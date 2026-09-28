@@ -3,8 +3,7 @@ description: >-
   3.4`): it filters as that spec does, and a retained annotation shows the
   spec the key stands for.
 spec: ["4.4", "9.2", "9.3"]
-tags: [resolve, provisional]
-questions: [Q25]
+tags: [resolve]
 
 builds:
   sm-3.3:

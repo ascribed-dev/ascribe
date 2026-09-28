@@ -319,6 +319,11 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\nversionless = [\"a\"]\n[features.x]\nname = \"X\"\navailable = \"a preview 3.4\" #!\n",
         ),
         case(
+            "model-availability-versionless",
+            Some("dimension"),
+            "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\", \"b\"]\nversionless = [\"a\"]\n[features.x]\nname = \"X\"\navailable = \"d 3.4\" #!\n",
+        ),
+        case(
             "model-availability-history-order",
             None,
             "spec = \"0.1\"\n[dimensions.d]\nvalues = [\"a\"]\n[features.x]\nname = \"X\"\navailable = \"a (ga 3.5, preview 3.3)\" #!\n",

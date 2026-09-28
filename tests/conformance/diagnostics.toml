@@ -340,6 +340,7 @@ level = "file"
 spec = "4.4"
 row = "`@available` | Versions given for a versionless target"
 message = "`{target}` is versionless, so it takes a state but no version"
+messages.dimension = "`{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version"
 
 [[diagnostic]]
 code = "TSR032"
@@ -948,6 +949,7 @@ level = "file"
 spec = "4.4"
 rule = "20.4"
 message = "feature `{key}`: `{target}` is versionless, so it takes a state but no version"
+messages.dimension = "feature `{key}`: `{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version"
 
 [[diagnostic]]
 code = "TSR095"
@@ -1182,3 +1184,27 @@ spec = "7.2"
 rule = "20.3"
 message = "`{key}` can't be an image attribute: HTML already uses it on the <img> element"
 messages.widget = "`{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element"
+
+###############################################################################
+# SPEC §8.2 rows added after phase 02 (questions Q30 and Q21).
+###############################################################################
+
+[[diagnostic]]
+code = "TSR120"
+slug = "directive-extra-text"
+severity = "error"
+level = "file"
+spec = "3.1"
+row = "Directives | Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary"
+message = "`@{name}`'s primary is a single word, so `{extra}` isn't part of it; remove it"
+messages.head = "`{extra}` isn't part of `@{name}`: a directive line has only its name, `{{attributes}}` in braces, and `:` with a primary; remove it, or put attributes in braces"
+messages.end = "`@end` takes nothing after it; remove `{extra}`"
+
+[[diagnostic]]
+code = "TSR121"
+slug = "link-page-dropped"
+severity = "error"
+level = "page"
+spec = "5.2"
+row = "Links | Target page isn't published by a build (page level, per build)"
+message = "build `{build}` doesn't publish `{path}`, so this link would be broken in that build; move the link into a `@variant` arm the build removes"

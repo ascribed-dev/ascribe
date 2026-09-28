@@ -304,12 +304,23 @@ pub enum AvailabilityProblem {
     UnknownTarget(Name),
     /// A state isn't a declared lifecycle state.
     UnknownState(Name),
-    /// A versionless target, or a dimension name (Q29), was given a version.
+    /// A versionless target was given a version.
     VersionlessVersion {
         /// The target.
         target: Name,
         /// The offending version.
         version: Version,
+    },
+    /// A dimension name was given a version (SPEC §4.4): its values don't
+    /// share one version line.
+    DimensionVersion {
+        /// The dimension name.
+        target: Name,
+        /// The offending version.
+        version: Version,
+        /// A value of the dimension to name instead: its first versioned
+        /// value, or its first value if all are versionless.
+        example: String,
     },
     /// A history isn't in chronological order.
     HistoryOrder {
@@ -500,11 +511,24 @@ pub(crate) fn check_entries(
         if versionless.is_none() {
             problems.push(AvailabilityProblem::UnknownTarget(target.clone()));
         }
-        // SPEC-QUESTION(Q29): a version on a dimension name is an error,
-        // whether or not its values are versionless.
-        let is_dimension = dimensions.iter().any(|d| d.name == target.text);
+        // SPEC §4.4: a dimension name takes no version, whether or not its
+        // values are versionless (resolved Q29).
+        let dimension = dimensions.iter().find(|d| d.name == target.text);
         let check_version = |v: &Version, problems: &mut Vec<AvailabilityProblem>| {
-            if is_dimension || versionless == Some(true) {
+            if let Some(d) = dimension {
+                let example = d
+                    .values
+                    .iter()
+                    .find(|value| !value.versionless)
+                    .or(d.values.first())
+                    .map(|value| value.value.clone())
+                    .unwrap_or_default();
+                problems.push(AvailabilityProblem::DimensionVersion {
+                    target: target.clone(),
+                    version: v.clone(),
+                    example,
+                });
+            } else if versionless == Some(true) {
                 problems.push(AvailabilityProblem::VersionlessVersion {
                     target: target.clone(),
                     version: v.clone(),

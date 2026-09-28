@@ -1,8 +1,7 @@
 description: >-
   A collapsed reference image `![alt][]` takes an attribute block.
 spec: ["5.3"]
-tags: [inline, provisional]
-questions: [Q23]
+tags: [inline]
 
 outline:
   - image: settings.png

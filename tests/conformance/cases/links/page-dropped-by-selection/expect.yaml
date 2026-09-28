@@ -1,0 +1,13 @@
+description: >-
+  A link to a page that a build's variant selection drops is an error in that
+  build only. The same link inside an arm that the build removes isn't
+  reported.
+spec: ["5.2", "9.3", "8.2"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics: []
+  cloud-only:
+    diagnostics:
+      - {slug: link-page-dropped, file: index.md, line: 5}

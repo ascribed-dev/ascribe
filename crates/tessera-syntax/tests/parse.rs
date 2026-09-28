@@ -135,7 +135,8 @@ fn identifier_and_line_primaries() {
     // An identifier ends at whitespace; the rest is kept, not dropped.
     let source = "@include: my file.md\n";
     let (d, line) = directive(source);
-    assert_eq!(slugs(&d), ["directive-primary"]);
+    assert_eq!(slugs(&d), ["directive-extra-text"]);
+    assert_eq!(d.issues[0].arg("extra"), Some("file.md"));
     let Some(PrimaryValue::Identifier(p)) = line.primary else {
         panic!("an identifier");
     };
@@ -218,7 +219,9 @@ fn reports_malformed_attributes_with_their_slugs() {
 fn keeps_and_reports_text_that_fits_nothing_in_the_head() {
     let source = "@note hello: text\n";
     let (d, line) = directive(source);
-    assert_eq!(slugs(&d), ["attribute-syntax"]);
+    assert_eq!(slugs(&d), ["directive-extra-text"]);
+    assert_eq!(d.issues[0].variant, Some("head"));
+    assert_eq!(d.issues[0].arg("extra"), Some("hello: text"));
     assert_eq!(cut(source, line.unexpected.expect("kept")), "hello: text");
     assert!(line.primary.is_none() && line.colon.is_none());
     assert_eq!(line.form, Form::Line);
@@ -255,7 +258,8 @@ fn end_lines() {
     assert!(matches!(&d.blocks[0].kind, BlockKind::End(_)));
     assert!(d.issues.is_empty());
     let d = doc("@end: nope\n");
-    assert_eq!(slugs(&d), ["directive-primary"]);
+    assert_eq!(slugs(&d), ["directive-extra-text"]);
+    assert_eq!(d.issues[0].variant, Some("end"));
     assert!(matches!(&d.blocks[0].kind, BlockKind::End(e) if e.extra.is_some()));
 }
 
