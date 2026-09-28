@@ -1,0 +1,17 @@
+description: >-
+  A directive line four or more spaces past the content column is part of an
+  indented code block, and is reported.
+spec: ["3.9", "8.2"]
+tags: [structure, check]
+
+outline:
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: Install
+          - code: |
+              @note: Literal text.
+            fenced: false
+diagnostics:
+  - {slug: directive-indented-code, line: 7}

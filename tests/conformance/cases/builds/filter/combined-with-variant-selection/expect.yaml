@@ -1,0 +1,35 @@
+description: >-
+  A build applies its variant mode and its availability mode together:
+  cloud-pdf reduces the group and removes the self-managed section, while a
+  `switch` build at 3.3 keeps the whole group and the section.
+spec: ["9.2", "9.3"]
+tags: [resolve]
+
+builds:
+  cloud-pdf:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - paragraph: Cloud text.
+  sm-3.3:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - group: variant
+            arms:
+              - attributes: {deployment: cloud}
+                children:
+                  - paragraph: Cloud text.
+              - attributes: {deployment: self-managed}
+                children:
+                  - paragraph: Self-managed text.
+          - heading: 2
+            text: Self-managed features
+          - directive: available
+            primary: self-managed 3.3
+            binding: heading
+          - paragraph: Features.

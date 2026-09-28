@@ -1,0 +1,16 @@
+description: >-
+  The end line closes the whole group, so the next paragraph is outside
+  every arm.
+spec: ["3.6"]
+tags: [structure]
+
+outline:
+  - group: variant
+    arms:
+      - attributes: {pm: npm}
+        children:
+          - paragraph: In the arm.
+      - attributes: {pm: yarn}
+        children:
+          - paragraph: In the last arm.
+  - paragraph: After the group.

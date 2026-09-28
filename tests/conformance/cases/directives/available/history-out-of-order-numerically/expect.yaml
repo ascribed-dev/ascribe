@@ -1,0 +1,8 @@
+description: >-
+  A history whose versions go backwards under the numeric scheme is an error
+  even when they look alphabetically ordered.
+spec: ["4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-history-order, line: 6}

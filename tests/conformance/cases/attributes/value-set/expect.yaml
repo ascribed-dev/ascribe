@@ -1,0 +1,12 @@
+description: >-
+  Tokens joined by `|` are a value set; spaces around `|` are ignored.
+spec: ["3.3"]
+tags: [parser]
+
+outline:
+  - directive: quill-audience
+    attributes: {role: [admin, developer]}
+  - directive: quill-audience
+    attributes: {role: [admin, developer, writer]}
+  - directive: quill-audience
+    attributes: {platform: [cloud, on-prem]}

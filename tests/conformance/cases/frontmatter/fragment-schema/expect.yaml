@@ -1,0 +1,10 @@
+description: >-
+  Fragments are validated against the fragment schema: `owner` is declared,
+  `title` is not, and a fragment needs no frontmatter. This applies to `_`
+  files and to files matching a fragment pattern.
+spec: ["2.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-unknown-key, file: _titled.md, line: 2}
+  - {slug: frontmatter-unknown-key, file: includes/pattern.md, line: 2}

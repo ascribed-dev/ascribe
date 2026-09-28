@@ -1,0 +1,9 @@
+description: >-
+  A feature key is checked as the spec it stands for.
+spec: ["4.4", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: available-exceeds-scope, file: index.md, line: 7}

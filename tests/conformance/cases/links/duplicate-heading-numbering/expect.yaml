@@ -1,0 +1,12 @@
+description: >-
+  Duplicate slugs in one file are numbered the way the slugger numbers them:
+  the second `## Steps` is `steps-1`, so `steps-2` does not exist. The
+  repeated heading is also reported.
+spec: ["5.2", "5.5", "8.2"]
+tags: [page-check, slug]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: link-id-missing, file: index.md, line: 5}
+      - {slug: heading-duplicate-without-id, file: dup.md, line: 9}

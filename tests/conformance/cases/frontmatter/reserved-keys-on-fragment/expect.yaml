@@ -1,0 +1,7 @@
+description: >-
+  A fragment may not use the reserved keys, whatever their values.
+spec: ["2.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-reserved-in-fragment, file: _f.md, line: 2}

@@ -1,0 +1,7 @@
+description: >-
+  An include whose target file does not exist is an error.
+spec: ["4.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: include-target-missing, line: 5}

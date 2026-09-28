@@ -1,0 +1,8 @@
+description: >-
+  A container-only widget written in line form is an error.
+spec: ["3.5", "6", "8.2"]
+tags: [check, provisional]
+questions: [Q16]
+
+diagnostics:
+  - {slug: container-colon-missing, line: 5}

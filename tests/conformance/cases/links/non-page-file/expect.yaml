@@ -1,0 +1,8 @@
+description: >-
+  A link to a local file that is not a page is an asset link; it is valid
+  when the file exists and an error when it does not.
+spec: ["5.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-target-missing, file: index.md, line: 5}

@@ -1,0 +1,9 @@
+description: >-
+  A page under `reference/` gets the `reference` type, which requires `api-
+  version`.
+spec: ["7.2", "8.2"]
+tags: [check, provisional]
+questions: [Q20]
+
+diagnostics:
+  - {slug: frontmatter-missing-field, file: reference/index.md, line: 1}

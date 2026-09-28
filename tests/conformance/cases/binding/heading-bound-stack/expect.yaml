@@ -1,0 +1,15 @@
+description: >-
+  Heading-bound directives sit at the top of their section and may stack,
+  one per line (the SPEC example).
+spec: ["3.8", "4.1", "4.4"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Streaming sync
+  - directive: id
+    primary: streaming-sync
+    binding: heading
+  - directive: available
+    primary: cloud, self-managed preview 3.4
+    binding: heading

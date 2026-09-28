@@ -1,0 +1,7 @@
+description: >-
+  A paragraph is not an ordered list.
+spec: ["4.6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: steps-not-ordered-list, line: 5}

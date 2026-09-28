@@ -1,0 +1,7 @@
+description: >-
+  States in a history must be in chronological order.
+spec: ["4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-history-order, line: 6}

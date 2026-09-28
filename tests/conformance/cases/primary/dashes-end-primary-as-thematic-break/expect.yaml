@@ -1,0 +1,10 @@
+description: >-
+  A `---` line cannot underline a primary, so it ends it and is a thematic
+  break (Q2).
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: Title
+  - thematic-break

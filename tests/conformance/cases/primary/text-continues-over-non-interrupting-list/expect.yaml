@@ -1,0 +1,9 @@
+description: >-
+  An ordered list that does not start at 1 cannot interrupt a paragraph, so
+  it continues the primary.
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: One 2. Not a list.

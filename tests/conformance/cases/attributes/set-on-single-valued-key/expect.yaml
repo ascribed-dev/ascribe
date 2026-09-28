@@ -1,0 +1,7 @@
+description: >-
+  A value set is only accepted where the schema declares the key set-valued.
+spec: ["3.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-type-mismatch, line: 5}

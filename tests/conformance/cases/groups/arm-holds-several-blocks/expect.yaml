@@ -1,0 +1,25 @@
+description: >-
+  An arm contains every block from its opener to the next opener or the end
+  line.
+spec: ["3.6"]
+tags: [structure]
+
+outline:
+  - group: variant
+    arms:
+      - attributes: {pm: npm}
+        children:
+          - paragraph: Intro.
+          - heading: 2
+            text: A heading
+          - list: bullet
+            children:
+              - item:
+                  - paragraph: one
+              - item:
+                  - paragraph: two
+          - blockquote:
+              - paragraph: quoted
+      - attributes: {pm: yarn}
+        children:
+          - paragraph: Other.

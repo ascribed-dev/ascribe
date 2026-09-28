@@ -1,0 +1,10 @@
+description: >-
+  A directive line in an indented code block is code.
+spec: ["3.2"]
+tags: [parser]
+
+outline:
+  - paragraph: Text.
+  - code: |
+      @note: not a directive
+    fenced: false

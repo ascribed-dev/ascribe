@@ -1,0 +1,10 @@
+description: >-
+  A spec that does not match the grammar is an error: a history entry with
+  no version, a trailing comma, a version that ends in a dot.
+spec: ["4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-syntax, line: 6}
+  - {slug: available-syntax, line: 11}
+  - {slug: available-syntax, line: 16}

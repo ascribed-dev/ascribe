@@ -1,0 +1,8 @@
+description: >-
+  A target that is neither a dimension value, a dimension name, nor a
+  feature key is an error.
+spec: ["4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-unknown, line: 6}

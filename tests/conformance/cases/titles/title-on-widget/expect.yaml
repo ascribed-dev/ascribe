@@ -1,0 +1,9 @@
+description: >-
+  A widget that accepts titles takes a title line like a built-in does.
+spec: ["3.7", "6"]
+tags: [structure]
+
+outline:
+  - directive: quill-aside
+    title: A side remark
+    primary: Text.

@@ -1,0 +1,8 @@
+description: >-
+  A container still open when the next arm begins is reported at that arm's
+  opener, not at the end of the document.
+spec: ["3.6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: container-open-at-arm, line: 8}

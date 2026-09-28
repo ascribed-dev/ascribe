@@ -1,0 +1,8 @@
+description: >-
+  A link inside a fragment resolves against the fragment's location:
+  `keys.md` means the one next to the fragment, wherever it is included,
+  even though the including page has no `keys.md` beside it.
+spec: ["4.2", "5.2"]
+tags: [check, include]
+
+diagnostics: []

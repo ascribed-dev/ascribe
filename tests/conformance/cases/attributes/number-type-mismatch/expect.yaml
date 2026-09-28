@@ -1,0 +1,8 @@
+description: >-
+  A number attribute rejects a non-numeric token, even one that starts like
+  a number (`600px`).
+spec: ["3.3", "6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-type-mismatch, line: 5}

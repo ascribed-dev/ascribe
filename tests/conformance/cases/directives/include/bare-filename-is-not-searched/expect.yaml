@@ -1,0 +1,8 @@
+description: >-
+  A bare filename is resolved beside the including file only; it is never
+  searched for elsewhere.
+spec: ["4.2", "8.2"]
+tags: [check, include]
+
+diagnostics:
+  - {slug: include-target-missing, file: guides/page.md, line: 5}

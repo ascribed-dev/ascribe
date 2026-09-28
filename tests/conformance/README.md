@@ -37,6 +37,45 @@ tests/conformance/
     harness.rs       tests of the harness itself, with fixtures in fixtures/
 ```
 
+## The suite
+
+Phase 03 wrote the cases from SPEC.md, not from any implementation. They're grouped by what they check:
+
+| Directory | Checks |
+|---|---|
+| `recognition/`, `attributes/`, `primary/` | Which lines are directives, attribute blocks and their diagnostics, identifier and text primaries (SPEC §3.1–§3.4) |
+| `forms/`, `groups/`, `titles/`, `binding/`, `lists/`, `nesting/` | Container and line forms, groups and the arm rule, title lines, binding, lists and blockquotes, nesting (§3.5–§3.10) |
+| `directives/<name>/` | Each built-in directive: `id`, `include`, `variant`, `available`, `note`, `steps`, `details` (§4) |
+| `widgets/` | Project widgets (§6) |
+| `phrases/`, `links/`, `images/`, `headings/`, `glossary/` | Inline constructs, source ids and page ids (§5) |
+| `frontmatter/`, `model/` | Frontmatter, content types, fragments, name roles (§2, §7.2) |
+| `builds/selection/`, `builds/filter/`, `builds/assets/`, `builds/pages/` | Resolution and build modes, availability filtering, assets, which files are pages (§9.2–§9.4) |
+| `projects/quill/` | The whole Quill project of `examples/quill`, with no diagnostics under any build |
+| `samples/` | The two worked examples from phase 00 |
+
+Every row of SPEC §8.2 has at least one case that expects it; `tests/suite.rs` keeps that true. Cases that depend on an open entry in `project-docs/questions.md` are tagged `provisional`, and the same test requires the entries they name to be open. [`INTERPRETATIONS.md`](INTERPRETATIONS.md) lists the readings of the spec the cases lock in, and what the suite doesn't cover.
+
+Conventions the cases follow:
+
+- **A page needs a title.** The shared model's default type requires `title`, so a single-file case that expects diagnostics starts with a three-line frontmatter block. Diagnostic lines count it. A case that expects only an outline has none, and neither does a fragment.
+- **A case checks one kind of thing.** Recognition and structure are separate from diagnostics (`parser` and `structure` cases carry an outline; `check` cases carry diagnostics), so each phase's cases run when its own adapter exists. A case carries several tags only when it needs several adapters.
+- **Page-level diagnostics need the `page-check` tag**, and top-level (file-level) diagnostics need `check`.
+
+## Resolved outlines
+
+A build's page `outline` is the page after resolution steps 1 to 4 (SPEC §9.2): includes replaced, availability resolved, the build's modes applied, and phrases substituted. Its text is still the page's source text, so:
+
+- links keep their file-path destinations and empty link text, heading ids aren't shown, and glossary terms aren't linked (steps 5 to 7); those show up as diagnostics and, in phases 18 and 20, as outputs;
+- an `@available` directive that survives a filter stays in the outline as the annotation, with its binding; content a filter removes takes its directive with it, and a section is its heading and everything up to the next heading of the same or a higher level, subsections included;
+- a group that a selection reduces to several arms stays a group with the arms' own attributes, and one arm becomes that arm's blocks;
+- an escape stays as written (`\{product}`).
+
+## The shared model and the content root
+
+`_model/tessera.toml` sets `content-root = "files"`, the content root of every project case. A single-file case has `input.md` in its directory, so its content root is the case directory: adapters use `Case::content_root()` as the content root whatever the model says, and the case directory as the project root (the directory a case's `tessera.toml` is in, when it has one). Files a case needs beside the project or outside it (`../shared/logo.png`, `../../shared.png`) sit next to `files/` or next to the case directory.
+
+A diagnostic in `tessera.toml` (a loader rule) is expected in a single-file case, with `file: tessera.toml`, since the case directory is the content root there.
+
 ## Cases
 
 A case is a directory under `cases/` that contains `expect.yaml`. Its **id** is its path relative to `cases/`, with `/` separators, for example `structure/groups/one-arm`. Group cases in directories by area; the grouping is for people, and tags drive the runner.

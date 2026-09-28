@@ -1,0 +1,11 @@
+description: >-
+  A widget with binding `self` and no primary stands alone.
+spec: ["6", "3.8"]
+tags: [structure]
+
+outline:
+  - paragraph: Before.
+  - directive: quill-labspace
+    attributes: {lab: first-sync}
+    binding: self
+  - paragraph: Next paragraph.

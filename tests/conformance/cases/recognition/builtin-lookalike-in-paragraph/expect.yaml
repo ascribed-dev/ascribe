@@ -1,0 +1,10 @@
+description: >-
+  A directive line after a paragraph line starts a new block; it never
+  continues the paragraph.
+spec: ["3.2", "3.9"]
+tags: [parser]
+
+outline:
+  - paragraph: Some text
+  - directive: note
+    primary: A note. more text

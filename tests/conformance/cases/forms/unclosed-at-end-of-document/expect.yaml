@@ -1,0 +1,7 @@
+description: >-
+  Every container must be closed before the document ends.
+spec: ["3.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: container-unclosed, line: 5}

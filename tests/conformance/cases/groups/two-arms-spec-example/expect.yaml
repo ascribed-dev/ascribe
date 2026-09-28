@@ -1,0 +1,15 @@
+description: >-
+  Each opener starts an arm and ends the previous one; a single end line
+  closes the group (the SPEC example).
+spec: ["3.6", "4.3"]
+tags: [structure]
+
+outline:
+  - group: variant
+    arms:
+      - attributes: {deployment: cloud}
+        children:
+          - paragraph: Sign in to Quill Cloud and copy an API key.
+      - attributes: {deployment: self-managed}
+        children:
+          - paragraph: Point the agent at your server.

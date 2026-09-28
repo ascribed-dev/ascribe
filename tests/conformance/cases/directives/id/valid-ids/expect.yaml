@@ -1,0 +1,7 @@
+description: >-
+  Letters, digits, and hyphens are valid, including a leading digit or
+  capital.
+spec: ["4.1"]
+tags: [check]
+
+diagnostics: []

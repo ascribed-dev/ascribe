@@ -1,0 +1,25 @@
+description: >-
+  An arm with a value set applies to any of its values, so it survives a
+  selection of one of them; when it is the only survivor it replaces the
+  group.
+spec: ["4.3", "9.3"]
+tags: [resolve]
+
+builds:
+  cloud-only:
+    pages:
+      index.md:
+        outline:
+          - paragraph: Both.
+  site:
+    pages:
+      index.md:
+        outline:
+          - group: variant
+            arms:
+              - attributes: {deployment: [cloud, self-managed]}
+                children:
+                  - paragraph: Both.
+              - attributes: {deployment: self-managed}
+                children:
+                  - paragraph: Self-managed only.

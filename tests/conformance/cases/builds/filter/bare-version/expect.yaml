@@ -1,0 +1,31 @@
+description: >-
+  A bare version means generally available since that version: unavailable
+  at 3.3, available at 3.4, and not for a target that is not listed.
+spec: ["4.4", "9.3"]
+tags: [resolve]
+
+builds:
+  sm-3.3:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+  sm-3.4:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Since 3.4
+          - directive: available
+            primary: self-managed 3.4
+            binding: heading
+          - paragraph: Text.
+  cloud-pdf:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page

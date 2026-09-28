@@ -1,0 +1,16 @@
+description: >-
+  Blank lines between a heading and its heading-bound directives do not
+  change what they bind.
+spec: ["3.8"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Streaming sync
+  - directive: id
+    primary: streaming-sync
+    binding: heading
+  - directive: available
+    primary: cloud
+    binding: heading
+  - paragraph: Body text.

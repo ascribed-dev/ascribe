@@ -1,0 +1,7 @@
+description: >-
+  File names match exactly on every platform: `P.png` does not find `p.png`.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: image-source-missing, file: index.md, line: 5}

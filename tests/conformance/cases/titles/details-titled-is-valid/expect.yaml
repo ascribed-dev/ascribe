@@ -1,0 +1,6 @@
+description: >-
+  A titled `@details` reports nothing.
+spec: ["4.7"]
+tags: [check]
+
+diagnostics: []

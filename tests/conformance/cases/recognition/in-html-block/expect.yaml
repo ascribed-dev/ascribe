@@ -1,0 +1,7 @@
+description: >-
+  A directive line inside a raw HTML block is part of the block.
+spec: ["3.2"]
+tags: [parser]
+
+outline:
+  - html

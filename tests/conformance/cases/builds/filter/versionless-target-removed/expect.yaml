@@ -1,0 +1,32 @@
+description: >-
+  A versionless target has a single state, in effect at every version, so
+  content marked `cloud removed` is never available for cloud. It is not
+  available for a target it does not list either.
+spec: ["4.4", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Gone on cloud
+          - directive: available
+            primary: cloud removed
+            binding: heading
+          - paragraph: Gone.
+  cloud-pdf:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+  sm-3.3:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page

@@ -134,7 +134,8 @@ fn identifier_and_line_primaries() {
 
     // An identifier ends at whitespace; the rest is kept, not dropped.
     let source = "@include: my file.md\n";
-    let (_, line) = directive(source);
+    let (d, line) = directive(source);
+    assert_eq!(slugs(&d), ["directive-primary"]);
     let Some(PrimaryValue::Identifier(p)) = line.primary else {
         panic!("an identifier");
     };

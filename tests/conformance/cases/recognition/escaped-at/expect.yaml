@@ -1,0 +1,8 @@
+description: >-
+  `\@` prevents a directive: the line stays a paragraph and its source text
+  keeps the backslash.
+spec: ["2.3", "3.2"]
+tags: [parser]
+
+outline:
+  - paragraph: "\\@note: Not a directive."

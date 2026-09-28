@@ -359,7 +359,7 @@ impl<'a> Converter<'a> {
             .or(head.unexpected_start);
         let extra = first.map(|start| Span::new(at + start, at + head.content_end));
         if let Some(extra) = extra {
-            // SPEC-QUESTION(Q12): nothing in SPEC §8.2 covers text after `@end`;
+            // SPEC-QUESTION(Q30): nothing in SPEC §8.2 covers text after `@end`;
             // this uses the nearest rows.
             let issue = if head.colon.is_some() {
                 Issue::new(diagnostics::DIRECTIVE_PRIMARY, self.location(extra))
@@ -394,7 +394,7 @@ impl<'a> Converter<'a> {
             .unexpected_start
             .map(|start| Span::new(at + start, at + head.content_end));
         if let Some(span) = unexpected {
-            // SPEC-QUESTION(Q12): nothing in SPEC §8.2 covers text that fits
+            // SPEC-QUESTION(Q30): nothing in SPEC §8.2 covers text that fits
             // no part of the head; `attribute-syntax` is the nearest row.
             let detail = if head.attributes.is_some() {
                 format!(
@@ -490,17 +490,24 @@ impl<'a> Converter<'a> {
         let rest = self.text(Span::new(start, end));
         match schema.map(|s| s.primary) {
             Some(Primary::Identifier { .. }) => {
-                // SPEC-QUESTION(Q12): text after the token is kept in
-                // `trailing` and not reported.
+                // SPEC-QUESTION(Q30, Q15): text after the token is kept in
+                // `trailing` and reported as `directive-primary` (Q15's
+                // proposal), whose message is the nearest the registry has.
                 let token_len = rest.find([' ', '\t']).unwrap_or(rest.len());
                 let after = &rest[token_len..];
                 let trailing = after.trim_start_matches([' ', '\t']);
+                let trailing = (!trailing.is_empty())
+                    .then(|| Span::new(start + token_len + (after.len() - trailing.len()), end));
+                if let Some(span) = trailing {
+                    self.report(
+                        Issue::new(diagnostics::DIRECTIVE_PRIMARY, self.location(span))
+                            .with_arg("name", line.name.clone()),
+                    );
+                }
                 Some(PrimaryValue::Identifier(IdentifierPrimary {
                     span: Span::new(start, start + token_len),
                     text: rest[..token_len].to_owned(),
-                    trailing: (!trailing.is_empty()).then(|| {
-                        Span::new(start + token_len + (after.len() - trailing.len()), end)
-                    }),
+                    trailing,
                 }))
             }
             Some(Primary::Availability { .. }) => Some(PrimaryValue::Line(LinePrimary {

@@ -1,0 +1,14 @@
+description: >-
+  A `{key}` that is not declared stays literal text, and is reported so it
+  cannot silently become a phrase later.
+spec: ["5.1", "8.2"]
+tags: [resolve, check]
+
+diagnostics:
+  - {slug: phrase-undeclared, file: index.md, line: 5}
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: The {nope} key stays, but Quill does not.

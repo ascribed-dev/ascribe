@@ -1,0 +1,10 @@
+description: >-
+  Image attributes use the same value grammar as directives, quoted strings
+  included.
+spec: ["3.3", "5.3"]
+tags: [inline]
+
+outline:
+  - image: settings.png
+    alt: Settings
+    attributes: {width: "600", loading: eager}

@@ -1,0 +1,13 @@
+description: >-
+  A trailing colon with an empty primary opens a container that holds the
+  blocks until `@end` (the SPEC example).
+spec: ["3.5"]
+tags: [structure]
+
+outline:
+  - directive: note
+    form: container
+    attributes: {type: caution}
+    children:
+      - paragraph: First paragraph.
+      - paragraph: Second paragraph, still inside the callout.

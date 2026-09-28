@@ -1,0 +1,10 @@
+description: >-
+  A link to a page or fragment is never an asset; a link to another local
+  file is.
+spec: ["5.2", "9.4"]
+tags: [resolve]
+
+builds:
+  site:
+    assets:
+      - data.csv

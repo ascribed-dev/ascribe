@@ -1,0 +1,11 @@
+description: >-
+  An identifier primary is a single token; the include path stops at the
+  first whitespace of a well-formed line.
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: include
+    primary: guides/setup.md#install
+  - directive: id
+    primary: streaming-sync

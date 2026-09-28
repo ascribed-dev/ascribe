@@ -1,0 +1,11 @@
+description: >-
+  A full reference image `![alt][ref]` takes an attribute block, and its
+  source is the definition's destination.
+spec: ["5.3"]
+tags: [inline, provisional]
+questions: [Q23]
+
+outline:
+  - image: settings.png
+    alt: The settings page
+    attributes: {width: "600"}

@@ -1,0 +1,8 @@
+description: >-
+  All arms of a group must share at least one dimension key.
+spec: ["4.3", "8.2"]
+tags: [check, provisional]
+questions: [Q17]
+
+diagnostics:
+  - {slug: variant-no-shared-dimension, line: 5}

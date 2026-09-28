@@ -1,0 +1,7 @@
+description: >-
+  A page may use every field its type declares, plus the reserved keys; `no`
+  and `on` are strings, not booleans (YAML 1.2 core schema).
+spec: ["2.1", "7.2", "8.2"]
+tags: [check]
+
+diagnostics: []

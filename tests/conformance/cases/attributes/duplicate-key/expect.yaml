@@ -1,0 +1,7 @@
+description: >-
+  The same key given twice in one block is an error.
+spec: ["3.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-duplicate-key, line: 5}

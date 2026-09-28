@@ -263,7 +263,7 @@ pub struct DirectiveLine {
     pub form: Form,
     /// Text after the name (and attribute block) that fits no part of the
     /// head, such as the `hello: text` of `@note hello: text`. It's kept, not
-    /// dropped, and reported as an issue (SPEC-QUESTION(Q12)).
+    /// dropped, and reported as an issue (SPEC-QUESTION(Q30)).
     pub unexpected: Option<Span>,
 }
 
@@ -302,8 +302,8 @@ pub struct IdentifierPrimary {
     /// The token's text.
     pub text: String,
     /// Text after the token on the same line, trimmed (`@include: my file.md`
-    /// has ` file.md`). Kept, not dropped; the checks decide what to do with
-    /// it (SPEC-QUESTION(Q12)).
+    /// has ` file.md`). Kept, not dropped, and reported as
+    /// `directive-primary` (SPEC-QUESTION(Q30, Q15)).
     pub trailing: Option<Span>,
 }
 

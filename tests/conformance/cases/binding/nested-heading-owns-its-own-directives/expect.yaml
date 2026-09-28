@@ -1,0 +1,17 @@
+description: >-
+  A directive under a subheading binds the subheading, not the section above
+  it.
+spec: ["3.8"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Outer
+  - directive: id
+    primary: outer
+    binding: heading
+  - heading: 3
+    text: Inner
+  - directive: id
+    primary: inner
+    binding: heading

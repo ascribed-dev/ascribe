@@ -1,0 +1,8 @@
+description: >-
+  A title line directly above a directive that accepts none is reported as a
+  probable misplaced title (Q11).
+spec: ["3.7", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: title-not-accepted, line: 5}

@@ -1,0 +1,7 @@
+description: >-
+  An attribute key the model does not declare for images is an error.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-unknown-key, file: index.md, line: 5}

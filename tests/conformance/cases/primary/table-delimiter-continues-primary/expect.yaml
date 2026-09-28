@@ -1,0 +1,8 @@
+description: >-
+  A table delimiter row does not turn a primary into a table (Q2).
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: a | b --|--

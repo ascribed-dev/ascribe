@@ -1,0 +1,10 @@
+description: >-
+  An include naming an id its target does not have is an error at the
+  include (page level).
+spec: ["4.2", "8.2"]
+tags: [page-check, include]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: include-id-missing, file: index.md, line: 5}

@@ -1,0 +1,17 @@
+description: >-
+  `@steps` marks an ordered list as a procedure (the SPEC example).
+spec: ["4.6"]
+tags: [structure]
+
+outline:
+  - directive: steps
+    binding: following-block
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: Install the agent package.
+      - item:
+          - paragraph: Verify the install.
+      - item:
+          - paragraph: Create `quill.yaml`.
