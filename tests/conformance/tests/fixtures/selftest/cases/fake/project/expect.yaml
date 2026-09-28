@@ -1,0 +1,13 @@
+tags: [fake]
+diagnostics: []
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: Page text.
+        outputs:
+          plain: {file: expected/index.plain.md}
+          site: snapshot
+    assets: [diagram.txt]
+    diagnostics: []

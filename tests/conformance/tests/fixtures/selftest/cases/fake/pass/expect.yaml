@@ -1,0 +1,9 @@
+tags: [fake]
+outline:
+  - paragraph: Hello world.
+  - directive: note
+  - paragraph
+diagnostics:
+  - slug: bad-line
+    line: 5
+    column: 1

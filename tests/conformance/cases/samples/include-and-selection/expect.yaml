@@ -1,0 +1,48 @@
+# Sample case: a project case with per-build expectations.
+#
+# It relies on the shared fixture model (tests/conformance/_model/tessera.toml,
+# written in phase 03) declaring the `deployment` dimension, the phrases
+# `product` (Quill) and `cloud` (Quill Cloud), and the builds `site`
+# (variants: switch) and `cloud-pdf` (variants: {deployment: cloud}), as in
+# SPEC §9.3. If the model names its builds differently, rename them here.
+description: >-
+  A page includes a fragment and has a deployment group. Every build publishes
+  the page but not the fragment; `switch` keeps both arms, and a cloud
+  selection reduces the group to its cloud arm's content.
+spec: ["2.2", "4.2", "9.2", "9.3"]
+tags: [include, resolve]
+
+# No file-level diagnostics in either file.
+diagnostics: []
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Install the Quill agent
+          # The include is replaced by the fragment's content, with phrases substituted.
+          - paragraph: The Quill agent syncs your docs to Quill.
+          - group: variant
+            arms:
+              - attributes: {deployment: cloud}
+                children:
+                  - paragraph: Sign in to Quill Cloud and copy an API key.
+              - attributes: {deployment: self-managed}
+                children:
+                  - paragraph: Point the agent at your server.
+    assets: []
+    diagnostics: []
+
+  cloud-pdf:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Install the Quill agent
+          - paragraph: The Quill agent syncs your docs to Quill.
+          # One arm survives, so its content replaces the group (SPEC §9.3).
+          - paragraph: Sign in to Quill Cloud and copy an API key.
+    assets: []
+    diagnostics: []

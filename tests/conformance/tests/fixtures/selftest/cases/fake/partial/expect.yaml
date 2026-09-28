@@ -1,0 +1,5 @@
+# The diagnostics check would fail, but SKIPS.toml skips just that check.
+tags: [fake]
+outline:
+  - paragraph: BAD
+diagnostics: []

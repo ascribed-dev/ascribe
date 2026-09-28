@@ -1,0 +1,10 @@
+# Skips for the harness's own tests (tests/harness.rs), not the real suite.
+
+[[skip]]
+tag = "skipped-area"
+reason = "Recorded reason for skipped-area."
+
+[[skip]]
+case = "fake/partial"
+reason = "Diagnostics for this case come later."
+checks = ["diagnostics"]
