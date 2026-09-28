@@ -173,11 +173,7 @@ site = "https://docs.quill.dev"
 base-path = "/docs/"
 trailing-slash = "never"
 slugger = "github"
-heading-ids = "attribute"
 html = true
-image-attributes = "attribute"
-assets = "directory"
-assets-dir = "_assets"
 
 # §17
 [builds.site]

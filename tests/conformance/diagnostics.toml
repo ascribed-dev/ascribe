@@ -1,0 +1,1185 @@
+# The Tessera diagnostics registry.
+#
+# One entry for every diagnostic a Tessera processor reports: every row of
+# SPEC §8.2, and every loader rule in project-docs/content-model.md §20.
+# Crates report problems by slug (tessera-core's `Issue`, whose slug constants
+# mirror this file); phase 10 maps each slug to its code, severity, and message
+# here; conformance cases name diagnostics by slug.
+#
+# This file is a contract (project-docs/phases/README.md, "Contracts"). After
+# phase 02, entries change only through an approved entry in
+# project-docs/questions.md. tests/conformance/tests/registry.rs checks it
+# against SPEC.md, content-model.md, and questions.md, and tessera-core's
+# tests check its slug constants against it.
+#
+# Required fields:
+#
+#   code      "TSR" and three digits, assigned in file order. Codes are never
+#             reused or renumbered: a new diagnostic is appended with the next
+#             code, and a retired one keeps its entry, with `retired` set.
+#   slug      Kebab-case, unique, and stable. Loader rules start with `model-`.
+#   severity  "error" or "warning". For a §8.2 row, the row's severity.
+#   level     "file" or "page" (SPEC §8.1). File-level diagnostics are checked
+#             on each file on its own (with the content model and the file
+#             system); a conformance case expects them in its top-level
+#             `diagnostics`. Page-level diagnostics are checked on each
+#             expanded page, per build; a case expects them under
+#             `builds.<name>.diagnostics`.
+#   spec      The SPEC.md section the rule comes from.
+#   message   The message template. `{name}` is a placeholder, filled from the
+#             issue's arguments; `{{` and `}}` are literal braces. A message
+#             says what's wrong and, when there's a likely fix, what to do.
+#
+# Optional fields:
+#
+#   messages     Named alternative templates, for cases of the rule that need
+#                different wording. An issue names the one it uses
+#                (`Issue::variant`); otherwise `message` is used.
+#   row          The SPEC §8.2 row, as "<construct> | <condition>", copied
+#                exactly. Every row has exactly one entry for each level it's
+#                checked at. Four rows join a file-level check and a
+#                page-level check in one condition, and have one entry for
+#                each (Q22).
+#   rule         The content-model.md §20 subsection a loader rule is in.
+#   provisional  questions.md entries the entry depends on. A conformance case
+#                that expects this diagnostic must be tagged `provisional` and
+#                list them in `questions`.
+#   retired      Why the diagnostic is no longer reported. Its code and slug
+#                stay reserved.
+
+###############################################################################
+# SPEC §8.2, in table order.
+###############################################################################
+
+[[diagnostic]]
+code = "TSR001"
+slug = "attribute-unknown-key"
+severity = "error"
+level = "file"
+spec = "3.3"
+row = "Attributes | Unknown key for the directive or image"
+message = "`@{name}` has no attribute `{key}`; its attributes are: {keys}"
+messages.suggestion = "`@{name}` has no attribute `{key}`; did you mean `{suggestion}`?"
+messages.none = "`@{name}` takes no attributes, so `{key}` isn't allowed"
+messages.image = "images have no attribute `{key}`; the accepted attributes are: {keys}"
+messages.image-none = "images take no attributes in this project; declare `{key}` in [images.attributes] to allow it"
+
+[[diagnostic]]
+code = "TSR002"
+slug = "attribute-type-mismatch"
+severity = "error"
+level = "file"
+spec = "3.3"
+row = "Attributes | Value doesn't match the key's declared type"
+message = "`{key}` must be {expected}, but it's \"{value}\""
+messages.enum = "`{key}` can't be \"{value}\"; use one of: {values}"
+messages.boolean = "`{key}` must be true or false, but it's \"{value}\""
+messages.set = "`{key}` takes a single value, so it can't be a value set"
+
+[[diagnostic]]
+code = "TSR003"
+slug = "attribute-bare-key"
+severity = "error"
+level = "file"
+spec = "3.3"
+row = "Attributes | Bare key without a value"
+message = "`{key}` needs a value, such as `{key}=<value>`; booleans are written out too: `{key}=true`"
+
+[[diagnostic]]
+code = "TSR004"
+slug = "attribute-unquoted-reserved"
+severity = "error"
+level = "file"
+spec = "3.3"
+row = "Attributes | Unquoted value containing a reserved character"
+message = "the value of `{key}` contains `{character}`, so it must be quoted: `{key}=\"{value}\"`"
+
+[[diagnostic]]
+code = "TSR005"
+slug = "directive-unknown"
+severity = "warning"
+level = "file"
+spec = "3.2"
+row = "Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name"
+message = "`@{name}` isn't a known directive, so this line is text; write `\\@{name}` if that's what you mean"
+messages.suggestion = "`@{name}` isn't a known directive, so this line is text; did you mean `{suggestion}`?"
+
+[[diagnostic]]
+code = "TSR006"
+slug = "directive-primary"
+severity = "error"
+level = "file"
+spec = "3.4"
+row = "Directives | Primary given to a directive that takes none, or a required primary missing"
+message = "`@{name}` doesn't take a primary; remove the text after its colon"
+messages.missing = "`@{name}` needs {kind} after its colon, such as `@{name}: {example}`"
+
+[[diagnostic]]
+code = "TSR007"
+slug = "container-unclosed"
+severity = "error"
+level = "file"
+spec = "3.5"
+row = "Container | Container not closed before its enclosing block ends"
+message = "the `@{name}` container opened here isn't closed before {end}; add `@end` where it should end"
+
+[[diagnostic]]
+code = "TSR008"
+slug = "container-colon-unexpected"
+severity = "error"
+level = "file"
+spec = "3.5"
+row = "Container | Trailing `:` on a directive with no container form"
+message = "`@{name}` has no container form, so its line can't end in a colon; remove the trailing `:`"
+
+[[diagnostic]]
+code = "TSR009"
+slug = "container-colon-missing"
+severity = "error"
+level = "file"
+spec = "3.5"
+row = "Container | Container-only directive without a trailing `:`"
+message = "`@{name}` is always a container; end its line with a colon to open it"
+
+[[diagnostic]]
+code = "TSR010"
+slug = "container-open-at-arm"
+severity = "error"
+level = "file"
+spec = "3.6"
+row = "Container | Container still open when the next arm of its group begins (reported at that arm's opener)"
+message = "the `@{name}` container opened on line {line} is still open where this `@{group}` arm begins; close it with `@end` first"
+
+[[diagnostic]]
+code = "TSR011"
+slug = "end-unmatched"
+severity = "error"
+level = "file"
+spec = "3.5"
+row = "Container | End line with no open container"
+message = "this `@end` has no open container to close; if a directive above should be a container, end its line with a colon"
+
+[[diagnostic]]
+code = "TSR012"
+slug = "end-indent-mismatch"
+severity = "error"
+level = "file"
+spec = "3.9"
+row = "Container | End line indented differently from its opener"
+message = "this `@end` is indented differently from the `@{name}` it would close; indent them the same"
+
+[[diagnostic]]
+code = "TSR013"
+slug = "container-nesting-deep"
+severity = "warning"
+level = "file"
+spec = "3.10"
+row = "Container | Nesting deeper than two levels"
+message = "containers are nested {depth} levels deep here; more than two is hard to follow, so flatten them, for example with a following-block form"
+
+[[diagnostic]]
+code = "TSR014"
+slug = "binding-no-block"
+severity = "error"
+level = "file"
+spec = "3.8"
+row = "Binding | Following-block directive with no following block in its container"
+message = "`@{name}` applies to the block after it, but nothing follows it in this {container}"
+
+[[diagnostic]]
+code = "TSR015"
+slug = "binding-heading"
+severity = "error"
+level = "file"
+spec = "3.8"
+row = "Binding | Following-block directive bound to a heading"
+message = "`@{name}` applies to the next block, and the next block here is a heading; a directive can't be bound to a heading"
+
+[[diagnostic]]
+code = "TSR016"
+slug = "binding-blank-line"
+severity = "warning"
+level = "file"
+spec = "3.8"
+row = "Binding | Blank line between a following-block directive and its block"
+message = "a blank line separates `@{name}` from the block it applies to; remove it so the directive touches its block"
+
+[[diagnostic]]
+code = "TSR017"
+slug = "binding-not-section-top"
+severity = "error"
+level = "file"
+spec = "3.8"
+row = "Binding | Heading-bound directive that isn't at the top of its section"
+message = "`@{name}` applies to its heading's section, so it must come directly under the heading, before any other content"
+
+[[diagnostic]]
+code = "TSR018"
+slug = "title-not-accepted"
+severity = "error"
+level = "file"
+spec = "3.7"
+row = "Title | Title given to a directive that doesn't accept one"
+message = "`@{name}` doesn't take a title; remove the title line, or start it with `\\.` if the dot is text"
+
+[[diagnostic]]
+code = "TSR019"
+slug = "title-dot-space"
+severity = "warning"
+level = "file"
+spec = "3.7"
+row = "Title | A `. ` line (dot and space) directly above a directive that accepts a title"
+message = "a title line has no space after its dot; write `.{title}` to make this the title of the `@{name}` below"
+
+[[diagnostic]]
+code = "TSR020"
+slug = "id-duplicate"
+severity = "error"
+level = "page"
+spec = "4.1"
+row = "`@id` | Duplicate id on a page, including ids from included content (page level)"
+message = "the id `{id}` is used more than once on this page; every id on a page must be unique"
+messages.include = "including `{path}` here puts the id `{id}` on this page twice; every id on a page must be unique"
+
+[[diagnostic]]
+code = "TSR021"
+slug = "include-target-missing"
+severity = "error"
+level = "file"
+spec = "4.2"
+row = "`@include` | Target file or id doesn't exist"
+provisional = ["Q22"]
+message = "the included file `{path}` doesn't exist"
+messages.case = "the included file `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
+
+[[diagnostic]]
+code = "TSR022"
+slug = "include-id-missing"
+severity = "error"
+level = "page"
+spec = "4.2"
+row = "`@include` | Target file or id doesn't exist"
+provisional = ["Q22"]
+message = "`{path}` has no heading with the id `{id}`"
+
+[[diagnostic]]
+code = "TSR023"
+slug = "include-cycle"
+severity = "error"
+level = "page"
+spec = "4.2"
+row = "`@include` | Include cycle"
+message = "including `{path}` here creates a cycle: {cycle}"
+
+[[diagnostic]]
+code = "TSR024"
+slug = "variant-no-arm-survives"
+severity = "warning"
+level = "page"
+spec = "9.3"
+row = "`@variant` | No arm of a group survives a build's selection (page level)"
+message = "build `{build}` removes every arm of this `@variant` group, so none of its content is published in that build"
+
+[[diagnostic]]
+code = "TSR025"
+slug = "variant-unknown"
+severity = "error"
+level = "file"
+spec = "4.3"
+row = "`@variant` | Unknown dimension or value"
+message = "`{dimension}` isn't a declared dimension; the dimensions are: {dimensions}"
+messages.value = "`{value}` isn't a value of `{dimension}`; its values are: {values}"
+
+[[diagnostic]]
+code = "TSR026"
+slug = "variant-mixed-arms"
+severity = "error"
+level = "file"
+spec = "4.3"
+row = "`@variant` | Group mixes labeled and dimensional arms"
+message = "this group mixes labeled and dimensional arms; give every arm attributes, or every arm a title"
+
+[[diagnostic]]
+code = "TSR027"
+slug = "variant-arm-kind"
+severity = "error"
+level = "file"
+spec = "4.3"
+row = "`@variant` | Arm has both a title and attributes, or neither"
+message = "this `@variant` arm has both a title and attributes; use one or the other"
+messages.neither = "this `@variant` arm has neither attributes nor a title; add dimension attributes, or a title line above it"
+
+[[diagnostic]]
+code = "TSR028"
+slug = "variant-no-shared-dimension"
+severity = "error"
+level = "file"
+spec = "4.3"
+row = "`@variant` | Dimensional arms share no dimension key"
+message = "the arms of this group have no dimension in common; every arm must name at least one of the same dimensions"
+
+[[diagnostic]]
+code = "TSR029"
+slug = "available-unknown"
+severity = "error"
+level = "file"
+spec = "4.4"
+row = "`@available` | Unknown target or state"
+message = "`{name}` isn't a declared dimension value, dimension, or feature key"
+messages.state = "`{name}` isn't a declared lifecycle state; the states are: {states}"
+
+[[diagnostic]]
+code = "TSR030"
+slug = "available-history-order"
+severity = "error"
+level = "file"
+spec = "4.4"
+row = "`@available` | History out of chronological order"
+message = "the history for `{target}` must be in chronological order, but {later} comes before {earlier}"
+
+[[diagnostic]]
+code = "TSR031"
+slug = "available-versionless"
+severity = "error"
+level = "file"
+spec = "4.4"
+row = "`@available` | Versions given for a versionless target"
+message = "`{target}` is versionless, so it takes a state but no version"
+
+[[diagnostic]]
+code = "TSR032"
+slug = "available-exceeds-scope"
+severity = "error"
+level = "page"
+spec = "4.4"
+row = "`@available` | Spec exceeds its enclosing scope"
+message = "this availability includes `{target}`, which the enclosing {scope} doesn't"
+messages.version = "this availability starts `{target}` at {version}, earlier than the enclosing {scope}, which starts it at {enclosing}"
+
+[[diagnostic]]
+code = "TSR033"
+slug = "steps-not-ordered-list"
+severity = "error"
+level = "file"
+spec = "4.6"
+row = "`@steps` | Bound block isn't an ordered list"
+message = "`@steps` must be followed by an ordered list (`1.`, `2.`, …), but the next block is {found}"
+
+[[diagnostic]]
+code = "TSR034"
+slug = "details-title-missing"
+severity = "error"
+level = "file"
+spec = "4.7"
+row = "`@details` | Missing title"
+message = "`@details` needs a title line directly above it: the text readers see while the content is collapsed"
+
+# Widgets are validated exactly like built-in directives (SPEC §6), so the
+# generic rows above apply to them. This entry covers what only a widget
+# declaration can require, such as a required attribute.
+[[diagnostic]]
+code = "TSR035"
+slug = "widget-schema"
+severity = "error"
+level = "file"
+spec = "6"
+row = "Project widget | Violates its declared schema"
+message = "`@{name}` doesn't match its declaration in tessera.toml: {detail}"
+messages.missing-attribute = "`@{name}` is missing the required attribute `{key}`"
+
+[[diagnostic]]
+code = "TSR036"
+slug = "link-target-missing"
+severity = "error"
+level = "file"
+spec = "5.2"
+row = "Links | Target file or id doesn't exist"
+provisional = ["Q22", "Q29"]
+message = "`{path}` doesn't exist"
+messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
+messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
+
+[[diagnostic]]
+code = "TSR037"
+slug = "link-id-missing"
+severity = "error"
+level = "page"
+spec = "5.2"
+row = "Links | Target file or id doesn't exist"
+provisional = ["Q22"]
+message = "`{path}` has no heading with the id `{id}`"
+
+[[diagnostic]]
+code = "TSR038"
+slug = "link-to-fragment"
+severity = "error"
+level = "file"
+spec = "4.2"
+row = "Links | Target is a fragment, or an id that exists only inside a fragment"
+provisional = ["Q22"]
+message = "`{path}` is a fragment, which isn't published on its own; link to a page that includes it"
+
+[[diagnostic]]
+code = "TSR039"
+slug = "link-id-in-fragment"
+severity = "error"
+level = "page"
+spec = "4.2"
+row = "Links | Target is a fragment, or an id that exists only inside a fragment"
+provisional = ["Q22", "Q25"]
+message = "`{id}` is a heading in the fragment `{fragment}`, not in `{path}` itself; link to a page, not to an id that exists only inside a fragment"
+
+[[diagnostic]]
+code = "TSR040"
+slug = "link-id-removed"
+severity = "error"
+level = "page"
+spec = "9.3"
+row = "Links | Target id is removed by a build (page level, per build)"
+message = "build `{build}` removes the heading `{id}` from `{path}`, so this link would be broken in that build"
+
+[[diagnostic]]
+code = "TSR041"
+slug = "link-route"
+severity = "warning"
+level = "file"
+spec = "5.2"
+row = "Links | Destination is a route rather than a file path"
+message = "this looks like the published route of `{page}`; link to the file instead: `{suggestion}`"
+
+[[diagnostic]]
+code = "TSR042"
+slug = "image-source-missing"
+severity = "error"
+level = "file"
+spec = "5.3"
+row = "Images | Local source doesn't exist"
+provisional = ["Q29"]
+message = "the image `{path}` doesn't exist"
+messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
+messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
+
+[[diagnostic]]
+code = "TSR043"
+slug = "image-alt-missing"
+severity = "warning"
+level = "file"
+spec = "5.3"
+row = "Images | Missing alt text"
+message = "this image has no alt text; describe it between the brackets for readers who can't see it"
+
+[[diagnostic]]
+code = "TSR044"
+slug = "phrase-undeclared"
+severity = "warning"
+level = "file"
+spec = "5.1"
+row = "Phrases | `{key}` in prose whose key isn't declared"
+message = "`{key}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{{` to keep it literal"
+
+[[diagnostic]]
+code = "TSR045"
+slug = "heading-phrase-without-id"
+severity = "warning"
+level = "file"
+spec = "5.5"
+row = "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text"
+provisional = ["Q22"]
+message = "this heading contains a phrase, so its id changes whenever the phrase's value does; give it a stable id with `@id`"
+
+[[diagnostic]]
+code = "TSR046"
+slug = "heading-duplicate-without-id"
+severity = "warning"
+level = "page"
+spec = "5.5"
+row = "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text"
+provisional = ["Q22"]
+message = "this heading repeats the text of another heading on the page, so its id is numbered and can change when headings move; give it a stable id with `@id`"
+
+[[diagnostic]]
+code = "TSR047"
+slug = "frontmatter-unknown-key"
+severity = "error"
+level = "file"
+spec = "7.2"
+row = "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page"
+message = "`{key}` isn't a field of the content type `{type}`"
+messages.suggestion = "`{key}` isn't a field of the content type `{type}`; did you mean `{suggestion}`?"
+messages.fragment = "`{key}` isn't a field of the fragment schema, [fragments.frontmatter]"
+
+[[diagnostic]]
+code = "TSR048"
+slug = "frontmatter-missing-field"
+severity = "error"
+level = "file"
+spec = "7.2"
+row = "Frontmatter | Required field missing"
+message = "the required field `{field}` is missing; the content type `{type}` needs it"
+
+[[diagnostic]]
+code = "TSR049"
+slug = "frontmatter-type-mismatch"
+severity = "error"
+level = "file"
+spec = "7.2"
+row = "Frontmatter | Value doesn't match the field's declared type"
+message = "`{field}` must be {expected}, but it's {found}"
+messages.quote = "`{field}` must be a string, but YAML reads {value} as {found}; quote it: {field}: \"{value}\""
+
+[[diagnostic]]
+code = "TSR050"
+slug = "frontmatter-reserved-in-fragment"
+severity = "error"
+level = "file"
+spec = "2.2"
+row = "Frontmatter | Reserved key (`available`, `variant`) on a fragment"
+message = "`{key}` is reserved for pages, and fragments can't use it"
+messages.available = "`available` is reserved for pages, and fragments can't use it; write `@available` inside the fragment instead"
+
+[[diagnostic]]
+code = "TSR051"
+slug = "content-type-unresolved"
+severity = "error"
+level = "file"
+spec = "7.2"
+row = "Frontmatter | Page matches more than one content type, or matches none and there's no default type"
+message = "this page matches the content types {types}, but a page can match only one; make their `files` patterns exclusive"
+messages.none = "no content type's `files` match this page, and no type is the default; add a pattern, or set `default = true` on a type"
+
+[[diagnostic]]
+code = "TSR052"
+slug = "list-ended-by-directive"
+severity = "warning"
+level = "file"
+spec = "3.9"
+row = "Lists | Unindented directive line ends a list"
+message = "this unindented `@{name}` ends the list above it; indent it to the list item's content to keep it in the item"
+
+[[diagnostic]]
+code = "TSR053"
+slug = "directive-indented-code"
+severity = "warning"
+level = "file"
+spec = "3.9"
+row = "Lists | Directive line over-indented into an indented code block"
+message = "this `@{name}` is indented four or more spaces past its container's content, so it's part of an indented code block, not a directive"
+
+[[diagnostic]]
+code = "TSR054"
+slug = "steps-numbering-continued"
+severity = "warning"
+level = "file"
+spec = "4.6"
+row = "Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list)"
+message = "this list continues the numbering of the `@steps` list above it, which usually means an unindented line split that list; indent the line to keep one list"
+
+###############################################################################
+# Diagnostics SPEC §8.2 has no row for (Q24). Provisional until Q24 is resolved.
+###############################################################################
+
+[[diagnostic]]
+code = "TSR055"
+slug = "attribute-syntax"
+severity = "error"
+level = "file"
+spec = "3.3"
+provisional = ["Q24"]
+message = "this attribute block isn't valid: {detail}"
+
+[[diagnostic]]
+code = "TSR056"
+slug = "attribute-duplicate-key"
+severity = "error"
+level = "file"
+spec = "3.3"
+provisional = ["Q24"]
+message = "`{key}` is given more than once; give each attribute once"
+
+[[diagnostic]]
+code = "TSR057"
+slug = "available-syntax"
+severity = "error"
+level = "file"
+spec = "4.4"
+provisional = ["Q24"]
+message = "\"{spec}\" isn't a valid availability spec: {detail}"
+
+[[diagnostic]]
+code = "TSR058"
+slug = "id-invalid"
+severity = "error"
+level = "file"
+spec = "4.1"
+provisional = ["Q24"]
+message = "`{id}` isn't a valid id: use only letters, digits, and hyphens"
+
+[[diagnostic]]
+code = "TSR059"
+slug = "image-attribute-missing"
+severity = "error"
+level = "file"
+spec = "5.3"
+provisional = ["Q24"]
+message = "this image is missing the required attribute `{key}`"
+
+###############################################################################
+# Loader rules: project-docs/content-model.md §20, in order. Reported on tessera.toml.
+###############################################################################
+
+[[diagnostic]]
+code = "TSR060"
+slug = "model-toml-syntax"
+severity = "error"
+level = "file"
+spec = "7.1"
+rule = "20.1"
+message = "tessera.toml isn't valid TOML: {detail}"
+
+[[diagnostic]]
+code = "TSR061"
+slug = "model-unknown-key"
+severity = "error"
+level = "file"
+spec = "7.1"
+rule = "20.1"
+message = "unknown key `{key}` in `[{table}]`"
+messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`?"
+
+[[diagnostic]]
+code = "TSR062"
+slug = "model-missing-key"
+severity = "error"
+level = "file"
+spec = "7.1"
+rule = "20.1"
+message = "`[{table}]` is missing the required key `{key}`"
+
+[[diagnostic]]
+code = "TSR063"
+slug = "model-wrong-type"
+severity = "error"
+level = "file"
+spec = "7.1"
+rule = "20.1"
+message = "`{key}` must be {expected}, but it's {found}"
+messages.quote = "`{key}` must be a string, but it's a number; quote it: {key} = \"{value}\""
+
+[[diagnostic]]
+code = "TSR064"
+slug = "model-invalid-value"
+severity = "error"
+level = "file"
+spec = "7.1"
+rule = "20.1"
+message = "`{key}` can't be \"{value}\"; use one of: {values}"
+
+[[diagnostic]]
+code = "TSR065"
+slug = "model-spec-unsupported"
+severity = "error"
+level = "file"
+spec = "11"
+rule = "20.1"
+message = "tessera.toml targets spec version \"{spec}\", but this processor implements {supported}"
+
+[[diagnostic]]
+code = "TSR066"
+slug = "model-invalid-name"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.1"
+message = "`{name}` isn't a valid {role} name: {rule}"
+
+[[diagnostic]]
+code = "TSR067"
+slug = "model-empty-text"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.1"
+message = "`{key}` can't be empty"
+
+[[diagnostic]]
+code = "TSR068"
+slug = "model-path-absolute"
+severity = "error"
+level = "file"
+spec = "2.2"
+rule = "20.2"
+message = "`{key}` must be a path relative to tessera.toml, not an absolute path"
+
+[[diagnostic]]
+code = "TSR069"
+slug = "model-content-root-missing"
+severity = "error"
+level = "file"
+spec = "2.2"
+rule = "20.2"
+message = "content root `{path}` doesn't exist"
+messages.not-directory = "content root `{path}` isn't a directory"
+
+[[diagnostic]]
+code = "TSR070"
+slug = "model-output-overlaps-content"
+severity = "error"
+level = "file"
+spec = "9.4"
+rule = "20.2"
+message = "output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source"
+messages.content-inside-output = "content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output"
+messages.same = "output directory and content root are both `{path}`"
+
+[[diagnostic]]
+code = "TSR071"
+slug = "model-type-multiple-defaults"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.3"
+message = "only one content type can be the default, but `{a}` and `{b}` both set default = true"
+
+[[diagnostic]]
+code = "TSR072"
+slug = "model-type-unreachable"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.3"
+message = "content type `{type}` has no `files` and isn't the default, so no page can use it"
+
+[[diagnostic]]
+code = "TSR073"
+slug = "model-type-title"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.3"
+message = "content type `{type}` must declare title = \"string\": it's the page title, used for empty link text"
+messages.not-string = "content type `{type}`: `title` must be a required string, not \"{found}\""
+
+[[diagnostic]]
+code = "TSR074"
+slug = "model-field-reserved"
+severity = "error"
+level = "file"
+spec = "2.1"
+rule = "20.3"
+message = "`{field}` is reserved by the Tessera spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
+messages.fragment = "`{field}` is reserved by the Tessera spec, and fragments can't use it"
+
+[[diagnostic]]
+code = "TSR075"
+slug = "model-type-syntax"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.3"
+message = "\"{type}\" isn't a valid {kind} type: {detail}"
+
+[[diagnostic]]
+code = "TSR076"
+slug = "model-type-fields"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.3"
+message = "field `{field}` is an object, so it needs `fields`"
+messages.not-object = "`fields` is only allowed on object fields, and `{field}` is \"{type}\""
+
+[[diagnostic]]
+code = "TSR077"
+slug = "model-enum-values"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.3"
+message = "`{field}` has an empty enumeration"
+messages.duplicate = "\"{value}\" appears twice in the enumeration for `{field}`"
+messages.both = "`{field}`: list enumeration values in enum(…) or in `values`, not both"
+messages.bare = "`{field}` is a bare enum, so it needs `values`"
+
+[[diagnostic]]
+code = "TSR078"
+slug = "model-set-token"
+severity = "error"
+level = "file"
+spec = "3.3"
+rule = "20.3"
+message = "\"{value}\" can't be in a value set: members can't contain spaces or any of , | {{ }} = \""
+
+[[diagnostic]]
+code = "TSR079"
+slug = "model-default-type"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.3"
+message = "default for `{field}` must be {type}, but it's {found}"
+messages.not-a-value = "default \"{value}\" for `{field}` isn't one of: {values}"
+
+[[diagnostic]]
+code = "TSR080"
+slug = "model-phrases-field-type"
+severity = "error"
+level = "file"
+spec = "5.1"
+rule = "20.3"
+message = "phrases = true only works on string and list(string) fields, and `{field}` is \"{type}\""
+
+[[diagnostic]]
+code = "TSR081"
+slug = "model-pattern-syntax"
+severity = "error"
+level = "file"
+spec = "2.2"
+rule = "20.3"
+message = "\"{pattern}\" isn't a valid pattern: {detail}"
+messages.leading-slash = "pattern \"{pattern}\" is already relative to the content root; remove the leading /"
+messages.parent = "pattern \"{pattern}\" can't contain .."
+
+[[diagnostic]]
+code = "TSR082"
+slug = "model-name-multiple-roles"
+severity = "error"
+level = "file"
+spec = "7.2"
+row = "Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension"
+rule = "20.4"
+message = "`{name}` is used as both {role-a} and {role-b}; a name can have only one role, so availability specs stay unambiguous"
+
+[[diagnostic]]
+code = "TSR083"
+slug = "model-name-case"
+severity = "warning"
+level = "file"
+spec = "7.2"
+rule = "20.4"
+message = "`{a}` and `{b}` differ only in case; names are case-sensitive, so they're easy to confuse"
+
+[[diagnostic]]
+code = "TSR084"
+slug = "model-dimension-empty"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.4"
+message = "dimension `{dimension}` has no values"
+
+[[diagnostic]]
+code = "TSR085"
+slug = "model-dimension-value-duplicate"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.4"
+message = "`{value}` appears twice in dimensions.{dimension}.values"
+
+# Also the second clause of the SPEC §8.2 "Content model" row, whose entry
+# is model-name-multiple-roles.
+[[diagnostic]]
+code = "TSR086"
+slug = "model-dimension-value-shared"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.4"
+message = "`{value}` is a value of both `{a}` and `{b}`; a value can belong to only one dimension"
+
+[[diagnostic]]
+code = "TSR087"
+slug = "model-label-undeclared"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.4"
+message = "dimensions.{dimension}.labels has a label for `{value}`, which isn't one of its values: {values}"
+
+[[diagnostic]]
+code = "TSR088"
+slug = "model-versionless-undeclared"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.4"
+message = "dimensions.{dimension}.versionless lists `{value}`, which isn't one of its values: {values}"
+
+[[diagnostic]]
+code = "TSR089"
+slug = "model-lifecycle-available-required"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.4"
+message = "new lifecycle state `{state}` must set available = true or available = false"
+
+[[diagnostic]]
+code = "TSR090"
+slug = "model-lifecycle-ga-unavailable"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.4"
+message = "`ga` must count as available: content with no lifecycle state is ga"
+
+[[diagnostic]]
+code = "TSR091"
+slug = "model-note-label-required"
+severity = "error"
+level = "file"
+spec = "4.5"
+rule = "20.4"
+message = "new note type `{type}` needs a label, such as label = \"{Type}\""
+
+[[diagnostic]]
+code = "TSR092"
+slug = "model-availability-syntax"
+severity = "error"
+level = "file"
+spec = "4.4"
+rule = "20.4"
+message = "feature `{key}`: \"{spec}\" isn't a valid availability spec: {detail}"
+
+[[diagnostic]]
+code = "TSR093"
+slug = "model-availability-unknown-name"
+severity = "error"
+level = "file"
+spec = "4.4"
+rule = "20.4"
+message = "feature `{key}`: `{name}` isn't a declared dimension value or dimension name"
+messages.state = "feature `{key}`: `{name}` isn't a declared lifecycle state"
+
+[[diagnostic]]
+code = "TSR094"
+slug = "model-availability-versionless"
+severity = "error"
+level = "file"
+spec = "4.4"
+rule = "20.4"
+message = "feature `{key}`: `{target}` is versionless, so it takes a state but no version"
+
+[[diagnostic]]
+code = "TSR095"
+slug = "model-availability-history-order"
+severity = "error"
+level = "file"
+spec = "4.4"
+rule = "20.4"
+message = "feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier}"
+
+[[diagnostic]]
+code = "TSR096"
+slug = "model-feature-nested"
+severity = "error"
+level = "file"
+spec = "4.4"
+rule = "20.4"
+message = "feature `{key}`: available must be an availability spec, not another feature (`{other}`)"
+
+[[diagnostic]]
+code = "TSR097"
+slug = "model-phrase-value-type"
+severity = "error"
+level = "file"
+spec = "5.1"
+rule = "20.5"
+message = "phrase `{key}` must be a quoted string, but it's {found}; write {key} = \"{value}\""
+
+[[diagnostic]]
+code = "TSR098"
+slug = "model-glossary-duplicate-term"
+severity = "error"
+level = "file"
+spec = "5.4"
+rule = "20.5"
+message = "\"{text}\" is declared by both glossary terms `{a}` and `{b}`"
+
+[[diagnostic]]
+code = "TSR099"
+slug = "model-glossary-link"
+severity = "error"
+level = "file"
+spec = "5.4"
+rule = "20.5"
+message = "glossary term `{id}` links to {path}, which doesn't exist"
+messages.fragment = "glossary term `{id}` links to {path}, which is a fragment; link to a page that includes it"
+
+[[diagnostic]]
+code = "TSR100"
+slug = "model-widget-reserved-name"
+severity = "error"
+level = "file"
+spec = "6"
+rule = "20.6"
+message = "widget name `{name}` is reserved: names starting with tessera- belong to Tessera's element library"
+messages.html = "widget name `{name}` is reserved by HTML and can't be a custom element"
+
+[[diagnostic]]
+code = "TSR101"
+slug = "model-widget-forms"
+severity = "error"
+level = "file"
+spec = "6"
+rule = "20.6"
+message = "forms must be [\"line\"], [\"container\"], or [\"line\", \"container\"]"
+
+[[diagnostic]]
+code = "TSR102"
+slug = "model-widget-binding"
+severity = "error"
+level = "file"
+spec = "6"
+rule = "20.6"
+message = "widget `{name}` has a line form, so it needs a binding: \"self\", \"heading\", \"block\", or \"heading-or-block\""
+messages.container-only = "widget `{name}` is container-only, and a container holds its own content; remove binding"
+
+[[diagnostic]]
+code = "TSR103"
+slug = "model-widget-container-primary"
+severity = "error"
+level = "file"
+spec = "6"
+rule = "20.6"
+message = "widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use \"{kind}?\""
+messages.container-only = "widget `{name}` is container-only, so it can't take a primary"
+
+[[diagnostic]]
+code = "TSR104"
+slug = "model-widget-groupable-form"
+severity = "error"
+level = "file"
+spec = "6"
+rule = "20.6"
+message = "widget `{name}` is groupable, so it must be container-only: forms = [\"container\"]"
+
+[[diagnostic]]
+code = "TSR105"
+slug = "model-widget-plain-content"
+severity = "error"
+level = "file"
+spec = "6"
+rule = "20.6"
+message = "widget `{name}` doesn't wrap content, so plain-content has no effect; remove it"
+
+[[diagnostic]]
+code = "TSR106"
+slug = "model-consumer-unsupported"
+severity = "error"
+level = "file"
+spec = "9.5"
+rule = "20.7"
+message = "the {profile} profile doesn't support {key} = {value}; use {values}"
+
+[[diagnostic]]
+code = "TSR107"
+slug = "model-consumer-site"
+severity = "error"
+level = "file"
+spec = "9.5"
+rule = "20.7"
+message = "site must be an origin such as \"https://docs.example.com\"; put any path in base-path"
+
+[[diagnostic]]
+code = "TSR108"
+slug = "model-consumer-base-path"
+severity = "error"
+level = "file"
+spec = "9.5"
+rule = "20.7"
+message = "base-path must start with \"/\", such as \"/docs/\""
+
+[[diagnostic]]
+code = "TSR109"
+slug = "model-build-name-case"
+severity = "error"
+level = "file"
+spec = "9.3"
+rule = "20.7"
+message = "builds `{a}` and `{b}` differ only in case, so they'd share an output directory on some file systems"
+
+[[diagnostic]]
+code = "TSR110"
+slug = "model-build-variants"
+severity = "error"
+level = "file"
+spec = "9.3"
+rule = "20.7"
+message = "variants must be \"switch\" or a selection such as {{ deployment = \"cloud\" }}"
+messages.empty = "build `{build}` selects nothing; write variants = \"switch\""
+
+[[diagnostic]]
+code = "TSR111"
+slug = "model-build-unknown-dimension"
+severity = "error"
+level = "file"
+spec = "9.3"
+rule = "20.7"
+message = "build `{build}` selects dimension `{dimension}`, which isn't declared"
+
+[[diagnostic]]
+code = "TSR112"
+slug = "model-build-unknown-value"
+severity = "error"
+level = "file"
+spec = "9.3"
+rule = "20.7"
+message = "build `{build}`: `{value}` isn't a value of `{dimension}`; values: {values}"
+
+[[diagnostic]]
+code = "TSR113"
+slug = "model-build-availability"
+severity = "error"
+level = "file"
+spec = "9.3"
+rule = "20.7"
+message = "availability must be \"badge\" or {{ filter = \"<target> <version>\" }}"
+
+[[diagnostic]]
+code = "TSR114"
+slug = "model-build-filter-target"
+severity = "error"
+level = "file"
+spec = "9.3"
+rule = "20.7"
+message = "build `{build}` filters for `{target}`, which isn't a declared dimension value"
+messages.dimension = "build `{build}` filters for `{target}`, which is a dimension; filter for one of its values: {values}"
+
+[[diagnostic]]
+code = "TSR115"
+slug = "model-build-filter-version"
+severity = "error"
+level = "file"
+spec = "9.3"
+rule = "20.7"
+message = "build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as \"{target} 3.3\""
+messages.versionless = "build `{build}`: `{target}` is versionless, so the filter can't name a version"
+messages.invalid = "build `{build}`: \"{version}\" isn't a valid version"
+
+[[diagnostic]]
+code = "TSR116"
+slug = "model-build-filter-excluded"
+severity = "warning"
+level = "file"
+spec = "9.3"
+rule = "20.7"
+message = "build `{build}` filters for `{target}`, but its selection keeps only {dimension} = {values}, so pages marked for `{target}` are dropped"
+
+[[diagnostic]]
+code = "TSR117"
+slug = "model-editor-build-unknown"
+severity = "error"
+level = "file"
+spec = "10"
+rule = "20.7"
+message = "editor.build is `{build}`, which isn't a declared build; builds: {builds}"
+
+[[diagnostic]]
+code = "TSR118"
+slug = "model-editor-build-required"
+severity = "error"
+level = "file"
+spec = "10"
+rule = "20.7"
+message = "there are several builds and none is named site; set [editor] build to the one the editor should check"

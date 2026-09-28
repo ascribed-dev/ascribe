@@ -1,0 +1,510 @@
+//! Slugs for every diagnostic in the registry.
+//!
+//! One constant per entry of `tests/conformance/diagnostics.toml`, in the
+//! same order, named after the slug. A crate that finds a problem reports it
+//! with one of these ([`Issue::new`](crate::Issue::new)); since
+//! [`DiagnosticSlug`] can't be constructed outside this crate, a misspelled or
+//! unregistered slug is a compile error. A test keeps this list equal to the
+//! registry, so adding a diagnostic means adding it in both places, through
+//! the contract process.
+//!
+//! The registry holds each diagnostic's code, severity, level, SPEC section,
+//! and message templates; phase 10 reads them from there.
+
+use crate::DiagnosticSlug;
+
+/// `TSR001`, error, file level: SPEC §8.2, "Attributes | Unknown key for the directive or image".
+pub const ATTRIBUTE_UNKNOWN_KEY: DiagnosticSlug = DiagnosticSlug("attribute-unknown-key");
+
+/// `TSR002`, error, file level: SPEC §8.2, "Attributes | Value doesn't match the key's declared type".
+pub const ATTRIBUTE_TYPE_MISMATCH: DiagnosticSlug = DiagnosticSlug("attribute-type-mismatch");
+
+/// `TSR003`, error, file level: SPEC §8.2, "Attributes | Bare key without a value".
+pub const ATTRIBUTE_BARE_KEY: DiagnosticSlug = DiagnosticSlug("attribute-bare-key");
+
+/// `TSR004`, error, file level: SPEC §8.2, "Attributes | Unquoted value containing a reserved character".
+pub const ATTRIBUTE_UNQUOTED_RESERVED: DiagnosticSlug =
+    DiagnosticSlug("attribute-unquoted-reserved");
+
+/// `TSR005`, warning, file level: SPEC §8.2, "Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name".
+pub const DIRECTIVE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("directive-unknown");
+
+/// `TSR006`, error, file level: SPEC §8.2, "Directives | Primary given to a directive that takes none, or a required primary missing".
+pub const DIRECTIVE_PRIMARY: DiagnosticSlug = DiagnosticSlug("directive-primary");
+
+/// `TSR007`, error, file level: SPEC §8.2, "Container | Container not closed before its enclosing block ends".
+pub const CONTAINER_UNCLOSED: DiagnosticSlug = DiagnosticSlug("container-unclosed");
+
+/// `TSR008`, error, file level: SPEC §8.2, "Container | Trailing `:` on a directive with no container form".
+pub const CONTAINER_COLON_UNEXPECTED: DiagnosticSlug = DiagnosticSlug("container-colon-unexpected");
+
+/// `TSR009`, error, file level: SPEC §8.2, "Container | Container-only directive without a trailing `:`".
+pub const CONTAINER_COLON_MISSING: DiagnosticSlug = DiagnosticSlug("container-colon-missing");
+
+/// `TSR010`, error, file level: SPEC §8.2, "Container | Container still open when the next arm of its group begins (reported at that arm's opener)".
+pub const CONTAINER_OPEN_AT_ARM: DiagnosticSlug = DiagnosticSlug("container-open-at-arm");
+
+/// `TSR011`, error, file level: SPEC §8.2, "Container | End line with no open container".
+pub const END_UNMATCHED: DiagnosticSlug = DiagnosticSlug("end-unmatched");
+
+/// `TSR012`, error, file level: SPEC §8.2, "Container | End line indented differently from its opener".
+pub const END_INDENT_MISMATCH: DiagnosticSlug = DiagnosticSlug("end-indent-mismatch");
+
+/// `TSR013`, warning, file level: SPEC §8.2, "Container | Nesting deeper than two levels".
+pub const CONTAINER_NESTING_DEEP: DiagnosticSlug = DiagnosticSlug("container-nesting-deep");
+
+/// `TSR014`, error, file level: SPEC §8.2, "Binding | Following-block directive with no following block in its container".
+pub const BINDING_NO_BLOCK: DiagnosticSlug = DiagnosticSlug("binding-no-block");
+
+/// `TSR015`, error, file level: SPEC §8.2, "Binding | Following-block directive bound to a heading".
+pub const BINDING_HEADING: DiagnosticSlug = DiagnosticSlug("binding-heading");
+
+/// `TSR016`, warning, file level: SPEC §8.2, "Binding | Blank line between a following-block directive and its block".
+pub const BINDING_BLANK_LINE: DiagnosticSlug = DiagnosticSlug("binding-blank-line");
+
+/// `TSR017`, error, file level: SPEC §8.2, "Binding | Heading-bound directive that isn't at the top of its section".
+pub const BINDING_NOT_SECTION_TOP: DiagnosticSlug = DiagnosticSlug("binding-not-section-top");
+
+/// `TSR018`, error, file level: SPEC §8.2, "Title | Title given to a directive that doesn't accept one".
+pub const TITLE_NOT_ACCEPTED: DiagnosticSlug = DiagnosticSlug("title-not-accepted");
+
+/// `TSR019`, warning, file level: SPEC §8.2, "Title | A `. ` line (dot and space) directly above a directive that accepts a title".
+pub const TITLE_DOT_SPACE: DiagnosticSlug = DiagnosticSlug("title-dot-space");
+
+/// `TSR020`, error, page level: SPEC §8.2, "`@id` | Duplicate id on a page, including ids from included content (page level)".
+pub const ID_DUPLICATE: DiagnosticSlug = DiagnosticSlug("id-duplicate");
+
+/// `TSR021`, error, file level: SPEC §8.2, "`@include` | Target file or id doesn't exist". Provisional (Q22).
+pub const INCLUDE_TARGET_MISSING: DiagnosticSlug = DiagnosticSlug("include-target-missing");
+
+/// `TSR022`, error, page level: SPEC §8.2, "`@include` | Target file or id doesn't exist". Provisional (Q22).
+pub const INCLUDE_ID_MISSING: DiagnosticSlug = DiagnosticSlug("include-id-missing");
+
+/// `TSR023`, error, page level: SPEC §8.2, "`@include` | Include cycle".
+pub const INCLUDE_CYCLE: DiagnosticSlug = DiagnosticSlug("include-cycle");
+
+/// `TSR024`, warning, page level: SPEC §8.2, "`@variant` | No arm of a group survives a build's selection (page level)".
+pub const VARIANT_NO_ARM_SURVIVES: DiagnosticSlug = DiagnosticSlug("variant-no-arm-survives");
+
+/// `TSR025`, error, file level: SPEC §8.2, "`@variant` | Unknown dimension or value".
+pub const VARIANT_UNKNOWN: DiagnosticSlug = DiagnosticSlug("variant-unknown");
+
+/// `TSR026`, error, file level: SPEC §8.2, "`@variant` | Group mixes labeled and dimensional arms".
+pub const VARIANT_MIXED_ARMS: DiagnosticSlug = DiagnosticSlug("variant-mixed-arms");
+
+/// `TSR027`, error, file level: SPEC §8.2, "`@variant` | Arm has both a title and attributes, or neither".
+pub const VARIANT_ARM_KIND: DiagnosticSlug = DiagnosticSlug("variant-arm-kind");
+
+/// `TSR028`, error, file level: SPEC §8.2, "`@variant` | Dimensional arms share no dimension key".
+pub const VARIANT_NO_SHARED_DIMENSION: DiagnosticSlug =
+    DiagnosticSlug("variant-no-shared-dimension");
+
+/// `TSR029`, error, file level: SPEC §8.2, "`@available` | Unknown target or state".
+pub const AVAILABLE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("available-unknown");
+
+/// `TSR030`, error, file level: SPEC §8.2, "`@available` | History out of chronological order".
+pub const AVAILABLE_HISTORY_ORDER: DiagnosticSlug = DiagnosticSlug("available-history-order");
+
+/// `TSR031`, error, file level: SPEC §8.2, "`@available` | Versions given for a versionless target".
+pub const AVAILABLE_VERSIONLESS: DiagnosticSlug = DiagnosticSlug("available-versionless");
+
+/// `TSR032`, error, page level: SPEC §8.2, "`@available` | Spec exceeds its enclosing scope".
+pub const AVAILABLE_EXCEEDS_SCOPE: DiagnosticSlug = DiagnosticSlug("available-exceeds-scope");
+
+/// `TSR033`, error, file level: SPEC §8.2, "`@steps` | Bound block isn't an ordered list".
+pub const STEPS_NOT_ORDERED_LIST: DiagnosticSlug = DiagnosticSlug("steps-not-ordered-list");
+
+/// `TSR034`, error, file level: SPEC §8.2, "`@details` | Missing title".
+pub const DETAILS_TITLE_MISSING: DiagnosticSlug = DiagnosticSlug("details-title-missing");
+
+/// `TSR035`, error, file level: SPEC §8.2, "Project widget | Violates its declared schema".
+pub const WIDGET_SCHEMA: DiagnosticSlug = DiagnosticSlug("widget-schema");
+
+/// `TSR036`, error, file level: SPEC §8.2, "Links | Target file or id doesn't exist". Provisional (Q22, Q29).
+pub const LINK_TARGET_MISSING: DiagnosticSlug = DiagnosticSlug("link-target-missing");
+
+/// `TSR037`, error, page level: SPEC §8.2, "Links | Target file or id doesn't exist". Provisional (Q22).
+pub const LINK_ID_MISSING: DiagnosticSlug = DiagnosticSlug("link-id-missing");
+
+/// `TSR038`, error, file level: SPEC §8.2, "Links | Target is a fragment, or an id that exists only inside a fragment". Provisional (Q22).
+pub const LINK_TO_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-to-fragment");
+
+/// `TSR039`, error, page level: SPEC §8.2, "Links | Target is a fragment, or an id that exists only inside a fragment". Provisional (Q22, Q25).
+pub const LINK_ID_IN_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-id-in-fragment");
+
+/// `TSR040`, error, page level: SPEC §8.2, "Links | Target id is removed by a build (page level, per build)".
+pub const LINK_ID_REMOVED: DiagnosticSlug = DiagnosticSlug("link-id-removed");
+
+/// `TSR041`, warning, file level: SPEC §8.2, "Links | Destination is a route rather than a file path".
+pub const LINK_ROUTE: DiagnosticSlug = DiagnosticSlug("link-route");
+
+/// `TSR042`, error, file level: SPEC §8.2, "Images | Local source doesn't exist". Provisional (Q29).
+pub const IMAGE_SOURCE_MISSING: DiagnosticSlug = DiagnosticSlug("image-source-missing");
+
+/// `TSR043`, warning, file level: SPEC §8.2, "Images | Missing alt text".
+pub const IMAGE_ALT_MISSING: DiagnosticSlug = DiagnosticSlug("image-alt-missing");
+
+/// `TSR044`, warning, file level: SPEC §8.2, "Phrases | `{key}` in prose whose key isn't declared".
+pub const PHRASE_UNDECLARED: DiagnosticSlug = DiagnosticSlug("phrase-undeclared");
+
+/// `TSR045`, warning, file level: SPEC §8.2, "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text". Provisional (Q22).
+pub const HEADING_PHRASE_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("heading-phrase-without-id");
+
+/// `TSR046`, warning, page level: SPEC §8.2, "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text". Provisional (Q22).
+pub const HEADING_DUPLICATE_WITHOUT_ID: DiagnosticSlug =
+    DiagnosticSlug("heading-duplicate-without-id");
+
+/// `TSR047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page".
+pub const FRONTMATTER_UNKNOWN_KEY: DiagnosticSlug = DiagnosticSlug("frontmatter-unknown-key");
+
+/// `TSR048`, error, file level: SPEC §8.2, "Frontmatter | Required field missing".
+pub const FRONTMATTER_MISSING_FIELD: DiagnosticSlug = DiagnosticSlug("frontmatter-missing-field");
+
+/// `TSR049`, error, file level: SPEC §8.2, "Frontmatter | Value doesn't match the field's declared type".
+pub const FRONTMATTER_TYPE_MISMATCH: DiagnosticSlug = DiagnosticSlug("frontmatter-type-mismatch");
+
+/// `TSR050`, error, file level: SPEC §8.2, "Frontmatter | Reserved key (`available`, `variant`) on a fragment".
+pub const FRONTMATTER_RESERVED_IN_FRAGMENT: DiagnosticSlug =
+    DiagnosticSlug("frontmatter-reserved-in-fragment");
+
+/// `TSR051`, error, file level: SPEC §8.2, "Frontmatter | Page matches more than one content type, or matches none and there's no default type".
+pub const CONTENT_TYPE_UNRESOLVED: DiagnosticSlug = DiagnosticSlug("content-type-unresolved");
+
+/// `TSR052`, warning, file level: SPEC §8.2, "Lists | Unindented directive line ends a list".
+pub const LIST_ENDED_BY_DIRECTIVE: DiagnosticSlug = DiagnosticSlug("list-ended-by-directive");
+
+/// `TSR053`, warning, file level: SPEC §8.2, "Lists | Directive line over-indented into an indented code block".
+pub const DIRECTIVE_INDENTED_CODE: DiagnosticSlug = DiagnosticSlug("directive-indented-code");
+
+/// `TSR054`, warning, file level: SPEC §8.2, "Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list)".
+pub const STEPS_NUMBERING_CONTINUED: DiagnosticSlug = DiagnosticSlug("steps-numbering-continued");
+
+/// `TSR055`, error, file level: SPEC §3.3. Provisional (Q24).
+pub const ATTRIBUTE_SYNTAX: DiagnosticSlug = DiagnosticSlug("attribute-syntax");
+
+/// `TSR056`, error, file level: SPEC §3.3. Provisional (Q24).
+pub const ATTRIBUTE_DUPLICATE_KEY: DiagnosticSlug = DiagnosticSlug("attribute-duplicate-key");
+
+/// `TSR057`, error, file level: SPEC §4.4. Provisional (Q24).
+pub const AVAILABLE_SYNTAX: DiagnosticSlug = DiagnosticSlug("available-syntax");
+
+/// `TSR058`, error, file level: SPEC §4.1. Provisional (Q24).
+pub const ID_INVALID: DiagnosticSlug = DiagnosticSlug("id-invalid");
+
+/// `TSR059`, error, file level: SPEC §5.3. Provisional (Q24).
+pub const IMAGE_ATTRIBUTE_MISSING: DiagnosticSlug = DiagnosticSlug("image-attribute-missing");
+
+/// `TSR060`, error, file level: loader rule, content-model.md §20.1.
+pub const MODEL_TOML_SYNTAX: DiagnosticSlug = DiagnosticSlug("model-toml-syntax");
+
+/// `TSR061`, error, file level: loader rule, content-model.md §20.1.
+pub const MODEL_UNKNOWN_KEY: DiagnosticSlug = DiagnosticSlug("model-unknown-key");
+
+/// `TSR062`, error, file level: loader rule, content-model.md §20.1.
+pub const MODEL_MISSING_KEY: DiagnosticSlug = DiagnosticSlug("model-missing-key");
+
+/// `TSR063`, error, file level: loader rule, content-model.md §20.1.
+pub const MODEL_WRONG_TYPE: DiagnosticSlug = DiagnosticSlug("model-wrong-type");
+
+/// `TSR064`, error, file level: loader rule, content-model.md §20.1.
+pub const MODEL_INVALID_VALUE: DiagnosticSlug = DiagnosticSlug("model-invalid-value");
+
+/// `TSR065`, error, file level: loader rule, content-model.md §20.1.
+pub const MODEL_SPEC_UNSUPPORTED: DiagnosticSlug = DiagnosticSlug("model-spec-unsupported");
+
+/// `TSR066`, error, file level: loader rule, content-model.md §20.1.
+pub const MODEL_INVALID_NAME: DiagnosticSlug = DiagnosticSlug("model-invalid-name");
+
+/// `TSR067`, error, file level: loader rule, content-model.md §20.1.
+pub const MODEL_EMPTY_TEXT: DiagnosticSlug = DiagnosticSlug("model-empty-text");
+
+/// `TSR068`, error, file level: loader rule, content-model.md §20.2.
+pub const MODEL_PATH_ABSOLUTE: DiagnosticSlug = DiagnosticSlug("model-path-absolute");
+
+/// `TSR069`, error, file level: loader rule, content-model.md §20.2.
+pub const MODEL_CONTENT_ROOT_MISSING: DiagnosticSlug = DiagnosticSlug("model-content-root-missing");
+
+/// `TSR070`, error, file level: loader rule, content-model.md §20.2.
+pub const MODEL_OUTPUT_OVERLAPS_CONTENT: DiagnosticSlug =
+    DiagnosticSlug("model-output-overlaps-content");
+
+/// `TSR071`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_TYPE_MULTIPLE_DEFAULTS: DiagnosticSlug =
+    DiagnosticSlug("model-type-multiple-defaults");
+
+/// `TSR072`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_TYPE_UNREACHABLE: DiagnosticSlug = DiagnosticSlug("model-type-unreachable");
+
+/// `TSR073`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_TYPE_TITLE: DiagnosticSlug = DiagnosticSlug("model-type-title");
+
+/// `TSR074`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_FIELD_RESERVED: DiagnosticSlug = DiagnosticSlug("model-field-reserved");
+
+/// `TSR075`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_TYPE_SYNTAX: DiagnosticSlug = DiagnosticSlug("model-type-syntax");
+
+/// `TSR076`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_TYPE_FIELDS: DiagnosticSlug = DiagnosticSlug("model-type-fields");
+
+/// `TSR077`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_ENUM_VALUES: DiagnosticSlug = DiagnosticSlug("model-enum-values");
+
+/// `TSR078`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_SET_TOKEN: DiagnosticSlug = DiagnosticSlug("model-set-token");
+
+/// `TSR079`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_DEFAULT_TYPE: DiagnosticSlug = DiagnosticSlug("model-default-type");
+
+/// `TSR080`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_PHRASES_FIELD_TYPE: DiagnosticSlug = DiagnosticSlug("model-phrases-field-type");
+
+/// `TSR081`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_PATTERN_SYNTAX: DiagnosticSlug = DiagnosticSlug("model-pattern-syntax");
+
+/// `TSR082`, error, file level: SPEC §8.2, "Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension".
+pub const MODEL_NAME_MULTIPLE_ROLES: DiagnosticSlug = DiagnosticSlug("model-name-multiple-roles");
+
+/// `TSR083`, warning, file level: loader rule, content-model.md §20.4.
+pub const MODEL_NAME_CASE: DiagnosticSlug = DiagnosticSlug("model-name-case");
+
+/// `TSR084`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_DIMENSION_EMPTY: DiagnosticSlug = DiagnosticSlug("model-dimension-empty");
+
+/// `TSR085`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_DIMENSION_VALUE_DUPLICATE: DiagnosticSlug =
+    DiagnosticSlug("model-dimension-value-duplicate");
+
+/// `TSR086`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_DIMENSION_VALUE_SHARED: DiagnosticSlug =
+    DiagnosticSlug("model-dimension-value-shared");
+
+/// `TSR087`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_LABEL_UNDECLARED: DiagnosticSlug = DiagnosticSlug("model-label-undeclared");
+
+/// `TSR088`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_VERSIONLESS_UNDECLARED: DiagnosticSlug =
+    DiagnosticSlug("model-versionless-undeclared");
+
+/// `TSR089`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_LIFECYCLE_AVAILABLE_REQUIRED: DiagnosticSlug =
+    DiagnosticSlug("model-lifecycle-available-required");
+
+/// `TSR090`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_LIFECYCLE_GA_UNAVAILABLE: DiagnosticSlug =
+    DiagnosticSlug("model-lifecycle-ga-unavailable");
+
+/// `TSR091`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_NOTE_LABEL_REQUIRED: DiagnosticSlug = DiagnosticSlug("model-note-label-required");
+
+/// `TSR092`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_AVAILABILITY_SYNTAX: DiagnosticSlug = DiagnosticSlug("model-availability-syntax");
+
+/// `TSR093`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_AVAILABILITY_UNKNOWN_NAME: DiagnosticSlug =
+    DiagnosticSlug("model-availability-unknown-name");
+
+/// `TSR094`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_AVAILABILITY_VERSIONLESS: DiagnosticSlug =
+    DiagnosticSlug("model-availability-versionless");
+
+/// `TSR095`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_AVAILABILITY_HISTORY_ORDER: DiagnosticSlug =
+    DiagnosticSlug("model-availability-history-order");
+
+/// `TSR096`, error, file level: loader rule, content-model.md §20.4.
+pub const MODEL_FEATURE_NESTED: DiagnosticSlug = DiagnosticSlug("model-feature-nested");
+
+/// `TSR097`, error, file level: loader rule, content-model.md §20.5.
+pub const MODEL_PHRASE_VALUE_TYPE: DiagnosticSlug = DiagnosticSlug("model-phrase-value-type");
+
+/// `TSR098`, error, file level: loader rule, content-model.md §20.5.
+pub const MODEL_GLOSSARY_DUPLICATE_TERM: DiagnosticSlug =
+    DiagnosticSlug("model-glossary-duplicate-term");
+
+/// `TSR099`, error, file level: loader rule, content-model.md §20.5.
+pub const MODEL_GLOSSARY_LINK: DiagnosticSlug = DiagnosticSlug("model-glossary-link");
+
+/// `TSR100`, error, file level: loader rule, content-model.md §20.6.
+pub const MODEL_WIDGET_RESERVED_NAME: DiagnosticSlug = DiagnosticSlug("model-widget-reserved-name");
+
+/// `TSR101`, error, file level: loader rule, content-model.md §20.6.
+pub const MODEL_WIDGET_FORMS: DiagnosticSlug = DiagnosticSlug("model-widget-forms");
+
+/// `TSR102`, error, file level: loader rule, content-model.md §20.6.
+pub const MODEL_WIDGET_BINDING: DiagnosticSlug = DiagnosticSlug("model-widget-binding");
+
+/// `TSR103`, error, file level: loader rule, content-model.md §20.6.
+pub const MODEL_WIDGET_CONTAINER_PRIMARY: DiagnosticSlug =
+    DiagnosticSlug("model-widget-container-primary");
+
+/// `TSR104`, error, file level: loader rule, content-model.md §20.6.
+pub const MODEL_WIDGET_GROUPABLE_FORM: DiagnosticSlug =
+    DiagnosticSlug("model-widget-groupable-form");
+
+/// `TSR105`, error, file level: loader rule, content-model.md §20.6.
+pub const MODEL_WIDGET_PLAIN_CONTENT: DiagnosticSlug = DiagnosticSlug("model-widget-plain-content");
+
+/// `TSR106`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_CONSUMER_UNSUPPORTED: DiagnosticSlug = DiagnosticSlug("model-consumer-unsupported");
+
+/// `TSR107`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_CONSUMER_SITE: DiagnosticSlug = DiagnosticSlug("model-consumer-site");
+
+/// `TSR108`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_CONSUMER_BASE_PATH: DiagnosticSlug = DiagnosticSlug("model-consumer-base-path");
+
+/// `TSR109`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_BUILD_NAME_CASE: DiagnosticSlug = DiagnosticSlug("model-build-name-case");
+
+/// `TSR110`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_BUILD_VARIANTS: DiagnosticSlug = DiagnosticSlug("model-build-variants");
+
+/// `TSR111`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_BUILD_UNKNOWN_DIMENSION: DiagnosticSlug =
+    DiagnosticSlug("model-build-unknown-dimension");
+
+/// `TSR112`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_BUILD_UNKNOWN_VALUE: DiagnosticSlug = DiagnosticSlug("model-build-unknown-value");
+
+/// `TSR113`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_BUILD_AVAILABILITY: DiagnosticSlug = DiagnosticSlug("model-build-availability");
+
+/// `TSR114`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_BUILD_FILTER_TARGET: DiagnosticSlug = DiagnosticSlug("model-build-filter-target");
+
+/// `TSR115`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_BUILD_FILTER_VERSION: DiagnosticSlug = DiagnosticSlug("model-build-filter-version");
+
+/// `TSR116`, warning, file level: loader rule, content-model.md §20.7.
+pub const MODEL_BUILD_FILTER_EXCLUDED: DiagnosticSlug =
+    DiagnosticSlug("model-build-filter-excluded");
+
+/// `TSR117`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_EDITOR_BUILD_UNKNOWN: DiagnosticSlug = DiagnosticSlug("model-editor-build-unknown");
+
+/// `TSR118`, error, file level: loader rule, content-model.md §20.7.
+pub const MODEL_EDITOR_BUILD_REQUIRED: DiagnosticSlug =
+    DiagnosticSlug("model-editor-build-required");
+
+/// Every slug, in registry order.
+pub const ALL: &[DiagnosticSlug] = &[
+    ATTRIBUTE_UNKNOWN_KEY,
+    ATTRIBUTE_TYPE_MISMATCH,
+    ATTRIBUTE_BARE_KEY,
+    ATTRIBUTE_UNQUOTED_RESERVED,
+    DIRECTIVE_UNKNOWN,
+    DIRECTIVE_PRIMARY,
+    CONTAINER_UNCLOSED,
+    CONTAINER_COLON_UNEXPECTED,
+    CONTAINER_COLON_MISSING,
+    CONTAINER_OPEN_AT_ARM,
+    END_UNMATCHED,
+    END_INDENT_MISMATCH,
+    CONTAINER_NESTING_DEEP,
+    BINDING_NO_BLOCK,
+    BINDING_HEADING,
+    BINDING_BLANK_LINE,
+    BINDING_NOT_SECTION_TOP,
+    TITLE_NOT_ACCEPTED,
+    TITLE_DOT_SPACE,
+    ID_DUPLICATE,
+    INCLUDE_TARGET_MISSING,
+    INCLUDE_ID_MISSING,
+    INCLUDE_CYCLE,
+    VARIANT_NO_ARM_SURVIVES,
+    VARIANT_UNKNOWN,
+    VARIANT_MIXED_ARMS,
+    VARIANT_ARM_KIND,
+    VARIANT_NO_SHARED_DIMENSION,
+    AVAILABLE_UNKNOWN,
+    AVAILABLE_HISTORY_ORDER,
+    AVAILABLE_VERSIONLESS,
+    AVAILABLE_EXCEEDS_SCOPE,
+    STEPS_NOT_ORDERED_LIST,
+    DETAILS_TITLE_MISSING,
+    WIDGET_SCHEMA,
+    LINK_TARGET_MISSING,
+    LINK_ID_MISSING,
+    LINK_TO_FRAGMENT,
+    LINK_ID_IN_FRAGMENT,
+    LINK_ID_REMOVED,
+    LINK_ROUTE,
+    IMAGE_SOURCE_MISSING,
+    IMAGE_ALT_MISSING,
+    PHRASE_UNDECLARED,
+    HEADING_PHRASE_WITHOUT_ID,
+    HEADING_DUPLICATE_WITHOUT_ID,
+    FRONTMATTER_UNKNOWN_KEY,
+    FRONTMATTER_MISSING_FIELD,
+    FRONTMATTER_TYPE_MISMATCH,
+    FRONTMATTER_RESERVED_IN_FRAGMENT,
+    CONTENT_TYPE_UNRESOLVED,
+    LIST_ENDED_BY_DIRECTIVE,
+    DIRECTIVE_INDENTED_CODE,
+    STEPS_NUMBERING_CONTINUED,
+    ATTRIBUTE_SYNTAX,
+    ATTRIBUTE_DUPLICATE_KEY,
+    AVAILABLE_SYNTAX,
+    ID_INVALID,
+    IMAGE_ATTRIBUTE_MISSING,
+    MODEL_TOML_SYNTAX,
+    MODEL_UNKNOWN_KEY,
+    MODEL_MISSING_KEY,
+    MODEL_WRONG_TYPE,
+    MODEL_INVALID_VALUE,
+    MODEL_SPEC_UNSUPPORTED,
+    MODEL_INVALID_NAME,
+    MODEL_EMPTY_TEXT,
+    MODEL_PATH_ABSOLUTE,
+    MODEL_CONTENT_ROOT_MISSING,
+    MODEL_OUTPUT_OVERLAPS_CONTENT,
+    MODEL_TYPE_MULTIPLE_DEFAULTS,
+    MODEL_TYPE_UNREACHABLE,
+    MODEL_TYPE_TITLE,
+    MODEL_FIELD_RESERVED,
+    MODEL_TYPE_SYNTAX,
+    MODEL_TYPE_FIELDS,
+    MODEL_ENUM_VALUES,
+    MODEL_SET_TOKEN,
+    MODEL_DEFAULT_TYPE,
+    MODEL_PHRASES_FIELD_TYPE,
+    MODEL_PATTERN_SYNTAX,
+    MODEL_NAME_MULTIPLE_ROLES,
+    MODEL_NAME_CASE,
+    MODEL_DIMENSION_EMPTY,
+    MODEL_DIMENSION_VALUE_DUPLICATE,
+    MODEL_DIMENSION_VALUE_SHARED,
+    MODEL_LABEL_UNDECLARED,
+    MODEL_VERSIONLESS_UNDECLARED,
+    MODEL_LIFECYCLE_AVAILABLE_REQUIRED,
+    MODEL_LIFECYCLE_GA_UNAVAILABLE,
+    MODEL_NOTE_LABEL_REQUIRED,
+    MODEL_AVAILABILITY_SYNTAX,
+    MODEL_AVAILABILITY_UNKNOWN_NAME,
+    MODEL_AVAILABILITY_VERSIONLESS,
+    MODEL_AVAILABILITY_HISTORY_ORDER,
+    MODEL_FEATURE_NESTED,
+    MODEL_PHRASE_VALUE_TYPE,
+    MODEL_GLOSSARY_DUPLICATE_TERM,
+    MODEL_GLOSSARY_LINK,
+    MODEL_WIDGET_RESERVED_NAME,
+    MODEL_WIDGET_FORMS,
+    MODEL_WIDGET_BINDING,
+    MODEL_WIDGET_CONTAINER_PRIMARY,
+    MODEL_WIDGET_GROUPABLE_FORM,
+    MODEL_WIDGET_PLAIN_CONTENT,
+    MODEL_CONSUMER_UNSUPPORTED,
+    MODEL_CONSUMER_SITE,
+    MODEL_CONSUMER_BASE_PATH,
+    MODEL_BUILD_NAME_CASE,
+    MODEL_BUILD_VARIANTS,
+    MODEL_BUILD_UNKNOWN_DIMENSION,
+    MODEL_BUILD_UNKNOWN_VALUE,
+    MODEL_BUILD_AVAILABILITY,
+    MODEL_BUILD_FILTER_TARGET,
+    MODEL_BUILD_FILTER_VERSION,
+    MODEL_BUILD_FILTER_EXCLUDED,
+    MODEL_EDITOR_BUILD_UNKNOWN,
+    MODEL_EDITOR_BUILD_REQUIRED,
+];
