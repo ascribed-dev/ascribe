@@ -48,11 +48,11 @@ Specify `tessera.toml`, the content model file, completely enough that phase 08 
 
 ## Acceptance criteria
 
-- [ ] Every declaration in SPEC §7.2 maps to a documented section of `content-model.md`.
-- [ ] Every key has a type, a default or "required", and a description.
-- [ ] The three example files exist, and each follows the reference exactly.
-- [ ] `quill.toml` supports every construct used in SPEC Appendix B.
-- [ ] Every loader validation rule has an error message.
+- [x] Every declaration in SPEC §7.2 maps to a documented section of `content-model.md`.
+- [x] Every key has a type, a default or "required", and a description.
+- [x] The three example files exist, and each follows the reference exactly.
+- [x] `quill.toml` supports every construct used in SPEC Appendix B.
+- [x] Every loader validation rule has an error message.
 
 ## Out of scope
 
@@ -66,4 +66,59 @@ Specify `tessera.toml`, the content model file, completely enough that phase 08 
 
 ## Handoff notes
 
-_To be filled in by the implementing agent._
+### What was built
+
+- **`project-docs/content-model.md`**, the `tessera.toml` reference:
+  - §1: conventions. Kebab-case keys, unknown keys are errors, name grammars, path and glob syntax, and which declaration orders are significant.
+  - §2: a table mapping every SPEC §7.2 declaration (plus §9.3, §9.5, §11, and the editor setting) to its section.
+  - §3–§18: one section per table, each with a key table (type, default or **required**, description) and an example.
+  - §6: the field-type and attribute-type short forms, with an ABNF grammar and a table form for defaults, descriptions, phrases, nested objects, and enumerations with arbitrary values.
+  - §19: what each absent section means.
+  - §20: 60 loader validation rules, each with a stable slug (`model-…`) and a message template.
+  - §21: 21 numbered open questions, each with a recommendation. Every provisional item in the body points at one.
+- **`examples/content-models/`**:
+  - `minimal.toml`: only `spec = "0.1"`.
+  - `quill.toml`: the SPEC Appendix B model, with dimensions `pm` and `deployment` (`cloud` versionless), the four phrases, the builds `site`, `cloud`, and `self-managed-3.3`, and the Astro profile.
+  - `full.toml`: every section, every key, and every short-form type.
+  - `docs/reference/glossary.md`: a one-page content root, so all three models pass the filesystem rules (the content root must exist; `full.toml`'s glossary link must name a page). It's valid frontmatter under all three models.
+
+### For phase 08 (loader)
+
+- Load all three example files from `examples/content-models/` with no issues; `docs/` is their shared content root.
+- Every rule in §20 needs a failing fixture producing its message at the offending key's span. Two rules are warnings: `model-name-case` and `model-build-filter-excluded`.
+- The filesystem rules (`model-content-root-missing`, `model-glossary-link`) are skipped when loading from text alone.
+- Preserve the declaration order of attribute tables; canonical form depends on it (§1.1). `toml_edit` and `toml-span` both keep order.
+- Widgets map onto phase 02's `DirectiveSchema`. Binding values are `self`, `heading`, `block`, and `heading-or-block` (§15). `block` with a `text?` primary behaves like `@note`: a given primary is the content.
+- The implicit `page` type and `site` build (§19) exist only when `[types]` or `[builds]` is absent.
+
+### For phase 02 (contracts)
+
+- `model-name-multiple-roles` is the only loader rule that is a SPEC §8.2 row. Q1 proposes new document-level rows for frontmatter and content-type assignment, which the registry will need if accepted.
+- The `[consumer]` values `heading-ids`, `image-attributes`, `assets`, and `assets-dir` are provisional (Q12). The site-render and asset contracts define the exact output, and may rename these values.
+- Glossary rendering (Q7) may need an element in the element contract.
+
+### For phase 03 (fixtures)
+
+- Base `tests/conformance/_model/tessera.toml` on `quill.toml`. `full.toml` has ready-made widgets covering every binding, primary kind, title setting, and groupable, plus a feature with a history, a lifecycle state that doesn't count as available (`sunset`), and an extra note type.
+- Cases that depend on a provisional item (Q1–Q21) should be tagged `provisional`.
+
+### Decisions needing human review (the checkpoint)
+
+`content-model.md` §21 has the full list with alternatives. The ones that most shape the format:
+
+1. **Q1:** add document-level frontmatter diagnostics to SPEC §8.2. The spec has none.
+2. **Q2:** assign content types with `files` globs plus one `default = true` type. A page matching several types is an error.
+3. **Q3:** the frontmatter `title` is the page title, so every page type must declare it.
+4. **Q5:** name the version scheme `numeric`, not `semver`. It's dotted numbers of any length with no pre-release syntax.
+5. **Q6:** a dimension value may belong to only one dimension, and dimension names follow the attribute `key` rule.
+6. **Q7:** the glossary format and matching rules.
+7. **Q8:** widget plain fallbacks are static text, and wrapped content is kept by default.
+8. **Q10–Q12:** consumer settings: `site` for absolute plain-output links, `html` must be `true` for Astro, and provisional asset and heading-id values.
+9. **Q14:** the defaults `content-root = "docs"` and `output-dir = ".tessera/build"`.
+
+`project-docs/questions.md` didn't exist when this phase ran (phase 00 creates it). Move §21's items there with the same numbers once it does.
+
+### Left open
+
+- A JSON Schema for `tessera.toml` would give writers completion in any TOML editor (for example, through Taplo). It isn't in any phase yet.
+- The Astro routing rule (§16) says routes follow how Astro's content loader computes entry ids. Phase 20 must verify this against the Astro version it targets, including Astro's handling of a `slug` frontmatter field.
