@@ -221,12 +221,12 @@ fn a_missing_field_is_reported_on_the_first_line() {
 }
 
 #[test]
-fn frontmatter_that_is_not_yaml_is_a_type_mismatch() {
-    // SPEC-QUESTION(Q51): no registry entry covers invalid YAML.
+fn frontmatter_that_is_not_yaml_is_a_syntax_error() {
+    // SPEC §8.2 (resolved Q51).
     let p = project(&[("index.md", "---\ntitle: [oops\n---\n\nText.\n")]);
     let d = one(&p);
-    assert_eq!(d.slug.as_str(), "frontmatter-type-mismatch");
-    assert!(d.message.contains("invalid YAML"), "{}", d.message);
+    assert_eq!(d.slug.as_str(), "frontmatter-syntax");
+    assert!(d.message.contains("isn't valid YAML"), "{}", d.message);
 }
 
 #[test]

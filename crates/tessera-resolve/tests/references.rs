@@ -472,7 +472,7 @@ fn missing_reasons_are_told_apart() {
 
 #[test]
 fn an_image_with_no_path_is_missing_but_a_fragment_only_link_is_not() {
-    // SPEC-QUESTION(Q59), as phase 10 implements it.
+    // Resolved Q59, as phase 10 implements it.
     let p = project(&[(
         "docs/index.md",
         &format!("{PAGE}![A]()\n\n![B](#top)\n\n[Self](#top)\n\n## Top\n"),

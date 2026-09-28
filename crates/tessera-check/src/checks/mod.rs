@@ -58,6 +58,16 @@ impl Ctx<'_> {
 /// then every check that needs the content model or the file system.
 /// Diagnostics come back in source order.
 pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
+    if let Some(failure) = &file.unreadable {
+        let at = Location::new(file.id, Span::empty(0));
+        let issue = Issue::new(diagnostics::SOURCE_UNREADABLE, at);
+        let issue = if failure.not_utf8 {
+            issue.with_variant("encoding")
+        } else {
+            issue.with_arg("reason", failure.reason.clone())
+        };
+        return vec![Diagnostic::from_issue(&issue)];
+    }
     let model = project.model();
     let options = ParseOptions::new(model.directive_schemas())
         .with_file(file.id)
@@ -167,7 +177,7 @@ impl Ctx<'_> {
         for inline in inlines {
             match &inline.kind {
                 InlineKind::Phrase(p) => {
-                    // SPEC-QUESTION(Q56): every inline position where a
+                    // Resolved Q56: every inline position where a
                     // candidate is recorded, and no destination, fence, or
                     // frontmatter.
                     // SPEC §5.1: a `{key}` in prose whose key isn't declared
@@ -200,12 +210,9 @@ impl Ctx<'_> {
         }
     }
 
-    /// A heading with a phrase and no `@id` (SPEC §5.5): its slug changes
-    /// whenever the phrase's value does.
+    /// A heading with no `@id` (SPEC §5.5) whose slug changes whenever a
+    /// phrase's value does, or whose slug is empty (resolved Q61).
     fn heading(&mut self, siblings: &[Block], index: usize, span: Span, h: &Heading) {
-        if !self.has_declared_phrase(&h.inlines) {
-            return;
-        }
         let has_id = siblings[index + 1..]
             .iter()
             .take_while(|b| !matches!(b.kind, BlockKind::Heading(_)))
@@ -216,8 +223,19 @@ impl Ctx<'_> {
                         if d.name == "id" && d.binding == Some(tessera_syntax::Bound::Heading)
                 )
             });
-        if !has_id {
+        if has_id {
+            return;
+        }
+        if self.has_declared_phrase(&h.inlines) {
             let issue = Issue::new(diagnostics::HEADING_PHRASE_WITHOUT_ID, self.location(span));
+            self.report(issue);
+        }
+        // The slug the text alone gives, as the source index computes it.
+        let text = tessera_resolve::heading_text(&h.inlines, self.model);
+        let slugger = tessera_resolve::slug::slugger_by_name(&self.model.consumer.slugger)
+            .unwrap_or_else(tessera_resolve::slug::default_slugger);
+        if slugger.new_scope().slug(&text).is_empty() {
+            let issue = Issue::new(diagnostics::HEADING_EMPTY_SLUG, self.location(span));
             self.report(issue);
         }
     }
@@ -256,11 +274,34 @@ impl Ctx<'_> {
         }
         match (d.name.as_str(), &d.primary) {
             ("id", Some(PrimaryValue::Identifier(p))) => self.check_id(&p.text, p.span),
-            ("include", Some(PrimaryValue::Identifier(p))) => self.check_include(&p.text, p.span),
+            ("include", Some(PrimaryValue::Identifier(p))) => {
+                self.check_include(&p.text, p.span);
+                self.check_include_heading(d, &p.text);
+            }
             ("available", Some(PrimaryValue::Line(p))) => {
                 self.check_availability_text(&p.text, p.span.start(), p.span, true);
             }
             _ => {}
+        }
+    }
+
+    /// `{heading=false}` only applies to an include of a section (SPEC §4.2,
+    /// resolved Q65).
+    fn check_include_heading(&mut self, d: &DirectiveLine, primary: &str) {
+        let Some(attribute) = d.attributes.as_ref().and_then(|a| a.get("heading")) else {
+            return;
+        };
+        let off = attribute.value.as_ref().and_then(|v| v.as_text()) == Some("false");
+        if off
+            && tessera_resolve::include_target(primary, &self.file.path)
+                .section
+                .is_none()
+        {
+            let issue = Issue::new(
+                diagnostics::INCLUDE_HEADING_WITHOUT_ID,
+                self.location(attribute.span),
+            );
+            self.report(issue);
         }
     }
 

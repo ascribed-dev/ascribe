@@ -355,7 +355,7 @@ impl<'p> Expander<'p> {
             }
         };
 
-        // SPEC-QUESTION(Q66): a cycle is expanding the same file, or the same
+        // Resolved Q66: a cycle is expanding the same file, or the same
         // section of it, again while it's still being expanded.
         if let Some(at) = self.stack.iter().position(|k| *k == key) {
             self.report_cycle(file, include, at, via);
@@ -369,7 +369,7 @@ impl<'p> Expander<'p> {
         });
         let chain: Arc<[IncludeSite]> = Arc::from(chain);
 
-        // SPEC-QUESTION(Q65): `heading=false` drops the included section's own
+        // Resolved Q65: `heading=false` drops the included section's own
         // heading; without an id there's no section heading, so it drops
         // nothing.
         let blocks = if include.section.is_some() && !include.heading {

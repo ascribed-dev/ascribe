@@ -402,7 +402,8 @@ impl Project {
 
     /// Headings with no `@id` whose slug is empty (SPEC §5.5): a heading made
     /// only of punctuation or emoji. Nothing can link to it usefully.
-    // SPEC-QUESTION(Q61): proposed warning; there is no registry entry yet.
+    /// `tessera check` reports them as `heading-empty-slug` (SPEC §5.5,
+    /// resolved Q61).
     pub fn empty_slug_headings(&self) -> Vec<(RelPath, &Heading)> {
         self.files()
             .flat_map(|f| {
@@ -510,11 +511,17 @@ impl Project {
         )
         .into_iter()
         .collect();
+        // A link's `#id` names a heading of its target page, or, for a `#id`
+        // alone in a fragment, of the fragment itself (SPEC §5.2, resolved
+        // Q64).
+        let names_itself =
+            matches!(&reference.target, crate::index::Target::Local(l) if l.written.is_empty());
         if let Resolution::Source {
             target,
             id: Some(id),
-            fragment: false,
+            fragment,
         } = resolution
+            && (!fragment || names_itself)
         {
             out.extend(self.link_id_problem(reference, at, target, id));
         }

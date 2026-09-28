@@ -103,7 +103,7 @@ fn a_heading_in_a_container_is_numbered_with_the_rest_of_the_file() {
 
 #[test]
 fn a_heading_with_an_empty_slug_is_flagged() {
-    // SPEC-QUESTION(Q61): an empty slug, and its numbered repeats.
+    // Resolved Q61: an empty slug, and its numbered repeats.
     let p = project(&[(
         "docs/a.md",
         &format!("{PAGE}## ???\n\n## 🎉\n\n## Real\n\n## Named\n@id: named\n"),

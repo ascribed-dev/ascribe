@@ -1,0 +1,8 @@
+description: >-
+  `{heading=false}` on an include of a whole file has no effect, which is a
+  warning; on an include of a section it drops the heading (Q65).
+spec: ["4.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: include-heading-without-id, file: index.md, line: 5}

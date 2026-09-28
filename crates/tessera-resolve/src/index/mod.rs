@@ -29,7 +29,7 @@ use tessera_syntax::{
     PrimaryValue, parse,
 };
 
-pub use headings::{ExplicitId, Heading};
+pub use headings::{ExplicitId, Heading, plain_text as heading_text};
 pub(crate) use refs::target_of;
 pub use refs::{Local, RefKind, Reference, Target};
 

@@ -31,7 +31,7 @@ Loads the content model, reads every `.md` file under its content root (skipping
 |---|---|
 | `0` | No errors. Warnings don't fail the command unless `--deny-warnings` is given. |
 | `1` | There are errors, or warnings under `--deny-warnings`. |
-| `2` | The command couldn't check the project: a usage error, no `tessera.toml`, a content model with errors (they're shown, and nothing else is checked), or a source file that can't be read (for example, one that isn't UTF-8). |
+| `2` | The command couldn't check the project: a usage error, no `tessera.toml`, or a content model with errors (they're shown, and nothing else is checked). A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list, and the rest of the project is still checked. |
 
 ### Text output
 

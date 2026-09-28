@@ -1,5 +1,4 @@
 description: "An image keeps an empty block that is followed by `{`: without it, the next braces would be the image's attribute block."
 spec: ["8.3"]
-tags: [format, provisional]
-questions: [Q76]
+tags: [format]
 formatted: input.md

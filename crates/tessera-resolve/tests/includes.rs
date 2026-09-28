@@ -358,7 +358,7 @@ fn a_cycle_among_fragments_no_page_includes_is_found_when_the_fragment_is_expand
 
 #[test]
 fn an_include_of_a_section_of_the_including_file_is_not_a_cycle() {
-    // SPEC-QUESTION(Q66): a cycle is expanding the same file, or the same
+    // Resolved Q66: a cycle is expanding the same file, or the same
     // section, again while it's still being expanded.
     let p = project(&[("docs/_a.md", "## Y\n\nWhy.\n\n## X\n\n@include: _a.md#y\n")]);
     let page = expand(&p, "_a.md");

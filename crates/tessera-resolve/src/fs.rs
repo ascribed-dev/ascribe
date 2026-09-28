@@ -43,7 +43,7 @@ pub trait FileSystem {
     /// ends in `.md`, skipping any file or directory whose name starts with `.`
     /// (`.github/`, `.vitepress/`, editor state). Directories are followed
     /// through symbolic links once each.
-    // SPEC-QUESTION(Q52): the same rule as `tessera check`'s discovery, which
+    // Resolved Q52: the same rule as `tessera check`'s discovery, which
     // raised it: which files count as sources.
     fn sources(&self) -> Sources;
 

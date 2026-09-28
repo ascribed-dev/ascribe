@@ -247,6 +247,7 @@ spec = "4.2"
 row = "`@include` | Target file doesn't exist"
 message = "the included file `{path}` doesn't exist"
 messages.case = "the included file `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
+messages.not-source = "`{path}` isn't a Tessera source file, so it can't be included: only `.md` files under the content root can"
 
 [[diagnostic]]
 code = "TSR022"
@@ -449,6 +450,7 @@ row = "Images | Local source doesn't exist"
 message = "the image `{path}` doesn't exist"
 messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
+messages.empty = "this image has no source; put the image's path between the parentheses"
 
 [[diagnostic]]
 code = "TSR043"
@@ -1208,3 +1210,44 @@ level = "page"
 spec = "5.2"
 row = "Links | Target page isn't published by a build (page level, per build)"
 message = "build `{build}` doesn't publish `{path}`, so this link would be broken in that build; move the link into a `@variant` arm the build removes"
+
+###############################################################################
+# SPEC §8.2 rows added for questions Q51, Q52, Q61, and Q65.
+###############################################################################
+
+[[diagnostic]]
+code = "TSR122"
+slug = "frontmatter-syntax"
+severity = "error"
+level = "file"
+spec = "2.1"
+row = "Frontmatter | Frontmatter that isn't valid YAML"
+message = "the frontmatter isn't valid YAML: {detail}"
+
+[[diagnostic]]
+code = "TSR123"
+slug = "source-unreadable"
+severity = "error"
+level = "file"
+spec = "2.1"
+row = "Files | Source file that can't be read, or isn't valid UTF-8"
+message = "this file can't be read: {reason}"
+messages.encoding = "this file isn't valid UTF-8, and Tessera reads source files as UTF-8 text; save it as UTF-8"
+
+[[diagnostic]]
+code = "TSR124"
+slug = "heading-empty-slug"
+severity = "warning"
+level = "file"
+spec = "5.5"
+row = "Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji)"
+message = "this heading's text gives it an empty id, so nothing can link to it reliably; give it an `@id`"
+
+[[diagnostic]]
+code = "TSR125"
+slug = "include-heading-without-id"
+severity = "warning"
+level = "file"
+spec = "4.2"
+row = "`@include` | `{heading=false}` without an `#id`, which has no effect"
+message = "`heading=false` only applies to an include of a section (`file.md#id`), so it does nothing here; remove it, or name the section"

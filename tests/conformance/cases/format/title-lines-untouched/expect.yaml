@@ -1,5 +1,4 @@
 description: "A title line is left as written; the directive below it is formatted."
 spec: ["8.3"]
-tags: [format, provisional]
-questions: [Q77]
+tags: [format]
 formatted: formatted.md

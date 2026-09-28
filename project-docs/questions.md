@@ -745,7 +745,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §8.3, §8.2
 - **Raised by:** phase 23
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.3 says canonical form is what a formatter writes, but a directive line that is wrong (an unclosed block, a bare key, text that fits no part, a container-only directive without its colon, a stray end line) has no reading the formatter can be sure of. Phase 23 leaves such a construct alone. The spec doesn't say which reported diagnostics count. One of them, `binding-blank-line`, is a warning the formatter itself fixes; the other warnings (`container-nesting-deep`, `title-not-accepted`, `title-dot-space`, `list-ended-by-directive`, `directive-indented-code`, `steps-numbering-continued`, `directive-unknown`) say nothing about the bytes it edits.
 - **Options:**
   1. Errors stop the formatter for the construct they are reported on, warnings don't. A construct is a directive line (and its title line), an end line, or an image's attribute block; "on" means the diagnostic's location is inside it.
@@ -753,24 +753,26 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Format a construct with an error as well as it can be read.
 - **Proposed resolution:** option 1. Implemented now (`tessera-fmt/src/skip.rs`, with a test that the warning list agrees with the diagnostics registry). Diagnostics that need the content model (unknown attribute keys, value types) aren't run by the formatter, so a block with an undeclared key is respaced and unquoted but keeps its order (Q75). The other options can't be less conservative than leaving a wrong construct as the author wrote it.
 - **Affects:** `crates/tessera-fmt/src/skip.rs`; conformance cases `format/errors-left-alone`, `format/errors-container-structure`, `format/errors-binding`; phase 24 (format on save).
+- **Resolution:** approved by the repository owner: as proposed: an error stops the formatter for the construct it's on; warnings don't. SPEC §8.3 now says so.
 
 ### Q72: Trailing whitespace on directive lines and end lines
 
 - **Section:** SPEC §8.3, §3.1
 - **Raised by:** phase 23
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.3 removes trailing whitespace "after a container's `:`" and lists nothing else. §3.1 says processors ignore whitespace at the end of a directive line. So `@note {type=tip}  `, `@steps  `, `@available: cloud  `, and `@end  ` are non-canonical or not?
 - **Options:**
   1. Only what §8.3 lists: whitespace after a container's colon goes; other trailing whitespace stays. A text primary's trailing spaces can be a hard break, so removing them there would change the page.
   2. Remove trailing whitespace from every directive line and end line, except a text primary's.
 - **Proposed resolution:** option 1, the conservative one, implemented now. Option 2 is a one-rule addition if the owner wants it.
 - **Affects:** `crates/tessera-fmt/src/head.rs`; conformance case `format/trailing-space-elsewhere`.
+- **Resolution:** approved by the repository owner: as proposed: trailing whitespace is removed only after a container's colon. SPEC §8.3 now says so.
 
 ### Q73: Indentation of directive lines: block quotes, the marker's line, and tabs
 
 - **Section:** SPEC §8.3, §3.9, §1.5
 - **Raised by:** phase 23
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.3 says a directive line in a list item is indented exactly to the item's content column, and Q1 and Q19 remove up to three extra spaces before a directive or end line. It says nothing about:
   - a block quote (`>   @note`): where is the content column, and is `>@note` canonical?
   - a directive on the marker's own line (`-   @note: x`), where the spaces after the marker are the marker's spacing;
@@ -780,12 +782,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. Also normalize `>@note` to `> @note`, marker spacing (`-   @note` to `- @note`), and tabs.
 - **Proposed resolution:** option 1, implemented now (`tessera-fmt/src/indent.rs`). Marker spacing is markdown formatting, not Tessera's, and a tab's width can't be known from the source alone.
 - **Affects:** `crates/tessera-fmt/src/indent.rs`; conformance cases `format/indent-block-quote`, `format/indent-left-alone`.
+- **Resolution:** approved by the repository owner: as proposed: block quotes keep `>` and one space; a list marker's line and tab indentation are left alone. SPEC §8.3 now says so.
 
 ### Q74: A blank line between a following-block directive and its block, in the awkward cases
 
 - **Section:** SPEC §8.3, §3.8, §3.4
 - **Raised by:** phase 23
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** canonical form removes the blank line between a following-block directive and its block. Three cases where doing so isn't safe or isn't what the author sees:
   - the directive has a text primary (a widget that binds a following block and takes text): the blank line ends its text, so removing it would make the block part of the primary;
   - a link reference definition sits in the gap (`@steps`, a definition, a blank line, the list). comrak consumes definitions, so the tree shows only a gap, and a definition must never be deleted or moved;
@@ -796,12 +799,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Close a gap in a list item only when the list's tightness, worked out again, doesn't change.
 - **Proposed resolution:** option 1, the conservative one; a formatter that runs on save (phase 24) mustn't change how ordinary markdown renders. Implemented now (`tessera-fmt/src/blank.rs`, using `ParsedDocument::definitions` and the block's owner). Option 2 is the previous reading; option 3 is exact but has to reason about every gap in a list together.
 - **Affects:** `crates/tessera-fmt/src/blank.rs`; conformance cases `format/blank-line-definition`, `format/blank-line-in-containers`, `format/blank-line-list-tightness`.
+- **Resolution:** approved by the repository owner: option 1 as implemented after review: the blank line is kept when removing it would change a list's tightness, when the directive has a text primary, or when a non-blank line sits in the gap. SPEC §8.3 now says so.
 
 ### Q75: Attribute blocks the formatter can't put in order or safely rewrite
 
 - **Section:** SPEC §8.3, §3.3
 - **Raised by:** phase 23
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.3 orders attributes as the schema declares them and quotes values "only when necessary". Not settled:
   - a block with a key the schema doesn't declare (`attribute-unknown-key` is reported by phase 10, not by the parser): where does it go?
   - a repeated key, or a bare key: there is no single reading.
@@ -812,12 +816,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Leave any block with an unknown key entirely alone.
 - **Proposed resolution:** option 1, implemented now (`tessera-fmt/src/attributes.rs`). Before a block is rewritten its canonical text is parsed again and must have the same keys, values, and forms, or the block is left alone.
 - **Affects:** `crates/tessera-fmt/src/attributes.rs`; conformance case `format/order-unknown-key`.
+- **Resolution:** approved by the repository owner: as proposed: bare or repeated keys leave the block alone; an undeclared key keeps its place; an unneeded quote is dropped. SPEC §8.3 now says so.
 
 ### Q76: Image attribute blocks: an empty block, and a block in a table cell
 
 - **Section:** SPEC §8.3, §5.3, §5.1
 - **Raised by:** phase 23
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.3 says "no empty attribute block", written for directives (`@note`, not `@note {}`); §5.3 uses the same grammar for images. Two edges for images:
   - `![a](b){}{cloud}`: removing the `{}` makes `{cloud}` the image's attribute block (§5.1), which changes what the text means.
   - a block inside a table cell: a `|` in a cell is written `\|`, and the canonical value-set spelling (`a|b`) would end the cell.
@@ -826,24 +831,26 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. Also format blocks in table cells, keeping `\|`.
 - **Proposed resolution:** option 1, implemented now (`tessera-fmt/src/attributes.rs`, `lib.rs`).
 - **Affects:** `crates/tessera-fmt`; conformance case `format/empty-block-before-brace`.
+- **Resolution:** approved by the repository owner: as proposed: an empty image block is removed; a block in a table cell is left alone. SPEC §8.3 now says so.
 
 ### Q77: Title lines
 
 - **Section:** SPEC §8.3, §3.7
 - **Raised by:** phase 23
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** a title line (`.Try it`) is part of a directive's construct, but §8.3 lists no rule for it: its indentation (up to three spaces are allowed before it as before any paragraph line), the spaces inside its text (which is inline markdown), and trailing whitespace.
 - **Options:**
   1. Title lines are left as written; only the directive line below them is formatted.
   2. Indent title lines like the directive below them.
 - **Proposed resolution:** option 1, implemented now. The title's text is prose, and §3.7 only requires that it touch the directive.
 - **Affects:** `crates/tessera-fmt`; conformance case `format/title-lines-untouched`.
+- **Resolution:** approved by the repository owner: as proposed: title lines are left as written. SPEC §8.3 now says so.
 
 ### Q61: A heading with no `@id` whose slug is empty
 
 - **Section:** SPEC §5.5, §8.2
 - **Raised by:** phase 11
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** a heading made only of characters the slugger removes (punctuation, emoji) slugs to the empty string, and a second one to `-1`, a third to `-2` (phase 09's hand-off; `github-slugger` and so Astro do the same):
 
   ```
@@ -859,13 +866,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1. The page still builds, and the consumer publishes some id for it, but the author can't rely on it. Also unverified: what Astro does with an empty id (phase 21 should check whether it writes `id=""`, or none).
 - **Implemented now:** option 3, with the facts recorded, so a check can report it once the row exists: `Heading::empty_slug` and `Project::empty_slug_headings()`. An empty source id names no heading (`FileIndex::heading_by_id("")` is `None`), and an empty fragment after `#` in a link or include means no id at all. `// SPEC-QUESTION(Q61)` in `crates/tessera-resolve/src/index/headings.rs` and `project.rs`.
 - **Affects:** `crates/tessera-resolve`; the registry and SPEC §8.2 (option 1 adds a row); phases 10 and 14 (to report it); conformance cases: none yet.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 1: a warning, a new §8.2 row and registry entry, `heading-empty-slug` (TSR124), reported by `tessera check` using the source index's heading text. SPEC §5.5 now says so. Case: `headings/empty-slug`. Whether Astro writes `id=""` or no id stays for phase 21 to check.
 
 ### Q62: Include paths: percent-encoding, and an empty id
 
 - **Section:** SPEC §4.2, §5.2
 - **Raised by:** phase 11
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §4.2 calls an include's primary a path, "optionally followed by `#` and an id", and the primary is an identifier that ends at the first whitespace (§3.4). A link destination is percent-decoded (`my%20diagram.png` names `my diagram.png`, asset contract §2), but an include isn't a destination, and the spec doesn't say. So a fragment named `my snippet.md` can't be included at all unless `%20` decodes. Separately, `@include: file.md#` has an empty id.
 - **Options:**
   1. An include path is literal: `%20` is three characters, and a file whose name has a space can't be included.
@@ -874,13 +881,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 2, for consistency: every path an author writes in Tessera resolves the same way, and a name with a space stays includable. And (a).
 - **Implemented now:** option 1 and (a) (`// SPEC-QUESTION(Q62)` in `crates/tessera-resolve/src/index/mod.rs`): a missing file is reported either way (`include-target-missing`), so the conservative reading loses nothing silently.
 - **Affects:** `crates/tessera-resolve`; phases 10, 12, 15 (include completion).
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 2: an include path is percent-decoded as a link destination is, and an empty `#` includes the whole file. SPEC §4.2 now says so.
 
 ### Q63: An include of something that isn't a source file of the project
 
 - **Section:** SPEC §4.2, §2.1, §2.2
 - **Raised by:** phase 11
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** an include names "a file", and §2.1 says a source file is a `.md` file under the content root. A path can also name a file that isn't one: a `.md` file outside the content root (`../README.md`), a file with another extension (`data.yaml`, `snippet.txt`), or a directory.
 - **Options:**
   1. Only source files can be included. Anything else is `include-target-missing`, whether or not it exists on disk.
@@ -888,13 +895,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1: the source index knows only its own files, expansion needs them parsed, and inserting arbitrary text would bypass every check. `include-target-missing`'s message says "doesn't exist", which is untrue of a `README.md` outside the content root, so a new variant (`not-a-source`, or `outside`, as image and link have) would be kind to the author.
 - **Implemented now:** option 1, with the message as it is (`// SPEC-QUESTION(Q63)` in `crates/tessera-resolve/src/project.rs`).
 - **Affects:** `crates/tessera-resolve`; the registry (a new message variant); phases 10 and 14.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: only a source file can be included, reported as `include-target-missing` with a new `not-source` message variant for a file outside the content root or not Markdown. SPEC §4.2 now says so.
 
 ### Q64: A link with only `#id` inside a fragment
 
 - **Section:** SPEC §4.2, §5.2
 - **Raised by:** phase 11
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** a link's path is relative to the file it's written in, and an empty path names that file. In a page, `[Setup](#setup)` links to a heading of the page (its own source ids, Q6). In a fragment, the same link names the fragment, and §4.2 says a link to a fragment file is an error, because a fragment isn't published:
 
   ```
@@ -909,13 +916,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 2, which fits Q6 and is what authors want (cross-references inside a fragment), but it needs that page-level row and a rule for links to other fragments' ids, so it isn't a small change. Until a human chooses, option 1.
 - **Implemented now:** option 1 (`// SPEC-QUESTION(Q64)` in `crates/tessera-resolve/src/project.rs`).
 - **Affects:** `crates/tessera-resolve`; phases 10, 12, 14; conformance cases: none.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 2 as restated: a `#id` alone in a fragment names a heading of the fragment itself and compiles to that heading's page id on each including page, so it isn't `link-to-fragment`; an id the fragment doesn't have is `link-id-missing`. SPEC §5.2 now says so.
 
 ### Q65: `{heading=false}` on an include with no `#id`
 
 - **Section:** SPEC §4.2
 - **Raised by:** phase 11
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** `heading=false` "omits the included section's own heading". An include with no `#id` includes a whole file, which has no "section's own heading", although it usually starts with one:
 
   ```
@@ -928,13 +935,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 3 as a warning, since the author expects something to disappear, with option 1 as the behavior so nothing is dropped by a guess. That needs a registry entry.
 - **Implemented now:** option 1 (`// SPEC-QUESTION(Q65)` in `crates/tessera-resolve/src/expand.rs`).
 - **Affects:** `crates/tessera-resolve`; the registry; phases 10 and 14.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 3 as a warning, with option 1's behavior: `{heading=false}` without `#id` has no effect and is warned about, as a new §8.2 row and registry entry, `include-heading-without-id` (TSR125). SPEC §4.2 now says so. Case: `directives/include/heading-false-without-id`. SPEC Appendix B had exactly this (`@include {heading=false}: _fragments/prerequisites.md`, a fragment with no heading), so the attribute was removed there and from its copies in `examples/`, `tests/conformance/cases/samples/appendix-b`, `projects/quill`, and the conformance README.
 
 ### Q66: What makes an include a cycle
 
 - **Section:** SPEC §4.2, §8.2
 - **Raised by:** phase 11
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** "Include cycles are an error." With section includes, a file can be included in part:
 
   ```
@@ -950,13 +957,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 2: it reports exactly the includes whose expansion would never end, and it doesn't reject a fragment whose sections refer to each other's files, which option 1 would. A whole-file include and a section of the same file are different keys; a section that includes itself, or includes a file that includes it, is a cycle.
 - **Implemented now:** option 2 (`// SPEC-QUESTION(Q66)` in `crates/tessera-resolve/src/expand.rs`). Either way it's reported at the include that closes the cycle (Q20).
 - **Affects:** `crates/tessera-resolve`; phases 12 and 14.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: a cycle is an include whose expansion would include the same section of the same file again. SPEC §4.2 now says so.
 
 ### Q67: What a heading's text is, for its slug
 
 - **Section:** SPEC §5.5
 - **Raised by:** phase 11
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** the slug is "computed from the heading's text (with phrases substituted)". A heading can hold more than text:
 
   ```
@@ -971,13 +978,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1, as Astro's heading pass reads a heading's text nodes, and verify it against Astro in phase 21. The `github` slugger and its Unicode handling are phase 09's; this is only what text goes in.
 - **Implemented now:** option 1 (`// SPEC-QUESTION(Q67)` in `crates/tessera-resolve/src/index/headings.rs`).
 - **Affects:** `crates/tessera-resolve`; phases 12 and 21.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: the heading's rendered text content (text, code, link text, emphasis; not images or raw HTML), with phrases substituted. SPEC §5.5 now says so. Phase 21 checks it against Astro.
 
 ### Q68: An `@id` value that isn't valid, or a second `@id` on a heading
 
 - **Section:** SPEC §4.1, §5.5
 - **Raised by:** phase 11
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** an `@id` with characters other than letters, digits, and hyphens is an error (`id-invalid`), and "the id replaces the heading's slug". Does an invalid id still replace it? And what if a heading has two `@id` lines, or an `@id` with no value?
 
   ```
@@ -990,13 +997,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1: one mistake gives one diagnostic, not a cascade of missing-id errors (the same reasoning as Q36). An `@id` with no value has nothing to replace the slug with, so it's ignored.
 - **Implemented now:** option 1 (`// SPEC-QUESTION(Q68)` in `crates/tessera-resolve/src/index/headings.rs`).
 - **Affects:** `crates/tessera-resolve`; phases 10 and 14.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 1: an invalid `@id` still replaces the slug, and the first of several wins; each mistake is reported once. SPEC §4.1 now says so.
 
 ### Q51: Frontmatter that isn't valid YAML
 
 - **Section:** SPEC §2.1, §8.2
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.2 has rows for frontmatter keys, missing fields, and types, but none for frontmatter that isn't YAML at all:
 
   ```
@@ -1012,13 +1019,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Don't report it. The page would then look as if it had no frontmatter.
 - **Proposed resolution:** option 1, since a syntax error isn't a type mismatch and deserves its own message and code. **Implemented now: option 2**, the conservative one, because a new entry is a contract change (`SPEC-QUESTION(Q51)` in `crates/tessera-check/src/checks/frontmatter.rs`). The diagnostic is at the YAML parser's position, and no other frontmatter check runs on that file.
 - **Affects:** `tests/conformance/diagnostics.toml` (a new entry), SPEC §8.2 (a new row); phases 10, 15.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: a new §8.2 row and registry entry, `frontmatter-syntax` (TSR122), at the YAML parser's position. SPEC §2.1 now requires valid YAML. Case: `frontmatter/not-valid-yaml`.
 
 ### Q52: Which files under the content root are source files
 
 - **Section:** SPEC §2.1, §2.2
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §2.1 says a source file is "a CommonMark file with the extension `.md`", and §2.2 that the source files live under the content root. Neither says what to do with `.md` files in directories such as `.git/`, `.github/`, or `.tessera/`, with `.markdown` or `.MD` files, or with a `.md` file that isn't UTF-8.
 - **Options:**
   1. Every file under the content root whose name ends in exactly `.md` is a source file, except those in a directory or with a name that begins with `.`. A source file that isn't UTF-8 stops the command (exit code 2) instead of being skipped.
@@ -1026,13 +1033,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Also accept `.markdown` and case variants.
 - **Proposed resolution:** option 1. Dot-directories hold tool state, not documentation, and reading them would report problems in files the author doesn't own. Exactly `.md` follows §2.1 and the exact-case rule for names (§9.4). A file that can't be read is a failure of the command, like a missing `tessera.toml`, not a diagnostic, because there's no text to point at. Implemented now: option 1 (`SPEC-QUESTION(Q52)` in `crates/tessera-check/src/project.rs`).
 - **Affects:** `tessera-check`'s `Project::load`; phases 11, 12, and 15 (which need the same set).
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1 for which files are sources (exactly `.md`, and a name beginning with `.` is skipped with everything in it), but a source that can't be read, or isn't UTF-8, is an error on that file, and the rest is still checked, rather than stopping the command: one bad file mustn't block the language server for a whole project. A new §8.2 row and registry entry, `source-unreadable` (TSR123, with an `encoding` variant). SPEC §2.1 now says so. Case: `files/source-not-utf8`.
 
 ### Q53: Where a link, image, or include diagnostic is reported
 
 - **Section:** SPEC §5.2, §5.3, §8.1, §8.2
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.1 says a diagnostic is "reported at the source location that causes it". For a missing link target that could be the whole link (`[text](gone.md)`), its destination, or, for a reference-style link or image, the link reference definition that holds the destination. The conformance cases give only the line.
 - **Options:**
   1. The destination as written, for an inline link or image; the whole link or image for a reference form, since the tree has no node for definitions (phase 05).
@@ -1040,26 +1047,26 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. The definition, for a reference form.
 - **Proposed resolution:** option 1 now, moving to option 3 when the parser exposes definitions (phases 12 and 23 need them anyway). The squiggle then covers the words the author has to change, and a fix (`link-route`) has an exact span to replace. The case `images/source-missing-reference` expects the image's line, which option 3 would change, so its expectation would need to name the definition's line at that point. Implemented now: option 1 (`SPEC-QUESTION(Q53)` in `checks/refs.rs`).
 - **Affects:** conformance cases `images/source-missing-reference`, `images/attributes-on-reference-forms`; phases 12, 15, 23.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: at the destination as written for inline forms, and at the link or image for reference forms. SPEC §8.1 now says so.
 
 ### Q54: Phrases in a destination, and the file checks
 
 - **Section:** SPEC §5.1, §5.2, §5.3
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §5.1 says phrases apply in link destinations, and §9.2 substitutes them (step 4) before links are resolved (step 6). §8.1 puts "whether referenced files exist" at file level. So does `[x]({api}streaming)` name the file `{api}streaming` or the URL `https://api.quill.dev/v3/streaming`? Read literally, the file-level check sees the source text and would report a missing file.
 - **Options:**
   1. File-level checks substitute the declared phrases in a destination first, as the build does, so `{api}streaming` is external and needs no file. An undeclared `{key}` stays literal.
   2. File-level checks see the text as written and report `{api}streaming` as a missing file, or as a route.
 - **Proposed resolution:** option 1: the SPEC's own example (`[streaming API reference]({api}streaming)`) must check cleanly, and Appendix B's page does. Implemented now: option 1, for inline and reference forms alike (`SPEC-QUESTION(Q54)` in `checks/refs.rs`). A phrase whose value contains `#` or a scheme therefore changes the destination's kind, as it does in the build.
 - **Affects:** `projects/quill` (the Appendix B link); phases 11, 12.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: phrases in a destination are substituted before it's checked. SPEC §5.1 now says so.
 
 ### Q55: Which page a route names, and when to offer the fix
 
 - **Section:** SPEC §5.2, §8.2, §9.5
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** `link-route` says "this looks like the published route of `{page}`; link to the file instead: `{suggestion}`". The mapping from a route to a page belongs to the consumer profile's router (phase 12), but the warning is a file-level check and has to name a page now, including when no such page exists (`/guides/install/` with no `guides/install.md`).
 - **Options:**
   1. The conventional mapping: `route.md`, else `route/index.md`, whichever exists in the project; else `route.md`. The warning offers a fix (an edit to the destination) only when a page exists.
@@ -1067,13 +1074,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Warn without naming a page.
 - **Proposed resolution:** option 1 until the router exists, then option 2 for the page and the suggestion. Implemented now: option 1 (`SPEC-QUESTION(Q55)` in `checks/refs.rs`). The suggestion keeps the destination's form (root-relative or relative to the file) and its `#id`.
 - **Affects:** `link-route` diagnostics and their fixes; phases 12, 14, 24 (quick fixes).
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1, as an interim rule until the consumer profile's router (phase 12) can name the page: `route.md`, else `route/index.md`, whichever is a source file; the fix is offered only when that page exists. No spec change: the spec leaves routing to the consumer profile.
 
 ### Q56: Where `phrase-undeclared` applies
 
 - **Section:** SPEC §5.1, §8.2
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** the warning is for "`{key}` in prose whose key isn't declared". §5.1 lists where phrases apply: prose, headings, link text, link destinations, fences that opt in, and frontmatter fields. Which of those count as prose for this warning?
 - **Options:**
   1. Every inline position where a phrase candidate is recorded: paragraphs, headings, link text, image alt text, table cells, titles, and text primaries. Not destinations, `phrases=true` fences, or frontmatter.
@@ -1081,13 +1088,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Only paragraphs and headings.
 - **Proposed resolution:** option 1. A destination's `{key}` is checked as part of the destination (Q54), a fence that opts in has said it wants substitution and probably knows its keys, and frontmatter phrases depend on the content model's declarations (phase 08). Implemented now: option 1 (`SPEC-QUESTION(Q56)` in `checks/mod.rs`).
 - **Affects:** phase 11 (frontmatter phrases), phase 12 (the registry-change report of §5.1).
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: every inline position, but not destinations, `phrases=true` fences, or frontmatter. SPEC §5.1 now says so.
 
 ### Q57: `available` and `variant` frontmatter values that aren't the right shape
 
 - **Section:** SPEC §2.1, §4.3, §4.4, §8.2
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §4.3 says `variant` is "a mapping from dimension names to a value or a list of values" and §4.4 that `available` holds a spec. §8.2 has no row for `available: 3` (a number) or `variant: cloud` (not a mapping) or `variant: {pm: [npm, 3]}`. The content model can't declare these keys, so `validate_frontmatter` accepts them as they are.
 - **Options:**
   1. `frontmatter-type-mismatch`, at the value, with the expected shape in the message.
@@ -1095,13 +1102,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Not reported.
 - **Proposed resolution:** option 1: the value has the wrong type, which is what that entry is for, and the message can name the right shape. Implemented now: option 1 (`SPEC-QUESTION(Q57)` in `checks/frontmatter.rs`).
 - **Affects:** phases 12 and 14 (they read these keys after this check passes).
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: a type mismatch, with the expected shape in the message. SPEC §2.1 now says so.
 
 ### Q58: A content model with errors, and the content model's warnings
 
 - **Section:** SPEC §8.1; phase 10's exit codes
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** `tessera check` exits `0`, `1`, or `2`, and `2` is for "usage or configuration failures". A `tessera.toml` with errors (the loader's rules, SPEC §7.2) isn't a usage error, but no source file can be checked against a model that doesn't load. And the loader's warnings (`model-name-case`, `model-build-filter-excluded`) belong to no source file.
 - **Options:**
   1. A model with errors is a configuration failure: the model's diagnostics are shown, nothing else is checked, and the exit code is `2`. A model that loads has its warnings in the file-level list, so they count under `--deny-warnings` and appear in the same output, JSON included.
@@ -1109,17 +1116,17 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. The model's warnings are shown by the build only.
 - **Proposed resolution:** option 1. Exit code `1` means "the documentation has problems you can fix by editing it", and `2` means "the tool can't tell". Implemented now: option 1 (`SPEC-QUESTION(Q58)` in `commands/check.rs` and `check_files`).
 - **Affects:** `tessera check`; phases 15 (the server reports model diagnostics on `tessera.toml`) and 18.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: a content model with errors is reported and nothing else is checked (exit code 2); a model's warnings are reported with the rest. SPEC §7.1 now says so.
 
 ### Q59: A link or image whose destination is only a fragment, or empty
 
 - **Section:** SPEC §5.2, §5.3
 - **Raised by:** phase 10
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** `[here](#install)` names a heading in the file it's written in (page level checks the id). `![a](#x)` and `![a]()` have no file to look for. §5.3 says "a local image source MUST exist".
 - **Options:**
   1. File-level checks skip a destination with no path (the fragment-only link names the file itself, and an empty destination names nothing), for links and images alike.
   2. Report an image with no path as `image-source-missing`; skip links.
 - **Proposed resolution:** option 2 for images, and option 1 for links: an image with no source is certainly wrong. **Implemented now: exactly that** (`SPEC-QUESTION(Q59)` in `checks/refs.rs`). The registry's message for `image-source-missing` reads badly for an empty path ("the image `(no source)` doesn't exist"; a `#id`-only source shows as written). A dedicated variant, such as `messages.empty = "this image has no source; give it a path between the parentheses"`, needs a registry change, which is the human's to approve when resolving this question.
 - **Affects:** `image-source-missing`; phases 12 and 14.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 2 for images and option 1 for links: an image with an empty source is `image-source-missing` with a new `empty` message variant ("this image has no source"); a link with only `#id` names its own file. SPEC §5.2 and §5.3 now say so.

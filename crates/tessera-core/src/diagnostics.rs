@@ -396,6 +396,18 @@ pub const DIRECTIVE_EXTRA_TEXT: DiagnosticSlug = DiagnosticSlug("directive-extra
 /// `TSR121`, error, page level: SPEC §8.2, "Links | Target page isn't published by a build (page level, per build)".
 pub const LINK_PAGE_DROPPED: DiagnosticSlug = DiagnosticSlug("link-page-dropped");
 
+/// `TSR122`, error, file level: SPEC §8.2, "Frontmatter | Frontmatter that isn't valid YAML".
+pub const FRONTMATTER_SYNTAX: DiagnosticSlug = DiagnosticSlug("frontmatter-syntax");
+
+/// `TSR123`, error, file level: SPEC §8.2, "Files | Source file that can't be read, or isn't valid UTF-8".
+pub const SOURCE_UNREADABLE: DiagnosticSlug = DiagnosticSlug("source-unreadable");
+
+/// `TSR124`, warning, file level: SPEC §8.2, "Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji)".
+pub const HEADING_EMPTY_SLUG: DiagnosticSlug = DiagnosticSlug("heading-empty-slug");
+
+/// `TSR125`, warning, file level: SPEC §8.2, "`@include` | `{heading=false}` without an `#id`, which has no effect".
+pub const INCLUDE_HEADING_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("include-heading-without-id");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -519,4 +531,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_ATTRIBUTE_RESERVED,
     DIRECTIVE_EXTRA_TEXT,
     LINK_PAGE_DROPPED,
+    FRONTMATTER_SYNTAX,
+    SOURCE_UNREADABLE,
+    HEADING_EMPTY_SLUG,
+    INCLUDE_HEADING_WITHOUT_ID,
 ];

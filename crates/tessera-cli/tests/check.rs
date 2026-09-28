@@ -164,12 +164,21 @@ fn config_names_the_model() {
 }
 
 #[test]
-fn an_unreadable_source_exits_2() {
-    let dir = project(&[("index.md", CLEAN)]);
+fn a_source_that_isnt_utf8_is_an_error_and_the_rest_is_checked() {
+    // SPEC §8.2 (resolved Q52).
+    let dir = project(&[("index.md", WITH_ERROR)]);
     fs::write(dir.path().join("docs/bad.md"), [0xff, 0xfe, 0x00]).expect("write bytes");
-    let out = tessera(dir.path(), &["check"]);
-    assert_eq!(code(&out), 2);
-    assert!(stderr(&out).contains("bad.md"), "{}", stderr(&out));
+    let out = tessera(dir.path(), &["check", "--format", "json"]);
+    assert_eq!(code(&out), 1);
+    let report: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("valid JSON");
+    let slugs: Vec<&str> = report["diagnostics"]
+        .as_array()
+        .expect("a list")
+        .iter()
+        .filter_map(|d| d["slug"].as_str())
+        .collect();
+    assert!(slugs.contains(&"source-unreadable"), "{slugs:?}");
+    assert!(slugs.len() >= 2, "index.md is still checked: {slugs:?}");
 }
 
 #[test]

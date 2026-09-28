@@ -167,7 +167,13 @@ fn every_conformance_input() {
     let mut changed = 0;
     let mut ugly_changed = 0;
     for path in &inputs {
-        let source = std::fs::read_to_string(path).expect("readable");
+        // `files/source-not-utf8` holds a file that isn't UTF-8 on purpose
+        // (SPEC §2.1); it has no text to format.
+        let source = match std::fs::read_to_string(path) {
+            Ok(source) => source,
+            Err(e) if e.kind() == std::io::ErrorKind::InvalidData => continue,
+            Err(e) => panic!("{}: {e}", path.display()),
+        };
         let model = model_for(path, &cases, &shared);
         let name = path
             .strip_prefix(&cases)

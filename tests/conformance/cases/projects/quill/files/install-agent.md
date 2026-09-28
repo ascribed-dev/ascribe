@@ -13,7 +13,7 @@ You can run {product} in the browser at play.quill.dev with no local setup.
 ## Prerequisites
 @id: prerequisites
 
-@include {heading=false}: _fragments/prerequisites.md
+@include: _fragments/prerequisites.md
 
 ## Install the agent
 @id: install-agent
