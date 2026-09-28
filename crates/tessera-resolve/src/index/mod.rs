@@ -305,7 +305,8 @@ fn include_of(line: &DirectiveLine, written_in: &RelPath) -> Include {
     };
     // SPEC-QUESTION(Q62): an include path is a path, not a URL, so `%20` isn't
     // decoded: a file name with a space can't be written as an identifier
-    // primary at all, and a name with `%` in it is taken literally.
+    // primary at all, and a name with `%` in it is taken literally. An empty
+    // id (`file.md#`) includes the whole file.
     let target = if path.is_empty() {
         None
     } else {

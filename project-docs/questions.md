@@ -740,3 +740,156 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1, so one mistake gives one diagnostic; the case `attributes/unclosed-brace` expects exactly `attribute-syntax`. Implemented now: option 1 (`Class::Unreadable` in `structure/bind.rs`). An unclosed block's line is still an opener when its directive is container-only, so its `@end` matches, but it gets no `container-colon-missing` either.
 - **Affects:** conformance case `attributes/unclosed-brace`; phases 05, 06, and 10.
 - **Resolution:** approved by the repository owner: option 1: only the unclosed block is reported for that line. SPEC §3.3 now says so.
+
+### Q61: A heading with no `@id` whose slug is empty
+
+- **Section:** SPEC §5.5, §8.2
+- **Raised by:** phase 11
+- **Status:** open
+- **Ambiguity:** a heading made only of characters the slugger removes (punctuation, emoji) slugs to the empty string, and a second one to `-1`, a third to `-2` (phase 09's hand-off; `github-slugger` and so Astro do the same):
+
+  ```
+  ## ???
+  ## 🎉
+  ```
+
+  These headings' source ids are `""` and `-1`. Nothing can link to `""` usefully (`page.md#` names no heading), and an author who moves a heading's emoji sees its id change from `-1` to `""` or the reverse. §5.5 asks processors to warn about a phrase in an id-less heading and about a repeated one, but says nothing about an empty slug, and §8.2 has no row for it.
+- **Options:**
+  1. A warning on every heading without `@id` whose slug is empty (including the numbered repeats), telling the author to give it an `@id`. A new §8.2 row and registry entry, file level.
+  2. An error, since the heading can't be linked to or included.
+  3. Nothing: report what the consumer does.
+- **Proposed resolution:** option 1. The page still builds, and the consumer publishes some id for it, but the author can't rely on it. Also unverified: what Astro does with an empty id (phase 21 should check whether it writes `id=""`, or none).
+- **Implemented now:** option 3, with the facts recorded, so a check can report it once the row exists: `Heading::empty_slug` and `Project::empty_slug_headings()`. An empty source id names no heading (`FileIndex::heading_by_id("")` is `None`), and an empty fragment after `#` in a link or include means no id at all. `// SPEC-QUESTION(Q61)` in `crates/tessera-resolve/src/index/headings.rs` and `project.rs`.
+- **Affects:** `crates/tessera-resolve`; the registry and SPEC §8.2 (option 1 adds a row); phases 10 and 14 (to report it); conformance cases: none yet.
+- **Resolution:** _to be filled in by a human._
+
+### Q62: Include paths: percent-encoding, and an empty id
+
+- **Section:** SPEC §4.2, §5.2
+- **Raised by:** phase 11
+- **Status:** open
+- **Ambiguity:** §4.2 calls an include's primary a path, "optionally followed by `#` and an id", and the primary is an identifier that ends at the first whitespace (§3.4). A link destination is percent-decoded (`my%20diagram.png` names `my diagram.png`, asset contract §2), but an include isn't a destination, and the spec doesn't say. So a fragment named `my snippet.md` can't be included at all unless `%20` decodes. Separately, `@include: file.md#` has an empty id.
+- **Options:**
+  1. An include path is literal: `%20` is three characters, and a file whose name has a space can't be included.
+  2. An include path is decoded the same way a link destination is, so `my%20snippet.md` names `my snippet.md`, and a literal `%` in a name is written `%25`.
+  Empty id: (a) it includes the whole file, (b) it's an error like a missing id.
+- **Proposed resolution:** option 2, for consistency: every path an author writes in Tessera resolves the same way, and a name with a space stays includable. And (a).
+- **Implemented now:** option 1 and (a) (`// SPEC-QUESTION(Q62)` in `crates/tessera-resolve/src/index/mod.rs`): a missing file is reported either way (`include-target-missing`), so the conservative reading loses nothing silently.
+- **Affects:** `crates/tessera-resolve`; phases 10, 12, 15 (include completion).
+- **Resolution:** _to be filled in by a human._
+
+### Q63: An include of something that isn't a source file of the project
+
+- **Section:** SPEC §4.2, §2.1, §2.2
+- **Raised by:** phase 11
+- **Status:** open
+- **Ambiguity:** an include names "a file", and §2.1 says a source file is a `.md` file under the content root. A path can also name a file that isn't one: a `.md` file outside the content root (`../README.md`), a file with another extension (`data.yaml`, `snippet.txt`), or a directory.
+- **Options:**
+  1. Only source files can be included. Anything else is `include-target-missing`, whether or not it exists on disk.
+  2. Any file inside the project or content root (the asset contract's boundary) can be included, and non-Markdown content is inserted as text.
+- **Proposed resolution:** option 1: the source index knows only its own files, expansion needs them parsed, and inserting arbitrary text would bypass every check. `include-target-missing`'s message says "doesn't exist", which is untrue of a `README.md` outside the content root, so a new variant (`not-a-source`, or `outside`, as image and link have) would be kind to the author.
+- **Implemented now:** option 1, with the message as it is (`// SPEC-QUESTION(Q63)` in `crates/tessera-resolve/src/project.rs`).
+- **Affects:** `crates/tessera-resolve`; the registry (a new message variant); phases 10 and 14.
+- **Resolution:** _to be filled in by a human._
+
+### Q64: A link with only `#id` inside a fragment
+
+- **Section:** SPEC §4.2, §5.2
+- **Raised by:** phase 11
+- **Status:** open
+- **Ambiguity:** a link's path is relative to the file it's written in, and an empty path names that file. In a page, `[Setup](#setup)` links to a heading of the page (its own source ids, Q6). In a fragment, the same link names the fragment, and §4.2 says a link to a fragment file is an error, because a fragment isn't published:
+
+  ```
+  _fragments/prerequisites.md:
+  See [the agent section](#install-the-agent).
+  ```
+
+  A fragment is written to be included, and a cross-reference to a heading beside it is natural, but where it lands is only known once a page includes it.
+- **Options:**
+  1. It's `link-to-fragment` like any other link to a fragment. Authors link to the page that includes the fragment instead.
+  2. It's allowed when the fragment has a heading with that source id, and compiles to that heading's page id on each page that includes the heading (phase 12); a page where the section isn't included (a section include, or a build that removes it) gets a page-level error.
+- **Proposed resolution:** option 2 is what authors want, but it needs a page-level row for "the linked heading isn't on this page" (like `link-id-removed`) and a rule for links to ids in other fragments. Until a human chooses, option 1.
+- **Implemented now:** option 1 (`// SPEC-QUESTION(Q64)` in `crates/tessera-resolve/src/project.rs`).
+- **Affects:** `crates/tessera-resolve`; phases 10, 12, 14; conformance cases: none.
+- **Resolution:** _to be filled in by a human._
+
+### Q65: `{heading=false}` on an include with no `#id`
+
+- **Section:** SPEC §4.2
+- **Raised by:** phase 11
+- **Status:** open
+- **Ambiguity:** `heading=false` "omits the included section's own heading". An include with no `#id` includes a whole file, which has no "section's own heading", although it usually starts with one:
+
+  ```
+  @include {heading=false}: _snippets/prerequisites.md
+  ```
+- **Options:**
+  1. The attribute does nothing without an id.
+  2. It drops the file's first block when that block is a heading.
+  3. It's an error or a warning: the attribute means nothing here.
+- **Proposed resolution:** option 3 as a warning, since the author expects something to disappear, with option 1 as the behavior so nothing is dropped by a guess. That needs a registry entry.
+- **Implemented now:** option 1 (`// SPEC-QUESTION(Q65)` in `crates/tessera-resolve/src/expand.rs`).
+- **Affects:** `crates/tessera-resolve`; the registry; phases 10 and 14.
+- **Resolution:** _to be filled in by a human._
+
+### Q66: What makes an include a cycle
+
+- **Section:** SPEC §4.2, §8.2
+- **Raised by:** phase 11
+- **Status:** open
+- **Ambiguity:** "Include cycles are an error." With section includes, a file can be included in part:
+
+  ```
+  _a.md:            ## Y  ...            ## X  @include: _a.md#y
+  _b.md:            @include: _a.md#glossary        (a section of _a.md with no includes)
+  _a.md also has:   @include: _b.md      (in another section)
+  ```
+
+  Is `_a.md → _b.md → _a.md#glossary` a cycle because it comes back to the file `_a.md`, or only if expansion would repeat?
+- **Options:**
+  1. A cycle is an include of a file that is already being expanded, whichever section.
+  2. A cycle is an include that would expand the same file, or the same section of it, again while it's still being expanded; expansion of anything else ends.
+- **Proposed resolution:** option 2: it reports exactly the includes whose expansion would never end, and it doesn't reject a fragment whose sections refer to each other's files, which option 1 would. A whole-file include and a section of the same file are different keys; a section that includes itself, or includes a file that includes it, is a cycle.
+- **Implemented now:** option 2 (`// SPEC-QUESTION(Q66)` in `crates/tessera-resolve/src/expand.rs`). Either way it's reported at the include that closes the cycle (Q20).
+- **Affects:** `crates/tessera-resolve`; phases 12 and 14.
+- **Resolution:** _to be filled in by a human._
+
+### Q67: What a heading's text is, for its slug
+
+- **Section:** SPEC §5.5
+- **Raised by:** phase 11
+- **Status:** open
+- **Ambiguity:** the slug is "computed from the heading's text (with phrases substituted)". A heading can hold more than text:
+
+  ```
+  ## Use `npm install` on **all** [hosts](hosts.md) ![logo](l.png)<br>now
+  ```
+
+  Whether code, link text, emphasis, an image's alt text, and inline HTML count, and what a line break is, decides the id, and the id has to be the one the consumer publishes (Astro takes the text of the rendered heading).
+- **Options:**
+  1. The text content of the rendered heading: text, code spans, link text, and emphasis count; an image and raw inline HTML contribute nothing; a line break is a newline.
+  2. The heading's raw source text.
+  3. Like option 1, but an image contributes its alt text.
+- **Proposed resolution:** option 1, as Astro's heading pass reads a heading's text nodes, and verify it against Astro in phase 21. The `github` slugger and its Unicode handling are phase 09's; this is only what text goes in.
+- **Implemented now:** option 1 (`// SPEC-QUESTION(Q67)` in `crates/tessera-resolve/src/index/headings.rs`).
+- **Affects:** `crates/tessera-resolve`; phases 12 and 21.
+- **Resolution:** _to be filled in by a human._
+
+### Q68: An `@id` value that isn't valid, or a second `@id` on a heading
+
+- **Section:** SPEC §4.1, §5.5
+- **Raised by:** phase 11
+- **Status:** open
+- **Ambiguity:** an `@id` with characters other than letters, digits, and hyphens is an error (`id-invalid`), and "the id replaces the heading's slug". Does an invalid id still replace it? And what if a heading has two `@id` lines, or an `@id` with no value?
+
+  ```
+  ## Setup
+  @id: my_id!
+  ```
+- **Options:**
+  1. An `@id` with a value replaces the slug even if invalid, and the first of two wins; the error is reported once, and links that use the id the author wrote work.
+  2. An invalid `@id` is ignored, so the heading keeps its slug, and a link to `my_id!` also fails.
+- **Proposed resolution:** option 1: one mistake gives one diagnostic, not a cascade of missing-id errors (the same reasoning as Q36). An `@id` with no value has nothing to replace the slug with, so it's ignored.
+- **Implemented now:** option 1 (`// SPEC-QUESTION(Q68)` in `crates/tessera-resolve/src/index/headings.rs`).
+- **Affects:** `crates/tessera-resolve`; phases 10 and 14.
+- **Resolution:** _to be filled in by a human._

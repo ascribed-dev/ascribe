@@ -355,6 +355,8 @@ impl<'p> Expander<'p> {
             }
         };
 
+        // SPEC-QUESTION(Q66): a cycle is expanding the same file, or the same
+        // section of it, again while it's still being expanded.
         if let Some(at) = self.stack.iter().position(|k| *k == key) {
             self.report_cycle(file, include, at, via);
             return keep(out);

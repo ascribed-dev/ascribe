@@ -110,6 +110,7 @@ fn collect_list(blocks: &[Block], model: &ContentModel, out: &mut Vec<Heading>) 
         }
     }
     // Explicit ids: an `@id` binds the heading before it in this list.
+    // SPEC-QUESTION(Q68): the first `@id` with a value wins, valid or not.
     for (i, block) in blocks.iter().enumerate() {
         let BlockKind::Directive(line) = &block.kind else {
             continue;
@@ -145,6 +146,8 @@ pub(crate) fn plain_text(inlines: &[Inline], model: &ContentModel) -> String {
 fn push_text(inlines: &[Inline], model: &ContentModel, out: &mut String) {
     for inline in inlines {
         match &inline.kind {
+            // SPEC-QUESTION(Q67): the text content of the rendered heading;
+            // an image and raw HTML contribute nothing.
             InlineKind::Text(t) | InlineKind::Code(t) => out.push_str(t),
             InlineKind::SoftBreak | InlineKind::HardBreak => out.push('\n'),
             InlineKind::Emphasis(children) | InlineKind::Strong(children) => {

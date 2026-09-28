@@ -30,6 +30,25 @@
 //!
 //! Nothing here depends on a build: availability, variants, and phrase
 //! substitution in content are phase 12's.
+//!
+//! ```
+//! use std::sync::Arc;
+//! use tessera_core::{FileId, RelPath};
+//! use tessera_resolve::{Layout, MemoryFs, Project};
+//!
+//! let model = tessera_model::load_str("spec = \"0.1\"\n", FileId::new(0)).expect("a valid model");
+//! let layout = Layout::from_model(&model);
+//! let fs = MemoryFs::new(&layout)
+//!     .with_source("index.md", "---\ntitle: Home\n---\n\n@include: _f.md#setup\n")
+//!     .with_source("_f.md", "## Setup\n\nInstall it.\n");
+//! let project = Project::load(Arc::new(model), layout, &fs);
+//!
+//! let fragment = RelPath::parse("_f.md").expect("a path");
+//! assert_eq!(project.heading(&fragment, "setup").map(|h| h.text.as_str()), Some("Setup"));
+//! let page = project.expand(&RelPath::parse("index.md").expect("a path")).expect("a page");
+//! assert!(page.problems.is_empty());
+//! assert_eq!(page.blocks.len(), 2); // the heading and the paragraph
+//! ```
 
 mod expand;
 pub mod fs;

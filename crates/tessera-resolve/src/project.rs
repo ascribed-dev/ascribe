@@ -583,6 +583,9 @@ impl Project {
 
     fn include_problem(&self, index: &FileIndex, include: &Include) -> Option<Issue> {
         let target = include.target.as_ref()?;
+        // SPEC-QUESTION(Q63): only a source file of the project can be
+        // included; a file outside the content root, or that isn't Markdown,
+        // is reported as missing, whether or not it exists on disk.
         if self.files.contains_key(target) {
             return None;
         }

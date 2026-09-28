@@ -64,7 +64,10 @@ fn quills_install_page_includes_the_prerequisites_fragment() {
         Some(FileKind::Fragment)
     );
     assert_eq!(project.includers(&fragment).len(), 1);
-    assert_eq!(project.including_pages(&fragment), [page.clone()]);
+    assert_eq!(
+        project.including_pages(&fragment),
+        std::slice::from_ref(&page)
+    );
 
     // The fragment's image is the one beside the fragment.
     let assets: Vec<(String, RefKind, String)> = project

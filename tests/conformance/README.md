@@ -22,6 +22,8 @@ cargo test -p tessera-conformance --lib --test harness
 
 `tests/structure_rows.rs` also runs, until phase 10 adds an adapter for `check`, the outlines and the structural diagnostics (containers, end lines, binding, titles, groups, lists) of the cases the runner skips only because they carry the `check` tag.
 
+`tests/source_index_rows.rs` likewise runs, until phases 10 and 14 add adapters for `check` and `page-check`, the rows the source index answers (phase 11): referenced files that don't exist, links to fragments and routes, include cycles and missing include ids, and links to ids. Every case tagged `include` or `slug` also carries `check`, `page-check`, or `resolve`, so the runner skips them all for now; this test compares those rows, in every case that expects diagnostics, with what `tessera-resolve` reports.
+
 ## Layout
 
 ```
