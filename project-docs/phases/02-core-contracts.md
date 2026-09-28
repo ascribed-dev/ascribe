@@ -121,4 +121,4 @@ Write every interface that parallel phases share, as completed deliverables, bef
 
 ### CI
 
-Both workflows passed on pull request #4 (run 36457842168 for Rust, 36457842178 for JavaScript): `fmt`; clippy, build, and test on Linux, macOS, and Windows; and the JavaScript format, lint, typecheck, and test job. They haven't run on a push to `main`, which happens only after merge.
+Both workflows passed on pull request #4 (run 36457842168 for Rust, 36457842178 for JavaScript): `fmt`; clippy, build, and test on Linux, macOS, and Windows; and the JavaScript format, lint, typecheck, and test job. After the checkpoint resolutions and the merge of main, they passed again (runs 36467638093 and 36467638008). They haven't run on a push to `main`, which happens only after merge.
