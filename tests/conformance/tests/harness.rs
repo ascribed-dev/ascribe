@@ -136,9 +136,13 @@ fn problems(outcome: Option<&Outcome>) -> Vec<String> {
 
 #[test]
 fn bundled_samples_are_discovered_and_skipped_with_recorded_reasons() {
-    let report = Suite::bundled()
-        .run(&Registry::new(), &Filter::default())
-        .unwrap();
+    // Only the samples: every phase that lands removes its tag's skip entry,
+    // so the other bundled cases stop being skipped with an empty registry.
+    let filter = Filter {
+        case: Some("samples/".into()),
+        ..Filter::default()
+    };
+    let report = Suite::bundled().run(&Registry::new(), &filter).unwrap();
     println!("{}", report.summary());
     assert!(report.success(), "{}", report.summary());
 

@@ -47,12 +47,14 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 | | | `NodeValue::accepts_lines` | A Tessera line takes its own line |
 | | | `Node::can_contain_type` | A Tessera line contains only its primary's paragraph |
 | `src/parser/options.rs` | 1 | `Extension` | The `tessera: Option<Arc<TesseraOptions>>` option, after `front_matter_delimiter` |
-| `src/parser/mod.rs` | 6 | module list | `mod tessera;` |
+| `src/parser/mod.rs` | 8 | module list | `mod tessera;` |
 | | | `check_open_blocks_inner` | A Tessera line stays open while its primary's paragraph does |
 | | | `open_new_blocks` | `handle_tessera_line` in the chain of block starts, between block quotes and ATX headings |
 | | | `detect_setext_heading` | A text primary never becomes a setext heading (changed condition) |
 | | | `detect_table` | A text primary never becomes a table header (changed condition) |
 | | | `finalize_borrowed` | A text primary has no link reference definitions (changed statement) |
+| | | `finalize_borrowed` | A paragraph that starts with link reference definitions starts on the first line after them (phase 05: upstream leaves its start position, and so every inline position in it, on the definitions). **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
+| | | `handle_setext_heading` | The same, for a setext heading's text (phase 05). **Candidate to upstream**, with the row above |
 | `src/html.rs` | 1 | `format_node_default` | Renders a Tessera line with `tessera::render_html` |
 | `src/cm.rs` | 2 | `CommonMarkFormatter::format_node` | Formats a Tessera line |
 | | | `CommonMarkFormatter::format_tessera_line` | New method, after `format_front_matter` |

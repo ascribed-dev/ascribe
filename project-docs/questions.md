@@ -545,4 +545,28 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Versions are never allowed on a dimension name.
 - **Proposed resolution:** option 1: it rejects only what is certainly wrong (a version on a dimension whose values are all versionless) and never rejects a spec that has a sensible meaning. **Implemented now: option 3**, the most conservative, at the reviewer's request while the question is open (`// SPEC-QUESTION(Q29)` in `tessera-model/src/model.rs`). A version on a dimension name is reported as `model-availability-versionless` (`available-versionless` in documents) with the base message; its wording ("`deployment` is versionless") doesn't quite fit, and a message variant naming the dimension would need a registry change, so none was added.
 - **Affects:** `tessera-model` (`check_availability`); phases 10, 12 (which decide what the version means for versionless members).
+
+### Q30: Text on a directive line that fits no part of the directive
+
+- **Section:** SPEC §3.1, §3.4, §8.2, Appendix A
+- **Raised by:** phase 05
+- **Status:** open
+- **Ambiguity:** the grammar (`directive-line`) allows only a name, an attribute block, a colon, and a primary, but §3.2 recognizes a line as a directive from its keyword alone, so a known keyword can be followed by text that fits no part of the grammar, and §8.2 has no row for it. Five shapes come up:
+
+  ```
+  @note hello: text          (attributes written without braces; no colon in the right place)
+  @steps foo                 (a name, then text, on a directive with no primary)
+  @end: later                (anything after `@end`)
+  @include: my file.md       (an identifier primary ends at whitespace; ` file.md` is left over)
+  @id: two words
+  ```
+
+  The first three aren't valid directive lines, and the fourth and fifth leave text after the identifier that the spec doesn't assign to anything.
+- **Options:**
+  1. Add one error to §8.2, for example `directive-extra-text` ("`@include` takes one identifier; ` file.md` isn't part of it"), covering all five shapes.
+  2. Report each under the nearest existing row: `attribute-syntax` for text where an attribute block or colon should be, `directive-primary` for text after `@end`'s colon, and nothing for text after an identifier, which the identifier's own checks (`id-invalid`, `include-target-missing`) then catch in most cases.
+  3. Treat an identifier primary's leftover text as part of it (so `@include: my file.md` names a file with a space in it), and report the other shapes as in option 2. This contradicts §3.4's "ends at the first whitespace".
+- **Proposed resolution:** option 1. It reports every case, with a message that says what to fix, and needs one new registry entry (a contract change: phase 02's `diagnostics.toml`, with a `Fix` that removes the text). Implemented now: option 2 for the head junk and `@end`; leftover text after an identifier is kept in the tree (`IdentifierPrimary::trailing`) and reported as `directive-primary`, as Q15 proposes, with that entry's existing message.
+- **See also:** Q15 (phase 03), which covers text after an identifier primary and proposes reporting it as `directive-primary`. Resolve the two together.
+- **Affects:** `crates/tessera-syntax/src/convert.rs` (`SPEC-QUESTION(Q30)`), `crates/tessera-syntax/src/tree.rs` (`DirectiveLine::unexpected`, `IdentifierPrimary::trailing`, `EndLine::extra`); `tests/conformance/diagnostics.toml`; phases 03, 05, and 10. No conformance case should depend on these shapes until this is resolved; tag any that do `provisional`.
 - **Resolution:** _to be filled in by a human._
