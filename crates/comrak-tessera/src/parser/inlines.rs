@@ -2021,6 +2021,12 @@ impl<'a, 'r, 'o, 'd, 'c, 'p> Subject<'a, 'r, 'o, 'd, 'c, 'p> {
             self.handle_potential_attribute(inl, parent_line_offsets);
         }
 
+        // TESSERA: an attribute block directly after an image belongs to it (SPEC §5.3).
+        if is_image && self.options.extension.tessera.is_some() {
+            self.scanner.pos +=
+                crate::tessera::image_attributes_len(&self.input[self.scanner.pos..]).unwrap_or(0);
+        }
+
         last.inl_text.insert_before(inl);
         let mut itm = last.inl_text.next_sibling();
         while let Some(it) = itm {

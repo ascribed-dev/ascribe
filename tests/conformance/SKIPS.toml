@@ -12,10 +12,6 @@
 #                                         optional; skips only these checks
 
 [[skip]]
-tag = "inline"
-reason = "Adapter for tag `inline` (phrases, escapes, image attributes) not yet implemented; phase 07."
-
-[[skip]]
 tag = "model"
 reason = "Adapter for tag `model` (loading tessera.toml) not yet implemented; phase 08."
 

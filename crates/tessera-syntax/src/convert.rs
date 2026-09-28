@@ -20,6 +20,8 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
     comrak_options.extension.tessera = Some(options.keywords());
     comrak_options.extension.table = true;
     comrak_options.extension.front_matter_delimiter = Some("---".to_owned());
+    // Keep each escape as a node, so a text's span includes its backslash.
+    comrak_options.parse.escaped_char_spans = true;
 
     let arena = Arena::new();
     let root = parse_document(&arena, source, &comrak_options);
@@ -33,7 +35,10 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
         .first_child()
         .and_then(|first| converter.frontmatter(first));
     let blocks = converter.blocks(root);
-    let blocks = crate::structure::run(source, options, blocks, &mut converter.issues);
+    let mut blocks = crate::structure::run(source, options, blocks, &mut converter.issues);
+    // After the structure pass, so the inline pass sees the final tree.
+    let escaped_phrases =
+        crate::inline::extend(source, options.file, &mut blocks, &mut converter.issues);
     let mut issues = converter.issues;
     issues.sort_by_key(|i| i.location.span.start());
     ParsedDocument {
@@ -42,6 +47,7 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
         frontmatter,
         blocks,
         issues,
+        escaped_phrases,
     }
 }
 
@@ -206,6 +212,7 @@ impl<'a> Converter<'a> {
                     info,
                     info_span,
                     literal: code.literal.clone(),
+                    phrases: None,
                 })
             }
             NodeValue::BlockQuote => {
@@ -630,7 +637,15 @@ impl<'a> Converter<'a> {
         let span = self.raw_span(node);
         let ast = node.data();
         let kind = match &ast.value {
-            NodeValue::Text(text) => {
+            // An escape is text whose span includes its backslash.
+            NodeValue::Text(_) | NodeValue::Escaped => {
+                let text = match &ast.value {
+                    NodeValue::Text(text) => text.to_string(),
+                    _ => node
+                        .first_child()
+                        .and_then(|c| c.data().value.text().map(|t| t.to_string()))
+                        .unwrap_or_default(),
+                };
                 // Text that touches the text before it is one node.
                 if let Some(Inline {
                     span: previous,
@@ -638,11 +653,11 @@ impl<'a> Converter<'a> {
                 }) = out.last_mut()
                     && previous.end() == span.start()
                 {
-                    previous_text.push_str(text);
+                    previous_text.push_str(&text);
                     *previous = Span::new(previous.start(), span.end());
                     return;
                 }
-                InlineKind::Text(text.to_string())
+                InlineKind::Text(text)
             }
             NodeValue::SoftBreak => InlineKind::SoftBreak,
             NodeValue::LineBreak => InlineKind::HardBreak,
@@ -671,6 +686,7 @@ impl<'a> Converter<'a> {
             destination: link.url.clone(),
             title: (!link.title.is_empty()).then(|| link.title.clone()),
             label,
+            destination_phrases: Vec::new(),
             children: self.inlines(node),
         }
     }
@@ -689,6 +705,7 @@ impl<'a> Converter<'a> {
             label,
             alt,
             children: self.inlines(node),
+            destination_phrases: Vec::new(),
             attributes: None,
         }
     }
@@ -768,7 +785,7 @@ fn hull(span: Span, others: impl Iterator<Item = Span>) -> Span {
 
 /// The index of the `]` that matches the `[` at `open`, skipping escaped
 /// brackets and code spans.
-fn matching_bracket(text: &str, open: usize) -> Option<usize> {
+pub(crate) fn matching_bracket(text: &str, open: usize) -> Option<usize> {
     let bytes = text.as_bytes();
     if bytes.get(open) != Some(&b'[') {
         return None;

@@ -214,6 +214,32 @@ fn skip_attributes(bytes: &[u8], start: usize) -> Option<usize> {
     None
 }
 
+/// The length of the attribute block directly after an image (SPEC §5.3), if
+/// there is one. `rest` is the text right after the image. It starts with the
+/// block's `{`; the block runs to the first `}` outside a quoted string (the
+/// rule of [`skip_attributes`]) and must close on the same line.
+///
+/// Whatever is between the braces is the block: whether it's well-formed is
+/// for `tessera-syntax` to report. A `{` with no closing `}` on the line isn't
+/// a block here, and stays text. The inline parser skips this many bytes after
+/// an image, so the block's contents never take part in emphasis, links, or
+/// code spans; `tessera-syntax` calls it too, to find the same block.
+pub fn image_attributes_len(rest: &str) -> Option<usize> {
+    let bytes = rest.as_bytes();
+    if bytes.first() != Some(&b'{') {
+        return None;
+    }
+    let line_end = rest.find(['\r', '\n']).unwrap_or(rest.len());
+    skip_attributes(&bytes[..line_end], 0)
+}
+
+/// Decodes the HTML entities (`&amp;`, `&#35;`) in `text` as CommonMark does.
+/// `tessera-syntax` uses it to work out the decoded value of a piece of text
+/// from its source.
+pub fn unescape_entities(text: &str) -> std::borrow::Cow<'_, str> {
+    crate::entity::unescape_html(text)
+}
+
 /// Renders a Tessera line as HTML.
 ///
 /// This output exists only so comrak's HTML renderer handles every node; the
@@ -243,6 +269,26 @@ pub(crate) fn render_html<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn image_attribute_blocks() {
+        for (rest, len) in [
+            ("{w=1}", Some(5)),
+            ("{w=1} tail", Some(5)),
+            ("{}", Some(2)),
+            ("{key}", Some(5)),
+            (r#"{a="}"} x"#, Some(7)),
+            (r#"{a="\"}"}"#, Some(9)),
+            ("{w=1", None),
+            ("{w=1\n}", None),
+            ("{a=\"}", None),
+            (" {w=1}", None),
+            ("w=1", None),
+            ("", None),
+        ] {
+            assert_eq!(image_attributes_len(rest), len, "{rest:?}");
+        }
+    }
 
     fn options() -> TesseraOptions {
         TesseraOptions::new()

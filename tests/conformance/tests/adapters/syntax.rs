@@ -12,7 +12,7 @@
 
 use tessera_conformance::outline::normalize_ws;
 use tessera_conformance::{
-    AdapterError, AdapterResult, Attributes, Case, ConformanceAdapter, Diagnostic, Node,
+    AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic, Node,
 };
 use tessera_core::{
     self as core, Binding as SchemaBinding, DirectiveSchema, Forms, LineIndex, Origin, Primary,
@@ -31,7 +31,7 @@ impl ConformanceAdapter for SyntaxAdapter {
     }
 
     fn handles_tag(&self, tag: &str) -> bool {
-        matches!(tag, "parser" | "structure")
+        matches!(tag, "parser" | "structure" | "inline")
     }
 
     fn outline(&self, case: &Case) -> AdapterResult<Vec<Node>> {
@@ -213,12 +213,7 @@ fn paragraph(source: &str, block: &Block, p: &tessera_syntax::Paragraph) -> Node
     if let [only] = p.inlines.as_slice()
         && let tessera_syntax::InlineKind::Image(image) = &only.kind
     {
-        return Node::Image {
-            src: image.destination.clone(),
-            alt: Some(text(source, image.alt)),
-            title: image.title.clone(),
-            attributes: Attributes::new(),
-        };
+        return super::inline::image(source, image);
     }
     Node::Paragraph {
         text: Some(text(source, block.span)),

@@ -4,6 +4,7 @@
 //! extends an existing one), registers it below, and removes the skip entries
 //! for the tags it now handles from `SKIPS.toml`.
 
+mod inline;
 mod structure;
 mod syntax;
 

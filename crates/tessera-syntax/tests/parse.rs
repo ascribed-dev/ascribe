@@ -481,7 +481,7 @@ fn blocks_and_inlines() {
 }
 
 #[test]
-fn produces_the_nodes_of_phase_06_but_not_phase_07() {
+fn produces_the_nodes_of_phase_06_and_07() {
     let d = doc(".Title\n@note:\nx\n@end\n@variant {a=b}:\n{phrase} ![i](s){w=1}\n@end\n");
     let text = format!("{:?}", d.blocks);
     // Phase 06: containers, groups, and attached titles. A title line is
@@ -490,8 +490,9 @@ fn produces_the_nodes_of_phase_06_but_not_phase_07() {
         assert!(text.contains(produced), "{produced}");
     }
     assert!(!text.contains("Title("));
-    // Phase 07 fills these in.
-    assert!(!text.contains("Phrase("));
+    // Phase 07: phrase candidates and image attributes.
+    assert!(text.contains("Phrase("));
+    assert!(text.contains("ImageAttributes"));
 }
 
 #[test]

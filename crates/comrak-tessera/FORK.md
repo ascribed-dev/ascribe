@@ -55,13 +55,14 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 | | | `finalize_borrowed` | A text primary has no link reference definitions (changed statement) |
 | | | `finalize_borrowed` | A paragraph that starts with link reference definitions starts on the first line after them (phase 05: upstream leaves its start position, and so every inline position in it, on the definitions). **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
 | | | `handle_setext_heading` | The same, for a setext heading's text (phase 05). **Candidate to upstream**, with the row above |
+| `src/parser/inlines.rs` | 1 | `close_bracket_match` | After an image, skips the attribute block that follows it directly (`![alt](src){width=600}`), so its contents are never parsed as emphasis, links, or code (phase 07). The scan is `tessera::image_attributes_len`, in Tessera's own file |
 | `src/html.rs` | 1 | `format_node_default` | Renders a Tessera line with `tessera::render_html` |
 | `src/cm.rs` | 2 | `CommonMarkFormatter::format_node` | Formats a Tessera line |
 | | | `CommonMarkFormatter::format_tessera_line` | New method, after `format_front_matter` |
 | `src/xml.rs` | 1 | `XmlFormatter::format_node` | A `raw` attribute on `tessera_line` |
 | `src/tests/sourcepos.rs` | 3 | `TESSERA_LINE`, `node_values`, `sourcepos` | Upstream's test requires a case for every node type |
 
-In total: 71 lines added and 3 changed in 7 upstream source files (44 of the added lines are code; the rest are comments), in 19 hunks, plus 13 lines in one upstream test. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
+In total: 76 lines added and 3 changed in 8 upstream source files (48 of the added lines are code; the rest are comments), in 20 hunks, plus 13 lines in one upstream test. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
 
 Also Tessera's, outside `src/`: `Cargo.toml`, this file, `SPIKE.md`, and the spike tests in `tests/spike.rs`.
 

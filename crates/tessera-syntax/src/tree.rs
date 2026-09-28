@@ -30,8 +30,10 @@
 //!   around them (a following-block directive and its block are neighbors),
 //!   and end lines that close nothing, which are reported.
 //! - **Phase 07 fills in inline extensions**: [`InlineKind::Phrase`] for a
-//!   `{key}` candidate in text, and [`Image::attributes`] for the attribute
-//!   block after an image.
+//!   `{key}` candidate in text (and [`Link::destination_phrases`],
+//!   [`Image::destination_phrases`], and [`CodeBlock::phrases`] where a
+//!   candidate isn't an inline node), and [`Image::attributes`] for the
+//!   attribute block after an image.
 //!
 //! Those node kinds exist now, and are documented, so phases 06 and 07 can
 //! run in parallel without both editing this file.
@@ -60,6 +62,12 @@ pub struct ParsedDocument {
     /// blocks, primaries the directive doesn't take (or lacks), and
     /// directive-shaped lines with an unknown name.
     pub issues: Vec<Issue>,
+    /// The `\{key}` escapes (SPEC §2.3) outside code, in source order: each
+    /// is a [`Phrase`] whose span runs from the backslash through the `}`.
+    /// They are plain text in the tree, never candidates; they're kept so that
+    /// tools can tell an author's escape from text that was never a phrase
+    /// (the undeclared-phrase warning is silenced by one).
+    pub escaped_phrases: Vec<Phrase>,
 }
 
 /// YAML frontmatter (SPEC §2.1): a leading block delimited by `---` lines.
@@ -159,6 +167,11 @@ pub struct CodeBlock {
     /// The block's literal text, as the code it holds (fences and indentation
     /// removed).
     pub literal: String,
+    /// The phrase candidates in the block, in source order, when it's a fence
+    /// whose info string contains the word `phrases=true` (SPEC §5.1); `None`
+    /// for every other code block, where `{key}` is never a phrase. `Some`
+    /// with no candidates is a fence that opted in and has none.
+    pub phrases: Option<Vec<Phrase>>,
 }
 
 /// A block quote.
@@ -507,6 +520,10 @@ pub struct Link {
     pub title: Option<String>,
     /// For a full reference, the label between its second pair of brackets.
     pub label: Option<Span>,
+    /// The phrase candidates in the destination as written, in source order
+    /// (`[text]({api}streaming)`). The destination itself is unchanged. Only
+    /// the inline form has any; see `Image::destination_phrases`.
+    pub destination_phrases: Vec<Phrase>,
     /// The link text.
     pub children: Vec<Inline>,
 }
@@ -528,25 +545,34 @@ pub struct Image {
     pub alt: Span,
     /// The alt text as inline content.
     pub children: Vec<Inline>,
-    /// The attribute block after the image (SPEC §5.3). **Phase 07 fills
-    /// this in.**
+    /// The phrase candidates in an inline image's source, as written, in
+    /// source order (`![alt]({assets}a.png)`). The destination itself is
+    /// unchanged. Reference forms have none: their destination is in the
+    /// definition, which isn't a node.
+    pub destination_phrases: Vec<Phrase>,
+    /// The attribute block directly after the image (SPEC §5.3). The image's
+    /// span covers it.
     pub attributes: Option<ImageAttributes>,
 }
 
-/// The attribute block after an image (SPEC §5.3). **Phase 07 fills this in.**
+/// The attribute block after an image (SPEC §5.3).
 #[derive(Clone, Debug, PartialEq)]
 pub struct ImageAttributes {
-    /// The parsed block, from `tessera_core::parse_attribute_block`.
+    /// The parsed block, from `tessera_core::parse_attribute_block`. Its
+    /// problems are in [`ParsedDocument::issues`].
     pub block: AttributeBlock,
 }
 
-/// A phrase candidate: `{key}` (SPEC §5.1). **Phase 07 fills this in.**
+/// A phrase candidate: `{key}` (SPEC §5.1). Whether the key is declared is
+/// decided later; the parser records every candidate.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Phrase {
     /// The key, between the braces.
     pub key: String,
     /// The key's span, without the braces.
     pub key_span: Span,
+    /// The whole candidate, braces included.
+    pub span: Span,
 }
 
 // ---------------------------------------------------------------------------

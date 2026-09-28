@@ -22,6 +22,12 @@ pub fn check_tree(source: &str, doc: &ParsedDocument) -> Vec<String> {
     for issue in &doc.issues {
         c.valid(issue.location.span, "issue");
     }
+    for escaped in &doc.escaped_phrases {
+        c.phrase(escaped, "escaped phrase");
+        if !c.text(escaped.span).starts_with("\\{") {
+            c.problem("escaped phrase", escaped.span, "doesn't start with `\\{`");
+        }
+    }
     c.problems
 }
 
@@ -49,6 +55,22 @@ impl Checker<'_> {
             self.problem(what, span, "not a valid range of the source");
         }
         ok
+    }
+
+    /// A phrase's spans: the candidate is `{key}` (or `\{key}`) in the source.
+    fn phrase(&mut self, phrase: &Phrase, what: &str) {
+        let (span, key) = (phrase.span, phrase.key_span);
+        if !self.valid(span, what) || !self.valid(key, what) {
+            return;
+        }
+        self.within(key, span, "phrase key");
+        if self.text(key) != phrase.key {
+            self.problem("phrase key", key, &format!("isn't {:?}", phrase.key));
+        }
+        if !self.text(span).ends_with(&format!("{{{}}}", phrase.key)) || key.end() + 1 != span.end()
+        {
+            self.problem(what, span, "isn't `{key}` around its key");
+        }
     }
 
     fn within(&mut self, inner: Span, outer: Span, what: &str) {
@@ -111,6 +133,13 @@ impl Checker<'_> {
                 self.inlines(&p.inlines, span);
             }
             BlockKind::CodeBlock(c) => {
+                for phrase in c.phrases.iter().flatten() {
+                    self.within(phrase.span, span, "code phrase");
+                    self.phrase(phrase, "code phrase");
+                }
+                if c.phrases.is_some() && !c.fenced {
+                    self.problem("code", span, "an indented block with phrases");
+                }
                 if let Some(info) = c.info_span {
                     self.within(info, span, "info");
                     if self.text(info) != c.info && !self.text(info).contains(['\\', '&']) {
@@ -428,6 +457,10 @@ impl Checker<'_> {
                     if let Some(label) = l.label {
                         self.within(label, span, "link label");
                     }
+                    for phrase in &l.destination_phrases {
+                        self.within(phrase.span, span, "destination phrase");
+                        self.phrase(phrase, "destination phrase");
+                    }
                     self.inlines(&l.children, span);
                 }
                 InlineKind::Image(i) => {
@@ -436,10 +469,28 @@ impl Checker<'_> {
                     if let Some(label) = i.label {
                         self.within(label, span, "image label");
                     }
+                    for phrase in &i.destination_phrases {
+                        self.within(phrase.span, span, "destination phrase");
+                        self.phrase(phrase, "destination phrase");
+                    }
+                    // The attribute block is the end of the image.
+                    if let Some(attributes) = &i.attributes {
+                        let block = attributes.block.span;
+                        self.within(block, span, "image attributes");
+                        if block.end() != span.end() {
+                            self.problem("image attributes", block, "isn't at the image's end");
+                        }
+                        if !self.text(block).starts_with('{') || !self.text(block).ends_with('}') {
+                            self.problem("image attributes", block, "isn't `{…}`");
+                        }
+                    }
                     self.inlines(&i.children, i.alt);
                 }
-                InlineKind::Phrase(_) => {
-                    self.problem("inline", span, "a node phase 05 doesn't produce");
+                InlineKind::Phrase(phrase) => {
+                    self.phrase(phrase, "phrase");
+                    if phrase.span != span {
+                        self.problem("phrase", span, "isn't the phrase's span");
+                    }
                 }
             }
         }
