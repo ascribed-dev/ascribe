@@ -39,7 +39,7 @@ This specification defines:
 - **compilation**: how a processor resolves a documentation set and emits output;
 - requirements for the **authoring environment**.
 
-A reference implementation is a VS Code extension plus a command-line compiler that share one parser and validator.
+The reference implementation is a compiler written in Rust, which runs as a command-line tool and as a language server, and a VS Code extension that hosts the language server. The command line and the editor share one parser and validator.
 
 ### 1.2 Design principles
 
@@ -125,7 +125,7 @@ A **directive line** has this shape (ABNF rule `directive-line`):
 - **Name.** The directive's keyword (§3.2).
 - **Attributes.** OPTIONAL. Metadata as `key=value` pairs in braces (§3.3).
 - **Primary.** OPTIONAL. The directive's main value: a path, an identifier, or text (§3.4). Introduced by `:`.
-- **Trailing colon.** A `:` that ends the line, with no primary after it, opens a container (§3.5). Every container opener ends this way, and no other directive line does.
+- **Trailing colon.** A `:` with no primary after it, only the end of the line or whitespace, opens a container (§3.5). Every container opener ends this way, and no other directive line does. A text primary that happens to end in `:` is still a primary: `@note: Important:` is a one-line note.
 
 Spacing between these parts doesn't matter: processors accept any spaces or tabs between the name, the attributes, the colon, and the primary, including none, and ignore whitespace at the end of the line. Canonical form (§8.3) fixes one spelling.
 
@@ -208,7 +208,7 @@ Second paragraph, still inside the callout.
 
 A single keyword can permit both forms. There's never a separate keyword for the container version of a directive. Each directive's schema declares which forms it permits (§7.2).
 
-**Choosing a form.** A directive's form is decided by its own line, never by content further down: **a directive line that ends in `:` opens a container, and any other directive line is in line form.** Trailing whitespace after the colon doesn't count.
+**Choosing a form.** A directive's form is decided by its own line, never by content further down: **a directive line whose `:` has nothing after it (an empty primary) opens a container, and any other directive line is in line form.** Trailing whitespace after the colon doesn't count, and neither does a colon at the end of a non-empty primary.
 
 Each directive's schema declares which forms it permits (§7.2), and processors check the line against it:
 
@@ -320,7 +320,7 @@ Gives a heading an explicit, stable id.
 ```
 
 - **Form:** line. **Binding:** preceding heading (at the top of the section, §3.8). **Primary:** REQUIRED identifier (letters, digits, hyphens).
-- The id replaces the heading's automatic id (§5.5). A heading has exactly one id.
+- The id replaces the heading's slug, as both its source id and its page id (§5.5).
 - The id MUST be unique within its page.
 - The id names the heading's section, which links (§5.2) and `@include` (§4.2) can both target.
 
@@ -335,7 +335,7 @@ Transcludes a file or a heading's section into the current document.
 
 - **Form:** line. **Binding:** self. **Primary:** REQUIRED path, optionally followed by `#` and an id.
 - **Paths** are relative to the including file, or, when they begin with `/`, relative to the content root. Processors MUST NOT resolve a bare filename by searching other directories.
-- With `#id`, only that heading's section is included.
+- With `#id`, only the section of the heading with that source id (§5.5) is included.
 - **Attributes:**
 
   | Key | Type | Default | Meaning |
@@ -551,7 +551,7 @@ Links are CommonMark links. Their destinations are **file paths**.
 See [](keys.md#rotate-keys).
 ```
 
-- **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` targets a heading (§5.5).
+- **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading in the target file by its source id; the compiled link points at that heading's page id (§5.5).
 - The target file, and the id if present, MUST exist.
 - **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise.
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
@@ -559,7 +559,7 @@ See [](keys.md#rotate-keys).
 
 ### 5.3 Images
 
-Images are CommonMark images. Alt text and titles use CommonMark's own syntax. Other attributes go in an attribute block placed directly after the image, with no space between:
+Images are CommonMark images. Alt text and titles use CommonMark's own syntax. Other attributes go in an attribute block placed directly after the image, with no space between. This applies to every form of CommonMark image: inline (`![alt](src)`) and reference (`![alt][ref]`, `![alt][]`, `![alt]`):
 
 ```
 ![The Quill settings page](settings.png){width=600}
@@ -576,9 +576,13 @@ The content model MAY declare a glossary (§7.2). Processors link occurrences of
 
 ### 5.5 Heading ids
 
-Every heading has exactly one id.
+Every heading has two ids: one for referring to it in source, and one for its anchor on a published page.
 
-- By default, the id is the heading's **slug**, computed from the heading's rendered text (after phrase substitution) with the slugging algorithm named in the consumer profile (§9.5).
+- **Source id.** The id that includes (§4.2) and links (§5.2) use to name a heading in a given file. It's the heading's `@id` if it has one. Otherwise it's the heading's **slug**, computed from the heading's text (with phrases substituted) by the slugging algorithm the consumer profile names (§9.5), with duplicates within the file numbered the way that algorithm numbers them. Source ids depend only on the file, never on a build.
+- **Page id.** The heading's anchor on the page it's published in, for a given build. It's the `@id` if there is one; otherwise it's computed like the source id, but on the expanded page after includes and build modes (§9.2), so duplicates are numbered across the whole page. A compiled link points at its target heading's page id.
+
+For a heading with `@id`, both ids are the `@id`, which is what makes it stable.
+
 - An `@id` directive under the heading replaces the slug (§4.1).
 - Processors SHOULD warn when a heading without `@id` contains a phrase, or repeats the text of another heading on the same page. In either case its slug can change without the heading itself being edited.
 
@@ -606,7 +610,9 @@ A **project widget** is a directive defined by a documentation set rather than b
 
 The content model is a documentation set's schema. It is the single contract shared by the authoring environment, the validator, and the compiler: all three read the same declarations, so they can't disagree about what's valid.
 
-Content models are written as Zod schemas. The consumer's own schemas (for example, an Astro content collection schema) SHOULD be generated from the content model rather than maintained separately.
+The content model is a TOML file named `tessera.toml` at the project root. Processors read it directly. Consumers' own schemas are generated from it rather than maintained separately; for Astro, that's the content collection's Zod schema (§9.6).
+
+TOML keeps the content model's values unambiguous: strings are always quoted, so a value such as `no` or `3.10` can't change type the way it can in YAML.
 
 ### 7.2 Declarations
 
@@ -614,7 +620,7 @@ A content model declares the following.
 
 | Declaration | Contents | Used by |
 |---|---|---|
-| Content types | A frontmatter schema per page type, and a fragment schema | §2 |
+| Content types | A frontmatter schema per page type, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default | §2 |
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
@@ -739,7 +745,7 @@ Compilers MUST produce results equivalent to applying these steps in order:
 2. **Availability.** Resolve feature keys and inherited scopes (§4.4).
 3. **Build modes.** Apply the build's variant and availability modes (§9.3).
 4. **Phrases.** Substitute phrases (§5.1).
-5. **Heading ids.** Assign every heading its id (§5.5).
+5. **Heading ids.** Assign every heading its page id (§5.5). Source ids are computed per file, before step 1, because includes and links use them.
 6. **Links.** Fill in empty link text from target titles, and rewrite file-path destinations into routes (§5.2).
 7. **Glossary.** Link glossary terms (§5.4).
 
@@ -777,9 +783,9 @@ For example, a build selecting `{ deployment: cloud }` reduces a `deployment` gr
 Content is **available** for target *T* at version *V* when its effective availability (§4.4, after inheritance):
 
 1. has no spec at all, or lists *T*, directly or through *T*'s dimension name; and
-2. for a versioned target, has a state in effect at *V* that counts as available (§7.2).
+2. has a state in effect for *T* at *V* that counts as available (§7.2).
 
-The state in effect at *V* is the last state in the target's history whose start version is at or before *V*. If *V* precedes the first state's start version, no state is in effect, and the content isn't available. A bare target with no version is in effect at every version. For versionless targets, only condition 1 applies.
+The state in effect at *V* is the last state in the target's history whose start version is at or before *V*. If *V* precedes the first state's start version, no state is in effect, and the content isn't available. A bare target with no version is in effect at every version. A versionless target has a single state, which is in effect at every version, so content marked `cloud removed` is never available for `cloud`. Content that has no spec, or reaches *T* through inheritance without a state, is treated as generally available.
 
 ### 9.4 Outputs
 
@@ -796,16 +802,18 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 | `@note {type=tip}` with title | `<tessera-note type="tip" title="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
 | `@steps` | `<tessera-steps>` wrapping the list | The ordered list |
 | `@variant` group, `switch` | `<tessera-tabs sync="…">` containing one `<tessera-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
-| `@variant` group, selection | The matching arm's content | The matching arm's content |
+| `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<tessera-tabs>` group | One arm becomes plain content; several stay labeled sections |
 | `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
 | `@available`, `badge` | A `<tessera-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
-| `@available`, `filter` | Unavailable content removed | Unavailable content removed |
+| `@available`, `filter` | Unavailable content removed; the rest annotated as in `badge` | Unavailable content removed; the rest annotated as in `badge` |
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
 
 Labels for dimension values come from the content model's display labels.
 
 In the site output, emitters MUST place a blank line after each opening tag and before each closing tag of an element that wraps markdown, so that CommonMark parses the wrapped content as markdown.
+
+**Assets.** Every output is self-contained: it works without access to the source files. Local files a page references (image sources, and link targets that aren't pages) are copied into the output, and references to them are rewritten to point at the copies. A reference resolves from the file it's written in, so an image referenced inside an included fragment is the one beside the fragment (§4.2). The consumer profile decides where copies go and how references to them are written (§9.5), so that a consumer's own image processing still applies.
 
 ### 9.5 Consumer profile
 
@@ -815,14 +823,14 @@ The consumer profile, declared in the content model, describes how the site outp
 - **Slugging:** the algorithm the consumer uses for heading ids.
 - **Heading ids:** how to emit an explicit id so the consumer keeps its own heading and table-of-contents processing.
 - **HTML passthrough:** whether the consumer renders raw HTML in markdown.
-- **Images:** how to emit image attributes so the consumer's image processing still applies.
+- **Images and assets:** how to emit image attributes, where copied assets go, and how references to them are written, so the consumer's image processing still applies.
 
 ### 9.6 Astro
 
 Astro is the primary consumer, through its content collections.
 
 - Compiled pages from the site output are loaded into an Astro content collection.
-- The collection's schema MUST be generated from the content model.
+- The collection's schema MUST be generated from the content model, as a Zod schema.
 - Page layouts are the project's own.
 - Page-level frontmatter, including `available`, reaches the layout as collection data.
 
@@ -885,7 +893,7 @@ OWS             = *( SP / HTAB )                          ; optional spaces or t
 RWS             = 1*( SP / HTAB )                         ; required spaces or tabs
 
 directive-line  = "@" name [ OWS attributes ] [ OWS ":" [ OWS primary ] ] OWS
-                                        ; ":" ending the line opens a container
+                                        ; ":" with no primary after it opens a container
 end-line        = "@end" OWS
 title-line      = "." title-start *title-char
 title-start     = %x21-2D / %x2F-7E / UTF8-non-ascii      ; not space, not "."
@@ -1091,4 +1099,5 @@ Notes on the example:
 - Swift `@available` attribute — https://docs.swift.org/swift-book/documentation/the-swift-programming-language/attributes/
 - Elastic docs-builder — https://github.com/elastic/docs-builder
 - Astro content collections — https://docs.astro.build/en/guides/content-collections/
+- TOML — https://toml.io/
 - Zod — https://zod.dev/
