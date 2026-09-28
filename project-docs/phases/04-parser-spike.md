@@ -41,10 +41,10 @@ Prove, with a small amount of code, that comrak can be forked to support Tessera
 
 ## Acceptance criteria
 
-- [ ] Every spike test in task 4 passes.
-- [ ] The CommonMark suite passes with the Tessera option off, and with it on apart from documented, justified exceptions.
-- [ ] `FORK.md` lists every changed location, each marked in the code with a `// TESSERA:` comment.
-- [ ] `SPIKE.md` ends with a go or no-go recommendation and its reasons.
+- [x] Every spike test in task 4 passes.
+- [x] The CommonMark suite passes with the Tessera option off, and with it on apart from documented, justified exceptions.
+- [x] `FORK.md` lists every changed location, each marked in the code with a `// TESSERA:` comment.
+- [x] `SPIKE.md` ends with a go or no-go recommendation and its reasons.
 
 ## Out of scope
 
@@ -57,4 +57,52 @@ Prove, with a small amount of code, that comrak can be forked to support Tessera
 
 ## Handoff notes
 
-_To be filled in by the implementing agent._
+### Recommendation
+
+**Go: continue with the comrak fork.** The reasons and evidence are in [`crates/comrak-tessera/SPIKE.md`](../../crates/comrak-tessera/SPIKE.md). In short: every block-level requirement works; the CommonMark 0.31.2 suite passes 652/652 with the option off and on, with no exceptions; upstream's 490 unit tests pass; the change to upstream is 44 lines of code in 7 files, each location marked; and the same patch applied cleanly to comrak releases from the previous eight months. A human confirms go or no-go before phase 05 starts.
+
+### What was built
+
+- **`crates/comrak-tessera`**: comrak **v0.55.0** (the latest release, tag commit `6fbe87f`), vendored unchanged in its own commit ("Vendor comrak v0.55.0 as crates/comrak-tessera"), minus the CLI's `src/main.rs`, with upstream's `COPYING` (BSD-2-Clause). The manifest is Tessera's: package `comrak-tessera`, library `comrak_tessera`, version `0.55.0`, `publish = false`, no default features, the CLI and syntect features removed, doctests off (they import `comrak`). It's a workspace member and a workspace dependency (`comrak-tessera.workspace = true`). It doesn't use the workspace lints; see `FORK.md`.
+- **`FORK.md`**: the upstream version, why the fork exists, what was and wasn't vendored, the manifest changes, a table of every changed location (file, marker count, function, what), and the procedure for merging an upstream release. `tests/fork_md.rs` fails if the table's marker counts disagree with the `// TESSERA:` markers in `src/`.
+- **The Tessera option and block**: `src/tessera.rs` (option, node, scanner, HTML rendering) and `src/parser/tessera.rs` (the parser hooks), plus 19 marked hunks in 7 upstream files and 3 in upstream's sourcepos test.
+- **Spike tests**: `tests/spike.rs`, 22 tests covering every case in task 4 and the edge cases listed in `SPIKE.md`; scanner unit tests in `src/tessera.rs`.
+- **CommonMark suite against the fork**: `tests/commonmark/tests/fork.rs`, with baselines `comrak-tessera-off.toml` and `comrak-tessera-on.toml`. Off: 652/652, and the test also requires it to match unmodified comrak's baseline. On (built-ins, `end`, one widget): 652/652, and no example's HTML changes. A third run puts an `@end` line before every example: 652/652. Documented in `tests/commonmark/README.md`.
+- **`SPIKE.md`**: what worked, what was hard, how intrusive the change is, a dry run of upstream merges, risks for later phases, the fallback, and the recommendation.
+
+### Interfaces later phases use
+
+All in `comrak_tessera` (depend on `comrak-tessera.workspace = true`; the rest of comrak's API is unchanged):
+
+- `tessera::TesseraOptions`: `new()`, `keyword(name, text_primary) -> Self`, `insert(name, text_primary)`, `get(name) -> Option<TesseraKeyword>`, `len()`, `is_empty()`. Names are given without `@`. The caller supplies every keyword, including `end`; the fork knows no built-ins. Phases 05 and 08 build the set from the built-in directives and the content model's widgets.
+- `tessera::TesseraKeyword { text_primary: bool }`.
+- `options.extension.tessera: Option<Arc<TesseraOptions>>`. `None` (the default) is plain comrak.
+- `nodes::NodeValue::TesseraLine(Box<tessera::NodeTesseraLine>)`, with:
+  - `raw: String`: the line from `@` to the end of the line, without the line ending; trailing whitespace is kept. Container indentation and blockquote markers aren't included.
+  - `name: String`: the keyword, such as `note` or `end`.
+  - `text_primary: Option<usize>`: the byte offset in `raw` where a non-empty text primary starts. `Some` exactly when the node has a child.
+  - Children: none, or one `Paragraph` holding the text primary from its first character through its last continuation line, already parsed into inlines.
+  - Sourcepos: starts at the `@`; ends at the end of the line, or of the primary's last line. Columns are comrak's (1-based bytes, unless `parse.sourcepos_chars` is on).
+- Recognition: `@`, a known keyword (a greedy run of `[a-z0-9-]` looked up in the set), then a space, tab, `{`, `:`, or the end of the line, at a block start that isn't indented four or more columns past its container. A text primary starts after an optional attribute block (quoted strings honored) and a `:`, and must be non-empty; a head the scanner can't read gets no primary. Parsing the head properly is phase 05's job.
+- The HTML renderer emits `<div data-tessera-line="RAW">…</div>`, and the XML renderer a `tessera_line` element with a `raw` attribute. Both exist only so comrak's renderers handle every node.
+
+### Decisions
+
+- **Vendored from the upstream tag rather than the crates.io package**, so upstream's unit tests (`src/tests/`) come along. They run in the workspace, and they caught a real bug during the spike.
+- **The primary is a real `Paragraph`**, the approach the phase suggested. It inherits every paragraph rule (interruption, lazy continuation, indented lines) with no extra code, at the cost of three guards for the paragraph conversions that don't apply to inline content (Q2).
+- **New match arms sit next to old, stable neighbors** (`Document`, `FrontMatter`, `Paragraph`), not at the end next to upstream's newest variant, so upstream's appended variants don't conflict. `handle_tessera_line` sits between block quotes and ATX headings in the block-start chain.
+- **Up to three spaces of extra indentation are allowed** before a directive line, as for a heading (Q1).
+- **`is_text_primary` uses `try_borrow`**, because some upstream containers finalize their children while holding their own `RefCell` borrow.
+- **Doctests are off** in the fork. The one Tessera doc example is duplicated as the test `module_example`.
+- **Three lints are allowed in the fork's manifest** (`deprecated`, `clippy::vec_init_then_push`, `clippy::write_with_newline`), all tripped only by upstream's tests, so upstream code stays unchanged.
+- **The root `Cargo.toml`** gained one workspace member and one workspace dependency (`comrak-tessera`), nothing else. The crates.io `comrak` dependency stays, for phase 00's unmodified baseline.
+
+### Left open
+
+- **Spec questions Q1 and Q2** in `project-docs/questions.md`, both implemented in their proposed (conservative) reading and marked `SPEC-QUESTION`. They're numbered Q1 and Q2 because the file had no entries; if phase 02 lands questions first with the same numbers, renumber these and their markers (`crates/comrak-tessera/src/parser/tessera.rs`, `crates/comrak-tessera/tests/spike.rs`).
+- **For phase 05**: positions are comrak's line and byte column; convert them with the line index, and compute the head's sub-spans from `raw`, the node's start column, and `text_primary`. Test phase 05's head parser against the fork's scanner: they must agree on where a text primary starts. The Tessera line's child paragraph is its primary, not content.
+- **For phase 07**: inline extensions go into `src/parser/inlines.rs`. comrak's `attributes` feature already parses `{…}` after images and links (with a Pandoc grammar, not Tessera's), and `{` is already dispatched there for Phoenix HEEx; both are models to follow. Mark every change `// TESSERA:` and add it to `FORK.md`'s table (the test enforces the counts).
+- **For phase 23**: comrak's CommonMark renderer drops the escape in `\@note`, so its output would be a directive. The formatter must escape a line-initial `@keyword`, `.` title lines, and phrases itself.
+- **Not guarded**: comrak's description-lists extension could still turn a text primary into a term. Tessera doesn't enable it.
+- **Conformance**: this phase added no conformance cases and no adapter; the `parser` tag stays skipped until phase 05.
+- **CI**: to be recorded after the pull request's checks run.
