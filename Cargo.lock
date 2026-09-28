@@ -853,6 +853,12 @@ version = "0.0.0"
 [[package]]
 name = "tessera-syntax"
 version = "0.0.0"
+dependencies = [
+ "comrak-tessera",
+ "proptest",
+ "tessera-commonmark-suite",
+ "tessera-core",
+]
 
 [[package]]
 name = "thiserror"

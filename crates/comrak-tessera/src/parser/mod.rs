@@ -1376,7 +1376,12 @@ where
 
         let has_content = {
             let mut ast = container.data_mut();
-            self.resolve_reference_link_definitions(&mut ast.content)
+            // TESSERA: definitions taken from the start of the heading's text
+            // move its first line down (see `finalize_borrowed`).
+            let lines_before = ast.content.matches('\n').count();
+            let has_content = self.resolve_reference_link_definitions(&mut ast.content);
+            ast.sourcepos.start.line += lines_before - ast.content.matches('\n').count();
+            has_content
         };
         if has_content {
             container.data_mut().value = NodeValue::Heading(NodeHeading {
@@ -2155,11 +2160,16 @@ where
             }
             NodeValue::Paragraph => {
                 // TESSERA: a text primary has no link reference definitions.
+                let lines_before = content.matches('\n').count();
                 let has_content = tessera::is_text_primary(node)
                     || self.resolve_reference_link_definitions(content);
                 if !has_content {
                     node.detach();
                 }
+                // TESSERA: definitions taken from the start of a paragraph
+                // move its first line down, so the inline positions (and the
+                // paragraph's) are right.
+                ast.sourcepos.start.line += lines_before - content.matches('\n').count();
             }
             NodeValue::CodeBlock(ref mut ncb) => {
                 if !ncb.fenced {
