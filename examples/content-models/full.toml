@@ -1,0 +1,197 @@
+# Every section and key in the tessera.toml reference, used at least once.
+# Reference: project-docs/content-model.md (section numbers in comments).
+spec = "0.1"
+
+# §4
+[project]
+content-root = "docs"
+output-dir = ".tessera/build"
+
+# §5.1: `guide` is the default type; `reference` applies to reference/**.
+[types.guide]
+default = true
+
+# §6: short forms, then table forms.
+[types.guide.frontmatter]
+title = { type = "string", phrases = true, description = "The page title, shown in navigation and the browser tab." }
+description = "string?"
+order = "number?"
+featured = "boolean?"
+updated = "date?"
+level = "enum(beginner, intermediate, advanced)?"
+tags = "list(string)?"
+draft = { type = "boolean", default = false }
+status = { type = "enum(draft, review, published)", default = "published" }
+category = { type = "enum?", values = ["Getting started", "How-to guides", "Concepts"] }
+keywords = { type = "list(string)?", phrases = true }
+author = { type = "object?", fields = { name = "string", email = "string?" } }
+related = { type = "list(object)?", fields = { title = "string", url = "string" } }
+
+[types.reference]
+files = ["reference/**", "api/**/*.md"]
+
+[types.reference.frontmatter]
+title = "string"
+api-version = "string?"
+
+# §5.3
+[fragments]
+patterns = ["includes/**", "**/*.partial.md"]
+
+[fragments.frontmatter]
+owner = "string?"
+
+# §7
+[dimensions.deployment]
+label = "Deployment"
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+labels = { cloud = "Quill Cloud", self-managed = "Self-managed" }
+
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm", "yarn"]
+labels = { yarn = "Yarn" }
+
+# §8
+[versions]
+scheme = "numeric"
+
+# §9: a new state, and a built-in state relabeled.
+[lifecycle.sunset]
+available = false
+label = "sunset"
+
+[lifecycle.beta]
+label = "Beta"
+
+# §10
+[features.streaming-sync]
+name = "Streaming sync"
+available = "cloud, self-managed preview 3.4"
+
+[features.sso]
+name = "Single sign-on"
+available = "cloud beta, self-managed (preview 3.3, ga 3.5, deprecated 4.0)"
+
+# §11: a new note type, and a built-in type relabeled.
+[notes.security]
+label = "Security"
+
+[notes.tip]
+label = "Pro tip"
+
+# §12
+[phrases]
+product = "Quill"
+cloud = "Quill Cloud"
+version = "3.4.1"
+api = "https://api.quill.dev/v3/"
+support-email = "support@quill.dev"
+
+# §13
+[glossary]
+match = "first"
+case-sensitive = false
+
+[glossary.terms.api-key]
+term = "API key"
+aliases = ["API keys"]
+definition = "A secret token that authenticates the Quill agent to Quill Cloud."
+link = "/reference/glossary.md#api-key"
+
+[glossary.terms.quill-server]
+term = "Quill Server"
+definition = "The self-managed Quill server."
+case-sensitive = true
+
+# §14: declaration order is canonical attribute order.
+[images.attributes]
+width = "number?"
+height = "number?"
+loading = { type = "enum(lazy, eager)", default = "lazy" }
+theme = "set(enum(light, dark))?"
+
+# §15
+# `@quill-labspace {lab=first-sync}`: stands alone.
+[widgets.quill-labspace]
+description = "An embedded, runnable Quill lab."
+forms = ["line"]
+primary = "none"
+binding = "self"
+title = "none"
+groupable = false
+plain-fallback = "Try this in the Quill lab at labs.quill.dev."
+
+[widgets.quill-labspace.attributes]
+lab = "string"
+height = "number?"
+
+# `@quill-api-ref: listDocuments` under a heading: documents that section.
+[widgets.quill-api-ref]
+description = "Links a section to an operation in the Quill API reference."
+forms = ["line"]
+primary = "identifier"
+binding = "heading"
+attributes = { version = "string?" }
+plain-fallback = "See the Quill API reference."
+
+# `@quill-audience {role=admin|developer}`: at the top of a section, the
+# section; anywhere else, the block it touches.
+[widgets.quill-audience]
+forms = ["line"]
+binding = "heading-or-block"
+attributes = { role = "set(enum(admin, developer, writer))" }
+
+# `@quill-aside: text`, `@quill-aside` binding the next block, or
+# `@quill-aside:` as a container; optionally titled.
+[widgets.quill-aside]
+forms = ["line", "container"]
+primary = "text?"
+binding = "block"
+title = "accepted"
+plain-content = "keep"
+
+# `.Before` / `@quill-compare:` … `.After` / `@quill-compare:` … `@end`
+[widgets.quill-compare]
+description = "Side-by-side alternatives, such as before and after."
+forms = ["container"]
+title = "required"
+groupable = true
+attributes = { highlight = { type = "boolean", default = false } }
+
+# `@quill-interactive:` … `@end`: content for the interactive site only.
+[widgets.quill-interactive]
+forms = ["container"]
+plain-fallback = "This section is interactive. See it at docs.quill.dev."
+plain-content = "drop"
+
+# §16: every key, overriding the astro profile's defaults where allowed.
+[consumer]
+profile = "astro"
+site = "https://docs.quill.dev"
+base-path = "/docs/"
+trailing-slash = "never"
+slugger = "github"
+heading-ids = "attribute"
+html = true
+image-attributes = "attribute"
+assets = "directory"
+assets-dir = "_assets"
+
+# §17
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }
+
+[builds."self-managed-3.5"]
+variants = { deployment = "self-managed", pm = ["npm", "pnpm"] }
+availability = { filter = "self-managed 3.5" }
+
+# §18
+[editor]
+build = "site"
