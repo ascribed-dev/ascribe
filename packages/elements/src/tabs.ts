@@ -14,13 +14,16 @@ const syncedGroups = new Set<TesseraTabs>();
 let idCounter = 0;
 
 function readChoice(dimension: string): string | null {
+  // This page's choices are always at least as fresh as storage, which a
+  // failed write leaves behind.
+  const chosen = pageChoices.get(dimension);
+  if (chosen !== undefined) return chosen;
   try {
-    const stored = localStorage.getItem(STORAGE_PREFIX + dimension);
-    if (stored !== null) return stored;
+    return localStorage.getItem(STORAGE_PREFIX + dimension);
   } catch {
-    // Storage can be blocked or unavailable; fall back to this page's choice.
+    // Storage can be blocked or unavailable.
+    return null;
   }
-  return pageChoices.get(dimension) ?? null;
 }
 
 function writeChoice(dimension: string, value: string): void {

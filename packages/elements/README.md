@@ -49,13 +49,14 @@ tessera-note[type="security"] {
   --_background: #fff0f0;
 }
 
-tessera-availability-target[states$="sunset"] {
+tessera-availability-target[states="sunset"],
+tessera-availability-target[states$=" sunset"] {
   --_color: #6e7781;
   --_background: #eaeef2;
 }
 ```
 
-Unknown types and states get the default (`note`, or the neutral state) style.
+`states` lists a target's states in order and the last one styles the badge, so match it as a whole token, as above: `[states="x"], [states$=" x"]`. A bare `[states$="x"]` would also match a state named `pre-x`. Unknown types and states get the default (`note`, or the neutral state) style.
 
 ### Generated text
 
@@ -72,6 +73,8 @@ tessera-availability::before {
 ## Tests
 
 `pnpm --filter @tessera/elements test` compiles the library and drives Chromium
-through Playwright. It uses `/opt/pw-browsers/chromium` when present, or the
-binary in `TESSERA_CHROMIUM`; otherwise install one with
-`pnpm --filter @tessera/elements exec playwright-core install chromium`.
+through Playwright in Chromium, Firefox, and WebKit. Install them with
+`pnpm --filter @tessera/elements exec playwright-core install chromium firefox webkit`.
+Chromium uses `/opt/pw-browsers/chromium` when present, or the binary in
+`TESSERA_CHROMIUM`. `TESSERA_ENGINES=chromium` (a comma-separated subset) runs
+fewer engines on a machine that can't install all three.

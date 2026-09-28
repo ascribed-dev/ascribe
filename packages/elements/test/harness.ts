@@ -1,7 +1,14 @@
 import { existsSync, readFileSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
+import {
+  chromium,
+  firefox,
+  webkit,
+  type Browser,
+  type BrowserContext,
+  type Page,
+} from "playwright-core";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const ORIGIN = "http://tessera.test";
@@ -18,7 +25,20 @@ function executablePath(): string | undefined {
   return existsSync(bundled) ? bundled : undefined;
 }
 
-export async function launch(): Promise<Browser> {
+const ALL_ENGINES = ["chromium", "firefox", "webkit"] as const;
+export type Engine = (typeof ALL_ENGINES)[number];
+const wanted = process.env["TESSERA_ENGINES"]?.split(",").map((name) => name.trim());
+export const ENGINES: readonly Engine[] = ALL_ENGINES.filter(
+  (name) => wanted === undefined || wanted.includes(name),
+);
+
+/**
+ * Launch one engine. The suite runs all three; TESSERA_ENGINES (a
+ * comma-separated subset) narrows it on machines that can't install them all.
+ */
+export async function launch(engine: Engine): Promise<Browser> {
+  if (engine === "firefox") return firefox.launch();
+  if (engine === "webkit") return webkit.launch();
   const path = executablePath();
   return chromium.launch(path === undefined ? {} : { executablePath: path });
 }

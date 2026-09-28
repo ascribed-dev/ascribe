@@ -261,27 +261,33 @@ tessera-availability-target {
   color: var(--_color);
 }
 
-tessera-availability-target[states$="ga"] {
+/* Match the last state as a whole token: `$="ga"` alone would also match `pre-ga`. */
+tessera-availability-target[states="ga"],
+tessera-availability-target[states$=" ga"] {
   --_color: var(--tessera-state-ga-color);
   --_background: var(--tessera-state-ga-background);
 }
 
-tessera-availability-target[states$="preview"] {
+tessera-availability-target[states="preview"],
+tessera-availability-target[states$=" preview"] {
   --_color: var(--tessera-state-preview-color);
   --_background: var(--tessera-state-preview-background);
 }
 
-tessera-availability-target[states$="beta"] {
+tessera-availability-target[states="beta"],
+tessera-availability-target[states$=" beta"] {
   --_color: var(--tessera-state-beta-color);
   --_background: var(--tessera-state-beta-background);
 }
 
-tessera-availability-target[states$="deprecated"] {
+tessera-availability-target[states="deprecated"],
+tessera-availability-target[states$=" deprecated"] {
   --_color: var(--tessera-state-deprecated-color);
   --_background: var(--tessera-state-deprecated-background);
 }
 
-tessera-availability-target[states$="removed"] {
+tessera-availability-target[states="removed"],
+tessera-availability-target[states$=" removed"] {
   --_color: var(--tessera-state-removed-color);
   --_background: var(--tessera-state-removed-background);
 }
