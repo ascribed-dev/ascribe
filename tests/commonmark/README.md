@@ -6,6 +6,7 @@ The official [CommonMark spec](https://spec.commonmark.org/0.31.2/) examples, ru
 - `src/lib.rs`: the runner, crate `tessera-commonmark-suite`. It takes any `&str -> String` HTML renderer, compares each example's HTML byte for byte, and compares the result with a recorded baseline.
 - `baselines/comrak.toml`: the baseline for unmodified comrak from crates.io (the version in `Cargo.lock`), with CommonMark options only and raw HTML allowed. It records the pass count and the exact failing examples.
 - `tests/commonmark.rs`: runs the baseline and prints the pass count.
+- `tests/fork.rs` and `baselines/comrak-tessera-{off,on}.toml`: the same examples against the `comrak-tessera` fork; see [below](#the-comrak-tessera-fork).
 
 ## Baseline
 
@@ -25,6 +26,19 @@ COMMONMARK_WRITE_BASELINE=1 cargo test -p tessera-commonmark-suite --test common
 
 The test fails when the result differs from the baseline in either direction, so a change that fixes one example and breaks another is caught, and an improvement has to be recorded.
 
-## For phase 04
+## The comrak-tessera fork
 
-Rerun the suite against the `comrak-tessera` fork by adding a test like `tests/commonmark.rs` with the fork's renderer and its own baseline file, once with the Tessera option off (it must match `comrak.toml`) and once with it on. Every example that fails only with the option on must involve a line that is a valid directive line, and needs a justification alongside its baseline.
+`tests/fork.rs` runs the suite against the `comrak-tessera` fork (phase 04), with the same options as the baseline:
+
+- **Tessera option off** (`baselines/comrak-tessera-off.toml`): **652 of 652**. The test also fails unless this result matches `baselines/comrak.toml`, so the fork behaves exactly as unmodified comrak.
+- **Tessera option on** (`baselines/comrak-tessera-on.toml`), with the built-in keywords (`id`, `include`, `variant`, `available`, `note`, `steps`, `details`), `end`, and one project widget (`quill-demo`): **652 of 652**. No example renders differently with the option on.
+- **Each example after a directive line**, option on: **652 of 652**. The test puts `@end` on its own line before every example and checks that the example's HTML is unchanged. This puts a Tessera line directly above every kind of block the spec covers, and shows it closes cleanly without changing what follows. It has no baseline: every example must pass.
+
+### Exceptions with the Tessera option on
+
+None. No example in CommonMark 0.31.2 has a line starting with `@`, so the Tessera line can't change any of them. An example that fails only with the option on must involve a line that is a valid directive line; list it here with its justification if one ever appears (for example, after a spec update).
+
+```sh
+cargo test -p tessera-commonmark-suite --test fork
+COMMONMARK_WRITE_BASELINE=1 cargo test -p tessera-commonmark-suite --test fork
+```
