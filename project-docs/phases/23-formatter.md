@@ -80,7 +80,7 @@ Build `tessera-fmt` and `tessera fmt`: rewrite Tessera constructs into canonical
 
 ### Left open
 
-- **Q71 to Q77** are open, each with its conservative reading implemented and its cases `provisional`: which diagnostics stop the formatter; trailing whitespace other than after a container's colon; block quote, marker-line, and tab indentation; blank-line gaps with a text primary or a definition ; undeclared keys, bare keys, and quoting; empty image blocks and blocks in table cells; title lines.
+- **Q71 to Q77** are open, each with its conservative reading implemented and its cases `provisional`: which diagnostics stop the formatter; trailing whitespace other than after a container's colon; block quote, marker-line, and tab indentation; blank-line gaps with a text primary, a definition, or between blocks of a list item; undeclared keys, bare keys, and quoting; empty image blocks and blocks in table cells; title lines.
 - **The formatter can't check what needs the model**: an unknown key or a wrong value type is phase 10's diagnostic; the formatter formats such a block as far as it is safe to.
 - **Format on save and range formatting** are phase 24's. `format` formats the whole file.
 - **`BlockKind::Title`** is still never produced (phase 06's note); nothing here matches on it except to skip it.
