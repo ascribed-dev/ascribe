@@ -45,7 +45,7 @@ Create the repository skeleton every other phase builds in: the Rust workspace, 
 
 - [x] `cargo build --workspace`, `cargo test --workspace`, `cargo fmt --all --check`, and `cargo clippy --workspace --all-targets -- -D warnings` pass.
 - [x] `pnpm install` and `pnpm -r lint` pass.
-- [ ] CI runs both workflows on a pull request and passes.
+- [x] CI runs both workflows on a pull request and passes.
 - [x] The CommonMark baseline runs and reports its pass count.
 - [x] The harness discovers the sample cases, reports them as skipped with the recorded reason, and fails a case whose tag has neither an adapter nor a skip entry.
 - [x] `tests/conformance/README.md` fully documents the case format, including the `outline` schema, with a worked example for the Appendix B page.
@@ -96,7 +96,7 @@ Create the repository skeleton every other phase builds in: the Rust workspace, 
 
 ### Left open
 
-- **CI on the pull request:** see the PR for the run results. Nothing here can change repository settings, so if Actions is disabled for the repository, a human needs to enable it.
+- **CI** ran both workflows on the phase 00 pull request (#2) and passed on Linux, macOS, and Windows. The workflows haven't run on a push to `main` yet, since that happens only after merge.
 - **Diagnostic slugs aren't validated** against `tests/conformance/diagnostics.toml`, which doesn't exist until phase 02. Once it does, phase 02 or 03 should make the harness reject unknown slugs in `expect.yaml` (a check in `Case::load` or the runner).
 - **`project-docs/questions.md`** is created here with no entries. Phase 01, running in parallel, may also add it; if so, merge the two, keeping this header and every entry.
 - **Intermediate commits.** The first commit lists `tests/commonmark` and `tests/conformance` as workspace members before the commits that add them, so the first two commits don't build on their own; the branch as a whole does.
