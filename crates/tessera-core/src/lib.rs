@@ -17,6 +17,7 @@
 //! | [`schema`] | [`DirectiveSchema`], and the built-in schemas of SPEC §4 |
 //! | [`attribute_block`] | [`AttributeBlock`]: parsed attributes, with spans (SPEC §3.3) |
 //! | [`path`] | [`RelPath`], and how link and image destinations resolve |
+//! | [`reserved`] | Attribute keys a content model can't declare (SPEC §7.2) |
 //! | [`consumer`] | The [`Slugger`], [`Router`], and [`ConsumerProfile`] traits (SPEC §9.5) |
 //!
 //! These types are a contract between phases (see
@@ -29,6 +30,7 @@ pub mod diagnostics;
 pub mod issue;
 pub mod line_index;
 pub mod path;
+pub mod reserved;
 pub mod schema;
 pub mod span;
 pub mod text_edit;

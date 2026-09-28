@@ -70,6 +70,7 @@ Write every interface that parallel phases share, as completed deliverables, bef
   - `schema`: `DirectiveSchema` (forms, primary, binding, title rule, groupable, attributes, description) and `builtin_schemas()` for the seven SPEC §4 directives; `END_KEYWORD`.
   - `attribute_block`: `AttributeBlock`, `Attribute`, `AttributeValue` (token, quoted, set), `Token`, all with spans. Phase 05's parser goes in `attributes.rs` and produces these.
   - `path`: `RelPath` (normalized, `/`-separated, leading `..` allowed), `classify_destination` and `LocalDestination::resolve`: the asset contract's resolution steps 1–4.
+  - `reserved`: the attribute keys a content model can't declare (SPEC §7.2), as explicit lists, with `is_reserved_image_attribute` and `is_reserved_widget_attribute` for phase 08's `model-attribute-reserved`.
   - `consumer`: the `Slugger` and `SlugScope`, `Router`, and `ConsumerProfile` traits, and `AssetUse` and `AssetPlacement`.
 - **`tests/conformance/diagnostics.toml`**: 119 entries, one per SPEC §8.2 row and one per loader rule. TSR001–TSR054 cover SPEC §8.2's original rows (the four rows Q3 split have one entry per half); TSR055–TSR059 cover the five rows Q5 added; TSR060–TSR118 are content-model.md §20's original 59 loader rules, with `model-name-multiple-roles` as §8.2's "Content model" row; TSR119 is `model-attribute-reserved`, added by Q9. No entry is provisional. Every entry has `code`, `slug`, `severity`, `level`, `spec`, and `message`; optional fields are `messages` (named variants), `row`, `rule`, `provisional`, and `retired`. The header documents the format.
 - **Registry checks**: `tests/conformance/tests/registry.rs` checks the registry against SPEC §8.2 (exactly one entry per row, severities, rows marked page level), content-model.md §20 (every rule, with the same severity and exactly the same messages), SPEC's section numbers, and questions.md; codes are sequential and slugs unique and kebab-case; templates are well formed.
@@ -107,7 +108,7 @@ Write every interface that parallel phases share, as completed deliverables, bef
 9. **Tabs sync on one dimension**; labeled groups don't sync.
 10. **Availability is a badge**, with `<tessera-availability-target>` children.
 11. **The note's title attribute is `heading`** (Q8, now SPEC §9.4), beside `label`, the type's display label. Widget elements use `heading` for their title lines too.
-12. **Reserved attribute keys** (Q9): the loader rejects image keys `src`, `alt`, and `title`, widget keys `heading` and `primary`, and on both HTML's global attributes and `on…` handlers (`model-attribute-reserved`, SPEC §7.2).
+12. **Reserved attribute keys** (Q9): the loader rejects image keys `src`, `alt`, and `title`, widget keys `heading` and `primary`, and on both HTML's global attributes, `aria-` keys, and HTML's event-handler attributes, from explicit lists in `tessera_core::reserved`, so `online` is allowed (`model-attribute-reserved`, SPEC §7.2).
 13. **A title line above a directive that takes none** stays a paragraph, with a warning, not an error (Q11, SPEC §3.7, §8.2).
 14. **Line primaries** (Q4), **per-file linkable ids** (Q6), and **explicit ids outside slug numbering** (Q7), now in SPEC.
 15. **No glossary element**; **`Issue` carries no severity or text**, and only `tessera-core` can create a `DiagnosticSlug`.
