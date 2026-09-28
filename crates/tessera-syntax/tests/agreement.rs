@@ -87,13 +87,20 @@ proptest! {
         let options = options();
         let doc = parse(&line, &options);
         let ours = doc.blocks.iter().find_map(|b| match &b.kind {
-            BlockKind::Directive(d) => Some((d.name.clone(), d.span.start(), d.primary.clone())),
+            BlockKind::Directive(d) => Some(d),
+            BlockKind::Container(c) => Some(&c.opener),
+            BlockKind::Group(g) => g.arms.first().map(|a| &a.opener),
             _ => None,
-        });
+        }).map(|d| (d.name.clone(), d.span.start(), d.primary.clone()));
         let forks = fork_view(&line, &options);
         let Some((name, start, primary)) = ours else {
             // Not a directive, or an end line: the fork sees an end line too.
-            let ends = doc.blocks.iter().filter(|b| matches!(b.kind, BlockKind::End(_))).count();
+            let ends = doc.blocks.iter().map(|b| match &b.kind {
+                BlockKind::End(_) => 1,
+                BlockKind::Container(c) => usize::from(c.end.is_some()),
+                BlockKind::Group(g) => usize::from(g.end.is_some()),
+                _ => 0,
+            }).sum::<usize>();
             prop_assert_eq!(forks.len(), ends, "{:?}", line);
             return Ok(());
         };

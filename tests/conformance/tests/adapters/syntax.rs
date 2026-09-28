@@ -1,10 +1,10 @@
-//! The adapter for `tessera-syntax`: what phase 05 produces.
+//! The adapter for `tessera-syntax`: what phases 05 and 06 produce.
 //!
 //! It handles the `parser` tag (Tessera-line recognition, directive heads,
-//! attributes, and primaries, SPEC §3.1–§3.4). Its outline is the flat one
-//! `tessera_syntax::parse` gives: directive lines and CommonMark blocks, with
-//! no containers, groups, or titles yet, because those arrive with phase 06.
-//! Its diagnostics are the parser's own issues.
+//! attributes, and primaries, SPEC §3.1–§3.4) and the `structure` tag
+//! (containers, groups, titles, binding, SPEC §3.5–§3.10, §4). Its outline
+//! is `tessera_syntax::parse`'s tree, with the Tessera nodes written by
+//! [`super::structure`]. Its diagnostics are the parser's own issues.
 //!
 //! Directive schemas come from the built-ins plus the widgets in the case's
 //! `tessera.toml`. That reader is a stand-in for phase 08's content-model
@@ -12,16 +12,15 @@
 
 use tessera_conformance::outline::normalize_ws;
 use tessera_conformance::{
-    AdapterError, AdapterResult, AttrValue, Attributes, Binding, Case, ConformanceAdapter,
-    Diagnostic, Directive, Form, Node,
+    AdapterError, AdapterResult, Attributes, Case, ConformanceAdapter, Diagnostic, Node,
 };
 use tessera_core::{
-    self as core, AttributeValue, Binding as SchemaBinding, DirectiveSchema, Forms, LineIndex,
-    Origin, Primary, TitleRule, WideEncoding,
+    self as core, Binding as SchemaBinding, DirectiveSchema, Forms, LineIndex, Origin, Primary,
+    TitleRule, WideEncoding,
 };
-use tessera_syntax::{
-    Block, BlockKind, DirectiveLine, ParseOptions, PrimaryValue, parse, raw_text,
-};
+use tessera_syntax::{Block, BlockKind, ParseOptions, parse, raw_text};
+
+use super::structure;
 
 /// Handles the tags whose cases `tessera-syntax` alone can answer.
 pub struct SyntaxAdapter;
@@ -32,7 +31,7 @@ impl ConformanceAdapter for SyntaxAdapter {
     }
 
     fn handles_tag(&self, tag: &str) -> bool {
-        tag == "parser"
+        matches!(tag, "parser" | "structure")
     }
 
     fn outline(&self, case: &Case) -> AdapterResult<Vec<Node>> {
@@ -41,7 +40,7 @@ impl ConformanceAdapter for SyntaxAdapter {
         };
         let options = options(case)?;
         let doc = parse(&source, &options);
-        Ok(Some(outline(&source, &options, &doc.blocks)))
+        Ok(Some(outline(&source, &doc.blocks)))
     }
 
     fn diagnostics(&self, case: &Case) -> AdapterResult<Vec<Diagnostic>> {
@@ -163,12 +162,9 @@ fn widget_schema(name: &str, widget: &toml::Table) -> DirectiveSchema {
 // ---------------------------------------------------------------------------
 // Tree to outline
 
-fn outline(source: &str, options: &ParseOptions, blocks: &[Block]) -> Vec<Node> {
+fn outline(source: &str, blocks: &[Block]) -> Vec<Node> {
     let mut out: Vec<Node> = Vec::new();
-    // What each earlier sibling is bound to, for the top-of-section rule.
-    let mut heading_bound: Vec<bool> = Vec::new();
     for block in blocks {
-        let mut bound_to_heading = false;
         let node = match &block.kind {
             BlockKind::Heading(h) => Some(Node::Heading {
                 level: h.level,
@@ -181,7 +177,7 @@ fn outline(source: &str, options: &ParseOptions, blocks: &[Block]) -> Vec<Node> 
                 fenced: Some(c.fenced),
             }),
             BlockKind::BlockQuote(q) => Some(Node::Blockquote {
-                children: outline(source, options, &q.children),
+                children: outline(source, &q.children),
             }),
             BlockKind::List(l) => Some(Node::List {
                 ordered: l.ordered,
@@ -190,7 +186,7 @@ fn outline(source: &str, options: &ParseOptions, blocks: &[Block]) -> Vec<Node> 
                     .items
                     .iter()
                     .map(|item| Node::Item {
-                        children: outline(source, options, &item.children),
+                        children: outline(source, &item.children),
                     })
                     .collect(),
             }),
@@ -199,27 +195,16 @@ fn outline(source: &str, options: &ParseOptions, blocks: &[Block]) -> Vec<Node> 
             }),
             BlockKind::ThematicBreak => Some(Node::ThematicBreak),
             BlockKind::Table(_) => Some(Node::Table),
-            BlockKind::Directive(line) => {
-                // The binding is worked out from the schema and the siblings
-                // before it; phase 06 does this properly, with containers.
-                let binding = binding(options, line, &heading_bound, &out);
-                bound_to_heading = binding == Some(Binding::Heading);
-                Some(Node::Directive(directive(source, line, binding)))
-            }
-            // End lines close containers, which don't exist in this tree yet.
-            BlockKind::End(_) => None,
-            BlockKind::Container(_) | BlockKind::Group(_) | BlockKind::Title(_) => None,
+            // Directives, containers, groups, and the end lines that close
+            // nothing (phase 06).
+            _ => structure::node(source, block, &|blocks| outline(source, blocks)),
         };
-        if let Some(node) = node {
-            let is_heading = matches!(node, Node::Heading { .. });
-            heading_bound.push(bound_to_heading || is_heading);
-            out.push(node);
-        }
+        out.extend(node);
     }
     out
 }
 
-fn text(source: &str, span: core::Span) -> String {
+pub(super) fn text(source: &str, span: core::Span) -> String {
     normalize_ws(&raw_text(source, span))
 }
 
@@ -237,78 +222,5 @@ fn paragraph(source: &str, block: &Block, p: &tessera_syntax::Paragraph) -> Node
     }
     Node::Paragraph {
         text: Some(text(source, block.span)),
-    }
-}
-
-fn binding(
-    options: &ParseOptions,
-    line: &DirectiveLine,
-    heading_bound: &[bool],
-    previous: &[Node],
-) -> Option<Binding> {
-    if line.form == tessera_syntax::Form::Container {
-        return None;
-    }
-    let schema = options.schemas.iter().find(|s| s.name == line.name)?;
-    Some(match schema.binding? {
-        SchemaBinding::SelfBound => Binding::SelfBinding,
-        SchemaBinding::Heading => Binding::Heading,
-        SchemaBinding::Block => match line.primary {
-            Some(PrimaryValue::Text(_)) => Binding::SelfBinding,
-            _ => Binding::FollowingBlock,
-        },
-        SchemaBinding::HeadingOrBlock => {
-            // At the top of a section: only heading-bound directives, back to
-            // a heading (SPEC §3.8).
-            let mut top = false;
-            for (node, bound) in previous.iter().zip(heading_bound).rev() {
-                if matches!(node, Node::Heading { .. }) {
-                    top = true;
-                    break;
-                }
-                if !bound {
-                    break;
-                }
-            }
-            if top {
-                Binding::Heading
-            } else {
-                Binding::FollowingBlock
-            }
-        }
-    })
-}
-
-fn directive(source: &str, line: &DirectiveLine, binding: Option<Binding>) -> Directive {
-    let mut attributes = Attributes::new();
-    if let Some(block) = &line.attributes {
-        for a in &block.attributes {
-            let Some(value) = &a.value else { continue };
-            let value = match value {
-                AttributeValue::Set { members, .. } => {
-                    AttrValue::Set(members.iter().map(|m| m.text.clone()).collect())
-                }
-                v => AttrValue::Single(v.as_text().unwrap_or_default().to_owned()),
-            };
-            attributes.entry(a.key.clone()).or_insert(value);
-        }
-    }
-    let primary = match &line.primary {
-        Some(PrimaryValue::Text(p)) => Some(text(source, p.span)),
-        Some(PrimaryValue::Identifier(p)) => Some(p.text.clone()),
-        Some(PrimaryValue::Line(p)) => Some(p.text.clone()),
-        Some(PrimaryValue::Unexpected(_)) | None => None,
-    };
-    Directive {
-        name: line.name.clone(),
-        form: match line.form {
-            tessera_syntax::Form::Line => Form::Line,
-            tessera_syntax::Form::Container => Form::Container,
-        },
-        attributes,
-        primary,
-        title: None,
-        binding,
-        children: Vec::new(),
     }
 }

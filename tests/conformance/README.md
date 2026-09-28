@@ -20,6 +20,8 @@ cargo test -p tessera-conformance --lib --test harness
 
 `cargo test --workspace` runs all of these. The run fails if any case fails or `SKIPS.toml` is stale.
 
+`tests/structure_rows.rs` also runs, until phase 10 adds an adapter for `check`, the outlines and the structural diagnostics (containers, end lines, binding, titles, groups, lists) of the cases the runner skips only because they carry the `check` tag.
+
 ## Layout
 
 ```
