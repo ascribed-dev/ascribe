@@ -70,6 +70,16 @@ describe.each(ENGINES)("%s", (engine) => {
       ] as const);
   }
 
+  /**
+   * The text of a computed `content` value. Engines serialize a `content` built
+   * from several parts differently: Chromium joins them (`"Tip: Heading"`),
+   * Firefox and WebKit keep the parts (`"Tip" ": " "Heading"`).
+   */
+  function contentText(content: string): string {
+    const parts = content.match(/"(?:[^"\\]|\\.)*"/g) ?? [];
+    return parts.map((part) => part.slice(1, -1)).join("");
+  }
+
   describe("without the script", () => {
     it("shows every tab's content, each introduced by its label", async () => {
       const page = await fresh(TABS, { script: false });
@@ -86,12 +96,12 @@ describe.each(ENGINES)("%s", (engine) => {
 
     it("shows a note's heading, or its label when it has none", async () => {
       const page = await fresh(NOTE, { script: false });
-      expect(await pseudo(page, "tessera-note[type=tip]", "::before", "content")).toBe(
-        '"Tip: Try it without installing"',
+      expect(contentText(await pseudo(page, "tessera-note[type=tip]", "::before", "content"))).toBe(
+        "Tip: Try it without installing",
       );
-      expect(await pseudo(page, "tessera-note[type=security]", "::before", "content")).toBe(
-        '"Security"',
-      );
+      expect(
+        contentText(await pseudo(page, "tessera-note[type=security]", "::before", "content")),
+      ).toBe("Security");
       await expect(page.getByText("A project's own type.").isVisible()).resolves.toBe(true);
       await context.close();
     });
