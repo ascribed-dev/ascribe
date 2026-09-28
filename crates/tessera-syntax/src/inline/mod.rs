@@ -95,6 +95,8 @@ impl Pass<'_> {
         }
     }
 
+    // Phase 06 moves title lines into `DirectiveLine::title`; when it does,
+    // this must walk that title too (see the title tests in `tests/inline.rs`).
     fn directive(&mut self, line: &mut DirectiveLine) {
         if let Some(PrimaryValue::Text(primary)) = &mut line.primary {
             self.inlines(&mut primary.inlines);

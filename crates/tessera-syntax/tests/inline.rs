@@ -142,6 +142,54 @@ fn candidates_in_text_primaries_lists_quotes_and_table_cells() {
     assert_eq!(all, ["a", "b", "c", "d", "e", "f", "g", "h"]);
 }
 
+/// The keys of every candidate in every paragraph, heading, and text primary
+/// of `blocks`, in order, at any depth. Title lines count: in phase 05's tree
+/// they're paragraphs, and after phase 06 they're `DirectiveLine::title`, so
+/// these tests must keep passing when the two are integrated.
+fn all_keys(blocks: &[Block]) -> Vec<String> {
+    let mut out = Vec::new();
+    for block in blocks {
+        match &block.kind {
+            BlockKind::Paragraph(p) => out.extend(keys(&p.inlines)),
+            BlockKind::Heading(h) => out.extend(keys(&h.inlines)),
+            BlockKind::Title(t) => out.extend(keys(&t.inlines)),
+            BlockKind::Directive(line) => {
+                if let Some(PrimaryValue::Text(p)) = &line.primary {
+                    out.extend(keys(&p.inlines));
+                }
+            }
+            BlockKind::Container(c) => out.extend(all_keys(&c.children)),
+            BlockKind::Group(g) => {
+                for arm in &g.arms {
+                    out.extend(all_keys(&arm.children));
+                }
+            }
+            BlockKind::BlockQuote(q) => out.extend(all_keys(&q.children)),
+            BlockKind::List(l) => l
+                .items
+                .iter()
+                .for_each(|i| out.extend(all_keys(&i.children))),
+            _ => {}
+        }
+    }
+    out
+}
+
+#[test]
+fn a_candidate_in_a_title_line_is_found() {
+    let source = ".Install {product} now\n@note: Body with {body}.\n";
+    let d = doc(source);
+    assert_eq!(all_keys(&d.blocks), ["product", "body"]);
+}
+
+#[test]
+fn a_candidate_in_an_arm_title_is_found() {
+    let source = ".Using {product} on {os}\n@variant {os=linux}:\nLinux text.\n\n\
+                  .Other {tool}\n@variant {os=macos}:\nmacOS text.\n@end\n";
+    let d = doc(source);
+    assert_eq!(all_keys(&d.blocks), ["product", "os", "tool"]);
+}
+
 #[test]
 fn a_candidate_after_an_escaped_pipe_in_a_table_cell_has_the_right_span() {
     let source = "| a |\n|---|\n| x \\| {k} |\n";
