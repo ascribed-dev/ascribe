@@ -97,7 +97,7 @@ See the pull request for the status and evidence of each.
 ### Left open
 
 - **Q51 to Q59** (`project-docs/questions.md`), each with a proposed resolution.
-- **Page-level rows** (`include-id-missing`, `link-id-missing`, `link-id-in-fragment`, `link-id-removed`, `link-page-dropped`, `id-duplicate`, `heading-duplicate-without-id`, `variant-none-survives`, `available-exceeds-scope`, and the rest with level `page`) are phase 14's. The include cycle and `@include` ids need phase 11's index.
+- **Page-level rows** (`id-duplicate`, `include-id-missing`, `include-cycle`, `variant-no-arm-survives`, `available-exceeds-scope`, `link-id-missing`, `link-id-in-fragment`, `link-id-removed`, `heading-duplicate-without-id`, `link-page-dropped`) are phase 14's, on phase 11's index and phase 12's resolution.
 - **Performance.** `Project::lookup` reads each directory of a path on every reference (no cache, so a `Project` never serves a stale listing). Phase 26 measures it; a per-check cache of directory listings is the first thing to try.
 - **Definitions.** A reference-style link's destination is in a definition that isn't a node, so its diagnostics are at the link (Q53), and `[ref]: {api}x` can't be checked for phrases in the definition's own position.
 - **`tessera-cli`'s JSON schema** is version 1. A field added later doesn't change the version.
