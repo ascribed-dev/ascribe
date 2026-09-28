@@ -33,6 +33,8 @@ tessera-resolve = { path = "crates/tessera-resolve" }
 tessera-emit = { path = "crates/tessera-emit" }
 tessera-fmt = { path = "crates/tessera-fmt" }
 tessera-lsp = { path = "crates/tessera-lsp" }
+# The comrak fork (phase 04). Depend on it as `comrak-tessera.workspace = true`.
+comrak-tessera = { path = "crates/comrak-tessera" }
 
 # External crates shared across the workspace.
 comrak = { version = "0.55", default-features = false }

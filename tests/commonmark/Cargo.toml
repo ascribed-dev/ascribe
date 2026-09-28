@@ -16,10 +16,16 @@ toml.workspace = true
 
 [dev-dependencies]
 comrak.workspace = true
+comrak-tessera.workspace = true
 
 [[test]]
 name = "commonmark"
 path = "tests/commonmark.rs"
+harness = false
+
+[[test]]
+name = "fork"
+path = "tests/fork.rs"
 harness = false
 
 [lints]
