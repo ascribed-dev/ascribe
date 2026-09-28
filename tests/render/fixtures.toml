@@ -1,0 +1,62 @@
+# The site-render fixtures. See README.md.
+#
+# Each fixture is a directory here with input.md (site markdown) and
+# expected.html. `covers` names the constructs from the table in
+# project-docs/contracts/site-render.md §6 that the fixture checks; every
+# construct is covered at least once (tests/conformance/tests/render_fixtures.rs
+# checks this).
+
+[[fixture]]
+name = "heading-id"
+covers = ["heading"]
+description = "A marker at the end of an ATX heading gives the heading its id."
+
+[[fixture]]
+name = "heading-id-duplicate-numbering"
+covers = ["heading", "heading-duplicates"]
+description = "Headings with the same text keep the numbered ids the emitter gave them."
+
+[[fixture]]
+name = "heading-id-inline-markup"
+covers = ["heading-markup"]
+description = "The marker follows code, emphasis, and a link, which render as usual."
+
+[[fixture]]
+name = "heading-id-protected-text"
+covers = ["heading-protected"]
+description = "Ids containing __, --, and ... come through exactly, whatever inline parsing or typography would do to text."
+
+[[fixture]]
+name = "heading-id-forms"
+covers = ["heading-setext", "heading-empty", "heading-closed"]
+description = "Setext headings, a heading whose only content is a marker, and an ATX closing sequence."
+
+[[fixture]]
+name = "image-inline"
+covers = ["image-inline", "image-title"]
+description = "Inline images followed by markers, one with a title."
+
+[[fixture]]
+name = "image-reference"
+covers = ["image-reference-full", "image-reference-collapsed", "image-reference-shortcut", "image-title"]
+description = "Full, collapsed, and shortcut reference images followed by markers."
+
+[[fixture]]
+name = "image-in-text"
+covers = ["image-in-text", "image-in-link"]
+description = "Two images in a paragraph with text around them, and an image inside a link."
+
+[[fixture]]
+name = "attribute-values"
+covers = ["attribute-values", "heading"]
+description = "Escaped quotes, ampersands, and angle brackets in marker values decode; spaces and commas stay."
+
+[[fixture]]
+name = "not-markers"
+covers = ["not-a-marker"]
+description = "Markers after a space, mid-heading, or in a paragraph, and malformed markers, stay as raw HTML."
+
+[[fixture]]
+name = "elements-passthrough"
+covers = ["raw-html"]
+description = "Custom elements and <details> wrapping markdown pass through, and markers inside them apply."

@@ -26,6 +26,7 @@ cargo test -p tessera-conformance --lib --test harness
 tests/conformance/
   README.md          this file
   SKIPS.toml         skipped tags and cases, each with a reason
+  diagnostics.toml   the diagnostics registry (phase 02)
   _model/            the shared fixture model, tessera.toml (phase 03)
   cases/             the cases, grouped by area: cases/<area>/<case>/
   snapshots/         insta snapshots of expected outputs (phases 18 and 20)
@@ -226,7 +227,7 @@ diagnostics:
     file: guides/setup.md       # required in project cases
 ```
 
-- `slug` names a row of the diagnostics registry, `tests/conformance/diagnostics.toml`, which phase 02 writes. Cases refer to diagnostics by slug, never by code or message.
+- `slug` names an entry of the diagnostics registry, `tests/conformance/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and a `page`-level slug under a build; and a slug whose entry is `provisional` needs a case tagged `provisional` that lists the entry's questions.
 - `line` is 1-based and counts every line of the file, including frontmatter.
 - `column` is 1-based and counts Unicode scalar values (characters), not bytes or UTF-16 units. It's compared only when written.
 - `file` is relative to the content root. It defaults to `input.md` in single-file cases.

@@ -1,0 +1,5 @@
+# A slug the registry doesn't have fails the case before it runs.
+tags: [fake]
+diagnostics:
+  - slug: no-such-slug
+    line: 1

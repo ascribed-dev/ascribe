@@ -2,7 +2,7 @@
 
 This is the reference for `tessera.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. Phase 08 implements the loader from this document; phase 03 writes fixtures against it.
 
-SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is marked **Decided (Qn)** and listed in [Decisions](#21-decisions). Items marked **Provisional (Qn)** may still change.
+SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is marked **Decided (Qn)** and listed in [Decisions](#21-decisions). No item is provisional.
 
 Example files, each valid under this reference:
 
@@ -54,7 +54,7 @@ Example files, each valid under this reference:
 
 - **Keys are kebab-case** (`content-root`, `trailing-slash`), matching Tessera's attribute keys. TOML allows hyphens in bare keys, so they need no quotes.
 - **Unknown keys are errors**, everywhere, with a did-you-mean suggestion. A misspelled key is otherwise a silently ignored setting. The exceptions are the tables whose keys are names the project chooses (`[phrases]`, `[types]`, `[dimensions]`, and so on); their keys are validated as names instead.
-- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order (SPEC §8.3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
+- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order (SPEC §8.3). It MUST also preserve the order of the `[dimensions]` tables, which is the canonical order of `@variant` attributes and decides which dimension a tab group syncs on (the [element contract](../packages/elements/CONTRACT.md), §3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
 
 ### 1.2 Names
 
@@ -154,7 +154,7 @@ output-dir = ".tessera/build"
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `content-root` | string (path) | `"docs"` | The content root (SPEC §2.2): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It MUST exist and be a directory. |
-| `output-dir` | string (path) | `".tessera/build"` | Where `tessera build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/` (see phase 02's output-layout contract). It need not exist. |
+| `output-dir` | string (path) | `".tessera/build"` | Where `tessera build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/` (see the [output-layout contract](contracts/output-layout.md)). It need not exist. |
 
 **Rules** (§20): both paths are relative (`model-path-absolute`). The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and they MUST NOT be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
 
@@ -504,7 +504,7 @@ loading = { type = "enum(lazy, eager)", default = "lazy" }
 |---|---|---|---|
 | `attributes` | table of attribute types | `{}` | Accepted image attribute keys (`key` rule) and their types (§6). With no entries, an image accepts no attributes, and any attribute block after an image is an error (SPEC §8.2, "Unknown key"). Declaration order is canonical order (SPEC §8.3). |
 
-Alt text and titles aren't attributes; they use CommonMark's syntax (SPEC §5.3). Presentation choices aren't image attributes either.
+Alt text and titles aren't attributes; they use CommonMark's syntax (SPEC §5.3). Presentation choices aren't image attributes either. Keys HTML already uses on `<img>` (`src`, `alt`, `title`, and its global attributes) are rejected (`model-attribute-reserved`), since the site output writes image attributes onto the `<img>` element (SPEC §7.2).
 
 ---
 
@@ -533,7 +533,7 @@ height = "number?"
 | `binding` | string | required when `forms` includes `"line"`; not allowed otherwise | What the line form applies to (SPEC §3.8), one of the values below. |
 | `title` | string | `"none"` | Whether the widget takes a title line (SPEC §3.7): `"none"`, `"accepted"`, or `"required"`. |
 | `groupable` | boolean | `false` | Whether a run of the widget's openers forms a group of arms (SPEC §3.6). |
-| `attributes` | table of attribute types | `{}` | The attribute schema: keys (`key` rule) and types (§6). Declaration order is canonical order (SPEC §8.3). |
+| `attributes` | table of attribute types | `{}` | The attribute schema: keys (`key` rule) and types (§6). Declaration order is canonical order (SPEC §8.3). The keys `heading` and `primary`, HTML's global attributes (including `title`), `aria-` keys, and event-handler attributes such as `onclick`, are rejected (`model-attribute-reserved`): the site output writes these attributes onto the widget's element (SPEC §7.2). |
 | `plain-fallback` | string | none | Plain-text fallback for the plain-markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing. **Decided (Q8).** |
 | `plain-content` | string | `"keep"` | For a widget that wraps content, whether the plain-markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`. **Decided (Q8).** |
 | `description` | string | none | Help text for the editor's hover and completion. |
@@ -553,7 +553,7 @@ height = "number?"
 - A groupable widget MUST be container-only, since group arms are containers (SPEC §3.6) (`model-widget-groupable-form`). **Decided (Q9).**
 - `binding` is required with line form and not allowed without it (`model-widget-binding`).
 
-The site output's element for a widget (tag name and attributes) is defined by phase 02's element contract, not here.
+The site output's element for a widget (tag name and attributes) is defined by the [element contract](../packages/elements/CONTRACT.md), not here.
 
 ---
 
@@ -577,11 +577,14 @@ slugger = "github"
 | `base-path` | string | `"/"` | **Routing.** The URL path every route starts with, such as `"/docs/"`, including any locale prefix (`"/en/"`). It MUST start with `/`. A trailing `/` is optional and doesn't change the meaning. |
 | `trailing-slash` | string | `"always"` | **Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`). |
 | `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids (SPEC §5.5), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses (phase 09). |
-| `heading-ids` | string | `"attribute"` | **Heading ids.** How the site output writes an explicit heading id so the consumer keeps its heading and table-of-contents processing: `"attribute"`, an attribute block that the consumer's markdown plugin applies, or `"html"`, a raw HTML heading. The exact syntax is phase 02's site-render contract. **Provisional (Q12).** |
 | `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. **Decided (Q11).** |
-| `image-attributes` | string | `"attribute"` | **Images.** How the site output writes image attributes: `"attribute"`, the attribute block after the image, applied by the consumer's markdown plugin, which keeps the consumer's image processing; or `"html"`, a raw `<img>` element, which bypasses it. The exact syntax is phase 02's site-render contract. **Provisional (Q12).** |
-| `assets` | string | `"beside-page"` | **Assets.** Where copies of local assets go (SPEC §9.4): `"beside-page"`, next to the compiled page that references them, referenced relatively, so a consumer's image processing (such as Astro's) still applies; or `"directory"`, one shared directory. Naming and collision rules are phase 02's asset contract. **Provisional (Q12).** |
-| `assets-dir` | string (path) | `"_assets"` | With `assets = "directory"`, the shared directory's path relative to each build's emitter output root (`<output-dir>/<build>/<emitter>/`). Not allowed with `"beside-page"`. |
+
+**Heading ids, image attributes, and assets** (SPEC §9.5) are part of the profile, not keys. The `astro` profile has exactly one way to do each, defined by the contracts:
+
+- **Heading ids and image attributes:** the site output writes each as a `<tessera-attributes>` marker that the consumer's markdown plugin applies, so the consumer keeps its own heading, table-of-contents, and image processing. See [`contracts/site-render.md`](contracts/site-render.md).
+- **Assets:** copies mirror their source paths inside each output, and images are referenced relatively so Astro's image processing still applies. Other files a page links to are published under `_tessera/files/`. See [`contracts/assets.md`](contracts/assets.md).
+
+A later profile that offers a choice adds a key for it then. **Decided (Q12).**
 
 **How file paths become routes** (the `astro` profile; phase 20 implements and verifies it against Astro): a page's route is `base-path`, then its path relative to the content root with the `.md` extension removed and each segment slugged the way Astro's content loader computes entry ids; a final `index` segment is dropped (`guides/index.md` → `/guides/`); then the trailing slash per `trailing-slash`. Source files never contain routes (SPEC §5.2).
 
@@ -663,7 +666,7 @@ A file containing only `spec = "0.1"` is valid. It means:
 
 A loader MUST enforce every rule below when it loads `tessera.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
 
-- **Slugs** are stable identifiers, for tests and for phase 02's diagnostics registry. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
+- **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`tests/conformance/diagnostics.toml`](../tests/conformance/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
 - **Messages** are templates. `{name}` is a placeholder. Where a rule has several messages, each covers one case of it.
 - Rules about documents, such as a page matching no content type or an unknown frontmatter key, aren't loader rules; see Q1.
 - **Filesystem rules** (`model-content-root-missing`, `model-glossary-link`) need the project directory. A loader given only the file's text, such as an unsaved editor buffer or a unit test, skips them; `tessera check` and the language server always run them.
@@ -704,6 +707,7 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 | `model-default-type` | A `default` has the declared type, and an enumeration default is one of its values. | `` default for `{field}` must be {type}, but it's {found} ``<br>`` default "{value}" for `{field}` isn't one of: {values} `` |
 | `model-phrases-field-type` | `phrases = true` is set only on `string` and `list(string)` fields. | `` phrases = true only works on string and list(string) fields, and `{field}` is "{type}" `` |
 | `model-pattern-syntax` | Every pattern parses under §1.3, doesn't start with `/`, and has no `..` segment. | `` "{pattern}" isn't a valid pattern: {detail} ``<br>`` pattern "{pattern}" is already relative to the content root; remove the leading / ``<br>`` pattern "{pattern}" can't contain .. `` |
+| `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `heading` or `primary` on widgets; and on both, HTML's global attributes (such as `id`, `class`, `style`, and `title`), any key starting with `aria-`, and HTML's event-handler attributes (such as `onclick`, `onload`, and `onerror`). The lists are explicit, in `tessera_core::reserved`, so keys that merely begin with `on`, such as `online` or `only-if`, are allowed. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
 ### 20.4 Dimensions, names, lifecycle, notes, and features
 
@@ -755,7 +759,6 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 | `model-consumer-unsupported` | Every consumer key has a value the profile supports (for example, `html = false` with `astro`). | `` the {profile} profile doesn't support {key} = {value}; use {values} `` |
 | `model-consumer-site` | `site` is an absolute `http` or `https` URL with no path, query, or fragment. | `` site must be an origin such as "https://docs.example.com"; put any path in base-path `` |
 | `model-consumer-base-path` | `base-path` starts with `/`. | `` base-path must start with "/", such as "/docs/" `` |
-| `model-consumer-assets-dir` | `assets-dir` is set only with `assets = "directory"`, and is a relative path without `..`. | `` assets-dir only applies when assets = "directory" ``<br>`` assets-dir must be a relative path inside the output `` |
 | `model-build-name-case` | Build names are unique ignoring case. | `` builds `{a}` and `{b}` differ only in case, so they'd share an output directory on some file systems `` |
 | `model-build-variants` | `variants` is `"switch"` or a non-empty table of dimension selections, each a value or a non-empty array of values. | `` variants must be "switch" or a selection such as { deployment = "cloud" } ``<br>`` build `{build}` selects nothing; write variants = "switch" `` |
 | `model-build-unknown-dimension` | Every dimension a selection names is declared. | `` build `{build}` selects dimension `{dimension}`, which isn't declared `` |
@@ -771,7 +774,9 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 
 ## 21. Decisions
 
-Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recommended below, at the human checkpoint after phase 01. Items 1, 2, 3, 4, and 6 are now also stated in SPEC.md (§2.1, §5.2, §7.2, §8.2). Item 12's values stay provisional until phase 02's site-render and asset contracts define the exact output. Each item keeps the alternatives that were considered.
+Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recommended below, at the human checkpoint after phase 01, except item 12, which phase 02 settled when it wrote the site-render and asset contracts. Items 1, 2, 3, 4, and 6 are now also stated in SPEC.md (§2.1, §5.2, §7.2, §8.2). Each item keeps the alternatives that were considered.
+
+These numbers belong to this document. [`questions.md`](questions.md) numbers its entries separately, from Q1; elsewhere, a bare Qn (in a `SPEC-QUESTION` comment, a conformance case's `questions`, or the diagnostics registry's `provisional`) means a `questions.md` entry.
 
 1. **Frontmatter diagnostics (SPEC §8.2).** §8.1 says file-level validation covers frontmatter, but §8.2 has no rows for it. *Decision:* add file-level error rows: unknown frontmatter key; missing required field; value doesn't match the field's type; reserved key (`available`, `variant`) on a fragment; page matches more than one content type; page matches no content type and there's no default.
 2. **Assigning content types to pages (SPEC §7.2).** The spec doesn't say how a page gets its type. *Decision:* `files` patterns per type plus at most one `default = true` type; a page matching several types is an error, with no precedence. *Considered:* first match in file order (TOML tables are formally unordered); most specific pattern (hard to define); a frontmatter `type` key (would need a new reserved key).
@@ -779,12 +784,12 @@ Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recomme
 4. **Reserved keys in fragments (SPEC §2.1, §4.3, §4.4).** `available` and `variant` are defined for pages. *Decision:* fragments can't use them in spec 0.1; use `@available` inside the fragment. *Considered:* fragment `available` applies to everything the fragment contributes, like a section spec.
 5. **Version scheme name (SPEC §4.4).** *Decision:* call the one scheme `numeric`: dotted numbers of any length, compared numerically with missing components as 0. The grammar has no pre-release syntax, so "semver" would overpromise. *Considered:* call it `semver` and cap versions at three components, which needs a new document diagnostic.
 6. **Name rules beyond the one-role rule (SPEC §4.3, §4.4, §7.2).** *Decision:* (a) a dimension value belongs to only one dimension, since `cloud` in a spec must mean one thing; (b) dimension names follow the `key` rule, since they're attribute keys; (c) warn on names that differ only in case. (a) and (b) are stated in SPEC §7.2.
-7. **Glossary (SPEC §5.4).** The spec gives no format or matching rules. *Decision:* terms with a required plain-text `definition` and an optional `link`; occurrences link to `link`; terms without it aren't linked in site or plain output. Whole-word matching, longest term wins, prose only (not headings, link text, or code), `first` per resolved page by default. Phase 02 decides whether a term element is needed in the element contract.
+7. **Glossary (SPEC §5.4).** The spec gives no format or matching rules. *Decision:* terms with a required plain-text `definition` and an optional `link`; occurrences link to `link`; terms without it aren't linked in site or plain output. Whole-word matching, longest term wins, prose only (not headings, link text, or code), `first` per resolved page by default. Phase 02 decided that no term element is needed: in the site output an occurrence is an ordinary link whose title is the definition (see the [element contract](../packages/elements/CONTRACT.md)).
 8. **Widget plain fallback (SPEC §6, §9.4).** *Decision:* a static CommonMark string with phrases substituted and no attribute interpolation (no behavior); a widget that wraps content keeps that content in plain output unless `plain-content = "drop"`, since silently losing content is worse than showing it. The spec's "or nothing" then applies to the widget itself, not its content.
 9. **Widget schema constraints (SPEC §3.5, §3.6, §6).** *Decision:* groupable widgets are container-only; widgets with container form have no required primary; names starting with `tessera-` and HTML's reserved custom-element names are rejected.
 10. **Absolute links in plain output (SPEC §9.4).** Plain-markdown links are "absolute URLs", which needs the site's origin. *Decision:* optional `[consumer] site`; without it, links are root-relative and `tessera build` warns.
 11. **HTML passthrough (SPEC §9.5).** The site output depends on raw HTML (custom elements). *Decision:* keep the key, but the `astro` profile accepts only `true` until a profile needs `false`, rather than defining a degraded site output now.
-12. **Heading ids, image attributes, and asset placement (SPEC §9.4, §9.5).** *Decision:* the keys and values in §16 (`heading-ids`, `image-attributes`, `assets`, `assets-dir`); phase 02's site-render and asset contracts define the exact output, and may change these values.
+12. **Heading ids, image attributes, and asset placement (SPEC §9.4, §9.5).** *Decision (phase 02):* no keys. The profile named by `profile` fixes all three, and the `astro` profile has one way to do each: a `<tessera-attributes>` marker for heading ids and image attributes ([site-render contract](contracts/site-render.md)), and mirrored asset copies with relative image references ([asset contract](contracts/assets.md)). A key that accepts one value says nothing, and since unknown keys are errors, adding a key when a second profile needs a choice breaks no existing file, while removing one later would. *Considered:* the phase 01 keys `heading-ids` (`"attribute"` or `"html"`), `image-attributes` (`"attribute"` or `"html"`), `assets` (`"beside-page"` or `"directory"`), and `assets-dir`. Their alternatives were dropped: an `{#id}` attribute block is rewritten by Astro's default smartypants and GFM processing before a plugin sees it (quotes, `--` in ids), which the marker avoids; a raw HTML heading loses the consumer's inline processing and, in Astro, its table-of-contents entry; a raw `<img>` bypasses Astro's image processing; and a shared asset directory needs hashed names to avoid collisions, which mirroring avoids by construction. With them went the loader rule `model-consumer-assets-dir`.
 13. **Filter builds on versioned targets (SPEC §9.3).** A filter is "given a target and, for versioned targets, a version". *Decision:* the version is required for versioned targets, and not allowed for versionless ones. *Considered:* a versioned target with no version means "at every version", but then the "state in effect" is undefined.
 14. **Project defaults.** *Decision:* `content-root = "docs"`, `output-dir = ".tessera/build"`; paths relative to `tessera.toml`, `..` allowed, absolute paths rejected (keeps projects portable). The content root can't be `"."` by default, because the output directory couldn't then sit outside it.
 15. **YAML flavor for frontmatter.** *Decision:* the YAML 1.2 core schema (`yes` is a string, `3.10` is a number), and `date` fields accept `YYYY-MM-DD` scalars, quoted or not.

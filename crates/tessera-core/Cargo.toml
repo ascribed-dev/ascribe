@@ -9,6 +9,12 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+serde.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+# The registry sync test reads tests/conformance/diagnostics.toml.
+toml.workspace = true
 
 [lints]
 workspace = true
