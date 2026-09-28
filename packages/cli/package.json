@@ -1,0 +1,13 @@
+{
+  "name": "@tessera/cli",
+  "version": "0.0.0",
+  "description": "The tessera binary, distributed through npm.",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  }
+}

@@ -1,0 +1,18 @@
+[package]
+name = "tessera-cli"
+description = "The tessera command-line tool: check, build, fmt, and lsp."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "tessera"
+path = "src/main.rs"
+
+[dependencies]
+
+[lints]
+workspace = true

@@ -1,0 +1,56 @@
+# Skipped conformance cases and tags. See README.md, "Skips".
+#
+# Every skip is deliberate and has a reason; the runner prints each one. A case
+# whose area tag has neither an adapter nor an entry here fails. When a phase
+# registers an adapter for a tag, it removes that tag's entry: the runner
+# reports a full tag skip for a handled tag as an error.
+#
+# Entries:
+#   tag = "<tag>" or case = "<case id>"   exactly one
+#   reason = "<why>"                      required
+#   checks = ["outline" | "diagnostics" | "builds", ...]
+#                                         optional; skips only these checks
+
+[[skip]]
+tag = "parser"
+reason = "Adapter for tag `parser` (Tessera lines, directive heads, attributes, primaries) not yet implemented; phase 05."
+
+[[skip]]
+tag = "structure"
+reason = "Adapter for tag `structure` (forms, containers, groups, titles, binding) not yet implemented; phase 06."
+
+[[skip]]
+tag = "inline"
+reason = "Adapter for tag `inline` (phrases, escapes, image attributes) not yet implemented; phase 07."
+
+[[skip]]
+tag = "model"
+reason = "Adapter for tag `model` (loading tessera.toml) not yet implemented; phase 08."
+
+[[skip]]
+tag = "slug"
+reason = "Adapter for tag `slug` (heading slugs and source ids) not yet implemented; phase 09."
+
+[[skip]]
+tag = "check"
+reason = "Adapter for tag `check` (file-level diagnostics) not yet implemented; phase 10."
+
+[[skip]]
+tag = "include"
+reason = "Adapter for tag `include` (includes and the source index) not yet implemented; phase 11."
+
+[[skip]]
+tag = "resolve"
+reason = "Adapter for tag `resolve` (resolution passes and build modes) not yet implemented; phase 12."
+
+[[skip]]
+tag = "page-check"
+reason = "Adapter for tag `page-check` (page-level diagnostics) not yet implemented; phase 14."
+
+[[skip]]
+tag = "output"
+reason = "Adapter for tag `output` (plain, site, and JSON outputs) not yet implemented; phases 18 and 20."
+
+[[skip]]
+tag = "format"
+reason = "Adapter for tag `format` (canonical form) not yet implemented; phase 23."

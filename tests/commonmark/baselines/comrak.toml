@@ -1,0 +1,6 @@
+# Written by `COMMONMARK_WRITE_BASELINE=1 cargo test -p tessera-commonmark-suite`.
+spec_version = "0.31.2"
+renderer = "comrak (crates.io, unmodified), CommonMark options only, render.unsafe = true"
+total = 652
+passed = 652
+failing = []

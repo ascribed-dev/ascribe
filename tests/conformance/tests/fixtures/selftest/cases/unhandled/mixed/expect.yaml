@@ -1,0 +1,5 @@
+# One tag is skipped, but `nobody` is unaccounted for, so the case fails
+# rather than being skipped.
+tags: [skipped-area, nobody]
+outline:
+  - paragraph: Hello.

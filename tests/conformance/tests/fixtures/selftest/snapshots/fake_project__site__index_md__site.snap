@@ -1,0 +1,7 @@
+---
+source: tests/conformance/src/runner.rs
+expression: output
+input_file: tests/conformance/tests/fixtures/selftest/cases/fake/project/expect.yaml
+---
+<site>
+Page text.

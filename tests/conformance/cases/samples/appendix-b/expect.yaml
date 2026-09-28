@@ -1,0 +1,126 @@
+# Sample case: the complete example page from SPEC Appendix B.
+#
+# This is the worked example in tests/conformance/README.md. It checks only
+# the outline: the page includes and links to files a single-file case doesn't
+# have, so its file-level diagnostics aren't clean here. examples/quill (phase
+# 03) is the full project.
+description: >-
+  The SPEC Appendix B page parses to the expected outline: title lines,
+  heading-bound and following-block directives, a variant group inside a list
+  item, a dimensional group, and a container note.
+spec: ["B", "3.5", "3.6", "3.7", "3.8", "3.9"]
+tags: [structure]
+
+outline:
+  - paragraph: >-
+      The {product} agent watches your docs repository and syncs changes to
+      {product}. This page covers installing the agent with a package manager,
+      configuring it, and connecting it to {cloud} or a self-managed server. If
+      you only want to try {product}, see [Try {product} in the
+      browser](quickstart.md#try-in-browser).
+
+  - directive: note
+    attributes: {type: tip}
+    title: Try it without installing
+    binding: following-block
+  - paragraph: "You can run {product} in the browser at play.quill.dev with no local setup."
+
+  - heading: 2
+    text: Prerequisites
+  - directive: id
+    primary: prerequisites
+    binding: heading
+  - directive: include
+    attributes: {heading: false}
+    primary: _fragments/prerequisites.md
+    binding: self
+
+  - heading: 2
+    text: Install the agent
+  - directive: id
+    primary: install-agent
+    binding: heading
+  - directive: steps
+    binding: following-block
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: "Install the agent package:"
+          - group: variant
+            arms:
+              - attributes: {pm: npm}
+                children:
+                  - code: "npm install -g @quill/agent\n"
+                    info: shell
+              - attributes: {pm: pnpm}
+                children:
+                  - code: "pnpm add -g @quill/agent\n"
+                    info: shell
+              - attributes: {pm: yarn}
+                children:
+                  - code: "yarn global add @quill/agent\n"
+                    info: shell
+      - item:
+          - paragraph: "Verify the install:"
+          - code: "quill --version\n"
+            info: shell
+          - paragraph: "The command prints the installed version, {version}."
+          - directive: note
+            binding: following-block
+          - paragraph: "The agent needs write access to your repository's `.quill/` directory."
+      - item:
+          - paragraph: "Create `quill.yaml` at the root of your repository:"
+          - code: |
+              agent:
+                version: {version}
+                watch: docs/
+            info: yaml phrases=true
+
+  - heading: 2
+    text: "Connect to {product}"
+  - directive: id
+    primary: connect
+    binding: heading
+  - group: variant
+    arms:
+      - attributes: {deployment: cloud}
+        children:
+          - paragraph: "Sign in to {cloud} and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:"
+          - code: |
+              cloud:
+                api_key: ${QUILL_KEY}
+            info: yaml
+      - attributes: {deployment: self-managed}
+        children:
+          - paragraph: "Point the agent at your server. Self-managed servers must run {product} Server 3.3 or later."
+          - code: |
+              server:
+                url: https://quill.internal.example.com
+            info: yaml
+
+  - heading: 2
+    text: Streaming sync
+  - directive: id
+    primary: streaming-sync
+    binding: heading
+  - directive: available
+    primary: cloud, self-managed preview 3.4
+    binding: heading
+  - paragraph: "Streaming sync pushes changes as you save, instead of on each commit."
+  - paragraph: "{cloud}'s streaming sync is enabled by default for new {cloud}-hosted workspaces."
+  - paragraph: "For event formats, see the [streaming API reference]({api}streaming)."
+
+  - heading: 2
+    text: Troubleshooting
+  - directive: id
+    primary: troubleshooting
+    binding: heading
+  - directive: note
+    form: container
+    attributes: {type: warning}
+    children:
+      - paragraph: "If the agent exits immediately, check the log at `~/.quill/agent.log`."
+      - paragraph: >-
+          A common cause is an expired API key. Generate a new key, then restart
+          the agent. See [](keys.md#rotate-keys).

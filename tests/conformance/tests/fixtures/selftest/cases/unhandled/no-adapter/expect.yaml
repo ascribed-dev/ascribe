@@ -1,0 +1,4 @@
+# `nobody` has neither an adapter nor a skip entry, so this case fails.
+tags: [nobody]
+outline:
+  - paragraph: Hello.

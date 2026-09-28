@@ -1,0 +1,20 @@
+# Prettier formats the JavaScript workspace's code and config only.
+#
+# Markdown is excluded everywhere: Tessera sources must not be reflowed by a
+# formatter that doesn't know title and directive lines start new blocks
+# (SPEC §10), and the project docs are hand-wrapped.
+**/*.md
+
+# Rust, test fixtures, and examples have their own formats and tools.
+target/
+crates/
+tests/
+examples/
+project-docs/
+
+# Generated and third-party files.
+pnpm-lock.yaml
+**/dist/
+**/out/
+**/coverage/
+**/node_modules/

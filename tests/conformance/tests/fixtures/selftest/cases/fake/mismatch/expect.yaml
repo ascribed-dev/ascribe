@@ -1,0 +1,6 @@
+tags: [fake]
+outline:
+  - heading: 1
+diagnostics:
+  - slug: bad-line
+    line: 1

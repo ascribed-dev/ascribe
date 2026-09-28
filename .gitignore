@@ -1,0 +1,17 @@
+# Rust
+/target/
+
+# JavaScript
+node_modules/
+dist/
+out/
+coverage/
+*.tsbuildinfo
+
+# insta writes pending snapshots next to the accepted ones; review them with
+# `cargo insta review` rather than committing them.
+*.snap.new
+*.pending-snap
+
+# OS and editor files
+.DS_Store
