@@ -87,7 +87,7 @@ describe.each(ENGINES)("%s", (engine) => {
     it("shows a note's heading, or its label when it has none", async () => {
       const page = await fresh(NOTE, { script: false });
       expect(await pseudo(page, "tessera-note[type=tip]", "::before", "content")).toBe(
-        '"Try it without installing"',
+        '"Tip: Try it without installing"',
       );
       expect(await pseudo(page, "tessera-note[type=security]", "::before", "content")).toBe(
         '"Security"',

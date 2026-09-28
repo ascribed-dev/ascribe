@@ -238,13 +238,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §4.5, §9.7; `packages/elements/CONTRACT.md` §1
 - **Raised by:** phase 19
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** The contract says a note's heading line shows `heading`, "or `label` when there's no heading". A note with a `heading`, such as `<tessera-note type="warning" label="Warning" heading="Back up your database first">`, then shows only "Back up your database first", and its type reaches the reader only through the accent color. A reader who can't tell the colors apart can't tell a warning from a tip (WCAG 1.4.1, Use of Color), and assistive technology gets no type either, because generated content is the only place the label appears.
 - **Options:**
   1. Keep the contract: `heading`, or `label` without one. The type is color-only when there's a heading.
   2. Show both when there's a heading: `content: attr(label) ": " attr(heading)`, giving "Warning: Back up your database first". A note with no heading still shows the label alone. Only the element library's CSS changes; the emitter's markup is unchanged.
   3. Show the label as a separate visually distinct line or badge above the heading. More layout, same information.
-- **Proposed resolution:** Option 2. It keeps the type readable without color and needs one CSS rule, with no change to the markup phase 20 emits. Implemented now: option 1, as the contract says.
+- **Proposed resolution:** Option 2. It keeps the type readable without color and needs one CSS rule, with no change to the markup phase 20 emits. Implemented: option 2 (approved).
 - **Affects:** `packages/elements/css/style.css` (`tessera-note[heading]::before`); contract §1 (its rendering paragraph); phase 19's tests of the note heading; no other phase, since the markup is unchanged. Plain-markdown output already shows the type (`**Tip: …**`).
-- **Resolution:** _open_
+- **Resolution:** Approved by the repository owner: option 2. `CONTRACT.md` §1 and `css/style.css` now show `label: heading`; the tests were updated.
 

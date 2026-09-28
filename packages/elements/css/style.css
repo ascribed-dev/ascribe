@@ -97,7 +97,7 @@ tessera-note[type="caution"] {
   --_background: var(--tessera-caution-background);
 }
 
-/* The heading line: `heading`, or `label` when there's no heading. */
+/* The heading line: `label: heading`, or `label` alone with no heading (Q12). */
 tessera-note::before {
   content: attr(label);
   display: block;
@@ -107,7 +107,7 @@ tessera-note::before {
 }
 
 tessera-note[heading]::before {
-  content: attr(heading);
+  content: attr(label) ": " attr(heading);
 }
 
 tessera-note > :first-child {

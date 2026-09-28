@@ -42,7 +42,7 @@ Build `@tessera/elements`: the custom elements the site output uses, implementin
 **Built.** `packages/elements` implements `CONTRACT.md` with no additions.
 
 - `src/tabs.ts`: `<tessera-tabs>` and `<tessera-tab>`, the only behavior (ARIA tabs pattern, arrow/Home/End keys, `sync` across groups, `localStorage` key `tessera-tabs:<sync>`, guarded, with a per-page fallback). `src/group.ts`: `<tessera-group>`, an empty class (CSS gives it `display: block`). `src/index.ts` registers those three; notes, steps, and availability are CSS only and are deliberately not registered.
-- `css/style.css`: all styling, themed by `--tessera-*` properties (documented in `README.md`). Generated text comes from attributes (`attr()`), so a note shows `heading` or else `label`, a tab shows its `label`, and the availability lead-in is `tessera-availability::before`.
+- `css/style.css`: all styling, themed by `--tessera-*` properties (documented in `README.md`). Generated text comes from attributes (`attr()`), so a note shows `label: heading`, or `label` alone with no heading (Q12, approved), a tab shows its `label`, and the availability lead-in is `tessera-availability::before`.
 - Browser tests in `test/`: Playwright (`playwright-core`) drives Chromium, Firefox, and WebKit (parameterized) against the compiled `dist` and the CSS; axe-core audits pages with and without the script. `test/global-setup.ts` compiles the library first.
 
 **Public interface for phases 21 and 25.**
@@ -60,4 +60,4 @@ Build `@tessera/elements`: the custom elements the site output uses, implementin
 - The tab list is rebuilt when a group is connected and removed when it's disconnected, so moving the element (for example, view transitions) is safe. A group whose children arrive after it connects is not re-scanned.
 - Step numbers use the `list-item` counter, so an `<ol start>` is honored.
 
-**Open.** Q12 (a titled note shows its type only by color; proposes showing `label: heading`), left open for a human; the CSS follows the contract meanwhile. The elements' contrast passes axe with the default colors; a site that overrides colors owns its own contrast. Nothing checks the emitted markup against these elements until phase 21.
+**Decided.** Q12 (a titled note showed its type only by color) was approved: the heading line is `label: heading`. `CONTRACT.md` §1's rendering paragraph and the CSS were updated to match; the emitter's markup is unchanged, so no other phase is affected. The elements' contrast passes axe with the default colors; a site that overrides colors owns its own contrast. Nothing checks the emitted markup against these elements until phase 21.
