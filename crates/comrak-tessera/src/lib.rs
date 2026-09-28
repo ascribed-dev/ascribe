@@ -96,6 +96,8 @@ pub use html::format_document_with_plugins as format_html_with_plugins;
 pub use nodes::Node;
 pub use parser::options;
 pub use parser::{Options, ResolvedReference, parse_document};
+// TESSERA: the parse that also returns link reference definitions.
+pub use parser::parse_document_with_definitions;
 pub use xml::format_document as format_xml;
 pub use xml::format_document_with_plugins as format_xml_with_plugins;
 

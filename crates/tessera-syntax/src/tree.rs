@@ -68,6 +68,64 @@ pub struct ParsedDocument {
     /// tools can tell an author's escape from text that was never a phrase
     /// (the undeclared-phrase warning is silenced by one).
     pub escaped_phrases: Vec<Phrase>,
+    /// The link reference definitions (`[ref]: {api}streaming "title"`), in
+    /// source order, wherever they are: in the document, a list item, a block
+    /// quote, or a directive container. comrak consumes them, so they aren't
+    /// blocks; a paragraph that held only definitions isn't in
+    /// [`ParsedDocument::blocks`] at all. Keeping them out of [`BlockKind`]
+    /// is deliberate: code that matches on block kinds needn't handle them.
+    ///
+    /// A definition that isn't first for its label is included; it's never
+    /// used (CommonMark: the first definition of a label wins).
+    pub definitions: Vec<LinkDefinition>,
+}
+
+/// A link reference definition (CommonMark), `[label]: destination "title"`,
+/// which can span several lines and sit in a list item or block quote. Its
+/// destination is a link destination, so phrases apply in it (SPEC §5.1,
+/// resolved Q43), and so do backslash escapes.
+///
+/// A definition is only recognized where CommonMark recognizes one: at the
+/// start of a paragraph. A leading `[label]: /url` in a directive's text
+/// primary is text, not a definition (SPEC §3.4).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LinkDefinition {
+    /// From the `[` through the last character of the title, or of the
+    /// destination when there is no title. It doesn't include the line
+    /// ending, or trailing whitespace.
+    pub span: Span,
+    /// The label between the brackets, without the brackets or the whitespace
+    /// around it.
+    pub label: Span,
+    /// The label's text as written.
+    pub label_text: String,
+    /// The label as CommonMark compares labels: case folded, with runs of
+    /// white space collapsed. A reference link matches the first definition
+    /// with the same normalized label.
+    pub normalized_label: String,
+    /// The destination as written, including its `<` and `>` if it has them.
+    pub destination: Span,
+    /// The destination with `<>` removed and escapes and entities decoded;
+    /// the same value as [`Link::destination`] for a link that uses this
+    /// definition.
+    pub url: String,
+    /// The phrase candidates in the destination as written, in source order
+    /// (`[ref]: {api}streaming`), as for [`Link::destination_phrases`]. A
+    /// backslash escapes (`\{key}` is text, and is in
+    /// [`ParsedDocument::escaped_phrases`]).
+    pub destination_phrases: Vec<Phrase>,
+    /// The title, if the definition has one.
+    pub title: Option<DefinitionTitle>,
+}
+
+/// The title of a [`LinkDefinition`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DefinitionTitle {
+    /// The title as written, including its quotes or parentheses.
+    pub span: Span,
+    /// The title's text, with the delimiters removed and escapes and entities
+    /// decoded.
+    pub text: String,
 }
 
 /// YAML frontmatter (SPEC §2.1): a leading block delimited by `---` lines.
@@ -523,7 +581,8 @@ pub struct Link {
     /// The phrase candidates in the destination as written, in source order
     /// (`[text]({api}streaming)`, `<https://{host}/status>`). The destination
     /// itself is unchanged. Inline links and autolinks have them; reference
-    /// forms don't yet, since their definitions aren't nodes (SPEC §5.1).
+    /// forms don't, since their destination is in a definition, which has
+    /// them ([`LinkDefinition::destination_phrases`], SPEC §5.1).
     pub destination_phrases: Vec<Phrase>,
     /// The link text.
     pub children: Vec<Inline>,
@@ -548,8 +607,9 @@ pub struct Image {
     pub children: Vec<Inline>,
     /// The phrase candidates in an inline image's source, as written, in
     /// source order (`![alt]({assets}a.png)`). The destination itself is
-    /// unchanged. Reference forms have none yet: their destination is in the
-    /// definition, which isn't a node (SPEC §5.1).
+    /// unchanged. Reference forms have none: their destination is in a
+    /// definition, which has them ([`LinkDefinition::destination_phrases`],
+    /// SPEC §5.1).
     pub destination_phrases: Vec<Phrase>,
     /// The attribute block directly after the image (SPEC §5.3). The image's
     /// span covers it.

@@ -37,8 +37,10 @@
 use std::collections::HashMap;
 use std::fmt::{self, Write};
 
+use std::ops::Range;
+
 use crate::html::{ChildRendering, Context, render_sourcepos};
-use crate::nodes::Node;
+use crate::nodes::{LineColumn, Node, Sourcepos};
 
 /// The Tessera option: the known directive keywords.
 ///
@@ -117,6 +119,97 @@ pub struct NodeTesseraLine {
     /// When the line has a non-empty text primary, the byte offset in
     /// [`raw`](Self::raw) where it starts.
     pub text_primary: Option<usize>,
+}
+
+/// A link reference definition (`[label]: destination "title"`), which comrak
+/// consumes while parsing and leaves out of the tree. Get them from
+/// [`parse_document_with_definitions`](crate::parse_document_with_definitions).
+///
+/// Every position is a [`Sourcepos`] in comrak's convention: 1-based lines and
+/// byte columns, the end being the last byte (inclusive). Every part is
+/// non-empty. A definition can span several lines.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LinkDefinition {
+    /// The whole definition, from the `[` through the last character of the
+    /// title, or of the destination when there is no title.
+    pub sourcepos: Sourcepos,
+    /// The label as written, trimmed, between the brackets.
+    pub label: Sourcepos,
+    /// The label normalized as CommonMark matches labels (case folded, white
+    /// space collapsed). The first definition of a label wins; later ones are
+    /// parsed but never used.
+    pub normalized_label: String,
+    /// The destination as written, `<>` included.
+    pub destination: Sourcepos,
+    /// The destination with `<>` removed and escapes and entities decoded.
+    pub url: String,
+    /// The title as written, quotes or parentheses included, and its decoded
+    /// text, if the definition has one.
+    pub title: Option<(Sourcepos, String)>,
+}
+
+/// A definition's parts as offsets into the content the parser was reading.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct RawDefinition {
+    pub label: Range<usize>,
+    pub normalized_label: String,
+    pub destination: Range<usize>,
+    pub url: String,
+    pub title: Option<(Range<usize>, String)>,
+}
+
+/// Turns a [`RawDefinition`] into positions. `raw`'s offsets are relative to
+/// `content[base..]`. `origin` is the line of the content's first line, and the
+/// byte column, in the source, at which each of its lines starts (comrak's
+/// `line_offsets`).
+pub(crate) fn locate(
+    content: &str,
+    base: usize,
+    raw: RawDefinition,
+    origin: (usize, &[usize]),
+) -> LinkDefinition {
+    // The position of the byte at `offset` in `content`.
+    let at = |offset: usize| {
+        let mut line = 0;
+        let mut line_start = 0;
+        let bytes = content.as_bytes();
+        let mut i = 0;
+        while i < offset {
+            match bytes[i] {
+                b'\r' if bytes.get(i + 1) == Some(&b'\n') => {
+                    i += 1;
+                    line += 1;
+                    line_start = i + 1;
+                }
+                b'\n' | b'\r' => {
+                    line += 1;
+                    line_start = i + 1;
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+        LineColumn {
+            line: origin.0 + line,
+            column: origin.1.get(line).copied().unwrap_or(0) + (offset - line_start) + 1,
+        }
+    };
+    let range = |r: &Range<usize>| Sourcepos {
+        start: at(base + r.start),
+        end: at(base + r.end - 1),
+    };
+    let end = raw.title.as_ref().map_or(&raw.destination, |(r, _)| r);
+    LinkDefinition {
+        sourcepos: Sourcepos {
+            start: at(base), // the `[`
+            end: at(base + end.end - 1),
+        },
+        label: range(&raw.label),
+        normalized_label: raw.normalized_label,
+        destination: range(&raw.destination),
+        url: raw.url,
+        title: raw.title.map(|(r, text)| (range(&r), text)),
+    }
 }
 
 /// The result of recognizing a Tessera line.
