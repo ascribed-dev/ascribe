@@ -199,6 +199,9 @@ fn every_outcome_in_the_fixture_suite() {
             "fake/project",
             "fake/provisional",
             "skipped/whole",
+            "slugs/provisional-untagged",
+            "slugs/unknown",
+            "slugs/wrong-level",
             "unhandled/mixed",
             "unhandled/no-adapter",
         ],
@@ -247,12 +250,31 @@ fn every_outcome_in_the_fixture_suite() {
     assert!(problems(report.outcome("broken/no-expect"))[0].contains("no expect.yaml"));
     assert!(problems(report.outcome("broken/unknown-key"))[0].contains("unknown field `outlines`"));
 
+    // Expected slugs are checked against diagnostics.toml before a case runs.
+    assert_eq!(
+        problems(report.outcome("slugs/unknown")),
+        vec!["diagnostics: `no-such-slug` isn't a slug in diagnostics.toml"]
+    );
+    assert_eq!(
+        problems(report.outcome("slugs/wrong-level")),
+        vec![
+            "diagnostics: `bad-page` is a page-level diagnostic; expect it under `builds.<name>.diagnostics`",
+            "builds.site.diagnostics: `bad-line` is a file-level diagnostic; expect it in the top-level `diagnostics`",
+        ]
+    );
+    assert_eq!(
+        problems(report.outcome("slugs/provisional-untagged")),
+        vec![
+            "diagnostics: `maybe-bad` is provisional (Q1); tag the case `provisional` and list those questions"
+        ]
+    );
+
     assert_eq!(
         (report.passed(), report.failed(), report.skipped()),
-        (4, 5, 1)
+        (4, 8, 1)
     );
     assert!(!report.success());
-    assert!(summary.contains("conformance: 4 passed, 5 failed, 1 skipped, 0 suite error(s)"));
+    assert!(summary.contains("conformance: 4 passed, 8 failed, 1 skipped, 0 suite error(s)"));
 }
 
 #[test]

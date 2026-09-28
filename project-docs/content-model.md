@@ -775,7 +775,7 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 
 Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recommended below, at the human checkpoint after phase 01, except item 12, which phase 02 settled when it wrote the site-render and asset contracts. Items 1, 2, 3, 4, and 6 are now also stated in SPEC.md (§2.1, §5.2, §7.2, §8.2). Each item keeps the alternatives that were considered.
 
-These numbers belong to this document. Entries in [`questions.md`](questions.md) start at Q22, so every Qn names one item across the project.
+These numbers belong to this document. [`questions.md`](questions.md) numbers its entries separately, from Q1; elsewhere, a bare Qn (in a `SPEC-QUESTION` comment, a conformance case's `questions`, or the diagnostics registry's `provisional`) means a `questions.md` entry.
 
 1. **Frontmatter diagnostics (SPEC §8.2).** §8.1 says file-level validation covers frontmatter, but §8.2 has no rows for it. *Decision:* add file-level error rows: unknown frontmatter key; missing required field; value doesn't match the field's type; reserved key (`available`, `variant`) on a fragment; page matches more than one content type; page matches no content type and there's no default.
 2. **Assigning content types to pages (SPEC §7.2).** The spec doesn't say how a page gets its type. *Decision:* `files` patterns per type plus at most one `default = true` type; a page matching several types is an error, with no precedence. *Considered:* first match in file order (TOML tables are formally unordered); most specific pattern (hard to define); a frontmatter `type` key (would need a new reserved key).

@@ -1,0 +1,26 @@
+# A registry for the harness's own tests (tests/harness.rs), not the real one.
+
+[[diagnostic]]
+code = "TSR001"
+slug = "bad-line"
+severity = "error"
+level = "file"
+spec = "8.2"
+message = "this line is bad"
+
+[[diagnostic]]
+code = "TSR002"
+slug = "bad-page"
+severity = "error"
+level = "page"
+spec = "8.2"
+message = "this page is bad"
+
+[[diagnostic]]
+code = "TSR003"
+slug = "maybe-bad"
+severity = "warning"
+level = "file"
+spec = "8.2"
+provisional = ["Q1"]
+message = "this line might be bad"

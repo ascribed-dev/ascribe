@@ -39,7 +39,7 @@
 #                exactly. Every row has exactly one entry for each level it's
 #                checked at. Four rows join a file-level check and a
 #                page-level check in one condition, and have one entry for
-#                each (Q22).
+#                each (Q3).
 #   rule         The content-model.md §20 subsection a loader rule is in.
 #   provisional  questions.md entries the entry depends on. A conformance case
 #                that expects this diagnostic must be tagged `provisional` and
@@ -248,7 +248,7 @@ severity = "error"
 level = "file"
 spec = "4.2"
 row = "`@include` | Target file or id doesn't exist"
-provisional = ["Q22"]
+provisional = ["Q3"]
 message = "the included file `{path}` doesn't exist"
 messages.case = "the included file `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 
@@ -259,7 +259,7 @@ severity = "error"
 level = "page"
 spec = "4.2"
 row = "`@include` | Target file or id doesn't exist"
-provisional = ["Q22"]
+provisional = ["Q3"]
 message = "`{path}` has no heading with the id `{id}`"
 
 [[diagnostic]]
@@ -394,7 +394,7 @@ severity = "error"
 level = "file"
 spec = "5.2"
 row = "Links | Target file or id doesn't exist"
-provisional = ["Q22", "Q29"]
+provisional = ["Q3", "Q10"]
 message = "`{path}` doesn't exist"
 messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
@@ -406,7 +406,7 @@ severity = "error"
 level = "page"
 spec = "5.2"
 row = "Links | Target file or id doesn't exist"
-provisional = ["Q22"]
+provisional = ["Q3"]
 message = "`{path}` has no heading with the id `{id}`"
 
 [[diagnostic]]
@@ -416,7 +416,7 @@ severity = "error"
 level = "file"
 spec = "4.2"
 row = "Links | Target is a fragment, or an id that exists only inside a fragment"
-provisional = ["Q22"]
+provisional = ["Q3"]
 message = "`{path}` is a fragment, which isn't published on its own; link to a page that includes it"
 
 [[diagnostic]]
@@ -426,7 +426,7 @@ severity = "error"
 level = "page"
 spec = "4.2"
 row = "Links | Target is a fragment, or an id that exists only inside a fragment"
-provisional = ["Q22", "Q25"]
+provisional = ["Q3", "Q6"]
 message = "`{id}` is a heading in the fragment `{fragment}`, not in `{path}` itself; link to a page, not to an id that exists only inside a fragment"
 
 [[diagnostic]]
@@ -454,7 +454,7 @@ severity = "error"
 level = "file"
 spec = "5.3"
 row = "Images | Local source doesn't exist"
-provisional = ["Q29"]
+provisional = ["Q10"]
 message = "the image `{path}` doesn't exist"
 messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
@@ -484,7 +484,7 @@ severity = "warning"
 level = "file"
 spec = "5.5"
 row = "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text"
-provisional = ["Q22"]
+provisional = ["Q3"]
 message = "this heading contains a phrase, so its id changes whenever the phrase's value does; give it a stable id with `@id`"
 
 [[diagnostic]]
@@ -494,7 +494,7 @@ severity = "warning"
 level = "page"
 spec = "5.5"
 row = "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text"
-provisional = ["Q22"]
+provisional = ["Q3"]
 message = "this heading repeats the text of another heading on the page, so its id is numbered and can change when headings move; give it a stable id with `@id`"
 
 [[diagnostic]]
@@ -575,7 +575,7 @@ row = "Lists | An ordered list continues the numbering of a list bound by `@step
 message = "this list continues the numbering of the `@steps` list above it, which usually means an unindented line split that list; indent the line to keep one list"
 
 ###############################################################################
-# Diagnostics SPEC §8.2 has no row for (Q24). Provisional until Q24 is resolved.
+# Diagnostics SPEC §8.2 has no row for (Q5). Provisional until Q5 is resolved.
 ###############################################################################
 
 [[diagnostic]]
@@ -584,7 +584,7 @@ slug = "attribute-syntax"
 severity = "error"
 level = "file"
 spec = "3.3"
-provisional = ["Q24"]
+provisional = ["Q5"]
 message = "this attribute block isn't valid: {detail}"
 
 [[diagnostic]]
@@ -593,7 +593,7 @@ slug = "attribute-duplicate-key"
 severity = "error"
 level = "file"
 spec = "3.3"
-provisional = ["Q24"]
+provisional = ["Q5"]
 message = "`{key}` is given more than once; give each attribute once"
 
 [[diagnostic]]
@@ -602,7 +602,7 @@ slug = "available-syntax"
 severity = "error"
 level = "file"
 spec = "4.4"
-provisional = ["Q24"]
+provisional = ["Q5"]
 message = "\"{spec}\" isn't a valid availability spec: {detail}"
 
 [[diagnostic]]
@@ -611,7 +611,7 @@ slug = "id-invalid"
 severity = "error"
 level = "file"
 spec = "4.1"
-provisional = ["Q24"]
+provisional = ["Q5"]
 message = "`{id}` isn't a valid id: use only letters, digits, and hyphens"
 
 [[diagnostic]]
@@ -620,7 +620,7 @@ slug = "image-attribute-missing"
 severity = "error"
 level = "file"
 spec = "5.3"
-provisional = ["Q24"]
+provisional = ["Q5"]
 message = "this image is missing the required attribute `{key}`"
 
 ###############################################################################

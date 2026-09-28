@@ -1,0 +1,10 @@
+# A page-level slug expected at the top level, and a file-level one under a build.
+tags: [fake]
+diagnostics:
+  - slug: bad-page
+    line: 1
+builds:
+  site:
+    diagnostics:
+      - slug: bad-line
+        line: 1

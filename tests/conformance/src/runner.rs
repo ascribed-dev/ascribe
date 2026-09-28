@@ -9,6 +9,7 @@ use crate::adapter::{AdapterResult, BuildResult, ConformanceAdapter, Diagnostic,
 use crate::case::{Case, CaseError, CaseKind, discover};
 use crate::expect::{BuildExpect, ExpectedDiagnostic, OutputKind, OutputSlot};
 use crate::outline::{compare, outline_to_yaml};
+use crate::registry::{DiagnosticsRegistry, Level, RegistryError};
 use crate::skips::{Check, SkipTarget, Skips, SkipsError};
 
 /// The conformance suite's directory layout.
@@ -27,6 +28,9 @@ pub enum RunError {
     /// The cases directory couldn't be read.
     #[error(transparent)]
     Discovery(#[from] CaseError),
+    /// `diagnostics.toml` couldn't be read.
+    #[error(transparent)]
+    Registry(#[from] RegistryError),
 }
 
 /// Which cases to run.
@@ -106,6 +110,11 @@ impl Suite {
         self.root.join("SKIPS.toml")
     }
 
+    /// `diagnostics.toml`, the diagnostics registry.
+    pub fn diagnostics_path(&self) -> PathBuf {
+        self.root.join("diagnostics.toml")
+    }
+
     /// `_model/tessera.toml`, the shared fixture model.
     pub fn shared_model_path(&self) -> PathBuf {
         self.root.join("_model").join("tessera.toml")
@@ -119,6 +128,7 @@ impl Suite {
     /// Discovers the cases, applies the skips, and runs the rest.
     pub fn run(&self, registry: &Registry, filter: &Filter) -> Result<Report, RunError> {
         let skips = Skips::load(&self.skips_path())?;
+        let registry_file = DiagnosticsRegistry::load(&self.diagnostics_path())?;
         let discovered = discover(&self.cases_dir(), &self.shared_model_path())?;
         let mut report = Report::default();
 
@@ -155,7 +165,14 @@ impl Suite {
                 Err(e) => Outcome::Failed {
                     problems: vec![format!("couldn't load case: {e}")],
                 },
-                Ok(case) => self.run_case(&case, registry, &skips),
+                Ok(case) => {
+                    let problems = check_slugs(&case, &registry_file);
+                    if problems.is_empty() {
+                        self.run_case(&case, registry, &skips)
+                    } else {
+                        Outcome::Failed { problems }
+                    }
+                }
             };
             report.cases.push(CaseReport { id: d.id, outcome });
         }
@@ -352,6 +369,65 @@ impl Suite {
             }
         }
     }
+}
+
+/// Checks the slugs a case expects against the registry, whether or not the
+/// case runs: each must be registered, at the level where the case expects
+/// it, and a provisional diagnostic needs a provisional case that lists its
+/// questions.
+fn check_slugs(case: &Case, registry: &DiagnosticsRegistry) -> Vec<String> {
+    let e = &case.expect;
+    let file_level = e
+        .diagnostics
+        .iter()
+        .flatten()
+        .map(|d| ("diagnostics", Level::File, d));
+    let page_level = e.builds.iter().flat_map(|(name, b)| {
+        b.diagnostics
+            .iter()
+            .flatten()
+            .map(move |d| (name.as_str(), Level::Page, d))
+    });
+    let mut problems = Vec::new();
+    for (place, level, d) in file_level.chain(page_level) {
+        let at = if level == Level::File {
+            place.to_owned()
+        } else {
+            format!("builds.{place}.diagnostics")
+        };
+        let Some(entry) = registry.get(&d.slug) else {
+            problems.push(format!(
+                "{at}: `{}` isn't a slug in diagnostics.toml",
+                d.slug
+            ));
+            continue;
+        };
+        if entry.level != level {
+            let hint = match entry.level {
+                Level::File => "expect it in the top-level `diagnostics`",
+                Level::Page => "expect it under `builds.<name>.diagnostics`",
+            };
+            problems.push(format!(
+                "{at}: `{}` is a {}-level diagnostic; {hint}",
+                d.slug, entry.level
+            ));
+        }
+        if !entry.provisional.is_empty() {
+            let missing: Vec<&String> = entry
+                .provisional
+                .iter()
+                .filter(|q| !e.questions.contains(q))
+                .collect();
+            if !e.is_provisional() || !missing.is_empty() {
+                problems.push(format!(
+                    "{at}: `{}` is provisional ({}); tag the case `provisional` and list those questions",
+                    d.slug,
+                    entry.provisional.join(", ")
+                ));
+            }
+        }
+    }
+    problems
 }
 
 /// The `insta` snapshot name for an output: the case id, build, page, and

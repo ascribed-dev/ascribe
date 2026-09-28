@@ -142,7 +142,7 @@ impl Builtin {
                 ..base
             },
             Builtin::Available => DirectiveSchema {
-                // SPEC-QUESTION(Q23): an availability spec contains spaces, so
+                // SPEC-QUESTION(Q4): an availability spec contains spaces, so
                 // it isn't an identifier primary, and it isn't inline content,
                 // so it isn't a text primary. It's the rest of the line.
                 primary: Primary::Availability { required: true },
@@ -234,7 +234,7 @@ pub enum Primary {
     /// An availability spec or feature key (SPEC §4.4): the rest of the
     /// directive line, trimmed. It isn't inline content, and it doesn't
     /// continue onto the next line. Built-in `@available` only; a content
-    /// model can't declare it. Provisional (Q23).
+    /// model can't declare it. Provisional (Q4).
     Availability {
         /// Whether the line form must have one.
         required: bool,
@@ -274,7 +274,7 @@ pub enum Binding {
 /// Whether a directive takes a title line (SPEC §3.7).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TitleRule {
-    /// A title line above it is an error (SPEC §8.2). See Q30.
+    /// A title line above it is an error (SPEC §8.2). See Q11.
     None,
     /// A title is allowed.
     Accepted,
