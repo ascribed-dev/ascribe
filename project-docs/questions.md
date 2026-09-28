@@ -234,7 +234,21 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `crates/tessera-core/src/schema.rs` (`TitleRule::None`); phases 03, 06, and 10.
 - **Resolution:** a variant of option 1: the `.` line stays a paragraph (§3.7), and the §8.2 row "Title given to a directive that doesn't accept one" is a warning, not an error, because a real sentence such as `.NET 8 is required.` directly above `@steps` mustn't fail a build. `\.` silences it. SPEC §3.7 and §8.2 and the registry entry `title-not-accepted` now say so.
 
-### Q12: `role` is reserved, but the full example model declares it
+### Q12: A titled note shows its type only by color
+
+- **Section:** SPEC §4.5, §9.7; `packages/elements/CONTRACT.md` §1
+- **Raised by:** phase 19
+- **Status:** resolved (2026-09-28)
+- **Ambiguity:** The contract says a note's heading line shows `heading`, "or `label` when there's no heading". A note with a `heading`, such as `<tessera-note type="warning" label="Warning" heading="Back up your database first">`, then shows only "Back up your database first", and its type reaches the reader only through the accent color. A reader who can't tell the colors apart can't tell a warning from a tip (WCAG 1.4.1, Use of Color), and assistive technology gets no type either, because generated content is the only place the label appears.
+- **Options:**
+  1. Keep the contract: `heading`, or `label` without one. The type is color-only when there's a heading.
+  2. Show both when there's a heading: `content: attr(label) ": " attr(heading)`, giving "Warning: Back up your database first". A note with no heading still shows the label alone. Only the element library's CSS changes; the emitter's markup is unchanged.
+  3. Show the label as a separate visually distinct line or badge above the heading. More layout, same information.
+- **Proposed resolution:** Option 2. It keeps the type readable without color and needs one CSS rule, with no change to the markup phase 20 emits. Implemented: option 2 (approved).
+- **Affects:** `packages/elements/css/style.css` (`tessera-note[heading]::before`); contract §1 (its rendering paragraph); phase 19's tests of the note heading; no other phase, since the markup is unchanged. Plain-markdown output already shows the type (`**Tip: …**`).
+- **Resolution:** Approved by the repository owner: option 2. `CONTRACT.md` §1 and `css/style.css` now show `label: heading`; the tests were updated.
+
+### Q27: `role` is reserved, but the full example model declares it
 
 - **Section:** SPEC §7.2 (reserved attribute keys); content-model.md §15, §20.3
 - **Raised by:** phase 08
@@ -247,7 +261,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `examples/content-models/full.toml`; phase 03 fixtures that copy from it.
 - **Resolution:** _to be filled in by a human._
 
-### Q13: `DefaultValue` has no number variant
+### Q28: `DefaultValue` has no number variant
 
 - **Section:** SPEC §3.3; content-model.md §6.2; `tessera_core::DefaultValue` (phase 02 contract)
 - **Raised by:** phase 08
@@ -256,11 +270,11 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Options:**
   1. Add `DefaultValue::Number` (a contract change: it touches every `match` on `DefaultValue` in phases 05, 06, 10, and 23).
   2. Store the default's source text (`"600"`) in `DefaultValue::Text`. Consumers of a `number` attribute already read attribute values as text.
-- **Proposed resolution:** option 2 for now, since it needs no contract change and loses nothing; option 1 if a consumer needs to tell `"600"` from `600`. Implemented now: option 2 (`// SPEC-QUESTION(Q13)` in `tessera-model/src/fields.rs`).
+- **Proposed resolution:** option 2 for now, since it needs no contract change and loses nothing; option 1 if a consumer needs to tell `"600"` from `600`. Implemented now: option 2 (`// SPEC-QUESTION(Q28)` in `tessera-model/src/fields.rs`).
 - **Affects:** `crates/tessera-core/src/schema.rs`; phases 05, 06, 10, 23.
 - **Resolution:** _to be filled in by a human._
 
-### Q14: A dimension name as a target of a versioned entry
+### Q29: A dimension name as a target of a versioned entry
 
 - **Section:** SPEC §4.4
 - **Raised by:** phase 08
@@ -270,6 +284,6 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   1. A dimension name is versionless only if all its values are. `deployment 3.4` is then accepted for a mixed dimension, and the version means nothing to `cloud`.
   2. A dimension name is versionless if any of its values is, so versions are never allowed on a mixed dimension name.
   3. Versions are never allowed on a dimension name.
-- **Proposed resolution:** option 1: it rejects only what is certainly wrong (a version on a dimension whose values are all versionless) and never rejects a spec that has a sensible meaning. Implemented now: option 1 (`// SPEC-QUESTION(Q14)` in `tessera-model/src/model.rs`).
+- **Proposed resolution:** option 1: it rejects only what is certainly wrong (a version on a dimension whose values are all versionless) and never rejects a spec that has a sensible meaning. **Implemented now: option 3**, the most conservative, at the reviewer's request while the question is open (`// SPEC-QUESTION(Q29)` in `tessera-model/src/model.rs`). A version on a dimension name is reported as `model-availability-versionless` (`available-versionless` in documents) with the base message; its wording ("`deployment` is versionless") doesn't quite fit, and a message variant naming the dimension would need a registry change, so none was added.
 - **Affects:** `tessera-model` (`check_availability`); phases 10, 12 (which decide what the version means for versionless members).
 - **Resolution:** _to be filled in by a human._

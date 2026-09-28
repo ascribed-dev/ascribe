@@ -285,6 +285,32 @@ fn availability_specs_are_checked_against_the_model() {
     );
 }
 
+#[test]
+fn a_version_on_a_dimension_name_is_an_error() {
+    // Q29: whether the dimension is mixed or all versioned.
+    let toml = "spec = \"0.1\"\n[dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\nversionless = [\"cloud\"]\n[dimensions.sdk]\nvalues = [\"python\", \"js\"]\n";
+    let m = load_str(toml, FileId::new(0)).unwrap();
+    for bad in [
+        "deployment 3.4",
+        "sdk 3.4",
+        "sdk preview 3.4",
+        "sdk (preview 3.3, ga 3.5)",
+    ] {
+        let problems = m.check_availability(&parse_availability(bad, 0).unwrap());
+        assert!(
+            matches!(problems[0], AvailabilityProblem::VersionlessVersion { .. }),
+            "{bad}: {problems:?}"
+        );
+    }
+    for ok in ["deployment", "deployment beta", "sdk", "sdk deprecated"] {
+        assert!(
+            m.check_availability(&parse_availability(ok, 0).unwrap())
+                .is_empty(),
+            "{ok}"
+        );
+    }
+}
+
 // ---- the filesystem rules ---------------------------------------------------
 
 fn scratch(name: &str) -> PathBuf {

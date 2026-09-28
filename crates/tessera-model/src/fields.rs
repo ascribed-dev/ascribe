@@ -413,7 +413,7 @@ impl Loader<'_> {
                 Some(DefaultValue::Text(s.to_string()))
             }
             (AttributeType::Boolean, DeValue::Boolean(b)) => Some(DefaultValue::Boolean(*b)),
-            // SPEC-QUESTION(Q13): `DefaultValue` has no number variant
+            // SPEC-QUESTION(Q28): `DefaultValue` has no number variant
             // (phase 02); a number default is its source text.
             (AttributeType::Number, DeValue::Integer(i)) => {
                 Some(DefaultValue::Text(i.as_str().to_owned()))

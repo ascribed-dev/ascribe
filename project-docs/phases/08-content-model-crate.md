@@ -75,15 +75,15 @@ Implement `tessera-model`: load `tessera.toml`, validate it against the phase 01
 - **`model-glossary-link`'s fragment half** doesn't need the file system (it's a path check), so it runs on `load_str` too; only the existence half is skipped there.
 - **An empty `[types]` or `[builds]` table** counts as absent: the implicit `page` type and `site` build apply.
 - **`model-output-overlaps-content`** compares lexically normalized paths, and, when the project directory is known, resolves symbolic links for the part of each path that exists.
-- **A `number` attribute default** is stored as its source text in `DefaultValue::Text` (Q13); a `set` default is `DefaultValue::Set`.
-- **A dimension name as a versioned target** (Q14): versionless only if all its values are.
-- **`role` is reserved** by phase 02's lists, so `full.toml`'s `quill-audience` attribute `role` became `audience` (Q12).
+- **A `number` attribute default** is stored as its source text in `DefaultValue::Text` (Q28); a `set` default is `DefaultValue::Set`.
+- **A dimension name as a versioned target** (Q29): any version on a dimension name is an error (`VersionlessVersion`, so `model-availability-versionless` / `available-versionless`, with the base message, whose wording says the dimension is "versionless"; a message variant naming the dimension would need a registry change).
+- **`role` is reserved** by phase 02's lists, so `full.toml`'s `quill-audience` attribute `role` became `audience` (Q27).
 - **`model-editor-build-required`** is reported at the `[editor]` table if there is one, else at the `[builds]` table.
 - **Feature spec spans** assume the TOML string has no escape sequences before the error; with escapes, the reported column can shift.
 
 ### Left open
 
-- Q12, Q13, and Q14 in `questions.md`.
+- Q27, Q28, and Q29 in `questions.md`.
 - `validate_frontmatter` gets a parsed `serde_yaml::Value`, which has lost the original spelling of `3.10`, so it uses the plain `frontmatter-type-mismatch` message, not the registry's `quote` variant. Phase 10 can build that variant, since it has the source text.
 - The `model` conformance tag still has its skip entry in `SKIPS.toml`: phase 03 writes the cases and the shared `_model/`, and `tests/conformance` has no `tessera-model` adapter yet. The rule fixtures live in `crates/tessera-model/tests/rules.rs` until then.
 - Frontmatter defaults are kept as `serde_yaml::Value` but aren't applied by `validate_frontmatter`; a consumer that wants defaults (the Zod generator, hover) reads `Field::default`.

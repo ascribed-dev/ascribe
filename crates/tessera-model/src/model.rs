@@ -304,7 +304,7 @@ pub enum AvailabilityProblem {
     UnknownTarget(Name),
     /// A state isn't a declared lifecycle state.
     UnknownState(Name),
-    /// A versionless target was given a version.
+    /// A versionless target, or a dimension name (Q29), was given a version.
     VersionlessVersion {
         /// The target.
         target: Name,
@@ -500,8 +500,11 @@ pub(crate) fn check_entries(
         if versionless.is_none() {
             problems.push(AvailabilityProblem::UnknownTarget(target.clone()));
         }
+        // SPEC-QUESTION(Q29): a version on a dimension name is an error,
+        // whether or not its values are versionless.
+        let is_dimension = dimensions.iter().any(|d| d.name == target.text);
         let check_version = |v: &Version, problems: &mut Vec<AvailabilityProblem>| {
-            if versionless == Some(true) {
+            if is_dimension || versionless == Some(true) {
                 problems.push(AvailabilityProblem::VersionlessVersion {
                     target: target.clone(),
                     version: v.clone(),
@@ -547,11 +550,11 @@ pub(crate) fn check_entries(
 }
 
 /// `None` when `name` isn't a target. `Some(true)` when it is a versionless
-/// dimension value, or a dimension all of whose values are.
-// SPEC-QUESTION(Q14): a dimension name with mixed values is not versionless.
+/// dimension value. A dimension name is `Some(false)`; versions on it are
+/// rejected separately (Q29).
 fn target_is_versionless(dimensions: &[Dimension], name: &str) -> Option<bool> {
-    if let Some(d) = dimensions.iter().find(|d| d.name == name) {
-        return Some(d.values.iter().all(|v| v.versionless));
+    if dimensions.iter().any(|d| d.name == name) {
+        return Some(false);
     }
     dimensions
         .iter()
