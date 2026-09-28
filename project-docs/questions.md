@@ -233,3 +233,43 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1: the tree follows §3.7 and the diagnostic follows §8.2, which reports a probable mistake rather than hiding it. Implemented now: nothing yet; the registry entry `title-not-accepted` exists, and phases 06 and 10 report it.
 - **Affects:** `crates/tessera-core/src/schema.rs` (`TitleRule::None`); phases 03, 06, and 10.
 - **Resolution:** a variant of option 1: the `.` line stays a paragraph (§3.7), and the §8.2 row "Title given to a directive that doesn't accept one" is a warning, not an error, because a real sentence such as `.NET 8 is required.` directly above `@steps` mustn't fail a build. `\.` silences it. SPEC §3.7 and §8.2 and the registry entry `title-not-accepted` now say so.
+
+### Q12: `role` is reserved, but the full example model declares it
+
+- **Section:** SPEC §7.2 (reserved attribute keys); content-model.md §15, §20.3
+- **Raised by:** phase 08
+- **Status:** open
+- **Ambiguity:** `tessera_core::reserved::HTML_GLOBAL_ATTRIBUTES` includes `role` (an ARIA global attribute), so `model-attribute-reserved` rejects it. Phase 01's `examples/content-models/full.toml` declared a widget attribute `role = "set(enum(admin, developer, writer))"` and, as an acceptance criterion, must load with no issues. The two contradict.
+- **Options:**
+  1. Keep `role` reserved and rename the example's attribute. The site output writes widget attributes onto the widget's custom element, where `role` would change its accessibility role.
+  2. Remove `role` from the reserved list. Authors could then declare a `role` attribute whose value (such as `admin`) becomes an invalid ARIA role on the element.
+- **Proposed resolution:** option 1. Implemented now: the example's attribute is renamed `audience` (in `full.toml` and its comment); no other file mentions the old spelling.
+- **Affects:** `examples/content-models/full.toml`; phase 03 fixtures that copy from it.
+- **Resolution:** _to be filled in by a human._
+
+### Q13: `DefaultValue` has no number variant
+
+- **Section:** SPEC §3.3; content-model.md §6.2; `tessera_core::DefaultValue` (phase 02 contract)
+- **Raised by:** phase 08
+- **Status:** open
+- **Ambiguity:** an attribute of type `number` can have a default (`height = { type = "number", default = 600 }`), but `DefaultValue` is `Text`, `Boolean`, or `Set`. There is nowhere to put a number.
+- **Options:**
+  1. Add `DefaultValue::Number` (a contract change: it touches every `match` on `DefaultValue` in phases 05, 06, 10, and 23).
+  2. Store the default's source text (`"600"`) in `DefaultValue::Text`. Consumers of a `number` attribute already read attribute values as text.
+- **Proposed resolution:** option 2 for now, since it needs no contract change and loses nothing; option 1 if a consumer needs to tell `"600"` from `600`. Implemented now: option 2 (`// SPEC-QUESTION(Q13)` in `tessera-model/src/fields.rs`).
+- **Affects:** `crates/tessera-core/src/schema.rs`; phases 05, 06, 10, 23.
+- **Resolution:** _to be filled in by a human._
+
+### Q14: A dimension name as a target of a versioned entry
+
+- **Section:** SPEC §4.4
+- **Raised by:** phase 08
+- **Status:** open
+- **Ambiguity:** a target may be a dimension name, "which stands for all of its values", and "a target that the content model declares as versionless takes a single state and no versions". For a dimension with both kinds of value (`deployment`: `cloud` versionless, `self-managed` versioned), `deployment 3.4` is neither clearly valid nor clearly invalid.
+- **Options:**
+  1. A dimension name is versionless only if all its values are. `deployment 3.4` is then accepted for a mixed dimension, and the version means nothing to `cloud`.
+  2. A dimension name is versionless if any of its values is, so versions are never allowed on a mixed dimension name.
+  3. Versions are never allowed on a dimension name.
+- **Proposed resolution:** option 1: it rejects only what is certainly wrong (a version on a dimension whose values are all versionless) and never rejects a spec that has a sensible meaning. Implemented now: option 1 (`// SPEC-QUESTION(Q14)` in `tessera-model/src/model.rs`).
+- **Affects:** `tessera-model` (`check_availability`); phases 10, 12 (which decide what the version means for versionless members).
+- **Resolution:** _to be filled in by a human._
