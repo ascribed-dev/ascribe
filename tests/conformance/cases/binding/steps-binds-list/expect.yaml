@@ -1,0 +1,15 @@
+description: >-
+  `@steps` binds the ordered list right after it.
+spec: ["3.8", "4.6"]
+tags: [structure]
+
+outline:
+  - directive: steps
+    binding: following-block
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: One.
+      - item:
+          - paragraph: Two.

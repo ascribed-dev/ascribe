@@ -1,0 +1,12 @@
+description: >-
+  The same at the top level of a document, after a blank line.
+spec: ["3.9", "8.2"]
+tags: [structure, check]
+
+outline:
+  - paragraph: Text.
+  - code: |
+      @note: Literal text.
+    fenced: false
+diagnostics:
+  - {slug: directive-indented-code, line: 7}

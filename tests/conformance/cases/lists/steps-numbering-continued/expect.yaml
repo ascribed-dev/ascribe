@@ -1,0 +1,24 @@
+description: >-
+  An unindented directive splits an ordered list bound by `@steps`; the list
+  that follows continues the numbering, which is reported.
+spec: ["3.9", "8.2"]
+tags: [structure, check]
+
+outline:
+  - directive: steps
+    binding: following-block
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: One.
+  - directive: note
+    primary: A note.
+  - list: ordered
+    start: 2
+    children:
+      - item:
+          - paragraph: Two.
+diagnostics:
+  - {slug: list-ended-by-directive, line: 7}
+  - {slug: steps-numbering-continued, line: 8}

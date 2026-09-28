@@ -1,0 +1,23 @@
+description: >-
+  A title line may follow a heading, a directive line, or the start of its
+  container.
+spec: ["3.7"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Section
+  - directive: note
+    title: First
+    primary: One.
+  - directive: include
+    primary: a.md
+  - directive: note
+    title: Second
+    primary: Two.
+  - directive: note
+    form: container
+    children:
+      - directive: note
+        title: Third
+        primary: Three.

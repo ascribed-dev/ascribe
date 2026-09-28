@@ -1,0 +1,6 @@
+description: >-
+  A note accepts a title in each of its forms.
+spec: ["3.7", "4.5"]
+tags: [check]
+
+diagnostics: []

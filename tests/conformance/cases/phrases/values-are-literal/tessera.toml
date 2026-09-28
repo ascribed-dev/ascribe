@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[phrases]
+a = "{b}"
+b = "X"

@@ -1,0 +1,7 @@
+description: >-
+  A page declares its dimension values in `variant` frontmatter: a value, a
+  list, or several dimensions.
+spec: ["4.3"]
+tags: [check]
+
+diagnostics: []

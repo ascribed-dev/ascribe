@@ -1,0 +1,7 @@
+description: >-
+  A type the content model does not declare is an error.
+spec: ["4.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-type-mismatch, line: 5}

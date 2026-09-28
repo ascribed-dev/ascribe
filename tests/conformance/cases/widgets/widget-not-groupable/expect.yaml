@@ -1,0 +1,7 @@
+description: >-
+  A widget that is not groupable ends at its own `@end`; two in a row are
+  two containers.
+spec: ["3.6", "6"]
+tags: [check]
+
+diagnostics: []

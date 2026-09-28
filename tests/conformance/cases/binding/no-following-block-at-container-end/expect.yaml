@@ -1,0 +1,8 @@
+description: >-
+  The next block must be in the same container: an end line stops the
+  search.
+spec: ["3.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: binding-no-block, line: 6}

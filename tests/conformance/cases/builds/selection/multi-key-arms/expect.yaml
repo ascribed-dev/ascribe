@@ -1,0 +1,32 @@
+description: >-
+  An arm with several keys conflicts when any selected dimension it names
+  has no selected value. Several survivors stay a group, keeping their own
+  attributes.
+spec: ["4.3", "9.3"]
+tags: [resolve]
+
+builds:
+  cloud-only:
+    pages:
+      index.md:
+        outline:
+          - group: variant
+            arms:
+              - attributes: {deployment: cloud, pm: npm}
+                children:
+                  - paragraph: A.
+              - attributes: {deployment: cloud, pm: yarn}
+                children:
+                  - paragraph: B.
+  npm-only:
+    pages:
+      index.md:
+        outline:
+          - group: variant
+            arms:
+              - attributes: {deployment: cloud, pm: npm}
+                children:
+                  - paragraph: A.
+              - attributes: {deployment: self-managed, pm: npm}
+                children:
+                  - paragraph: C.

@@ -1,0 +1,7 @@
+description: >-
+  A widget with an identifier primary requires it.
+spec: ["3.4", "6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-primary, line: 6}

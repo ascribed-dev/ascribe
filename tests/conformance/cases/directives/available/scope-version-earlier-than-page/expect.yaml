@@ -1,0 +1,10 @@
+description: >-
+  A section spec cannot name a version earlier than the enclosing scope
+  does.
+spec: ["4.4", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: available-exceeds-scope, file: index.md, line: 7}

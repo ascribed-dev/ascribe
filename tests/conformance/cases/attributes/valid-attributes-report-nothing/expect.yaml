@@ -1,0 +1,6 @@
+description: >-
+  Valid attributes on built-ins and a widget report no diagnostics.
+spec: ["3.3"]
+tags: [check]
+
+diagnostics: []

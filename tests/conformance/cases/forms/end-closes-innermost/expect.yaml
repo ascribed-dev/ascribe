@@ -1,0 +1,7 @@
+description: >-
+  `@end` closes the innermost open container, so two nested containers need
+  two end lines, and the diagnostics list stays empty.
+spec: ["3.5", "3.10"]
+tags: [check]
+
+diagnostics: []

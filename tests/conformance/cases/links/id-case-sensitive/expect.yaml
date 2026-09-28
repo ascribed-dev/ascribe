@@ -1,0 +1,9 @@
+description: >-
+  Ids are case-sensitive.
+spec: ["5.2", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: link-id-missing, file: index.md, line: 5}

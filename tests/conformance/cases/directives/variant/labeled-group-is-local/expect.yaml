@@ -1,0 +1,7 @@
+description: >-
+  Labeled arms are not validated against the content model, so any label is
+  fine.
+spec: ["4.3"]
+tags: [check]
+
+diagnostics: []

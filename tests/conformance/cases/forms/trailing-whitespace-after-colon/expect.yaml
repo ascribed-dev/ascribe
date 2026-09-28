@@ -1,0 +1,15 @@
+description: >-
+  Whitespace after the colon does not count as a primary: the line still
+  opens a container.
+spec: ["3.5"]
+tags: [structure]
+
+outline:
+  - directive: note
+    form: container
+    children:
+      - paragraph: Inside.
+  - directive: note
+    form: container
+    children:
+      - paragraph: Inside too.

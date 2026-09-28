@@ -1,0 +1,10 @@
+description: >-
+  A text primary continues onto following lines as a paragraph does (the
+  SPEC example).
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: note
+    attributes: {type: caution}
+    primary: Back up your database before you upgrade.

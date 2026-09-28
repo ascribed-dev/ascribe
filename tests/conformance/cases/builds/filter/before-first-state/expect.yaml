@@ -1,0 +1,68 @@
+description: >-
+  Content that starts in a state at version 3.4 is not available at 3.3,
+  which precedes the first state, and is available at 3.4. The section goes
+  with its heading and directive; content that stays keeps its `@available`
+  annotation in a filter build. Cloud is listed with no state, so it is
+  generally available.
+spec: ["4.4", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - paragraph: Intro.
+          - heading: 2
+            text: Streaming
+          - directive: available
+            primary: cloud, self-managed preview 3.4
+            binding: heading
+          - paragraph: Streaming text.
+          - heading: 2
+            text: After
+          - paragraph: Closing text.
+  sm-3.3:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - paragraph: Intro.
+          - heading: 2
+            text: After
+          - paragraph: Closing text.
+  sm-3.4:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - paragraph: Intro.
+          - heading: 2
+            text: Streaming
+          - directive: available
+            primary: cloud, self-managed preview 3.4
+            binding: heading
+          - paragraph: Streaming text.
+          - heading: 2
+            text: After
+          - paragraph: Closing text.
+  cloud-pdf:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - paragraph: Intro.
+          - heading: 2
+            text: Streaming
+          - directive: available
+            primary: cloud, self-managed preview 3.4
+            binding: heading
+          - paragraph: Streaming text.
+          - heading: 2
+            text: After
+          - paragraph: Closing text.

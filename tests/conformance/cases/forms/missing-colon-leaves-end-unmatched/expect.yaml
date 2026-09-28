@@ -1,0 +1,8 @@
+description: >-
+  A container note whose trailing colon is missing binds only its first
+  block, and its `@end` is an end line with no open container.
+spec: ["3.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: end-unmatched, line: 9}

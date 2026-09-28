@@ -1,0 +1,20 @@
+description: >-
+  Any spaces or tabs, or none, are accepted between the name, attributes,
+  colon, and primary, and around commas and equals signs.
+spec: ["3.1", "3.3"]
+tags: [parser]
+
+outline:
+  - directive: note
+    attributes: {type: caution}
+    primary: Text one.
+  - directive: note
+    attributes: {type: caution}
+    primary: Text two.
+  - directive: note
+    attributes: {type: caution}
+    primary: Text three.
+  - directive: quill-labspace
+    attributes: {lab: a, height: "2"}
+  - directive: include
+    primary: a.md

@@ -1,0 +1,7 @@
+description: >-
+  The same warning applies to a widget that takes no title.
+spec: ["3.7", "6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: title-not-accepted, line: 5}

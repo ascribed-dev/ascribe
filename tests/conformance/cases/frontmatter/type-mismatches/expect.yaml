@@ -1,0 +1,12 @@
+description: >-
+  Each declared type rejects a value of another type: a number, a date, a
+  boolean, an enumeration, and a list.
+spec: ["2.1", "7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-type-mismatch, file: index.md, line: 3}
+  - {slug: frontmatter-type-mismatch, file: index.md, line: 4}
+  - {slug: frontmatter-type-mismatch, file: index.md, line: 5}
+  - {slug: frontmatter-type-mismatch, file: index.md, line: 6}
+  - {slug: frontmatter-type-mismatch, file: index.md, line: 7}

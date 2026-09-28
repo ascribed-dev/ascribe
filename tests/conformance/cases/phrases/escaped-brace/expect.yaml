@@ -1,0 +1,13 @@
+description: >-
+  `\{` prevents a phrase and silences the undeclared-key warning; the source
+  text keeps the backslash.
+spec: ["2.3", "5.1"]
+tags: [resolve, check]
+
+diagnostics: []
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "\\{product} stays, Quill does not, and \\{nope} is quiet."

@@ -1,0 +1,17 @@
+description: >-
+  The `pm` group of SPEC §4.3: three arms, each holding a fenced code block,
+  closed by one end line.
+spec: ["4.3"]
+tags: [structure]
+
+outline:
+  - group: variant
+    arms:
+      - attributes: {pm: npm}
+        children:
+          - code: "npm install -g @quill/agent\n"
+            info: shell
+      - attributes: {pm: pnpm}
+        children:
+          - code: "pnpm add -g @quill/agent\n"
+            info: shell

@@ -1,0 +1,8 @@
+description: >-
+  An attribute key that is not a declared dimension is an error on a
+  dimensional arm.
+spec: ["4.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: variant-unknown, line: 5}

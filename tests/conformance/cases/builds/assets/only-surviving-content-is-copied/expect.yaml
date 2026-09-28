@@ -1,0 +1,16 @@
+description: >-
+  An asset used only in an arm a build removes is not copied for that build;
+  one used everywhere is.
+spec: ["9.3", "9.4"]
+tags: [resolve]
+
+builds:
+  site:
+    assets:
+      - cloud.png
+      - shared.png
+      - sm.png
+  cloud-only:
+    assets:
+      - cloud.png
+      - shared.png

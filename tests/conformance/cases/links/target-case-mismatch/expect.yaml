@@ -1,0 +1,8 @@
+description: >-
+  File names match exactly on every platform: `Keys.md` does not find
+  `keys.md`.
+spec: ["5.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-target-missing, file: index.md, line: 5}

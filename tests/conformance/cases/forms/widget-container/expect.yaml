@@ -1,0 +1,11 @@
+description: >-
+  A container-only widget opens with a trailing colon and closes with
+  `@end`.
+spec: ["3.5", "6"]
+tags: [structure]
+
+outline:
+  - directive: quill-interactive
+    form: container
+    children:
+      - paragraph: Only on the site.

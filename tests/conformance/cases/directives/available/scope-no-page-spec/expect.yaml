@@ -1,0 +1,8 @@
+description: >-
+  A page with no spec applies everywhere, so any section spec fits.
+spec: ["4.4", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics: []

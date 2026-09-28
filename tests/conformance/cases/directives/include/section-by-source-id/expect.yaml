@@ -1,0 +1,21 @@
+description: >-
+  With `#id`, only the section of the heading with that source id is
+  included: the heading, and everything up to the next heading of the same
+  or a higher level, subsections included.
+spec: ["4.2", "5.5", "9.2"]
+tags: [resolve, include, provisional]
+questions: [Q26]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Install
+          - paragraph: Install text.
+          - heading: 3
+            text: Detail
+          - paragraph: Detail text.

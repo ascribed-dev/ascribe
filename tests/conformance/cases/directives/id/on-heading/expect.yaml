@@ -1,0 +1,11 @@
+description: >-
+  `@id` under a heading gives it an id; the directive is heading-bound.
+spec: ["4.1"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Configuration
+  - directive: id
+    primary: config-setup
+    binding: heading

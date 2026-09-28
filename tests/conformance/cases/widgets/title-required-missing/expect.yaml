@@ -1,0 +1,8 @@
+description: >-
+  A widget whose schema requires a title violates it when the title is
+  missing.
+spec: ["3.7", "6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: widget-schema, line: 5}

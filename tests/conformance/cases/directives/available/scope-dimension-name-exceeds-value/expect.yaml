@@ -1,0 +1,10 @@
+description: >-
+  A dimension name stands for all of its values, so it exceeds a single
+  value.
+spec: ["4.4", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: available-exceeds-scope, file: index.md, line: 7}

@@ -1,0 +1,7 @@
+description: >-
+  The default note types and a project-added type are valid values of
+  `type`.
+spec: ["4.5"]
+tags: [check]
+
+diagnostics: []

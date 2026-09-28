@@ -1,0 +1,9 @@
+description: >-
+  A `.` line that is not directly above a directive is ordinary text: `.NET
+  is a framework` is unaffected.
+spec: ["3.7"]
+tags: [structure]
+
+outline:
+  - paragraph: .NET is a framework.
+  - paragraph: ..hidden is text too.

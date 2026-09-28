@@ -1,0 +1,7 @@
+description: >-
+  A primary given to a widget that takes none is an error.
+spec: ["3.4", "6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-primary, line: 5}

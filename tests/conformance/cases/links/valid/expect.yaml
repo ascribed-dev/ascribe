@@ -1,0 +1,10 @@
+description: >-
+  Links to a file, to a heading by slug and by `@id`, root-relative, with
+  empty text, to the same file, and external, are all valid, at both levels.
+spec: ["5.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics: []

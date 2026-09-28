@@ -1,0 +1,9 @@
+description: >-
+  A hyphenated name the content model declares is recognized like a built-
+  in.
+spec: ["6"]
+tags: [parser]
+
+outline:
+  - directive: quill-labspace
+    attributes: {lab: first-sync}

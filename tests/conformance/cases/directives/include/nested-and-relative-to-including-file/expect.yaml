@@ -1,0 +1,13 @@
+description: >-
+  Nested include paths resolve against the file they are written in, not the
+  including page.
+spec: ["4.2", "9.2"]
+tags: [resolve, include]
+
+builds:
+  site:
+    pages:
+      guides/a.md:
+        outline:
+          - paragraph: One.
+          - paragraph: Two.

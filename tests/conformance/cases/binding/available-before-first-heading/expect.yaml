@@ -1,0 +1,14 @@
+description: >-
+  Before any heading there is no section, so `@available` binds the block it
+  touches.
+spec: ["3.8", "4.4"]
+tags: [structure, provisional]
+questions: [Q18]
+
+outline:
+  - directive: available
+    primary: cloud
+    binding: following-block
+  - paragraph: Cloud-only opening paragraph.
+  - heading: 2
+    text: First heading

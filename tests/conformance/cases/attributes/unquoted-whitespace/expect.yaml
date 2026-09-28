@@ -1,0 +1,9 @@
+description: >-
+  A value containing whitespace must be quoted; the same words quoted are
+  fine.
+spec: ["3.3", "8.2"]
+tags: [check, provisional]
+questions: [Q14]
+
+diagnostics:
+  - {slug: attribute-unquoted-reserved, line: 5}

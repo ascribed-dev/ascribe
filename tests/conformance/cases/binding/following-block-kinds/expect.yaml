@@ -1,0 +1,33 @@
+description: >-
+  A following-block directive binds a paragraph, a list, a code block, a
+  blockquote, a table, or a container, always the next block.
+spec: ["3.8"]
+tags: [structure]
+
+outline:
+  - directive: note
+    binding: following-block
+  - paragraph: A paragraph.
+  - directive: note
+    binding: following-block
+  - list: bullet
+    children:
+      - item:
+          - paragraph: a list
+  - directive: note
+    binding: following-block
+  - code: |
+      code
+  - directive: note
+    binding: following-block
+  - blockquote:
+      - paragraph: a quote
+  - directive: note
+    binding: following-block
+  - table
+  - directive: note
+    binding: following-block
+  - directive: quill-interactive
+    form: container
+    children:
+      - paragraph: Content.

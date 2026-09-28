@@ -1,0 +1,8 @@
+description: >-
+  A directive must be at line start; the same words after other text are
+  literal.
+spec: ["3.2"]
+tags: [parser]
+
+outline:
+  - paragraph: "Use the word @note: like this."

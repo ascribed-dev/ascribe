@@ -1,0 +1,12 @@
+description: >-
+  A title line directly above a directive that accepts one becomes its
+  title, and is not a block of its own (the SPEC example).
+spec: ["3.7", "4.5"]
+tags: [structure]
+
+outline:
+  - directive: note
+    attributes: {type: tip}
+    title: Try it without installing
+    binding: following-block
+  - paragraph: You can run Quill in the browser with no local setup.

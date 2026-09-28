@@ -1,0 +1,12 @@
+description: >-
+  A heading-bound widget with an identifier primary sits under a heading.
+spec: ["6", "3.8"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: List documents
+  - directive: quill-api-ref
+    attributes: {version: v3}
+    primary: listDocuments
+    binding: heading

@@ -1,0 +1,10 @@
+description: >-
+  A directive line without the `>` marker ends the blockquote.
+spec: ["3.9"]
+tags: [structure]
+
+outline:
+  - blockquote:
+      - paragraph: Quoted.
+  - directive: note
+    primary: Outside.

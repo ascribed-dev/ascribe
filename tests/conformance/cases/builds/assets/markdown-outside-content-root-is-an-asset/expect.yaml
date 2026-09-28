@@ -1,0 +1,11 @@
+description: >-
+  A Markdown file outside the content root, but inside the project root, is
+  not a page or fragment, so a link to it is an asset link.
+spec: ["5.2", "9.4"]
+tags: [resolve, check]
+
+diagnostics: []
+builds:
+  site:
+    assets:
+      - ../notes/NOTES.md

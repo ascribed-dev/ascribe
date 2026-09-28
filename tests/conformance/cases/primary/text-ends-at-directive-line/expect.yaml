@@ -1,0 +1,11 @@
+description: >-
+  A directive line ends a text primary.
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: First line
+  - directive: note
+    attributes: {type: tip}
+    primary: Second note.

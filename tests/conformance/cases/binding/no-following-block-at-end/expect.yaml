@@ -1,0 +1,7 @@
+description: >-
+  A following-block directive with no block after it is an error.
+spec: ["3.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: binding-no-block, line: 7}

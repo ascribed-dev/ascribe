@@ -1,0 +1,17 @@
+description: >-
+  Two nested containers are fine, and `@end` closes the innermost first.
+spec: ["3.10"]
+tags: [structure, check]
+
+outline:
+  - directive: details
+    form: container
+    title: Outer
+    children:
+      - paragraph: Before.
+      - directive: note
+        form: container
+        children:
+          - paragraph: Inner.
+      - paragraph: After.
+diagnostics: []

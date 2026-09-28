@@ -1,0 +1,7 @@
+description: >-
+  An arm has either attributes or a title, never both.
+spec: ["4.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: variant-arm-kind, line: 6}

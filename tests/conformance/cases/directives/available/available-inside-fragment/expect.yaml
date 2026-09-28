@@ -1,0 +1,6 @@
+description: >-
+  `@available` works inside a fragment.
+spec: ["2.2", "4.4"]
+tags: [check]
+
+diagnostics: []

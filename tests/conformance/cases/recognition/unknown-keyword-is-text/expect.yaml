@@ -1,0 +1,9 @@
+description: >-
+  `@` followed by an unknown word is literal text: `@astrojs/react` and
+  `@timestamp` are paragraphs.
+spec: ["3.2"]
+tags: [parser]
+
+outline:
+  - paragraph: "@astrojs/react is the integration."
+  - paragraph: "@timestamp is a column name."

@@ -1,0 +1,9 @@
+description: >-
+  A text primary is inline content: emphasis, links, and phrase text stay in
+  its source text.
+spec: ["3.4", "5.1"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: Use **care**, see [keys](keys.md), and {product}.

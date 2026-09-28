@@ -1,0 +1,9 @@
+description: >-
+  A page matched by more than one type's patterns is an error; there is no
+  precedence. Pages matched by one type, or by the default, are fine.
+spec: ["7.2", "8.2"]
+tags: [check, provisional]
+questions: [Q20]
+
+diagnostics:
+  - {slug: content-type-unresolved, file: reference/api/index.md, line: 1}

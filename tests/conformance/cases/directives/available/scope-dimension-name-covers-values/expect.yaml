@@ -1,0 +1,9 @@
+description: >-
+  A dimension name stands for all of its values, so a value fits under it
+  but the name does not fit under one value.
+spec: ["4.4", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics: []

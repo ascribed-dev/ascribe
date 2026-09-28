@@ -1,0 +1,7 @@
+description: >-
+  A link whose target file does not exist is an error.
+spec: ["5.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-target-missing, file: index.md, line: 5}

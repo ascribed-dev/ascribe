@@ -1,0 +1,12 @@
+description: >-
+  A phrase's value is inserted as literal text: it is not scanned for
+  phrases again.
+spec: ["5.1"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: The value is {b}.

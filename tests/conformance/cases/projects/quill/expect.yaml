@@ -1,0 +1,39 @@
+description: >-
+  The complete Quill project of examples/quill, built around the SPEC
+  Appendix B page: no diagnostics at file or page level, and the same three
+  pages and two assets under every build. The streaming-sync section drops
+  out of the self-managed 3.3 build, and the deployment group reduces to its
+  cloud arm in the cloud build. A test keeps this case identical to
+  examples/quill.
+spec: ["B", "4.2", "9.3"]
+tags: [check, page-check, resolve, include]
+
+diagnostics: []
+builds:
+  site:
+    pages:
+      install-agent.md:
+      keys.md:
+      quickstart.md:
+    assets:
+      - _fragments/prerequisites.png
+      - playground.png
+    diagnostics: []
+  cloud:
+    pages:
+      install-agent.md:
+      keys.md:
+      quickstart.md:
+    assets:
+      - _fragments/prerequisites.png
+      - playground.png
+    diagnostics: []
+  self-managed-3.3:
+    pages:
+      install-agent.md:
+      keys.md:
+      quickstart.md:
+    assets:
+      - _fragments/prerequisites.png
+      - playground.png
+    diagnostics: []

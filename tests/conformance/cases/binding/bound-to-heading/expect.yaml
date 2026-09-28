@@ -1,0 +1,7 @@
+description: >-
+  A following-block directive cannot bind a heading.
+spec: ["3.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: binding-heading, line: 5}

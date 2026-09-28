@@ -1,0 +1,12 @@
+description: >-
+  `@details` with a title and a trailing colon holds content until `@end`
+  (the SPEC example).
+spec: ["4.7"]
+tags: [structure]
+
+outline:
+  - directive: details
+    form: container
+    title: Show the full configuration reference
+    children:
+      - paragraph: The reference goes here.

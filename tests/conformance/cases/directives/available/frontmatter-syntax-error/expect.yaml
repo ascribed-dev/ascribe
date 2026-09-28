@@ -1,0 +1,7 @@
+description: >-
+  A spec in `available` frontmatter is checked like one in a directive.
+spec: ["4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-syntax, file: index.md, line: 3}

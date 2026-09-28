@@ -1,0 +1,12 @@
+description: >-
+  A heading's slug is computed from its text with phrases substituted, so
+  `## Connect to {product}` has the source id `connect-to-quill`. The
+  heading is reported for having a phrase and no `@id`.
+spec: ["5.2", "5.5", "8.2"]
+tags: [check, page-check, slug]
+
+diagnostics:
+  - {slug: heading-phrase-without-id, file: phr.md, line: 5}
+builds:
+  site:
+    diagnostics: []

@@ -1,0 +1,10 @@
+description: >-
+  A note with no colon is line form and binds the following block.
+spec: ["3.5", "4.5"]
+tags: [structure]
+
+outline:
+  - directive: note
+    attributes: {type: tip}
+    binding: following-block
+  - paragraph: You can run Quill in the browser.
