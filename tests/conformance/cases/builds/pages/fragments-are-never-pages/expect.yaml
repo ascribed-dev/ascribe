@@ -1,0 +1,12 @@
+description: >-
+  A build publishes pages only: files with a `_` path segment, and files
+  matching a fragment pattern, are fragments, even when nothing includes
+  them.
+spec: ["2.2", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      guides/setup.md:
+      index.md:

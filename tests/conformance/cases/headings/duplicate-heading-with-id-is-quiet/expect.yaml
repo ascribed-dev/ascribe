@@ -1,0 +1,8 @@
+description: >-
+  A repeated heading text with `@id`s is fine: the ids are stable.
+spec: ["5.5", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics: []

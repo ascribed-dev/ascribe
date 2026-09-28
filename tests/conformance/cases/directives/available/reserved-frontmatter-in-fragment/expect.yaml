@@ -1,0 +1,9 @@
+description: >-
+  A fragment must not use the reserved `available` or `variant` frontmatter
+  keys.
+spec: ["2.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-reserved-in-fragment, file: _f.md, line: 2}
+  - {slug: frontmatter-reserved-in-fragment, file: _f.md, line: 3}

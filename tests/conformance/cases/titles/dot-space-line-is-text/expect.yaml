@@ -1,0 +1,9 @@
+description: >-
+  A line that starts with `.` and a space is never a title.
+spec: ["3.7"]
+tags: [structure]
+
+outline:
+  - paragraph: . Try it
+  - directive: note
+    primary: A note.

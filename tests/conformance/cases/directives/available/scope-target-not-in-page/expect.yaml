@@ -1,0 +1,9 @@
+description: >-
+  A section spec cannot list a target the enclosing page does not.
+spec: ["4.4", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: available-exceeds-scope, file: index.md, line: 7}

@@ -1,0 +1,7 @@
+description: >-
+  `@steps` at the end of a document has no block to bind.
+spec: ["4.6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: binding-no-block, line: 5}

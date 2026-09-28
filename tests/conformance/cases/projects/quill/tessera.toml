@@ -1,0 +1,68 @@
+# The content model for examples/quill: the model SPEC Appendix B assumes (see
+# examples/content-models/quill.toml), plus image attributes. Reference:
+# project-docs/content-model.md.
+spec = "0.1"
+
+[project]
+content-root = "files"
+output-dir = ".tessera/build"
+
+# Every page is a `page`. Appendix B's frontmatter has `title` and
+# `description`; `available` is reserved and always accepted.
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+
+# `@variant {pm=npm}:` and friends.
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm", "yarn"]
+labels = { yarn = "Yarn" }
+
+# `@variant {deployment=cloud}:` and `@available: cloud, self-managed preview 3.3`.
+# `cloud` has no versions. `self-managed` keeps its own name as its label, which
+# gives SPEC §9.4's example line: "Available: Quill Cloud (GA); self-managed
+# (preview, 3.4+)".
+[dimensions.deployment]
+label = "Deployment"
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+labels = { cloud = "Quill Cloud" }
+
+[phrases]
+product = "Quill"
+cloud = "Quill Cloud"
+version = "3.4.1"
+api = "https://api.quill.dev/v3/"
+
+# Image attributes: `![alt](src){width=600}`.
+[images.attributes]
+width = "number?"
+height = "number?"
+
+[consumer]
+profile = "astro"
+site = "https://docs.quill.dev"
+
+# The published site: every arm as a switcher, availability as badges.
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+# Quill Cloud only: deployment groups reduce to their cloud arm, and content
+# not available on cloud is removed. The `pm` group stays a full switcher.
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }
+
+# Self-managed 3.3: every arm kept, content not available on self-managed 3.3
+# removed (such as the streaming-sync section, in preview from 3.4).
+[builds."self-managed-3.3"]
+variants = "switch"
+availability = { filter = "self-managed 3.3" }
+
+[editor]
+build = "site"

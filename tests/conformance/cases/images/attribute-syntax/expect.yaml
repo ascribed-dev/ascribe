@@ -1,0 +1,7 @@
+description: >-
+  A malformed block after an image is an error, as after a directive.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-syntax, file: index.md, line: 5}

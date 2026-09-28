@@ -1,0 +1,7 @@
+description: >-
+  A widget's attributes are checked against its schema.
+spec: ["3.3", "6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-unknown-key, line: 5}

@@ -1,0 +1,12 @@
+description: >-
+  A token such as `3.4` is a string; types come from the schema, not from
+  how a value looks.
+spec: ["3.3"]
+tags: [parser]
+
+outline:
+  - directive: quill-labspace
+    attributes: {lab: "3.10", height: "1.5"}
+  - directive: note
+    attributes: {since: "3.4", width: 600px}
+    primary: Text.

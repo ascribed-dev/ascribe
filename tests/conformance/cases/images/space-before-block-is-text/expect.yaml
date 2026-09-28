@@ -1,0 +1,8 @@
+description: >-
+  A space between the image and the block means the block is not an
+  attribute block: the paragraph is ordinary text.
+spec: ["5.3"]
+tags: [inline]
+
+outline:
+  - paragraph: "![Settings](settings.png) {width=600}"

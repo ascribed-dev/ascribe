@@ -1,0 +1,7 @@
+description: >-
+  A value that is not declared for its dimension is an error.
+spec: ["4.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: variant-unknown, line: 5}

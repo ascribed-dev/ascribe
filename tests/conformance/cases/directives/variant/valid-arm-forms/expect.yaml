@@ -1,0 +1,7 @@
+description: >-
+  A single value, a value set, and several keys on one arm are all valid,
+  and arms may add keys as long as one is shared.
+spec: ["4.3"]
+tags: [check]
+
+diagnostics: []

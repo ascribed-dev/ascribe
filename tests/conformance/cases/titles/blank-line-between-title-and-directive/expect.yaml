@@ -1,0 +1,10 @@
+description: >-
+  A blank line between the title line and the directive means it is not a
+  title; it is a paragraph.
+spec: ["3.7"]
+tags: [structure]
+
+outline:
+  - paragraph: .Not a title
+  - directive: note
+    primary: A note.

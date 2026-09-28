@@ -1,0 +1,6 @@
+description: >-
+  An ordered list is valid, whatever its start number.
+spec: ["4.6"]
+tags: [check]
+
+diagnostics: []

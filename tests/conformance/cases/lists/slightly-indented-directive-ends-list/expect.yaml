@@ -1,0 +1,16 @@
+description: >-
+  A directive indented less than the item's content column is outside the
+  item (Q1): as a heading would, it ends the list.
+spec: ["1.5", "3.9", "8.2"]
+tags: [structure, check]
+
+outline:
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: Install
+  - directive: note
+    primary: Keep the key safe.
+diagnostics:
+  - {slug: list-ended-by-directive, line: 6}

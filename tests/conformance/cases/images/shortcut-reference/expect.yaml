@@ -1,0 +1,11 @@
+description: >-
+  A shortcut reference image `![alt]` takes an attribute block.
+spec: ["5.3"]
+tags: [inline, provisional]
+questions: [Q23]
+
+outline:
+  - image: settings.png
+    alt: settings
+    title: A title
+    attributes: {width: "600", height: "400"}

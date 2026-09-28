@@ -1,0 +1,16 @@
+description: >-
+  A container opens and closes within one list item.
+spec: ["3.9"]
+tags: [structure]
+
+outline:
+  - list: bullet
+    children:
+      - item:
+          - paragraph: Item
+          - directive: note
+            form: container
+            children:
+              - paragraph: Inside the note.
+      - item:
+          - paragraph: Next item.

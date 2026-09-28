@@ -1,0 +1,4 @@
+spec = "0.1"
+
+[dimensions.channel]
+values = ["beta", "stable"]

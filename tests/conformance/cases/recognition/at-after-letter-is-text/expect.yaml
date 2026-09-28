@@ -1,0 +1,8 @@
+description: >-
+  An `@` that follows a letter or digit is literal, as in an email address.
+spec: ["3.2"]
+tags: [parser]
+
+outline:
+  - paragraph: Write to support@example.com for help.
+  - paragraph: Or to a1@note.

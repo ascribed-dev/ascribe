@@ -1,0 +1,22 @@
+description: >-
+  A selection only acts along the dimensions it names: `pm=npm` reduces the
+  `pm` group to one arm and leaves the deployment group alone.
+spec: ["9.3"]
+tags: [resolve]
+
+builds:
+  npm-only:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Install
+          - group: variant
+            arms:
+              - attributes: {deployment: cloud}
+                children:
+                  - paragraph: Cloud text.
+              - attributes: {deployment: self-managed}
+                children:
+                  - paragraph: Self-managed text.
+          - paragraph: npm text.

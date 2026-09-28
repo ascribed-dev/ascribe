@@ -1,0 +1,10 @@
+description: >-
+  `{}` is allowed and means no attributes, the same as leaving the block
+  out.
+spec: ["3.3"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: Text.
+  - directive: steps

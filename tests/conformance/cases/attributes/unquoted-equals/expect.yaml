@@ -1,0 +1,8 @@
+description: >-
+  A token containing `=` must be quoted.
+spec: ["3.3", "8.2"]
+tags: [check, provisional]
+questions: [Q14]
+
+diagnostics:
+  - {slug: attribute-unquoted-reserved, line: 5}

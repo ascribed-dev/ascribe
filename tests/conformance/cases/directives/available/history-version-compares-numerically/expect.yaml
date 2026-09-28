@@ -1,0 +1,7 @@
+description: >-
+  Versions compare numerically, component by component: 3.9 comes before
+  3.10.
+spec: ["4.4"]
+tags: [check]
+
+diagnostics: []

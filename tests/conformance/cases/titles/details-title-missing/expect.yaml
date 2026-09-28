@@ -1,0 +1,8 @@
+description: >-
+  `@details` needs a title, in either form.
+spec: ["4.7", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: details-title-missing, line: 5}
+  - {slug: details-title-missing, line: 8}

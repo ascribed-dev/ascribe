@@ -1,0 +1,8 @@
+description: >-
+  A trailing colon added by mistake leaves a container unclosed, reported at
+  its opener.
+spec: ["3.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: container-unclosed, line: 5}

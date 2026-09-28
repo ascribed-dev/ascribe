@@ -1,0 +1,27 @@
+description: >-
+  A group keyed only on unselected dimensions, and a labeled group, are
+  unaffected by a selection.
+spec: ["9.3"]
+tags: [resolve]
+
+builds:
+  cloud-only:
+    pages:
+      index.md:
+        outline:
+          - group: variant
+            arms:
+              - attributes: {pm: npm}
+                children:
+                  - paragraph: npm.
+              - attributes: {pm: yarn}
+                children:
+                  - paragraph: yarn.
+          - group: variant
+            arms:
+              - title: First
+                children:
+                  - paragraph: One.
+              - title: Second
+                children:
+                  - paragraph: Two.

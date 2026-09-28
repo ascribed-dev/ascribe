@@ -1,0 +1,21 @@
+description: >-
+  Any line that would interrupt a paragraph ends a text primary: a heading,
+  a fence, a bullet list.
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: One
+  - heading: 1
+    text: Heading
+  - directive: note
+    primary: Two
+  - code: |
+      code
+  - directive: note
+    primary: Three
+  - list: bullet
+    children:
+      - item:
+          - paragraph: item

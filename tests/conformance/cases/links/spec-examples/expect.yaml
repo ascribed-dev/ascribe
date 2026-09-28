@@ -1,0 +1,10 @@
+description: >-
+  The SPEC §5.2 examples: a titled link and an empty-text link to the same
+  heading.
+spec: ["5.2"]
+tags: [check, page-check]
+
+diagnostics: []
+builds:
+  site:
+    diagnostics: []

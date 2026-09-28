@@ -1,0 +1,9 @@
+description: >-
+  A required image attribute that is missing is an error, with or without a
+  block.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: image-attribute-missing, file: index.md, line: 5}
+  - {slug: image-attribute-missing, file: index.md, line: 7}

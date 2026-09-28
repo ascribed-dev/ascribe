@@ -1,0 +1,6 @@
+description: >-
+  `\.` silences the misplaced-title warning.
+spec: ["2.3", "3.7", "8.2"]
+tags: [check]
+
+diagnostics: []

@@ -1,0 +1,13 @@
+description: >-
+  A quoted string may contain spaces and reserved characters; `\"` and `\\`
+  escape inside it.
+spec: ["3.3"]
+tags: [parser]
+
+outline:
+  - directive: quill-labspace
+    attributes: {lab: Using other images}
+  - directive: quill-labspace
+    attributes: {lab: "a, b | c {d} = e"}
+  - directive: quill-labspace
+    attributes: {lab: 'say "hi" and \'}

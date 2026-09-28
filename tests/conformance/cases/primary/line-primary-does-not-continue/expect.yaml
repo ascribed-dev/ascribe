@@ -1,0 +1,10 @@
+description: >-
+  An availability primary is the rest of the line, trimmed; the paragraph
+  below it is a separate block.
+spec: ["3.4", "4.4"]
+tags: [parser]
+
+outline:
+  - directive: available
+    primary: cloud, self-managed preview 3.4
+  - paragraph: Streaming sync pushes changes as you save.

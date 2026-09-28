@@ -1,0 +1,8 @@
+description: >-
+  A heading-bound directive must come before any other content in its
+  section.
+spec: ["3.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: binding-not-section-top, line: 8}

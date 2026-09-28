@@ -1,0 +1,8 @@
+description: >-
+  File names match exactly on every platform: `_Frag.md` does not find
+  `_frag.md`.
+spec: ["4.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: include-target-missing, file: index.md, line: 5}

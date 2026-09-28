@@ -1,0 +1,1 @@
+![Pipeline diagram](pipeline.png)

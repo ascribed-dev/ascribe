@@ -1,0 +1,9 @@
+description: >-
+  An id the target file does not have is a page-level error.
+spec: ["5.2", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: link-id-missing, file: index.md, line: 5}

@@ -1,0 +1,7 @@
+description: >-
+  An end line with no open container is an error.
+spec: ["3.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: end-unmatched, line: 7}

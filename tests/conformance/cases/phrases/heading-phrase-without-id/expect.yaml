@@ -1,0 +1,9 @@
+description: >-
+  A heading that contains a phrase and has no `@id` draws a warning, because
+  its slug can change without the heading being edited; with an `@id` it
+  does not.
+spec: ["5.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: heading-phrase-without-id, line: 5}

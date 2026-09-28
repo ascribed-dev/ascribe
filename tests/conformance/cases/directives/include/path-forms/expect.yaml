@@ -1,0 +1,14 @@
+description: >-
+  An include path may be relative, root-relative, or name a section with
+  `#id`; `heading=false` is a boolean attribute.
+spec: ["4.2"]
+tags: [parser]
+
+outline:
+  - directive: include
+    primary: _snippets/prerequisites.md
+  - directive: include
+    attributes: {heading: "false"}
+    primary: guides/setup.md#install
+  - directive: include
+    primary: /shared/intro.md

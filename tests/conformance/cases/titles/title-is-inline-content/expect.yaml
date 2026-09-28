@@ -1,0 +1,10 @@
+description: >-
+  The title is the rest of the line after the dot, as inline content; the
+  outline keeps its source text.
+spec: ["3.7"]
+tags: [structure]
+
+outline:
+  - directive: note
+    title: Using **Docker** and {product}
+    primary: Text.

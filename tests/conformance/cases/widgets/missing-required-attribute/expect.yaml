@@ -1,0 +1,7 @@
+description: >-
+  A widget missing a required attribute violates its schema.
+spec: ["6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: widget-schema, line: 5}

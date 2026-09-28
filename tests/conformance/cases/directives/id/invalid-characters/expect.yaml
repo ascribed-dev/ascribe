@@ -1,0 +1,9 @@
+description: >-
+  An id may contain only letters, digits, and hyphens; an underscore or a
+  dot is an error.
+spec: ["4.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: id-invalid, line: 6}
+  - {slug: id-invalid, line: 9}

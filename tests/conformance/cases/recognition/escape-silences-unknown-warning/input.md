@@ -1,0 +1,5 @@
+---
+title: Test
+---
+
+\@warning: Careful.

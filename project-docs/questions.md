@@ -248,6 +248,265 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `packages/elements/css/style.css` (`tessera-note[heading]::before`); contract §1 (its rendering paragraph); phase 19's tests of the note heading; no other phase, since the markup is unchanged. Plain-markdown output already shows the type (`**Tip: …**`).
 - **Resolution:** Approved by the repository owner: option 2. `CONTRACT.md` §1 and `css/style.css` now show `label: heading`; the tests were updated.
 
+### Q13: A directive line inside a code span that started on an earlier line
+
+- **Section:** SPEC §3.2, §3.9
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** SPEC §3.2 says a line is a directive line only if it "is not inside a code span, fenced code block, indented code block, or raw HTML block". Fences, indented code, and HTML blocks are block structure, so a block parser knows about them. A code span is inline: it can span lines of one paragraph, and a block parser reads line starts before it knows whether a span is open:
+
+  ```
+  Use `code
+  @note: A note.
+  more` here.
+  ```
+
+  Read literally, the `@note` line is inside the span, so it's text and the span closes on the third line. But §3.9 rule 4 says directive lines "interrupt paragraphs and never continue them, like a heading", and CommonMark lets a heading interrupt a paragraph even inside an open code span (block structure has priority over inline structure).
+- **Options:**
+  1. Block structure wins, as for a heading: the directive line interrupts the paragraph, the span never closes, and its backticks are literal. The first line is a paragraph `Use \`code`, then a note whose text primary is `A note. more\` here.`
+  2. The code span wins: the line is text, and the paragraph is `Use \`code @note: A note. more\` here.` A block parser can't do this without an inline pass first; it would make a directive line's meaning depend on later lines.
+- **Proposed resolution:** option 1. It keeps recognition a property of the line and its block context, which is what the block parser (phase 04) does, and it matches headings. SPEC §3.2 should say "inside a fenced code block, an indented code block, or a raw HTML block" and drop "code span", which can only apply within a line. Implemented in the fork now: option 1 (see `crates/comrak-tessera/SPIKE.md`).
+- **Affects:** conformance cases: `recognition/code-span-across-lines`; phases 05, 06.
+- **Resolution:** _open_
+
+### Q14: Which diagnostic a malformed attribute value gets
+
+- **Section:** SPEC §3.3, §8.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §8.2 has two rows for attribute blocks that break §3.3's grammar: "Unquoted value containing a reserved character" and "Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value)". Some values satisfy both readings:
+
+  ```
+  @quill-labspace {lab=a=b}
+  @quill-labspace {lab=Using other images}
+  @quill-labspace {lab=say"hi"}
+  ```
+
+  The first has a `=` inside a token; the second has whitespace inside what should have been a quoted string; the third has a `"` inside a token. Each is also "an attribute block that doesn't parse" under the ABNF.
+- **Options:**
+  1. A value that is a run of non-whitespace characters containing a reserved character (`=`, `"`, `{`), or words separated by whitespace where §3.3 says a value must be quoted, is `attribute-unquoted-reserved`; `attribute-syntax` is for structure that can't be read as key, `=`, value at all: an unclosed quote or brace, a missing value, junk between pairs.
+  2. Everything that fails the grammar is `attribute-syntax`; `attribute-unquoted-reserved` is only for reserved characters that the block would otherwise have accepted (there are none, so the row is unreachable).
+- **Proposed resolution:** option 1. It gives the author the more specific message ("quote this value") whenever that is the fix, and keeps both rows reachable. Cases expect exactly one of the two per line. Implemented now: nothing yet; phase 05 chooses when it parses attribute blocks.
+- **Affects:** conformance cases: `attributes/unquoted-equals`, `attributes/unquoted-quote-char`, `attributes/unquoted-whitespace`; phases 05, 06.
+- **Resolution:** _open_
+
+### Q15: Text after an identifier primary
+
+- **Section:** SPEC §3.4, §8.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §3.4: an identifier primary "is a single token that ends at the first whitespace". It doesn't say what happens to what follows:
+
+  ```
+  @include: guides/setup.md and more words
+  @id: my id
+  ```
+
+  The token is `guides/setup.md`, but `and more words` isn't a primary, an attribute, or a comment.
+- **Options:**
+  1. It is an error: `directive-primary`, at the line, since the directive was given more primary than it takes.
+  2. It is ignored, so a typo silently changes nothing.
+  3. It is part of the primary (the token rule is dropped), which turns `@include: my file.md` into a path with a space.
+- **Proposed resolution:** option 1, which reports rather than drops. `directive-primary`'s message would need a variant for it (for example, "`@include`'s primary is a single word; remove `{extra}`"), a change to the registry that this question's approval would cover. Cases expect `directive-primary` at the line.
+- **See also:** Q30 (phase 05), which covers this shape and four others (`@note hello: text`, `@steps foo`, `@end: later`, `@id: two words`) and proposes a new `directive-extra-text` error instead. Resolve the two together.
+- **Affects:** conformance cases: `primary/identifier-with-trailing-text`; phases 05, 06.
+- **Resolution:** _open_
+
+### Q16: What a container-form error does to the container
+
+- **Section:** SPEC §3.5, §8.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §3.5 makes two container-form mistakes errors: a trailing colon on a directive with no container form (`@steps:`), and a container-only directive (`@variant`) without its colon. It doesn't say whether, after the error, the line still opens a container (or a group arm) that the author's `@end` will close:
+
+  ```
+  @steps:
+  1. One.
+  @end
+  ```
+
+  If the colon line is still an opener, the `@end` closes it and one error is reported. If it isn't, the `@end` is an end line with no open container, a second error. For `@variant {deployment=cloud}` with no colon, if the line isn't an opener, its arm doesn't exist and the `@end` is again unmatched.
+- **Options:**
+  1. The form is decided by the line's colon, as §3.5 says ("a directive's form is decided by its own line"): a colon line opens a container even where that's an error, and a missing colon on a container-only directive is treated as if it were there. One error is reported; the `@end` matches.
+  2. The line isn't a container after an error; `@end` is then reported too.
+- **Proposed resolution:** option 1. It reports each mistake once, at the line where it happens, and keeps the rest of the file's structure intact, which is the point of §3.5's last paragraph. Cases expect the one error and include the `@end`.
+- **Affects:** conformance cases: `forms/container-colon-on-line-only-directive`, `forms/container-only-without-colon`, `widgets/container-widget-line-form`, `widgets/line-widget-container-form`; phases 05, 06.
+- **Resolution:** _open_
+
+### Q17: Where diagnostics about a whole group are reported, and how groups count toward nesting depth
+
+- **Section:** SPEC §3.6, §3.10, §4.3, §8.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** A group is several openers with one end line, and §8.2 has rows about the group as a whole: a group never closed ("Container not closed before its enclosing block ends"), one that "mixes labeled and dimensional arms", one whose "dimensional arms share no dimension key", and (page level) one where "no arm survives a build's selection". The spec says where only for the case of an open container at an arm's opener. Nesting depth (§3.10) has a related gap: a group is a container, but its arms could count as a second level.
+- **Options:**
+  1. Group-level diagnostics are reported at the group's first opener (its directive line, not its title line); arm-level ones (`variant-arm-kind`, `variant-unknown`) at the arm's opener. A group is one container level, its arms are not another.
+  2. Group-level diagnostics at the offending arm (the first arm that differs from the first), and arms count as a level.
+  3. Group-level diagnostics at the last opener or at `@end`.
+- **Proposed resolution:** option 1: the group is one container, opened once; the first opener is where it's written and where a fix starts. Cases carry `provisional` for the group-level diagnostics and for the nesting case that puts a group at the first level.
+- **Affects:** conformance cases: `builds/selection/no-arm-survives`, `directives/variant/arms-share-no-dimension`, `directives/variant/mixed-labeled-and-dimensional`, `groups/same-directive-does-not-nest`, `groups/unclosed-group`, `nesting/group-counts-as-one-level`; phases 10, 11, 12, 14.
+- **Resolution:** _open_
+
+### Q18: A heading-bound directive with no heading above it
+
+- **Section:** SPEC §3.8, §4.1, §4.4, §8.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §3.8: "at the top of a section, a directive describes the section; anywhere else, it describes the block it touches", and heading-bound directives "go at the top of their section, under the heading". Before a document's first heading there is no section:
+
+  ```
+  @id: orphan
+
+  Text before any heading.
+  ```
+
+  `@id` is heading-bound only, so it has nothing to bind. `@available` is heading-or-block: before any heading, is it at the top of a section (the page), or "anywhere else"?
+- **Options:**
+  1. `@id` before any heading is `binding-not-section-top`, at the directive (it isn't under a heading). `@available` before any heading binds the block it touches: page-wide availability belongs in frontmatter (§4.4), so a section-level reading would duplicate it.
+  2. `@available` before any heading describes the whole page.
+  3. Both are errors when there's no heading.
+- **Proposed resolution:** option 1. Cases carry `provisional` for both.
+- **Affects:** conformance cases: `binding/available-before-first-heading`, `binding/id-with-no-heading`; phases 05, 06.
+- **Resolution:** _open_
+
+### Q19: An end line in a different container from its opener, or indented differently within one
+
+- **Section:** SPEC §3.9, §8.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §3.9 rule 3: "A container or group opens and closes within one list item... An end line indented differently from its opener doesn't close that opener; it's an error." §8.2 has the row "End line indented differently from its opener" and the row "End line with no open container". Which applies, and what else is reported, isn't stated for:
+
+  ```
+  - Item
+
+    @note:
+    Inside.
+  - Two
+
+    @end
+  ```
+
+  The `@end` is in another list item (a different CommonMark container), so it can't close the note. Is it an end line with no open container, or one indented differently from its opener, and is the note also reported unclosed? A second question is the same container with different spaces: `@note:` at column 1 and `   @end` (three extra spaces, which §1.5 allows before any block).
+- **Options:**
+  1. An end line that is in a different CommonMark container from an open opener that it would otherwise close is `end-indent-mismatch`, and the opener is also `container-unclosed` (it stays open until its own container ends). `end-unmatched` is for an end line when no container is open anywhere it could reach. An end line in the same container as its opener closes it whatever its extra spaces (up to three); the formatter (§8.3) removes them.
+  2. Any difference in indentation is `end-indent-mismatch`, even within one container.
+  3. Different container: `end-unmatched` only.
+- **Proposed resolution:** option 1. It follows the container rule the section is about and doesn't punish spacing the grammar accepts. Cases expect both diagnostics for the cross-container case.
+- **Affects:** conformance cases: `lists/end-in-next-item`, `lists/end-with-extra-indent-same-container`; phases 05, 06.
+- **Resolution:** _open_
+
+### Q20: Where page-level, model, and frontmatter diagnostics are reported when several places cause them
+
+- **Section:** SPEC §4.1, §4.2, §5.5, §7.2, §8.1, §8.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §8.1 says a page-level diagnostic "is reported at the source location that causes it", and that when the cause is in a fragment it "is reported at the include site". A conformance case needs one line. The spec doesn't choose it when two places are involved:
+
+  - a duplicate id (`id-duplicate`) or a repeated heading (`heading-duplicate-without-id`): the first or the later occurrence, and for a slug that collides with an `@id`, the heading or the `@id` line;
+  - an id from an include that collides with the page's own: the include site (stated), but whether the second of two includes of one fragment or both;
+  - an include cycle: which include closes it;
+  - a required frontmatter field missing, or a page matching several content types or none: no line names the problem;
+  - a model name used in two roles: the first or the later declaration.
+
+  §8.1's "SHOULD also report it in the fragment" is optional, so an expected list can't require it.
+- **Options:**
+  1. Report at the later occurrence: the second of two duplicate ids or headings (an `@id` line for an explicit id, the heading line for a slug); the second include of a fragment included twice; the include that closes the cycle, written in the file containing it; the first line of the file for frontmatter problems that have no line; the later declaration in `tessera.toml`. Report only at the include site, never also in the fragment (a processor may add the fragment report as a note, not as a conformance diagnostic).
+  2. Report at every occurrence.
+  3. Report at the first occurrence.
+- **Proposed resolution:** option 1: the later occurrence is the one that made the earlier one a duplicate, and the first of a set is unchanged by whatever the author added. Cases that depend on a choice carry `provisional`.
+- **Affects:** conformance cases: `directives/id/duplicate-explicit`, `directives/id/duplicate-through-include`, `directives/id/same-fragment-twice`, `directives/id/slug-equals-explicit-id`, `directives/include/cycle`, `directives/include/self-include`, `frontmatter/missing-required-field`, `frontmatter/no-frontmatter-at-all`, `frontmatter/no-type-and-no-default`, `frontmatter/reference-type-requires-api-version`, `frontmatter/two-types-match`, `headings/duplicate-across-included-fragment`, `headings/duplicate-heading-on-page`, `headings/explicit-id-is-stable-source-and-page-id`, `headings/page-id-differs-from-source-id`, `model/name-is-a-feature-key`, `model/name-is-a-lifecycle-state`; phases 10, 11, 12, 14.
+- **Resolution:** _open_
+
+### Q21: A link to a page that a build drops
+
+- **Section:** SPEC §5.2, §8.2, §9.3
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §9.3 drops a page whose `variant` frontmatter conflicts with a selection. §8.2 has a row for a link whose target *id* a build removes ("Target id is removed by a build"), but none for a link to a page (with or without an id) that the build doesn't publish. Such a link is valid in the `site` build and would have no target in `cloud-only`:
+
+  ```
+  [Self-managed setup](sm.md)   ← sm.md has variant: {deployment: self-managed}
+  ```
+- **Options:**
+  1. Nothing is reported: the link is valid in the source, and the consumer profile could route it to a page that another deployment publishes.
+  2. An error in that build (a new row, or `link-id-removed` extended to pages), since the compiled link would be dead.
+  3. A warning.
+- **Proposed resolution:** option 2 is what §8.1's page-level checking is for, but it needs a row, so this is a request for one. No case depends on it yet, because the registry has nothing to expect; add cases when a slug exists.
+- **Affects:** conformance cases: none; phases 10, 11, 12, 14.
+- **Resolution:** _open_
+
+### Q22: What a destination that "looks like a published route" is
+
+- **Section:** SPEC §5.2, §8.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §5.2: "A destination that looks like a published route rather than a file path produces a warning offering conversion." Paths are file paths; a `/` prefix means content-root-relative. The spec doesn't say how a route is recognized:
+
+  ```
+  [Install](/guides/install/)
+  [Install](/guides/install)
+  [Install](../guides/install)
+  ```
+- **Options:**
+  1. A local destination (not external, not `#id` alone) whose path has no file extension in its last segment, or ends in `/`, and that doesn't name an existing file or directory-index page, is route-like: `link-route` is reported, and `link-target-missing` is not, so the author gets one message with the conversion offered.
+  2. Only destinations that end in `/`.
+  3. Any destination that doesn't exist and has no extension.
+- **Proposed resolution:** option 1. The case expects `link-route` alone for `/guides/install/`.
+- **Affects:** conformance cases: `links/route-destination`; phases 10, 11, 12, 14.
+- **Resolution:** _open_
+
+### Q23: The source of a reference-style image in an outline
+
+- **Section:** SPEC §5.3
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** The outline's `image` block has a required main value: "source, as written". For an inline image, `![alt](settings.png)`, that is `settings.png`. For a reference image, `![alt][ref]`, `![alt][]`, and `![alt]`, the text as written is the label (`ref`), and the source is in a definition (`[ref]: settings.png`), which outlines omit.
+- **Options:**
+  1. The source is the definition's destination, `settings.png`: an image's source is where its file is, and adapters must resolve labels anyway to check that the file exists.
+  2. The label as written.
+- **Proposed resolution:** option 1. Cases for the three reference forms carry `provisional`.
+- **Affects:** conformance cases: `images/collapsed-reference`, `images/full-reference`, `images/shortcut-reference`; phases 07.
+- **Resolution:** _open_
+
+### Q24: A page whose page-level availability isn't available in a filter build
+
+- **Section:** SPEC §4.4, §9.3
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §9.3: `filter` "removes content that isn't available for" the target, and a page's frontmatter `available` "applies to the whole page". §9.3 says which pages a variant selection drops, but not what a filter does with a page whose spec makes all of it unavailable: it could be dropped, like a conflicting page, or published with no content.
+- **Options:**
+  1. The page isn't published in that build: nothing on it is available, and an empty page in navigation is worse than none.
+  2. The page is published with only its title and frontmatter.
+- **Proposed resolution:** option 1. The case lists the pages each build publishes.
+- **Affects:** conformance cases: `builds/filter/page-level-availability`; phases 10, 11, 12, 14.
+- **Resolution:** _open_
+
+### Q25: What a retained `@available` shows when its primary was a feature key
+
+- **Section:** SPEC §4.4, §9.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §4.4: a feature key "is replaced by that feature's declared spec". §9.2 step 2 resolves feature keys before build modes, and §9.3 says content that remains "is annotated as in `badge`". A resolved outline keeps the `available` directive as the annotation. Its primary is either the key as the author wrote it or the spec it stands for.
+- **Options:**
+  1. The declared spec (`cloud, self-managed preview 3.4`), as §4.4 says: the key is replaced, and an annotation the emitters render needs the targets and states, not the key.
+  2. The key, with the registry consulted again by each emitter.
+- **Proposed resolution:** option 1. The case is provisional.
+- **Affects:** conformance cases: `builds/filter/feature-key`; phases 10, 11, 12, 14.
+- **Resolution:** _open_
+
+### Q26: Heading levels in an included section
+
+- **Section:** SPEC §4.2, §9.2
+- **Raised by:** phase 03
+- **Status:** open
+- **Ambiguity:** §4.2 includes "a heading's section", the heading and its content up to the next heading of the same or a higher level. It says nothing about the level of the included headings in the including page. A fragment's `## Install` included under a page's `### Steps` could keep level 2, which breaks the page's outline, or be shifted to level 4.
+- **Options:**
+  1. Levels are kept as written: an include is transclusion, and the author chooses where to include it. A tool may warn about a skipped level.
+  2. Levels are shifted so the included top heading sits one below the enclosing heading.
+- **Proposed resolution:** option 1, since the spec has no level-shifting syntax or attribute and options 2's rule would have to guess what "enclosing" means inside lists and containers. The cases put includes where the levels agree, and are provisional.
+- **Affects:** conformance cases: `directives/include/heading-true-keeps-heading`, `directives/include/section-by-explicit-id`, `directives/include/section-by-source-id`; phases 10, 11, 12, 14.
+- **Resolution:** _open_
+
 ### Q27: `role` is reserved, but the full example model declares it
 
 - **Section:** SPEC §7.2 (reserved attribute keys); content-model.md §15, §20.3

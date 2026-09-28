@@ -1,0 +1,15 @@
+description: >-
+  A `.` line directly above a directive that takes no title is a paragraph,
+  and the directive has no title (Q11).
+spec: ["3.7"]
+tags: [structure]
+
+outline:
+  - paragraph: .NET 8 is required.
+  - directive: steps
+    binding: following-block
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: Install the SDK.

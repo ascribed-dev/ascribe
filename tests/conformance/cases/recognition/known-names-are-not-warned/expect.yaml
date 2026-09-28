@@ -1,0 +1,7 @@
+description: >-
+  Only unknown names warn; the built-in names and declared widgets are
+  directives.
+spec: ["3.2"]
+tags: [check]
+
+diagnostics: []

@@ -1,0 +1,16 @@
+description: >-
+  An unindented directive line directly after a list item ends the list, and
+  is reported.
+spec: ["3.9", "8.2"]
+tags: [structure, check]
+
+outline:
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: Install
+  - directive: note
+    primary: Keep the key safe.
+diagnostics:
+  - {slug: list-ended-by-directive, line: 6}

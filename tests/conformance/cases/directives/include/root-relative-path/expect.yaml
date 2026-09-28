@@ -1,0 +1,11 @@
+description: >-
+  A path that begins with `/` is relative to the content root.
+spec: ["4.2"]
+tags: [resolve, include]
+
+builds:
+  site:
+    pages:
+      guides/deep/page.md:
+        outline:
+          - paragraph: From the root.

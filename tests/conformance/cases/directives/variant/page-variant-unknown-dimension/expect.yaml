@@ -1,0 +1,7 @@
+description: >-
+  Names in `variant` frontmatter are validated like `@variant` attributes.
+spec: ["4.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: variant-unknown, file: index.md, line: 4}

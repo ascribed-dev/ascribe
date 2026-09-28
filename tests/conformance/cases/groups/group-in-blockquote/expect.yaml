@@ -1,0 +1,16 @@
+description: >-
+  A group opens and closes within one blockquote, with `>` markers in place
+  of indentation.
+spec: ["3.6", "3.9"]
+tags: [structure]
+
+outline:
+  - blockquote:
+      - group: variant
+        arms:
+          - attributes: {pm: npm}
+            children:
+              - paragraph: One.
+          - attributes: {pm: yarn}
+            children:
+              - paragraph: Two.

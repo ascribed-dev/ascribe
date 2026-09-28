@@ -1,0 +1,6 @@
+---
+variant:
+  pm: npm
+---
+
+Text.

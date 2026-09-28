@@ -1,0 +1,7 @@
+description: >-
+  A model may declare a glossary; authors mark nothing in source, so a page
+  that uses a term and a page that defines it are both valid.
+spec: ["5.4", "7.2"]
+tags: [check]
+
+diagnostics: []

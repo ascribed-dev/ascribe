@@ -1,0 +1,2 @@
+> @note
+> A quoted block.

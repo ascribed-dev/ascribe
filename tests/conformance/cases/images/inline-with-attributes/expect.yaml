@@ -1,0 +1,10 @@
+description: >-
+  Attributes go in a block directly after the image, with no space (the SPEC
+  example).
+spec: ["5.3"]
+tags: [inline]
+
+outline:
+  - image: settings.png
+    alt: The Quill settings page
+    attributes: {width: "600"}

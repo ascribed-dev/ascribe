@@ -1,0 +1,9 @@
+description: >-
+  Narrowing at every level is fine, and a page with no spec applies
+  everywhere.
+spec: ["4.4", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics: []

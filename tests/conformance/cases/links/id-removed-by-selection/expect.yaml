@@ -1,0 +1,12 @@
+description: >-
+  A link to a heading that a build's variant selection removes is an error
+  in that build only.
+spec: ["5.2", "9.3", "8.2"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics: []
+  cloud-only:
+    diagnostics:
+      - {slug: link-id-removed, file: index.md, line: 5}

@@ -1,0 +1,7 @@
+description: >-
+  An enumerated attribute rejects a value outside its set.
+spec: ["3.3", "4.5", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-type-mismatch, line: 5}

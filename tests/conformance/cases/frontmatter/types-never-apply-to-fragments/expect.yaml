@@ -1,0 +1,7 @@
+description: >-
+  A content type's patterns never match a fragment, so a fragment under
+  `reference/` needs no `api-version`.
+spec: ["2.2", "7.2"]
+tags: [check]
+
+diagnostics: []

@@ -1,0 +1,17 @@
+description: >-
+  Groups separated by an end line are two groups, even of the same
+  directive.
+spec: ["3.6"]
+tags: [structure]
+
+outline:
+  - group: variant
+    arms:
+      - attributes: {pm: npm}
+        children:
+          - paragraph: One.
+  - group: variant
+    arms:
+      - attributes: {pm: yarn}
+        children:
+          - paragraph: Two.

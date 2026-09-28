@@ -1,0 +1,7 @@
+description: >-
+  A repeated key in an image block is an error.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-duplicate-key, file: index.md, line: 5}

@@ -1,0 +1,12 @@
+description: >-
+  A directive line interrupts a paragraph even inside a code span that
+  started on an earlier line, as a heading would; the span is not closed, so
+  its backticks are literal text.
+spec: ["3.2", "3.9"]
+tags: [structure, provisional]
+questions: [Q13]
+
+outline:
+  - paragraph: Use `code
+  - directive: note
+    primary: A note. more` here.

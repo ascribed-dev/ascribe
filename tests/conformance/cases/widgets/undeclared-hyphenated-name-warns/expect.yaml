@@ -1,0 +1,8 @@
+description: >-
+  An undeclared hyphenated name is text, but the directive-shaped line draws
+  a warning.
+spec: ["3.2", "6", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-unknown, line: 5}

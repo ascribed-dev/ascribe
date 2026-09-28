@@ -1,0 +1,8 @@
+description: >-
+  An image beside the case directory exists on disk but is outside the
+  project root, so it is reported as not existing (Q10).
+spec: ["5.3", "9.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: image-source-missing, file: index.md, line: 5}

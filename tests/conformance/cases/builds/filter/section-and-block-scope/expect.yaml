@@ -1,0 +1,64 @@
+description: >-
+  A section spec removes the whole section, subsections included, which
+  inherit it; a block spec removes only the block it touches; content with
+  no spec is kept.
+spec: ["3.8", "4.4", "9.3"]
+tags: [resolve]
+
+builds:
+  sm-3.3:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Sibling
+          - paragraph: Sibling text.
+          - paragraph: After block.
+  cloud-pdf:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Parent
+          - directive: available
+            primary: cloud
+            binding: heading
+          - paragraph: Parent text.
+          - heading: 3
+            text: Child
+          - paragraph: Child text.
+          - heading: 2
+            text: Sibling
+          - paragraph: Sibling text.
+          - directive: available
+            primary: cloud
+            binding: following-block
+          - paragraph: Cloud-only block.
+          - paragraph: After block.
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Parent
+          - directive: available
+            primary: cloud
+            binding: heading
+          - paragraph: Parent text.
+          - heading: 3
+            text: Child
+          - paragraph: Child text.
+          - heading: 2
+            text: Sibling
+          - paragraph: Sibling text.
+          - directive: available
+            primary: cloud
+            binding: following-block
+          - paragraph: Cloud-only block.
+          - paragraph: After block.

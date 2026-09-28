@@ -1,0 +1,10 @@
+description: >-
+  Whitespace at the end of a directive line is ignored.
+spec: ["3.1"]
+tags: [parser]
+
+outline:
+  - paragraph: A paragraph.
+  - directive: include
+    primary: a.md
+  - directive: steps

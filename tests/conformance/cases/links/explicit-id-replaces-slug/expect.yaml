@@ -1,0 +1,10 @@
+description: >-
+  An `@id` replaces the heading's slug as its source id, so the slug no
+  longer names it.
+spec: ["5.2", "8.2"]
+tags: [page-check, slug]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: link-id-missing, file: index.md, line: 5}

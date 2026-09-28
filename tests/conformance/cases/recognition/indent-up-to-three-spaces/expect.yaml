@@ -1,0 +1,13 @@
+description: >-
+  Up to three spaces of indentation before a directive line are allowed, as
+  before a heading; four make indented code.
+spec: ["1.5", "3.9"]
+tags: [parser]
+
+outline:
+  - directive: include
+    primary: a.md
+  - paragraph: Text.
+  - code: |
+      @include: b.md
+    fenced: false

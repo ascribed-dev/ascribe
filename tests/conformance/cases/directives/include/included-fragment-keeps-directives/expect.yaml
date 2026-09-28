@@ -1,0 +1,12 @@
+description: >-
+  Included content keeps its directives, and build modes apply to it as they
+  do to the rest of the page.
+spec: ["4.2", "9.2"]
+tags: [resolve, include]
+
+builds:
+  cloud-only:
+    pages:
+      index.md:
+        outline:
+          - paragraph: Cloud text.

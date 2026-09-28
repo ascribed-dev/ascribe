@@ -1,0 +1,23 @@
+description: >-
+  An include is replaced by the fragment's content, with phrases
+  substituted, and the fragment is not a page.
+spec: ["4.2", "9.2"]
+tags: [resolve, include]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - paragraph: Before.
+          - paragraph: The Quill fragment.
+          - list: bullet
+            children:
+              - item:
+                  - paragraph: one
+              - item:
+                  - paragraph: two
+          - paragraph: After.
+    assets: []

@@ -1,0 +1,12 @@
+description: >-
+  The duplicate check runs on the expanded page, so a heading repeated by an
+  included fragment is reported at the later heading, which is the page's
+  own.
+spec: ["4.2", "5.5", "8.2"]
+tags: [page-check, include, provisional]
+questions: [Q20]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: heading-duplicate-without-id, file: index.md, line: 7}

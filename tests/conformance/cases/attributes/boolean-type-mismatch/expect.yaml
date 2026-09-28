@@ -1,0 +1,8 @@
+description: >-
+  Booleans are explicit `true` or `false`; anything else is a type error.
+spec: ["3.3", "4.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-type-mismatch, line: 5}
+  - {slug: include-target-missing, line: 5}

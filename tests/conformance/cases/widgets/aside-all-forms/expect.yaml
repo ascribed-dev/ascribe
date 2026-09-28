@@ -1,0 +1,18 @@
+description: >-
+  A widget with both forms and an optional text primary behaves like
+  `@note`: primary, following block, or container.
+spec: ["6", "3.5"]
+tags: [structure]
+
+outline:
+  - directive: quill-aside
+    primary: With a primary.
+    binding: self
+  - directive: quill-aside
+    binding: following-block
+  - paragraph: A bound block.
+  - directive: quill-aside
+    form: container
+    title: Titled
+    children:
+      - paragraph: Container.

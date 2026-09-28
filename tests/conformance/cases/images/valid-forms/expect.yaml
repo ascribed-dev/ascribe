@@ -1,0 +1,7 @@
+description: >-
+  Every image form with a local file that exists, an external URL, and
+  attributes within the model is valid; raw HTML images are not checked.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics: []

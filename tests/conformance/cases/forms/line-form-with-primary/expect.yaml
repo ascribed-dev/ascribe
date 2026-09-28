@@ -1,0 +1,11 @@
+description: >-
+  A note with a primary is line form and its own content.
+spec: ["3.5", "4.5"]
+tags: [structure]
+
+outline:
+  - directive: note
+    attributes: {type: caution}
+    primary: Back up your database first.
+    binding: self
+  - paragraph: Next paragraph.

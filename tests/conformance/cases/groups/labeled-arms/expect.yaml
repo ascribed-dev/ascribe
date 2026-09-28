@@ -1,0 +1,14 @@
+description: >-
+  Labeled arms carry a title line and no attributes (the SPEC §4.3 example).
+spec: ["3.6", "3.7", "4.3"]
+tags: [structure]
+
+outline:
+  - group: variant
+    arms:
+      - title: Using Docker Hardened Images
+        children:
+          - paragraph: Run the hardened image.
+      - title: Using other images
+        children:
+          - paragraph: Run any other image.

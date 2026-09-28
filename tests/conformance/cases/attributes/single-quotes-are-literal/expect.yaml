@@ -1,0 +1,8 @@
+description: >-
+  Single quotes have no special meaning: they are ordinary token characters.
+spec: ["3.3"]
+tags: [parser]
+
+outline:
+  - directive: quill-labspace
+    attributes: {lab: "'x'"}

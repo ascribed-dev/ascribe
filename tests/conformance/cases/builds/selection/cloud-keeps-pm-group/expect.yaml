@@ -1,0 +1,45 @@
+description: >-
+  A build selecting `deployment=cloud` reduces the deployment group to its
+  cloud arm and leaves the `pm` group a full switcher (the SPEC §9.3
+  example). `switch` keeps both groups.
+spec: ["9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Install
+          - group: variant
+            arms:
+              - attributes: {deployment: cloud}
+                children:
+                  - paragraph: Cloud text.
+              - attributes: {deployment: self-managed}
+                children:
+                  - paragraph: Self-managed text.
+          - group: variant
+            arms:
+              - attributes: {pm: npm}
+                children:
+                  - paragraph: npm text.
+              - attributes: {pm: yarn}
+                children:
+                  - paragraph: yarn text.
+  cloud-only:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Install
+          - paragraph: Cloud text.
+          - group: variant
+            arms:
+              - attributes: {pm: npm}
+                children:
+                  - paragraph: npm text.
+              - attributes: {pm: yarn}
+                children:
+                  - paragraph: yarn text.

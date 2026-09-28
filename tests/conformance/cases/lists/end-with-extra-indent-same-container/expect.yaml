@@ -1,0 +1,8 @@
+description: >-
+  An end line with up to three extra spaces, in the same container as its
+  opener, still closes it.
+spec: ["1.5", "3.9"]
+tags: [check, provisional]
+questions: [Q19]
+
+diagnostics: []
