@@ -710,6 +710,10 @@ version = "0.0.0"
 [[package]]
 name = "tessera-resolve"
 version = "0.0.0"
+dependencies = [
+ "serde_json",
+ "tessera-core",
+]
 
 [[package]]
 name = "tessera-syntax"
