@@ -1,7 +1,7 @@
 //! Shared test support: a checker that every span in a tree covers exactly
 //! its source text, and helpers to find inputs.
 
-#![allow(dead_code)]
+#![allow(dead_code, clippy::expect_used, clippy::panic)]
 
 use std::path::{Path, PathBuf};
 

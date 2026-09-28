@@ -16,9 +16,10 @@ thiserror.workspace = true
 toml.workspace = true
 
 # Implementation phases add the Tessera crates their adapters need, as
-# dev-dependencies, for example:
-# [dev-dependencies]
-# tessera-syntax.workspace = true
+# dev-dependencies.
+[dev-dependencies]
+tessera-core.workspace = true
+tessera-syntax.workspace = true
 
 [[test]]
 name = "conformance"

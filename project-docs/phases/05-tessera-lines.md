@@ -48,4 +48,42 @@ Build `tessera-syntax`'s public parsing API and its own syntax tree, and parse e
 
 ## Handoff notes
 
-_To be filled in by the implementing agent._
+### What was built
+
+- **`tessera_core::attributes`** (`parse_attribute_block(text, offset, file) -> Option<ParsedAttributes>`): SPEC §3.3 and Appendix A. Tokens, quoted strings with `\"` and `\\`, value sets, any spaces or tabs, `{}`. It returns the `AttributeBlock` (a span for the block, every pair, key, value, and set member), how many bytes it covered, whether it was closed, and `Issue`s. It recovers from every error, so the rest of a block is still read. It reports `attribute-syntax`, `attribute-bare-key`, `attribute-unquoted-reserved`, and `attribute-duplicate-key` (at the second use). Phase 07 reuses it for images.
+- **`tessera-syntax`**:
+  - `parse(source, &ParseOptions) -> ParsedDocument`. `ParseOptions` holds the file id, the `DirectiveSchema`s (`ParseOptions::default()` is the built-ins), and the note types (for the `@note {type=warning}:` suggestion).
+  - `tree`: Tessera's own tree, documented. Blocks (`Heading`, `Paragraph`, `CodeBlock`, `BlockQuote`, `List`/`ListItem`, `HtmlBlock`, `ThematicBreak`, `Table`), inlines (`Text`, `Code`, breaks, `Html`, `Emphasis`, `Strong`, `Link`, `Image` in every form with `LinkForm` and `label`), and the Tessera nodes: `DirectiveLine` (name, `@name` span, attribute block, colon, primary, form) and `EndLine`. Primaries are `PrimaryValue::{Identifier, Text, Line, Unexpected}`. `raw_text(source, span)` reads source text with container prefixes removed.
+  - **Node kinds for later phases**, defined and unused: `Container`, `Group`, `Arm`, `TitleLine` (phase 06), `Phrase` and `ImageAttributes`/`Image::attributes` (phase 07). Phase 05 never produces them (a test checks).
+  - The directive-head parser (`head.rs`), the conversion from comrak (`convert.rs`), and misspelled-directive detection (`unknown.rs`).
+- **The conformance adapter** (`tests/conformance/tests/adapters/syntax.rs`): handles the `parser` tag, with an `outline` (flat directives and CommonMark blocks) and `diagnostics` (the parser's issues, with columns in Unicode scalar values). It reads `[widgets]` and `[notes]` from the case's `tessera.toml` itself, as a stand-in for phase 08's loader.
+- **A fix in the fork.** comrak leaves a paragraph's or setext heading's start line on its link reference definitions when it takes them from the start, so every inline position after them was wrong. `parser/mod.rs` now moves the start line down (two marked hunks, listed in `FORK.md`).
+
+### Interfaces later phases use
+
+- **Positions.** `Span` is a byte range into the whole file (frontmatter included); every span covers exactly its source text and never includes a line ending. A test checks this over the 652 CommonMark examples (alone, and with a directive line before, after, and around each), the SPEC, project docs, examples, and every `.md` under `tests/conformance` (so phase 03's inputs are covered as soon as they merge).
+- **Directive lines.** `BlockKind::Directive(DirectiveLine)` and `BlockKind::End(EndLine)`, as flat siblings of the blocks around them. `DirectiveLine::form` is decided by the line alone (`Container` iff there's a colon and nothing after it). A container's content is *not* inside it; phase 06 nests it. `span` runs from `@` to the end of the line, or of the primary's last line; trailing whitespace isn't included.
+- **Text primaries.** `TextPrimary { span, lines, inlines }`. `lines` are the primary's lines with container indentation and `>` markers removed; use `raw_text(source, primary.span)` for the text. The fork's child paragraph is not a separate block in Tessera's tree.
+- **Where the head parser and the block parser agree.** A text primary starts where `comrak-tessera` says (`NodeTesseraLine::text_primary`). Both find the end of an attribute block with the same rule (the first `}` outside a quoted string; a backslash inside quotes hides the next character). `tests/agreement.rs` checks it on 3,000 generated lines per run against the fork.
+- **Issues** (`ParsedDocument::issues`, in source order): `attribute-syntax`, `attribute-bare-key`, `attribute-unquoted-reserved`, `attribute-duplicate-key`, `directive-primary` (a primary where none is taken, and, with the `missing` variant, a required one missing; located at the primary and at `@name`), and `directive-unknown` (with the `suggestion` variant when there's a close name). **Phase 10 shouldn't report these again**; it reports what needs a schema (unknown keys, value types).
+- **Misspelled directives** stay `Paragraph`s. Any line of a paragraph (including a text primary's continuation lines) that is `@` and a lowercase name followed, after optional spaces and tabs, by `{`, `:`, or the end of the line, and whose name isn't known, is reported at `@name`.
+- **Bindings and titles.** Not in the tree. The adapter works out `binding` for the outline from the schema and the siblings before a directive, as a stand-in; phase 06 replaces that. A title line is still a one-line `Paragraph`.
+
+### Decisions
+
+- **The tree owns the text.** `Text` and `Code` values are comrak's decoded values; the span is the source. Adjacent `Text` nodes that touch are merged, so phase 07 finds `{key}` in one node.
+- **comrak positions are corrected, not trusted.** Block and inline spans come from comrak's line and byte column, converted with `LineIndex`, then corrected where comrak is wrong: containers grow to cover their last child (a list ending in an indented code block after a tab, and a table, end short); a heading or paragraph loses trailing spaces; table cells put back the byte comrak drops for each `\|` before a position; a line break's span is its line ending; and the fork change above.
+- **A directive line's Tessera-specific parts are computed from the raw line**, anchored at the `@` (`NodeTesseraLine::raw`), not from comrak's columns.
+- **Reporting places.** A missing `}` and an unclosed quote are reported at the `{` and the opening quote. A missing required primary is at `@name`; an unexpected primary is at the primary.
+- **A recovered `key=` with no value** keeps the pair with `value: None`, as `AttributeBlock` documents, and reports `attribute-syntax`; a bare key reports `attribute-bare-key`. Unquoted values with whitespace (`{label=Using other images}`) report `attribute-unquoted-reserved` and keep the whole value; a missing comma before another `key=` reports `attribute-syntax`. Only `attribute-syntax` is reported for an unclosed block.
+- **Invalid keys** (`Type`, `my_key`) are reported as `attribute-syntax` and kept, so their values still parse.
+- **`proptest`** is a workspace dependency now (dev-dependency of `tessera-core` and `tessera-syntax`).
+
+### Left open
+
+- **Q12** (`project-docs/questions.md`): text on a directive line that fits no part of the directive (`@note hello: text`, `@steps foo`, `@end: x`, and text after an identifier primary such as `@include: my file.md`). Implemented now: the head junk and `@end` extras use the nearest rows, and text after an identifier is kept in `IdentifierPrimary::trailing` without a report.
+- **Conformance.** Phase 03 hadn't merged when this was written, so no `parser` cases have run against the adapter; I checked the adapter with temporary cases (recognition, primaries across lines, attributes in containers, and each issue with line and column), which aren't committed. The `parser` skip entry is removed and the adapter is registered; when phase 03 lands, its `parser` cases run, and any that fail show what to change on one side.
+- **Link reference definitions** aren't nodes (comrak doesn't produce them); the destinations of reference-form links and images are on the `Link` and `Image` nodes. Phase 23 will need the definitions themselves.
+- **Setext headings and paragraphs after definitions** have their start line corrected, but the column is the paragraph's original one, which is right unless the definitions were indented differently from the text after them.
+- **Trailing whitespace inside an unclosed attribute block's quote** is left out of the block's span.
+

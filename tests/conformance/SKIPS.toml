@@ -12,10 +12,6 @@
 #                                         optional; skips only these checks
 
 [[skip]]
-tag = "parser"
-reason = "Adapter for tag `parser` (Tessera lines, directive heads, attributes, primaries) not yet implemented; phase 05."
-
-[[skip]]
 tag = "structure"
 reason = "Adapter for tag `structure` (forms, containers, groups, titles, binding) not yet implemented; phase 06."
 

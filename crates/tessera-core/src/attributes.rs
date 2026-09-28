@@ -81,14 +81,21 @@ pub fn parse_attribute_block(text: &str, offset: usize, file: FileId) -> Option<
         issues: Vec::new(),
     };
     if !closed {
+        // Reported at the opening brace: the end of the line is a poor place
+        // to point at.
         parser.issue_syntax(
-            Span::new(len, len),
+            Span::new(0, 1),
             "the block has no closing `}` (write `}` at the end)",
         );
     }
     let attributes = parser.attributes();
     let mut issues = parser.issues;
     report_duplicates(&attributes, file, &mut issues);
+    if !closed {
+        // Text after the last value is most likely what follows a forgotten
+        // `}`, so calling it an unquoted value would only add noise.
+        issues.retain(|i| i.slug != diagnostics::ATTRIBUTE_UNQUOTED_RESERVED);
+    }
     issues.sort_by_key(|i| i.location.span.start());
     Some(ParsedAttributes {
         block: AttributeBlock {

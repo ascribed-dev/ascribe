@@ -233,3 +233,27 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1: the tree follows §3.7 and the diagnostic follows §8.2, which reports a probable mistake rather than hiding it. Implemented now: nothing yet; the registry entry `title-not-accepted` exists, and phases 06 and 10 report it.
 - **Affects:** `crates/tessera-core/src/schema.rs` (`TitleRule::None`); phases 03, 06, and 10.
 - **Resolution:** a variant of option 1: the `.` line stays a paragraph (§3.7), and the §8.2 row "Title given to a directive that doesn't accept one" is a warning, not an error, because a real sentence such as `.NET 8 is required.` directly above `@steps` mustn't fail a build. `\.` silences it. SPEC §3.7 and §8.2 and the registry entry `title-not-accepted` now say so.
+
+### Q12: Text on a directive line that fits no part of the directive
+
+- **Section:** SPEC §3.1, §3.4, §8.2, Appendix A
+- **Raised by:** phase 05
+- **Status:** open
+- **Ambiguity:** the grammar (`directive-line`) allows only a name, an attribute block, a colon, and a primary, but §3.2 recognizes a line as a directive from its keyword alone, so a known keyword can be followed by text that fits no part of the grammar, and §8.2 has no row for it. Three shapes come up:
+
+  ```
+  @note hello: text          (attributes written without braces; no colon in the right place)
+  @steps foo                 (a name, then text, on a directive with no primary)
+  @end: later                (anything after `@end`)
+  @include: my file.md       (an identifier primary ends at whitespace; ` file.md` is left over)
+  @id: two words
+  ```
+
+  The first three aren't valid directive lines, and the fourth and fifth leave text after the identifier that the spec doesn't assign to anything.
+- **Options:**
+  1. Add one error to §8.2, for example `directive-extra-text` ("`@include` takes one identifier; ` file.md` isn't part of it"), covering all five shapes.
+  2. Report each under the nearest existing row: `attribute-syntax` for text where an attribute block or colon should be, `directive-primary` for text after `@end`'s colon, and nothing for text after an identifier, which the identifier's own checks (`id-invalid`, `include-target-missing`) then catch in most cases.
+  3. Treat an identifier primary's leftover text as part of it (so `@include: my file.md` names a file with a space in it), and report the other shapes as in option 2. This contradicts §3.4's "ends at the first whitespace".
+- **Proposed resolution:** option 1. It reports every case, with a message that says what to fix, and needs one new registry entry (a contract change: phase 02's `diagnostics.toml`, with a `Fix` that removes the text). Implemented now: option 2, except that leftover text after an identifier is kept in the tree (`IdentifierPrimary::trailing`) and isn't reported, which keeps the content and leaves the decision to the checks.
+- **Affects:** `crates/tessera-syntax/src/convert.rs` (`SPEC-QUESTION(Q12)`), `crates/tessera-syntax/src/tree.rs` (`DirectiveLine::unexpected`, `IdentifierPrimary::trailing`, `EndLine::extra`); `tests/conformance/diagnostics.toml`; phases 03, 05, and 10. No conformance case should depend on these shapes until this is resolved; tag any that do `provisional`.
+- **Resolution:** _to be filled in by a human._

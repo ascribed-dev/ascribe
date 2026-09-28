@@ -59,9 +59,9 @@ pub(crate) fn parse_head(raw: &str, base: usize, file: FileId) -> Head {
 
     let mut i = skip_ows(bytes, name_end, content_end);
     if raw.as_bytes().get(i) == Some(&b'{') && i < content_end {
-        // The block may end after the trimmed content only if the trailing
-        // whitespace is inside an unclosed quote; parse the whole line.
-        let text = &raw[i..];
+        // Trailing whitespace can't close a block, so it's left out; an
+        // unclosed block then ends where the line's content does.
+        let text = &raw[i..content_end];
         if let Some(parsed) = parse_attribute_block(text, base + i, file) {
             let end = i + parsed.len;
             let closed = parsed.closed;

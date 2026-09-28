@@ -359,6 +359,8 @@ impl<'a> Converter<'a> {
             .or(head.unexpected_start);
         let extra = first.map(|start| Span::new(at + start, at + head.content_end));
         if let Some(extra) = extra {
+            // SPEC-QUESTION(Q12): nothing in SPEC §8.2 covers text after `@end`;
+            // this uses the nearest rows.
             let issue = if head.colon.is_some() {
                 Issue::new(diagnostics::DIRECTIVE_PRIMARY, self.location(extra))
                     .with_arg("name", name)
@@ -392,6 +394,8 @@ impl<'a> Converter<'a> {
             .unexpected_start
             .map(|start| Span::new(at + start, at + head.content_end));
         if let Some(span) = unexpected {
+            // SPEC-QUESTION(Q12): nothing in SPEC §8.2 covers text that fits
+            // no part of the head; `attribute-syntax` is the nearest row.
             let detail = if head.attributes.is_some() {
                 format!(
                     "expected `:` or the end of the line after the attributes of `@{}`",
@@ -417,10 +421,10 @@ impl<'a> Converter<'a> {
         };
 
         let primary = self.primary(node, line, &head, at, schema.as_ref());
-        if let (Some(schema), None) = (&schema, &primary) {
-            if schema.primary.is_required() {
-                self.report_missing(schema, name_span);
-            }
+        if let (Some(schema), None) = (&schema, &primary)
+            && schema.primary.is_required()
+        {
+            self.report_missing(schema, name_span);
         }
 
         let form = if colon.is_some() && head.primary_start.is_none() && unexpected.is_none() {
@@ -476,16 +480,18 @@ impl<'a> Converter<'a> {
         schema: Option<&DirectiveSchema>,
     ) -> Option<PrimaryValue> {
         // A text primary is the child paragraph the block parser made.
-        if line.text_primary.is_some() {
-            if let Some(paragraph) = node.first_child() {
-                return Some(PrimaryValue::Text(self.text_primary(paragraph)));
-            }
+        if line.text_primary.is_some()
+            && let Some(paragraph) = node.first_child()
+        {
+            return Some(PrimaryValue::Text(self.text_primary(paragraph)));
         }
         let start = at + head.primary_start?;
         let end = at + head.content_end;
         let rest = self.text(Span::new(start, end));
         match schema.map(|s| s.primary) {
             Some(Primary::Identifier { .. }) => {
+                // SPEC-QUESTION(Q12): text after the token is kept in
+                // `trailing` and not reported.
                 let token_len = rest.find([' ', '\t']).unwrap_or(rest.len());
                 let after = &rest[token_len..];
                 let trailing = after.trim_start_matches([' ', '\t']);
@@ -635,12 +641,11 @@ impl<'a> Converter<'a> {
                     span: previous,
                     kind: InlineKind::Text(previous_text),
                 }) = out.last_mut()
+                    && previous.end() == span.start()
                 {
-                    if previous.end() == span.start() {
-                        previous_text.push_str(text);
-                        *previous = Span::new(previous.start(), span.end());
-                        return;
-                    }
+                    previous_text.push_str(text);
+                    *previous = Span::new(previous.start(), span.end());
+                    return;
                 }
                 InlineKind::Text(text.to_string())
             }
