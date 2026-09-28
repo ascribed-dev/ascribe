@@ -25,9 +25,9 @@ Generate heading slugs exactly as the consumer does, so ids Tessera validates ar
 
 ## Acceptance criteria
 
-- [ ] Every ported upstream fixture passes.
-- [ ] Duplicate headings number exactly as `github-slugger` numbers them, within a scope.
-- [ ] The implementation records the upstream version it matches.
+- [x] Every ported upstream fixture passes.
+- [x] Duplicate headings number exactly as `github-slugger` numbers them, within a scope.
+- [x] The implementation records the upstream version it matches.
 
 ## Out of scope
 
@@ -63,11 +63,11 @@ Generate heading slugs exactly as the consumer does, so ids Tessera validates ar
 - Odd upstream results are kept: the hyphen stays (`a - b` is `a---b`), emoji are removed but U+FE0F stays, a punctuation-only heading has the empty slug (and numbers as `-1`, `-2`).
 - The empty slug is returned as `""`, not rejected. Phase 11 should decide what an id-less heading with an empty slug means (see Left open).
 
-### Testing, and one gap
+### Testing
 
 The fixtures were generated from the real package (`github-slugger` 2.0.0 from npm): 734 single texts (hand-picked Latin, Unicode, emoji, punctuation, and seeded random strings, including random scalars from all of Unicode), 18 duplicate sequences, and every Unicode scalar checked one at a time.
 
-**Upstream's own test fixtures weren't ported**: they're in the GitHub repository, not the npm package, and this environment couldn't reach GitHub or a mirror. The corpus above is my own, checked against the package's real output, which is the property the fixtures exist for. If someone wants upstream's fixture file too, adding it is a matter of running its inputs through `generate.mjs`.
+**Upstream's own test fixtures** (`test/fixtures.json` from `Flet/github-slugger` at 2.0.0, 78 entries) are vendored unchanged as `fixtures/upstream.json`. They weren't reachable from the implementing session, so they were added afterwards. All 78 pass, run in order through one scope as upstream's test runs them (`upstream_test_fixtures_pass`).
 
 ### Left open
 

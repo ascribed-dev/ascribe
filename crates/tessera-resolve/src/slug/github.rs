@@ -149,6 +149,26 @@ mod tests {
         }
     }
 
+    /// Upstream's own test fixtures (`test/fixtures.json` in
+    /// `Flet/github-slugger` at 2.0.0), run in order through one scope as
+    /// upstream's test does, so later entries depend on earlier ones.
+    #[test]
+    fn upstream_test_fixtures_pass() {
+        let fx = fixture("upstream.json");
+        let cases = fx.as_array().unwrap();
+        assert_eq!(cases.len(), 78);
+        let mut scope = GithubSlugger.new_scope();
+        for case in cases {
+            let input = case["input"].as_str().unwrap();
+            assert_eq!(
+                scope.slug(input),
+                case["expected"].as_str().unwrap(),
+                "{}",
+                case["name"]
+            );
+        }
+    }
+
     #[test]
     fn duplicate_numbering_matches_upstream() {
         let fx = fixture("slugs.json");
