@@ -74,7 +74,7 @@ A marker after a space, or after anything but an image, doesn't apply.
 
 ## 3. What applying a marker does
 
-Each of the marker's attributes is set on the element it applies to (`<h1>`–`<h6>`, or `<img>`), with the same name and its decoded value. If the element already has an attribute of that name (an image's `src`, `alt`, or `title`), the marker's value replaces it. **Provisional (Q9):** the replacement rule stands until Q9 decides whether a content model may declare those names at all.
+Each of the marker's attributes is set on the element it applies to (`<h1>`–`<h6>`, or `<img>`), with the same name and its decoded value. The emitter never writes a name the element already has: a heading's marker holds only `id`, and a content model can't declare an image attribute named `src`, `alt`, `title`, or any other name HTML gives a meaning (SPEC §7.2; content-model.md, `model-attribute-reserved`). If a marker written by hand does repeat one, the marker's value replaces the element's.
 
 The resulting HTML is the CommonMark rendering of the input with the marker removed, plus those attributes. Nothing else changes: implementations don't renumber, deduplicate, or validate ids, since Tessera has already assigned and checked them.
 

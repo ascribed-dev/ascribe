@@ -80,7 +80,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §8.1, §8.2
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** the diagnostics registry gives every diagnostic one level, because the level decides where it's reported (once per file, or per page and build) and where a conformance case expects it. Four §8.2 rows join two checks at different levels in one condition:
   - `@include` "Target file or id doesn't exist": whether the file exists is file level (§8.1, "whether referenced files exist"); whether the id exists needs the target's headings.
   - Links "Target file or id doesn't exist": the same, and §8.1 names "link targets that are ids" as page level.
@@ -92,13 +92,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. One entry per row, at file level. File-level checks can't see includes, so duplicate headings from fragments and fragment-only ids are never reported.
 - **Proposed resolution:** option 1, which reports every error and gives each problem a precise message and fix. It changes phase 02's acceptance criterion from "exactly one entry per §8.2 row" to "exactly one entry per row and level"; the registry test (`tests/conformance/tests/registry.rs`) lists the four split rows. Implemented now: option 1.
 - **Affects:** `tests/conformance/diagnostics.toml` (`include-target-missing`, `include-id-missing`, `link-target-missing`, `link-id-missing`, `link-to-fragment`, `link-id-in-fragment`, `heading-phrase-without-id`, and `heading-duplicate-without-id`, each `provisional` on Q3); phases 03, 10, 11, and 14.
-- **Resolution:**
+- **Resolution:** option 1, as proposed and implemented. SPEC §8.2 now splits each of the four rows into a file-level row and a page-level row, so the registry has exactly one entry per row, and none is provisional.
 
 ### Q4: The kind of `@available`'s primary
 
 - **Section:** SPEC §3.4, §4.4
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.4 defines two primary kinds: an identifier, which ends at the first whitespace, and text, which is inline content that continues onto following lines like a paragraph. `@available`'s primary, an availability spec such as `cloud, self-managed preview 3.4`, contains spaces, so it isn't an identifier, but it isn't markdown either. If it's a text primary, a paragraph directly below a block-level `@available` becomes part of the spec:
 
   ```
@@ -110,13 +110,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. A text primary. The paragraph joins the spec, which then fails to parse.
 - **Proposed resolution:** option 1. It keeps the paragraph as content, and it fits every example in §4.4, which are all one line. Implemented now: option 1, as `Primary::Availability` in `tessera-core`.
 - **Affects:** `crates/tessera-core/src/schema.rs` (`SPEC-QUESTION(Q4)`); phases 04, 05, and 08.
-- **Resolution:**
+- **Resolution:** option 1, as proposed and implemented. SPEC §3.4 now defines a line primary, and §4.4 gives `@available` one.
 
 ### Q5: Problems §8.2 has no row for
 
 - **Section:** SPEC §3.3, §4.1, §4.4, §5.3, §8.2
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** the spec states these rules, but §8.2 has no diagnostic for breaking them:
   - an attribute block that doesn't parse, such as an unclosed quote or brace, or `=` with no value (§3.3 grammar);
   - the same attribute key twice in one block (`{type=tip, type=note}`);
@@ -129,13 +129,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Don't report them. A malformed spec or id would then be silently accepted or dropped.
 - **Proposed resolution:** option 1. Implemented now: registry entries `attribute-syntax`, `attribute-duplicate-key`, `available-syntax`, `id-invalid`, and `image-attribute-missing`, each `provisional` on Q5.
 - **Affects:** `tests/conformance/diagnostics.toml`; `crates/tessera-core/src/diagnostics.rs`; phases 03, 05, 07, 08, and 10.
-- **Resolution:**
+- **Resolution:** option 1, as proposed and implemented. SPEC §8.2 now has the five rows, as errors, and their registry entries aren't provisional.
 
 ### Q6: What "an id that exists only inside a fragment" means
 
 - **Section:** SPEC §4.2, §5.2, §5.5, §8.2
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §4.2 says "a link to a fragment file, or to an id that exists only inside one, is an error. Link to the page that includes it." But a link's `#id` names "a heading in the target file by its source id" (§5.2), and source ids "depend only on the file" (§5.5). So for `[x](setup.md#prereq)`, where `prereq` is a heading in `_fragments/prereq.md` that `setup.md` includes, `setup.md` has no source id `prereq`, and the link already fails as "id doesn't exist". It's unclear whether:
   - the fragment rule gives that case a clearer error (the id exists, but only in an included fragment), so no link can name a heading that comes from a fragment; or
   - links to `setup.md#prereq` are meant to work, with a page's ids including its fragments' headings, and the error is only for `_fragments/prereq.md#prereq`.
@@ -144,13 +144,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. A page's linkable ids include the source ids of the fragments it includes, so `setup.md#prereq` works. §5.2 and §5.5 would need rewording, and ids from a fragment included twice would be ambiguous.
 - **Proposed resolution:** option 1, which reports an error rather than guessing a target, and follows §5.5's definition. Implemented now: option 1.
 - **Affects:** `tests/conformance/diagnostics.toml` (`link-id-in-fragment`, `provisional` on Q3 and Q6); phases 03, 11, 12, and 14.
-- **Resolution:**
+- **Resolution:** option 1, as proposed and implemented. SPEC §4.2 and §5.2 now say a page's linkable ids are its own source ids, and a link to an id that exists only in an included fragment is an error that names the fragment.
 
 ### Q7: Whether an explicit `@id` takes part in slug numbering
 
 - **Section:** SPEC §4.1, §5.5
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** duplicate slugs are numbered "the way that algorithm numbers them". With
 
   ```
@@ -166,26 +166,26 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. Explicit ids are recorded first, so the second heading becomes `intro-1`. No error, but the numbering no longer matches the consumer's algorithm, which §5.5 requires.
 - **Proposed resolution:** option 1. It reports an error rather than silently choosing an id, and it matches the consumer. Implemented now: option 1, stated on `tessera_core::SlugScope::slug`.
 - **Affects:** `crates/tessera-core/src/consumer.rs`; phases 09, 11, and 12.
-- **Resolution:**
+- **Resolution:** option 1, as proposed and implemented. SPEC §5.5 now says explicit ids don't take part in slug numbering, so a slug equal to an explicit id is a duplicate id.
 
 ### Q8: `<tessera-note title>` is also HTML's `title` attribute
 
 - **Section:** SPEC §9.4
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §9.4's table gives a note's title as `<tessera-note type="tip" title="…">`. `title` is a global HTML attribute: browsers show it as a tooltip whenever the pointer is anywhere over the element, so every titled note shows its title as a tooltip over its whole body, and assistive technology may announce it as the element's description.
 - **Options:**
   1. Keep `title`, as the spec says, and accept the tooltip.
   2. Use another name, such as `heading`. Needs a spec change.
 - **Proposed resolution:** option 2, `heading`, which the element library would show the same way. Implemented now: option 1, since the spec names the attribute; the element contract marks it provisional.
 - **Affects:** `packages/elements/CONTRACT.md`; phases 19 and 20.
-- **Resolution:**
+- **Resolution:** option 2: the attribute is `heading` (`<tessera-note type="tip" heading="…">`). SPEC §9.4, the element contract, and the render fixtures use it, and so do widget elements, for their title lines. The note's `label` attribute stays.
 
 ### Q9: Attribute names that clash with HTML
 
 - **Section:** SPEC §5.3, §6, §9.4
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** the site output writes a widget as "a custom element with the widget's name and attributes", and the site-render contract sets image attributes on the `<img>`. Nothing stops a content model from declaring attribute keys that mean something else in HTML:
   - on widgets: `title`, which the element contract uses for the widget's title line, and HTML's global attributes (`id`, `class`, `style`, `hidden`, `slot`, and any `on…` event handler);
   - on images: `src`, `alt`, and `title`, which CommonMark's image syntax already supplies, and the same global attributes.
@@ -197,13 +197,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Allow them. A marker attribute replaces the image's own attribute of the same name.
 - **Proposed resolution:** option 1. Implemented now: nothing rejects them. The site-render contract says a marker attribute replaces an existing attribute of the same name (option 3), so no author content is dropped, and marks that rule provisional.
 - **Affects:** `project-docs/content-model.md` §14, §15, §20; `tests/conformance/diagnostics.toml`; `project-docs/contracts/site-render.md`; `packages/elements/CONTRACT.md`; phases 08, 19, 20, and 21.
-- **Resolution:**
+- **Resolution:** option 1, as proposed. SPEC §7.2 now forbids these keys, and content-model.md §20.3 has the loader rule `model-attribute-reserved` (registry TSR119). For widgets the reserved names are `heading` and `primary` (Q8 renamed the title attribute), plus HTML's global attributes, which include `title`, and event handlers. The site-render contract no longer depends on replacing an image's own attributes.
 
 ### Q10: Which local files an output may copy
 
 - **Section:** SPEC §4.2, §5.2, §5.3, §9.4 (Assets)
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** relative paths may lead out of the content root (`../../shared/logo.png`), and the spec doesn't limit where. Copying any file a destination can reach would let a page publish files from anywhere on the machine, or copy a previous build's output back into the build. The spec also doesn't say whether a reference whose case differs from the file's (`Logo.png` for `logo.png`) exists, which differs between file systems, or whether references inside raw HTML (`<img src="x.png">`) are assets.
 - **Options:**
   1. A reference must resolve to a file inside the project root (the directory of `tessera.toml`) or the content root, and not inside the output directory; otherwise it's reported as not existing. Names must match exactly, on every platform. References in raw HTML aren't assets and pass through unchanged.
@@ -211,13 +211,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Allow only files inside the content root.
 - **Proposed resolution:** option 1. It supports shared images in a monorepo, keeps builds the same on macOS, Windows, and Linux, and reports an error rather than copying an unexpected file. Implemented now: option 1, in the asset contract, with the `outside` and `case` message variants of `image-source-missing` and `link-target-missing`.
 - **Affects:** `project-docs/contracts/assets.md`; `tests/conformance/diagnostics.toml`; phases 10, 11, 18, 20, and 25.
-- **Resolution:**
+- **Resolution:** option 1, as proposed and implemented. SPEC §9.4 (Assets) now says so, and the asset contract and registry entries aren't provisional.
 
 ### Q11: A title line above a directive that doesn't take one
 
 - **Section:** SPEC §3.7, §8.2
 - **Raised by:** phase 02
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.7 says "If the next line isn't a directive that accepts a title, the `.` line is ordinary text", but §8.2 has the error "Title given to a directive that doesn't accept one". For
 
   ```
@@ -232,4 +232,4 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. The line is ordinary text and nothing is reported, so the §8.2 row never applies.
 - **Proposed resolution:** option 1: the tree follows §3.7 and the diagnostic follows §8.2, which reports a probable mistake rather than hiding it. Implemented now: nothing yet; the registry entry `title-not-accepted` exists, and phases 06 and 10 report it.
 - **Affects:** `crates/tessera-core/src/schema.rs` (`TitleRule::None`); phases 03, 06, and 10.
-- **Resolution:**
+- **Resolution:** a variant of option 1: the `.` line stays a paragraph (§3.7), and the §8.2 row "Title given to a directive that doesn't accept one" is a warning, not an error, because a real sentence such as `.NET 8 is required.` directly above `@steps` mustn't fail a build. `\.` silences it. SPEC §3.7 and §8.2 and the registry entry `title-not-accepted` now say so.

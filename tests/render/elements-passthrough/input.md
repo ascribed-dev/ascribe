@@ -1,4 +1,4 @@
-<tessera-note type="tip" label="Tip" title="Try it without installing">
+<tessera-note type="tip" label="Tip" heading="Try it without installing">
 
 You can run Quill in the browser.
 

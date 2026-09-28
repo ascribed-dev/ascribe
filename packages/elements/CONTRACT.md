@@ -27,7 +27,7 @@ Changes to this contract go through `project-docs/questions.md` (phases README, 
 
 **Attribute values** are written in double quotes, with `&`, `<`, `>`, and `"` escaped as `&amp;`, `&lt;`, `&gt;`, and `&quot;`. Attributes appear in the order this contract lists them. An optional attribute with no value is left out, never written empty.
 
-**Plain text of inline content.** Where an attribute holds a title or label written as inline markdown, its value is the inline content's text: phrases substituted (they already are, in the resolved page), code spans as their text, emphasis and links as their text, images as their alt text, raw inline HTML dropped, and line breaks as single spaces. So `.Try the *new* \`quill\` CLI` becomes `Try the new quill CLI`.
+**Plain text of inline content.** Where an attribute holds a title or label written as inline markdown, its value is the inline content's text: phrases substituted (they already are, in the resolved page), code spans as their text, emphasis and links as their text, images as their alt text, raw inline HTML dropped, and line breaks as single spaces. So ``.Try the *new* `quill` CLI`` becomes `Try the new quill CLI`.
 
 **Labels** come from the content model: note types' `label` (content-model.md §11), dimensions' and dimension values' `labels` (§7), and lifecycle states' `label` (§9). A value without a declared label is shown as itself.
 
@@ -39,19 +39,19 @@ A callout (SPEC §4.5), from `@note` in all three forms.
 |---|---|---|
 | `type` | yes | The note type, such as `tip`, or a type the project declares. Always written, including the default `note`. |
 | `label` | yes | The note type's display label, such as `Tip`. |
-| `title` | no | The plain text of the note's title line (§0). **Provisional (Q8):** `title` is also HTML's tooltip attribute; Q8 proposes renaming it. |
+| `heading` | no | The plain text of the note's title line (§0). It isn't called `title` because HTML's `title` attribute shows as a tooltip over the whole element (Q8). |
 
 **Children:** the note's content, as markdown blocks. With a text primary (`@note: text`), a paragraph of that text; with no colon, the one block it binds; as a container, every block up to `@end`.
 
 ```html
-<tessera-note type="tip" label="Tip" title="Try it without installing">
+<tessera-note type="tip" label="Tip" heading="Try it without installing">
 
 You can run Quill in the browser at play.quill.dev with no local setup.
 
 </tessera-note>
 ```
 
-**Rendering, with or without JavaScript:** a block styled by `type`, with a heading line showing the title, or the label when there's no title, generated from the attributes by CSS (`::before` with `attr()`). Unknown types (a project's own) get the default note style, and are themed by selecting on `[type="…"]`. With no CSS, the content shows as ordinary blocks.
+**Rendering, with or without JavaScript:** a block styled by `type`, with a heading line showing `heading`, or `label` when there's no heading, generated from the attributes by CSS (`::before` with `attr()`). Unknown types (a project's own) get the default note style, and are themed by selecting on `[type="…"]`. With no CSS, the content shows as ordinary blocks.
 
 ## 2. `<tessera-steps>`
 
@@ -201,9 +201,9 @@ A project widget (SPEC §6) becomes a custom element whose tag is the widget's n
 
 **Attributes**, in this order:
 
-1. `title`: the plain text of the widget's title line, if it has one. **Provisional (Q8, Q9).**
-2. `primary`: an identifier primary, if the widget takes one and it's given. A text primary is content instead (below). **Provisional (Q9).**
-3. Each attribute in the widget's declaration, in declared order, with the value given or, if absent, its declared default. A value set's members are joined by single spaces; booleans are `true` or `false`; other values are their text. An attribute with neither a value nor a default is left out. **Provisional (Q9):** until Q9 is resolved, nothing stops a declaration from using `title`, `primary`, or HTML's global attribute names.
+1. `heading`: the plain text of the widget's title line, if it has one, named as on `<tessera-note>`.
+2. `primary`: an identifier primary, if the widget takes one and it's given. A text primary is content instead (below).
+3. Each attribute in the widget's declaration, in declared order, with the value given or, if absent, its declared default. A value set's members are joined by single spaces; booleans are `true` or `false`; other values are their text. An attribute with neither a value nor a default is left out. A declaration can't use `heading`, `primary`, or HTML's global or event-handler attribute names (SPEC §7.2; content-model.md, `model-attribute-reserved`), so these never clash.
 
 **Children and placement**, by the widget's form and binding (content-model.md §15):
 

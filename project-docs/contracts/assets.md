@@ -25,7 +25,7 @@ A local destination that names a Markdown file (`.md`) under the content root is
 Not assets:
 
 - **External destinations**: those with a URL scheme (`https:`, `mailto:`, and so on) or starting with `//`. They pass through unchanged (SPEC §5.2).
-- **References in raw HTML**, such as `<img src="x.png">` in an HTML block. Tessera doesn't parse raw HTML, so it passes through unchanged and the file isn't copied. **Provisional (Q10).**
+- **References in raw HTML**, such as `<img src="x.png">` in an HTML block. Tessera doesn't parse raw HTML, so it passes through unchanged and the file isn't copied (SPEC §9.4).
 - **Include paths** (SPEC §4.2). Included content is expanded into the page; the fragment itself isn't copied.
 
 ## 2. Resolving a reference
@@ -36,8 +36,8 @@ A reference resolves **from the file it's written in** (SPEC §4.2). In content 
 2. **Split.** Everything after the first `#` is the fragment. For an asset, the fragment is kept and written after the rewritten reference (`manual.pdf#page=2`). `?` has no special meaning.
 3. **Decode.** Percent-encoded bytes are decoded, as GitHub and browsers do: `my%20diagram.png` names `my diagram.png`. If the decoded bytes aren't valid UTF-8, the text is used as written.
 4. **Join.** A path starting with `/` is relative to the content root; any other path is relative to the directory of the file it's written in. `.` and `..` segments are resolved. An empty path (a destination that's only `#fragment`) names the file itself.
-5. **Check the boundary.** The resolved file must be inside the content root or inside the project root, and must not be inside the output directory (`[project] output-dir`). Otherwise it's reported as not existing, with the `outside` message of `image-source-missing` or `link-target-missing`. **Provisional (Q10).**
-6. **Check the file.** It must exist and be a regular file (a symbolic link to one counts). Names are compared **exactly, on every platform**: on a case-insensitive file system, `Logo.png` doesn't find `logo.png`, and the `case` message suggests the real name. This keeps a project that checks cleanly on macOS or Windows from breaking on Linux. **Provisional (Q10).** A reference to a directory doesn't exist.
+5. **Check the boundary.** The resolved file must be inside the content root or inside the project root, and must not be inside the output directory (`[project] output-dir`). Otherwise it's reported as not existing, with the `outside` message of `image-source-missing` or `link-target-missing` (SPEC §9.4).
+6. **Check the file.** It must exist and be a regular file (a symbolic link to one counts). Names are compared **exactly, on every platform**: on a case-insensitive file system, `Logo.png` doesn't find `logo.png`, and the `case` message suggests the real name. This keeps a project that checks cleanly on macOS or Windows from breaking on Linux (SPEC §9.4). A reference to a directory doesn't exist.
 
 Problems are reported at file level, at the reference's span: `image-source-missing` for images and `link-target-missing` for links (SPEC §8.2).
 
