@@ -73,16 +73,11 @@ fn err(e: impl std::fmt::Display) -> AdapterError {
 /// Indexes a case as a project: the case directory is the project root, and
 /// `Case::content_root` the content root, whatever the model says.
 ///
-/// The model is read with `load_str`, which skips the file-system rules (the
-/// shared model's `content-root = "files"` doesn't exist for a single-file
-/// case). The shared model declares a `role` attribute on `quill-audience`,
-/// which phase 08's loader reserves (Q27), so the key is read as `audience`;
-/// only the model's phrases and fragment patterns matter to the source index.
-/// Phase 03's cases still use `role`, so the model itself is left alone here.
+/// The model is read with `load_str`, as phase 10's adapter reads it, which
+/// skips the file-system rules (the shared model's `content-root = "files"`
+/// doesn't exist for a single-file case).
 pub fn load_project(case: &Case) -> Result<Project, AdapterError> {
-    let text = std::fs::read_to_string(&case.model)
-        .map_err(err)?
-        .replace("attributes = { role =", "attributes = { audience =");
+    let text = std::fs::read_to_string(&case.model).map_err(err)?;
     let model = tessera_model::load_str(&text, FileId::new(0))
         .map_err(|issues| AdapterError(format!("the case's model doesn't load: {issues:?}")))?;
     let content_root = case

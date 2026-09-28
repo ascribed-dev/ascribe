@@ -469,3 +469,22 @@ fn missing_reasons_are_told_apart() {
         [Resolution::AssetMissing(Missing::Absent)]
     );
 }
+
+#[test]
+fn an_image_with_no_path_is_missing_but_a_fragment_only_link_is_not() {
+    // SPEC-QUESTION(Q59), as phase 10 implements it.
+    let p = project(&[(
+        "docs/index.md",
+        &format!("{PAGE}![A]()\n\n![B](#top)\n\n[Self](#top)\n\n## Top\n"),
+    )]);
+    let problems = p.problems(&path("index.md"));
+    assert_eq!(
+        slugs(&p, "index.md", &problems),
+        [
+            ("image-source-missing".to_owned(), 5),
+            ("image-source-missing".to_owned(), 7)
+        ]
+    );
+    assert_eq!(problems[0].arg("path"), Some("(no source)"));
+    assert_eq!(problems[1].arg("path"), Some("#top"));
+}

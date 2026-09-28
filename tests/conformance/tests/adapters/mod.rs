@@ -4,15 +4,21 @@
 //! extends an existing one), registers it below, and removes the skip entries
 //! for the tags it now handles from `SKIPS.toml`.
 
+mod check;
 pub mod include;
 mod inline;
+mod model;
 mod structure;
 mod syntax;
 
+#[allow(unused_imports)]
+pub use check::file_level_diagnostics;
 use tessera_conformance::Registry;
 
 /// Registers every adapter. Earlier registrations are asked first.
 pub fn register(registry: &mut Registry) {
     registry.register(syntax::SyntaxAdapter);
+    registry.register(check::CheckAdapter);
+    registry.register(model::ModelAdapter);
     registry.register(include::IncludeAdapter);
 }

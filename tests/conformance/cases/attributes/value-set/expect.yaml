@@ -5,8 +5,8 @@ tags: [parser]
 
 outline:
   - directive: quill-audience
-    attributes: {role: [admin, developer]}
+    attributes: {audience: [admin, developer]}
   - directive: quill-audience
-    attributes: {role: [admin, developer, writer]}
+    attributes: {audience: [admin, developer, writer]}
   - directive: quill-audience
     attributes: {platform: [cloud, on-prem]}

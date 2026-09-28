@@ -434,6 +434,12 @@ impl Project {
         let Some(path) = &local.path else {
             return Resolution::AssetMissing(Missing::Absent);
         };
+        // SPEC-QUESTION(Q59): an image with no path (`![a]()`, `![a](#x)`) has
+        // no file, so it's reported as a missing source, as phase 10 does. A
+        // link with only a `#id` names the file it's in.
+        if reference.kind == RefKind::Image && local.written.is_empty() {
+            return Resolution::AssetMissing(Missing::Absent);
+        }
         if local.source {
             return match self.files.get(path) {
                 Some(target) => Resolution::Source {
@@ -610,6 +616,10 @@ impl Project {
     ) -> Vec<Issue> {
         let at = Location::new(index.file, reference.span);
         let written = match &reference.target {
+            Target::Local(l) if l.written.is_empty() && !reference.destination.is_empty() => {
+                reference.destination.clone()
+            }
+            Target::Local(l) if l.written.is_empty() => "(no source)".to_owned(),
             Target::Local(l) => l.written.clone(),
             _ => reference.destination.clone(),
         };
