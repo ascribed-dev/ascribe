@@ -1,8 +1,7 @@
 description: >-
   A bare key in an image block is an error.
 spec: ["5.3", "8.2"]
-tags: [check, provisional]
-questions: [Q41]
+tags: [check]
 
 diagnostics:
   - {slug: attribute-bare-key, file: index.md, line: 5}

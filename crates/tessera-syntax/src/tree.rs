@@ -353,7 +353,7 @@ pub struct IdentifierPrimary {
     pub text: String,
     /// Text after the token on the same line, trimmed (`@include: my file.md`
     /// has ` file.md`). Kept, not dropped, and reported as
-    /// `directive-primary` (SPEC-QUESTION(Q30, Q15)).
+    /// `directive-extra-text` (SPEC §3.4, resolved Q15 and Q30).
     pub trailing: Option<Span>,
 }
 
@@ -403,7 +403,7 @@ pub struct Container {
     /// The opener: a directive line that opens a container, and whose title
     /// is in [`DirectiveLine::title`]. Its form is [`Form::Container`], except
     /// for a container-only directive written without its colon, which is
-    /// still an opener and is reported (SPEC-QUESTION(Q16)).
+    /// still an opener and is reported (SPEC §3.5, resolved Q16).
     pub opener: DirectiveLine,
     /// The blocks between the opener and the end line.
     pub children: Vec<Block>,
@@ -412,7 +412,7 @@ pub struct Container {
 }
 
 /// A group of arms (SPEC §3.6): a run of openers of one groupable directive,
-/// closed by one end line. It's one container level for nesting (SPEC-QUESTION(Q17)).
+/// closed by one end line. It's one container level for nesting (SPEC §3.10, resolved Q17).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Group {
     /// The groupable directive's keyword.
@@ -521,8 +521,9 @@ pub struct Link {
     /// For a full reference, the label between its second pair of brackets.
     pub label: Option<Span>,
     /// The phrase candidates in the destination as written, in source order
-    /// (`[text]({api}streaming)`). The destination itself is unchanged. Only
-    /// the inline form has any; see `Image::destination_phrases`.
+    /// (`[text]({api}streaming)`, `<https://{host}/status>`). The destination
+    /// itself is unchanged. Inline links and autolinks have them; reference
+    /// forms don't yet, since their definitions aren't nodes (SPEC §5.1).
     pub destination_phrases: Vec<Phrase>,
     /// The link text.
     pub children: Vec<Inline>,
@@ -547,8 +548,8 @@ pub struct Image {
     pub children: Vec<Inline>,
     /// The phrase candidates in an inline image's source, as written, in
     /// source order (`![alt]({assets}a.png)`). The destination itself is
-    /// unchanged. Reference forms have none: their destination is in the
-    /// definition, which isn't a node.
+    /// unchanged. Reference forms have none yet: their destination is in the
+    /// definition, which isn't a node (SPEC §5.1).
     pub destination_phrases: Vec<Phrase>,
     /// The attribute block directly after the image (SPEC §5.3). The image's
     /// span covers it.

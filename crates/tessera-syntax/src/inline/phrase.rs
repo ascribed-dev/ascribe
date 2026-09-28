@@ -131,14 +131,33 @@ impl Pass<'_> {
     }
 
     /// The candidates in the destination of the link or image at `span`, when
-    /// it's an inline one, `[text](destination "title")`.
+    /// it's an inline one, `[text](destination "title")`, or an autolink,
+    /// `<destination>` (SPEC §5.1).
     pub(super) fn destination_phrases(&mut self, span: Span, form: LinkForm) -> Vec<Phrase> {
-        if form != LinkForm::Inline {
-            return Vec::new();
-        }
         let Some(text) = self.source.get(span.start()..span.end()) else {
             return Vec::new();
         };
+        if form == LinkForm::Autolink {
+            // Backslash escapes don't apply in an autolink (CommonMark), so
+            // every `{key}` between the angle brackets is a candidate.
+            let inner = text.strip_prefix('<').and_then(|t| t.strip_suffix('>'));
+            let Some(inner) = inner else {
+                return Vec::new();
+            };
+            return scan(inner, span.start() + 1, false)
+                .into_iter()
+                .filter_map(|found| match found {
+                    Found::Candidate(phrase) => Some(phrase),
+                    Found::Escaped(_) => None,
+                })
+                .collect();
+        }
+        if form != LinkForm::Inline {
+            // SPEC §5.1 (resolved Q43): a reference form's destination is in
+            // its definition, which isn't a node yet, so its candidates
+            // aren't recorded.
+            return Vec::new();
+        }
         let open = usize::from(text.starts_with('!'));
         let Some(dest) = matching_bracket(text, open).and_then(|close| destination(text, close))
         else {
@@ -156,7 +175,7 @@ impl Pass<'_> {
     }
 
     /// Records the candidates in a fence that opts in with `phrases=true`.
-    // SPEC-QUESTION(Q42): backslashes don't escape in code, so `\{key}` is a
+    // SPEC §5.1 (resolved Q42): backslashes don't escape in code, so `\{key}` is a
     // candidate here.
     pub(super) fn code_block(&mut self, span: Span, code: &mut CodeBlock) {
         if !code.fenced || !code.info.split_whitespace().any(|w| w == "phrases=true") {

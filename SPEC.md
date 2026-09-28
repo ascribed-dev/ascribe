@@ -178,6 +178,7 @@ Attributes use one grammar everywhere: after a directive name, and after an imag
 - A value that breaks only the quoting rule, such as `{label=Using other images}` or `{lab=a=b}`, is reported as an unquoted value, because quoting it is the fix. A block whose structure can't be read as keys, `=`, and values (an unclosed quote or brace, a missing value, or text between pairs) is reported as a block that doesn't parse (§8.2).
 - **Types come from the schema, never from how a value looks.** The grammar captures only the form (token, string, or set); the content model declares each key's type (string, enumeration, boolean, number) and processors validate against it.
 - **Booleans are explicit:** `key=true` or `key=false`. A bare key with no value is an error.
+- **An unclosed block** runs to the end of its line, so the rest of the directive line can't be read: whether it has a colon or a primary, and so its form and binding, are unknown. Processors report the unclosed block and nothing else about that line.
 
 Attributes carry semantic metadata only. There are no class or id shorthands (`.class`, `#id`).
 
@@ -193,7 +194,7 @@ Each directive's schema declares whether it takes a primary and of which kind:
   before you upgrade.
   ```
 
-  A text primary is always inline content, never a block. A line that would turn a paragraph into something else stays text: a setext underline `===` or a table delimiter row continues the primary, and a leading `[label]: /url` is text, not a link reference definition. A `---` line can't underline a primary, so it ends the primary and is a thematic break.
+  A text primary is always inline content, never a block. A line that would turn a paragraph into something else stays text: a setext underline `===` or a table delimiter row continues the primary, and a leading `[label]: /url` is text, not a link reference definition. A `---` line can't underline a primary, so it ends the primary and is a thematic break. Likewise, an ordered list that doesn't start at 1 can't interrupt a paragraph, so a line such as `2. Two.` continues a text primary; a blank line before it starts the list.
 
 - A **line primary** (an availability spec) is the rest of the directive line, with surrounding whitespace removed. It may contain spaces, but it isn't parsed as inline content and it never continues onto the following lines, so a paragraph directly below the directive is the block it binds. Only `@available` (§4.4) takes one.
 
@@ -289,6 +290,10 @@ A heading's **section** is the heading plus all content up to the next heading o
 
 **Following-block directives** bind the next block (paragraph, list, code block, blockquote, table, or container) within the same container. They belong directly above that block, touching it: what a directive annotates is what it touches. A blank line between them is allowed, but processors SHOULD warn, because it hides what the directive annotates, and canonical form removes it. Binding a heading is an error, and so is a following-block directive with no block after it in its container.
 
+Following-block directives **stack**: several in a row all bind the block the last of them touches. Any block except a heading can be bound, including a thematic break or a raw HTML block. A line-form directive whose content is its own text primary, such as a one-line `@note: …`, is a block too, so `@available` directly above it binds the note. A directive that renders nothing of its own, such as `@id`, `@include`, or an end line, isn't a block, so a following-block directive directly above one has nothing to bind.
+
+Sections are found within one container: a heading-bound directive binds a heading in its own document, list item, blockquote, directive container, or arm, never one outside it. A container's first blocks have no heading above them, as at the start of a document.
+
 The two rules together: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.**
 
 Before a document's first heading there is no section. A directive that can only bind a heading, such as `@id`, is an error there, and one that can bind either way, such as `@available`, binds the block it touches. Availability for the whole page belongs in frontmatter (§4.4).
@@ -304,9 +309,11 @@ Directives follow CommonMark's container rules, just as headings and code fences
 5. **Over-indentation makes code.** A directive line indented four or more spaces beyond its container's content column is part of an indented code block, and so it's literal text. One to three extra spaces are allowed, as before a heading; a line indented less than a list item's content column is outside that item.
 6. **Blockquotes work the same way**, with `>` markers in place of indentation.
 
+The three list warnings (§8.2) apply narrowly. A directive line ends a list when it directly follows the list, with no blank line, in the same container; end lines and blockquotes don't count. Every directive line inside an indented code block is reported, at its `@name`. A `@steps` list's numbering is continued when the next ordered list starts at the number after the `@steps` list's last item and only line-form directive lines stand between the two.
+
 ### 3.10 Nesting
 
-Containers MAY nest, and `@end` always closes the innermost one. Processors SHOULD warn when containers nest more than two levels deep (§8). A group counts as one level; its arms don't add another.
+Containers MAY nest, and `@end` always closes the innermost one. Processors SHOULD warn when containers nest more than two levels deep (§8). A group counts as one level; its arms don't add another. Depth counts every open container around a directive, through list items and blockquotes, which aren't levels themselves.
 
 ---
 
@@ -545,11 +552,12 @@ See the [streaming API reference]({api}streaming).
 - **Recognition:** `{key}` is a phrase only if the key is declared in the phrases registry. Otherwise it's literal text.
 - **Boundaries:** braces delimit the phrase, so it can sit directly against punctuation, letters, or hyphens.
 - **Where phrases apply:**
-  - Prose, headings, link text, and link destinations.
+  - Prose, headings, link text, and link destinations, including the destinations of link reference definitions (`[ref]: {api}streaming`) and autolinks (`<https://{host}/status>`).
   - Fenced code blocks only when the info string contains the word `phrases=true` (for example ` ```yaml phrases=true `).
   - Frontmatter fields, as the content model declares.
 - **Where phrases never apply:** code spans, indented code blocks, and raw HTML.
-- **Distinction from attributes:** `{…}` containing `=` directly after a directive name or an image is an attribute block (§3.3), not a phrase.
+- **Escapes in code.** A backslash doesn't escape in code, so in a fenced block with `phrases=true`, `\{key}` is a backslash followed by a phrase, and a fence's content never differs from its source except where phrases are substituted. For a literal `{key}` in code, leave `phrases=true` off that fence.
+- **Distinction from attributes:** `{…}` directly after a directive name, or directly after an image and closed on the same line, is an attribute block (§3.3), not a phrase, whatever it contains. So `![Logo](logo.png){cloud}` is an attribute block with a bare key, which is an error; to put a phrase right after an image, separate it with a space or escape it (`\{cloud}`).
 - **Values** are inserted as literal text. They aren't scanned for phrases or markup, and they don't vary by case, number, or argument.
 - **Keeping source and output in agreement.** Whether `{key}` is a phrase depends on a registry the reader can't see, so processors SHOULD report two cases:
   - `{key}` text in prose whose key isn't declared, which is literal today and would silently become a phrase if the key were declared later (`\{` silences it);
@@ -579,6 +587,7 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 ```
 
 - The attribute grammar is §3.3's. The content model declares which image attributes are accepted (§7.2).
+- The block MUST close on the same line as the image. Any `{…}` directly after an image and closed on its line is the image's attribute block, even with no `=` in it (§5.1). A `{` directly after an image with no `}` on its line stays text, and processors report it as an attribute block that doesn't parse.
 - A local image source MUST exist. A reference image's source is its link reference definition's destination.
 - Processors SHOULD warn when an image has no alt text.
 - Presentation choices such as borders or shadows are not image attributes; they belong to the consumer's styling.

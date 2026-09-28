@@ -4,8 +4,7 @@ description: >-
   can't interrupt a paragraph, and so can't interrupt the note's text)
   continues the numbering, which is reported.
 spec: ["3.9", "8.2"]
-tags: [structure, check, provisional]
-questions: [Q35]
+tags: [structure, check]
 
 outline:
   - directive: steps

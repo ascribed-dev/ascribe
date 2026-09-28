@@ -28,7 +28,7 @@ impl Pass<'_> {
 
     /// A directive line right after a list, with no blank line between, ended
     /// the list: it wasn't indented to the item's content (SPEC §3.9 rule 4).
-    /// SPEC-QUESTION(Q34): only directive lines do, not end lines, and only
+    /// SPEC §3.9 (resolved Q34): only directive lines do, not end lines, and only
     /// after a list, not after a block quote.
     fn list_then_directive(&mut self, list: &Block, next: Option<&Block>) {
         let Some(next) = next else { return };

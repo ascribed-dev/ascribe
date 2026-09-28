@@ -117,10 +117,10 @@ impl Pass<'_> {
                     self.inlines(children);
                 }
                 InlineKind::Link(link) => {
-                    // An autolink's text is its destination, not prose.
-                    // SPEC-QUESTION(Q43): no candidates there.
+                    link.destination_phrases = self.destination_phrases(inline.span, link.form);
+                    // An autolink's text is its destination, not prose: its
+                    // candidates are the destination's (SPEC §5.1).
                     if link.form != LinkForm::Autolink {
-                        link.destination_phrases = self.destination_phrases(inline.span, link.form);
                         self.inlines(&mut link.children);
                     }
                 }

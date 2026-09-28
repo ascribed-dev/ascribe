@@ -68,7 +68,7 @@ impl Pass<'_> {
                 .with_arg("name", line.name.clone());
             self.report(issue);
         } else if container_only && line.colon.is_none() && line.attributes_closed {
-            // SPEC-QUESTION(Q36): with an unclosed attribute block the colon
+            // SPEC §3.3 (resolved Q36): with an unclosed attribute block the colon
             // can't be known, so only the block is reported.
             let issue = Issue::new(
                 diagnostics::CONTAINER_COLON_MISSING,
@@ -104,7 +104,7 @@ impl Pass<'_> {
         }
         self.open.push(line.name.clone());
         // SPEC §3.10 (resolved Q17): a group is one container level, however
-        // many arms it has. SPEC-QUESTION(Q33): levels count containers open in
+        // many arms it has. SPEC §3.10 (resolved Q33): levels count containers open in
         // enclosing list items and block quotes too.
         if self.open.len() > 2 {
             let issue = Issue::new(

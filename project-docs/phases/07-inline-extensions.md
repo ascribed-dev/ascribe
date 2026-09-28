@@ -64,12 +64,12 @@ Recognize Tessera's two inline constructs, phrase candidates (`{key}`) and attri
 
 - **Recognition reads the source, not comrak's text.** comrak has decoded `\{` and `&#123;` to `{` by the time the converter sees text, and it merges adjacent text nodes, so `{key}` can't be recognized from the values. `inline/phrase.rs` scans each text's source span (backslash escapes, then `{key}`) and works out the decoded value of the pieces around a candidate with the same escape and entity rules (`decode`). A test checks values next to escapes and entities.
 - **The fork skips the block; `tessera-syntax` finds it with the same function.** So there's no second copy of the "where a block ends" rule, and a test checks that what follows a block is neither lost nor repeated.
-- **Autolinks** have no candidates (Q43); reference definitions aren't nodes, so `[ref]: {api}x` has none either (Q43).
+- **Autolinks** hold candidates in their destination (`Link::destination_phrases`), with no backslash escapes (resolved Q43, added afterwards). Reference definitions aren't nodes, so `[ref]: {api}x` has none yet, although SPEC §5.1 now says phrases apply there: that needs a parser change to expose definitions.
 - **Images of every form** come from one node, so nothing in the pass depends on how the image closed.
 
 ### Left open
 
-- **Q41** (`{key}` directly after an image is an attribute block with a bare key, as `images/attribute-bare-key` expects, not a phrase as §5.1's wording suggests), **Q42** (backslash doesn't escape in a `phrases=true` fence), **Q43** (definitions and autolinks). Each is implemented in the conservative reading and marked `SPEC-QUESTION`. **Q23** has since been resolved as proposed (SPEC §5.3 says so), and nothing is left to do for it.
+- **Q41** (`{key}` directly after an image is an attribute block with a bare key, as `images/attribute-bare-key` expects, not a phrase as §5.1's wording suggests), **Q42** (backslash doesn't escape in a `phrases=true` fence), **Q43** (definitions and autolinks). Each is implemented in the conservative reading and marked `SPEC-QUESTION`. **Q23** has since been resolved as proposed (SPEC §5.3 says so), and nothing is left to do for it. All three were resolved on 2026-09-28 (Q43 in favor of definitions and autolinks), and SPEC §5.1 and §5.3 now state them.
 - **Frontmatter phrases** aren't parsed here (the content model decides which fields, phase 08 and 10).
 - **Definitions** (`[ref]: {api}x`) need the parser to expose them (phases 12 and 23).
 - The `phrase-undeclared` and `heading-phrase-without-id` cases (tag `check`) and the substitution cases (tag `resolve`) wait for their own phases; an outline can't show candidates, so this phase's coverage of §5.1 is the syntax tests.

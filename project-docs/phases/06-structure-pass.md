@@ -94,7 +94,7 @@ Turn the flat sequence of directive lines and blocks into Tessera's structure: c
 
 ### Left open
 
-- **Q31 to Q36** are new (stacked following-block directives; sections per container; nesting across list items; the exact triggers of the list warnings; text primaries and `2.`; unreadable heads). Each has an implemented proposal marked `SPEC-QUESTION`.
+- **Q31 to Q36** are new (stacked following-block directives; sections per container; nesting across list items; the exact triggers of the list warnings; text primaries and `2.`; unreadable heads). Each has an implemented proposal marked `SPEC-QUESTION`. All six were resolved on 2026-09-28 as proposed (Q31 extended to one-line notes, as implemented), and SPEC §3.3–§3.10 now state them.
 - **Q13, Q16 to Q19** are implemented as proposed; none of the proposals proved wrong or unimplementable. Q13 needed nothing from the structure pass (the fork decides recognition).
 - **`BlockKind::Title`** is never produced. Remove it when no other phase's code matches on it.
 - **Not done here**: which arms a build keeps, `@variant`'s dimension names and values, `@available` specs, and `@id` characters are phase 10 and later; `@include` isn't followed (phase 11).

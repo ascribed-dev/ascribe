@@ -582,7 +582,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §5.1, §5.3
 - **Raised by:** phase 07
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §5.1 says "`{…}` containing `=` directly after … an image is an attribute block, not a phrase", which implies that a `{…}` *without* `=` directly after an image is a phrase. But §5.3 says an attribute block goes "directly after the image", and the conformance case `images/attribute-bare-key` (`![A](p.png){width}`) expects `attribute-bare-key`, which treats `{width}` as an attribute block with a bare key. Both can't hold:
 
   ```
@@ -593,38 +593,38 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. Only a block containing `=` (or an empty one) is an attribute block; `{cloud}` after an image is a phrase, and `![A](p.png){width}` is a phrase candidate, not a bare-key error.
 - **Proposed resolution:** option 1. It matches the case, needs no `=` test, and turns the likeliest mistake (a forgotten `=value`) into an error instead of a literal `{width}` in the output. A phrase directly after an image is rare, and both escapes are available. Implemented now: option 1 (`// SPEC-QUESTION(Q41)` in `crates/tessera-syntax/src/inline/image.rs`). Under option 2 the change is one test in `comrak_tessera::tessera::image_attributes_len`, and the case `images/attribute-bare-key` would change. A `{` directly after an image that has no `}` on its line is also reported (`attribute-syntax`) and left as text, under either option.
 - **Affects:** `crates/comrak-tessera/src/tessera.rs` (`image_attributes_len`), `crates/tessera-syntax/src/inline/image.rs`; conformance case `images/attribute-bare-key` (tagged `provisional`); phases 10 and 12.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 1: any `{…}` directly after an image and closed on its line is the image's attribute block; `{cloud}` there is a bare key. SPEC §5.1 and §5.3 now say so.
 
 ### Q42: Escapes in a fenced block that opts in to phrases
 
 - **Section:** SPEC §2.3, §5.1
 - **Raised by:** phase 07
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** a fence with `phrases=true` in its info string substitutes phrases in its code. In code, CommonMark's backslash escapes don't apply, so there's no way to write a literal `{key}` (say, a Mustache or Helm template that happens to use a declared key) in such a block. §2.3 says `\{` prevents a phrase, and doesn't say where.
 - **Options:**
   1. Backslash doesn't escape in code, so `\{key}` in an opted-in fence is a candidate (with a backslash before it). A literal `{key}` needs a fence without `phrases=true`, or a key that isn't declared.
   2. `\{` escapes in an opted-in fence, and the substituted output drops the backslash (`\{key}` becomes `{key}`). The code's content changes from what the author sees in the source.
 - **Proposed resolution:** option 2 is friendlier to authors, but it makes a code block's content differ from its source, which is the thing fences avoid. Option 1 is the conservative choice, since it changes nothing about code. Implemented now: option 1 (`// SPEC-QUESTION(Q42)` in `crates/tessera-syntax/src/inline/phrase.rs`); `CodeBlock::phrases` lists every `{key}`, with no escapes.
 - **Affects:** `crates/tessera-syntax/src/inline/phrase.rs`; phases 10 and 12.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 1: a backslash doesn't escape in code, so a phrases fence's content never differs from its source except where phrases are substituted. SPEC §5.1 now says so.
 
 ### Q43: Phrases in link reference definitions and autolinks
 
 - **Section:** SPEC §5.1, §5.2
 - **Raised by:** phase 07
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §5.1 lists "link destinations" among the places phrases apply. An inline link's destination is part of the link (`[text]({api}streaming)`). But a reference link's destination is in a definition (`[ref]: {api}streaming`), which isn't a node in the parser's tree, and an autolink's text is its destination (`<https://{host}/x>`, which CommonMark accepts, since `{` is allowed).
 - **Options:**
   1. Recognize candidates in definitions and autolinks too.
   2. Only in inline links and images, where the destination is inside the node.
 - **Proposed resolution:** option 1 for definitions (the destination is a link destination, and `[ref]: {api}streaming` is the natural way to write it once); autolinks are a corner, and either reading is fine as long as it's stated. Implemented now: option 2, the conservative one (the text stays literal, nothing is dropped), with `// SPEC-QUESTION(Q43)` in `crates/tessera-syntax/src/inline/mod.rs`. Option 1 for definitions needs the parser to expose definitions (phase 23 needs them too; phase 05 left this open).
 - **Affects:** `crates/tessera-syntax/src/inline/`; phases 10, 12, and 23.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 1 for both: phrases apply in the destinations of link reference definitions and of autolinks. SPEC §5.1 now says so. Autolinks are implemented (`Link::destination_phrases`, with no backslash escapes, as CommonMark has none in autolinks). Definitions aren't implemented yet: they aren't nodes in the tree, so exposing them needs a parser change, which the formatter (phase 23) also needs. Until then a `{key}` in a definition's destination stays literal.
 ### Q31: Directives that stack in front of a block, and a block that isn't there
 
 - **Section:** SPEC §3.8, §4.4, §4.5
 - **Raised by:** phase 06
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.8 says a following-block directive binds "the next block (paragraph, list, code block, blockquote, table, or container)". It doesn't say what "next" means when another directive line comes first:
 
   ```
@@ -640,13 +640,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Only the blocks §3.8 lists can be bound, so a thematic break or an HTML block is `binding-no-block`.
 - **Proposed resolution:** option 1. It matches how stacked heading-bound directives read, and reports rather than guesses when what follows is a directive that stands alone. Implemented now: option 1, including the one-line note (`// SPEC-QUESTION(Q31)` in `structure/bind.rs`; `@available` above `@include`, `@id`, or a widget that stands alone still reports `binding-no-block`); `tessera_syntax::bound_block` finds the block a stack binds. If `@available` above `@include` should work, phase 12 needs option 2's reading of an include's content.
 - **Affects:** `crates/tessera-syntax/src/structure/bind.rs`; phases 10, 11, 12, 23. No conformance case depends on it.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1, extended: following-block directives stack and bind the block the last of them touches, and any block but a heading can be bound. A line-form directive whose content is its own text primary (a one-line `@note: …`) is a block, so `@available` above it binds the note; `@id`, `@include`, and end lines aren't blocks. SPEC §3.8 now says so.
 
 ### Q32: Which sections a heading-bound directive can be at the top of
 
 - **Section:** SPEC §3.8, §3.9, §8.2
 - **Raised by:** phase 06
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.8 defines a section as a heading and the content up to the next heading of the same or a higher level. Headings are blocks in a container (the document, a list item, a blockquote, a directive container), so it's unclear whether a heading-bound directive in one container can bind a heading in another:
 
   ```
@@ -662,13 +662,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. A directive at the top of a container binds the heading above the container.
 - **Proposed resolution:** option 1, which follows §3.9's rule that binding stays inside the container. Implemented now: option 1 (`// SPEC-QUESTION(Q18)` in `structure/bind.rs`; the pass has no other notion of a section).
 - **Affects:** conformance cases: none beyond Q18's; phases 10, 11, 12.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: sections are found within one container, so a heading-bound directive never binds a heading outside its own document, list item, blockquote, container, or arm. SPEC §3.8 now says so.
 
 ### Q33: Whether containers in list items and block quotes count toward nesting depth
 
 - **Section:** SPEC §3.10, §8.2
 - **Raised by:** phase 06
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.10 warns "when containers nest more than two levels deep". A container can sit in a list item that sits in a container, so the levels can be split by CommonMark containers:
 
   ```
@@ -684,13 +684,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. Depth restarts in each list item and block quote, since a container never straddles them (§3.9).
 - **Proposed resolution:** option 1: what a reader sees as nesting is the whole stack, and §3.10's reason (hard to follow) doesn't depend on where a list item sits. Implemented now: option 1 (`// SPEC-QUESTION(Q33)` in `structure/nest.rs`).
 - **Affects:** conformance cases: none; phases 10 and 23.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: depth counts every open container around a directive, through list items and blockquotes. SPEC §3.10 now says so.
 
 ### Q34: Exactly what triggers the three list warnings
 
 - **Section:** SPEC §3.9, §4.6, §8.2 ("Lists")
 - **Raised by:** phase 06
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** the three "Lists" rows say when they apply in a sentence each, which leaves several edges open:
   - `list-ended-by-directive`: "an unindented directive line ends a list". Does a directive after a blank line count (the blank line already ends the list in CommonMark), an `@end` line (it often ends a list that sits in a container, correctly), or a block quote (rule 6 says quotes work the same way)?
   - `directive-indented-code`: is it every directive-shaped line in an indented code block, or the first?
@@ -698,13 +698,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Options:** any combination of the above.
 - **Proposed resolution:** the narrowest triggers that catch the cases the spec describes. `list-ended-by-directive`: a directive line (including a container or group opener) directly after a list with no blank line, in the same list of blocks; not an end line, and not after a block quote. `directive-indented-code`: every directive-shaped line (`@`, a known keyword, then a space, tab, `{`, `:`, or the end) of an indented code block, at the `@name`. `steps-numbering-continued`: an ordered list whose start number is the `@steps` list's start plus its item count, after one or more line-form directive lines and nothing else. Implemented now: these (`// SPEC-QUESTION(Q34)` in `structure/lists.rs`).
 - **Affects:** `crates/tessera-syntax/src/structure/lists.rs`; phases 10 and 23.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: as proposed: the narrowest triggers. SPEC §3.9 now states them.
 
 ### Q35: A text primary followed by an ordered list that doesn't start at 1
 
 - **Section:** SPEC §3.4, §8.2
 - **Raised by:** phase 06
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** the conformance case `lists/steps-numbering-continued` (phase 03) wrote
 
   ```
@@ -720,13 +720,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. A text primary also ends at any line that starts a list, of any number. That departs from CommonMark's paragraph rule, which §3.4 says a primary follows "exactly".
 - **Proposed resolution:** option 1. Implemented now: option 1; the case's input has the blank line, its diagnostics move to line 9, and the case is `provisional` on this question (the expected outline and diagnostics are otherwise as phase 03 wrote them).
 - **Affects:** conformance case `lists/steps-numbering-continued`; `crates/comrak-tessera` (option 2 would change the fork's paragraph rules); phases 05 and 06.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: a text primary follows CommonMark's paragraph rule, so `2. Two.` continues it; the case's corrected input stands. SPEC §3.4 now gives the example.
 
 ### Q36: What else is reported about a directive whose attribute block never closes
 
 - **Section:** SPEC §3.3, §3.5, §3.8, §8.2
 - **Raised by:** phase 06
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** an unclosed `{` takes the rest of the line (phase 05), so the line's colon and primary, and therefore whether it's line form, a container opener, or has its own text, are unknowable:
 
   ```
@@ -739,4 +739,4 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. Report everything the guessed reading would.
 - **Proposed resolution:** option 1, so one mistake gives one diagnostic; the case `attributes/unclosed-brace` expects exactly `attribute-syntax`. Implemented now: option 1 (`Class::Unreadable` in `structure/bind.rs`). An unclosed block's line is still an opener when its directive is container-only, so its `@end` matches, but it gets no `container-colon-missing` either.
 - **Affects:** conformance case `attributes/unclosed-brace`; phases 05, 06, and 10.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: only the unclosed block is reported for that line. SPEC §3.3 now says so.

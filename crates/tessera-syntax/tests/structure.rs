@@ -413,7 +413,7 @@ fn following_block_errors_and_warnings() {
 
 #[test]
 fn a_one_line_note_is_a_block_a_directive_can_bind() {
-    // SPEC-QUESTION(Q31): the three spellings of a cloud-only note.
+    // SPEC §3.8 (resolved Q31): the three spellings of a cloud-only note.
     for source in [
         "@available: cloud\n@note: Streaming sync is in preview.\n",
         "@available: cloud\n@note\nStreaming sync is in preview.\n",
