@@ -2,7 +2,7 @@ description: >-
   A feature key may not reuse a dimension's name.
 spec: ["7.2", "8.2"]
 tags: [model, provisional]
-questions: [Q19]
+questions: [Q20]
 
 diagnostics:
   - {slug: model-name-multiple-roles, file: tessera.toml, line: 7}

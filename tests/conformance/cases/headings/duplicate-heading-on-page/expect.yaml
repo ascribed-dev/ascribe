@@ -3,7 +3,7 @@ description: >-
   reported at the later one.
 spec: ["5.5", "8.2"]
 tags: [page-check, provisional]
-questions: [Q19]
+questions: [Q20]
 
 builds:
   site:

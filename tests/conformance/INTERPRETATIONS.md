@@ -1,13 +1,13 @@
 # Interpretations the cases lock in
 
-SPEC.md is normative, and the cases in `cases/` were written from it by hand. Where the spec leaves something open, `project-docs/questions.md` has an entry (Q12 onwards are this suite's) and the cases that depend on it are tagged `provisional`. This file lists the other choices: readings the spec supports, but where a case had to pick one, so an implementer knows what the cases assume, and what the suite doesn't cover.
+SPEC.md is normative, and the cases in `cases/` were written from it by hand. Where the spec leaves something open, `project-docs/questions.md` has an entry (Q13 onwards are this suite's) and the cases that depend on it are tagged `provisional`. This file lists the other choices: readings the spec supports, but where a case had to pick one, so an implementer knows what the cases assume, and what the suite doesn't cover.
 
 ## Readings of the spec
 
 **Recognition and attributes**
 
 - The name is the whole run of lowercase letters, digits, and hyphens after `@`, and only a space, tab, `{`, `:`, or the end of the line may follow it (Appendix A's `directive-line`; the fork's rule). `@note.`, `@notes:`, `@note-x:`, and `@Note:` are text.
-- A malformed attribute block is one diagnostic for the block, however many things are wrong in it (Q13 chooses which one).
+- A malformed attribute block is one diagnostic for the block, however many things are wrong in it (Q14 chooses which one).
 - `@steps {…}` and other directives with no attributes report `attribute-unknown-key` (the registry's `none` variant).
 - A directive indented less than a list item's content column is outside the item and, following a list item, is reported as `list-ended-by-directive`, the same as an unindented one (Q1).
 
@@ -32,7 +32,7 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Wh
 - Include and link paths resolve from the file they're written in; a bare name is never searched for (§4.2). Names match exactly, including case, on every platform, and a file outside the project root or in the output directory is reported as not existing (SPEC §9.4, Q10).
 - Source ids are per file (§5.5): a link's `#id` names a heading of the target file, computed with duplicates numbered (`steps`, `steps-1`) and phrases substituted. Page ids appear on the expanded page, so a page-id such as `setup-1` is not a link target.
 - A link to an empty-text target, a same-file `#id`, an external URL, and `mailto:` are valid. A link to a non-page local file is an asset link.
-- `heading-duplicate-without-id` and `id-duplicate` are checked on the expanded page, so a fragment's headings count. They are reported once each, at the later occurrence (Q19).
+- `heading-duplicate-without-id` and `id-duplicate` are checked on the expanded page, so a fragment's headings count. They are reported once each, at the later occurrence (Q20).
 
 **Builds**
 
@@ -48,5 +48,5 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Wh
 - **Registry-change reports (§5.1).** "When a key is added to the registry, the pages whose existing literal `{key}` text would change" is a report between two versions of a model, which a case can't state.
 - **Phrases in frontmatter (§5.1).** Nothing in a resolved outline shows them.
 - **Loader rules (content-model.md §20).** Only the one that is a §8.2 row (`model-name-multiple-roles`) has cases; phase 08 writes fixtures for the rest. `model-dimension-value-shared` overlaps that row (a value in two dimensions) and has no case here for that reason.
-- **Links to pages a build drops (Q20)**, which have no registry entry.
+- **Links to pages a build drops (Q21)**, which have no registry entry.
 - **Editor features (§10).** Completion, hover, and refactoring are tested in phases 15, 16, and 24.

@@ -3,7 +3,7 @@ description: >-
   frontmatter.
 spec: ["2.1", "7.2", "8.2"]
 tags: [check, provisional]
-questions: [Q19]
+questions: [Q20]
 
 diagnostics:
   - {slug: frontmatter-missing-field, file: index.md, line: 1}

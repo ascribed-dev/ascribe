@@ -3,7 +3,7 @@ description: >-
   touches.
 spec: ["3.8", "4.4"]
 tags: [structure, provisional]
-questions: [Q17]
+questions: [Q18]
 
 outline:
   - directive: available

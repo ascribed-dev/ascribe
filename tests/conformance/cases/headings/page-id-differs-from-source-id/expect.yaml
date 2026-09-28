@@ -5,7 +5,7 @@ description: >-
   valid, `#setup-1` (a page id) is not. The repeated heading is reported.
 spec: ["4.2", "5.2", "5.5", "8.2"]
 tags: [page-check, include, slug, provisional]
-questions: [Q19]
+questions: [Q20]
 
 builds:
   site:

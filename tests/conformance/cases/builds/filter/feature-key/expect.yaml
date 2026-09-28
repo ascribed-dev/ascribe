@@ -4,7 +4,7 @@ description: >-
   spec the key stands for.
 spec: ["4.4", "9.2", "9.3"]
 tags: [resolve, provisional]
-questions: [Q24]
+questions: [Q25]
 
 builds:
   sm-3.3:

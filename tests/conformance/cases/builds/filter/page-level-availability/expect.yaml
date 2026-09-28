@@ -3,7 +3,7 @@ description: >-
   published; the build keeps the pages that are.
 spec: ["4.4", "9.3"]
 tags: [resolve, provisional]
-questions: [Q23]
+questions: [Q24]
 
 builds:
   sm-3.3:

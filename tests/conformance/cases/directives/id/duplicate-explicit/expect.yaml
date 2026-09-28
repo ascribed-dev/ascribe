@@ -3,7 +3,7 @@ description: >-
   (page level).
 spec: ["4.1", "8.2"]
 tags: [page-check, provisional]
-questions: [Q19]
+questions: [Q20]
 
 builds:
   site:

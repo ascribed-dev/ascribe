@@ -2,7 +2,7 @@ description: >-
   `heading=true` (the default) keeps the included section's own heading.
 spec: ["4.2", "9.2"]
 tags: [resolve, include, provisional]
-questions: [Q25]
+questions: [Q26]
 
 builds:
   site:

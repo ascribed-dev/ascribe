@@ -3,7 +3,7 @@ description: >-
   fine.
 spec: ["3.3", "8.2"]
 tags: [check, provisional]
-questions: [Q13]
+questions: [Q14]
 
 diagnostics:
   - {slug: attribute-unquoted-reserved, line: 5}

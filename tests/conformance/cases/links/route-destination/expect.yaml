@@ -3,7 +3,7 @@ description: >-
   draws a warning.
 spec: ["5.2", "8.2"]
 tags: [check, provisional]
-questions: [Q21]
+questions: [Q22]
 
 diagnostics:
   - {slug: link-route, file: index.md, line: 5}

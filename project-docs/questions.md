@@ -234,7 +234,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `crates/tessera-core/src/schema.rs` (`TitleRule::None`); phases 03, 06, and 10.
 - **Resolution:** a variant of option 1: the `.` line stays a paragraph (§3.7), and the §8.2 row "Title given to a directive that doesn't accept one" is a warning, not an error, because a real sentence such as `.NET 8 is required.` directly above `@steps` mustn't fail a build. `\.` silences it. SPEC §3.7 and §8.2 and the registry entry `title-not-accepted` now say so.
 
-### Q12: A directive line inside a code span that started on an earlier line
+### Q13: A directive line inside a code span that started on an earlier line
 
 - **Section:** SPEC §3.2, §3.9
 - **Raised by:** phase 03
@@ -255,7 +255,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `recognition/code-span-across-lines`; phases 05, 06.
 - **Resolution:** _open_
 
-### Q13: Which diagnostic a malformed attribute value gets
+### Q14: Which diagnostic a malformed attribute value gets
 
 - **Section:** SPEC §3.3, §8.2
 - **Raised by:** phase 03
@@ -276,7 +276,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `attributes/unquoted-equals`, `attributes/unquoted-quote-char`, `attributes/unquoted-whitespace`; phases 05, 06.
 - **Resolution:** _open_
 
-### Q14: Text after an identifier primary
+### Q15: Text after an identifier primary
 
 - **Section:** SPEC §3.4, §8.2
 - **Raised by:** phase 03
@@ -294,10 +294,11 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. It is ignored, so a typo silently changes nothing.
   3. It is part of the primary (the token rule is dropped), which turns `@include: my file.md` into a path with a space.
 - **Proposed resolution:** option 1, which reports rather than drops. `directive-primary`'s message would need a variant for it (for example, "`@include`'s primary is a single word; remove `{extra}`"), a change to the registry that this question's approval would cover. Cases expect `directive-primary` at the line.
+- **See also:** Q30 (phase 05), which covers this shape and four others (`@note hello: text`, `@steps foo`, `@end: later`, `@id: two words`) and proposes a new `directive-extra-text` error instead. Resolve the two together.
 - **Affects:** conformance cases: `primary/identifier-with-trailing-text`; phases 05, 06.
 - **Resolution:** _open_
 
-### Q15: What a container-form error does to the container
+### Q16: What a container-form error does to the container
 
 - **Section:** SPEC §3.5, §8.2
 - **Raised by:** phase 03
@@ -318,7 +319,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `forms/container-colon-on-line-only-directive`, `forms/container-only-without-colon`, `widgets/container-widget-line-form`, `widgets/line-widget-container-form`; phases 05, 06.
 - **Resolution:** _open_
 
-### Q16: Where diagnostics about a whole group are reported, and how groups count toward nesting depth
+### Q17: Where diagnostics about a whole group are reported, and how groups count toward nesting depth
 
 - **Section:** SPEC §3.6, §3.10, §4.3, §8.2
 - **Raised by:** phase 03
@@ -332,7 +333,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `builds/selection/no-arm-survives`, `directives/variant/arms-share-no-dimension`, `directives/variant/mixed-labeled-and-dimensional`, `groups/same-directive-does-not-nest`, `groups/unclosed-group`, `nesting/group-counts-as-one-level`; phases 10, 11, 12, 14.
 - **Resolution:** _open_
 
-### Q17: A heading-bound directive with no heading above it
+### Q18: A heading-bound directive with no heading above it
 
 - **Section:** SPEC §3.8, §4.1, §4.4, §8.2
 - **Raised by:** phase 03
@@ -354,7 +355,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `binding/available-before-first-heading`, `binding/id-with-no-heading`; phases 05, 06.
 - **Resolution:** _open_
 
-### Q18: An end line in a different container from its opener, or indented differently within one
+### Q19: An end line in a different container from its opener, or indented differently within one
 
 - **Section:** SPEC §3.9, §8.2
 - **Raised by:** phase 03
@@ -380,7 +381,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `lists/end-in-next-item`, `lists/end-with-extra-indent-same-container`; phases 05, 06.
 - **Resolution:** _open_
 
-### Q19: Where page-level, model, and frontmatter diagnostics are reported when several places cause them
+### Q20: Where page-level, model, and frontmatter diagnostics are reported when several places cause them
 
 - **Section:** SPEC §4.1, §4.2, §5.5, §7.2, §8.1, §8.2
 - **Raised by:** phase 03
@@ -402,7 +403,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `directives/id/duplicate-explicit`, `directives/id/duplicate-through-include`, `directives/id/same-fragment-twice`, `directives/id/slug-equals-explicit-id`, `directives/include/cycle`, `directives/include/self-include`, `frontmatter/missing-required-field`, `frontmatter/no-frontmatter-at-all`, `frontmatter/no-type-and-no-default`, `frontmatter/reference-type-requires-api-version`, `frontmatter/two-types-match`, `headings/duplicate-across-included-fragment`, `headings/duplicate-heading-on-page`, `headings/explicit-id-is-stable-source-and-page-id`, `headings/page-id-differs-from-source-id`, `model/name-is-a-feature-key`, `model/name-is-a-lifecycle-state`; phases 10, 11, 12, 14.
 - **Resolution:** _open_
 
-### Q20: A link to a page that a build drops
+### Q21: A link to a page that a build drops
 
 - **Section:** SPEC §5.2, §8.2, §9.3
 - **Raised by:** phase 03
@@ -420,7 +421,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: none; phases 10, 11, 12, 14.
 - **Resolution:** _open_
 
-### Q21: What a destination that "looks like a published route" is
+### Q22: What a destination that "looks like a published route" is
 
 - **Section:** SPEC §5.2, §8.2
 - **Raised by:** phase 03
@@ -440,7 +441,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `links/route-destination`; phases 10, 11, 12, 14.
 - **Resolution:** _open_
 
-### Q22: The source of a reference-style image in an outline
+### Q23: The source of a reference-style image in an outline
 
 - **Section:** SPEC §5.3
 - **Raised by:** phase 03
@@ -453,7 +454,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `images/collapsed-reference`, `images/full-reference`, `images/shortcut-reference`; phases 07.
 - **Resolution:** _open_
 
-### Q23: A page whose page-level availability isn't available in a filter build
+### Q24: A page whose page-level availability isn't available in a filter build
 
 - **Section:** SPEC §4.4, §9.3
 - **Raised by:** phase 03
@@ -466,7 +467,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `builds/filter/page-level-availability`; phases 10, 11, 12, 14.
 - **Resolution:** _open_
 
-### Q24: What a retained `@available` shows when its primary was a feature key
+### Q25: What a retained `@available` shows when its primary was a feature key
 
 - **Section:** SPEC §4.4, §9.2
 - **Raised by:** phase 03
@@ -479,7 +480,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `builds/filter/feature-key`; phases 10, 11, 12, 14.
 - **Resolution:** _open_
 
-### Q25: Heading levels in an included section
+### Q26: Heading levels in an included section
 
 - **Section:** SPEC §4.2, §9.2
 - **Raised by:** phase 03

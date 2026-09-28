@@ -4,7 +4,7 @@ description: >-
   or a higher level, subsections included.
 spec: ["4.2", "5.5", "9.2"]
 tags: [resolve, include, provisional]
-questions: [Q25]
+questions: [Q26]
 
 builds:
   site:

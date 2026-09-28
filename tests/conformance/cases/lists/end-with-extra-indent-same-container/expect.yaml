@@ -3,6 +3,6 @@ description: >-
   opener, still closes it.
 spec: ["1.5", "3.9"]
 tags: [check, provisional]
-questions: [Q18]
+questions: [Q19]
 
 diagnostics: []

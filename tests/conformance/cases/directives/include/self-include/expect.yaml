@@ -2,7 +2,7 @@ description: >-
   A file that includes itself is a cycle.
 spec: ["4.2", "8.2"]
 tags: [page-check, include, provisional]
-questions: [Q19]
+questions: [Q20]
 
 builds:
   site:

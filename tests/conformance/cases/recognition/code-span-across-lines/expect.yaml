@@ -4,7 +4,7 @@ description: >-
   its backticks are literal text.
 spec: ["3.2", "3.9"]
 tags: [structure, provisional]
-questions: [Q12]
+questions: [Q13]
 
 outline:
   - paragraph: Use `code

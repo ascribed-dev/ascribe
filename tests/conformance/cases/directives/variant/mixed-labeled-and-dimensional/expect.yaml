@@ -2,7 +2,7 @@ description: >-
   A group's arms must be all labeled or all dimensional.
 spec: ["4.3", "8.2"]
 tags: [check, provisional]
-questions: [Q16]
+questions: [Q17]
 
 diagnostics:
   - {slug: variant-mixed-arms, line: 6}

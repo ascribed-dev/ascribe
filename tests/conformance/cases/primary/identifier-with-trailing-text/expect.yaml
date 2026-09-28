@@ -3,7 +3,7 @@ description: >-
   dropped.
 spec: ["3.4", "8.2"]
 tags: [check, provisional]
-questions: [Q14]
+questions: [Q15]
 
 diagnostics:
   - {slug: directive-primary, line: 5}

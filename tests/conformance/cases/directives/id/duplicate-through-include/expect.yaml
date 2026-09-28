@@ -3,7 +3,7 @@ description: >-
   include site, on the expanded page.
 spec: ["4.2", "8.2"]
 tags: [page-check, include, provisional]
-questions: [Q19]
+questions: [Q20]
 
 builds:
   site:

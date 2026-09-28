@@ -3,7 +3,7 @@ description: >-
   source is the definition's destination.
 spec: ["5.3"]
 tags: [inline, provisional]
-questions: [Q22]
+questions: [Q23]
 
 outline:
   - image: settings.png

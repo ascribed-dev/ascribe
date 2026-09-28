@@ -2,7 +2,7 @@ description: >-
   A line-only widget with a trailing colon is an error.
 spec: ["3.5", "6", "8.2"]
 tags: [check, provisional]
-questions: [Q15]
+questions: [Q16]
 
 diagnostics:
   - {slug: container-colon-unexpected, line: 5}

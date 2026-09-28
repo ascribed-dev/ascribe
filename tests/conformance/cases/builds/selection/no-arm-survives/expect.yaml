@@ -3,7 +3,7 @@ description: >-
   build warns at the group; other builds are quiet.
 spec: ["9.3", "8.2"]
 tags: [resolve, page-check, provisional]
-questions: [Q16]
+questions: [Q17]
 
 builds:
   site:

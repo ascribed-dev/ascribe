@@ -2,7 +2,7 @@ description: >-
   A shortcut reference image `![alt]` takes an attribute block.
 spec: ["5.3"]
 tags: [inline, provisional]
-questions: [Q22]
+questions: [Q23]
 
 outline:
   - image: settings.png

@@ -73,7 +73,7 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
 - **`examples/quill/`**: `tessera.toml`, `docs/install-agent.md` (byte for byte the Appendix B page), `quickstart.md` (`try-in-browser`), `keys.md` (`rotate-keys`), `_fragments/prerequisites.md`, and two images, one beside the fragment.
 - **`tests/conformance/tests/suite.rs`** (runs now, in `cargo test`): every SPEC §8.2 row has a case that expects it; every case has a description and `spec`; every question a case names is open in `questions.md`; the Quill example page equals SPEC Appendix B and the `appendix-b` sample; the example equals its project case; every file the example's pages include, link to, or embed exists.
 - **`tests/conformance/INTERPRETATIONS.md`**: the readings the cases lock in, and what the suite doesn't cover. **README** gained "The suite", "Resolved outlines", and "The shared model and the content root".
-- **`project-docs/questions.md`**: Q12 to Q25, all open, each with a proposed resolution. 45 cases are `provisional` on them.
+- **`project-docs/questions.md`**: Q13 to Q26, all open, each with a proposed resolution. 45 cases are `provisional` on them.
 
 ### Interfaces later phases use
 
@@ -94,7 +94,7 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
 
 ### Left open
 
-- **Q12 to Q25** need a human. Q20 has no case (there's no registry entry to expect).
+- **Q13 to Q26** need a human. Q21 has no case (there's no registry entry to expect).
 - **Not covered** (see `INTERPRETATIONS.md`): canonical form (§8.3, the `format` tag), outputs, registry-change reports (§5.1), phrases in frontmatter, most loader rules, and editor features.
 - **Tag coverage**: no case carries `output` or `format`, so those `SKIPS.toml` entries stay until phases 18, 20, and 23 add cases and adapters.
 - **Finish after**: this phase's cases can't be shown to pass until the implementation phases connect adapters; until then they're reported as skipped.

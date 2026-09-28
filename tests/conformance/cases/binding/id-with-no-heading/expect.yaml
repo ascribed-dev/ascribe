@@ -2,7 +2,7 @@ description: >-
   `@id` before any heading has no heading to bind.
 spec: ["3.8", "4.1", "8.2"]
 tags: [check, provisional]
-questions: [Q17]
+questions: [Q18]
 
 diagnostics:
   - {slug: binding-not-section-top, line: 5}
