@@ -858,7 +858,10 @@ name = "tessera-resolve"
 version = "0.0.0"
 dependencies = [
  "serde_json",
+ "serde_yaml",
  "tessera-core",
+ "tessera-model",
+ "tessera-syntax",
 ]
 
 [[package]]
