@@ -393,7 +393,7 @@ document
     );
 }
 
-/// SPEC-QUESTION(Q2): the primary stays inline content, so a setext
+/// SPEC §3.4 (resolved Q2): the primary stays inline content, so a setext
 /// underline doesn't make it a heading (`===` continues it, and `---` is a
 /// thematic break), and it holds no link reference definitions.
 #[test]
@@ -496,7 +496,7 @@ document
     );
 }
 
-/// SPEC-QUESTION(Q1): up to three spaces of indentation beyond the
+/// SPEC §1.5 and §3.9 (resolved Q1): up to three spaces of indentation beyond the
 /// container's, as for an ATX heading.
 #[test]
 fn up_to_three_spaces_of_extra_indentation_are_allowed() {

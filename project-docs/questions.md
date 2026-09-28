@@ -32,7 +32,7 @@ Number entries in order (`Q1`, `Q2`, …) and never reuse a number.
 
 - **Section:** SPEC §1.5, §3.2, §3.9
 - **Raised by:** phase 04
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.2 requires `@` at "line start", which §1.5 defines as "the first character after any indentation or blockquote markers required by the enclosing CommonMark container". Read strictly, a directive line with one to three extra spaces of indentation isn't at line start, so it's ordinary text. But §3.9 says directives "follow CommonMark's container rules, just as headings and code fences do", and rule 5 makes only four or more extra spaces code; headings and fences allow up to three. The readings disagree on, for example:
 
   ```
@@ -46,13 +46,13 @@ Number entries in order (`Q1`, `Q2`, …) and never reuse a number.
   2. Require `@` at exactly the container's content column. Slightly indented directive lines become text, silently: nothing reports that the author's `@note` or `@end` was ignored (an `@end` that isn't recognized leaves its container unclosed, which is reported, but elsewhere).
 - **Proposed resolution:** option 1. It's what "follow CommonMark's container rules, just as headings do" means, and it keeps the block parser's rule uniform. Phase 06 still reports an end line indented differently from its opener (§3.9 rule 3), and the formatter (phase 23) can remove the extra spaces. Implemented now: option 1.
 - **Affects:** `crates/comrak-tessera` (recognition in `open_new_blocks`; the test `up_to_three_spaces_of_extra_indentation_are_allowed` in `tests/spike.rs`); phases 05, 06, and 23; conformance cases with indented directive lines.
-- **Resolution:**
+- **Resolution:** option 1, as proposed and implemented. SPEC §1.5 and §3.9 rule 5 now say so.
 
 ### Q2: A setext underline, table delimiter row, or link reference definition in a text primary
 
 - **Section:** SPEC §3.4
 - **Raised by:** phase 04
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** a text primary "continues onto the following lines exactly as a paragraph does: until a blank line, a directive line, or any other line that would interrupt a paragraph", and is "parsed as CommonMark inline content". Three CommonMark rules don't interrupt a paragraph but turn it into something else, and the spec doesn't say what they do to a primary:
 
   ```
@@ -72,4 +72,4 @@ Number entries in order (`Q1`, `Q2`, …) and never reuse a number.
   3. Treat an underline or delimiter row as ending the primary and starting a new block.
 - **Proposed resolution:** option 1. It follows from the primary being inline content, and it keeps every line of content where the author wrote it. Implemented now: option 1.
 - **Affects:** `crates/comrak-tessera` (`is_text_primary` in `src/parser/tessera.rs` and its three call sites in `src/parser/mod.rs`; the test `text_primary_never_becomes_a_block` in `tests/spike.rs`); phases 05 and 23; conformance cases with multi-line primaries.
-- **Resolution:**
+- **Resolution:** option 1, as proposed and implemented. SPEC §3.4 now says so.

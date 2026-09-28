@@ -41,8 +41,7 @@ where
         };
         // Up to three spaces of indentation beyond the container's are
         // allowed, as for an ATX heading; `self.first_nonspace` skips them.
-        // SPEC-QUESTION(Q1): whether a directive line may be indented at all
-        // beyond its container's content column.
+        // SPEC §1.5 and §3.9 rule 5 (resolved Q1).
         let start = self.first_nonspace;
         let Some(scanned) = scan_line(&line[start..], options) else {
             return false;
@@ -79,8 +78,7 @@ where
 /// holding their own data. A parent that's borrowed isn't a Tessera line,
 /// because the parser never holds a Tessera line's data while it works on
 /// the line's paragraph, so a failed borrow means "no".
-// SPEC-QUESTION(Q2): what a setext underline or table delimiter row does
-// after a text primary.
+// SPEC §3.4: a text primary is always inline content (resolved Q2).
 pub(super) fn is_text_primary(node: Node<'_>) -> bool {
     node.parent().is_some_and(|parent| {
         parent

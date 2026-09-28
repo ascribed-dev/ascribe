@@ -73,7 +73,7 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 ### 1.5 Notational conventions
 
 - Syntax is given in ABNF (RFC 5234) in [Appendix A](#appendix-a-grammar); sections refer to its rules by name.
-- `SP` is a single space (U+0020). "Line start" means the first character after any indentation or blockquote markers required by the enclosing CommonMark container (§3.9).
+- `SP` is a single space (U+0020). "Line start" means the first character after any indentation or blockquote markers required by the enclosing CommonMark container, allowing up to three further spaces of indentation, as CommonMark allows before a heading (§3.9).
 - Examples show Tessera source unless labeled otherwise.
 
 ---
@@ -190,6 +190,8 @@ Each directive's schema declares whether it takes a primary and of which kind:
   before you upgrade.
   ```
 
+  A text primary is always inline content, never a block. A line that would turn a paragraph into something else stays text: a setext underline `===` or a table delimiter row continues the primary, and a leading `[label]: /url` is text, not a link reference definition. A `---` line can't underline a primary, so it ends the primary and is a thematic break.
+
 ### 3.5 Forms
 
 A directive takes one of two forms.
@@ -289,7 +291,7 @@ Directives follow CommonMark's container rules, just as headings and code fences
 2. **Binding stays inside the item.** A following-block directive in a list item binds the next block within that item.
 3. **Containers don't straddle items.** A container or group opens and closes within one list item, or it contains whole lists. An end line indented differently from its opener doesn't close that opener; it's an error.
 4. **Directive lines interrupt paragraphs and never continue them.** Like a heading, a directive line starts a new block. An unindented directive line directly after a list item therefore ends the list.
-5. **Over-indentation makes code.** A directive line indented four or more spaces beyond its container's content column is part of an indented code block, and so it's literal text.
+5. **Over-indentation makes code.** A directive line indented four or more spaces beyond its container's content column is part of an indented code block, and so it's literal text. One to three extra spaces are allowed, as before a heading; a line indented less than a list item's content column is outside that item.
 6. **Blockquotes work the same way**, with `>` markers in place of indentation.
 
 ### 3.10 Nesting

@@ -99,7 +99,7 @@ All in `comrak_tessera` (depend on `comrak-tessera.workspace = true`; the rest o
 
 ### Left open
 
-- **Spec questions Q1 and Q2** in `project-docs/questions.md`, both implemented in their proposed (conservative) reading and marked `SPEC-QUESTION`. They're numbered Q1 and Q2 because the file had no entries; if phase 02 lands questions first with the same numbers, renumber these and their markers (`crates/comrak-tessera/src/parser/tessera.rs`, `crates/comrak-tessera/tests/spike.rs`).
+- **Spec questions Q1 and Q2** were resolved on 2026-09-28 as implemented, and SPEC §1.5, §3.4, and §3.9 now state them. The go decision on the comrak fork was approved at the same checkpoint.
 - **For phase 05**: positions are comrak's line and byte column; convert them with the line index, and compute the head's sub-spans from `raw`, the node's start column, and `text_primary`. Test phase 05's head parser against the fork's scanner: they must agree on where a text primary starts. The Tessera line's child paragraph is its primary, not content.
 - **For phase 07**: inline extensions go into `src/parser/inlines.rs`. comrak's `attributes` feature already parses `{…}` after images and links (with a Pandoc grammar, not Tessera's), and `{` is already dispatched there for Phoenix HEEx; both are models to follow. Mark every change `// TESSERA:` and add it to `FORK.md`'s table (the test enforces the counts).
 - **For phase 23**: comrak's CommonMark renderer drops the escape in `\@note`, so its output would be a directive. The formatter must escape a line-initial `@keyword`, `.` title lines, and phrases itself.
