@@ -18,7 +18,7 @@ mod frontmatter;
 mod refs;
 mod text;
 
-use tessera_core::{DirectiveSchema, FileId, Issue, Location, Span, diagnostics};
+use tessera_core::{DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use tessera_model::ContentModel;
 use tessera_syntax::{
     Block, BlockKind, DirectiveLine, Heading, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
@@ -73,6 +73,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
     cx.blocks(&doc.blocks);
+    cx.parser_fixes();
     // A stable sort keeps the parser's issues before a check's at one place.
     let mut issues = cx.issues;
     issues.sort_by_key(|i| (i.location.span.start(), i.location.span.end()));
@@ -80,6 +81,49 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
 }
 
 impl Ctx<'_> {
+    /// Fixes for the parser's issues whose replacement is certain: a
+    /// misspelled directive (the suggested one) and text that doesn't belong
+    /// on a directive line (remove it).
+    fn parser_fixes(&mut self) {
+        let text = self.file.text.clone();
+        let id = self.id;
+        for issue in &mut self.issues {
+            let span = issue.location.span;
+            let fix = if issue.slug == diagnostics::DIRECTIVE_UNKNOWN
+                && issue.variant == Some("suggestion")
+            {
+                let Some(suggestion) = issue.arg("suggestion").map(str::to_owned) else {
+                    continue;
+                };
+                // `@warning:` becomes `@note {type=warning}:`, colon included.
+                let mut end = span.end();
+                if suggestion.ends_with(':') {
+                    let rest = &text[end..];
+                    let after = rest.trim_start_matches([' ', '\t']);
+                    if after.starts_with(':') {
+                        end += rest.len() - after.len() + 1;
+                    }
+                }
+                Fix {
+                    title: format!("Replace with `{suggestion}`"),
+                    file: id,
+                    edits: vec![TextEdit::replace(Span::new(span.start(), end), suggestion)],
+                }
+            } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT {
+                let before = &text[..span.start()];
+                let start = before.trim_end_matches([' ', '\t']).len();
+                Fix {
+                    title: format!("Remove `{}`", issue.arg("extra").unwrap_or_default()),
+                    file: id,
+                    edits: vec![TextEdit::delete(Span::new(start, span.end()))],
+                }
+            } else {
+                continue;
+            };
+            issue.fixes.push(fix);
+        }
+    }
+
     fn blocks(&mut self, blocks: &[Block]) {
         for (i, block) in blocks.iter().enumerate() {
             match &block.kind {

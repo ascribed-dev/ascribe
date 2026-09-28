@@ -234,6 +234,17 @@ impl Ctx<'_> {
             return;
         };
         if local.path.is_empty() && !local.root_relative {
+            // SPEC-QUESTION(Q59): an image with no path names no file, which
+            // is certainly wrong. The registry has no wording for "no
+            // source", so the message reads as a missing file.
+            let shown = if image.destination.is_empty() {
+                "(no source)".to_owned()
+            } else {
+                image.destination.clone()
+            };
+            let issue = Issue::new(diagnostics::IMAGE_SOURCE_MISSING, self.location(span))
+                .with_arg("path", shown);
+            self.report(issue);
             return;
         }
         let Ok(content) = local.resolve(&self.file.path) else {

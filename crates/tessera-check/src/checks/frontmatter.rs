@@ -8,7 +8,7 @@
 //! missing field, is reported at the file's first line (SPEC §8.1).
 
 use serde_yaml::Value;
-use tessera_core::{Issue, Location, Span, diagnostics};
+use tessera_core::{Fix, Issue, Location, Span, TextEdit, diagnostics};
 use tessera_model::{FrontmatterSchema, TypeMatch, validate_frontmatter};
 use tessera_syntax::Frontmatter;
 
@@ -89,13 +89,16 @@ impl Ctx<'_> {
         }
     }
 
-    /// The first line of the file, without its line ending.
+    /// The first line of the file, without its line ending. Never empty
+    /// unless the file is: a diagnostic on a blank first line covers its line
+    /// break, so it always has a span to show (SPEC §8.1).
     fn first_line(&self) -> Span {
-        let end = self
-            .file
-            .text
-            .find(['\n', '\r'])
-            .unwrap_or(self.file.text.len());
+        let text = &self.file.text;
+        let end = text.find(['\n', '\r']).unwrap_or(text.len());
+        if end == 0 && !text.is_empty() {
+            let width = text.chars().next().map_or(0, char::len_utf8);
+            return Span::new(0, width);
+        }
         Span::new(0, end)
     }
 
@@ -122,6 +125,19 @@ impl Ctx<'_> {
             _ => node.value,
         };
         issue.location = Location::new(self.id, span);
+
+        // A misspelled key has one certain replacement: the suggestion.
+        if issue.slug == diagnostics::FRONTMATTER_UNKNOWN_KEY
+            && issue.variant == Some("suggestion")
+            && let (Some(suggestion), Some(key)) = (issue.arg("suggestion"), node.key)
+        {
+            let fix = Fix {
+                title: format!("Rename the key to `{suggestion}`"),
+                file: self.id,
+                edits: vec![TextEdit::replace(key, suggestion.to_owned())],
+            };
+            issue = issue.with_fix(fix);
+        }
 
         let quotable = is_type
             && node.plain

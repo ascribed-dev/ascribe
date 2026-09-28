@@ -7,7 +7,7 @@
 
 use tessera_core::{
     Attribute, AttributeBlock, AttributeSchema, AttributeType, AttributeValue, Attributes,
-    DirectiveSchema, Issue, Location, SetMember, Span, diagnostics,
+    DirectiveSchema, Fix, Issue, Location, SetMember, Span, TextEdit, diagnostics,
 };
 
 use super::Ctx;
@@ -105,9 +105,15 @@ impl Ctx<'_> {
                 if keys.is_empty() {
                     issue.with_variant("none")
                 } else if let Some(s) = suggest(&attribute.key, keys.iter().copied()) {
+                    let fix = Fix {
+                        title: format!("Rename the attribute to `{s}`"),
+                        file: self.id,
+                        edits: vec![TextEdit::replace(attribute.key_span, s.to_owned())],
+                    };
                     issue
                         .with_variant("suggestion")
                         .with_arg("suggestion", s.to_owned())
+                        .with_fix(fix)
                 } else {
                     issue.with_arg("keys", quoted_list(&keys))
                 }

@@ -449,6 +449,101 @@ fn model_warnings_are_part_of_the_list() {
     );
 }
 
+/// Applies the first fix of the first diagnostic with `slug` to page `path`,
+/// and returns the new text.
+fn fixed(path: &str, text: &str, slug: &str) -> String {
+    let p = project(&[(path, text)]);
+    let d = check_files(&p)
+        .into_iter()
+        .find(|d| d.slug.as_str() == slug)
+        .unwrap_or_else(|| panic!("no {slug}"));
+    assert_eq!(d.fixes.len(), 1, "{slug} carries one fix");
+    apply_edits(text, &d.fixes[0].edits).expect("edits apply")
+}
+
+#[test]
+fn certain_replacements_come_with_fixes_that_clear_the_diagnostic() {
+    let cases = [
+        (
+            "attribute-unknown-key",
+            page("@note {typ=tip}: t"),
+            page("@note {type=tip}: t"),
+        ),
+        (
+            "frontmatter-unknown-key",
+            "---\ntitel: x\n---\n\nText.\n".to_owned(),
+            "---\ntitle: x\n---\n\nText.\n".to_owned(),
+        ),
+        (
+            "directive-unknown",
+            page("@warning: Careful."),
+            page("@note {type=warning}: Careful."),
+        ),
+        (
+            "directive-unknown",
+            page("@avaliable: cloud\n\nText."),
+            page("@available: cloud\n\nText."),
+        ),
+        (
+            "directive-extra-text",
+            page("@include: _f.md extra words"),
+            page("@include: _f.md"),
+        ),
+        (
+            "directive-extra-text",
+            page("@steps foo\n1. a"),
+            page("@steps\n1. a"),
+        ),
+    ];
+    for (slug, before, after) in cases {
+        let now = fixed("index.md", &before, slug);
+        assert_eq!(now, after, "{slug}");
+        // The diagnostic is gone (other diagnostics may remain).
+        let p = project(&[("index.md", &now)]);
+        assert!(
+            !slugs(&p).iter().any(|s| s == slug),
+            "{slug} remains in {now:?}"
+        );
+    }
+}
+
+#[test]
+fn guesses_carry_no_fix() {
+    // A missing value, an unknown key with no close match, and a wrong type
+    // need the author's judgment.
+    let p = project(&[(
+        "index.md",
+        &page("@note {colour=red}: t\n\n@note {type}: t\n\n@note {type=hint}: t"),
+    )]);
+    assert!(check_files(&p).iter().all(|d| d.fixes.is_empty()));
+}
+
+#[test]
+fn a_frontmatter_path_the_index_misses_is_reported_on_the_first_line() {
+    // A key that isn't a string is in the values but not in the position
+    // index, so the diagnostic falls back to the file's first line.
+    let text = "---\ntitle: T\n1: x\n---\n\nText.\n";
+    let p = project(&[("index.md", text)]);
+    let d = one(&p);
+    assert_eq!(d.slug.as_str(), "frontmatter-type-mismatch");
+    assert_eq!(&text[d.location.span.range()], "---");
+
+    // Even when the first line is blank, the span isn't empty.
+    let p = project(&[("index.md", "\n\nJust text.\n")]);
+    let d = one(&p);
+    assert_eq!(d.slug.as_str(), "frontmatter-missing-field");
+    assert!(!d.location.span.is_empty());
+}
+
+#[test]
+fn an_image_with_no_path_is_a_missing_source_and_a_link_is_not() {
+    let p = project(&[(
+        "index.md",
+        &page("![A]()\n\n![B](#top)\n\n[Self](#top) []()"),
+    )]);
+    assert_eq!(slugs(&p), ["image-source-missing", "image-source-missing"]);
+}
+
 mod robustness {
     use super::*;
     use proptest::prelude::*;

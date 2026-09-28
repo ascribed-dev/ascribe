@@ -868,7 +868,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Ambiguity:** `[here](#install)` names a heading in the file it's written in (page level checks the id). `![a](#x)` and `![a]()` have no file to look for. §5.3 says "a local image source MUST exist".
 - **Options:**
   1. File-level checks skip a destination with no path (the fragment-only link names the file itself, and an empty destination names nothing), for links and images alike.
-  2. Report an image with no path as `image-source-missing`.
-- **Proposed resolution:** option 2 for images, and option 1 for links. An image with no source is certainly wrong. **Implemented now: option 1 for both**, because the message for an empty path ("the image `` doesn't exist") reads badly and a wording variant would be a registry change (`SPEC-QUESTION(Q59)` in `checks/refs.rs`).
+  2. Report an image with no path as `image-source-missing`; skip links.
+- **Proposed resolution:** option 2 for images, and option 1 for links: an image with no source is certainly wrong. **Implemented now: exactly that** (`SPEC-QUESTION(Q59)` in `checks/refs.rs`). The registry's message for `image-source-missing` reads badly for an empty path ("the image `(no source)` doesn't exist"; a `#id`-only source shows as written). A dedicated variant, such as `messages.empty = "this image has no source; give it a path between the parentheses"`, needs a registry change, which is the human's to approve when resolving this question.
 - **Affects:** `image-source-missing`; phases 12 and 14.
 - **Resolution:** _open_

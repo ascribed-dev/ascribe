@@ -70,7 +70,7 @@ Build the diagnostics framework every tool shares, implement every file-level ch
 ### Interfaces later phases use
 
 - **14, 15, 18:** `tessera_check::check_files(&Project)`. The language server builds the `Project` from its buffers with `Project::from_parts` and `Project::from_sources`; `Project::file(id)` gives a file's text and display path for any `Location`. Page-level checks (phase 14, `src/page/`) can call `Diagnostic::from_issue` and use the `Registry` the same way.
-- **15:** every `Diagnostic` has its fixes as `TextEdit`s in the file's own byte offsets. Only `link-route` offers one now (when the page exists).
+- **15, 24:** every `Diagnostic` has its fixes as `TextEdit`s in the file's own byte offsets. These carry one: `attribute-unknown-key` (suggestion), `frontmatter-unknown-key` (suggestion), `directive-unknown` (suggestion; `@warning:` becomes `@note {type=warning}:`), `directive-extra-text` (remove the text), and `link-route` (when the page exists). Fixes that need judgment (a missing value, a wrong type) have none. Tests apply each fix and check the diagnostic is gone.
 - **14:** for `link-route` the crate uses the conventional route-to-page mapping (Q55). When phase 12's router exists, ask it instead.
 - **18:** `tessera_cli::report` is private to the binary crate today. When `build` needs to show diagnostics, move `report/` into a library target, or call it from a `build` module in the same crate (it's already in the crate).
 - **23:** add `commands/fmt.rs`, `mod fmt;` in `commands/mod.rs`, one `Command::Fmt` variant and one arm in `cli.rs`. Nothing else in `tessera-cli` needs to change.
@@ -98,6 +98,8 @@ See the pull request for the status and evidence of each.
 
 - **Q51 to Q59** (`project-docs/questions.md`), each with a proposed resolution.
 - **Page-level rows** (`id-duplicate`, `include-id-missing`, `include-cycle`, `variant-no-arm-survives`, `available-exceeds-scope`, `link-id-missing`, `link-id-in-fragment`, `link-id-removed`, `heading-duplicate-without-id`, `link-page-dropped`) are phase 14's, on phase 11's index and phase 12's resolution.
+- **One YAML parser would be safer.** Values come from `serde_yaml` and positions from `yaml-rust2`, which accept slightly different inputs. When the position index misses a path (a non-string key, or a parse that only one accepts), the diagnostic falls back to the file's first line (never an empty span), and a test covers it. Using one parser for both would remove the risk; `serde_yaml` is deprecated upstream anyway. Not this PR's job.
+- **Q59** is implemented as proposed for images (an empty or `#id`-only source is `image-source-missing`, worded as a missing file); a dedicated message needs a registry change for the human to approve. The case `images/source-empty` is `provisional` on it.
 - **Performance.** `Project::lookup` reads each directory of a path on every reference (no cache, so a `Project` never serves a stale listing). Phase 26 measures it; a per-check cache of directory listings is the first thing to try.
 - **Definitions.** A reference-style link's destination is in a definition that isn't a node, so its diagnostics are at the link (Q53), and `[ref]: {api}x` can't be checked for phrases in the definition's own position.
 - **`tessera-cli`'s JSON schema** is version 1. A field added later doesn't change the version.
