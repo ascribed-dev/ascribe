@@ -1,5 +1,4 @@
 description: "Only a container's colon loses trailing whitespace: line-form directives and end lines keep theirs."
 spec: ["8.3"]
-tags: [format, provisional]
-questions: [Q72]
+tags: [format]
 formatted: input.md

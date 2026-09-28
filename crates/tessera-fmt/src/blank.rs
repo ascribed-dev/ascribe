@@ -23,7 +23,7 @@ use tessera_syntax::{Block, BlockKind, Bound, PrimaryValue};
 
 use crate::{Ctx, Owner};
 
-// SPEC-QUESTION(Q74): a gap with a text primary before it, with a line that
+// Resolved Q74: a gap with a text primary before it, with a line that
 // isn't blank (a definition), or between blocks of a list item is left alone.
 /// Applies the rule to the directive at `blocks[index]`, if it's a
 /// following-block directive with something after it in the same container.

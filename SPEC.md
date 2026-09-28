@@ -84,6 +84,9 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 A Tessera source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
 
+- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, or a mapping of dimensions to values) is a frontmatter value of the wrong type (§8.2).
+- The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
+
 ### 2.2 Pages and fragments
 
 A documentation set's source files live under a **content root**. Each file is either a page or a fragment.
@@ -339,7 +342,7 @@ Gives a heading an explicit, stable id.
 ```
 
 - **Form:** line. **Binding:** preceding heading (at the top of the section, §3.8). **Primary:** REQUIRED identifier (letters, digits, hyphens).
-- The id replaces the heading's slug, as both its source id and its page id (§5.5).
+- The id replaces the heading's slug, as both its source id and its page id (§5.5). An id that isn't valid still replaces the slug, so a link that uses it works once the id is fixed, and a heading with several `@id` lines takes the first; each mistake is reported once.
 - The id MUST be unique within its page.
 - The id names the heading's section, which links (§5.2) and `@include` (§4.2) can both target.
 
@@ -353,15 +356,16 @@ Transcludes a file or a heading's section into the current document.
 ```
 
 - **Form:** line. **Binding:** self. **Primary:** REQUIRED path, optionally followed by `#` and an id.
-- **Paths** are relative to the including file, or, when they begin with `/`, relative to the content root. Processors MUST NOT resolve a bare filename by searching other directories.
+- **Paths** are relative to the including file, or, when they begin with `/`, relative to the content root. Processors MUST NOT resolve a bare filename by searching other directories. A path is percent-decoded as a link destination is (§5.2), so `my%20snippet.md` names `my snippet.md`, and an empty `#` (`file.md#`) includes the whole file.
+- Only a source file (§2.1) can be included: a file outside the content root, or that isn't Markdown, is reported as a target that doesn't exist.
 - With `#id`, only the section of the heading with that source id (§5.5) is included.
 - **Attributes:**
 
   | Key | Type | Default | Meaning |
   |---|---|---|---|
-  | `heading` | boolean | `true` | When `false`, the included section's own heading is omitted |
+  | `heading` | boolean | `true` | When `false`, the included section's own heading is omitted. It applies only with `#id`; on an include of a whole file it has no effect, and processors SHOULD warn |
 
-- The target file and id MUST exist. Include cycles are an error.
+- The target file and id MUST exist. Include cycles are an error: an include is a cycle when expanding it would, directly or through other includes, include the same section of the same file again, so its expansion would never end.
 - Included content becomes part of the including page. Phrase substitution and build modes (§9) apply to it as they do to the rest of the page.
 - Included headings keep the levels they're written with. Include a section where its levels fit the page.
 - **Relative paths resolve from the file they're written in.** Every piece of content keeps its source file. Link destinations, image sources, and nested include paths inside a fragment resolve against the fragment's location, not the including page's. A fragment that links to `keys.md` means the `keys.md` next to the fragment, wherever it's included.
@@ -559,8 +563,9 @@ See the [streaming API reference]({api}streaming).
 - **Escapes in code.** A backslash doesn't escape in code, so in a fenced block with `phrases=true`, `\{key}` is a backslash followed by a phrase, and a fence's content never differs from its source except where phrases are substituted. For a literal `{key}` in code, leave `phrases=true` off that fence.
 - **Distinction from attributes:** `{…}` directly after a directive name, or directly after an image and closed on the same line, is an attribute block (§3.3), not a phrase, whatever it contains. So `![Logo](logo.png){cloud}` is an attribute block with a bare key, which is an error; to put a phrase right after an image, separate it with a space or escape it (`\{cloud}`).
 - **Values** are inserted as literal text. They aren't scanned for phrases or markup, and they don't vary by case, number, or argument.
+- **Destinations are checked after substitution.** A destination's phrases are substituted before it's resolved and checked, as in the build, so `[reference]({api}streaming)` names an external URL, not a missing file.
 - **Keeping source and output in agreement.** Whether `{key}` is a phrase depends on a registry the reader can't see, so processors SHOULD report two cases:
-  - `{key}` text in prose whose key isn't declared, which is literal today and would silently become a phrase if the key were declared later (`\{` silences it);
+  - `{key}` text in prose whose key isn't declared, which is literal today and would silently become a phrase if the key were declared later (`\{` silences it). Prose here is every inline position: paragraphs, headings, link text, alt text, table cells, titles, and text primaries, but not destinations, fences with `phrases=true`, or frontmatter;
   - when a key is added to the registry, the pages whose existing literal `{key}` text would change.
 
 ### 5.2 Links
@@ -573,7 +578,7 @@ See [](keys.md#rotate-keys).
 ```
 
 - **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading in the target file by its source id; the compiled link points at that heading's page id (§5.5). Only the target file's own headings have source ids there; headings it includes from fragments don't (§4.2).
-- The target file, and the id if present, MUST exist. In each build, the target page MUST also be published: a link to a page the build drops (§9.3) is an error in that build. To link to such a page from shared content, put the link in a `@variant` arm that the same build removes.
+- The target file, and the id if present, MUST exist. A destination that is only `#id` names a heading in the file it's written in; in a fragment, that's a heading of the fragment itself, and the compiled link points at that heading's page id on each page that includes the fragment. In each build, the target page MUST also be published: a link to a page the build drops (§9.3) is an error in that build. To link to such a page from shared content, put the link in a `@variant` arm that the same build removes.
 - **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2).
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
 - **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion. A local destination looks like a route when it names no existing file and its last segment has no file extension or it ends in `/` (`/guides/install/`, `../guides/install`); it then gets that warning instead of a missing-file error.
@@ -588,7 +593,7 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 
 - The attribute grammar is §3.3's. The content model declares which image attributes are accepted (§7.2).
 - The block MUST close on the same line as the image. Any `{…}` directly after an image and closed on its line is the image's attribute block, even with no `=` in it (§5.1). A `{` directly after an image with no `}` on its line stays text, and processors report it as an attribute block that doesn't parse.
-- A local image source MUST exist. A reference image's source is its link reference definition's destination.
+- A local image source MUST exist, and an image MUST have one: an image with an empty source is an error. A reference image's source is its link reference definition's destination.
 - Processors SHOULD warn when an image has no alt text.
 - Presentation choices such as borders or shadows are not image attributes; they belong to the consumer's styling.
 
@@ -606,6 +611,8 @@ Every heading has two ids: one for referring to it in source, and one for its an
 For a heading with `@id`, both ids are the `@id`, which is what makes it stable.
 
 - An `@id` directive under the heading replaces the slug (§4.1).
+- **A heading's text**, for its slug, is the text content of the rendered heading: its text, code spans, link text, and emphasized text, with phrases substituted. Images and raw HTML contribute nothing.
+- A heading without `@id` whose slug is empty, because its text is only punctuation or emoji, can't be linked to reliably, and processors SHOULD warn.
 - Explicit ids don't take part in slug numbering: a slug is numbered only against earlier slugs. A heading whose slug equals another heading's `@id` on the same page therefore duplicates that id, which is an error (§4.1).
 - Processors SHOULD warn when a heading without `@id` contains a phrase, or repeats the text of another heading on the same page. In either case its slug can change without the heading itself being edited.
 
@@ -634,6 +641,8 @@ A **project widget** is a directive defined by a documentation set rather than b
 The content model is a documentation set's schema. It is the single contract shared by the authoring environment, the validator, and the compiler: all three read the same declarations, so they can't disagree about what's valid.
 
 The content model is a TOML file named `tessera.toml` at the project root. Processors read it directly. Consumers' own schemas are generated from it rather than maintained separately; for Astro, that's the content collection's Zod schema (§9.6).
+
+A content model with errors is reported, and nothing else is checked, since every other check depends on it. The warnings of a content model that loads are reported with the rest of the diagnostics.
 
 TOML keeps the content model's values unambiguous: strings are always quoted, so a value such as `no` or `3.10` can't change type the way it can in YAML.
 
@@ -676,7 +685,7 @@ Validation happens at two levels.
 - **File level.** Each source file on its own: syntax, attributes, directive schemas, frontmatter, and whether referenced files exist.
 - **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes.
 
-A page-level diagnostic is reported at the source location that causes it. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment, as related information rather than as a second diagnostic.
+A page-level diagnostic is reported at the source location that causes it. A diagnostic about what a link or image names is reported at its destination as written, for an inline link or image, and at the link or image itself for a reference form. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment, as related information rather than as a second diagnostic.
 
 When several places together cause a diagnostic, it's reported once, at the later one: the second of two duplicate ids or headings (at the `@id` line for an explicit id, at the heading for a slug), the second include of a fragment included twice, the include that closes a cycle, and the later of two declarations in the content model. A frontmatter problem with no line of its own, such as a missing field, is reported at the file's first line.
 
@@ -713,6 +722,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@include` | Target file doesn't exist | Error |
 | `@include` | Target id doesn't exist in the target file (page level) | Error |
 | `@include` | Include cycle | Error |
+| `@include` | `{heading=false}` without an `#id`, which has no effect | Warning |
 | `@variant` | No arm of a group survives a build's selection (page level) | Warning |
 | `@variant` | Unknown dimension or value | Error |
 | `@variant` | Group mixes labeled and dimensional arms | Error |
@@ -738,12 +748,15 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Images | Required image attribute missing | Error |
 | Phrases | `{key}` in prose whose key isn't declared | Warning |
 | Headings | No `@id`, and the heading contains a phrase | Warning |
+| Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji) | Warning |
 | Headings | No `@id`, and the heading duplicates another heading's text on the page (page level) | Warning |
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
 | Frontmatter | Reserved key (`available`, `variant`) on a fragment | Error |
 | Frontmatter | Page matches more than one content type, or matches none and there's no default type | Error |
+| Frontmatter | Frontmatter that isn't valid YAML | Error |
+| Files | Source file that can't be read, or isn't valid UTF-8 | Error |
 | Lists | Unindented directive line ends a list | Warning |
 | Lists | Directive line over-indented into an indented code block | Warning |
 | Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list) | Warning |
@@ -763,6 +776,16 @@ Processors accept any spacing the grammar allows (§3.1, §3.3). Each construct 
 - No blank line between a following-block directive and its block.
 - `:` directly after the name or attribute block, followed by one space before a primary, or ending the line for a container.
 - Directive lines inside a list item indented exactly to the item's content column.
+
+A formatter changes only Tessera constructs, and never how a page renders:
+
+- It leaves alone a construct that has an error, and fixes only what's certain: a construct with a warning is still formatted.
+- It removes trailing whitespace only after a container's `:`. After a text primary, trailing spaces can be a hard line break.
+- Directive lines in a blockquote keep the `>` and one space. Directive lines on a list marker's own line, and indentation written with tabs, are left as written.
+- It keeps a blank line between a following-block directive and its block when removing it would change how the page renders (a list's tightness), when the directive has a text primary, or when anything but blank lines sits in the gap (a link reference definition).
+- It leaves an attribute block with a bare or repeated key as written. An undeclared key keeps its place, and the rest are ordered and respaced. A quoted value that needs no quotes loses them.
+- It removes an empty attribute block after an image, and leaves an image's attribute block in a table cell as written.
+- Title lines are left as written.
 
 ---
 
@@ -1007,7 +1030,7 @@ You can run {product} in the browser at play.quill.dev with no local setup.
 ## Prerequisites
 @id: prerequisites
 
-@include {heading=false}: _fragments/prerequisites.md
+@include: _fragments/prerequisites.md
 
 ## Install the agent
 @id: install-agent

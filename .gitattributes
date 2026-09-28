@@ -4,3 +4,6 @@
 # rewrite their line endings. A case that needs CRLF input marks its file
 # with `-text` here.
 * text=auto eol=lf
+
+# A source file that must stay invalid UTF-8, byte for byte.
+tests/conformance/cases/files/source-not-utf8/files/bad.md binary

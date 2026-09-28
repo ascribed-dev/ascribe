@@ -96,7 +96,7 @@ See the pull request for the status and evidence of each.
 
 ### Left open
 
-- **Q51 to Q59** (`project-docs/questions.md`), each with a proposed resolution.
+- **Q51 to Q59** were resolved on 2026-09-28 (`project-docs/questions.md`): Q51 added `frontmatter-syntax`, Q52 made an unreadable or non-UTF-8 source a `source-unreadable` error on that file (the rest is still checked), and Q59 added the `empty` message variant for an image with no source.
 - **Page-level rows** (`id-duplicate`, `include-id-missing`, `include-cycle`, `variant-no-arm-survives`, `available-exceeds-scope`, `link-id-missing`, `link-id-in-fragment`, `link-id-removed`, `heading-duplicate-without-id`, `link-page-dropped`) are phase 14's, on phase 11's index and phase 12's resolution.
 - **One YAML parser would be safer.** Values come from `serde_yaml` and positions from `yaml-rust2`, which accept slightly different inputs. When the position index misses a path (a non-string key, or a parse that only one accepts), the diagnostic falls back to the file's first line (never an empty span), and a test covers it. Using one parser for both would remove the risk; `serde_yaml` is deprecated upstream anyway. Not this PR's job.
 - **Q59** is implemented as proposed for images (an empty or `#id`-only source is `image-source-missing`, worded as a missing file); a dedicated message needs a registry change for the human to approve. The case `images/source-empty` is `provisional` on it.

@@ -64,7 +64,7 @@ pub use expand::{
 pub use fs::{DiskFs, FileSystem, MemoryFs, Probe, Sources};
 pub use index::{
     AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, PhrasePlace,
-    PhraseUse, RefKind, Reference, Target, index_file,
+    PhraseUse, RefKind, Reference, Target, heading_text, index_file,
 };
 pub use layout::Layout;
 pub use project::{

@@ -1,5 +1,4 @@
 description: "A following-block directive that binds nothing or a heading is left as written."
 spec: ["8.3"]
-tags: [format, provisional]
-questions: [Q71]
+tags: [format]
 formatted: input.md

@@ -21,8 +21,21 @@ pub struct SourceFile {
     pub id: FileId,
     /// The path relative to the content root, `/`-separated.
     pub path: RelPath,
-    /// The text.
+    /// The text; empty when the file couldn't be read.
     pub text: String,
+    /// Why the file couldn't be read, if it couldn't. It's reported as
+    /// `source-unreadable`, and nothing else is checked in it (SPEC §8.2,
+    /// resolved Q52).
+    pub unreadable: Option<ReadFailure>,
+}
+
+/// Why a source file couldn't be read.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReadFailure {
+    /// The operating system's reason.
+    pub reason: String,
+    /// Whether the file was read but isn't valid UTF-8.
+    pub not_utf8: bool,
 }
 
 /// What a file id names, for reporting.
@@ -103,7 +116,8 @@ impl Project {
     /// [`tessera_resolve::FileSystem::sources`] finds them.
     ///
     /// A source file or directory that can't be read, or a source file that
-    /// isn't valid UTF-8, is a [`LoadError::Read`].
+    /// isn't valid UTF-8, is still a source file, with its [`ReadFailure`];
+    /// `check_files` reports it and checks the rest.
     pub fn load(config: &Path) -> Result<Project, LoadError> {
         let text = fs::read(config)
             .map_err(|e| read_error(config, e))
@@ -141,44 +155,53 @@ impl Project {
         ))
     }
 
-    /// Reads every source file under `root/content_root`, in path order, with
-    /// ids from 1. See [`Project::load`].
+    /// Reads every source file under `root/content_root`. The files that
+    /// could be read have ids from 1, in path order, as in
+    /// `tessera_resolve::Project`; those that couldn't come after them, with
+    /// their [`ReadFailure`].
     pub fn read_sources(root: &Path, content_root: &RelPath) -> Result<Vec<SourceFile>, LoadError> {
-        // SPEC-QUESTION(Q52): an unreadable source stops the command.
         let layout = Layout {
             content_root: content_root.clone(),
             output_dir: RelPath::root(),
         };
         let disk = DiskFs::new(root, &layout);
         let found = disk.sources();
-        if let Some(bad) = found.unreadable.first() {
-            return Err(LoadError::Read {
-                path: join(&join(root, content_root), &bad.path)
-                    .display()
-                    .to_string(),
-                message: bad.reason.clone(),
-            });
-        }
         let mut sources = Vec::with_capacity(found.paths.len());
-        for (i, path) in found.paths.into_iter().enumerate() {
-            let text = disk.read(&path).map_err(|e| {
-                let full = join(&join(root, content_root), &path);
-                if e.kind() == io::ErrorKind::InvalidData {
-                    LoadError::Read {
-                        path: full.display().to_string(),
-                        message: "the file isn't valid UTF-8".into(),
-                    }
-                } else {
-                    read_error(&full, e)
-                }
-            })?;
-            sources.push(SourceFile {
+        let mut failed = Vec::new();
+        for path in found.paths {
+            match disk.read(&path) {
+                Ok(text) => sources.push((path, text)),
+                Err(e) => failed.push((
+                    path,
+                    ReadFailure {
+                        not_utf8: e.kind() == io::ErrorKind::InvalidData,
+                        reason: e.to_string(),
+                    },
+                )),
+            }
+        }
+        failed.extend(found.unreadable.into_iter().map(|u| {
+            (
+                u.path,
+                ReadFailure {
+                    reason: u.reason,
+                    not_utf8: false,
+                },
+            )
+        }));
+        let out = sources
+            .into_iter()
+            .map(|(path, text)| (path, text, None))
+            .chain(failed.into_iter().map(|(p, f)| (p, String::new(), Some(f))))
+            .enumerate()
+            .map(|(i, (path, text, unreadable))| SourceFile {
                 id: FileId::new(i as u32 + 1),
                 path,
                 text,
-            });
-        }
-        Ok(sources)
+                unreadable,
+            })
+            .collect();
+        Ok(out)
     }
 
     /// A project from parts the caller already has: the language server's
@@ -196,8 +219,11 @@ impl Project {
         sources: Vec<SourceFile>,
     ) -> Project {
         let model_warnings = model.warnings.iter().map(Diagnostic::from_issue).collect();
+        // A file that couldn't be read isn't a source another file can name,
+        // as in the source index.
         let source_paths = sources
             .iter()
+            .filter(|s| s.unreadable.is_none())
             .map(|s| (s.path.as_str().to_lowercase(), s.path.clone()))
             .collect();
         let layout = Layout {
@@ -228,6 +254,7 @@ impl Project {
                 id: FileId::new(i as u32 + 1),
                 path,
                 text,
+                unreadable: None,
             })
             .collect()
     }
@@ -314,14 +341,6 @@ impl SourceSet for Project {
             .filter(|actual| *actual != path)
             .cloned()
     }
-}
-
-fn join(base: &Path, rel: &RelPath) -> PathBuf {
-    let mut out = base.to_owned();
-    for seg in rel.segments() {
-        out.push(seg);
-    }
-    out
 }
 
 fn read_error(path: &Path, e: std::io::Error) -> LoadError {

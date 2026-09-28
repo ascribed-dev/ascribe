@@ -55,7 +55,7 @@ pub(crate) fn content_width(source: &str, marker: Span) -> Option<usize> {
     Some(marker.end() - start + width)
 }
 
-// SPEC-QUESTION(Q73): block quotes keep the marker and one space; a
+// Resolved Q73: block quotes keep the marker and one space; a
 // directive on a marker's line, and indentation with a tab, are left alone.
 /// Removes the extra spaces before the directive or end line whose `@` is at
 /// `at`.

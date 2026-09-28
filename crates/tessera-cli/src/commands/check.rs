@@ -74,7 +74,7 @@ fn check(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
 
 /// Reports a project that couldn't be loaded, and returns the exit code.
 ///
-/// SPEC-QUESTION(Q58): a content model with errors is a configuration
+/// Resolved Q58: a content model with errors is a configuration
 /// failure (exit code 2), and its diagnostics are shown.
 fn report_failure(
     failure: Failure,

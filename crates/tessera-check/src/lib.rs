@@ -32,7 +32,7 @@ mod yaml;
 
 pub use checks::check_file;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
-pub use project::{FileEntry, LoadError, MODEL_FILE, Project, SourceFile};
+pub use project::{FileEntry, LoadError, MODEL_FILE, Project, ReadFailure, SourceFile};
 pub use registry::{Entry, Level, Registry};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content
@@ -42,7 +42,7 @@ pub use registry::{Entry, Level, Registry};
 /// Never panics on user input. Sorting is stable, so two tools that call it
 /// on the same project get the same list.
 pub fn check_files(project: &Project) -> Vec<Diagnostic> {
-    // SPEC-QUESTION(Q58): the content model's warnings are part of the list.
+    // Resolved Q58: the content model's warnings are part of the list.
     let mut out: Vec<Diagnostic> = project.model_warnings().to_vec();
     for file in project.sources() {
         out.extend(check_file(project, file));

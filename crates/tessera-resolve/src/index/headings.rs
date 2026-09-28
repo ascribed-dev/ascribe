@@ -42,7 +42,7 @@ pub struct Heading {
     pub has_phrase: bool,
     /// Whether the slug is empty: the heading has no `@id`, and its text is
     /// only characters the slugger removes (punctuation, emoji).
-    // SPEC-QUESTION(Q61): what an id-less heading with an empty slug means.
+    /// `tessera check` reports it (SPEC §5.5, resolved Q61).
     pub empty_slug: bool,
 }
 
@@ -110,7 +110,7 @@ fn collect_list(blocks: &[Block], model: &ContentModel, out: &mut Vec<Heading>) 
         }
     }
     // Explicit ids: an `@id` binds the heading before it in this list.
-    // SPEC-QUESTION(Q68): the first `@id` with a value wins, valid or not.
+    // SPEC §4.1 (resolved Q68): the first `@id` with a value wins, valid or not.
     for (i, block) in blocks.iter().enumerate() {
         let BlockKind::Directive(line) = &block.kind else {
             continue;
@@ -136,8 +136,9 @@ fn collect_list(blocks: &[Block], model: &ContentModel, out: &mut Vec<Heading>) 
 }
 
 /// The plain text of inline content, with declared phrases replaced by their
-/// values and undeclared candidates left as the `{key}` they are.
-pub(crate) fn plain_text(inlines: &[Inline], model: &ContentModel) -> String {
+/// values and undeclared candidates left as the `{key}` they are: a heading's
+/// text, as its slug is computed from it (SPEC §5.5).
+pub fn plain_text(inlines: &[Inline], model: &ContentModel) -> String {
     let mut out = String::new();
     push_text(inlines, model, &mut out);
     out
@@ -146,8 +147,8 @@ pub(crate) fn plain_text(inlines: &[Inline], model: &ContentModel) -> String {
 fn push_text(inlines: &[Inline], model: &ContentModel, out: &mut String) {
     for inline in inlines {
         match &inline.kind {
-            // SPEC-QUESTION(Q67): the text content of the rendered heading;
-            // an image and raw HTML contribute nothing.
+            // SPEC §5.5 (resolved Q67): the text content of the rendered
+            // heading; an image and raw HTML contribute nothing.
             InlineKind::Text(t) | InlineKind::Code(t) => out.push_str(t),
             InlineKind::SoftBreak | InlineKind::HardBreak => out.push('\n'),
             InlineKind::Emphasis(children) | InlineKind::Strong(children) => {

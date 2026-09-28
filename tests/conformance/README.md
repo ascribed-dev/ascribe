@@ -405,7 +405,6 @@ outline:
     primary: prerequisites
     binding: heading
   - directive: include
-    attributes: {heading: false}
     primary: _fragments/prerequisites.md
     binding: self
 

@@ -18,7 +18,7 @@
 //! Page-level problems, such as a link to an id the target page lacks, are
 //! the source index's ([`crate::Project::problems`]).
 
-use tessera_core::{Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics};
+use tessera_core::{Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics, percent_decode};
 use tessera_model::ContentModel;
 use tessera_syntax::{Inline, LinkForm, Phrase};
 
@@ -52,23 +52,23 @@ pub struct IncludeTarget {
 /// What an `@include` primary names, resolved from the file it's written in
 /// (SPEC §4.2).
 pub fn include_target(primary: &str, written_in: &RelPath) -> IncludeTarget {
+    // SPEC §4.2 (resolved Q62): an include path is decoded as a link
+    // destination is, so `my%20snippet.md` names `my snippet.md`, and an
+    // empty id (`file.md#`) includes the whole file.
     let (path, section) = match primary.split_once('#') {
-        Some((path, id)) => (path, Some(id.to_owned()).filter(|id| !id.is_empty())),
+        Some((path, id)) => (path, Some(percent_decode(id)).filter(|id| !id.is_empty())),
         None => (primary, None),
     };
-    // SPEC-QUESTION(Q62): an include path is a path, not a URL, so `%20` isn't
-    // decoded: a file name with a space can't be written as an identifier
-    // primary at all, and a name with `%` in it is taken literally. An empty
-    // id (`file.md#`) includes the whole file.
     let target = if path.is_empty() {
         None
     } else {
-        let base = if path.starts_with('/') {
+        let decoded = percent_decode(path);
+        let base = if decoded.starts_with('/') {
             RelPath::root()
         } else {
             written_in.parent().unwrap_or_default()
         };
-        base.join(path).ok()
+        base.join(decoded.trim_start_matches('/')).ok()
     };
     IncludeTarget {
         written: path.to_owned(),
@@ -78,10 +78,9 @@ pub fn include_target(primary: &str, written_in: &RelPath) -> IncludeTarget {
 }
 
 /// The file-level issue with an include, if any: its target isn't a source
-/// file of the project.
-// SPEC-QUESTION(Q63): only a source file of the project can be included; a
-// file outside the content root, or that isn't Markdown, is reported as
-// missing, whether or not it exists on disk.
+/// file of the project. Only a source file can be included (SPEC §4.2,
+/// resolved Q63): a file outside the content root, or that isn't Markdown,
+/// gets the `not-source` message, whether or not it exists on disk.
 ///
 /// `written` and `target` are an [`IncludeTarget`]'s. `at` is the primary.
 pub fn include_issue(
@@ -96,6 +95,9 @@ pub fn include_issue(
     }
     let issue =
         Issue::new(diagnostics::INCLUDE_TARGET_MISSING, at).with_arg("path", written.to_owned());
+    if !target.is_inside() || target.extension() != Some("md") {
+        return Some(issue.with_variant("not-source"));
+    }
     Some(match sources.case_twin(target) {
         Some(actual) => issue
             .with_variant("case")
@@ -136,9 +138,9 @@ pub fn resolve_reference(
     let Some(path) = &local.path else {
         return Resolution::AssetMissing(Missing::Absent);
     };
-    // SPEC-QUESTION(Q59): an image with no path (`![a]()`, `![a](#x)`) has
-    // no file, so it's reported as a missing source. A link with only a
-    // `#id` names the file it's in.
+    // SPEC §5.3 (resolved Q59): an image with no path (`![a]()`, `![a](#x)`)
+    // has no source, which is reported. A link with only a `#id` names the
+    // file it's in.
     if kind == RefKind::Image && local.written.is_empty() {
         return Resolution::AssetMissing(Missing::Absent);
     }
@@ -181,9 +183,9 @@ pub fn resolve_reference(
 
 /// The page a route-like link most likely names, and the file-path link to
 /// write instead.
-// SPEC-QUESTION(Q55): the conventional mapping, `route.md`, else
-// `route/index.md`, whichever is a source file; else `route.md`. The
-// consumer profile's router (phase 12) will answer instead.
+// Resolved Q55: the conventional mapping, `route.md`, else `route/index.md`,
+// whichever is a source file; else `route.md`, until the consumer profile's
+// router (phase 12) can answer.
 fn route(
     local: &Local,
     path: &RelPath,
@@ -255,8 +257,8 @@ pub fn reference_issue(
     at: Location,
     destination: Option<Span>,
 ) -> Option<Issue> {
-    // SPEC-QUESTION(Q53): the destination as written for inline forms, the
-    // whole link or image for reference forms.
+    // SPEC §8.1 (resolved Q53): the destination as written for inline forms,
+    // the whole link or image for reference forms.
     let here = Location::new(at.file, destination.unwrap_or(at.span));
     let written = match target {
         Target::Local(l) if l.written.is_empty() && !written_destination.is_empty() => {
@@ -280,6 +282,16 @@ pub fn reference_issue(
                     .with_arg("actual", actual.to_string()),
                 None => issue,
             })
+        }
+        Resolution::AssetMissing(_)
+            if kind == RefKind::Image
+                && matches!(target, Target::Local(l) if l.written.is_empty()) =>
+        {
+            Some(
+                Issue::new(missing_slug, here)
+                    .with_variant("empty")
+                    .with_arg("path", written),
+            )
         }
         Resolution::AssetMissing(why) => {
             let issue = Issue::new(missing_slug, here).with_arg("path", written);
@@ -314,10 +326,11 @@ pub fn reference_issue(
             Some(issue)
         }
         Resolution::Source { fragment, .. } => {
-            // SPEC-QUESTION(Q64): a link with only `#id` in a fragment names
-            // the fragment itself, so it's reported like any other link to a
-            // fragment.
-            fragment
+            // SPEC §5.2 (resolved Q64): a `#id` alone in a fragment names a
+            // heading of the fragment itself, which each including page
+            // publishes; only a link to a fragment *file* is an error.
+            let names_itself = matches!(target, Target::Local(l) if l.written.is_empty());
+            (*fragment && !names_itself)
                 .then(|| Issue::new(diagnostics::LINK_TO_FRAGMENT, here).with_arg("path", written))
         }
     }

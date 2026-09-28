@@ -19,7 +19,7 @@ pub const NON_BLOCKING: &[&str] = &[
     "title-not-accepted",
 ];
 
-// SPEC-QUESTION(Q71): errors stop the formatter for the construct they are
+// Resolved Q71: errors stop the formatter for the construct they are
 // reported on; warnings don't.
 /// The locations of every issue in `doc` that blocks formatting.
 pub(crate) fn blocking_spans(doc: &ParsedDocument) -> Vec<Span> {

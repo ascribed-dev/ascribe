@@ -104,7 +104,12 @@ fn appendix_b_and_examples() {
             markdown_files(&dir)
         };
         for path in files {
-            let source = std::fs::read_to_string(&path).expect("readable");
+            // A case may hold a file that isn't UTF-8 on purpose (SPEC §2.1).
+            let source = match std::fs::read_to_string(&path) {
+                Ok(source) => source,
+                Err(e) if e.kind() == std::io::ErrorKind::InvalidData => continue,
+                Err(e) => panic!("{}: {e}", path.display()),
+            };
             assert_exact(&path.display().to_string(), &source);
             count += 1;
         }

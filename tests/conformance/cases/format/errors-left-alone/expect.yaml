@@ -1,5 +1,4 @@
 description: "A construct with an error is left as written, and the constructs around it are still formatted."
 spec: ["8.3"]
-tags: [format, provisional]
-questions: [Q71]
+tags: [format]
 formatted: formatted.md

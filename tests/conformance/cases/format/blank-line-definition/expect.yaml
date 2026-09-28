@@ -1,5 +1,4 @@
 description: "A link reference definition between a directive and its block is never touched."
 spec: ["8.3"]
-tags: [format, provisional]
-questions: [Q74]
+tags: [format]
 formatted: input.md

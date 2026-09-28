@@ -249,7 +249,9 @@ fn has_scheme(dest: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
 }
 
-fn percent_decode(text: &str) -> String {
+/// Decodes `%XX` escapes, as in a link destination (SPEC §5.2). Text that
+/// wouldn't decode to UTF-8 is returned as written.
+pub fn percent_decode(text: &str) -> String {
     if !text.contains('%') {
         return text.to_owned();
     }
