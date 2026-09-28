@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/comrak-tessera",
     "crates/tessera-core",
     "crates/tessera-syntax",
     "crates/tessera-model",
