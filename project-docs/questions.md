@@ -589,12 +589,12 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   Text.
   ```
 
-  and `@available: cloud` directly above `@include: x.md`, which stands alone and isn't in the list of blocks. Nor does it say whether a thematic break or a raw HTML block, which the list omits, can be bound.
+  `@available: cloud` directly above a one-line note (`@note: Preview.`), which to a reader and to the site output is the same note as the other two forms (`@note` with a block below it, and `@note:` with `@end`), and `@available: cloud` directly above `@include: x.md`, which stands alone and isn't in the list of blocks. Nor does it say whether a thematic break or a raw HTML block, which the list omits, can be bound.
 - **Options:**
-  1. Following-block directives stack, as heading-bound ones do: they all bind the block that the last of them touches. A following-block directive above a directive that isn't itself following-block (`@include`, `@id`, an end line) has no block: `binding-no-block`. Every CommonMark block except a heading can be bound.
-  2. A following-block directive binds the next directive line too, so `@available` above `@note` annotates the note, and above `@include` annotates the include.
+  1. Following-block directives stack, as heading-bound ones do: they all bind the block that the last of them touches. A following-block directive above a directive that isn't itself following-block (`@include`, `@id`, an end line) has no block: `binding-no-block`. A line-form directive that is its own text (`@note: text`) renders as a block, so a following-block directive binds it, and so the three spellings of a cloud-only note behave alike. Every CommonMark block except a heading can be bound.
+  2. A following-block directive binds the next directive line too (including one that stands alone), so `@available` above `@note` annotates the note, and above `@include` annotates the include.
   3. Only the blocks §3.8 lists can be bound, so a thematic break or an HTML block is `binding-no-block`.
-- **Proposed resolution:** option 1. It matches how stacked heading-bound directives read, and reports rather than guesses when what follows is a directive that stands alone. Implemented now: option 1 (`// SPEC-QUESTION(Q31)` in `structure/bind.rs`); `tessera_syntax::bound_block` finds the block a stack binds. If `@available` above `@include` should work, phase 12 needs option 2's reading of an include's content.
+- **Proposed resolution:** option 1. It matches how stacked heading-bound directives read, and reports rather than guesses when what follows is a directive that stands alone. Implemented now: option 1, including the one-line note (`// SPEC-QUESTION(Q31)` in `structure/bind.rs`; `@available` above `@include`, `@id`, or a widget that stands alone still reports `binding-no-block`); `tessera_syntax::bound_block` finds the block a stack binds. If `@available` above `@include` should work, phase 12 needs option 2's reading of an include's content.
 - **Affects:** `crates/tessera-syntax/src/structure/bind.rs`; phases 10, 11, 12, 23. No conformance case depends on it.
 - **Resolution:** _open_
 

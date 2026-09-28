@@ -38,7 +38,7 @@ impl Pass<'_> {
         for (i, block) in children.iter().enumerate() {
             let class = match &block.kind {
                 BlockKind::Directive(line) => {
-                    // SPEC-QUESTION(Q18, Q32): a section starts at a heading in this
+                    // SPEC §3.8 (resolved Q18), SPEC-QUESTION(Q32): a section starts at a heading in this
                     // same list of blocks. Before the first one there is no
                     // section, so nothing is at the top of one.
                     let top = i > 0
@@ -120,14 +120,32 @@ impl Pass<'_> {
         };
         let at = self.location(line.name_span);
         // SPEC-QUESTION(Q31): directives that bind the following block stack:
-        // they all describe the block the last of them touches.
+        // they all describe the block the last of them touches. A line-form
+        // directive that is its own text (`@note: text`) renders as a block,
+        // so it can be bound; one that stands alone (`@include`, `@id`) or an
+        // end line can't.
         let mut j = i + 1;
         while classes.get(j) == Some(&Class::Block) {
             j += 1;
         }
         let target = children.get(j).map(|b| &b.kind);
+        let text_directive = matches!(
+            target,
+            Some(BlockKind::Directive(l))
+                if classes.get(j) == Some(&Class::Own)
+                    && matches!(l.primary, Some(PrimaryValue::Text(_)))
+        );
         match target {
-            None | Some(BlockKind::End(_) | BlockKind::Directive(_) | BlockKind::Title(_)) => {
+            None => {
+                let issue = Issue::new(diagnostics::BINDING_NO_BLOCK, at)
+                    .with_arg("name", line.name.clone())
+                    .with_arg("container", scope.noun());
+                self.report(issue);
+                return Bound::Unbound;
+            }
+            Some(BlockKind::End(_) | BlockKind::Directive(_) | BlockKind::Title(_))
+                if !text_directive =>
+            {
                 let issue = Issue::new(diagnostics::BINDING_NO_BLOCK, at)
                     .with_arg("name", line.name.clone())
                     .with_arg("container", scope.noun());

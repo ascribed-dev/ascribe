@@ -141,7 +141,7 @@ fn unclosed_containers_are_reported_at_their_openers() {
 #[test]
 fn containers_cant_straddle_list_items() {
     // The note is unclosed at the end of its item; the `@end` in the next
-    // item is another container's, so it's reported too (SPEC-QUESTION(Q19)).
+    // item is another container's, so it's reported too (SPEC §3.9, resolved Q19).
     let d = doc("- One\n\n  @note:\n  Inside.\n- Two\n\n  @end\n");
     assert_eq!(slugs(&d), ["container-unclosed", "end-indent-mismatch"]);
     let d = doc("- One\n\n  @note:\n  Inside.\n  @end\n- Two\n");
@@ -169,7 +169,7 @@ fn extra_indentation_in_the_same_container_still_closes() {
 
 #[test]
 fn form_errors_report_once_and_keep_the_structure() {
-    // SPEC-QUESTION(Q16): the colon line opens a container even as an error.
+    // SPEC §3.5 (resolved Q16): the colon line opens a container even as an error.
     let d = doc("@steps:\n1. One.\n@end\n");
     assert_eq!(slugs(&d), ["container-colon-unexpected"]);
     assert!(matches!(&d.blocks[0].kind, BlockKind::Container(c) if c.end.is_some()));
@@ -309,7 +309,7 @@ fn required_titles_and_variant_arm_rules() {
 
 #[test]
 fn group_issues_are_reported_at_the_first_opener() {
-    // SPEC-QUESTION(Q17).
+    // SPEC §3.6 (resolved Q17).
     let source = ".T\n@variant:\nX.\n@variant {a=b}:\nY.\n";
     let d = doc(source);
     let mixed = d
@@ -372,7 +372,7 @@ Bound.
 
 #[test]
 fn heading_bound_errors() {
-    // SPEC-QUESTION(Q18).
+    // SPEC §3.8 (resolved Q18).
     assert_eq!(
         slugs(&doc("@id: orphan\n\nText.\n")),
         ["binding-not-section-top"]
@@ -409,6 +409,34 @@ fn following_block_errors_and_warnings() {
     assert!(d.issues.is_empty(), "{:?}", d.issues);
     assert_eq!(bound_block(&d.blocks, 0), Some(2));
     assert_eq!(bound_block(&d.blocks, 1), Some(2));
+}
+
+#[test]
+fn a_one_line_note_is_a_block_a_directive_can_bind() {
+    // SPEC-QUESTION(Q31): the three spellings of a cloud-only note.
+    for source in [
+        "@available: cloud\n@note: Streaming sync is in preview.\n",
+        "@available: cloud\n@note\nStreaming sync is in preview.\n",
+        "@available: cloud\n@note:\nInside.\n@end\n",
+    ] {
+        let d = doc(source);
+        assert!(d.issues.is_empty(), "{source:?}: {:?}", d.issues);
+        assert_eq!(directive(&d.blocks[0]).binding, Some(Bound::FollowingBlock));
+    }
+    let d = doc("@available: cloud\n@note: Preview.\n");
+    assert_eq!(bound_block(&d.blocks, 0), Some(1));
+    // A stack ends at the text directive, which binds its own text.
+    let d = doc("@available: cloud\n@steps\n@note: N.\n");
+    assert_eq!(bound_block(&d.blocks, 0), Some(2));
+    // Directives that stand alone still have no block.
+    assert_eq!(
+        slugs(&doc("@available: cloud\n@include: x.md\n")),
+        ["binding-no-block"]
+    );
+    assert_eq!(
+        slugs(&doc("@note\n@id: x\n")),
+        ["binding-no-block", "binding-not-section-top"]
+    );
 }
 
 #[test]

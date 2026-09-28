@@ -95,7 +95,7 @@ pub(crate) struct Pass<'a> {
     open: Vec<String>,
     /// Containers left unclosed when their scope ended, as (keyword, opener),
     /// outermost first. A later end line in another scope may be the one
-    /// their author meant (SPEC-QUESTION(Q19)).
+    /// their author meant (SPEC §3.9, resolved Q19).
     orphans: Vec<(String, Span)>,
 }
 
