@@ -71,6 +71,6 @@ pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };
 pub use references::{
-    IncludeTarget, SourceSet, destination_span, include_issue, include_target, reference_issue,
-    reference_target, resolve_reference,
+    IncludeTarget, SourceSet, destination_phrases, destination_span, include_issue, include_target,
+    reference_issue, reference_target, resolve_reference,
 };

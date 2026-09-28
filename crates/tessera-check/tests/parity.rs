@@ -54,6 +54,16 @@ title: Home
 
 ![logo](logo.png) ![case](Logo.png) ![gone](gone.png) ![](#) ![up](../assets/pic.png)
 ![outside](../../pic.png)
+
+[defined url][d-api] [defined file][d-file] [defined missing][d-gone] ![defined image][d-img]
+[collapsed][] [shortcut]
+
+[d-api]: {api}streaming
+[d-file]: {here}.md
+[d-gone]: {here}2.md
+[d-img]: {here}.png
+[collapsed]: {api}collapsed
+[shortcut]: gone-shortcut.md
 "#;
 
 fn write(root: &Path, path: &str, text: &str) {
@@ -177,4 +187,29 @@ fn an_existing_file_that_isnt_a_source_cant_be_included() {
     // `missing.md`, `../README.md` (exists, but isn't a source: Q63), and
     // `_F.md` (a case twin of `_f.md`).
     assert_eq!(includes.len(), 3, "{includes:#?}");
+}
+
+#[test]
+fn a_definitions_phrases_are_applied_to_the_references_that_use_it() {
+    // Q43: `{here}.png` in a definition is `keys.png`, which doesn't exist,
+    // and `{api}` is a URL. Both implementations agree, at the reference
+    // (Q53: a reference form's diagnostics point at the whole link).
+    let dir = tree();
+    let (check, _) = from_check(dir.path());
+    let page = fs::read_to_string(dir.path().join("docs/index.md")).expect("the page");
+    let texts: BTreeSet<(String, &str)> = check
+        .iter()
+        .filter(|(_, file, ..)| file == "index.md")
+        .map(|(slug, _, start, end)| (slug.clone(), &page[*start..*end]))
+        .collect();
+    assert!(texts.contains(&("image-source-missing".to_owned(), "![defined image][d-img]")));
+    assert!(texts.contains(&(
+        "link-target-missing".to_owned(),
+        "[defined missing][d-gone]"
+    )));
+    assert!(
+        !texts
+            .iter()
+            .any(|(_, t)| t.contains("d-api") || t.contains("d-file"))
+    );
 }

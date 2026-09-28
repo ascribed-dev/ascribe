@@ -20,7 +20,7 @@
 
 use tessera_core::{Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics, percent_decode};
 use tessera_model::ContentModel;
-use tessera_syntax::{Inline, LinkForm, Phrase};
+use tessera_syntax::{Inline, LinkDefinition, LinkForm, Phrase};
 
 use crate::fs::{FileSystem, Probe};
 use crate::index::{Local, RefKind, Target};
@@ -108,16 +108,74 @@ pub fn include_issue(
 
 /// What a link's or image's destination names, from the destination and the
 /// path of the file it's written in alone. `phrases` are the parser's phrase
-/// candidates in the destination.
+/// candidates in the destination: for a reference form, its definition's
+/// ([`destination_phrases`]).
 pub fn reference_target(
     kind: RefKind,
-    form: LinkForm,
     destination: &str,
     phrases: &[Phrase],
     written_in: &RelPath,
     model: &ContentModel,
 ) -> Target {
-    crate::index::target_of(kind, form, destination, phrases, written_in, model)
+    crate::index::target_of(kind, destination, phrases, written_in, model)
+}
+
+/// The phrase candidates in a link's or image's destination.
+///
+/// An inline form, or an autolink, carries them itself (`own`). A reference
+/// form's destination is its link reference definition's, so they are the
+/// definition's (SPEC §5.1, resolved Q43): the definition whose normalized
+/// label is the reference's label, else, if the label can't be read back from
+/// the source, the first definition with the same decoded destination.
+///
+/// `span` is the whole link or image, `children` its text (a link) or alt
+/// text as inlines (an image), `alt` an image's alt text as source, and
+/// `label` the label of a full reference. Both `tessera check` and the source
+/// index call this, so the two can't disagree.
+#[allow(clippy::too_many_arguments)]
+pub fn destination_phrases<'a>(
+    source: &str,
+    form: LinkForm,
+    own: &'a [Phrase],
+    label: Option<Span>,
+    children: &[Inline],
+    alt: Option<Span>,
+    destination: &str,
+    definitions: &'a [LinkDefinition],
+) -> &'a [Phrase] {
+    if !matches!(
+        form,
+        LinkForm::Full | LinkForm::Collapsed | LinkForm::Shortcut
+    ) {
+        return own;
+    }
+    let raw = match (form, label, alt) {
+        (LinkForm::Full, Some(label), _) => source.get(label.range()),
+        // An image's alt text is the label of the collapsed and shortcut
+        // forms; a link's is its text.
+        (_, _, Some(alt)) => source.get(alt.range()),
+        _ => children
+            .first()
+            .zip(children.last())
+            .and_then(|(first, last)| source.get(first.span.start()..last.span.end())),
+    };
+    let by_label = raw.map(normalize_label).and_then(|label| {
+        definitions
+            .iter()
+            .find(|d| !label.is_empty() && d.normalized_label == label)
+    });
+    let definition = by_label.or_else(|| definitions.iter().find(|d| d.url == destination));
+    definition.map_or(&[], |d| d.destination_phrases.as_slice())
+}
+
+/// CommonMark's label normalization: whitespace runs collapse to one space,
+/// the ends are trimmed, and case is folded (lowercased, here).
+fn normalize_label(label: &str) -> String {
+    label
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
 }
 
 /// What a target names, once the project's files are known.
@@ -132,7 +190,6 @@ pub fn resolve_reference(
 ) -> Resolution {
     let local = match target {
         Target::External => return Resolution::External,
-        Target::Deferred => return Resolution::Deferred,
         Target::Local(local) => local,
     };
     let Some(path) = &local.path else {
@@ -273,7 +330,7 @@ pub fn reference_issue(
         RefKind::Image => diagnostics::IMAGE_SOURCE_MISSING,
     };
     match resolution {
-        Resolution::External | Resolution::Deferred | Resolution::Asset { .. } => None,
+        Resolution::External | Resolution::Asset { .. } => None,
         Resolution::SourceMissing { actual } => {
             let issue = Issue::new(missing_slug, here).with_arg("path", written);
             Some(match actual {

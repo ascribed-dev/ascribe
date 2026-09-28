@@ -378,13 +378,73 @@ fn a_phrase_in_an_inline_destination_is_applied_before_it_is_resolved() {
 }
 
 #[test]
-fn a_phrase_in_a_definitions_destination_is_left_for_when_definitions_are_exposed() {
+fn a_phrase_in_a_definitions_destination_is_applied_like_an_inline_ones() {
+    // Q43: `{api}` in a definition is a URL, as it is inline.
     let p = project(&[(
         "docs/index.md",
-        &format!("{PAGE}[api][r]\n\n[r]: {{api}}streaming\n"),
+        &format!(
+            "{PAGE}[api][r] and [r] and [also][]\n\n[r]: {{api}}streaming\n[also]: {{api}}more\n"
+        ),
     )]);
-    assert_eq!(p.resolutions(&path("index.md")), [Resolution::Deferred]);
+    assert_eq!(
+        p.resolutions(&path("index.md")),
+        [
+            Resolution::External,
+            Resolution::External,
+            Resolution::External
+        ]
+    );
     assert!(p.problems(&path("index.md")).is_empty());
+}
+
+#[test]
+fn a_definitions_phrase_can_name_a_file() {
+    let p = project(&[
+        (
+            "docs/index.md",
+            &format!("{PAGE}![Logo][logo] and [the logo][logo]\n\n[logo]: {{product}}.png\n"),
+        ),
+        ("docs/Quill.png", ""),
+    ]);
+    assert!(p.problems(&path("index.md")).is_empty());
+    assert_eq!(asset_paths(&p, "index.md"), ["Quill.png", "Quill.png"]);
+    // The candidates are indexed once, where the definition is.
+    let file = p.file(&path("index.md")).expect("the file");
+    assert_eq!(
+        file.phrases
+            .iter()
+            .filter(|u| u.phrase.key == "product")
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn a_definitions_phrase_that_makes_a_missing_file_is_reported() {
+    let p = project(&[(
+        "docs/index.md",
+        &format!("{PAGE}![Logo][logo]\n\n[logo]: {{product}}.png\n"),
+    )]);
+    let problems = p.problems(&path("index.md"));
+    assert_eq!(problems.len(), 1);
+    assert_eq!(problems[0].slug.as_str(), "image-source-missing");
+    assert_eq!(problems[0].arg("path"), Some("Quill.png"));
+}
+
+#[test]
+fn a_reference_finds_its_definition_by_normalized_label() {
+    // Two definitions with different phrases; each reference uses its own,
+    // whatever the case and spacing of its label.
+    let p = project(&[(
+        "docs/index.md",
+        &format!(
+            "{PAGE}[x][My  Label] and [y][other]\n\n[my label]: {{api}}one\n[other]: {{product}}.md\n"
+        ),
+    )]);
+    let resolutions = p.resolutions(&path("index.md"));
+    assert_eq!(resolutions[0], Resolution::External);
+    // `Quill.md` isn't a source file of the project.
+    assert!(matches!(resolutions[1], Resolution::SourceMissing { .. }));
 }
 
 #[test]

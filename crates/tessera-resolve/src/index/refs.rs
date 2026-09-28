@@ -3,7 +3,7 @@
 
 use tessera_core::{Destination, LocalDestination, RelPath, Span, classify_destination};
 use tessera_model::ContentModel;
-use tessera_syntax::{Inline, InlineKind, LinkForm, Phrase};
+use tessera_syntax::{Inline, InlineKind, LinkDefinition, LinkForm, Phrase};
 
 use super::walk::walk_inlines;
 
@@ -52,11 +52,6 @@ pub enum Target {
     External,
     /// A file in the project.
     Local(Local),
-    /// A reference form whose definition's destination contains a declared
-    /// phrase (`[r]: {api}x`). The parser doesn't expose definitions yet, so
-    /// the phrase can't be applied, and nothing is said about the target
-    /// until it can be (phase 07's hand-off; SPEC §5.1).
-    Deferred,
 }
 
 /// A local destination, resolved.
@@ -93,15 +88,17 @@ pub(crate) fn collect_references(
     source: &str,
     written_in: &RelPath,
     model: &ContentModel,
+    definitions: &[LinkDefinition],
     out: &mut Vec<Reference>,
 ) {
     walk_inlines(inlines, &mut |inline| {
-        let (kind, form, destination, phrases, text_empty, children, alt) = match &inline.kind {
+        let (kind, form, destination, own, label, text_empty, children, alt) = match &inline.kind {
             InlineKind::Link(l) => (
                 RefKind::Link,
                 l.form,
                 &l.destination,
                 &l.destination_phrases,
+                l.label,
                 l.children.is_empty(),
                 &l.children,
                 None,
@@ -111,12 +108,24 @@ pub(crate) fn collect_references(
                 i.form,
                 &i.destination,
                 &i.destination_phrases,
+                i.label,
                 false,
                 &i.children,
                 Some(i.alt),
             ),
             _ => return,
         };
+        // A reference form's destination is in its definition (Q43).
+        let phrases = crate::references::destination_phrases(
+            source,
+            form,
+            own,
+            label,
+            children,
+            alt,
+            destination,
+            definitions,
+        );
         out.push(Reference {
             kind,
             span: inline.span,
@@ -131,31 +140,21 @@ pub(crate) fn collect_references(
             destination: destination.clone(),
             form,
             text_empty,
-            target: target_of(kind, form, destination, phrases, written_in, model),
+            target: target_of(kind, destination, phrases, written_in, model),
         });
     });
 }
 
 pub(crate) fn target_of(
     kind: RefKind,
-    form: LinkForm,
     destination: &str,
     phrases: &[Phrase],
     written_in: &RelPath,
     model: &ContentModel,
 ) -> Target {
-    let is_reference_form = matches!(
-        form,
-        LinkForm::Full | LinkForm::Collapsed | LinkForm::Shortcut
-    );
-    let text = if is_reference_form {
-        if mentions_declared_phrase(destination, model) {
-            return Target::Deferred;
-        }
-        destination.to_owned()
-    } else {
-        substitute(destination, phrases, model)
-    };
+    // A reference form's `phrases` are its definition's (Q43): the caller
+    // passes them, so every form is substituted the same way.
+    let text = substitute(destination, phrases, model);
     match classify_destination(&text) {
         Destination::External => Target::External,
         Destination::Local(local) => Target::Local(local_of(kind, &text, &local, written_in)),
@@ -183,20 +182,12 @@ fn local_of(kind: RefKind, text: &str, local: &LocalDestination, written_in: &Re
     }
 }
 
-/// Whether the text contains `{key}` for a key the model declares.
-fn mentions_declared_phrase(text: &str, model: &ContentModel) -> bool {
-    model
-        .phrases
-        .iter()
-        .any(|p| text.contains(&format!("{{{}}}", p.key)))
-}
-
 /// The destination with each declared phrase candidate replaced by its value,
 /// in order. The destination is CommonMark's decoded text, and the candidates
 /// are the parser's, so an escaped `\{key}` in a destination that also has a
 /// real candidate of the same key could be replaced instead; that pairing of
 /// decoded text with source is the parser's to expose, and no author writes it.
-fn substitute(destination: &str, phrases: &[Phrase], model: &ContentModel) -> String {
+pub(crate) fn substitute(destination: &str, phrases: &[Phrase], model: &ContentModel) -> String {
     let mut out = String::new();
     let mut rest = destination;
     for phrase in phrases {
