@@ -1,0 +1,4 @@
+description: "A text primary's later lines and trailing spaces are the author's: only the space after the colon changes."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

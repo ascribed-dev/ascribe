@@ -51,6 +51,7 @@ Phase 03 wrote the cases from SPEC.md, not from any implementation. They're grou
 | `widgets/` | Project widgets (§6) |
 | `phrases/`, `links/`, `images/`, `headings/`, `glossary/` | Inline constructs, source ids and page ids (§5) |
 | `frontmatter/`, `model/` | Frontmatter, content types, fragments, name roles (§2, §7.2) |
+| `format/` | Canonical form (§8.3): each rule, what the formatter leaves alone, and constructs with errors |
 | `builds/selection/`, `builds/filter/`, `builds/assets/`, `builds/pages/` | Resolution and build modes, availability filtering, assets, which files are pages (§9.2–§9.4) |
 | `projects/quill/` | The whole Quill project of `examples/quill`, with no diagnostics under any build |
 | `samples/` | The two worked examples from phase 00 |
@@ -114,11 +115,12 @@ tags: [structure]                                 # required; at least one area 
 questions: [Q4]                                   # required if tagged provisional
 
 outline: [...]         # single-file cases only; the expected parse (see Outline)
+formatted: formatted.md  # single-file cases only; what formatting input.md gives (see Formatting)
 diagnostics: [...]     # expected file-level diagnostics (see Diagnostics)
 builds: {...}          # per-build expectations (see Builds)
 ```
 
-A case must expect at least one of `outline`, `diagnostics`, or `builds`. Unknown keys are errors, so a typo can't silently turn off a check. Omitting `outline`, `diagnostics`, or a build means "not checked"; an empty list (`diagnostics: []`) means "expect none".
+A case must expect at least one of `outline`, `diagnostics`, `builds`, or `formatted`. Unknown keys are errors, so a typo can't silently turn off a check. Omitting `outline`, `diagnostics`, or a build means "not checked"; an empty list (`diagnostics: []`) means "expect none".
 
 ### Tags
 
@@ -303,6 +305,18 @@ Every key is optional; an omitted key isn't checked.
   - `snapshot`: an [insta](https://insta.rs) snapshot in `tests/conformance/snapshots/`, named `<case>__<build>__<page>__<emitter>` with `/` and `.` replaced by `_`. New or changed snapshots show up as `.snap.new` files; review them with `cargo insta review` and never accept them blindly.
   - `{file: <path>}`: a file relative to the case directory, compared byte for byte.
 
+## Formatting
+
+A case tagged `format` checks canonical form (SPEC §8.3). It is a single-file case whose `expect.yaml` names, in `formatted`, a file in the case directory: what formatting `input.md` must give, byte for byte. `formatted: input.md` says the input is already canonical.
+
+```yaml
+tags: [format]
+spec: ["8.3"]
+formatted: formatted.md
+```
+
+The runner formats `input.md` through the adapter (`ConformanceAdapter::format`, under the case's content model), compares the result with the file, and formats the result again: canonical form is a fixed point, so the second pass must change nothing. A case names its rule (one rule per case where it can) and tests the rule's edges next to it. `format/markdown-untouched` shows ordinary markdown staying byte for byte, and the `format/errors-*` cases show constructs with errors left as written.
+
 ## Skips
 
 `SKIPS.toml` lists everything the runner deliberately doesn't run. Every entry has a reason, and the runner prints every skip.
@@ -319,7 +333,7 @@ checks = ["diagnostics"]
 ```
 
 - Each entry names exactly one `tag` or one `case` (by id), and has a non-empty `reason`.
-- Without `checks`, the entry skips whole cases. With `checks` (any of `outline`, `diagnostics`, `builds`), only those checks are skipped and the rest of the case runs.
+- Without `checks`, the entry skips whole cases. With `checks` (any of `outline`, `diagnostics`, `builds`, `formatted`), only those checks are skipped and the rest of the case runs.
 
 For each case, the runner decides:
 
@@ -340,6 +354,7 @@ pub trait ConformanceAdapter {
     fn handles_tag(&self, tag: &str) -> bool;
     fn outline(&self, case: &Case) -> AdapterResult<Outline> { Ok(None) }
     fn diagnostics(&self, case: &Case) -> AdapterResult<Vec<Diagnostic>> { Ok(None) }
+    fn format(&self, case: &Case, source: &str) -> AdapterResult<String> { Ok(None) }
     fn build(&self, case: &Case, build: &str) -> AdapterResult<BuildResult> { Ok(None) }
 }
 ```
@@ -348,6 +363,7 @@ pub trait ConformanceAdapter {
 - Each method returns `Ok(Some(result))`, `Ok(None)` when this adapter doesn't produce that result, or `Err` when it can't process the case. For each check, the runner asks the adapters that handle any of the case's area tags, in registration order, and uses the first `Some`. An expectation that no adapter produces fails the case, unless a skip entry names that check.
 - `Case` gives an adapter the case's `kind`, `content_root()`, `input()` (single-file cases), `source_files()`, and `model` (the `tessera.toml` to load; the shared model may not exist before phase 03).
 - `diagnostics` returns file-level diagnostics for every source file, with `file` relative to the content root. `build` returns the published pages, copied assets, page-level diagnostics, and, per page, the resolved outline and any emitted outputs.
+- `format` returns `source` in canonical form under the case's content model (see Formatting).
 - A panic inside an adapter fails that case; the run continues.
 
 To connect a phase: add the crate as a dev-dependency of `tessera-conformance`, implement the trait in a module under `tests/adapters/`, register it, remove the tag's entry from `SKIPS.toml`, and make the cases pass.

@@ -1,0 +1,4 @@
+description: "Nothing, not even whitespace, after a container's `:`."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

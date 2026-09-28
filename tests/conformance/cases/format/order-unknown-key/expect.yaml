@@ -1,0 +1,5 @@
+description: "A block with a key the schema doesn't declare keeps its order (the check reports the key); spacing is still fixed."
+spec: ["8.3"]
+tags: [format, provisional]
+questions: [Q75]
+formatted: formatted.md

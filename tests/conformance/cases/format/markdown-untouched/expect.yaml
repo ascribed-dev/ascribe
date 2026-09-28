@@ -1,0 +1,4 @@
+description: "Ordinary markdown is never touched: hand-wrapped prose, tables, code, lists, definitions, HTML. Only the directive lines change."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

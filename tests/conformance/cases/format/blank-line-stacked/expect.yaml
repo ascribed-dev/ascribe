@@ -1,0 +1,4 @@
+description: "Stacked following-block directives all touch the block they bind."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

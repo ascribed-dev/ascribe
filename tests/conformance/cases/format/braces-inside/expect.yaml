@@ -1,0 +1,4 @@
+description: "No space inside the braces."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

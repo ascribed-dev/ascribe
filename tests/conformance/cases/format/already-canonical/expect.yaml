@@ -1,0 +1,4 @@
+description: "A document that is already canonical is unchanged."
+spec: ["8.3"]
+tags: [format]
+formatted: input.md

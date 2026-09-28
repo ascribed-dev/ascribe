@@ -87,6 +87,14 @@ pub trait ConformanceAdapter {
         Ok(None)
     }
 
+    /// `source` formatted into canonical form (SPEC §8.3), under the case's
+    /// content model. The runner calls it with the case's `input.md`, and again
+    /// with the result to check that formatting is idempotent.
+    fn format(&self, case: &Case, source: &str) -> AdapterResult<String> {
+        let _ = (case, source);
+        Ok(None)
+    }
+
     /// The result of the named build of the case.
     fn build(&self, case: &Case, build: &str) -> AdapterResult<BuildResult> {
         let _ = (case, build);

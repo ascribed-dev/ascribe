@@ -1,0 +1,4 @@
+description: "Up to three extra spaces before a directive line, and before an end line, are removed at the top level (resolved Q1)."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

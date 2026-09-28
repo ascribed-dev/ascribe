@@ -1,0 +1,5 @@
+description: "In a block quote the marker and one space stay; extra spaces go. A quote without a space after `>` is left as written."
+spec: ["8.3"]
+tags: [format, provisional]
+questions: [Q73]
+formatted: formatted.md

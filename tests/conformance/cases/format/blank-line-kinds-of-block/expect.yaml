@@ -1,0 +1,4 @@
+description: "Whatever block a following-block directive binds, a table, a code block, a container, or a titled container, it touches it."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

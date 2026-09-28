@@ -1,0 +1,4 @@
+description: "A link reference definition is never changed, phrases in its destination and all."
+spec: ["8.3"]
+tags: [format]
+formatted: input.md

@@ -1,0 +1,5 @@
+description: "A directive on a list marker's line, and indentation made of tabs, are left as written."
+spec: ["8.3"]
+tags: [format, provisional]
+questions: [Q73]
+formatted: input.md

@@ -4,6 +4,7 @@
 //! extends an existing one), registers it below, and removes the skip entries
 //! for the tags it now handles from `SKIPS.toml`.
 
+mod format;
 mod inline;
 mod structure;
 mod syntax;
@@ -13,4 +14,5 @@ use tessera_conformance::Registry;
 /// Registers every adapter. Earlier registrations are asked first.
 pub fn register(registry: &mut Registry) {
     registry.register(syntax::SyntaxAdapter);
+    registry.register(format::FormatAdapter);
 }

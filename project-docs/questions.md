@@ -740,3 +740,100 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1, so one mistake gives one diagnostic; the case `attributes/unclosed-brace` expects exactly `attribute-syntax`. Implemented now: option 1 (`Class::Unreadable` in `structure/bind.rs`). An unclosed block's line is still an opener when its directive is container-only, so its `@end` matches, but it gets no `container-colon-missing` either.
 - **Affects:** conformance case `attributes/unclosed-brace`; phases 05, 06, and 10.
 - **Resolution:** approved by the repository owner: option 1: only the unclosed block is reported for that line. SPEC §3.3 now says so.
+
+### Q71: What "a construct with errors" is, for the formatter
+
+- **Section:** SPEC §8.3, §8.2
+- **Raised by:** phase 23
+- **Status:** open
+- **Ambiguity:** §8.3 says canonical form is what a formatter writes, but a directive line that is wrong (an unclosed block, a bare key, text that fits no part, a container-only directive without its colon, a stray end line) has no reading the formatter can be sure of. Phase 23 leaves such a construct alone. The spec doesn't say which reported diagnostics count. One of them, `binding-blank-line`, is a warning the formatter itself fixes; the other warnings (`container-nesting-deep`, `title-not-accepted`, `title-dot-space`, `list-ended-by-directive`, `directive-indented-code`, `steps-numbering-continued`, `directive-unknown`) say nothing about the bytes it edits.
+- **Options:**
+  1. Errors stop the formatter for the construct they are reported on, warnings don't. A construct is a directive line (and its title line), an end line, or an image's attribute block; "on" means the diagnostic's location is inside it.
+  2. Any diagnostic stops it. Then `binding-blank-line` could never be fixed.
+  3. Format a construct with an error as well as it can be read.
+- **Proposed resolution:** option 1. Implemented now (`tessera-fmt/src/skip.rs`, with a test that the warning list agrees with the diagnostics registry). Diagnostics that need the content model (unknown attribute keys, value types) aren't run by the formatter, so a block with an undeclared key is respaced and unquoted but keeps its order (Q75). The other options can't be less conservative than leaving a wrong construct as the author wrote it.
+- **Affects:** `crates/tessera-fmt/src/skip.rs`; conformance cases `format/errors-left-alone`, `format/errors-container-structure`, `format/errors-binding`; phase 24 (format on save).
+
+### Q72: Trailing whitespace on directive lines and end lines
+
+- **Section:** SPEC §8.3, §3.1
+- **Raised by:** phase 23
+- **Status:** open
+- **Ambiguity:** §8.3 removes trailing whitespace "after a container's `:`" and lists nothing else. §3.1 says processors ignore whitespace at the end of a directive line. So `@note {type=tip}  `, `@steps  `, `@available: cloud  `, and `@end  ` are non-canonical or not?
+- **Options:**
+  1. Only what §8.3 lists: whitespace after a container's colon goes; other trailing whitespace stays. A text primary's trailing spaces can be a hard break, so removing them there would change the page.
+  2. Remove trailing whitespace from every directive line and end line, except a text primary's.
+- **Proposed resolution:** option 1, the conservative one, implemented now. Option 2 is a one-rule addition if the owner wants it.
+- **Affects:** `crates/tessera-fmt/src/head.rs`; conformance case `format/trailing-space-elsewhere`.
+
+### Q73: Indentation of directive lines: block quotes, the marker's line, and tabs
+
+- **Section:** SPEC §8.3, §3.9, §1.5
+- **Raised by:** phase 23
+- **Status:** open
+- **Ambiguity:** §8.3 says a directive line in a list item is indented exactly to the item's content column, and Q1 and Q19 remove up to three extra spaces before a directive or end line. It says nothing about:
+  - a block quote (`>   @note`): where is the content column, and is `>@note` canonical?
+  - a directive on the marker's own line (`-   @note: x`), where the spaces after the marker are the marker's spacing;
+  - indentation made of tabs, whose width depends on the tab stop.
+- **Options:**
+  1. In a block quote the content starts after the marker and one space; extra spaces after that are removed, and no space after `>` is left as written. A directive on a marker's line, and a line whose indentation holds a tab, are left alone.
+  2. Also normalize `>@note` to `> @note`, marker spacing (`-   @note` to `- @note`), and tabs.
+- **Proposed resolution:** option 1, implemented now (`tessera-fmt/src/indent.rs`). Marker spacing is markdown formatting, not Tessera's, and a tab's width can't be known from the source alone.
+- **Affects:** `crates/tessera-fmt/src/indent.rs`; conformance cases `format/indent-block-quote`, `format/indent-left-alone`.
+
+### Q74: A blank line between a following-block directive and its block, in the awkward cases
+
+- **Section:** SPEC §8.3, §3.8, §3.4
+- **Raised by:** phase 23
+- **Status:** open
+- **Ambiguity:** canonical form removes the blank line between a following-block directive and its block. Three cases where doing so isn't safe or isn't what the author sees:
+  - the directive has a text primary (a widget that binds a following block and takes text): the blank line ends its text, so removing it would make the block part of the primary;
+  - a link reference definition sits in the gap (`@steps`, a definition, a blank line, the list). comrak consumes definitions, so the tree shows only a gap, and a definition must never be deleted or moved;
+  - inside a list item, removing a blank line can turn a loose list tight, which changes the rendering.
+- **Options:**
+  1. Leave a gap alone when the directive has a text primary, or when any line in it isn't blank (this includes definitions); otherwise remove the blank lines, whatever that does to list tightness.
+  2. Also leave gaps in list items alone.
+- **Proposed resolution:** option 1, implemented now (`tessera-fmt/src/blank.rs`, using `ParsedDocument::definitions`). The spec's rule is about what a directive touches; tightness is a consequence the author asked for by writing the directive there.
+- **Affects:** `crates/tessera-fmt/src/blank.rs`; conformance case `format/blank-line-definition`.
+
+### Q75: Attribute blocks the formatter can't put in order or safely rewrite
+
+- **Section:** SPEC §8.3, §3.3
+- **Raised by:** phase 23
+- **Status:** open
+- **Ambiguity:** §8.3 orders attributes as the schema declares them and quotes values "only when necessary". Not settled:
+  - a block with a key the schema doesn't declare (`attribute-unknown-key` is reported by phase 10, not by the parser): where does it go?
+  - a repeated key, or a bare key: there is no single reading.
+  - whether `label="Setup"` (a quoted value that could be a token) is non-canonical, given that types come from the schema and never from the value's spelling (§3.3).
+- **Options:**
+  1. Unknown keys: if every key is declared, sort; otherwise keep the block's order (respacing and unquoting still happen). A repeated or bare key, or anything the attribute parser reports, leaves the block alone. A quoted string that can be a token loses its quotes; one that needs them keeps its exact spelling.
+  2. Unknown keys sort after known ones.
+  3. Leave any block with an unknown key entirely alone.
+- **Proposed resolution:** option 1, implemented now (`tessera-fmt/src/attributes.rs`). Before a block is rewritten its canonical text is parsed again and must have the same keys, values, and forms, or the block is left alone.
+- **Affects:** `crates/tessera-fmt/src/attributes.rs`; conformance case `format/order-unknown-key`.
+
+### Q76: Image attribute blocks: an empty block, and a block in a table cell
+
+- **Section:** SPEC §8.3, §5.3, §5.1
+- **Raised by:** phase 23
+- **Status:** open
+- **Ambiguity:** §8.3 says "no empty attribute block", written for directives (`@note`, not `@note {}`); §5.3 uses the same grammar for images. Two edges for images:
+  - `![a](b){}{cloud}`: removing the `{}` makes `{cloud}` the image's attribute block (§5.1), which changes what the text means.
+  - a block inside a table cell: a `|` in a cell is written `\|`, and the canonical value-set spelling (`a|b`) would end the cell.
+- **Options:**
+  1. An empty image block is removed unless the next character is `{`; a block in a table cell is left as written.
+  2. Also format blocks in table cells, keeping `\|`.
+- **Proposed resolution:** option 1, implemented now (`tessera-fmt/src/attributes.rs`, `lib.rs`).
+- **Affects:** `crates/tessera-fmt`; conformance case `format/empty-block-before-brace`.
+
+### Q77: Title lines
+
+- **Section:** SPEC §8.3, §3.7
+- **Raised by:** phase 23
+- **Status:** open
+- **Ambiguity:** a title line (`.Try it`) is part of a directive's construct, but §8.3 lists no rule for it: its indentation (up to three spaces are allowed before it as before any paragraph line), the spaces inside its text (which is inline markdown), and trailing whitespace.
+- **Options:**
+  1. Title lines are left as written; only the directive line below them is formatted.
+  2. Indent title lines like the directive below them.
+- **Proposed resolution:** option 1, implemented now. The title's text is prose, and §3.7 only requires that it touch the directive.
+- **Affects:** `crates/tessera-fmt`; conformance case `format/title-lines-untouched`.

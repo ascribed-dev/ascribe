@@ -1,0 +1,4 @@
+description: "A value that needs its quotes keeps them: whitespace, `,` `|` `{` `}` `=` `\"`, or nothing at all."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

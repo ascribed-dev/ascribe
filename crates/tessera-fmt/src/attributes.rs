@@ -44,6 +44,7 @@ pub(crate) fn image_rule(ctx: &mut Ctx<'_>, block: &AttributeBlock) {
         return;
     }
     if block.attributes.is_empty() {
+        // SPEC-QUESTION(Q76).
         // `![a](b){}{cloud}`: without its `{}`, `{cloud}` would be the
         // image's attribute block.
         if !ctx.source[block.span.end()..].starts_with('{') {
@@ -76,6 +77,8 @@ fn declared_keys(ctx: &Ctx<'_>, name: &str) -> Option<Vec<String>> {
     })
 }
 
+// SPEC-QUESTION(Q75): a block with an undeclared key keeps its order; a bare
+// or repeated key leaves the block alone.
 /// Rewrites a non-empty `block` into canonical form, if that's safe.
 fn rule(ctx: &mut Ctx<'_>, block: &AttributeBlock, keys: Option<&[String]>) {
     if let Some(text) = canonical(ctx.source, block, keys) {

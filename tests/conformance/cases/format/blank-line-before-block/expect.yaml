@@ -1,0 +1,4 @@
+description: "No blank line between a following-block directive and its block."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

@@ -1,0 +1,4 @@
+description: "A heading-bound directive may keep its blank lines: they don't hide what it annotates."
+spec: ["8.3"]
+tags: [format]
+formatted: input.md

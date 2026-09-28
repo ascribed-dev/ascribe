@@ -222,6 +222,7 @@ impl Ctx<'_> {
 
     /// A directive line or container opener: its indentation and its head.
     fn directive(&mut self, line: &DirectiveLine, owner: Owner) {
+        // SPEC-QUESTION(Q77): the title line itself is left as written.
         // Titles hold inlines too, and an image in one has an attribute block.
         if let Some(title) = &line.title {
             self.inlines(&title.inlines, false);
@@ -264,7 +265,7 @@ impl Ctx<'_> {
                 InlineKind::Image(image) => {
                     self.inlines(&image.children, in_table);
                     if let Some(attributes) = &image.attributes {
-                        // In a table cell a `|` is written `\|`, which the
+                        // SPEC-QUESTION(Q76): in a table cell a `|` is written `\|`, which the
                         // block's canonical spelling doesn't know.
                         if !in_table {
                             attributes::image_rule(self, &attributes.block);

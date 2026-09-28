@@ -247,6 +247,12 @@ impl Suite {
             }
         }
 
+        if let Some(file) = &e.formatted
+            && !skipped.contains(&Check::Format)
+        {
+            problems.extend(check_format(case, file, &adapters));
+        }
+
         if !skipped.contains(&Check::Builds) {
             for (name, expected) in &e.builds {
                 match first(&adapters, &format!("build `{name}`"), |a| {
@@ -435,6 +441,42 @@ fn check_slugs(case: &Case, registry: &DiagnosticsRegistry) -> Vec<String> {
 pub fn snapshot_name(case: &str, build: &str, page: &str, kind: OutputKind) -> String {
     let clean = |s: &str| s.replace(['/', '.'], "_");
     format!("{}__{}__{}__{kind}", clean(case), clean(build), clean(page))
+}
+
+/// Formats `input.md` through the adapters, and compares the result with the
+/// expected file. The result formatted again must not change: canonical form
+/// is a fixed point.
+fn check_format(case: &Case, file: &str, adapters: &[&dyn ConformanceAdapter]) -> Vec<String> {
+    let input = match case.input() {
+        Ok(Some(input)) => input,
+        Ok(None) => return vec!["formatted: the case has no input.md".into()],
+        Err(e) => return vec![format!("formatted: couldn't read input.md: {e}")],
+    };
+    let path = case.dir.join(file);
+    let expected = match std::fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(e) => return vec![format!("formatted: couldn't read {}: {e}", path.display())],
+    };
+    let actual = match first(adapters, "format", |a| a.format(case, &input)) {
+        Ok(actual) => actual,
+        Err(p) => return vec![p],
+    };
+    let mut problems = Vec::new();
+    if actual != expected {
+        problems.push(format!(
+            "formatted: differs from {file}\n--- expected\n{expected}\n--- actual\n{actual}"
+        ));
+    }
+    match first(adapters, "format (the result again)", |a| {
+        a.format(case, &actual)
+    }) {
+        Ok(again) if again != actual => problems.push(format!(
+            "formatted: formatting the result again changes it\n--- once\n{actual}\n--- twice\n{again}"
+        )),
+        Ok(_) => {}
+        Err(p) => problems.push(p),
+    }
+    problems
 }
 
 /// Asks each adapter in turn, returning the first result produced.

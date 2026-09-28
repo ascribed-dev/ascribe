@@ -19,6 +19,8 @@ use tessera_syntax::{Block, BlockKind, Bound, PrimaryValue};
 
 use crate::Ctx;
 
+// SPEC-QUESTION(Q74): a gap with a text primary before it, or with a line that
+// isn't blank (a definition), is left alone.
 /// Applies the rule to the directive at `blocks[index]`, if it's a
 /// following-block directive with something after it in the same container.
 pub(crate) fn rule(ctx: &mut Ctx<'_>, blocks: &[Block], index: usize) {
