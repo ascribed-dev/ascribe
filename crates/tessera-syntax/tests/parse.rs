@@ -437,10 +437,10 @@ fn blocks_and_inlines() {
 }
 
 #[test]
-fn never_produces_nodes_phases_06_and_07_own() {
+fn never_produces_nodes_phase_06_owns() {
     let d = doc(".Title\n@note:\nx\n@end\n@variant {a=b}:\n{phrase} ![i](s){w=1}\n");
     let text = format!("{:?}", d.blocks);
-    for owned in ["Container(", "Group(", "Title(", "Phrase("] {
+    for owned in ["Container(", "Group(", "Title("] {
         assert!(!text.contains(owned), "{owned}");
     }
 }

@@ -14,10 +14,20 @@
 //!   attribute blocks, a primary the directive doesn't take or lacks, and a
 //!   directive-shaped line with an unknown name (which stays text).
 //!
-//! What later phases add to the tree (their node kinds are already defined):
-//! containers, groups, titles, and bindings (phase 06), and phrases and image
-//! attributes (phase 07). Phase 06 owns `src/structure/` and phase 07 owns
-//! `src/inline/`.
+//! Phase 07 adds the inline extensions (in `src/inline/`):
+//!
+//! - **phrase candidates** (`{key}`, SPEC §5.1) as [`InlineKind::Phrase`] in
+//!   text, and in link and image destinations ([`Link::destination_phrases`]),
+//!   and in fences that opt in with `phrases=true` ([`CodeBlock::phrases`]);
+//!   an escaped `\{key}` stays text and is listed in
+//!   [`ParsedDocument::escaped_phrases`];
+//! - **image attribute blocks** (SPEC §5.3) as [`Image::attributes`], for
+//!   every form of image, parsed by `tessera_core::parse_attribute_block`,
+//!   with their issues in [`ParsedDocument::issues`].
+//!
+//! What a later phase adds to the tree (its node kinds are already defined):
+//! containers, groups, titles, and bindings (phase 06). Phase 06 owns
+//! `src/structure/` and phase 07 owns `src/inline/`.
 //!
 //! ```
 //! use tessera_syntax::{parse, ParseOptions, BlockKind, PrimaryValue};
@@ -31,6 +41,7 @@
 
 mod convert;
 mod head;
+mod inline;
 mod options;
 mod unknown;
 

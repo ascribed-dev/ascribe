@@ -465,6 +465,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   1. The source is the definition's destination, `settings.png`: an image's source is where its file is, and adapters must resolve labels anyway to check that the file exists.
   2. The label as written.
 - **Proposed resolution:** option 1. Cases for the three reference forms carry `provisional`.
+- **Implemented now (phase 07):** option 1 (`// SPEC-QUESTION(Q23)` in `tests/conformance/tests/adapters/inline.rs`). Nothing in the proposal turned out to be wrong. It costs nothing in the tree: `Image::destination` is already the definition's destination for every reference form (comrak resolves it), and the label is `Image::label` (full form) or the alt text (collapsed and shortcut), so option 2 would be as cheap if a human chooses it. The one thing to note is that a reference image whose label has no definition isn't an image at all (CommonMark), so it never has a source of either kind.
 - **Affects:** conformance cases: `images/collapsed-reference`, `images/full-reference`, `images/shortcut-reference`; phases 07.
 - **Resolution:** _open_
 
@@ -569,4 +570,47 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1. It reports every case, with a message that says what to fix, and needs one new registry entry (a contract change: phase 02's `diagnostics.toml`, with a `Fix` that removes the text). Implemented now: option 2 for the head junk and `@end`; leftover text after an identifier is kept in the tree (`IdentifierPrimary::trailing`) and reported as `directive-primary`, as Q15 proposes, with that entry's existing message.
 - **See also:** Q15 (phase 03), which covers text after an identifier primary and proposes reporting it as `directive-primary`. Resolve the two together.
 - **Affects:** `crates/tessera-syntax/src/convert.rs` (`SPEC-QUESTION(Q30)`), `crates/tessera-syntax/src/tree.rs` (`DirectiveLine::unexpected`, `IdentifierPrimary::trailing`, `EndLine::extra`); `tests/conformance/diagnostics.toml`; phases 03, 05, and 10. No conformance case should depend on these shapes until this is resolved; tag any that do `provisional`.
+- **Resolution:** _to be filled in by a human._
+
+### Q41: `{key}` directly after an image
+
+- **Section:** SPEC §5.1, §5.3
+- **Raised by:** phase 07
+- **Status:** open
+- **Ambiguity:** §5.1 says "`{…}` containing `=` directly after … an image is an attribute block, not a phrase", which implies that a `{…}` *without* `=` directly after an image is a phrase. But §5.3 says an attribute block goes "directly after the image", and the conformance case `images/attribute-bare-key` (`![A](p.png){width}`) expects `attribute-bare-key`, which treats `{width}` as an attribute block with a bare key. Both can't hold:
+
+  ```
+  ![Logo](logo.png){cloud}
+  ```
+- **Options:**
+  1. Any `{…}` that closes on the same line and comes directly after an image is its attribute block, so `{cloud}` there is a bare key (an error). To write a phrase after an image, put a space before it or escape it (`\{cloud}`).
+  2. Only a block containing `=` (or an empty one) is an attribute block; `{cloud}` after an image is a phrase, and `![A](p.png){width}` is a phrase candidate, not a bare-key error.
+- **Proposed resolution:** option 1. It matches the case, needs no `=` test, and turns the likeliest mistake (a forgotten `=value`) into an error instead of a literal `{width}` in the output. A phrase directly after an image is rare, and both escapes are available. Implemented now: option 1 (`// SPEC-QUESTION(Q41)` in `crates/tessera-syntax/src/inline/image.rs`). Under option 2 the change is one test in `comrak_tessera::tessera::image_attributes_len`, and the case `images/attribute-bare-key` would change. A `{` directly after an image that has no `}` on its line is also reported (`attribute-syntax`) and left as text, under either option.
+- **Affects:** `crates/comrak-tessera/src/tessera.rs` (`image_attributes_len`), `crates/tessera-syntax/src/inline/image.rs`; conformance case `images/attribute-bare-key` (tagged `provisional`); phases 10 and 12.
+- **Resolution:** _to be filled in by a human._
+
+### Q42: Escapes in a fenced block that opts in to phrases
+
+- **Section:** SPEC §2.3, §5.1
+- **Raised by:** phase 07
+- **Status:** open
+- **Ambiguity:** a fence with `phrases=true` in its info string substitutes phrases in its code. In code, CommonMark's backslash escapes don't apply, so there's no way to write a literal `{key}` (say, a Mustache or Helm template that happens to use a declared key) in such a block. §2.3 says `\{` prevents a phrase, and doesn't say where.
+- **Options:**
+  1. Backslash doesn't escape in code, so `\{key}` in an opted-in fence is a candidate (with a backslash before it). A literal `{key}` needs a fence without `phrases=true`, or a key that isn't declared.
+  2. `\{` escapes in an opted-in fence, and the substituted output drops the backslash (`\{key}` becomes `{key}`). The code's content changes from what the author sees in the source.
+- **Proposed resolution:** option 2 is friendlier to authors, but it makes a code block's content differ from its source, which is the thing fences avoid. Option 1 is the conservative choice, since it changes nothing about code. Implemented now: option 1 (`// SPEC-QUESTION(Q42)` in `crates/tessera-syntax/src/inline/phrase.rs`); `CodeBlock::phrases` lists every `{key}`, with no escapes.
+- **Affects:** `crates/tessera-syntax/src/inline/phrase.rs`; phases 10 and 12.
+- **Resolution:** _to be filled in by a human._
+
+### Q43: Phrases in link reference definitions and autolinks
+
+- **Section:** SPEC §5.1, §5.2
+- **Raised by:** phase 07
+- **Status:** open
+- **Ambiguity:** §5.1 lists "link destinations" among the places phrases apply. An inline link's destination is part of the link (`[text]({api}streaming)`). But a reference link's destination is in a definition (`[ref]: {api}streaming`), which isn't a node in the parser's tree, and an autolink's text is its destination (`<https://{host}/x>`, which CommonMark accepts, since `{` is allowed).
+- **Options:**
+  1. Recognize candidates in definitions and autolinks too.
+  2. Only in inline links and images, where the destination is inside the node.
+- **Proposed resolution:** option 1 for definitions (the destination is a link destination, and `[ref]: {api}streaming` is the natural way to write it once); autolinks are a corner, and either reading is fine as long as it's stated. Implemented now: option 2, the conservative one (the text stays literal, nothing is dropped), with `// SPEC-QUESTION(Q43)` in `crates/tessera-syntax/src/inline/mod.rs`. Option 1 for definitions needs the parser to expose definitions (phase 23 needs them too; phase 05 left this open).
+- **Affects:** `crates/tessera-syntax/src/inline/`; phases 10, 12, and 23.
 - **Resolution:** _to be filled in by a human._
