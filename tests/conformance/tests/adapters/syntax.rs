@@ -12,7 +12,7 @@
 
 use tessera_conformance::outline::normalize_ws;
 use tessera_conformance::{
-    AdapterError, AdapterResult, Attributes, Case, ConformanceAdapter, Diagnostic, Node,
+    AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic, Node,
 };
 use tessera_core::{
     self as core, Binding as SchemaBinding, DirectiveSchema, Forms, LineIndex, Origin, Primary,
