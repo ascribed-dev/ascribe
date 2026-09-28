@@ -12,7 +12,7 @@ use crate::convert::matching_bracket;
 use crate::tree::*;
 
 /// One find in a run of source text.
-enum Found {
+pub(super) enum Found {
     /// A candidate, `{key}`.
     Candidate(Phrase),
     /// An escaped one, `\{key}`; the span starts at the backslash.
@@ -22,7 +22,7 @@ enum Found {
 /// Finds candidates in `text`, which starts at `base` in the file. With
 /// `escapes`, a backslash before ASCII punctuation escapes it (CommonMark's
 /// rule, which holds in text and in destinations, not in code).
-fn scan(text: &str, base: usize, escapes: bool) -> Vec<Found> {
+pub(super) fn scan(text: &str, base: usize, escapes: bool) -> Vec<Found> {
     let bytes = text.as_bytes();
     let mut found = Vec::new();
     let mut i = 0;
@@ -154,8 +154,7 @@ impl Pass<'_> {
         }
         if form != LinkForm::Inline {
             // SPEC §5.1 (resolved Q43): a reference form's destination is in
-            // its definition, which isn't a node yet, so its candidates
-            // aren't recorded.
+            // its definition, whose candidates are recorded by `definition`.
             return Vec::new();
         }
         let open = usize::from(text.starts_with('!'));

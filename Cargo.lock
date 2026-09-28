@@ -974,6 +974,8 @@ dependencies = [
  "tempfile",
  "tessera-check",
  "tessera-core",
+ "tessera-fmt",
+ "tessera-model",
 ]
 
 [[package]]
@@ -997,6 +999,7 @@ dependencies = [
  "serde_yaml",
  "tessera-check",
  "tessera-core",
+ "tessera-fmt",
  "tessera-model",
  "tessera-resolve",
  "tessera-syntax",
@@ -1021,6 +1024,14 @@ version = "0.0.0"
 [[package]]
 name = "tessera-fmt"
 version = "0.0.0"
+dependencies = [
+ "proptest",
+ "tessera-commonmark-suite",
+ "tessera-core",
+ "tessera-model",
+ "tessera-syntax",
+ "toml 0.9.12+spec-1.1.0",
+]
 
 [[package]]
 name = "tessera-lsp"

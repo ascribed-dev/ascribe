@@ -1,0 +1,4 @@
+description: "No spaces around `=` or `|`."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

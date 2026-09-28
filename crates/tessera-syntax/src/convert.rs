@@ -7,7 +7,7 @@
 //! anchored at the `@`).
 
 use comrak_tessera::nodes::{LineColumn, Node, NodeLink, NodeValue};
-use comrak_tessera::{Arena, Options, parse_document};
+use comrak_tessera::{Arena, Options, parse_document_with_definitions};
 use tessera_core::{DirectiveSchema, Issue, LineIndex, Location, Primary, Span, diagnostics};
 
 use crate::head::{Head, parse_head};
@@ -24,7 +24,7 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
     comrak_options.parse.escaped_char_spans = true;
 
     let arena = Arena::new();
-    let root = parse_document(&arena, source, &comrak_options);
+    let (root, raw_definitions) = parse_document_with_definitions(&arena, source, &comrak_options);
     let mut converter = Converter {
         source,
         index: LineIndex::new(source),
@@ -37,8 +37,17 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
     let blocks = converter.blocks(root);
     let mut blocks = crate::structure::run(source, options, blocks, &mut converter.issues);
     // After the structure pass, so the inline pass sees the final tree.
-    let escaped_phrases =
-        crate::inline::extend(source, options.file, &mut blocks, &mut converter.issues);
+    let mut definitions: Vec<LinkDefinition> = raw_definitions
+        .iter()
+        .map(|d| converter.definition(d))
+        .collect();
+    let escaped_phrases = crate::inline::extend(
+        source,
+        options.file,
+        &mut blocks,
+        &mut definitions,
+        &mut converter.issues,
+    );
     let mut issues = converter.issues;
     issues.sort_by_key(|i| i.location.span.start());
     ParsedDocument {
@@ -48,6 +57,7 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
         blocks,
         issues,
         escaped_phrases,
+        definitions,
     }
 }
 
@@ -94,6 +104,30 @@ impl<'a> Converter<'a> {
             offset += 1;
         }
         offset
+    }
+
+    /// A span from comrak's positions, the end being the last byte.
+    fn sourcepos_span(&self, pos: comrak_tessera::nodes::Sourcepos) -> Span {
+        let start = self.start_of(pos.start);
+        Span::new(start, self.end_of(pos.end).max(start))
+    }
+
+    /// A link reference definition, as the fork reports it.
+    fn definition(&self, d: &comrak_tessera::tessera::LinkDefinition) -> LinkDefinition {
+        let label = self.sourcepos_span(d.label);
+        LinkDefinition {
+            span: self.sourcepos_span(d.sourcepos),
+            label,
+            label_text: self.text(label).to_owned(),
+            normalized_label: d.normalized_label.clone(),
+            destination: self.sourcepos_span(d.destination),
+            url: d.url.clone(),
+            destination_phrases: Vec::new(),
+            title: d.title.as_ref().map(|(pos, text)| DefinitionTitle {
+                span: self.sourcepos_span(*pos),
+                text: text.clone(),
+            }),
+        }
     }
 
     /// A node's span exactly as comrak reports it.

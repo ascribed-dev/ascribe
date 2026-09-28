@@ -5,6 +5,7 @@
 //! for the tags it now handles from `SKIPS.toml`.
 
 mod check;
+mod format;
 pub mod include;
 mod inline;
 mod model;
@@ -18,6 +19,7 @@ use tessera_conformance::Registry;
 /// Registers every adapter. Earlier registrations are asked first.
 pub fn register(registry: &mut Registry) {
     registry.register(syntax::SyntaxAdapter);
+    registry.register(format::FormatAdapter);
     registry.register(check::CheckAdapter);
     registry.register(model::ModelAdapter);
     registry.register(include::IncludeAdapter);

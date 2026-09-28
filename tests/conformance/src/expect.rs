@@ -35,6 +35,12 @@ pub struct Expect {
         serialize_with = "serialize_outline"
     )]
     pub outline: Option<Outline>,
+    /// The file, relative to the case directory, that formatting `input.md`
+    /// must produce (SPEC §8.3, canonical form). `input.md` itself says the
+    /// input is already canonical. Single-file cases only. The runner also
+    /// requires formatting the result to change nothing.
+    #[serde(default)]
+    pub formatted: Option<String>,
     /// Expected file-level diagnostics (SPEC §8.1). `None` means not checked;
     /// an empty list means none are expected.
     #[serde(default)]

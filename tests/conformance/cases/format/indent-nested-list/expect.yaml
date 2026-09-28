@@ -1,0 +1,4 @@
+description: "In nested lists a directive line uses the content column of the item that owns it."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

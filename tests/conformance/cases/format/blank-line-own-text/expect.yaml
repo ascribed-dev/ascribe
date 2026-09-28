@@ -1,0 +1,4 @@
+description: "A one-line note's own text isn't pulled into the block below it: the blank line ends the text."
+spec: ["8.3"]
+tags: [format]
+formatted: input.md

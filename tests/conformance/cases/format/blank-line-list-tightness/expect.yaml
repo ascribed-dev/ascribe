@@ -1,0 +1,5 @@
+description: "Closing the gap would turn this loose list tight and change how it renders, so it stays (Q74)."
+spec: ["8.3"]
+tags: [format, provisional]
+questions: [Q74]
+formatted: input.md

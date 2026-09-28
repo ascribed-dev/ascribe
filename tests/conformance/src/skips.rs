@@ -15,6 +15,8 @@ pub enum Check {
     Diagnostics,
     /// Everything under `builds`.
     Builds,
+    /// The top-level `formatted`.
+    Format,
 }
 
 impl fmt::Display for Check {
@@ -23,6 +25,7 @@ impl fmt::Display for Check {
             Check::Outline => "outline",
             Check::Diagnostics => "diagnostics",
             Check::Builds => "builds",
+            Check::Format => "format",
         })
     }
 }

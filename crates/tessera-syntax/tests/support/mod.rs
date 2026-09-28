@@ -28,6 +28,7 @@ pub fn check_tree(source: &str, doc: &ParsedDocument) -> Vec<String> {
             c.problem("escaped phrase", escaped.span, "doesn't start with `\\{`");
         }
     }
+    c.definitions(&doc.definitions);
     c.problems
 }
 
@@ -98,6 +99,98 @@ impl Checker<'_> {
             self.problem(what, span, "starts with whitespace");
         } else if text.ends_with([' ', '\t', '\n', '\r']) {
             self.problem(what, span, "ends with whitespace");
+        }
+    }
+
+    /// Every part of every link reference definition is where the source
+    /// says: `[label]:` then a destination, then perhaps a title, and the
+    /// definition ends with the last of them.
+    fn definitions(&mut self, definitions: &[LinkDefinition]) {
+        let mut previous_end = 0;
+        for d in definitions {
+            let what = "definition";
+            if !self.valid(d.span, what) {
+                continue;
+            }
+            if d.span.start() < previous_end {
+                self.problem(what, d.span, "overlaps or precedes the one before");
+            }
+            previous_end = d.span.end();
+            self.text_starts(d.span, "[", what);
+            self.tight(d.span, what);
+            // The label sits right inside the brackets, and `]:` follows it.
+            self.within(d.label, d.span, "definition label");
+            self.tight(d.label, "definition label");
+            if self.text(d.label) != d.label_text {
+                self.problem("definition label", d.label, "isn't its label_text");
+            }
+            if d.normalized_label.is_empty() {
+                self.problem("definition label", d.label, "has an empty normalized label");
+            }
+            let between = self
+                .source
+                .get(d.span.start() + 1..d.label.start())
+                .unwrap_or("x");
+            if !between.chars().all(|c| c.is_whitespace() || c == '>') {
+                self.problem("definition label", d.label, "isn't right after the `[`");
+            }
+            let after = self.source.get(d.label.end()..).unwrap_or("");
+            let after = after.trim_start_matches(char::is_whitespace);
+            if !after.starts_with("]:") {
+                self.problem("definition label", d.label, "isn't followed by `]:`");
+            }
+            // The destination follows the colon.
+            self.within(d.destination, d.span, "definition destination");
+            self.tight(d.destination, "definition destination");
+            if d.destination.start() < d.label.end() {
+                self.problem(what, d.destination, "starts before the label ends");
+            }
+            let dest = self.text(d.destination);
+            if dest.starts_with('<') != dest.ends_with('>') {
+                self.problem(what, d.destination, "has one pointy bracket, not two");
+            }
+            let between = self
+                .source
+                .get(d.label.end()..d.destination.start())
+                .unwrap_or("]:");
+            if !between.trim_start().starts_with("]:")
+                || !between[between.find(':').map_or(0, |i| i + 1)..]
+                    .chars()
+                    .all(|c| c.is_whitespace() || c == '>')
+            {
+                self.problem(what, d.destination, "isn't right after the `]:`");
+            }
+            for phrase in &d.destination_phrases {
+                self.within(phrase.span, d.destination, "definition destination phrase");
+                self.phrase(phrase, "definition destination phrase");
+            }
+            // A title ends the definition.
+            match &d.title {
+                Some(title) => {
+                    self.within(title.span, d.span, "definition title");
+                    if title.span.end() != d.span.end() {
+                        self.problem(what, title.span, "isn't at the definition's end");
+                    }
+                    let text = self.text(title.span);
+                    let closes = match text.chars().next() {
+                        Some('"') => Some('"'),
+                        Some('\'') => Some('\''),
+                        Some('(') => Some(')'),
+                        _ => None,
+                    };
+                    if closes.is_none() || text.chars().last() != closes || text.len() < 2 {
+                        self.problem("definition title", title.span, "isn't delimited");
+                    }
+                    if title.span.start() < d.destination.end() {
+                        self.problem(what, title.span, "starts before the destination ends");
+                    }
+                }
+                None => {
+                    if d.destination.end() != d.span.end() {
+                        self.problem(what, d.span, "doesn't end with its destination");
+                    }
+                }
+            }
         }
     }
 

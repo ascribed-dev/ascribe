@@ -22,7 +22,3 @@ reason = "Adapter for tag `page-check` (page-level diagnostics) not yet implemen
 [[skip]]
 tag = "output"
 reason = "Adapter for tag `output` (plain, site, and JSON outputs) not yet implemented; phases 18 and 20."
-
-[[skip]]
-tag = "format"
-reason = "Adapter for tag `format` (canonical form) not yet implemented; phase 23."

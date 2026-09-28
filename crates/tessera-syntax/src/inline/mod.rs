@@ -10,6 +10,9 @@
 //!   that decodes to a brace (`&#123;`) is never a candidate. See [`phrase`].
 //! - **Candidates in link destinations**, and in fenced code that opts in
 //!   with `phrases=true`, which aren't text nodes.
+//! - **Candidates in the destinations of link reference definitions**
+//!   (`[ref]: {api}streaming`), which the fork reports and the tree keeps in
+//!   [`ParsedDocument::definitions`]. See [`definition`].
 //! - **Attribute blocks after images** (SPEC §5.3), parsed with
 //!   `tessera_core::parse_attribute_block`. The fork's inline parser skips the
 //!   block, so its contents never become emphasis or links; this finds the
@@ -18,6 +21,7 @@
 //! Code spans, indented code, raw HTML, and fences without `phrases=true`
 //! hold no candidates because they hold no [`InlineKind::Text`].
 
+mod definition;
 mod image;
 mod phrase;
 
@@ -25,13 +29,15 @@ use tessera_core::{FileId, Issue};
 
 use crate::tree::*;
 
-/// Adds phrase candidates and image attribute blocks to `blocks`, reporting
-/// what's wrong with an attribute block in `issues`. Returns the `\{key}`
-/// escapes it found ([`ParsedDocument::escaped_phrases`]).
+/// Adds phrase candidates and image attribute blocks to `blocks`, and phrase
+/// candidates to the destinations of `definitions`, reporting what's wrong
+/// with an attribute block in `issues`. Returns the `\{key}` escapes it found
+/// ([`ParsedDocument::escaped_phrases`]).
 pub(crate) fn extend(
     source: &str,
     file: FileId,
     blocks: &mut [Block],
+    definitions: &mut [LinkDefinition],
     issues: &mut Vec<Issue>,
 ) -> Vec<Phrase> {
     let mut pass = Pass {
@@ -41,6 +47,7 @@ pub(crate) fn extend(
         escaped: Vec::new(),
     };
     pass.blocks(blocks);
+    pass.definitions(definitions);
     pass.escaped.sort_by_key(|p| p.span.start());
     pass.escaped
 }

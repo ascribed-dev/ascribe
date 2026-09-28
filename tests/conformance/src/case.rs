@@ -100,10 +100,23 @@ impl Case {
         if e.is_provisional() && e.questions.is_empty() {
             return fail("a provisional case must list the `questions` it depends on".into());
         }
-        if e.outline.is_none() && e.diagnostics.is_none() && e.builds.is_empty() {
+        if e.outline.is_none()
+            && e.diagnostics.is_none()
+            && e.builds.is_empty()
+            && e.formatted.is_none()
+        {
             return fail(
-                "a case must expect at least one of outline, diagnostics, or builds".into(),
+                "a case must expect at least one of outline, diagnostics, builds, or formatted"
+                    .into(),
             );
+        }
+        if let Some(file) = &e.formatted {
+            if self.kind == CaseKind::Project {
+                return fail("project cases have no `formatted`; it formats `input.md`".into());
+            }
+            if !self.dir.join(file).is_file() {
+                return fail(format!("formatted: {file} doesn't exist"));
+            }
         }
         if self.kind == CaseKind::Project {
             if e.outline.is_some() {

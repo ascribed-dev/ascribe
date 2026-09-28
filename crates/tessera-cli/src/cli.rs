@@ -53,12 +53,15 @@ pub enum Color {
 pub enum Command {
     /// Check every source file for problems, without building anything.
     Check(commands::check::Args),
+    /// Rewrite Tessera constructs into canonical form.
+    Fmt(commands::fmt::Args),
 }
 
 impl Command {
     fn run(self, global: &Global) -> ExitCode {
         match self {
             Command::Check(args) => commands::check::run(global, args),
+            Command::Fmt(args) => commands::fmt::run(global, args),
         }
     }
 }

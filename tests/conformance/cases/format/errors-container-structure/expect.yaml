@@ -1,0 +1,5 @@
+description: "A stray end line, an end line in another list item, and an unclosed container are left as written."
+spec: ["8.3"]
+tags: [format, provisional]
+questions: [Q71]
+formatted: input.md

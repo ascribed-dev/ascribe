@@ -90,6 +90,23 @@ impl ConformanceAdapter for FakeAdapter {
         Ok(Some(out))
     }
 
+    /// A toy formatter: trailing spaces go, and `@grow` lines gain a `!` each
+    /// time (so formatting them is never a fixed point).
+    fn format(&self, _case: &Case, source: &str) -> AdapterResult<String> {
+        let lines: Vec<String> = source
+            .lines()
+            .map(|l| {
+                let l = l.trim_end();
+                if l.starts_with("@grow") {
+                    format!("{l}!")
+                } else {
+                    l.to_owned()
+                }
+            })
+            .collect();
+        Ok(Some(lines.join("\n") + "\n"))
+    }
+
     fn build(&self, case: &Case, _build: &str) -> AdapterResult<BuildResult> {
         let root = case.content_root();
         let mut result = BuildResult::default();
@@ -204,6 +221,9 @@ fn every_outcome_in_the_fixture_suite() {
         [
             "broken/no-expect",
             "broken/unknown-key",
+            "fake/format-mismatch",
+            "fake/format-not-idempotent",
+            "fake/format-pass",
             "fake/mismatch",
             "fake/partial",
             "fake/pass",
@@ -234,7 +254,12 @@ fn every_outcome_in_the_fixture_suite() {
     assert_eq!(problems(report.outcome("unhandled/mixed")), vec![msg]);
 
     // Passing cases, including a project case with outputs and a provisional case.
-    for id in ["fake/pass", "fake/project", "fake/provisional"] {
+    for id in [
+        "fake/pass",
+        "fake/project",
+        "fake/provisional",
+        "fake/format-pass",
+    ] {
         assert_eq!(
             report.outcome(id),
             Some(&Outcome::Passed {
@@ -256,6 +281,19 @@ fn every_outcome_in_the_fixture_suite() {
     assert_eq!(p[0], "outline[0]: expected heading 1, got paragraph");
     assert!(p[1].starts_with("actual outline:"));
     assert_eq!(p[2], "diagnostics: missing bad-line at input.md:1");
+
+    // Formatting: the result must equal the expected file, and formatting it
+    // again must change nothing.
+    let p = problems(report.outcome("fake/format-mismatch"));
+    assert_eq!(p.len(), 1, "{p:?}");
+    assert!(p[0].starts_with("formatted: differs from formatted.md\n--- expected\na   \n"));
+    assert!(p[0].ends_with("--- actual\na\n"), "{}", p[0]);
+    let p = problems(report.outcome("fake/format-not-idempotent"));
+    assert_eq!(p.len(), 1, "{p:?}");
+    assert!(
+        p[0].starts_with("formatted: formatting the result again changes it\n--- once\n@grow!\n")
+    );
+    assert!(p[0].ends_with("--- twice\n@grow!!\n"), "{}", p[0]);
 
     // Broken cases fail with a reason.
     assert!(problems(report.outcome("broken/no-expect"))[0].contains("no expect.yaml"));
@@ -282,10 +320,10 @@ fn every_outcome_in_the_fixture_suite() {
 
     assert_eq!(
         (report.passed(), report.failed(), report.skipped()),
-        (4, 8, 1)
+        (5, 10, 1)
     );
     assert!(!report.success());
-    assert!(summary.contains("conformance: 4 passed, 8 failed, 1 skipped, 0 suite error(s)"));
+    assert!(summary.contains("conformance: 5 passed, 10 failed, 1 skipped, 0 suite error(s)"));
 }
 
 #[test]

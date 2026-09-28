@@ -1,0 +1,4 @@
+description: "Image attributes follow the model's declaration order: `width`, `height`, `loading`."
+spec: ["8.3"]
+tags: [format]
+formatted: formatted.md

@@ -45,6 +45,17 @@ const MAX_LIST_DEPTH: usize = 100;
 ///
 /// See the documentation of the crate root for an example.
 pub fn parse_document<'a>(arena: &'a Arena<'a>, md: &str, options: &Options) -> Node<'a> {
+    // TESSERA: the definitions are for `parse_document_with_definitions`.
+    parse_document_with_definitions(arena, md, options).0
+}
+
+/// Like [`parse_document`], and also returns the link reference
+/// definitions the parser consumed, which aren't nodes in the tree.
+pub fn parse_document_with_definitions<'a>(
+    arena: &'a Arena<'a>,
+    md: &str,
+    options: &Options,
+) -> (Node<'a>, Vec<crate::tessera::LinkDefinition>) {
     let root = arena.alloc(
         Ast {
             value: NodeValue::Document,
@@ -59,11 +70,13 @@ pub fn parse_document<'a>(arena: &'a Arena<'a>, md: &str, options: &Options) -> 
         }
         .into(),
     );
-    let document = Parser::new(arena, root, options).parse(md);
+    let mut parser = Parser::new(arena, root, options);
+    let document = parser.parse(md);
     if options.parse.sourcepos_chars {
         convert_sourcepos_columns_to_chars(document, md);
     }
-    document
+    // The definitions' columns are always bytes.
+    (document, mem::take(&mut parser.tessera_definitions))
 }
 
 /// Convert all byte-based column values in the AST's sourcepos to char-based.
@@ -136,6 +149,9 @@ pub struct Parser<'a, 'o, 'c> {
     total_size: usize,
     #[cfg(feature = "phoenix_heex")]
     heex_block_depth: usize,
+    // TESSERA: the link reference definitions consumed, in source order.
+    tessera_definitions: Vec<crate::tessera::LinkDefinition>,
+    tessera_raw_definition: Option<crate::tessera::RawDefinition>,
 }
 
 /// A reference link's resolved details.
@@ -182,10 +198,13 @@ where
             total_size: 0,
             #[cfg(feature = "phoenix_heex")]
             heex_block_depth: 0,
+            tessera_definitions: Vec::new(),
+            tessera_raw_definition: None,
         }
     }
 
-    fn parse(mut self, mut s: &str) -> Node<'a> {
+    // TESSERA: borrows the parser (was `mut self`) so the caller can take the definitions.
+    fn parse(&mut self, mut s: &str) -> Node<'a> {
         if let Some(delimiter) = &self.options.extension.front_matter_delimiter {
             if let Some((front_matter, rest)) = split_off_front_matter(s, delimiter) {
                 self.handle_front_matter(front_matter, delimiter);
@@ -1376,10 +1395,14 @@ where
 
         let has_content = {
             let mut ast = container.data_mut();
+            let ast = &mut *ast;
             // TESSERA: definitions taken from the start of the heading's text
             // move its first line down (see `finalize_borrowed`).
             let lines_before = ast.content.matches('\n').count();
-            let has_content = self.resolve_reference_link_definitions(&mut ast.content);
+            let has_content = self.resolve_reference_link_definitions(
+                &mut ast.content,
+                (ast.sourcepos.start.line, &ast.line_offsets),
+            );
             ast.sourcepos.start.line += lines_before - ast.content.matches('\n').count();
             has_content
         };
@@ -2100,13 +2123,24 @@ where
         self.finalize_borrowed(node, &mut node.data_mut())
     }
 
-    fn resolve_reference_link_definitions(&mut self, content: &mut String) -> bool {
+    // TESSERA: `origin` is the content's first line and the source column
+    // where each of its lines starts, for the definitions' positions.
+    fn resolve_reference_link_definitions(
+        &mut self,
+        content: &mut String,
+        origin: (usize, &[usize]),
+    ) -> bool {
         let mut pos = 0;
         let mut rrs = vec![];
 
         let bytes = content.as_bytes();
         while pos < content.len() && bytes[pos] == b'[' {
             if let Some((offset, rr)) = self.parse_reference_inline(&content[pos..]) {
+                // Record the definition.
+                if let Some(raw) = self.tessera_raw_definition.take() {
+                    let def = crate::tessera::locate(content, pos, raw, origin);
+                    self.tessera_definitions.push(def);
+                }
                 pos += offset;
                 rrs.extend(rr);
             } else {
@@ -2162,7 +2196,10 @@ where
                 // TESSERA: a text primary has no link reference definitions.
                 let lines_before = content.matches('\n').count();
                 let has_content = tessera::is_text_primary(node)
-                    || self.resolve_reference_link_definitions(content);
+                    || self.resolve_reference_link_definitions(
+                        content,
+                        (ast.sourcepos.start.line, &ast.line_offsets),
+                    );
                 if !has_content {
                     node.detach();
                 }
@@ -2713,7 +2750,7 @@ where
     }
 
     fn parse_reference_inline(
-        &self,
+        &mut self,
         content: &str,
     ) -> Option<(usize, Option<(String, ResolvedReference)>)> {
         let mut scanner = inlines::Scanner::new();
@@ -2727,12 +2764,21 @@ where
             return None;
         }
 
+        // TESSERA: link reference definitions are recorded for
+        // `parse_document_with_definitions`. Where the label is: the trimmed
+        // text between the brackets.
+        let label_slice = strings::trim_slice(&content[1..scanner.pos - 1]);
+        let label_start = label_slice.as_ptr() as usize - content.as_ptr() as usize;
+        let label_end = label_start + label_slice.len();
+
         scanner.pos += 1;
         scanner.spnl(content);
         let (url, matchlen) = match inlines::manual_scan_link_url(&content[scanner.pos..]) {
             Some((url, matchlen)) => (url.to_string(), matchlen),
             None => return None,
         };
+        // Where the destination is.
+        let dest = scanner.pos..scanner.pos + matchlen;
         scanner.pos += matchlen;
 
         let beforetitle = scanner.pos;
@@ -2742,9 +2788,11 @@ where
         } else {
             scanners::link_title(&content[scanner.pos..])
         };
+        let mut title_range = None; // Where the title is.
         let title = match title_search {
             Some(matchlen) => {
                 let t = &content[scanner.pos..scanner.pos + matchlen];
+                title_range = Some(scanner.pos..scanner.pos + matchlen);
                 scanner.pos += matchlen;
                 t
             }
@@ -2757,6 +2805,7 @@ where
         scanner.skip_spaces(content);
         if !scanner.skip_line_end(content) {
             if !title.is_empty() {
+                title_range = None; // The title isn't part of the definition.
                 scanner.pos = beforetitle;
                 scanner.skip_spaces(content);
                 if !scanner.skip_line_end(content) {
@@ -2767,7 +2816,15 @@ where
             }
         }
 
+        // The parts are located by `crate::tessera::locate`.
         lab = strings::normalize_label(&lab, Case::Fold);
+        self.tessera_raw_definition = Some(crate::tessera::RawDefinition {
+            label: label_start..label_end,
+            normalized_label: lab.clone(),
+            destination: dest,
+            url: strings::clean_url(&url).into(),
+            title: title_range.map(|r| (r, strings::clean_title(title).into())),
+        });
         let mut rr = None;
         if !lab.is_empty() && !self.refmap.map.contains_key(&lab) {
             rr = Some((

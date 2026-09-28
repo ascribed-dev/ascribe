@@ -43,7 +43,7 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Wh
 
 ## What the suite doesn't cover
 
-- **Canonical form (§8.3).** The `format` tag has no case: the harness has no formatting interface yet, and phase 23 adds cases with it.
+- **Canonical form (§8.3).** Phase 23 added the `format` tag's cases (`cases/format/`) and the harness's formatting interface (`formatted`). Where §8.3 is silent, the cases are `provisional` on Q71 to Q77: errors and the formatter, trailing whitespace outside a container's colon, block quote and marker-line indentation, awkward blank-line gaps, attribute blocks with undeclared keys, image blocks, and title lines.
 - **Outputs (§9.4).** The plain, site, and JSON outputs are out of scope for this phase; phases 18 and 20 add snapshots. So glossary links, rewritten link destinations, page ids in output, and availability rendering are not observed anywhere yet.
 - **Registry-change reports (§5.1).** "When a key is added to the registry, the pages whose existing literal `{key}` text would change" is a report between two versions of a model, which a case can't state.
 - **Phrases in frontmatter (§5.1).** Nothing in a resolved outline shows them.

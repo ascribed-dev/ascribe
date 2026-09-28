@@ -19,6 +19,8 @@ serde.workspace = true
 serde_json.workspace = true
 tessera-check.workspace = true
 tessera-core.workspace = true
+tessera-fmt.workspace = true
+tessera-model.workspace = true
 
 [dev-dependencies]
 # Integration tests copy example projects to a temporary directory.

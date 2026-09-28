@@ -39,6 +39,12 @@
 //!   every form of image, parsed by `tessera_core::parse_attribute_block`,
 //!   with their issues in [`ParsedDocument::issues`].
 //!
+//! Phase 23 adds **link reference definitions** ([`ParsedDocument::definitions`]),
+//! a side list rather than blocks: each has exact spans for its label,
+//! destination, and title, and the phrase candidates in its destination
+//! ([`LinkDefinition::destination_phrases`], SPEC §5.1). The parser consumes
+//! them, so the fork reports them (`comrak_tessera::parse_document_with_definitions`).
+//!
 //! Phase 06 owns `src/structure/` and phase 07 owns `src/inline/`. The inline
 //! pass runs after the structure pass.
 //!

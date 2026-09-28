@@ -40,14 +40,15 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 
 | File | Markers | Where | What |
 |---|---|---|---|
-| `src/lib.rs` | 1 | module list | `pub mod tessera;` |
+| `src/lib.rs` | 2 | module list | `pub mod tessera;` |
+| | | re-exports | `parse_document_with_definitions` (phase 23) |
 | `src/nodes.rs` | 5 | `NodeValue` | The `TesseraLine(Box<NodeTesseraLine>)` variant, after `FrontMatter` |
 | | | `NodeValue::block` | A Tessera line is a block |
 | | | `NodeValue::xml_node_name` | `tessera_line` |
 | | | `NodeValue::accepts_lines` | A Tessera line takes its own line |
 | | | `Node::can_contain_type` | A Tessera line contains only its primary's paragraph |
 | `src/parser/options.rs` | 1 | `Extension` | The `tessera: Option<Arc<TesseraOptions>>` option, after `front_matter_delimiter` |
-| `src/parser/mod.rs` | 8 | module list | `mod tessera;` |
+| `src/parser/mod.rs` | 13 | module list | `mod tessera;` |
 | | | `check_open_blocks_inner` | A Tessera line stays open while its primary's paragraph does |
 | | | `open_new_blocks` | `handle_tessera_line` in the chain of block starts, between block quotes and ATX headings |
 | | | `detect_setext_heading` | A text primary never becomes a setext heading (changed condition) |
@@ -55,6 +56,11 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 | | | `finalize_borrowed` | A text primary has no link reference definitions (changed statement) |
 | | | `finalize_borrowed` | A paragraph that starts with link reference definitions starts on the first line after them (phase 05: upstream leaves its start position, and so every inline position in it, on the definitions). **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
 | | | `handle_setext_heading` | The same, for a setext heading's text (phase 05). **Candidate to upstream**, with the row above |
+| | | `parse_document` | Delegates to the new `parse_document_with_definitions`, which returns the link reference definitions the parser consumed along with the document (phase 23; the body is upstream's, with the parser kept so its list can be taken) |
+| | | `Parser::parse` | Borrows the parser (`&mut self`, was `mut self`) so the caller can take the definitions |
+| | | `Parser` | Two fields: the definitions found so far, and the last one `parse_reference_inline` read |
+| | | `resolve_reference_link_definitions` | Takes the content's first line and column offsets, and records each definition with its positions (`tessera::locate`); the setext and paragraph call sites pass them |
+| | | `parse_reference_inline` | `&mut self` (was `&self`); records the label, destination, and title ranges, and the cleaned values, in the field above. The parsing itself is unchanged |
 | `src/parser/inlines.rs` | 1 | `close_bracket_match` | After an image, skips the attribute block that follows it directly (`![alt](src){width=600}`), so its contents are never parsed as emphasis, links, or code (phase 07). The scan is `tessera::image_attributes_len`, in Tessera's own file |
 | `src/html.rs` | 1 | `format_node_default` | Renders a Tessera line with `tessera::render_html` |
 | `src/cm.rs` | 2 | `CommonMarkFormatter::format_node` | Formats a Tessera line |
@@ -64,9 +70,13 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 
 In total: 76 lines added and 3 changed in 8 upstream source files (48 of the added lines are code; the rest are comments), in 20 hunks, plus 13 lines in one upstream test. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
 
+Phase 23 (link reference definitions) added 68 lines and changed 7 in two upstream files, in 7 hunks (`lib.rs` and `parser/mod.rs`; about half the added lines are comments), and the definition types and `locate` in `src/tessera.rs`. It adds no node and no `NodeValue` variant, and doesn't change what is parsed.
+
 Also Tessera's, outside `src/`: `Cargo.toml`, this file, `SPIKE.md`, and the spike tests in `tests/spike.rs`.
 
 ## Merging an upstream release
+
+The likeliest conflicts are the two upstream signatures phase 23 changed to return definitions: `Parser::parse` (`&mut self`, was `mut self`) and `resolve_reference_link_definitions` (an extra `origin` parameter, and its two call sites), plus `parse_reference_inline` (`&mut self`). Take upstream's version and reapply those changes from the table below.
 
 Tessera's changes are a patch against a pristine upstream release. To move to a new release:
 

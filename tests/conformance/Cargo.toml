@@ -20,6 +20,7 @@ toml.workspace = true
 [dev-dependencies]
 tessera-check.workspace = true
 tessera-core.workspace = true
+tessera-fmt.workspace = true
 tessera-model.workspace = true
 tessera-resolve.workspace = true
 tessera-syntax.workspace = true
