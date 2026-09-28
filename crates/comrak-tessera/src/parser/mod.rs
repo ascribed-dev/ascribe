@@ -8,6 +8,8 @@ pub mod phoenix_heex;
 #[cfg(feature = "shortcodes")]
 pub mod shortcodes;
 mod table;
+// TESSERA: the Tessera-line block.
+mod tessera;
 
 use std::borrow::Cow;
 use std::cmp::{Ordering, min};
@@ -359,6 +361,13 @@ where
                 }
                 NodeValue::Paragraph => {
                     if self.blank {
+                        break;
+                    }
+                }
+                // TESSERA: a Tessera line stays open only while its text
+                // primary's paragraph does.
+                NodeValue::TesseraLine(..) => {
+                    if self.blank || !container.last_child_is_open() {
                         break;
                     }
                 }
@@ -764,6 +773,7 @@ where
                     || self.handle_alert(container, line)
                     || self.handle_multiline_blockquote(container, line)
                     || self.handle_blockquote(container, line)
+                    || self.handle_tessera_line(container, line) // TESSERA
                     || self.handle_atx_heading(container, line)
                     || self.handle_atx_subtext(container, line)
                     || self.handle_code_fence(container, line)
@@ -1389,7 +1399,11 @@ where
         container: Node<'a>,
         line: &str,
     ) -> Option<scanners::SetextChar> {
-        if node_matches!(container, NodeValue::Paragraph) && !self.options.parse.ignore_setext {
+        // TESSERA: a text primary never becomes a setext heading.
+        if node_matches!(container, NodeValue::Paragraph)
+            && !self.options.parse.ignore_setext
+            && !tessera::is_text_primary(container)
+        {
             scanners::setext_heading_line(&line[self.first_nonspace..])
         } else {
             None
@@ -1764,7 +1778,8 @@ where
         line: &str,
         indented: bool,
     ) -> Option<(Node<'a>, bool, bool)> {
-        if !indented && self.options.extension.table {
+        // TESSERA: a text primary never becomes a table header.
+        if !indented && self.options.extension.table && !tessera::is_text_primary(container) {
             table::try_opening_block(self, container, line)
         } else {
             None
@@ -2139,7 +2154,9 @@ where
                 self.fix_zero_end_columns(node);
             }
             NodeValue::Paragraph => {
-                let has_content = self.resolve_reference_link_definitions(content);
+                // TESSERA: a text primary has no link reference definitions.
+                let has_content = tessera::is_text_primary(node)
+                    || self.resolve_reference_link_definitions(content);
                 if !has_content {
                     node.detach();
                 }

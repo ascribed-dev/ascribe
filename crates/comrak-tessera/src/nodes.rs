@@ -38,6 +38,18 @@ pub enum NodeValue {
     /// Non-Markdown front matter.  Treated as an opaque blob.
     FrontMatter(String),
 
+    // TESSERA: the Tessera-line block.
+    /// **Block**. A Tessera line: a directive line or an end line. Enabled
+    /// with the `tessera` option. Contains a paragraph holding its text
+    /// primary, if it has one; otherwise has no children. See
+    /// [`crate::tessera`].
+    ///
+    /// ```markdown
+    /// @note {type=caution}: Back up your database
+    /// before you upgrade.
+    /// ```
+    TesseraLine(Box<crate::tessera::NodeTesseraLine>),
+
     /// **Block**. A [block quote](https://github.github.com/gfm/#block-quotes).  Contains other
     /// **blocks**.
     ///
@@ -661,6 +673,7 @@ impl NodeValue {
     /// Indicates whether this node is a block node or inline node.
     pub fn block(&self) -> bool {
         match *self {
+            NodeValue::TesseraLine(_) => true, // TESSERA
             NodeValue::Document
             | NodeValue::BlockQuote
             | NodeValue::FootnoteDefinition(_)
@@ -726,6 +739,7 @@ impl NodeValue {
     pub fn xml_node_name(&self) -> &'static str {
         match *self {
             NodeValue::Document => "document",
+            NodeValue::TesseraLine(_) => "tessera_line", // TESSERA
             NodeValue::BlockQuote => "block_quote",
             NodeValue::FootnoteDefinition(_) => "footnote_definition",
             NodeValue::List(..) => "list",
@@ -781,6 +795,8 @@ impl NodeValue {
 
     pub(crate) fn accepts_lines(&self) -> bool {
         match *self {
+            // TESSERA: takes its own line (see parser/tessera.rs).
+            NodeValue::TesseraLine(_) => true,
             NodeValue::Paragraph
             | NodeValue::Heading(..)
             | NodeValue::CodeBlock(..)
@@ -1040,6 +1056,8 @@ impl<'a> arena_tree::Node<'a, RefCell<Ast>> {
         }
 
         match self.data().value {
+            // TESSERA: only the paragraph holding the text primary.
+            NodeValue::TesseraLine(_) => matches!(*child, NodeValue::Paragraph),
             NodeValue::Document
             | NodeValue::BlockQuote
             | NodeValue::FootnoteDefinition(_)

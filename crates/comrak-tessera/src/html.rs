@@ -356,6 +356,10 @@ pub fn format_node_default<T>(
         NodeValue::Code(ref nc) => render_code(context, node, entering, nc),
         NodeValue::CodeBlock(ref ncb) => render_code_block(context, node, entering, ncb),
         NodeValue::Document => Ok(ChildRendering::HTML),
+        // TESSERA
+        NodeValue::TesseraLine(ref ntl) => {
+            crate::tessera::render_html(context, node, entering, ntl)
+        }
         NodeValue::Emph => render_emph(context, node, entering),
         NodeValue::Heading(ref nh) => render_heading(context, node, entering, nh),
         NodeValue::HtmlBlock(ref nhb) => render_html_block(context, entering, nhb),

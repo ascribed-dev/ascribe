@@ -257,6 +257,12 @@ pub struct Extension<'c> {
     /// ```
     pub front_matter_delimiter: Option<String>,
 
+    // TESSERA: the Tessera option.
+    /// Enables Tessera lines (directive lines and end lines) for the given
+    /// keywords. See [`crate::tessera`].
+    #[cfg_attr(feature = "arbitrary", arbitrary(value = None))]
+    pub tessera: Option<Arc<crate::tessera::TesseraOptions>>,
+
     /// Enables the multiline block quote extension.
     ///
     /// Place `>>>` before and after text to make it into

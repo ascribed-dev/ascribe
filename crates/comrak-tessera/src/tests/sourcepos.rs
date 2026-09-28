@@ -8,6 +8,12 @@ type TestCase = (&'static [Sourcepos], &'static str);
 
 const DOCUMENT: TestCase = (&[sourcepos!((1:1-1:1))], "a");
 
+// TESSERA
+const TESSERA_LINE: TestCase = (
+    &[sourcepos!((2:1-3:5)), sourcepos!((4:3-4:6))],
+    "before\n@note: hello\nworld\n  @end\n",
+);
+
 const FRONT_MATTER: TestCase = (
     &[sourcepos!((1:1-3:3))],
     r#"---
@@ -477,6 +483,7 @@ fn node_values() -> HashMap<NodeValueDiscriminants, TestCase> {
         .map(|v| {
             let text = match v {
                 Document => DOCUMENT,
+                TesseraLine => TESSERA_LINE, // TESSERA
                 FrontMatter => FRONT_MATTER,
                 BlockQuote => BLOCK_QUOTE,
                 MultilineBlockQuote => MULTILINE_BLOCK_QUOTE,
@@ -538,6 +545,12 @@ fn sourcepos() {
     let node_values = node_values();
 
     let mut options = Options::default();
+    // TESSERA
+    options.extension.tessera = Some(std::sync::Arc::new(
+        crate::tessera::TesseraOptions::new()
+            .keyword("note", true)
+            .keyword("end", false),
+    ));
     options.render.escaped_char_spans = true;
     options.extension.front_matter_delimiter = Some("---".to_string());
     options.extension.description_lists = true;

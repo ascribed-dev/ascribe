@@ -158,6 +158,12 @@ impl<'o, 'c> XmlFormatter<'o, 'c> {
                 NodeValue::Document => self
                     .output
                     .write_str(" xmlns=\"http://commonmark.org/xml/1.0\"")?,
+                // TESSERA
+                NodeValue::TesseraLine(ref ntl) => {
+                    self.output.write_str(" raw=\"")?;
+                    self.escape(&ntl.raw)?;
+                    self.output.write_str("\"")?;
+                }
                 NodeValue::Text(ref literal) => {
                     self.output.write_str(" xml:space=\"preserve\">")?;
                     self.escape(literal)?;

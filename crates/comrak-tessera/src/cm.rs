@@ -450,6 +450,8 @@ impl<'a, 'o, 'c, 'w> CommonMarkFormatter<'a, 'o, 'c, 'w> {
 
         match node.data().value {
             NodeValue::Document => (),
+            // TESSERA
+            NodeValue::TesseraLine(ref ntl) => self.format_tessera_line(ntl, entering)?,
             NodeValue::FrontMatter(ref fm) => self.format_front_matter(fm, entering)?,
             NodeValue::BlockQuote => self.format_block_quote(entering)?,
             NodeValue::List(..) => self.format_list(node, entering)?,
@@ -521,6 +523,22 @@ impl<'a, 'o, 'c, 'w> CommonMarkFormatter<'a, 'o, 'c, 'w> {
     fn format_front_matter(&mut self, front_matter: &str, entering: bool) -> fmt::Result {
         if entering {
             self.output(front_matter, false, Escaping::Literal)?;
+        }
+        Ok(())
+    }
+
+    // TESSERA: writes the line up to its text primary; the primary's
+    // paragraph child writes the rest.
+    fn format_tessera_line(
+        &mut self,
+        ntl: &crate::tessera::NodeTesseraLine,
+        entering: bool,
+    ) -> fmt::Result {
+        if entering {
+            let head = &ntl.raw[..ntl.text_primary.unwrap_or(ntl.raw.len())];
+            self.output(head, false, Escaping::Literal)?;
+        } else {
+            self.blankline();
         }
         Ok(())
     }
