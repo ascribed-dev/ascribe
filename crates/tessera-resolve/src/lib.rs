@@ -60,7 +60,7 @@ pub mod slug;
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,
 };
-pub use fs::{DiskFs, FileSystem, MemoryFs, Probe};
+pub use fs::{DiskFs, FileSystem, MemoryFs, Probe, Sources};
 pub use index::{
     AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, PhrasePlace,
     PhraseUse, RefKind, Reference, Target, index_file,

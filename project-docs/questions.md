@@ -807,8 +807,8 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   A fragment is written to be included, and a cross-reference to a heading beside it is natural, but where it lands is only known once a page includes it.
 - **Options:**
   1. It's `link-to-fragment` like any other link to a fragment. Authors link to the page that includes the fragment instead.
-  2. It's allowed when the fragment has a heading with that source id, and compiles to that heading's page id on each page that includes the heading (phase 12); a page where the section isn't included (a section include, or a build that removes it) gets a page-level error.
-- **Proposed resolution:** option 2 is what authors want, but it needs a page-level row for "the linked heading isn't on this page" (like `link-id-removed`) and a rule for links to ids in other fragments. Until a human chooses, option 1.
+  2. In a fragment, `#id` names a heading **in that fragment**, by the fragment's own source id, consistent with Q6 (a file's linkable ids are its own source ids, never those of another file, and never resolved against the including page's). Each page that includes the fragment compiles the link to that heading's page id *on that page* (phase 12). A `#id` that isn't a heading of the fragment itself is `link-id-missing`, as in a page. On a page where the heading isn't included (a section include that leaves it out, or a build that removes it), the link has no target there: a page-level error like `link-id-removed`.
+- **Proposed resolution:** option 2, which fits Q6 and is what authors want (cross-references inside a fragment), but it needs that page-level row and a rule for links to other fragments' ids, so it isn't a small change. Until a human chooses, option 1.
 - **Implemented now:** option 1 (`// SPEC-QUESTION(Q64)` in `crates/tessera-resolve/src/project.rs`).
 - **Affects:** `crates/tessera-resolve`; phases 10, 12, 14; conformance cases: none.
 - **Resolution:** _to be filled in by a human._

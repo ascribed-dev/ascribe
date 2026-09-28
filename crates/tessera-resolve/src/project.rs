@@ -70,7 +70,7 @@ pub enum Missing {
     Outside,
 }
 
-/// A source file the project couldn't read.
+/// A source file, or a directory, the project couldn't read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Unreadable {
     /// The file's content path.
@@ -164,13 +164,14 @@ impl Project {
     pub fn load(model: Arc<ContentModel>, layout: Layout, fs: &dyn FileSystem) -> Project {
         let slugger: Box<dyn Slugger> =
             slugger_by_name(&model.consumer.slugger).unwrap_or_else(default_slugger);
-        let mut paths = fs.sources();
+        let found = fs.sources();
+        let mut paths = found.paths;
         paths.sort();
         paths.dedup();
 
         let mut files = BTreeMap::new();
         let mut order = Vec::new();
-        let mut unreadable = Vec::new();
+        let mut unreadable = found.unreadable;
         for path in paths {
             match fs.read(&path) {
                 Ok(text) => {
@@ -244,7 +245,8 @@ impl Project {
         self.path_of(file).and_then(|p| self.files.get(p))
     }
 
-    /// Source files that couldn't be read.
+    /// Source files and directories that couldn't be read. They're never
+    /// skipped silently.
     pub fn unreadable(&self) -> &[Unreadable] {
         &self.unreadable
     }

@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 use tessera_core::RelPath;
 
 use crate::layout::Layout;
+use crate::project::Unreadable;
 
 /// What a path names, checked with exact, case-sensitive names on every
 /// platform (SPEC §9.4).
@@ -26,11 +27,25 @@ pub enum Probe {
     CaseMismatch(RelPath),
 }
 
+/// The source files a file system holds, and the places it couldn't look.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Sources {
+    /// Every source file, as content paths, in any order.
+    pub paths: Vec<RelPath>,
+    /// Directories and entries that couldn't be read. They aren't skipped
+    /// silently: the project lists them ([`crate::Project::unreadable`]).
+    pub unreadable: Vec<Unreadable>,
+}
+
 /// The files of a project.
 pub trait FileSystem {
-    /// Every `.md` file under the content root, as content paths, in any
-    /// order. Directories are followed through symbolic links once each.
-    fn sources(&self) -> Vec<RelPath>;
+    /// Every source file under the content root: exactly the files whose name
+    /// ends in `.md`, skipping any file or directory whose name starts with `.`
+    /// (`.github/`, `.vitepress/`, editor state). Directories are followed
+    /// through symbolic links once each.
+    // SPEC-QUESTION(Q52): the same rule as `tessera check`'s discovery, which
+    // raised it: which files count as sources.
+    fn sources(&self) -> Sources;
 
     /// The text of a source file, by content path.
     fn read(&self, path: &RelPath) -> io::Result<String>;
@@ -63,11 +78,11 @@ impl DiskFs {
 }
 
 impl FileSystem for DiskFs {
-    fn sources(&self) -> Vec<RelPath> {
-        let mut out = Vec::new();
+    fn sources(&self) -> Sources {
+        let mut out = Sources::default();
         let mut seen = BTreeSet::new();
         walk(&self.content_dir(), &RelPath::root(), &mut seen, &mut out);
-        out.sort();
+        out.paths.sort();
         out
     }
 
@@ -126,33 +141,58 @@ impl FileSystem for DiskFs {
     }
 }
 
-/// Collects `.md` files under `dir`, as paths relative to the content root.
+/// Collects source files under `dir`, as paths relative to the content root.
 /// `seen` holds the canonical directories already walked, so a symbolic link
 /// back up the tree can't loop.
-fn walk(dir: &Path, rel: &RelPath, seen: &mut BTreeSet<PathBuf>, out: &mut Vec<RelPath>) {
-    let Ok(canonical) = fs::canonicalize(dir) else {
-        return;
+fn walk(dir: &Path, rel: &RelPath, seen: &mut BTreeSet<PathBuf>, out: &mut Sources) {
+    let unreadable = |out: &mut Sources, path: &Path, err: io::Error| {
+        out.unreadable.push(Unreadable {
+            path: rel.clone(),
+            reason: format!("{}: {err}", path.display()),
+        });
+    };
+    let canonical = match fs::canonicalize(dir) {
+        Ok(canonical) => canonical,
+        Err(err) => return unreadable(out, dir, err),
     };
     if !seen.insert(canonical) {
         return;
     }
-    let Ok(entries) = fs::read_dir(dir) else {
-        return;
+    let entries = match fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(err) => return unreadable(out, dir, err),
     };
-    for entry in entries.flatten() {
-        let name = entry.file_name().to_string_lossy().into_owned();
-        let path = entry.path();
-        // `metadata` follows symbolic links.
-        let Ok(meta) = fs::metadata(&path) else {
-            continue;
+    for entry in entries {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(err) => {
+                unreadable(out, dir, err);
+                continue;
+            }
         };
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name.starts_with('.') {
+            continue;
+        }
+        let path = entry.path();
         let Ok(child) = rel.join(&name) else {
             continue;
+        };
+        // `metadata` follows symbolic links.
+        let meta = match fs::metadata(&path) {
+            Ok(meta) => meta,
+            Err(err) => {
+                out.unreadable.push(Unreadable {
+                    path: child,
+                    reason: format!("{}: {err}", path.display()),
+                });
+                continue;
+            }
         };
         if meta.is_dir() {
             walk(&path, &child, seen, out);
         } else if meta.is_file() && name.ends_with(".md") {
-            out.push(child);
+            out.paths.push(child);
         }
     }
 }
@@ -206,12 +246,18 @@ impl MemoryFs {
 }
 
 impl FileSystem for MemoryFs {
-    fn sources(&self) -> Vec<RelPath> {
-        self.files
+    fn sources(&self) -> Sources {
+        let paths = self
+            .files
             .keys()
             .filter(|p| p.extension() == Some("md"))
             .filter_map(|p| self.content_path(p))
-            .collect()
+            .filter(|p| !p.segments().any(|s| s.starts_with('.')))
+            .collect();
+        Sources {
+            paths,
+            unreadable: Vec::new(),
+        }
     }
 
     fn read(&self, path: &RelPath) -> io::Result<String> {
@@ -262,7 +308,7 @@ mod tests {
             .with_source("img.png", "")
             .with_file("README.md", "")
             .with_file("shared/logo.png", "");
-        let mut sources = fs.sources();
+        let mut sources = fs.sources().paths;
         sources.sort();
         assert_eq!(sources, [p("_f/a.md"), p("index.md")]);
         assert_eq!(fs.read(&p("index.md")).ok().as_deref(), Some("x"));
@@ -272,6 +318,52 @@ mod tests {
             fs.probe(&p("shared/Logo.png")),
             Probe::CaseMismatch(p("shared/logo.png"))
         );
+    }
+
+    #[test]
+    fn dot_names_are_not_sources() {
+        let fs = MemoryFs::new(&layout())
+            .with_source("index.md", "x")
+            .with_source(".github/PULL_REQUEST_TEMPLATE.md", "y")
+            .with_source(".vitepress/notes.md", "y")
+            .with_source("guides/.draft.md", "y");
+        assert_eq!(fs.sources().paths, [p("index.md")]);
+
+        let dir = std::env::temp_dir().join(format!("tessera-resolve-dot-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("docs/.github")).expect("create dirs");
+        fs::create_dir_all(dir.join("docs/guides")).expect("create dirs");
+        fs::write(dir.join("docs/index.md"), "x").expect("write");
+        fs::write(dir.join("docs/.github/template.md"), "y").expect("write");
+        fs::write(dir.join("docs/guides/.draft.md"), "y").expect("write");
+        fs::write(dir.join("docs/guides/a.md"), "y").expect("write");
+        // Only a name that is exactly `<name>.md` counts, not `.markdown`.
+        fs::write(dir.join("docs/guides/b.markdown"), "y").expect("write");
+        let disk = DiskFs::new(&dir, &layout());
+        assert_eq!(disk.sources().paths, [p("guides/a.md"), p("index.md")]);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn an_unreadable_directory_is_reported_not_skipped() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("tessera-resolve-perm-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("docs/locked")).expect("create dirs");
+        fs::write(dir.join("docs/index.md"), "x").expect("write");
+        fs::write(dir.join("docs/locked/a.md"), "y").expect("write");
+        let locked = dir.join("docs/locked");
+        fs::set_permissions(&locked, fs::Permissions::from_mode(0o000)).expect("chmod");
+        let readable_anyway = fs::read_dir(&locked).is_ok(); // running as root
+        let found = DiskFs::new(&dir, &layout()).sources();
+        fs::set_permissions(&locked, fs::Permissions::from_mode(0o755)).expect("chmod");
+        let _ = fs::remove_dir_all(&dir);
+        if !readable_anyway {
+            assert_eq!(found.paths, [p("index.md")]);
+            assert_eq!(found.unreadable.len(), 1);
+            assert_eq!(found.unreadable[0].path, p("locked"));
+        }
     }
 
     #[test]
@@ -285,7 +377,7 @@ mod tests {
         fs::write(dir.join("docs/notes.txt"), "").expect("write");
 
         let disk = DiskFs::new(&dir, &layout());
-        assert_eq!(disk.sources(), [p("_f/a.md"), p("index.md")]);
+        assert_eq!(disk.sources().paths, [p("_f/a.md"), p("index.md")]);
         assert_eq!(disk.read(&p("_f/a.md")).ok().as_deref(), Some("a"));
         assert_eq!(disk.probe(&p("docs/p.png")), Probe::File);
         assert_eq!(disk.probe(&p("docs/missing.png")), Probe::Missing);
