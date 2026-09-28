@@ -12,14 +12,6 @@
 #                                         optional; skips only these checks
 
 [[skip]]
-tag = "slug"
-reason = "Adapter for tag `slug` (heading slugs and source ids) not yet implemented; phase 09."
-
-[[skip]]
-tag = "include"
-reason = "Adapter for tag `include` (includes and the source index) not yet implemented; phase 11."
-
-[[skip]]
 tag = "resolve"
 reason = "Adapter for tag `resolve` (resolution passes and build modes) not yet implemented; phase 12."
 

@@ -139,11 +139,17 @@ fn bundled_samples_are_discovered_and_skipped_with_recorded_reasons() {
     // Only this sample: every phase that lands removes its tag's skip entry,
     // so the other bundled cases stop being skipped with an empty registry
     // (`samples/appendix-b` is tagged `structure`, which phase 06 handles).
+    // The sample is tagged `include` (phase 11 handles it) and `resolve`
+    // (phase 12): a stand-in adapter takes `include`, so the case is skipped
+    // for `resolve` alone, and is again a good example when phase 12 lands if
+    // the stand-in also takes `resolve` and another sample is skipped instead.
     let filter = Filter {
         case: Some("samples/include-and-selection".into()),
         ..Filter::default()
     };
-    let report = Suite::bundled().run(&Registry::new(), &filter).unwrap();
+    let report = Suite::bundled()
+        .run(&fake_registry(vec!["include"]), &filter)
+        .unwrap();
     println!("{}", report.summary());
     assert!(report.success(), "{}", report.summary());
 
@@ -161,7 +167,7 @@ fn bundled_samples_are_discovered_and_skipped_with_recorded_reasons() {
     }
     let summary = report.summary();
     assert!(summary.contains("skipped samples/include-and-selection"));
-    assert!(summary.contains("tag `include`: Adapter for tag `include`"));
+    assert!(summary.contains("tag `resolve`: Adapter for tag `resolve`"));
 }
 
 #[test]

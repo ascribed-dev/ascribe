@@ -5,6 +5,7 @@
 //! for the tags it now handles from `SKIPS.toml`.
 
 mod check;
+pub mod include;
 mod inline;
 mod model;
 mod structure;
@@ -19,4 +20,5 @@ pub fn register(registry: &mut Registry) {
     registry.register(syntax::SyntaxAdapter);
     registry.register(check::CheckAdapter);
     registry.register(model::ModelAdapter);
+    registry.register(include::IncludeAdapter);
 }

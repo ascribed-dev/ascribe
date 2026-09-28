@@ -21,6 +21,7 @@ toml.workspace = true
 tessera-check.workspace = true
 tessera-core.workspace = true
 tessera-model.workspace = true
+tessera-resolve.workspace = true
 tessera-syntax.workspace = true
 
 [[test]]

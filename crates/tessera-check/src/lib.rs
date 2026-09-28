@@ -32,7 +32,7 @@ mod yaml;
 
 pub use checks::check_file;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
-pub use project::{FileEntry, LoadError, Lookup, MODEL_FILE, Project, SourceFile};
+pub use project::{FileEntry, LoadError, MODEL_FILE, Project, SourceFile};
 pub use registry::{Entry, Level, Registry};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content

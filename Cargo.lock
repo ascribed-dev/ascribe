@@ -956,6 +956,7 @@ dependencies = [
  "tempfile",
  "tessera-core",
  "tessera-model",
+ "tessera-resolve",
  "tessera-syntax",
  "thiserror",
  "toml 0.9.12+spec-1.1.0",
@@ -997,6 +998,7 @@ dependencies = [
  "tessera-check",
  "tessera-core",
  "tessera-model",
+ "tessera-resolve",
  "tessera-syntax",
  "thiserror",
  "toml 0.9.12+spec-1.1.0",
@@ -1038,7 +1040,10 @@ name = "tessera-resolve"
 version = "0.0.0"
 dependencies = [
  "serde_json",
+ "serde_yaml",
  "tessera-core",
+ "tessera-model",
+ "tessera-syntax",
 ]
 
 [[package]]

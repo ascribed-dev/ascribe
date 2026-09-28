@@ -22,6 +22,8 @@ cargo test -p tessera-conformance --lib --test harness
 
 `tests/file_checks.rs` also runs, for every case tagged `check`, the file-level diagnostics the case expects (its top-level `diagnostics`), even when the runner skips the case because it carries another tag whose phase isn't built yet (`include`, `resolve`, `slug`, `page-check`). File-level diagnostics don't depend on those phases, so this keeps every file-level row of SPEC §8.2 checked now.
 
+`tests/source_index_rows.rs` likewise runs, until phases 10 and 14 add adapters for `check` and `page-check`, the rows the source index answers (phase 11): referenced files that don't exist, links to fragments and routes, include cycles and missing include ids, and links to ids. Every case tagged `include` or `slug` also carries `check`, `page-check`, or `resolve`, so the runner skips them all for now; this test compares those rows, in every case that expects diagnostics, with what `tessera-resolve` reports.
+
 ## Layout
 
 ```
