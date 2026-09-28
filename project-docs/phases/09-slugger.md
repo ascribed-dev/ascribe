@@ -71,6 +71,6 @@ The fixtures were generated from the real package (`github-slugger` 2.0.0 from n
 
 ### Left open
 
-- **Empty slugs.** A heading such as `## ???` or `## 🎉` slugs to `""` (or `-` followed by nothing useful). Astro then produces an empty id; a link `#` can't target it. Phase 11 or 12 may want a diagnostic. No spec question raised yet, because SPEC doesn't say and the conservative behavior (report what the consumer does) is implemented.
+- **Empty slugs.** A heading such as `## ???` or `## 🎉` slugs to `""`, and a second one to `-1`. Such an id can't be linked to usefully; how Astro treats an empty id is unverified. Phase 11 or 12 may want a diagnostic. No spec question raised yet, because SPEC doesn't say and the conservative behavior (report what the consumer does) is implemented.
 - **Upgrading upstream.** Rerun `generate.mjs` against the new version and update `GITHUB_SLUGGER_VERSION`; the tests fail if the fixtures' recorded version differs from the constant.
 
