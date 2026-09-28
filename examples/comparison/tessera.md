@@ -21,43 +21,43 @@ You can run {product} in the browser at play.quill.dev with no local setup.
 @steps
 1. Install the agent package:
 
-    @variant {pm=npm}
-    ```shell
-    npm install -g @quill/agent
-    ```
-    @variant {pm=pnpm}
-    ```shell
-    pnpm add -g @quill/agent
-    ```
-    @variant {pm=yarn}
-    ```shell
-    yarn global add @quill/agent
-    ```
-    @end
+   @variant {pm=npm}:
+   ```shell
+   npm install -g @quill/agent
+   ```
+   @variant {pm=pnpm}:
+   ```shell
+   pnpm add -g @quill/agent
+   ```
+   @variant {pm=yarn}:
+   ```shell
+   yarn global add @quill/agent
+   ```
+   @end
 
 2. Verify the install:
 
-    ```shell
-    quill --version
-    ```
+   ```shell
+   quill --version
+   ```
 
-    The command prints the installed version, {version}.
+   The command prints the installed version, {version}.
 
-    @note
-    The agent needs write access to your repository's `.quill/` directory.
+   @note
+   The agent needs write access to your repository's `.quill/` directory.
 
 3. Create `quill.yaml` at the root of your repository:
 
-    ```yaml phrases=true
-    agent:
-      version: {version}
-      watch: docs/
-    ```
+   ```yaml phrases=true
+   agent:
+     version: {version}
+     watch: docs/
+   ```
 
 ## Connect to {product}
 @id: connect
 
-@variant {deployment=cloud}
+@variant {deployment=cloud}:
 Sign in to {cloud} and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
 
 ```yaml
@@ -65,7 +65,7 @@ cloud:
   api_key: ${QUILL_KEY}
 ```
 
-@variant {deployment=self-managed}
+@variant {deployment=self-managed}:
 Point the agent at your server. Self-managed servers must run {product} Server 3.3 or later.
 
 ```yaml

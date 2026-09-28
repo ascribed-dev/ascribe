@@ -52,7 +52,7 @@ These principles govern the language. They are non-normative, but every normativ
 5. **Containers are rare.** Most directives occupy a single line. Nesting is discouraged, and every nesting need has a flat alternative.
 6. **Constrain the grammar, don't strangle it.** `@` marks directives, but other constructs use whatever notation reads best (for example, `{key}` for phrases).
 7. **Validate while authoring.** The rules a build enforces are the same rules the editor reports as you type.
-8. **Strict inside, tolerant outside.** Processors are strict about Tessera source; compiled output degrades to readable plain markdown.
+8. **Strict inside, tolerant outside.** Processors are strict about what Tessera source means, not about how it's spaced; compiled output degrades to readable plain markdown.
 
 ### 1.3 Conformance
 
@@ -123,9 +123,11 @@ A **directive line** has this shape (ABNF rule `directive-line`):
 ```
 
 - **Name.** The directive's keyword (§3.2).
-- **Attributes.** OPTIONAL. Metadata as `key=value` pairs in braces (§3.3), separated from the name by one space.
-- **Primary.** OPTIONAL. The directive's main value: a path, an identifier, a label, or text (§3.4). Introduced by `:` and one space.
-- **Trailing colon.** A `:` that ends the line, with no primary after it, opens a container. It's used only by directives that permit both forms (§3.5).
+- **Attributes.** OPTIONAL. Metadata as `key=value` pairs in braces (§3.3).
+- **Primary.** OPTIONAL. The directive's main value: a path, an identifier, or text (§3.4). Introduced by `:`.
+- **Trailing colon.** A `:` that ends the line, with no primary after it, opens a container (§3.5). Every container opener ends this way, and no other directive line does.
+
+Spacing between these parts doesn't matter: processors accept any spaces or tabs between the name, the attributes, the colon, and the primary, including none, and ignore whitespace at the end of the line. Canonical form (§8.3) fixes one spelling.
 
 Attributes, when present, always come before the primary.
 
@@ -148,6 +150,8 @@ A line is a directive line only if all of the following hold:
 
 Otherwise the line is ordinary text. In particular, `@` followed by an unknown word is literal (`@astrojs/react`, `@timestamp`), and so is an `@` that follows a letter or digit (`support@example.com`).
 
+A line that has the shape of a directive but an unknown name, meaning `@word` at line start followed by `{`, `:`, or the end of the line, is still ordinary text, but processors SHOULD warn about it and suggest the closest known directive (`@warning:` → "did you mean `@note {type=warning}:`?"). Writing `\@` silences the warning. Prose `@` doesn't take this shape in practice.
+
 Built-in keywords never contain a hyphen. Project widget names always contain one (§6). The keyword set is closed: it grows only by revisions to this specification (built-ins) or by content-model declarations (project widgets).
 
 ### 3.3 Attributes
@@ -159,16 +163,16 @@ Attributes use one grammar everywhere: after a directive name, and after an imag
 ```
 
 - **Keys** are lowercase: a letter followed by letters, digits, or hyphens (`key`). Each directive's schema declares the keys it accepts (§7.2).
-- **Pairs** are separated by a comma and one space.
+- **Pairs** are separated by commas. Spaces and tabs inside the braces, around commas, around `=`, and around `|` are ignored. An empty attribute block (`{}`) is allowed and means no attributes.
 - **Values** take one of three forms:
 
   | Form | Syntax | Example |
   |---|---|---|
-  | Token | Letters, digits, `_`, `-` | `type=caution`, `level=2`, `heading=false` |
+  | Token | Any characters except whitespace and `,` `\|` `{` `}` `=` `"` | `type=caution`, `heading=false`, `since=3.4`, `width=600px` |
   | Quoted string | Double quotes; `\"` and `\\` escape inside | `label="Using other images"` |
   | Value set | Tokens joined by `\|`, only where the schema declares the key set-valued | `platform=cloud\|on-prem` |
 
-- A single value MUST be quoted if it contains a space or any of `,` `|` `}` `=` `"`. In a value set, `|` separates the members, each member is a token, and the set is never quoted. Single quotes have no special meaning.
+- A single value MUST be quoted if it contains whitespace or any of `,` `|` `{` `}` `=` `"`. In a value set, `|` separates the members, each member is a token, and the set is never quoted. Single quotes have no special meaning.
 - **Types come from the schema, never from how a value looks.** The grammar captures only the form (token, string, or set); the content model declares each key's type (string, enumeration, boolean, number) and processors validate against it.
 - **Booleans are explicit:** `key=true` or `key=false`. A bare key with no value is an error.
 
@@ -179,7 +183,12 @@ Attributes carry semantic metadata only. There are no class or id shorthands (`.
 Each directive's schema declares whether it takes a primary and of which kind:
 
 - An **identifier primary** (a path, id, or key) is a single token that ends at the first whitespace.
-- A **text primary** (callout text or a label) runs to the end of the line and is parsed as CommonMark inline content, so it may contain emphasis, links, and phrases.
+- A **text primary** (callout text) starts after the colon and continues onto the following lines exactly as a paragraph does: until a blank line, a directive line, or any other line that would interrupt a paragraph. It's parsed as CommonMark inline content, so it may contain emphasis, links, and phrases. Hard-wrapped text therefore stays together:
+
+  ```
+  @note {type=caution}: Back up your database
+  before you upgrade.
+  ```
 
 ### 3.5 Forms
 
@@ -199,16 +208,13 @@ Second paragraph, still inside the callout.
 
 A single keyword can permit both forms. There's never a separate keyword for the container version of a directive. Each directive's schema declares which forms it permits (§7.2).
 
-**Choosing a form.** A directive's form is decided by its schema and its own line, never by content further down:
+**Choosing a form.** A directive's form is decided by its own line, never by content further down: **a directive line that ends in `:` opens a container, and any other directive line is in line form.** Trailing whitespace after the colon doesn't count.
 
-| Schema permits | Directive line | Form |
-|---|---|---|
-| Line form only | Any | Line |
-| Container form only | Any | Container |
-| Both forms | Ends in `:` with nothing after it | Container |
-| Both forms | Anything else | Line |
+Each directive's schema declares which forms it permits (§7.2), and processors check the line against it:
 
-A trailing colon on a directive that doesn't permit both forms is an error.
+- A trailing colon on a directive with no container form is an error.
+- A container-only directive (such as `@variant`) without its trailing colon is an error.
+- A directive that permits both forms (such as `@note`) is a container with the colon and in line form without it.
 
 **Closing.** `@end` closes the innermost open container. There are no named closers. Every container MUST be closed before its enclosing block (list item, blockquote, group arm, or document) ends.
 
@@ -221,10 +227,10 @@ A directive whose schema declares it **groupable** forms groups of alternatives.
 A run of openers of the same groupable directive forms one **group**. Each opener starts an **arm** and ends the previous one. A single end line closes the whole group.
 
 ```
-@variant {deployment=cloud}
+@variant {deployment=cloud}:
 Sign in to Quill Cloud and copy an API key.
 
-@variant {deployment=self-managed}
+@variant {deployment=self-managed}:
 Point the agent at your server.
 @end
 ```
@@ -232,7 +238,8 @@ Point the agent at your server.
 - An arm contains every block from its opener up to the next opener in the group, or up to the group's end line.
 - The group's end line belongs to the group, not to its last arm.
 - A group with one arm is valid.
-- An opener that appears while a group of the same directive is the innermost open group joins that group.
+- An opener joins the nearest open group of the same directive within the same CommonMark container (the document, a list item, or a blockquote), even when other containers are still open inside the current arm. Those containers are reported as unclosed at the opener's line, so a missing `@end` is reported where the next arm begins rather than at the end of the document.
+- As a result, a group can't be nested directly inside an arm of another group of the same directive. For `@variant`, combine the dimensions on one arm instead (§4.3).
 
 ### 3.7 Titles
 
@@ -247,6 +254,8 @@ You can run Quill in the browser with no local setup.
 - The title line MUST be directly above the directive line, with no blank line between.
 - A title line MUST begin a block: it follows a blank line, a heading, a directive line, or the start of its container. A `.` line that continues a paragraph is ordinary text.
 - If the next line isn't a directive that accepts a title, the `.` line is ordinary text. Prose such as `.NET is a framework` is therefore unaffected unless it sits directly on top of a directive; `\.` escapes it there.
+- A line that starts with `.` and a space (`. Try it`) is never a title. When it sits directly above a directive that accepts a title, processors SHOULD warn that it was probably meant as one.
+- Titles serve as a note's heading, a `@details` summary, and a labeled `@variant` arm's label (§4.3).
 
 ### 3.8 Binding
 
@@ -255,10 +264,10 @@ A directive in line form attaches to content according to its schema's **binding
 | Binding | Applies to |
 |---|---|
 | Self | The directive's own primary, or nothing (it stands alone) |
-| Preceding heading | The heading directly above it, and that heading's section |
+| Preceding heading | The heading at the start of its section, and that section |
 | Following block | The next block in the same container |
 
-**Heading-bound directives** go on the lines directly under their heading, with no blank line between them and the heading. Several MAY stack:
+**Heading-bound directives** go at the top of their section: under the heading, before any other content. Blank lines between the heading and these directives don't matter. Several MAY stack, one per line:
 
 ```
 ## Streaming sync
@@ -268,7 +277,9 @@ A directive in line form attaches to content according to its schema's **binding
 
 A heading's **section** is the heading plus all content up to the next heading of the same or a higher level.
 
-**Following-block directives** bind the next block (paragraph, list, code block, blockquote, table, or container) within the same container. A blank line MAY separate the directive from the block. Binding a heading is an error, and so is a following-block directive with no block after it in its container.
+**Following-block directives** bind the next block (paragraph, list, code block, blockquote, table, or container) within the same container. They belong directly above that block, touching it: what a directive annotates is what it touches. A blank line between them is allowed, but processors SHOULD warn, because it hides what the directive annotates, and canonical form removes it. Binding a heading is an error, and so is a following-block directive with no block after it in its container.
+
+The two rules together: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.**
 
 ### 3.9 Directives inside lists and blockquotes
 
@@ -291,10 +302,10 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 
 | Directive | Forms | Primary | Binding | Purpose |
 |---|---|---|---|---|
-| `@id` | line | identifier | preceding heading | Give a heading a stable id |
+| `@id` | line | identifier | top of section | Give a heading a stable id |
 | `@include` | line | identifier (path) | self | Transclude a file or a region |
-| `@variant` | container, groupable | text (label), optional | — | Mark alternative content |
-| `@available` | line | availability spec or feature key | preceding heading, else following block | Declare where content applies |
+| `@variant` | container, groupable | none (label via title) | — | Mark alternative content |
+| `@available` | line | availability spec or feature key | top of section, else following block | Declare where content applies |
 | `@note` | line, container | text, optional | self (with primary), else following block; container with a trailing `:` | Callout |
 | `@steps` | line | none | following block | Mark an ordered list as a procedure |
 | `@details` | line, container | none | following block; container with a trailing `:` | Collapsible content |
@@ -308,7 +319,7 @@ Gives a heading an explicit, stable id.
 @id: config-setup
 ```
 
-- **Form:** line. **Binding:** preceding heading. **Primary:** REQUIRED identifier (letters, digits, hyphens).
+- **Form:** line. **Binding:** preceding heading (at the top of the section, §3.8). **Primary:** REQUIRED identifier (letters, digits, hyphens).
 - The id replaces the heading's automatic id (§5.5). A heading has exactly one id.
 - The id MUST be unique within its page.
 - The id names the heading's section, which links (§5.2) and `@include` (§4.2) can both target.
@@ -344,35 +355,39 @@ Marks alternatives: content that differs by a declared dimension, or labeled one
 **Dimensional arms** carry dimension values as attributes:
 
 ````
-@variant {pm=npm}
+@variant {pm=npm}:
 ```shell
 npm install -g @quill/agent
 ```
-@variant {pm=pnpm}
+@variant {pm=pnpm}:
 ```shell
 pnpm add -g @quill/agent
 ```
 @end
 ````
 
-**Labeled arms** carry a label as their primary, for alternatives that don't correspond to a declared dimension:
+**Labeled arms** carry a label as a title line (§3.7), for alternatives that don't correspond to a declared dimension:
 
 ```
-@variant: Using Docker Hardened Images
+.Using Docker Hardened Images
+@variant:
 …
 
-@variant: Using other images
+.Using other images
+@variant:
 …
 @end
 ```
 
-- **Form:** container only, groupable (§3.6).
+- **Form:** container only, groupable (§3.6). Every arm opener ends in `:`. **Primary:** none.
+- Each arm has either attributes (a dimensional arm) or a title (a labeled arm), never both and never neither.
 - **Dimensional arms:**
   - Each attribute key MUST be a declared dimension, and each value a declared value of it (§7.2).
   - A value set (`platform=cloud|on-prem`) means the arm applies to any of those values.
   - Several keys on one arm mean the arm applies only when all of them match.
   - Negation and any other operators are not part of the language.
   - All arms in a group MUST share at least one dimension key.
+  - To vary by two dimensions at once, put both on one arm (`{deployment=cloud, pm=npm}`); groups don't nest directly (§3.6).
 - **Labeled arms:**
   - A labeled group is local to its page. Its labels aren't validated against the content model and don't synchronize across pages.
   - A group's arms MUST be either all labeled or all dimensional.
@@ -400,8 +415,8 @@ Declares where content applies and its lifecycle state. Unlike `@variant`, it do
 
 - **Form:** line. **Primary:** REQUIRED availability spec or feature key.
 - **Binding:**
-  - Directly under a heading, it applies to that heading's section.
-  - Anywhere else, it binds the following block.
+  - At the top of a section, before any other content, it applies to the whole section, whether or not a blank line separates it from the heading.
+  - Anywhere else, it binds the following block it touches (§3.8).
 - **Page level:** the frontmatter key `available` holds the same spec and applies to the whole page:
 
   ```yaml
@@ -428,6 +443,8 @@ A spec is a comma-separated list of **targets**, each optionally followed by its
 - Each lifecycle state declares whether content in that state **counts as available**. By default every state counts as available except `removed`.
 - States in a history MUST be in chronological order, compared using the content model's version scheme. A target that the content model declares as versionless takes a single state and no versions.
 - The language has no version ranges, alternatives, or negation. Each state names only the version where it begins.
+- **Commas here aren't `|`.** In `@variant`, `|` means "any of these values", a single membership test (`platform=cloud|on-prem`). In an availability spec, `,` separates targets, each with its own lifecycle (`cloud, self-managed preview 3.3`).
+- Targets, dimension names, and states are names (ABNF rule `name-word`): a letter followed by letters, digits, `_`, or `-`. They're spelled exactly as the content model declares them.
 
 #### Scope
 
@@ -437,7 +454,7 @@ A spec is a comma-separated list of **targets**, each optionally followed by its
 
 #### Feature keys
 
-A primary (or frontmatter value) consisting of a single token that matches a key in the content model's features registry is replaced by that feature's declared spec. A feature going generally available then takes one edit. Feature keys and target names MUST NOT overlap.
+A primary (or frontmatter value) consisting of a single token that matches a key in the content model's features registry is replaced by that feature's declared spec. A feature going generally available then takes one edit. A bare word in a spec is therefore a dimension value, a dimension name, or a feature key, and the content model guarantees it can only be one of them (§7.2).
 
 ### 4.5 `@note`
 
@@ -454,7 +471,7 @@ You can run Quill in the browser with no local setup.
 ```
 
 - **Forms:**
-  1. **With a primary** (`@note {type=tip}: text`), the note is a single line whose primary is its content.
+  1. **With a primary** (`@note {type=tip}: text`), the primary is the note's content. It may continue onto the following lines, like a paragraph (§3.4).
   2. **With no colon** (`@note {type=tip}`), the note binds the following block.
   3. **With a trailing colon** (`@note {type=tip}:`), the note is a container that holds blocks until `@end`.
 - **Title:** accepted (§3.7).
@@ -521,6 +538,9 @@ See the [streaming API reference]({api}streaming).
 - **Where phrases never apply:** code spans, indented code blocks, and raw HTML.
 - **Distinction from attributes:** `{…}` containing `=` directly after a directive name or an image is an attribute block (§3.3), not a phrase.
 - **Values** are inserted as literal text. They aren't scanned for phrases or markup, and they don't vary by case, number, or argument.
+- **Keeping source and output in agreement.** Whether `{key}` is a phrase depends on a registry the reader can't see, so processors SHOULD report two cases:
+  - `{key}` text in prose whose key isn't declared, which is literal today and would silently become a phrase if the key were declared later (`\{` silences it);
+  - when a key is added to the registry, the pages whose existing literal `{key}` text would change.
 
 ### 5.2 Links
 
@@ -610,6 +630,8 @@ A content model declares the following.
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
+Dimension names, dimension values, lifecycle states, and feature keys are names (ABNF rule `name-word`). A name MUST NOT be used in more than one of these roles; processors reject a content model that does so when loading it. This keeps every bare word in an availability spec unambiguous (§4.4).
+
 ---
 
 ## 8. Validation
@@ -633,20 +655,28 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Attributes | Value doesn't match the key's declared type | Error |
 | Attributes | Bare key without a value | Error |
 | Attributes | Unquoted value containing a reserved character | Error |
+| Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name | Warning |
+| Directives | Primary given to a directive that takes none, or a required primary missing | Error |
 | Container | Container not closed before its enclosing block ends | Error |
-| Container | Trailing `:` on a directive that doesn't permit both forms | Error |
+| Container | Trailing `:` on a directive with no container form | Error |
+| Container | Container-only directive without a trailing `:` | Error |
+| Container | Container still open when the next arm of its group begins (reported at that arm's opener) | Error |
 | Container | End line with no open container | Error |
 | Container | End line indented differently from its opener | Error |
 | Container | Nesting deeper than two levels | Warning |
 | Binding | Following-block directive with no following block in its container | Error |
 | Binding | Following-block directive bound to a heading | Error |
+| Binding | Blank line between a following-block directive and its block | Warning |
+| Binding | Heading-bound directive that isn't at the top of its section | Error |
 | Title | Title given to a directive that doesn't accept one | Error |
+| Title | A `. ` line (dot and space) directly above a directive that accepts a title | Warning |
 | `@id` | Duplicate id on a page, including ids from included content (page level) | Error |
 | `@include` | Target file or id doesn't exist | Error |
 | `@include` | Include cycle | Error |
 | `@variant` | No arm of a group survives a build's selection (page level) | Warning |
 | `@variant` | Unknown dimension or value | Error |
 | `@variant` | Group mixes labeled and dimensional arms | Error |
+| `@variant` | Arm has both a title and attributes, or neither | Error |
 | `@variant` | Dimensional arms share no dimension key | Error |
 | `@available` | Unknown target or state | Error |
 | `@available` | History out of chronological order | Error |
@@ -661,14 +691,16 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Links | Destination is a route rather than a file path | Warning |
 | Images | Local source doesn't exist | Error |
 | Images | Missing alt text | Warning |
+| Phrases | `{key}` in prose whose key isn't declared | Warning |
 | Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text | Warning |
 | Lists | Unindented directive line ends a list | Warning |
 | Lists | Directive line over-indented into an indented code block | Warning |
-| Content model | Feature key overlaps a target name | Error |
+| Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list) | Warning |
+| Content model | A name used in more than one role: dimension name, dimension value, lifecycle state, or feature key | Error |
 
 ### 8.3 Canonical form
 
-Each construct has one canonical spelling. Processors SHOULD offer to rewrite source into canonical form, and SHOULD report non-canonical source as a formatting issue, not as an error.
+Processors accept any spacing the grammar allows (§3.1, §3.3). Each construct still has one canonical spelling, which is what a formatter writes. Processors SHOULD offer to rewrite source into canonical form, and SHOULD report non-canonical source as a formatting issue, not as an error.
 
 - One space between a directive name and `{`.
 - No space inside braces: `{type=caution}`.
@@ -676,6 +708,8 @@ Each construct has one canonical spelling. Processors SHOULD offer to rewrite so
 - Attributes in the order the schema declares them.
 - Values quoted only when necessary.
 - No empty attribute block: `@note`, not `@note {}`.
+- No trailing whitespace after a container's `:`.
+- No blank line between a following-block directive and its block.
 - `:` directly after the name or attribute block, followed by one space before a primary, or ending the line for a container.
 - Directive lines inside a list item indented exactly to the item's content column.
 
@@ -825,11 +859,14 @@ An authoring environment is a processor that edits Tessera source interactively.
   - Renaming or moving a file updates links and includes that point to it.
   - Changing a heading's id updates links to it.
   - Renaming a phrase key updates its uses.
-- **Formatting** into canonical form (§8.3).
+- **Formatting** into canonical form (§8.3), with a formatter that understands Tessera.
+- **Distinct display of title lines**, so a paragraph that accidentally became a title is easy to spot.
 
 Source files store real file paths, but authors should rarely need to read or type them.
 
 *Note (non-normative): VS Code has no API for hiding text within a line. Hover, CodeLens, and inlay hints are the dependable ways to keep paths out of the author's way.*
+
+*Note (non-normative): general CommonMark formatters don't know that title and directive lines start new blocks. To them, a title line, a directive line, and the text below are one paragraph, so a formatter that reflows paragraphs (for example, Prettier with `proseWrap: always`) joins them into one line and breaks the page. Tessera projects should format with a Tessera-aware formatter, or exclude Tessera sources from other formatters.*
 
 ---
 
@@ -844,39 +881,46 @@ Versions of this specification are numbered. A documentation set's content model
 ABNF (RFC 5234). `SP`, `DIGIT`, `ALPHA`, `DQUOTE`, and `VCHAR` are the RFC 5234 core rules. Container indentation and blockquote markers (§3.9) are stripped before these rules apply.
 
 ```abnf
-directive-line  = "@" name [ SP attributes ] [ ":" [ SP primary ] ]
-                                              ; ":" ending the line opens a container
-end-line        = "@end"
+OWS             = *( SP / HTAB )                          ; optional spaces or tabs
+RWS             = 1*( SP / HTAB )                         ; required spaces or tabs
+
+directive-line  = "@" name [ OWS attributes ] [ OWS ":" [ OWS primary ] ] OWS
+                                        ; ":" ending the line opens a container
+end-line        = "@end" OWS
 title-line      = "." title-start *title-char
-title-start     = %x21-2D / %x2F-7E / UTF8-non-ascii    ; not space, not "."
+title-start     = %x21-2D / %x2F-7E / UTF8-non-ascii      ; not space, not "."
 title-char      = %x20-7E / UTF8-non-ascii
 
 name            = builtin-name / widget-name
 builtin-name    = LOWER *( LOWER / DIGIT )
 widget-name     = builtin-name 1*( "-" 1*( LOWER / DIGIT ) )
 
-attributes      = "{" attribute *( "," SP attribute ) "}"
-attribute       = key "=" value
+attributes      = "{" OWS [ attribute *( OWS "," OWS attribute ) OWS ] "}"
+attribute       = key OWS "=" OWS value
 key             = LOWER *( LOWER / DIGIT / "-" )
 value           = token / quoted / value-set
-token           = 1*( ALPHA / DIGIT / "_" / "-" )
-value-set       = token 1*( "|" token )
+token           = 1*tchar
+tchar           = %x21 / %x23-2B / %x2D-3C / %x3E-7A / %x7E / UTF8-non-ascii
+                                        ; any visible character except " , = { | }
+value-set       = token 1*( OWS "|" OWS token )
 quoted          = DQUOTE *( qchar / "\" DQUOTE / "\\" ) DQUOTE
 qchar           = %x20-21 / %x23-5B / %x5D-7E / UTF8-non-ascii
 
 primary         = identifier / text
-identifier      = 1*( VCHAR / UTF8-non-ascii )           ; no whitespace
-text            = 1*( %x20-7E / UTF8-non-ascii )         ; to end of line
+identifier      = 1*( VCHAR / UTF8-non-ascii )            ; no whitespace
+text            = 1*( %x20-7E / UTF8-non-ascii )          ; first line only; continues
+                                        ; onto following lines like a paragraph (§3.4)
 
 phrase          = "{" key "}"
 
-availability    = entry *( "," SP entry ) / feature-key
-entry           = target [ SP detail ]
-detail          = version / state [ SP version ] / "(" history ")"
-history         = state SP version *( "," SP state SP version )
-target          = key
-state           = key
-feature-key     = key
+availability    = entry *( OWS "," OWS entry ) / feature-key
+entry           = target [ RWS detail ]
+detail          = version / state [ RWS version ] / "(" OWS history OWS ")"
+history         = state RWS version *( OWS "," OWS state RWS version )
+target          = name-word
+state           = name-word
+feature-key     = name-word
+name-word       = ALPHA *( ALPHA / DIGIT / "_" / "-" )    ; the "name" of §4.4 and §7.2
 version         = 1*DIGIT *( "." 1*DIGIT )
 
 LOWER           = %x61-7A
@@ -916,15 +960,15 @@ You can run {product} in the browser at play.quill.dev with no local setup.
 @steps
 1. Install the agent package:
 
-   @variant {pm=npm}
+   @variant {pm=npm}:
    ```shell
    npm install -g @quill/agent
    ```
-   @variant {pm=pnpm}
+   @variant {pm=pnpm}:
    ```shell
    pnpm add -g @quill/agent
    ```
-   @variant {pm=yarn}
+   @variant {pm=yarn}:
    ```shell
    yarn global add @quill/agent
    ```
@@ -952,7 +996,7 @@ You can run {product} in the browser at play.quill.dev with no local setup.
 ## Connect to {product}
 @id: connect
 
-@variant {deployment=cloud}
+@variant {deployment=cloud}:
 Sign in to {cloud} and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
 
 ```yaml
@@ -960,7 +1004,7 @@ cloud:
   api_key: ${QUILL_KEY}
 ```
 
-@variant {deployment=self-managed}
+@variant {deployment=self-managed}:
 Point the agent at your server. Self-managed servers must run {product} Server 3.3 or later.
 
 ```yaml
@@ -1008,13 +1052,15 @@ Notes on the example:
 
 **One line grammar, attributes first.** Placing attributes before the primary keeps metadata next to the name, and gives a directive's line and container forms the same head. Braces were chosen over brackets because brackets collide with markdown link syntax.
 
-**A bare `@end`, and containers kept rare.** Named closers are verbose, and counting delimiters (as in `:::` fences) is hard to read. A bare `@end` is simple, as in Ruby and Lua. The price is that deeply nested containers become hard to match by eye, so the language keeps them rare: most directives are single lines, and variance uses sibling arms instead of nesting. A directive that can be either a single line or a container says which on its own line, with a trailing colon, so neither a reader nor a parser has to look ahead to find its `@end`.
+**A bare `@end`, and containers kept rare.** Named closers are verbose, and counting delimiters (as in `:::` fences) is hard to read. A bare `@end` is simple, as in Ruby and Lua. The price is that deeply nested containers become hard to match by eye, so the language keeps them rare: most directives are single lines, and variance uses sibling arms instead of nesting. Every container opener ends in a colon, and nothing else does, so neither a reader nor a parser has to look ahead to find out whether an `@end` is coming.
 
 **Groups whose arms close each other.** Tabs, switches, and steppers were the largest source of nesting in the surveyed corpora. Letting each arm end the previous one, as Ruby's `elsif` and HTML's `<li>` do, handles them with one closer and no nesting.
 
 **`@note` rather than GitHub alerts.** GitHub's `> [!NOTE]` syntax renders on GitHub, but it requires a `>` on every line and can't carry a title. Source readability outranks renderer compatibility, so Tessera keeps `@note` with a following-block form. In every corpus surveyed, 79–90% of callouts were a single block.
 
-**Titles on their own line.** AsciiDoc's `.Title` convention keeps a title as readable text rather than a quoted attribute.
+**Titles on their own line.** AsciiDoc's `.Title` convention keeps a title as readable text rather than a quoted attribute. The same line labels one-off `@variant` arms, so the language has one way to name things.
+
+**Free spacing, one canonical spelling.** Invisible differences in spacing never change meaning or cause errors; a formatter writes the canonical form. Binding follows what a reader sees: a directive annotates the block it touches, or the whole section when it sits at the top.
 
 **Phrases as `{key}`.** Substitutions are heavily used (about 49,000 in Elastic's documentation), and 40% of them are directly followed by text (`'s`, plurals, hyphenated compounds). An `@`-prefixed form ends at whitespace, so it fails in those positions, and it also looks like a directive or a social handle. Braces are bounded and read as a placeholder.
 
