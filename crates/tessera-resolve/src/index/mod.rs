@@ -30,6 +30,7 @@ use tessera_syntax::{
 };
 
 pub use headings::{ExplicitId, Heading};
+pub(crate) use refs::target_of;
 pub use refs::{Local, RefKind, Reference, Target};
 
 /// Whether a file is published (SPEC §2.2).
@@ -200,7 +201,7 @@ pub fn index_file(
 
     let mut visit = |block: &Block| {
         for inlines in walk::own_inlines(block) {
-            refs::collect_references(inlines, path, model, &mut references);
+            refs::collect_references(inlines, source, path, model, &mut references);
             collect_phrases(inlines, block, model, &mut phrases);
         }
         match &block.kind {
@@ -299,28 +300,15 @@ fn include_of(line: &DirectiveLine, written_in: &RelPath) -> Include {
             heading,
         };
     };
-    let (path, section) = match primary.text.split_once('#') {
-        Some((path, id)) => (path, Some(id.to_owned()).filter(|id| !id.is_empty())),
-        None => (primary.text.as_str(), None),
-    };
-    // SPEC-QUESTION(Q62): an include path is a path, not a URL, so `%20` isn't
-    // decoded: a file name with a space can't be written as an identifier
-    // primary at all, and a name with `%` in it is taken literally. An empty
-    // id (`file.md#`) includes the whole file.
-    let target = if path.is_empty() {
-        None
-    } else {
-        let base = if path.starts_with('/') {
-            RelPath::root()
-        } else {
-            written_in.parent().unwrap_or_default()
-        };
-        base.join(path).ok()
-    };
+    let crate::references::IncludeTarget {
+        written,
+        target,
+        section,
+    } = crate::references::include_target(&primary.text, written_in);
     Include {
         span: line.span,
         primary: Some(primary.span),
-        written: path.to_owned(),
+        written,
         target,
         section,
         heading,

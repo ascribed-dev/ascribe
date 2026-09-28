@@ -8,9 +8,10 @@ use tessera_core::{FileId, Issue, Location, RelPath, Slugger, Span, diagnostics}
 use tessera_model::ContentModel;
 
 use crate::expand::{ExpandedPage, Expander, IncludeSite};
-use crate::fs::{FileSystem, Probe};
-use crate::index::{FileIndex, FileKind, Heading, Include, RefKind, Reference, Target, index_file};
+use crate::fs::FileSystem;
+use crate::index::{FileIndex, FileKind, Heading, Include, RefKind, Reference, index_file};
 use crate::layout::Layout;
+use crate::references::{SourceSet, include_issue, reference_issue, resolve_reference};
 use crate::slug::{default_slugger, slugger_by_name};
 
 /// What a link or image names, once the project's files are known.
@@ -19,7 +20,7 @@ pub enum Resolution {
     /// A URL with a scheme. Nothing to check or copy.
     External,
     /// A reference form whose definition holds a declared phrase, which can't
-    /// be applied yet ([`Target::Deferred`]). Nothing is said about it.
+    /// be applied yet ([`crate::Target::Deferred`]). Nothing is said about it.
     Deferred,
     /// A source file of the project: a page or a fragment.
     Source {
@@ -54,6 +55,9 @@ pub enum Resolution {
         page: String,
         /// The link to write instead, as a file path.
         suggestion: String,
+        /// Whether that page is a source file of the project, so the
+        /// suggestion can be offered as a fix.
+        page_exists: bool,
     },
 }
 
@@ -416,123 +420,18 @@ impl Project {
         index
             .references
             .iter()
-            .map(|r| self.resolve_reference(index, r, fs))
+            .map(|r| {
+                resolve_reference(
+                    r.kind,
+                    &r.target,
+                    &index.path,
+                    &self.model,
+                    self,
+                    fs,
+                    &self.layout,
+                )
+            })
             .collect()
-    }
-
-    fn resolve_reference(
-        &self,
-        index: &FileIndex,
-        reference: &Reference,
-        fs: &dyn FileSystem,
-    ) -> Resolution {
-        let local = match &reference.target {
-            Target::External => return Resolution::External,
-            Target::Deferred => return Resolution::Deferred,
-            Target::Local(local) => local,
-        };
-        let Some(path) = &local.path else {
-            return Resolution::AssetMissing(Missing::Absent);
-        };
-        // SPEC-QUESTION(Q59): an image with no path (`![a]()`, `![a](#x)`) has
-        // no file, so it's reported as a missing source, as phase 10 does. A
-        // link with only a `#id` names the file it's in.
-        if reference.kind == RefKind::Image && local.written.is_empty() {
-            return Resolution::AssetMissing(Missing::Absent);
-        }
-        if local.source {
-            return match self.files.get(path) {
-                Some(target) => Resolution::Source {
-                    target: path.clone(),
-                    id: local.fragment.clone(),
-                    fragment: target.kind == FileKind::Fragment,
-                },
-                None => Resolution::SourceMissing {
-                    actual: self.case_twin(path),
-                },
-            };
-        }
-        // A file the build would copy.
-        let missing = if !self.layout.is_allowed(path) {
-            Missing::Outside
-        } else {
-            match fs.probe(&self.layout.project_path(path)) {
-                Probe::File => {
-                    return Resolution::Asset {
-                        path: path.clone(),
-                        fragment: local.fragment.clone(),
-                    };
-                }
-                Probe::Missing => Missing::Absent,
-                Probe::CaseMismatch(actual) => match self.content_path_of(&actual) {
-                    Some(actual) => Missing::Case(actual),
-                    None => Missing::Absent,
-                },
-            }
-        };
-        if local.route_like && !matches!(missing, Missing::Case(_)) {
-            return self.route(index, local, path);
-        }
-        Resolution::AssetMissing(missing)
-    }
-
-    /// The page a route-like link probably means, and the file-path link to
-    /// write instead.
-    fn route(&self, index: &FileIndex, local: &crate::index::Local, path: &RelPath) -> Resolution {
-        let as_directory = path.join("index.md").unwrap_or_else(|_| path.clone());
-        let as_file = match path.file_name() {
-            Some(_) => RelPath::parse(&format!("{path}.md")).unwrap_or_else(|_| path.clone()),
-            None => as_directory.clone(),
-        };
-        // A route `a/b` means `a/b.md`; `a/b/` may mean `a/b/index.md`.
-        let page = if local.written.ends_with('/')
-            && self.files.contains_key(&as_directory)
-            && !self.files.contains_key(&as_file)
-        {
-            as_directory
-        } else {
-            as_file
-        };
-        let suggestion = if local.written.starts_with('/') {
-            format!("/{page}")
-        } else {
-            let from = index.path.parent().unwrap_or_default();
-            if page.is_inside() {
-                page.relative_from(&from)
-                    .unwrap_or_else(|| format!("/{page}"))
-            } else {
-                // A page above the content root: up out of the file's directory
-                // first, then the path's own `..` segments.
-                format!("{}{page}", "../".repeat(from.segments().count()))
-            }
-        };
-        let suggestion = match &local.fragment {
-            Some(id) => format!("{suggestion}#{id}"),
-            None => suggestion,
-        };
-        Resolution::Route {
-            page: page.to_string(),
-            suggestion,
-        }
-    }
-
-    /// A project file whose path differs from `path` only in case.
-    fn case_twin(&self, path: &RelPath) -> Option<RelPath> {
-        let folded = path.as_str().to_lowercase();
-        self.files
-            .keys()
-            .find(|p| p.as_str().to_lowercase() == folded)
-            .cloned()
-    }
-
-    /// A path relative to the project root as a content path, when it's
-    /// inside the content root or reaches it by `..`.
-    fn content_path_of(&self, project_path: &RelPath) -> Option<RelPath> {
-        let root: Vec<&str> = self.layout.content_root.segments().collect();
-        let mine: Vec<&str> = project_path.segments().collect();
-        let common = root.iter().zip(&mine).take_while(|(a, b)| a == b).count();
-        let ups = "../".repeat(root.len() - common);
-        RelPath::parse(&format!("{ups}{}", mine[common..].join("/"))).ok()
     }
 
     fn build_edges(&self) -> ReverseEdges {
@@ -590,22 +489,8 @@ impl Project {
     // -- Problems -----------------------------------------------------------
 
     fn include_problem(&self, index: &FileIndex, include: &Include) -> Option<Issue> {
-        let target = include.target.as_ref()?;
-        // SPEC-QUESTION(Q63): only a source file of the project can be
-        // included; a file outside the content root, or that isn't Markdown,
-        // is reported as missing, whether or not it exists on disk.
-        if self.files.contains_key(target) {
-            return None;
-        }
         let at = Location::new(index.file, include.primary.unwrap_or(include.span));
-        let issue = Issue::new(diagnostics::INCLUDE_TARGET_MISSING, at)
-            .with_arg("path", include.written.clone());
-        Some(match self.case_twin(target) {
-            Some(actual) => issue
-                .with_variant("case")
-                .with_arg("actual", actual.to_string()),
-            None => issue,
-        })
+        include_issue(&include.written, include.target.as_ref(), self, at)
     }
 
     fn reference_problem(
@@ -615,63 +500,25 @@ impl Project {
         resolution: &Resolution,
     ) -> Vec<Issue> {
         let at = Location::new(index.file, reference.span);
-        let written = match &reference.target {
-            Target::Local(l) if l.written.is_empty() && !reference.destination.is_empty() => {
-                reference.destination.clone()
-            }
-            Target::Local(l) if l.written.is_empty() => "(no source)".to_owned(),
-            Target::Local(l) => l.written.clone(),
-            _ => reference.destination.clone(),
-        };
-        let missing_slug = match reference.kind {
-            RefKind::Link => diagnostics::LINK_TARGET_MISSING,
-            RefKind::Image => diagnostics::IMAGE_SOURCE_MISSING,
-        };
-        match resolution {
-            Resolution::External | Resolution::Deferred | Resolution::Asset { .. } => Vec::new(),
-            Resolution::SourceMissing { actual } => {
-                let issue = Issue::new(missing_slug, at).with_arg("path", written);
-                vec![match actual {
-                    Some(actual) => issue
-                        .with_variant("case")
-                        .with_arg("actual", actual.to_string()),
-                    None => issue,
-                }]
-            }
-            Resolution::AssetMissing(why) => {
-                let issue = Issue::new(missing_slug, at).with_arg("path", written);
-                vec![match why {
-                    Missing::Absent => issue,
-                    Missing::Case(actual) => issue
-                        .with_variant("case")
-                        .with_arg("actual", actual.to_string()),
-                    Missing::Outside => issue.with_variant("outside"),
-                }]
-            }
-            Resolution::Route { page, suggestion } => vec![
-                Issue::new(diagnostics::LINK_ROUTE, at)
-                    .with_arg("page", page.clone())
-                    .with_arg("suggestion", suggestion.clone()),
-            ],
-            Resolution::Source {
-                target,
-                id,
-                fragment,
-            } => {
-                if *fragment {
-                    // SPEC-QUESTION(Q64): a link with only `#id` in a fragment
-                    // names the fragment itself, so it's reported like any
-                    // other link to a fragment.
-                    return vec![
-                        Issue::new(diagnostics::LINK_TO_FRAGMENT, at).with_arg("path", written),
-                    ];
-                }
-                match id {
-                    Some(id) => self.link_id_problem(reference, at, target, id),
-                    None => Vec::new(),
-                }
-            }
+        let mut out: Vec<Issue> = reference_issue(
+            reference.kind,
+            &reference.target,
+            &reference.destination,
+            resolution,
+            at,
+            reference.destination_span,
+        )
+        .into_iter()
+        .collect();
+        if let Resolution::Source {
+            target,
+            id: Some(id),
+            fragment: false,
+        } = resolution
+        {
+            out.extend(self.link_id_problem(reference, at, target, id));
         }
+        out
     }
 
     /// A link's `#id` must be a source id of the target page itself, not of a
@@ -708,11 +555,27 @@ impl Project {
     }
 }
 
+/// Source files have ids from 1, in path order: id 0 is `tessera.toml`, as
+/// in `tessera-check`, so diagnostics from both can be merged.
 fn file_id(index: usize) -> FileId {
     // A project never has 2^32 files; saturate rather than wrap.
-    FileId::new(u32::try_from(index).unwrap_or(u32::MAX))
+    FileId::new(u32::try_from(index + 1).unwrap_or(u32::MAX))
 }
 
 fn file_index(file: FileId) -> usize {
-    file.index() as usize
+    (file.index() as usize).wrapping_sub(1)
+}
+
+impl SourceSet for Project {
+    fn contains(&self, path: &RelPath) -> bool {
+        self.files.contains_key(path)
+    }
+
+    fn case_twin(&self, path: &RelPath) -> Option<RelPath> {
+        let folded = path.as_str().to_lowercase();
+        self.files
+            .keys()
+            .find(|p| p.as_str().to_lowercase() == folded)
+            .cloned()
+    }
 }

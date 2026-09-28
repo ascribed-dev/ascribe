@@ -956,6 +956,7 @@ dependencies = [
  "tempfile",
  "tessera-core",
  "tessera-model",
+ "tessera-resolve",
  "tessera-syntax",
  "thiserror",
  "toml 0.9.12+spec-1.1.0",

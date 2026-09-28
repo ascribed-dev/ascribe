@@ -55,6 +55,7 @@ pub mod fs;
 mod index;
 mod layout;
 mod project;
+pub mod references;
 pub mod slug;
 
 pub use expand::{
@@ -68,4 +69,8 @@ pub use index::{
 pub use layout::Layout;
 pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
+};
+pub use references::{
+    IncludeTarget, SourceSet, destination_span, include_issue, include_target, reference_issue,
+    reference_target, resolve_reference,
 };

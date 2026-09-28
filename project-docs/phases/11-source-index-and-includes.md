@@ -92,16 +92,18 @@ Index every source file in the project, independent of any build, and expand inc
 - What the `resolve`-tagged include cases expect (resolved outlines, `builds.*.assets`) needs build modes and phrase substitution in content: phase 12. `Project::assets` already gives the assets before build filtering; the cases `builds/assets/beside-fragment` and `projects/quill` list the same sets.
 - **The shared model didn't load with phase 08's loader (fixed by phase 10).** `tests/conformance/_model/tessera.toml` declares a `role` attribute on `quill-audience`, which Q27 reserves (`model-attribute-reserved`), and its `content-root = "files"` doesn't exist for single-file cases. Phase 08 fixed `examples/content-models/full.toml` but not this file, and three cases use `role` in their inputs (`attributes/value-set`, `attributes/set-on-set-valued-key`, `widgets/audience-heading-or-block`). Phase 10 fixed the model and the three cases (PR #14), and the adapter here now reads the model as phase 10's does (`load_str`, the content root from the case's kind).
 
-### Rules that phase 10's `tessera-check` `Project` also implements
+### One implementation of the reference rules (consolidated with phase 10)
 
-Two implementations of each of these exist once #13 and #14 are both on `main`, and they need to become one (a consolidation step before phases 12, 14, and 15; `FileSystem` is offered as the base):
+After phases 10 and 11 merged, their two implementations of the rules below were made one, in `tessera_resolve::references` and `tessera_resolve::fs`. `tessera-check` depends on `tessera-resolve` and calls them; `tessera_check::tests::parity` builds both projects over one tree with every kind of reference problem and asserts they report the same problems at the same places, with the same file ids.
 
-1. **Discovery of source files**: exactly `.md`, skipping dot-names, unreadable entries reported (aligned with phase 10's Q52 here).
-2. **The exact-case probe**: `FileSystem::probe` compares directory entries, so a case mismatch is found on every file system, with the real name.
-3. **The project and content-root boundary**: `Layout::is_allowed` (inside the content root or project root, outside the output directory, Q10).
-4. **Route detection**: a local link that names no file and whose last segment has no extension, or that ends in `/`, is `link-route` instead of a missing-file error (Q22); the page and suggestion arguments are worked out in `Project::route`.
-5. **Phrase substitution in destinations**: declared phrases in inline link and image destinations and autolinks are substituted before classification (`index/refs.rs`); reference forms are `Deferred` until definitions are exposed.
-6. Also implemented in both, or close to it: percent-decoding and resolution of destinations (both use `tessera_core::classify_destination`), `link-to-fragment`, `include-target-missing` with its `case` variant, and the file-level `image-source-missing` and `link-target-missing` variants (`case`, `outside`).
+1. **Discovery of source files**: `FileSystem::sources` (exactly `.md`, skipping dot-names, unreadable entries listed). `tessera_check::Project::load` uses `DiskFs`, and still stops on an unreadable source (Q52).
+2. **The exact-case probe**: `FileSystem::probe`. `tessera-check`'s own `Project::lookup` and `Lookup` are gone.
+3. **The boundary**: `Layout::is_allowed` (Q10).
+4. **What a destination names**: `reference_target` (phrase substitution in destinations, Q54; external or local; source or asset; route-like, Q22).
+5. **Whether it's there**: `resolve_reference`, against a `SourceSet` (both projects implement it) and a `FileSystem`, including the route-to-page mapping (Q55: `route.md`, else `route/index.md`; `Resolution::Route::page_exists` says whether to offer the fix).
+6. **The file-level issue**: `reference_issue` and `include_issue`, at the destination as written (Q53, `destination_span`, now also on `Reference::destination_span`), with the `link-route` fix. `Project::problems` adds only the page-level link-id checks.
+
+Behavior that changed for `tessera check` in the consolidation: an `@include` of an existing file that isn't a source (`../README.md`) is now `include-target-missing` (Q63), a route-like link to a file whose name differs only in case is the case error rather than `link-route`, and a `#id`-only link in a fragment is `link-to-fragment` (Q64). Behavior that changed for the source index: source files have ids from 1 (id 0 is `tessera.toml`, as in `tessera-check`), and its diagnostics point at the destination as written.
 
 ### Left open
 

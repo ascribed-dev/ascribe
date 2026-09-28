@@ -12,6 +12,7 @@ publish.workspace = true
 tessera-core.workspace = true
 tessera-model.workspace = true
 tessera-syntax.workspace = true
+tessera-resolve.workspace = true
 serde.workspace = true
 serde_yaml.workspace = true
 toml.workspace = true

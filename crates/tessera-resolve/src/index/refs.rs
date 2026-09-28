@@ -29,6 +29,9 @@ pub struct Reference {
     /// attribute block included). For a reference form that's the label, not
     /// the definition.
     pub span: Span,
+    /// The destination as written, for an inline link or image: where a
+    /// diagnostic about the file it names points (Q53).
+    pub destination_span: Option<Span>,
     /// The destination, with escapes decoded and `<>` removed. For a
     /// reference form, that of the link reference definition (SPEC §5.3, Q23).
     pub destination: String,
@@ -87,18 +90,21 @@ pub struct Local {
 /// is the file's content path.
 pub(crate) fn collect_references(
     inlines: &[Inline],
+    source: &str,
     written_in: &RelPath,
     model: &ContentModel,
     out: &mut Vec<Reference>,
 ) {
     walk_inlines(inlines, &mut |inline| {
-        let (kind, form, destination, phrases, text_empty) = match &inline.kind {
+        let (kind, form, destination, phrases, text_empty, children, alt) = match &inline.kind {
             InlineKind::Link(l) => (
                 RefKind::Link,
                 l.form,
                 &l.destination,
                 &l.destination_phrases,
                 l.children.is_empty(),
+                &l.children,
+                None,
             ),
             InlineKind::Image(i) => (
                 RefKind::Image,
@@ -106,12 +112,22 @@ pub(crate) fn collect_references(
                 &i.destination,
                 &i.destination_phrases,
                 false,
+                &i.children,
+                Some(i.alt),
             ),
             _ => return,
         };
         out.push(Reference {
             kind,
             span: inline.span,
+            destination_span: crate::references::destination_span(
+                source,
+                inline.span,
+                form,
+                children,
+                alt,
+                destination,
+            ),
             destination: destination.clone(),
             form,
             text_empty,
@@ -120,7 +136,7 @@ pub(crate) fn collect_references(
     });
 }
 
-fn target_of(
+pub(crate) fn target_of(
     kind: RefKind,
     form: LinkForm,
     destination: &str,

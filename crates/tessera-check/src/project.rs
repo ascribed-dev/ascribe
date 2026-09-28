@@ -2,10 +2,12 @@
 
 use std::collections::HashMap;
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
+use tessera_resolve::{DiskFs, FileSystem, Layout, SourceSet};
 
 use crate::Diagnostic;
 
@@ -38,18 +40,6 @@ pub struct FileEntry<'a> {
     pub content_path: Option<&'a RelPath>,
 }
 
-/// The result of looking for a file, with names compared exactly (SPEC §9.4).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Lookup {
-    /// A regular file with exactly this name exists.
-    Found,
-    /// No file has this name, but one differs only in letter case. Holds the
-    /// path as it's really spelled, relative to the project root.
-    CaseMismatch(String),
-    /// There's no such file, or it isn't a regular file.
-    Missing,
-}
-
 /// Why a project couldn't be loaded.
 #[derive(Debug, thiserror::Error)]
 pub enum LoadError {
@@ -75,23 +65,28 @@ pub enum LoadError {
 /// A documentation set: its content model and source files.
 ///
 /// The content model is file id 0, and the source files have ids 1, 2, … in
-/// path order, so an id is stable for one loaded project. Source texts are
-/// held in memory: the language server builds a `Project` from its open
-/// buffers, and the command line from the files on disk. Files that aren't
-/// sources (images, other downloads) are looked up on disk when a reference
-/// needs them; a source file counts as existing even when it's only in
-/// memory.
+/// path order, so an id is stable for one loaded project (the same numbering
+/// as `tessera_resolve::Project`). Source texts are held in memory: the
+/// language server builds a `Project` from its open buffers, and the command
+/// line from the files on disk. Files that aren't sources (images, other
+/// downloads) are looked for on disk, through `tessera_resolve`'s
+/// [`FileSystem`], when a reference needs them; a source file counts as
+/// existing even when it's only in memory.
+///
+/// Which files are sources, and every rule about what a reference names, are
+/// `tessera_resolve`'s, so this crate and the source index can't disagree.
 #[derive(Clone, Debug)]
 pub struct Project {
     root: PathBuf,
-    content_root: RelPath,
+    layout: Layout,
     model: ContentModel,
     model_text: String,
     sources: Vec<SourceFile>,
     model_warnings: Vec<Diagnostic>,
-    /// Every source file's path relative to the project root, exactly and
-    /// lowercased, so a lookup doesn't scan the sources.
-    source_paths: HashMap<String, String>,
+    /// Every source file's content path, lowercased, to its real spelling,
+    /// for [`SourceSet`].
+    source_paths: HashMap<String, RelPath>,
+    disk: DiskFs,
 }
 
 impl Project {
@@ -104,11 +99,11 @@ impl Project {
     }
 
     /// Loads the project whose content model is at `config`: the model, then
-    /// every `.md` file under its content root.
+    /// every source file under its content root, as
+    /// [`tessera_resolve::FileSystem::sources`] finds them.
     ///
-    /// Directories and files whose names begin with `.` are skipped, and
-    /// symbolic links to directories aren't followed. A source file that
-    /// isn't valid UTF-8 is a [`LoadError::Read`].
+    /// A source file or directory that can't be read, or a source file that
+    /// isn't valid UTF-8, is a [`LoadError::Read`].
     pub fn load(config: &Path) -> Result<Project, LoadError> {
         let text = fs::read(config)
             .map_err(|e| read_error(config, e))
@@ -146,26 +141,37 @@ impl Project {
         ))
     }
 
-    /// Reads every `.md` file under `root/content_root`, in path order, with
-    /// ids from 1. See [`Project::load`] for what's skipped.
+    /// Reads every source file under `root/content_root`, in path order, with
+    /// ids from 1. See [`Project::load`].
     pub fn read_sources(root: &Path, content_root: &RelPath) -> Result<Vec<SourceFile>, LoadError> {
-        // SPEC-QUESTION(Q52): which files are sources: exactly `.md`, no
-        // dot-names, UTF-8, and an unreadable one stops the command.
-        let base = join(root, content_root);
-        let mut paths = Vec::new();
-        walk(&base, &RelPath::root(), &mut paths)?;
-        paths.sort();
-        let mut sources = Vec::with_capacity(paths.len());
-        for (i, path) in paths.into_iter().enumerate() {
-            let full = join(&base, &path);
-            let text = fs::read(&full)
-                .map_err(|e| read_error(&full, e))
-                .and_then(|bytes| {
-                    String::from_utf8(bytes).map_err(|_| LoadError::Read {
+        // SPEC-QUESTION(Q52): an unreadable source stops the command.
+        let layout = Layout {
+            content_root: content_root.clone(),
+            output_dir: RelPath::root(),
+        };
+        let disk = DiskFs::new(root, &layout);
+        let found = disk.sources();
+        if let Some(bad) = found.unreadable.first() {
+            return Err(LoadError::Read {
+                path: join(&join(root, content_root), &bad.path)
+                    .display()
+                    .to_string(),
+                message: bad.reason.clone(),
+            });
+        }
+        let mut sources = Vec::with_capacity(found.paths.len());
+        for (i, path) in found.paths.into_iter().enumerate() {
+            let text = disk.read(&path).map_err(|e| {
+                let full = join(&join(root, content_root), &path);
+                if e.kind() == io::ErrorKind::InvalidData {
+                    LoadError::Read {
                         path: full.display().to_string(),
                         message: "the file isn't valid UTF-8".into(),
-                    })
-                })?;
+                    }
+                } else {
+                    read_error(&full, e)
+                }
+            })?;
             sources.push(SourceFile {
                 id: FileId::new(i as u32 + 1),
                 path,
@@ -192,17 +198,22 @@ impl Project {
         let model_warnings = model.warnings.iter().map(Diagnostic::from_issue).collect();
         let source_paths = sources
             .iter()
-            .filter_map(|s| content_root.join(s.path.as_str()).ok())
-            .map(|p| (p.as_str().to_lowercase(), p.to_string()))
+            .map(|s| (s.path.as_str().to_lowercase(), s.path.clone()))
             .collect();
+        let layout = Layout {
+            content_root,
+            output_dir: RelPath::parse(&model.project.output_dir).unwrap_or_default(),
+        };
+        let disk = DiskFs::new(&root, &layout);
         Project {
             root,
-            content_root,
+            layout,
             model,
             model_text,
             sources,
             model_warnings,
             source_paths,
+            disk,
         }
     }
 
@@ -228,7 +239,17 @@ impl Project {
 
     /// The content root, relative to the project root.
     pub fn content_root(&self) -> &RelPath {
-        &self.content_root
+        &self.layout.content_root
+    }
+
+    /// Where the content root and the output directory are.
+    pub fn layout(&self) -> &Layout {
+        &self.layout
+    }
+
+    /// The files on disk, for what isn't a source file held in memory.
+    pub fn file_system(&self) -> &dyn FileSystem {
+        &self.disk
     }
 
     /// The content model.
@@ -265,6 +286,7 @@ impl Project {
         Some(FileEntry {
             id,
             display_path: self
+                .layout
                 .content_root
                 .join(source.path.as_str())
                 .map_or_else(|_| source.path.to_string(), |p| p.to_string()),
@@ -277,74 +299,20 @@ impl Project {
     pub fn line_index(&self, id: FileId) -> Option<LineIndex> {
         self.file(id).map(|f| LineIndex::new(f.text))
     }
+}
 
-    /// Looks for a file by its path relative to the **project root**, comparing
-    /// every name exactly, on every platform (SPEC §9.4). Source files held in
-    /// memory count as existing; anything else is looked for on disk, one
-    /// directory at a time, so `Logo.png` never finds `logo.png` even on a
-    /// case-insensitive file system.
-    ///
-    /// A path that leaves the project root is [`Lookup::Missing`].
-    pub fn lookup(&self, path: &RelPath) -> Lookup {
-        if !path.is_inside() {
-            return Lookup::Missing;
-        }
-        if let Some(found) = self.lookup_source(path) {
-            return found;
-        }
-        let mut dir = self.root.clone();
-        let mut actual: Vec<String> = Vec::new();
-        let mut mismatched = false;
-        let segments: Vec<&str> = path.segments().collect();
-        for (i, seg) in segments.iter().enumerate() {
-            let last = i + 1 == segments.len();
-            let Ok(entries) = fs::read_dir(&dir) else {
-                return Lookup::Missing;
-            };
-            let names: Vec<String> = entries
-                .filter_map(Result::ok)
-                .filter_map(|e| e.file_name().into_string().ok())
-                .collect();
-            let name = if names.iter().any(|n| n == seg) {
-                (*seg).to_owned()
-            } else if let Some(n) = names
-                .iter()
-                .find(|n| n.to_lowercase() == seg.to_lowercase())
-            {
-                mismatched = true;
-                n.clone()
-            } else {
-                return Lookup::Missing;
-            };
-            dir.push(&name);
-            actual.push(name);
-            if last {
-                if !dir.is_file() {
-                    return Lookup::Missing;
-                }
-            } else if !dir.is_dir() {
-                return Lookup::Missing;
-            }
-        }
-        if segments.is_empty() {
-            return Lookup::Missing;
-        }
-        if mismatched {
-            Lookup::CaseMismatch(actual.join("/"))
-        } else {
-            Lookup::Found
-        }
+impl SourceSet for Project {
+    fn contains(&self, path: &RelPath) -> bool {
+        self.source_paths
+            .get(&path.as_str().to_lowercase())
+            .is_some_and(|actual| actual == path)
     }
 
-    /// The in-memory source files' answer to [`Project::lookup`], if they
-    /// have one.
-    fn lookup_source(&self, path: &RelPath) -> Option<Lookup> {
-        let actual = self.source_paths.get(&path.as_str().to_lowercase())?;
-        Some(if actual == path.as_str() {
-            Lookup::Found
-        } else {
-            Lookup::CaseMismatch(actual.clone())
-        })
+    fn case_twin(&self, path: &RelPath) -> Option<RelPath> {
+        self.source_paths
+            .get(&path.as_str().to_lowercase())
+            .filter(|actual| *actual != path)
+            .cloned()
     }
 }
 
@@ -361,28 +329,4 @@ fn read_error(path: &Path, e: std::io::Error) -> LoadError {
         path: path.display().to_string(),
         message: e.to_string(),
     }
-}
-
-fn walk(base: &Path, dir: &RelPath, out: &mut Vec<RelPath>) -> Result<(), LoadError> {
-    let full = join(base, dir);
-    let entries = fs::read_dir(&full).map_err(|e| read_error(&full, e))?;
-    for entry in entries {
-        let entry = entry.map_err(|e| read_error(&full, e))?;
-        let Ok(name) = entry.file_name().into_string() else {
-            continue;
-        };
-        if name.starts_with('.') {
-            continue;
-        }
-        let Ok(rel) = dir.join(&name) else { continue };
-        let file_type = entry
-            .file_type()
-            .map_err(|e| read_error(&entry.path(), e))?;
-        if file_type.is_dir() {
-            walk(base, &rel, out)?;
-        } else if (file_type.is_file() || entry.path().is_file()) && rel.extension() == Some("md") {
-            out.push(rel);
-        }
-    }
-    Ok(())
 }
