@@ -26,6 +26,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The element library's tests drive a real browser.
+      - run: pnpm --filter @tessera/elements exec playwright-core install --with-deps chromium
       - run: pnpm format:check
       - run: pnpm -r lint
       - run: pnpm -r typecheck

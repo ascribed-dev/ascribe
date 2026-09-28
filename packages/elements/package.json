@@ -5,9 +5,32 @@
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
+  "sideEffects": [
+    "./dist/index.js",
+    "*.css"
+  ],
+  "files": [
+    "dist",
+    "css",
+    "CONTRACT.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./style.css": "./css/style.css"
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "axe-core": "^4.10.0",
+    "playwright-core": "^1.50.0"
   }
 }

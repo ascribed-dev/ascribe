@@ -39,4 +39,22 @@ Build `@tessera/elements`: the custom elements the site output uses, implementin
 
 ## Handoff notes
 
-_To be filled in by the implementing agent._
+**Built.** `packages/elements` implements `CONTRACT.md` with no additions.
+
+- `src/tabs.ts`: `<tessera-tabs>` and `<tessera-tab>`, the only behavior (ARIA tabs pattern, arrow/Home/End keys, `sync` across groups, `localStorage` key `tessera-tabs:<sync>`, guarded, with a per-page fallback). `src/group.ts`: `<tessera-group>`, an empty class (CSS gives it `display: block`). `src/index.ts` registers those three; notes, steps, and availability are CSS only and are deliberately not registered.
+- `css/style.css`: all styling, themed by `--tessera-*` properties (documented in `README.md`). Generated text comes from attributes (`attr()`), so a note shows `heading` or else `label`, a tab shows its `label`, and the availability lead-in is `tessera-availability::before`.
+- `tests/`-style browser tests in `test/`: Playwright (`playwright-core`) drives Chromium against the compiled `dist` and the CSS; axe-core audits pages with and without the script. `test/global-setup.ts` compiles the library first.
+
+**Public interface for phases 21 and 25.**
+
+- `import "@tessera/elements"` registers the elements; `@tessera/elements/style.css` is the stylesheet, importable without the script. The package exports `dist/index.js` (run `pnpm --filter @tessera/elements build` first; `dist/` is git-ignored) and `css/style.css`.
+- A project styles its own note types or lifecycle states by selecting on `[type="…"]` or `[states$="…"]` and setting `--_color` and `--_background` (see README).
+
+**Decisions.**
+
+- CI now installs Chromium (`playwright-core install --with-deps chromium` in `.github/workflows/js.yml`); locally the tests use `/opt/pw-browsers/chromium` or `TESSERA_CHROMIUM`.
+- No global `details` styling: the contract makes it optional, and a global rule would restyle every `<details>` on a site.
+- The tab list is rebuilt when a group is connected and removed when it's disconnected, so moving the element (for example, view transitions) is safe. A group whose children arrive after it connects is not re-scanned.
+- Step numbers use the `list-item` counter, so an `<ol start>` is honored.
+
+**Open.** No questions raised. The elements' contrast passes axe with the default colors; a site that overrides colors owns its own contrast. Nothing checks the emitted markup against these elements until phase 21.

@@ -1,0 +1,293 @@
+/*
+ * @tessera/elements: styles for the Tessera site output (CONTRACT.md).
+ *
+ * Everything here works without the script; only <tessera-tabs> adds
+ * behavior. Theme it by setting the --tessera-* custom properties (listed in
+ * README.md) on :root or any ancestor.
+ */
+
+:root {
+  /* Type */
+  --tessera-font-family: inherit;
+  --tessera-font-size-small: 0.875em;
+  --tessera-font-weight-strong: 600;
+
+  /* Spacing, borders */
+  --tessera-space: 1rem;
+  --tessera-space-small: 0.5rem;
+  --tessera-border-width: 1px;
+  --tessera-border-color: #d0d7de;
+  --tessera-radius: 0.375rem;
+
+  /* Surfaces and text */
+  --tessera-text-color: inherit;
+  --tessera-muted-color: #57606a;
+  --tessera-surface-color: transparent;
+
+  /* Note types: an accent color and a tinted background each. */
+  --tessera-note-color: #0969da;
+  --tessera-note-background: #ddf4ff;
+  --tessera-tip-color: #1a7f37;
+  --tessera-tip-background: #dafbe1;
+  --tessera-important-color: #8250df;
+  --tessera-important-background: #fbefff;
+  --tessera-warning-color: #9a6700;
+  --tessera-warning-background: #fff8c5;
+  --tessera-caution-color: #cf222e;
+  --tessera-caution-background: #ffebe9;
+
+  /* Steps */
+  --tessera-steps-color: #0969da;
+  --tessera-steps-marker-size: 1.75rem;
+  --tessera-steps-marker-text-color: #ffffff;
+
+  /* Tabs */
+  --tessera-tab-color: #57606a;
+  --tessera-tab-active-color: #0969da;
+  --tessera-tab-focus-color: #0969da;
+  --tessera-tab-hover-background: #f6f8fa;
+
+  /* Availability lifecycle states: an accent color and a background each. */
+  --tessera-state-color: #57606a;
+  --tessera-state-background: #eaeef2;
+  --tessera-state-ga-color: #1a7f37;
+  --tessera-state-ga-background: #dafbe1;
+  --tessera-state-preview-color: #8250df;
+  --tessera-state-preview-background: #fbefff;
+  --tessera-state-beta-color: #0969da;
+  --tessera-state-beta-background: #ddf4ff;
+  --tessera-state-deprecated-color: #9a6700;
+  --tessera-state-deprecated-background: #fff8c5;
+  --tessera-state-removed-color: #cf222e;
+  --tessera-state-removed-background: #ffebe9;
+}
+
+/* <tessera-note> ---------------------------------------------------------- */
+
+tessera-note {
+  --_color: var(--tessera-note-color);
+  --_background: var(--tessera-note-background);
+  display: block;
+  margin-block: var(--tessera-space);
+  padding: var(--tessera-space-small) var(--tessera-space);
+  border-inline-start: 0.25rem solid var(--_color);
+  border-radius: var(--tessera-radius);
+  background: var(--_background);
+  color: var(--tessera-text-color);
+  font-family: var(--tessera-font-family);
+}
+
+tessera-note[type="tip"] {
+  --_color: var(--tessera-tip-color);
+  --_background: var(--tessera-tip-background);
+}
+
+tessera-note[type="important"] {
+  --_color: var(--tessera-important-color);
+  --_background: var(--tessera-important-background);
+}
+
+tessera-note[type="warning"] {
+  --_color: var(--tessera-warning-color);
+  --_background: var(--tessera-warning-background);
+}
+
+tessera-note[type="caution"] {
+  --_color: var(--tessera-caution-color);
+  --_background: var(--tessera-caution-background);
+}
+
+/* The heading line: `heading`, or `label` when there's no heading. */
+tessera-note::before {
+  content: attr(label);
+  display: block;
+  margin-bottom: var(--tessera-space-small);
+  color: var(--_color);
+  font-weight: var(--tessera-font-weight-strong);
+}
+
+tessera-note[heading]::before {
+  content: attr(heading);
+}
+
+tessera-note > :first-child {
+  margin-top: 0;
+}
+
+tessera-note > :last-child {
+  margin-bottom: 0;
+}
+
+/* <tessera-steps> --------------------------------------------------------- */
+
+tessera-steps {
+  display: block;
+  margin-block: var(--tessera-space);
+}
+
+tessera-steps > ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+tessera-steps > ol > li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 var(--tessera-space) calc(var(--tessera-steps-marker-size) + var(--tessera-space));
+  min-height: var(--tessera-steps-marker-size);
+}
+
+tessera-steps > ol > li::before {
+  /* `list-item` follows the list's own numbering, including `start`. */
+  content: counter(list-item);
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  width: var(--tessera-steps-marker-size);
+  height: var(--tessera-steps-marker-size);
+  border-radius: 50%;
+  background: var(--tessera-steps-color);
+  color: var(--tessera-steps-marker-text-color);
+  font-size: var(--tessera-font-size-small);
+  font-weight: var(--tessera-font-weight-strong);
+  line-height: var(--tessera-steps-marker-size);
+  text-align: center;
+}
+
+tessera-steps > ol > li::after {
+  content: "";
+  position: absolute;
+  inset-block: calc(var(--tessera-steps-marker-size) + 0.25rem) 0.25rem;
+  inset-inline-start: calc(var(--tessera-steps-marker-size) / 2);
+  border-inline-start: var(--tessera-border-width) solid var(--tessera-border-color);
+}
+
+tessera-steps > ol > li:last-child::after {
+  display: none;
+}
+
+/* <tessera-tabs> ---------------------------------------------------------- */
+
+tessera-tabs {
+  display: block;
+  margin-block: var(--tessera-space);
+  font-family: var(--tessera-font-family);
+}
+
+tessera-tab {
+  display: block;
+}
+
+tessera-tab[hidden] {
+  display: none;
+}
+
+/* Without the script: every tab shows, introduced by its label. */
+tessera-tab::before {
+  content: attr(label);
+  display: block;
+  margin-top: var(--tessera-space);
+  color: var(--tessera-muted-color);
+  font-weight: var(--tessera-font-weight-strong);
+}
+
+/* With the script: the tab list carries the labels. */
+tessera-tab[role="tabpanel"]::before {
+  display: none;
+}
+
+tessera-tab[role="tabpanel"] {
+  padding-top: var(--tessera-space-small);
+}
+
+tessera-tabs > [role="tablist"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tessera-space-small);
+  border-bottom: var(--tessera-border-width) solid var(--tessera-border-color);
+}
+
+tessera-tabs > [role="tablist"] > [role="tab"] {
+  margin: 0 0 calc(var(--tessera-border-width) * -1);
+  padding: var(--tessera-space-small) var(--tessera-space);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--tessera-radius) var(--tessera-radius) 0 0;
+  background: transparent;
+  color: var(--tessera-tab-color);
+  font: inherit;
+  cursor: pointer;
+}
+
+tessera-tabs > [role="tablist"] > [role="tab"]:hover {
+  background: var(--tessera-tab-hover-background);
+}
+
+tessera-tabs > [role="tablist"] > [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--tessera-tab-active-color);
+  color: var(--tessera-tab-active-color);
+  font-weight: var(--tessera-font-weight-strong);
+}
+
+tessera-tabs > [role="tablist"] > [role="tab"]:focus-visible {
+  outline: 2px solid var(--tessera-tab-focus-color);
+  outline-offset: -2px;
+}
+
+/* <tessera-availability> -------------------------------------------------- */
+
+tessera-availability {
+  display: block;
+  margin-block: var(--tessera-space-small);
+  color: var(--tessera-muted-color);
+  font-family: var(--tessera-font-family);
+  font-size: var(--tessera-font-size-small);
+}
+
+/* The lead-in is generated content, so a site can restyle or translate it. */
+tessera-availability::before {
+  content: "Available: ";
+}
+
+tessera-availability-target {
+  --_color: var(--tessera-state-color);
+  --_background: var(--tessera-state-background);
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--_background);
+  color: var(--_color);
+}
+
+tessera-availability-target[states$="ga"] {
+  --_color: var(--tessera-state-ga-color);
+  --_background: var(--tessera-state-ga-background);
+}
+
+tessera-availability-target[states$="preview"] {
+  --_color: var(--tessera-state-preview-color);
+  --_background: var(--tessera-state-preview-background);
+}
+
+tessera-availability-target[states$="beta"] {
+  --_color: var(--tessera-state-beta-color);
+  --_background: var(--tessera-state-beta-background);
+}
+
+tessera-availability-target[states$="deprecated"] {
+  --_color: var(--tessera-state-deprecated-color);
+  --_background: var(--tessera-state-deprecated-background);
+}
+
+tessera-availability-target[states$="removed"] {
+  --_color: var(--tessera-state-removed-color);
+  --_background: var(--tessera-state-removed-background);
+}
+
+/* <tessera-group> --------------------------------------------------------- */
+
+tessera-group {
+  display: block;
+}

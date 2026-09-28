@@ -1,4 +1,18 @@
-// @tessera/elements: Tessera's web component library for the site output.
-// Phase 19 implements the elements.
+// @tessera/elements: registers Tessera's custom elements. Only
+// <tessera-tabs> has behavior; the rest are styled by the CSS file
+// (`@tessera/elements/style.css`), which works without this script.
 
-export {};
+import { TesseraGroup } from "./group.js";
+import { TesseraTab, TesseraTabs } from "./tabs.js";
+
+export { TesseraGroup, TesseraTab, TesseraTabs };
+
+const registry: [string, CustomElementConstructor][] = [
+  ["tessera-tabs", TesseraTabs],
+  ["tessera-tab", TesseraTab],
+  ["tessera-group", TesseraGroup],
+];
+
+for (const [name, constructor] of registry) {
+  if (!customElements.get(name)) customElements.define(name, constructor);
+}
