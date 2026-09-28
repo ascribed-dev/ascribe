@@ -51,7 +51,7 @@ You can run Quill in the browser at play.quill.dev with no local setup.
 </tessera-note>
 ```
 
-**Rendering, with or without JavaScript:** a block styled by `type`, with a heading line showing `heading`, or `label` when there's no heading, generated from the attributes by CSS (`::before` with `attr()`). Unknown types (a project's own) get the default note style, and are themed by selecting on `[type="…"]`. With no CSS, the content shows as ordinary blocks.
+**Rendering, with or without JavaScript:** a block styled by `type`, with a heading line showing `label` followed by `: ` and `heading`, or `label` alone when there's no heading (so the type never depends on color, Q12), generated from the attributes by CSS (`::before` with `attr()`). Unknown types (a project's own) get the default note style, and are themed by selecting on `[type="…"]`. With no CSS, the content shows as ordinary blocks.
 
 ## 2. `<tessera-steps>`
 
