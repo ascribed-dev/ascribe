@@ -2,8 +2,7 @@ description: >-
   A heading without `@id` that repeats another heading's text on the page is
   reported at the later one.
 spec: ["5.5", "8.2"]
-tags: [page-check, provisional]
-questions: [Q20]
+tags: [page-check]
 
 builds:
   site:

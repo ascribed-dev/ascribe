@@ -398,7 +398,7 @@ available = "cloud, self-managed preview 3.4"
 | `name` | string | **required** | The feature's display name, shown on hover and available to emitters. |
 | `available` | string (availability spec) | **required** | The feature's availability, in SPEC §4.4's syntax. |
 
-**Rules.** The spec is checked like one written in a document: it MUST parse (`model-availability-syntax`); every target MUST be a declared dimension value or dimension name, and every state a declared state (`model-availability-unknown-name`); versionless targets take no versions (`model-availability-versionless`); histories MUST be in chronological order (`model-availability-history-order`). It MUST NOT be a feature key itself (`model-feature-nested`), so features never refer to each other. **Decided (Q19).** Feature keys take part in the one-role rule.
+**Rules.** The spec is checked like one written in a document: it MUST parse (`model-availability-syntax`); every target MUST be a declared dimension value or dimension name, and every state a declared state (`model-availability-unknown-name`); versionless targets and dimension names take no versions (`model-availability-versionless`); histories MUST be in chronological order (`model-availability-history-order`). It MUST NOT be a feature key itself (`model-feature-nested`), so features never refer to each other. **Decided (Q19).** Feature keys take part in the one-role rule.
 
 ---
 
@@ -725,7 +725,7 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 | `model-note-label-required` | A new note type sets `label`. | `` new note type `{type}` needs a label, such as label = "{Type}" `` |
 | `model-availability-syntax` | A feature's `available` parses as an availability spec (SPEC Appendix A `availability`). | `` feature `{key}`: "{spec}" isn't a valid availability spec: {detail} `` |
 | `model-availability-unknown-name` | Every target in a feature's spec is a declared dimension value or dimension name, and every state is a declared lifecycle state. | `` feature `{key}`: `{name}` isn't a declared dimension value or dimension name ``<br>`` feature `{key}`: `{name}` isn't a declared lifecycle state `` |
-| `model-availability-versionless` | A versionless target has no versions in a feature's spec. | `` feature `{key}`: `{target}` is versionless, so it takes a state but no version `` |
+| `model-availability-versionless` | A versionless target, or a dimension name, has no versions in a feature's spec (SPEC §4.4). | `` feature `{key}`: `{target}` is versionless, so it takes a state but no version ``<br>`` feature `{key}`: `{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version `` |
 | `model-availability-history-order` | A history in a feature's spec is in chronological order under the version scheme. | `` feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier} `` |
 | `model-feature-nested` | A feature's `available` isn't itself a feature key (Q19). | `` feature `{key}`: available must be an availability spec, not another feature (`{other}`) `` |
 

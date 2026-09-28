@@ -129,7 +129,7 @@ A **directive line** has this shape (ABNF rule `directive-line`):
 
 Spacing between these parts doesn't matter: processors accept any spaces or tabs between the name, the attributes, the colon, and the primary, including none, and ignore whitespace at the end of the line. Canonical form (§8.3) fixes one spelling.
 
-Attributes, when present, always come before the primary.
+Attributes, when present, always come before the primary. Nothing else may appear on a directive line: text that fits none of these parts, such as `@steps foo`, `@note hello: text`, anything after `@end`, or a second word after an identifier primary (§3.4), is an error (§8.2).
 
 ```
 @note {type=caution}: Back up your database first.
@@ -146,7 +146,9 @@ A line is a directive line only if all of the following hold:
 
 1. `@` is at line start (§1.5).
 2. The name is a **known keyword**: a built-in directive (§4), `end`, or a project widget declared in the content model (§6).
-3. The line is not inside a code span, fenced code block, indented code block, or raw HTML block.
+3. The line is not inside a fenced code block, an indented code block, or a raw HTML block.
+
+Recognition is block structure, which comes before inline structure. So, as with a heading, a directive line interrupts a paragraph even when a code span opened on an earlier line of that paragraph hasn't closed; the span's opening backticks are then literal text.
 
 Otherwise the line is ordinary text. In particular, `@` followed by an unknown word is literal (`@astrojs/react`, `@timestamp`), and so is an `@` that follows a letter or digit (`support@example.com`).
 
@@ -173,6 +175,7 @@ Attributes use one grammar everywhere: after a directive name, and after an imag
   | Value set | Tokens joined by `\|`, only where the schema declares the key set-valued | `platform=cloud\|on-prem` |
 
 - A single value MUST be quoted if it contains whitespace or any of `,` `|` `{` `}` `=` `"`. In a value set, `|` separates the members, each member is a token, and the set is never quoted. Single quotes have no special meaning.
+- A value that breaks only the quoting rule, such as `{label=Using other images}` or `{lab=a=b}`, is reported as an unquoted value, because quoting it is the fix. A block whose structure can't be read as keys, `=`, and values (an unclosed quote or brace, a missing value, or text between pairs) is reported as a block that doesn't parse (§8.2).
 - **Types come from the schema, never from how a value looks.** The grammar captures only the form (token, string, or set); the content model declares each key's type (string, enumeration, boolean, number) and processors validate against it.
 - **Booleans are explicit:** `key=true` or `key=false`. A bare key with no value is an error.
 
@@ -182,7 +185,7 @@ Attributes carry semantic metadata only. There are no class or id shorthands (`.
 
 Each directive's schema declares whether it takes a primary and of which kind:
 
-- An **identifier primary** (a path, id, or key) is a single token that ends at the first whitespace.
+- An **identifier primary** (a path, id, or key) is a single token that ends at the first whitespace. Anything after the token on the line is an error (§3.1).
 - A **text primary** (callout text) starts after the colon and continues onto the following lines exactly as a paragraph does: until a blank line, a directive line, or any other line that would interrupt a paragraph. It's parsed as CommonMark inline content, so it may contain emphasis, links, and phrases. Hard-wrapped text therefore stays together:
 
   ```
@@ -220,6 +223,8 @@ Each directive's schema declares which forms it permits (§7.2), and processors 
 - A container-only directive (such as `@variant`) without its trailing colon is an error.
 - A directive that permits both forms (such as `@note`) is a container with the colon and in line form without it.
 
+After either error, the line keeps the form its own line gives it: a trailing colon still opens a container, and a container-only directive missing its colon is treated as if the colon were there. The error is reported once, at that line, and the container's `@end` still closes it.
+
 **Closing.** `@end` closes the innermost open container. There are no named closers. Every container MUST be closed before its enclosing block (list item, blockquote, group arm, or document) ends.
 
 Because the form is visible on the directive's own line, mistakes are reported where they happen. A container note whose trailing colon is missing binds only its first block, and its `@end` is then an end line with no open container, which is an error. A trailing colon added by mistake leaves a container unclosed, which is also an error.
@@ -244,6 +249,7 @@ Point the agent at your server.
 - A group with one arm is valid.
 - An opener joins the nearest open group of the same directive within the same CommonMark container (the document, a list item, or a blockquote), even when other containers are still open inside the current arm. Those containers are reported as unclosed at the opener's line, so a missing `@end` is reported where the next arm begins rather than at the end of the document.
 - As a result, a group can't be nested directly inside an arm of another group of the same directive. For `@variant`, combine the dimensions on one arm instead (§4.3).
+- Diagnostics about a group as a whole (it isn't closed, it mixes kinds of arm, its arms share no dimension, or none of its arms survives a build) are reported at the group's first opener. Diagnostics about one arm are reported at that arm's opener.
 
 ### 3.7 Titles
 
@@ -285,20 +291,22 @@ A heading's **section** is the heading plus all content up to the next heading o
 
 The two rules together: **at the top of a section, a directive describes the section; anywhere else, it describes the block it touches.**
 
+Before a document's first heading there is no section. A directive that can only bind a heading, such as `@id`, is an error there, and one that can bind either way, such as `@available`, binds the block it touches. Availability for the whole page belongs in frontmatter (§4.4).
+
 ### 3.9 Directives inside lists and blockquotes
 
 Directives follow CommonMark's container rules, just as headings and code fences do.
 
 1. **Indentation decides ownership.** A directive line indented to a list item's content column belongs to that list item.
 2. **Binding stays inside the item.** A following-block directive in a list item binds the next block within that item.
-3. **Containers don't straddle items.** A container or group opens and closes within one list item, or it contains whole lists. An end line indented differently from its opener doesn't close that opener; it's an error.
+3. **Containers don't straddle items.** A container or group opens and closes within one list item, or it contains whole lists. An end line in a different list item or blockquote from its opener doesn't close that opener: the end line is an error, and the opener, still open, is also reported unclosed when its own container ends. Within one container, up to three extra spaces before the end line (§1.5) don't matter.
 4. **Directive lines interrupt paragraphs and never continue them.** Like a heading, a directive line starts a new block. An unindented directive line directly after a list item therefore ends the list.
 5. **Over-indentation makes code.** A directive line indented four or more spaces beyond its container's content column is part of an indented code block, and so it's literal text. One to three extra spaces are allowed, as before a heading; a line indented less than a list item's content column is outside that item.
 6. **Blockquotes work the same way**, with `>` markers in place of indentation.
 
 ### 3.10 Nesting
 
-Containers MAY nest, and `@end` always closes the innermost one. Processors SHOULD warn when containers nest more than two levels deep (§8).
+Containers MAY nest, and `@end` always closes the innermost one. Processors SHOULD warn when containers nest more than two levels deep (§8). A group counts as one level; its arms don't add another.
 
 ---
 
@@ -348,6 +356,7 @@ Transcludes a file or a heading's section into the current document.
 
 - The target file and id MUST exist. Include cycles are an error.
 - Included content becomes part of the including page. Phrase substitution and build modes (§9) apply to it as they do to the rest of the page.
+- Included headings keep the levels they're written with. Include a section where its levels fit the page.
 - **Relative paths resolve from the file they're written in.** Every piece of content keeps its source file. Link destinations, image sources, and nested include paths inside a fragment resolve against the fragment's location, not the including page's. A fragment that links to `keys.md` means the `keys.md` next to the fragment, wherever it's included.
 - **Ids are checked on the expanded page.** Headings and `@id`s in included content become ids of the including page, and every id on a page MUST be unique after expansion. Including the same fragment twice on one page, or including a fragment whose ids collide with the page's own, is an error reported at the include site (§8.1).
 - **Links target pages, not fragments.** A fragment isn't published on its own, so a link to a fragment file is an error. A page's linkable ids are its own source ids (§5.5), not those of the fragments it includes: a link naming an id that exists only inside an included fragment is an error, and processors name the fragment when they report it. Link to the page that includes it.
@@ -442,7 +451,7 @@ A spec is a comma-separated list of **targets**, each optionally followed by its
 | `self-managed (preview 3.3, ga 3.5, deprecated 4.0)` | A history: each state starts at its version and lasts until the next state begins |
 | `cloud, self-managed preview 3.3` | Two targets |
 
-- A **target** is a value of a declared dimension, or the name of a dimension, which stands for all of its values.
+- A **target** is a value of a declared dimension, or the name of a dimension, which stands for all of its values. A dimension name takes a state but never a version, since its values don't share one version line: write `deployment beta`, or name the value, as in `self-managed beta 3.4`.
 - A **state** is a declared lifecycle state (§7.2). A target with no state is generally available (`ga`). A bare version means generally available since that version.
 - Each lifecycle state declares whether content in that state **counts as available**. By default every state counts as available except `removed`.
 - States in a history MUST be in chronological order, compared using the content model's version scheme. A target that the content model declares as versionless takes a single state and no versions.
@@ -458,7 +467,7 @@ A spec is a comma-separated list of **targets**, each optionally followed by its
 
 #### Feature keys
 
-A primary (or frontmatter value) consisting of a single token that matches a key in the content model's features registry is replaced by that feature's declared spec. A feature going generally available then takes one edit. A bare word in a spec is therefore a dimension value, a dimension name, or a feature key, and the content model guarantees it can only be one of them (§7.2).
+A primary (or frontmatter value) consisting of a single token that matches a key in the content model's features registry is replaced by that feature's declared spec, and wherever the directive's annotation is kept (§9.3, §9.4), it shows that spec, not the key. A feature going generally available then takes one edit. A bare word in a spec is therefore a dimension value, a dimension name, or a feature key, and the content model guarantees it can only be one of them (§7.2).
 
 ### 4.5 `@note`
 
@@ -556,10 +565,10 @@ See [](keys.md#rotate-keys).
 ```
 
 - **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading in the target file by its source id; the compiled link points at that heading's page id (§5.5). Only the target file's own headings have source ids there; headings it includes from fragments don't (§4.2).
-- The target file, and the id if present, MUST exist.
+- The target file, and the id if present, MUST exist. In each build, the target page MUST also be published: a link to a page the build drops (§9.3) is an error in that build. To link to such a page from shared content, put the link in a `@variant` arm that the same build removes.
 - **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2).
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
-- **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion.
+- **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion. A local destination looks like a route when it names no existing file and its last segment has no file extension or it ends in `/` (`/guides/install/`, `../guides/install`); it then gets that warning instead of a missing-file error.
 
 ### 5.3 Images
 
@@ -570,7 +579,7 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 ```
 
 - The attribute grammar is §3.3's. The content model declares which image attributes are accepted (§7.2).
-- A local image source MUST exist.
+- A local image source MUST exist. A reference image's source is its link reference definition's destination.
 - Processors SHOULD warn when an image has no alt text.
 - Presentation choices such as borders or shadows are not image attributes; they belong to the consumer's styling.
 
@@ -658,7 +667,9 @@ Validation happens at two levels.
 - **File level.** Each source file on its own: syntax, attributes, directive schemas, frontmatter, and whether referenced files exist.
 - **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes.
 
-A page-level diagnostic is reported at the source location that causes it. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment.
+A page-level diagnostic is reported at the source location that causes it. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment, as related information rather than as a second diagnostic.
+
+When several places together cause a diagnostic, it's reported once, at the later one: the second of two duplicate ids or headings (at the `@id` line for an explicit id, at the heading for a slug), the second include of a fragment included twice, the include that closes a cycle, and the later of two declarations in the content model. A frontmatter problem with no line of its own, such as a missing field, is reported at the file's first line.
 
 ### 8.2 Diagnostics
 
@@ -674,6 +685,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Attributes | The same key given more than once | Error |
 | Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name | Warning |
 | Directives | Primary given to a directive that takes none, or a required primary missing | Error |
+| Directives | Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary | Error |
 | Container | Container not closed before its enclosing block ends | Error |
 | Container | Trailing `:` on a directive with no container form | Error |
 | Container | Container-only directive without a trailing `:` | Error |
@@ -710,6 +722,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Links | Target is a fragment | Error |
 | Links | Target id exists only inside a fragment the target page includes (page level) | Error |
 | Links | Target id is removed by a build (page level, per build) | Error |
+| Links | Target page isn't published by a build (page level, per build) | Error |
 | Links | Destination is a route rather than a file path | Warning |
 | Images | Local source doesn't exist | Error |
 | Images | Missing alt text | Warning |
@@ -801,7 +814,7 @@ For example, a build selecting `{ deployment: cloud }` reduces a `deployment` gr
 #### Availability mode
 
 - **`badge`** keeps all content and annotates it with its availability.
-- **`filter`**, given a target and, for versioned targets, a version (for example `self-managed 3.3`), removes content that isn't available for them. Content that remains is annotated as in `badge`.
+- **`filter`**, given a target and, for versioned targets, a version (for example `self-managed 3.3`), removes content that isn't available for them. Content that remains is annotated as in `badge`. A page whose frontmatter `available` makes it unavailable is dropped from the build, like a conflicting page.
 
 Content is **available** for target *T* at version *V* when its effective availability (§4.4, after inheritance):
 

@@ -268,7 +268,7 @@ pub struct DirectiveLine {
     pub form: Form,
     /// Text after the name (and attribute block) that fits no part of the
     /// head, such as the `hello: text` of `@note hello: text`. It's kept, not
-    /// dropped, and reported as an issue (SPEC-QUESTION(Q30)).
+    /// dropped, and reported as `directive-extra-text` (SPEC §3.1).
     pub unexpected: Option<Span>,
     /// The title line directly above the directive (SPEC §3.7), when the
     /// directive accepts one. **Set by the structure pass.** A directive

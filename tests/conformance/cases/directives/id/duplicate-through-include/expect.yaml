@@ -2,8 +2,7 @@ description: >-
   A fragment whose id collides with the page's own is reported at the
   include site, on the expanded page.
 spec: ["4.2", "8.2"]
-tags: [page-check, include, provisional]
-questions: [Q20]
+tags: [page-check, include]
 
 builds:
   site:

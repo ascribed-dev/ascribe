@@ -76,7 +76,7 @@ Implement `tessera-model`: load `tessera.toml`, validate it against the phase 01
 - **An empty `[types]` or `[builds]` table** counts as absent: the implicit `page` type and `site` build apply.
 - **`model-output-overlaps-content`** compares lexically normalized paths, and, when the project directory is known, resolves symbolic links for the part of each path that exists.
 - **A `number` attribute default** is stored as its source text in `DefaultValue::Text` (Q28); a `set` default is `DefaultValue::Set`.
-- **A dimension name as a versioned target** (Q29): any version on a dimension name is an error (`VersionlessVersion`, so `model-availability-versionless` / `available-versionless`, with the base message, whose wording says the dimension is "versionless"; a message variant naming the dimension would need a registry change).
+- **A dimension name as a versioned target** (Q29, resolved): any version on a dimension name is an error. `check_availability` reports `AvailabilityProblem::DimensionVersion` (with an `example` value to suggest), which maps to the `dimension` variant of `model-availability-versionless` in the loader and of `available-versionless` in documents.
 - **`role` is reserved** by phase 02's lists, so `full.toml`'s `quill-audience` attribute `role` became `audience` (Q27).
 - **`model-editor-build-required`** is reported at the `[editor]` table if there is one, else at the `[builds]` table.
 - **Feature spec spans** assume the TOML string has no escape sequences before the error; with escapes, the reported column can shift.

@@ -1,0 +1,8 @@
+description: >-
+  Attributes written without braces fit no part of the directive line, so
+  the text is an error rather than attributes or a primary.
+spec: ["3.1", "8.2"]
+tags: [parser]
+
+diagnostics:
+  - {slug: directive-extra-text, line: 5}

@@ -1,8 +1,7 @@
 description: >-
   An include cycle is an error, reported where the cycle closes.
 spec: ["4.2", "8.2"]
-tags: [page-check, include, provisional]
-questions: [Q20]
+tags: [page-check, include]
 
 builds:
   site:

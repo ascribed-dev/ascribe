@@ -2,8 +2,7 @@ description: >-
   An `@id` names the section for `@include`; the include omits the heading
   when `heading=false`, and keeps the section's directives.
 spec: ["4.1", "4.2", "9.2"]
-tags: [resolve, include, provisional]
-questions: [Q26]
+tags: [resolve, include]
 
 builds:
   site:

@@ -2,8 +2,7 @@ description: >-
   A dimension value may not reuse a lifecycle state's name, even a built-in
   one.
 spec: ["7.2", "8.2"]
-tags: [model, provisional]
-questions: [Q20]
+tags: [model]
 
 diagnostics:
   - {slug: model-name-multiple-roles, file: tessera.toml, line: 4}

@@ -3,8 +3,7 @@ description: >-
   included: the heading, and everything up to the next heading of the same
   or a higher level, subsections included.
 spec: ["4.2", "5.5", "9.2"]
-tags: [resolve, include, provisional]
-questions: [Q26]
+tags: [resolve, include]
 
 builds:
   site:

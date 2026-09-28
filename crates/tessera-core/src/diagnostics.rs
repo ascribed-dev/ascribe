@@ -390,6 +390,12 @@ pub const MODEL_EDITOR_BUILD_REQUIRED: DiagnosticSlug =
 /// `TSR119`, error, file level: loader rule, content-model.md §20.3.
 pub const MODEL_ATTRIBUTE_RESERVED: DiagnosticSlug = DiagnosticSlug("model-attribute-reserved");
 
+/// `TSR120`, error, file level: SPEC §8.2, "Directives | Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary".
+pub const DIRECTIVE_EXTRA_TEXT: DiagnosticSlug = DiagnosticSlug("directive-extra-text");
+
+/// `TSR121`, error, page level: SPEC §8.2, "Links | Target page isn't published by a build (page level, per build)".
+pub const LINK_PAGE_DROPPED: DiagnosticSlug = DiagnosticSlug("link-page-dropped");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -511,4 +517,6 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_EDITOR_BUILD_UNKNOWN,
     MODEL_EDITOR_BUILD_REQUIRED,
     MODEL_ATTRIBUTE_RESERVED,
+    DIRECTIVE_EXTRA_TEXT,
+    LINK_PAGE_DROPPED,
 ];
