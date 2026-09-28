@@ -44,6 +44,11 @@ impl ConformanceAdapter for SyntaxAdapter {
     }
 
     fn diagnostics(&self, case: &Case) -> AdapterResult<Vec<Diagnostic>> {
+        // A case tagged `check` gets the whole file-level check (phase 10),
+        // which includes these issues and the checks that need the model.
+        if case.expect.area_tags().any(|t| t == "check") {
+            return Ok(None);
+        }
         let options = options(case)?;
         let mut out = Vec::new();
         for file in case.source_files().map_err(err)? {

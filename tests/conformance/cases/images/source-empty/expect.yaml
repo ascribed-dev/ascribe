@@ -1,0 +1,10 @@
+description: >-
+  An image with no path names no file, so it's reported as a missing source.
+  A link with only a `#id` names the file it's in, and isn't.
+spec: ["5.3", "8.2"]
+tags: [check, provisional]
+questions: [Q59]
+
+diagnostics:
+  - {slug: image-source-missing, line: 5}
+  - {slug: image-source-missing, line: 7}

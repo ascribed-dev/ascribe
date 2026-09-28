@@ -18,7 +18,9 @@ toml.workspace = true
 # Implementation phases add the Tessera crates their adapters need, as
 # dev-dependencies.
 [dev-dependencies]
+tessera-check.workspace = true
 tessera-core.workspace = true
+tessera-model.workspace = true
 tessera-syntax.workspace = true
 
 [[test]]

@@ -1,7 +1,7 @@
 ## Admin setup
-@quill-audience {role=admin}
+@quill-audience {audience=admin}
 
 Text.
 
-@quill-audience {role=developer|writer}
+@quill-audience {audience=developer|writer}
 Only for these roles.

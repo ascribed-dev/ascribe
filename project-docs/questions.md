@@ -740,3 +740,135 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1, so one mistake gives one diagnostic; the case `attributes/unclosed-brace` expects exactly `attribute-syntax`. Implemented now: option 1 (`Class::Unreadable` in `structure/bind.rs`). An unclosed block's line is still an opener when its directive is container-only, so its `@end` matches, but it gets no `container-colon-missing` either.
 - **Affects:** conformance case `attributes/unclosed-brace`; phases 05, 06, and 10.
 - **Resolution:** approved by the repository owner: option 1: only the unclosed block is reported for that line. SPEC §3.3 now says so.
+
+### Q51: Frontmatter that isn't valid YAML
+
+- **Section:** SPEC §2.1, §8.2
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** §8.2 has rows for frontmatter keys, missing fields, and types, but none for frontmatter that isn't YAML at all:
+
+  ```
+  ---
+  title: [oops
+  ---
+  ```
+
+  Nothing can be validated against the content type's schema until the YAML reads.
+- **Options:**
+  1. A new registry entry, `frontmatter-syntax` (an error, file level), whose message says what the YAML parser found.
+  2. Report it as `frontmatter-type-mismatch` for the whole frontmatter (`frontmatter` must be a mapping of fields written in valid YAML, but it's invalid YAML).
+  3. Don't report it. The page would then look as if it had no frontmatter.
+- **Proposed resolution:** option 1, since a syntax error isn't a type mismatch and deserves its own message and code. **Implemented now: option 2**, the conservative one, because a new entry is a contract change (`SPEC-QUESTION(Q51)` in `crates/tessera-check/src/checks/frontmatter.rs`). The diagnostic is at the YAML parser's position, and no other frontmatter check runs on that file.
+- **Affects:** `tests/conformance/diagnostics.toml` (a new entry), SPEC §8.2 (a new row); phases 10, 15.
+- **Resolution:** _open_
+
+### Q52: Which files under the content root are source files
+
+- **Section:** SPEC §2.1, §2.2
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** §2.1 says a source file is "a CommonMark file with the extension `.md`", and §2.2 that the source files live under the content root. Neither says what to do with `.md` files in directories such as `.git/`, `.github/`, or `.tessera/`, with `.markdown` or `.MD` files, or with a `.md` file that isn't UTF-8.
+- **Options:**
+  1. Every file under the content root whose name ends in exactly `.md` is a source file, except those in a directory or with a name that begins with `.`. A source file that isn't UTF-8 stops the command (exit code 2) instead of being skipped.
+  2. Every `.md` file, dot-directories included.
+  3. Also accept `.markdown` and case variants.
+- **Proposed resolution:** option 1. Dot-directories hold tool state, not documentation, and reading them would report problems in files the author doesn't own. Exactly `.md` follows §2.1 and the exact-case rule for names (§9.4). A file that can't be read is a failure of the command, like a missing `tessera.toml`, not a diagnostic, because there's no text to point at. Implemented now: option 1 (`SPEC-QUESTION(Q52)` in `crates/tessera-check/src/project.rs`).
+- **Affects:** `tessera-check`'s `Project::load`; phases 11, 12, and 15 (which need the same set).
+- **Resolution:** _open_
+
+### Q53: Where a link, image, or include diagnostic is reported
+
+- **Section:** SPEC §5.2, §5.3, §8.1, §8.2
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** §8.1 says a diagnostic is "reported at the source location that causes it". For a missing link target that could be the whole link (`[text](gone.md)`), its destination, or, for a reference-style link or image, the link reference definition that holds the destination. The conformance cases give only the line.
+- **Options:**
+  1. The destination as written, for an inline link or image; the whole link or image for a reference form, since the tree has no node for definitions (phase 05).
+  2. Always the whole link or image.
+  3. The definition, for a reference form.
+- **Proposed resolution:** option 1 now, moving to option 3 when the parser exposes definitions (phases 12 and 23 need them anyway). The squiggle then covers the words the author has to change, and a fix (`link-route`) has an exact span to replace. The case `images/source-missing-reference` expects the image's line, which option 3 would change, so its expectation would need to name the definition's line at that point. Implemented now: option 1 (`SPEC-QUESTION(Q53)` in `checks/refs.rs`).
+- **Affects:** conformance cases `images/source-missing-reference`, `images/attributes-on-reference-forms`; phases 12, 15, 23.
+- **Resolution:** _open_
+
+### Q54: Phrases in a destination, and the file checks
+
+- **Section:** SPEC §5.1, §5.2, §5.3
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** §5.1 says phrases apply in link destinations, and §9.2 substitutes them (step 4) before links are resolved (step 6). §8.1 puts "whether referenced files exist" at file level. So does `[x]({api}streaming)` name the file `{api}streaming` or the URL `https://api.quill.dev/v3/streaming`? Read literally, the file-level check sees the source text and would report a missing file.
+- **Options:**
+  1. File-level checks substitute the declared phrases in a destination first, as the build does, so `{api}streaming` is external and needs no file. An undeclared `{key}` stays literal.
+  2. File-level checks see the text as written and report `{api}streaming` as a missing file, or as a route.
+- **Proposed resolution:** option 1: the SPEC's own example (`[streaming API reference]({api}streaming)`) must check cleanly, and Appendix B's page does. Implemented now: option 1, for inline and reference forms alike (`SPEC-QUESTION(Q54)` in `checks/refs.rs`). A phrase whose value contains `#` or a scheme therefore changes the destination's kind, as it does in the build.
+- **Affects:** `projects/quill` (the Appendix B link); phases 11, 12.
+- **Resolution:** _open_
+
+### Q55: Which page a route names, and when to offer the fix
+
+- **Section:** SPEC §5.2, §8.2, §9.5
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** `link-route` says "this looks like the published route of `{page}`; link to the file instead: `{suggestion}`". The mapping from a route to a page belongs to the consumer profile's router (phase 12), but the warning is a file-level check and has to name a page now, including when no such page exists (`/guides/install/` with no `guides/install.md`).
+- **Options:**
+  1. The conventional mapping: `route.md`, else `route/index.md`, whichever exists in the project; else `route.md`. The warning offers a fix (an edit to the destination) only when a page exists.
+  2. Ask the router (phase 12): a file-level check would then depend on the resolve crate.
+  3. Warn without naming a page.
+- **Proposed resolution:** option 1 until the router exists, then option 2 for the page and the suggestion. Implemented now: option 1 (`SPEC-QUESTION(Q55)` in `checks/refs.rs`). The suggestion keeps the destination's form (root-relative or relative to the file) and its `#id`.
+- **Affects:** `link-route` diagnostics and their fixes; phases 12, 14, 24 (quick fixes).
+- **Resolution:** _open_
+
+### Q56: Where `phrase-undeclared` applies
+
+- **Section:** SPEC §5.1, §8.2
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** the warning is for "`{key}` in prose whose key isn't declared". §5.1 lists where phrases apply: prose, headings, link text, link destinations, fences that opt in, and frontmatter fields. Which of those count as prose for this warning?
+- **Options:**
+  1. Every inline position where a phrase candidate is recorded: paragraphs, headings, link text, image alt text, table cells, titles, and text primaries. Not destinations, `phrases=true` fences, or frontmatter.
+  2. Also destinations and opted-in fences.
+  3. Only paragraphs and headings.
+- **Proposed resolution:** option 1. A destination's `{key}` is checked as part of the destination (Q54), a fence that opts in has said it wants substitution and probably knows its keys, and frontmatter phrases depend on the content model's declarations (phase 08). Implemented now: option 1 (`SPEC-QUESTION(Q56)` in `checks/mod.rs`).
+- **Affects:** phase 11 (frontmatter phrases), phase 12 (the registry-change report of §5.1).
+- **Resolution:** _open_
+
+### Q57: `available` and `variant` frontmatter values that aren't the right shape
+
+- **Section:** SPEC §2.1, §4.3, §4.4, §8.2
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** §4.3 says `variant` is "a mapping from dimension names to a value or a list of values" and §4.4 that `available` holds a spec. §8.2 has no row for `available: 3` (a number) or `variant: cloud` (not a mapping) or `variant: {pm: [npm, 3]}`. The content model can't declare these keys, so `validate_frontmatter` accepts them as they are.
+- **Options:**
+  1. `frontmatter-type-mismatch`, at the value, with the expected shape in the message.
+  2. `available-syntax` for `available`, and `variant-unknown` for `variant`.
+  3. Not reported.
+- **Proposed resolution:** option 1: the value has the wrong type, which is what that entry is for, and the message can name the right shape. Implemented now: option 1 (`SPEC-QUESTION(Q57)` in `checks/frontmatter.rs`).
+- **Affects:** phases 12 and 14 (they read these keys after this check passes).
+- **Resolution:** _open_
+
+### Q58: A content model with errors, and the content model's warnings
+
+- **Section:** SPEC §8.1; phase 10's exit codes
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** `tessera check` exits `0`, `1`, or `2`, and `2` is for "usage or configuration failures". A `tessera.toml` with errors (the loader's rules, SPEC §7.2) isn't a usage error, but no source file can be checked against a model that doesn't load. And the loader's warnings (`model-name-case`, `model-build-filter-excluded`) belong to no source file.
+- **Options:**
+  1. A model with errors is a configuration failure: the model's diagnostics are shown, nothing else is checked, and the exit code is `2`. A model that loads has its warnings in the file-level list, so they count under `--deny-warnings` and appear in the same output, JSON included.
+  2. A model with errors exits `1`, like any other errors.
+  3. The model's warnings are shown by the build only.
+- **Proposed resolution:** option 1. Exit code `1` means "the documentation has problems you can fix by editing it", and `2` means "the tool can't tell". Implemented now: option 1 (`SPEC-QUESTION(Q58)` in `commands/check.rs` and `check_files`).
+- **Affects:** `tessera check`; phases 15 (the server reports model diagnostics on `tessera.toml`) and 18.
+- **Resolution:** _open_
+
+### Q59: A link or image whose destination is only a fragment, or empty
+
+- **Section:** SPEC §5.2, §5.3
+- **Raised by:** phase 10
+- **Status:** open
+- **Ambiguity:** `[here](#install)` names a heading in the file it's written in (page level checks the id). `![a](#x)` and `![a]()` have no file to look for. §5.3 says "a local image source MUST exist".
+- **Options:**
+  1. File-level checks skip a destination with no path (the fragment-only link names the file itself, and an empty destination names nothing), for links and images alike.
+  2. Report an image with no path as `image-source-missing`; skip links.
+- **Proposed resolution:** option 2 for images, and option 1 for links: an image with no source is certainly wrong. **Implemented now: exactly that** (`SPEC-QUESTION(Q59)` in `checks/refs.rs`). The registry's message for `image-source-missing` reads badly for an empty path ("the image `(no source)` doesn't exist"; a `#id`-only source shows as written). A dedicated variant, such as `messages.empty = "this image has no source; give it a path between the parentheses"`, needs a registry change, which is the human's to approve when resolving this question.
+- **Affects:** `image-source-missing`; phases 12 and 14.
+- **Resolution:** _open_

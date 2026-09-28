@@ -13,6 +13,16 @@ name = "tessera"
 path = "src/main.rs"
 
 [dependencies]
+ariadne.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tessera-check.workspace = true
+tessera-core.workspace = true
+
+[dev-dependencies]
+# Integration tests copy example projects to a temporary directory.
+tempfile = "3"
 
 [lints]
 workspace = true
