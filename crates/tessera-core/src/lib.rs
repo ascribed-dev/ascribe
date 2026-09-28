@@ -25,6 +25,7 @@
 //! approved entry in `project-docs/questions.md`.
 
 pub mod attribute_block;
+pub mod availability;
 pub mod consumer;
 pub mod diagnostics;
 pub mod issue;

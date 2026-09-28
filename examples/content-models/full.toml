@@ -136,12 +136,12 @@ binding = "heading"
 attributes = { version = "string?" }
 plain-fallback = "See the Quill API reference."
 
-# `@quill-audience {role=admin|developer}`: at the top of a section, the
+# `@quill-audience {audience=admin|developer}`: at the top of a section, the
 # section; anywhere else, the block it touches.
 [widgets.quill-audience]
 forms = ["line"]
 binding = "heading-or-block"
-attributes = { role = "set(enum(admin, developer, writer))" }
+attributes = { audience = "set(enum(admin, developer, writer))" }
 
 # `@quill-aside: text`, `@quill-aside` binding the next block, or
 # `@quill-aside:` as a container; optionally titled.
