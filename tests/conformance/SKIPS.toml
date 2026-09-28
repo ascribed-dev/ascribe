@@ -12,22 +12,6 @@
 #                                         optional; skips only these checks
 
 [[skip]]
-tag = "model"
-reason = "Adapter for tag `model` (loading tessera.toml) not yet implemented; phase 08."
-
-[[skip]]
-tag = "slug"
-reason = "Adapter for tag `slug` (heading slugs and source ids) not yet implemented; phase 09."
-
-[[skip]]
-tag = "check"
-reason = "Adapter for tag `check` (file-level diagnostics) not yet implemented; phase 10."
-
-[[skip]]
-tag = "include"
-reason = "Adapter for tag `include` (includes and the source index) not yet implemented; phase 11."
-
-[[skip]]
 tag = "resolve"
 reason = "Adapter for tag `resolve` (resolution passes and build modes) not yet implemented; phase 12."
 

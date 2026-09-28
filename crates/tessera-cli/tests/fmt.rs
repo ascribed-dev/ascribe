@@ -190,7 +190,7 @@ fn problems_exit_2() {
     assert!(stderr(&out).contains("nope.md"));
     let out = p.fmt(&["--wat"]);
     assert_eq!(code(&out), 2);
-    assert!(stderr(&out).contains("unknown option"));
+    assert!(stderr(&out).contains("unexpected argument"));
     std::fs::write(p.dir.join("docs/bytes.md"), [0xff, 0xfe, b'\n']).expect("write bytes");
     let out = p.fmt(&[]);
     assert_eq!(code(&out), 2);

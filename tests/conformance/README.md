@@ -20,7 +20,9 @@ cargo test -p tessera-conformance --lib --test harness
 
 `cargo test --workspace` runs all of these. The run fails if any case fails or `SKIPS.toml` is stale.
 
-`tests/structure_rows.rs` also runs, until phase 10 adds an adapter for `check`, the outlines and the structural diagnostics (containers, end lines, binding, titles, groups, lists) of the cases the runner skips only because they carry the `check` tag.
+`tests/file_checks.rs` also runs, for every case tagged `check`, the file-level diagnostics the case expects (its top-level `diagnostics`), even when the runner skips the case because it carries another tag whose phase isn't built yet (`include`, `resolve`, `slug`, `page-check`). File-level diagnostics don't depend on those phases, so this keeps every file-level row of SPEC §8.2 checked now.
+
+`tests/source_index_rows.rs` likewise runs, until phases 10 and 14 add adapters for `check` and `page-check`, the rows the source index answers (phase 11): referenced files that don't exist, links to fragments and routes, include cycles and missing include ids, and links to ids. Every case tagged `include` or `slug` also carries `check`, `page-check`, or `resolve`, so the runner skips them all for now; this test compares those rows, in every case that expects diagnostics, with what `tessera-resolve` reports.
 
 ## Layout
 
@@ -35,6 +37,7 @@ tests/conformance/
   src/               the harness library (crate tessera-conformance)
   tests/
     conformance.rs   the runner
+    file_checks.rs   file-level diagnostics of every `check` case, including skipped ones
     adapters/        adapters connecting the harness to the Tessera crates
     harness.rs       tests of the harness itself, with fixtures in fixtures/
 ```

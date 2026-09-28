@@ -1,3 +1,51 @@
-//! File- and page-level validation of Tessera documents, producing diagnostics.
+//! File-level validation of Tessera documents, producing diagnostics.
 //!
-//! Phase 10 implements file-level checks; phase 14 adds page-level checks in `src/page/`.
+//! [`check_files`] is the single file-level entry point: the command line
+//! (`tessera check`), the build, and the language server all call it, which
+//! is what makes their results identical. It takes a [`Project`] (the content
+//! model and the source files) and returns [`Diagnostic`]s.
+//!
+//! What it reports, and where each row of SPEC §8.2 comes from:
+//!
+//! - **The parser's issues**, from `tessera_syntax::parse`: attribute blocks,
+//!   primaries, unknown directives, containers, end lines, nesting, binding,
+//!   titles, `@variant` group rules, `@steps`, `@details`, and the list
+//!   warnings. They're turned into diagnostics here and never reported twice.
+//! - **Checks that need the content model**: attribute keys and value types
+//!   (directives, widgets, images), `@variant` dimensions and values,
+//!   `@available` specs, frontmatter (content type, fields, reserved keys,
+//!   `available` and `variant`), undeclared phrases, headings that contain
+//!   a phrase and have no `@id`, and `@id` values.
+//! - **Checks that need the file system**: `@include` targets, link
+//!   destinations (files, fragments, routes), and image sources, all with the
+//!   asset contract's boundary and exact-case rules.
+//!
+//! Messages, codes, and severities come from the diagnostics registry
+//! (`tests/conformance/diagnostics.toml`), through [`Registry`]. Page-level
+//! checks (phase 14) live elsewhere and build on this crate.
+
+mod checks;
+mod diagnostic;
+mod project;
+pub mod registry;
+mod yaml;
+
+pub use checks::check_file;
+pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
+pub use project::{FileEntry, LoadError, MODEL_FILE, Project, SourceFile};
+pub use registry::{Entry, Level, Registry};
+
+/// Checks every file of the project at file level (SPEC §8.1): the content
+/// model's warnings, then each source file's diagnostics, in file order and,
+/// within a file, in source order.
+///
+/// Never panics on user input. Sorting is stable, so two tools that call it
+/// on the same project get the same list.
+pub fn check_files(project: &Project) -> Vec<Diagnostic> {
+    // SPEC-QUESTION(Q58): the content model's warnings are part of the list.
+    let mut out: Vec<Diagnostic> = project.model_warnings().to_vec();
+    for file in project.sources() {
+        out.extend(check_file(project, file));
+    }
+    out
+}

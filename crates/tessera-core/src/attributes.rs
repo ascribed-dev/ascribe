@@ -95,6 +95,13 @@ pub fn parse_attribute_block(text: &str, offset: usize, file: FileId) -> Option<
         // Text after the last value is most likely what follows a forgotten
         // `}`, so calling it an unquoted value would only add noise.
         issues.retain(|i| i.slug != diagnostics::ATTRIBUTE_UNQUOTED_RESERVED);
+        // An unclosed quote swallows the rest of the line, including the `}`,
+        // so the quote is the one problem to report: adding the missing
+        // brace would say the same thing twice (SPEC §3.3).
+        let says = |i: &Issue, text: &str| i.arg("detail").is_some_and(|d| d.contains(text));
+        if issues.iter().any(|i| says(i, "no closing quote")) {
+            issues.retain(|i| !says(i, "no closing `}`"));
+        }
     }
     issues.sort_by_key(|i| i.location.span.start());
     Some(ParsedAttributes {
@@ -752,7 +759,8 @@ mod tests {
         assert_eq!(pairs(&p), vec![kv("type", "tip")]);
         let p = parse(r#"{label="oops}"#);
         assert!(!p.closed);
-        assert!(slugs(&p).contains(&"attribute-syntax"));
+        assert_eq!(slugs(&p), vec!["attribute-syntax"]);
+        assert_eq!(p.issues[0].location.span.start(), 7);
         let p = parse("{");
         assert_eq!(slugs(&p), vec!["attribute-syntax"]);
     }
