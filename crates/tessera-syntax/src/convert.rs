@@ -33,6 +33,7 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
         .first_child()
         .and_then(|first| converter.frontmatter(first));
     let blocks = converter.blocks(root);
+    let blocks = crate::structure::run(source, options, blocks, &mut converter.issues);
     let mut issues = converter.issues;
     issues.sort_by_key(|i| i.location.span.start());
     ParsedDocument {
@@ -446,6 +447,8 @@ impl<'a> Converter<'a> {
             primary,
             form,
             unexpected,
+            title: None,
+            binding: None,
         }
     }
 

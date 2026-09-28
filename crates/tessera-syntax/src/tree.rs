@@ -16,15 +16,19 @@
 //! blocks nest as CommonMark nests them (block quotes and list items hold
 //! blocks). The Tessera nodes come in two layers:
 //!
-//! - **Phase 05 (this crate's `parse`) produces flat lines.** A directive
-//!   line is a [`BlockKind::Directive`] and an end line a
-//!   [`BlockKind::End`], each a sibling of the blocks around it. A container
-//!   opener has [`Form::Container`] but none of its content is inside it yet.
-//!   A title line is still a [`BlockKind::Paragraph`] of one line.
-//! - **Phase 06 (the structure pass) fills in the rest**: it nests a
-//!   container's blocks in [`BlockKind::Container`], groups runs of openers
-//!   into [`BlockKind::Group`] with [`Arm`]s, and turns title lines into
-//!   [`BlockKind::Title`].
+//! - **Phase 05 reads lines.** A directive line is a
+//!   [`BlockKind::Directive`] and an end line a [`BlockKind::End`], each with
+//!   its head parsed into parts. A container opener has [`Form::Container`].
+//! - **Phase 06 (the structure pass, run by `parse`) gives them structure.**
+//!   A container opener and the blocks up to its end line become a
+//!   [`BlockKind::Container`]; a run of openers of a groupable directive
+//!   becomes a [`BlockKind::Group`] of [`Arm`]s, closed by one end line. A
+//!   title line is attached to the directive below it
+//!   ([`DirectiveLine::title`]) and stops being a block of its own. Each
+//!   line-form directive records what it binds ([`DirectiveLine::binding`]).
+//!   What stays flat: line-form directives, which are siblings of the blocks
+//!   around them (a following-block directive and its block are neighbors),
+//!   and end lines that close nothing, which are reported.
 //! - **Phase 07 fills in inline extensions**: [`InlineKind::Phrase`] for a
 //!   `{key}` candidate in text, and [`Image::attributes`] for the attribute
 //!   block after an image.
@@ -99,23 +103,24 @@ pub enum BlockKind {
     ThematicBreak,
     /// A GFM table.
     Table(Table),
-    /// A directive line (SPEC §3.1): a line-form directive, or the opener of
-    /// a container or arm. Phase 05 produces every one of these as a flat
-    /// sibling; phase 06 moves container openers into [`Container`] and
-    /// [`Arm`].
+    /// A line-form directive line (SPEC §3.1). After the structure pass, the
+    /// openers of containers and arms are inside [`Container`] and [`Arm`]
+    /// instead, so a `Directive` block is always a line-form directive.
     Directive(DirectiveLine),
-    /// An end line, `@end` (SPEC §3.1). Phase 05 produces every one as a flat
-    /// sibling; phase 06 moves each into the [`Container`] or [`Group`] it
-    /// closes, and leaves the unmatched ones here.
+    /// An end line, `@end` (SPEC §3.1) that closes nothing. The structure
+    /// pass moves every end line that closes a container into its
+    /// [`Container::end`] or [`Group::end`], so one left here is reported
+    /// (`end-unmatched` or `end-indent-mismatch`).
     End(EndLine),
     /// A container: an opener, the blocks up to its end line, and the end
-    /// line. **Phase 06 fills this in;** phase 05 never produces it.
+    /// line (SPEC §3.5). Its span starts at its title line, if it has one.
     Container(Container),
-    /// A group of arms of one groupable directive (SPEC §3.6). **Phase 06
-    /// fills this in;** phase 05 never produces it.
+    /// A group of arms of one groupable directive (SPEC §3.6).
     Group(Group),
-    /// A title line (SPEC §3.7). **Phase 06 fills this in;** phase 05 leaves
-    /// title lines as paragraphs.
+    /// Reserved; the structure pass never produces it. A title line
+    /// (SPEC §3.7) is attached to the directive below it
+    /// ([`DirectiveLine::title`]), and one that can't be attached stays a
+    /// [`BlockKind::Paragraph`].
     Title(TitleLine),
 }
 
@@ -265,6 +270,38 @@ pub struct DirectiveLine {
     /// head, such as the `hello: text` of `@note hello: text`. It's kept, not
     /// dropped, and reported as an issue (SPEC-QUESTION(Q30)).
     pub unexpected: Option<Span>,
+    /// The title line directly above the directive (SPEC §3.7), when the
+    /// directive accepts one. **Set by the structure pass.** A directive
+    /// with a title has a [`Block`] span that starts at the title's dot; this
+    /// line's own `span` still starts at the `@`.
+    pub title: Option<TitleLine>,
+    /// What a line-form directive applies to (SPEC §3.8). **Set by the
+    /// structure pass**; `None` on a container opener (and on a directive
+    /// whose schema has no binding).
+    pub binding: Option<Bound>,
+}
+
+/// What a line-form directive applies to (SPEC §3.8), as the structure pass
+/// worked it out from the directive's schema and its position.
+///
+/// A [`Bound::Heading`] directive's heading is the nearest [`Heading`] before
+/// it in the same list of blocks, and a [`Bound::FollowingBlock`] directive's
+/// block is the next sibling that isn't itself a following-block directive
+/// (stacked directives all describe the same block). [`crate::bound_heading`] and
+/// [`crate::bound_block`] find them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Bound {
+    /// The directive's own primary, or nothing (it stands alone).
+    Own,
+    /// The heading at the top of the section the directive sits in, and that
+    /// section.
+    Heading,
+    /// The next block in the same container.
+    FollowingBlock,
+    /// Binding failed, and the structure pass reported why: a heading-bound
+    /// directive not at the top of a section, or a following-block
+    /// directive with no block, or a heading, after it.
+    Unbound,
 }
 
 /// A directive's primary (SPEC §3.4), by what the directive's schema says.
@@ -343,11 +380,17 @@ pub struct EndLine {
     pub extra: Option<Span>,
 }
 
-/// A container: an opener, its blocks, and its end line. **Phase 06 fills
-/// this in.**
+/// A container: an opener, its blocks, and its end line (SPEC §3.5).
+///
+/// The span of its [`Block`] runs from the opener's title line (or the
+/// opener) through the end line, or, when it's unclosed, through its last
+/// block.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Container {
-    /// The opener, a directive line with [`Form::Container`].
+    /// The opener: a directive line that opens a container, and whose title
+    /// is in [`DirectiveLine::title`]. Its form is [`Form::Container`], except
+    /// for a container-only directive written without its colon, which is
+    /// still an opener and is reported (SPEC-QUESTION(Q16)).
     pub opener: DirectiveLine,
     /// The blocks between the opener and the end line.
     pub children: Vec<Block>,
@@ -355,36 +398,44 @@ pub struct Container {
     pub end: Option<EndLine>,
 }
 
-/// A group of arms (SPEC §3.6). **Phase 06 fills this in.**
+/// A group of arms (SPEC §3.6): a run of openers of one groupable directive,
+/// closed by one end line. It's one container level for nesting (SPEC-QUESTION(Q17)).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Group {
     /// The groupable directive's keyword.
     pub name: String,
-    /// The arms, in source order.
+    /// The arms, in source order. At least one.
     pub arms: Vec<Arm>,
-    /// The group's end line; `None` when the group is unclosed.
+    /// The group's end line; `None` when the group is unclosed. It belongs to
+    /// the group, not to its last arm.
     pub end: Option<EndLine>,
 }
 
-/// One arm of a group. **Phase 06 fills this in.**
+/// One arm of a group.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Arm {
-    /// From the opener through the last block of the arm.
+    /// From the opener's title line (or the opener) through the last block of
+    /// the arm, or through the opener when the arm is empty. It doesn't
+    /// include the group's end line.
     pub span: Span,
-    /// The opener, a directive line with [`Form::Container`].
+    /// The opener, a directive line that opens a container.
     pub opener: DirectiveLine,
-    /// The title line above the opener, if it has one.
+    /// The title line above the opener, if it has one; the same as
+    /// `opener.title`.
     pub title: Option<TitleLine>,
     /// The blocks in the arm.
     pub children: Vec<Block>,
 }
 
-/// A title line (SPEC §3.7): `.Title text`. **Phase 06 fills this in.**
+/// A title line (SPEC §3.7): `.Title text`, attached to the directive below
+/// it as [`DirectiveLine::title`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct TitleLine {
+    /// The whole line, from the `.` through the end of the text.
+    pub span: Span,
     /// The `.`.
     pub dot: Span,
-    /// The title's text after the `.`.
+    /// The title's text after the `.`, without trailing whitespace.
     pub content: Span,
     /// The title's inline content.
     pub inlines: Vec<Inline>,

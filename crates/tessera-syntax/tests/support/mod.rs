@@ -157,16 +157,123 @@ impl Checker<'_> {
                     self.tight(extra, "end line extra");
                 }
             }
-            BlockKind::Container(_) | BlockKind::Group(_) | BlockKind::Title(_) => {
-                self.problem("block", span, "a node phase 05 doesn't produce");
+            BlockKind::Container(c) => {
+                self.tight(span, "container");
+                self.opener(&c.opener, span, span.start(), "container opener");
+                self.blocks(&c.children, span, "container child");
+                self.closer(c.end.as_ref(), span);
+                let last = c
+                    .children
+                    .last()
+                    .map_or(c.opener.span.end(), |b| b.span.end());
+                let want_end = c
+                    .end
+                    .as_ref()
+                    .map_or(last.max(c.opener.span.end()), |e| e.span.end());
+                if span.end() != want_end {
+                    self.problem(
+                        "container",
+                        span,
+                        "doesn't end where its end line or last block does",
+                    );
+                }
+            }
+            BlockKind::Group(g) => {
+                self.tight(span, "group");
+                if g.arms.is_empty() {
+                    self.problem("group", span, "has no arms");
+                }
+                let mut previous_end = 0;
+                for arm in &g.arms {
+                    self.within(arm.span, span, "arm");
+                    self.opener(&arm.opener, arm.span, arm.span.start(), "arm opener");
+                    if arm.title != arm.opener.title {
+                        self.problem("arm", arm.span, "title differs from the opener's");
+                    }
+                    self.blocks(&arm.children, arm.span, "arm child");
+                    if arm.span.start() < previous_end {
+                        self.problem("arm", arm.span, "overlaps the arm before it");
+                    }
+                    previous_end = arm.span.end();
+                    let last = arm.children.last().map_or(0, |b| b.span.end());
+                    if arm.span.end() != last.max(arm.opener.span.end()) {
+                        self.problem("arm", arm.span, "doesn't end at its last block");
+                    }
+                }
+                self.closer(g.end.as_ref(), span);
+                if g.arms.first().map(|a| a.span.start()) != Some(span.start()) {
+                    self.problem("group", span, "doesn't start where its first arm does");
+                }
+                let last = g.arms.last().map_or(0, |a| a.span.end());
+                let want_end = g.end.as_ref().map_or(last, |e| e.span.end());
+                if span.end() != want_end {
+                    self.problem("group", span, "doesn't end where its end line does");
+                }
+            }
+            BlockKind::Title(_) => {
+                self.problem("block", span, "a node the structure pass doesn't produce");
             }
         }
     }
 
+    /// The end line of a container or group, when it has one.
+    fn closer(&mut self, end: Option<&EndLine>, parent: Span) {
+        if let Some(e) = end {
+            self.within(e.span, parent, "end line");
+            if self.text(e.span) != "@end" {
+                self.problem("end line", e.span, "isn't `@end`");
+            }
+        }
+    }
+
+    /// A directive line inside a container or an arm, whose block starts at
+    /// `start` (its title line, or the `@`).
+    fn opener(&mut self, d: &DirectiveLine, parent: Span, start: usize, what: &str) {
+        self.within(d.span, parent, what);
+        self.directive_parts(d, d.span);
+        self.title(d, start);
+    }
+
+    fn title(&mut self, d: &DirectiveLine, start: usize) {
+        let Some(t) = &d.title else {
+            if start != d.span.start() {
+                self.problem(
+                    "directive",
+                    d.span,
+                    "its block starts before it, with no title",
+                );
+            }
+            return;
+        };
+        if t.span.start() != start || t.span.end() > d.span.start() {
+            self.problem(
+                "title",
+                t.span,
+                "isn't at the start of its directive's block",
+            );
+        }
+        self.tight(t.span, "title line");
+        self.text_starts(t.dot, ".", "title dot");
+        if self.text(t.dot) != "." || t.dot.end() != t.content.start() {
+            self.problem("title", t.dot, "isn't the dot before the content");
+        }
+        self.within(t.content, t.span, "title content");
+        if t.content.end() != t.span.end() {
+            self.problem("title", t.content, "doesn't end the title line");
+        }
+        self.inlines(&t.inlines, t.content);
+    }
+
     fn directive(&mut self, d: &DirectiveLine, span: Span) {
-        if d.span != span {
+        let start = d.title.as_ref().map_or(d.span.start(), |t| t.span.start());
+        if span != Span::new(start, d.span.end()) {
             self.problem("directive", d.span, "differs from its block's span");
         }
+        self.title(d, start);
+        self.directive_parts(d, d.span);
+    }
+
+    fn directive_parts(&mut self, d: &DirectiveLine, span: Span) {
         self.tight(span, "directive line");
         self.text_starts(span, "@", "directive line");
         if self.text(d.name_span) != format!("@{}", d.name) {

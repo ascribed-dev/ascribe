@@ -267,6 +267,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. The code span wins: the line is text, and the paragraph is `Use \`code @note: A note. more\` here.` A block parser can't do this without an inline pass first; it would make a directive line's meaning depend on later lines.
 - **Proposed resolution:** option 1. It keeps recognition a property of the line and its block context, which is what the block parser (phase 04) does, and it matches headings. SPEC §3.2 should say "inside a fenced code block, an indented code block, or a raw HTML block" and drop "code span", which can only apply within a line. Implemented in the fork now: option 1 (see `crates/comrak-tessera/SPIKE.md`).
 - **Affects:** conformance cases: `recognition/code-span-across-lines`; phases 05, 06.
+- **Phase 06:** the structure pass needs nothing here: recognition happens in the fork, and the structure pass only sees the lines it produced. The proposal is what the case expects.
 - **Resolution:** _open_
 
 ### Q14: Which diagnostic a malformed attribute value gets
@@ -331,6 +332,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. The line isn't a container after an error; `@end` is then reported too.
 - **Proposed resolution:** option 1. It reports each mistake once, at the line where it happens, and keeps the rest of the file's structure intact, which is the point of §3.5's last paragraph. Cases expect the one error and include the `@end`.
 - **Affects:** conformance cases: `forms/container-colon-on-line-only-directive`, `forms/container-only-without-colon`, `widgets/container-widget-line-form`, `widgets/line-widget-container-form`; phases 05, 06.
+- **Phase 06:** implemented as proposed (`// SPEC-QUESTION(Q16)` in `structure/nest.rs`). A container-only directive that has a colon followed by text (`@variant: text`) is an opener and only `directive-primary` is reported, not `container-colon-missing`.
 - **Resolution:** _open_
 
 ### Q17: Where diagnostics about a whole group are reported, and how groups count toward nesting depth
@@ -345,6 +347,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Group-level diagnostics at the last opener or at `@end`.
 - **Proposed resolution:** option 1: the group is one container, opened once; the first opener is where it's written and where a fix starts. Cases carry `provisional` for the group-level diagnostics and for the nesting case that puts a group at the first level.
 - **Affects:** conformance cases: `builds/selection/no-arm-survives`, `directives/variant/arms-share-no-dimension`, `directives/variant/mixed-labeled-and-dimensional`, `groups/same-directive-does-not-nest`, `groups/unclosed-group`, `nesting/group-counts-as-one-level`; phases 10, 11, 12, 14.
+- **Phase 06:** implemented as proposed (`// SPEC-QUESTION(Q17)` in `structure/nest.rs`). An unclosed group is one `container-unclosed`, at its first opener. `variant-arm-kind` is reported at the arm's opener, `variant-mixed-arms` and `variant-no-shared-dimension` at the first opener; the shared-dimension check skips a group that's already mixed, and uses the keys common to every dimensional arm. The `@variant` rules apply to `@variant` only, not to other groupable widgets. Q33 covers how enclosing list items count.
 - **Resolution:** _open_
 
 ### Q18: A heading-bound directive with no heading above it
@@ -367,6 +370,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Both are errors when there's no heading.
 - **Proposed resolution:** option 1. Cases carry `provisional` for both.
 - **Affects:** conformance cases: `binding/available-before-first-heading`, `binding/id-with-no-heading`; phases 05, 06.
+- **Phase 06:** implemented as proposed (`// SPEC-QUESTION(Q18)` in `structure/bind.rs`). Q32 asks the same question for the start of every container.
 - **Resolution:** _open_
 
 ### Q19: An end line in a different container from its opener, or indented differently within one
@@ -393,6 +397,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Different container: `end-unmatched` only.
 - **Proposed resolution:** option 1. It follows the container rule the section is about and doesn't punish spacing the grammar accepts. Cases expect both diagnostics for the cross-container case.
 - **Affects:** conformance cases: `lists/end-in-next-item`, `lists/end-with-extra-indent-same-container`; phases 05, 06.
+- **Phase 06:** implemented as proposed (`// SPEC-QUESTION(Q19)` in `structure/nest.rs`). An end line with no open container in its own list of blocks is `end-indent-mismatch` when a container is open in an enclosing scope, or when an earlier container was left unclosed when its scope ended (each such container is claimed by one end line, innermost first); otherwise `end-unmatched`. The container is reported unclosed where its own scope ends.
 - **Resolution:** _open_
 
 ### Q20: Where page-level, model, and frontmatter diagnostics are reported when several places cause them
@@ -570,3 +575,124 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **See also:** Q15 (phase 03), which covers text after an identifier primary and proposes reporting it as `directive-primary`. Resolve the two together.
 - **Affects:** `crates/tessera-syntax/src/convert.rs` (`SPEC-QUESTION(Q30)`), `crates/tessera-syntax/src/tree.rs` (`DirectiveLine::unexpected`, `IdentifierPrimary::trailing`, `EndLine::extra`); `tests/conformance/diagnostics.toml`; phases 03, 05, and 10. No conformance case should depend on these shapes until this is resolved; tag any that do `provisional`.
 - **Resolution:** _to be filled in by a human._
+
+### Q31: Directives that stack in front of a block, and a block that isn't there
+
+- **Section:** SPEC §3.8, §4.4, §4.5
+- **Raised by:** phase 06
+- **Status:** open
+- **Ambiguity:** §3.8 says a following-block directive binds "the next block (paragraph, list, code block, blockquote, table, or container)". It doesn't say what "next" means when another directive line comes first:
+
+  ```
+  @available: cloud
+  @note
+  Text.
+  ```
+
+  and `@available: cloud` directly above `@include: x.md`, which stands alone and isn't in the list of blocks. Nor does it say whether a thematic break or a raw HTML block, which the list omits, can be bound.
+- **Options:**
+  1. Following-block directives stack, as heading-bound ones do: they all bind the block that the last of them touches. A following-block directive above a directive that isn't itself following-block (`@include`, `@id`, an end line) has no block: `binding-no-block`. Every CommonMark block except a heading can be bound.
+  2. A following-block directive binds the next directive line too, so `@available` above `@note` annotates the note, and above `@include` annotates the include.
+  3. Only the blocks §3.8 lists can be bound, so a thematic break or an HTML block is `binding-no-block`.
+- **Proposed resolution:** option 1. It matches how stacked heading-bound directives read, and reports rather than guesses when what follows is a directive that stands alone. Implemented now: option 1 (`// SPEC-QUESTION(Q31)` in `structure/bind.rs`); `tessera_syntax::bound_block` finds the block a stack binds. If `@available` above `@include` should work, phase 12 needs option 2's reading of an include's content.
+- **Affects:** `crates/tessera-syntax/src/structure/bind.rs`; phases 10, 11, 12, 23. No conformance case depends on it.
+- **Resolution:** _open_
+
+### Q32: Which sections a heading-bound directive can be at the top of
+
+- **Section:** SPEC §3.8, §3.9, §8.2
+- **Raised by:** phase 06
+- **Status:** open
+- **Ambiguity:** §3.8 defines a section as a heading and the content up to the next heading of the same or a higher level. Headings are blocks in a container (the document, a list item, a blockquote, a directive container), so it's unclear whether a heading-bound directive in one container can bind a heading in another:
+
+  ```
+  ## Setup
+  @note:
+  @id: x
+  @end
+  ```
+
+  Q18 covers the document before its first heading; this is the same question for the start of every container.
+- **Options:**
+  1. A section is found among the siblings in the same container, so a heading-bound directive binds a heading of its own container, and a container's first blocks have no heading above them (`binding-not-section-top`).
+  2. A directive at the top of a container binds the heading above the container.
+- **Proposed resolution:** option 1, which follows §3.9's rule that binding stays inside the container. Implemented now: option 1 (`// SPEC-QUESTION(Q18)` in `structure/bind.rs`; the pass has no other notion of a section).
+- **Affects:** conformance cases: none beyond Q18's; phases 10, 11, 12.
+- **Resolution:** _open_
+
+### Q33: Whether containers in list items and block quotes count toward nesting depth
+
+- **Section:** SPEC §3.10, §8.2
+- **Raised by:** phase 06
+- **Status:** open
+- **Ambiguity:** §3.10 warns "when containers nest more than two levels deep". A container can sit in a list item that sits in a container, so the levels can be split by CommonMark containers:
+
+  ```
+  @note:
+  - item
+
+    @note:
+    @details:
+    ...
+  ```
+- **Options:**
+  1. Depth counts every open container (directive containers and groups) around a directive, through list items and block quotes. The list item and the block quote themselves aren't levels.
+  2. Depth restarts in each list item and block quote, since a container never straddles them (§3.9).
+- **Proposed resolution:** option 1: what a reader sees as nesting is the whole stack, and §3.10's reason (hard to follow) doesn't depend on where a list item sits. Implemented now: option 1 (`// SPEC-QUESTION(Q33)` in `structure/nest.rs`).
+- **Affects:** conformance cases: none; phases 10 and 23.
+- **Resolution:** _open_
+
+### Q34: Exactly what triggers the three list warnings
+
+- **Section:** SPEC §3.9, §4.6, §8.2 ("Lists")
+- **Raised by:** phase 06
+- **Status:** open
+- **Ambiguity:** the three "Lists" rows say when they apply in a sentence each, which leaves several edges open:
+  - `list-ended-by-directive`: "an unindented directive line ends a list". Does a directive after a blank line count (the blank line already ends the list in CommonMark), an `@end` line (it often ends a list that sits in a container, correctly), or a block quote (rule 6 says quotes work the same way)?
+  - `directive-indented-code`: is it every directive-shaped line in an indented code block, or the first?
+  - `steps-numbering-continued`: how much may sit between the two lists (only directive lines, or blocks too), and must there be at least one?
+- **Options:** any combination of the above.
+- **Proposed resolution:** the narrowest triggers that catch the cases the spec describes. `list-ended-by-directive`: a directive line (including a container or group opener) directly after a list with no blank line, in the same list of blocks; not an end line, and not after a block quote. `directive-indented-code`: every directive-shaped line (`@`, a known keyword, then a space, tab, `{`, `:`, or the end) of an indented code block, at the `@name`. `steps-numbering-continued`: an ordered list whose start number is the `@steps` list's start plus its item count, after one or more line-form directive lines and nothing else. Implemented now: these (`// SPEC-QUESTION(Q34)` in `structure/lists.rs`).
+- **Affects:** `crates/tessera-syntax/src/structure/lists.rs`; phases 10 and 23.
+- **Resolution:** _open_
+
+### Q35: A text primary followed by an ordered list that doesn't start at 1
+
+- **Section:** SPEC §3.4, §8.2
+- **Raised by:** phase 06
+- **Status:** open
+- **Ambiguity:** the conformance case `lists/steps-numbering-continued` (phase 03) wrote
+
+  ```
+  @steps
+  1. One.
+  @note: A note.
+  2. Two.
+  ```
+
+  and expected the note's primary to be `A note.` and `2. Two.` to be a list starting at 2. §3.4 says a text primary continues "until a blank line, a directive line, or any other line that would interrupt a paragraph", and CommonMark's rule is that an ordered list can interrupt a paragraph only if it starts with 1. So `2. Two.` continues the primary, and the note's text is `A note. 2. Two.` (this is what the fork and the syntax tree do).
+- **Options:**
+  1. Keep §3.4 and CommonMark: the case is wrong. Its input gets a blank line after the note (so `2. Two.` starts a list), which is what an author who wants the warning has to write.
+  2. A text primary also ends at any line that starts a list, of any number. That departs from CommonMark's paragraph rule, which §3.4 says a primary follows "exactly".
+- **Proposed resolution:** option 1. Implemented now: option 1; the case's input has the blank line, its diagnostics move to line 9, and the case is `provisional` on this question (the expected outline and diagnostics are otherwise as phase 03 wrote them).
+- **Affects:** conformance case `lists/steps-numbering-continued`; `crates/comrak-tessera` (option 2 would change the fork's paragraph rules); phases 05 and 06.
+- **Resolution:** _open_
+
+### Q36: What else is reported about a directive whose attribute block never closes
+
+- **Section:** SPEC §3.3, §3.5, §3.8, §8.2
+- **Raised by:** phase 06
+- **Status:** open
+- **Ambiguity:** an unclosed `{` takes the rest of the line (phase 05), so the line's colon and primary, and therefore whether it's line form, a container opener, or has its own text, are unknowable:
+
+  ```
+  @note {type=tip
+  ```
+
+  §8.2 reports the unclosed block, and the same line is also a following-block directive with nothing after it, which §8.2 also reports.
+- **Options:**
+  1. Report only the malformed block. The line's binding is `unbound` and nothing more is said about it, since every other conclusion depends on guessing what the author meant.
+  2. Report everything the guessed reading would.
+- **Proposed resolution:** option 1, so one mistake gives one diagnostic; the case `attributes/unclosed-brace` expects exactly `attribute-syntax`. Implemented now: option 1 (`Class::Unreadable` in `structure/bind.rs`). An unclosed block's line is still an opener when its directive is container-only, so its `@end` matches, but it gets no `container-colon-missing` either.
+- **Affects:** conformance case `attributes/unclosed-brace`; phases 05, 06, and 10.
+- **Resolution:** _open_

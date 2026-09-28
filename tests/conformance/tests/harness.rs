@@ -136,17 +136,18 @@ fn problems(outcome: Option<&Outcome>) -> Vec<String> {
 
 #[test]
 fn bundled_samples_are_discovered_and_skipped_with_recorded_reasons() {
-    // Only the samples: every phase that lands removes its tag's skip entry,
-    // so the other bundled cases stop being skipped with an empty registry.
+    // Only this sample: every phase that lands removes its tag's skip entry,
+    // so the other bundled cases stop being skipped with an empty registry
+    // (`samples/appendix-b` is tagged `structure`, which phase 06 handles).
     let filter = Filter {
-        case: Some("samples/".into()),
+        case: Some("samples/include-and-selection".into()),
         ..Filter::default()
     };
     let report = Suite::bundled().run(&Registry::new(), &filter).unwrap();
     println!("{}", report.summary());
     assert!(report.success(), "{}", report.summary());
 
-    for id in ["samples/appendix-b", "samples/include-and-selection"] {
+    for id in ["samples/include-and-selection"] {
         match report.outcome(id) {
             Some(Outcome::Skipped { reasons }) => {
                 assert!(!reasons.is_empty());
@@ -159,8 +160,8 @@ fn bundled_samples_are_discovered_and_skipped_with_recorded_reasons() {
         }
     }
     let summary = report.summary();
-    assert!(summary.contains("skipped samples/appendix-b"));
-    assert!(summary.contains("tag `structure`: Adapter for tag `structure`"));
+    assert!(summary.contains("skipped samples/include-and-selection"));
+    assert!(summary.contains("tag `include`: Adapter for tag `include`"));
 }
 
 #[test]
