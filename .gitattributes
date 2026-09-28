@@ -1,2 +1,6 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalize text files to LF in the repository and in every working tree,
+# including on Windows. Test inputs (conformance cases, the CommonMark suite)
+# and expected outputs are compared byte for byte, so a checkout must not
+# rewrite their line endings. A case that needs CRLF input marks its file
+# with `-text` here.
+* text=auto eol=lf

@@ -1,0 +1,61 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/tessera-core",
+    "crates/tessera-syntax",
+    "crates/tessera-model",
+    "crates/tessera-check",
+    "crates/tessera-resolve",
+    "crates/tessera-emit",
+    "crates/tessera-fmt",
+    "crates/tessera-lsp",
+    "crates/tessera-cli",
+    "tests/conformance",
+    "tests/commonmark",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MPL-2.0"
+repository = "https://github.com/KyleBlankRollins/tessera"
+publish = false
+
+[workspace.dependencies]
+# Internal crates. Depend on these with `tessera-core.workspace = true`.
+tessera-core = { path = "crates/tessera-core" }
+tessera-syntax = { path = "crates/tessera-syntax" }
+tessera-model = { path = "crates/tessera-model" }
+tessera-check = { path = "crates/tessera-check" }
+tessera-resolve = { path = "crates/tessera-resolve" }
+tessera-emit = { path = "crates/tessera-emit" }
+tessera-fmt = { path = "crates/tessera-fmt" }
+tessera-lsp = { path = "crates/tessera-lsp" }
+
+# External crates shared across the workspace.
+comrak = { version = "0.55", default-features = false }
+insta = { version = "1", features = ["yaml"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+thiserror = "2"
+toml = "0.9"
+
+[workspace.lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+# Libraries never panic on user input (phases README, Conventions). Tests are
+# exempt through clippy.toml; documented invariants use a local `#[allow]`.
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+dbg_macro = "warn"
+todo = "warn"
+
+[profile.dev.package]
+# Snapshot diffs are much faster with these optimized.
+insta.opt-level = 3
+similar.opt-level = 3

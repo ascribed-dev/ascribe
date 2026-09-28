@@ -1,0 +1,5 @@
+# Tests may unwrap, expect, and panic freely. Library code may not (see
+# project-docs/phases/README.md, Conventions); the workspace lints enforce it.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
