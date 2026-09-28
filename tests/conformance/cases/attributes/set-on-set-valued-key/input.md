@@ -2,5 +2,5 @@
 title: Test
 ---
 
-@quill-audience {role=admin|developer}
+@quill-audience {audience=admin|developer}
 Text.

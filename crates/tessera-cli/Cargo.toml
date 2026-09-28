@@ -13,6 +13,9 @@ name = "tessera"
 path = "src/main.rs"
 
 [dependencies]
+tessera-core.workspace = true
+tessera-fmt.workspace = true
+tessera-model.workspace = true
 
 [lints]
 workspace = true

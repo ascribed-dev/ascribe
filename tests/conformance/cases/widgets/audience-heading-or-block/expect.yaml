@@ -8,10 +8,10 @@ outline:
   - heading: 2
     text: Admin setup
   - directive: quill-audience
-    attributes: {role: admin}
+    attributes: {audience: admin}
     binding: heading
   - paragraph: Text.
   - directive: quill-audience
-    attributes: {role: [developer, writer]}
+    attributes: {audience: [developer, writer]}
     binding: following-block
   - paragraph: Only for these roles.

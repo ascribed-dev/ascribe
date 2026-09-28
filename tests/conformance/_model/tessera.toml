@@ -155,7 +155,7 @@ plain-fallback = "See the Quill API reference."
 [widgets.quill-audience]
 forms = ["line"]
 binding = "heading-or-block"
-attributes = { role = "set(enum(admin, developer, writer))" }
+attributes = { audience = "set(enum(admin, developer, writer))" }
 
 # Both forms, optional text primary, following block, titled.
 [widgets.quill-aside]

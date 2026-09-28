@@ -796,6 +796,11 @@ version = "0.0.0"
 [[package]]
 name = "tessera-cli"
 version = "0.0.0"
+dependencies = [
+ "tessera-core",
+ "tessera-fmt",
+ "tessera-model",
+]
 
 [[package]]
 name = "tessera-commonmark-suite"
@@ -839,6 +844,14 @@ version = "0.0.0"
 [[package]]
 name = "tessera-fmt"
 version = "0.0.0"
+dependencies = [
+ "proptest",
+ "tessera-commonmark-suite",
+ "tessera-core",
+ "tessera-model",
+ "tessera-syntax",
+ "toml 0.9.12+spec-1.1.0",
+]
 
 [[package]]
 name = "tessera-lsp"
