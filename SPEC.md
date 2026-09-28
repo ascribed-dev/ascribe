@@ -190,6 +190,8 @@ Each directive's schema declares whether it takes a primary and of which kind:
   before you upgrade.
   ```
 
+- A **line primary** (an availability spec) is the rest of the directive line, with surrounding whitespace removed. It may contain spaces, but it isn't parsed as inline content and it never continues onto the following lines, so a paragraph directly below the directive is the block it binds. Only `@available` (§4.4) takes one.
+
 ### 3.5 Forms
 
 A directive takes one of two forms.
