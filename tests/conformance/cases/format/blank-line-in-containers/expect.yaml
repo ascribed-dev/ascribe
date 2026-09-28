@@ -1,4 +1,5 @@
-description: "Blank lines are removed in list items and block quotes too."
+description: "A gap in a block quote is closed; a gap between the blocks of a list item stays, because it may be what makes the list loose (Q74)."
 spec: ["8.3"]
-tags: [format]
+tags: [format, provisional]
+questions: [Q74]
 formatted: formatted.md

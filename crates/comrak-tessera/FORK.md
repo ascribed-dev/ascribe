@@ -76,6 +76,8 @@ Also Tessera's, outside `src/`: `Cargo.toml`, this file, `SPIKE.md`, and the spi
 
 ## Merging an upstream release
 
+The likeliest conflicts are the two upstream signatures phase 23 changed to return definitions: `Parser::parse` (`&mut self`, was `mut self`) and `resolve_reference_link_definitions` (an extra `origin` parameter, and its two call sites), plus `parse_reference_inline` (`&mut self`). Take upstream's version and reapply those changes from the table below.
+
 Tessera's changes are a patch against a pristine upstream release. To move to a new release:
 
 1. **Branch**, and check the new release's changelog for changes to the block parser (`src/parser/mod.rs`), `NodeValue`, or the renderers.

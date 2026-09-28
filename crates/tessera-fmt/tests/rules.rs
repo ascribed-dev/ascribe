@@ -286,11 +286,7 @@ fn a_bound_container_or_table_or_code_block() {
 }
 
 #[test]
-fn blank_lines_in_lists_and_quotes_are_removed_too() {
-    check(
-        "- item\n\n  @steps\n\n  1. One\n",
-        "- item\n\n  @steps\n  1. One\n",
-    );
+fn blank_lines_in_quotes_are_removed_too() {
     check("> @steps\n>\n> 1. One\n", "> @steps\n> 1. One\n");
 }
 
@@ -311,6 +307,20 @@ fn a_definition_between_a_directive_and_its_block_is_never_touched() {
     // comrak consumes the definition, so the paragraph isn't in the tree; the
     // rule sees a gap that isn't blank and leaves it.
     unchanged("@steps\n[ref]: /docs\n\n1. One\n");
+}
+
+#[test]
+fn a_gap_in_a_list_item_stays_so_the_list_renders_the_same() {
+    // Closing it would turn a loose list tight.
+    unchanged("1. First step.\n   @note\n\n   Text of the note.\n2. Second step.\n");
+    unchanged("- item\n\n  @steps\n\n  1. One\n");
+    // Inside a container in an item it is still the item's gap.
+    unchanged("- item\n  @note:\n  @steps\n\n  1. One\n  @end\n");
+    // A gap in a quote in an item isn't between the item's blocks.
+    check(
+        "- item\n  > @steps\n  >\n  > 1. One\n",
+        "- item\n  > @steps\n  > 1. One\n",
+    );
 }
 
 // ---- Directive lines indented to the item's content column ---------------------
@@ -567,7 +577,7 @@ fn everything_at_once() {
     );
     check(
         "- item\n\n    @available :  cloud\n\n    @note{ }  :  \n    Text.\n    @end\n",
-        "- item\n\n  @available: cloud\n  @note:\n    Text.\n  @end\n",
+        "- item\n\n  @available: cloud\n\n  @note:\n    Text.\n  @end\n",
     );
 }
 

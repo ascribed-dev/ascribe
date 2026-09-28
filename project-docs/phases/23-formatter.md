@@ -52,7 +52,7 @@ Build `tessera-fmt` and `tessera fmt`: rewrite Tessera constructs into canonical
   - `head.rs`: `name_gap`, `empty_block`, `colon`, `primary_gap`, `container_trailing`;
   - `attributes.rs`: the attribute block (spacing, schema order, quoting), for directives and images;
   - `indent.rs`: indentation of directive lines and end lines (Q1, Q19), for the document, list items, and block quotes;
-  - `blank.rs`: the blank line between a following-block directive and its block;
+  - `blank.rs`: the blank line between a following-block directive and its block (a gap between the blocks of a list item stays, since closing it can change the list's tightness, Q74);
   - `skip.rs`: which reported issues make a construct untouchable.
 - **`crates/tessera-cli/src/fmt.rs`**: `tessera fmt [paths] [--check]` as `run(&Options, out, err) -> ExitCode`, with `parse_args` and `run_from_env`. **`main.rs` has interim wiring** (`mod fmt;` and one match arm): phase 10 hadn't merged. After it does, merge `main`, delete `run_from_env` and `parse_args`, and call `fmt::run` from the clap subcommand with `Options { paths, check }`.
 - **Link reference definitions** (the extra task, and Q43):
@@ -80,7 +80,7 @@ Build `tessera-fmt` and `tessera fmt`: rewrite Tessera constructs into canonical
 
 ### Left open
 
-- **Q71 to Q77** are open, each with its conservative reading implemented and its cases `provisional`: which diagnostics stop the formatter; trailing whitespace other than after a container's colon; block quote, marker-line, and tab indentation; blank-line gaps with a text primary or a definition (and list tightness); undeclared keys, bare keys, and quoting; empty image blocks and blocks in table cells; title lines.
+- **Q71 to Q77** are open, each with its conservative reading implemented and its cases `provisional`: which diagnostics stop the formatter; trailing whitespace other than after a container's colon; block quote, marker-line, and tab indentation; blank-line gaps with a text primary or a definition ; undeclared keys, bare keys, and quoting; empty image blocks and blocks in table cells; title lines.
 - **The formatter can't check what needs the model**: an unknown key or a wrong value type is phase 10's diagnostic; the formatter formats such a block as far as it is safe to.
 - **Format on save and range formatting** are phase 24's. `format` formats the whole file.
 - **`BlockKind::Title`** is still never produced (phase 06's note); nothing here matches on it except to skip it.

@@ -120,8 +120,8 @@ fn blocks(source: &str, list: &[Block], depth: usize, out: &mut String) {
             }
             BlockKind::List(l) => {
                 out.push_str(&format!(
-                    "{p}list ordered={} start={:?}\n",
-                    l.ordered, l.start
+                    "{p}list ordered={} start={:?} tight={}\n",
+                    l.ordered, l.start, l.tight
                 ));
                 for item in &l.items {
                     out.push_str(&format!("{p}  item\n"));

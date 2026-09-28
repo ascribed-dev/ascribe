@@ -180,7 +180,7 @@ impl Ctx<'_> {
             match &block.kind {
                 BlockKind::Directive(line) => {
                     self.directive(line, owner);
-                    blank::rule(self, blocks, i);
+                    blank::rule(self, blocks, i, owner);
                 }
                 BlockKind::Container(container) => {
                     self.directive(&container.opener, owner);

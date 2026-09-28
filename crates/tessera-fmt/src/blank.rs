@@ -11,22 +11,33 @@
 //! such as a link reference definition (comrak consumes definitions, so they
 //! aren't blocks), is never touched; the rule then leaves the gap alone.
 //!
+//! A gap between two blocks of a list item is left alone too: it may be what
+//! makes the list loose, and closing it would change how the list renders
+//! (Q74).
+//!
 //! A directive whose text primary would swallow the block once nothing
 //! separates them is left alone too.
 
 use tessera_core::{Span, TextEdit};
 use tessera_syntax::{Block, BlockKind, Bound, PrimaryValue};
 
-use crate::Ctx;
+use crate::{Ctx, Owner};
 
-// SPEC-QUESTION(Q74): a gap with a text primary before it, or with a line that
-// isn't blank (a definition), is left alone.
+// SPEC-QUESTION(Q74): a gap with a text primary before it, with a line that
+// isn't blank (a definition), or between blocks of a list item is left alone.
 /// Applies the rule to the directive at `blocks[index]`, if it's a
 /// following-block directive with something after it in the same container.
-pub(crate) fn rule(ctx: &mut Ctx<'_>, blocks: &[Block], index: usize) {
+pub(crate) fn rule(ctx: &mut Ctx<'_>, blocks: &[Block], index: usize, owner: Owner) {
     let BlockKind::Directive(line) = &blocks[index].kind else {
         return;
     };
+    // A blank line between two blocks of a list item is what makes its list
+    // loose, and closing the gap could make the list tight, which changes how
+    // the whole list renders. The gap stays, and `binding-blank-line` still
+    // reports it.
+    if matches!(owner, Owner::Item(_)) {
+        return;
+    }
     if line.binding != Some(Bound::FollowingBlock)
         // Its own text would go on into the block.
         || matches!(line.primary, Some(PrimaryValue::Text(_)))

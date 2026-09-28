@@ -789,12 +789,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Ambiguity:** canonical form removes the blank line between a following-block directive and its block. Three cases where doing so isn't safe or isn't what the author sees:
   - the directive has a text primary (a widget that binds a following block and takes text): the blank line ends its text, so removing it would make the block part of the primary;
   - a link reference definition sits in the gap (`@steps`, a definition, a blank line, the list). comrak consumes definitions, so the tree shows only a gap, and a definition must never be deleted or moved;
-  - inside a list item, removing a blank line can turn a loose list tight, which changes the rendering.
+  - the gap is between two blocks of a list item. A blank line there can be what makes the list loose, and closing it can make the list tight, which changes how every item renders (paragraph wrapping and spacing). Reproduced by the reviewer with `1. First step.`, `   @note`, a blank line, `   Text of the note.`, `2. Second step.`.
 - **Options:**
-  1. Leave a gap alone when the directive has a text primary, or when any line in it isn't blank (this includes definitions); otherwise remove the blank lines, whatever that does to list tightness.
-  2. Also leave gaps in list items alone.
-- **Proposed resolution:** option 1, implemented now (`tessera-fmt/src/blank.rs`, using `ParsedDocument::definitions`). The spec's rule is about what a directive touches; tightness is a consequence the author asked for by writing the directive there.
-- **Affects:** `crates/tessera-fmt/src/blank.rs`; conformance case `format/blank-line-definition`.
+  1. Leave a gap alone when the directive has a text primary, when any line in it isn't blank (this includes definitions), or when it is between blocks of a list item; otherwise remove the blank lines. `binding-blank-line` still reports a gap that stays.
+  2. Also leave gaps alone in the first two cases only, and close gaps in list items whatever that does to tightness (the author wrote the directive there).
+  3. Close a gap in a list item only when the list's tightness, worked out again, doesn't change.
+- **Proposed resolution:** option 1, the conservative one; a formatter that runs on save (phase 24) mustn't change how ordinary markdown renders. Implemented now (`tessera-fmt/src/blank.rs`, using `ParsedDocument::definitions` and the block's owner). Option 2 is the previous reading; option 3 is exact but has to reason about every gap in a list together.
+- **Affects:** `crates/tessera-fmt/src/blank.rs`; conformance cases `format/blank-line-definition`, `format/blank-line-in-containers`, `format/blank-line-list-tightness`.
 
 ### Q75: Attribute blocks the formatter can't put in order or safely rewrite
 
