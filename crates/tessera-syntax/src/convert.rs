@@ -34,7 +34,9 @@ pub(crate) fn convert(source: &str, options: &ParseOptions) -> ParsedDocument {
     let frontmatter = root
         .first_child()
         .and_then(|first| converter.frontmatter(first));
-    let mut blocks = converter.blocks(root);
+    let blocks = converter.blocks(root);
+    let mut blocks = crate::structure::run(source, options, blocks, &mut converter.issues);
+    // After the structure pass, so the inline pass sees the final tree.
     let escaped_phrases =
         crate::inline::extend(source, options.file, &mut blocks, &mut converter.issues);
     let mut issues = converter.issues;
@@ -437,6 +439,8 @@ impl<'a> Converter<'a> {
             primary,
             form,
             unexpected,
+            title: None,
+            binding: None,
         }
     }
 

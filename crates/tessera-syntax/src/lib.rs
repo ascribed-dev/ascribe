@@ -14,6 +14,20 @@
 //!   attribute blocks, a primary the directive doesn't take or lacks, and a
 //!   directive-shaped line with an unknown name (which stays text).
 //!
+//! What phase 06's structure pass (`src/structure/`) adds, in the same call:
+//!
+//! - **containers** ([`Container`]) holding the blocks between an opener and
+//!   its end line, and **groups** ([`Group`]) of [`Arm`]s for runs of openers
+//!   of a groupable directive such as `@variant`;
+//! - **titles**, attached to the directive below them
+//!   ([`DirectiveLine::title`]);
+//! - **bindings** ([`DirectiveLine::binding`], [`bound_heading`],
+//!   [`bound_block`]);
+//! - **issues** for every structural row of SPEC §8.2: forms, unclosed
+//!   containers and stray end lines, nesting, binding, titles, `@variant`
+//!   groups, `@steps` and `@details`, and the list warnings.
+//!
+//!
 //! Phase 07 adds the inline extensions (in `src/inline/`):
 //!
 //! - **phrase candidates** (`{key}`, SPEC §5.1) as [`InlineKind::Phrase`] in
@@ -25,9 +39,8 @@
 //!   every form of image, parsed by `tessera_core::parse_attribute_block`,
 //!   with their issues in [`ParsedDocument::issues`].
 //!
-//! What a later phase adds to the tree (its node kinds are already defined):
-//! containers, groups, titles, and bindings (phase 06). Phase 06 owns
-//! `src/structure/` and phase 07 owns `src/inline/`.
+//! Phase 06 owns `src/structure/` and phase 07 owns `src/inline/`. The inline
+//! pass runs after the structure pass.
 //!
 //! ```
 //! use tessera_syntax::{parse, ParseOptions, BlockKind, PrimaryValue};
@@ -43,11 +56,13 @@ mod convert;
 mod head;
 mod inline;
 mod options;
+mod structure;
 mod unknown;
 
 pub mod tree;
 
 pub use options::ParseOptions;
+pub use structure::{bound_block, bound_heading};
 pub use tree::*;
 
 /// Parses a Tessera source file.

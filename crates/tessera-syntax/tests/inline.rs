@@ -142,25 +142,33 @@ fn candidates_in_text_primaries_lists_quotes_and_table_cells() {
     assert_eq!(all, ["a", "b", "c", "d", "e", "f", "g", "h"]);
 }
 
-/// The keys of every candidate in every paragraph, heading, and text primary
-/// of `blocks`, in order, at any depth. Title lines count: in phase 05's tree
-/// they're paragraphs, and after phase 06 they're `DirectiveLine::title`, so
-/// these tests must keep passing when the two are integrated.
+/// The keys of every candidate in every paragraph, heading, title line, and
+/// text primary of `blocks`, in order, at any depth. A title line is
+/// `DirectiveLine::title` (SPEC §3.7); an arm's `title` is its opener's.
 fn all_keys(blocks: &[Block]) -> Vec<String> {
+    fn line_keys(line: &DirectiveLine) -> Vec<String> {
+        let mut out = Vec::new();
+        if let Some(title) = &line.title {
+            out.extend(keys(&title.inlines));
+        }
+        if let Some(PrimaryValue::Text(p)) = &line.primary {
+            out.extend(keys(&p.inlines));
+        }
+        out
+    }
     let mut out = Vec::new();
     for block in blocks {
         match &block.kind {
             BlockKind::Paragraph(p) => out.extend(keys(&p.inlines)),
             BlockKind::Heading(h) => out.extend(keys(&h.inlines)),
-            BlockKind::Title(t) => out.extend(keys(&t.inlines)),
-            BlockKind::Directive(line) => {
-                if let Some(PrimaryValue::Text(p)) = &line.primary {
-                    out.extend(keys(&p.inlines));
-                }
+            BlockKind::Directive(line) => out.extend(line_keys(line)),
+            BlockKind::Container(c) => {
+                out.extend(line_keys(&c.opener));
+                out.extend(all_keys(&c.children));
             }
-            BlockKind::Container(c) => out.extend(all_keys(&c.children)),
             BlockKind::Group(g) => {
                 for arm in &g.arms {
+                    out.extend(line_keys(&arm.opener));
                     out.extend(all_keys(&arm.children));
                 }
             }
@@ -669,4 +677,18 @@ fn the_fork_and_the_tree_agree_on_where_a_block_ends() {
             assert_eq!(flat, format!("x {expect_tail}"), "{source:?}");
         }
     }
+}
+
+#[test]
+fn an_arms_title_stays_the_same_as_its_openers_after_the_inline_pass() {
+    let source = ".Using {product}\n@variant {os=linux}:\nText.\n\n.Other\n@variant {os=macos}:\nText.\n@end\n";
+    let d = doc(source);
+    let BlockKind::Group(g) = &d.blocks[0].kind else {
+        panic!("{:?}", d.blocks);
+    };
+    assert!(g.arms.iter().all(|a| a.title == a.opener.title));
+    assert_eq!(
+        g.arms[0].title.as_ref().map(|t| keys(&t.inlines)),
+        Some(vec!["product".to_owned()])
+    );
 }

@@ -12,10 +12,6 @@
 #                                         optional; skips only these checks
 
 [[skip]]
-tag = "structure"
-reason = "Adapter for tag `structure` (forms, containers, groups, titles, binding) not yet implemented; phase 06."
-
-[[skip]]
 tag = "model"
 reason = "Adapter for tag `model` (loading tessera.toml) not yet implemented; phase 08."
 

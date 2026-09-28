@@ -1,8 +1,11 @@
 description: >-
   An unindented directive splits an ordered list bound by `@steps`; the list
-  that follows continues the numbering, which is reported.
+  that follows (after a blank line, since a list that doesn't start at 1
+  can't interrupt a paragraph, and so can't interrupt the note's text)
+  continues the numbering, which is reported.
 spec: ["3.9", "8.2"]
-tags: [structure, check]
+tags: [structure, check, provisional]
+questions: [Q35]
 
 outline:
   - directive: steps
@@ -21,4 +24,4 @@ outline:
           - paragraph: Two.
 diagnostics:
   - {slug: list-ended-by-directive, line: 7}
-  - {slug: steps-numbering-continued, line: 8}
+  - {slug: steps-numbering-continued, line: 9}

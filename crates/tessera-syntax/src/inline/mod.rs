@@ -84,9 +84,8 @@ impl Pass<'_> {
             BlockKind::Group(g) => {
                 for arm in &mut g.arms {
                     self.directive(&mut arm.opener);
-                    if let Some(title) = &mut arm.title {
-                        self.inlines(&mut title.inlines);
-                    }
+                    // `Arm::title` is the same as `opener.title`.
+                    arm.title.clone_from(&arm.opener.title);
                     self.blocks(&mut arm.children);
                 }
             }
@@ -95,9 +94,11 @@ impl Pass<'_> {
         }
     }
 
-    // Phase 06 moves title lines into `DirectiveLine::title`; when it does,
-    // this must walk that title too (see the title tests in `tests/inline.rs`).
+    /// A directive line's text primary and its title line (SPEC §3.7).
     fn directive(&mut self, line: &mut DirectiveLine) {
+        if let Some(title) = &mut line.title {
+            self.inlines(&mut title.inlines);
+        }
         if let Some(PrimaryValue::Text(primary)) = &mut line.primary {
             self.inlines(&mut primary.inlines);
         }

@@ -5,6 +5,7 @@
 //! for the tags it now handles from `SKIPS.toml`.
 
 mod inline;
+mod structure;
 mod syntax;
 
 use tessera_conformance::Registry;

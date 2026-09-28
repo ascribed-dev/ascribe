@@ -10,20 +10,52 @@ fn doc(source: &str) -> ParsedDocument {
     parse(source, &ParseOptions::default())
 }
 
+/// The first block's directive line: a line-form directive, or the opener of
+/// a container or of a group's first arm (phase 06 nests those).
 fn directive(source: &str) -> (ParsedDocument, DirectiveLine) {
     let d = doc(source);
-    let Some(Block {
-        kind: BlockKind::Directive(line),
-        ..
-    }) = d.blocks.first().cloned()
-    else {
-        panic!("not a directive: {:?}", d.blocks);
+    let line = match d.blocks.first().map(|b| &b.kind) {
+        Some(BlockKind::Directive(line)) => line.clone(),
+        Some(BlockKind::Container(c)) => c.opener.clone(),
+        Some(BlockKind::Group(g)) => g.arms[0].opener.clone(),
+        _ => panic!("not a directive: {:?}", d.blocks),
     };
     (d, line)
 }
 
+/// The `directive-extra-text` issue (the structure pass's issues can sort
+/// before it).
+fn extra_text(d: &ParsedDocument) -> &tessera_core::Issue {
+    let found = d
+        .issues
+        .iter()
+        .find(|i| i.slug.as_str() == "directive-extra-text");
+    found.unwrap_or_else(|| panic!("not reported: {:?}", d.issues))
+}
+
+/// The slugs of the issues the head parser reports (phase 05). The structure
+/// pass's issues (binding, containers, titles) have their own tests.
 fn slugs(d: &ParsedDocument) -> Vec<&'static str> {
-    d.issues.iter().map(|i| i.slug.as_str()).collect()
+    const STRUCTURE: &[&str] = &[
+        "container-unclosed",
+        "container-colon-unexpected",
+        "container-colon-missing",
+        "container-open-at-arm",
+        "end-unmatched",
+        "end-indent-mismatch",
+        "container-nesting-deep",
+        "binding-no-block",
+        "binding-heading",
+        "binding-blank-line",
+        "binding-not-section-top",
+        "title-not-accepted",
+        "title-dot-space",
+    ];
+    d.issues
+        .iter()
+        .map(|i| i.slug.as_str())
+        .filter(|s| !STRUCTURE.contains(s))
+        .collect()
 }
 
 fn cut(source: &str, span: Span) -> &str {
@@ -172,9 +204,14 @@ fn reports_a_primary_where_the_schema_takes_none() {
     let source = "@steps: now\n";
     let (d, line) = directive(source);
     assert_eq!(slugs(&d), ["directive-primary"]);
-    assert_eq!(d.issues[0].variant, None);
-    assert_eq!(d.issues[0].arg("name"), Some("steps"));
-    assert_eq!(cut(source, d.issues[0].location.span), "now");
+    let issue = d
+        .issues
+        .iter()
+        .find(|i| i.slug.as_str() == "directive-primary");
+    let issue = issue.expect("reported");
+    assert_eq!(issue.variant, None);
+    assert_eq!(issue.arg("name"), Some("steps"));
+    assert_eq!(cut(source, issue.location.span), "now");
     assert!(matches!(line.primary, Some(PrimaryValue::Unexpected(_))));
 }
 
@@ -220,8 +257,9 @@ fn keeps_and_reports_text_that_fits_nothing_in_the_head() {
     let source = "@note hello: text\n";
     let (d, line) = directive(source);
     assert_eq!(slugs(&d), ["directive-extra-text"]);
-    assert_eq!(d.issues[0].variant, Some("head"));
-    assert_eq!(d.issues[0].arg("extra"), Some("hello: text"));
+    let issue = extra_text(&d);
+    assert_eq!(issue.variant, Some("head"));
+    assert_eq!(issue.arg("extra"), Some("hello: text"));
     assert_eq!(cut(source, line.unexpected.expect("kept")), "hello: text");
     assert!(line.primary.is_none() && line.colon.is_none());
     assert_eq!(line.form, Form::Line);
@@ -231,7 +269,7 @@ fn keeps_and_reports_text_that_fits_nothing_in_the_head() {
 fn attribute_values_of_every_form() {
     let source = "@variant {pm=npm, platform=cloud|on-prem, label=\"Using other images\"}:\n";
     let (d, line) = directive(source);
-    assert!(d.issues.is_empty(), "{:?}", d.issues);
+    assert!(slugs(&d).is_empty(), "{:?}", d.issues);
     let attrs = line.attributes.expect("attributes");
     assert!(matches!(
         attrs.get("pm").and_then(|a| a.value.as_ref()),
@@ -252,14 +290,16 @@ fn attribute_values_of_every_form() {
 fn end_lines() {
     let d = doc("@note:\nText.\n@end\n");
     assert!(d.issues.is_empty());
-    assert_eq!(d.blocks.len(), 3);
-    assert!(matches!(&d.blocks[2].kind, BlockKind::End(e) if e.extra.is_none()));
+    assert_eq!(d.blocks.len(), 1);
+    assert!(
+        matches!(&d.blocks[0].kind, BlockKind::Container(c) if c.end.as_ref().is_some_and(|e| e.extra.is_none()))
+    );
     let d = doc("@end   \n");
     assert!(matches!(&d.blocks[0].kind, BlockKind::End(_)));
-    assert!(d.issues.is_empty());
+    assert!(slugs(&d).is_empty());
     let d = doc("@end: nope\n");
     assert_eq!(slugs(&d), ["directive-extra-text"]);
-    assert_eq!(d.issues[0].variant, Some("end"));
+    assert_eq!(extra_text(&d).variant, Some("end"));
     assert!(matches!(&d.blocks[0].kind, BlockKind::End(e) if e.extra.is_some()));
 }
 
@@ -441,12 +481,18 @@ fn blocks_and_inlines() {
 }
 
 #[test]
-fn never_produces_nodes_phase_06_owns() {
-    let d = doc(".Title\n@note:\nx\n@end\n@variant {a=b}:\n{phrase} ![i](s){w=1}\n");
+fn produces_the_nodes_of_phase_06_and_07() {
+    let d = doc(".Title\n@note:\nx\n@end\n@variant {a=b}:\n{phrase} ![i](s){w=1}\n@end\n");
     let text = format!("{:?}", d.blocks);
-    for owned in ["Container(", "Group(", "Title("] {
-        assert!(!text.contains(owned), "{owned}");
+    // Phase 06: containers, groups, and attached titles. A title line is
+    // never a block of its own.
+    for produced in ["Container(", "Group(", "TitleLine {"] {
+        assert!(text.contains(produced), "{produced}");
     }
+    assert!(!text.contains("Title("));
+    // Phase 07: phrase candidates and image attributes.
+    assert!(text.contains("Phrase("));
+    assert!(text.contains("ImageAttributes"));
 }
 
 #[test]
