@@ -773,7 +773,7 @@ where
                     || self.handle_alert(container, line)
                     || self.handle_multiline_blockquote(container, line)
                     || self.handle_blockquote(container, line)
-                    || self.handle_tessera_line(container, line) // TESSERA
+                    || self.handle_tessera_line(container, line) // TESSERA: a block start.
                     || self.handle_atx_heading(container, line)
                     || self.handle_atx_subtext(container, line)
                     || self.handle_code_fence(container, line)

@@ -8,7 +8,7 @@ type TestCase = (&'static [Sourcepos], &'static str);
 
 const DOCUMENT: TestCase = (&[sourcepos!((1:1-1:1))], "a");
 
-// TESSERA
+// TESSERA: a case for the Tessera-line node.
 const TESSERA_LINE: TestCase = (
     &[sourcepos!((2:1-3:5)), sourcepos!((4:3-4:6))],
     "before\n@note: hello\nworld\n  @end\n",
@@ -483,7 +483,7 @@ fn node_values() -> HashMap<NodeValueDiscriminants, TestCase> {
         .map(|v| {
             let text = match v {
                 Document => DOCUMENT,
-                TesseraLine => TESSERA_LINE, // TESSERA
+                TesseraLine => TESSERA_LINE, // TESSERA: its case.
                 FrontMatter => FRONT_MATTER,
                 BlockQuote => BLOCK_QUOTE,
                 MultilineBlockQuote => MULTILINE_BLOCK_QUOTE,
@@ -545,7 +545,7 @@ fn sourcepos() {
     let node_values = node_values();
 
     let mut options = Options::default();
-    // TESSERA
+    // TESSERA: turn Tessera lines on.
     options.extension.tessera = Some(std::sync::Arc::new(
         crate::tessera::TesseraOptions::new()
             .keyword("note", true)

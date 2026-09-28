@@ -450,7 +450,7 @@ impl<'a, 'o, 'c, 'w> CommonMarkFormatter<'a, 'o, 'c, 'w> {
 
         match node.data().value {
             NodeValue::Document => (),
-            // TESSERA
+            // TESSERA: format a Tessera line.
             NodeValue::TesseraLine(ref ntl) => self.format_tessera_line(ntl, entering)?,
             NodeValue::FrontMatter(ref fm) => self.format_front_matter(fm, entering)?,
             NodeValue::BlockQuote => self.format_block_quote(entering)?,

@@ -1,5 +1,5 @@
 //! TESSERA: checks that `FORK.md` lists every file Tessera changed, with the
-//! number of `// TESSERA` markers each one has.
+//! number of `// TESSERA:` markers each one has.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -34,7 +34,7 @@ fn markers_in_source(root: &Path) -> BTreeMap<String, usize> {
             continue;
         }
         let text = std::fs::read_to_string(&path).unwrap();
-        let count = text.matches("// TESSERA").count();
+        let count = text.matches("// TESSERA:").count();
         if count > 0 {
             counts.insert(rel, count);
         }
@@ -69,6 +69,6 @@ fn fork_md_lists_every_marked_file() {
     assert_eq!(
         markers_in_fork_md(root),
         source,
-        "FORK.md's changed-locations table (left) doesn't match the `// TESSERA` markers in src/ (right)"
+        "FORK.md's changed-locations table (left) doesn't match the `// TESSERA:` markers in src/ (right)"
     );
 }

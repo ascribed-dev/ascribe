@@ -673,7 +673,7 @@ impl NodeValue {
     /// Indicates whether this node is a block node or inline node.
     pub fn block(&self) -> bool {
         match *self {
-            NodeValue::TesseraLine(_) => true, // TESSERA
+            NodeValue::TesseraLine(_) => true, // TESSERA: a block.
             NodeValue::Document
             | NodeValue::BlockQuote
             | NodeValue::FootnoteDefinition(_)
@@ -739,7 +739,7 @@ impl NodeValue {
     pub fn xml_node_name(&self) -> &'static str {
         match *self {
             NodeValue::Document => "document",
-            NodeValue::TesseraLine(_) => "tessera_line", // TESSERA
+            NodeValue::TesseraLine(_) => "tessera_line", // TESSERA: its XML name.
             NodeValue::BlockQuote => "block_quote",
             NodeValue::FootnoteDefinition(_) => "footnote_definition",
             NodeValue::List(..) => "list",

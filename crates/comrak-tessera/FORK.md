@@ -36,7 +36,7 @@ Not vendored: `src/main.rs` (the CLI), `benches/`, `examples/`, `fuzz/`, `vendor
 
 ## Changed locations
 
-Every change to an upstream file is marked in the code with a `// TESSERA` comment. `grep -rn '// TESSERA' src` lists them. Two files are wholly Tessera's and have no upstream counterpart: [`src/tessera.rs`](src/tessera.rs) (the option, node, scanner, and HTML rendering) and [`src/parser/tessera.rs`](src/parser/tessera.rs) (the parser hooks). The test `tests/fork_md.rs` checks that this table's counts match the markers in the code.
+Every change to an upstream file is marked in the code with a `// TESSERA:` comment. `grep -rn '// TESSERA:' src` lists them. Two files are wholly Tessera's and have no upstream counterpart: [`src/tessera.rs`](src/tessera.rs) (the option, node, scanner, and HTML rendering) and [`src/parser/tessera.rs`](src/parser/tessera.rs) (the parser hooks). The test `tests/fork_md.rs` checks that this table's counts match the markers in the code.
 
 | File | Markers | Where | What |
 |---|---|---|---|
@@ -88,7 +88,7 @@ Tessera's changes are a patch against a pristine upstream release. To move to a 
    ```
 
    Commit this state on its own ("Vendor comrak vX.Y.Z"), so the next merge has a pristine base to diff against.
-4. **Reapply the patch**: `patch -p1 -d crates/comrak-tessera -i /tmp/tessera.patch`. Resolve any rejected hunk by hand at the equivalent place (`*.rej` files show them), keeping its `// TESSERA` marker.
+4. **Reapply the patch**: `patch -p1 -d crates/comrak-tessera -i /tmp/tessera.patch`. Resolve any rejected hunk by hand at the equivalent place (`*.rej` files show them), keeping its `// TESSERA:` marker.
 5. **Update the manifest** from the new release's `Cargo.toml`: dependency versions, `rust-version`, new features (declare any feature that pulls in the CLI or syntect as an expected `cfg` instead), and `version`.
 6. **Check upstream's new block starts and paragraph rules.** A new block type that can interrupt a paragraph needs no change. A new rule that converts a paragraph into something else (as setext headings and tables do) needs the `tessera::is_text_primary` guard, and a new `NodeValue` variant needs nothing from Tessera.
 7. **Run everything**: `cargo test -p comrak-tessera` (upstream's tests and the spike tests), `cargo test -p tessera-commonmark-suite` (the CommonMark suite against the fork, off and on), then the whole workspace with fmt and clippy. If the CommonMark version changed, update `tests/commonmark/spec.json` and rewrite the baselines.

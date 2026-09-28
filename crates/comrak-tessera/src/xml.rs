@@ -158,7 +158,7 @@ impl<'o, 'c> XmlFormatter<'o, 'c> {
                 NodeValue::Document => self
                     .output
                     .write_str(" xmlns=\"http://commonmark.org/xml/1.0\"")?,
-                // TESSERA
+                // TESSERA: the raw line as an attribute.
                 NodeValue::TesseraLine(ref ntl) => {
                     self.output.write_str(" raw=\"")?;
                     self.escape(&ntl.raw)?;
