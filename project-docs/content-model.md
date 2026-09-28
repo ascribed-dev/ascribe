@@ -54,7 +54,7 @@ Example files, each valid under this reference:
 
 - **Keys are kebab-case** (`content-root`, `trailing-slash`), matching Tessera's attribute keys. TOML allows hyphens in bare keys, so they need no quotes.
 - **Unknown keys are errors**, everywhere, with a did-you-mean suggestion. A misspelled key is otherwise a silently ignored setting. The exceptions are the tables whose keys are names the project chooses (`[phrases]`, `[types]`, `[dimensions]`, and so on); their keys are validated as names instead.
-- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order (SPEC §8.3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
+- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order (SPEC §8.3). It MUST also preserve the order of the `[dimensions]` tables, which is the canonical order of `@variant` attributes and decides which dimension a tab group syncs on (the [element contract](../packages/elements/CONTRACT.md), §3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
 
 ### 1.2 Names
 
