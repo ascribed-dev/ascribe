@@ -1,8 +1,7 @@
 description: >-
   A group with no end line is reported unclosed.
 spec: ["3.6", "8.2"]
-tags: [check, provisional]
-questions: [Q17]
+tags: [check]
 
 diagnostics:
   - {slug: container-unclosed, line: 5}

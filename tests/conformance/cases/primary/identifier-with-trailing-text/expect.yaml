@@ -2,9 +2,8 @@ description: >-
   Text after an identifier primary's token is reported, not silently
   dropped.
 spec: ["3.4", "8.2"]
-tags: [check, provisional]
-questions: [Q15]
+tags: [check]
 
 diagnostics:
-  - {slug: directive-primary, line: 5}
+  - {slug: directive-extra-text, line: 5}
   - {slug: include-target-missing, line: 5}

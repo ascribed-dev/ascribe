@@ -2,8 +2,7 @@ description: >-
   Including the same fragment twice puts its ids on the page twice; the
   error is at the second include.
 spec: ["4.2", "8.2"]
-tags: [page-check, include, provisional]
-questions: [Q20]
+tags: [page-check, include]
 
 builds:
   site:

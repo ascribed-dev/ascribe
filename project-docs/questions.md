@@ -252,7 +252,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §3.2, §3.9
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** SPEC §3.2 says a line is a directive line only if it "is not inside a code span, fenced code block, indented code block, or raw HTML block". Fences, indented code, and HTML blocks are block structure, so a block parser knows about them. A code span is inline: it can span lines of one paragraph, and a block parser reads line starts before it knows whether a span is open:
 
   ```
@@ -267,13 +267,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. The code span wins: the line is text, and the paragraph is `Use \`code @note: A note. more\` here.` A block parser can't do this without an inline pass first; it would make a directive line's meaning depend on later lines.
 - **Proposed resolution:** option 1. It keeps recognition a property of the line and its block context, which is what the block parser (phase 04) does, and it matches headings. SPEC §3.2 should say "inside a fenced code block, an indented code block, or a raw HTML block" and drop "code span", which can only apply within a line. Implemented in the fork now: option 1 (see `crates/comrak-tessera/SPIKE.md`).
 - **Affects:** conformance cases: `recognition/code-span-across-lines`; phases 05, 06.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: block structure wins, as for a heading. SPEC §3.2 now lists only fenced code, indented code, and raw HTML blocks, and says a directive line interrupts a paragraph even inside an unclosed code span.
 
 ### Q14: Which diagnostic a malformed attribute value gets
 
 - **Section:** SPEC §3.3, §8.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.2 has two rows for attribute blocks that break §3.3's grammar: "Unquoted value containing a reserved character" and "Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value)". Some values satisfy both readings:
 
   ```
@@ -288,13 +288,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. Everything that fails the grammar is `attribute-syntax`; `attribute-unquoted-reserved` is only for reserved characters that the block would otherwise have accepted (there are none, so the row is unreachable).
 - **Proposed resolution:** option 1. It gives the author the more specific message ("quote this value") whenever that is the fix, and keeps both rows reachable. Cases expect exactly one of the two per line. Implemented now: nothing yet; phase 05 chooses when it parses attribute blocks.
 - **Affects:** conformance cases: `attributes/unquoted-equals`, `attributes/unquoted-quote-char`, `attributes/unquoted-whitespace`; phases 05, 06.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: a value that breaks only the quoting rule is `attribute-unquoted-reserved`, and structure that can't be read is `attribute-syntax`. SPEC §3.3 now says so.
 
 ### Q15: Text after an identifier primary
 
 - **Section:** SPEC §3.4, §8.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.4: an identifier primary "is a single token that ends at the first whitespace". It doesn't say what happens to what follows:
 
   ```
@@ -310,13 +310,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1, which reports rather than drops. `directive-primary`'s message would need a variant for it (for example, "`@include`'s primary is a single word; remove `{extra}`"), a change to the registry that this question's approval would cover. Cases expect `directive-primary` at the line.
 - **See also:** Q30 (phase 05), which covers this shape and four others (`@note hello: text`, `@steps foo`, `@end: later`, `@id: two words`) and proposes a new `directive-extra-text` error instead. Resolve the two together.
 - **Affects:** conformance cases: `primary/identifier-with-trailing-text`; phases 05, 06.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: settled with Q30: text after an identifier primary is an error, reported as the new `directive-extra-text` rather than `directive-primary`. SPEC §3.1 and §3.4 now say so, and the case `primary/identifier-with-trailing-text` expects the new slug.
 
 ### Q16: What a container-form error does to the container
 
 - **Section:** SPEC §3.5, §8.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.5 makes two container-form mistakes errors: a trailing colon on a directive with no container form (`@steps:`), and a container-only directive (`@variant`) without its colon. It doesn't say whether, after the error, the line still opens a container (or a group arm) that the author's `@end` will close:
 
   ```
@@ -331,13 +331,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. The line isn't a container after an error; `@end` is then reported too.
 - **Proposed resolution:** option 1. It reports each mistake once, at the line where it happens, and keeps the rest of the file's structure intact, which is the point of §3.5's last paragraph. Cases expect the one error and include the `@end`.
 - **Affects:** conformance cases: `forms/container-colon-on-line-only-directive`, `forms/container-only-without-colon`, `widgets/container-widget-line-form`, `widgets/line-widget-container-form`; phases 05, 06.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: the line keeps the form its colon gives it, one error is reported, and the `@end` still closes it. SPEC §3.5 now says so.
 
 ### Q17: Where diagnostics about a whole group are reported, and how groups count toward nesting depth
 
 - **Section:** SPEC §3.6, §3.10, §4.3, §8.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** A group is several openers with one end line, and §8.2 has rows about the group as a whole: a group never closed ("Container not closed before its enclosing block ends"), one that "mixes labeled and dimensional arms", one whose "dimensional arms share no dimension key", and (page level) one where "no arm survives a build's selection". The spec says where only for the case of an open container at an arm's opener. Nesting depth (§3.10) has a related gap: a group is a container, but its arms could count as a second level.
 - **Options:**
   1. Group-level diagnostics are reported at the group's first opener (its directive line, not its title line); arm-level ones (`variant-arm-kind`, `variant-unknown`) at the arm's opener. A group is one container level, its arms are not another.
@@ -345,13 +345,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Group-level diagnostics at the last opener or at `@end`.
 - **Proposed resolution:** option 1: the group is one container, opened once; the first opener is where it's written and where a fix starts. Cases carry `provisional` for the group-level diagnostics and for the nesting case that puts a group at the first level.
 - **Affects:** conformance cases: `builds/selection/no-arm-survives`, `directives/variant/arms-share-no-dimension`, `directives/variant/mixed-labeled-and-dimensional`, `groups/same-directive-does-not-nest`, `groups/unclosed-group`, `nesting/group-counts-as-one-level`; phases 10, 11, 12, 14.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: group-level diagnostics at the group's first opener, arm-level ones at the arm's opener, and a group counts as one nesting level. SPEC §3.6 and §3.10 now say so.
 
 ### Q18: A heading-bound directive with no heading above it
 
 - **Section:** SPEC §3.8, §4.1, §4.4, §8.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.8: "at the top of a section, a directive describes the section; anywhere else, it describes the block it touches", and heading-bound directives "go at the top of their section, under the heading". Before a document's first heading there is no section:
 
   ```
@@ -367,13 +367,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Both are errors when there's no heading.
 - **Proposed resolution:** option 1. Cases carry `provisional` for both.
 - **Affects:** conformance cases: `binding/available-before-first-heading`, `binding/id-with-no-heading`; phases 05, 06.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: `@id` before any heading is an error, and `@available` there binds the block it touches. SPEC §3.8 now says so.
 
 ### Q19: An end line in a different container from its opener, or indented differently within one
 
 - **Section:** SPEC §3.9, §8.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §3.9 rule 3: "A container or group opens and closes within one list item... An end line indented differently from its opener doesn't close that opener; it's an error." §8.2 has the row "End line indented differently from its opener" and the row "End line with no open container". Which applies, and what else is reported, isn't stated for:
 
   ```
@@ -393,13 +393,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Different container: `end-unmatched` only.
 - **Proposed resolution:** option 1. It follows the container rule the section is about and doesn't punish spacing the grammar accepts. Cases expect both diagnostics for the cross-container case.
 - **Affects:** conformance cases: `lists/end-in-next-item`, `lists/end-with-extra-indent-same-container`; phases 05, 06.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: an end line in a different container is `end-indent-mismatch`, and the opener is also `container-unclosed`; up to three extra spaces within one container don't matter. SPEC §3.9 rule 3 now says so.
 
 ### Q20: Where page-level, model, and frontmatter diagnostics are reported when several places cause them
 
 - **Section:** SPEC §4.1, §4.2, §5.5, §7.2, §8.1, §8.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §8.1 says a page-level diagnostic "is reported at the source location that causes it", and that when the cause is in a fragment it "is reported at the include site". A conformance case needs one line. The spec doesn't choose it when two places are involved:
 
   - a duplicate id (`id-duplicate`) or a repeated heading (`heading-duplicate-without-id`): the first or the later occurrence, and for a slug that collides with an `@id`, the heading or the `@id` line;
@@ -415,13 +415,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Report at the first occurrence.
 - **Proposed resolution:** option 1: the later occurrence is the one that made the earlier one a duplicate, and the first of a set is unchanged by whatever the author added. Cases that depend on a choice carry `provisional`.
 - **Affects:** conformance cases: `directives/id/duplicate-explicit`, `directives/id/duplicate-through-include`, `directives/id/same-fragment-twice`, `directives/id/slug-equals-explicit-id`, `directives/include/cycle`, `directives/include/self-include`, `frontmatter/missing-required-field`, `frontmatter/no-frontmatter-at-all`, `frontmatter/no-type-and-no-default`, `frontmatter/reference-type-requires-api-version`, `frontmatter/two-types-match`, `headings/duplicate-across-included-fragment`, `headings/duplicate-heading-on-page`, `headings/explicit-id-is-stable-source-and-page-id`, `headings/page-id-differs-from-source-id`, `model/name-is-a-feature-key`, `model/name-is-a-lifecycle-state`; phases 10, 11, 12, 14.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: report once, at the later occurrence; at the include site only, with the fragment as related information; frontmatter problems with no line at the file's first line. SPEC §8.1 now says so.
 
 ### Q21: A link to a page that a build drops
 
 - **Section:** SPEC §5.2, §8.2, §9.3
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §9.3 drops a page whose `variant` frontmatter conflicts with a selection. §8.2 has a row for a link whose target *id* a build removes ("Target id is removed by a build"), but none for a link to a page (with or without an id) that the build doesn't publish. Such a link is valid in the `site` build and would have no target in `cloud-only`:
 
   ```
@@ -433,13 +433,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. A warning.
 - **Proposed resolution:** option 2 is what §8.1's page-level checking is for, but it needs a row, so this is a request for one. No case depends on it yet, because the registry has nothing to expect; add cases when a slug exists.
 - **Affects:** conformance cases: none; phases 10, 11, 12, 14.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 2: an error in that build, with a new §8.2 row and registry entry, `link-page-dropped` (TSR121, page level). SPEC §5.2 now says so, and the case `links/page-dropped-by-selection` expects it.
 
 ### Q22: What a destination that "looks like a published route" is
 
 - **Section:** SPEC §5.2, §8.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §5.2: "A destination that looks like a published route rather than a file path produces a warning offering conversion." Paths are file paths; a `/` prefix means content-root-relative. The spec doesn't say how a route is recognized:
 
   ```
@@ -453,13 +453,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Any destination that doesn't exist and has no extension.
 - **Proposed resolution:** option 1. The case expects `link-route` alone for `/guides/install/`.
 - **Affects:** conformance cases: `links/route-destination`; phases 10, 11, 12, 14.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: a local destination that names no existing file, and whose last segment has no extension or ends in `/`, gets `link-route` instead of a missing-file error. SPEC §5.2 now says so.
 
 ### Q23: The source of a reference-style image in an outline
 
 - **Section:** SPEC §5.3
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** The outline's `image` block has a required main value: "source, as written". For an inline image, `![alt](settings.png)`, that is `settings.png`. For a reference image, `![alt][ref]`, `![alt][]`, and `![alt]`, the text as written is the label (`ref`), and the source is in a definition (`[ref]: settings.png`), which outlines omit.
 - **Options:**
   1. The source is the definition's destination, `settings.png`: an image's source is where its file is, and adapters must resolve labels anyway to check that the file exists.
@@ -467,78 +467,78 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1. Cases for the three reference forms carry `provisional`.
 - **Implemented now (phase 07):** option 1 (`// SPEC-QUESTION(Q23)` in `tests/conformance/tests/adapters/inline.rs`). Nothing in the proposal turned out to be wrong. It costs nothing in the tree: `Image::destination` is already the definition's destination for every reference form (comrak resolves it), and the label is `Image::label` (full form) or the alt text (collapsed and shortcut), so option 2 would be as cheap if a human chooses it. The one thing to note is that a reference image whose label has no definition isn't an image at all (CommonMark), so it never has a source of either kind.
 - **Affects:** conformance cases: `images/collapsed-reference`, `images/full-reference`, `images/shortcut-reference`; phases 07.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: a reference image's source is its definition's destination. SPEC §5.3 now says so.
 
 ### Q24: A page whose page-level availability isn't available in a filter build
 
 - **Section:** SPEC §4.4, §9.3
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §9.3: `filter` "removes content that isn't available for" the target, and a page's frontmatter `available` "applies to the whole page". §9.3 says which pages a variant selection drops, but not what a filter does with a page whose spec makes all of it unavailable: it could be dropped, like a conflicting page, or published with no content.
 - **Options:**
   1. The page isn't published in that build: nothing on it is available, and an empty page in navigation is worse than none.
   2. The page is published with only its title and frontmatter.
 - **Proposed resolution:** option 1. The case lists the pages each build publishes.
 - **Affects:** conformance cases: `builds/filter/page-level-availability`; phases 10, 11, 12, 14.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: the page isn't published in that build. SPEC §9.3 now says so.
 
 ### Q25: What a retained `@available` shows when its primary was a feature key
 
 - **Section:** SPEC §4.4, §9.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §4.4: a feature key "is replaced by that feature's declared spec". §9.2 step 2 resolves feature keys before build modes, and §9.3 says content that remains "is annotated as in `badge`". A resolved outline keeps the `available` directive as the annotation. Its primary is either the key as the author wrote it or the spec it stands for.
 - **Options:**
   1. The declared spec (`cloud, self-managed preview 3.4`), as §4.4 says: the key is replaced, and an annotation the emitters render needs the targets and states, not the key.
   2. The key, with the registry consulted again by each emitter.
 - **Proposed resolution:** option 1. The case is provisional.
 - **Affects:** conformance cases: `builds/filter/feature-key`; phases 10, 11, 12, 14.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: the declared spec, not the key. SPEC §4.4 (Feature keys) now says so.
 
 ### Q26: Heading levels in an included section
 
 - **Section:** SPEC §4.2, §9.2
 - **Raised by:** phase 03
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** §4.2 includes "a heading's section", the heading and its content up to the next heading of the same or a higher level. It says nothing about the level of the included headings in the including page. A fragment's `## Install` included under a page's `### Steps` could keep level 2, which breaks the page's outline, or be shifted to level 4.
 - **Options:**
   1. Levels are kept as written: an include is transclusion, and the author chooses where to include it. A tool may warn about a skipped level.
   2. Levels are shifted so the included top heading sits one below the enclosing heading.
 - **Proposed resolution:** option 1, since the spec has no level-shifting syntax or attribute and options 2's rule would have to guess what "enclosing" means inside lists and containers. The cases put includes where the levels agree, and are provisional.
 - **Affects:** conformance cases: `directives/include/heading-true-keeps-heading`, `directives/include/section-by-explicit-id`, `directives/include/section-by-source-id`; phases 10, 11, 12, 14.
-- **Resolution:** _open_
+- **Resolution:** approved by the repository owner: option 1: included headings keep the levels they're written with. SPEC §4.2 now says so.
 
 ### Q27: `role` is reserved, but the full example model declares it
 
 - **Section:** SPEC §7.2 (reserved attribute keys); content-model.md §15, §20.3
 - **Raised by:** phase 08
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** `tessera_core::reserved::HTML_GLOBAL_ATTRIBUTES` includes `role` (an ARIA global attribute), so `model-attribute-reserved` rejects it. Phase 01's `examples/content-models/full.toml` declared a widget attribute `role = "set(enum(admin, developer, writer))"` and, as an acceptance criterion, must load with no issues. The two contradict.
 - **Options:**
   1. Keep `role` reserved and rename the example's attribute. The site output writes widget attributes onto the widget's custom element, where `role` would change its accessibility role.
   2. Remove `role` from the reserved list. Authors could then declare a `role` attribute whose value (such as `admin`) becomes an invalid ARIA role on the element.
 - **Proposed resolution:** option 1. Implemented now: the example's attribute is renamed `audience` (in `full.toml` and its comment); no other file mentions the old spelling.
 - **Affects:** `examples/content-models/full.toml`; phase 03 fixtures that copy from it.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 1: `role` stays reserved, and the example's attribute is `audience`.
 
 ### Q28: `DefaultValue` has no number variant
 
 - **Section:** SPEC §3.3; content-model.md §6.2; `tessera_core::DefaultValue` (phase 02 contract)
 - **Raised by:** phase 08
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** an attribute of type `number` can have a default (`height = { type = "number", default = 600 }`), but `DefaultValue` is `Text`, `Boolean`, or `Set`. There is nowhere to put a number.
 - **Options:**
   1. Add `DefaultValue::Number` (a contract change: it touches every `match` on `DefaultValue` in phases 05, 06, 10, and 23).
   2. Store the default's source text (`"600"`) in `DefaultValue::Text`. Consumers of a `number` attribute already read attribute values as text.
 - **Proposed resolution:** option 2 for now, since it needs no contract change and loses nothing; option 1 if a consumer needs to tell `"600"` from `600`. Implemented now: option 2 (`// SPEC-QUESTION(Q28)` in `tessera-model/src/fields.rs`).
 - **Affects:** `crates/tessera-core/src/schema.rs`; phases 05, 06, 10, 23.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 2: a number default is stored as its source text in `DefaultValue::Text`. Revisit if a consumer needs to tell `"600"` from `600`.
 
 ### Q29: A dimension name as a target of a versioned entry
 
 - **Section:** SPEC §4.4
 - **Raised by:** phase 08
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** a target may be a dimension name, "which stands for all of its values", and "a target that the content model declares as versionless takes a single state and no versions". For a dimension with both kinds of value (`deployment`: `cloud` versionless, `self-managed` versioned), `deployment 3.4` is neither clearly valid nor clearly invalid.
 - **Options:**
   1. A dimension name is versionless only if all its values are. `deployment 3.4` is then accepted for a mixed dimension, and the version means nothing to `cloud`.
@@ -546,12 +546,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Versions are never allowed on a dimension name.
 - **Proposed resolution:** option 1: it rejects only what is certainly wrong (a version on a dimension whose values are all versionless) and never rejects a spec that has a sensible meaning. **Implemented now: option 3**, the most conservative, at the reviewer's request while the question is open (`// SPEC-QUESTION(Q29)` in `tessera-model/src/model.rs`). A version on a dimension name is reported as `model-availability-versionless` (`available-versionless` in documents) with the base message; its wording ("`deployment` is versionless") doesn't quite fit, and a message variant naming the dimension would need a registry change, so none was added.
 - **Affects:** `tessera-model` (`check_availability`); phases 10, 12 (which decide what the version means for versionless members).
+- **Resolution:** approved by the repository owner: option 3: a version on a dimension name is always an error, since the dimension's values don't share one version line. SPEC §4.4 now says so. It's reported with a new `dimension` message variant of `model-availability-versionless` and `available-versionless`, which suggests naming a value instead (`AvailabilityProblem::DimensionVersion`).
 
 ### Q30: Text on a directive line that fits no part of the directive
 
 - **Section:** SPEC §3.1, §3.4, §8.2, Appendix A
 - **Raised by:** phase 05
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** the grammar (`directive-line`) allows only a name, an attribute block, a colon, and a primary, but §3.2 recognizes a line as a directive from its keyword alone, so a known keyword can be followed by text that fits no part of the grammar, and §8.2 has no row for it. Five shapes come up:
 
   ```
@@ -570,7 +571,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1. It reports every case, with a message that says what to fix, and needs one new registry entry (a contract change: phase 02's `diagnostics.toml`, with a `Fix` that removes the text). Implemented now: option 2 for the head junk and `@end`; leftover text after an identifier is kept in the tree (`IdentifierPrimary::trailing`) and reported as `directive-primary`, as Q15 proposes, with that entry's existing message.
 - **See also:** Q15 (phase 03), which covers text after an identifier primary and proposes reporting it as `directive-primary`. Resolve the two together.
 - **Affects:** `crates/tessera-syntax/src/convert.rs` (`SPEC-QUESTION(Q30)`), `crates/tessera-syntax/src/tree.rs` (`DirectiveLine::unexpected`, `IdentifierPrimary::trailing`, `EndLine::extra`); `tests/conformance/diagnostics.toml`; phases 03, 05, and 10. No conformance case should depend on these shapes until this is resolved; tag any that do `provisional`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 1, together with Q15: a new §8.2 row and registry entry, `directive-extra-text` (TSR120), covers all five shapes, with message variants for text in the head (`head`) and after `@end` (`end`). SPEC §3.1 now says so, the parser reports it, and the cases `primary/extra-text-after-name`, `primary/extra-text-where-attributes-go`, and `primary/extra-text-after-end` expect it.
 
 ### Q41: `{key}` directly after an image
 

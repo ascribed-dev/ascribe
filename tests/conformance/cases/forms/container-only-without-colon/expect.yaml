@@ -1,8 +1,7 @@
 description: >-
   A container-only directive without its trailing colon is an error.
 spec: ["3.5", "8.2"]
-tags: [check, provisional]
-questions: [Q16]
+tags: [check]
 
 diagnostics:
   - {slug: container-colon-missing, line: 5}

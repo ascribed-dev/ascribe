@@ -81,7 +81,7 @@ Build `tessera-syntax`'s public parsing API and its own syntax tree, and parse e
 
 ### Left open
 
-- **Q30** (`project-docs/questions.md`): text on a directive line that fits no part of the directive (`@note hello: text`, `@steps foo`, `@end: x`). Implemented now: the head junk and `@end` extras use the nearest rows, and text after an identifier (`@include: my file.md`) is kept in `IdentifierPrimary::trailing` and reported as `directive-primary`, as Q15 proposes. Q30 asks for a dedicated `directive-extra-text` error; resolve it with Q15.
+- **Q30** (`project-docs/questions.md`): text on a directive line that fits no part of the directive (`@note hello: text`, `@steps foo`, `@end: x`). Resolved with Q15 on 2026-09-28: all five shapes are reported as `directive-extra-text` (variants `head` and `end`, and the base message for text after an identifier), and text after an identifier is still kept in `IdentifierPrimary::trailing`.
 - **Conformance.** Phase 03 has merged. All 36 `parser`-tagged cases run and pass against the adapter (the `parser` skip entry is removed); cases tagged with other areas stay skipped until their phases land. Q14's proposal (option 1) is what the attribute parser implements, and Q15's is what the identifier primary does.
 - **Link reference definitions** aren't nodes (comrak doesn't produce them); the destinations of reference-form links and images are on the `Link` and `Image` nodes. Phase 23 will need the definitions themselves.
 - **Setext headings and paragraphs after definitions** have their start line corrected, but the column is the paragraph's original one, which is right unless the definitions were indented differently from the text after them.

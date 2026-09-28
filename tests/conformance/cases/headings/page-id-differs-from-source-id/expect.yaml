@@ -4,8 +4,7 @@ description: >-
   its source id in the file stays `setup`. Links use source ids: `#setup` is
   valid, `#setup-1` (a page id) is not. The repeated heading is reported.
 spec: ["4.2", "5.2", "5.5", "8.2"]
-tags: [page-check, include, slug, provisional]
-questions: [Q20]
+tags: [page-check, include, slug]
 
 builds:
   site:

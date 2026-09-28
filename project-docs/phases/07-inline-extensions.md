@@ -69,7 +69,7 @@ Recognize Tessera's two inline constructs, phrase candidates (`{key}`) and attri
 
 ### Left open
 
-- **Q41** (`{key}` directly after an image is an attribute block with a bare key, as `images/attribute-bare-key` expects, not a phrase as §5.1's wording suggests), **Q42** (backslash doesn't escape in a `phrases=true` fence), **Q43** (definitions and autolinks). Each is implemented in the conservative reading and marked `SPEC-QUESTION`. **Q23** is implemented as proposed and the proposal held up; see its entry.
+- **Q41** (`{key}` directly after an image is an attribute block with a bare key, as `images/attribute-bare-key` expects, not a phrase as §5.1's wording suggests), **Q42** (backslash doesn't escape in a `phrases=true` fence), **Q43** (definitions and autolinks). Each is implemented in the conservative reading and marked `SPEC-QUESTION`. **Q23** has since been resolved as proposed (SPEC §5.3 says so), and nothing is left to do for it.
 - **Frontmatter phrases** aren't parsed here (the content model decides which fields, phase 08 and 10).
 - **Definitions** (`[ref]: {api}x`) need the parser to expose them (phases 12 and 23).
 - The `phrase-undeclared` and `heading-phrase-without-id` cases (tag `check`) and the substitution cases (tag `resolve`) wait for their own phases; an outline can't show candidates, so this phase's coverage of §5.1 is the syntax tests.

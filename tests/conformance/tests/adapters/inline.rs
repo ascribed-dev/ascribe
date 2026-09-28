@@ -10,7 +10,7 @@ use tessera_syntax::{Image, raw_text};
 /// The outline's `image` block for an image alone in its paragraph.
 pub(super) fn image(source: &str, image: &Image) -> Node {
     Node::Image {
-        // SPEC-QUESTION(Q23): a reference image's source is its definition's
+        // SPEC §5.3 (resolved Q23): a reference image's source is its definition's
         // destination. The tree's `destination` already is that; the label is
         // `Image::label` (full form) or the alt text (collapsed and shortcut).
         src: image.destination.clone(),

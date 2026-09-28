@@ -2,8 +2,7 @@ description: >-
   Before any heading there is no section, so `@available` binds the block it
   touches.
 spec: ["3.8", "4.4"]
-tags: [structure, provisional]
-questions: [Q18]
+tags: [structure]
 
 outline:
   - directive: available

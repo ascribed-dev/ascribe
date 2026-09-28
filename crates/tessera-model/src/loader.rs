@@ -965,6 +965,16 @@ impl<'s> Loader<'s> {
                 .issue(diagnostics::MODEL_AVAILABILITY_VERSIONLESS, version.span)
                 .with_arg("key", key)
                 .with_arg("target", target.text),
+            AvailabilityProblem::DimensionVersion {
+                target,
+                version,
+                example,
+            } => self
+                .issue(diagnostics::MODEL_AVAILABILITY_VERSIONLESS, version.span)
+                .with_variant("dimension")
+                .with_arg("key", key)
+                .with_arg("target", target.text)
+                .with_arg("example", example),
             AvailabilityProblem::HistoryOrder {
                 target,
                 later,
