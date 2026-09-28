@@ -1,0 +1,1048 @@
+# Tessera Specification
+
+Version 0.1
+
+## Contents
+
+1. [Introduction](#1-introduction)
+2. [Documents](#2-documents)
+3. [Directives](#3-directives)
+4. [Built-in directives](#4-built-in-directives)
+5. [Inline constructs](#5-inline-constructs)
+6. [Project widgets](#6-project-widgets)
+7. [Content model](#7-content-model)
+8. [Validation](#8-validation)
+9. [Compilation](#9-compilation)
+10. [Authoring environment](#10-authoring-environment)
+11. [Versioning](#11-versioning)
+
+Appendices:
+
+- [A. Grammar](#appendix-a-grammar)
+- [B. Complete example](#appendix-b-complete-example)
+- [C. Design rationale](#appendix-c-design-rationale)
+- [D. References](#appendix-d-references)
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose and scope
+
+Tessera is a markup language, content model, and toolchain for documentation written as code. It makes a documentation set's structure (its pages, reusable content, variants, cross-references, and metadata) explicit, validated while authoring, and compiled for publication.
+
+This specification defines:
+
+- the **Tessera markup language**: CommonMark extended with directives and a small set of inline constructs;
+- the **content model**: the schema contract that declares what a documentation set may contain;
+- **validation**: the diagnostics a conforming processor reports;
+- **compilation**: how a processor resolves a documentation set and emits output;
+- requirements for the **authoring environment**.
+
+A reference implementation is a VS Code extension plus a command-line compiler that share one parser and validator.
+
+### 1.2 Design principles
+
+These principles govern the language. They are non-normative, but every normative rule in this document follows from them.
+
+1. **Authoring should feel like writing, not programming.** Source files are markdown a person can read without any tooling. Where source readability and a renderer's display conflict, source readability wins.
+2. **Directives annotate content structure.** They mark what content *is* (a callout, a procedure, a variant, a reusable region), never how it looks and never what it computes.
+3. **No behavior.** The language has no conditionals, loops, variables, operators, or computed content. Variance is declarative membership, not evaluation.
+4. **Structure over grammar.** When a need can be met by a file convention or a content-model declaration instead of new syntax, it is.
+5. **Containers are rare.** Most directives occupy a single line. Nesting is discouraged, and every nesting need has a flat alternative.
+6. **Constrain the grammar, don't strangle it.** `@` marks directives, but other constructs use whatever notation reads best (for example, `{key}` for phrases).
+7. **Validate while authoring.** The rules a build enforces are the same rules the editor reports as you type.
+8. **Strict inside, tolerant outside.** Processors are strict about Tessera source; compiled output degrades to readable plain markdown.
+
+### 1.3 Conformance
+
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in RFC 2119 and RFC 8174 when, and only when, they appear in all capitals.
+
+- A **conforming document** is a Tessera source file that produces no errors (§8) under a given content model.
+- A **processor** is any software that reads Tessera source: a parser, validator, compiler, or authoring environment.
+- A **conforming processor** parses documents as this specification describes and reports every error listed in §8. It MAY report additional warnings.
+
+Sections marked *non-normative*, examples, and notes are informative.
+
+### 1.4 Relationship to CommonMark
+
+A Tessera document is a CommonMark document. Everything CommonMark defines keeps its meaning, except where this specification assigns meaning to text CommonMark treats as ordinary paragraph content (directive lines, title lines, phrases, and attribute blocks after images).
+
+Processors MAY support common CommonMark extensions, such as GitHub Flavored Markdown tables. This specification doesn't depend on them.
+
+### 1.5 Notational conventions
+
+- Syntax is given in ABNF (RFC 5234) in [Appendix A](#appendix-a-grammar); sections refer to its rules by name.
+- `SP` is a single space (U+0020). "Line start" means the first character after any indentation or blockquote markers required by the enclosing CommonMark container (§3.9).
+- Examples show Tessera source unless labeled otherwise.
+
+---
+
+## 2. Documents
+
+### 2.1 Files
+
+A Tessera source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
+
+### 2.2 Pages and fragments
+
+A documentation set's source files live under a **content root**. Each file is either a page or a fragment.
+
+- A **page** is published on its own and appears in navigation.
+- A **fragment** exists only to be included by other files (§4.2). It isn't published on its own and doesn't appear in navigation.
+
+A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
+
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema.
+
+### 2.3 Escapes
+
+Tessera reuses CommonMark's backslash escapes. `@`, `{`, and `.` are ASCII punctuation, so CommonMark already allows escaping them, and an escaped character renders as itself even in processors that don't understand Tessera.
+
+| Escape | Prevents |
+|---|---|
+| `\@` | A directive (§3) |
+| `\{` | A phrase (§5.1) |
+| `\.` | A title line (§3.7) |
+
+Escapes are rarely needed, because these constructs are only recognized in narrow positions: a directive requires a known keyword at line start, a phrase requires a declared key, and a title line requires a directive on the next line.
+
+---
+
+## 3. Directives
+
+A **directive** is a line that annotates content structure. Directives begin with `@`.
+
+### 3.1 Syntax
+
+A **directive line** has this shape (ABNF rule `directive-line`):
+
+```
+@<name> [{<attributes>}] [: <primary>]
+@<name> [{<attributes>}]:
+```
+
+- **Name.** The directive's keyword (§3.2).
+- **Attributes.** OPTIONAL. Metadata as `key=value` pairs in braces (§3.3), separated from the name by one space.
+- **Primary.** OPTIONAL. The directive's main value: a path, an identifier, a label, or text (§3.4). Introduced by `:` and one space.
+- **Trailing colon.** A `:` that ends the line, with no primary after it, opens a container. It's used only by directives that permit both forms (§3.5).
+
+Attributes, when present, always come before the primary.
+
+```
+@note {type=caution}: Back up your database first.
+@include {heading=false}: guides/setup.md#install
+@steps
+@note {type=caution}:
+```
+
+An **end line** consists of `@end` alone. It closes a container (§3.5).
+
+### 3.2 Recognition
+
+A line is a directive line only if all of the following hold:
+
+1. `@` is at line start (§1.5).
+2. The name is a **known keyword**: a built-in directive (§4), `end`, or a project widget declared in the content model (§6).
+3. The line is not inside a code span, fenced code block, indented code block, or raw HTML block.
+
+Otherwise the line is ordinary text. In particular, `@` followed by an unknown word is literal (`@astrojs/react`, `@timestamp`), and so is an `@` that follows a letter or digit (`support@example.com`).
+
+Built-in keywords never contain a hyphen. Project widget names always contain one (§6). The keyword set is closed: it grows only by revisions to this specification (built-ins) or by content-model declarations (project widgets).
+
+### 3.3 Attributes
+
+Attributes use one grammar everywhere: after a directive name, and after an image (§5.3).
+
+```
+{key=value, key=value}
+```
+
+- **Keys** are lowercase: a letter followed by letters, digits, or hyphens (`key`). Each directive's schema declares the keys it accepts (§7.2).
+- **Pairs** are separated by a comma and one space.
+- **Values** take one of three forms:
+
+  | Form | Syntax | Example |
+  |---|---|---|
+  | Token | Letters, digits, `_`, `-` | `type=caution`, `level=2`, `heading=false` |
+  | Quoted string | Double quotes; `\"` and `\\` escape inside | `label="Using other images"` |
+  | Value set | Tokens joined by `\|`, only where the schema declares the key set-valued | `platform=cloud\|on-prem` |
+
+- A single value MUST be quoted if it contains a space or any of `,` `|` `}` `=` `"`. In a value set, `|` separates the members, each member is a token, and the set is never quoted. Single quotes have no special meaning.
+- **Types come from the schema, never from how a value looks.** The grammar captures only the form (token, string, or set); the content model declares each key's type (string, enumeration, boolean, number) and processors validate against it.
+- **Booleans are explicit:** `key=true` or `key=false`. A bare key with no value is an error.
+
+Attributes carry semantic metadata only. There are no class or id shorthands (`.class`, `#id`).
+
+### 3.4 The primary
+
+Each directive's schema declares whether it takes a primary and of which kind:
+
+- An **identifier primary** (a path, id, or key) is a single token that ends at the first whitespace.
+- A **text primary** (callout text or a label) runs to the end of the line and is parsed as CommonMark inline content, so it may contain emphasis, links, and phrases.
+
+### 3.5 Forms
+
+A directive takes one of two forms.
+
+**Line form.** The directive is a single line with no end line. What it applies to depends on its schema's binding (§3.8): its own primary, the heading above it, the block below it, or nothing (it stands alone, like `@include`).
+
+**Container form.** The directive line opens a container, which holds the blocks that follow until an end line closes it:
+
+```
+@note {type=caution}:
+First paragraph.
+
+Second paragraph, still inside the callout.
+@end
+```
+
+A single keyword can permit both forms. There's never a separate keyword for the container version of a directive. Each directive's schema declares which forms it permits (§7.2).
+
+**Choosing a form.** A directive's form is decided by its schema and its own line, never by content further down:
+
+| Schema permits | Directive line | Form |
+|---|---|---|
+| Line form only | Any | Line |
+| Container form only | Any | Container |
+| Both forms | Ends in `:` with nothing after it | Container |
+| Both forms | Anything else | Line |
+
+A trailing colon on a directive that doesn't permit both forms is an error.
+
+**Closing.** `@end` closes the innermost open container. There are no named closers. Every container MUST be closed before its enclosing block (list item, blockquote, group arm, or document) ends.
+
+Because the form is visible on the directive's own line, mistakes are reported where they happen. A container note whose trailing colon is missing binds only its first block, and its `@end` is then an end line with no open container, which is an error. A trailing colon added by mistake leaves a container unclosed, which is also an error.
+
+### 3.6 Groups
+
+A directive whose schema declares it **groupable** forms groups of alternatives. `@variant` (§4.3) is groupable, and project widgets MAY be (§6).
+
+A run of openers of the same groupable directive forms one **group**. Each opener starts an **arm** and ends the previous one. A single end line closes the whole group.
+
+```
+@variant {deployment=cloud}
+Sign in to Quill Cloud and copy an API key.
+
+@variant {deployment=self-managed}
+Point the agent at your server.
+@end
+```
+
+- An arm contains every block from its opener up to the next opener in the group, or up to the group's end line.
+- The group's end line belongs to the group, not to its last arm.
+- A group with one arm is valid.
+- An opener that appears while a group of the same directive is the innermost open group joins that group.
+
+### 3.7 Titles
+
+A **title line** gives a directive a title. It's a line whose first character is `.`, followed by a character that is neither whitespace nor `.`, placed directly above a directive line whose schema accepts a title. The title is the rest of the line after the `.`, parsed as CommonMark inline content.
+
+```
+.Try it without installing
+@note {type=tip}
+You can run Quill in the browser with no local setup.
+```
+
+- The title line MUST be directly above the directive line, with no blank line between.
+- A title line MUST begin a block: it follows a blank line, a heading, a directive line, or the start of its container. A `.` line that continues a paragraph is ordinary text.
+- If the next line isn't a directive that accepts a title, the `.` line is ordinary text. Prose such as `.NET is a framework` is therefore unaffected unless it sits directly on top of a directive; `\.` escapes it there.
+
+### 3.8 Binding
+
+A directive in line form attaches to content according to its schema's **binding**:
+
+| Binding | Applies to |
+|---|---|
+| Self | The directive's own primary, or nothing (it stands alone) |
+| Preceding heading | The heading directly above it, and that heading's section |
+| Following block | The next block in the same container |
+
+**Heading-bound directives** go on the lines directly under their heading, with no blank line between them and the heading. Several MAY stack:
+
+```
+## Streaming sync
+@id: streaming-sync
+@available: cloud, self-managed preview 3.4
+```
+
+A heading's **section** is the heading plus all content up to the next heading of the same or a higher level.
+
+**Following-block directives** bind the next block (paragraph, list, code block, blockquote, table, or container) within the same container. A blank line MAY separate the directive from the block. Binding a heading is an error, and so is a following-block directive with no block after it in its container.
+
+### 3.9 Directives inside lists and blockquotes
+
+Directives follow CommonMark's container rules, just as headings and code fences do.
+
+1. **Indentation decides ownership.** A directive line indented to a list item's content column belongs to that list item.
+2. **Binding stays inside the item.** A following-block directive in a list item binds the next block within that item.
+3. **Containers don't straddle items.** A container or group opens and closes within one list item, or it contains whole lists. An end line indented differently from its opener doesn't close that opener; it's an error.
+4. **Directive lines interrupt paragraphs and never continue them.** Like a heading, a directive line starts a new block. An unindented directive line directly after a list item therefore ends the list.
+5. **Over-indentation makes code.** A directive line indented four or more spaces beyond its container's content column is part of an indented code block, and so it's literal text.
+6. **Blockquotes work the same way**, with `>` markers in place of indentation.
+
+### 3.10 Nesting
+
+Containers MAY nest, and `@end` always closes the innermost one. Processors SHOULD warn when containers nest more than two levels deep (§8).
+
+---
+
+## 4. Built-in directives
+
+| Directive | Forms | Primary | Binding | Purpose |
+|---|---|---|---|---|
+| `@id` | line | identifier | preceding heading | Give a heading a stable id |
+| `@include` | line | identifier (path) | self | Transclude a file or a region |
+| `@variant` | container, groupable | text (label), optional | — | Mark alternative content |
+| `@available` | line | availability spec or feature key | preceding heading, else following block | Declare where content applies |
+| `@note` | line, container | text, optional | self (with primary), else following block; container with a trailing `:` | Callout |
+| `@steps` | line | none | following block | Mark an ordered list as a procedure |
+| `@details` | line, container | none | following block; container with a trailing `:` | Collapsible content |
+
+### 4.1 `@id`
+
+Gives a heading an explicit, stable id.
+
+```
+## Configuration
+@id: config-setup
+```
+
+- **Form:** line. **Binding:** preceding heading. **Primary:** REQUIRED identifier (letters, digits, hyphens).
+- The id replaces the heading's automatic id (§5.5). A heading has exactly one id.
+- The id MUST be unique within its page.
+- The id names the heading's section, which links (§5.2) and `@include` (§4.2) can both target.
+
+### 4.2 `@include`
+
+Transcludes a file or a heading's section into the current document.
+
+```
+@include: _snippets/prerequisites.md
+@include {heading=false}: guides/setup.md#install
+```
+
+- **Form:** line. **Binding:** self. **Primary:** REQUIRED path, optionally followed by `#` and an id.
+- **Paths** are relative to the including file, or, when they begin with `/`, relative to the content root. Processors MUST NOT resolve a bare filename by searching other directories.
+- With `#id`, only that heading's section is included.
+- **Attributes:**
+
+  | Key | Type | Default | Meaning |
+  |---|---|---|---|
+  | `heading` | boolean | `true` | When `false`, the included section's own heading is omitted |
+
+- The target file and id MUST exist. Include cycles are an error.
+- Included content becomes part of the including page. Phrase substitution and build modes (§9) apply to it as they do to the rest of the page.
+- **Relative paths resolve from the file they're written in.** Every piece of content keeps its source file. Link destinations, image sources, and nested include paths inside a fragment resolve against the fragment's location, not the including page's. A fragment that links to `keys.md` means the `keys.md` next to the fragment, wherever it's included.
+- **Ids are checked on the expanded page.** Headings and `@id`s in included content become ids of the including page, and every id on a page MUST be unique after expansion. Including the same fragment twice on one page, or including a fragment whose ids collide with the page's own, is an error reported at the include site (§8.1).
+- **Links target pages, not fragments.** A fragment isn't published on its own, so a link to a fragment file, or to an id that exists only inside one, is an error. Link to the page that includes it.
+
+### 4.3 `@variant`
+
+Marks alternatives: content that differs by a declared dimension, or labeled one-off alternatives.
+
+**Dimensional arms** carry dimension values as attributes:
+
+````
+@variant {pm=npm}
+```shell
+npm install -g @quill/agent
+```
+@variant {pm=pnpm}
+```shell
+pnpm add -g @quill/agent
+```
+@end
+````
+
+**Labeled arms** carry a label as their primary, for alternatives that don't correspond to a declared dimension:
+
+```
+@variant: Using Docker Hardened Images
+…
+
+@variant: Using other images
+…
+@end
+```
+
+- **Form:** container only, groupable (§3.6).
+- **Dimensional arms:**
+  - Each attribute key MUST be a declared dimension, and each value a declared value of it (§7.2).
+  - A value set (`platform=cloud|on-prem`) means the arm applies to any of those values.
+  - Several keys on one arm mean the arm applies only when all of them match.
+  - Negation and any other operators are not part of the language.
+  - All arms in a group MUST share at least one dimension key.
+- **Labeled arms:**
+  - A labeled group is local to its page. Its labels aren't validated against the content model and don't synchronize across pages.
+  - A group's arms MUST be either all labeled or all dimensional.
+- **Granularity.** `@variant` varies whole blocks. For a single differing term, use a phrase (§5.1). For larger differences inside a paragraph, split the paragraph into blocks.
+- **Semantics.** `@variant` only marks content. The build decides whether to keep every arm for readers to switch between, or only the arms matching the build (§9.3).
+- **Whole-page variance.** When an entire page differs by dimension, write separate pages rather than wrapping a page in `@variant`, and declare each page's dimension values in the reserved frontmatter key `variant`. Its value is a mapping from dimension names to a value or a list of values:
+
+  ```yaml
+  ---
+  title: Connect to Quill Cloud
+  variant:
+    deployment: cloud
+  ---
+  ```
+
+  The meaning matches a dimensional arm: a list is a value set, and several dimensions must all match. Names and values are validated like `@variant` attributes. A page without `variant` applies to every dimension value.
+
+### 4.4 `@available`
+
+Declares where content applies and its lifecycle state. Unlike `@variant`, it doesn't select content: every reader sees the content, annotated with its availability.
+
+```
+@available: cloud, self-managed preview 3.4
+```
+
+- **Form:** line. **Primary:** REQUIRED availability spec or feature key.
+- **Binding:**
+  - Directly under a heading, it applies to that heading's section.
+  - Anywhere else, it binds the following block.
+- **Page level:** the frontmatter key `available` holds the same spec and applies to the whole page:
+
+  ```yaml
+  ---
+  title: Install the Quill agent
+  available: cloud, self-managed preview 3.3
+  ---
+  ```
+
+#### Availability specs
+
+A spec is a comma-separated list of **targets**, each optionally followed by its lifecycle (ABNF rule `availability`).
+
+| Spec | Meaning |
+|---|---|
+| `cloud` | Generally available on `cloud` |
+| `self-managed 3.3` | Generally available on `self-managed` since version 3.3 |
+| `self-managed preview 3.4` | In preview on `self-managed` since version 3.4 |
+| `self-managed (preview 3.3, ga 3.5, deprecated 4.0)` | A history: each state starts at its version and lasts until the next state begins |
+| `cloud, self-managed preview 3.3` | Two targets |
+
+- A **target** is a value of a declared dimension, or the name of a dimension, which stands for all of its values.
+- A **state** is a declared lifecycle state (§7.2). A target with no state is generally available (`ga`). A bare version means generally available since that version.
+- Each lifecycle state declares whether content in that state **counts as available**. By default every state counts as available except `removed`.
+- States in a history MUST be in chronological order, compared using the content model's version scheme. A target that the content model declares as versionless takes a single state and no versions.
+- The language has no version ranges, alternatives, or negation. Each state names only the version where it begins.
+
+#### Scope
+
+- When a scope has a spec, only the targets it lists apply there.
+- A scope with no spec inherits its enclosing scope's availability. A page with no spec applies everywhere.
+- A section or block spec MUST NOT exceed its enclosing scope: it can't list a target the enclosing scope doesn't, or name a version earlier than the enclosing scope does.
+
+#### Feature keys
+
+A primary (or frontmatter value) consisting of a single token that matches a key in the content model's features registry is replaced by that feature's declared spec. A feature going generally available then takes one edit. Feature keys and target names MUST NOT overlap.
+
+### 4.5 `@note`
+
+A callout.
+
+```
+@note {type=caution}: Back up your database first.
+```
+
+```
+.Try it without installing
+@note {type=tip}
+You can run Quill in the browser with no local setup.
+```
+
+- **Forms:**
+  1. **With a primary** (`@note {type=tip}: text`), the note is a single line whose primary is its content.
+  2. **With no colon** (`@note {type=tip}`), the note binds the following block.
+  3. **With a trailing colon** (`@note {type=tip}:`), the note is a container that holds blocks until `@end`.
+- **Title:** accepted (§3.7).
+- **Attributes:**
+
+  | Key | Type | Default | Meaning |
+  |---|---|---|---|
+  | `type` | note type | `note` | The kind of callout |
+
+- **Note types** are an enumeration declared in the content model. The default types are `note`, `tip`, `important`, `warning`, and `caution`. Projects MAY add types. A type is data, not a new keyword.
+
+### 4.6 `@steps`
+
+Marks an ordered list as a procedure.
+
+```
+@steps
+1. Install the agent package.
+2. Verify the install.
+3. Create `quill.yaml`.
+```
+
+- **Form:** line. **Binding:** following block. **Primary:** none.
+- The bound block MUST be an ordered list.
+- The list remains an ordinary CommonMark list. Directives inside its items follow §3.9.
+
+### 4.7 `@details`
+
+Content that readers can expand or collapse.
+
+```
+.Show the full configuration reference
+@details:
+…
+@end
+```
+
+- **Forms:** with no colon, binds the following block; with a trailing colon, a container. **Primary:** none.
+- **Title:** REQUIRED (§3.7). It's the text a reader sees while the content is collapsed.
+
+---
+
+## 5. Inline constructs
+
+These constructs appear within text. None of them is a directive.
+
+### 5.1 Phrases
+
+A **phrase** inserts a reusable string, such as a product name, version, or URL base, from the content model's phrases registry (§7.2).
+
+```
+Sign in to {cloud} and copy an API key.
+{cloud}'s streaming sync is enabled for new {cloud}-hosted workspaces.
+See the [streaming API reference]({api}streaming).
+```
+
+- **Syntax:** a key in braces: `{key}` (ABNF rule `phrase`).
+- **Recognition:** `{key}` is a phrase only if the key is declared in the phrases registry. Otherwise it's literal text.
+- **Boundaries:** braces delimit the phrase, so it can sit directly against punctuation, letters, or hyphens.
+- **Where phrases apply:**
+  - Prose, headings, link text, and link destinations.
+  - Fenced code blocks only when the info string contains the word `phrases=true` (for example ` ```yaml phrases=true `).
+  - Frontmatter fields, as the content model declares.
+- **Where phrases never apply:** code spans, indented code blocks, and raw HTML.
+- **Distinction from attributes:** `{…}` containing `=` directly after a directive name or an image is an attribute block (§3.3), not a phrase.
+- **Values** are inserted as literal text. They aren't scanned for phrases or markup, and they don't vary by case, number, or argument.
+
+### 5.2 Links
+
+Links are CommonMark links. Their destinations are **file paths**.
+
+```
+[Rotate API keys](keys.md#rotate-keys)
+See [](keys.md#rotate-keys).
+```
+
+- **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` targets a heading (§5.5).
+- The target file, and the id if present, MUST exist.
+- **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise.
+- **External URLs** (with a scheme such as `https:`) are passed through unchanged.
+- **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion.
+
+### 5.3 Images
+
+Images are CommonMark images. Alt text and titles use CommonMark's own syntax. Other attributes go in an attribute block placed directly after the image, with no space between:
+
+```
+![The Quill settings page](settings.png){width=600}
+```
+
+- The attribute grammar is §3.3's. The content model declares which image attributes are accepted (§7.2).
+- A local image source MUST exist.
+- Processors SHOULD warn when an image has no alt text.
+- Presentation choices such as borders or shadows are not image attributes; they belong to the consumer's styling.
+
+### 5.4 Glossary terms
+
+The content model MAY declare a glossary (§7.2). Processors link occurrences of glossary terms to their definitions according to the glossary's settings. Authors don't mark glossary terms in source.
+
+### 5.5 Heading ids
+
+Every heading has exactly one id.
+
+- By default, the id is the heading's **slug**, computed from the heading's rendered text (after phrase substitution) with the slugging algorithm named in the consumer profile (§9.5).
+- An `@id` directive under the heading replaces the slug (§4.1).
+- Processors SHOULD warn when a heading without `@id` contains a phrase, or repeats the text of another heading on the same page. In either case its slug can change without the heading itself being edited.
+
+---
+
+## 6. Project widgets
+
+A **project widget** is a directive defined by a documentation set rather than by this specification. Project widgets are the extension mechanism for needs the built-in vocabulary doesn't cover.
+
+```
+@quill-labspace {lab=first-sync}
+```
+
+- **Names** MUST contain at least one hyphen (ABNF rule `widget-name`). Built-in names never do, so a reader can tell the two apart at a glance.
+- Every project widget MUST be declared in the content model with its permitted forms, primary kind, attribute schema, binding, title acceptance, and whether it's groupable (§7.2).
+- A declared widget is recognized, parsed, and validated exactly like a built-in directive. An undeclared hyphenated name isn't a directive (§3.2).
+- A widget MAY declare a plain-text fallback, used by the plain-markdown output (§9.4).
+- Project widgets follow all of §3, including end lines, groups, titles, binding, and container rules.
+
+---
+
+## 7. Content model
+
+### 7.1 Role
+
+The content model is a documentation set's schema. It is the single contract shared by the authoring environment, the validator, and the compiler: all three read the same declarations, so they can't disagree about what's valid.
+
+Content models are written as Zod schemas. The consumer's own schemas (for example, an Astro content collection schema) SHOULD be generated from the content model rather than maintained separately.
+
+### 7.2 Declarations
+
+A content model declares the following.
+
+| Declaration | Contents | Used by |
+|---|---|---|
+| Content types | A frontmatter schema per page type, and a fragment schema | §2 |
+| Fragment patterns | Additional globs that mark files as fragments | §2.2 |
+| Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
+| Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
+| Version scheme | How versions are compared | §4.4 |
+| Lifecycle states | Default `preview`, `beta`, `ga`, `deprecated`, `removed`, each declaring whether it counts as available (by default, all but `removed` do); extensible | §4.4 |
+| Features registry | Feature keys, each with a name and an availability spec | §4.4 |
+| Note types | Default `note`, `tip`, `important`, `warning`, `caution`; extensible | §4.5 |
+| Phrases registry | Phrase keys and values | §5.1 |
+| Glossary | Terms, definitions, and matching settings | §5.4 |
+| Image attributes | Accepted image attribute keys and types | §5.3 |
+| Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |
+| Builds | Named builds and their modes | §9.3 |
+
+Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
+
+---
+
+## 8. Validation
+
+### 8.1 Validation levels
+
+Validation happens at two levels.
+
+- **File level.** Each source file on its own: syntax, attributes, directive schemas, frontmatter, and whether referenced files exist.
+- **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes.
+
+A page-level diagnostic is reported at the source location that causes it. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment.
+
+### 8.2 Diagnostics
+
+Conforming processors MUST report every error below, and SHOULD report the warnings. An error means the document isn't conforming; a build MUST fail on errors.
+
+| Construct | Condition | Severity |
+|---|---|---|
+| Attributes | Unknown key for the directive or image | Error |
+| Attributes | Value doesn't match the key's declared type | Error |
+| Attributes | Bare key without a value | Error |
+| Attributes | Unquoted value containing a reserved character | Error |
+| Container | Container not closed before its enclosing block ends | Error |
+| Container | Trailing `:` on a directive that doesn't permit both forms | Error |
+| Container | End line with no open container | Error |
+| Container | End line indented differently from its opener | Error |
+| Container | Nesting deeper than two levels | Warning |
+| Binding | Following-block directive with no following block in its container | Error |
+| Binding | Following-block directive bound to a heading | Error |
+| Title | Title given to a directive that doesn't accept one | Error |
+| `@id` | Duplicate id on a page, including ids from included content (page level) | Error |
+| `@include` | Target file or id doesn't exist | Error |
+| `@include` | Include cycle | Error |
+| `@variant` | No arm of a group survives a build's selection (page level) | Warning |
+| `@variant` | Unknown dimension or value | Error |
+| `@variant` | Group mixes labeled and dimensional arms | Error |
+| `@variant` | Dimensional arms share no dimension key | Error |
+| `@available` | Unknown target or state | Error |
+| `@available` | History out of chronological order | Error |
+| `@available` | Versions given for a versionless target | Error |
+| `@available` | Spec exceeds its enclosing scope | Error |
+| `@steps` | Bound block isn't an ordered list | Error |
+| `@details` | Missing title | Error |
+| Project widget | Violates its declared schema | Error |
+| Links | Target file or id doesn't exist | Error |
+| Links | Target is a fragment, or an id that exists only inside a fragment | Error |
+| Links | Target id is removed by a build (page level, per build) | Error |
+| Links | Destination is a route rather than a file path | Warning |
+| Images | Local source doesn't exist | Error |
+| Images | Missing alt text | Warning |
+| Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text | Warning |
+| Lists | Unindented directive line ends a list | Warning |
+| Lists | Directive line over-indented into an indented code block | Warning |
+| Content model | Feature key overlaps a target name | Error |
+
+### 8.3 Canonical form
+
+Each construct has one canonical spelling. Processors SHOULD offer to rewrite source into canonical form, and SHOULD report non-canonical source as a formatting issue, not as an error.
+
+- One space between a directive name and `{`.
+- No space inside braces: `{type=caution}`.
+- No spaces around `=` or `|`. Pairs separated by `, `.
+- Attributes in the order the schema declares them.
+- Values quoted only when necessary.
+- No empty attribute block: `@note`, not `@note {}`.
+- `:` directly after the name or attribute block, followed by one space before a primary, or ending the line for a container.
+- Directive lines inside a list item indented exactly to the item's content column.
+
+---
+
+## 9. Compilation
+
+### 9.1 Pipeline
+
+A compiler processes a documentation set in four stages:
+
+```
+source files
+  → parse and validate    the same parser and validator the authoring environment uses
+  → resolve               independent of the consumer
+  → resolved tree
+  → emit                  one emitter per output
+```
+
+Because the compiler and the authoring environment share one parser and validator, a command-line check reports exactly what the editor reports.
+
+### 9.2 Resolution
+
+Compilers MUST produce results equivalent to applying these steps in order:
+
+1. **Includes.** Replace each `@include` with its target content (§4.2), recursively. Included content keeps its source file, for resolving relative paths.
+2. **Availability.** Resolve feature keys and inherited scopes (§4.4).
+3. **Build modes.** Apply the build's variant and availability modes (§9.3).
+4. **Phrases.** Substitute phrases (§5.1).
+5. **Heading ids.** Assign every heading its id (§5.5).
+6. **Links.** Fill in empty link text from target titles, and rewrite file-path destinations into routes (§5.2).
+7. **Glossary.** Link glossary terms (§5.4).
+
+Titles and bindings are attached during parsing. Page-level validation (§8.1) runs on each page once heading ids and links are resolved (after step 6), for each build.
+
+### 9.3 Build modes
+
+A content model declares named builds. Each build sets a variant mode and an availability mode. The source is the same for every build.
+
+```yaml
+builds:
+  site:      { variants: switch, availability: badge }
+  cloud-pdf: { variants: { deployment: cloud }, availability: { filter: cloud } }
+  sm-3.3:    { variants: switch, availability: { filter: self-managed 3.3 } }
+```
+
+#### Variant mode
+
+- **`switch`** keeps every arm of every group, for readers to switch between, and keeps every page.
+- **Selection**, a mapping from dimension names to a value or a list of values (for example `{ deployment: cloud }`), selects only along the dimensions it names. Everything keyed on other dimensions behaves as in `switch`.
+
+Under a selection, an arm or page **conflicts** with the build when, for some dimension the selection names, the arm's attributes or the page's `variant` frontmatter name that dimension but none of the selected values. Then:
+
+- **Pages** that conflict are dropped. Pages without a `variant` key never conflict.
+- **Dimensional groups:** conflicting arms are removed. If one arm remains, its content replaces the group. If several remain, they stay a group, rendered as in `switch`. If none remain, the group is removed, and processors SHOULD warn (§8.2).
+- **Groups keyed only on unselected dimensions**, and **labeled groups**, are unaffected and rendered as in `switch`.
+
+For example, a build selecting `{ deployment: cloud }` reduces a `deployment` group to its cloud arm, and leaves a `pm` group as a full switcher.
+
+#### Availability mode
+
+- **`badge`** keeps all content and annotates it with its availability.
+- **`filter`**, given a target and, for versioned targets, a version (for example `self-managed 3.3`), removes content that isn't available for them. Content that remains is annotated as in `badge`.
+
+Content is **available** for target *T* at version *V* when its effective availability (§4.4, after inheritance):
+
+1. has no spec at all, or lists *T*, directly or through *T*'s dimension name; and
+2. for a versioned target, has a state in effect at *V* that counts as available (§7.2).
+
+The state in effect at *V* is the last state in the target's history whose start version is at or before *V*. If *V* precedes the first state's start version, no state is in effect, and the content isn't available. A bare target with no version is in effect at every version. For versionless targets, only condition 1 applies.
+
+### 9.4 Outputs
+
+A compiler MUST provide the site output and the plain-markdown output. It MAY provide the JSON output.
+
+**Site output: markdown plus web components.** CommonMark with custom elements for constructs that need presentation or interaction. It depends on no consumer component system. Tessera provides an element library for it (§9.7).
+
+**Plain-markdown output.** Fully resolved CommonMark with no HTML, for LLM consumption, search indexing, and export. Links are absolute URLs.
+
+**JSON output.** The resolved tree, for custom consumers.
+
+| Source | Site output | Plain-markdown output |
+|---|---|---|
+| `@note {type=tip}` with title | `<tessera-note type="tip" title="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
+| `@steps` | `<tessera-steps>` wrapping the list | The ordered list |
+| `@variant` group, `switch` | `<tessera-tabs sync="…">` containing one `<tessera-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
+| `@variant` group, selection | The matching arm's content | The matching arm's content |
+| `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
+| `@available`, `badge` | A `<tessera-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
+| `@available`, `filter` | Unavailable content removed | Unavailable content removed |
+| Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
+| Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
+
+Labels for dimension values come from the content model's display labels.
+
+In the site output, emitters MUST place a blank line after each opening tag and before each closing tag of an element that wraps markdown, so that CommonMark parses the wrapped content as markdown.
+
+### 9.5 Consumer profile
+
+The consumer profile, declared in the content model, describes how the site output fits a specific consumer:
+
+- **Routing:** how file paths map to URLs, including any locale prefix.
+- **Slugging:** the algorithm the consumer uses for heading ids.
+- **Heading ids:** how to emit an explicit id so the consumer keeps its own heading and table-of-contents processing.
+- **HTML passthrough:** whether the consumer renders raw HTML in markdown.
+- **Images:** how to emit image attributes so the consumer's image processing still applies.
+
+### 9.6 Astro
+
+Astro is the primary consumer, through its content collections.
+
+- Compiled pages from the site output are loaded into an Astro content collection.
+- The collection's schema MUST be generated from the content model.
+- Page layouts are the project's own.
+- Page-level frontmatter, including `available`, reaches the layout as collection data.
+
+An Astro integration SHOULD provide the collection configuration and generated schema, load the element library, and supply the markdown processing needed for explicit heading ids.
+
+### 9.7 Element library
+
+The element library implements the custom elements used by the site output.
+
+- Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology.
+- Elements are styled with CSS and themed through CSS custom properties.
+- Only elements that require interaction use JavaScript. Of the built-ins, that's `<tessera-tabs>`.
+- Without JavaScript, `<tessera-tabs>` displays every arm with its label.
+
+---
+
+## 10. Authoring environment
+
+An authoring environment is a processor that edits Tessera source interactively. It SHOULD provide the following.
+
+- **Diagnostics** from §8, reported as the author types.
+- **Completion** for:
+  - directive names and attribute keys and values;
+  - dimension values and lifecycle states;
+  - phrase keys and feature keys;
+  - include paths;
+  - link targets, searched by page and heading title and inserted as file paths.
+- **Hover:**
+  - for a link, the full target path and a preview of the target;
+  - for a phrase, its value.
+- **Navigation:** a CodeLens or equivalent that names a link's or include's target file and opens it.
+- **Inline hints:** the resolved text of empty-text links.
+- **Refactoring:**
+  - Renaming or moving a file updates links and includes that point to it.
+  - Changing a heading's id updates links to it.
+  - Renaming a phrase key updates its uses.
+- **Formatting** into canonical form (§8.3).
+
+Source files store real file paths, but authors should rarely need to read or type them.
+
+*Note (non-normative): VS Code has no API for hiding text within a line. Hover, CodeLens, and inlay hints are the dependable ways to keep paths out of the author's way.*
+
+---
+
+## 11. Versioning
+
+Versions of this specification are numbered. A documentation set's content model declares the version it targets. Changes to the grammar or the built-in vocabulary are made only in new versions of this specification.
+
+---
+
+## Appendix A. Grammar
+
+ABNF (RFC 5234). `SP`, `DIGIT`, `ALPHA`, `DQUOTE`, and `VCHAR` are the RFC 5234 core rules. Container indentation and blockquote markers (§3.9) are stripped before these rules apply.
+
+```abnf
+directive-line  = "@" name [ SP attributes ] [ ":" [ SP primary ] ]
+                                              ; ":" ending the line opens a container
+end-line        = "@end"
+title-line      = "." title-start *title-char
+title-start     = %x21-2D / %x2F-7E / UTF8-non-ascii    ; not space, not "."
+title-char      = %x20-7E / UTF8-non-ascii
+
+name            = builtin-name / widget-name
+builtin-name    = LOWER *( LOWER / DIGIT )
+widget-name     = builtin-name 1*( "-" 1*( LOWER / DIGIT ) )
+
+attributes      = "{" attribute *( "," SP attribute ) "}"
+attribute       = key "=" value
+key             = LOWER *( LOWER / DIGIT / "-" )
+value           = token / quoted / value-set
+token           = 1*( ALPHA / DIGIT / "_" / "-" )
+value-set       = token 1*( "|" token )
+quoted          = DQUOTE *( qchar / "\" DQUOTE / "\\" ) DQUOTE
+qchar           = %x20-21 / %x23-5B / %x5D-7E / UTF8-non-ascii
+
+primary         = identifier / text
+identifier      = 1*( VCHAR / UTF8-non-ascii )           ; no whitespace
+text            = 1*( %x20-7E / UTF8-non-ascii )         ; to end of line
+
+phrase          = "{" key "}"
+
+availability    = entry *( "," SP entry ) / feature-key
+entry           = target [ SP detail ]
+detail          = version / state [ SP version ] / "(" history ")"
+history         = state SP version *( "," SP state SP version )
+target          = key
+state           = key
+feature-key     = key
+version         = 1*DIGIT *( "." 1*DIGIT )
+
+LOWER           = %x61-7A
+UTF8-non-ascii  = %x80-10FFFF
+```
+
+---
+
+## Appendix B. Complete example
+
+*Non-normative.* A complete page, assuming a content model that declares:
+
+- the dimensions `pm` (`npm`, `pnpm`, `yarn`) and `deployment` (`cloud`, `self-managed`), with `cloud` versionless;
+- the phrases `product` (Quill), `cloud` (Quill Cloud), `version` (3.4.1), and `api` (`https://api.quill.dev/v3/`).
+
+````markdown
+---
+title: Install the Quill agent
+description: Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.
+available: cloud, self-managed preview 3.3
+---
+
+The {product} agent watches your docs repository and syncs changes to {product}. This page covers installing the agent with a package manager, configuring it, and connecting it to {cloud} or a self-managed server. If you only want to try {product}, see [Try {product} in the browser](quickstart.md#try-in-browser).
+
+.Try it without installing
+@note {type=tip}
+You can run {product} in the browser at play.quill.dev with no local setup.
+
+## Prerequisites
+@id: prerequisites
+
+@include {heading=false}: _fragments/prerequisites.md
+
+## Install the agent
+@id: install-agent
+
+@steps
+1. Install the agent package:
+
+   @variant {pm=npm}
+   ```shell
+   npm install -g @quill/agent
+   ```
+   @variant {pm=pnpm}
+   ```shell
+   pnpm add -g @quill/agent
+   ```
+   @variant {pm=yarn}
+   ```shell
+   yarn global add @quill/agent
+   ```
+   @end
+
+2. Verify the install:
+
+   ```shell
+   quill --version
+   ```
+
+   The command prints the installed version, {version}.
+
+   @note
+   The agent needs write access to your repository's `.quill/` directory.
+
+3. Create `quill.yaml` at the root of your repository:
+
+   ```yaml phrases=true
+   agent:
+     version: {version}
+     watch: docs/
+   ```
+
+## Connect to {product}
+@id: connect
+
+@variant {deployment=cloud}
+Sign in to {cloud} and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
+
+```yaml
+cloud:
+  api_key: ${QUILL_KEY}
+```
+
+@variant {deployment=self-managed}
+Point the agent at your server. Self-managed servers must run {product} Server 3.3 or later.
+
+```yaml
+server:
+  url: https://quill.internal.example.com
+```
+@end
+
+## Streaming sync
+@id: streaming-sync
+@available: cloud, self-managed preview 3.4
+
+Streaming sync pushes changes as you save, instead of on each commit.
+
+{cloud}'s streaming sync is enabled by default for new {cloud}-hosted workspaces.
+
+For event formats, see the [streaming API reference]({api}streaming).
+
+## Troubleshooting
+@id: troubleshooting
+
+@note {type=warning}:
+If the agent exits immediately, check the log at `~/.quill/agent.log`.
+
+A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys).
+@end
+````
+
+Notes on the example:
+
+- `@quill/agent` inside code is literal (§3.2).
+- `${QUILL_KEY}` is literal because its fence doesn't opt in to phrases (§5.1).
+- The troubleshooting note's trailing colon makes it a container, so both paragraphs are inside the callout until `@end` (§3.5).
+- The streaming-sync section's availability fits inside the page's (§4.4).
+
+---
+
+## Appendix C. Design rationale
+
+*Non-normative.* Why the language is shaped the way it is.
+
+**Markdown, not MDX.** MDX mixes content with code, so every author has to work in JSX. Plain markdown keeps existing tooling and stays readable. MDX-style components are replaced by directives in source and by web components in output.
+
+**`@` rather than `:::` directives.** The colon-fenced "generic directives" syntax was proposed for CommonMark in 2018 and never adopted; its only real implementation is the remark-directive library, and related dialects (MyST, Pandoc, Docusaurus) each differ from it. Tessera couldn't version or own a grammar built on it. `@` lines also read better unrendered, and `@` almost never collides with prose: across roughly 4,500 pages of Astro, Elastic, and Docker documentation, no prose `@` matched a Tessera keyword.
+
+**One line grammar, attributes first.** Placing attributes before the primary keeps metadata next to the name, and gives a directive's line and container forms the same head. Braces were chosen over brackets because brackets collide with markdown link syntax.
+
+**A bare `@end`, and containers kept rare.** Named closers are verbose, and counting delimiters (as in `:::` fences) is hard to read. A bare `@end` is simple, as in Ruby and Lua. The price is that deeply nested containers become hard to match by eye, so the language keeps them rare: most directives are single lines, and variance uses sibling arms instead of nesting. A directive that can be either a single line or a container says which on its own line, with a trailing colon, so neither a reader nor a parser has to look ahead to find its `@end`.
+
+**Groups whose arms close each other.** Tabs, switches, and steppers were the largest source of nesting in the surveyed corpora. Letting each arm end the previous one, as Ruby's `elsif` and HTML's `<li>` do, handles them with one closer and no nesting.
+
+**`@note` rather than GitHub alerts.** GitHub's `> [!NOTE]` syntax renders on GitHub, but it requires a `>` on every line and can't carry a title. Source readability outranks renderer compatibility, so Tessera keeps `@note` with a following-block form. In every corpus surveyed, 79–90% of callouts were a single block.
+
+**Titles on their own line.** AsciiDoc's `.Title` convention keeps a title as readable text rather than a quoted attribute.
+
+**Phrases as `{key}`.** Substitutions are heavily used (about 49,000 in Elastic's documentation), and 40% of them are directly followed by text (`'s`, plurals, hyphenated compounds). An `@`-prefixed form ends at whitespace, so it fails in those positions, and it also looks like a directive or a social handle. Braces are bounded and read as a placeholder.
+
+**No `@ref`; empty-text links instead.** Only about 10% of surveyed in-site links used the target's own title as their text, so a dedicated directive wasn't worth it. Elastic's docs-builder fills in empty link text from the target, which covers the need with plain markdown.
+
+**File paths, not routes.** File paths can be validated without knowing the consumer's routing, work on GitHub, update when files move, and stay correct in translated copies.
+
+**Lifecycle states named by their start version.** Following Swift's `@available`, each state names the version where it begins, so availability needs no ranges or logic.
+
+**No image style flags.** Elastic's most common image attribute, `screenshot`, only adds a shadow. That's styling, which belongs to the consumer.
+
+**Project widgets marked by a hyphen.** Following HTML custom elements, shape distinguishes extensions from built-ins. An experimental prefix such as `x-` was avoided, since RFC 6648 documents how such prefixes outlive the experiment.
+
+**Plain markdown and web components as output.** Output that depends on no consumer's component system (Starlight, Hugo shortcodes) keeps Tessera portable, while Astro content collections remain the primary target.
+
+---
+
+## Appendix D. References
+
+- CommonMark Spec — https://spec.commonmark.org/
+- RFC 2119, *Key words for use in RFCs to Indicate Requirement Levels*
+- RFC 8174, *Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words*
+- RFC 5234, *Augmented BNF for Syntax Specifications: ABNF*
+- RFC 6648, *Deprecating the "X-" Prefix and Similar Constructs in Application Protocols*
+- WHATWG HTML Standard, custom elements — https://html.spec.whatwg.org/multipage/custom-elements.html
+- AsciiDoc Language — https://docs.asciidoctor.org/asciidoc/latest/
+- Djot — https://djot.net/
+- Swift `@available` attribute — https://docs.swift.org/swift-book/documentation/the-swift-programming-language/attributes/
+- Elastic docs-builder — https://github.com/elastic/docs-builder
+- Astro content collections — https://docs.astro.build/en/guides/content-collections/
+- Zod — https://zod.dev/

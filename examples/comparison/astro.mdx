@@ -1,0 +1,105 @@
+---
+title: Install the Quill agent
+description: Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.
+---
+import { Steps, Tabs, TabItem, Badge } from '@astrojs/starlight/components';
+import PackageManagerTabs from '~/components/tabs/PackageManagerTabs.astro';
+import ReadMore from '~/components/ReadMore.astro';
+import Prerequisites from '~/components/_prerequisites.mdx';
+
+<Badge text="Quill Cloud" variant="success" /> <Badge text="Self-managed: Preview (3.3+)" variant="caution" />
+
+The Quill agent watches your docs repository and syncs changes to Quill. This page covers installing the agent with a package manager, configuring it, and connecting it to Quill Cloud or a self-managed server. If you only want to try Quill, see [Try Quill in the browser](/en/quickstart/#try-quill-in-the-browser).
+
+:::tip[Try it without installing]
+You can run Quill in the browser at play.quill.dev with no local setup.
+:::
+
+## Prerequisites
+
+<Prerequisites />
+
+## Install the agent
+
+<Steps>
+1. Install the agent package:
+
+    <PackageManagerTabs>
+      <Fragment slot="npm">
+      ```shell
+      npm install -g @quill/agent
+      ```
+      </Fragment>
+      <Fragment slot="pnpm">
+      ```shell
+      pnpm add -g @quill/agent
+      ```
+      </Fragment>
+      <Fragment slot="yarn">
+      ```shell
+      yarn global add @quill/agent
+      ```
+      </Fragment>
+    </PackageManagerTabs>
+
+2. Verify the install:
+
+    ```shell
+    quill --version
+    ```
+
+    The command prints `3.4.1`.
+
+    :::note
+    The agent needs write access to your repository's `.quill/` directory.
+    :::
+
+3. Create `quill.yaml` at the root of your repository:
+
+    ```yaml title="quill.yaml"
+    agent:
+      version: 3.4.1
+      watch: docs/
+    ```
+</Steps>
+
+## Connect to Quill
+
+<Tabs syncKey="deployment">
+  <TabItem label="Quill Cloud">
+  Sign in to Quill Cloud and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
+
+  ```yaml title="quill.yaml"
+  cloud:
+    api_key: ${QUILL_KEY}
+  ```
+  </TabItem>
+  <TabItem label="Self-managed">
+  Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.
+
+  ```yaml title="quill.yaml"
+  server:
+    url: https://quill.internal.example.com
+  ```
+  </TabItem>
+</Tabs>
+
+## Streaming sync
+
+<Badge text="Cloud" variant="success" /> <Badge text="Self-managed: Preview (3.4+)" variant="caution" />
+
+Streaming sync pushes changes as you save, instead of on each commit.
+
+Quill Cloud's streaming sync is enabled by default for new workspaces.
+
+For event formats, see the [streaming API reference](https://api.quill.dev/v3/streaming).
+
+## Troubleshooting
+
+:::caution
+If the agent exits immediately, check the log at `~/.quill/agent.log`.
+
+A common cause is an expired API key. Generate a new key, then restart the agent.
+:::
+
+<ReadMore>See [Rotate API keys](/en/guides/keys/#rotate-api-keys).</ReadMore>

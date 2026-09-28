@@ -1,0 +1,5 @@
+- VS Code extension UI
+- What automations and commands should there be?
+  - Take inspiration from Rust and failing early to indicate problems
+- Template site that's the default. Astro.
+- Directives for stuff like tabs?
