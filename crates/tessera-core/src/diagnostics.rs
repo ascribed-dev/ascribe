@@ -65,7 +65,7 @@ pub const BINDING_BLANK_LINE: DiagnosticSlug = DiagnosticSlug("binding-blank-lin
 /// `TSR017`, error, file level: SPEC §8.2, "Binding | Heading-bound directive that isn't at the top of its section".
 pub const BINDING_NOT_SECTION_TOP: DiagnosticSlug = DiagnosticSlug("binding-not-section-top");
 
-/// `TSR018`, error, file level: SPEC §8.2, "Title | Title given to a directive that doesn't accept one".
+/// `TSR018`, warning, file level: SPEC §8.2, "Title | Title given to a directive that doesn't accept one".
 pub const TITLE_NOT_ACCEPTED: DiagnosticSlug = DiagnosticSlug("title-not-accepted");
 
 /// `TSR019`, warning, file level: SPEC §8.2, "Title | A `. ` line (dot and space) directly above a directive that accepts a title".
@@ -74,10 +74,10 @@ pub const TITLE_DOT_SPACE: DiagnosticSlug = DiagnosticSlug("title-dot-space");
 /// `TSR020`, error, page level: SPEC §8.2, "`@id` | Duplicate id on a page, including ids from included content (page level)".
 pub const ID_DUPLICATE: DiagnosticSlug = DiagnosticSlug("id-duplicate");
 
-/// `TSR021`, error, file level: SPEC §8.2, "`@include` | Target file or id doesn't exist". Provisional (Q3).
+/// `TSR021`, error, file level: SPEC §8.2, "`@include` | Target file doesn't exist".
 pub const INCLUDE_TARGET_MISSING: DiagnosticSlug = DiagnosticSlug("include-target-missing");
 
-/// `TSR022`, error, page level: SPEC §8.2, "`@include` | Target file or id doesn't exist". Provisional (Q3).
+/// `TSR022`, error, page level: SPEC §8.2, "`@include` | Target id doesn't exist in the target file (page level)".
 pub const INCLUDE_ID_MISSING: DiagnosticSlug = DiagnosticSlug("include-id-missing");
 
 /// `TSR023`, error, page level: SPEC §8.2, "`@include` | Include cycle".
@@ -120,16 +120,16 @@ pub const DETAILS_TITLE_MISSING: DiagnosticSlug = DiagnosticSlug("details-title-
 /// `TSR035`, error, file level: SPEC §8.2, "Project widget | Violates its declared schema".
 pub const WIDGET_SCHEMA: DiagnosticSlug = DiagnosticSlug("widget-schema");
 
-/// `TSR036`, error, file level: SPEC §8.2, "Links | Target file or id doesn't exist". Provisional (Q3, Q10).
+/// `TSR036`, error, file level: SPEC §8.2, "Links | Target file doesn't exist".
 pub const LINK_TARGET_MISSING: DiagnosticSlug = DiagnosticSlug("link-target-missing");
 
-/// `TSR037`, error, page level: SPEC §8.2, "Links | Target file or id doesn't exist". Provisional (Q3).
+/// `TSR037`, error, page level: SPEC §8.2, "Links | Target id doesn't exist in the target file (page level)".
 pub const LINK_ID_MISSING: DiagnosticSlug = DiagnosticSlug("link-id-missing");
 
-/// `TSR038`, error, file level: SPEC §8.2, "Links | Target is a fragment, or an id that exists only inside a fragment". Provisional (Q3).
+/// `TSR038`, error, file level: SPEC §8.2, "Links | Target is a fragment".
 pub const LINK_TO_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-to-fragment");
 
-/// `TSR039`, error, page level: SPEC §8.2, "Links | Target is a fragment, or an id that exists only inside a fragment". Provisional (Q3, Q6).
+/// `TSR039`, error, page level: SPEC §8.2, "Links | Target id exists only inside a fragment the target page includes (page level)".
 pub const LINK_ID_IN_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-id-in-fragment");
 
 /// `TSR040`, error, page level: SPEC §8.2, "Links | Target id is removed by a build (page level, per build)".
@@ -138,7 +138,7 @@ pub const LINK_ID_REMOVED: DiagnosticSlug = DiagnosticSlug("link-id-removed");
 /// `TSR041`, warning, file level: SPEC §8.2, "Links | Destination is a route rather than a file path".
 pub const LINK_ROUTE: DiagnosticSlug = DiagnosticSlug("link-route");
 
-/// `TSR042`, error, file level: SPEC §8.2, "Images | Local source doesn't exist". Provisional (Q10).
+/// `TSR042`, error, file level: SPEC §8.2, "Images | Local source doesn't exist".
 pub const IMAGE_SOURCE_MISSING: DiagnosticSlug = DiagnosticSlug("image-source-missing");
 
 /// `TSR043`, warning, file level: SPEC §8.2, "Images | Missing alt text".
@@ -147,10 +147,10 @@ pub const IMAGE_ALT_MISSING: DiagnosticSlug = DiagnosticSlug("image-alt-missing"
 /// `TSR044`, warning, file level: SPEC §8.2, "Phrases | `{key}` in prose whose key isn't declared".
 pub const PHRASE_UNDECLARED: DiagnosticSlug = DiagnosticSlug("phrase-undeclared");
 
-/// `TSR045`, warning, file level: SPEC §8.2, "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text". Provisional (Q3).
+/// `TSR045`, warning, file level: SPEC §8.2, "Headings | No `@id`, and the heading contains a phrase".
 pub const HEADING_PHRASE_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("heading-phrase-without-id");
 
-/// `TSR046`, warning, page level: SPEC §8.2, "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text". Provisional (Q3).
+/// `TSR046`, warning, page level: SPEC §8.2, "Headings | No `@id`, and the heading duplicates another heading's text on the page (page level)".
 pub const HEADING_DUPLICATE_WITHOUT_ID: DiagnosticSlug =
     DiagnosticSlug("heading-duplicate-without-id");
 
@@ -179,19 +179,19 @@ pub const DIRECTIVE_INDENTED_CODE: DiagnosticSlug = DiagnosticSlug("directive-in
 /// `TSR054`, warning, file level: SPEC §8.2, "Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list)".
 pub const STEPS_NUMBERING_CONTINUED: DiagnosticSlug = DiagnosticSlug("steps-numbering-continued");
 
-/// `TSR055`, error, file level: SPEC §3.3. Provisional (Q5).
+/// `TSR055`, error, file level: SPEC §8.2, "Attributes | Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value)".
 pub const ATTRIBUTE_SYNTAX: DiagnosticSlug = DiagnosticSlug("attribute-syntax");
 
-/// `TSR056`, error, file level: SPEC §3.3. Provisional (Q5).
+/// `TSR056`, error, file level: SPEC §8.2, "Attributes | The same key given more than once".
 pub const ATTRIBUTE_DUPLICATE_KEY: DiagnosticSlug = DiagnosticSlug("attribute-duplicate-key");
 
-/// `TSR057`, error, file level: SPEC §4.4. Provisional (Q5).
+/// `TSR057`, error, file level: SPEC §8.2, "`@available` | Spec that doesn't parse, in a directive or in `available` frontmatter".
 pub const AVAILABLE_SYNTAX: DiagnosticSlug = DiagnosticSlug("available-syntax");
 
-/// `TSR058`, error, file level: SPEC §4.1. Provisional (Q5).
+/// `TSR058`, error, file level: SPEC §8.2, "`@id` | Id containing characters other than letters, digits, and hyphens".
 pub const ID_INVALID: DiagnosticSlug = DiagnosticSlug("id-invalid");
 
-/// `TSR059`, error, file level: SPEC §5.3. Provisional (Q5).
+/// `TSR059`, error, file level: SPEC §8.2, "Images | Required image attribute missing".
 pub const IMAGE_ATTRIBUTE_MISSING: DiagnosticSlug = DiagnosticSlug("image-attribute-missing");
 
 /// `TSR060`, error, file level: loader rule, content-model.md §20.1.
@@ -387,6 +387,9 @@ pub const MODEL_EDITOR_BUILD_UNKNOWN: DiagnosticSlug = DiagnosticSlug("model-edi
 pub const MODEL_EDITOR_BUILD_REQUIRED: DiagnosticSlug =
     DiagnosticSlug("model-editor-build-required");
 
+/// `TSR119`, error, file level: loader rule, content-model.md §20.3.
+pub const MODEL_ATTRIBUTE_RESERVED: DiagnosticSlug = DiagnosticSlug("model-attribute-reserved");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -507,4 +510,5 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_BUILD_FILTER_EXCLUDED,
     MODEL_EDITOR_BUILD_UNKNOWN,
     MODEL_EDITOR_BUILD_REQUIRED,
+    MODEL_ATTRIBUTE_RESERVED,
 ];

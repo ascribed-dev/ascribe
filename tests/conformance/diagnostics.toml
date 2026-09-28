@@ -36,10 +36,7 @@
 #                different wording. An issue names the one it uses
 #                (`Issue::variant`); otherwise `message` is used.
 #   row          The SPEC §8.2 row, as "<construct> | <condition>", copied
-#                exactly. Every row has exactly one entry for each level it's
-#                checked at. Four rows join a file-level check and a
-#                page-level check in one condition, and have one entry for
-#                each (Q3).
+#                exactly. Every row has exactly one entry.
 #   rule         The content-model.md §20 subsection a loader rule is in.
 #   provisional  questions.md entries the entry depends on. A conformance case
 #                that expects this diagnostic must be tagged `provisional` and
@@ -216,11 +213,11 @@ message = "`@{name}` applies to its heading's section, so it must come directly 
 [[diagnostic]]
 code = "TSR018"
 slug = "title-not-accepted"
-severity = "error"
+severity = "warning"
 level = "file"
 spec = "3.7"
 row = "Title | Title given to a directive that doesn't accept one"
-message = "`@{name}` doesn't take a title; remove the title line, or start it with `\\.` if the dot is text"
+message = "this line looks like a title, but `@{name}` below it doesn't take one, so it's text; if that's intended, start it with `\\.` to silence this"
 
 [[diagnostic]]
 code = "TSR019"
@@ -247,8 +244,7 @@ slug = "include-target-missing"
 severity = "error"
 level = "file"
 spec = "4.2"
-row = "`@include` | Target file or id doesn't exist"
-provisional = ["Q3"]
+row = "`@include` | Target file doesn't exist"
 message = "the included file `{path}` doesn't exist"
 messages.case = "the included file `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 
@@ -258,8 +254,7 @@ slug = "include-id-missing"
 severity = "error"
 level = "page"
 spec = "4.2"
-row = "`@include` | Target file or id doesn't exist"
-provisional = ["Q3"]
+row = "`@include` | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
 
 [[diagnostic]]
@@ -393,8 +388,7 @@ slug = "link-target-missing"
 severity = "error"
 level = "file"
 spec = "5.2"
-row = "Links | Target file or id doesn't exist"
-provisional = ["Q3", "Q10"]
+row = "Links | Target file doesn't exist"
 message = "`{path}` doesn't exist"
 messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
@@ -405,8 +399,7 @@ slug = "link-id-missing"
 severity = "error"
 level = "page"
 spec = "5.2"
-row = "Links | Target file or id doesn't exist"
-provisional = ["Q3"]
+row = "Links | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
 
 [[diagnostic]]
@@ -415,8 +408,7 @@ slug = "link-to-fragment"
 severity = "error"
 level = "file"
 spec = "4.2"
-row = "Links | Target is a fragment, or an id that exists only inside a fragment"
-provisional = ["Q3"]
+row = "Links | Target is a fragment"
 message = "`{path}` is a fragment, which isn't published on its own; link to a page that includes it"
 
 [[diagnostic]]
@@ -425,8 +417,7 @@ slug = "link-id-in-fragment"
 severity = "error"
 level = "page"
 spec = "4.2"
-row = "Links | Target is a fragment, or an id that exists only inside a fragment"
-provisional = ["Q3", "Q6"]
+row = "Links | Target id exists only inside a fragment the target page includes (page level)"
 message = "`{id}` is a heading in the fragment `{fragment}`, not in `{path}` itself; link to a page, not to an id that exists only inside a fragment"
 
 [[diagnostic]]
@@ -454,7 +445,6 @@ severity = "error"
 level = "file"
 spec = "5.3"
 row = "Images | Local source doesn't exist"
-provisional = ["Q10"]
 message = "the image `{path}` doesn't exist"
 messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
@@ -483,8 +473,7 @@ slug = "heading-phrase-without-id"
 severity = "warning"
 level = "file"
 spec = "5.5"
-row = "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text"
-provisional = ["Q3"]
+row = "Headings | No `@id`, and the heading contains a phrase"
 message = "this heading contains a phrase, so its id changes whenever the phrase's value does; give it a stable id with `@id`"
 
 [[diagnostic]]
@@ -493,8 +482,7 @@ slug = "heading-duplicate-without-id"
 severity = "warning"
 level = "page"
 spec = "5.5"
-row = "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text"
-provisional = ["Q3"]
+row = "Headings | No `@id`, and the heading duplicates another heading's text on the page (page level)"
 message = "this heading repeats the text of another heading on the page, so its id is numbered and can change when headings move; give it a stable id with `@id`"
 
 [[diagnostic]]
@@ -575,7 +563,7 @@ row = "Lists | An ordered list continues the numbering of a list bound by `@step
 message = "this list continues the numbering of the `@steps` list above it, which usually means an unindented line split that list; indent the line to keep one list"
 
 ###############################################################################
-# Diagnostics SPEC §8.2 has no row for (Q5). Provisional until Q5 is resolved.
+# SPEC §8.2 rows added by Q5. Their codes follow the rows that were there first.
 ###############################################################################
 
 [[diagnostic]]
@@ -584,7 +572,7 @@ slug = "attribute-syntax"
 severity = "error"
 level = "file"
 spec = "3.3"
-provisional = ["Q5"]
+row = "Attributes | Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value)"
 message = "this attribute block isn't valid: {detail}"
 
 [[diagnostic]]
@@ -593,7 +581,7 @@ slug = "attribute-duplicate-key"
 severity = "error"
 level = "file"
 spec = "3.3"
-provisional = ["Q5"]
+row = "Attributes | The same key given more than once"
 message = "`{key}` is given more than once; give each attribute once"
 
 [[diagnostic]]
@@ -602,7 +590,7 @@ slug = "available-syntax"
 severity = "error"
 level = "file"
 spec = "4.4"
-provisional = ["Q5"]
+row = "`@available` | Spec that doesn't parse, in a directive or in `available` frontmatter"
 message = "\"{spec}\" isn't a valid availability spec: {detail}"
 
 [[diagnostic]]
@@ -611,7 +599,7 @@ slug = "id-invalid"
 severity = "error"
 level = "file"
 spec = "4.1"
-provisional = ["Q5"]
+row = "`@id` | Id containing characters other than letters, digits, and hyphens"
 message = "`{id}` isn't a valid id: use only letters, digits, and hyphens"
 
 [[diagnostic]]
@@ -620,11 +608,12 @@ slug = "image-attribute-missing"
 severity = "error"
 level = "file"
 spec = "5.3"
-provisional = ["Q5"]
+row = "Images | Required image attribute missing"
 message = "this image is missing the required attribute `{key}`"
 
 ###############################################################################
-# Loader rules: project-docs/content-model.md §20, in order. Reported on tessera.toml.
+# Loader rules: project-docs/content-model.md §20. Reported on tessera.toml.
+# Rules added after phase 02 are appended with the next code.
 ###############################################################################
 
 [[diagnostic]]
@@ -1183,3 +1172,13 @@ level = "file"
 spec = "10"
 rule = "20.7"
 message = "there are several builds and none is named site; set [editor] build to the one the editor should check"
+
+[[diagnostic]]
+code = "TSR119"
+slug = "model-attribute-reserved"
+severity = "error"
+level = "file"
+spec = "7.2"
+rule = "20.3"
+message = "`{key}` can't be an image attribute: HTML already uses it on the <img> element"
+messages.widget = "`{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element"

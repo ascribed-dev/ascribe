@@ -36,7 +36,7 @@ pub trait SlugScope {
     /// `intro`, then `intro-1`, and so on, as the algorithm numbers them.
     ///
     /// Only headings without `@id` go through the scope: an explicit id is
-    /// not a slug and doesn't take part in numbering. See Q7.
+    /// not a slug and doesn't take part in numbering (SPEC §5.5).
     fn slug(&mut self, text: &str) -> String;
 }
 

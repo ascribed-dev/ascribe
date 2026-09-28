@@ -110,10 +110,10 @@ fn templates(e: &Entry) -> Vec<&String> {
 }
 
 #[test]
-fn every_spec_row_has_one_entry_per_level() {
+fn every_spec_row_has_exactly_one_entry() {
     let reg = registry();
     let rows = spec_rows();
-    assert_eq!(rows.len(), 51, "SPEC §8.2 changed; update the registry");
+    assert_eq!(rows.len(), 60, "SPEC §8.2 changed; update the registry");
     let mut by_row: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
     for e in &reg.entries {
         if let Some(row) = &e.row {
@@ -124,17 +124,13 @@ fn every_spec_row_has_one_entry_per_level() {
         let entries = by_row
             .remove(row.as_str())
             .unwrap_or_else(|| panic!("no entry for SPEC §8.2 row {row:?}"));
-        let levels: BTreeSet<String> = entries.iter().map(|e| e.level.to_string()).collect();
-        assert_eq!(
-            levels.len(),
-            entries.len(),
-            "row {row:?} has more than one entry at one level"
-        );
-        for e in entries {
-            assert_eq!(&e.severity, severity, "{}: severity of {row:?}", e.slug);
-            if row.contains("(page level") {
-                assert_eq!(e.level, Level::Page, "{}: {row:?} is page level", e.slug);
-            }
+        let slugs: Vec<&str> = entries.iter().map(|e| e.slug.as_str()).collect();
+        assert_eq!(slugs.len(), 1, "row {row:?} has several entries: {slugs:?}");
+        let e = entries[0];
+        assert_eq!(&e.severity, severity, "{}: severity of {row:?}", e.slug);
+        // SPEC marks some page-level rows; the rest take their level from §8.1.
+        if row.contains("(page level") {
+            assert_eq!(e.level, Level::Page, "{}: {row:?} is page level", e.slug);
         }
     }
     assert!(
@@ -142,43 +138,6 @@ fn every_spec_row_has_one_entry_per_level() {
         "entries name rows SPEC §8.2 doesn't have: {:?}",
         by_row.keys()
     );
-}
-
-#[test]
-fn rows_split_across_levels_are_the_documented_ones() {
-    // Q3: rows whose condition joins a file-level and a page-level check.
-    let reg = registry();
-    let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
-    for e in &reg.entries {
-        if let Some(row) = &e.row {
-            *counts.entry(row).or_default() += 1;
-        }
-    }
-    let split: Vec<&str> = counts
-        .into_iter()
-        .filter(|(_, n)| *n > 1)
-        .map(|(r, _)| r)
-        .collect();
-    assert_eq!(
-        split,
-        [
-            "Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text",
-            "Links | Target file or id doesn't exist",
-            "Links | Target is a fragment, or an id that exists only inside a fragment",
-            "`@include` | Target file or id doesn't exist",
-        ]
-    );
-    for e in reg
-        .entries
-        .iter()
-        .filter(|e| e.row.as_deref().is_some_and(|r| split.contains(&r)))
-    {
-        assert!(
-            e.provisional.contains(&"Q3".to_owned()),
-            "{} depends on Q3",
-            e.slug
-        );
-    }
 }
 
 #[test]
@@ -190,12 +149,17 @@ fn every_loader_rule_has_one_entry_with_its_messages() {
         .iter()
         .filter(|e| e.slug.starts_with("model-"))
         .collect();
+    // Codes follow the order rules were added, so compare by slug.
+    let mut ours: Vec<&str> = model_entries.iter().map(|e| e.slug.as_str()).collect();
+    let mut theirs: Vec<&str> = rules.iter().map(|r| r.0.as_str()).collect();
+    ours.sort_unstable();
+    theirs.sort_unstable();
     assert_eq!(
-        model_entries.iter().map(|e| &e.slug).collect::<Vec<_>>(),
-        rules.iter().map(|r| &r.0).collect::<Vec<_>>(),
-        "model- entries must match content-model.md §20, in order"
+        ours, theirs,
+        "model- entries must match content-model.md §20"
     );
-    for (e, (slug, severity, subsection, messages)) in model_entries.iter().zip(&rules) {
+    for (slug, severity, subsection, messages) in &rules {
+        let e = reg.get(slug).unwrap();
         assert_eq!(&e.severity, severity, "{slug}");
         assert_eq!(e.level, Level::File, "{slug}");
         assert_eq!(e.rule.as_ref(), Some(subsection), "{slug}");

@@ -504,7 +504,7 @@ loading = { type = "enum(lazy, eager)", default = "lazy" }
 |---|---|---|---|
 | `attributes` | table of attribute types | `{}` | Accepted image attribute keys (`key` rule) and their types (§6). With no entries, an image accepts no attributes, and any attribute block after an image is an error (SPEC §8.2, "Unknown key"). Declaration order is canonical order (SPEC §8.3). |
 
-Alt text and titles aren't attributes; they use CommonMark's syntax (SPEC §5.3). Presentation choices aren't image attributes either.
+Alt text and titles aren't attributes; they use CommonMark's syntax (SPEC §5.3). Presentation choices aren't image attributes either. Keys HTML already uses on `<img>` (`src`, `alt`, `title`, and its global attributes) are rejected (`model-attribute-reserved`), since the site output writes image attributes onto the `<img>` element (SPEC §7.2).
 
 ---
 
@@ -533,7 +533,7 @@ height = "number?"
 | `binding` | string | required when `forms` includes `"line"`; not allowed otherwise | What the line form applies to (SPEC §3.8), one of the values below. |
 | `title` | string | `"none"` | Whether the widget takes a title line (SPEC §3.7): `"none"`, `"accepted"`, or `"required"`. |
 | `groupable` | boolean | `false` | Whether a run of the widget's openers forms a group of arms (SPEC §3.6). |
-| `attributes` | table of attribute types | `{}` | The attribute schema: keys (`key` rule) and types (§6). Declaration order is canonical order (SPEC §8.3). |
+| `attributes` | table of attribute types | `{}` | The attribute schema: keys (`key` rule) and types (§6). Declaration order is canonical order (SPEC §8.3). The keys `title` and `primary`, and HTML's global and event-handler attributes, are rejected (`model-attribute-reserved`): the site output writes these attributes onto the widget's element (SPEC §7.2). |
 | `plain-fallback` | string | none | Plain-text fallback for the plain-markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing. **Decided (Q8).** |
 | `plain-content` | string | `"keep"` | For a widget that wraps content, whether the plain-markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`. **Decided (Q8).** |
 | `description` | string | none | Help text for the editor's hover and completion. |
@@ -707,6 +707,7 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 | `model-default-type` | A `default` has the declared type, and an enumeration default is one of its values. | `` default for `{field}` must be {type}, but it's {found} ``<br>`` default "{value}" for `{field}` isn't one of: {values} `` |
 | `model-phrases-field-type` | `phrases = true` is set only on `string` and `list(string)` fields. | `` phrases = true only works on string and list(string) fields, and `{field}` is "{type}" `` |
 | `model-pattern-syntax` | Every pattern parses under §1.3, doesn't start with `/`, and has no `..` segment. | `` "{pattern}" isn't a valid pattern: {detail} ``<br>`` pattern "{pattern}" is already relative to the content root; remove the leading / ``<br>`` pattern "{pattern}" can't contain .. `` |
+| `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `title` or `primary` on widgets; and on both, HTML's global attributes (`accesskey`, `autocapitalize`, `autofocus`, `class`, `contenteditable`, `dir`, `draggable`, `enterkeyhint`, `hidden`, `id`, `inert`, `inputmode`, `is`, `itemid`, `itemprop`, `itemref`, `itemscope`, `itemtype`, `lang`, `nonce`, `part`, `popover`, `role`, `slot`, `spellcheck`, `style`, `tabindex`, `translate`, `writingsuggestions`), any key starting with `aria-` or `on`. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
 ### 20.4 Dimensions, names, lifecycle, notes, and features
 

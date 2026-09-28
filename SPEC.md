@@ -257,7 +257,7 @@ You can run Quill in the browser with no local setup.
 
 - The title line MUST be directly above the directive line, with no blank line between.
 - A title line MUST begin a block: it follows a blank line, a heading, a directive line, or the start of its container. A `.` line that continues a paragraph is ordinary text.
-- If the next line isn't a directive that accepts a title, the `.` line is ordinary text. Prose such as `.NET is a framework` is therefore unaffected unless it sits directly on top of a directive; `\.` escapes it there.
+- If the next line isn't a directive that accepts a title, the `.` line is ordinary text. Prose such as `.NET is a framework` is therefore unaffected. When it sits directly on top of a directive that doesn't accept a title, it stays ordinary text, but processors SHOULD warn that it may be a misplaced title (§8.2); `\.` silences the warning.
 - A line that starts with `.` and a space (`. Try it`) is never a title. When it sits directly above a directive that accepts a title, processors SHOULD warn that it was probably meant as one.
 - Titles serve as a note's heading, a `@details` summary, and a labeled `@variant` arm's label (§4.3).
 
@@ -350,7 +350,7 @@ Transcludes a file or a heading's section into the current document.
 - Included content becomes part of the including page. Phrase substitution and build modes (§9) apply to it as they do to the rest of the page.
 - **Relative paths resolve from the file they're written in.** Every piece of content keeps its source file. Link destinations, image sources, and nested include paths inside a fragment resolve against the fragment's location, not the including page's. A fragment that links to `keys.md` means the `keys.md` next to the fragment, wherever it's included.
 - **Ids are checked on the expanded page.** Headings and `@id`s in included content become ids of the including page, and every id on a page MUST be unique after expansion. Including the same fragment twice on one page, or including a fragment whose ids collide with the page's own, is an error reported at the include site (§8.1).
-- **Links target pages, not fragments.** A fragment isn't published on its own, so a link to a fragment file, or to an id that exists only inside one, is an error. Link to the page that includes it.
+- **Links target pages, not fragments.** A fragment isn't published on its own, so a link to a fragment file is an error. A page's linkable ids are its own source ids (§5.5), not those of the fragments it includes: a link naming an id that exists only inside an included fragment is an error, and processors name the fragment when they report it. Link to the page that includes it.
 
 ### 4.3 `@variant`
 
@@ -417,7 +417,7 @@ Declares where content applies and its lifecycle state. Unlike `@variant`, it do
 @available: cloud, self-managed preview 3.4
 ```
 
-- **Form:** line. **Primary:** REQUIRED availability spec or feature key.
+- **Form:** line. **Primary:** REQUIRED line primary (§3.4): an availability spec or feature key.
 - **Binding:**
   - At the top of a section, before any other content, it applies to the whole section, whether or not a blank line separates it from the heading.
   - Anywhere else, it binds the following block it touches (§3.8).
@@ -555,7 +555,7 @@ Links are CommonMark links. Their destinations are **file paths**.
 See [](keys.md#rotate-keys).
 ```
 
-- **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading in the target file by its source id; the compiled link points at that heading's page id (§5.5).
+- **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading in the target file by its source id; the compiled link points at that heading's page id (§5.5). Only the target file's own headings have source ids there; headings it includes from fragments don't (§4.2).
 - The target file, and the id if present, MUST exist.
 - **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2).
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
@@ -588,6 +588,7 @@ Every heading has two ids: one for referring to it in source, and one for its an
 For a heading with `@id`, both ids are the `@id`, which is what makes it stable.
 
 - An `@id` directive under the heading replaces the slug (§4.1).
+- Explicit ids don't take part in slug numbering: a slug is numbered only against earlier slugs. A heading whose slug equals another heading's `@id` on the same page therefore duplicates that id, which is an error (§4.1).
 - Processors SHOULD warn when a heading without `@id` contains a phrase, or repeats the text of another heading on the same page. In either case its slug can change without the heading itself being edited.
 
 ---
@@ -642,6 +643,8 @@ Built-in directive schemas are defined by this specification, not by the content
 
 Dimension names, dimension values, lifecycle states, and feature keys are names (ABNF rule `name-word`). A name MUST NOT be used in more than one of these roles, and a dimension value MUST NOT belong to more than one dimension; processors reject a content model that does either when loading it. This keeps every bare word in an availability spec unambiguous (§4.4). Dimension names are also attribute keys (§4.3), so they follow the attribute key rule (ABNF rule `key`, §3.3).
 
+The site output writes image attributes onto `<img>` elements and project widgets' attributes onto custom elements (§9.4), so a content model MUST NOT declare an attribute key that HTML already gives a meaning there: `src`, `alt`, or `title` for images; `title` or `primary` for widgets, which the site output uses for a widget's title and identifier primary; and, for both, HTML's global attributes (such as `id`, `class`, `style`, `hidden`, and `slot`) and event-handler attributes (`on…`). Processors reject a content model that does when loading it.
+
 A page's content type is the one whose path patterns match it. A page matched by more than one type's patterns is an error; there's no precedence between types. A page no type matches gets the default type, and it's an error if there isn't one.
 
 ---
@@ -667,6 +670,8 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Attributes | Value doesn't match the key's declared type | Error |
 | Attributes | Bare key without a value | Error |
 | Attributes | Unquoted value containing a reserved character | Error |
+| Attributes | Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value) | Error |
+| Attributes | The same key given more than once | Error |
 | Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name | Warning |
 | Directives | Primary given to a directive that takes none, or a required primary missing | Error |
 | Container | Container not closed before its enclosing block ends | Error |
@@ -680,16 +685,19 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Binding | Following-block directive bound to a heading | Error |
 | Binding | Blank line between a following-block directive and its block | Warning |
 | Binding | Heading-bound directive that isn't at the top of its section | Error |
-| Title | Title given to a directive that doesn't accept one | Error |
+| Title | Title given to a directive that doesn't accept one | Warning |
 | Title | A `. ` line (dot and space) directly above a directive that accepts a title | Warning |
 | `@id` | Duplicate id on a page, including ids from included content (page level) | Error |
-| `@include` | Target file or id doesn't exist | Error |
+| `@id` | Id containing characters other than letters, digits, and hyphens | Error |
+| `@include` | Target file doesn't exist | Error |
+| `@include` | Target id doesn't exist in the target file (page level) | Error |
 | `@include` | Include cycle | Error |
 | `@variant` | No arm of a group survives a build's selection (page level) | Warning |
 | `@variant` | Unknown dimension or value | Error |
 | `@variant` | Group mixes labeled and dimensional arms | Error |
 | `@variant` | Arm has both a title and attributes, or neither | Error |
 | `@variant` | Dimensional arms share no dimension key | Error |
+| `@available` | Spec that doesn't parse, in a directive or in `available` frontmatter | Error |
 | `@available` | Unknown target or state | Error |
 | `@available` | History out of chronological order | Error |
 | `@available` | Versions given for a versionless target | Error |
@@ -697,14 +705,18 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@steps` | Bound block isn't an ordered list | Error |
 | `@details` | Missing title | Error |
 | Project widget | Violates its declared schema | Error |
-| Links | Target file or id doesn't exist | Error |
-| Links | Target is a fragment, or an id that exists only inside a fragment | Error |
+| Links | Target file doesn't exist | Error |
+| Links | Target id doesn't exist in the target file (page level) | Error |
+| Links | Target is a fragment | Error |
+| Links | Target id exists only inside a fragment the target page includes (page level) | Error |
 | Links | Target id is removed by a build (page level, per build) | Error |
 | Links | Destination is a route rather than a file path | Warning |
 | Images | Local source doesn't exist | Error |
 | Images | Missing alt text | Warning |
+| Images | Required image attribute missing | Error |
 | Phrases | `{key}` in prose whose key isn't declared | Warning |
-| Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text | Warning |
+| Headings | No `@id`, and the heading contains a phrase | Warning |
+| Headings | No `@id`, and the heading duplicates another heading's text on the page (page level) | Warning |
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
@@ -810,7 +822,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 
 | Source | Site output | Plain-markdown output |
 |---|---|---|
-| `@note {type=tip}` with title | `<tessera-note type="tip" title="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
+| `@note {type=tip}` with title | `<tessera-note type="tip" heading="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
 | `@steps` | `<tessera-steps>` wrapping the list | The ordered list |
 | `@variant` group, `switch` | `<tessera-tabs sync="…">` containing one `<tessera-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
 | `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<tessera-tabs>` group | One arm becomes plain content; several stay labeled sections |
@@ -825,6 +837,8 @@ Labels for dimension values come from the content model's display labels.
 In the site output, emitters MUST place a blank line after each opening tag and before each closing tag of an element that wraps markdown, so that CommonMark parses the wrapped content as markdown.
 
 **Assets.** Every output is self-contained: it works without access to the source files. Local files a page references (image sources, and link targets that aren't pages) are copied into the output, and references to them are rewritten to point at the copies. A reference resolves from the file it's written in, so an image referenced inside an included fragment is the one beside the fragment (§4.2). The consumer profile decides where copies go and how references to them are written (§9.5), so that a consumer's own image processing still applies.
+
+A reference MUST resolve to a file inside the project root (the directory containing `tessera.toml`) or the content root, and not inside the output directory; any other reference is treated as a file that doesn't exist (§8.2). File names MUST match exactly, including case, on every platform, so a project checks the same everywhere. References inside raw HTML aren't assets: they pass through unchanged, and the files they name aren't copied.
 
 ### 9.5 Consumer profile
 
