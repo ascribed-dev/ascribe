@@ -847,6 +847,11 @@ version = "0.0.0"
 [[package]]
 name = "tessera-model"
 version = "0.0.0"
+dependencies = [
+ "serde_yaml",
+ "tessera-core",
+ "toml 0.9.12+spec-1.1.0",
+]
 
 [[package]]
 name = "tessera-resolve"

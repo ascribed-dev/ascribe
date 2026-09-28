@@ -507,12 +507,51 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** conformance cases: `directives/include/heading-true-keeps-heading`, `directives/include/section-by-explicit-id`, `directives/include/section-by-source-id`; phases 10, 11, 12, 14.
 - **Resolution:** _open_
 
+### Q27: `role` is reserved, but the full example model declares it
+
+- **Section:** SPEC §7.2 (reserved attribute keys); content-model.md §15, §20.3
+- **Raised by:** phase 08
+- **Status:** open
+- **Ambiguity:** `tessera_core::reserved::HTML_GLOBAL_ATTRIBUTES` includes `role` (an ARIA global attribute), so `model-attribute-reserved` rejects it. Phase 01's `examples/content-models/full.toml` declared a widget attribute `role = "set(enum(admin, developer, writer))"` and, as an acceptance criterion, must load with no issues. The two contradict.
+- **Options:**
+  1. Keep `role` reserved and rename the example's attribute. The site output writes widget attributes onto the widget's custom element, where `role` would change its accessibility role.
+  2. Remove `role` from the reserved list. Authors could then declare a `role` attribute whose value (such as `admin`) becomes an invalid ARIA role on the element.
+- **Proposed resolution:** option 1. Implemented now: the example's attribute is renamed `audience` (in `full.toml` and its comment); no other file mentions the old spelling.
+- **Affects:** `examples/content-models/full.toml`; phase 03 fixtures that copy from it.
+- **Resolution:** _to be filled in by a human._
+
+### Q28: `DefaultValue` has no number variant
+
+- **Section:** SPEC §3.3; content-model.md §6.2; `tessera_core::DefaultValue` (phase 02 contract)
+- **Raised by:** phase 08
+- **Status:** open
+- **Ambiguity:** an attribute of type `number` can have a default (`height = { type = "number", default = 600 }`), but `DefaultValue` is `Text`, `Boolean`, or `Set`. There is nowhere to put a number.
+- **Options:**
+  1. Add `DefaultValue::Number` (a contract change: it touches every `match` on `DefaultValue` in phases 05, 06, 10, and 23).
+  2. Store the default's source text (`"600"`) in `DefaultValue::Text`. Consumers of a `number` attribute already read attribute values as text.
+- **Proposed resolution:** option 2 for now, since it needs no contract change and loses nothing; option 1 if a consumer needs to tell `"600"` from `600`. Implemented now: option 2 (`// SPEC-QUESTION(Q28)` in `tessera-model/src/fields.rs`).
+- **Affects:** `crates/tessera-core/src/schema.rs`; phases 05, 06, 10, 23.
+- **Resolution:** _to be filled in by a human._
+
+### Q29: A dimension name as a target of a versioned entry
+
+- **Section:** SPEC §4.4
+- **Raised by:** phase 08
+- **Status:** open
+- **Ambiguity:** a target may be a dimension name, "which stands for all of its values", and "a target that the content model declares as versionless takes a single state and no versions". For a dimension with both kinds of value (`deployment`: `cloud` versionless, `self-managed` versioned), `deployment 3.4` is neither clearly valid nor clearly invalid.
+- **Options:**
+  1. A dimension name is versionless only if all its values are. `deployment 3.4` is then accepted for a mixed dimension, and the version means nothing to `cloud`.
+  2. A dimension name is versionless if any of its values is, so versions are never allowed on a mixed dimension name.
+  3. Versions are never allowed on a dimension name.
+- **Proposed resolution:** option 1: it rejects only what is certainly wrong (a version on a dimension whose values are all versionless) and never rejects a spec that has a sensible meaning. **Implemented now: option 3**, the most conservative, at the reviewer's request while the question is open (`// SPEC-QUESTION(Q29)` in `tessera-model/src/model.rs`). A version on a dimension name is reported as `model-availability-versionless` (`available-versionless` in documents) with the base message; its wording ("`deployment` is versionless") doesn't quite fit, and a message variant naming the dimension would need a registry change, so none was added.
+- **Affects:** `tessera-model` (`check_availability`); phases 10, 12 (which decide what the version means for versionless members).
+
 ### Q30: Text on a directive line that fits no part of the directive
 
 - **Section:** SPEC §3.1, §3.4, §8.2, Appendix A
 - **Raised by:** phase 05
 - **Status:** open
-- **Ambiguity:** the grammar (`directive-line`) allows only a name, an attribute block, a colon, and a primary, but §3.2 recognizes a line as a directive from its keyword alone, so a known keyword can be followed by text that fits no part of the grammar, and §8.2 has no row for it. Three shapes come up:
+- **Ambiguity:** the grammar (`directive-line`) allows only a name, an attribute block, a colon, and a primary, but §3.2 recognizes a line as a directive from its keyword alone, so a known keyword can be followed by text that fits no part of the grammar, and §8.2 has no row for it. Five shapes come up:
 
   ```
   @note hello: text          (attributes written without braces; no colon in the right place)
@@ -528,5 +567,6 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   2. Report each under the nearest existing row: `attribute-syntax` for text where an attribute block or colon should be, `directive-primary` for text after `@end`'s colon, and nothing for text after an identifier, which the identifier's own checks (`id-invalid`, `include-target-missing`) then catch in most cases.
   3. Treat an identifier primary's leftover text as part of it (so `@include: my file.md` names a file with a space in it), and report the other shapes as in option 2. This contradicts §3.4's "ends at the first whitespace".
 - **Proposed resolution:** option 1. It reports every case, with a message that says what to fix, and needs one new registry entry (a contract change: phase 02's `diagnostics.toml`, with a `Fix` that removes the text). Implemented now: option 2 for the head junk and `@end`; leftover text after an identifier is kept in the tree (`IdentifierPrimary::trailing`) and reported as `directive-primary`, as Q15 proposes, with that entry's existing message.
+- **See also:** Q15 (phase 03), which covers text after an identifier primary and proposes reporting it as `directive-primary`. Resolve the two together.
 - **Affects:** `crates/tessera-syntax/src/convert.rs` (`SPEC-QUESTION(Q30)`), `crates/tessera-syntax/src/tree.rs` (`DirectiveLine::unexpected`, `IdentifierPrimary::trailing`, `EndLine::extra`); `tests/conformance/diagnostics.toml`; phases 03, 05, and 10. No conformance case should depend on these shapes until this is resolved; tag any that do `provisional`.
 - **Resolution:** _to be filled in by a human._

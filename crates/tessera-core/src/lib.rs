@@ -27,6 +27,7 @@
 
 pub mod attribute_block;
 pub mod attributes;
+pub mod availability;
 pub mod consumer;
 pub mod diagnostics;
 pub mod issue;
