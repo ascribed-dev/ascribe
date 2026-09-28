@@ -1,0 +1,8 @@
+description: >-
+  Text after a directive's name that is neither an attribute block nor a
+  colon is an error.
+spec: ["3.1", "8.2"]
+tags: [parser]
+
+diagnostics:
+  - {slug: directive-extra-text, line: 5}

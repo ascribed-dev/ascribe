@@ -2,8 +2,7 @@ description: >-
   When no arm of a dimensional group survives, the group is removed and the
   build warns at the group; other builds are quiet.
 spec: ["9.3", "8.2"]
-tags: [resolve, page-check, provisional]
-questions: [Q17]
+tags: [resolve, page-check]
 
 builds:
   site:

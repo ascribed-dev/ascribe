@@ -3,8 +3,7 @@ description: >-
   `@variant` inside an arm is a sibling arm, and arms on different
   dimensions share no key.
 spec: ["3.6", "4.3", "8.2"]
-tags: [check, provisional]
-questions: [Q17]
+tags: [check]
 
 diagnostics:
   - {slug: variant-no-shared-dimension, line: 5}

@@ -287,7 +287,7 @@ fn availability_specs_are_checked_against_the_model() {
 
 #[test]
 fn a_version_on_a_dimension_name_is_an_error() {
-    // Q29: whether the dimension is mixed or all versioned.
+    // SPEC §4.4 (resolved Q29): whether the dimension is mixed or all versioned.
     let toml = "spec = \"0.1\"\n[dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\nversionless = [\"cloud\"]\n[dimensions.sdk]\nvalues = [\"python\", \"js\"]\n";
     let m = load_str(toml, FileId::new(0)).unwrap();
     for bad in [
@@ -298,10 +298,16 @@ fn a_version_on_a_dimension_name_is_an_error() {
     ] {
         let problems = m.check_availability(&parse_availability(bad, 0).unwrap());
         assert!(
-            matches!(problems[0], AvailabilityProblem::VersionlessVersion { .. }),
+            matches!(problems[0], AvailabilityProblem::DimensionVersion { .. }),
             "{bad}: {problems:?}"
         );
     }
+    // The message suggests a versioned value of the dimension.
+    let problems = m.check_availability(&parse_availability("deployment 3.4", 0).unwrap());
+    assert!(
+        matches!(&problems[..], [AvailabilityProblem::DimensionVersion { example, .. }] if example == "self-managed"),
+        "{problems:?}"
+    );
     for ok in ["deployment", "deployment beta", "sdk", "sdk deprecated"] {
         assert!(
             m.check_availability(&parse_availability(ok, 0).unwrap())

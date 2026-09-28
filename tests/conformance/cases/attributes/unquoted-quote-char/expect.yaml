@@ -1,8 +1,7 @@
 description: >-
   A `"` inside an unquoted token is a reserved character.
 spec: ["3.3", "8.2"]
-tags: [check, provisional]
-questions: [Q14]
+tags: [check]
 
 diagnostics:
   - {slug: attribute-unquoted-reserved, line: 5}

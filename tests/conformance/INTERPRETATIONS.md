@@ -1,6 +1,6 @@
 # Interpretations the cases lock in
 
-SPEC.md is normative, and the cases in `cases/` were written from it by hand. Where the spec leaves something open, `project-docs/questions.md` has an entry (Q13 onwards are this suite's) and the cases that depend on it are tagged `provisional`. This file lists the other choices: readings the spec supports, but where a case had to pick one, so an implementer knows what the cases assume, and what the suite doesn't cover.
+SPEC.md is normative, and the cases in `cases/` were written from it by hand. Where the spec leaves something open, `project-docs/questions.md` has an entry (Q13 to Q26 are this suite's; all are resolved, and SPEC.md states them) and, while an entry is open, the cases that depend on it are tagged `provisional`. This file lists the other choices: readings the spec supports, but where a case had to pick one, so an implementer knows what the cases assume, and what the suite doesn't cover.
 
 ## Readings of the spec
 
@@ -48,5 +48,4 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Wh
 - **Registry-change reports (§5.1).** "When a key is added to the registry, the pages whose existing literal `{key}` text would change" is a report between two versions of a model, which a case can't state.
 - **Phrases in frontmatter (§5.1).** Nothing in a resolved outline shows them.
 - **Loader rules (content-model.md §20).** Only the one that is a §8.2 row (`model-name-multiple-roles`) has cases; phase 08 writes fixtures for the rest. `model-dimension-value-shared` overlaps that row (a value in two dimensions) and has no case here for that reason.
-- **Links to pages a build drops (Q21)**, which have no registry entry.
 - **Editor features (§10).** Completion, hover, and refactoring are tested in phases 15, 16, and 24.

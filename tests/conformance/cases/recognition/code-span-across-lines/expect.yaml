@@ -3,8 +3,7 @@ description: >-
   started on an earlier line, as a heading would; the span is not closed, so
   its backticks are literal text.
 spec: ["3.2", "3.9"]
-tags: [structure, provisional]
-questions: [Q13]
+tags: [structure]
 
 outline:
   - paragraph: Use `code

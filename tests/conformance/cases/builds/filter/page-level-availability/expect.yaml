@@ -2,8 +2,7 @@ description: >-
   A page whose page-level `available` is not available for the build is not
   published; the build keeps the pages that are.
 spec: ["4.4", "9.3"]
-tags: [resolve, provisional]
-questions: [Q24]
+tags: [resolve]
 
 builds:
   sm-3.3:
