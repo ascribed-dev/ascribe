@@ -2,7 +2,7 @@
 
 This is the reference for `tessera.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. Phase 08 implements the loader from this document; phase 03 writes fixtures against it.
 
-SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is marked **Provisional (Qn)** and listed in [Open questions](#21-open-questions); a human confirms or changes it.
+SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is marked **Decided (Qn)** and listed in [Decisions](#21-decisions). Items marked **Provisional (Qn)** may still change.
 
 Example files, each valid under this reference:
 
@@ -32,7 +32,7 @@ Example files, each valid under this reference:
 18. [`[editor]`](#18-editor)
 19. [Defaults: what an absent section means](#19-defaults-what-an-absent-section-means)
 20. [Validation rules](#20-validation-rules)
-21. [Open questions](#21-open-questions)
+21. [Decisions](#21-decisions)
 
 ---
 
@@ -67,7 +67,7 @@ Several kinds of name appear in the file. Each has a grammar from SPEC Appendix 
 | widget name | SPEC A `widget-name` | Lowercase words of letters and digits joined by single hyphens, with at least one hyphen; starting with a letter | Widget names |
 | build name | This reference | A letter, then letters, digits, `_`, `-`, or `.` | Build names |
 
-Dimension names follow the stricter `key` rule, not just `name-word`, because they're also written as attribute keys in `@variant {deployment=cloud}` (SPEC §3.3, §4.3). **Provisional (Q6).**
+Dimension names follow the stricter `key` rule, not just `name-word`, because they're also written as attribute keys in `@variant {deployment=cloud}` (SPEC §3.3, §4.3). **Decided (Q6).**
 
 Build names allow `.` so that names like `self-managed-3.3` work. A name containing `.` must be quoted in a TOML header: `[builds."self-managed-3.3"]`.
 
@@ -135,7 +135,7 @@ spec = "0.1"
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `spec` | string | **required** | The version of the Tessera specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`. **Provisional (Q21).** |
+| `spec` | string | **required** | The version of the Tessera specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`. **Decided (Q21).** |
 
 The only other top-level keys are the tables in §4–§18. Anything else is an unknown key.
 
@@ -158,7 +158,7 @@ output-dir = ".tessera/build"
 
 **Rules** (§20): both paths are relative (`model-path-absolute`). The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and they MUST NOT be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
 
-The defaults are **Provisional (Q14)**. `".tessera/build"` keeps generated output out of the way of both the source and a consumer's own `dist/`.
+The defaults are **Decided (Q14)**. `".tessera/build"` keeps generated output out of the way of both the source and a consumer's own `dist/`.
 
 ---
 
@@ -199,17 +199,17 @@ api-version = "string"
 3. If none match and a default type exists, the default applies.
 4. If none match and there's no default type, it's an error on the page.
 
-A type with neither `files` nor `default = true` could never apply, and is an error (`model-type-unreachable`). The rules in steps 2 and 4 are document diagnostics, which SPEC §8.2 doesn't list yet. **Provisional (Q1, Q2).**
+A type with neither `files` nor `default = true` could never apply, and is an error (`model-type-unreachable`). The rules in steps 2 and 4 are document diagnostics, listed in SPEC §8.2. **Decided (Q1, Q2).**
 
-**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page (SPEC §5.2). The field MAY accept phrases (§12). **Provisional (Q3).**
+**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page (SPEC §5.2). The field MAY accept phrases (§12). **Decided (Q3).**
 
 **Reserved keys.** `available` (SPEC §4.4) and `variant` (SPEC §4.3) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type MUST NOT declare them (`model-field-reserved`). Generated consumer schemas include them automatically.
 
-**Unknown frontmatter keys.** A page whose frontmatter has a key its type doesn't declare (and that isn't reserved) is an error on the page. **Provisional (Q1).**
+**Unknown frontmatter keys.** A page whose frontmatter has a key its type doesn't declare (and that isn't reserved) is an error on the page. **Decided (Q1).**
 
 ### 5.2 Frontmatter values
 
-Frontmatter is YAML. For type checking, processors parse it with the YAML 1.2 **core schema**: `true` and `false` are booleans (`yes`, `no`, `on`, and `off` are strings), and `3.10` is the number 3.1. So a `string` field whose value is `3.10` unquoted is a type error, and the message suggests quoting it. **Provisional (Q15).**
+Frontmatter is YAML. For type checking, processors parse it with the YAML 1.2 **core schema**: `true` and `false` are booleans (`yes`, `no`, `on`, and `off` are strings), and `3.10` is the number 3.1. So a `string` field whose value is `3.10` unquoted is a type error, and the message suggests quoting it. **Decided (Q15).**
 
 ### 5.3 Fragments
 
@@ -228,7 +228,7 @@ owner = "string?"
 
 Content types never apply to fragments, even when a type's `files` match a fragment's path.
 
-**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter MUST NOT use them (an error on the fragment), and `[fragments.frontmatter]` MUST NOT declare them (`model-field-reserved`). Use `@available` inside the fragment instead. **Provisional (Q4).**
+**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter MUST NOT use them (an error on the fragment), and `[fragments.frontmatter]` MUST NOT declare them (`model-field-reserved`). Use `@available` inside the fragment instead. **Decided (Q4).**
 
 ---
 
@@ -324,7 +324,7 @@ labels = { cloud = "Quill Cloud", self-managed = "Self-managed" }
 | `label` | string | the dimension's name | The display label for the dimension itself, used where a dimension name appears as an availability target or names a tab group. |
 | `versionless` | array of strings | `[]` | Values that are versionless (SPEC §4.4): availability for them takes a single state and no versions. Every entry MUST be a declared value. Values not listed are versioned. |
 
-**Rules.** A value MUST belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. **Provisional (Q6).** Dimension names and values also take part in the one-role rule (§20).
+**Rules.** A value MUST belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. **Decided (Q6).** Dimension names and values also take part in the one-role rule (§20).
 
 ---
 
@@ -343,7 +343,7 @@ scheme = "numeric"
 
 **The `numeric` scheme.** A version is any string matching SPEC Appendix A's `version` rule: numbers separated by dots (`3`, `3.4`, `3.4.1`). Versions compare component by component, numerically, from the left, with missing trailing components treated as `0`: `3.4` equals `3.4.0`, `3.10` is later than `3.9`, and `4` is later than `3.99.1`. Leading zeros don't matter (`3.04` equals `3.4`). This is semantic versioning's `major.minor.patch` ordering. It has no pre-release or build suffixes, because the spec's grammar doesn't allow them; express a pre-release with a lifecycle state (`preview 3.4`) instead.
 
-No other scheme is defined. The table exists so a later spec version can add one without changing the file's shape. **Provisional (Q5)**: the phase plan named the default "semantic versioning"; this reference names it `numeric` because it accepts any number of components and has no pre-release syntax.
+No other scheme is defined. The table exists so a later spec version can add one without changing the file's shape. **Decided (Q5)**: the phase plan named the default "semantic versioning"; this reference names it `numeric` because it accepts any number of components and has no pre-release syntax.
 
 ---
 
@@ -377,7 +377,7 @@ label = "Generally available"
 | `available` | boolean | built-in states: as in the table above; new states: **required** | Whether content in this state counts as available (SPEC §4.4, §9.3). A new state must say so explicitly. |
 | `label` | string | built-in states: as in the table above; new states: the state's name | The display label used in availability annotations, such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" (SPEC §9.4). |
 
-**Rules.** `ga` MUST count as available (`model-lifecycle-ga-unavailable`), because content with no state is `ga` (SPEC §4.4). Lifecycle states take part in the one-role rule, including the built-in ones: a dimension value named `beta` is an error. **Provisional (Q17).**
+**Rules.** `ga` MUST count as available (`model-lifecycle-ga-unavailable`), because content with no state is `ga` (SPEC §4.4). Lifecycle states take part in the one-role rule, including the built-in ones: a dimension value named `beta` is an error. **Decided (Q17).**
 
 ---
 
@@ -398,7 +398,7 @@ available = "cloud, self-managed preview 3.4"
 | `name` | string | **required** | The feature's display name, shown on hover and available to emitters. |
 | `available` | string (availability spec) | **required** | The feature's availability, in SPEC §4.4's syntax. |
 
-**Rules.** The spec is checked like one written in a document: it MUST parse (`model-availability-syntax`); every target MUST be a declared dimension value or dimension name, and every state a declared state (`model-availability-unknown-name`); versionless targets take no versions (`model-availability-versionless`); histories MUST be in chronological order (`model-availability-history-order`). It MUST NOT be a feature key itself (`model-feature-nested`), so features never refer to each other. **Provisional (Q19).** Feature keys take part in the one-role rule.
+**Rules.** The spec is checked like one written in a document: it MUST parse (`model-availability-syntax`); every target MUST be a declared dimension value or dimension name, and every state a declared state (`model-availability-unknown-name`); versionless targets take no versions (`model-availability-versionless`); histories MUST be in chronological order (`model-availability-history-order`). It MUST NOT be a feature key itself (`model-feature-nested`), so features never refer to each other. **Decided (Q19).** Feature keys take part in the one-role rule.
 
 ---
 
@@ -445,7 +445,7 @@ Every key is a phrase key (`key` rule, the same rule as SPEC Appendix A's `phras
 title = { type = "string", phrases = true }
 ```
 
-Only `string` and `list(string)` fields can accept phrases (`model-phrases-field-type`). By default, no field does. The setting lives on the field, not in `[phrases]`, so that a phrase key can never collide with a setting's name. **Provisional (Q20).**
+Only `string` and `list(string)` fields can accept phrases (`model-phrases-field-type`). By default, no field does. The setting lives on the field, not in `[phrases]`, so that a phrase key can never collide with a setting's name. **Decided (Q20).**
 
 ---
 
@@ -483,7 +483,7 @@ link = "/reference/glossary.md#api-key"
 | `link` | string (path) | none | Where the full definition lives: a source file path relative to the content root, with an optional `#id`, written as in a link (SPEC §5.2; a leading `/` is allowed and means the same). It MUST name a page, not a fragment. Occurrences are linked here. |
 | `case-sensitive` | boolean | the `[glossary]` setting | Overrides `case-sensitive` for this term, for terms like `Go` that collide with ordinary words. |
 
-**Matching**, which phase 12 implements: occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term with no `link` isn't linked in the site or plain-markdown output; its definition still reaches the editor and the JSON output. **Provisional (Q7)**: SPEC §5.4 says only that occurrences are linked to definitions.
+**Matching**, which phase 12 implements: occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term with no `link` isn't linked in the site or plain-markdown output; its definition still reaches the editor and the JSON output. **Decided (Q7)**: SPEC §5.4 says only that occurrences are linked to definitions.
 
 **Rules.** No two terms or aliases may be the same text (compared ignoring case when either is case-insensitive; `model-glossary-duplicate-term`). The `link` file MUST exist and not be a fragment (`model-glossary-link`); its `#id` is checked with the page-level link checks, since ids depend on parsing.
 
@@ -524,7 +524,7 @@ lab = "string"
 height = "number?"
 ```
 
-`<name>` is the widget's name (SPEC A `widget-name`: lowercase, with at least one hyphen). Names starting with `tessera-` are reserved for Tessera's element library, and the names HTML reserves for itself (`annotation-xml`, `color-profile`, `font-face`, `font-face-src`, `font-face-uri`, `font-face-format`, `font-face-name`, `missing-glyph`) aren't allowed, because the site output emits a widget as a custom element with the widget's name (SPEC §9.4). **Provisional (Q9).**
+`<name>` is the widget's name (SPEC A `widget-name`: lowercase, with at least one hyphen). Names starting with `tessera-` are reserved for Tessera's element library, and the names HTML reserves for itself (`annotation-xml`, `color-profile`, `font-face`, `font-face-src`, `font-face-uri`, `font-face-format`, `font-face-name`, `missing-glyph`) aren't allowed, because the site output emits a widget as a custom element with the widget's name (SPEC §9.4). **Decided (Q9).**
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -534,8 +534,8 @@ height = "number?"
 | `title` | string | `"none"` | Whether the widget takes a title line (SPEC §3.7): `"none"`, `"accepted"`, or `"required"`. |
 | `groupable` | boolean | `false` | Whether a run of the widget's openers forms a group of arms (SPEC §3.6). |
 | `attributes` | table of attribute types | `{}` | The attribute schema: keys (`key` rule) and types (§6). Declaration order is canonical order (SPEC §8.3). |
-| `plain-fallback` | string | none | Plain-text fallback for the plain-markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing. **Provisional (Q8).** |
-| `plain-content` | string | `"keep"` | For a widget that wraps content, whether the plain-markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`. **Provisional (Q8).** |
+| `plain-fallback` | string | none | Plain-text fallback for the plain-markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing. **Decided (Q8).** |
+| `plain-content` | string | `"keep"` | For a widget that wraps content, whether the plain-markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`. **Decided (Q8).** |
 | `description` | string | none | Help text for the editor's hover and completion. |
 
 **Binding values:**
@@ -550,7 +550,7 @@ height = "number?"
 **Rules** (§20):
 
 - A widget with container form MUST NOT have a required primary, since a container opener's primary is empty (SPEC §3.5). A container-only widget's primary MUST be `"none"` (`model-widget-container-primary`).
-- A groupable widget MUST be container-only, since group arms are containers (SPEC §3.6) (`model-widget-groupable-form`). **Provisional (Q9).**
+- A groupable widget MUST be container-only, since group arms are containers (SPEC §3.6) (`model-widget-groupable-form`). **Decided (Q9).**
 - `binding` is required with line form and not allowed without it (`model-widget-binding`).
 
 The site output's element for a widget (tag name and attributes) is defined by phase 02's element contract, not here.
@@ -573,12 +573,12 @@ slugger = "github"
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `profile` | string | `"astro"` | The consumer profile. Supported: `"astro"`. |
-| `site` | string (URL) | none | The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain-markdown output needs it to write absolute links (SPEC §9.4). Without it, plain-markdown links are root-relative (they start with `base-path`) and `tessera build` warns. **Provisional (Q10).** |
+| `site` | string (URL) | none | The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain-markdown output needs it to write absolute links (SPEC §9.4). Without it, plain-markdown links are root-relative (they start with `base-path`) and `tessera build` warns. **Decided (Q10).** |
 | `base-path` | string | `"/"` | **Routing.** The URL path every route starts with, such as `"/docs/"`, including any locale prefix (`"/en/"`). It MUST start with `/`. A trailing `/` is optional and doesn't change the meaning. |
 | `trailing-slash` | string | `"always"` | **Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`). |
 | `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids (SPEC §5.5), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses (phase 09). |
 | `heading-ids` | string | `"attribute"` | **Heading ids.** How the site output writes an explicit heading id so the consumer keeps its heading and table-of-contents processing: `"attribute"`, an attribute block that the consumer's markdown plugin applies, or `"html"`, a raw HTML heading. The exact syntax is phase 02's site-render contract. **Provisional (Q12).** |
-| `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. **Provisional (Q11).** |
+| `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. **Decided (Q11).** |
 | `image-attributes` | string | `"attribute"` | **Images.** How the site output writes image attributes: `"attribute"`, the attribute block after the image, applied by the consumer's markdown plugin, which keeps the consumer's image processing; or `"html"`, a raw `<img>` element, which bypasses it. The exact syntax is phase 02's site-render contract. **Provisional (Q12).** |
 | `assets` | string | `"beside-page"` | **Assets.** Where copies of local assets go (SPEC §9.4): `"beside-page"`, next to the compiled page that references them, referenced relatively, so a consumer's image processing (such as Astro's) still applies; or `"directory"`, one shared directory. Naming and collision rules are phase 02's asset contract. **Provisional (Q12).** |
 | `assets-dir` | string (path) | `"_assets"` | With `assets = "directory"`, the shared directory's path relative to each build's emitter output root (`<output-dir>/<build>/<emitter>/`). Not allowed with `"beside-page"`. |
@@ -612,7 +612,7 @@ availability = { filter = "self-managed 3.3" }
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `variants` | string or table | `"switch"` | The variant mode. `"switch"` keeps every arm and page. A **selection** is a table from dimension names to a value or an array of values: `{ deployment = "cloud" }`, `{ pm = ["npm", "pnpm"] }`. Every dimension MUST be declared and every value a value of that dimension. An empty table is an error; write `"switch"`. |
-| `availability` | string or table | `"badge"` | The availability mode. `"badge"` keeps everything and annotates it. `{ filter = "<target> [<version>]" }` removes content not available for the target at the version. The target MUST be a declared dimension value, not a dimension name. A versioned target MUST have a version, and a versionless one MUST NOT (**Provisional (Q13)**). The version follows the version scheme (§8). |
+| `availability` | string or table | `"badge"` | The availability mode. `"badge"` keeps everything and annotates it. `{ filter = "<target> [<version>]" }` removes content not available for the target at the version. The target MUST be a declared dimension value, not a dimension name. A versioned target MUST have a version, and a versionless one MUST NOT (**Decided (Q13)**). The version follows the version scheme (§8). |
 
 **Rules.** Build names MUST be unique ignoring case (`model-build-name-case`), since they become directory names and some file systems ignore case. A build that filters for a target its own selection excludes (for example, selecting `deployment = "cloud"` and filtering for `self-managed 3.3`) is legal but almost certainly a mistake, so the loader warns (`model-build-filter-excluded`).
 
@@ -631,7 +631,7 @@ build = "site"
 |---|---|---|---|
 | `build` | string | see below | The build whose page-level diagnostics the language server reports by default (SPEC §8.1 checks pages once per build). It MUST name a declared build. |
 
-**Default.** If only one build exists, that build. Otherwise, the build named `site`, if there is one. Otherwise the key is required (`model-editor-build-required`). **Provisional (Q16).**
+**Default.** If only one build exists, that build. Otherwise, the build named `site`, if there is one. Otherwise the key is required (`model-editor-build-required`). **Decided (Q16).**
 
 ---
 
@@ -642,7 +642,7 @@ A file containing only `spec = "0.1"` is valid. It means:
 | Section | When absent |
 |---|---|
 | `[project]` | `content-root = "docs"`, `output-dir = ".tessera/build"` |
-| `[types]` | One implicit default page type, named `page`, with frontmatter `title = "string"` and nothing else. If `[types]` declares any type, there's no implicit type. **Provisional (Q18).** |
+| `[types]` | One implicit default page type, named `page`, with frontmatter `title = "string"` and nothing else. If `[types]` declares any type, there's no implicit type. **Decided (Q18).** |
 | `[fragments]` | Only paths with a `_` segment are fragments. The fragment schema has no fields, so a fragment's frontmatter can't have any keys. |
 | `[dimensions]` | No dimensions. Any `@variant` arm with attributes, or `variant` frontmatter, is an error. |
 | `[versions]` | `scheme = "numeric"` |
@@ -654,7 +654,7 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[images]` | No image attributes. |
 | `[widgets]` | No project widgets. |
 | `[consumer]` | `profile = "astro"` with its defaults. |
-| `[builds]` | One implicit build, `site`, with `variants = "switch"` and `availability = "badge"`. If `[builds]` declares any build, there's no implicit one. **Provisional (Q18).** |
+| `[builds]` | One implicit build, `site`, with `variants = "switch"` and `availability = "badge"`. If `[builds]` declares any build, there's no implicit one. **Decided (Q18).** |
 | `[editor]` | `build` as in §18. |
 
 ---
@@ -769,28 +769,28 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 
 ---
 
-## 21. Open questions
+## 21. Decisions
 
-Each item settles a gap in SPEC.md, marked **Provisional (Qn)** above. They are listed here because phase 00's `project-docs/questions.md` may not exist yet; once it does, they move there with the same numbers. Items 1–13 need a decision; items 14–21 record a derived rule or a default to confirm.
+Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recommended below, at the human checkpoint after phase 01. Items 1, 2, 3, 4, and 6 are now also stated in SPEC.md (§2.1, §5.2, §7.2, §8.2). Item 12's values stay provisional until phase 02's site-render and asset contracts define the exact output. Each item keeps the alternatives that were considered.
 
-1. **Frontmatter diagnostics (SPEC §8.2).** §8.1 says file-level validation covers frontmatter, but §8.2 has no rows for it. *Recommendation:* add file-level error rows: unknown frontmatter key; missing required field; value doesn't match the field's type; reserved key (`available`, `variant`) on a fragment; page matches more than one content type; page matches no content type and there's no default.
-2. **Assigning content types to pages (SPEC §7.2).** The spec doesn't say how a page gets its type. *Recommendation:* `files` patterns per type plus at most one `default = true` type; a page matching several types is an error, with no precedence. *Alternatives:* first match in file order (TOML tables are formally unordered); most specific pattern (hard to define); a frontmatter `type` key (would need a new reserved key).
-3. **Page titles (SPEC §5.2).** Empty link text uses "the page title", but the spec doesn't say where it comes from. *Recommendation:* the frontmatter `title`, which every page type must declare as a required string. *Alternative:* fall back to the first level-1 heading.
-4. **Reserved keys in fragments (SPEC §2.1, §4.3, §4.4).** `available` and `variant` are defined for pages. *Recommendation:* fragments can't use them in spec 0.1; use `@available` inside the fragment. *Alternative:* fragment `available` applies to everything the fragment contributes, like a section spec.
-5. **Version scheme name (SPEC §4.4).** *Recommendation:* call the one scheme `numeric`: dotted numbers of any length, compared numerically with missing components as 0. The grammar has no pre-release syntax, so "semver" would overpromise. *Alternative:* call it `semver` and cap versions at three components, which needs a new document diagnostic.
-6. **Name rules beyond the one-role rule (SPEC §4.3, §4.4, §7.2).** *Recommendation:* (a) a dimension value belongs to only one dimension, since `cloud` in a spec must mean one thing; (b) dimension names follow the `key` rule, since they're attribute keys; (c) warn on names that differ only in case. Consider stating (a) and (b) in §7.2.
-7. **Glossary (SPEC §5.4).** The spec gives no format or matching rules. *Recommendation:* terms with a required plain-text `definition` and an optional `link`; occurrences link to `link`; terms without it aren't linked in site or plain output. Whole-word matching, longest term wins, prose only (not headings, link text, or code), `first` per resolved page by default. Phase 02 decides whether a term element is needed in the element contract.
-8. **Widget plain fallback (SPEC §6, §9.4).** *Recommendation:* a static CommonMark string with phrases substituted and no attribute interpolation (no behavior); a widget that wraps content keeps that content in plain output unless `plain-content = "drop"`, since silently losing content is worse than showing it. The spec's "or nothing" then applies to the widget itself, not its content.
-9. **Widget schema constraints (SPEC §3.5, §3.6, §6).** *Recommendation:* groupable widgets are container-only; widgets with container form have no required primary; names starting with `tessera-` and HTML's reserved custom-element names are rejected.
-10. **Absolute links in plain output (SPEC §9.4).** Plain-markdown links are "absolute URLs", which needs the site's origin. *Recommendation:* optional `[consumer] site`; without it, links are root-relative and `tessera build` warns.
-11. **HTML passthrough (SPEC §9.5).** The site output depends on raw HTML (custom elements). *Recommendation:* keep the key, but the `astro` profile accepts only `true` until a profile needs `false`, rather than defining a degraded site output now.
-12. **Heading ids, image attributes, and asset placement (SPEC §9.4, §9.5).** *Recommendation:* the keys and values in §16 (`heading-ids`, `image-attributes`, `assets`, `assets-dir`); phase 02's site-render and asset contracts define the exact output, and may change these values.
-13. **Filter builds on versioned targets (SPEC §9.3).** A filter is "given a target and, for versioned targets, a version". *Recommendation:* the version is required for versioned targets, and not allowed for versionless ones. *Alternative:* a versioned target with no version means "at every version", but then the "state in effect" is undefined.
-14. **Project defaults.** *Recommendation:* `content-root = "docs"`, `output-dir = ".tessera/build"`; paths relative to `tessera.toml`, `..` allowed, absolute paths rejected (keeps projects portable). The content root can't be `"."` by default, because the output directory couldn't then sit outside it.
-15. **YAML flavor for frontmatter.** *Recommendation:* the YAML 1.2 core schema (`yes` is a string, `3.10` is a number), and `date` fields accept `YYYY-MM-DD` scalars, quoted or not.
-16. **The editor's default build.** *Recommendation:* the only build, else the build named `site`, else required.
-17. **Built-in lifecycle states and note types.** *Recommendation:* built-ins can be relabeled, and states' `available` flags changed, but not removed; `ga` must stay available; new states must set `available` explicitly; new note types need a `label`; built-in states take part in the one-role rule.
-18. **Implicit type and build.** *Recommendation:* with no `[types]`, one default type `page` with a required `title`; with no `[builds]`, one build `site` (`switch`, `badge`). Declaring any type or build removes the implicit one.
-19. **Features referring to features (SPEC §4.4).** *Recommendation:* not allowed, so there are no chains or cycles.
-20. **Phrases in frontmatter (SPEC §5.1).** *Recommendation:* opt in per field with `phrases = true`, on `string` and `list(string)` fields only; off by default.
-21. **Spec version matching (SPEC §11).** *Recommendation:* `spec` is a quoted string that must exactly equal a version the processor implements; `"0.1"` for now. Revisit compatibility ranges when 0.2 exists.
+1. **Frontmatter diagnostics (SPEC §8.2).** §8.1 says file-level validation covers frontmatter, but §8.2 has no rows for it. *Decision:* add file-level error rows: unknown frontmatter key; missing required field; value doesn't match the field's type; reserved key (`available`, `variant`) on a fragment; page matches more than one content type; page matches no content type and there's no default.
+2. **Assigning content types to pages (SPEC §7.2).** The spec doesn't say how a page gets its type. *Decision:* `files` patterns per type plus at most one `default = true` type; a page matching several types is an error, with no precedence. *Considered:* first match in file order (TOML tables are formally unordered); most specific pattern (hard to define); a frontmatter `type` key (would need a new reserved key).
+3. **Page titles (SPEC §5.2).** Empty link text uses "the page title", but the spec doesn't say where it comes from. *Decision:* the frontmatter `title`, which every page type must declare as a required string. *Considered:* fall back to the first level-1 heading.
+4. **Reserved keys in fragments (SPEC §2.1, §4.3, §4.4).** `available` and `variant` are defined for pages. *Decision:* fragments can't use them in spec 0.1; use `@available` inside the fragment. *Considered:* fragment `available` applies to everything the fragment contributes, like a section spec.
+5. **Version scheme name (SPEC §4.4).** *Decision:* call the one scheme `numeric`: dotted numbers of any length, compared numerically with missing components as 0. The grammar has no pre-release syntax, so "semver" would overpromise. *Considered:* call it `semver` and cap versions at three components, which needs a new document diagnostic.
+6. **Name rules beyond the one-role rule (SPEC §4.3, §4.4, §7.2).** *Decision:* (a) a dimension value belongs to only one dimension, since `cloud` in a spec must mean one thing; (b) dimension names follow the `key` rule, since they're attribute keys; (c) warn on names that differ only in case. (a) and (b) are stated in SPEC §7.2.
+7. **Glossary (SPEC §5.4).** The spec gives no format or matching rules. *Decision:* terms with a required plain-text `definition` and an optional `link`; occurrences link to `link`; terms without it aren't linked in site or plain output. Whole-word matching, longest term wins, prose only (not headings, link text, or code), `first` per resolved page by default. Phase 02 decides whether a term element is needed in the element contract.
+8. **Widget plain fallback (SPEC §6, §9.4).** *Decision:* a static CommonMark string with phrases substituted and no attribute interpolation (no behavior); a widget that wraps content keeps that content in plain output unless `plain-content = "drop"`, since silently losing content is worse than showing it. The spec's "or nothing" then applies to the widget itself, not its content.
+9. **Widget schema constraints (SPEC §3.5, §3.6, §6).** *Decision:* groupable widgets are container-only; widgets with container form have no required primary; names starting with `tessera-` and HTML's reserved custom-element names are rejected.
+10. **Absolute links in plain output (SPEC §9.4).** Plain-markdown links are "absolute URLs", which needs the site's origin. *Decision:* optional `[consumer] site`; without it, links are root-relative and `tessera build` warns.
+11. **HTML passthrough (SPEC §9.5).** The site output depends on raw HTML (custom elements). *Decision:* keep the key, but the `astro` profile accepts only `true` until a profile needs `false`, rather than defining a degraded site output now.
+12. **Heading ids, image attributes, and asset placement (SPEC §9.4, §9.5).** *Decision:* the keys and values in §16 (`heading-ids`, `image-attributes`, `assets`, `assets-dir`); phase 02's site-render and asset contracts define the exact output, and may change these values.
+13. **Filter builds on versioned targets (SPEC §9.3).** A filter is "given a target and, for versioned targets, a version". *Decision:* the version is required for versioned targets, and not allowed for versionless ones. *Considered:* a versioned target with no version means "at every version", but then the "state in effect" is undefined.
+14. **Project defaults.** *Decision:* `content-root = "docs"`, `output-dir = ".tessera/build"`; paths relative to `tessera.toml`, `..` allowed, absolute paths rejected (keeps projects portable). The content root can't be `"."` by default, because the output directory couldn't then sit outside it.
+15. **YAML flavor for frontmatter.** *Decision:* the YAML 1.2 core schema (`yes` is a string, `3.10` is a number), and `date` fields accept `YYYY-MM-DD` scalars, quoted or not.
+16. **The editor's default build.** *Decision:* the only build, else the build named `site`, else required.
+17. **Built-in lifecycle states and note types.** *Decision:* built-ins can be relabeled, and states' `available` flags changed, but not removed; `ga` must stay available; new states must set `available` explicitly; new note types need a `label`; built-in states take part in the one-role rule.
+18. **Implicit type and build.** *Decision:* with no `[types]`, one default type `page` with a required `title`; with no `[builds]`, one build `site` (`switch`, `badge`). Declaring any type or build removes the implicit one.
+19. **Features referring to features (SPEC §4.4).** *Decision:* not allowed, so there are no chains or cycles.
+20. **Phrases in frontmatter (SPEC §5.1).** *Decision:* opt in per field with `phrases = true`, on `string` and `list(string)` fields only; off by default.
+21. **Spec version matching (SPEC §11).** *Decision:* `spec` is a quoted string that must exactly equal a version the processor implements; `"0.1"` for now. Revisit compatibility ranges when 0.2 exists.

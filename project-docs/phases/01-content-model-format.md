@@ -93,30 +93,18 @@ Specify `tessera.toml`, the content model file, completely enough that phase 08 
 
 ### For phase 02 (contracts)
 
-- `model-name-multiple-roles` is the only loader rule that is a SPEC §8.2 row. Q1 proposes new document-level rows for frontmatter and content-type assignment, which the registry will need if accepted.
+- `model-name-multiple-roles` is the only loader rule that is a SPEC §8.2 row. Q1 added document-level rows for frontmatter and content-type assignment to SPEC §8.2; the registry needs them.
 - The `[consumer]` values `heading-ids`, `image-attributes`, `assets`, and `assets-dir` are provisional (Q12). The site-render and asset contracts define the exact output, and may rename these values.
 - Glossary rendering (Q7) may need an element in the element contract.
 
 ### For phase 03 (fixtures)
 
 - Base `tests/conformance/_model/tessera.toml` on `quill.toml`. `full.toml` has ready-made widgets covering every binding, primary kind, title setting, and groupable, plus a feature with a history, a lifecycle state that doesn't count as available (`sunset`), and an extra note type.
-- Cases that depend on a provisional item (Q1–Q21) should be tagged `provisional`.
+- Q1–Q21 are decided, so cases that depend on them are ordinary cases. Only cases depending on Q12's consumer values should be tagged `provisional`.
 
-### Decisions needing human review (the checkpoint)
+### Decisions (the checkpoint)
 
-`content-model.md` §21 has the full list with alternatives. The ones that most shape the format:
-
-1. **Q1:** add document-level frontmatter diagnostics to SPEC §8.2. The spec has none.
-2. **Q2:** assign content types with `files` globs plus one `default = true` type. A page matching several types is an error.
-3. **Q3:** the frontmatter `title` is the page title, so every page type must declare it.
-4. **Q5:** name the version scheme `numeric`, not `semver`. It's dotted numbers of any length with no pre-release syntax.
-5. **Q6:** a dimension value may belong to only one dimension, and dimension names follow the attribute `key` rule.
-6. **Q7:** the glossary format and matching rules.
-7. **Q8:** widget plain fallbacks are static text, and wrapped content is kept by default.
-8. **Q10–Q12:** consumer settings: `site` for absolute plain-output links, `html` must be `true` for Astro, and provisional asset and heading-id values.
-9. **Q14:** the defaults `content-root = "docs"` and `output-dir = ".tessera/build"`.
-
-`project-docs/questions.md` didn't exist when this phase ran (phase 00 creates it). Move §21's items there with the same numbers once it does.
+All 21 items in `content-model.md` §21 were decided on 2026-09-28 at the human checkpoint, each as recommended. Items 1, 2, 3, 4, and 6 are also written into SPEC.md (§2.1, §5.2, §7.2, §8.2). Q12's consumer values stay provisional until phase 02's contracts. The decisions stay in §21 rather than moving to `project-docs/questions.md`, since none is open.
 
 ### Left open
 

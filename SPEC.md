@@ -93,7 +93,7 @@ A documentation set's source files live under a **content root**. Each file is e
 
 A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
 
-Frontmatter on fragments is validated against the content model's fragment schema, not a page schema.
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available` and `variant`; availability inside a fragment is written with `@available`.
 
 ### 2.3 Escapes
 
@@ -553,7 +553,7 @@ See [](keys.md#rotate-keys).
 
 - **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading in the target file by its source id; the compiled link points at that heading's page id (§5.5).
 - The target file, and the id if present, MUST exist.
-- **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise.
+- **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2).
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
 - **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion.
 
@@ -620,7 +620,7 @@ A content model declares the following.
 
 | Declaration | Contents | Used by |
 |---|---|---|
-| Content types | A frontmatter schema per page type, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default | §2 |
+| Content types | A frontmatter schema per page type, each requiring a string `title`, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. Each type names the pages it applies to by path pattern, and at most one type is the default for pages no pattern matches | §2, §5.2 |
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
@@ -636,7 +636,9 @@ A content model declares the following.
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
-Dimension names, dimension values, lifecycle states, and feature keys are names (ABNF rule `name-word`). A name MUST NOT be used in more than one of these roles; processors reject a content model that does so when loading it. This keeps every bare word in an availability spec unambiguous (§4.4).
+Dimension names, dimension values, lifecycle states, and feature keys are names (ABNF rule `name-word`). A name MUST NOT be used in more than one of these roles, and a dimension value MUST NOT belong to more than one dimension; processors reject a content model that does either when loading it. This keeps every bare word in an availability spec unambiguous (§4.4). Dimension names are also attribute keys (§4.3), so they follow the attribute key rule (ABNF rule `key`, §3.3).
+
+A page's content type is the one whose path patterns match it. A page matched by more than one type's patterns is an error; there's no precedence between types. A page no type matches gets the default type, and it's an error if there isn't one.
 
 ---
 
@@ -699,10 +701,15 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Images | Missing alt text | Warning |
 | Phrases | `{key}` in prose whose key isn't declared | Warning |
 | Headings | No `@id`, and the heading contains a phrase or duplicates another heading's text | Warning |
+| Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page | Error |
+| Frontmatter | Required field missing | Error |
+| Frontmatter | Value doesn't match the field's declared type | Error |
+| Frontmatter | Reserved key (`available`, `variant`) on a fragment | Error |
+| Frontmatter | Page matches more than one content type, or matches none and there's no default type | Error |
 | Lists | Unindented directive line ends a list | Warning |
 | Lists | Directive line over-indented into an indented code block | Warning |
 | Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list) | Warning |
-| Content model | A name used in more than one role: dimension name, dimension value, lifecycle state, or feature key | Error |
+| Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension | Error |
 
 ### 8.3 Canonical form
 
