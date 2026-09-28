@@ -1,0 +1,9 @@
+description: >-
+  A blank line ends a text primary; the next paragraph is separate.
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: First line second line.
+  - paragraph: A paragraph.

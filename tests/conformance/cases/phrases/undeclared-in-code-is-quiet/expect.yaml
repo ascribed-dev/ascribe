@@ -1,0 +1,6 @@
+description: >-
+  Only prose is checked for undeclared keys: code spans and fences are not.
+spec: ["5.1", "8.2"]
+tags: [check]
+
+diagnostics: []

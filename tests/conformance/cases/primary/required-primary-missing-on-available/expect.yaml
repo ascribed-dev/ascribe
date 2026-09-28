@@ -1,0 +1,7 @@
+description: >-
+  `@available` requires an availability spec.
+spec: ["3.4", "4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-primary, line: 6}

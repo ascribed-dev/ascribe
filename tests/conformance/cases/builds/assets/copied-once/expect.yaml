@@ -1,0 +1,9 @@
+description: >-
+  An asset referenced several times, from several pages, is listed once.
+spec: ["9.4"]
+tags: [resolve]
+
+builds:
+  site:
+    assets:
+      - x.png

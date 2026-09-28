@@ -1,0 +1,6 @@
+description: >-
+  A value set is accepted on a key the schema declares set-valued.
+spec: ["3.3", "6"]
+tags: [check]
+
+diagnostics: []

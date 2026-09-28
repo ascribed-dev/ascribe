@@ -1,0 +1,14 @@
+description: >-
+  A fragment that duplicates a page heading's text takes the first slug on
+  the expanded page, so the page's own heading gets `setup-1` there while
+  its source id in the file stays `setup`. Links use source ids: `#setup` is
+  valid, `#setup-1` (a page id) is not. The repeated heading is reported.
+spec: ["4.2", "5.2", "5.5", "8.2"]
+tags: [page-check, include, slug, provisional]
+questions: [Q19]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: heading-duplicate-without-id, file: index.md, line: 9}
+      - {slug: link-id-missing, file: other.md, line: 5}

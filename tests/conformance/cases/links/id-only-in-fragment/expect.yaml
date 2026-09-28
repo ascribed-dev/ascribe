@@ -1,0 +1,10 @@
+description: >-
+  A link naming an id that exists only inside a fragment the target page
+  includes is an error (Q6); the page's linkable ids are its own.
+spec: ["4.2", "5.2", "8.2"]
+tags: [page-check, include]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: link-id-in-fragment, file: index.md, line: 5}

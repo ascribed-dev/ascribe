@@ -1,0 +1,10 @@
+description: >-
+  References inside raw HTML pass through unchanged: the file is not copied,
+  and a missing one is not reported.
+spec: ["9.4"]
+tags: [resolve, check]
+
+diagnostics: []
+builds:
+  site:
+    assets: []

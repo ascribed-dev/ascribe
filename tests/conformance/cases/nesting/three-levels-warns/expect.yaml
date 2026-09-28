@@ -1,0 +1,20 @@
+description: >-
+  Nesting more than two levels deep is reported at the innermost opener, and
+  the tree is unaffected.
+spec: ["3.10", "8.2"]
+tags: [structure, check]
+
+outline:
+  - directive: details
+    form: container
+    title: Outer
+    children:
+      - directive: note
+        form: container
+        children:
+          - directive: quill-interactive
+            form: container
+            children:
+              - paragraph: Deep.
+diagnostics:
+  - {slug: container-nesting-deep, line: 8}

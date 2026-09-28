@@ -1,0 +1,13 @@
+description: >-
+  A directive line after a paragraph inside an item interrupts it and starts
+  a new block there.
+spec: ["3.9"]
+tags: [structure]
+
+outline:
+  - list: bullet
+    children:
+      - item:
+          - paragraph: Item text
+          - directive: note
+            primary: Note in the item.

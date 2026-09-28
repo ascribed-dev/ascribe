@@ -1,0 +1,9 @@
+description: >-
+  A block spec is checked against its section.
+spec: ["4.4", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: available-exceeds-scope, file: index.md, line: 11}

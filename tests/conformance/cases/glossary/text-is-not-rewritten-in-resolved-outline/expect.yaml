@@ -1,0 +1,13 @@
+description: >-
+  Glossary linking (resolution step 7) is not visible in a resolved outline,
+  whose text is the page's source text with includes, build modes, and
+  phrases applied.
+spec: ["5.4", "9.2"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: Copy your API key.

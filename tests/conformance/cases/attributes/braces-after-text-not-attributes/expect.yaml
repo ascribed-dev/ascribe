@@ -1,0 +1,8 @@
+description: >-
+  Braces are attributes only directly after a directive name or an image;
+  elsewhere `{key=value}` is literal text.
+spec: ["3.3", "5.1"]
+tags: [parser]
+
+outline:
+  - paragraph: The block {width=600} is just text.

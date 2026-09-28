@@ -1,0 +1,9 @@
+description: >-
+  Every reference form takes the block, and errors in it are reported too.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-unknown-key, file: index.md, line: 5}
+  - {slug: attribute-unknown-key, file: index.md, line: 7}
+  - {slug: attribute-unknown-key, file: index.md, line: 9}

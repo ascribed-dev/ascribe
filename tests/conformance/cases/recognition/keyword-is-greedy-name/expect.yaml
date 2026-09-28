@@ -1,0 +1,10 @@
+description: >-
+  The name is the whole run of lowercase letters, digits, and hyphens, so
+  `@notes`, `@note-x`, and `@Note` are not the `note` keyword.
+spec: ["3.2", "6"]
+tags: [parser]
+
+outline:
+  - paragraph: "@notes: Plain text."
+  - paragraph: "@note-x: Plain text."
+  - paragraph: "@Note: Plain text."

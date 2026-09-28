@@ -1,0 +1,9 @@
+description: >-
+  A page with no frontmatter is missing its required `title`, reported on
+  the first line.
+spec: ["2.1", "8.2"]
+tags: [check, provisional]
+questions: [Q19]
+
+diagnostics:
+  - {slug: frontmatter-missing-field, file: index.md, line: 1}

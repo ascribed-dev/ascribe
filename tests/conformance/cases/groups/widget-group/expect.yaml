@@ -1,0 +1,14 @@
+description: >-
+  A groupable project widget forms groups like `@variant`.
+spec: ["3.6", "6"]
+tags: [structure]
+
+outline:
+  - group: quill-compare
+    arms:
+      - title: Before
+        children:
+          - paragraph: Old way.
+      - title: After
+        children:
+          - paragraph: New way.

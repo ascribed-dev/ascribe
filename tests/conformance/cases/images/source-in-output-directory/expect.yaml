@@ -1,0 +1,8 @@
+description: >-
+  A reference into the output directory is reported as not existing, though
+  the file is there (Q10).
+spec: ["5.3", "9.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: image-source-missing, file: index.md, line: 5}

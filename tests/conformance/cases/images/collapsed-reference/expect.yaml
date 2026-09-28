@@ -1,0 +1,10 @@
+description: >-
+  A collapsed reference image `![alt][]` takes an attribute block.
+spec: ["5.3"]
+tags: [inline, provisional]
+questions: [Q22]
+
+outline:
+  - image: settings.png
+    alt: settings
+    attributes: {width: "600"}

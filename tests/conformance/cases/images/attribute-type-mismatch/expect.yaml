@@ -1,0 +1,8 @@
+description: >-
+  Image attributes are type-checked: a number and an enumeration.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-type-mismatch, file: index.md, line: 5}
+  - {slug: attribute-type-mismatch, file: index.md, line: 7}

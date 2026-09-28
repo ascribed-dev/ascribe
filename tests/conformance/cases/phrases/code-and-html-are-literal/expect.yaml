@@ -1,0 +1,19 @@
+description: >-
+  Phrases never apply in code spans, indented code, raw HTML, or fenced code
+  unless the info string has `phrases=true`.
+spec: ["5.1"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: Use `{product}` in code.
+          - code: "name: {product}\n"
+            info: yaml
+          - code: "name: Quill\n"
+            info: yaml phrases=true
+          - code: "{product} indented\n"
+            fenced: false
+          - html

@@ -1,0 +1,8 @@
+description: >-
+  A page no type matches is an error when there is no default type.
+spec: ["7.2", "8.2"]
+tags: [check, provisional]
+questions: [Q19]
+
+diagnostics:
+  - {slug: content-type-unresolved, file: other/b.md, line: 1}

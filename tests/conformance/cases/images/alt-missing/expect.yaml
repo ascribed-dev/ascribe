@@ -1,0 +1,8 @@
+description: >-
+  An image with no alt text is a warning, in inline and reference forms.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: image-alt-missing, file: index.md, line: 5}
+  - {slug: image-alt-missing, file: index.md, line: 7}

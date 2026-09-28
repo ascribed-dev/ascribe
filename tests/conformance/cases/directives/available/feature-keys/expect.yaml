@@ -1,0 +1,7 @@
+description: >-
+  A single token that is a feature key stands for the feature's declared
+  spec.
+spec: ["4.4"]
+tags: [check]
+
+diagnostics: []

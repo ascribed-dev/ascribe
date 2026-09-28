@@ -1,0 +1,7 @@
+description: >-
+  An attribute block that is never closed is malformed.
+spec: ["3.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-syntax, line: 5}

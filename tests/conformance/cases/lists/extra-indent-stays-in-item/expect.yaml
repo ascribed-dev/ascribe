@@ -1,0 +1,14 @@
+description: >-
+  One to three spaces past the content column are allowed and the directive
+  stays in the item.
+spec: ["1.5", "3.9"]
+tags: [structure]
+
+outline:
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: Install
+          - directive: note
+            primary: Inside the item.

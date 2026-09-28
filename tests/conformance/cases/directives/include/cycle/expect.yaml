@@ -1,0 +1,10 @@
+description: >-
+  An include cycle is an error, reported where the cycle closes.
+spec: ["4.2", "8.2"]
+tags: [page-check, include, provisional]
+questions: [Q19]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: include-cycle, file: _b.md, line: 3}

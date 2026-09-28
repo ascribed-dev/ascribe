@@ -1,0 +1,12 @@
+description: >-
+  A blank line between a following-block directive and its block is allowed
+  and still binds it, but is reported.
+spec: ["3.8", "8.2"]
+tags: [structure, check]
+
+outline:
+  - directive: note
+    binding: following-block
+  - paragraph: The block below.
+diagnostics:
+  - {slug: binding-blank-line, line: 5}

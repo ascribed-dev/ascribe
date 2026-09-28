@@ -1,0 +1,7 @@
+description: >-
+  `=` with no value is a malformed attribute block.
+spec: ["3.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-syntax, line: 5}

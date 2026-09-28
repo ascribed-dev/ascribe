@@ -1,0 +1,11 @@
+description: >-
+  A directive in a blockquote follows the same rules, with `>` markers in
+  place of indentation.
+spec: ["3.9"]
+tags: [structure]
+
+outline:
+  - blockquote:
+      - directive: note
+        binding: following-block
+      - paragraph: A quoted block.

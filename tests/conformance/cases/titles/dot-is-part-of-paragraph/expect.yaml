@@ -1,0 +1,9 @@
+description: >-
+  A `.` line that continues a paragraph is ordinary text, not a title.
+spec: ["3.7"]
+tags: [structure]
+
+outline:
+  - paragraph: Some text .Not a title
+  - directive: note
+    primary: A note.

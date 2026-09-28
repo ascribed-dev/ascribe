@@ -1,0 +1,15 @@
+description: >-
+  A following-block directive binds the next block within the same
+  container, so a note in a container binds a block of that container.
+spec: ["3.8"]
+tags: [structure]
+
+outline:
+  - directive: quill-interactive
+    form: container
+    children:
+      - directive: note
+        binding: following-block
+      - paragraph: Inside.
+      - paragraph: Also inside.
+  - paragraph: Outside.

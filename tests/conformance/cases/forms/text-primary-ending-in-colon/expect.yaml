@@ -1,0 +1,12 @@
+description: >-
+  A text primary that ends in a colon is still a primary: `@note:
+  Important:` is a one-line note, not a container.
+spec: ["3.1", "3.5"]
+tags: [structure]
+
+outline:
+  - directive: note
+    form: line
+    primary: "Important:"
+    binding: self
+  - paragraph: A paragraph after the note.

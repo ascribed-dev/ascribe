@@ -1,0 +1,7 @@
+description: >-
+  A directive after a subheading belongs to the subheading, so under a
+  section's own heading it is no longer at the top.
+spec: ["3.8", "8.2"]
+tags: [check]
+
+diagnostics: []

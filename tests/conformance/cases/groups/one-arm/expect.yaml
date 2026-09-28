@@ -1,0 +1,11 @@
+description: >-
+  A group with one arm is valid.
+spec: ["3.6", "4.3"]
+tags: [structure]
+
+outline:
+  - group: variant
+    arms:
+      - attributes: {deployment: cloud}
+        children:
+          - paragraph: Sign in to Quill Cloud.

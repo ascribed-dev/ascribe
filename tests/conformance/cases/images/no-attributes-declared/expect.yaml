@@ -1,0 +1,8 @@
+description: >-
+  With no `[images.attributes]` in the model, any attribute block is an
+  error.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-unknown-key, file: index.md, line: 5}

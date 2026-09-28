@@ -1,0 +1,14 @@
+description: >-
+  Anywhere but the top of a section, `@available` describes the block it
+  touches.
+spec: ["3.8", "4.4"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Section
+  - paragraph: Intro text.
+  - directive: available
+    primary: cloud
+    binding: following-block
+  - paragraph: This paragraph is cloud only.

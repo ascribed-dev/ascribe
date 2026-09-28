@@ -1,0 +1,11 @@
+description: >-
+  For a heading with `@id` both ids are the `@id`: a link by id works even
+  when an included fragment repeats the heading text.
+spec: ["4.1", "5.5"]
+tags: [page-check, slug, provisional]
+questions: [Q19]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: heading-duplicate-without-id, file: index.md, line: 5}

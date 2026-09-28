@@ -1,0 +1,36 @@
+description: >-
+  A page whose `variant` names a selected dimension but none of its selected
+  values is dropped; a page with no `variant`, or one naming only unselected
+  dimensions, is kept. Fragments never appear.
+spec: ["4.3", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      both.md:
+      cloud.md:
+      index.md:
+      npm-yarn.md:
+      sm.md:
+      yarn.md:
+  cloud-only:
+    pages:
+      both.md:
+      cloud.md:
+      index.md:
+      npm-yarn.md:
+      yarn.md:
+  npm-only:
+    pages:
+      both.md:
+      cloud.md:
+      index.md:
+      npm-yarn.md:
+      sm.md:
+  sm-3.5:
+    pages:
+      both.md:
+      index.md:
+      npm-yarn.md:
+      sm.md:

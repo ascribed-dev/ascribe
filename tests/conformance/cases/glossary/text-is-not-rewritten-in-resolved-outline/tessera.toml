@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[glossary]
+match = "first"
+
+[glossary.terms.api-key]
+term = "API key"
+aliases = ["API keys"]
+definition = "A secret token that authenticates the Quill agent to Quill Cloud."
+link = "/glossary.md#api-key"

@@ -1,0 +1,10 @@
+description: >-
+  An end line in the next list item does not close a container opened in the
+  previous one.
+spec: ["3.9", "8.2"]
+tags: [check, provisional]
+questions: [Q18]
+
+diagnostics:
+  - {slug: end-indent-mismatch, line: 11}
+  - {slug: container-unclosed, line: 7}

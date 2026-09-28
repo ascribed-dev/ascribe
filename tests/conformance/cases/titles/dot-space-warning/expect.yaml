@@ -1,0 +1,8 @@
+description: >-
+  A `. ` line directly above a directive that accepts a title is probably a
+  mistyped title.
+spec: ["3.7", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: title-dot-space, line: 5}

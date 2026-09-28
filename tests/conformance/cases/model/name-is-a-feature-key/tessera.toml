@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+
+# The key below is also a dimension name.
+[features.deployment]
+name = "Deployment"
+available = "cloud"

@@ -1,0 +1,25 @@
+description: >-
+  An image inside an included fragment resolves from the fragment's
+  location, so it is the file beside the fragment, not one beside the page.
+  Every local file a page uses is an asset: image sources, and link targets
+  that are not pages.
+spec: ["4.2", "9.4"]
+tags: [resolve, include, check]
+
+diagnostics: []
+builds:
+  site:
+    pages:
+      guides/install.md:
+        outline:
+          - heading: 1
+            text: Install
+          - image: pipeline.png
+            alt: Pipeline diagram
+          - paragraph: See [the config](../downloads/quill.yaml).
+          - image: img/settings.png
+            alt: Settings
+    assets:
+      - _fragments/pipeline.png
+      - downloads/quill.yaml
+      - guides/img/settings.png

@@ -1,0 +1,17 @@
+description: >-
+  A `heading-or-block` widget describes the section at the top of a section,
+  and the block it touches elsewhere.
+spec: ["6", "3.8"]
+tags: [structure]
+
+outline:
+  - heading: 2
+    text: Admin setup
+  - directive: quill-audience
+    attributes: {role: admin}
+    binding: heading
+  - paragraph: Text.
+  - directive: quill-audience
+    attributes: {role: [developer, writer]}
+    binding: following-block
+  - paragraph: Only for these roles.

@@ -1,0 +1,11 @@
+description: >-
+  The same `@id` on two headings of one page is an error at the later one
+  (page level).
+spec: ["4.1", "8.2"]
+tags: [page-check, provisional]
+questions: [Q19]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: id-duplicate, file: index.md, line: 9}

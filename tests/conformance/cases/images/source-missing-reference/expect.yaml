@@ -1,0 +1,8 @@
+description: >-
+  A reference image whose definition names a missing file is reported at the
+  image.
+spec: ["5.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: image-source-missing, file: index.md, line: 5}

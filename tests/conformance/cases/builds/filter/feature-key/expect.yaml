@@ -1,0 +1,27 @@
+description: >-
+  A feature key stands for its declared spec (`cloud, self-managed preview
+  3.4`): it filters as that spec does, and a retained annotation shows the
+  spec the key stands for.
+spec: ["4.4", "9.2", "9.3"]
+tags: [resolve, provisional]
+questions: [Q24]
+
+builds:
+  sm-3.3:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+  sm-3.4:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Streaming
+          - directive: available
+            primary: cloud, self-managed preview 3.4
+            binding: heading
+          - paragraph: Text.

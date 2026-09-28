@@ -1,0 +1,6 @@
+description: >-
+  The `available` frontmatter key holds the same spec, or a feature key.
+spec: ["4.4"]
+tags: [check]
+
+diagnostics: []

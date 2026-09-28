@@ -1,0 +1,9 @@
+description: >-
+  A group is one container level, so a group holding a note that holds a
+  details container nests three deep.
+spec: ["3.6", "3.10", "8.2"]
+tags: [check, provisional]
+questions: [Q16]
+
+diagnostics:
+  - {slug: container-nesting-deep, line: 8}

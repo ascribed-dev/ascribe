@@ -1,0 +1,8 @@
+description: >-
+  Every form of the availability table is valid: a bare target, a version, a
+  state and version, a history, two targets, a dimension name, and a state
+  with no version.
+spec: ["4.4"]
+tags: [check]
+
+diagnostics: []

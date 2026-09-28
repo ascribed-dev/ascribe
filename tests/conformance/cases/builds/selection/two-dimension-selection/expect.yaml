@@ -1,0 +1,24 @@
+description: >-
+  A selection may name two dimensions, one with a value list:
+  `deployment=self-managed, pm=[npm, pnpm]` reduces the deployment group to
+  its self-managed arm and drops the `yarn` arm of the `pm` group, leaving
+  two arms as a group.
+spec: ["9.3"]
+tags: [resolve]
+
+builds:
+  sm-3.5:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Install
+          - paragraph: Self-managed text.
+          - group: variant
+            arms:
+              - attributes: {pm: npm}
+                children:
+                  - paragraph: npm text.
+              - attributes: {pm: pnpm}
+                children:
+                  - paragraph: pnpm text.

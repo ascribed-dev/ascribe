@@ -1,0 +1,7 @@
+description: >-
+  A required primary that is missing is an error.
+spec: ["3.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-primary, line: 6}

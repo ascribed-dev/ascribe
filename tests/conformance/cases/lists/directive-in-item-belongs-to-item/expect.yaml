@@ -1,0 +1,17 @@
+description: >-
+  A directive line indented to a list item's content column belongs to that
+  item, and its binding stays inside the item.
+spec: ["3.9"]
+tags: [structure]
+
+outline:
+  - list: ordered
+    start: 1
+    children:
+      - item:
+          - paragraph: "Verify the install:"
+          - directive: note
+            binding: following-block
+          - paragraph: The agent needs write access.
+      - item:
+          - paragraph: Second step.

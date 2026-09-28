@@ -1,0 +1,9 @@
+description: >-
+  A link to a fragment file is an error, whether the fragment is marked by
+  `_` or by a pattern.
+spec: ["5.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: link-to-fragment, file: index.md, line: 5}
+  - {slug: link-to-fragment, file: index.md, line: 5}

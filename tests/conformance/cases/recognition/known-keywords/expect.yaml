@@ -1,0 +1,16 @@
+description: >-
+  Each built-in keyword at line start is a directive line; the name is the
+  keyword and nothing else changes the outline of a line-form directive.
+spec: ["3.1", "3.2", "4"]
+tags: [parser]
+
+outline:
+  - directive: include
+    primary: a.md
+  - directive: id
+    primary: some-id
+  - directive: available
+    primary: cloud
+  - directive: note
+    primary: A note.
+  - directive: steps

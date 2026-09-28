@@ -1,0 +1,9 @@
+description: >-
+  A required field that is missing is an error, reported at the start of the
+  frontmatter.
+spec: ["2.1", "7.2", "8.2"]
+tags: [check, provisional]
+questions: [Q19]
+
+diagnostics:
+  - {slug: frontmatter-missing-field, file: index.md, line: 1}

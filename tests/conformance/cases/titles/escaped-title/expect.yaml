@@ -1,0 +1,10 @@
+description: >-
+  `\.` prevents a title line: it stays a paragraph, and the directive below
+  has no title.
+spec: ["2.3", "3.7"]
+tags: [structure]
+
+outline:
+  - paragraph: "\\.Not a title"
+  - directive: note
+    primary: A note.

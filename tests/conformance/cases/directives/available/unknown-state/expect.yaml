@@ -1,0 +1,7 @@
+description: >-
+  A state that is not a declared lifecycle state is an error.
+spec: ["4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-unknown, line: 6}

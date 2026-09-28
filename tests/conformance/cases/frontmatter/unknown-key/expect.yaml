@@ -1,0 +1,8 @@
+description: >-
+  A key the page's content type does not declare is an error, other than the
+  reserved keys.
+spec: ["2.1", "7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-unknown-key, file: index.md, line: 3}

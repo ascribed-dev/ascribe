@@ -1,0 +1,9 @@
+description: >-
+  A hyphenated name that the content model does not declare is not a
+  directive.
+spec: ["3.2", "6"]
+tags: [parser]
+
+outline:
+  - paragraph: "@quill-unknown: Plain text."
+  - paragraph: "@quill-unknown {a=b}"

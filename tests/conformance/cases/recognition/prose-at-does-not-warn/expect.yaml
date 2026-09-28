@@ -1,0 +1,7 @@
+description: >-
+  Prose `@` is not directive-shaped: `@word` followed by other text, a
+  slash, or a letter before the `@` draws no warning.
+spec: ["3.2", "8.2"]
+tags: [check]
+
+diagnostics: []

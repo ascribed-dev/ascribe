@@ -1,0 +1,17 @@
+description: >-
+  `@details` is a line-form directive that binds the next block, or a
+  container with a trailing colon.
+spec: ["3.5", "4.7"]
+tags: [structure]
+
+outline:
+  - directive: details
+    title: Show the reference
+    binding: following-block
+  - paragraph: A single block.
+  - directive: details
+    form: container
+    title: Show more
+    children:
+      - paragraph: First.
+      - paragraph: Second.

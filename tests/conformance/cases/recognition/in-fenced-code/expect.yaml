@@ -1,0 +1,11 @@
+description: >-
+  A directive line inside a fenced code block is code, including an end
+  line.
+spec: ["3.2"]
+tags: [parser]
+
+outline:
+  - code: |
+      @note: not a directive
+      @end
+    fenced: true

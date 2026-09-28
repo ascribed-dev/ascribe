@@ -61,4 +61,40 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
 
 ## Handoff notes
 
-_To be filled in by the implementing agent._
+### What was built
+
+- **310 conformance cases** in `tests/conformance/cases/`, written by hand from SPEC.md (see the table in `tests/conformance/README.md`, "The suite"), plus the two phase 00 samples. All load, validate against `diagnostics.toml`, and run as skipped under `SKIPS.toml`; the skip entries are unchanged, since no adapter exists yet.
+  - §3 and §4: `recognition/` (19), `attributes/` (25), `primary/` (17), `forms/` (14), `groups/` (12), `titles/` (17), `binding/` (15), `lists/` (13), `nesting/` (3), `directives/` (65: `id`, `include`, `variant`, `available`, `note`, `steps`, `details`), `widgets/` (14).
+  - §5: `phrases/` (7), `links/` (16), `images/` (25, every reference form with attributes), `headings/` (5), `glossary/` (2).
+  - §2, §7.2: `frontmatter/` (13), `model/` (2).
+  - §9.2 to §9.4: `builds/selection/` (8), `builds/filter/` (9), `builds/assets/` (7), `builds/pages/` (1).
+  - `projects/quill/`: the whole Quill project as one case, with no diagnostics under any of its three builds.
+- **`tests/conformance/_model/tessera.toml`**: the shared fixture model, from `quill.toml`, extended with a fragment pattern and schema, three page types (two overlap on `reference/api/**`), features (one with a history), a `sunset` state that isn't available, a `security` note type, image attributes, one widget of each shape (from `full.toml`), and the builds `site`, `cloud-pdf`, `cloud-only`, `npm-only`, `sm-3.3`, `sm-3.4`, and `sm-3.5`. It declares `site` and `cloud-pdf`, as phase 00's sample expects.
+- **`examples/quill/`**: `tessera.toml`, `docs/install-agent.md` (byte for byte the Appendix B page), `quickstart.md` (`try-in-browser`), `keys.md` (`rotate-keys`), `_fragments/prerequisites.md`, and two images, one beside the fragment.
+- **`tests/conformance/tests/suite.rs`** (runs now, in `cargo test`): every SPEC §8.2 row has a case that expects it; every case has a description and `spec`; every question a case names is open in `questions.md`; the Quill example page equals SPEC Appendix B and the `appendix-b` sample; the example equals its project case; every file the example's pages include, link to, or embed exists.
+- **`tests/conformance/INTERPRETATIONS.md`**: the readings the cases lock in, and what the suite doesn't cover. **README** gained "The suite", "Resolved outlines", and "The shared model and the content root".
+- **`project-docs/questions.md`**: Q12 to Q25, all open, each with a proposed resolution. 45 cases are `provisional` on them.
+
+### Interfaces later phases use
+
+- **Adapters** (05 to 14, 18, 20): expectations use the format in the README. Points an adapter has to know, all in the README or `INTERPRETATIONS.md`:
+  - a resolved outline is source text after includes, availability, build modes, and phrases; links, heading ids, and glossary aren't in it, and a surviving `@available` stays as the annotation;
+  - `Case::content_root()` is the content root whatever the shared model's `content-root` says, and the case directory is the project root, which is where `../shared/...` and `../.tessera/...` files sit;
+  - a loader diagnostic is `file: tessera.toml` in a single-file case.
+- **Tags**: `parser` cases carry only line-form directives, so they need no structure; `structure` cases carry outlines; `check` cases carry top-level diagnostics; page-level diagnostics under a build always come with `page-check`. A case with several tags waits for all of them. Build expectations for a `resolve`-only case list `pages` and `assets`, never `diagnostics`.
+- **Phase 08**: `tests/conformance/cases/model/` has the two `model-name-multiple-roles` cases, tagged `model`. The rest of §20 needs fixtures there; `model-dimension-value-shared` overlaps that row (`INTERPRETATIONS.md`).
+
+### Decisions
+
+- **Outline-only and diagnostics-only cases are separate**, so each implementation phase's cases run when its own adapter lands, not when all of them have.
+- **Every provisional choice is the proposal in `questions.md`**, and each provisional case implements it. When a question resolves differently, its cases change and lose the tag (the suite test fails until they do).
+- **Small cases**: 310 cases, most with one input file and a handful of lines.
+- **A project case copy of the example** rather than a pointer, because a case's files must sit under it; the test in `suite.rs` keeps them identical.
+- **No output expectations**: `plain`, `site`, and `json` are phases 18 and 20's.
+
+### Left open
+
+- **Q12 to Q25** need a human. Q20 has no case (there's no registry entry to expect).
+- **Not covered** (see `INTERPRETATIONS.md`): canonical form (§8.3, the `format` tag), outputs, registry-change reports (§5.1), phrases in frontmatter, most loader rules, and editor features.
+- **Tag coverage**: no case carries `output` or `format`, so those `SKIPS.toml` entries stay until phases 18, 20, and 23 add cases and adapters.
+- **Finish after**: this phase's cases can't be shown to pass until the implementation phases connect adapters; until then they're reported as skipped.

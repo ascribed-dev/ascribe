@@ -1,0 +1,7 @@
+description: >-
+  A misspelled key is unknown, and the message can suggest the declared one.
+spec: ["2.1", "7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-unknown-key, file: index.md, line: 3}

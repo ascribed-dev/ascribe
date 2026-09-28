@@ -1,0 +1,7 @@
+description: >-
+  `@steps` takes no attributes, so any key is unknown.
+spec: ["3.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-unknown-key, line: 5}

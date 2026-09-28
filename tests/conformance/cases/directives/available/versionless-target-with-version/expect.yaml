@@ -1,0 +1,8 @@
+description: >-
+  A versionless target takes a state and no versions.
+spec: ["4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-versionless, line: 6}
+  - {slug: available-versionless, line: 11}

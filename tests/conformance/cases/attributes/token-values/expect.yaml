@@ -1,0 +1,15 @@
+description: >-
+  A token value is any run of characters without whitespace or the reserved
+  characters; the outline records it as a string.
+spec: ["3.3", "3.1"]
+tags: [parser]
+
+outline:
+  - directive: note
+    attributes: {type: caution}
+    primary: Back up your database first.
+  - directive: include
+    attributes: {heading: "false"}
+    primary: guides/setup.md#install
+  - directive: quill-labspace
+    attributes: {lab: first-sync, height: 600px}

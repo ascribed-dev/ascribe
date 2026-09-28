@@ -1,0 +1,10 @@
+description: >-
+  An opener joins the nearest open group of the same directive, so a second
+  `@variant` inside an arm is a sibling arm, and arms on different
+  dimensions share no key.
+spec: ["3.6", "4.3", "8.2"]
+tags: [check, provisional]
+questions: [Q16]
+
+diagnostics:
+  - {slug: variant-no-shared-dimension, line: 5}

@@ -1,0 +1,7 @@
+description: >-
+  An attribute key the directive does not declare is an error.
+spec: ["3.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-unknown-key, line: 5}

@@ -1,0 +1,9 @@
+description: >-
+  A leading `[label]: /url` in a primary is text, not a link reference
+  definition (Q2).
+spec: ["3.4"]
+tags: [parser]
+
+outline:
+  - directive: note
+    primary: "[label]: /url"

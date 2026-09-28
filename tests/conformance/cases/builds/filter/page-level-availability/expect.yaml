@@ -1,0 +1,19 @@
+description: >-
+  A page whose page-level `available` is not available for the build is not
+  published; the build keeps the pages that are.
+spec: ["4.4", "9.3"]
+tags: [resolve, provisional]
+questions: [Q23]
+
+builds:
+  sm-3.3:
+    pages:
+      index.md:
+  sm-3.4:
+    pages:
+      index.md:
+      newer.md:
+  site:
+    pages:
+      index.md:
+      newer.md:

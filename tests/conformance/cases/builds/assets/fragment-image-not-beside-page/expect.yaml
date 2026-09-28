@@ -1,0 +1,8 @@
+description: >-
+  The same fragment image is not found beside the including page: the page
+  has no `pipeline.png`, but the fragment does, so nothing is reported. A
+  page-relative reading would report it.
+spec: ["4.2", "9.4", "8.2"]
+tags: [check, include]
+
+diagnostics: []

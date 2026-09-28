@@ -1,0 +1,7 @@
+description: >-
+  A bare key with no value is an error.
+spec: ["3.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-bare-key, line: 5}

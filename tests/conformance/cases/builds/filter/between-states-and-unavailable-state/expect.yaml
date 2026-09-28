@@ -1,0 +1,58 @@
+description: >-
+  The state in effect at a version is the last one that began at or before
+  it: preview still applies at 3.4, between the states. At 3.5 the project's
+  `sunset` state, which does not count as available, is in effect, so the
+  section is removed. A target the spec does not list (cloud) is not
+  available.
+spec: ["4.4", "7.2", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Sunset
+          - directive: available
+            primary: self-managed (preview 3.3, sunset 3.5)
+            binding: heading
+          - paragraph: Sunset text.
+  sm-3.3:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Sunset
+          - directive: available
+            primary: self-managed (preview 3.3, sunset 3.5)
+            binding: heading
+          - paragraph: Sunset text.
+  sm-3.4:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - heading: 2
+            text: Sunset
+          - directive: available
+            primary: self-managed (preview 3.3, sunset 3.5)
+            binding: heading
+          - paragraph: Sunset text.
+  sm-3.5:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+  cloud-pdf:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page

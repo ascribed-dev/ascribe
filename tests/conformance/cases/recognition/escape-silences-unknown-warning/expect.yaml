@@ -1,0 +1,6 @@
+description: >-
+  `\@` silences the unknown-directive warning.
+spec: ["2.3", "3.2", "8.2"]
+tags: [check]
+
+diagnostics: []

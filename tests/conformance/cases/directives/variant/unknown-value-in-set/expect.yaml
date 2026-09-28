@@ -1,0 +1,7 @@
+description: >-
+  Every member of a value set must be declared.
+spec: ["4.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: variant-unknown, line: 5}

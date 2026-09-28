@@ -1,0 +1,6 @@
+description: >-
+  A `. ` line that is not above a directive is not reported.
+spec: ["3.7"]
+tags: [check]
+
+diagnostics: []

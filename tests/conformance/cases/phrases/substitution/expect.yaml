@@ -1,0 +1,20 @@
+description: >-
+  Phrases are substituted in headings, prose, and link destinations,
+  directly against punctuation, apostrophes, and hyphens (the SPEC
+  examples).
+spec: ["5.1", "9.2"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Connect to Quill
+          - directive: id
+            primary: connect
+            binding: heading
+          - paragraph: Sign in to Quill Cloud and copy an API key.
+          - paragraph: Quill Cloud's streaming sync is enabled for new Quill Cloud-hosted workspaces.
+          - paragraph: See the [streaming API reference](https://api.quill.dev/v3/streaming).

@@ -1,0 +1,227 @@
+# The shared fixture model for conformance cases that don't have their own
+# tessera.toml (tests/conformance/README.md, "The content model").
+#
+# It is examples/content-models/quill.toml (the model SPEC Appendix B assumes),
+# extended only where a rule needs something the Quill model lacks:
+#
+#   - a fragment pattern (`includes/**`) and a fragment schema (`owner`);
+#   - a second page type (`reference`) whose patterns overlap a third (`api`),
+#     so one path can match two types;
+#   - page fields of each type (number, date, list, enum, boolean);
+#   - a feature with and without a history, and a lifecycle state (`sunset`)
+#     that doesn't count as available;
+#   - an extra note type (`security`);
+#   - image attributes;
+#   - one project widget of each shape;
+#   - the builds the cases select and filter with.
+#
+# Keep additions here rare and purposeful: every case that uses this model
+# sees them. A case that needs something the shared model shouldn't have (a
+# glossary, a required image attribute, no default type, a broken model) has
+# its own tessera.toml.
+#
+# Where the content root is. The model says `files`, which is the content root
+# of every project case. A single-file case has `input.md` in its directory,
+# so its content root is the case directory itself: adapters treat the case's
+# content root (`Case::content_root`) as the content root whatever this file
+# says, and the case directory as the project root.
+spec = "0.1"
+
+[project]
+content-root = "files"
+output-dir = ".tessera/build"
+
+###############################################################################
+# Content types and fragments (SPEC §2.2, §7.2)
+###############################################################################
+
+# The default type: Appendix B's `title` and `description`, plus one field of
+# each other type for the frontmatter cases.
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+order = "number?"
+updated = "date?"
+draft = "boolean?"
+level = "enum(beginner, intermediate, advanced)?"
+tags = "list(string)?"
+
+# `reference/**` pages need `api-version`.
+[types.reference]
+files = ["reference/**"]
+
+[types.reference.frontmatter]
+title = "string"
+api-version = "string"
+
+# Overlaps `reference` on `reference/api/**`, so a page there matches two types
+# (SPEC §7.2, "no precedence between types").
+[types.api]
+files = ["reference/api/**"]
+
+[types.api.frontmatter]
+title = "string"
+
+# Files under `includes/` are fragments without a `_` segment.
+[fragments]
+patterns = ["includes/**"]
+
+[fragments.frontmatter]
+owner = "string?"
+
+###############################################################################
+# Dimensions, versions, lifecycle, features (SPEC §4.3, §4.4)
+###############################################################################
+
+# Order matters: `pm` first, then `deployment` (content-model.md §1.1).
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm", "yarn"]
+labels = { yarn = "Yarn" }
+
+# `cloud` is versionless; `self-managed` is versioned.
+[dimensions.deployment]
+label = "Deployment"
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+labels = { cloud = "Quill Cloud" }
+
+[versions]
+scheme = "numeric"
+
+# A state that doesn't count as available, besides the built-in `removed`.
+[lifecycle.sunset]
+available = false
+label = "sunset"
+
+# A feature with one state and a versioned target.
+[features.streaming-sync]
+name = "Streaming sync"
+available = "cloud, self-managed preview 3.4"
+
+# A feature with a history.
+[features.sso]
+name = "Single sign-on"
+available = "cloud beta, self-managed (preview 3.3, ga 3.5, deprecated 4.0)"
+
+###############################################################################
+# Note types, phrases, images (SPEC §4.5, §5.1, §5.3)
+###############################################################################
+
+[notes.security]
+label = "Security"
+
+[phrases]
+product = "Quill"
+cloud = "Quill Cloud"
+version = "3.4.1"
+api = "https://api.quill.dev/v3/"
+
+# Declaration order is canonical order.
+[images.attributes]
+width = "number?"
+height = "number?"
+loading = { type = "enum(lazy, eager)", default = "lazy" }
+
+###############################################################################
+# Project widgets (SPEC §6), one of each shape
+###############################################################################
+
+# Line form, binding self, no primary.
+[widgets.quill-labspace]
+description = "An embedded, runnable Quill lab."
+forms = ["line"]
+primary = "none"
+binding = "self"
+plain-fallback = "Try this in the Quill lab at labs.quill.dev."
+
+[widgets.quill-labspace.attributes]
+lab = "string"
+height = "number?"
+
+# Line form, binding heading, identifier primary.
+[widgets.quill-api-ref]
+description = "Links a section to an operation in the Quill API reference."
+forms = ["line"]
+primary = "identifier"
+binding = "heading"
+attributes = { version = "string?" }
+plain-fallback = "See the Quill API reference."
+
+# Line form, binding heading-or-block, a value-set attribute.
+[widgets.quill-audience]
+forms = ["line"]
+binding = "heading-or-block"
+attributes = { role = "set(enum(admin, developer, writer))" }
+
+# Both forms, optional text primary, following block, titled.
+[widgets.quill-aside]
+forms = ["line", "container"]
+primary = "text?"
+binding = "block"
+title = "accepted"
+plain-content = "keep"
+
+# Container only, groupable, title required.
+[widgets.quill-compare]
+description = "Side-by-side alternatives, such as before and after."
+forms = ["container"]
+title = "required"
+groupable = true
+attributes = { highlight = { type = "boolean", default = false } }
+
+# Container only, not groupable, content dropped from plain output.
+[widgets.quill-interactive]
+forms = ["container"]
+plain-fallback = "This section is interactive. See it at docs.quill.dev."
+plain-content = "drop"
+
+###############################################################################
+# Consumer and builds (SPEC §9.3, §9.5)
+###############################################################################
+
+[consumer]
+profile = "astro"
+site = "https://docs.quill.dev"
+
+# The published site: every arm as a switcher, availability as badges.
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+# Quill Cloud only: deployment groups reduce to their cloud arm and content
+# not available on cloud is removed. The `pm` group stays a switcher.
+[builds.cloud-pdf]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }
+
+# A selection with no availability filter.
+[builds.cloud-only]
+variants = { deployment = "cloud" }
+availability = "badge"
+
+# A selection along `pm` only: `deployment` groups stay switchers.
+[builds.npm-only]
+variants = { pm = "npm" }
+availability = "badge"
+
+# A selection with a value list, and a filter at a version where `sunset`
+# content is no longer available.
+[builds."sm-3.5"]
+variants = { deployment = "self-managed", pm = ["npm", "pnpm"] }
+availability = { filter = "self-managed 3.5" }
+
+# Filter builds at successive self-managed versions, every arm kept.
+[builds."sm-3.3"]
+variants = "switch"
+availability = { filter = "self-managed 3.3" }
+
+[builds."sm-3.4"]
+variants = "switch"
+availability = { filter = "self-managed 3.4" }
+
+[editor]
+build = "site"
