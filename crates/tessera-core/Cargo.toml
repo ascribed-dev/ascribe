@@ -13,8 +13,9 @@ serde.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-# The registry sync test reads tests/conformance/diagnostics.toml.
+# The registry sync test reads tests/conformance/diagnostics.toml; proptest checks the attribute parser.
 toml.workspace = true
+proptest.workspace = true
 
 [lints]
 workspace = true

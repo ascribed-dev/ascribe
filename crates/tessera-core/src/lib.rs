@@ -4,7 +4,7 @@
 //! these types. It holds types and traits only, with the small amount of
 //! behavior they need to be exact (line and column conversion, applying
 //! edits, normalizing paths). The parsers that live here are added by later
-//! phases: the attribute parser (phase 05, `attributes`) and the
+//! phases: the attribute parser (phase 05, [`attributes`]) and the
 //! availability-spec parser (phase 08, `availability`).
 //!
 //! | Module | Contents |
@@ -15,6 +15,7 @@
 //! | [`issue`] | [`Issue`]: a problem, by registry slug, with its message arguments |
 //! | [`diagnostics`] | One [`DiagnosticSlug`] constant per entry of `tests/conformance/diagnostics.toml` |
 //! | [`schema`] | [`DirectiveSchema`], and the built-in schemas of SPEC §4 |
+//! | [`attributes`] | [`parse_attribute_block`]: the attribute-block parser |
 //! | [`attribute_block`] | [`AttributeBlock`]: parsed attributes, with spans (SPEC §3.3) |
 //! | [`path`] | [`RelPath`], and how link and image destinations resolve |
 //! | [`reserved`] | Attribute keys a content model can't declare (SPEC §7.2) |
@@ -25,6 +26,7 @@
 //! approved entry in `project-docs/questions.md`.
 
 pub mod attribute_block;
+pub mod attributes;
 pub mod consumer;
 pub mod diagnostics;
 pub mod issue;
@@ -36,6 +38,7 @@ pub mod span;
 pub mod text_edit;
 
 pub use attribute_block::{Attribute, AttributeBlock, AttributeValue, Token};
+pub use attributes::{ParsedAttributes, parse_attribute_block};
 pub use consumer::{AssetPlacement, AssetUse, ConsumerProfile, Router, SlugScope, Slugger};
 pub use issue::{Arg, DiagnosticSlug, Fix, Issue, Related};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
