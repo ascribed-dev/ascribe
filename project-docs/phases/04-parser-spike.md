@@ -105,4 +105,4 @@ All in `comrak_tessera` (depend on `comrak-tessera.workspace = true`; the rest o
 - **For phase 23**: comrak's CommonMark renderer drops the escape in `\@note`, so its output would be a directive. The formatter must escape a line-initial `@keyword`, `.` title lines, and phrases itself.
 - **Not guarded**: comrak's description-lists extension could still turn a text primary into a term. Tessera doesn't enable it.
 - **Conformance**: this phase added no conformance cases and no adapter; the `parser` tag stays skipped until phase 05.
-- **CI**: to be recorded after the pull request's checks run.
+- **CI** ran on the phase 04 pull request (#3) and passed: Rust fmt, then clippy, build, and test on Linux, macOS, and Windows, and the JS workflow. The logs show the spike tests, the `FORK.md` check, and all three CommonMark runs against the fork (652/652 each) on all three platforms.
