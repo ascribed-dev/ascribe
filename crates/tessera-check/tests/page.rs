@@ -406,3 +406,19 @@ fn check_project_is_the_file_level_diagnostics_then_the_builds_page_level_ones()
     assert_eq!(rest, ["id-duplicate"]);
     assert_eq!(all[files.len()].builds, ["cloud"]);
 }
+
+#[test]
+fn a_message_names_its_builds_when_the_registry_template_has_a_build_placeholder() {
+    let registry = tessera_check::Registry::global();
+    for (slug, names) in [
+        ("variant-no-arm-survives", true),
+        ("link-id-removed", true),
+        ("link-page-dropped", true),
+        ("id-duplicate", false),
+        ("include-id-missing", false),
+    ] {
+        let slug = tessera_core::DiagnosticSlug::from_name(slug).expect("a slug");
+        let entry = registry.get(slug).expect("an entry");
+        assert_eq!(entry.names_build(), names, "{slug}");
+    }
+}

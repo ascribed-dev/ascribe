@@ -3,7 +3,7 @@
 use serde::Serialize;
 use tessera_core::{DiagnosticSlug, Fix, Issue, Location};
 
-use crate::registry::Registry;
+use crate::registry::{Entry, Registry};
 
 /// How serious a diagnostic is. An error means the document isn't
 /// conforming and a build fails; a warning doesn't fail a build (SPEC §8.2).
@@ -100,16 +100,17 @@ impl Diagnostic {
     /// What to add to the message so a reader knows which builds it's about:
     /// `only in build `a``, `only in builds `a`, `b``, or a note that no build
     /// publishes the content. `None` for a diagnostic that doesn't depend on
-    /// a build, one that appears in all `total_builds` builds, and the rows
-    /// whose message already names the builds.
+    /// a build, one that appears in all `total_builds` builds, and one whose
+    /// registry message already names the builds (it has a `{build}`
+    /// placeholder).
     pub fn builds_note(&self, total_builds: usize) -> Option<String> {
         if self.unpublished {
             return Some("in content that no build publishes".to_owned());
         }
-        let names_builds = matches!(
-            self.slug.as_str(),
-            "variant-no-arm-survives" | "link-id-removed" | "link-page-dropped"
-        );
+        // A message with a `{build}` placeholder already names the builds.
+        let names_builds = Registry::global()
+            .get(self.slug)
+            .is_some_and(Entry::names_build);
         if self.builds.is_empty() || names_builds || self.builds.len() >= total_builds {
             return None;
         }

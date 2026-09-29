@@ -59,7 +59,7 @@ Diagnostics are written to standard output; failures that stop the command (exit
 
 ### JSON output
 
-`--format json` writes one JSON document to standard output, whatever the outcome, so a tool can always parse it. The schema is versioned: `schema_version` changes only when a field is removed or changes meaning. New fields can appear without a new version, so ignore fields you don't know.
+`--format json` writes one JSON document to standard output, whatever the outcome, so a tool can always parse it. The schema is versioned: `schema_version` changes only when a field is removed or changes meaning. New fields can appear without a new version, so **consumers must ignore fields they don't know**. (`builds` and `unpublished` were added this way.)
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -82,6 +82,8 @@ Each diagnostic:
 | `range` | object | Where: `start` and `end` positions |
 | `related` | array | Other places that explain it: `{file, range, message}` |
 | `fixes` | array | Edits that would fix it: `{title, file, edits}`, where each edit is `{range, new_text}` and replaces the text in `range` |
+| `builds` | array of strings | The builds a page-level diagnostic appears in, in the content model's order. Empty when the diagnostic doesn't depend on a build (every file-level one) and when it's in content no build publishes (`unpublished`). Each problem appears once, however many builds it's in. With `--build`, only that build. |
+| `unpublished` | boolean | `true` for a problem in content that no build publishes; `builds` is then empty |
 
 A position is `{line, column, offset}`: `line` and `column` start at 1, `column` counts Unicode characters (not bytes or UTF-16 units), and `offset` is the byte offset from the start of the file. A range is `{start, end}`; `end` is just past the last character, and an edit that inserts text has equal positions. Codes, slugs, severities, and message templates come from the diagnostics registry, `tests/conformance/diagnostics.toml`.
 
@@ -119,7 +121,9 @@ An example, for a page that links to a route:
             }
           ]
         }
-      ]
+      ],
+      "builds": [],
+      "unpublished": false
     }
   ],
   "summary": { "errors": 0, "warnings": 1 }

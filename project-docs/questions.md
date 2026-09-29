@@ -1252,7 +1252,18 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   1. One diagnostic per build, each naming its build.
   2. One diagnostic, its message naming every build, and the builds listed as data.
   3. One diagnostic whose message doesn't name a build, with the builds as data only (a registry change to the three messages).
-- **Proposed resolution:** option 2 now, reading "build `cloud`, `self-managed` removes …": accurate, but not good English. The better fix is registry message variants for several builds (`builds`, with "builds {builds} remove …"), which the human approves; until then the merged `{build}` is the builds joined by `` `, ` ``. Every diagnostic that appears in some but not all builds also gets "(only in build `a`)" from `tessera check`, and the builds are `Diagnostic::builds` for every tool. Implemented now: option 2 (`SPEC-QUESTION(Q102)` in `crates/tessera-check/src/page/mod.rs`).
+- **Proposed resolution:** option 2 now, reading "build `cloud`, `self-managed` removes …": accurate, but not good English. The better fix is a `builds` message variant on each of the three rows, chosen when a diagnostic is in several builds, with the placeholder `{builds}` filled with the names quoted and joined (`` `cloud`, `cloud-pdf` ``). The exact texts, to approve and add in one step to `tests/conformance/diagnostics.toml`:
+
+  ```toml
+  # variant-no-arm-survives
+  messages.builds = "builds {builds} remove every arm of this `@variant` group, so none of its content is published in those builds"
+  # link-id-removed
+  messages.builds = "builds {builds} remove the heading `{id}` from `{path}`, so this link would be broken in those builds"
+  # link-page-dropped
+  messages.builds = "builds {builds} don't publish `{path}`, so this link would be broken in those builds; move the link into a `@variant` arm those builds remove"
+  ```
+
+  With them, `check_all_builds` sets `variant = "builds"` and a `builds` argument when a merged diagnostic has more than one build, and nothing else changes. Until then the merged `{build}` is the builds joined by `` `, ` ``. Every diagnostic that appears in some but not all builds also gets "(only in build `a`)" from `tessera check`, and the builds are `Diagnostic::builds` for every tool. Implemented now: option 2 (`SPEC-QUESTION(Q102)` in `crates/tessera-check/src/page/mod.rs`).
 - **Affects:** `tests/conformance/diagnostics.toml` (three messages, if option 3 or the plural variants are chosen); phases 15 and 18.
 - **Resolution:** filled in by a human.
 

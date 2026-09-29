@@ -40,6 +40,8 @@ struct Entry {
     range: Range,
     related: Vec<Related>,
     fixes: Vec<Fix>,
+    builds: Vec<String>,
+    unpublished: bool,
 }
 
 #[derive(Serialize)]
@@ -126,6 +128,8 @@ fn entry(files: &FileTable, d: &Diagnostic) -> Entry {
                     .collect(),
             })
             .collect(),
+        builds: d.builds.clone(),
+        unpublished: d.unpublished,
     }
 }
 

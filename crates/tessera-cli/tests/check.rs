@@ -352,4 +352,34 @@ fn a_problem_in_a_fragment_is_at_the_include_site() {
     assert_eq!(d["file"], "docs/index.md");
     assert_eq!(d["range"]["start"]["line"], 5);
     assert_eq!(d["related"][0]["file"], "docs/_f.md");
+    // Both builds have it, so it names both; nothing about it is unpublished.
+    assert_eq!(d["builds"], serde_json::json!(["site", "cloud"]));
+    assert_eq!(d["unpublished"], false);
+}
+
+#[test]
+fn json_names_the_builds_of_a_problem_and_leaves_file_level_ones_empty() {
+    let dir = builds_project(&[
+        ("index.md", ONLY_SELF_MANAGED),
+        ("other.md", "---\ntitle: Other\n---\n\n[Gone](gone.md)\n"),
+    ]);
+    let out = tessera(dir.path(), &["check", "--format", "json"]);
+    let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
+    let by_slug = |slug: &str| {
+        json["diagnostics"]
+            .as_array()
+            .expect("a list")
+            .iter()
+            .find(|d| d["slug"] == slug)
+            .unwrap_or_else(|| panic!("no {slug}: {json}"))
+            .clone()
+    };
+    // In some builds only.
+    let variant = by_slug("variant-no-arm-survives");
+    assert_eq!(variant["builds"], serde_json::json!(["cloud"]));
+    assert_eq!(variant["unpublished"], false);
+    // File-level: no build.
+    let missing = by_slug("link-target-missing");
+    assert_eq!(missing["builds"], serde_json::json!([]));
+    assert_eq!(missing["unpublished"], false);
 }
