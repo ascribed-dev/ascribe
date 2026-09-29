@@ -37,6 +37,16 @@ pub struct Sources {
     pub unreadable: Vec<Unreadable>,
 }
 
+/// Whether a content path names a source file: exactly `.md`, inside the
+/// content root (no leading `..`), and not in or under anything whose name
+/// starts with `.` (Q52). Discovery ([`FileSystem::sources`]) and the
+/// incremental update ([`crate::Change`]) use the same rule.
+pub fn is_source_path(path: &RelPath) -> bool {
+    path.is_inside()
+        && path.extension() == Some("md")
+        && !path.segments().any(|s| s.starts_with('.'))
+}
+
 /// The files of a project.
 pub trait FileSystem {
     /// Every source file under the content root: exactly the files whose name
@@ -250,9 +260,8 @@ impl FileSystem for MemoryFs {
         let paths = self
             .files
             .keys()
-            .filter(|p| p.extension() == Some("md"))
             .filter_map(|p| self.content_path(p))
-            .filter(|p| !p.segments().any(|s| s.starts_with('.')))
+            .filter(is_source_path)
             .collect();
         Sources {
             paths,

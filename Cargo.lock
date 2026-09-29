@@ -1050,6 +1050,7 @@ dependencies = [
 name = "tessera-resolve"
 version = "0.0.0"
 dependencies = [
+ "proptest",
  "serde_json",
  "serde_yaml",
  "tessera-core",

@@ -15,7 +15,12 @@ tessera-model.workspace = true
 tessera-syntax.workspace = true
 
 [dev-dependencies]
+proptest.workspace = true
 serde_json.workspace = true
+
+[[bench]]
+name = "incremental"
+harness = false
 
 [lints]
 workspace = true

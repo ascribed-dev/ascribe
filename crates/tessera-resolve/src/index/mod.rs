@@ -173,15 +173,43 @@ pub fn index_file(
     model: &ContentModel,
     slugger: &dyn Slugger,
 ) -> FileIndex {
+    let document = parse_source(file, source, model);
+    index_parsed(
+        file,
+        path,
+        Arc::from(source),
+        Arc::new(document),
+        model,
+        slugger,
+    )
+}
+
+/// Parses one file's text the way [`index_file`] does. The result depends on
+/// the text, the file's id (it's in every location), and the model's
+/// directive keywords and note types alone, which is what lets the
+/// incremental update reuse it ([`crate::incremental`]).
+pub fn parse_source(file: FileId, source: &str, model: &ContentModel) -> ParsedDocument {
     let options = ParseOptions::new(model.directive_schemas())
         .with_file(file)
         .with_note_types(model.notes.iter().map(|n| n.name.clone()).collect());
-    let document = parse(source, &options);
+    parse(source, &options)
+}
 
+/// Indexes a file that is already parsed ([`parse_source`] of the same
+/// `source`, `file`, and model): the second half of [`index_file`].
+pub fn index_parsed(
+    file: FileId,
+    path: &RelPath,
+    source: Arc<str>,
+    document: Arc<ParsedDocument>,
+    model: &ContentModel,
+    slugger: &dyn Slugger,
+) -> FileIndex {
+    let text: &str = &source;
     let frontmatter = document.frontmatter.as_ref().and_then(|fm| {
-        let text = source.get(fm.content.range())?;
+        let yaml = text.get(fm.content.range())?;
         // An empty frontmatter block reads as no keys.
-        match serde_yaml::from_str::<serde_yaml::Value>(text) {
+        match serde_yaml::from_str::<serde_yaml::Value>(yaml) {
             Ok(serde_yaml::Value::Null) => Some(serde_yaml::Value::Mapping(Default::default())),
             Ok(value) => Some(value),
             Err(_) => None,
@@ -203,7 +231,7 @@ pub fn index_file(
         for inlines in walk::own_inlines(block) {
             refs::collect_references(
                 inlines,
-                source,
+                text,
                 path,
                 model,
                 &document.definitions,
@@ -221,7 +249,7 @@ pub fn index_file(
                 includes.push(include_of(line, path));
             }
             BlockKind::Directive(line) if line.name == "available" => {
-                availability.push(availability_of(line, source));
+                availability.push(availability_of(line, text));
             }
             _ => {}
         }
@@ -247,8 +275,8 @@ pub fn index_file(
         file,
         path: path.clone(),
         kind,
-        source: Arc::from(source),
-        document: Arc::new(document),
+        source,
+        document,
         frontmatter,
         title,
         headings,
