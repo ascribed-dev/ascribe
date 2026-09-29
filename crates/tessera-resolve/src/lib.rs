@@ -70,6 +70,7 @@
 //! assert_eq!(page.blocks.len(), 2); // the heading and the paragraph
 //! ```
 
+mod astro;
 pub mod build;
 mod expand;
 pub mod fs;
@@ -80,6 +81,7 @@ mod project;
 pub mod references;
 pub mod slug;
 
+pub use astro::AstroRouter;
 pub use build::{
     Annotation, Availability, BuildResolver, DefaultRouter, DropReason, DroppedPage, GlossaryUse,
     HeadingIds, LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind,

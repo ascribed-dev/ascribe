@@ -346,6 +346,12 @@ impl SourceSet for Project {
             .filter(|actual| *actual != path)
             .cloned()
     }
+
+    fn pages(&self) -> Vec<RelPath> {
+        let mut pages: Vec<RelPath> = self.source_paths.values().cloned().collect();
+        pages.sort();
+        pages
+    }
 }
 
 fn read_error(path: &Path, e: std::io::Error) -> LoadError {

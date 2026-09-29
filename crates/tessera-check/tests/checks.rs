@@ -288,6 +288,21 @@ fn attribute_types_and_required_attributes() {
     );
 }
 
+/// The route of a page whose file name Astro slugs is found by the router
+/// (Q148), so the fix is offered.
+#[test]
+fn a_route_whose_page_has_a_slugged_file_name_gets_a_fix() {
+    let p = project(&[
+        ("index.md", &page("[x](/guides/my-guide/)")),
+        ("Guides/My Guide.md", &page("Text.")),
+    ]);
+    let all = check_files(&p);
+    assert_eq!(slugs(&p), ["link-route"]);
+    assert_eq!(all[0].fixes.len(), 1);
+    // The space in the file name puts the destination in angle brackets.
+    assert_eq!(all[0].fixes[0].edits[0].new_text, "</Guides/My Guide.md>");
+}
+
 #[test]
 fn links_files_pages_and_fragments() {
     let p = project(&[

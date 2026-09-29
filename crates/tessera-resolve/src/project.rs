@@ -791,4 +791,10 @@ impl SourceSet for Project {
             .find(|p| p.as_str().to_lowercase() == folded)
             .cloned()
     }
+
+    fn pages(&self) -> Vec<RelPath> {
+        let mut pages: Vec<RelPath> = self.files.keys().cloned().collect();
+        pages.sort();
+        pages
+    }
 }
