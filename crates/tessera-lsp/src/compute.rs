@@ -143,6 +143,8 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
     // Page level: the editor's build, over the whole project (the source index
     // is rebuilt from the snapshot's texts), keeping what is located in the
     // files of the round.
+    // SPEC-QUESTION(Q134): only the editor's build, not content no build
+    // publishes. SPEC-QUESTION(Q137): whole-project, not incremental.
     let build = job.model.editor_default_build().clone();
     for d in PageChecker::new(&project).check(&build) {
         if let Some(list) = by_file.get_mut(&d.location.file) {

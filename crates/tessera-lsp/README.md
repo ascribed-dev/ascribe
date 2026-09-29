@@ -98,6 +98,29 @@ advertise pull diagnostics.
   internal error where a response is owed; the server keeps running. Nothing is
   ever written to stdout except LSP messages.
 
+## Performance
+
+`cargo bench -p tessera-lsp --bench keystroke` types into a page of a project of
+each size (every page has an include, three links, an image, and headings) and
+times the wait from `didChange` to the `publishDiagnostics` for that version.
+Release build, one run on a 4-core 2.1 GHz Xeon container (a developer laptop is
+faster):
+
+| Pages | Load and first diagnostics | Keystroke median | p95 |
+|---|---|---|---|
+| 20 | 13 ms | 3.5 ms | 4.0 ms |
+| 100 | 35 ms | 12.5 ms | 14.6 ms |
+| 300 | 112 ms | 39 ms | 48 ms |
+| 1,000 | 322 ms | 157 ms | 204 ms |
+| 3,000 | 1.2 s | 501 ms | 603 ms |
+
+The 50 ms target holds up to a few hundred pages. Past that the time grows
+linearly, because the page-level checks (`tessera_check::PageChecker`) index the
+whole project and resolve every page of the build on every round; the
+file-level checks are per file and cost about 0.3 ms. Making the page-level
+checks incremental needs a change in `tessera-check`'s `page/` module that this
+phase's brief left out (Q137).
+
 ## Library choice
 
 Chosen: **`lsp-server` with `lsp-types`** (rust-analyzer's synchronous
