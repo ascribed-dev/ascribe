@@ -183,6 +183,90 @@ fn run(pages: usize) {
     times.sort();
     let q = |f: f64| times[((times.len() as f64 - 1.0) * f).round() as usize];
 
+    // The same keystrokes with the preview open (phase 25): each change is
+    // followed by an `ascribe/preview` request for the page, as the editor sends
+    // it after its debounce. `preview` is the time from the change to the
+    // answer; `with preview` is the time from the change to its diagnostics,
+    // which must stay what it was without one.
+    let mut preview_times = Vec::new();
+    let mut with_preview_times = Vec::new();
+    for k in 0..KEYSTROKES {
+        let version = 2 + KEYSTROKES as i32 + k as i32;
+        let at = line_length + (KEYSTROKES + k) as u32;
+        let began = Instant::now();
+        client
+            .conn
+            .sender
+            .send(
+                Notification::new(
+                    "textDocument/didChange".into(),
+                    DidChangeTextDocumentParams {
+                        text_document: VersionedTextDocumentIdentifier {
+                            uri: uri.clone(),
+                            version,
+                        },
+                        content_changes: vec![TextDocumentContentChangeEvent {
+                            range: Some(Range::new(Position::new(6, at), Position::new(6, at))),
+                            range_length: None,
+                            text: "x".into(),
+                        }],
+                    },
+                )
+                .into(),
+            )
+            .unwrap();
+        client.next += 1;
+        let id = RequestId::from(client.next);
+        client
+            .conn
+            .sender
+            .send(
+                Request::new(
+                    id.clone(),
+                    "ascribe/preview".into(),
+                    json!({ "textDocument": { "uri": uri.as_str() } }),
+                )
+                .into(),
+            )
+            .unwrap();
+        let (mut answered, mut published) = (None, None);
+        while answered.is_none() || published.is_none() {
+            match client
+                .conn
+                .receiver
+                .recv_timeout(Duration::from_secs(60))
+                .unwrap()
+            {
+                Message::Response(r) if r.id == id => {
+                    let result = r.response_result.expect("the preview answers");
+                    assert!(!result["page"].is_null(), "{result}");
+                    answered = Some(began.elapsed());
+                }
+                Message::Notification(n) if n.method == "textDocument/publishDiagnostics" => {
+                    let p: PublishDiagnosticsParams = serde_json::from_value(n.params).unwrap();
+                    if p.uri == uri && p.version == Some(version) {
+                        published = Some(began.elapsed());
+                    }
+                }
+                Message::Request(r) => {
+                    client
+                        .conn
+                        .sender
+                        .send(Response::new_ok(r.id, serde_json::Value::Null).into())
+                        .unwrap();
+                }
+                _ => {}
+            }
+        }
+        preview_times.push(answered.unwrap());
+        with_preview_times.push(published.unwrap());
+    }
+    preview_times.sort();
+    with_preview_times.sort();
+    let pv = |f: f64| preview_times[((preview_times.len() as f64 - 1.0) * f).round() as usize];
+    let wp =
+        |f: f64| with_preview_times[((with_preview_times.len() as f64 - 1.0) * f).round() as usize];
+
     // Type into a fragment that pages include (each of the first fragments is
     // included by `pages / 100` pages).
     let fragment = root.join(format!("{CONTENT_ROOT}/{}", project.fragment_path(0)));
@@ -249,6 +333,13 @@ fn run(pages: usize) {
         pages / FRAGMENTS,
         f(0.5),
         f(0.95)
+    );
+    println!(
+        "        with the preview open: change to answer median {:>9.3?} p95 {:>9.3?}   change to diagnostics median {:>9.3?} p95 {:>9.3?}",
+        pv(0.5),
+        pv(0.95),
+        wp(0.5),
+        wp(0.95)
     );
     client.request("shutdown", json!(null));
     client

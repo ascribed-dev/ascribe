@@ -1802,6 +1802,83 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `packages/astro/src/content.ts`; `examples/astro-site/src/content.config.ts`; phase 22.
 - **Resolution:** approved by the repository owner: as proposed, option 3: the integration passes the resolved site root to `tesseraCollection` through `virtual:tessera/site`, so the integration's options are the one place the project and build are named; the site imports `schema` from the generated `_tessera/schema.ts` by path, to keep its exact inferred types (the trade-off is documented in `packages/astro/README.md`). Integration behavior, not language: no SPEC change.
 
+### Q181: What the preview shows, and what it does for a file that isn't a page
+
+- **Section:** SPEC §10 (authoring environment); PLAN.md, VS Code extension, Preview
+- **Raised by:** phase 25
+- **Status:** open
+- **Ambiguity:** The preview shows "the current page". SPEC §10 doesn't say which document that is when the author moves between files, or what to show for a fragment, which isn't a page and has no route, or for a page a build drops (SPEC §9.3).
+- **Options:** (1) Follow the active Ascribe editor, and show a message in place of the page when it isn't previewable: for a fragment, name the pages that include it; for a dropped page, say which build drops it and why. (2) Lock to the document the preview was opened for. (3) For a fragment, show the first page that includes it, with the fragment's part highlighted.
+- **Proposed resolution:** option 1, implemented. It matches how the markdown preview follows the editor, needs no state to get out of step, and never shows content the published site wouldn't have. Option 3 is a better experience for fragment authors and could follow: it needs a way to say which of several including pages to show. The answer to `ascribe/preview` carries `problems` (`info`, `warning`, `error`) for these cases, and the builds and content root even when there is no page, so the client's picker doesn't go blank.
+- **Affects:** `crates/tessera-lsp/src/preview.rs` (`preview`), `packages/vscode/src/preview/controller.ts` (`followActiveEditor`).
+- **Resolution:** _to be filled in by a human._
+
+### Q182: An asset outside the content root is served from its own directory
+
+- **Section:** SPEC §9.4 (Assets); asset contract §2 step 5 and §7
+- **Raised by:** phase 25
+- **Status:** open
+- **Ambiguity:** A reference may resolve to a file inside the project root but outside the content root (`../shared/logo.png`, or an `assets/` directory beside `docs/`); the asset contract accepts it and the site output copies it (`_ascribe/up/…`). The preview resolves references the same way (contract §7) and shows them through webview URLs, and a webview reads only the directories in its `localResourceRoots`. The phase's brief says the extension's resources and the content root, nothing wider.
+- **Options:** (1) `localResourceRoots` is the extension's webview files and the content root; an asset outside the content root is reported and shown broken, so the preview differs from the site for a valid project. (2) Add the project root. (3) Add the directory of each such asset.
+- **Proposed resolution:** option 3, implemented (first as option 1, changed after review). The server lists the directories in `assetRoots` and marks each asset `servable`: a file in the content root needs nothing more; a file elsewhere in the project needs its own directory; a file directly in the project root (that directory *is* the project root), in `node_modules` or `.git`, in the output directory, or outside the project isn't served, and a warning says why. The client serves the extension's files, the content root, and those directories, and nothing else. The webview reloads when the set changes, which happens only when a page starts or stops using an asset in another directory (or the reader moves to a page that does).
+- **Affects:** `crates/tessera-lsp/src/preview.rs` (`serve`), `packages/vscode/src/preview/controller.ts` (`webviewOptions`, `followRoots`).
+- **Resolution:** _to be filled in by a human._
+
+### Q183: The preview's content security policy is stricter than the site's
+
+- **Section:** SPEC §9.5 (HTML passthrough), §9.7
+- **Raised by:** phase 25
+- **Status:** open
+- **Ambiguity:** The site output passes raw HTML through (SPEC §9.5), so a page can contain a `<script>`, an inline `style` attribute, or an image from another site. The phase asks for a strict content security policy in the webview: only the extension's and the project's local resources.
+- **Options:** (1) Strict: `default-src 'none'`; `script-src`, `style-src`, `img-src`, and `font-src` are the webview's `cspSource` (the extension's and the project's local files), with no `'unsafe-inline'`, no nonce, and no `'unsafe-eval'`. The element library is a script file and a stylesheet file and sets no inline styles, so it runs as it does on the site; raw HTML that needs inline script, inline style, or the network doesn't work in the preview. (2) Allow inline styles. (3) Allow `https:` images.
+- **Proposed resolution:** option 1, implemented and tested in Chromium (`packages/vscode/test/webview/preview.test.ts`): a page's raw `<script>` and `onerror` don't run, a `style` attribute is refused, a remote image is refused, and the tabs work. A page with raw HTML that relies on those looks different in the preview than on the site; the preview says so nowhere but the output channel today. Raw HTML in the content is the author's own, so this is about limiting what the preview can be made to do, not about the author.
+- **Affects:** `packages/vscode/src/preview/html.ts` (`contentSecurityPolicy`).
+- **Resolution:** _to be filled in by a human._
+
+### Q184: What "the same HTML" leaves out in the parity test
+
+- **Section:** SPEC §9.5; site-render contract §5
+- **Raised by:** phase 25
+- **Status:** open
+- **Ambiguity:** The preview's HTML (`render_site_html`) and Astro's built HTML come from different Markdown processors, and Astro adds things to what it renders. "The page's content: the same elements, attributes, heading ids, and image attributes" doesn't say which of Astro's additions don't count.
+- **Options:** Compare everything, and have the test fail on each difference below; or compare the tree of elements, attributes, and text, and leave out what a consumer's own pipeline adds.
+- **Proposed resolution:** the second, implemented in `packages/vscode/test/parity/normalize.ts`, and nothing else is left out: whitespace between nodes; an image's `height`, `loading`, `decoding`, and `data-image-component` (Astro's image service; the author's `alt`, `title`, `width`, and other attributes are compared); the inside of a `<pre>` (Astro highlights with Shiki; the language and the text are compared); and typographic punctuation (Astro's `smartypants`; the contract allows it). An asset URL is compared by the source file it resolves to.
+- **Affects:** `packages/vscode/test/parity/`.
+- **Resolution:** _to be filled in by a human._
+
+### Q185: The preview draws the page's title and availability itself
+
+- **Section:** SPEC §9.6 ("Page layouts are the project's own"); phase 25, Out of scope
+- **Raised by:** phase 25
+- **Status:** open
+- **Ambiguity:** The site's title and page-level availability badges are drawn by the project's layout from the collection's data, not by the emitter. The preview has no layout, but a page without its title or badges is hard to review.
+- **Options:** (1) Draw a default header the way the example's layout does (the title as `<h1>`, then `<ascribe-availability scope="page">` from the frontmatter's `available` list, element contract §4), from the frontmatter the server returns. (2) Show only the body.
+- **Proposed resolution:** option 1, implemented (`packages/vscode/src/webview/preview.ts`), built with DOM calls and text nodes. The parity test compares the title and the `available` targets with the example site's layout. A project's own layout isn't reproduced.
+- **Affects:** `packages/vscode/src/webview/preview.ts`.
+- **Resolution:** _to be filled in by a human._
+
+### Q186: The build picker's default and what it remembers
+
+- **Section:** SPEC §9.3; content-model.md §17 (`[editor] build`)
+- **Raised by:** phase 25
+- **Status:** open
+- **Ambiguity:** The picker lists the content model's builds, and the default is the editor's build. It isn't said whether choosing the editor's build again is a choice to keep, what happens to a choice when the content model changes, or whether it is remembered across sessions.
+- **Options:** (1) The picker stores a name, except that choosing the editor's build clears it (so a later change of `[editor] build` is followed); a name that isn't a build any more falls back to the editor's build; nothing is stored across sessions. (2) Always store the name. (3) Store it in workspace state.
+- **Proposed resolution:** option 1, implemented (`controller.ts`, `chooseBuild`, `renderOnce`).
+- **Affects:** `packages/vscode/src/preview/controller.ts`.
+- **Resolution:** _to be filled in by a human._
+
+### Q187: Which links in the preview open a file
+
+- **Section:** SPEC §5.2, §5.4; asset contract §1
+- **Raised by:** phase 25
+- **Status:** open
+- **Ambiguity:** "Clicking a link in the preview opens the target file in the editor." A page's links are of several kinds: another page (a route, maybe with a heading id), a link to a local file that isn't a page (a download), an external URL, a glossary term (a link the emitter adds), a link inside the page.
+- **Options:** Open every kind; or open the ones Ascribe resolved to a file, follow links inside the page in the preview, and open only `http:`, `https:`, and `mailto:` URLs outside VS Code.
+- **Proposed resolution:** the second, implemented: `ascribe/preview` lists each page link's `href`, target path, and heading id (from the resolved page), and each asset's reference and source path; a click on a link to another page opens its file; to a heading of the previewed page, scrolls to it; to an asset, opens the file. Any other scheme (`javascript:`, `command:`, `file:`) is ignored: a link in a page must not be able to run a command. **Left out:** a glossary term's link, which is a page route the resolver doesn't map back to a file, and a heading id in another page (the file opens, not the heading).
+- **Affects:** `crates/tessera-lsp/src/preview.rs` (`links`), `packages/vscode/src/preview/controller.ts` (`openLink`).
+- **Resolution:** _to be filled in by a human._
+
 ### Q191: `{{key}}` holds a phrase candidate between literal braces
 
 - **Section:** SPEC §5.1

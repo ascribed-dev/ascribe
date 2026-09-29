@@ -26,8 +26,11 @@ describe("package.json", () => {
     expect(manifest.private).toBe(true);
   });
 
-  it("activates only for workspaces that contain ascribe.toml", () => {
-    expect(manifest.activationEvents).toEqual(["workspaceContains:**/ascribe.toml"]);
+  it("activates for workspaces that contain ascribe.toml, and to restore a preview", () => {
+    expect(manifest.activationEvents).toEqual([
+      "workspaceContains:**/ascribe.toml",
+      "onWebviewPanel:ascribe.preview",
+    ]);
   });
 
   it("doesn't support untrusted workspaces, since it runs the project's binary", () => {
@@ -39,13 +42,15 @@ describe("package.json", () => {
     expect(hidden.map((entry) => entry.command).sort()).toEqual(
       manifest.contributes.commands.map((command) => command.command).sort(),
     );
-    for (const entry of hidden) expect(entry.when).toBe("ascribe.active");
+    for (const entry of hidden) expect(entry.when).toMatch(/^ascribe\.active\b/);
   });
 
   it("declares the commands and settings the extension reads", () => {
     expect(manifest.contributes.commands.map((command) => command.command)).toEqual([
       "ascribe.restartServer",
       "ascribe.showOutput",
+      "ascribe.openPreview",
+      "ascribe.selectPreviewBuild",
     ]);
     const properties = manifest.contributes.configuration.properties;
     expect(Object.keys(properties).sort()).toEqual([

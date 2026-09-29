@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { ServerController, type ServerState } from "./client.js";
 import type { ResolvedBinary } from "./binary.js";
+import { PreviewController, type PreviewApi } from "./preview/controller.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
@@ -9,6 +10,8 @@ export interface AscribeApi {
   state(): ServerState;
   /** Settles when the current start or restart is over. */
   whenSettled(): Promise<void>;
+  /** The preview, for tests. */
+  preview: PreviewApi;
 }
 
 let controller: ServerController | undefined;
@@ -17,8 +20,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const server = new ServerController(context);
   controller = server;
 
+  const preview = new PreviewController(context, server);
+  preview.register();
+
   context.subscriptions.push(
     server,
+    preview,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       const present = await hasProject();
       await vscode.commands.executeCommand("setContext", "ascribe.active", present);
@@ -42,6 +49,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     binary: () => server.binary,
     state: () => server.state,
     whenSettled: () => server.whenSettled(),
+    preview: preview.api,
   };
 }
 

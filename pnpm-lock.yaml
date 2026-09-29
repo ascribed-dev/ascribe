@@ -124,6 +124,9 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
     devDependencies:
+      '@ascribed/elements':
+        specifier: workspace:*
+        version: link:../elements
       '@types/mocha':
         specifier: ^10.0.10
         version: 10.0.10
@@ -142,6 +145,9 @@ importers:
       mocha:
         specifier: ^11.0.0
         version: 11.8.0
+      playwright-core:
+        specifier: ^1.50.0
+        version: 1.63.0
       vscode-languageserver:
         specifier: ^9.0.1
         version: 9.0.1

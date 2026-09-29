@@ -9,7 +9,8 @@ disagree (SPEC §8, §10).
 
 This is phase 15: initialization, document and file synchronization,
 diagnostics, and semantic tokens. Completion, hover, navigation, CodeLens, and
-inlay hints are phase 16; code actions, rename, and formatting are phase 24.
+inlay hints are phase 16; code actions, rename, and formatting are phase 24;
+the `ascribe/preview` request is phase 25.
 
 ## Semantic token legend
 
@@ -54,6 +55,53 @@ The server uses UTF-16 unless the client offers UTF-8 in
 through `tessera_core::LineIndex`. (The command line's JSON counts columns in
 characters; the two differ for a line with an astral-plane character, and the
 parity test converts before comparing.)
+
+## The preview request: `ascribe/preview`
+
+A custom request (phase 25) that renders a page the way the published site
+does, for the editor's preview. It answers from the current snapshot, so it
+includes unsaved edits, and it writes nothing. For a document and a build it
+resolves the page for the build (`Project::resolve_page`), writes the site
+markdown with `SiteEmitter` (`tessera_emit::emit_page`), and renders it with
+`tessera_emit::render_site_html`, which implements the site-render contract
+that the Astro plugin implements; both pass the fixtures in `tests/render/`,
+so heading ids and image attributes are the site's. No capability is
+advertised: a client that wants it sends the request.
+
+**Params**
+
+```jsonc
+{
+  "textDocument": { "uri": "file:///…/docs/install.md" },
+  "build": "cloud"        // optional: a build name; the default is `[editor] build`
+}
+```
+
+**Result.** Always an object; `page` is `null` when there is nothing to show,
+and `problems` says why. Field names are camelCase.
+
+| Field | Meaning |
+|---|---|
+| `build` | The build the answer is for. |
+| `builds` | Every build of the content model, in order: `{ name, editor, description }`. `editor` marks `[editor] build`, the picker's default. |
+| `projectRoot`, `contentRoot` | Absolute paths. |
+| `assetRoots` | Directories outside the content root that the page's assets are in and the preview may read (Q182): the directory of each asset that is in the project but not in the content root. The client may serve the content root and these, and nothing wider. |
+| `documentVersion` | The version of the open document the answer is from, or `null` when the file isn't open. A client that sent version *n* and gets an older one has raced its own change notification and asks again. |
+| `problems` | `{ severity: "error" \| "warning" \| "info", message }`: no project, an unknown build, a file that isn't a page (a fragment names the pages that include it), a page the build drops, an emit error, an asset the preview can't show. |
+| `page.path`, `page.route` | The page's content path and its route on the site. |
+| `page.title` | The page's title, phrases substituted. |
+| `page.frontmatter` | What the site output writes as frontmatter, as JSON. `available` is the list of targets a layout hands to `<ascribe-availability>` (Q142). |
+| `page.html` | The page's content as HTML, without frontmatter and without a layout. |
+| `page.assets` | Each asset the page uses: `{ reference, path, kind, servable }`. `reference` is what the HTML writes, before any `#fragment`: an image's `src` is relative to the page (`./_fragments/a.png`), a link target's `href` is the site URL. `path` is the absolute source file, **resolved from the file the reference is written in** (asset contract §7), so a fragment's image is the one beside the fragment. `servable` is `true` when the file is in the content root or in a directory of `assetRoots`; a file directly in the project root, in `node_modules` or `.git`, or in the output directory isn't served (Q182), and `problems` says so. References are percent-encoded as URLs are; compare them after normalizing (`packages/vscode/src/preview/refs.ts` does). |
+| `page.links` | Each link to a page: `{ href, path, id }`, `href` as the HTML writes it, `path` the target file, `id` the heading it names. |
+| `page.sections` | The headings written in the previewed file itself, in order: `{ id, line }`, `line` from 0, for following the cursor. |
+
+Every problem is in `problems`, not in a JSON-RPC error: a malformed request
+(parameters that don't parse) is the only error, `InvalidParams`. The request runs on the server's main loop, so it must not grow with the
+project: it emits one page, indexes only the files a position is asked for
+(`EmitContext` builds line indexes lazily), and finds pages that share a route
+once per set of pages (a cache keyed by the model revision and a hash of the
+page paths), not per request. See the table under Performance.
 
 ## Capabilities
 
@@ -113,6 +161,23 @@ run on a 4-core 2.1 GHz Xeon container (a developer laptop is faster):
 | 300 | 78 ms | 1.0 ms (1.4) | 1.5 ms (1.9), 3 |
 | 1,000 | 286 ms | 2.0 ms (2.5) | 3.8 ms (4.7), 10 |
 | 3,000 | 825 ms | 3.0 ms (3.6) | 9.0 ms (11.8), 30 |
+
+The same benchmark then sends `ascribe/preview` for the page after each
+keystroke, as the editor does after its debounce (release build, same machine):
+
+| Pages | Change to preview answer, median (p95) | Change to diagnostics with the preview open, median (p95) |
+|---|---|---|
+| 20 | 0.5 ms (0.8) | 0.7 ms (1.0) |
+| 100 | 0.8 ms (1.0) | 0.7 ms (1.0) |
+| 300 | 0.6 ms (0.7) | 0.9 ms (1.0) |
+| 1,000 | 0.9 ms (1.1) | 1.4 ms (1.7) |
+| 3,000 | 1.1 ms (1.7) | 3.0 ms (5.8) |
+
+The preview's cost doesn't grow with the project, and the diagnostics numbers
+are what they are without it (3.1 ms at 3,000 pages). A first version listed
+every page, tested whether the build drops it, and slugged every path for the
+route check, and took 9.6 ms at 3,000 pages (and slowed diagnostics to 4.0 ms);
+it also built a line index of every file for each request.
 
 Both are far under the 50 ms target at 3,000 pages. What is left that grows
 with the project is small: building the checked project from the snapshot's

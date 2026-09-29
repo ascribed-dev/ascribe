@@ -51,7 +51,10 @@ mod store;
 pub mod zod;
 
 pub use assets::Placement;
-pub use emitter::{Emission, EmitContext, Emitter, PageContext, Position, emit};
+pub use emitter::{
+    Emission, EmitContext, EmittedPage, Emitter, PageContext, PlacedAsset, Position, emit,
+    emit_page,
+};
 pub use error::EmitError;
 pub use json::{JSON_SCHEMA_VERSION, JsonEmitter};
 pub use plain::PlainEmitter;
