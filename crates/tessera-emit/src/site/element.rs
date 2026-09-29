@@ -53,7 +53,7 @@ impl Attrs {
     }
 }
 
-/// An opening tag: `<tessera-note type="tip">`.
+/// An opening tag: `<ascribe-note type="tip">`.
 pub(crate) fn open(name: &str, attrs: &Attrs) -> String {
     format!("<{name}{}>", attrs.write())
 }
@@ -84,13 +84,13 @@ pub(crate) fn empty(name: &str, attrs: &Attrs) -> String {
 }
 
 /// The attribute marker (site-render contract §1): an empty
-/// `tessera-attributes` element holding `attrs`.
+/// `ascribe-attributes` element holding `attrs`.
 pub(crate) fn marker(attrs: &[(String, String)]) -> String {
     let mut out = Attrs::new();
     for (name, value) in attrs {
         out = out.with(name, value.as_str());
     }
-    empty("tessera-attributes", &out)
+    empty("ascribe-attributes", &out)
 }
 
 #[cfg(test)]
@@ -101,8 +101,8 @@ mod tests {
     fn values_are_escaped_in_the_contracts_way() {
         let attrs = Attrs::new().with("heading", "A \"b\" & <c>");
         assert_eq!(
-            open("tessera-note", &attrs),
-            "<tessera-note heading=\"A &quot;b&quot; &amp; &lt;c&gt;\">"
+            open("ascribe-note", &attrs),
+            "<ascribe-note heading=\"A &quot;b&quot; &amp; &lt;c&gt;\">"
         );
     }
 
@@ -112,15 +112,15 @@ mod tests {
             .with("type", "note")
             .with_opt("heading", Some(String::new()))
             .with_opt("x", None);
-        assert_eq!(open("tessera-note", &attrs), "<tessera-note type=\"note\">");
+        assert_eq!(open("ascribe-note", &attrs), "<ascribe-note type=\"note\">");
     }
 
     #[test]
     fn a_wrapping_element_has_blank_lines_inside_its_tags() {
         let attrs = Attrs::new();
         assert_eq!(
-            wrap("tessera-steps", &attrs, &["1. One.".to_owned()]),
-            "<tessera-steps>\n\n1. One.\n\n</tessera-steps>"
+            wrap("ascribe-steps", &attrs, &["1. One.".to_owned()]),
+            "<ascribe-steps>\n\n1. One.\n\n</ascribe-steps>"
         );
     }
 
@@ -128,7 +128,7 @@ mod tests {
     fn a_marker_is_an_empty_element() {
         assert_eq!(
             marker(&[("id".to_owned(), "a-&-b".to_owned())]),
-            "<tessera-attributes id=\"a-&amp;-b\"></tessera-attributes>"
+            "<ascribe-attributes id=\"a-&amp;-b\"></ascribe-attributes>"
         );
     }
 }

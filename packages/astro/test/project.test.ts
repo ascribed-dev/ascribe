@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { consumerMismatches, normalizeBase, readProject } from "../src/project.js";
 
 function project(toml: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
-  writeFileSync(path.join(dir, "tessera.toml"), toml);
+  const dir = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
+  writeFileSync(path.join(dir, "ascribe.toml"), toml);
   return dir;
 }
 
@@ -32,19 +32,19 @@ trailing-slash = "never"
 
   it("needs no [builds] table: the implicit `site` build has the same output layout", () => {
     const info = readProject(project('spec = "0.1"\n[project]\ncontent-root = "docs"\n'));
-    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".tessera", "build", "site", "site"));
+    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".ascribe", "build", "site", "site"));
   });
 
   it("uses the profile's defaults", () => {
     const info = readProject(project('spec = "0.1"\n'));
     expect(info.consumer).toEqual({ site: undefined, basePath: "/", trailingSlash: "always" });
-    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".tessera", "build", "site", "site"));
+    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".ascribe", "build", "site", "site"));
   });
 
   it("says which file it couldn't read", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+    const dir = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
     mkdirSync(path.join(dir, "empty"));
-    expect(() => readProject(path.join(dir, "empty"))).toThrow(/tessera\.toml/);
+    expect(() => readProject(path.join(dir, "empty"))).toThrow(/ascribe\.toml/);
   });
 });
 

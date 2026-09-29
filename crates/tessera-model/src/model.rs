@@ -10,7 +10,7 @@ use crate::types::FrontmatterSchema;
 /// The spec versions this crate implements (`spec`, content-model.md §3).
 pub const SUPPORTED_SPECS: &[&str] = &["0.1"];
 
-/// A loaded, validated `tessera.toml`.
+/// A loaded, validated `ascribe.toml`.
 ///
 /// Every default from content-model.md §19 is applied: the implicit `page`
 /// type and `site` build exist when their tables are absent, and the built-in
@@ -141,7 +141,7 @@ pub struct Feature {
     pub name: String,
     /// The spec text, as written.
     pub available_text: String,
-    /// The parsed spec. Spans are offsets into `tessera.toml`.
+    /// The parsed spec. Spans are offsets into `ascribe.toml`.
     pub available: AvailabilitySpec,
 }
 

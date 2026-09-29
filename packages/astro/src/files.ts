@@ -1,7 +1,7 @@
-// Serving `_tessera/files/`: the files pages link to that aren't pages or
+// Serving `_ascribe/files/`: the files pages link to that aren't pages or
 // images (asset contract §3.2). Astro doesn't copy them, so the integration
 // does: into the build's output directory, and in dev through a middleware.
-// Both put them at `<base>_tessera/files/`, the URL the site output links to.
+// Both put them at `<base>_ascribe/files/`, the URL the site output links to.
 import { createReadStream } from "node:fs";
 import { cp, stat } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -10,10 +10,10 @@ import { fileURLToPath } from "node:url";
 
 /** The directory of published files inside a site output root. */
 export function publishedDir(siteRoot: string): string {
-  return path.join(siteRoot, "_tessera", "files");
+  return path.join(siteRoot, "_ascribe", "files");
 }
 
-/** Copies the published files to `<outDir>/_tessera/files/`. Returns how many top-level entries were there. */
+/** Copies the published files to `<outDir>/_ascribe/files/`. Returns how many top-level entries were there. */
 export async function copyPublishedFiles(siteRoot: string, outDir: URL): Promise<boolean> {
   const from = publishedDir(siteRoot);
   if (
@@ -23,7 +23,7 @@ export async function copyPublishedFiles(siteRoot: string, outDir: URL): Promise
     ))
   )
     return false;
-  await cp(from, path.join(fileURLToPath(outDir), "_tessera", "files"), { recursive: true });
+  await cp(from, path.join(fileURLToPath(outDir), "_ascribe", "files"), { recursive: true });
   return true;
 }
 
@@ -47,7 +47,7 @@ const TYPES: Record<string, string> = {
   ".svg": "image/svg+xml",
 };
 
-/** A dev-server middleware serving the published files at `<base>_tessera/files/`. */
+/** A dev-server middleware serving the published files at `<base>_ascribe/files/`. */
 export function filesMiddleware(
   siteRoot: string,
   base: string,
@@ -55,7 +55,7 @@ export function filesMiddleware(
   const root = publishedDir(siteRoot);
   // Only under the base path, as in the build (asset contract §3.2). Vite strips the base from
   // `req.url` before a plugin's middleware runs, but connect keeps the original in `originalUrl`.
-  const prefix = `${base}_tessera/files/`;
+  const prefix = `${base}_ascribe/files/`;
   return (req, res, next) => {
     const pathname =
       ((req as { originalUrl?: string }).originalUrl ?? req.url ?? "").split(/[?#]/, 1)[0] ?? "";

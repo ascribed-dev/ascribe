@@ -1,13 +1,13 @@
-//! TESSERA: Tessera's additions to comrak. This whole file is Tessera's; see
+//! TESSERA: Ascribe's additions to comrak. This whole file is Ascribe's; see
 //! `FORK.md`.
 //!
-//! Tessera (see the repository's `SPEC.md`) adds one block to CommonMark: the
-//! **Tessera line**, a directive line (`@note {type=caution}: text`) or an end
+//! Ascribe (see the repository's `SPEC.md`) adds one block to CommonMark: the
+//! **Ascribe line**, a directive line (`@note {type=caution}: text`) or an end
 //! line (`@end`). This module holds its option, its node, and the scanner that
 //! recognizes it. The parser hooks that call the scanner are in
 //! `parser/tessera.rs`.
 //!
-//! The fork only finds Tessera lines and gives them the right block structure.
+//! The fork only finds Ascribe lines and gives them the right block structure.
 //! It doesn't parse the directive head (the name's attributes, form, and
 //! primary kind); `tessera-syntax` does that from [`NodeTesseraLine::raw`].
 //!
@@ -30,7 +30,7 @@
 //! let second = root.last_child().unwrap();
 //! match &second.data().value {
 //!     NodeValue::TesseraLine(line) => assert_eq!(line.raw, "@note: Careful."),
-//!     other => panic!("expected a Tessera line, got {other:?}"),
+//!     other => panic!("expected a Ascribe line, got {other:?}"),
 //! }
 //! ```
 
@@ -42,9 +42,9 @@ use std::ops::Range;
 use crate::html::{ChildRendering, Context, render_sourcepos};
 use crate::nodes::{LineColumn, Node, Sourcepos};
 
-/// The Tessera option: the known directive keywords.
+/// The Ascribe option: the known directive keywords.
 ///
-/// A line is a Tessera line only when its name is one of these keywords
+/// A line is a Ascribe line only when its name is one of these keywords
 /// (SPEC §3.2). The set is closed per project: the built-in directives, `end`,
 /// and the project widgets the content model declares. The fork doesn't know
 /// the built-in set; the caller supplies every keyword.
@@ -63,7 +63,7 @@ pub struct TesseraKeyword {
 }
 
 impl TesseraOptions {
-    /// An empty keyword set. With no keywords, no line is a Tessera line.
+    /// An empty keyword set. With no keywords, no line is a Ascribe line.
     pub fn new() -> Self {
         Self::default()
     }
@@ -97,7 +97,7 @@ impl TesseraOptions {
     }
 }
 
-/// A Tessera line: a directive line or an end line (SPEC §3.1).
+/// A Ascribe line: a directive line or an end line (SPEC §3.1).
 ///
 /// The node's sourcepos covers the whole line, and, when the directive has a
 /// text primary, every line the primary continues onto. When there's a text
@@ -212,7 +212,7 @@ pub(crate) fn locate(
     }
 }
 
-/// The result of recognizing a Tessera line.
+/// The result of recognizing a Ascribe line.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct ScannedLine {
     /// Where the name ends: the byte after its last character.
@@ -224,11 +224,11 @@ pub(crate) struct ScannedLine {
     pub text_primary: Option<usize>,
 }
 
-/// Recognizes a Tessera line (SPEC §3.2). `line` starts at the line's first
+/// Recognizes a Ascribe line (SPEC §3.2). `line` starts at the line's first
 /// non-space character, after container indentation, and may end with a line
 /// ending.
 ///
-/// A line is a Tessera line when it's `@`, a known keyword, and then
+/// A line is a Ascribe line when it's `@`, a known keyword, and then
 /// whitespace, `{`, `:`, or the end of the line.
 pub(crate) fn scan_line(line: &str, options: &TesseraOptions) -> Option<ScannedLine> {
     let bytes = line.as_bytes();
@@ -333,10 +333,10 @@ pub fn unescape_entities(text: &str) -> std::borrow::Cow<'_, str> {
     crate::entity::unescape_html(text)
 }
 
-/// Renders a Tessera line as HTML.
+/// Renders a Ascribe line as HTML.
 ///
 /// This output exists only so comrak's HTML renderer handles every node; the
-/// real output comes from `tessera-emit`. A Tessera line becomes a `div`
+/// real output comes from `tessera-emit`. A Ascribe line becomes a `div`
 /// carrying the raw line, wrapping the primary's paragraph if there is one.
 pub(crate) fn render_html<T>(
     context: &mut Context<T>,
@@ -415,7 +415,7 @@ mod tests {
             "@quill-demo: text",
             "@note hello",
         ] {
-            assert!(scan(line).is_some(), "{line:?} should be a Tessera line");
+            assert!(scan(line).is_some(), "{line:?} should be a Ascribe line");
         }
     }
 
@@ -436,7 +436,7 @@ mod tests {
             "\\@note: text",
             "support@example.com",
         ] {
-            assert!(scan(line).is_none(), "{line:?} shouldn't be a Tessera line");
+            assert!(scan(line).is_none(), "{line:?} shouldn't be a Ascribe line");
         }
     }
 

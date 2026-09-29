@@ -1,63 +1,63 @@
-// @tessera/astro: the Astro integration for Tessera (phase 21's slice; phase 22
+// @ascribed/astro: the Astro integration for Ascribe (phase 21's slice; phase 22
 // completes it). Written against Astro 7.3.5.
 //
 //   // astro.config.mjs
-//   import tessera from "@tessera/astro";
+//   import ascribe from "@ascribed/astro";
 //   export default defineConfig({
-//     base: "/docs", trailingSlash: "never",     // as in tessera.toml's [consumer]
-//     integrations: [tessera({ build: "site" })],
+//     base: "/docs", trailingSlash: "never",     // as in ascribe.toml's [consumer]
+//     integrations: [ascribe({ build: "site" })],
 //   });
 //
 //   // src/content.config.ts
 //   import { defineCollection } from "astro:content";
-//   import { tesseraCollection } from "@tessera/astro/content";
-//   import { schema } from "../.tessera/build/site/site/_tessera/schema.ts";
-//   export const collections = { docs: defineCollection(tesseraCollection({ schema })) };
+//   import { ascribeCollection } from "@ascribed/astro/content";
+//   import { schema } from "../.ascribe/build/site/site/_ascribe/schema.ts";
+//   export const collections = { docs: defineCollection(ascribeCollection({ schema })) };
 //
 //   // a layout's <head>
-//   import Elements from "@tessera/astro/Elements.astro";   // <Elements />
+//   import Elements from "@ascribed/astro/Elements.astro";   // <Elements />
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
 import { findBinary } from "./binary.js";
 import { copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
-import rehypeTesseraAttributes from "./rehype.js";
+import rehypeAscribeAttributes from "./rehype.js";
 import { runBuild } from "./run.js";
-import { satteriTesseraAttributes } from "./satteri.js";
+import { satteriAscribeAttributes } from "./satteri.js";
 
-export { default as rehypeTesseraAttributes } from "./rehype.js";
-export { satteriTesseraAttributes } from "./satteri.js";
+export { default as rehypeAscribeAttributes } from "./rehype.js";
+export { satteriAscribeAttributes } from "./satteri.js";
 
 /** The virtual module `content.ts` reads the resolved site output root from. */
-const SITE_MODULE = "virtual:tessera/site";
+const SITE_MODULE = "virtual:ascribe/site";
 
 /** Options of the integration. */
-export interface TesseraOptions {
-  /** The build whose site output is the collection (a name in `tessera.toml`). */
+export interface AscribeOptions {
+  /** The build whose site output is the collection (a name in `ascribe.toml`). */
   build: string;
-  /** The directory holding `tessera.toml`, relative to the Astro root. Default: the root. */
+  /** The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. */
   project?: string;
   /**
-   * The `tessera` binary, relative to the Astro root. Default: `TESSERA_BIN`, then the
+   * The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then the
    * nearest `target/release` or `target/debug` build above the project (Q152).
    */
   binary?: string;
 }
 
-/** Runs `tessera build`, checks the site's routing, adds the markdown plugin, and serves published files. */
-export default function tessera(options: TesseraOptions): AstroIntegration {
+/** Runs `ascribe build`, checks the site's routing, adds the markdown plugin, and serves published files. */
+export default function ascribe(options: AscribeOptions): AstroIntegration {
   let siteRoot = "";
   return {
-    name: "@tessera/astro",
+    name: "@ascribed/astro",
     hooks: {
       "astro:config:setup": async ({ config, command, logger, updateConfig }) => {
         const root = fileURLToPath(config.root);
         const project = readProject(path.resolve(root, options.project ?? "."));
-        // An unknown build is `tessera build`'s to report: it knows the implicit `site` build (content-model.md §17).
+        // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build (content-model.md §17).
         siteRoot = project.siteRoot(options.build);
 
-        // `tessera.toml`'s routing must be Astro's, or every link Tessera writes is wrong.
+        // `ascribe.toml`'s routing must be Astro's, or every link Ascribe writes is wrong.
         const problems = consumerMismatches(project, {
           base: config.base,
           trailingSlash: config.trailingSlash,
@@ -65,7 +65,7 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
         });
         if (problems.length > 0) {
           throw new Error(
-            `@tessera/astro: tessera.toml and astro.config disagree:\n- ${problems.join("\n- ")}`,
+            `@ascribed/astro: ascribe.toml and astro.config disagree:\n- ${problems.join("\n- ")}`,
           );
         }
 
@@ -76,13 +76,13 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
           hastPlugins?: unknown[];
         };
         if (processor.name === "satteri" && pluginLists.hastPlugins !== undefined) {
-          pluginLists.hastPlugins.push(satteriTesseraAttributes());
+          pluginLists.hastPlugins.push(satteriAscribeAttributes());
         } else if (processor.name === "unified" && pluginLists.rehypePlugins !== undefined) {
-          pluginLists.rehypePlugins.push(rehypeTesseraAttributes);
+          pluginLists.rehypePlugins.push(rehypeAscribeAttributes);
         } else {
           throw new Error(
-            `@tessera/astro: the markdown processor "${processor.name}" is not one it can add its plugin to. ` +
-              "Use Astro's default (satteri) or unified(), or add `rehypeTesseraAttributes` to your own.",
+            `@ascribed/astro: the markdown processor "${processor.name}" is not one it can add its plugin to. ` +
+              "Use Astro's default (satteri) or unified(), or add `rehypeAscribeAttributes` to your own.",
           );
         }
 
@@ -99,14 +99,14 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
           if (result.summary !== "") logger.info(result.summary);
         }
 
-        // Dev serving of `_tessera/files/`; the build copies them in `astro:build:done`.
+        // Dev serving of `_ascribe/files/`; the build copies them in `astro:build:done`.
         updateConfig({
           vite: {
             // `Elements.astro` is Astro source, so Vite must compile it, not load it as a Node module.
-            ssr: { noExternal: ["@tessera/astro"] },
+            ssr: { noExternal: ["@ascribed/astro"] },
             plugins: [
               {
-                name: "@tessera/astro:site",
+                name: "@ascribed/astro:site",
                 resolveId: (id) => (id === SITE_MODULE ? `\0${SITE_MODULE}` : undefined),
                 load: (id) =>
                   id === `\0${SITE_MODULE}`
@@ -114,7 +114,7 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
                     : undefined,
               },
               {
-                name: "@tessera/astro:files",
+                name: "@ascribed/astro:files",
                 configureServer(server) {
                   server.middlewares.use(
                     filesMiddleware(
@@ -129,7 +129,7 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
         });
       },
       "astro:build:done": async ({ dir, logger }) => {
-        if (await copyPublishedFiles(siteRoot, dir)) logger.info("copied _tessera/files/");
+        if (await copyPublishedFiles(siteRoot, dir)) logger.info("copied _ascribe/files/");
       },
     },
   };

@@ -8,7 +8,7 @@ use tessera_model::ContentModel;
 ///
 /// Every source path in this crate is a **content path**, relative to the
 /// content root. The layout says where that root is, relative to the
-/// **project root** (the directory containing `tessera.toml`), and where the
+/// **project root** (the directory containing `ascribe.toml`), and where the
 /// output directory is, so that a reference can be checked against the
 /// boundary of what a build may copy.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -64,7 +64,7 @@ mod tests {
     fn layout() -> Layout {
         Layout {
             content_root: p("docs"),
-            output_dir: p(".tessera/build"),
+            output_dir: p(".ascribe/build"),
         }
     }
 
@@ -80,18 +80,18 @@ mod tests {
     fn outside_the_project_and_the_output_directory_are_not() {
         let l = layout();
         assert!(!l.is_allowed(&p("../../outside.png")));
-        assert!(!l.is_allowed(&p("../.tessera/build/site/p.png")));
-        assert!(l.is_allowed(&p("../.tessera/other.png")));
+        assert!(!l.is_allowed(&p("../.ascribe/build/site/p.png")));
+        assert!(l.is_allowed(&p("../.ascribe/other.png")));
     }
 
     #[test]
     fn content_root_at_the_project_root() {
         let l = Layout {
             content_root: RelPath::root(),
-            output_dir: p(".tessera/build"),
+            output_dir: p(".ascribe/build"),
         };
         assert!(l.is_allowed(&p("a.png")));
         assert!(!l.is_allowed(&p("../a.png")));
-        assert!(!l.is_allowed(&p(".tessera/build/x")));
+        assert!(!l.is_allowed(&p(".ascribe/build/x")));
     }
 }

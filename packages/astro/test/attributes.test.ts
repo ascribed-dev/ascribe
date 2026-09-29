@@ -1,7 +1,7 @@
 // Cases beyond tests/render/ for the marker rules, on hand-built trees.
 import { describe, expect, it } from "vitest";
 import { findEdits, toProperty, type HastNode } from "../src/attributes.js";
-import rehypeTesseraAttributes from "../src/rehype.js";
+import rehypeAscribeAttributes from "../src/rehype.js";
 
 const raw = (value: string): HastNode => ({ type: "raw", value });
 const text = (value: string): HastNode => ({ type: "text", value });
@@ -15,14 +15,14 @@ const element = (
   properties,
   children,
 });
-const open = (attributes: string): HastNode => raw(`<tessera-attributes${attributes}>`);
-const close = raw("</tessera-attributes>");
+const open = (attributes: string): HastNode => raw(`<ascribe-attributes${attributes}>`);
+const close = raw("</ascribe-attributes>");
 
 describe("findEdits", () => {
   it("accepts a marker written as one node", () => {
     const heading = element("h2", [
       text("Title "),
-      raw('<tessera-attributes id="t"></tessera-attributes>'),
+      raw('<ascribe-attributes id="t"></ascribe-attributes>'),
     ]);
     const edits = findEdits({ type: "root", children: [heading] });
     expect(edits).toHaveLength(1);
@@ -38,12 +38,12 @@ describe("findEdits", () => {
 
   it("ignores near-markers", () => {
     for (const marker of [
-      [raw("<tessera-attributes id='t'>"), close],
-      [raw('<tessera-attributes  id="t">'), close],
-      [raw('<tessera-attributes id="t" >'), close],
-      [raw('<tessera-attributes ID="t">'), close],
-      [raw('<tessera-attributes id="t">'), text("x"), close],
-      [raw('<tessera-attributes id="t">')],
+      [raw("<ascribe-attributes id='t'>"), close],
+      [raw('<ascribe-attributes  id="t">'), close],
+      [raw('<ascribe-attributes id="t" >'), close],
+      [raw('<ascribe-attributes ID="t">'), close],
+      [raw('<ascribe-attributes id="t">'), text("x"), close],
+      [raw('<ascribe-attributes id="t">')],
     ]) {
       const heading = element("h2", [text("Title "), ...marker]);
       expect(findEdits({ type: "root", children: [heading] })).toEqual([]);
@@ -79,7 +79,7 @@ describe("findEdits", () => {
   });
 });
 
-describe("rehypeTesseraAttributes", () => {
+describe("rehypeAscribeAttributes", () => {
   it("sets properties, removes markers and the space before a heading's", () => {
     const image = element("img", [], { src: "a.png" });
     const heading = element("h2", [text("Title "), open(' id="title"'), close]);
@@ -87,7 +87,7 @@ describe("rehypeTesseraAttributes", () => {
       type: "root" as const,
       children: [heading, element("p", [image, open(' width="600"'), close])],
     };
-    rehypeTesseraAttributes()(tree as never);
+    rehypeAscribeAttributes()(tree as never);
     expect(heading.properties).toEqual({ id: "title" });
     expect(heading.children).toEqual([text("Title")]);
     expect(image.properties).toEqual({ src: "a.png", width: "600" });

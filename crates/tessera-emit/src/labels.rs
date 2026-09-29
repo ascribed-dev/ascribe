@@ -26,7 +26,7 @@ pub fn availability_display(model: &ContentModel, spec: &AvailabilitySpec) -> St
 
 /// One target of an availability spec as a person reads it: its label, and in
 /// parentheses its state and version (`Self-managed (preview, 3.4+)`). The
-/// text of a `<tessera-availability-target>` (element contract §4).
+/// text of a `<ascribe-availability-target>` (element contract §4).
 pub fn availability_target_text(model: &ContentModel, entry: &Entry) -> String {
     let ga = model
         .lifecycle_state("ga")

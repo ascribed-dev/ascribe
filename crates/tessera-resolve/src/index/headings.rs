@@ -42,7 +42,7 @@ pub struct Heading {
     pub has_phrase: bool,
     /// Whether the slug is empty: the heading has no `@id`, and its text is
     /// only characters the slugger removes (punctuation, emoji).
-    /// `tessera check` reports it (SPEC §5.5, resolved Q61).
+    /// `ascribe check` reports it (SPEC §5.5, resolved Q61).
     pub empty_slug: bool,
 }
 

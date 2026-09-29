@@ -1,4 +1,4 @@
-// What the integration needs from `tessera.toml`: where a build's site output
+// What the integration needs from `ascribe.toml`: where a build's site output
 // goes, and the consumer settings that must agree with `astro.config`
 // (content-model.md §16). The compiler validates the whole file; this reads
 // only what it compiled.
@@ -6,11 +6,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parse } from "smol-toml";
 
-/** The parts of a Tessera project the integration reads. */
+/** The parts of a Ascribe project the integration reads. */
 export interface ProjectInfo {
-  /** The directory holding `tessera.toml`. */
+  /** The directory holding `ascribe.toml`. */
   dir: string;
-  /** The path of `tessera.toml`. */
+  /** The path of `ascribe.toml`. */
   configPath: string;
   /** `[consumer]`, with the profile's defaults. */
   consumer: { site: string | undefined; basePath: string; trailingSlash: "always" | "never" };
@@ -18,22 +18,22 @@ export interface ProjectInfo {
   siteRoot(build: string): string;
 }
 
-/** Reads `tessera.toml` in `dir`. Throws a readable error if it can't be read. */
+/** Reads `ascribe.toml` in `dir`. Throws a readable error if it can't be read. */
 export function readProject(dir: string): ProjectInfo {
-  const configPath = path.join(dir, "tessera.toml");
+  const configPath = path.join(dir, "ascribe.toml");
   let table: Record<string, unknown>;
   try {
     table = parse(readFileSync(configPath, "utf8"));
   } catch (error) {
     throw new Error(
-      `@tessera/astro can't read ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
+      `@ascribed/astro can't read ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error },
     );
   }
   const project = section(table, "project");
   const consumer = section(table, "consumer");
   const outputDir =
-    typeof project["output-dir"] === "string" ? project["output-dir"] : ".tessera/build";
+    typeof project["output-dir"] === "string" ? project["output-dir"] : ".ascribe/build";
   const trailingSlash = consumer["trailing-slash"] === "never" ? "never" : "always";
   return {
     dir,
@@ -56,7 +56,7 @@ function section(table: Record<string, unknown>, name: string): Record<string, u
     : {};
 }
 
-/** A base path with a leading and a trailing `/`, as Tessera's router has it. */
+/** A base path with a leading and a trailing `/`, as Ascribe's router has it. */
 export function normalizeBase(base: string): string {
   let result = base.trim();
   if (!result.startsWith("/")) result = `/${result}`;
@@ -65,8 +65,8 @@ export function normalizeBase(base: string): string {
 }
 
 /**
- * The ways `tessera.toml`'s `[consumer]` disagrees with Astro's configuration,
- * as sentences. Tessera writes every link with its own settings, so a site
+ * The ways `ascribe.toml`'s `[consumer]` disagrees with Astro's configuration,
+ * as sentences. Ascribe writes every link with its own settings, so a site
  * whose routes differ would have broken links.
  */
 export function consumerMismatches(
@@ -80,7 +80,7 @@ export function consumerMismatches(
       `[consumer] base-path is "${basePath}", but Astro's \`base\` is "${astro.base}". Set them to the same path.`,
     );
   }
-  // Astro's "ignore" serves both forms, so Tessera's links work either way.
+  // Astro's "ignore" serves both forms, so Ascribe's links work either way.
   if (astro.trailingSlash !== "ignore" && astro.trailingSlash !== trailingSlash) {
     problems.push(
       `[consumer] trailing-slash is "${trailingSlash}", but Astro's \`trailingSlash\` is "${astro.trailingSlash}".`,

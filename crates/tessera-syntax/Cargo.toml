@@ -1,6 +1,6 @@
 [package]
 name = "tessera-syntax"
-description = "Tessera parsing: Tessera lines, the structure pass, and the syntax tree."
+description = "Ascribe parsing: Ascribe lines, the structure pass, and the syntax tree."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

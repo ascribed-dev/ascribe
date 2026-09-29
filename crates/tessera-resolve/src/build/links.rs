@@ -4,7 +4,7 @@
 //!
 //! What a destination names comes from the source index
 //! ([`crate::Resolution`], which is `tessera_resolve::references`, the same
-//! rules `tessera check` runs). This pass adds what only a build knows: which
+//! rules `ascribe check` runs). This pass adds what only a build knows: which
 //! pages the build publishes, and what a heading's page id is there. It
 //! records the links whose target a build removes (`link-id-removed`,
 //! `link-page-dropped`) for phase 14 to report, and carries the assets the

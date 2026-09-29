@@ -1,10 +1,10 @@
-//! Loads and validates a documentation set's content model, `tessera.toml`.
+//! Loads and validates a documentation set's content model, `ascribe.toml`.
 //!
 //! [`load`] reads the file, checks it against every rule in
 //! `project-docs/content-model.md` §20, and returns a typed
 //! [`ContentModel`], or the [`Issue`]s that stopped it. Every issue is
 //! reported by registry slug, at the span of the offending key or value in
-//! `tessera.toml`.
+//! `ascribe.toml`.
 //!
 //! | Module | Contents |
 //! |---|---|
@@ -48,7 +48,7 @@ pub use types::{
 
 use tessera_core::FileId;
 
-/// Reads and validates `tessera.toml` at `path`.
+/// Reads and validates `ascribe.toml` at `path`.
 ///
 /// Issues are located in file `FileId::new(0)`; use [`load_with_file`] when
 /// the caller owns a file table. The filesystem rules run relative to the

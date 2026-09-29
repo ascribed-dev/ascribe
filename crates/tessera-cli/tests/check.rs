@@ -1,4 +1,4 @@
-//! `tessera check`: output, JSON, and exit codes, by running the binary.
+//! `ascribe check`: output, JSON, and exit codes, by running the binary.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -14,7 +14,7 @@ const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[ty
 /// files under `docs/`.
 fn project(files: &[(&str, &str)]) -> TempDir {
     let dir = tempfile::tempdir().expect("a temporary directory");
-    fs::write(dir.path().join("tessera.toml"), MODEL).expect("write the model");
+    fs::write(dir.path().join("ascribe.toml"), MODEL).expect("write the model");
     for (path, text) in files {
         write(&dir.path().join("docs").join(path), text);
     }
@@ -27,12 +27,12 @@ fn write(path: &Path, text: &str) {
 }
 
 fn tessera(dir: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_tessera"))
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
         .args(args)
         .env("NO_COLOR", "1")
         .output()
-        .expect("run tessera")
+        .expect("run ascribe")
 }
 
 fn code(output: &Output) -> i32 {
@@ -65,7 +65,7 @@ fn errors_exit_1_and_show_the_source() {
     let out = tessera(dir.path(), &["check"]);
     assert_eq!(code(&out), 1);
     let text = stdout(&out);
-    assert!(text.contains("TSR036"), "{text}");
+    assert!(text.contains("ASC036"), "{text}");
     assert!(text.contains("`gone.md` doesn't exist"), "{text}");
     assert!(text.contains("docs/index.md:5:"), "{text}");
     assert!(text.contains("[Gone](gone.md)"), "the snippet: {text}");
@@ -101,7 +101,7 @@ fn help_and_version_exit_0() {
     let dir = project(&[]);
     let out = tessera(dir.path(), &["--version"]);
     assert_eq!(code(&out), 0);
-    assert!(stdout(&out).starts_with("tessera "), "{}", stdout(&out));
+    assert!(stdout(&out).starts_with("ascribe "), "{}", stdout(&out));
     let out = tessera(dir.path(), &["check", "--help"]);
     assert_eq!(code(&out), 0);
     assert!(stdout(&out).contains("--deny-warnings"));
@@ -112,19 +112,19 @@ fn no_content_model_exits_2() {
     let dir = tempfile::tempdir().expect("a temporary directory");
     let out = tessera(dir.path(), &["check"]);
     assert_eq!(code(&out), 2);
-    assert!(stderr(&out).contains("tessera.toml"), "{}", stderr(&out));
+    assert!(stderr(&out).contains("ascribe.toml"), "{}", stderr(&out));
 }
 
 #[test]
 fn a_content_model_with_errors_exits_2_and_shows_them() {
     let dir = tempfile::tempdir().expect("a temporary directory");
     write(
-        &dir.path().join("tessera.toml"),
+        &dir.path().join("ascribe.toml"),
         "spec = \"0.1\"\nbogus = 1\n",
     );
     let out = tessera(dir.path(), &["check"]);
     assert_eq!(code(&out), 2);
-    assert!(stdout(&out).contains("tessera.toml:2"), "{}", stdout(&out));
+    assert!(stdout(&out).contains("ascribe.toml:2"), "{}", stdout(&out));
     assert!(
         stderr(&out).contains("nothing can be checked"),
         "{}",
@@ -148,7 +148,7 @@ fn finds_the_model_in_a_parent_directory() {
 fn config_names_the_model() {
     let dir = project(&[("index.md", CLEAN)]);
     let elsewhere = tempfile::tempdir().expect("a temporary directory");
-    let config: PathBuf = dir.path().join("tessera.toml");
+    let config: PathBuf = dir.path().join("ascribe.toml");
     let out = tessera(
         elsewhere.path(),
         &["check", "--config", config.to_str().expect("utf-8")],
@@ -188,7 +188,7 @@ fn json_output_follows_the_documented_schema() {
     assert_eq!(code(&out), 1);
     let report: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("valid JSON");
     assert_eq!(report["schema_version"], 1);
-    assert!(report["tessera_version"].is_string());
+    assert!(report["ascribe_version"].is_string());
     assert!(report["error"].is_null());
     assert_eq!(report["files_checked"], 2);
     assert_eq!(report["summary"]["errors"], 1);
@@ -199,7 +199,7 @@ fn json_output_follows_the_documented_schema() {
         .iter()
         .find(|d| d["slug"] == "link-target-missing")
         .expect("the missing link");
-    assert_eq!(d["code"], "TSR036");
+    assert_eq!(d["code"], "ASC036");
     assert_eq!(d["severity"], "error");
     assert_eq!(d["file"], "docs/index.md");
     assert_eq!(d["message"], "`gone.md` doesn't exist");
@@ -230,14 +230,14 @@ fn json_output_carries_fixes_as_edits() {
 fn json_reports_a_project_that_did_not_load() {
     let dir = tempfile::tempdir().expect("a temporary directory");
     write(
-        &dir.path().join("tessera.toml"),
+        &dir.path().join("ascribe.toml"),
         "spec = \"0.1\"\nbogus = 1\n",
     );
     let out = tessera(dir.path(), &["check", "--format", "json"]);
     assert_eq!(code(&out), 2);
     let report: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("valid JSON");
     assert!(report["error"].is_string());
-    assert_eq!(report["diagnostics"][0]["file"], "tessera.toml");
+    assert_eq!(report["diagnostics"][0]["file"], "ascribe.toml");
     assert_eq!(report["files_checked"], 0);
 }
 
@@ -251,7 +251,7 @@ fn json_reports_a_missing_model_as_an_error_object() {
         report["error"]
             .as_str()
             .expect("a message")
-            .contains("tessera.toml")
+            .contains("ascribe.toml")
     );
     assert!(
         report["diagnostics"]
@@ -275,7 +275,7 @@ const BUILDS_MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"
 
 fn builds_project(files: &[(&str, &str)]) -> TempDir {
     let dir = project(files);
-    fs::write(dir.path().join("tessera.toml"), BUILDS_MODEL).expect("write the model");
+    fs::write(dir.path().join("ascribe.toml"), BUILDS_MODEL).expect("write the model");
     dir
 }
 

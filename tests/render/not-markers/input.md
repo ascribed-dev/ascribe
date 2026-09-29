@@ -1,9 +1,9 @@
-![Space before](./a.png) <tessera-attributes width="1"></tessera-attributes>
+![Space before](./a.png) <ascribe-attributes width="1"></ascribe-attributes>
 
-## Not <tessera-attributes id="not"></tessera-attributes> at the end
+## Not <ascribe-attributes id="not"></ascribe-attributes> at the end
 
-A paragraph with <tessera-attributes id="para"></tessera-attributes> inside.
+A paragraph with <ascribe-attributes id="para"></ascribe-attributes> inside.
 
-![Single quotes](./b.png)<tessera-attributes width='2'></tessera-attributes>
+![Single quotes](./b.png)<ascribe-attributes width='2'></ascribe-attributes>
 
-![Something between](./c.png)<tessera-attributes width="3">x</tessera-attributes>
+![Something between](./c.png)<ascribe-attributes width="3">x</ascribe-attributes>

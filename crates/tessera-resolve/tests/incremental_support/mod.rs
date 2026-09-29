@@ -28,7 +28,7 @@ pub struct ModelSpec {
     pub shared_pattern: bool,
     pub glossary: bool,
     /// A comment, which changes nothing about the model but its warnings'
-    /// spans in a real `tessera.toml`.
+    /// spans in a real `ascribe.toml`.
     pub comment: bool,
 }
 
@@ -51,7 +51,7 @@ impl ModelSpec {
         if self.comment {
             t.push_str("# a comment\n");
         }
-        t.push_str("spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\noutput-dir = \".tessera/build\"\n\n");
+        t.push_str("spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\noutput-dir = \".ascribe/build\"\n\n");
         let _ = writeln!(
             t,
             "[phrases]\nproduct = \"{}\"\napi = \"https://api.quill.dev/v3/\"",

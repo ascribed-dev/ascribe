@@ -1,9 +1,9 @@
-Overview <tessera-attributes id="overview"></tessera-attributes>
+Overview <ascribe-attributes id="overview"></ascribe-attributes>
 ========
 
-Details <tessera-attributes id="details"></tessera-attributes>
+Details <ascribe-attributes id="details"></ascribe-attributes>
 -------
 
-## <tessera-attributes id="untitled"></tessera-attributes>
+## <ascribe-attributes id="untitled"></ascribe-attributes>
 
-## Closed heading <tessera-attributes id="closed"></tessera-attributes> ##
+## Closed heading <ascribe-attributes id="closed"></ascribe-attributes> ##

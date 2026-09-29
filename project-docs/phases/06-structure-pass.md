@@ -4,7 +4,7 @@
 
 ## Goal
 
-Turn the flat sequence of directive lines and blocks into Tessera's structure: containers, groups and arms, titles, and bindings. Report every structural error the spec defines.
+Turn the flat sequence of directive lines and blocks into Ascribe's structure: containers, groups and arms, titles, and bindings. Report every structural error the spec defines.
 
 ## Read first
 
@@ -62,7 +62,7 @@ Turn the flat sequence of directive lines and blocks into Tessera's structure: c
   - `bind.rs`: bindings, `@steps`, and the helpers `bound_heading` and `bound_block`.
   - `lists.rs`: `list-ended-by-directive`, `directive-indented-code`, `steps-numbering-continued`.
 - **The tree**: `BlockKind::Container`, `Group` (with `Arm`s) are produced. A title is **attached** to its directive, as `DirectiveLine::title` (a `TitleLine` with `span`, `dot`, `content`, and `inlines`), and the title line stops being a block. `DirectiveLine::binding: Option<Bound>` (`Own`, `Heading`, `FollowingBlock`, `Unbound`). `BlockKind::Title` is kept but never produced (documented; removing it would have touched `match`es in phase 07's files).
-- **The conformance adapter**: `syntax.rs` handles `structure` as well as `parser` and delegates the Tessera nodes to `tests/adapters/structure.rs`. The stand-in binding logic is gone. The `structure` skip entry is removed.
+- **The conformance adapter**: `syntax.rs` handles `structure` as well as `parser` and delegates the Ascribe nodes to `tests/adapters/structure.rs`. The stand-in binding logic is gone. The `structure` skip entry is removed.
 - **`tests/conformance/tests/structure_rows.rs`**: see "Conformance" below.
 - **Questions** Q31 to Q36 (below), and implementation notes on Q13 and Q16 to Q19.
 

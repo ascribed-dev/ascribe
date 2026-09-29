@@ -1,7 +1,7 @@
-//! `tessera build`: check the project, then write each build's outputs.
+//! `ascribe build`: check the project, then write each build's outputs.
 //!
 //! The checks run first, for every build asked for, and print exactly what
-//! `tessera check` prints (the same report code on the same diagnostics). A
+//! `ascribe check` prints (the same report code on the same diagnostics). A
 //! build with errors writes nothing (SPEC §8.2: "a build MUST fail on
 //! errors"). Otherwise each build is resolved once (phase 12) and each
 //! output is written from that resolved tree (phase 18), into a staging
@@ -29,11 +29,11 @@ use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::{Counts, FileTable, json, text};
 
-/// Arguments of `tessera build`.
+/// Arguments of `ascribe build`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
     /// Build only this build (repeat for several). By default, every build
-    /// in tessera.toml.
+    /// in ascribe.toml.
     #[arg(long, value_name = "NAME")]
     pub build: Vec<String>,
 
@@ -47,7 +47,7 @@ pub struct Args {
     )]
     pub emit: Vec<Emit>,
 
-    /// How to show the checks' results: the same formats as `tessera check`.
+    /// How to show the checks' results: the same formats as `ascribe check`.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
 }
@@ -65,7 +65,7 @@ pub enum Emit {
 
 /// Runs the command. Exit codes: 0 on success, 1 when the checks found errors
 /// (nothing is written), 2 when it couldn't do its work: a usage error, no
-/// `tessera.toml`, a content model with errors, or an output that couldn't be
+/// `ascribe.toml`, a content model with errors, or an output that couldn't be
 /// written.
 pub fn run(global: &Global, args: Args) -> ExitCode {
     let stdout = io::stdout();
@@ -212,7 +212,7 @@ fn fail(err: &mut dyn Write, message: &str) -> u8 {
     exit::FAILURE
 }
 
-/// Reports a project that couldn't be loaded, as `tessera check` does
+/// Reports a project that couldn't be loaded, as `ascribe check` does
 /// (resolved Q58): a content model with errors is a configuration failure
 /// (exit code 2), and its diagnostics are shown.
 fn report_failure(

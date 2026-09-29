@@ -1,15 +1,15 @@
-// <tessera-tabs> and <tessera-tab> (CONTRACT.md §3): the library's only
+// <ascribe-tabs> and <ascribe-tab> (CONTRACT.md §3): the library's only
 // element with behavior. Without this script every tab shows with its label
 // (CSS generated content); with it, the group follows the WAI-ARIA tabs
 // pattern.
 
-const STORAGE_PREFIX = "tessera-tabs:";
+const STORAGE_PREFIX = "ascribe-tabs:";
 
 /** Choices made this page load, for readers whose storage is unavailable. */
 const pageChoices = new Map<string, string>();
 
 /** Every connected, initialized group with a `sync` attribute. */
-const syncedGroups = new Set<TesseraTabs>();
+const syncedGroups = new Set<AscribeTabs>();
 
 let idCounter = 0;
 
@@ -40,9 +40,9 @@ function valuesOf(tab: Element): string[] {
 }
 
 /** A tab panel: one arm of a `@variant` group. Styled by CSS; no behavior. */
-export class TesseraTab extends HTMLElement {}
+export class AscribeTab extends HTMLElement {}
 
-export class TesseraTabs extends HTMLElement {
+export class AscribeTabs extends HTMLElement {
   #tablist: HTMLElement | null = null;
   #tabs: HTMLElement[] = [];
   #buttons: HTMLButtonElement[] = [];
@@ -65,7 +65,7 @@ export class TesseraTabs extends HTMLElement {
   #setup(): void {
     if (!this.isConnected || this.#ready) return;
     this.#tabs = Array.from(this.children).filter(
-      (child): child is HTMLElement => child.localName === "tessera-tab",
+      (child): child is HTMLElement => child.localName === "ascribe-tab",
     );
     if (this.#tabs.length === 0) return;
     this.#ready = true;
@@ -75,7 +75,7 @@ export class TesseraTabs extends HTMLElement {
     this.#tablist = tablist;
 
     this.#buttons = this.#tabs.map((tab) => {
-      if (!tab.id) tab.id = `tessera-tab-${++idCounter}`;
+      if (!tab.id) tab.id = `ascribe-tab-${++idCounter}`;
       const button = document.createElement("button");
       button.type = "button";
       button.id = `${tab.id}-button`;

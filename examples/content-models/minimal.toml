@@ -1,4 +1,4 @@
 # The smallest valid content model. See project-docs/content-model.md §19 for
-# what every absent section means: content in docs/, output in .tessera/build/,
+# what every absent section means: content in docs/, output in .ascribe/build/,
 # one page type with a required title, and one build, `site`.
 spec = "0.1"

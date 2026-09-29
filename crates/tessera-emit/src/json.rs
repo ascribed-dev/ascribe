@@ -393,7 +393,7 @@ impl Writer<'_, '_> {
             site: emit.site_origin().map(str::to_owned),
             title: page.title.clone(),
             // A frontmatter mapping with a key that isn't a string can't be
-            // JSON; it's left out (`tessera check` reports the key).
+            // JSON; it's left out (`ascribe check` reports the key).
             frontmatter: page
                 .frontmatter
                 .as_ref()

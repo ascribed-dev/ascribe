@@ -66,7 +66,7 @@ pub type AdapterResult<T> = Result<Option<T>, AdapterError>;
 /// carrying them. Every method has a default that produces nothing, so an
 /// adapter implements only what its phase builds. Adapters live in the
 /// conformance crate's `tests/adapters/` module and are registered in
-/// `tests/conformance.rs`; the harness itself depends on no Tessera crate.
+/// `tests/conformance.rs`; the harness itself depends on no Ascribe crate.
 pub trait ConformanceAdapter {
     /// A short name for messages, for example `syntax`.
     fn name(&self) -> &str;

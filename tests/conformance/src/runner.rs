@@ -115,9 +115,9 @@ impl Suite {
         self.root.join("diagnostics.toml")
     }
 
-    /// `_model/tessera.toml`, the shared fixture model.
+    /// `_model/ascribe.toml`, the shared fixture model.
     pub fn shared_model_path(&self) -> PathBuf {
-        self.root.join("_model").join("tessera.toml")
+        self.root.join("_model").join("ascribe.toml")
     }
 
     /// `snapshots/`, where `insta` output snapshots live.

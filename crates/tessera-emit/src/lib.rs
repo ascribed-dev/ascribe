@@ -1,4 +1,4 @@
-//! Emitters for Tessera's outputs: site markdown, plain markdown, and JSON, plus Zod schema generation.
+//! Emitters for Ascribe's outputs: site markdown, plain markdown, and JSON, plus Zod schema generation.
 //!
 //! Phase 18 adds the plain-markdown and JSON emitters and the shared output
 //! handling; phase 20 adds site output.
@@ -32,7 +32,7 @@
 //! let root = Path::new(".");
 //! let cx = EmitContext::new(project, root, build);
 //! let emission = emit(&PlainEmitter, &cx, resolved)?;
-//! let output = OutputDir::lock(&root.join(".tessera/build"))?;
+//! let output = OutputDir::lock(&root.join(".ascribe/build"))?;
 //! output.replace(&build.name, PlainEmitter.name(), &emission.files)?;
 //! # Ok(()) }
 //! ```

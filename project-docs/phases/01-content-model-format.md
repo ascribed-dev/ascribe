@@ -4,16 +4,16 @@
 
 ## Goal
 
-Specify `tessera.toml`, the content model file, completely enough that phase 08 can implement a loader and phase 03 can write fixtures without making design decisions. This is a design and documentation phase; it produces no code.
+Specify `ascribe.toml`, the content model file, completely enough that phase 08 can implement a loader and phase 03 can write fixtures without making design decisions. This is a design and documentation phase; it produces no code.
 
 ## Read first
 
 - [SPEC.md](../../SPEC.md): §2 (documents), §4 (built-in directives), §5 (inline constructs), §6 (project widgets), §7 (content model), §9.3–§9.5 (build modes, outputs, consumer profile).
-- [PLAN.md](../PLAN.md): the `tessera.toml` sketch under Content model.
+- [PLAN.md](../PLAN.md): the `ascribe.toml` sketch under Content model.
 
 ## Deliverables
 
-- `project-docs/content-model.md`: the reference for `tessera.toml`.
+- `project-docs/content-model.md`: the reference for `ascribe.toml`.
 - `examples/content-models/`: at least three example files, each valid under the reference:
   - `minimal.toml`: the smallest valid content model.
   - `quill.toml`: the model Appendix B assumes (see below).
@@ -68,7 +68,7 @@ Specify `tessera.toml`, the content model file, completely enough that phase 08 
 
 ### What was built
 
-- **`project-docs/content-model.md`**, the `tessera.toml` reference:
+- **`project-docs/content-model.md`**, the `ascribe.toml` reference:
   - §1: conventions. Kebab-case keys, unknown keys are errors, name grammars, path and glob syntax, and which declaration orders are significant.
   - §2: a table mapping every SPEC §7.2 declaration (plus §9.3, §9.5, §11, and the editor setting) to its section.
   - §3–§18: one section per table, each with a key table (type, default or **required**, description) and an example.
@@ -99,7 +99,7 @@ Specify `tessera.toml`, the content model file, completely enough that phase 08 
 
 ### For phase 03 (fixtures)
 
-- Base `tests/conformance/_model/tessera.toml` on `quill.toml`. `full.toml` has ready-made widgets covering every binding, primary kind, title setting, and groupable, plus a feature with a history, a lifecycle state that doesn't count as available (`sunset`), and an extra note type.
+- Base `tests/conformance/_model/ascribe.toml` on `quill.toml`. `full.toml` has ready-made widgets covering every binding, primary kind, title setting, and groupable, plus a feature with a history, a lifecycle state that doesn't count as available (`sunset`), and an extra note type.
 - Q1–Q21 are decided, so cases that depend on them are ordinary cases. Only cases depending on Q12's consumer values should be tagged `provisional`.
 
 ### Decisions (the checkpoint)
@@ -108,5 +108,5 @@ All 21 items in `content-model.md` §21 were decided on 2026-09-28 at the human 
 
 ### Left open
 
-- A JSON Schema for `tessera.toml` would give writers completion in any TOML editor (for example, through Taplo). It isn't in any phase yet.
+- A JSON Schema for `ascribe.toml` would give writers completion in any TOML editor (for example, through Taplo). It isn't in any phase yet.
 - The Astro routing rule (§16) says routes follow how Astro's content loader computes entry ids. Phase 20 must verify this against the Astro version it targets, including Astro's handling of a `slug` frontmatter field.

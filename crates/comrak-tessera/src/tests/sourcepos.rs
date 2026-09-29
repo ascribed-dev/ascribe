@@ -8,7 +8,7 @@ type TestCase = (&'static [Sourcepos], &'static str);
 
 const DOCUMENT: TestCase = (&[sourcepos!((1:1-1:1))], "a");
 
-// TESSERA: a case for the Tessera-line node.
+// TESSERA: a case for the Ascribe-line node.
 const TESSERA_LINE: TestCase = (
     &[sourcepos!((2:1-3:5)), sourcepos!((4:3-4:6))],
     "before\n@note: hello\nworld\n  @end\n",
@@ -545,7 +545,7 @@ fn sourcepos() {
     let node_values = node_values();
 
     let mut options = Options::default();
-    // TESSERA: turn Tessera lines on.
+    // TESSERA: turn Ascribe lines on.
     options.extension.tessera = Some(std::sync::Arc::new(
         crate::tessera::TesseraOptions::new()
             .keyword("note", true)

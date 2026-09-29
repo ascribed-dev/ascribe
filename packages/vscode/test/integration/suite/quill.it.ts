@@ -3,13 +3,13 @@ import { readFileSync, writeFileSync } from "node:fs";
 import * as vscode from "vscode";
 import { activated, diagnosticsOf, uriOf } from "./helpers.js";
 
-// The real `tessera lsp` (phase 15) on a copy of examples/quill with a broken
+// The real `ascribe lsp` (phase 15) on a copy of examples/quill with a broken
 // page, `docs/broken.md`, added (its unknown attribute key is a §8.2 error).
 describe("with the real language server on examples/quill", () => {
   const broken = uriOf("docs", "broken.md");
   const original = () => readFileSync(broken.fsPath, "utf8");
 
-  it("starts `tessera lsp` from the tessera.path setting", async () => {
+  it("starts `ascribe lsp` from the ascribe.path setting", async () => {
     const api = await activated();
     await api.whenSettled();
     assert.equal(api.state(), "running");

@@ -78,7 +78,7 @@ fn project_with(model: &str, files: &[(&str, &str)]) -> Project {
         )
     }));
     Project::from_parts(
-        PathBuf::from("/nonexistent-tessera-project"),
+        PathBuf::from("/nonexistent-ascribe-project"),
         RelPath::parse("docs").expect("a relative path"),
         tessera_model::load_str(model, FileId::new(0)).expect("the model loads"),
         model.to_owned(),
@@ -379,7 +379,7 @@ fn locations_use_the_projects_file_ids_whatever_order_the_sources_came_in() {
         },
     ];
     let p = Project::from_parts(
-        PathBuf::from("/nonexistent-tessera-project"),
+        PathBuf::from("/nonexistent-ascribe-project"),
         RelPath::parse("docs").expect("a relative path"),
         tessera_model::load_str(MODEL, FileId::new(0)).expect("the model loads"),
         MODEL.to_owned(),

@@ -147,7 +147,7 @@ impl Client {
 fn run(pages: usize) {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
-    write(&root, "tessera.toml", MODEL);
+    write(&root, "ascribe.toml", MODEL);
     for i in 0..pages {
         write(
             &root,
@@ -200,7 +200,7 @@ fn run(pages: usize) {
                 DidOpenTextDocumentParams {
                     text_document: TextDocumentItem {
                         uri: uri.clone(),
-                        language_id: "tessera".into(),
+                        language_id: "ascribe".into(),
                         version: 1,
                         text: text.clone(),
                     },
@@ -259,7 +259,7 @@ fn run(pages: usize) {
                 DidOpenTextDocumentParams {
                     text_document: TextDocumentItem {
                         uri: fragment_uri.clone(),
-                        language_id: "tessera".into(),
+                        language_id: "ascribe".into(),
                         version: 1,
                         text: "## Shared 0\n\nShared text.\n".into(),
                     },

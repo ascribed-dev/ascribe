@@ -1,4 +1,4 @@
-// Running `tessera build --emit site` for the configured build.
+// Running `ascribe build --emit site` for the configured build.
 import { execFile } from "node:child_process";
 
 /** What a successful build printed. */
@@ -40,7 +40,7 @@ export function runBuild(options: {
           const report = `${stdout}${stderr}`.trim();
           reject(
             new Error(
-              `\`tessera build --build ${options.build}\` failed${report === "" ? `: ${error.message}` : `:\n${report}`}`,
+              `\`ascribe build --build ${options.build}\` failed${report === "" ? `: ${error.message}` : `:\n${report}`}`,
               { cause: error },
             ),
           );

@@ -1,7 +1,7 @@
 // The Astro end-to-end slice (phase 21): a real `astro build` of this site,
 // then the built HTML checked in Chromium. Run by `pnpm test:e2e`; it needs a
-// built `tessera` binary (`cargo build -p tessera-cli`, or TESSERA_BIN) and
-// `pnpm --filter @tessera/astro build` and `pnpm --filter @tessera/elements build`.
+// built `ascribe` binary (`cargo build -p tessera-cli`, or ASCRIBE_BIN) and
+// `pnpm --filter @ascribed/astro build` and `pnpm --filter @ascribed/elements build`.
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -48,7 +48,7 @@ describe("the built site", () => {
     }
   });
 
-  it("follows links that only work if Tessera's routes are Astro's", async () => {
+  it("follows links that only work if Ascribe's routes are Astro's", async () => {
     const page = await open(BASE);
     // `[setting up Loom](<Guides/My Setup.md>)`: a slugged, lower-cased entry id.
     await page.getByRole("link", { name: "setting up Loom" }).click();
@@ -120,9 +120,9 @@ describe("the built site", () => {
       connect.getByText("Sign in to Loom Cloud and copy your API key.").isVisible(),
     ).resolves.toBe(true);
     await expect(page.getByText("Point the CLI at your own server").count()).resolves.toBe(0);
-    await expect(page.locator('tessera-tabs[sync="deployment"]').count()).resolves.toBe(0);
+    await expect(page.locator('ascribe-tabs[sync="deployment"]').count()).resolves.toBe(0);
     // The `pm` group is still a switcher.
-    const group = page.locator('tessera-tabs[sync="pm"]');
+    const group = page.locator('ascribe-tabs[sync="pm"]');
     await expect(group.getByRole("tab").allTextContents()).resolves.toEqual([
       "npm",
       "pnpm",
@@ -138,7 +138,7 @@ describe("the built site", () => {
 
   it("renders the availability badges, page-level from frontmatter and section-level", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
-    const pageBadge = page.locator('tessera-availability[scope="page"]');
+    const pageBadge = page.locator('ascribe-availability[scope="page"]');
     await expect(pageBadge.innerText()).resolves.toContain(
       "Loom Cloud (GA); Self-managed (preview, 3.4+)",
     );
@@ -147,33 +147,33 @@ describe("the built site", () => {
       pageBadge.evaluate((element) => getComputedStyle(element, "::before").content),
     ).resolves.toBe('"Available: "');
     const background = await pageBadge
-      .locator("tessera-availability-target")
+      .locator("ascribe-availability-target")
       .first()
       .evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(background).not.toBe("rgba(0, 0, 0, 0)");
-    const section = page.locator('tessera-availability[scope="section"]');
+    const section = page.locator('ascribe-availability[scope="section"]');
     await expect(section.innerText()).resolves.toContain("Self-managed (preview, 3.4+)");
     await page.close();
   });
 
-  it("serves a linked file at <base>/_tessera/files/", async () => {
+  it("serves a linked file at <base>/_ascribe/files/", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
     const href = await page.getByRole("link", { name: "sample config" }).getAttribute("href");
-    expect(href).toBe(`${BASE}/_tessera/files/downloads/loom.yaml`);
+    expect(href).toBe(`${BASE}/_ascribe/files/downloads/loom.yaml`);
     const response = await page.request.get(`${origin}${href}`);
     expect(response.status()).toBe(200);
     await expect(response.text()).resolves.toBe("weave:\n  strands: 4\n");
     await page.close();
   });
 
-  it("gives every heading the id Tessera validated, at the route Tessera computed", async () => {
-    // `tessera build --emit json` records each page's route and heading ids.
-    const binary = process.env["TESSERA_BIN"] ?? findWorkspaceBinary();
+  it("gives every heading the id Ascribe validated, at the route Ascribe computed", async () => {
+    // `ascribe build --emit json` records each page's route and heading ids.
+    const binary = process.env["ASCRIBE_BIN"] ?? findWorkspaceBinary();
     execFileSync(binary, ["build", "--build", "site", "--emit", "json", "--color", "never"], {
       cwd: siteDir,
       stdio: "pipe",
     });
-    const jsonDir = path.join(siteDir, ".tessera", "build", "site", "json");
+    const jsonDir = path.join(siteDir, ".ascribe", "build", "site", "json");
     const documents = jsonFiles(jsonDir).map(
       (file) =>
         JSON.parse(readFileSync(file, "utf8")) as {
@@ -207,7 +207,7 @@ describe("the built site", () => {
 function findWorkspaceBinary(): string {
   for (let dir = siteDir; dir !== path.dirname(dir); dir = path.dirname(dir)) {
     for (const profile of ["debug", "release"]) {
-      const candidate = path.join(dir, "target", profile, "tessera");
+      const candidate = path.join(dir, "target", profile, "ascribe");
       try {
         readFileSync(candidate);
         return candidate;
@@ -216,7 +216,7 @@ function findWorkspaceBinary(): string {
       }
     }
   }
-  throw new Error("no tessera binary: run `cargo build -p tessera-cli` or set TESSERA_BIN");
+  throw new Error("no ascribe binary: run `cargo build -p tessera-cli` or set ASCRIBE_BIN");
 }
 
 function jsonFiles(dir: string): string[] {

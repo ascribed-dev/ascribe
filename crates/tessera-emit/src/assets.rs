@@ -18,14 +18,14 @@ pub struct Placement {
 }
 
 /// The mirrored path of an asset (asset contract, §3.1): the source path
-/// itself inside the content root, and `_tessera/up/…` outside it, with each
+/// itself inside the content root, and `_ascribe/up/…` outside it, with each
 /// leading `..` replaced by `up`.
 pub fn mirrored_path(source: &RelPath) -> RelPath {
     let ups = source.up_count();
     if ups == 0 {
         return source.clone();
     }
-    let mut path = String::from("_tessera");
+    let mut path = String::from("_ascribe");
     for _ in 0..ups {
         path.push_str("/up");
     }
@@ -115,11 +115,11 @@ mod tests {
         assert_eq!(mirrored_path(&path("img/a.png")).as_str(), "img/a.png");
         assert_eq!(
             mirrored_path(&path("../shared/logo.png")).as_str(),
-            "_tessera/up/shared/logo.png"
+            "_ascribe/up/shared/logo.png"
         );
         assert_eq!(
             mirrored_path(&path("../../x.png")).as_str(),
-            "_tessera/up/up/x.png"
+            "_ascribe/up/up/x.png"
         );
     }
 
@@ -139,8 +139,8 @@ mod tests {
             "./playground.png"
         );
         assert_eq!(
-            relative_reference(&path("a/b/c.md"), &path("_tessera/up/x.png")),
-            "../../_tessera/up/x.png"
+            relative_reference(&path("a/b/c.md"), &path("_ascribe/up/x.png")),
+            "../../_ascribe/up/x.png"
         );
     }
 

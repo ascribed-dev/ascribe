@@ -1,11 +1,11 @@
-//! `tessera fmt [paths] [--check]`: rewrites Tessera constructs into
+//! `ascribe fmt [paths] [--check]`: rewrites Ascribe constructs into
 //! canonical form (SPEC §8.3) with `tessera-fmt`.
 //!
 //! - **What it formats.** Every `.md` file under each path (a file, or a
 //!   directory searched recursively), or, with no path, under the project's
 //!   content root. Directories whose names start with `.` and `node_modules`
 //!   are skipped.
-//! - **The project.** `--config`, or the nearest `tessera.toml` at or above the
+//! - **The project.** `--config`, or the nearest `ascribe.toml` at or above the
 //!   current directory. Its content model decides which lines are directives.
 //! - **Without `--check`** files are rewritten in place, and each file that
 //!   changed is listed. **With `--check`** nothing is written, and each file
@@ -25,7 +25,7 @@ use tessera_model::ContentModel;
 use crate::cli::Global;
 use crate::exit;
 
-/// Arguments of `tessera fmt`.
+/// Arguments of `ascribe fmt`.
 #[derive(Debug, Default, ClapArgs)]
 pub struct Args {
     /// Files and directories to format. By default, the content root.
@@ -104,7 +104,7 @@ fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<us
     Ok(changed)
 }
 
-/// `--config`, or the nearest `tessera.toml` in the current directory or a parent.
+/// `--config`, or the nearest `ascribe.toml` in the current directory or a parent.
 fn find_config(global: &Global) -> Result<PathBuf, String> {
     let config = match &global.config {
         Some(path) if path.is_dir() => path.join(tessera_check::MODEL_FILE),
@@ -114,7 +114,7 @@ fn find_config(global: &Global) -> Result<PathBuf, String> {
                 .map_err(|e| format!("can't read the current directory: {e}"))?;
             tessera_check::Project::find_config(&cwd).ok_or_else(|| {
                 format!(
-                    "no {} found in {} or any parent directory; run tessera from a project, or pass --config",
+                    "no {} found in {} or any parent directory; run ascribe from a project, or pass --config",
                     tessera_check::MODEL_FILE,
                     cwd.display()
                 )
@@ -135,7 +135,7 @@ fn load_model(path: &Path) -> Result<ContentModel, String> {
     tessera_model::load_with_file(path, FileId::new(0)).map_err(|issues| {
         let slugs: Vec<&str> = issues.iter().map(|i| i.slug.as_str()).collect();
         format!(
-            "{} isn't a valid content model ({}); run `tessera check` for details",
+            "{} isn't a valid content model ({}); run `ascribe check` for details",
             path.display(),
             slugs.join(", ")
         )

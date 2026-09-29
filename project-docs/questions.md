@@ -1,5 +1,7 @@
 # Spec questions
 
+**A note on names.** The project was renamed to Ascribe on 2026-09-29. Entries before that date use the old names; they are historical record and are left as written. The short mapping: the command `tessera` is now `ascribe`; the content model `tessera.toml` is now `ascribe.toml`; the custom elements and the reserved widget prefix `tessera-…` are now `ascribe-…`; the attribute marker `<tessera-attributes>` is now `<ascribe-attributes>`; the npm scope `@tessera` is now `@ascribed`; and the diagnostic codes `TSRnnn` are now `ASCnnn`, with the same numbers.
+
 [SPEC.md](../SPEC.md) is normative, but it has gaps. This file records every place where an implementing agent found the spec ambiguous or silent, so that a human can resolve it. The protocol is in [phases/README.md](phases/README.md#when-the-spec-is-unclear):
 
 1. **Don't guess silently.** Add an entry below with the section, the ambiguity, the options, and your proposed resolution.
@@ -168,18 +170,18 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `crates/tessera-core/src/consumer.rs`; phases 09, 11, and 12.
 - **Resolution:** option 1, as proposed and implemented. SPEC §5.5 now says explicit ids don't take part in slug numbering, so a slug equal to an explicit id is a duplicate id.
 
-### Q8: `<tessera-note title>` is also HTML's `title` attribute
+### Q8: `<ascribe-note title>` is also HTML's `title` attribute
 
 - **Section:** SPEC §9.4
 - **Raised by:** phase 02
 - **Status:** resolved (2026-09-28)
-- **Ambiguity:** §9.4's table gives a note's title as `<tessera-note type="tip" title="…">`. `title` is a global HTML attribute: browsers show it as a tooltip whenever the pointer is anywhere over the element, so every titled note shows its title as a tooltip over its whole body, and assistive technology may announce it as the element's description.
+- **Ambiguity:** §9.4's table gives a note's title as `<ascribe-note type="tip" title="…">`. `title` is a global HTML attribute: browsers show it as a tooltip whenever the pointer is anywhere over the element, so every titled note shows its title as a tooltip over its whole body, and assistive technology may announce it as the element's description.
 - **Options:**
   1. Keep `title`, as the spec says, and accept the tooltip.
   2. Use another name, such as `heading`. Needs a spec change.
 - **Proposed resolution:** option 2, `heading`, which the element library would show the same way. Implemented now: option 1, since the spec names the attribute; the element contract marks it provisional.
 - **Affects:** `packages/elements/CONTRACT.md`; phases 19 and 20.
-- **Resolution:** option 2: the attribute is `heading` (`<tessera-note type="tip" heading="…">`). SPEC §9.4, the element contract, and the render fixtures use it, and so do widget elements, for their title lines. The note's `label` attribute stays.
+- **Resolution:** option 2: the attribute is `heading` (`<ascribe-note type="tip" heading="…">`). SPEC §9.4, the element contract, and the render fixtures use it, and so do widget elements, for their title lines. The note's `label` attribute stays.
 
 ### Q9: Attribute names that clash with HTML
 
@@ -239,13 +241,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Section:** SPEC §4.5, §9.7; `packages/elements/CONTRACT.md` §1
 - **Raised by:** phase 19
 - **Status:** resolved (2026-09-28)
-- **Ambiguity:** The contract says a note's heading line shows `heading`, "or `label` when there's no heading". A note with a `heading`, such as `<tessera-note type="warning" label="Warning" heading="Back up your database first">`, then shows only "Back up your database first", and its type reaches the reader only through the accent color. A reader who can't tell the colors apart can't tell a warning from a tip (WCAG 1.4.1, Use of Color), and assistive technology gets no type either, because generated content is the only place the label appears.
+- **Ambiguity:** The contract says a note's heading line shows `heading`, "or `label` when there's no heading". A note with a `heading`, such as `<ascribe-note type="warning" label="Warning" heading="Back up your database first">`, then shows only "Back up your database first", and its type reaches the reader only through the accent color. A reader who can't tell the colors apart can't tell a warning from a tip (WCAG 1.4.1, Use of Color), and assistive technology gets no type either, because generated content is the only place the label appears.
 - **Options:**
   1. Keep the contract: `heading`, or `label` without one. The type is color-only when there's a heading.
   2. Show both when there's a heading: `content: attr(label) ": " attr(heading)`, giving "Warning: Back up your database first". A note with no heading still shows the label alone. Only the element library's CSS changes; the emitter's markup is unchanged.
   3. Show the label as a separate visually distinct line or badge above the heading. More layout, same information.
 - **Proposed resolution:** Option 2. It keeps the type readable without color and needs one CSS rule, with no change to the markup phase 20 emits. Implemented: option 2 (approved).
-- **Affects:** `packages/elements/css/style.css` (`tessera-note[heading]::before`); contract §1 (its rendering paragraph); phase 19's tests of the note heading; no other phase, since the markup is unchanged. Plain-markdown output already shows the type (`**Tip: …**`).
+- **Affects:** `packages/elements/css/style.css` (`ascribe-note[heading]::before`); contract §1 (its rendering paragraph); phase 19's tests of the note heading; no other phase, since the markup is unchanged. Plain-markdown output already shows the type (`**Tip: …**`).
 - **Resolution:** Approved by the repository owner: option 2. `CONTRACT.md` §1 and `css/style.css` now show `label: heading`; the tests were updated.
 
 ### Q13: A directive line inside a code span that started on an earlier line
@@ -1658,8 +1660,8 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Raised by:** phase 20
 - **Status:** resolved (2026-09-29)
 - **Ambiguity:** SPEC §9.4 says page-level availability is "passed through as frontmatter", and the element contract leaves "a form the layout can read" to phase 20. The source's `available` is a spec string (`cloud, self-managed preview 3.3`). A layout that shows it needs each target's `dimension`, states, versions, and display text, which the layout can't compute without the content model, and the generated Zod schema must describe whatever is written.
-- **Options:** (1) Pass the string through, and let the layout parse it. (2) Write a list of targets with the attributes of a `<tessera-availability-target>` and its text.
-- **Proposed resolution:** option 2, with the spec resolved (a feature key replaced by the spec it stands for, Q25). Each entry is `{ target, dimension, states: [...], versions: [...] (left out with none), text }`, in the spec's order, so a layout writes `<tessera-availability scope="page">` with one `<tessera-availability-target target dimension states versions>text</…>` per entry, with no model knowledge. The Zod schema's `available` is that list (`availableSchema`), not a string. A page with no `available` has no key. `variant` passes through as written. Implemented now: exactly that (`SPEC-QUESTION(Q142)` in `site/frontmatter.rs`).
+- **Options:** (1) Pass the string through, and let the layout parse it. (2) Write a list of targets with the attributes of a `<ascribe-availability-target>` and its text.
+- **Proposed resolution:** option 2, with the spec resolved (a feature key replaced by the spec it stands for, Q25). Each entry is `{ target, dimension, states: [...], versions: [...] (left out with none), text }`, in the spec's order, so a layout writes `<ascribe-availability scope="page">` with one `<ascribe-availability-target target dimension states versions>text</…>` per entry, with no model knowledge. The Zod schema's `available` is that list (`availableSchema`), not a string. A page with no `available` has no key. `variant` passes through as written. Implemented now: exactly that (`SPEC-QUESTION(Q142)` in `site/frontmatter.rs`).
 - **Affects:** `crates/tessera-emit/src/site/frontmatter.rs` and `zod/`; phase 21's collection configuration (the schema is the site output's, not the source's); the element contract's §4 could name this form.
 - **Resolution:** approved by the repository owner: as proposed, option 2: page-level `available` in the site output is a list of targets (`target`, `dimension`, `states`, `versions` when given, `text`), with feature keys resolved, and the Zod schema describes that list. Stated in SPEC §9.6 and the element contract §4.
 
@@ -1689,7 +1691,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Section:** site-render contract §2.1, §2.2
 - **Raised by:** phase 20
 - **Status:** resolved (2026-09-29)
-- **Ambiguity:** `## ![Icon](./icon.png)<tessera-attributes width="16"></tessera-attributes>`: the marker is the last inline content of the heading (§2.1) and also directly follows an image (§2.2).
+- **Ambiguity:** `## ![Icon](./icon.png)<ascribe-attributes width="16"></ascribe-attributes>`: the marker is the last inline content of the heading (§2.1) and also directly follows an image (§2.2).
 - **Proposed resolution:** it applies to the image; the heading gets no id from it. §2.2 names the position exactly, and the emitter never writes this (its heading marker follows a space, so a heading `## Logo ![Logo](./logo.png){width=32}` is `… ![Logo](./logo.png)<marker> <marker>`). A fixture, `tests/render/image-ends-heading`, records it for both implementations. Implemented now: exactly that (`SPEC-QUESTION(Q145)` in `render/mod.rs`).
 - **Affects:** `render_site_html`; phase 21's plugin must agree, through the new fixture; site-render.md §2.
 - **Resolution:** approved by the repository owner: as proposed: a marker directly after an image that also ends a heading applies to the image, and the heading gets no id from it. Stated in the site-render contract §2.2, with the fixture `image-ends-heading` in §6, which phase 21's plugin must also pass.

@@ -1,6 +1,6 @@
 [package]
 name = "tessera-fmt"
-description = "The Tessera formatter, which rewrites Tessera constructs into canonical form."
+description = "The Ascribe formatter, which rewrites Ascribe constructs into canonical form."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

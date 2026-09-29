@@ -3,7 +3,7 @@
 //!
 //! Every rule about what a reference names, and whether it's there, lives in
 //! `tessera_resolve::references`: the same code the source index runs, so
-//! `tessera check` and the source index can't disagree. That covers phrase
+//! `ascribe check` and the source index can't disagree. That covers phrase
 //! substitution in destinations (Q54), the asset contract's boundary and
 //! exact-case rules (Q10), routes (Q22, Q55), and where a diagnostic points
 //! (Q53). This module runs those rules on each reference of a file, and adds

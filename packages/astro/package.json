@@ -1,7 +1,7 @@
 {
-  "name": "@tessera/astro",
+  "name": "@ascribed/astro",
   "version": "0.0.0",
-  "description": "The Astro integration for Tessera.",
+  "description": "The Astro integration for Ascribe.",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -36,7 +36,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@tessera/elements": "workspace:*",
+    "@ascribed/elements": "workspace:*",
     "property-information": "^7.2.0",
     "smol-toml": "^1.9.0"
   },

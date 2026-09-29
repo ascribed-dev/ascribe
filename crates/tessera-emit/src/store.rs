@@ -1,6 +1,6 @@
 //! Output ownership (`project-docs/contracts/output-layout.md`): staging,
 //! the manifest, and replacing a previous build's output without ever
-//! touching a file Tessera didn't write.
+//! touching a file Ascribe didn't write.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions, TryLockError};
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use tessera_core::RelPath;
 
 /// The manifest's `format`.
-const MANIFEST_FORMAT: &str = "tessera-manifest";
+const MANIFEST_FORMAT: &str = "ascribe-manifest";
 /// The manifest format's version.
 const MANIFEST_VERSION: u32 = 1;
 const LOCK_FILE: &str = ".lock";
@@ -25,7 +25,7 @@ pub enum FileKind {
     Page,
     /// A copy of a file a page refers to.
     Asset,
-    /// Anything else Tessera writes, such as a schema.
+    /// Anything else Ascribe writes, such as a schema.
     Generated,
 }
 
@@ -57,22 +57,22 @@ pub struct EmittedFile {
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
     /// Another build holds the lock.
-    #[error("another tessera build is writing to {dir}")]
+    #[error("another ascribe build is writing to {dir}")]
     Locked {
         /// The output directory.
         dir: String,
     },
-    /// A file is at a manifest's path but isn't one, so Tessera can't tell
+    /// A file is at a manifest's path but isn't one, so Ascribe can't tell
     /// what it owns.
     #[error(
-        "{path} isn't a Tessera manifest, so Tessera can't tell which files in its directory it owns; move or remove it"
+        "{path} isn't a Ascribe manifest, so Ascribe can't tell which files in its directory it owns; move or remove it"
     )]
     NotManifest {
         /// The path.
         path: String,
     },
-    /// A manifest of a version this Tessera doesn't know.
-    #[error("{path} has manifest version {version}, which this tessera doesn't know")]
+    /// A manifest of a version this Ascribe doesn't know.
+    #[error("{path} has manifest version {version}, which this ascribe doesn't know")]
     UnknownVersion {
         /// The path.
         path: String,
@@ -199,7 +199,7 @@ impl OutputDir {
 
     /// Replaces the output of one build and emitter with `files`
     /// (output-layout contract, §4, steps 2 to 9): stages them, checks that
-    /// nothing that isn't Tessera's is in the way, records ownership, moves
+    /// nothing that isn't Ascribe's is in the way, records ownership, moves
     /// the files into place, removes what the previous output had and this
     /// one doesn't, and writes the final manifest.
     ///
@@ -263,7 +263,7 @@ impl OutputDir {
                 });
             }
         }
-        // Step 4, second part: nothing that isn't Tessera's is in the way.
+        // Step 4, second part: nothing that isn't Ascribe's is in the way.
         let mut blockers: BTreeSet<PathBuf> = BTreeSet::new();
         for dir in [self.root.join(build), emitter_root.clone()] {
             if fs::symlink_metadata(&dir).is_ok() && !dir.is_dir() {
@@ -284,7 +284,7 @@ impl OutputDir {
                     ));
                 } else if !previous_paths.contains(file.path.as_str()) {
                     problems.push(format!(
-                        "{} exists and isn't a file Tessera wrote; move or remove it",
+                        "{} exists and isn't a file Ascribe wrote; move or remove it",
                         dest.display()
                     ));
                 }
@@ -298,16 +298,16 @@ impl OutputDir {
                 prefix.push_str(segment);
                 let at = emitter_root.join(&prefix);
                 if fs::symlink_metadata(&at).is_ok() && !at.is_dir() {
-                    // Resolved Q117: a file of Tessera's where this build
+                    // Resolved Q117: a file of Ascribe's where this build
                     // needs a directory.
                     if previous_paths.contains(prefix.as_str()) {
-                        // Tessera's own file, which this build no longer
+                        // Ascribe's own file, which this build no longer
                         // produces as a file: it's removed before the
                         // directory is made.
                         blockers.insert(at);
                     } else {
                         problems.push(format!(
-                            "{} is a file that isn't Tessera's, and a directory is needed there",
+                            "{} is a file that isn't Ascribe's, and a directory is needed there",
                             at.display()
                         ));
                     }
@@ -462,7 +462,7 @@ fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
             version: manifest.version,
         });
     }
-    // Tessera deletes what a manifest lists, so an entry that could reach
+    // Ascribe deletes what a manifest lists, so an entry that could reach
     // outside the emitter root is refused, not followed.
     for entry in &manifest.files {
         let inside = RelPath::parse(&entry.path)

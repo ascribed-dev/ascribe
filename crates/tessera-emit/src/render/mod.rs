@@ -3,7 +3,7 @@
 //!
 //! It is comrak's CommonMark rendering with raw HTML passed through (SPEC
 //! §9.5, "HTML passthrough"), plus the two things the contract adds: a
-//! `<tessera-attributes>` marker that ends a heading gives the heading its
+//! `<ascribe-attributes>` marker that ends a heading gives the heading its
 //! attributes (its `id`), and one directly after an image gives the `<img>`
 //! its attributes. The editor preview (phase 25) renders with it. The Astro
 //! markdown plugin (phase 21) does the same in Astro's pipeline, and
@@ -28,7 +28,7 @@
 use comrak::{Options, markdown_to_html};
 
 /// The tag name of the attribute marker.
-const MARKER: &str = "tessera-attributes";
+const MARKER: &str = "ascribe-attributes";
 
 /// Renders site markdown as HTML: CommonMark with raw HTML allowed, GFM's
 /// tables, strikethrough, bare links, and task lists as Astro's defaults have
@@ -294,14 +294,14 @@ mod tests {
     #[test]
     fn a_marker_ending_a_heading_gives_it_an_id() {
         let html =
-            render_site_html("## Setup <tessera-attributes id=\"setup\"></tessera-attributes>\n");
+            render_site_html("## Setup <ascribe-attributes id=\"setup\"></ascribe-attributes>\n");
         assert_eq!(html, "<h2 id=\"setup\">Setup</h2>\n");
     }
 
     #[test]
     fn a_marker_after_an_image_gives_the_img_its_attributes() {
         let html = render_site_html(
-            "![A](./a.png \"T\")<tessera-attributes width=\"600\" loading=\"lazy\"></tessera-attributes>\n",
+            "![A](./a.png \"T\")<ascribe-attributes width=\"600\" loading=\"lazy\"></ascribe-attributes>\n",
         );
         assert_eq!(
             html,
@@ -312,14 +312,14 @@ mod tests {
     #[test]
     fn a_marker_replaces_an_attribute_the_element_has() {
         let html =
-            render_site_html("![A](./a.png)<tessera-attributes alt=\"B\"></tessera-attributes>\n");
+            render_site_html("![A](./a.png)<ascribe-attributes alt=\"B\"></ascribe-attributes>\n");
         assert_eq!(html, "<p><img src=\"./a.png\" alt=\"B\" /></p>\n");
     }
 
     #[test]
     fn values_decode_and_encode() {
         let html = render_site_html(
-            "## T <tessera-attributes id=\"a&amp;b &lt;c&gt; &quot;d&quot; &e\"></tessera-attributes>\n",
+            "## T <ascribe-attributes id=\"a&amp;b &lt;c&gt; &quot;d&quot; &e\"></ascribe-attributes>\n",
         );
         assert_eq!(
             html,
@@ -330,11 +330,11 @@ mod tests {
     #[test]
     fn the_second_of_two_adjacent_markers_does_not_apply_to_the_image() {
         let html = render_site_html(
-            "![A](./a.png)<tessera-attributes width=\"1\"></tessera-attributes><tessera-attributes width=\"2\"></tessera-attributes>\n",
+            "![A](./a.png)<ascribe-attributes width=\"1\"></ascribe-attributes><ascribe-attributes width=\"2\"></ascribe-attributes>\n",
         );
         assert_eq!(
             html,
-            "<p><img src=\"./a.png\" alt=\"A\" width=\"1\" /><tessera-attributes width=\"2\"></tessera-attributes></p>\n"
+            "<p><img src=\"./a.png\" alt=\"A\" width=\"1\" /><ascribe-attributes width=\"2\"></ascribe-attributes></p>\n"
         );
     }
 

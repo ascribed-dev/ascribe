@@ -1,6 +1,6 @@
 //! Project paths, and how link and image destinations resolve to them.
 //!
-//! Every path Tessera exchanges between crates is a [`RelPath`]: relative,
+//! Every path Ascribe exchanges between crates is a [`RelPath`]: relative,
 //! `/`-separated on every platform, and normalized. Paths of source files
 //! and assets are relative to the **content root** (SPEC §2.2), and may begin
 //! with `..` segments for files outside it, such as an image elsewhere in the

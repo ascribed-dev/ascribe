@@ -24,14 +24,14 @@ const SHOW_OUTPUT = "Show Output";
 const RESTART = "Restart Server";
 
 /**
- * Owns the language client: finds the binary, starts `tessera lsp`, restarts
+ * Owns the language client: finds the binary, starts `ascribe lsp`, restarts
  * it on request, and gives up after too many crashes.
  */
 export class ServerController implements vscode.Disposable {
   private client: LanguageClient | undefined;
   private current: ResolvedBinary | undefined;
   private status: ServerState = "stopped";
-  private readonly output = vscode.window.createOutputChannel("Tessera");
+  private readonly output = vscode.window.createOutputChannel("Ascribe");
   private readonly crashes: CrashCounter;
   private starting: Promise<void> = Promise.resolve();
 
@@ -88,7 +88,7 @@ export class ServerController implements vscode.Disposable {
     this.status = "starting";
 
     const resolution = await resolveBinary({
-      setting: vscode.workspace.getConfiguration("tessera").get<string>("path", ""),
+      setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
       projectRoots: await projectRoots(),
       extensionPath: this.context.extensionPath,
       minVersion: minServerVersion(this.context),
@@ -102,10 +102,10 @@ export class ServerController implements vscode.Disposable {
       this.output.appendLine(message);
       for (const line of tried) this.output.appendLine(`  tried ${line}`);
       void vscode.window
-        .showErrorMessage(`Tessera: ${message}`, OPEN_SETTINGS, SHOW_OUTPUT)
+        .showErrorMessage(`Ascribe: ${message}`, OPEN_SETTINGS, SHOW_OUTPUT)
         .then((choice) => {
           if (choice === OPEN_SETTINGS) {
-            void vscode.commands.executeCommand("workbench.action.openSettings", "tessera.path");
+            void vscode.commands.executeCommand("workbench.action.openSettings", "ascribe.path");
           } else if (choice === SHOW_OUTPUT) {
             this.showOutput();
           }
@@ -118,10 +118,10 @@ export class ServerController implements vscode.Disposable {
     this.output.appendLine(`Using ${binary.source} binary ${binary.path}`);
     if (binary.warning) {
       this.output.appendLine(binary.warning);
-      void vscode.window.showWarningMessage(`Tessera: ${binary.warning}`);
+      void vscode.window.showWarningMessage(`Ascribe: ${binary.warning}`);
     }
 
-    const client = new LanguageClient("tessera", "Tessera", serverOptions(binary), {
+    const client = new LanguageClient("ascribe", "Ascribe", serverOptions(binary), {
       ...clientOptions(this.output),
       errorHandler: this.errorHandler(),
     });
@@ -137,7 +137,7 @@ export class ServerController implements vscode.Disposable {
       const message = error instanceof Error ? error.message : String(error);
       this.output.appendLine(`The language server didn't start: ${message}`);
       void vscode.window
-        .showErrorMessage(`Tessera: the language server didn't start: ${message}`, SHOW_OUTPUT)
+        .showErrorMessage(`Ascribe: the language server didn't start: ${message}`, SHOW_OUTPUT)
         .then((choice) => {
           if (choice === SHOW_OUTPUT) this.showOutput();
         });
@@ -169,11 +169,11 @@ export class ServerController implements vscode.Disposable {
         }
         this.status = "failed";
         const message =
-          `The Tessera language server crashed ${this.crashes.count} times, so it won't be ` +
+          `The Ascribe language server crashed ${this.crashes.count} times, so it won't be ` +
           `restarted again. See the output for details, then restart it when you've fixed the cause.`;
         this.output.appendLine(message);
         void vscode.window
-          .showErrorMessage(`Tessera: ${message}`, SHOW_OUTPUT, RESTART)
+          .showErrorMessage(`Ascribe: ${message}`, SHOW_OUTPUT, RESTART)
           .then((choice) => {
             if (choice === SHOW_OUTPUT) this.showOutput();
             else if (choice === RESTART) void this.restart();
@@ -197,7 +197,7 @@ function clientOptions(outputChannel: vscode.OutputChannel): LanguageClientOptio
   return {
     documentSelector: [
       { scheme: "file", language: "markdown" },
-      { scheme: "file", pattern: "**/tessera.toml" },
+      { scheme: "file", pattern: "**/ascribe.toml" },
     ],
     outputChannel,
     // Resolved Q124: the server asks for the files it wants watched with dynamic
@@ -208,25 +208,25 @@ function clientOptions(outputChannel: vscode.OutputChannel): LanguageClientOptio
 }
 
 function readMaxCrashes(): number {
-  const value = vscode.workspace.getConfiguration("tessera").get<number>("maxCrashes", 5);
+  const value = vscode.workspace.getConfiguration("ascribe").get<number>("maxCrashes", 5);
   return Number.isInteger(value) && value >= 1 ? value : 5;
 }
 
-/** Resolved Q125: the oldest server this extension is written for (`tessera.minServerVersion` in package.json). */
+/** Resolved Q125: the oldest server this extension is written for (`ascribe.minServerVersion` in package.json). */
 function minServerVersion(context: vscode.ExtensionContext) {
-  const declared = (context.extension.packageJSON as { tessera?: { minServerVersion?: string } })
-    .tessera?.minServerVersion;
+  const declared = (context.extension.packageJSON as { ascribe?: { minServerVersion?: string } })
+    .ascribe?.minServerVersion;
   return parseVersion(declared ?? "") ?? { parts: [0, 0, 0] as const, prerelease: undefined };
 }
 
 /**
  * The directories to look in for the project's own binary: each folder that
- * holds a `tessera.toml`, and its parents up to the workspace folder (a
+ * holds a `ascribe.toml`, and its parents up to the workspace folder (a
  * monorepo keeps `node_modules` at the top); then the workspace folders.
  */
 async function projectRoots(): Promise<string[]> {
   const roots = new Set<string>();
-  const models = await vscode.workspace.findFiles("**/tessera.toml", "**/node_modules/**", 50);
+  const models = await vscode.workspace.findFiles("**/ascribe.toml", "**/node_modules/**", 50);
   for (const model of models) {
     const folder = vscode.workspace.getWorkspaceFolder(model);
     const dir = path.dirname(model.fsPath);

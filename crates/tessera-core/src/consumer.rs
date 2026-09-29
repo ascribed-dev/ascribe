@@ -4,7 +4,7 @@
 //! These are traits so that the crates that need them (resolution, phase 12;
 //! the emitters, phases 18 and 20) don't depend on the crates that implement
 //! them (the slugger, phase 09; the Astro profile, phase 20). Spec 0.1 has one
-//! profile, `astro`, selected by `[consumer] profile` in `tessera.toml`.
+//! profile, `astro`, selected by `[consumer] profile` in `ascribe.toml`.
 //!
 //! Two things SPEC §9.5 lists are not here, because the contracts fix them
 //! for every profile in spec 0.1: how heading ids and image attributes are
@@ -16,7 +16,7 @@ use crate::RelPath;
 /// Computes heading slugs (SPEC §5.5).
 ///
 /// Implementations reproduce a consumer's algorithm exactly, including how it
-/// numbers duplicates, because the slugs Tessera validates must be the
+/// numbers duplicates, because the slugs Ascribe validates must be the
 /// anchors the consumer publishes. Phase 09 implements `github`, a port of
 /// `github-slugger`, which Astro uses.
 pub trait Slugger: Send + Sync {
@@ -81,7 +81,7 @@ pub enum AssetPlacement {
     /// relative path from the page (`./`, `../`). The consumer's markdown
     /// pipeline resolves the reference, so its image processing applies.
     Mirror,
-    /// Under the output's `_tessera/files/` directory, which the consumer
+    /// Under the output's `_ascribe/files/` directory, which the consumer
     /// serves as static files, referenced by root-relative URL.
     Published,
 }

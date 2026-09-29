@@ -27,14 +27,14 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # The element library's tests drive Chromium, Firefox, and WebKit.
-      - run: pnpm --filter @tessera/elements exec playwright-core install --with-deps chromium firefox webkit
+      - run: pnpm --filter @ascribed/elements exec playwright-core install --with-deps chromium firefox webkit
       - run: pnpm format:check
       - run: pnpm -r lint
       - run: pnpm -r typecheck
       - run: pnpm -r test
 
   # The VS Code extension's integration tests run in a real VS Code, against a
-  # stub server, and against the real `tessera lsp` on a copy of examples/quill.
+  # stub server, and against the real `ascribe lsp` on a copy of examples/quill.
   vscode:
     name: VS Code extension integration tests
     runs-on: ubuntu-latest
@@ -54,12 +54,12 @@ jobs:
           path: packages/vscode/out/vscode-test
           key: vscode-test-${{ runner.os }}
       # VS Code needs a display; xvfb provides a virtual one.
-      - run: xvfb-run -a pnpm --filter tessera-vscode test:integration
+      - run: xvfb-run -a pnpm --filter ascribe-vscode test:integration
         env:
-          TESSERA_BIN: ${{ github.workspace }}/target/debug/tessera
+          ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
 
   # The Astro end-to-end slice (phase 21): a real `astro build` of
-  # examples/astro-site against a locally built `tessera`, with the built
+  # examples/astro-site against a locally built `ascribe`, with the built
   # HTML checked in Chromium. Also runs the markdown plugin's tests/render/
   # fixtures under both of Astro's markdown processors.
   astro:
@@ -76,10 +76,10 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - run: cargo build -p tessera-cli --locked
-      - run: pnpm --filter @tessera/elements build
-      - run: pnpm --filter @tessera/astro build
-      - run: pnpm --filter @tessera/astro test
-      - run: pnpm --filter @tessera/example-astro-site exec playwright-core install --with-deps chromium
-      - run: pnpm --filter @tessera/example-astro-site test:e2e
+      - run: pnpm --filter @ascribed/elements build
+      - run: pnpm --filter @ascribed/astro build
+      - run: pnpm --filter @ascribed/astro test
+      - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install --with-deps chromium
+      - run: pnpm --filter @ascribed/example-astro-site test:e2e
         env:
-          TESSERA_BIN: ${{ github.workspace }}/target/debug/tessera
+          ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe

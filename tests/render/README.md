@@ -1,9 +1,9 @@
 # Site-render fixtures
 
-Shared fixtures for the [site-render contract](../../project-docs/contracts/site-render.md). Each pairs site markdown, as Tessera's site emitter writes it, with the HTML it must render to. Two implementations run them, and both must pass every fixture:
+Shared fixtures for the [site-render contract](../../project-docs/contracts/site-render.md). Each pairs site markdown, as Ascribe's site emitter writes it, with the HTML it must render to. Two implementations run them, and both must pass every fixture:
 
 - `render_site_html()` in `tessera-emit` (phase 20), used by the editor preview;
-- the markdown plugin in `@tessera/astro` (phase 21), used by the published site.
+- the markdown plugin in `@ascribed/astro` (phase 21), used by the published site.
 
 Phase 02 wrote these fixtures. They change only through the contract process (`project-docs/phases/README.md`, "Contracts"); phases 20 and 21 may add fixtures for cases they find.
 

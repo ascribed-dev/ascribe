@@ -43,8 +43,8 @@ fn each_build_lists_its_pages_assets_and_schema() {
         assert_eq!(
             files,
             [
+                "_ascribe/schema.ts",
                 "_fragments/prerequisites.png",
-                "_tessera/schema.ts",
                 "install-agent.md",
                 "keys.md",
                 "playground.png",
@@ -59,10 +59,10 @@ fn each_build_lists_its_pages_assets_and_schema() {
 fn the_cloud_build_keeps_the_package_manager_group_as_tabs() {
     let out = output("cloud");
     let page = &out["install-agent.md"];
-    assert!(page.contains("<tessera-tabs sync=\"pm\">"), "{page}");
+    assert!(page.contains("<ascribe-tabs sync=\"pm\">"), "{page}");
     for value in ["npm", "pnpm", "yarn"] {
         assert!(
-            page.contains(&format!("<tessera-tab value=\"{value}\"")),
+            page.contains(&format!("<ascribe-tab value=\"{value}\"")),
             "{page}"
         );
     }
@@ -75,7 +75,7 @@ fn the_cloud_build_keeps_the_package_manager_group_as_tabs() {
     assert!(!page.contains("Point the agent at your server"), "{page}");
     // The availability annotations still show.
     assert!(
-        page.contains("<tessera-availability scope=\"section\">"),
+        page.contains("<ascribe-availability scope=\"section\">"),
         "{page}"
     );
 }
@@ -84,9 +84,9 @@ fn the_cloud_build_keeps_the_package_manager_group_as_tabs() {
 fn the_switch_build_keeps_both_groups_as_tabs() {
     let out = output("site");
     let page = &out["install-agent.md"];
-    assert!(page.contains("<tessera-tabs sync=\"pm\">"), "{page}");
+    assert!(page.contains("<ascribe-tabs sync=\"pm\">"), "{page}");
     assert!(
-        page.contains("<tessera-tabs sync=\"deployment\">"),
+        page.contains("<ascribe-tabs sync=\"deployment\">"),
         "{page}"
     );
 }
@@ -110,23 +110,23 @@ fn links_are_astro_routes_and_pages_are_at_their_source_paths() {
         "{page}"
     );
     assert!(out["quickstart.md"].contains("(/install-agent/)"));
-    assert!(out["quickstart.md"].contains("![The Quill playground](./playground.png)<tessera-attributes width=\"600\"></tessera-attributes>"));
+    assert!(out["quickstart.md"].contains("![The Quill playground](./playground.png)<ascribe-attributes width=\"600\"></ascribe-attributes>"));
     assert!(page.contains("![Checklist of prerequisites](./_fragments/prerequisites.png)"));
 }
 
 /// The elements and attributes `packages/elements/CONTRACT.md` defines, in
 /// the order it lists each element's attributes.
 const CONTRACT: &[(&str, &[&str])] = &[
-    ("tessera-note", &["type", "label", "heading"]),
-    ("tessera-steps", &[]),
-    ("tessera-tabs", &["sync"]),
-    ("tessera-tab", &["value", "label"]),
-    ("tessera-availability", &["scope"]),
+    ("ascribe-note", &["type", "label", "heading"]),
+    ("ascribe-steps", &[]),
+    ("ascribe-tabs", &["sync"]),
+    ("ascribe-tab", &["value", "label"]),
+    ("ascribe-availability", &["scope"]),
     (
-        "tessera-availability-target",
+        "ascribe-availability-target",
         &["target", "dimension", "states", "versions"],
     ),
-    ("tessera-attributes", &["id", "width", "height"]),
+    ("ascribe-attributes", &["id", "width", "height"]),
     ("details", &[]),
     ("summary", &[]),
 ];
@@ -227,7 +227,7 @@ fn rendered_pages_have_the_structure_the_elements_expect() {
                 }
             }
             assert!(
-                !html.contains("<tessera-attributes"),
+                !html.contains("<ascribe-attributes"),
                 "{build} {path}\n{html}"
             );
         }
@@ -243,7 +243,7 @@ fn rendered_pages_have_the_structure_the_elements_expect() {
         "{html}"
     );
     assert!(
-        html.contains("<tessera-tab value=\"npm\" label=\"npm\">"),
+        html.contains("<ascribe-tab value=\"npm\" label=\"npm\">"),
         "{html}"
     );
     assert!(

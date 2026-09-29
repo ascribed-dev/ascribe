@@ -26,7 +26,7 @@ pub enum Level {
 /// One registry entry.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Entry {
-    /// The code, such as `TSR001`.
+    /// The code, such as `ASC001`.
     pub code: String,
     /// The slug.
     pub slug: String,

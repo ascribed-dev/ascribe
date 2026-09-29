@@ -11,7 +11,7 @@ import {
 } from "playwright-core";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const ORIGIN = "http://tessera.test";
+const ORIGIN = "http://ascribe.test";
 const TYPES: Record<string, string> = {
   ".js": "text/javascript",
   ".css": "text/css",
@@ -20,20 +20,20 @@ const TYPES: Record<string, string> = {
 
 /** The bundled Chromium in this environment, if there is one; otherwise Playwright's own. */
 function executablePath(): string | undefined {
-  if (process.env["TESSERA_CHROMIUM"]) return process.env["TESSERA_CHROMIUM"];
+  if (process.env["ASCRIBE_CHROMIUM"]) return process.env["ASCRIBE_CHROMIUM"];
   const bundled = "/opt/pw-browsers/chromium";
   return existsSync(bundled) ? bundled : undefined;
 }
 
 const ALL_ENGINES = ["chromium", "firefox", "webkit"] as const;
 export type Engine = (typeof ALL_ENGINES)[number];
-const wanted = process.env["TESSERA_ENGINES"]?.split(",").map((name) => name.trim());
+const wanted = process.env["ASCRIBE_ENGINES"]?.split(",").map((name) => name.trim());
 export const ENGINES: readonly Engine[] = ALL_ENGINES.filter(
   (name) => wanted === undefined || wanted.includes(name),
 );
 
 /**
- * Launch one engine. The suite runs all three; TESSERA_ENGINES (a
+ * Launch one engine. The suite runs all three; ASCRIBE_ENGINES (a
  * comma-separated subset) narrows it on machines that can't install them all.
  */
 export async function launch(engine: Engine): Promise<Browser> {
@@ -94,79 +94,79 @@ export async function open(
     });
   });
   await page.goto(`${ORIGIN}/`);
-  if (script) await page.waitForFunction(() => customElements.get("tessera-tabs") !== undefined);
+  if (script) await page.waitForFunction(() => customElements.get("ascribe-tabs") !== undefined);
   return page;
 }
 
 /** Two `pm` groups, one `os` group, and one labeled group. */
 export const TABS = `
-<tessera-tabs sync="pm" id="a">
+<ascribe-tabs sync="pm" id="a">
 
-<tessera-tab value="npm" label="npm">
+<ascribe-tab value="npm" label="npm">
 
 Install with npm.
 
-</tessera-tab>
+</ascribe-tab>
 
-<tessera-tab value="pnpm yarn" label="pnpm / yarn">
+<ascribe-tab value="pnpm yarn" label="pnpm / yarn">
 
 Install with pnpm or yarn.
 
-</tessera-tab>
+</ascribe-tab>
 
-<tessera-tab value="bun" label="bun">
+<ascribe-tab value="bun" label="bun">
 
 Install with bun.
 
-</tessera-tab>
+</ascribe-tab>
 
-</tessera-tabs>
+</ascribe-tabs>
 
-<tessera-tabs sync="pm" id="b">
+<ascribe-tabs sync="pm" id="b">
 
-<tessera-tab value="pnpm" label="pnpm">
+<ascribe-tab value="pnpm" label="pnpm">
 
 Configure with pnpm.
 
-</tessera-tab>
+</ascribe-tab>
 
-<tessera-tab value="npm" label="npm">
+<ascribe-tab value="npm" label="npm">
 
 Configure with npm.
 
-</tessera-tab>
+</ascribe-tab>
 
-</tessera-tabs>
+</ascribe-tabs>
 
-<tessera-tabs sync="os" id="c">
+<ascribe-tabs sync="os" id="c">
 
-<tessera-tab value="linux" label="Linux">
+<ascribe-tab value="linux" label="Linux">
 
 Linux steps.
 
-</tessera-tab>
+</ascribe-tab>
 
-<tessera-tab value="windows" label="Windows">
+<ascribe-tab value="windows" label="Windows">
 
 Windows steps.
 
-</tessera-tab>
+</ascribe-tab>
 
-</tessera-tabs>
+</ascribe-tabs>
 
-<tessera-tabs id="d">
+<ascribe-tabs id="d">
 
-<tessera-tab label="First look">
+<ascribe-tab label="First look">
 
 First look content.
 
-</tessera-tab>
+</ascribe-tab>
 
-<tessera-tab label="Second look">
+<ascribe-tab label="Second look">
 
 Second look content.
 
-</tessera-tab>
+</ascribe-tab>
 
-</tessera-tabs>
+</ascribe-tabs>
 `;

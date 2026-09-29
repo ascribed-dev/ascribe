@@ -9,7 +9,7 @@ authors = [
     "Brett Walker <github@digitalmoksha.com>",
     "gjtorikian",
 ]
-description = "Tessera's fork of comrak, a CommonMark and GFM parser, with Tessera's block-level changes"
+description = "Ascribe's fork of comrak, a CommonMark and GFM parser, with Ascribe's block-level changes"
 repository.workspace = true
 license = "BSD-2-Clause"
 edition = "2024"
@@ -53,7 +53,7 @@ phf_codegen = "0.13"
 
 [features]
 # Upstream's default features are the CLI, syntect, and the `bon` builders.
-# Tessera needs none of them.
+# Ascribe needs none of them.
 default = []
 shortcodes = ["emojis"]
 phoenix_heex = []

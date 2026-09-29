@@ -38,9 +38,9 @@ pub enum NodeValue {
     /// Non-Markdown front matter.  Treated as an opaque blob.
     FrontMatter(String),
 
-    // TESSERA: the Tessera-line block.
-    /// **Block**. A Tessera line: a directive line or an end line. Enabled
-    /// with the `tessera` option. Contains a paragraph holding its text
+    // TESSERA: the Ascribe-line block.
+    /// **Block**. A Ascribe line: a directive line or an end line. Enabled
+    /// with the `ascribe` option. Contains a paragraph holding its text
     /// primary, if it has one; otherwise has no children. See
     /// [`crate::tessera`].
     ///

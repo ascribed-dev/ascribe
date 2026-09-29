@@ -1,4 +1,4 @@
-//! `tessera lsp`: the language server, speaking LSP over standard input and
+//! `ascribe lsp`: the language server, speaking LSP over standard input and
 //! output.
 
 use std::process::ExitCode;
@@ -8,7 +8,7 @@ use tessera_lsp::Exit;
 use crate::cli::Global;
 use crate::exit;
 
-/// Arguments of `tessera lsp`. There are none: the editor's workspace folders
+/// Arguments of `ascribe lsp`. There are none: the editor's workspace folders
 /// say where the project is, and the content model's `[editor]` table says which
 /// build to check.
 #[derive(Debug, clap::Args)]

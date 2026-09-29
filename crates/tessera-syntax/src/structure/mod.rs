@@ -1,5 +1,5 @@
 //! The structure pass (phase 06): turns the flat sequence of directive lines
-//! and blocks that tree conversion produces into Tessera's structure.
+//! and blocks that tree conversion produces into Ascribe's structure.
 //!
 //! [`crate::parse`] runs it after conversion. It works one *scope* at a time:
 //! the document, a list item, or a block quote, each a list of sibling

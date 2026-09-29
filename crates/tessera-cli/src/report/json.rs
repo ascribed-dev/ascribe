@@ -1,4 +1,4 @@
-//! The JSON report: `tessera check --format json`. The schema is documented,
+//! The JSON report: `ascribe check --format json`. The schema is documented,
 //! with an example, in `crates/tessera-cli/README.md`. It's versioned:
 //! [`SCHEMA_VERSION`] changes only when a field is removed or changes
 //! meaning, and fields may be added without a new version.
@@ -16,7 +16,7 @@ pub const SCHEMA_VERSION: u32 = 1;
 #[derive(Serialize)]
 struct Report<'a> {
     schema_version: u32,
-    tessera_version: &'static str,
+    ascribe_version: &'static str,
     /// Why the command couldn't run, or `None`.
     error: Option<&'a str>,
     files_checked: usize,
@@ -148,7 +148,7 @@ pub fn write(
     let counts = Counts::of(diagnostics);
     let report = Report {
         schema_version: SCHEMA_VERSION,
-        tessera_version: env!("CARGO_PKG_VERSION"),
+        ascribe_version: env!("CARGO_PKG_VERSION"),
         error,
         files_checked,
         diagnostics: diagnostics.iter().map(|d| entry(files, d)).collect(),

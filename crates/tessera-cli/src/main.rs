@@ -1,4 +1,4 @@
-//! The `tessera` binary.
+//! The `ascribe` binary.
 //!
 //! The command structure is in [`cli`]: one module per subcommand under
 //! `commands/`, so a phase adds a subcommand with its own module and a line

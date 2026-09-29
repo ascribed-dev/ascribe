@@ -8,7 +8,7 @@ pub mod phoenix_heex;
 #[cfg(feature = "shortcodes")]
 pub mod shortcodes;
 mod table;
-// TESSERA: the Tessera-line block.
+// TESSERA: the Ascribe-line block.
 mod tessera;
 
 use std::borrow::Cow;
@@ -383,7 +383,7 @@ where
                         break;
                     }
                 }
-                // TESSERA: a Tessera line stays open only while its text
+                // TESSERA: a Ascribe line stays open only while its text
                 // primary's paragraph does.
                 NodeValue::TesseraLine(..) => {
                     if self.blank || !container.last_child_is_open() {

@@ -4,4 +4,4 @@ spec: ["7.2", "8.2"]
 tags: [model]
 
 diagnostics:
-  - {slug: model-name-multiple-roles, file: tessera.toml, line: 7}
+  - {slug: model-name-multiple-roles, file: ascribe.toml, line: 7}

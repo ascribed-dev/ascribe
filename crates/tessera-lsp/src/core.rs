@@ -30,7 +30,7 @@ use crate::position::Encoding;
 use crate::uri::{normalize, path_to_uri, relative_to, uri_to_path};
 
 /// The content model's file name, at the project root.
-const MODEL_FILE: &str = "tessera.toml";
+const MODEL_FILE: &str = "ascribe.toml";
 
 // Resolved Q135: which files the server follows.
 /// Directories nothing in a documentation set lives in, whose changes are
@@ -111,7 +111,7 @@ impl Loaded {
 }
 
 enum Kind {
-    /// `tessera.toml`.
+    /// `ascribe.toml`.
     Model,
     /// A source file: its content path and its project path.
     Source(RelPath, RelPath),
@@ -125,10 +125,10 @@ pub(crate) struct Core {
     pub encoding: Encoding,
     pub folders: Vec<PathBuf>,
     pub docs: HashMap<PathBuf, Doc>,
-    /// The project's `tessera.toml`, once found.
+    /// The project's `ascribe.toml`, once found.
     pub config: Option<PathBuf>,
     pub loaded: Option<Loaded>,
-    /// Set while the current text of `tessera.toml` doesn't load.
+    /// Set while the current text of `ascribe.toml` doesn't load.
     pub model_problem: Option<ModelProblem>,
     pub shutdown: bool,
     pub can_watch: bool,
@@ -166,7 +166,7 @@ impl Core {
 
     // -- Startup ------------------------------------------------------------
 
-    /// Finds the project's `tessera.toml` in the workspace folders and loads it.
+    /// Finds the project's `ascribe.toml` in the workspace folders and loads it.
     pub(crate) fn start(&mut self) {
         if self.config.is_none() {
             self.config = find_config(&self.folders).map(|p| normalize(&p));
@@ -178,7 +178,7 @@ impl Core {
                 }
                 self.sync_model();
             }
-            None => self.log("no tessera.toml found in the workspace folders"),
+            None => self.log("no ascribe.toml found in the workspace folders"),
         }
     }
 
@@ -196,7 +196,7 @@ impl Core {
         self.next_id += 1;
         let params = RegistrationParams {
             registrations: vec![Registration {
-                id: "tessera-watched-files".to_owned(),
+                id: "ascribe-watched-files".to_owned(),
                 method: "workspace/didChangeWatchedFiles".to_owned(),
                 register_options: serde_json::to_value(options).ok(),
             }],
@@ -210,7 +210,7 @@ impl Core {
 
     // -- The model ----------------------------------------------------------
 
-    /// The current text of `tessera.toml`: the open buffer, or the file.
+    /// The current text of `ascribe.toml`: the open buffer, or the file.
     fn model_text(&self) -> Option<String> {
         let config = self.config.as_ref()?;
         match self.docs.get(config) {
@@ -219,7 +219,7 @@ impl Core {
         }
     }
 
-    /// Reads `tessera.toml` again and brings the project in line with it.
+    /// Reads `ascribe.toml` again and brings the project in line with it.
     pub(crate) fn sync_model(&mut self) {
         let Some(config) = self.config.clone() else {
             return;
@@ -234,7 +234,7 @@ impl Core {
         match tessera_model::load_str_in(&text, FileId::new(0), &root) {
             Err(issues) => {
                 // Resolved Q131: the project keeps the last model that
-                // loaded, and the problems go on `tessera.toml`.
+                // loaded, and the problems go on `ascribe.toml`.
                 self.model_problem = Some(ModelProblem {
                     text,
                     diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
@@ -626,7 +626,7 @@ impl Core {
 
     // -- Publishing -------------------------------------------------------------
 
-    /// Publishes the diagnostics of `tessera.toml`: the model's own problems
+    /// Publishes the diagnostics of `ascribe.toml`: the model's own problems
     /// when it doesn't load, otherwise its warnings.
     fn publish_model_diagnostics(&mut self) {
         let Some(config) = self.config.clone() else {
@@ -718,7 +718,7 @@ impl Core {
 }
 
 // Resolved Q132: one project per server.
-/// The nearest `tessera.toml` at or above a workspace folder; failing that,
+/// The nearest `ascribe.toml` at or above a workspace folder; failing that,
 /// the first one below a folder (a few levels down, skipping hidden and
 /// dependency directories).
 fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {

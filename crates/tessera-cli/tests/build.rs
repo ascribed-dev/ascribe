@@ -1,5 +1,5 @@
-//! `tessera build`: outputs, replacing a previous build, and reporting what
-//! `tessera check` reports, by running the binary.
+//! `ascribe build`: outputs, replacing a previous build, and reporting what
+//! `ascribe check` reports, by running the binary.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -40,7 +40,7 @@ availability = "badge"
 
 fn project(model: &str, files: &[(&str, &str)]) -> TempDir {
     let dir = tempfile::tempdir().expect("a temporary directory");
-    write(&dir.path().join("tessera.toml"), model);
+    write(&dir.path().join("ascribe.toml"), model);
     for (path, text) in files {
         write(&dir.path().join("docs").join(path), text);
     }
@@ -57,12 +57,12 @@ fn read(path: &Path) -> String {
 }
 
 fn tessera(dir: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_tessera"))
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
         .args(args)
         .env("NO_COLOR", "1")
         .output()
-        .expect("run tessera")
+        .expect("run ascribe")
 }
 
 fn code(output: &Output) -> i32 {
@@ -106,7 +106,7 @@ fn builds_quill_under_every_build_with_both_emitters() {
     let dir = quill();
     let out = tessera(dir.path(), &["build"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
-    let built = dir.path().join(".tessera/build");
+    let built = dir.path().join(".ascribe/build");
     for build in ["site", "cloud", "self-managed-3.3"] {
         for (emitter, page) in [
             ("plain", "install-agent.md"),
@@ -136,7 +136,7 @@ fn builds_quill_under_every_build_with_both_emitters() {
         "{}",
         stderr(&out)
     );
-    // The report is what `tessera check` prints.
+    // The report is what `ascribe check` prints.
     let check = tessera(dir.path(), &["check"]);
     assert_eq!(stdout(&out), stdout(&check));
     // Building again changes nothing on disk that hasn't changed.
@@ -152,7 +152,7 @@ fn a_build_and_an_output_can_be_chosen() {
         &["build", "--build", "cloud", "--emit", "plain"],
     );
     assert_eq!(code(&out), 0, "{}", stderr(&out));
-    let built = dir.path().join(".tessera/build");
+    let built = dir.path().join(".ascribe/build");
     assert!(built.join("cloud/plain/install-agent.md").is_file());
     assert!(!built.join("cloud/json").exists());
     assert!(!built.join("site").exists());
@@ -163,7 +163,7 @@ fn the_site_output_is_built_under_every_build() {
     let dir = quill();
     let out = tessera(dir.path(), &["build", "--emit", "site"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
-    let built = dir.path().join(".tessera/build");
+    let built = dir.path().join(".ascribe/build");
     for build in ["site", "cloud", "self-managed-3.3"] {
         let root = built.join(build).join("site");
         for file in [
@@ -172,7 +172,7 @@ fn the_site_output_is_built_under_every_build() {
             "quickstart.md",
             "playground.png",
             "_fragments/prerequisites.png",
-            "_tessera/schema.ts",
+            "_ascribe/schema.ts",
         ] {
             assert!(root.join(file).is_file(), "{build}/site/{file}");
         }
@@ -185,7 +185,7 @@ fn the_site_output_is_built_under_every_build() {
         stderr(&out)
     );
     let page = read(&built.join("cloud/site/install-agent.md"));
-    assert!(page.contains("<tessera-tabs sync=\"pm\">"), "{page}");
+    assert!(page.contains("<ascribe-tabs sync=\"pm\">"), "{page}");
     assert!(page.contains("(/quickstart/#try-in-browser)"), "{page}");
 }
 
@@ -201,7 +201,7 @@ fn a_generated_file_isnt_counted_as_an_asset() {
     );
     assert!(
         dir.path()
-            .join(".tessera/build/site/site/_tessera/schema.ts")
+            .join(".ascribe/build/site/site/_ascribe/schema.ts")
             .is_file()
     );
 }
@@ -211,7 +211,7 @@ fn every_output_is_built_by_default() {
     let dir = quill();
     let out = tessera(dir.path(), &["build", "--build", "cloud"]);
     assert_eq!(code(&out), 0, "{}", stderr(&out));
-    let built = dir.path().join(".tessera/build/cloud");
+    let built = dir.path().join(".ascribe/build/cloud");
     for emitter in ["site", "plain", "json"] {
         assert!(built.join(emitter).is_dir(), "{emitter}");
     }
@@ -231,7 +231,7 @@ fn two_pages_with_one_route_fail_the_site_output() {
         stderr(&out)
     );
     // Nothing is written for the output that failed.
-    assert!(!dir.path().join(".tessera/build/site/site").exists());
+    assert!(!dir.path().join(".ascribe/build/site/site").exists());
     // The other outputs don't have the problem.
     let out = tessera(dir.path(), &["build", "--emit", "plain"]);
     assert_eq!(code(&out), 0, "{}", stderr(&out));
@@ -248,7 +248,7 @@ fn unknown_builds_are_refused() {
         "{}",
         stderr(&out)
     );
-    assert!(!dir.path().join(".tessera").exists());
+    assert!(!dir.path().join(".ascribe").exists());
 }
 
 #[test]
@@ -263,7 +263,7 @@ fn removing_a_page_removes_its_old_output_and_leaves_users_files() {
     );
     let out = tessera(dir.path(), &["build"]);
     assert_eq!(code(&out), 0, "{}", stderr(&out));
-    let built = dir.path().join(".tessera/build");
+    let built = dir.path().join(".ascribe/build");
     // Files the user put in the output directory before the second build.
     write(&built.join("cloud/plain/notes.txt"), "my notes");
     write(&built.join("cloud/plain/g/mine.md"), "my file");
@@ -296,7 +296,7 @@ fn removing_a_page_removes_its_old_output_and_leaves_users_files() {
     assert_eq!(read(&built.join("cloud/plain/notes.txt")), "my notes");
     assert_eq!(read(&built.join("cloud/plain/g/mine.md")), "my file");
     assert_eq!(read(&built.join("README.md")), "about this directory");
-    // `g/` held only Tessera's file in the site build, so it's gone there; it still holds the user's in cloud.
+    // `g/` held only Ascribe's file in the site build, so it's gone there; it still holds the user's in cloud.
     assert!(!built.join("site/plain/g").exists());
     assert!(built.join("cloud/plain/g").is_dir());
 }
@@ -311,7 +311,7 @@ fn a_page_a_selection_build_now_drops_loses_its_old_output_in_that_build_only() 
         ],
     );
     assert_eq!(code(&tessera(dir.path(), &["build"])), 0);
-    let built = dir.path().join(".tessera/build");
+    let built = dir.path().join(".ascribe/build");
     write(&built.join("cloud/plain/notes.txt"), "my notes");
     assert!(built.join("cloud/plain/server.md").is_file());
 
@@ -334,12 +334,12 @@ fn a_page_a_selection_build_now_drops_loses_its_old_output_in_that_build_only() 
 #[test]
 fn a_users_file_where_the_build_writes_fails_it_without_touching_anything() {
     let dir = project(MODEL, &[("index.md", &page("Home.\n"))]);
-    let built = dir.path().join(".tessera/build");
+    let built = dir.path().join(".ascribe/build");
     write(&built.join("cloud/plain/index.md"), "the user's own file");
     let out = tessera(dir.path(), &["build", "--build", "cloud"]);
     assert_eq!(code(&out), 2);
     assert!(
-        stderr(&out).contains("isn't a file Tessera wrote"),
+        stderr(&out).contains("isn't a file Ascribe wrote"),
         "{}",
         stderr(&out)
     );
@@ -363,7 +363,7 @@ fn a_missing_site_origin_warns() {
         stderr(&out)
     );
     assert_eq!(
-        read(&dir.path().join(".tessera/build/site/plain/index.md")),
+        read(&dir.path().join(".ascribe/build/site/plain/index.md")),
         "# A page\n\n[Self](/)\n"
     );
     // JSON has no absolute links to warn about.
@@ -394,7 +394,7 @@ fn build_reports_what_check_reports_and_writes_nothing() {
             stderr(&build)
         );
     }
-    assert!(!dir.path().join(".tessera").exists());
+    assert!(!dir.path().join(".ascribe").exists());
 }
 
 #[test]
@@ -408,7 +408,7 @@ fn a_build_with_only_warnings_reports_them_and_builds() {
     assert_eq!(stdout(&check), stdout(&build));
     assert!(
         dir.path()
-            .join(".tessera/build/site/plain/index.md")
+            .join(".ascribe/build/site/plain/index.md")
             .is_file()
     );
 }
@@ -417,7 +417,7 @@ fn a_build_with_only_warnings_reports_them_and_builds() {
 fn a_content_model_with_errors_fails_like_check() {
     let dir = tempfile::tempdir().expect("a temporary directory");
     write(
-        &dir.path().join("tessera.toml"),
+        &dir.path().join("ascribe.toml"),
         "spec = \"0.1\"\nbogus = 1\n",
     );
     let check = tessera(dir.path(), &["check"]);
@@ -451,7 +451,7 @@ fn build_reports_what_check_reports_for_page_level_problems_too() {
         }
     }
     assert!(stdout(&tessera(dir.path(), &["build"])).contains("id-duplicate"));
-    assert!(!dir.path().join(".tessera").exists());
+    assert!(!dir.path().join(".ascribe").exists());
 }
 
 #[test]
@@ -511,5 +511,5 @@ fn several_builds_and_unknown_builds_are_reported_as_check_reports_them() {
         "{}",
         stderr(&out)
     );
-    assert!(!dir.path().join(".tessera").exists());
+    assert!(!dir.path().join(".ascribe").exists());
 }

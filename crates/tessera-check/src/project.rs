@@ -13,7 +13,7 @@ use tessera_resolve::{DiskFs, FileSystem, Layout, SourceSet};
 use crate::Diagnostic;
 
 /// The content model's file name, at the project root.
-pub const MODEL_FILE: &str = "tessera.toml";
+pub const MODEL_FILE: &str = "ascribe.toml";
 
 /// One source file: a Markdown file under the content root.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -45,7 +45,7 @@ pub struct FileEntry<'a> {
     /// The id.
     pub id: FileId,
     /// The path relative to the project root, `/`-separated: how a person
-    /// would type it. `tessera.toml` for the content model.
+    /// would type it. `ascribe.toml` for the content model.
     pub display_path: String,
     /// The text.
     pub text: &'a str,
@@ -119,7 +119,7 @@ impl std::fmt::Debug for Files {
 }
 
 impl Project {
-    /// The nearest `tessera.toml` in `start` or one of its parents.
+    /// The nearest `ascribe.toml` in `start` or one of its parents.
     pub fn find_config(start: &Path) -> Option<PathBuf> {
         start
             .ancestors()
@@ -223,7 +223,7 @@ impl Project {
     /// A project from parts the caller already has: the language server's
     /// buffers, or a test.
     ///
-    /// `root` is the project root (the directory of `tessera.toml`),
+    /// `root` is the project root (the directory of `ascribe.toml`),
     /// `content_root` is relative to it, and `model_text` is the content
     /// model's text (for showing snippets). `sources` should have distinct ids
     /// from 1, not necessarily consecutive; [`Project::from_sources`] assigns
@@ -307,7 +307,7 @@ impl Project {
             .collect()
     }
 
-    /// The project root: the directory containing `tessera.toml`.
+    /// The project root: the directory containing `ascribe.toml`.
     pub fn root(&self) -> &Path {
         &self.root
     }

@@ -1,15 +1,15 @@
-// Finding the `tessera` binary. npm distribution is phase 22's; for now the
+// Finding the `ascribe` binary. npm distribution is phase 22's; for now the
 // integration uses a binary someone built (Q152), looked for in this order:
 //
 //   1. the `binary` option,
-//   2. the `TESSERA_BIN` environment variable,
-//   3. `target/release/tessera` or `target/debug/tessera` in the project's
-//      directory or the nearest parent that has one (the Tessera workspace's
+//   2. the `ASCRIBE_BIN` environment variable,
+//   3. `target/release/ascribe` or `target/debug/ascribe` in the project's
+//      directory or the nearest parent that has one (the Ascribe workspace's
 //      `cargo build -p tessera-cli`), the newer of the two.
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 
-const EXE = process.platform === "win32" ? "tessera.exe" : "tessera";
+const EXE = process.platform === "win32" ? "ascribe.exe" : "ascribe";
 
 /** The path of the binary to run. Throws an error saying how to point at one. */
 export function findBinary(options: {
@@ -21,15 +21,15 @@ export function findBinary(options: {
     const binary = path.resolve(options.root, options.binary);
     if (!existsSync(binary))
       throw new Error(
-        `@tessera/astro: the \`binary\` option names ${binary}, which doesn't exist.`,
+        `@ascribed/astro: the \`binary\` option names ${binary}, which doesn't exist.`,
       );
     return binary;
   }
-  const fromEnv = process.env["TESSERA_BIN"];
+  const fromEnv = process.env["ASCRIBE_BIN"];
   if (fromEnv !== undefined && fromEnv !== "") {
     const binary = path.resolve(fromEnv);
     if (!existsSync(binary))
-      throw new Error(`@tessera/astro: TESSERA_BIN names ${binary}, which doesn't exist.`);
+      throw new Error(`@ascribed/astro: ASCRIBE_BIN names ${binary}, which doesn't exist.`);
     return binary;
   }
   for (let dir = path.resolve(options.projectDir); ; dir = path.dirname(dir)) {
@@ -41,7 +41,7 @@ export function findBinary(options: {
     if (path.dirname(dir) === dir) break;
   }
   throw new Error(
-    "@tessera/astro can't find the `tessera` binary. Build it with `cargo build -p tessera-cli`, then " +
-      "set the `binary` option of the integration or the TESSERA_BIN environment variable to it.",
+    "@ascribed/astro can't find the `ascribe` binary. Build it with `cargo build -p tessera-cli`, then " +
+      "set the `binary` option of the integration or the ASCRIBE_BIN environment variable to it.",
   );
 }

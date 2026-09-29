@@ -1,4 +1,4 @@
-# Tessera Specification
+# Ascribe Specification
 
 Version 0.1
 
@@ -29,11 +29,11 @@ Appendices:
 
 ### 1.1 Purpose and scope
 
-Tessera is a markup language, content model, and toolchain for documentation written as code. It makes a documentation set's structure (its pages, reusable content, variants, cross-references, and metadata) explicit, validated while authoring, and compiled for publication.
+Ascribe is a markup language, content model, and toolchain for documentation written as code. It makes a documentation set's structure (its pages, reusable content, variants, cross-references, and metadata) explicit, validated while authoring, and compiled for publication.
 
 This specification defines:
 
-- the **Tessera markup language**: CommonMark extended with directives and a small set of inline constructs;
+- the **Ascribe markup language**: CommonMark extended with directives and a small set of inline constructs;
 - the **content model**: the schema contract that declares what a documentation set may contain;
 - **validation**: the diagnostics a conforming processor reports;
 - **compilation**: how a processor resolves a documentation set and emits output;
@@ -52,21 +52,21 @@ These principles govern the language. They are non-normative, but every normativ
 5. **Containers are rare.** Most directives occupy a single line. Nesting is discouraged, and every nesting need has a flat alternative.
 6. **Constrain the grammar, don't strangle it.** `@` marks directives, but other constructs use whatever notation reads best (for example, `{key}` for phrases).
 7. **Validate while authoring.** The rules a build enforces are the same rules the editor reports as you type.
-8. **Strict inside, tolerant outside.** Processors are strict about what Tessera source means, not about how it's spaced; compiled output degrades to readable plain markdown.
+8. **Strict inside, tolerant outside.** Processors are strict about what Ascribe source means, not about how it's spaced; compiled output degrades to readable plain markdown.
 
 ### 1.3 Conformance
 
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in RFC 2119 and RFC 8174 when, and only when, they appear in all capitals.
 
-- A **conforming document** is a Tessera source file that produces no errors (§8) under a given content model.
-- A **processor** is any software that reads Tessera source: a parser, validator, compiler, or authoring environment.
+- A **conforming document** is a Ascribe source file that produces no errors (§8) under a given content model.
+- A **processor** is any software that reads Ascribe source: a parser, validator, compiler, or authoring environment.
 - A **conforming processor** parses documents as this specification describes and reports every error listed in §8. It MAY report additional warnings.
 
 Sections marked *non-normative*, examples, and notes are informative.
 
 ### 1.4 Relationship to CommonMark
 
-A Tessera document is a CommonMark document. Everything CommonMark defines keeps its meaning, except where this specification assigns meaning to text CommonMark treats as ordinary paragraph content (directive lines, title lines, phrases, and attribute blocks after images).
+A Ascribe document is a CommonMark document. Everything CommonMark defines keeps its meaning, except where this specification assigns meaning to text CommonMark treats as ordinary paragraph content (directive lines, title lines, phrases, and attribute blocks after images).
 
 Processors MAY support common CommonMark extensions, such as GitHub Flavored Markdown tables. This specification doesn't depend on them.
 
@@ -74,7 +74,7 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 - Syntax is given in ABNF (RFC 5234) in [Appendix A](#appendix-a-grammar); sections refer to its rules by name.
 - `SP` is a single space (U+0020). "Line start" means the first character after any indentation or blockquote markers required by the enclosing CommonMark container, allowing up to three further spaces of indentation, as CommonMark allows before a heading (§3.9).
-- Examples show Tessera source unless labeled otherwise.
+- Examples show Ascribe source unless labeled otherwise.
 
 ---
 
@@ -82,7 +82,7 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-A Tessera source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
+A Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
 
 - Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, or a mapping of dimensions to values) is a frontmatter value of the wrong type (§8.2).
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
@@ -100,7 +100,7 @@ Frontmatter on fragments is validated against the content model's fragment schem
 
 ### 2.3 Escapes
 
-Tessera reuses CommonMark's backslash escapes. `@`, `{`, and `.` are ASCII punctuation, so CommonMark already allows escaping them, and an escaped character renders as itself even in processors that don't understand Tessera.
+Ascribe reuses CommonMark's backslash escapes. `@`, `{`, and `.` are ASCII punctuation, so CommonMark already allows escaping them, and an escaped character renders as itself even in processors that don't understand Ascribe.
 
 | Escape | Prevents |
 |---|---|
@@ -645,7 +645,7 @@ A **project widget** is a directive defined by a documentation set rather than b
 
 The content model is a documentation set's schema. It is the single contract shared by the authoring environment, the validator, and the compiler: all three read the same declarations, so they can't disagree about what's valid.
 
-The content model is a TOML file named `tessera.toml` at the project root. Processors read it directly. Consumers' own schemas are generated from it rather than maintained separately; for Astro, that's the content collection's Zod schema (§9.6).
+The content model is a TOML file named `ascribe.toml` at the project root. Processors read it directly. Consumers' own schemas are generated from it rather than maintained separately; for Astro, that's the content collection's Zod schema (§9.6).
 
 A content model with errors is reported, and nothing else is checked, since every other check depends on it. The warnings of a content model that loads are reported with the rest of the diagnostics.
 
@@ -782,7 +782,7 @@ Processors accept any spacing the grammar allows (§3.1, §3.3). Each construct 
 - `:` directly after the name or attribute block, followed by one space before a primary, or ending the line for a container.
 - Directive lines inside a list item indented exactly to the item's content column.
 
-A formatter changes only Tessera constructs, and never how a page renders:
+A formatter changes only Ascribe constructs, and never how a page renders:
 
 - It leaves alone a construct that has an error, and fixes only what's certain: a construct with a warning is still formatted.
 - It removes trailing whitespace only after a container's `:`. After a text primary, trailing spaces can be a hard line break.
@@ -864,7 +864,7 @@ The state in effect at *V* is the last state in the target's history whose start
 
 A compiler MUST provide the site output and the plain-markdown output. It MAY provide the JSON output.
 
-**Site output: markdown plus web components.** CommonMark with custom elements for constructs that need presentation or interaction. It depends on no consumer component system. Tessera provides an element library for it (§9.7).
+**Site output: markdown plus web components.** CommonMark with custom elements for constructs that need presentation or interaction. It depends on no consumer component system. Ascribe provides an element library for it (§9.7).
 
 **Plain-markdown output.** Fully resolved CommonMark with no HTML, for LLM consumption, search indexing, and export. Links are absolute URLs.
 
@@ -879,12 +879,12 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 
 | Source | Site output | Plain-markdown output |
 |---|---|---|
-| `@note {type=tip}` with title | `<tessera-note type="tip" heading="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
-| `@steps` | `<tessera-steps>` wrapping the list | The ordered list |
-| `@variant` group, `switch` | `<tessera-tabs sync="…">` containing one `<tessera-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
-| `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<tessera-tabs>` group | One arm becomes plain content; several stay labeled sections |
+| `@note {type=tip}` with title | `<ascribe-note type="tip" heading="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
+| `@steps` | `<ascribe-steps>` wrapping the list | The ordered list |
+| `@variant` group, `switch` | `<ascribe-tabs sync="…">` containing one `<ascribe-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
+| `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<ascribe-tabs>` group | One arm becomes plain content; several stay labeled sections |
 | `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
-| `@available`, `badge` | A `<tessera-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
+| `@available`, `badge` | A `<ascribe-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
 | `@available`, `filter` | Unavailable content removed; the rest annotated as in `badge` | Unavailable content removed; the rest annotated as in `badge` |
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
@@ -895,7 +895,7 @@ In the site output, emitters MUST place a blank line after each opening tag and 
 
 **Assets.** Every output is self-contained: it works without access to the source files. Local files a page references (image sources, and link targets that aren't pages) are copied into the output, and references to them are rewritten to point at the copies. A reference resolves from the file it's written in, so an image referenced inside an included fragment is the one beside the fragment (§4.2). The consumer profile decides where copies go and how references to them are written (§9.5), so that a consumer's own image processing still applies.
 
-A reference MUST resolve to a file inside the project root (the directory containing `tessera.toml`) or the content root, and not inside the output directory; any other reference is treated as a file that doesn't exist (§8.2). File names MUST match exactly, including case, on every platform, so a project checks the same everywhere. References inside raw HTML aren't assets: they pass through unchanged, and the files they name aren't copied.
+A reference MUST resolve to a file inside the project root (the directory containing `ascribe.toml`) or the content root, and not inside the output directory; any other reference is treated as a file that doesn't exist (§8.2). File names MUST match exactly, including case, on every platform, so a project checks the same everywhere. References inside raw HTML aren't assets: they pass through unchanged, and the files they name aren't copied.
 
 ### 9.5 Consumer profile
 
@@ -924,14 +924,14 @@ The element library implements the custom elements used by the site output.
 
 - Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology.
 - Elements are styled with CSS and themed through CSS custom properties.
-- Only elements that require interaction use JavaScript. Of the built-ins, that's `<tessera-tabs>`.
-- Without JavaScript, `<tessera-tabs>` displays every arm with its label.
+- Only elements that require interaction use JavaScript. Of the built-ins, that's `<ascribe-tabs>`.
+- Without JavaScript, `<ascribe-tabs>` displays every arm with its label.
 
 ---
 
 ## 10. Authoring environment
 
-An authoring environment is a processor that edits Tessera source interactively. It SHOULD provide the following.
+An authoring environment is a processor that edits Ascribe source interactively. It SHOULD provide the following.
 
 - **Diagnostics** from §8, reported as the author types.
 - **Completion** for:
@@ -949,14 +949,14 @@ An authoring environment is a processor that edits Tessera source interactively.
   - Renaming or moving a file updates links and includes that point to it.
   - Changing a heading's id updates links to it.
   - Renaming a phrase key updates its uses.
-- **Formatting** into canonical form (§8.3), with a formatter that understands Tessera.
+- **Formatting** into canonical form (§8.3), with a formatter that understands Ascribe.
 - **Distinct display of title lines**, so a paragraph that accidentally became a title is easy to spot.
 
 Source files store real file paths, but authors should rarely need to read or type them.
 
 *Note (non-normative): VS Code has no API for hiding text within a line. Hover, CodeLens, and inlay hints are the dependable ways to keep paths out of the author's way.*
 
-*Note (non-normative): general CommonMark formatters don't know that title and directive lines start new blocks. To them, a title line, a directive line, and the text below are one paragraph, so a formatter that reflows paragraphs (for example, Prettier with `proseWrap: always`) joins them into one line and breaks the page. Tessera projects should format with a Tessera-aware formatter, or exclude Tessera sources from other formatters.*
+*Note (non-normative): general CommonMark formatters don't know that title and directive lines start new blocks. To them, a title line, a directive line, and the text below are one paragraph, so a formatter that reflows paragraphs (for example, Prettier with `proseWrap: always`) joins them into one line and breaks the page. Ascribe projects should format with a Ascribe-aware formatter, or exclude Ascribe sources from other formatters.*
 
 ---
 
@@ -1138,7 +1138,7 @@ Notes on the example:
 
 **Markdown, not MDX.** MDX mixes content with code, so every author has to work in JSX. Plain markdown keeps existing tooling and stays readable. MDX-style components are replaced by directives in source and by web components in output.
 
-**`@` rather than `:::` directives.** The colon-fenced "generic directives" syntax was proposed for CommonMark in 2018 and never adopted; its only real implementation is the remark-directive library, and related dialects (MyST, Pandoc, Docusaurus) each differ from it. Tessera couldn't version or own a grammar built on it. `@` lines also read better unrendered, and `@` almost never collides with prose: across roughly 4,500 pages of Astro, Elastic, and Docker documentation, no prose `@` matched a Tessera keyword.
+**`@` rather than `:::` directives.** The colon-fenced "generic directives" syntax was proposed for CommonMark in 2018 and never adopted; its only real implementation is the remark-directive library, and related dialects (MyST, Pandoc, Docusaurus) each differ from it. Ascribe couldn't version or own a grammar built on it. `@` lines also read better unrendered, and `@` almost never collides with prose: across roughly 4,500 pages of Astro, Elastic, and Docker documentation, no prose `@` matched a Ascribe keyword.
 
 **One line grammar, attributes first.** Placing attributes before the primary keeps metadata next to the name, and gives a directive's line and container forms the same head. Braces were chosen over brackets because brackets collide with markdown link syntax.
 
@@ -1146,7 +1146,7 @@ Notes on the example:
 
 **Groups whose arms close each other.** Tabs, switches, and steppers were the largest source of nesting in the surveyed corpora. Letting each arm end the previous one, as Ruby's `elsif` and HTML's `<li>` do, handles them with one closer and no nesting.
 
-**`@note` rather than GitHub alerts.** GitHub's `> [!NOTE]` syntax renders on GitHub, but it requires a `>` on every line and can't carry a title. Source readability outranks renderer compatibility, so Tessera keeps `@note` with a following-block form. In every corpus surveyed, 79–90% of callouts were a single block.
+**`@note` rather than GitHub alerts.** GitHub's `> [!NOTE]` syntax renders on GitHub, but it requires a `>` on every line and can't carry a title. Source readability outranks renderer compatibility, so Ascribe keeps `@note` with a following-block form. In every corpus surveyed, 79–90% of callouts were a single block.
 
 **Titles on their own line.** AsciiDoc's `.Title` convention keeps a title as readable text rather than a quoted attribute. The same line labels one-off `@variant` arms, so the language has one way to name things.
 
@@ -1164,7 +1164,7 @@ Notes on the example:
 
 **Project widgets marked by a hyphen.** Following HTML custom elements, shape distinguishes extensions from built-ins. An experimental prefix such as `x-` was avoided, since RFC 6648 documents how such prefixes outlive the experiment.
 
-**Plain markdown and web components as output.** Output that depends on no consumer's component system (Starlight, Hugo shortcodes) keeps Tessera portable, while Astro content collections remain the primary target.
+**Plain markdown and web components as output.** Output that depends on no consumer's component system (Starlight, Hugo shortcodes) keeps Ascribe portable, while Astro content collections remain the primary target.
 
 ---
 

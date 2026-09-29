@@ -4,7 +4,7 @@
 
 ## Goal
 
-Report every page-level diagnostic, per build, at the source location that causes it. Provide the single entry point that `tessera check`, `tessera build`, and the language server all use, so they can't disagree.
+Report every page-level diagnostic, per build, at the source location that causes it. Provide the single entry point that `ascribe check`, `ascribe build`, and the language server all use, so they can't disagree.
 
 ## Read first
 
@@ -15,7 +15,7 @@ Report every page-level diagnostic, per build, at the source location that cause
 
 - `crates/tessera-check/src/page/`: page-level checks.
 - `check_project(&project, build) -> Vec<Diagnostic>`: file-level plus page-level diagnostics for one build. This is the one function every tool calls.
-- `tessera check` running it for every build, or one build with `--build`.
+- `ascribe check` running it for every build, or one build with `--build`.
 
 ## Tasks
 
@@ -28,13 +28,13 @@ Report every page-level diagnostic, per build, at the source location that cause
    - include targets whose `#id` doesn't exist;
    - duplicate heading text without `@id` once includes are expanded (a warning).
 2. **Locations.** A problem inside included content is reported at the include site, and also in the fragment (SPEC §8.1). A problem that appears only in some builds names those builds. Report each distinct problem once, not once per build.
-3. **Entry point.** Implement `check_project`, and make `tessera check` use it.
+3. **Entry point.** Implement `check_project`, and make `ascribe check` use it.
 4. **Conformance.** Remove skip entries for page-level cases, and make them pass.
 
 ## Acceptance criteria
 
 - [ ] Every page-level row of §8.2 has a passing conformance case.
-- [ ] `tessera check` on `examples/quill` exits `0`.
+- [ ] `ascribe check` on `examples/quill` exits `0`.
 - [ ] A test shows a problem inside a fragment reported at the include site and in the fragment.
 - [ ] A test shows a build-specific problem reported once, naming the build.
 
@@ -50,8 +50,8 @@ Report every page-level diagnostic, per build, at the source location that cause
   - `mod.rs`: the entry points and `PageChecker`. `check_project(&Project, &Build)` is the file-level diagnostics (`check_files`) followed by the build's page-level ones; `check_pages` is the page-level ones alone; `check_all_builds(&Project)` is the file-level ones once, then every build's page-level ones with each distinct problem once, then the problems in content no build publishes. `PageChecker::new(&Project)` indexes the project once, for several `check(build)` calls or one `check_all()`; the free functions build one each call.
   - `bridge.rs`: `tessera_resolve::Project` over a checked `Project`: source texts from memory (so the language server's buffers work), everything else (images) through the project's own file system, and a map from the index's `FileId`s to the checked project's, applied to every location before it leaves the crate.
   - `collect.rs`: one resolved page's problems, from three sources. (1) `ResolvedPage::problems`, relocated to the include site. (2) Duplicates from `ResolvedPage::headings()`: `id-duplicate` (page ids, at the `@id` line for an explicit id and at the heading for a slug, the `include` message variant when the later one came through an include) and `heading-duplicate-without-id` (Q103). (3) The source index's `link-id-missing` and `link-id-in-fragment` for the links the build publishes.
-- **`Diagnostic`** gained `builds: Vec<String>` (the builds a page-level diagnostic appears in, in the model's order; empty for file-level ones) and `unpublished: bool`, and `builds_note(total_builds)`, the text `tessera check` adds to a message.
-- **`tessera check`** (`commands/check.rs` only): runs `check_all_builds`, or `check_project` for `--build <name>` (an unknown name is exit code 2, listing the builds), and appends `builds_note` to each message. `report/` is untouched, so the JSON has the builds in the message, not as a field.
+- **`Diagnostic`** gained `builds: Vec<String>` (the builds a page-level diagnostic appears in, in the model's order; empty for file-level ones) and `unpublished: bool`, and `builds_note(total_builds)`, the text `ascribe check` adds to a message.
+- **`ascribe check`** (`commands/check.rs` only): runs `check_all_builds`, or `check_project` for `--build <name>` (an unknown name is exit code 2, listing the builds), and appends `builds_note` to each message. `report/` is untouched, so the JSON has the builds in the message, not as a field.
 - **Conformance**: the `page-check` skip entry is removed and `tests/adapters/page_check.rs` handles the tag; the `resolve` adapter's build diagnostics are `check_pages`, no longer read off the resolved pages. `tests/file_checks.rs`, `resolve_rows.rs`, and `source_index_rows.rs` are deleted (see below). **363 passed, 0 failed, 0 skipped.**
 
 ### Interfaces later phases use
@@ -89,4 +89,4 @@ See the pull request for the status and evidence of each.
 - **Fragments no page includes** have no page-level diagnostics (Q104): they aren't in any page.
 - **Performance.** `PageChecker` indexes the project (parsing every file a second time, after `check_files`) and resolves every page once per build, plus once for the unpublished pass when it's needed. `Project::problems` expands the target page for each link whose id isn't among the target's own, and its results are cached across builds. Phases 13 and 26 can cache all of it per file.
 - **The JSON report** has the builds only in the message, because `report/` is shared with phase 18. A `builds` array and an `unpublished` flag on each entry are additive (no schema version change) and are the next change there.
-- **Check that `tessera build` uses `check_project`.** Phase 18 adds the command; the per-build parity is for its tests.
+- **Check that `ascribe build` uses `check_project`.** Phase 18 adds the command; the per-build parity is for its tests.

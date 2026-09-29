@@ -30,7 +30,7 @@ fn all_three_examples_load_with_no_issues() {
 fn minimal_gets_every_default() {
     let m = example("minimal.toml");
     assert_eq!(m.project.content_root, "docs");
-    assert_eq!(m.project.output_dir, ".tessera/build");
+    assert_eq!(m.project.output_dir, ".ascribe/build");
     assert_eq!(m.types.len(), 1);
     assert_eq!(m.types[0].name, "page");
     assert!(m.types[0].default);
@@ -384,6 +384,6 @@ fn the_output_directory_is_compared_after_resolving_links() {
 
 #[test]
 fn an_unreadable_file_is_reported_not_a_panic() {
-    let issues = load("/no/such/dir/tessera.toml").unwrap_err();
+    let issues = load("/no/such/dir/ascribe.toml").unwrap_err();
     assert_eq!(issues[0].slug.as_str(), "model-toml-syntax");
 }

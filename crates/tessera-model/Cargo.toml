@@ -1,6 +1,6 @@
 [package]
 name = "tessera-model"
-description = "Loads and validates a documentation set's content model, tessera.toml."
+description = "Loads and validates a documentation set's content model, ascribe.toml."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

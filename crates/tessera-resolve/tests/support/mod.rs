@@ -13,7 +13,7 @@ spec = "0.1"
 
 [project]
 content-root = "docs"
-output-dir = ".tessera/build"
+output-dir = ".ascribe/build"
 
 [phrases]
 product = "Quill"

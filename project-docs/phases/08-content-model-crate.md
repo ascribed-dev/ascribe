@@ -4,7 +4,7 @@
 
 ## Goal
 
-Implement `tessera-model`: load `tessera.toml`, validate it against the phase 01 reference, and expose typed data to every other crate. Also implement the availability-spec parser in `tessera-core`.
+Implement `tessera-model`: load `ascribe.toml`, validate it against the phase 01 reference, and expose typed data to every other crate. Also implement the availability-spec parser in `tessera-core`.
 
 ## Read first
 
@@ -19,7 +19,7 @@ Implement `tessera-model`: load `tessera.toml`, validate it against the phase 01
 
 ## Tasks
 
-1. **Loading.** Parse `tessera.toml` with a TOML library that keeps source spans (for example `toml_edit` or `toml-span`), so every problem points at a line in the file.
+1. **Loading.** Parse `ascribe.toml` with a TOML library that keeps source spans (for example `toml_edit` or `toml-span`), so every problem points at a line in the file.
 2. **Typed model.** Structures for each section: project, content types and frontmatter schemas, fragments, dimensions, versions, lifecycle states, features, note types, phrases, glossary, images, widgets, consumer profile settings, builds, editor settings. Apply defaults from the reference.
 3. **Widgets.** Convert each declared widget into a `tessera-core` `DirectiveSchema`, exactly as phase 02 defined the type.
 4. **Frontmatter schemas.** Parse the field-type syntax from the reference into a schema representation, and provide `validate_frontmatter(&schema, &yaml_value) -> Vec<Issue>` for phase 10 to call.
@@ -70,7 +70,7 @@ Implement `tessera-model`: load `tessera.toml`, validate it against the phase 01
 ### Decisions
 
 - **Warnings ride in the model**, so `load`'s signature stays `Result<ContentModel, Vec<Issue>>` as the phase file says.
-- **Issue locations** are byte spans in `tessera.toml`, in the `FileId` the caller passes (`FileId::new(0)` for `load`). A missing top-level `spec` is reported at offset 0; a missing key inside a table is reported at the table's header.
+- **Issue locations** are byte spans in `ascribe.toml`, in the `FileId` the caller passes (`FileId::new(0)` for `load`). A missing top-level `spec` is reported at offset 0; a missing key inside a table is reported at the table's header.
 - **`toml` 0.9 with `preserve_order`**, not `toml_edit`: `toml::de::DeTable` keeps spans and, with the feature, order. The workspace already depends on `toml` 0.9.
 - **`model-glossary-link`'s fragment half** doesn't need the file system (it's a path check), so it runs on `load_str` too; only the existence half is skipped there.
 - **An empty `[types]` or `[builds]` table** counts as absent: the implicit `page` type and `site` build apply.

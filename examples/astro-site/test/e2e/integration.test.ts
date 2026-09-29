@@ -1,6 +1,6 @@
 // The integration's contract with Astro, beyond the happy path: it fails the
-// build on Tessera errors and on routing that disagrees with tessera.toml, it
-// serves `_tessera/files/` in the dev server, and its markdown plugin works
+// build on Ascribe errors and on routing that disagrees with ascribe.toml, it
+// serves `_ascribe/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
 import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -24,7 +24,7 @@ async function edit(file: string, change: (text: string) => string): Promise<voi
 }
 
 describe("the integration", () => {
-  it("fails the Astro build when Tessera reports errors", async () => {
+  it("fails the Astro build when Ascribe reports errors", async () => {
     const root = await copySite("errors");
     await edit(path.join(root, "content", "Guides", "My Setup.md"), (text) =>
       text.replace("(../index.md)", "(../missing.md)"),
@@ -37,7 +37,7 @@ describe("the integration", () => {
     expect(String(failure)).toContain("missing.md");
   });
 
-  it("fails the Astro build when tessera.toml and astro.config disagree on routing", async () => {
+  it("fails the Astro build when ascribe.toml and astro.config disagree on routing", async () => {
     const root = await copySite("routing");
     await edit(path.join(root, "astro.config.mjs"), (text) =>
       text
@@ -54,7 +54,7 @@ describe("the integration", () => {
 
   it("builds a project with no [builds] table (the implicit `site` build), and reports an unknown build", async () => {
     const root = await copySite("implicit");
-    await edit(path.join(root, "tessera.toml"), (text) =>
+    await edit(path.join(root, "ascribe.toml"), (text) =>
       text.replace(/\[builds\.site\][^[]*/, "").replace(/\[editor\][^[]*/, ""),
     );
     await buildSite(root);
@@ -70,7 +70,7 @@ describe("the integration", () => {
 
   it("routes agree under a root base path with trailing slashes", async () => {
     const root = await copySite("always");
-    await edit(path.join(root, "tessera.toml"), (text) =>
+    await edit(path.join(root, "ascribe.toml"), (text) =>
       text
         .replace('base-path = "/docs/"', 'base-path = "/"')
         .replace('trailing-slash = "never"', 'trailing-slash = "always"'),
@@ -91,7 +91,7 @@ describe("the integration", () => {
       await page.getByRole("link", { name: "documentation home" }).click();
       await page.waitForURL(`${server.origin}/`);
       expect(await page.locator("main > h1").textContent()).toBe("Loom documentation");
-      const file = await page.request.get(`${server.origin}/_tessera/files/downloads/loom.yaml`);
+      const file = await page.request.get(`${server.origin}/_ascribe/files/downloads/loom.yaml`);
       expect(file.status()).toBe(200);
     } finally {
       await browser.close();
@@ -99,16 +99,16 @@ describe("the integration", () => {
     }
   });
 
-  it("serves _tessera/files/ and the markdown plugin's ids in the dev server", async () => {
+  it("serves _ascribe/files/ and the markdown plugin's ids in the dev server", async () => {
     const server = await serveDev();
     try {
-      const file = await fetch(`${server.origin}${BASE}/_tessera/files/downloads/loom.yaml`);
+      const file = await fetch(`${server.origin}${BASE}/_ascribe/files/downloads/loom.yaml`);
       expect(file.status).toBe(200);
       expect(await file.text()).toBe("weave:\n  strands: 4\n");
-      const missing = await fetch(`${server.origin}${BASE}/_tessera/files/downloads/nope.yaml`);
+      const missing = await fetch(`${server.origin}${BASE}/_ascribe/files/downloads/nope.yaml`);
       expect(missing.status).toBe(404);
       // Only under the base path, as in the build.
-      const unprefixed = await fetch(`${server.origin}/_tessera/files/downloads/loom.yaml`);
+      const unprefixed = await fetch(`${server.origin}/_ascribe/files/downloads/loom.yaml`);
       expect(unprefixed.status).toBe(404);
       const html = await (await fetch(`${server.origin}${BASE}/guides/my-setup`)).text();
       expect(html).toContain('id="weave-config"');
@@ -122,8 +122,8 @@ describe("the integration", () => {
     await edit(path.join(root, "astro.config.mjs"), (text) =>
       text
         .replace(
-          'import tessera from "@tessera/astro";',
-          'import { unified } from "@astrojs/markdown-remark";\nimport tessera from "@tessera/astro";',
+          'import ascribe from "@ascribed/astro";',
+          'import { unified } from "@astrojs/markdown-remark";\nimport ascribe from "@ascribed/astro";',
         )
         .replace("integrations:", "markdown: { processor: unified() },\n  integrations:"),
     );
@@ -144,7 +144,7 @@ describe("the integration", () => {
       const image = page.getByRole("img", { name: "Checklist of requirements" });
       expect(await image.getAttribute("src")).toMatch(/\/_astro\/requirements\.[\w-]+\.webp$/);
       expect(await image.getAttribute("width")).toBe("300");
-      expect(await page.locator("tessera-attributes").count()).toBe(0);
+      expect(await page.locator("ascribe-attributes").count()).toBe(0);
     } finally {
       await browser.close();
       await server.stop();

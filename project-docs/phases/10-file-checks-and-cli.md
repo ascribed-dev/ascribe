@@ -1,10 +1,10 @@
-# Phase 10: File-level checks and `tessera check`
+# Phase 10: File-level checks and `ascribe check`
 
 **Track:** Check · **Start after:** 06, 07, 08 · **Finish after:** 03 · **Parallel with:** 11, 23 · **Unblocks:** 14, 15
 
 ## Goal
 
-Build the diagnostics framework every tool shares, implement every file-level check, and ship the first working command: `tessera check`.
+Build the diagnostics framework every tool shares, implement every file-level check, and ship the first working command: `ascribe check`.
 
 ## Read first
 
@@ -15,7 +15,7 @@ Build the diagnostics framework every tool shares, implement every file-level ch
 ## Deliverables
 
 - `crates/tessera-check`: the `Diagnostic` type, the registry mapping from slugs to codes and severities, and the file-level checks.
-- `crates/tessera-cli`: the `tessera` binary's command structure and the `check` subcommand.
+- `crates/tessera-cli`: the `ascribe` binary's command structure and the `check` subcommand.
 
 ## Tasks
 
@@ -31,7 +31,7 @@ Build the diagnostics framework every tool shares, implement every file-level ch
    - headings without `@id` that contain a phrase.
 4. **One entry point.** Expose `check_files(&project) -> Vec<Diagnostic>` as the single file-level entry point. The CLI, the build command, and the language server all call it, which is what makes their results identical.
 5. **CLI structure.** Set up `tessera-cli` with `clap`, with one module per subcommand so phases 15, 18, and 23 can add `lsp`, `build`, and `fmt` without conflicts. Add `--version`.
-6. **`tessera check`.** Finds `tessera.toml` (in the current directory or a parent, or at `--config`), loads the model, parses every file under the content root, and reports diagnostics.
+6. **`ascribe check`.** Finds `ascribe.toml` (in the current directory or a parent, or at `--config`), loads the model, parses every file under the content root, and reports diagnostics.
    - Readable output with source snippets (via `miette` or `ariadne`), and `--format json` with a documented, versioned schema.
    - Exit codes: `0` with no errors, `1` with errors, `2` for usage or configuration failures. `--deny-warnings` turns warnings into failure.
 7. **Conformance.** Implement the adapter's `diagnostics` for file-level cases. Remove their skip entries, and make them pass.
@@ -39,7 +39,7 @@ Build the diagnostics framework every tool shares, implement every file-level ch
 ## Acceptance criteria
 
 - [ ] Every file-level row of §8.2 has a passing conformance case, reported with the registry's code and severity.
-- [ ] `tessera check` on `examples/quill` reports no errors at file level.
+- [ ] `ascribe check` on `examples/quill` reports no errors at file level.
 - [ ] The JSON output schema is documented in `crates/tessera-cli/README.md`, with an example.
 - [ ] Exit codes behave as specified; integration tests cover each.
 
@@ -59,11 +59,11 @@ Build the diagnostics framework every tool shares, implement every file-level ch
 - **`crates/tessera-check`**:
   - `Diagnostic` (`code`, `slug`, `severity`, `message`, primary `Location`, `related`, `fixes` as `tessera_core::Fix`es of `TextEdit`s), built from an `Issue` by `Diagnostic::from_issue`.
   - `Registry` (`registry.rs`): `tests/conformance/diagnostics.toml`, embedded with `include_str!` and parsed once. It gives each slug's code, severity, level, and message templates (`{name}` placeholders, `{{`/`}}` braces, variants by `Issue::variant`). A `debug_assert!` fails a test when an issue lacks an argument its template uses, and a unit test keeps the registry equal to `tessera_core::diagnostics::ALL`.
-  - `Project` (`project.rs`): the content model (file id 0), the source files (ids from 1, in path order, texts in memory), the project root and the content root (relative to it). `Project::load(config)` reads `tessera.toml` and every `.md` under the content root; `Project::from_parts` and `Project::from_sources` build one from buffers or a test. Source discovery, the exact-case probe, the boundary, and every rule about what a reference names come from `tessera-resolve` (`DiskFs`, `Layout`, `tessera_resolve::references`), since the consolidation with phase 11; see phase 11's handoff notes. An in-memory source counts as existing (`Project` implements `SourceSet`).
+  - `Project` (`project.rs`): the content model (file id 0), the source files (ids from 1, in path order, texts in memory), the project root and the content root (relative to it). `Project::load(config)` reads `ascribe.toml` and every `.md` under the content root; `Project::from_parts` and `Project::from_sources` build one from buffers or a test. Source discovery, the exact-case probe, the boundary, and every rule about what a reference names come from `tessera-resolve` (`DiskFs`, `Layout`, `tessera_resolve::references`), since the consolidation with phase 11; see phase 11's handoff notes. An in-memory source counts as existing (`Project` implements `SourceSet`).
   - `check_files(&Project) -> Vec<Diagnostic>`: the model's warnings, then `check_file` for each source, in file order and source order. `check_file` parses with the model's directive schemas, turns the parser's issues (phases 05 to 07) into diagnostics, and walks the tree.
   - The checks, one module each under `src/checks/`: `attrs` (unknown keys, value types, required attributes, `@variant` dimensions and values, for directives, widgets, and images), `avail` (`@available` and the `available` key: syntax, unknown targets and states, versionless targets and dimension names with versions, history order), `frontmatter` (content type, `validate_frontmatter`, reserved keys, `available`, `variant`), `refs` (`@include` targets, link destinations, image sources, alt text, image attributes). `mod.rs` also has undeclared phrases, headings with a phrase and no `@id`, and `@id` values.
   - `yaml.rs`: `YamlIndex`, which finds where a frontmatter path (`author.name`, `tags[1]`) is, with `yaml-rust2` events, so a frontmatter problem is reported at its key or value.
-- **`crates/tessera-cli`**: `clap` derive; `cli.rs` (options every command shares: `--config`, `--color`; the `Command` enum and its one `match`), one module per subcommand under `commands/` (`check.rs`), `context.rs` (find the model and load the project), `report/` (`text.rs` with `ariadne` snippets, `json.rs`, and a `FileTable` that turns byte offsets into lines and columns for both), `exit.rs`. `tessera --version`, `tessera check [--format text|json] [--deny-warnings]`. The README documents the JSON schema (version 1), the exit codes, and an example.
+- **`crates/tessera-cli`**: `clap` derive; `cli.rs` (options every command shares: `--config`, `--color`; the `Command` enum and its one `match`), one module per subcommand under `commands/` (`check.rs`), `context.rs` (find the model and load the project), `report/` (`text.rs` with `ariadne` snippets, `json.rs`, and a `FileTable` that turns byte offsets into lines and columns for both), `exit.rs`. `ascribe --version`, `ascribe check [--format text|json] [--deny-warnings]`. The README documents the JSON schema (version 1), the exit codes, and an example.
 - **Conformance**: `tests/adapters/check.rs` (tag `check`: `check_files` on a project built from the case), `tests/adapters/model.rs` (tag `model`: the loader's diagnostics; it makes the two `model-name-multiple-roles` cases run), the `check` and `model` skip entries removed, `structure_rows.rs` deleted (see below), and `tests/file_checks.rs`.
 - **`tessera-core`**: `parse_attribute_block` reports only the unclosed quote when a quote is what left the block unclosed (`{lab="first sync}` gave two `attribute-syntax` diagnostics, and the case `attributes/unclosed-quote` expects one; SPEC §3.3: an unclosed block is reported once).
 
@@ -86,7 +86,7 @@ Build the diagnostics framework every tool shares, implement every file-level ch
 
 ### Fixes to inputs from earlier phases
 
-- **`role` in the shared model** (Q27): `tests/conformance/_model/tessera.toml` still declared the widget attribute `role`, which the loader rejects (`model-attribute-reserved`), so no case could load the shared model. It's `audience` now, in the model and in the three cases that use it (`attributes/value-set`, `attributes/set-on-set-valued-key`, `widgets/audience-heading-or-block`).
+- **`role` in the shared model** (Q27): `tests/conformance/_model/ascribe.toml` still declared the widget attribute `role`, which the loader rejects (`model-attribute-reserved`), so no case could load the shared model. It's `audience` now, in the model and in the three cases that use it (`attributes/value-set`, `attributes/set-on-set-valued-key`, `widgets/audience-heading-or-block`).
 - **`directives/include/bare-filename-is-not-searched`**: `files/prerequisites.md` is a page, and had no `title`, so it drew `frontmatter-missing-field`. It has one now; the case's expectation is unchanged.
 - **`attribute-syntax` for an unclosed quote** (above), a two-line change in `tessera-core/src/attributes.rs` with its unit test.
 

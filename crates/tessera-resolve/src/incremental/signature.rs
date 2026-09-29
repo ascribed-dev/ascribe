@@ -101,9 +101,9 @@ fn blocks(list: &[Block], source: &str, h: &mut DefaultHasher) {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ModelImpact {
     // Resolved Q96: a change to only the model's own warnings.
-    /// Only what `tessera.toml` says about itself changed (a warning, or where
+    /// Only what `ascribe.toml` says about itself changed (a warning, or where
     /// something is in the file). No file's result changes; the caller
-    /// refreshes the diagnostics of `tessera.toml` (file id 0).
+    /// refreshes the diagnostics of `ascribe.toml` (file id 0).
     Warnings,
     /// Something changed that later passes read: dimensions, lifecycle
     /// states, features, builds, glossary, types, frontmatter schemas, image

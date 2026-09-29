@@ -1,11 +1,11 @@
-//! Tessera's syntax tree.
+//! Ascribe's syntax tree.
 //!
-//! The tree is Tessera's own. It doesn't expose comrak's types, so nothing
+//! The tree is Ascribe's own. It doesn't expose comrak's types, so nothing
 //! downstream depends on the parser behind it. Every node has a [`Span`]: a
 //! range of UTF-8 byte offsets into the source file, counting from the start
 //! of the file (frontmatter included). A span covers exactly the source text
 //! of its node, from its first character through its last, without the line
-//! ending after it. Tessera nodes keep sub-spans for their parts (name,
+//! ending after it. Ascribe nodes keep sub-spans for their parts (name,
 //! attribute block, each pair, colon, primary), which the formatter (phase
 //! 23) and the language server (phase 15) use to edit, highlight, and
 //! complete them.
@@ -14,7 +14,7 @@
 //!
 //! [`ParsedDocument`] holds the file's [`Block`]s in source order. CommonMark
 //! blocks nest as CommonMark nests them (block quotes and list items hold
-//! blocks). The Tessera nodes come in two layers:
+//! blocks). The Ascribe nodes come in two layers:
 //!
 //! - **Phase 05 reads lines.** A directive line is a
 //!   [`BlockKind::Directive`] and an end line a [`BlockKind::End`], each with
@@ -47,7 +47,7 @@
 
 use tessera_core::{AttributeBlock, FileId, Issue, Span};
 
-/// A parsed Tessera source file.
+/// A parsed Ascribe source file.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ParsedDocument {
     /// The file's id, as given in the parse options.
@@ -316,7 +316,7 @@ pub struct TableCell {
 }
 
 // ---------------------------------------------------------------------------
-// Tessera lines
+// Ascribe lines
 
 /// Whether a directive line opens a container or stands alone (SPEC §3.5).
 ///

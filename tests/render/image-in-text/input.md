@@ -1,3 +1,3 @@
-Before ![one](./one.png)<tessera-attributes width="10"></tessera-attributes> between ![two](./two.png)<tessera-attributes width="20"></tessera-attributes>after.
+Before ![one](./one.png)<ascribe-attributes width="10"></ascribe-attributes> between ![two](./two.png)<ascribe-attributes width="20"></ascribe-attributes>after.
 
-[![Open the full size image](./thumb.png)<tessera-attributes width="200"></tessera-attributes>](./full.png)
+[![Open the full size image](./thumb.png)<ascribe-attributes width="200"></ascribe-attributes>](./full.png)

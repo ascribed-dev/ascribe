@@ -409,7 +409,7 @@ impl Loader<'_> {
     fn widget(&mut self, name: &str, name_span: Span, item: &V<'_>) -> Option<Widget> {
         let path = join("widgets", name);
         let mut ok = self.name_ok(name, name_span, "widget", NameRule::Widget);
-        if ok && name.starts_with("tessera-") {
+        if ok && name.starts_with("ascribe-") {
             self.push(
                 self.issue(diagnostics::MODEL_WIDGET_RESERVED_NAME, name_span)
                     .with_arg("name", name),

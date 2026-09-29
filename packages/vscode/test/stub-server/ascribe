@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// A stand-in for `tessera`, for testing the extension's client without the real
-// language server. `tessera --version` reports a version, and `tessera lsp`
+// A stand-in for `ascribe`, for testing the extension's client without the real
+// language server. `ascribe --version` reports a version, and `ascribe lsp`
 // speaks just enough LSP to exercise the client:
 //
 //  - a warning on every line of a markdown file that contains "TODO", for open
@@ -26,11 +26,11 @@ const {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 if (process.argv[2] === "--version") {
-  console.log("tessera 0.0.0 (stub)");
+  console.log("ascribe 0.0.0 (stub)");
   process.exit(0);
 }
 if (process.argv[2] !== "lsp") {
-  console.error("usage: tessera lsp");
+  console.error("usage: ascribe lsp");
   process.exit(2);
 }
 
@@ -51,7 +51,7 @@ function diagnose(text) {
           end: { line: row, character: column + 4 },
         },
         message: "stub: TODO found",
-        source: "tessera-stub",
+        source: "ascribe-stub",
         code: "stub-todo",
       });
     }
@@ -90,7 +90,7 @@ connection.onInitialize((params) => {
 
 connection.onInitialized(() => {
   void connection.client.register(DidChangeWatchedFilesNotification.type, {
-    watchers: [{ globPattern: "**/*.md" }, { globPattern: "**/tessera.toml" }],
+    watchers: [{ globPattern: "**/*.md" }, { globPattern: "**/ascribe.toml" }],
   });
   for (const root of roots) {
     for (const file of markdownFiles(root)) publishFromDisk(pathToFileURL(file).toString());

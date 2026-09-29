@@ -1,10 +1,10 @@
 //! A page's frontmatter in the site output (SPEC §9.4, §9.6).
 //!
 //! The page's own frontmatter passes through, with phrases already
-//! substituted where the content model says. The one field Tessera rewrites is
+//! substituted where the content model says. The one field Ascribe rewrites is
 //! the reserved `available`: it is the spec as the author wrote it, which a
 //! layout would have to parse, so it becomes a list of targets a layout can
-//! pass straight to `<tessera-availability scope="page">` (element contract
+//! pass straight to `<ascribe-availability scope="page">` (element contract
 //! §4). Q142.
 //!
 //! ```yaml
@@ -20,7 +20,7 @@
 //!     text: Self-managed (preview, 3.3+)
 //! ```
 //!
-//! Each entry has the attributes of a `<tessera-availability-target>` and its
+//! Each entry has the attributes of a `<ascribe-availability-target>` and its
 //! text. `variant` passes through as written.
 
 use serde_yaml::{Mapping, Value};

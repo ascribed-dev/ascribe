@@ -1,34 +1,34 @@
-<tessera-note type="tip" label="Tip" heading="Try it without installing">
+<ascribe-note type="tip" label="Tip" heading="Try it without installing">
 
 You can run Quill in the browser.
 
-</tessera-note>
+</ascribe-note>
 
-<tessera-tabs sync="pm">
+<ascribe-tabs sync="pm">
 
-<tessera-tab value="npm" label="npm">
+<ascribe-tab value="npm" label="npm">
 
-### Install with npm <tessera-attributes id="install-with-npm"></tessera-attributes>
+### Install with npm <ascribe-attributes id="install-with-npm"></ascribe-attributes>
 
 ```shell
 npm install -g @quill/agent
 ```
 
-</tessera-tab>
+</ascribe-tab>
 
-<tessera-tab value="pnpm" label="pnpm">
+<ascribe-tab value="pnpm" label="pnpm">
 
 ```shell
 pnpm add -g @quill/agent
 ```
 
-</tessera-tab>
+</ascribe-tab>
 
-</tessera-tabs>
+</ascribe-tabs>
 
 <details>
 <summary>Show the <code>quill.yaml</code> reference</summary>
 
-![Config](./config.png)<tessera-attributes width="320"></tessera-attributes>
+![Config](./config.png)<ascribe-attributes width="320"></ascribe-attributes>
 
 </details>

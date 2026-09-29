@@ -186,7 +186,7 @@ impl Client {
             serde_json::to_value(DidOpenTextDocumentParams {
                 text_document: TextDocumentItem {
                     uri: uri(path),
-                    language_id: "tessera".into(),
+                    language_id: "ascribe".into(),
                     version,
                     text: text.into(),
                 },
@@ -323,7 +323,7 @@ impl Fixture {
     pub fn new(model: &str, files: &[(&str, &str)]) -> Fixture {
         let dir = tempfile::tempdir().expect("a temp dir");
         let f = Fixture { dir };
-        f.write("tessera.toml", model);
+        f.write("ascribe.toml", model);
         for (path, text) in files {
             f.write(path, text);
         }

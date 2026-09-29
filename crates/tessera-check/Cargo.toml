@@ -1,6 +1,6 @@
 [package]
 name = "tessera-check"
-description = "File- and page-level validation of Tessera documents, producing diagnostics."
+description = "File- and page-level validation of Ascribe documents, producing diagnostics."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

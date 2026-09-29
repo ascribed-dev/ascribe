@@ -187,7 +187,7 @@ fn codes_are_sequential_and_slugs_unique() {
     for (i, e) in reg.entries.iter().enumerate() {
         assert_eq!(
             e.code,
-            format!("TSR{:03}", i + 1),
+            format!("ASC{:03}", i + 1),
             "codes go up by one, in file order"
         );
         assert!(slugs.insert(&e.slug), "{} appears twice", e.slug);

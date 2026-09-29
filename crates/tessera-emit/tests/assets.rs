@@ -26,7 +26,7 @@ fn project_dir() -> tempfile::TempDir {
         fs::create_dir_all(full.parent().expect("a parent")).expect("directories");
         fs::write(full, bytes).expect("a file");
     };
-    write("tessera.toml", MODEL.as_bytes());
+    write("ascribe.toml", MODEL.as_bytes());
     write(
         "docs/guides/install.md",
         b"---\ntitle: Install\n---\n\n![Settings](img/settings.png)\n\n@include: ../_fragments/prerequisites.md\n\nGet the [sample config](../downloads/quill.yaml#top) and the [manual](../../shared/My%20Manual%20(v2).pdf).\n",
@@ -84,7 +84,7 @@ fn build_into(dir: &Path, emitter: &dyn Emitter) -> PathBuf {
     let resolved = project.resolve_build(build, &router);
     let cx = EmitContext::new(&project, dir, build);
     let emission = emit(emitter, &cx, &resolved).expect("emits");
-    let output = OutputDir::lock(&dir.join(".tessera/build")).expect("locked");
+    let output = OutputDir::lock(&dir.join(".ascribe/build")).expect("locked");
     output
         .replace("site", emitter.name(), &emission.files)
         .expect("written");
@@ -118,7 +118,7 @@ fn the_plain_output_works_with_the_source_removed() {
         let _ = is_image;
     }
     // Where they point: beside the page, beside the fragment (mirrored), and
-    // outside the content root (`_tessera/up`).
+    // outside the content root (`_ascribe/up`).
     let destinations: Vec<&str> = refs.iter().map(|(_, d)| d.as_str()).collect();
     assert!(
         destinations.contains(&"./img/settings.png"),
@@ -133,7 +133,7 @@ fn the_plain_output_works_with_the_source_removed() {
         "{destinations:?}"
     );
     assert!(
-        destinations.contains(&"../_tessera/up/shared/My Manual (v2).pdf"),
+        destinations.contains(&"../_ascribe/up/shared/My Manual (v2).pdf"),
         "{destinations:?}"
     );
     assert_eq!(
@@ -141,7 +141,7 @@ fn the_plain_output_works_with_the_source_removed() {
         b"pipeline-bytes"
     );
     assert_eq!(
-        fs::read(moved.join("_tessera/up/shared/My Manual (v2).pdf")).expect("copy"),
+        fs::read(moved.join("_ascribe/up/shared/My Manual (v2).pdf")).expect("copy"),
         b"pdf-bytes"
     );
 }
@@ -179,7 +179,7 @@ fn each_asset_is_copied_once_however_often_it_is_used() {
     let dir = project_dir();
     let root = build_into(dir.path(), &PlainEmitter);
     let manifest: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(dir.path().join(".tessera/build/site/plain.manifest.json"))
+        &fs::read_to_string(dir.path().join(".ascribe/build/site/plain.manifest.json"))
             .expect("manifest"),
     )
     .expect("JSON");
@@ -192,8 +192,8 @@ fn each_asset_is_copied_once_however_often_it_is_used() {
     assert_eq!(
         paths,
         [
+            "_ascribe/up/shared/My Manual (v2).pdf",
             "_fragments/pipeline.png",
-            "_tessera/up/shared/My Manual (v2).pdf",
             "downloads/quill.yaml",
             "guides/img/settings.png",
             "guides/install.md",

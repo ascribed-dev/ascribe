@@ -13,9 +13,9 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::{commands, exit};
 
-/// Tessera: check, build, format, and serve documentation written as code.
+/// Ascribe: check, build, format, and serve documentation written as code.
 #[derive(Debug, Parser)]
-#[command(name = "tessera", version, arg_required_else_help = true)]
+#[command(name = "ascribe", version, arg_required_else_help = true)]
 pub struct Cli {
     #[command(flatten)]
     pub global: Global,
@@ -27,7 +27,7 @@ pub struct Cli {
 /// Options every subcommand accepts, before or after its name.
 #[derive(Debug, clap::Args)]
 pub struct Global {
-    /// The content model, `tessera.toml`. By default, the nearest one in the
+    /// The content model, `ascribe.toml`. By default, the nearest one in the
     /// current directory or a parent.
     #[arg(long, global = true, value_name = "PATH")]
     pub config: Option<PathBuf>,
@@ -55,7 +55,7 @@ pub enum Command {
     Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
     Check(commands::check::Args),
-    /// Rewrite Tessera constructs into canonical form.
+    /// Rewrite Ascribe constructs into canonical form.
     Fmt(commands::fmt::Args),
     /// Run the language server, speaking LSP over standard input and output.
     Lsp(commands::lsp::Args),

@@ -358,7 +358,7 @@ fn cases() -> Vec<Case> {
         case(
             "model-widget-reserved-name",
             None,
-            "spec = \"0.1\"\n[widgets.tessera-lab] #!\nforms = [\"container\"]\n",
+            "spec = \"0.1\"\n[widgets.ascribe-lab] #!\nforms = [\"container\"]\n",
         ),
         case(
             "model-widget-reserved-name",

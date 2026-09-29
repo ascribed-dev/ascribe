@@ -1,8 +1,8 @@
-//! The Tessera language server, run as `tessera lsp`.
+//! The Ascribe language server, run as `ascribe lsp`.
 //!
 //! It keeps a project in memory ([`tessera_resolve::IncrementalProject`]),
 //! follows every change to it (open documents, files changed on disk, the
-//! content model), and publishes the diagnostics `tessera check` reports for
+//! content model), and publishes the diagnostics `ascribe check` reports for
 //! the editor's build, as the author types. See the README for the design, the
 //! semantic token legend, and how stale results are kept from the editor.
 
@@ -40,7 +40,7 @@ pub type PublishHook = Arc<dyn Fn(&PublishInfo) + Send + Sync>;
 /// A hook called with a request's method.
 pub type RequestHook = Arc<dyn Fn(&str) + Send + Sync>;
 
-/// Settings for [`serve`]; the default is what `tessera lsp` uses.
+/// Settings for [`serve`]; the default is what `ascribe lsp` uses.
 #[derive(Clone, Default)]
 pub struct Options {
     /// Called on the worker thread after a round has computed and before it

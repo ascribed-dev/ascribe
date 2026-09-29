@@ -57,7 +57,7 @@ fn options() -> ParseOptions {
     ParseOptions::new(schemas)
 }
 
-/// The fork's view: where each Tessera line's text primary starts, in the
+/// The fork's view: where each Ascribe line's text primary starts, in the
 /// raw line, from the block parser alone.
 fn fork_view(line: &str, options: &ParseOptions) -> Vec<(String, Option<usize>)> {
     let mut comrak = Options::default();
@@ -125,7 +125,7 @@ proptest! {
     fn parse_never_panics_and_keeps_its_spans_valid(source in "\\PC{0,120}") {
         let doc = parse(&source, &options());
         let problems = support::check_tree(&source, &doc);
-        // Only exactness of Tessera-line spans and validity are guaranteed
+        // Only exactness of Ascribe-line spans and validity are guaranteed
         // for arbitrary input; comrak's own positions can be off in odd
         // corners, so only range and boundary problems fail here.
         prop_assert!(

@@ -1,3 +1,3 @@
-# Not a Tessera project
+# Not a Ascribe project
 
 @note: Hello.

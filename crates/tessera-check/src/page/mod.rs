@@ -13,8 +13,8 @@
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
 //!
 //! The entry points are [`check_project`], for one build, and
-//! [`check_all_builds`], for every build of the project. `tessera check`,
-//! `tessera build`, and the language server all call them, which is what keeps
+//! [`check_all_builds`], for every build of the project. `ascribe check`,
+//! `ascribe build`, and the language server all call them, which is what keeps
 //! their diagnostics identical.
 //!
 //! # Where a problem is reported, and how often

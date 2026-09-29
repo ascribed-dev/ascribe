@@ -134,7 +134,7 @@ fn uglify(source: &str) -> Vec<(&'static str, String)> {
     ]
 }
 
-/// The model a case uses: its own `tessera.toml` (looking up from the input's
+/// The model a case uses: its own `ascribe.toml` (looking up from the input's
 /// directory to `cases/`), or the shared model.
 fn model_for(input: &Path, cases: &Path, shared: &ContentModel) -> ContentModel {
     let mut dir = input.parent();
@@ -142,7 +142,7 @@ fn model_for(input: &Path, cases: &Path, shared: &ContentModel) -> ContentModel 
         if !d.starts_with(cases) {
             break;
         }
-        let candidate = d.join("tessera.toml");
+        let candidate = d.join("ascribe.toml");
         if candidate.is_file() {
             let text = std::fs::read_to_string(&candidate).expect("readable");
             // A case about a broken model has a model that doesn't load.

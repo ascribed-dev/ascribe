@@ -49,7 +49,7 @@ fn a_first_build_writes_its_files_and_a_manifest() {
     assert_eq!(read(&out.join("site/plain/g/b.md")), "B");
     let manifest: serde_json::Value =
         serde_json::from_str(&read(&out.join("site/plain.manifest.json"))).expect("JSON");
-    assert_eq!(manifest["format"], "tessera-manifest");
+    assert_eq!(manifest["format"], "ascribe-manifest");
     assert_eq!(manifest["version"], 1);
     assert_eq!(manifest["build"], "site");
     assert_eq!(manifest["emitter"], "plain");
@@ -122,7 +122,7 @@ fn a_users_file_in_the_way_fails_the_build_and_changes_nothing() {
     };
     assert_eq!(list.len(), 1, "{err}");
     assert!(
-        list[0].contains("new.md") && list[0].contains("isn't a file Tessera wrote"),
+        list[0].contains("new.md") && list[0].contains("isn't a file Ascribe wrote"),
         "{err}"
     );
     // Everything is as it was.
@@ -144,7 +144,7 @@ fn a_directory_where_a_file_goes_and_a_file_where_a_directory_goes_fail() {
     let text = err.to_string();
     assert!(text.contains("a.md is a directory"), "{text}");
     assert!(
-        text.contains("isn't Tessera's, and a directory is needed"),
+        text.contains("isn't Ascribe's, and a directory is needed"),
         "{text}"
     );
     assert!(out.join("site/plain/a.md/keep.txt").exists());
@@ -187,7 +187,7 @@ fn a_manifest_that_lists_a_path_outside_the_root_is_refused() {
     let out = dir.path().join("out");
     replace(&out, "site", &[page("a.md", "A")]).expect("first");
     write(&dir.path().join("precious.txt"), "keep me");
-    let manifest = "{\"format\":\"tessera-manifest\",\"version\":1,\"build\":\"site\",\"emitter\":\"plain\",\"files\":[{\"path\":\"../../../precious.txt\",\"kind\":\"page\"}]}";
+    let manifest = "{\"format\":\"ascribe-manifest\",\"version\":1,\"build\":\"site\",\"emitter\":\"plain\",\"files\":[{\"path\":\"../../../precious.txt\",\"kind\":\"page\"}]}";
     write(&out.join("site/plain.manifest.json"), manifest);
     let err = replace(&out, "site", &[page("a.md", "A")]).expect_err("a bad entry");
     assert!(matches!(err, StoreError::BadEntry { .. }), "{err}");
@@ -198,7 +198,7 @@ fn a_manifest_that_lists_a_path_outside_the_root_is_refused() {
 fn a_manifest_of_an_unknown_version_is_refused() {
     let dir = tempfile::tempdir().expect("a temporary directory");
     let out = dir.path().join("out");
-    let manifest = "{\"format\":\"tessera-manifest\",\"version\":2,\"build\":\"site\",\"emitter\":\"plain\",\"files\":[]}";
+    let manifest = "{\"format\":\"ascribe-manifest\",\"version\":2,\"build\":\"site\",\"emitter\":\"plain\",\"files\":[]}";
     write(&out.join("site/plain.manifest.json"), manifest);
     let err = replace(&out, "site", &[page("a.md", "A")]).expect_err("unknown version");
     assert!(
@@ -246,7 +246,7 @@ fn assets_are_copied_byte_for_byte() {
     let source = dir.path().join("logo.bin");
     fs::write(&source, [0u8, 159, 146, 150, 255]).expect("write");
     let file = EmittedFile {
-        path: RelPath::parse("_tessera/up/logo.bin").expect("a path"),
+        path: RelPath::parse("_ascribe/up/logo.bin").expect("a path"),
         kind: FileKind::Asset,
         source: Some(RelPath::parse("../logo.bin").expect("a path")),
         url: None,
@@ -254,7 +254,7 @@ fn assets_are_copied_byte_for_byte() {
     };
     replace(&out, "site", &[file]).expect("replaced");
     assert_eq!(
-        fs::read(out.join("site/plain/_tessera/up/logo.bin")).expect("read"),
+        fs::read(out.join("site/plain/_ascribe/up/logo.bin")).expect("read"),
         [0u8, 159, 146, 150, 255]
     );
     let manifest = read(&out.join("site/plain.manifest.json"));
@@ -273,7 +273,7 @@ fn a_second_build_can_not_take_the_lock() {
     assert!(matches!(err, StoreError::Locked { .. }), "{err}");
     assert!(
         err.to_string()
-            .contains("another tessera build is writing to"),
+            .contains("another ascribe build is writing to"),
         "{err}"
     );
 }

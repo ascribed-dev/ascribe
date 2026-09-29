@@ -15,16 +15,16 @@ use crate::position::Encoding;
 
 /// The token types, in legend order.
 pub const TYPES: [&str; 10] = [
-    "tesseraDirective",
-    "tesseraWidget",
-    "tesseraAttributeKey",
-    "tesseraAttributeValue",
-    "tesseraColon",
-    "tesseraEnd",
-    "tesseraTitle",
-    "tesseraPhrase",
-    "tesseraPhraseUndeclared",
-    "tesseraAvailability",
+    "ascribeDirective",
+    "ascribeWidget",
+    "ascribeAttributeKey",
+    "ascribeAttributeValue",
+    "ascribeColon",
+    "ascribeEnd",
+    "ascribeTitle",
+    "ascribePhrase",
+    "ascribePhraseUndeclared",
+    "ascribeAvailability",
 ];
 
 /// The token modifiers, in legend order.

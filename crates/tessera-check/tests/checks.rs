@@ -56,7 +56,7 @@ fn project_in(root: PathBuf, files: &[(&str, &str)]) -> Project {
 }
 
 fn project(files: &[(&str, &str)]) -> Project {
-    project_in(PathBuf::from("/nonexistent-tessera-project"), files)
+    project_in(PathBuf::from("/nonexistent-ascribe-project"), files)
 }
 
 fn page(body: &str) -> String {
@@ -96,7 +96,7 @@ fn parser_issues_are_reported_once_with_registry_data() {
     let p = project(&[("index.md", &page("@note {type=tip}:\nNever closed."))]);
     let d = one(&p);
     assert_eq!(d.slug.as_str(), "container-unclosed");
-    assert_eq!(d.code, "TSR007");
+    assert_eq!(d.code, "ASC007");
     assert_eq!(d.severity, Severity::Error);
     assert!(d.message.contains("`@note`"), "{}", d.message);
 }
@@ -389,10 +389,10 @@ fn files_are_found_with_exact_names_inside_the_boundary() {
     ] {
         fs::write(root.join(f), "x").expect("write");
     }
-    let outside = root.parent().expect("a parent").join("tessera-outside.png");
+    let outside = root.parent().expect("a parent").join("ascribe-outside.png");
     let text = page(
         "![a](img/Logo.png) ![b](img/logo.png) ![c](../.out/site/p.png) ![d](../shared/s.png) \
-         ![e](../../tessera-outside.png) ![f](img)",
+         ![e](../../ascribe-outside.png) ![f](img)",
     );
     let p = project_in(root.to_owned(), &[("index.md", &text)]);
     let all = check_files(&p);
@@ -402,7 +402,7 @@ fn files_are_found_with_exact_names_inside_the_boundary() {
         messages[0].contains("`img/logo.png` doesn't exist; `img/Logo.png` differs only in case")
     );
     assert!(messages[1].contains("`../.out/site/p.png` is outside the project"));
-    assert!(messages[2].contains("`../../tessera-outside.png` is outside the project"));
+    assert!(messages[2].contains("`../../ascribe-outside.png` is outside the project"));
     assert!(
         messages[3].contains("`img` doesn't exist"),
         "a directory isn't a file: {}",

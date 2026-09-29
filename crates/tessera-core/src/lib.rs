@@ -1,6 +1,6 @@
-//! Shared types for the Tessera toolchain.
+//! Shared types for the Ascribe toolchain.
 //!
-//! Every other Tessera crate depends on this one, and on nothing else for
+//! Every other Ascribe crate depends on this one, and on nothing else for
 //! these types. It holds types and traits only, with the small amount of
 //! behavior they need to be exact (line and column conversion, applying
 //! edits, normalizing paths). The parsers that live here are added by later

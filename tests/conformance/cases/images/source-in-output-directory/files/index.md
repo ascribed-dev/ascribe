@@ -2,4 +2,4 @@
 title: Home
 ---
 
-![A](../.tessera/build/site/p.png)
+![A](../.ascribe/build/site/p.png)

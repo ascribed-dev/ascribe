@@ -3,7 +3,7 @@
 //! It handles the `check` tag. Its diagnostics are `tessera_check::check_files`
 //! on a project built from the case: the case's content model, and every
 //! `.md` file under its content root. That's the same entry point
-//! `tessera check`, the build, and the language server call.
+//! `ascribe check`, the build, and the language server call.
 //!
 //! A `check` case that also carries `structure` or `parser` gets its
 //! diagnostics here, from the whole check, not from the parser alone.

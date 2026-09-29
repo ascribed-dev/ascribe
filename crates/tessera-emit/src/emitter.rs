@@ -29,7 +29,7 @@ struct SourceFile {
 }
 
 /// A position in a source file, counted from 1, with columns in Unicode
-/// scalar values (as `tessera check` reports them).
+/// scalar values (as `ascribe check` reports them).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Position {
     /// The line.
@@ -39,7 +39,7 @@ pub struct Position {
 }
 
 impl<'a> EmitContext<'a> {
-    /// A context for emitting `build` of `project`, whose `tessera.toml` is
+    /// A context for emitting `build` of `project`, whose `ascribe.toml` is
     /// in `project_root`. Assets are copied from the content root under it.
     pub fn new(project: &'a Project, project_root: &Path, build: &'a Build) -> EmitContext<'a> {
         let files = project
@@ -174,7 +174,7 @@ pub trait Emitter {
     }
 
     /// Generated files the emitter adds to the root besides pages and assets,
-    /// under `_tessera/` (output-layout contract, §1.1).
+    /// under `_ascribe/` (output-layout contract, §1.1).
     ///
     /// # Errors
     ///

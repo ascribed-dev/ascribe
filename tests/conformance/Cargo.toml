@@ -1,6 +1,6 @@
 [package]
 name = "tessera-conformance"
-description = "The Tessera conformance harness: case discovery, expectations, skips, and adapters."
+description = "The Ascribe conformance harness: case discovery, expectations, skips, and adapters."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -15,7 +15,7 @@ serde_yaml.workspace = true
 thiserror.workspace = true
 toml.workspace = true
 
-# Implementation phases add the Tessera crates their adapters need, as
+# Implementation phases add the Ascribe crates their adapters need, as
 # dev-dependencies.
 [dev-dependencies]
 tessera-check.workspace = true

@@ -22,13 +22,13 @@ available:
 
 The Quill agent watches your docs repository and syncs changes to Quill. This page covers installing the agent with a package manager, configuring it, and connecting it to Quill Cloud or a self-managed server. If you only want to try Quill, see [Try Quill in the browser](/quickstart/#try-in-browser).
 
-<tessera-note type="tip" label="Tip" heading="Try it without installing">
+<ascribe-note type="tip" label="Tip" heading="Try it without installing">
 
 You can run Quill in the browser at play.quill.dev with no local setup.
 
-</tessera-note>
+</ascribe-note>
 
-## Prerequisites <tessera-attributes id="prerequisites"></tessera-attributes>
+## Prerequisites <ascribe-attributes id="prerequisites"></ascribe-attributes>
 
 Before you install the agent, make sure you have:
 
@@ -37,39 +37,39 @@ Before you install the agent, make sure you have:
 
 ![Checklist of prerequisites](./_fragments/prerequisites.png)
 
-## Install the agent <tessera-attributes id="install-agent"></tessera-attributes>
+## Install the agent <ascribe-attributes id="install-agent"></ascribe-attributes>
 
-<tessera-steps>
+<ascribe-steps>
 
 1. Install the agent package:
 
-   <tessera-tabs sync="pm">
+   <ascribe-tabs sync="pm">
 
-   <tessera-tab value="npm" label="npm">
+   <ascribe-tab value="npm" label="npm">
 
    ```shell
    npm install -g @quill/agent
    ```
 
-   </tessera-tab>
+   </ascribe-tab>
 
-   <tessera-tab value="pnpm" label="pnpm">
+   <ascribe-tab value="pnpm" label="pnpm">
 
    ```shell
    pnpm add -g @quill/agent
    ```
 
-   </tessera-tab>
+   </ascribe-tab>
 
-   <tessera-tab value="yarn" label="Yarn">
+   <ascribe-tab value="yarn" label="Yarn">
 
    ```shell
    yarn global add @quill/agent
    ```
 
-   </tessera-tab>
+   </ascribe-tab>
 
-   </tessera-tabs>
+   </ascribe-tabs>
 
 2. Verify the install:
 
@@ -79,11 +79,11 @@ Before you install the agent, make sure you have:
 
    The command prints the installed version, 3.4.1.
 
-   <tessera-note type="note" label="Note">
+   <ascribe-note type="note" label="Note">
 
    The agent needs write access to your repository's `.quill/` directory.
 
-   </tessera-note>
+   </ascribe-note>
 
 3. Create `quill.yaml` at the root of your repository:
 
@@ -93,13 +93,13 @@ Before you install the agent, make sure you have:
      watch: docs/
    ```
 
-</tessera-steps>
+</ascribe-steps>
 
-## Connect to Quill <tessera-attributes id="connect"></tessera-attributes>
+## Connect to Quill <ascribe-attributes id="connect"></ascribe-attributes>
 
-<tessera-tabs sync="deployment">
+<ascribe-tabs sync="deployment">
 
-<tessera-tab value="cloud" label="Quill Cloud">
+<ascribe-tab value="cloud" label="Quill Cloud">
 
 Sign in to Quill Cloud and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
 
@@ -108,9 +108,9 @@ cloud:
   api_key: ${QUILL_KEY}
 ```
 
-</tessera-tab>
+</ascribe-tab>
 
-<tessera-tab value="self-managed" label="self-managed">
+<ascribe-tab value="self-managed" label="self-managed">
 
 Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.
 
@@ -119,15 +119,15 @@ server:
   url: https://quill.internal.example.com
 ```
 
-</tessera-tab>
+</ascribe-tab>
 
-</tessera-tabs>
+</ascribe-tabs>
 
-## Streaming sync <tessera-attributes id="streaming-sync"></tessera-attributes>
+## Streaming sync <ascribe-attributes id="streaming-sync"></ascribe-attributes>
 
-<tessera-availability scope="section">
-<tessera-availability-target target="cloud" dimension="deployment" states="ga">Quill Cloud (GA)</tessera-availability-target>; <tessera-availability-target target="self-managed" dimension="deployment" states="preview" versions="3.4">self-managed (preview, 3.4+)</tessera-availability-target>
-</tessera-availability>
+<ascribe-availability scope="section">
+<ascribe-availability-target target="cloud" dimension="deployment" states="ga">Quill Cloud (GA)</ascribe-availability-target>; <ascribe-availability-target target="self-managed" dimension="deployment" states="preview" versions="3.4">self-managed (preview, 3.4+)</ascribe-availability-target>
+</ascribe-availability>
 
 Streaming sync pushes changes as you save, instead of on each commit.
 
@@ -135,12 +135,12 @@ Quill Cloud's streaming sync is enabled by default for new Quill Cloud-hosted wo
 
 For event formats, see the [streaming API reference](https://api.quill.dev/v3/streaming).
 
-## Troubleshooting <tessera-attributes id="troubleshooting"></tessera-attributes>
+## Troubleshooting <ascribe-attributes id="troubleshooting"></ascribe-attributes>
 
-<tessera-note type="warning" label="Warning">
+<ascribe-note type="warning" label="Warning">
 
 If the agent exits immediately, check the log at `~/.quill/agent.log`.
 
 A common cause is an expired API key. Generate a new key, then restart the agent. See [Rotate keys](/keys/#rotate-keys).
 
-</tessera-note>
+</ascribe-note>

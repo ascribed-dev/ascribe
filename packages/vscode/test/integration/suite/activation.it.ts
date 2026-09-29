@@ -1,11 +1,11 @@
 import * as assert from "node:assert/strict";
 import * as vscode from "vscode";
-import type { TesseraApi } from "../../../src/extension.js";
+import type { AscribeApi } from "../../../src/extension.js";
 import { EXTENSION_ID, sleep, uriOf } from "./helpers.js";
 
-describe("in a workspace without tessera.toml", () => {
+describe("in a workspace without ascribe.toml", () => {
   it("doesn't activate the extension", async () => {
-    // Opening a markdown file must not activate it either: only `tessera.toml` does.
+    // Opening a markdown file must not activate it either: only `ascribe.toml` does.
     await vscode.window.showTextDocument(
       await vscode.workspace.openTextDocument(uriOf("readme.md")),
     );
@@ -17,10 +17,10 @@ describe("in a workspace without tessera.toml", () => {
 
   it("starts no server when a command activates it anyway", async () => {
     // Contributed commands add their own activation events (VS Code 1.74+).
-    await vscode.commands.executeCommand("tessera.showOutput");
-    const extension = vscode.extensions.getExtension<TesseraApi>(EXTENSION_ID);
+    await vscode.commands.executeCommand("ascribe.showOutput");
+    const extension = vscode.extensions.getExtension<AscribeApi>(EXTENSION_ID);
     assert.ok(extension?.isActive, "the command should have activated the extension");
-    await vscode.commands.executeCommand("tessera.restartServer");
+    await vscode.commands.executeCommand("ascribe.restartServer");
     const api = extension.exports;
     await api.whenSettled();
     assert.equal(api.state(), "stopped");

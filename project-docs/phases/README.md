@@ -65,12 +65,12 @@ The conformance harness reports every case as passed, failed, or skipped. A case
 | 02 | [Core contracts](02-core-contracts.md) | Setup | 00, 01 | — |
 | 03 | [Conformance cases](03-conformance-cases.md) | Tests | 00, 01, 02 | — |
 | 04 | [Parser spike](04-parser-spike.md) | Parser | 00 | — |
-| 05 | [Tessera lines and syntax tree](05-tessera-lines.md) | Parser | 02, 04 | 03 |
+| 05 | [Ascribe lines and syntax tree](05-tessera-lines.md) | Parser | 02, 04 | 03 |
 | 06 | [Structure pass](06-structure-pass.md) | Parser | 05 | 03 |
 | 07 | [Inline extensions](07-inline-extensions.md) | Parser | 05 | 03 |
 | 08 | [Content model crate](08-content-model-crate.md) | Model | 01, 02 | — |
 | 09 | [Slugger](09-slugger.md) | Resolve | 02 | — |
-| 10 | [File-level checks and `tessera check`](10-file-checks-and-cli.md) | Check | 06, 07, 08 | 03 |
+| 10 | [File-level checks and `ascribe check`](10-file-checks-and-cli.md) | Check | 06, 07, 08 | 03 |
 | 11 | [Source index and includes](11-source-index-and-includes.md) | Resolve | 06, 07, 08, 09 | 03 |
 | 12 | [Build resolution and linking](12-build-resolution.md) | Resolve | 11 | 03 |
 | 13 | [Incremental updates](13-incremental-updates.md) | Resolve | 12 | — |
@@ -78,7 +78,7 @@ The conformance harness reports every case as passed, failed, or skipped. A case
 | 15 | [Language server core](15-lsp-core.md) | Editor | 10, 13 | 14 |
 | 16 | [Language server navigation](16-lsp-navigation.md) | Editor | 15, 21 | — |
 | 17 | [VS Code extension client](17-vscode-client.md) | Editor | 00 | 15 |
-| 18 | [`tessera build`, plain markdown, and JSON](18-build-plain-json.md) | Output | 12 | 14 |
+| 18 | [`ascribe build`, plain markdown, and JSON](18-build-plain-json.md) | Output | 12 | 14 |
 | 19 | [Element library](19-element-library.md) | Web | 02 | — |
 | 20 | [Site output and Astro profile](20-site-output.md) | Output | 18 | — |
 | 21 | [Astro end-to-end slice](21-astro-slice.md) | Web | 19, 20 | — |
@@ -99,7 +99,7 @@ graph TD
   P01[01 Content model format] --> P02
   P02 --> P03[03 Conformance cases]
   P00 --> P04[04 Parser spike]
-  P02 --> P05[05 Tessera lines]
+  P02 --> P05[05 Ascribe lines]
   P04 --> P05
   P05 --> P06[06 Structure pass]
   P05 --> P07[07 Inline extensions]
@@ -178,7 +178,7 @@ To keep parallel phases from colliding, each phase owns specific paths. Changing
 | `crates/tessera-core` | 02 (types and traits) | 05 adds `attributes.rs`; 08 adds `availability.rs` |
 | `project-docs/contracts/`, `packages/elements/CONTRACT.md`, `tests/conformance/diagnostics.toml`, `tests/render/` | 02 | Changes only through the contract process; 20 and 21 add render fixtures |
 | `crates/comrak-tessera` | 04 (fork, block changes) | 07 (inline changes) |
-| `crates/tessera-syntax` | 05 (tree, Tessera lines) | 06 owns `src/structure/`; 07 owns `src/inline/` |
+| `crates/tessera-syntax` | 05 (tree, Ascribe lines) | 06 owns `src/structure/`; 07 owns `src/inline/` |
 | `crates/tessera-model` | 08 | |
 | `crates/tessera-check` | 10 | 14 owns `src/page/` |
 | `crates/tessera-resolve` | 11 | 09 owns `src/slug/`; 12 owns `src/build/`; 13 owns `src/incremental/` |
@@ -198,10 +198,10 @@ To keep parallel phases from colliding, each phase owns specific paths. Changing
 
 These need a person, not an agent:
 
-- **After 01:** review the `tessera.toml` format.
+- **After 01:** review the `ascribe.toml` format.
 - **After 02:** review the contracts before parallel implementation begins.
 - **After 04:** confirm the go or no-go decision on the comrak fork.
-- **Before 22:** confirm that the npm scope `@tessera` and the package names are available, or choose new ones. Every package name in these phases assumes the scope.
+- **Before 22:** confirm that the npm scope `@ascribed` and the package names are available, or choose new ones. Every package name in these phases assumes the scope.
 - **Throughout:** resolve entries in `project-docs/questions.md`, and approve contract changes.
 - **27:** all publishing.
 
@@ -210,6 +210,6 @@ These need a person, not an agent:
 Phase 27 can't finish until all of these hold:
 
 - **No unintentional skips.** Every conformance case runs. `SKIPS.toml` is empty, or every remaining entry has a human-approved reason.
-- **Diagnostic parity.** For every build of every example project, `tessera check`, `tessera build`, and the language server report the same diagnostics. The parity tests from phases 15 and 18 pass on every platform.
+- **Diagnostic parity.** For every build of every example project, `ascribe check`, `ascribe build`, and the language server report the same diagnostics. The parity tests from phases 15 and 18 pass on every platform.
 - **End to end.** The Astro slice's tests (phase 21) pass on every platform in CI.
 - **Performance.** The targets in phase 26 are met, or each miss is accepted by a human.

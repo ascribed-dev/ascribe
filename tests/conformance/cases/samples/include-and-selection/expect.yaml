@@ -1,6 +1,6 @@
 # Sample case: a project case with per-build expectations.
 #
-# It relies on the shared fixture model (tests/conformance/_model/tessera.toml,
+# It relies on the shared fixture model (tests/conformance/_model/ascribe.toml,
 # written in phase 03) declaring the `deployment` dimension, the phrases
 # `product` (Quill) and `cloud` (Quill Cloud), and the builds `site`
 # (variants: switch) and `cloud-pdf` (variants: {deployment: cloud}), as in

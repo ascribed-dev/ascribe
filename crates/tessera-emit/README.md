@@ -1,6 +1,6 @@
 # tessera-emit
 
-Emitters for Tessera's outputs. An emitter renders phase 12's **resolved tree** (`tessera_resolve::ResolvedPage`) and never works out what a build mode keeps: a selection build that keeps several arms of a group emits them all, and a filter build emits the availability annotations still attached (SPEC §9.2).
+Emitters for Ascribe's outputs. An emitter renders phase 12's **resolved tree** (`tessera_resolve::ResolvedPage`) and never works out what a build mode keeps: a selection build that keeps several arms of a group emits them all, and a filter build emits the availability annotations still attached (SPEC §9.2).
 
 | Output | Emitter | Phase |
 |---|---|---|
@@ -10,7 +10,7 @@ Emitters for Tessera's outputs. An emitter renders phase 12's **resolved tree** 
 
 ## Pieces
 
-- `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page`, and the defaults `place_asset` (the mirrored path and a relative reference, asset contract §3), `generated` (files under `_tessera/`), and `warnings`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once.
+- `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page`, and the defaults `place_asset` (the mirrored path and a relative reference, asset contract §3), `generated` (files under `_ascribe/`), and `warnings`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once.
 - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, and `markdown_destination`, which write a reference so CommonMark reads it back as written (asset contract §4).
 - `OutputDir` (`store.rs`): the [output-layout contract](../../project-docs/contracts/output-layout.md): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
 - `labels.rs`: text the outputs share (the availability line and each target's text, an arm's label).
@@ -19,7 +19,7 @@ Emitters for Tessera's outputs. An emitter renders phase 12's **resolved tree** 
 ```rust,ignore
 let cx = EmitContext::new(&project, project_root, build);
 let emission = emit(&PlainEmitter, &cx, &resolved)?;
-let output = OutputDir::lock(&project_root.join(".tessera/build"))?;
+let output = OutputDir::lock(&project_root.join(".ascribe/build"))?;
 output.replace(&build.name, "plain", &emission.files)?;
 ```
 
@@ -36,7 +36,7 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 | `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` (Q114) |
 | A project widget | Its `plain-fallback` (phrases substituted), then its wrapped content unless `plain-content = "drop"` (Q113) |
 | Phrases, includes, glossary links | Resolved |
-| Links | Absolute URLs with the `[consumer] site` origin; root-relative, with a warning from `tessera build`, without one |
+| Links | Absolute URLs with the `[consumer] site` origin; root-relative, with a warning from `ascribe build`, without one |
 | Images and linked files | Copied into the output at their mirrored path, and written as relative references |
 | Raw HTML in the source | Its text, without the tags; comments, scripts, and styles dropped (Q112) |
 
@@ -44,19 +44,19 @@ Code blocks are always fenced (the fence is longer than any backtick run in the 
 
 ## Site
 
-Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_tessera/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_tessera/schema.ts`. `prepare` refuses a build whose pages share a route (Q143).
+Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`. `prepare` refuses a build whose pages share a route (Q143).
 
 | Source | Output |
 |---|---|
 | Frontmatter | Passed through, phrases substituted; `available` becomes a list of targets (Q142) |
-| Heading | An ATX heading ending in `<tessera-attributes id="…"></tessera-attributes>` with its page id, after a space |
+| Heading | An ATX heading ending in `<ascribe-attributes id="…"></ascribe-attributes>` with its page id, after a space |
 | Image | `![alt](./path "title")`, then a marker with its attributes and the model's defaults (Q141) |
-| `@note` | `<tessera-note type label heading>` wrapping the content |
-| `@steps` | `<tessera-steps>` wrapping the list |
-| `@variant` group | `<tessera-tabs sync>` of `<tessera-tab value label>` per surviving arm (a group reduced to one arm is its content) |
+| `@note` | `<ascribe-note type label heading>` wrapping the content |
+| `@steps` | `<ascribe-steps>` wrapping the list |
+| `@variant` group | `<ascribe-tabs sync>` of `<ascribe-tab value label>` per surviving arm (a group reduced to one arm is its content) |
 | `@details` | `<details>` with `<summary>` holding the title as HTML |
-| `@available` | `<tessera-availability scope="section|block">` of `<tessera-availability-target target dimension states versions>` |
-| Project widget | An element named after the widget, `<tessera-group widget>` around a group's arms |
+| `@available` | `<ascribe-availability scope="section|block">` of `<ascribe-availability-target target dimension states versions>` |
+| Project widget | An element named after the widget, `<ascribe-group widget>` around a group's arms |
 | Glossary term | A link to the term's route, with its definition as the title |
 | Raw HTML | Unchanged |
 
@@ -68,7 +68,7 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ### Zod
 
-`zod::generate(model)` writes the TypeScript module `_tessera/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys, and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema` (Q149). `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @tessera/zod-check test`). Regenerate its fixtures after a change with `TESSERA_BLESS=1 cargo test -p tessera-emit --test zod`.
+`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys, and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema` (Q149). `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p tessera-emit --test zod`.
 
 ## JSON
 
@@ -159,7 +159,7 @@ The full documents for Quill are the snapshots in `tests/snapshots/`.
 
 ## Output ownership
 
-See the [output-layout contract](../../project-docs/contracts/output-layout.md). In short: each build's emitter writes to `<output-dir>/<build>/<emitter>/`, beside `<emitter>.manifest.json`, which lists every file Tessera wrote. A build stages its files, checks that no file it doesn't own is in the way, records ownership, moves the files into place, removes the previous manifest's files it no longer produces, and writes the final manifest. It never deletes a file the manifest never listed.
+See the [output-layout contract](../../project-docs/contracts/output-layout.md). In short: each build's emitter writes to `<output-dir>/<build>/<emitter>/`, beside `<emitter>.manifest.json`, which lists every file Ascribe wrote. A build stages its files, checks that no file it doesn't own is in the way, records ownership, moves the files into place, removes the previous manifest's files it no longer produces, and writes the final manifest. It never deletes a file the manifest never listed.
 
 ## Tests
 

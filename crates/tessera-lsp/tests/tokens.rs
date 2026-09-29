@@ -104,27 +104,27 @@ fn every_kind_of_token_is_marked() {
     assert_eq!(
         summary(&tokens),
         pairs(&[
-            ("tesseraTitle", ".A "),
-            ("tesseraPhrase", "{product}"),
-            ("tesseraTitle", " title"),
-            ("tesseraDirective", "@note"),
-            ("tesseraAttributeKey", "type"),
-            ("tesseraAttributeValue", "tip"),
-            ("tesseraAttributeKey", "bogus"),
-            ("tesseraAttributeValue", "1"),
-            ("tesseraColon", ":"),
-            ("tesseraPhrase", "{product}"),
-            ("tesseraPhraseUndeclared", "{nope}"),
-            ("tesseraEnd", "@end"),
-            ("tesseraWidget", "@my-callout"),
-            ("tesseraColon", ":"),
-            ("tesseraDirective", "@available"),
-            ("tesseraColon", ":"),
-            ("tesseraAvailability", "cloud, self-managed preview 3.3"),
-            ("tesseraAttributeKey", "width"),
-            ("tesseraAttributeValue", "600"),
-            ("tesseraAttributeKey", "height"),
-            ("tesseraAttributeValue", "2"),
+            ("ascribeTitle", ".A "),
+            ("ascribePhrase", "{product}"),
+            ("ascribeTitle", " title"),
+            ("ascribeDirective", "@note"),
+            ("ascribeAttributeKey", "type"),
+            ("ascribeAttributeValue", "tip"),
+            ("ascribeAttributeKey", "bogus"),
+            ("ascribeAttributeValue", "1"),
+            ("ascribeColon", ":"),
+            ("ascribePhrase", "{product}"),
+            ("ascribePhraseUndeclared", "{nope}"),
+            ("ascribeEnd", "@end"),
+            ("ascribeWidget", "@my-callout"),
+            ("ascribeColon", ":"),
+            ("ascribeDirective", "@available"),
+            ("ascribeColon", ":"),
+            ("ascribeAvailability", "cloud, self-managed preview 3.3"),
+            ("ascribeAttributeKey", "width"),
+            ("ascribeAttributeValue", "600"),
+            ("ascribeAttributeKey", "height"),
+            ("ascribeAttributeValue", "2"),
         ])
     );
     // Only the keys the schema doesn't declare are `unknown`.
@@ -147,7 +147,7 @@ fn a_range_request_gives_only_the_tokens_in_it() {
     assert!(all.len() > some.len());
     assert_eq!(
         summary(&some),
-        pairs(&[("tesseraWidget", "@my-callout"), ("tesseraColon", ":")])
+        pairs(&[("ascribeWidget", "@my-callout"), ("ascribeColon", ":")])
     );
 }
 
@@ -187,12 +187,12 @@ fn tokens_follow_an_edit_of_an_open_document() {
     let before = fetch(&mut client, &path, page, None);
     assert_eq!(
         summary(&before),
-        pairs(&[("tesseraPhraseUndeclared", "{nope}")])
+        pairs(&[("ascribePhraseUndeclared", "{nope}")])
     );
     let edited = "---\ntitle: T\n---\nUse {product}.\n";
     client.replace(&path, 2, edited);
     let after = fetch(&mut client, &path, edited, None);
-    assert_eq!(summary(&after), pairs(&[("tesseraPhrase", "{product}")]));
+    assert_eq!(summary(&after), pairs(&[("ascribePhrase", "{product}")]));
 }
 
 #[test]

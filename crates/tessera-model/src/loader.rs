@@ -1,4 +1,4 @@
-//! Loading `tessera.toml`: the walk over the TOML tree, and the sections that
+//! Loading `ascribe.toml`: the walk over the TOML tree, and the sections that
 //! define names (project, dimensions, lifecycle, features, notes, phrases).
 //! Fields and attributes are in `fields.rs`; types, glossary, images,
 //! widgets, consumer, builds, and editor are in `sections.rs`.
@@ -246,7 +246,7 @@ impl<'s> Loader<'s> {
         let root_span = sp(&parsed);
         let root = parsed.get_ref();
         self.check_keys(
-            "tessera.toml",
+            "ascribe.toml",
             root,
             &[
                 "spec",
@@ -318,7 +318,7 @@ impl<'s> Loader<'s> {
 
     fn spec(&mut self, root: &DeTable<'_>, root_span: Span) -> Option<String> {
         let v = self.require(
-            "tessera.toml",
+            "ascribe.toml",
             root,
             Span::new(root_span.start(), root_span.start()),
             "spec",
@@ -358,7 +358,7 @@ impl<'s> Loader<'s> {
         let mut info = ProjectInfo {
             value: Project {
                 content_root: "docs".into(),
-                output_dir: ".tessera/build".into(),
+                output_dir: ".ascribe/build".into(),
             },
             content_span: None,
             output_span: None,

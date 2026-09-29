@@ -9,7 +9,7 @@ use tessera_resolve::{DiskFs, FileKind, Layout, Project, RefKind};
 
 fn quill() -> Project {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill");
-    let model = tessera_model::load(root.join("tessera.toml")).expect("the Quill model loads");
+    let model = tessera_model::load(root.join("ascribe.toml")).expect("the Quill model loads");
     let layout = Layout::from_model(&model);
     let fs = DiskFs::new(&root, &layout);
     Project::load(Arc::new(model), layout, &fs)

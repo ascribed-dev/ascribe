@@ -269,7 +269,7 @@ impl Project {
     /// Indexes every `.md` file under the content root.
     ///
     /// Each file gets a [`FileId`], in path order, from 1 (id 0 is
-    /// `tessera.toml`). A file that can't be read is left out and listed in
+    /// `ascribe.toml`). A file that can't be read is left out and listed in
     /// [`Project::unreadable`].
     pub fn load(model: Arc<ContentModel>, layout: Layout, fs: &dyn FileSystem) -> Project {
         Project::load_with_ids(model, layout, fs, &mut FileIds::default())
@@ -569,7 +569,7 @@ impl Project {
 
     /// Headings with no `@id` whose slug is empty (SPEC §5.5): a heading made
     /// only of punctuation or emoji. Nothing can link to it usefully.
-    /// `tessera check` reports them as `heading-empty-slug` (SPEC §5.5,
+    /// `ascribe check` reports them as `heading-empty-slug` (SPEC §5.5,
     /// resolved Q61).
     pub fn empty_slug_headings(&self) -> Vec<(RelPath, &Heading)> {
         self.files()
