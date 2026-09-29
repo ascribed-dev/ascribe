@@ -126,7 +126,7 @@ fn write_outputs(
     let root: &Path = project.root();
     let output_dir = root.join(&model.project.output_dir);
     let output = OutputDir::lock(&output_dir).map_err(store_message)?;
-    // Resolved Q119; SPEC-QUESTION(Q144): routes come from the `astro` profile's router,
+    // Resolved Q119; Resolved Q144: routes come from the `astro` profile's router,
     // the only profile of spec 0.1, for every output, so a link in the plain
     // output is the URL the site publishes.
     let router = AstroRouter::from_consumer(&model.consumer);

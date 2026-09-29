@@ -78,7 +78,7 @@ fn apply_markers(html: &str) -> String {
     for marker in markers(html) {
         // A marker directly after an image applies to the image, even at the
         // end of a heading: the image rule is the more specific one.
-        // SPEC-QUESTION(Q145)
+        // Resolved Q145
         if let Some(edit) = image_edit(html, &marker) {
             edits.push(edit);
         } else if let Some(mut found) = heading_edits(html, &marker) {

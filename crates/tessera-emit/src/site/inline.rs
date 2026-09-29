@@ -215,7 +215,7 @@ fn image_inline(
 /// in the order the content model declares them, then any it doesn't declare
 /// in written order. A value set's members are joined with spaces; other
 /// values are their text (site-render contract §4).
-// SPEC-QUESTION(Q141): a declared default reaches every image, as a widget's
+// Resolved Q141: a declared default reaches every image, as a widget's
 // does.
 fn image_attributes(r: &Renderer<'_>, image: &Image) -> Vec<(String, String)> {
     let written = image.attributes.as_ref().map(|a| &a.block);

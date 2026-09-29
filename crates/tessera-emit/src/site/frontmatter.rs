@@ -30,7 +30,7 @@ use super::blocks::availability_target;
 use crate::emitter::PageContext;
 use crate::error::EmitError;
 
-// SPEC-QUESTION(Q142): `available` is the list of targets, not the source's
+// Resolved Q142: `available` is the list of targets, not the source's
 // spec string.
 /// The page's frontmatter block, `---` lines included and a blank line after,
 /// or an empty string when the page has nothing to put in it.

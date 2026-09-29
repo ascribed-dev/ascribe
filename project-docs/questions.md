@@ -1503,65 +1503,65 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §3.1, §3.2, §3.9, §5.1
 - **Raised by:** phase 17
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** §3.2 makes a line a directive only if its name is a known keyword: a built-in or a project widget the content model declares. A TextMate grammar can't read the content model, so it must decide from the spelling. §3.9 and Q1 allow up to three extra spaces of indentation beyond the container's, but TextMate can't see a list item's content column or a quote's marker width, so "extra" is unknowable there. A directive's text primary continues onto later lines (§3.4), and TextMate can't see past a line.
 - **Options:** (a) highlight only the built-in names and leave every widget to the server; (b) also highlight any hyphenated name (§3.2: widget names always contain a hyphen), so `@api-endpoint` is colored at once, and let the server's `tesseraWidget` tokens confirm it, at the cost that an undeclared `@my-thing` at line start is colored until the server answers (the server can't remove a TextMate color, only add tokens); (c) accept any indentation everywhere, at the cost of coloring indented code.
 - **Proposed resolution:** (b), plus this for indentation: at top level, up to three spaces (four spaces or a tab is indented code and is left alone; the guard rule claims such a line because the markdown grammar's own rule starts at column 0, where an injection wins a tie); inside a list or blockquote, any indentation (TextMate can't tell what the container consumed). Unknown built-in-shaped names (`@warning:`) are not colored. Every `{key}` is colored as a candidate phrase, whether or not declared (`tesseraPhraseUndeclared` marks the undeclared ones once the server answers), except `\{key}`; phrases inside link destinations aren't colored by TextMate, because the markdown grammar tokenizes the destination in a capture the injection doesn't reach. Only the first line of a text primary is colored. Title lines (§3.7) are left to the server. Implemented now: exactly that (`packages/vscode/syntaxes/`, tested in `test/unit/grammar.test.ts` against VS Code's own markdown grammar).
 - **Affects:** `packages/vscode/syntaxes/*.tmLanguage.json`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option (b): the grammar colors built-in names and any hyphenated (widget-shaped) name; up to three spaces of indentation at top level (four or a tab is indented code), any inside lists and quotes; every `{key}` outside code and link destinations as a candidate phrase; only a text primary's first line; title lines left to the server's semantic tokens. Editor-extension behavior, not language: no SPEC change.
 
 ### Q122: A `tessera.path` that doesn't work
 
 - **Section:** phase 17, task 2
 - **Raised by:** phase 17
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** the binary is found "in order: the `tessera.path` setting if set; the project's `node_modules/.bin/tessera`; the bundled binary". It doesn't say whether a `tessera.path` that names no working binary falls through to the next.
 - **Options:** (a) fall through, so the extension still works; (b) fail with an error that names the setting.
 - **Proposed resolution:** (b). The author asked for that binary; using another silently would hide a typo and run a different version from the one they meant. A project or bundled candidate that doesn't run (missing, not executable, no version in `--version`) is skipped and listed in the output when none works. Implemented now: (b) (`SPEC-QUESTION(Q122)` in `src/binary.ts`).
 - **Affects:** `packages/vscode/src/binary.ts`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option (b): a `tessera.path` that doesn't name a working binary is an error that names the setting, and resolution doesn't fall through. A project or bundled candidate that doesn't run is skipped and listed. Editor-extension behavior, not language: no SPEC change.
 
 ### Q123: What counts as a crash, and when the count resets
 
 - **Section:** phase 17, task 3
 - **Raised by:** phase 17
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** "After a configured number of crashes, stop and explain." It doesn't say what the count covers (a session, a time window, since the last successful start), what the default is, or whether the limit is the crash that stops restarts.
 - **Options:** (a) count all crashes in the window's lifetime; (b) count crashes in a sliding time window (`vscode-languageclient`'s own default is five in three minutes); (c) count since the last manual restart.
 - **Proposed resolution:** (c), with the setting `tessera.maxCrashes` (default 5, at least 1): the server is restarted after crashes 1 to `max - 1`, and the crash number `max` stops it, with a message that offers **Show Output** and **Restart Server**. Restarting by hand (the command, or a `tessera.path` change) resets the count. A time window would restart a server that dies once an hour forever, which is a bug worth reporting; a lifetime count is the simplest to explain. Implemented now: (c) (`SPEC-QUESTION(Q123)` in `src/crash.ts`).
 - **Affects:** `packages/vscode/src/crash.ts`, `client.ts`, the `tessera.maxCrashes` setting.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option (c): crashes count since the last manual restart (the command, or a `tessera.path` change); `tessera.maxCrashes` (default 5, at least 1) is the crash that stops restarts, with a message offering Show Output and Restart Server. Editor-extension behavior, not language: no SPEC change.
 
 ### Q124: Who registers file watchers
 
 - **Section:** phase 17, task 3; phase 15, task 3
 - **Raised by:** phase 17
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** phase 17 says to "forward file-watching registrations (phase 15 relies on them for files that aren't open)". Phase 15 registers `workspace/didChangeWatchedFiles` dynamically after `initialized`. The client could also watch `**/*.md` and `**/tessera.toml` itself (`synchronize.fileEvents`), but a server that registers as well would then receive every event twice.
 - **Options:** (a) the client only forwards what the server registers; (b) the client also watches statically.
 - **Proposed resolution:** (a). `vscode-languageclient` implements dynamic registration of `didChangeWatchedFiles` on its own, so the extension adds nothing, and what is watched (the content root, assets, `tessera.toml`) stays the server's decision. The integration tests cover it: a file created, changed, and deleted on disk while not open produces updated diagnostics. Implemented now: (a).
 - **Affects:** `packages/vscode/src/client.ts`; phase 15 must keep registering the watchers.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option (a): the client only forwards the server's dynamic `workspace/didChangeWatchedFiles` registration, so what is watched stays the server's decision (phase 15, Q135) and no event arrives twice. Editor-extension behavior, not language: no SPEC change.
 
 ### Q125: The version the extension expects
 
 - **Section:** phase 17, task 2; PLAN.md, Packaging
 - **Raised by:** phase 17
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** "warn when the project's binary is older than the version the extension expects" doesn't say where that version is written down, or what it is before the first release. The compiler is `0.0.0` (`Cargo.toml`).
 - **Proposed resolution:** it's `tessera.minServerVersion` in `packages/vscode/package.json`, `0.0.0` for now (so nothing warns yet), and phase 27 sets it to the release it ships with. The warning applies to a binary from the setting or the project, not to the bundled one (which is the extension's own). A pre-release sorts before its release. Implemented now: exactly that (`SPEC-QUESTION(Q125)` in `src/client.ts`).
 - **Affects:** `packages/vscode/package.json`; phase 27.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: the expected version is `tessera.minServerVersion` in `packages/vscode/package.json`, `0.0.0` until phase 27 sets it to the release it ships with; the warning applies to a binary from the setting or the project, not the bundled one. Editor-extension behavior, not language: no SPEC change.
 
 ### Q126: Extension files outside `packages/vscode`
 
 - **Section:** phases/README.md, Ownership
 - **Raised by:** phase 17
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** the extension's tests and install need three things in files other phases own: the pnpm 11 build-script policy for `esbuild` (`allowBuilds` in `pnpm-workspace.yaml`; without a decision `pnpm install` exits 1), a `vscode` job in `.github/workflows/js.yml` (integration tests need Rust, a display, and a VS Code download), and `test/fixtures/markdown.tmLanguage.json`, a copy of VS Code's MIT-licensed markdown grammar.
 - **Proposed resolution:** `allowBuilds: esbuild: false` (esbuild ships its binary in a per-platform package; its postinstall only swaps in a faster launcher); the workflow stays manual-only (`workflow_dispatch`); the grammar is a test fixture, reformatted by Prettier only, with its MIT license notice beside it (`test/fixtures/markdown.tmLanguage.LICENSE.txt`). Implemented now: exactly that.
 - **Affects:** `pnpm-workspace.yaml`, `.github/workflows/js.yml`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: `allowBuilds: esbuild: false` in `pnpm-workspace.yaml`; a `vscode` job in `.github/workflows/js.yml`, manual-only (`workflow_dispatch`) like the rest of CI; VS Code's MIT-licensed markdown grammar as a test fixture, with its license beside it. Repository layout, not language: no SPEC change.
 
 ### Q131: A `tessera.toml` that doesn't load, in a running editor
 
@@ -1645,102 +1645,102 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** site-render contract §4; content-model.md §14; SPEC §5.3
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** the contract says an image's marker holds "the image's attributes in canonical order", and "an image without attributes has no marker". content-model.md §14 lets `[images.attributes]` declare defaults (`loading = { type = "enum(lazy, eager)", default = "lazy" }`). It doesn't say whether a default reaches the `<img>` of an image that doesn't write the attribute. The element contract says widgets get their declared defaults; images aren't mentioned.
 - **Options:** (1) Written attributes only: a default is validation help and never appears in output. (2) Written attributes and declared defaults: every image carries what the model declares, so `loading="lazy"` applies to every image.
 - **Proposed resolution:** option 2. A default the output ignores would make declaring it pointless, and it's the rule for widgets. So an image gets a marker holding, in declaration order, every declared attribute that has a value or a default, and then any attribute written that the model doesn't declare (already an error the checks report). An image with none has no marker. Implemented now: exactly that (`SPEC-QUESTION(Q141)` in `site/inline.rs`). Quill declares no defaults, so its output doesn't change.
 - **Affects:** `crates/tessera-emit/src/site/inline.rs`; site-render.md §4's wording ("An image without attributes" would read "with neither attributes nor defaults"); phase 21's plugin needs nothing, since it applies whatever the marker holds.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 2: a declared image attribute's default reaches every image's marker, as widgets' defaults do. Stated in the site-render contract §4 and content-model.md §14.
 
 ### Q142: How page-level `available` reaches the layout
 
 - **Section:** SPEC §9.4, §9.6; element contract §4
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** SPEC §9.4 says page-level availability is "passed through as frontmatter", and the element contract leaves "a form the layout can read" to phase 20. The source's `available` is a spec string (`cloud, self-managed preview 3.3`). A layout that shows it needs each target's `dimension`, states, versions, and display text, which the layout can't compute without the content model, and the generated Zod schema must describe whatever is written.
 - **Options:** (1) Pass the string through, and let the layout parse it. (2) Write a list of targets with the attributes of a `<tessera-availability-target>` and its text.
 - **Proposed resolution:** option 2, with the spec resolved (a feature key replaced by the spec it stands for, Q25). Each entry is `{ target, dimension, states: [...], versions: [...] (left out with none), text }`, in the spec's order, so a layout writes `<tessera-availability scope="page">` with one `<tessera-availability-target target dimension states versions>text</…>` per entry, with no model knowledge. The Zod schema's `available` is that list (`availableSchema`), not a string. A page with no `available` has no key. `variant` passes through as written. Implemented now: exactly that (`SPEC-QUESTION(Q142)` in `site/frontmatter.rs`).
 - **Affects:** `crates/tessera-emit/src/site/frontmatter.rs` and `zod/`; phase 21's collection configuration (the schema is the site output's, not the source's); the element contract's §4 could name this form.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 2: page-level `available` in the site output is a list of targets (`target`, `dimension`, `states`, `versions` when given, `text`), with feature keys resolved, and the Zod schema describes that list. Stated in SPEC §9.6 and the element contract §4.
 
 ### Q143: Two pages with the same route
 
 - **Section:** SPEC §9.5; content-model.md §16; phase 02's handoff ("Route collisions have no diagnostic")
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** Astro's `glob` loader slugs each path segment, so `My File.md` and `my-file.md` have the same entry id and the same route, and `index.md` and `index/index.md` both have the id `index`, which Tessera routes to the base path. Neither the spec nor the registry says what a build does.
 - **Options:** (1) Publish both and let Astro pick (its loader warns of a duplicate id and keeps one). (2) Fail the build with a message. (3) A registry diagnostic at page level.
 - **Proposed resolution:** option 2 for now: the site emitter refuses the build ("the site output can't publish two pages at one route: /docs/my-file is the route of My File.md and my-file.md. Rename one of the files"), before writing anything, and the plain and JSON outputs are unaffected. It isn't a registry diagnostic because it's a property of an output (the routes are the consumer's), like Q120; if it should be one (`page-route-duplicate`, reported by `tessera check` too), that's the human's call. Implemented now: the emitter error (`SPEC-QUESTION(Q143)` in `site/mod.rs`).
 - **Affects:** `crates/tessera-emit/src/site/mod.rs`; the registry if a diagnostic is preferred.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 2: two pages with one Astro entry id fail `tessera build --emit site` before anything is written, with a message naming the route and both files; the plain and JSON outputs are unaffected. An emitter error, not a registry diagnostic, since routes are a property of the consumer profile (as with Q120). Stated in content-model.md §16. If authors need to see it in the editor, a `page-route-duplicate` diagnostic can be added later.
 
 ### Q144: Which router `tessera build` uses, and which outputs it builds by default
 
 - **Section:** SPEC §9.5; Q119
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** Q119 used `DefaultRouter` for every output "until phase 20 supplies the `astro` profile's", and defaulted `--emit` to `plain,json`. The plain output's links must be the URLs the site publishes (SPEC §9.4), and the site output is the toolchain's main output.
 - **Proposed resolution:** every output is resolved with the `astro` profile's router (`AstroRouter`, in `tessera-resolve`, which also answers "which page has this route"), so a link in the plain or JSON output is the URL the site publishes, including the entry-id slugging (`Guides/My Setup.md` is `/guides/my-setup/`). `DefaultRouter` stays for tests and callers with no profile; `tessera check`'s page-level pass still uses it, because a route's text never changes a diagnostic. `--emit` defaults to `site,plain,json`.
 - **Affects:** `crates/tessera-cli/src/commands/build.rs`, `crates/tessera-resolve/src/astro.rs`; `tessera-check`'s page pass could switch to `AstroRouter` too.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: every output of `tessera build` is resolved with the `astro` profile's router, so plain and JSON links are the URLs the site publishes; `tessera check`'s page pass keeps `DefaultRouter`, since a route's text never changes a diagnostic; `--emit` defaults to `site,plain,json`. Tool behavior, not language: no SPEC change.
 
 ### Q145: A marker after an image that ends a heading
 
 - **Section:** site-render contract §2.1, §2.2
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** `## ![Icon](./icon.png)<tessera-attributes width="16"></tessera-attributes>`: the marker is the last inline content of the heading (§2.1) and also directly follows an image (§2.2).
 - **Proposed resolution:** it applies to the image; the heading gets no id from it. §2.2 names the position exactly, and the emitter never writes this (its heading marker follows a space, so a heading `## Logo ![Logo](./logo.png){width=32}` is `… ![Logo](./logo.png)<marker> <marker>`). A fixture, `tests/render/image-ends-heading`, records it for both implementations. Implemented now: exactly that (`SPEC-QUESTION(Q145)` in `render/mod.rs`).
 - **Affects:** `render_site_html`; phase 21's plugin must agree, through the new fixture; site-render.md §2.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: a marker directly after an image that also ends a heading applies to the image, and the heading gets no id from it. Stated in the site-render contract §2.2, with the fixture `image-ends-heading` in §6, which phase 21's plugin must also pass.
 
 ### Q146: Markdown in a tight list item that holds an element
 
 - **Section:** element contract §0; SPEC §9.4
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** an HTML block of the kind the elements are can't interrupt a paragraph, so a list item written tight (`- item` then a `@note` on the next line) needs a blank line before the element, and CommonMark then reads the list as loose: its items render `<p>`. The contract doesn't say.
 - **Proposed resolution:** accept it. The emitter writes the blank line the element needs, whatever the list's tightness in the source, and a tight list whose items hold no element stays tight. The only difference is spacing of paragraphs in that list.
 - **Affects:** `crates/tessera-emit/src/site/blocks.rs`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: a list whose items hold an element is written loose, because the element needs a blank line before it; a list whose items hold none keeps its tightness. Stated in the element contract §0.
 
 ### Q147: Images in a `@details` title
 
 - **Section:** element contract §5; SPEC §9.4
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** the summary is raw HTML (`<summary>Show <code>x</code></summary>`), so an image in the title would be a raw `<img>`, which a consumer doesn't process, and whose relative `src` resolves against the page's URL, not the file. Assets in raw HTML aren't copied or rewritten (asset contract §1).
 - **Proposed resolution:** an image in a `@details` title is written as its alt text in the summary. Its file is still copied, since the resolved page lists it. Implemented now (`SPEC-QUESTION(Q147)` in `site/blocks.rs`). If images in summaries matter, the contract could allow a published reference.
 - **Affects:** `crates/tessera-emit/src/site/blocks.rs`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: an image in a `@details` title is written as its alt text in the `<summary>`; its file is still copied. Stated in the element contract §5.
 
 ### Q148: Which page a route-like link names
 
 - **Section:** SPEC §5.2; Q22, Q55
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** Q55's interim rule guessed a route's page as `route.md`, else `route/index.md`, on the destination read as a content path. That misses a route the way a published site spells it: with the base path (`/docs/guides/install/`), or with the segments Astro slugs (`/guides/my-setup/` for `Guides/My Setup.md`).
 - **Proposed resolution:** keep Q55's mapping first, since it never gets a project wrong that it got right, and when neither candidate is a source file, ask the profile's router which page has the route (`AstroRouter::page_for_route`, through a new `SourceSet::pages`, whose default is empty). A destination that starts with `/` is read as written, with or without the base path; any other is the route of the content path it names. A page that's found makes the `link-route` fix available (its `page_exists`). The change is additive: no destination that resolved before resolves differently, and `tessera check` and the source index share it, so `crates/tessera-check/tests/parity.rs` still passes.
 - **Affects:** `crates/tessera-resolve/src/references.rs`, `crates/tessera-check/src/project.rs` (`SourceSet::pages`), `link-route` and its fix.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: Q55's conventional mapping first (`route.md`, else `route/index.md`), then the profile's router names the page whose route it is (with or without the base path, and with Astro's entry-id slugging), for the `link-route` warning and its fix. `tessera check` and the source index share it. Stated in content-model.md §16; SPEC leaves routing to the consumer profile, so no SPEC change.
 
 ### Q149: The generated Zod module
 
 - **Section:** SPEC §9.6; content-model.md §5.1, §6
 - **Raised by:** phase 20
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** SPEC §9.6 says the collection's schema MUST be generated as a Zod schema, and the phase asks for one per content type with the reserved keys. Where the module lives, what it imports, how each field type maps, and what it exports aren't set.
 - **Proposed resolution:** `_tessera/schema.ts` in the site emitter root (a `generated` file in the manifest), importing `z` from `astro/zod` (Zod 4 in Astro 7.3, the targeted version). Each type is `z.strictObject` (unknown keys are errors, as in Tessera), with `title` and every field per content-model.md §6: `string`, `number`, `boolean`; `date` as `z.coerce.date()` (Astro's own advice, since YAML readers may return a string or a `Date`); `enum` as `z.enum`; `list` as `z.array`; `object` as a nested strict object; optional fields `.optional()`; defaults `.default(…)`; `description` as `.describe(…)`. `available` is `availableSchema` (Q142) and `variant` is a record of strings or lists of strings, on every type. Exports, per type `<camelName>Schema` and its type, and `schemas` (by name), `contentTypes` (each type's `files` and `default`), and `schema` (a union of every type's, for one collection). `tests/zod/` (a pnpm workspace package) type-checks the generated files under the workspace's strict settings, and validates the Quill pages' frontmatter with them.
 - **Affects:** `crates/tessera-emit/src/zod/`, `tests/zod/`; phase 21's collection configuration.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: `_tessera/schema.ts` in the site output, importing `z` from `astro/zod` (Zod 4, Astro 7.3); one `z.strictObject` per content type with `title`, its fields mapped per content-model.md §6, and the reserved `available` and `variant`; exports per type, plus `schemas`, `contentTypes`, and `schema`. `tests/zod/` type-checks it and validates Quill's site frontmatter. Output format, not language: no SPEC change.
 
 ### Q150: A frontmatter `slug` under the `astro` profile
 
 - **Section:** content-model.md §5.1, §16; SPEC §9.5
 - **Raised by:** phase 20 (review of the pull request)
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** Astro's `glob` loader gives a page whose frontmatter has a `slug` that value as its entry id, in place of the id computed from its path (`generateIdDefault`, Astro 7.3.5). A content model can declare a `slug` field today, and a page that sets it would be published at an id Tessera never computed, so every route, link, and `link-route` answer for it would be wrong.
 - **Options:** (1) The router honors the frontmatter `slug`, so Tessera's routes depend on frontmatter, and the source index and every route answer need each page's frontmatter. (2) Under the `astro` profile `slug` is reserved: a content type can't declare it.
 - **Proposed resolution:** option 2, the simpler. A page that sets `slug` without a declaration is already an unknown key (`frontmatter-unknown-key`), and a declaration is now a model error, `model-field-reserved` with a third message variant that names the profile's rule. A later profile that doesn't have this rule doesn't reserve it. Implemented now: exactly that (`SPEC-QUESTION(Q150)` in `tessera-model/src/sections.rs`), with the message in the registry and content-model.md §20.
 - **Affects:** `crates/tessera-model/src/sections.rs`, `tests/conformance/diagnostics.toml`, content-model.md §5.1 and §20.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 2: under the `astro` profile, `slug` is a reserved frontmatter key that no content type may declare (`model-field-reserved`, a third message variant), because Astro's loader uses it as the entry id in place of the path. Stated in content-model.md §5.1 and §20, and in the registry.

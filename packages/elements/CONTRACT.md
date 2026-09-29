@@ -24,6 +24,7 @@ Changes to this contract go through `project-docs/questions.md` (phases README, 
 - An element that holds **no markdown** (`<tessera-availability>`, an empty widget) is written as one HTML block: its lines are consecutive, with no blank line inside.
 - Every element is separated from the blocks around it by a blank line, or starts or ends its container.
 - Inside a list item or blockquote, every line carries the container's indentation or `>` markers, like any other block there.
+- A list whose items hold an element is written loose, whatever it was in the source, because an element needs a blank line before it and CommonMark then reads the list as loose: its items render `<p>`. A list whose items hold no element keeps its tightness (Q146).
 
 **Attribute values** are written in double quotes, with `&`, `<`, `>`, and `"` escaped as `&amp;`, `&lt;`, `&gt;`, and `&quot;`. Attributes appear in the order this contract lists them. An optional attribute with no value is left out, never written empty.
 
@@ -146,7 +147,7 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 
 - `section`: directly after the section's heading, as the next block.
 - `block`: directly before the block it annotates, where the `@available` line was.
-- `page`: the emitter doesn't write one. Page-level availability reaches the layout as frontmatter (SPEC §9.4, §9.6), in a form phase 20 defines; a layout that shows it should render this element with `scope="page"`.
+- `page`: the emitter doesn't write one. Page-level availability reaches the layout as frontmatter (SPEC §9.4, §9.6): `available` is a list with one entry per target, in the spec's order and with feature keys resolved, each holding this element's attributes and its text: `{ target, dimension, states: [...], versions: [...], text }`, with `versions` left out as the attribute is (Q142). A layout that shows it renders this element with `scope="page"`, one `<tessera-availability-target>` per entry, joining `states` and `versions` with single spaces.
 
 ### `<tessera-availability-target>`
 
@@ -181,7 +182,7 @@ That is: the target's label, then in parentheses either one state's label, follo
 `@details` compiles to HTML's own `<details>` element (SPEC §9.4), which works without JavaScript everywhere.
 
 - `<details>` has no attributes: it starts closed.
-- Its first child is `<summary>`, on the line after `<details>`, holding the title line's inline content **rendered as HTML** (not plain text): `<summary>Show the <code>quill.yaml</code> reference</summary>`. Because `<details>` starts an HTML block, the emitter renders the title's markdown itself.
+- Its first child is `<summary>`, on the line after `<details>`, holding the title line's inline content **rendered as HTML** (not plain text): `<summary>Show the <code>quill.yaml</code> reference</summary>`. Because `<details>` starts an HTML block, the emitter renders the title's markdown itself. An image in the title is written as its alt text, since a raw `<img>` there would get no image processing and its relative path wouldn't resolve (Q147).
 - Then a blank line, the content as markdown blocks, a blank line, and `</details>`.
 
 ```html
