@@ -487,10 +487,12 @@ impl IncrementalProject {
     /// Loads a project from `fs` (the source files under the content root, and
     /// what references can probe): the state every later update is relative
     /// to. Files are numbered in path order from 1, as [`Project::load`] does.
+    /// `fs` must be `Send`, so the project can move between threads (the
+    /// language server computes on a worker).
     pub fn load(
         model: Arc<ContentModel>,
         layout: Layout,
-        fs: impl FileSystem + 'static,
+        fs: impl FileSystem + Send + 'static,
     ) -> IncrementalProject {
         let mut ids = FileIds::new();
         let project = Project::load_with_ids(model.clone(), layout, &fs, &mut ids);

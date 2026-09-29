@@ -1,0 +1,391 @@
+//! The message loop and the worker.
+
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::PathBuf;
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
+use std::thread;
+
+use lsp_server::{Connection, ErrorCode, Message, Notification, Request, RequestId, Response};
+use lsp_types::notification::{
+    DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument, DidOpenTextDocument,
+    Notification as _,
+};
+use lsp_types::request::{Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest};
+use lsp_types::{
+    InitializeParams, InitializeResult, SemanticTokens, SemanticTokensFullOptions,
+    SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams,
+    SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo, TextDocumentSyncCapability,
+    TextDocumentSyncKind, TextDocumentSyncOptions, Uri,
+};
+use tessera_core::{LineIndex, Span};
+
+use crate::compute::{Outcome, compute};
+use crate::core::Core;
+use crate::position::Encoding;
+use crate::tokens::{legend, semantic_tokens};
+use crate::{Options, PublishInfo};
+
+/// Why the server stopped.
+#[derive(Debug, thiserror::Error)]
+pub enum ServeError {
+    /// The client broke the protocol.
+    #[error("protocol error: {0}")]
+    Protocol(#[from] lsp_server::ProtocolError),
+    /// The client's `initialize` parameters weren't understood.
+    #[error("can't read the initialize parameters: {0}")]
+    Params(#[from] serde_json::Error),
+}
+
+/// How the session ended.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Exit {
+    /// `shutdown`, then `exit`, or the client closed the connection after
+    /// `shutdown`.
+    Clean,
+    /// `exit` without `shutdown`, or the connection closed without either:
+    /// the protocol says the exit code is 1.
+    Abrupt,
+}
+
+struct Shared {
+    core: Mutex<Core>,
+    wake: Condvar,
+    options: Options,
+}
+
+impl Shared {
+    fn lock(&self) -> MutexGuard<'_, Core> {
+        // A panic in a handler doesn't stop the server (it's caught), so a
+        // poisoned lock is still a usable state.
+        self.core.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+}
+
+/// Runs the server over a connection until the client ends the session.
+///
+/// # Errors
+///
+/// The client's `initialize` isn't understood, or the client breaks the
+/// protocol before the session starts.
+pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeError> {
+    let (id, params) = connection.initialize_start()?;
+    let params: InitializeParams = serde_json::from_value(params)?;
+    let encoding = Encoding::negotiate(
+        params
+            .capabilities
+            .general
+            .as_ref()
+            .and_then(|g| g.position_encodings.as_deref()),
+    );
+    let result = InitializeResult {
+        capabilities: ServerCapabilities {
+            position_encoding: Some(encoding.kind()),
+            text_document_sync: Some(TextDocumentSyncCapability::Options(
+                TextDocumentSyncOptions {
+                    open_close: Some(true),
+                    change: Some(TextDocumentSyncKind::INCREMENTAL),
+                    ..TextDocumentSyncOptions::default()
+                },
+            )),
+            semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
+                SemanticTokensOptions {
+                    legend: legend(),
+                    range: Some(true),
+                    full: Some(SemanticTokensFullOptions::Bool(true)),
+                    work_done_progress_options: Default::default(),
+                },
+            )),
+            ..ServerCapabilities::default()
+        },
+        server_info: Some(ServerInfo {
+            name: "tessera".to_owned(),
+            version: Some(env!("CARGO_PKG_VERSION").to_owned()),
+        }),
+    };
+    connection.initialize_finish(id, serde_json::to_value(result)?)?;
+
+    let mut core = Core::new(connection.sender.clone());
+    core.encoding = encoding;
+    core.can_watch = params
+        .capabilities
+        .workspace
+        .as_ref()
+        .and_then(|w| w.did_change_watched_files.as_ref())
+        .and_then(|c| c.dynamic_registration)
+        .unwrap_or(false);
+    core.folders = workspace_folders(&params);
+    let shared = Arc::new(Shared {
+        core: Mutex::new(core),
+        wake: Condvar::new(),
+        options,
+    });
+    let worker = {
+        let shared = shared.clone();
+        thread::spawn(move || worker(&shared))
+    };
+    {
+        let mut core = shared.lock();
+        guarded("start", || {
+            core.start();
+            core.register_watchers();
+        });
+    }
+    shared.wake.notify_all();
+
+    let mut shutdown_requested = false;
+    let exit = loop {
+        let Ok(message) = connection.receiver.recv() else {
+            break if shutdown_requested {
+                Exit::Clean
+            } else {
+                Exit::Abrupt
+            };
+        };
+        match message {
+            Message::Request(request) => {
+                if shutdown_requested {
+                    connection.sender.send(
+                        Response::new_err(
+                            request.id,
+                            ErrorCode::InvalidRequest as i32,
+                            "the server is shutting down".to_owned(),
+                        )
+                        .into(),
+                    ).ok();
+                } else if request.method == "shutdown" {
+                    shutdown_requested = true;
+                    connection
+                        .sender
+                        .send(Response::new_ok(request.id, ()).into())
+                        .ok();
+                } else {
+                    let response = handle_request(&shared, request);
+                    connection.sender.send(response.into()).ok();
+                }
+            }
+            Message::Notification(notification) => {
+                if notification.method == "exit" {
+                    break if shutdown_requested {
+                        Exit::Clean
+                    } else {
+                        Exit::Abrupt
+                    };
+                }
+                handle_notification(&shared, notification);
+                shared.wake.notify_all();
+            }
+            Message::Response(_) => {}
+        }
+    };
+    shared.lock().shutdown = true;
+    shared.wake.notify_all();
+    let _ = worker.join();
+    Ok(exit)
+}
+
+fn workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
+    let mut folders: Vec<PathBuf> = params
+        .workspace_folders
+        .iter()
+        .flatten()
+        .filter_map(|f| crate::uri::uri_to_path(&f.uri))
+        .collect();
+    if folders.is_empty() {
+        #[allow(deprecated)]
+        let root = params.root_uri.clone();
+        if let Some(path) = root.as_ref().and_then(crate::uri::uri_to_path) {
+            folders.push(path);
+        }
+    }
+    folders.iter().map(|p| crate::uri::normalize(p)).collect()
+}
+
+/// Runs a handler, logging a panic instead of letting it end the server.
+fn guarded(what: &str, f: impl FnOnce()) {
+    if let Err(panic) = catch_unwind(AssertUnwindSafe(f)) {
+        eprintln!("tessera-lsp: panic in {what}: {}", panic_message(&*panic));
+    }
+}
+
+fn panic_message(panic: &(dyn std::any::Any + Send)) -> String {
+    panic
+        .downcast_ref::<&str>()
+        .map(|s| (*s).to_owned())
+        .or_else(|| panic.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "(no message)".to_owned())
+}
+
+fn handle_notification(shared: &Shared, notification: Notification) {
+    let method = notification.method.clone();
+    guarded(&method, || {
+        let mut core = shared.lock();
+        match notification.method.as_str() {
+            DidOpenTextDocument::METHOD => {
+                if let Some(p) = parse::<lsp_types::DidOpenTextDocumentParams>(&notification) {
+                    core.did_open(
+                        p.text_document.uri,
+                        p.text_document.version,
+                        p.text_document.text,
+                    );
+                }
+            }
+            DidChangeTextDocument::METHOD => {
+                if let Some(p) = parse::<lsp_types::DidChangeTextDocumentParams>(&notification) {
+                    core.did_change(
+                        &p.text_document.uri,
+                        p.text_document.version,
+                        p.content_changes,
+                    );
+                }
+            }
+            DidCloseTextDocument::METHOD => {
+                if let Some(p) = parse::<lsp_types::DidCloseTextDocumentParams>(&notification) {
+                    core.did_close(&p.text_document.uri);
+                }
+            }
+            DidChangeWatchedFiles::METHOD => {
+                if let Some(p) = parse::<lsp_types::DidChangeWatchedFilesParams>(&notification) {
+                    core.did_change_watched(p.changes);
+                }
+            }
+            // `initialized` was consumed by the handshake; the rest need no
+            // action (`didSave`, `$/cancelRequest`, `$/setTrace`, …).
+            _ => {}
+        }
+    });
+}
+
+fn parse<T: serde::de::DeserializeOwned>(notification: &Notification) -> Option<T> {
+    match serde_json::from_value(notification.params.clone()) {
+        Ok(params) => Some(params),
+        Err(e) => {
+            eprintln!(
+                "tessera-lsp: bad parameters for {}: {e}",
+                notification.method
+            );
+            None
+        }
+    }
+}
+
+fn handle_request(shared: &Shared, request: Request) -> Response {
+    let id = request.id.clone();
+    let result = catch_unwind(AssertUnwindSafe(|| match request.method.as_str() {
+        SemanticTokensFullRequest::METHOD => semantic_tokens_request(shared, &request, false),
+        SemanticTokensRangeRequest::METHOD => semantic_tokens_request(shared, &request, true),
+        method => Err(Response::new_err(
+            request.id.clone(),
+            ErrorCode::MethodNotFound as i32,
+            format!("the server doesn't handle {method}"),
+        )),
+    }));
+    match result {
+        Ok(Ok(value)) => Response::new_ok(id, value),
+        Ok(Err(response)) => response,
+        Err(panic) => {
+            eprintln!(
+                "tessera-lsp: panic in {}: {}",
+                request.method,
+                panic_message(&*panic)
+            );
+            Response::new_err(
+                id,
+                ErrorCode::InternalError as i32,
+                format!("internal error handling {}", request.method),
+            )
+        }
+    }
+}
+
+fn invalid(id: &RequestId, message: String) -> Response {
+    Response::new_err(id.clone(), ErrorCode::InvalidParams as i32, message)
+}
+
+fn semantic_tokens_request(
+    shared: &Shared,
+    request: &Request,
+    range: bool,
+) -> Result<serde_json::Value, Response> {
+    let (uri, range): (Uri, Option<lsp_types::Range>) = if range {
+        let p: SemanticTokensRangeParams = serde_json::from_value(request.params.clone())
+            .map_err(|e| invalid(&request.id, e.to_string()))?;
+        (p.text_document.uri, Some(p.range))
+    } else {
+        let p: SemanticTokensParams = serde_json::from_value(request.params.clone())
+            .map_err(|e| invalid(&request.id, e.to_string()))?;
+        (p.text_document.uri, None)
+    };
+    let (target, encoding) = {
+        let core = shared.lock();
+        (core.tokens_target(&uri), core.encoding)
+    };
+    let Some((snapshot, path, model)) = target else {
+        return Ok(serde_json::Value::Null);
+    };
+    let Some(file) = snapshot.file(&path) else {
+        return Ok(serde_json::Value::Null);
+    };
+    let only: Option<Span> = range.map(|range| {
+        let index = LineIndex::new(&file.source);
+        let start = encoding.offset_lenient(&index, &file.source, range.start);
+        let end = encoding.offset_lenient(&index, &file.source, range.end);
+        Span::new(start, end.max(start))
+    });
+    let data = semantic_tokens(file, &model, encoding, only);
+    serde_json::to_value(SemanticTokens {
+        result_id: None,
+        data,
+    })
+    .map_err(|e| {
+        Response::new_err(
+            request.id.clone(),
+            ErrorCode::InternalError as i32,
+            e.to_string(),
+        )
+    })
+}
+
+/// The worker: takes what is queued, computes it without the lock, and
+/// publishes what is still current.
+fn worker(shared: &Shared) {
+    loop {
+        let job = {
+            let mut core = shared.lock();
+            loop {
+                if core.shutdown {
+                    return;
+                }
+                if let Some(job) = core.plan() {
+                    break job;
+                }
+                core = shared
+                    .wake
+                    .wait(core)
+                    .unwrap_or_else(PoisonError::into_inner);
+            }
+        };
+        let outcome = catch_unwind(AssertUnwindSafe(|| {
+            compute(&job, &|| job.snapshot.is_current())
+        }));
+        let outcome = match outcome {
+            Ok(outcome) => outcome,
+            Err(panic) => {
+                // The round is dropped, not retried: the same input would
+                // panic again. The next change to these files queues them.
+                eprintln!(
+                    "tessera-lsp: panic computing diagnostics: {}",
+                    panic_message(&*panic)
+                );
+                continue;
+            }
+        };
+        if let (Some(hook), Outcome::Done(results)) = (&shared.options.before_publish, &outcome) {
+            hook(&PublishInfo {
+                version: job.snapshot.version().get(),
+                files: results.iter().map(|(p, _)| p.to_string()).collect(),
+            });
+        }
+        let mut core = shared.lock();
+        guarded("publishing diagnostics", || core.finish(&job, outcome));
+    }
+}

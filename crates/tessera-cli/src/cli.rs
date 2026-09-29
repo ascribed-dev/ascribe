@@ -57,6 +57,8 @@ pub enum Command {
     Check(commands::check::Args),
     /// Rewrite Tessera constructs into canonical form.
     Fmt(commands::fmt::Args),
+    /// Run the language server, speaking LSP over standard input and output.
+    Lsp(commands::lsp::Args),
 }
 
 impl Command {
@@ -65,6 +67,7 @@ impl Command {
             Command::Build(args) => commands::build::run(global, args),
             Command::Check(args) => commands::check::run(global, args),
             Command::Fmt(args) => commands::fmt::run(global, args),
+            Command::Lsp(args) => commands::lsp::run(global, args),
         }
     }
 }
