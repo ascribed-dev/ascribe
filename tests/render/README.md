@@ -23,7 +23,7 @@ tests/render/
 1. Render `input.md` as CommonMark, with raw HTML passed through, applying the contract's attribute markers. GFM and typographic replacements (Astro's defaults) may be on: the fixtures contain nothing they change outside markers, and they must not change markers.
 2. Compare the result with `expected.html` as HTML, not as text (below).
 
-For the Astro plugin, render with a unified pipeline that has the plugin in the position it takes in Astro, not with a full Astro build: the fixtures test the transform, and Astro's image optimization would replace every `src`.
+For the Astro plugin, render with each markdown processor Astro can run (in Astro 7.3, Sätteri, its default, and `unified()`), with the plugin at the stage it takes in Astro, which is a user hast plugin that runs before Astro's image and heading-id passes (Q151), not with a full Astro build: the fixtures test the transform, and Astro's image optimization would replace every `src`.
 
 ## Comparing HTML
 

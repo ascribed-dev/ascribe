@@ -588,7 +588,7 @@ A later profile that offers a choice adds a key for it then. **Decided (Q12).**
 
 **How file paths become routes** (the `astro` profile; phase 20 implements and verifies it against Astro): a page's route is `base-path`, then its path relative to the content root with the `.md` extension removed and each segment slugged the way Astro's content loader computes entry ids; a final `index` segment is dropped (`guides/index.md` → `/guides/`); then the trailing slash per `trailing-slash`. The root `index.md` (Astro's entry id `index`) is at `base-path`, which under `trailing-slash = "never"` loses its final `/` unless it's `/`. Two pages with one entry id (`My File.md` and `my-file.md`, or `index.md` and `index/index.md`) can't both be published, and `tessera build --emit site` fails, naming them (Q143). The same router answers the reverse question, which page a route-like link names, for the `link-route` warning and its fix (Q148). Source files never contain routes (SPEC §5.2).
 
-The `astro` profile's `site`, `base-path`, and `trailing-slash` repeat settings from `astro.config`. The Astro integration (phases 21 and 22) SHOULD check that they agree.
+The `astro` profile's `site`, `base-path`, and `trailing-slash` repeat settings from `astro.config`. The Astro integration (phases 21 and 22) checks that they agree, and fails the build, naming each difference, when they don't. It compares `base-path` as a path with a leading and a trailing `/`, treats Astro's `trailingSlash: "ignore"` as agreeing with either value, and compares `site` by origin when both sides set it (Q154).
 
 ---
 
