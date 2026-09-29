@@ -1586,7 +1586,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Options:** (1) Written attributes only: a default is validation help and never appears in output. (2) Written attributes and declared defaults: every image carries what the model declares, so `loading="lazy"` applies to every image.
 - **Proposed resolution:** option 2. A default the output ignores would make declaring it pointless, and it's the rule for widgets. So an image gets a marker holding, in declaration order, every declared attribute that has a value or a default, and then any attribute written that the model doesn't declare (already an error the checks report). An image with none has no marker. Implemented now: exactly that (`SPEC-QUESTION(Q141)` in `site/inline.rs`). Quill declares no defaults, so its output doesn't change.
 - **Affects:** `crates/tessera-emit/src/site/inline.rs`; site-render.md §4's wording ("An image without attributes" would read "with neither attributes nor defaults"); phase 21's plugin needs nothing, since it applies whatever the marker holds.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
 
 ### Q142: How page-level `available` reaches the layout
 
@@ -1597,18 +1597,18 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Options:** (1) Pass the string through, and let the layout parse it. (2) Write a list of targets with the attributes of a `<tessera-availability-target>` and its text.
 - **Proposed resolution:** option 2, with the spec resolved (a feature key replaced by the spec it stands for, Q25). Each entry is `{ target, dimension, states: [...], versions: [...] (left out with none), text }`, in the spec's order, so a layout writes `<tessera-availability scope="page">` with one `<tessera-availability-target target dimension states versions>text</…>` per entry, with no model knowledge. The Zod schema's `available` is that list (`availableSchema`), not a string. A page with no `available` has no key. `variant` passes through as written. Implemented now: exactly that (`SPEC-QUESTION(Q142)` in `site/frontmatter.rs`).
 - **Affects:** `crates/tessera-emit/src/site/frontmatter.rs` and `zod/`; phase 21's collection configuration (the schema is the site output's, not the source's); the element contract's §4 could name this form.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
 
 ### Q143: Two pages with the same route
 
 - **Section:** SPEC §9.5; content-model.md §16; phase 02's handoff ("Route collisions have no diagnostic")
 - **Raised by:** phase 20
 - **Status:** open
-- **Ambiguity:** Astro's `glob` loader slugs each path segment, so `My File.md` and `my-file.md` have the same entry id and the same route. Neither the spec nor the registry says what a build does.
+- **Ambiguity:** Astro's `glob` loader slugs each path segment, so `My File.md` and `my-file.md` have the same entry id and the same route, and `index.md` and `index/index.md` both have the id `index`, which Tessera routes to the base path. Neither the spec nor the registry says what a build does.
 - **Options:** (1) Publish both and let Astro pick (its loader warns of a duplicate id and keeps one). (2) Fail the build with a message. (3) A registry diagnostic at page level.
 - **Proposed resolution:** option 2 for now: the site emitter refuses the build ("the site output can't publish two pages at one route: /docs/my-file is the route of My File.md and my-file.md. Rename one of the files"), before writing anything, and the plain and JSON outputs are unaffected. It isn't a registry diagnostic because it's a property of an output (the routes are the consumer's), like Q120; if it should be one (`page-route-duplicate`, reported by `tessera check` too), that's the human's call. Implemented now: the emitter error (`SPEC-QUESTION(Q143)` in `site/mod.rs`).
 - **Affects:** `crates/tessera-emit/src/site/mod.rs`; the registry if a diagnostic is preferred.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
 
 ### Q144: Which router `tessera build` uses, and which outputs it builds by default
 
@@ -1618,7 +1618,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Ambiguity:** Q119 used `DefaultRouter` for every output "until phase 20 supplies the `astro` profile's", and defaulted `--emit` to `plain,json`. The plain output's links must be the URLs the site publishes (SPEC §9.4), and the site output is the toolchain's main output.
 - **Proposed resolution:** every output is resolved with the `astro` profile's router (`AstroRouter`, in `tessera-resolve`, which also answers "which page has this route"), so a link in the plain or JSON output is the URL the site publishes, including the entry-id slugging (`Guides/My Setup.md` is `/guides/my-setup/`). `DefaultRouter` stays for tests and callers with no profile; `tessera check`'s page-level pass still uses it, because a route's text never changes a diagnostic. `--emit` defaults to `site,plain,json`.
 - **Affects:** `crates/tessera-cli/src/commands/build.rs`, `crates/tessera-resolve/src/astro.rs`; `tessera-check`'s page pass could switch to `AstroRouter` too.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
 
 ### Q145: A marker after an image that ends a heading
 
@@ -1628,7 +1628,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Ambiguity:** `## ![Icon](./icon.png)<tessera-attributes width="16"></tessera-attributes>`: the marker is the last inline content of the heading (§2.1) and also directly follows an image (§2.2).
 - **Proposed resolution:** it applies to the image; the heading gets no id from it. §2.2 names the position exactly, and the emitter never writes this (its heading marker follows a space, so a heading `## Logo ![Logo](./logo.png){width=32}` is `… ![Logo](./logo.png)<marker> <marker>`). A fixture, `tests/render/image-ends-heading`, records it for both implementations. Implemented now: exactly that (`SPEC-QUESTION(Q145)` in `render/mod.rs`).
 - **Affects:** `render_site_html`; phase 21's plugin must agree, through the new fixture; site-render.md §2.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
 
 ### Q146: Markdown in a tight list item that holds an element
 
@@ -1638,7 +1638,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Ambiguity:** an HTML block of the kind the elements are can't interrupt a paragraph, so a list item written tight (`- item` then a `@note` on the next line) needs a blank line before the element, and CommonMark then reads the list as loose: its items render `<p>`. The contract doesn't say.
 - **Proposed resolution:** accept it. The emitter writes the blank line the element needs, whatever the list's tightness in the source, and a tight list whose items hold no element stays tight. The only difference is spacing of paragraphs in that list.
 - **Affects:** `crates/tessera-emit/src/site/blocks.rs`.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
 
 ### Q147: Images in a `@details` title
 
@@ -1648,7 +1648,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Ambiguity:** the summary is raw HTML (`<summary>Show <code>x</code></summary>`), so an image in the title would be a raw `<img>`, which a consumer doesn't process, and whose relative `src` resolves against the page's URL, not the file. Assets in raw HTML aren't copied or rewritten (asset contract §1).
 - **Proposed resolution:** an image in a `@details` title is written as its alt text in the summary. Its file is still copied, since the resolved page lists it. Implemented now (`SPEC-QUESTION(Q147)` in `site/blocks.rs`). If images in summaries matter, the contract could allow a published reference.
 - **Affects:** `crates/tessera-emit/src/site/blocks.rs`.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
 
 ### Q148: Which page a route-like link names
 
@@ -1658,7 +1658,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Ambiguity:** Q55's interim rule guessed a route's page as `route.md`, else `route/index.md`, on the destination read as a content path. That misses a route the way a published site spells it: with the base path (`/docs/guides/install/`), or with the segments Astro slugs (`/guides/my-setup/` for `Guides/My Setup.md`).
 - **Proposed resolution:** keep Q55's mapping first, since it never gets a project wrong that it got right, and when neither candidate is a source file, ask the profile's router which page has the route (`AstroRouter::page_for_route`, through a new `SourceSet::pages`, whose default is empty). A destination that starts with `/` is read as written, with or without the base path; any other is the route of the content path it names. A page that's found makes the `link-route` fix available (its `page_exists`). The change is additive: no destination that resolved before resolves differently, and `tessera check` and the source index share it, so `crates/tessera-check/tests/parity.rs` still passes.
 - **Affects:** `crates/tessera-resolve/src/references.rs`, `crates/tessera-check/src/project.rs` (`SourceSet::pages`), `link-route` and its fix.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
 
 ### Q149: The generated Zod module
 
@@ -1668,4 +1668,15 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Ambiguity:** SPEC §9.6 says the collection's schema MUST be generated as a Zod schema, and the phase asks for one per content type with the reserved keys. Where the module lives, what it imports, how each field type maps, and what it exports aren't set.
 - **Proposed resolution:** `_tessera/schema.ts` in the site emitter root (a `generated` file in the manifest), importing `z` from `astro/zod` (Zod 4 in Astro 7.3, the targeted version). Each type is `z.strictObject` (unknown keys are errors, as in Tessera), with `title` and every field per content-model.md §6: `string`, `number`, `boolean`; `date` as `z.coerce.date()` (Astro's own advice, since YAML readers may return a string or a `Date`); `enum` as `z.enum`; `list` as `z.array`; `object` as a nested strict object; optional fields `.optional()`; defaults `.default(…)`; `description` as `.describe(…)`. `available` is `availableSchema` (Q142) and `variant` is a record of strings or lists of strings, on every type. Exports, per type `<camelName>Schema` and its type, and `schemas` (by name), `contentTypes` (each type's `files` and `default`), and `schema` (a union of every type's, for one collection). `tests/zod/` (a pnpm workspace package) type-checks the generated files under the workspace's strict settings, and validates the Quill pages' frontmatter with them.
 - **Affects:** `crates/tessera-emit/src/zod/`, `tests/zod/`; phase 21's collection configuration.
-- **Resolution:** filled in by a human.
+- **Resolution:** _to be filled in by a human._
+
+### Q150: A frontmatter `slug` under the `astro` profile
+
+- **Section:** content-model.md §5.1, §16; SPEC §9.5
+- **Raised by:** phase 20 (review of the pull request)
+- **Status:** open
+- **Ambiguity:** Astro's `glob` loader gives a page whose frontmatter has a `slug` that value as its entry id, in place of the id computed from its path (`generateIdDefault`, Astro 7.3.5). A content model can declare a `slug` field today, and a page that sets it would be published at an id Tessera never computed, so every route, link, and `link-route` answer for it would be wrong.
+- **Options:** (1) The router honors the frontmatter `slug`, so Tessera's routes depend on frontmatter, and the source index and every route answer need each page's frontmatter. (2) Under the `astro` profile `slug` is reserved: a content type can't declare it.
+- **Proposed resolution:** option 2, the simpler. A page that sets `slug` without a declaration is already an unknown key (`frontmatter-unknown-key`), and a declaration is now a model error, `model-field-reserved` with a third message variant that names the profile's rule. A later profile that doesn't have this rule doesn't reserve it. Implemented now: exactly that (`SPEC-QUESTION(Q150)` in `tessera-model/src/sections.rs`), with the message in the registry and content-model.md §20.
+- **Affects:** `crates/tessera-model/src/sections.rs`, `tests/conformance/diagnostics.toml`, content-model.md §5.1 and §20.
+- **Resolution:** _to be filled in by a human._

@@ -79,7 +79,7 @@ Written against **Astro 7.3.5** (`astro/zod` is Zod 4.6). Verified in `node_modu
 
 ### Decisions
 
-Every choice the spec leaves open is a question with the implemented answer: Q141 (image defaults reach every image), Q142 (page-level `available` is a list of targets), Q143 (two pages with one route fail the site output), Q144 (`AstroRouter` for every output; all three outputs by default), Q145 (a marker after an image that ends a heading applies to the image), Q146 (a list that holds an element is loose), Q147 (an image in a `@details` title is its alt text), Q148 (the router finds the page a route names), Q149 (the Zod module). All are `open`, implemented as proposed.
+Every choice the spec leaves open is a question with the implemented answer: Q141 (image defaults reach every image), Q142 (page-level `available` is a list of targets), Q143 (two pages with one route fail the site output), Q144 (`AstroRouter` for every output; all three outputs by default), Q145 (a marker after an image that ends a heading applies to the image), Q146 (a list that holds an element is loose), Q147 (an image in a `@details` title is its alt text), Q148 (the router finds the page a route names), Q149 (the Zod module), Q150 (`slug` is reserved under the `astro` profile: a content type can't declare it, since Astro would use it as the entry id). All are `open`, implemented as proposed.
 
 Also:
 
@@ -89,6 +89,12 @@ Also:
 - **A bug in the plain emitter was fixed on the way**: a heading whose text ends in an already escaped `#` (`## \#`) got `\\#`, which reads as an escaped backslash and a `#`. Both emitters use `escape_closing_hash`; `tests/plain.rs` has a case.
 - **Attributes on a tab label** follow the contract's canonical order (the content model's dimension order), where the plain output labels in written order (phase 18, Q115): the two differ only for an arm whose attributes are written out of order.
 - **`tessera-check`'s page pass** still uses `DefaultRouter` (Q144): a route's text never changes a diagnostic.
+
+### For phase 21 and later
+
+- **The root page.** Astro's entry id for `index.md` is `index` (its regex removes only `/index`), while Tessera's route for that entry is the base path (content-model.md §16). Phase 21's page route must serve the entry with id `index` at the base path, or the root page is at `/index/`. `AstroRouter::entry_id` returns exactly Astro's id, and `index.md` and `index/index.md` are reported as one route.
+- **The root route under `trailing-slash = "never"`** is the base path without its trailing slash (`/docs`), unless the base is `/`, matching Astro's `BASE_URL` and the URL its build writes for the root page. Phase 21 should confirm it in a real build.
+- **Cost of a route-like link.** For each route-like link that the conventional mapping doesn't resolve, `page_of_route` lists and slugs every page. That's fine at Quill's size; at phase 15's benchmark scale a route map built once per source set would be better. Not done here.
 
 ### Conformance
 

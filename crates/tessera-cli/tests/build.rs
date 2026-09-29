@@ -180,13 +180,30 @@ fn the_site_output_is_built_under_every_build() {
         assert!(!built.join(build).join("plain").exists());
     }
     assert!(
-        stderr(&out).contains("built cloud/site: 3 pages, 3 assets"),
+        stderr(&out).contains("built cloud/site: 3 pages, 2 assets"),
         "{}",
         stderr(&out)
     );
     let page = read(&built.join("cloud/site/install-agent.md"));
     assert!(page.contains("<tessera-tabs sync=\"pm\">"), "{page}");
     assert!(page.contains("(/quickstart/#try-in-browser)"), "{page}");
+}
+
+#[test]
+fn a_generated_file_isnt_counted_as_an_asset() {
+    let dir = project(MODEL, &[("index.md", &page("Hi.\n"))]);
+    let out = tessera(dir.path(), &["build", "--build", "site", "--emit", "site"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("built site/site: 1 page, 0 assets"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(
+        dir.path()
+            .join(".tessera/build/site/site/_tessera/schema.ts")
+            .is_file()
+    );
 }
 
 #[test]

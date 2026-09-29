@@ -95,7 +95,7 @@ fn details_render_their_title_as_html() {
         body(
             ".Show the `quill.yaml` *reference* & [keys](index.md)\n@details:\nHidden.\n\n- a\n@end\n"
         ),
-        "<details>\n<summary>Show the <code>quill.yaml</code> <em>reference</em> &amp; <a href=\"/docs/\">keys</a></summary>\n\nHidden.\n\n- a\n\n</details>\n"
+        "<details>\n<summary>Show the <code>quill.yaml</code> <em>reference</em> &amp; <a href=\"/docs\">keys</a></summary>\n\nHidden.\n\n- a\n\n</details>\n"
     );
     assert_eq!(
         body(".More\n@details\nHidden.\n"),
@@ -380,7 +380,7 @@ fn links_are_the_routes_of_the_consumer_profile() {
     // `guides/My Setup.md`.
     assert_eq!(
         strip_frontmatter(&site(&project, "site", "index.md")),
-        "[a](/docs/guides/my-setup#run-it) and [b](/docs/) and [c](https://example.com/x)\n"
+        "[a](/docs/guides/my-setup#run-it) and [b](/docs) and [c](https://example.com/x)\n"
     );
 }
 

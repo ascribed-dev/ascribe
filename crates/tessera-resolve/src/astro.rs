@@ -8,7 +8,13 @@
 //! `github-slugger` (the pure `slug()`, without numbering), joined with `/`,
 //! and a final `/index` removed (`getContentEntryIdAndSlug`, Astro 7.3, the
 //! version phase 20 targets). So `Guides/My Setup.md` is `guides/my-setup`
-//! and `guides/index.md` is `guides`. The root `index.md` is the root route.
+//! and `guides/index.md` is `guides`. The regex needs the `/`, so the root
+//! `index.md` keeps the id `index`, and so does `index/index.md`. Tessera's
+//! route for the id `index` is the base path (content-model.md §16: a final
+//! `index` segment is dropped), so those two pages collide, as they do in
+//! Astro. Under `trailing-slash = "never"` the base path has no trailing
+//! slash (Astro's `BASE_URL`, and the build's URL for the root page), unless
+//! it is `/`.
 //!
 //! Two source files can have the same entry id (`My File.md` and
 //! `my-file.md`); [`AstroRouter::collisions`] finds them, and the site output
@@ -69,13 +75,13 @@ impl AstroRouter {
     }
 
     /// The entry id Astro's `glob` loader gives a page: its path without the
-    /// extension, each segment slugged, and a final `index` segment dropped
-    /// (`""` for the root `index.md`).
+    /// extension, each segment slugged, and a final `/index` removed. The root
+    /// `index.md` (and `index/index.md`) is `index`.
     pub fn entry_id(page: &RelPath) -> String {
         // The extension is removed before slugging: `a.b.md` is `a.b`, then
         // `ab`.
         let count = page.segments().count();
-        let mut segments: Vec<String> = page
+        let slugged: Vec<String> = page
             .segments()
             .enumerate()
             .map(|(n, segment)| match segment.rfind('.') {
@@ -83,10 +89,11 @@ impl AstroRouter {
                 _ => github_slug(segment),
             })
             .collect();
-        if segments.last().is_some_and(|s| s == "index") {
-            segments.pop();
+        let id = slugged.join("/");
+        match id.strip_suffix("/index") {
+            Some(rest) => rest.to_owned(),
+            None => id,
         }
-        segments.join("/")
     }
 
     /// The page in `pages` that has this route, if any. `route` is a URL
@@ -115,7 +122,9 @@ impl AstroRouter {
             Some(rest) if rest.is_empty() || rest.starts_with('/') => rest,
             _ => path.as_str(),
         };
-        Some(rest.trim_matches('/').to_owned())
+        let id = rest.trim_matches('/');
+        // The base path is the route of the entry `index`.
+        Some(if id.is_empty() { "index" } else { id }.to_owned())
     }
 
     /// The groups of pages that share a route, each with its route, in path
@@ -136,7 +145,10 @@ impl Router for AstroRouter {
     fn route(&self, page: &RelPath) -> String {
         let id = AstroRouter::entry_id(page);
         let mut url = self.base.clone();
-        if id.is_empty() {
+        if id == "index" {
+            if !self.trailing_slash && url.len() > 1 {
+                url.pop();
+            }
             return url;
         }
         let encoded: Vec<String> = id.split('/').map(encode_segment).collect();
@@ -176,7 +188,10 @@ mod tests {
     #[test]
     fn entry_ids_follow_astros_glob_loader() {
         let id = |p: &str| AstroRouter::entry_id(&page(p));
-        assert_eq!(id("index.md"), "");
+        // The regex needs a `/`: the root page keeps `index`, as does
+        // `index/index.md`.
+        assert_eq!(id("index.md"), "index");
+        assert_eq!(id("index/index.md"), "index");
         assert_eq!(id("keys.md"), "keys");
         assert_eq!(id("guides/index.md"), "guides");
         assert_eq!(id("Guides/My Setup.md"), "guides/my-setup");
@@ -196,7 +211,10 @@ mod tests {
         assert_eq!(route(&with, "guides/index.md"), "/docs/guides/");
         let without = AstroRouter::with_base("docs", false);
         assert_eq!(route(&without, "guides/setup.md"), "/docs/guides/setup");
-        assert_eq!(route(&without, "index.md"), "/docs/");
+        // With no trailing slash, the root page is the base without one,
+        // unless the base is `/` (Astro's `BASE_URL`).
+        assert_eq!(route(&without, "index.md"), "/docs");
+        assert_eq!(route(&AstroRouter::with_base("/", false), "index.md"), "/");
         assert_eq!(
             route(&AstroRouter::with_base("/", true), "keys.md"),
             "/keys/"
@@ -244,5 +262,10 @@ mod tests {
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].0, "/my-file/");
         assert_eq!(found[0].1.len(), 2);
+        // Astro gives `index.md` and `index/index.md` the same id.
+        let roots = [page("index.md"), page("index/index.md")];
+        let found = router.collisions(&roots);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].0, "/");
     }
 }

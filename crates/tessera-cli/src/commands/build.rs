@@ -163,7 +163,11 @@ fn write_outputs(
                 .iter()
                 .filter(|f| f.kind == tessera_emit::FileKind::Page)
                 .count();
-            let assets = emission.files.len().saturating_sub(pages);
+            let assets = emission
+                .files
+                .iter()
+                .filter(|f| f.kind == tessera_emit::FileKind::Asset)
+                .count();
             let replaced = output
                 .replace(&build.name, emitter.name(), &emission.files)
                 .map_err(store_message)?;
