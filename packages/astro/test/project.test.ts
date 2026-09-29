@@ -1,0 +1,87 @@
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import { consumerMismatches, normalizeBase, readProject } from "../src/project.js";
+
+function project(toml: string): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+  writeFileSync(path.join(dir, "tessera.toml"), toml);
+  return dir;
+}
+
+describe("readProject", () => {
+  it("reads the output directory, builds, and consumer settings", () => {
+    const dir = project(`
+spec = "0.1"
+[project]
+output-dir = "out"
+[consumer]
+site = "https://docs.example.com"
+base-path = "/docs"
+trailing-slash = "never"
+[builds.site]
+[builds."self-managed-3.3"]
+`);
+    const info = readProject(dir);
+    expect(info.builds).toEqual(["site", "self-managed-3.3"]);
+    expect(info.consumer).toEqual({
+      site: "https://docs.example.com",
+      basePath: "/docs/",
+      trailingSlash: "never",
+    });
+    expect(info.siteRoot("site")).toBe(path.join(dir, "out", "site", "site"));
+  });
+
+  it("uses the profile's defaults", () => {
+    const info = readProject(project('spec = "0.1"\n'));
+    expect(info.consumer).toEqual({ site: undefined, basePath: "/", trailingSlash: "always" });
+    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".tessera", "build", "site", "site"));
+  });
+
+  it("says which file it couldn't read", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+    mkdirSync(path.join(dir, "empty"));
+    expect(() => readProject(path.join(dir, "empty"))).toThrow(/tessera\.toml/);
+  });
+});
+
+describe("consumerMismatches", () => {
+  const info = readProject(
+    project(
+      '[consumer]\nsite = "https://a.example"\nbase-path = "/docs/"\ntrailing-slash = "never"\n',
+    ),
+  );
+
+  it("accepts the same routing however the base path is written", () => {
+    expect(
+      consumerMismatches(info, {
+        base: "/docs",
+        trailingSlash: "never",
+        site: "https://a.example/",
+      }),
+    ).toEqual([]);
+    expect(
+      consumerMismatches(info, { base: "/docs/", trailingSlash: "ignore", site: undefined }),
+    ).toEqual([]);
+  });
+
+  it("names each difference", () => {
+    const problems = consumerMismatches(info, {
+      base: "/",
+      trailingSlash: "always",
+      site: "https://b.example",
+    });
+    expect(problems).toHaveLength(3);
+    expect(problems.join("\n")).toMatch(/base-path.*"\/docs\/".*"\/"/);
+    expect(problems.join("\n")).toMatch(/trailing-slash.*"never".*"always"/);
+    expect(problems.join("\n")).toMatch(/site/);
+  });
+});
+
+describe("normalizeBase", () => {
+  it("adds the missing slashes", () => {
+    expect(normalizeBase("docs")).toBe("/docs/");
+    expect(normalizeBase("/")).toBe("/");
+  });
+});
