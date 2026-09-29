@@ -39,8 +39,8 @@ export interface Edit {
   trim: { node: HastNode; value: string }[];
 }
 
-const OPEN = /^<tessera-attributes((?: [a-z][a-z0-9-]*="[^"\r\n]*")*)>$/;
-const CLOSE = "</tessera-attributes>";
+const OPEN = /^<ascribe-attributes((?: [a-z][a-z0-9-]*="[^"\r\n]*")*)>$/;
+const CLOSE = "</ascribe-attributes>";
 const ATTRIBUTE = / ([a-z][a-z0-9-]*)="([^"]*)"/g;
 const HEADING = /^h[1-6]$/;
 

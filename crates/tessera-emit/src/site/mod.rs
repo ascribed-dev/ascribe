@@ -6,14 +6,14 @@
 //! | Source | Site output |
 //! |---|---|
 //! | Frontmatter | Passed through; `available` as a list of targets (Q142) |
-//! | Heading | An ATX heading ending in a `<tessera-attributes>` marker with its page id |
+//! | Heading | An ATX heading ending in a `<ascribe-attributes>` marker with its page id |
 //! | Image with attributes | The image, then a marker with the attributes |
-//! | `@note` | `<tessera-note type label heading>` wrapping the content |
-//! | `@steps` | `<tessera-steps>` wrapping the list |
-//! | `@variant` group | `<tessera-tabs sync>` of `<tessera-tab value label>`, when several arms survive |
+//! | `@note` | `<ascribe-note type label heading>` wrapping the content |
+//! | `@steps` | `<ascribe-steps>` wrapping the list |
+//! | `@variant` group | `<ascribe-tabs sync>` of `<ascribe-tab value label>`, when several arms survive |
 //! | `@details` | `<details>` with a `<summary>` |
-//! | `@available` | `<tessera-availability scope>` of `<tessera-availability-target>` |
-//! | Project widget | An element named after the widget, and `<tessera-group>` for groups |
+//! | `@available` | `<ascribe-availability scope>` of `<ascribe-availability-target>` |
+//! | Project widget | An element named after the widget, and `<ascribe-group>` for groups |
 //! | Glossary term | An ordinary link, with the definition as its title |
 //! | Raw HTML | Passed through unchanged |
 //!

@@ -18,9 +18,9 @@ Build `@tessera/elements`: the custom elements the site output uses, implementin
 
 ## Tasks
 
-1. **Elements.** Plain custom elements with no framework, rendering into the light DOM (SPEC §9.7), exactly as the contract defines: `tessera-note`, `tessera-steps`, `tessera-tabs` with `tessera-tab`, and `tessera-availability`.
-   - `tessera-note`, `tessera-steps`, and `tessera-availability` need CSS only, and their content renders meaningfully even if the script never loads.
-   - `tessera-tabs` is the only element with behavior. Without JavaScript, every tab shows with its label. With it, the element follows the WAI-ARIA tabs pattern (roles, keyboard navigation). Tabs with the same `sync` value stay in step across the page, and the reader's choice is remembered across pages with `localStorage` (guarded, because storage can be unavailable).
+1. **Elements.** Plain custom elements with no framework, rendering into the light DOM (SPEC §9.7), exactly as the contract defines: `ascribe-note`, `ascribe-steps`, `ascribe-tabs` with `ascribe-tab`, and `ascribe-availability`.
+   - `ascribe-note`, `ascribe-steps`, and `ascribe-availability` need CSS only, and their content renders meaningfully even if the script never loads.
+   - `ascribe-tabs` is the only element with behavior. Without JavaScript, every tab shows with its label. With it, the element follows the WAI-ARIA tabs pattern (roles, keyboard navigation). Tabs with the same `sync` value stay in step across the page, and the reader's choice is remembered across pages with `localStorage` (guarded, because storage can be unavailable).
 2. **Theming.** CSS custom properties for colors, spacing, borders, and type, with a documented list and sensible defaults. Note types map to colors through properties, and projects can add their own types.
 3. **Packaging.** An ES module entry that registers the elements, a CSS file, and a way to import the CSS without the script.
 4. **Tests.** Browser tests (for example Playwright or Web Test Runner) covering rendering without the script, tab keyboard navigation, cross-group syncing, remembered choices, and an accessibility audit (for example `axe-core`).
@@ -41,8 +41,8 @@ Build `@tessera/elements`: the custom elements the site output uses, implementin
 
 **Built.** `packages/elements` implements `CONTRACT.md` with no additions.
 
-- `src/tabs.ts`: `<tessera-tabs>` and `<tessera-tab>`, the only behavior (ARIA tabs pattern, arrow/Home/End keys, `sync` across groups, `localStorage` key `tessera-tabs:<sync>`, guarded, with a per-page fallback). `src/group.ts`: `<tessera-group>`, an empty class (CSS gives it `display: block`). `src/index.ts` registers those three; notes, steps, and availability are CSS only and are deliberately not registered.
-- `css/style.css`: all styling, themed by `--tessera-*` properties (documented in `README.md`). Generated text comes from attributes (`attr()`), so a note shows `label: heading`, or `label` alone with no heading (Q12, approved), a tab shows its `label`, and the availability lead-in is `tessera-availability::before`.
+- `src/tabs.ts`: `<ascribe-tabs>` and `<ascribe-tab>`, the only behavior (ARIA tabs pattern, arrow/Home/End keys, `sync` across groups, `localStorage` key `ascribe-tabs:<sync>`, guarded, with a per-page fallback). `src/group.ts`: `<ascribe-group>`, an empty class (CSS gives it `display: block`). `src/index.ts` registers those three; notes, steps, and availability are CSS only and are deliberately not registered.
+- `css/style.css`: all styling, themed by `--ascribe-*` properties (documented in `README.md`). Generated text comes from attributes (`attr()`), so a note shows `label: heading`, or `label` alone with no heading (Q12, approved), a tab shows its `label`, and the availability lead-in is `ascribe-availability::before`.
 - Browser tests in `test/`: Playwright (`playwright-core`) drives Chromium, Firefox, and WebKit (parameterized) against the compiled `dist` and the CSS; axe-core audits pages with and without the script. `test/global-setup.ts` compiles the library first.
 
 **Public interface for phases 21 and 25.**

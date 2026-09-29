@@ -234,7 +234,7 @@ impl Renderer<'_> {
         };
         match line.name.as_str() {
             "note" => vec![self.note(line, &bound)],
-            "steps" => vec![wrap("tessera-steps", &Attrs::new(), &bound)],
+            "steps" => vec![wrap("ascribe-steps", &Attrs::new(), &bound)],
             "details" => vec![self.details(directive, line, &bound)],
             "available" => {
                 let mut out: Vec<String> = self.availability(directive).into_iter().collect();
@@ -276,7 +276,7 @@ impl Renderer<'_> {
         (!text.is_empty()).then_some(text)
     }
 
-    /// `<tessera-note>` (contract §1).
+    /// `<ascribe-note>` (contract §1).
     fn note(&self, line: &DirectiveLine, content: &[String]) -> String {
         let kind = line
             .attributes
@@ -293,7 +293,7 @@ impl Renderer<'_> {
             .with("type", kind)
             .with("label", label)
             .with_opt("heading", self.title_text(line));
-        wrap("tessera-note", &attrs, content)
+        wrap("ascribe-note", &attrs, content)
     }
 
     /// `<details>` with a `<summary>` (contract §5): the title's inline
@@ -324,7 +324,7 @@ impl Renderer<'_> {
         out
     }
 
-    /// `<tessera-availability>` for a surviving `@available` (contract §4),
+    /// `<ascribe-availability>` for a surviving `@available` (contract §4),
     /// written where the directive was.
     fn availability(&self, block: &ResolvedBlock) -> Option<String> {
         let annotation = block.annotation.as_ref()?;
@@ -377,8 +377,8 @@ impl Renderer<'_> {
         attrs
     }
 
-    /// A surviving group (SPEC §9.4): `<tessera-tabs>` for `@variant`, and a
-    /// `<tessera-group>` of one element per arm for a widget.
+    /// A surviving group (SPEC §9.4): `<ascribe-tabs>` for `@variant`, and a
+    /// `<ascribe-group>` of one element per arm for a widget.
     fn group(&self, name: &str, arms: &[ResolvedArm]) -> String {
         if name == "variant" {
             return self.tabs(arms);
@@ -388,13 +388,13 @@ impl Renderer<'_> {
             .map(|arm| self.widget(&arm.opener, &self.blocks(&arm.children)))
             .collect();
         wrap(
-            "tessera-group",
+            "ascribe-group",
             &Attrs::new().with("widget", name),
             &elements,
         )
     }
 
-    /// `<tessera-tabs>` and its `<tessera-tab>`s (contract §3).
+    /// `<ascribe-tabs>` and its `<ascribe-tab>`s (contract §3).
     fn tabs(&self, arms: &[ResolvedArm]) -> String {
         let values: Vec<Vec<(String, Vec<String>)>> = arms
             .iter()
@@ -424,15 +424,15 @@ impl Renderer<'_> {
                 let attrs = Attrs::new()
                     .with_opt("value", value)
                     .with_opt("label", label);
-                wrap("tessera-tab", &attrs, &self.blocks(&arm.children))
+                wrap("ascribe-tab", &attrs, &self.blocks(&arm.children))
             })
             .collect();
         let attrs = Attrs::new().with_opt("sync", sync);
-        wrap("tessera-tabs", &attrs, &tabs)
+        wrap("ascribe-tabs", &attrs, &tabs)
     }
 }
 
-/// `<tessera-availability>` with one `<tessera-availability-target>` per
+/// `<ascribe-availability>` with one `<ascribe-availability-target>` per
 /// entry, as one HTML block (contract §4): no blank line inside.
 pub(crate) fn availability_element(model: &ContentModel, scope: &str, entries: &[Entry]) -> String {
     let targets: Vec<String> = entries
@@ -449,17 +449,17 @@ pub(crate) fn availability_element(model: &ContentModel, scope: &str, entries: &
                 );
             format!(
                 "{}{}{}",
-                open("tessera-availability-target", &attrs),
+                open("ascribe-availability-target", &attrs),
                 super::element::escape(&view.text),
-                close("tessera-availability-target")
+                close("ascribe-availability-target")
             )
         })
         .collect();
     format!(
         "{}\n{}\n{}",
-        open("tessera-availability", &Attrs::new().with("scope", scope)),
+        open("ascribe-availability", &Attrs::new().with("scope", scope)),
         targets.join("; "),
-        close("tessera-availability")
+        close("ascribe-availability")
     )
 }
 

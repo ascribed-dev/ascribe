@@ -10,38 +10,38 @@ const axeSource = readFileSync(
 );
 
 const NOTE = `
-<tessera-note type="tip" label="Tip" heading="Try it without installing">
+<ascribe-note type="tip" label="Tip" heading="Try it without installing">
 
 <p>Run Quill in the browser.</p>
 
-</tessera-note>
+</ascribe-note>
 
-<tessera-note type="security" label="Security">
+<ascribe-note type="security" label="Security">
 
 <p>A project's own type.</p>
 
-</tessera-note>
+</ascribe-note>
 `;
 
 const STEPS = `
-<tessera-steps>
+<ascribe-steps>
 
 <ol start="3">
 <li>Install the agent package.</li>
 <li>Verify the install.</li>
 </ol>
 
-</tessera-steps>
+</ascribe-steps>
 `;
 
 const AVAILABILITY = `
-<tessera-availability scope="section">
-<tessera-availability-target target="cloud" dimension="deployment" states="ga">Quill Cloud (GA)</tessera-availability-target>; <tessera-availability-target target="self-managed" dimension="deployment" states="preview" versions="3.4">Self-managed (preview, 3.4+)</tessera-availability-target>
-</tessera-availability>
+<ascribe-availability scope="section">
+<ascribe-availability-target target="cloud" dimension="deployment" states="ga">Quill Cloud (GA)</ascribe-availability-target>; <ascribe-availability-target target="self-managed" dimension="deployment" states="preview" versions="3.4">Self-managed (preview, 3.4+)</ascribe-availability-target>
+</ascribe-availability>
 `;
 
 const ALL = `<h1>Page</h1>${NOTE}${STEPS}${AVAILABILITY}${TABS}
-<tessera-group widget="quill-thing"><p>Grouped.</p></tessera-group>`;
+<ascribe-group widget="quill-thing"><p>Grouped.</p></ascribe-group>`;
 
 describe.each(ENGINES)("%s", (engine) => {
   let browser: Browser;
@@ -87,7 +87,7 @@ describe.each(ENGINES)("%s", (engine) => {
         await expect(page.getByText(text).isVisible()).resolves.toBe(true);
       }
       const labels = await page
-        .locator("#a > tessera-tab")
+        .locator("#a > ascribe-tab")
         .evaluateAll((tabs) => tabs.map((tab) => getComputedStyle(tab, "::before").content));
       expect(labels).toEqual(['"npm"', '"pnpm / yarn"', '"bun"']);
       await expect(page.locator("[role=tablist]").count()).resolves.toBe(0);
@@ -96,11 +96,11 @@ describe.each(ENGINES)("%s", (engine) => {
 
     it("shows a note's heading, or its label when it has none", async () => {
       const page = await fresh(NOTE, { script: false });
-      expect(contentText(await pseudo(page, "tessera-note[type=tip]", "::before", "content"))).toBe(
+      expect(contentText(await pseudo(page, "ascribe-note[type=tip]", "::before", "content"))).toBe(
         "Tip: Try it without installing",
       );
       expect(
-        contentText(await pseudo(page, "tessera-note[type=security]", "::before", "content")),
+        contentText(await pseudo(page, "ascribe-note[type=security]", "::before", "content")),
       ).toBe("Security");
       await expect(page.getByText("A project's own type.").isVisible()).resolves.toBe(true);
       await context.close();
@@ -109,21 +109,21 @@ describe.each(ENGINES)("%s", (engine) => {
     it("themes note types through custom properties, and unknown types get the default", async () => {
       const page = await fresh(NOTE, { script: false });
       const colors = await page
-        .locator("tessera-note")
+        .locator("ascribe-note")
         .evaluateAll((notes) => notes.map((note) => getComputedStyle(note).borderInlineStartColor));
       expect(colors[0]).not.toBe(colors[1]);
       await page.addStyleTag({
         content: '[type="security"] { --_color: rgb(1, 2, 3); }',
       });
       const themed = await page
-        .locator("tessera-note[type=security]")
+        .locator("ascribe-note[type=security]")
         .evaluate((note) => getComputedStyle(note).borderInlineStartColor);
       expect(themed).toBe("rgb(1, 2, 3)");
       await context.close();
     });
 
     it("numbers steps from the list's own start", async () => {
-      const item = (list: string) => `<tessera-steps>${list}</tessera-steps>`;
+      const item = (list: string) => `<ascribe-steps>${list}</ascribe-steps>`;
       const page = await fresh(
         item('<ol id="real" start="3"><li>Step</li><li>Step</li></ol>') +
           item('<ol id="ref"><li>Step</li><li>Step</li></ol>') +
@@ -160,13 +160,13 @@ describe.each(ENGINES)("%s", (engine) => {
         ]
           .map(
             (states) =>
-              `<tessera-availability scope="block"><tessera-availability-target target="t" dimension="d" states="${states}">T</tessera-availability-target></tessera-availability>`,
+              `<ascribe-availability scope="block"><ascribe-availability-target target="t" dimension="d" states="${states}">T</ascribe-availability-target></ascribe-availability>`,
           )
           .join(""),
         { script: false },
       );
       const colors = await page
-        .locator("tessera-availability-target")
+        .locator("ascribe-availability-target")
         .evaluateAll((all) => all.map((el) => getComputedStyle(el).backgroundColor));
       const [ga, preGa, previewGa, earlyPreview, beta, omega, xDeprecated, preDeprecated] = colors;
       const neutral = preGa;
@@ -182,10 +182,10 @@ describe.each(ENGINES)("%s", (engine) => {
 
     it("reads as a sentence, with a lead-in from CSS", async () => {
       const page = await fresh(AVAILABILITY, { script: false });
-      expect(await pseudo(page, "tessera-availability", "::before", "content")).toBe(
+      expect(await pseudo(page, "ascribe-availability", "::before", "content")).toBe(
         '"Available: "',
       );
-      const text = await page.locator("tessera-availability").innerText();
+      const text = await page.locator("ascribe-availability").innerText();
       expect(text.replace(/\s+/g, " ").trim()).toBe(
         "Quill Cloud (GA); Self-managed (preview, 3.4+)",
       );
@@ -215,16 +215,16 @@ describe.each(ENGINES)("%s", (engine) => {
       const page = await fresh(ALL);
       const defined = await page.evaluate(() =>
         [
-          "tessera-tabs",
-          "tessera-tab",
-          "tessera-group",
-          "tessera-note",
-          "tessera-steps",
-          "tessera-availability",
-          "tessera-availability-target",
+          "ascribe-tabs",
+          "ascribe-tab",
+          "ascribe-group",
+          "ascribe-note",
+          "ascribe-steps",
+          "ascribe-availability",
+          "ascribe-availability-target",
         ].filter((name) => customElements.get(name) !== undefined),
       );
-      expect(defined).toEqual(["tessera-tabs", "tessera-tab", "tessera-group"]);
+      expect(defined).toEqual(["ascribe-tabs", "ascribe-tab", "ascribe-group"]);
       await context.close();
     });
 
@@ -333,7 +333,7 @@ describe.each(ENGINES)("%s", (engine) => {
     it("remembers the choice in localStorage across pages", async () => {
       const page = await fresh(TABS);
       await page.locator("#b").getByRole("tab", { name: "pnpm" }).click();
-      expect(await page.evaluate(() => localStorage.getItem("tessera-tabs:pm"))).toBe("pnpm");
+      expect(await page.evaluate(() => localStorage.getItem("ascribe-tabs:pm"))).toBe("pnpm");
       await page.reload();
       await expect(page.locator("#a [aria-selected=true]").textContent()).resolves.toBe(
         "pnpm / yarn",
@@ -348,7 +348,7 @@ describe.each(ENGINES)("%s", (engine) => {
 
     it("prefers this page's choice when storage writes fail but reads work", async () => {
       const page = await fresh(TABS);
-      await page.evaluate(() => localStorage.setItem("tessera-tabs:pm", "npm"));
+      await page.evaluate(() => localStorage.setItem("ascribe-tabs:pm", "npm"));
       await page.evaluate(() => {
         Storage.prototype.setItem = () => {
           throw new DOMException("full", "QuotaExceededError");
@@ -357,11 +357,11 @@ describe.each(ENGINES)("%s", (engine) => {
       await page.locator("#b").getByRole("tab", { name: "pnpm" }).click();
       // A group that starts later reads the choice just made, not the older stored one.
       await page.evaluate(() => {
-        const late = document.createElement("tessera-tabs");
+        const late = document.createElement("ascribe-tabs");
         late.id = "late";
         late.setAttribute("sync", "pm");
         late.innerHTML =
-          '<tessera-tab value="npm" label="npm">n</tessera-tab><tessera-tab value="pnpm" label="pnpm">p</tessera-tab>';
+          '<ascribe-tab value="npm" label="npm">n</ascribe-tab><ascribe-tab value="pnpm" label="pnpm">p</ascribe-tab>';
         document.querySelector("main")?.append(late);
       });
       await expect(page.locator("#late [aria-selected=true]").textContent()).resolves.toBe("pnpm");
@@ -370,7 +370,7 @@ describe.each(ENGINES)("%s", (engine) => {
 
     it("falls back to the first tab when the remembered value matches nothing", async () => {
       const page = await fresh(TABS);
-      await page.evaluate(() => localStorage.setItem("tessera-tabs:pm", "deno"));
+      await page.evaluate(() => localStorage.setItem("ascribe-tabs:pm", "deno"));
       await page.reload();
       await expect(page.locator("#a [aria-selected=true]").textContent()).resolves.toBe("npm");
       await context.close();

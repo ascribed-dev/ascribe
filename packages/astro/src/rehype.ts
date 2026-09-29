@@ -14,7 +14,7 @@
 import type { Root } from "hast";
 import { findEdits, toProperty, type HastNode } from "./attributes.js";
 
-/** Applies the site-render contract's attribute markers (`tessera-attributes`). */
+/** Applies the site-render contract's attribute markers (`ascribe-attributes`). */
 export default function rehypeTesseraAttributes(): (tree: Root) => void {
   return (tree) => {
     const edits = findEdits(tree as HastNode);

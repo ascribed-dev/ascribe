@@ -18,17 +18,17 @@ Everything here applies to spec 0.1's only consumer profile, `astro`. It settles
 
 ## 1. The attribute marker
 
-A marker is raw inline HTML: an empty `tessera-attributes` element.
+A marker is raw inline HTML: an empty `ascribe-attributes` element.
 
 ```html
-<tessera-attributes id="streaming-sync"></tessera-attributes>
-<tessera-attributes width="600" loading="lazy"></tessera-attributes>
+<ascribe-attributes id="streaming-sync"></ascribe-attributes>
+<ascribe-attributes width="600" loading="lazy"></ascribe-attributes>
 ```
 
 Exactly this form, and nothing else, is a marker:
 
-1. The open tag: `<tessera-attributes`, then zero or more attributes, then `>`. Each attribute is one space, a name, `="`, a value, and `"`. A name is a lowercase ASCII letter followed by lowercase ASCII letters, digits, or hyphens (SPEC Appendix A `key`). A value is any text without `"` or a line ending.
-2. Directly after it, with nothing between, the close tag `</tessera-attributes>`.
+1. The open tag: `<ascribe-attributes`, then zero or more attributes, then `>`. Each attribute is one space, a name, `="`, a value, and `"`. A name is a lowercase ASCII letter followed by lowercase ASCII letters, digits, or hyphens (SPEC Appendix A `key`). A value is any text without `"` or a line ending.
+2. Directly after it, with nothing between, the close tag `</ascribe-attributes>`.
 
 CommonMark parses the two tags as two adjacent raw inline HTML nodes. (An implementation may see them as one node or two; the rule is about the source text they cover.) Anything that differs, such as single quotes, an unquoted value, a space before `>`, text between the tags, or a missing close tag, is not a marker.
 
@@ -42,14 +42,14 @@ The other options considered, and why they lost, are in content-model.md §21, Q
 
 ## 2. Where a marker applies
 
-A marker applies in exactly two positions. Anywhere else it's left alone, as raw HTML, and renders as an empty `tessera-attributes` element.
+A marker applies in exactly two positions. Anywhere else it's left alone, as raw HTML, and renders as an empty `ascribe-attributes` element.
 
 ### 2.1 At the end of a heading
 
 A marker that is the **last inline content of a heading** (ATX or setext, at any level) applies to the heading. The marker, and any spaces, tabs, and line breaks directly before it, are removed. The heading's content is otherwise unchanged. A marker can be a heading's only content.
 
 ```markdown
-## Run `tessera check` in *CI* <tessera-attributes id="run-tessera-check-in-ci"></tessera-attributes>
+## Run `tessera check` in *CI* <ascribe-attributes id="run-tessera-check-in-ci"></ascribe-attributes>
 ```
 
 ```html
@@ -63,7 +63,7 @@ A marker that is the **last inline content of a heading** (ATX or setext, at any
 A marker that immediately follows an image, with nothing between the image's closing `)` or `]` and the marker's `<`, applies to the image. This holds for every CommonMark image form: inline `![alt](src)`, full reference `![alt][ref]`, collapsed `![alt][]`, and shortcut `![alt]`, and for an image anywhere inline content can have one, including inside link text. The marker is removed.
 
 ```markdown
-![The Quill settings page](./settings.png)<tessera-attributes width="600"></tessera-attributes>
+![The Quill settings page](./settings.png)<ascribe-attributes width="600"></ascribe-attributes>
 ```
 
 ```html
@@ -89,7 +89,7 @@ Phase 20's emitter writes the site output so that the rules above are all a cons
 - **Every heading ends in a marker with its page id**, one space after the heading's text. So the consumer's own slugger never runs on Tessera content, and every heading id on the published page is one `tessera check` validated, including ids numbered for duplicates and ids from `@id`. A heading whose page id is empty (a heading with no text) gets no marker.
 - **Headings are ATX headings**, whatever the source used.
 - **An image with attributes has a marker directly after it**, holding the image's attributes in canonical order (SPEC §8.3): every attribute the content model declares that the image writes or that has a default, then any it writes that the model doesn't declare (Q141). An image with neither attributes nor defaults has no marker. A value set's members are joined with single spaces (`platform=cloud|on-prem` becomes `platform="cloud on-prem"`); other values are their text (a quoted string without its quotes and escapes).
-- **The emitter writes markers nowhere else.** Raw HTML an author writes passes through unchanged, as everywhere in the site output, so an author who writes a `tessera-attributes` element gets its effect. Element names starting with `tessera-` belong to Tessera (content-model.md §15), so there's no reason to. Since the emitter's own heading marker is always last, an author's marker inside a heading never applies.
+- **The emitter writes markers nowhere else.** Raw HTML an author writes passes through unchanged, as everywhere in the site output, so an author who writes a `ascribe-attributes` element gets its effect. Element names starting with `tessera-` belong to Tessera (content-model.md §15), so there's no reason to. Since the emitter's own heading marker is always last, an author's marker inside a heading never applies.
 
 The element contract ([`packages/elements/CONTRACT.md`](../../packages/elements/CONTRACT.md)) covers the custom elements, which are ordinary raw HTML to a renderer.
 

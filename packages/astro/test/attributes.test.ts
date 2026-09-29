@@ -15,14 +15,14 @@ const element = (
   properties,
   children,
 });
-const open = (attributes: string): HastNode => raw(`<tessera-attributes${attributes}>`);
-const close = raw("</tessera-attributes>");
+const open = (attributes: string): HastNode => raw(`<ascribe-attributes${attributes}>`);
+const close = raw("</ascribe-attributes>");
 
 describe("findEdits", () => {
   it("accepts a marker written as one node", () => {
     const heading = element("h2", [
       text("Title "),
-      raw('<tessera-attributes id="t"></tessera-attributes>'),
+      raw('<ascribe-attributes id="t"></ascribe-attributes>'),
     ]);
     const edits = findEdits({ type: "root", children: [heading] });
     expect(edits).toHaveLength(1);
@@ -38,12 +38,12 @@ describe("findEdits", () => {
 
   it("ignores near-markers", () => {
     for (const marker of [
-      [raw("<tessera-attributes id='t'>"), close],
-      [raw('<tessera-attributes  id="t">'), close],
-      [raw('<tessera-attributes id="t" >'), close],
-      [raw('<tessera-attributes ID="t">'), close],
-      [raw('<tessera-attributes id="t">'), text("x"), close],
-      [raw('<tessera-attributes id="t">')],
+      [raw("<ascribe-attributes id='t'>"), close],
+      [raw('<ascribe-attributes  id="t">'), close],
+      [raw('<ascribe-attributes id="t" >'), close],
+      [raw('<ascribe-attributes ID="t">'), close],
+      [raw('<ascribe-attributes id="t">'), text("x"), close],
+      [raw('<ascribe-attributes id="t">')],
     ]) {
       const heading = element("h2", [text("Title "), ...marker]);
       expect(findEdits({ type: "root", children: [heading] })).toEqual([]);

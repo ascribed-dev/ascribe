@@ -31,10 +31,10 @@ Rename everything a user writes, types, or sees. Keep internal names as they are
 | Config file | `tessera.toml` | `ascribe.toml`: the constant the loader and the language server look for, discovery, messages, docs, and every fixture file (`git mv`; 14 tracked files are named `tessera.toml`) |
 | Default output directory | `.tessera/build` | `.ascribe/build`: the model default, docs, `.gitignore` entries, and paths in examples and tests |
 | Site-output folder | `_tessera/` (`_tessera/schema.ts`, `_tessera/files/`) | `_ascribe/`: the emitter constants, the asset contract, the Astro integration, and examples |
-| Custom elements | `<tessera-note>`, `<tessera-tabs>`, `<tessera-tab>`, `<tessera-steps>`, `<tessera-availability>`, `<tessera-availability-target>`, `<tessera-group>` | `<ascribe-…>`: the emitter, `packages/elements` (registration and CSS), `packages/elements/CONTRACT.md`, SPEC §9, snapshots, and tests |
-| Attribute marker | `<tessera-attributes>` | `<ascribe-attributes>`: the emitter, `render_site_html`, the Astro plugin (`packages/astro/src/attributes.ts`), `project-docs/contracts/site-render.md`, and every `tests/render/*/input.md` and `expected.html` |
-| CSS custom properties | `--tessera-*` | `--ascribe-*` |
-| Tab-choice storage key | `tessera-tabs:<sync>` | `ascribe-tabs:<sync>` |
+| Custom elements | `<ascribe-note>`, `<ascribe-tabs>`, `<ascribe-tab>`, `<ascribe-steps>`, `<ascribe-availability>`, `<ascribe-availability-target>`, `<ascribe-group>` | `<ascribe-…>`: the emitter, `packages/elements` (registration and CSS), `packages/elements/CONTRACT.md`, SPEC §9, snapshots, and tests |
+| Attribute marker | `<ascribe-attributes>` | `<ascribe-attributes>`: the emitter, `render_site_html`, the Astro plugin (`packages/astro/src/attributes.ts`), `project-docs/contracts/site-render.md`, and every `tests/render/*/input.md` and `expected.html` |
+| CSS custom properties | `--ascribe-*` | `--ascribe-*` |
+| Tab-choice storage key | `ascribe-tabs:<sync>` | `ascribe-tabs:<sync>` |
 | Reserved widget prefix | Names starting with `tessera-` are reserved (content-model.md §15, Q9) | `ascribe-`: the model rule, its message, and its tests |
 | Diagnostic codes | `TSR001`–`TSR125` | `ASC001`–`ASC125`: `tests/conformance/diagnostics.toml`, `crates/tessera-core/src/diagnostics.rs`, any prefix constant or parser, every expectation and snapshot, and the docs |
 | npm packages | `@tessera/cli`, `@tessera/astro`, `@tessera/elements`, `@tessera/zod-check`, `@tessera/example-astro-site` | `@ascribed/cli`, `@ascribed/astro`, and so on. Update every import and `--filter` (package.json scripts, `.github/workflows/js.yml`, READMEs), then run `pnpm install` to regenerate `pnpm-lock.yaml`. All packages stay `private`. |

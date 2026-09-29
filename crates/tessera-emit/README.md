@@ -49,14 +49,14 @@ Markdown plus web components, for a consumer that renders CommonMark with raw HT
 | Source | Output |
 |---|---|
 | Frontmatter | Passed through, phrases substituted; `available` becomes a list of targets (Q142) |
-| Heading | An ATX heading ending in `<tessera-attributes id="…"></tessera-attributes>` with its page id, after a space |
+| Heading | An ATX heading ending in `<ascribe-attributes id="…"></ascribe-attributes>` with its page id, after a space |
 | Image | `![alt](./path "title")`, then a marker with its attributes and the model's defaults (Q141) |
-| `@note` | `<tessera-note type label heading>` wrapping the content |
-| `@steps` | `<tessera-steps>` wrapping the list |
-| `@variant` group | `<tessera-tabs sync>` of `<tessera-tab value label>` per surviving arm (a group reduced to one arm is its content) |
+| `@note` | `<ascribe-note type label heading>` wrapping the content |
+| `@steps` | `<ascribe-steps>` wrapping the list |
+| `@variant` group | `<ascribe-tabs sync>` of `<ascribe-tab value label>` per surviving arm (a group reduced to one arm is its content) |
 | `@details` | `<details>` with `<summary>` holding the title as HTML |
-| `@available` | `<tessera-availability scope="section|block">` of `<tessera-availability-target target dimension states versions>` |
-| Project widget | An element named after the widget, `<tessera-group widget>` around a group's arms |
+| `@available` | `<ascribe-availability scope="section|block">` of `<ascribe-availability-target target dimension states versions>` |
+| Project widget | An element named after the widget, `<ascribe-group widget>` around a group's arms |
 | Glossary term | A link to the term's route, with its definition as the title |
 | Raw HTML | Unchanged |
 

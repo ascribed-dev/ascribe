@@ -1,8 +1,8 @@
-Full: ![Settings][settings]<tessera-attributes width="600"></tessera-attributes>
+Full: ![Settings][settings]<ascribe-attributes width="600"></ascribe-attributes>
 
-Collapsed: ![diagram][]<tessera-attributes height="300"></tessera-attributes>
+Collapsed: ![diagram][]<ascribe-attributes height="300"></ascribe-attributes>
 
-Shortcut: ![logo]<tessera-attributes width="64" loading="eager"></tessera-attributes>
+Shortcut: ![logo]<ascribe-attributes width="64" loading="eager"></ascribe-attributes>
 
 [settings]: ./settings.png
 [diagram]: ../_fragments/diagram.png "The sync pipeline"

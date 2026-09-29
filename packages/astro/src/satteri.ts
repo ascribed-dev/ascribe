@@ -10,10 +10,10 @@
 import type { HastNode as SatteriNode, HastVisitorInstance } from "satteri";
 import { findEdits, toProperty, type HastNode } from "./attributes.js";
 
-/** Applies the site-render contract's attribute markers (`tessera-attributes`). */
+/** Applies the site-render contract's attribute markers (`ascribe-attributes`). */
 export function satteriTesseraAttributes(): HastVisitorInstance & { name: string } {
   return {
-    name: "tessera-attributes",
+    name: "ascribe-attributes",
     before(root, ctx) {
       for (const edit of findEdits(root as HastNode)) {
         const target = edit.target as unknown as SatteriNode;

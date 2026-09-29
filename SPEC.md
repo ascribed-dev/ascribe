@@ -879,12 +879,12 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 
 | Source | Site output | Plain-markdown output |
 |---|---|---|
-| `@note {type=tip}` with title | `<tessera-note type="tip" heading="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
-| `@steps` | `<tessera-steps>` wrapping the list | The ordered list |
-| `@variant` group, `switch` | `<tessera-tabs sync="…">` containing one `<tessera-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
-| `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<tessera-tabs>` group | One arm becomes plain content; several stay labeled sections |
+| `@note {type=tip}` with title | `<ascribe-note type="tip" heading="…">` wrapping the content | A blockquote beginning `**Tip: …**` |
+| `@steps` | `<ascribe-steps>` wrapping the list | The ordered list |
+| `@variant` group, `switch` | `<ascribe-tabs sync="…">` containing one `<ascribe-tab value="…" label="…">` per arm | Each arm as a section with a bold label |
+| `@variant` group, selection | The arms that survive the selection (§9.3): one arm becomes plain content; several stay a `<ascribe-tabs>` group | One arm becomes plain content; several stay labeled sections |
 | `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
-| `@available`, `badge` | A `<tessera-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
+| `@available`, `badge` | A `<ascribe-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
 | `@available`, `filter` | Unavailable content removed; the rest annotated as in `badge` | Unavailable content removed; the rest annotated as in `badge` |
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
@@ -924,8 +924,8 @@ The element library implements the custom elements used by the site output.
 
 - Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology.
 - Elements are styled with CSS and themed through CSS custom properties.
-- Only elements that require interaction use JavaScript. Of the built-ins, that's `<tessera-tabs>`.
-- Without JavaScript, `<tessera-tabs>` displays every arm with its label.
+- Only elements that require interaction use JavaScript. Of the built-ins, that's `<ascribe-tabs>`.
+- Without JavaScript, `<ascribe-tabs>` displays every arm with its label.
 
 ---
 

@@ -27,8 +27,8 @@ Emit the site output (markdown plus web components), implement the Astro consume
    - **Heading ids and image attributes:** emit exactly the syntax the site-render contract defines. Phase 21's Astro plugin applies it.
    - **Assets:** place copies where Astro's image processing handles them, as the asset contract's Astro rules say (for example, beside the compiled page, with a relative reference), so Astro still optimizes images.
 2. **Site emitter.** Emit from phase 12's resolved tree, following SPEC §9.4's table and the element contract:
-   - A group with several surviving arms becomes `<tessera-tabs>`; a group with one becomes plain content.
-   - Availability annotations become `<tessera-availability>` elements, in badge and filter builds alike.
+   - A group with several surviving arms becomes `<ascribe-tabs>`; a group with one becomes plain content.
+   - Availability annotations become `<ascribe-availability>` elements, in badge and filter builds alike.
    - Put a blank line after each opening tag and before each closing tag that wraps markdown (SPEC §9.4).
    - Pass page-level frontmatter through, including `available` in a form the layout can read.
    - Copy and rewrite assets, and write output, through phase 18's shared handling.
@@ -40,7 +40,7 @@ Emit the site output (markdown plus web components), implement the Astro consume
 ## Acceptance criteria
 
 - [ ] `tessera build --emit site` builds `examples/quill` under every build.
-- [ ] Every element and attribute in the output matches `CONTRACT.md`; the cloud build's output keeps the `pm` group as `<tessera-tabs>`.
+- [ ] Every element and attribute in the output matches `CONTRACT.md`; the cloud build's output keeps the `pm` group as `<ascribe-tabs>`.
 - [ ] Links in the output use Astro routes; a test checks them against the routing settings.
 - [ ] Assets in the output follow the asset contract's Astro rules, and the fragment-image case resolves with the source directory removed.
 - [ ] `render_site_html()` passes every `tests/render/` fixture.
@@ -69,7 +69,7 @@ Emit the site output (markdown plus web components), implement the Astro consume
 
 ### Interfaces later phases use
 
-- **Phase 21 (the Astro plugin):** the marker rules are the site-render contract's; the fixtures in `tests/render/` are the shared test, and `image-ends-heading` is new (Q145). Read `_ascribe/schema.ts` (`schema`, `schemas`, `contentTypes`, `availableSchema`) for the collection; the site output root is `<output-dir>/<build>/site/`; `_ascribe/files/` must be served at `<base-path>_ascribe/files/`. Images stay relative (`./img/a.png`) so Astro processes them. Page-level `available` is a list of targets (Q142); a layout writes `<tessera-availability scope="page">` from it.
+- **Phase 21 (the Astro plugin):** the marker rules are the site-render contract's; the fixtures in `tests/render/` are the shared test, and `image-ends-heading` is new (Q145). Read `_ascribe/schema.ts` (`schema`, `schemas`, `contentTypes`, `availableSchema`) for the collection; the site output root is `<output-dir>/<build>/site/`; `_ascribe/files/` must be served at `<base-path>_ascribe/files/`. Images stay relative (`./img/a.png`) so Astro processes them. Page-level `available` is a list of targets (Q142); a layout writes `<ascribe-availability scope="page">` from it.
 - **Phase 25 (preview):** `tessera_emit::render_site_html(markdown)`; `SiteEmitter::new(model)` with `emit`, or the whole pipeline through `tessera build`.
 - **Everyone:** `tessera_resolve::AstroRouter` (`from_consumer`, `route`, `entry_id`, `page_for_route`, `collisions`); `tessera_emit::AstroProfile`.
 

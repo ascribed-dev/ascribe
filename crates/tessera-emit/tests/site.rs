@@ -33,10 +33,10 @@ fn a_page_is_its_frontmatter_and_its_body() {
 fn every_heading_ends_in_a_marker_with_its_page_id() {
     assert_eq!(
         body("# One\n\nTwo\n---\n\n## One\n\n### Custom\n@id: mine\n\n## \n"),
-        "# One <tessera-attributes id=\"one\"></tessera-attributes>\n\n\
-         ## Two <tessera-attributes id=\"two\"></tessera-attributes>\n\n\
-         ## One <tessera-attributes id=\"one-1\"></tessera-attributes>\n\n\
-         ### Custom <tessera-attributes id=\"mine\"></tessera-attributes>\n\n\
+        "# One <ascribe-attributes id=\"one\"></ascribe-attributes>\n\n\
+         ## Two <ascribe-attributes id=\"two\"></ascribe-attributes>\n\n\
+         ## One <ascribe-attributes id=\"one-1\"></ascribe-attributes>\n\n\
+         ### Custom <ascribe-attributes id=\"mine\"></ascribe-attributes>\n\n\
          ##\n"
     );
 }
@@ -46,12 +46,12 @@ fn a_heading_keeps_its_inline_content_and_a_trailing_hash() {
     assert_eq!(
         body("## Run `ascribe check` in *CI* [now](https://example.com)\n"),
         "## Run `ascribe check` in *CI* [now](https://example.com) \
-         <tessera-attributes id=\"run-ascribe-check-in-ci-now\"></tessera-attributes>\n"
+         <ascribe-attributes id=\"run-ascribe-check-in-ci-now\"></ascribe-attributes>\n"
     );
     // A trailing `#` in the text isn't a closing sequence.
     assert_eq!(
         body("## C\\#\n"),
-        "## C# <tessera-attributes id=\"c\"></tessera-attributes>\n"
+        "## C# <ascribe-attributes id=\"c\"></ascribe-attributes>\n"
     );
     // A heading with no page id has no marker, and its trailing `#` is
     // escaped so it isn't a closing sequence either.
@@ -63,21 +63,21 @@ fn a_heading_keeps_its_inline_content_and_a_trailing_hash() {
 fn notes_carry_their_type_label_and_heading() {
     assert_eq!(
         body(".Watch *out* & \"care\"\n@note {type=warning}\nIt bites.\n"),
-        "<tessera-note type=\"warning\" label=\"Warning\" heading=\"Watch out &amp; &quot;care&quot;\">\n\nIt bites.\n\n</tessera-note>\n"
+        "<ascribe-note type=\"warning\" label=\"Warning\" heading=\"Watch out &amp; &quot;care&quot;\">\n\nIt bites.\n\n</ascribe-note>\n"
     );
     // The relabeled built-in type uses its own label; the default type is
     // still written.
     assert_eq!(
         body("@note {type=tip}: Use `x`.\n"),
-        "<tessera-note type=\"tip\" label=\"Pro tip\">\n\nUse `x`.\n\n</tessera-note>\n"
+        "<ascribe-note type=\"tip\" label=\"Pro tip\">\n\nUse `x`.\n\n</ascribe-note>\n"
     );
     assert_eq!(
         body("@note: Plain.\n"),
-        "<tessera-note type=\"note\" label=\"Note\">\n\nPlain.\n\n</tessera-note>\n"
+        "<ascribe-note type=\"note\" label=\"Note\">\n\nPlain.\n\n</ascribe-note>\n"
     );
     assert_eq!(
         body("@note {type=security}:\nOne.\n\nTwo.\n@end\n"),
-        "<tessera-note type=\"security\" label=\"Security\">\n\nOne.\n\nTwo.\n\n</tessera-note>\n"
+        "<ascribe-note type=\"security\" label=\"Security\">\n\nOne.\n\nTwo.\n\n</ascribe-note>\n"
     );
 }
 
@@ -85,7 +85,7 @@ fn notes_carry_their_type_label_and_heading() {
 fn steps_wrap_the_list() {
     assert_eq!(
         body("@steps\n3. One\n4. Two\n"),
-        "<tessera-steps>\n\n3. One\n4. Two\n\n</tessera-steps>\n"
+        "<ascribe-steps>\n\n3. One\n4. Two\n\n</ascribe-steps>\n"
     );
 }
 
@@ -108,10 +108,10 @@ fn a_group_is_tabs_that_sync_on_their_dimension() {
     let source = "@variant {pm=npm}:\nnpm i\n@variant {pm=yarn}:\nyarn add\n@end\n";
     assert_eq!(
         body(source),
-        "<tessera-tabs sync=\"pm\">\n\n\
-         <tessera-tab value=\"npm\" label=\"npm\">\n\nnpm i\n\n</tessera-tab>\n\n\
-         <tessera-tab value=\"yarn\" label=\"Yarn\">\n\nyarn add\n\n</tessera-tab>\n\n\
-         </tessera-tabs>\n"
+        "<ascribe-tabs sync=\"pm\">\n\n\
+         <ascribe-tab value=\"npm\" label=\"npm\">\n\nnpm i\n\n</ascribe-tab>\n\n\
+         <ascribe-tab value=\"yarn\" label=\"Yarn\">\n\nyarn add\n\n</ascribe-tab>\n\n\
+         </ascribe-tabs>\n"
     );
 }
 
@@ -120,10 +120,10 @@ fn a_labeled_group_has_no_sync_and_no_values() {
     let source = ".Docker\n@variant:\nA\n\n.Use *k8s* now\n@variant:\nB\n@end\n";
     assert_eq!(
         body(source),
-        "<tessera-tabs>\n\n\
-         <tessera-tab label=\"Docker\">\n\nA\n\n</tessera-tab>\n\n\
-         <tessera-tab label=\"Use k8s now\">\n\nB\n\n</tessera-tab>\n\n\
-         </tessera-tabs>\n"
+        "<ascribe-tabs>\n\n\
+         <ascribe-tab label=\"Docker\">\n\nA\n\n</ascribe-tab>\n\n\
+         <ascribe-tab label=\"Use k8s now\">\n\nB\n\n</ascribe-tab>\n\n\
+         </ascribe-tabs>\n"
     );
 }
 
@@ -132,11 +132,11 @@ fn a_value_set_arm_lists_its_values_and_joins_their_labels() {
     let source = "@variant {pm=npm|yarn}:\nA\n@variant {pm=pnpm}:\nB\n@end\n";
     let out = body(source);
     assert!(
-        out.contains("<tessera-tab value=\"npm yarn\" label=\"npm / Yarn\">"),
+        out.contains("<ascribe-tab value=\"npm yarn\" label=\"npm / Yarn\">"),
         "{out}"
     );
     assert!(
-        out.contains("<tessera-tab value=\"pnpm\" label=\"pnpm\">"),
+        out.contains("<ascribe-tab value=\"pnpm\" label=\"pnpm\">"),
         "{out}"
     );
 }
@@ -149,15 +149,15 @@ fn sync_is_the_first_dimension_the_arms_share_and_differ_on() {
     let source =
         "@variant {pm=npm, deployment=cloud}:\nA\n@variant {pm=yarn, deployment=cloud}:\nB\n@end\n";
     let out = body(source);
-    assert!(out.starts_with("<tessera-tabs sync=\"pm\">"), "{out}");
+    assert!(out.starts_with("<ascribe-tabs sync=\"pm\">"), "{out}");
     assert!(
-        out.contains("<tessera-tab value=\"npm\" label=\"Quill Cloud, npm\">"),
+        out.contains("<ascribe-tab value=\"npm\" label=\"Quill Cloud, npm\">"),
         "{out}"
     );
     // Every shared dimension has the same values: the first is the sync.
     let same =
         "@variant {pm=npm, deployment=cloud}:\nA\n@variant {pm=npm, deployment=cloud}:\nB\n@end\n";
-    assert!(body(same).starts_with("<tessera-tabs sync=\"deployment\">"));
+    assert!(body(same).starts_with("<ascribe-tabs sync=\"deployment\">"));
 }
 
 #[test]
@@ -171,7 +171,7 @@ fn a_selection_that_leaves_one_arm_leaves_its_content_and_several_stay_tabs() {
     let two = "@variant {pm=npm}:\nA\n@variant {pm=pnpm}:\nB\n@variant {pm=yarn}:\nC\n@end\n";
     let project = memory_project(FULL_MODEL, &[("index.md", &page(two))]);
     let out = site(&project, "self-managed-3.5", "index.md");
-    assert!(out.contains("<tessera-tabs sync=\"pm\">"), "{out}");
+    assert!(out.contains("<ascribe-tabs sync=\"pm\">"), "{out}");
     assert!(!out.contains("value=\"yarn\""), "{out}");
 }
 
@@ -180,20 +180,20 @@ fn availability_is_a_block_of_targets_where_the_directive_was() {
     let out = body("## Sect\n@available: cloud, self-managed preview 3.4\n\nBody.\n");
     assert_eq!(
         out,
-        "## Sect <tessera-attributes id=\"sect\"></tessera-attributes>\n\n\
-         <tessera-availability scope=\"section\">\n\
-         <tessera-availability-target target=\"cloud\" dimension=\"deployment\" states=\"ga\">Quill Cloud (GA)</tessera-availability-target>; \
-         <tessera-availability-target target=\"self-managed\" dimension=\"deployment\" states=\"preview\" versions=\"3.4\">Self-managed (preview, 3.4+)</tessera-availability-target>\n\
-         </tessera-availability>\n\nBody.\n"
+        "## Sect <ascribe-attributes id=\"sect\"></ascribe-attributes>\n\n\
+         <ascribe-availability scope=\"section\">\n\
+         <ascribe-availability-target target=\"cloud\" dimension=\"deployment\" states=\"ga\">Quill Cloud (GA)</ascribe-availability-target>; \
+         <ascribe-availability-target target=\"self-managed\" dimension=\"deployment\" states=\"preview\" versions=\"3.4\">Self-managed (preview, 3.4+)</ascribe-availability-target>\n\
+         </ascribe-availability>\n\nBody.\n"
     );
     // A block-scoped spec, a history, a bare version, and a dimension name.
     let block = body("Intro.\n\n@available: sso\nPara.\n");
     assert!(
-        block.contains("<tessera-availability scope=\"block\">"),
+        block.contains("<ascribe-availability scope=\"block\">"),
         "{block}"
     );
     assert!(block.contains(
-        "<tessera-availability-target target=\"self-managed\" dimension=\"deployment\" states=\"preview ga deprecated\" versions=\"3.3 3.5 4.0\">Self-managed (preview 3.3, GA 3.5, deprecated 4.0)</tessera-availability-target>"
+        "<ascribe-availability-target target=\"self-managed\" dimension=\"deployment\" states=\"preview ga deprecated\" versions=\"3.3 3.5 4.0\">Self-managed (preview 3.3, GA 3.5, deprecated 4.0)</ascribe-availability-target>"
     ), "{block}");
     assert!(
         block.contains("states=\"beta\">Quill Cloud (Beta)<"),
@@ -218,7 +218,7 @@ fn a_filter_build_annotates_what_remains() {
     let project = memory_project(FULL_MODEL, &[("index.md", &page(source))]);
     let out = site(&project, "cloud", "index.md");
     assert!(
-        out.contains("<tessera-availability scope=\"section\">"),
+        out.contains("<ascribe-availability scope=\"section\">"),
         "{out}"
     );
     assert!(out.contains("Body."), "{out}");
@@ -237,7 +237,7 @@ fn page_level_availability_is_a_list_of_targets_in_the_frontmatter() {
          variant:\n  pm:\n  - npm\n  - yarn\n---\n\nBody.\n"
     );
     // No element is written for it: the layout renders that.
-    assert!(!out.contains("<tessera-availability"));
+    assert!(!out.contains("<ascribe-availability"));
 }
 
 #[test]
@@ -263,7 +263,7 @@ fn project_widgets_are_elements_named_after_them() {
     // Bound to its heading: empty, after the heading, with a primary.
     assert_eq!(
         body("## Api\n@quill-api-ref {version=2}: op-1\n"),
-        "## Api <tessera-attributes id=\"api\"></tessera-attributes>\n\n<quill-api-ref primary=\"op-1\" version=\"2\"></quill-api-ref>\n"
+        "## Api <ascribe-attributes id=\"api\"></ascribe-attributes>\n\n<quill-api-ref primary=\"op-1\" version=\"2\"></quill-api-ref>\n"
     );
     // Bound to a block: wraps it.
     assert_eq!(
@@ -293,10 +293,10 @@ fn widget_groups_are_wrapped_in_an_ascribe_group() {
         ".Before\n@quill-compare:\nX\n\n.After\n@quill-compare {highlight=true}:\nY\n@end\n";
     assert_eq!(
         body(source),
-        "<tessera-group widget=\"quill-compare\">\n\n\
+        "<ascribe-group widget=\"quill-compare\">\n\n\
          <quill-compare heading=\"Before\" highlight=\"false\">\n\nX\n\n</quill-compare>\n\n\
          <quill-compare heading=\"After\" highlight=\"true\">\n\nY\n\n</quill-compare>\n\n\
-         </tessera-group>\n"
+         </ascribe-group>\n"
     );
 }
 
@@ -304,11 +304,11 @@ fn widget_groups_are_wrapped_in_an_ascribe_group() {
 fn elements_nest_in_lists_and_block_quotes_with_their_indentation() {
     assert_eq!(
         body("- item\n\n  @note\n  In list.\n"),
-        "- item\n\n  <tessera-note type=\"note\" label=\"Note\">\n\n  In list.\n\n  </tessera-note>\n"
+        "- item\n\n  <ascribe-note type=\"note\" label=\"Note\">\n\n  In list.\n\n  </ascribe-note>\n"
     );
     assert_eq!(
         body("> @note: Quoted.\n"),
-        "> <tessera-note type=\"note\" label=\"Note\">\n>\n> Quoted.\n>\n> </tessera-note>\n"
+        "> <ascribe-note type=\"note\" label=\"Note\">\n>\n> Quoted.\n>\n> </ascribe-note>\n"
     );
 }
 
@@ -342,8 +342,8 @@ fn images_carry_their_attributes_and_the_models_defaults() {
     // default `loading` applies to every image (Q141).
     assert_eq!(
         out,
-        "![Shot](./shot.png \"T\")<tessera-attributes width=\"600\" loading=\"lazy\" theme=\"dark light\"></tessera-attributes>\n\n\
-         ![Plain](./plain.png)<tessera-attributes loading=\"lazy\"></tessera-attributes>\n"
+        "![Shot](./shot.png \"T\")<ascribe-attributes width=\"600\" loading=\"lazy\" theme=\"dark light\"></ascribe-attributes>\n\n\
+         ![Plain](./plain.png)<ascribe-attributes loading=\"lazy\"></ascribe-attributes>\n"
     );
     let html = render_site_html(&out);
     assert!(html.contains("<img src=\"./shot.png\" alt=\"Shot\" title=\"T\" width=\"600\" loading=\"lazy\" theme=\"dark light\" />"), "{html}");

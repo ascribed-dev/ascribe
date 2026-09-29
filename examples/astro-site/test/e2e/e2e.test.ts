@@ -120,9 +120,9 @@ describe("the built site", () => {
       connect.getByText("Sign in to Loom Cloud and copy your API key.").isVisible(),
     ).resolves.toBe(true);
     await expect(page.getByText("Point the CLI at your own server").count()).resolves.toBe(0);
-    await expect(page.locator('tessera-tabs[sync="deployment"]').count()).resolves.toBe(0);
+    await expect(page.locator('ascribe-tabs[sync="deployment"]').count()).resolves.toBe(0);
     // The `pm` group is still a switcher.
-    const group = page.locator('tessera-tabs[sync="pm"]');
+    const group = page.locator('ascribe-tabs[sync="pm"]');
     await expect(group.getByRole("tab").allTextContents()).resolves.toEqual([
       "npm",
       "pnpm",
@@ -138,7 +138,7 @@ describe("the built site", () => {
 
   it("renders the availability badges, page-level from frontmatter and section-level", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
-    const pageBadge = page.locator('tessera-availability[scope="page"]');
+    const pageBadge = page.locator('ascribe-availability[scope="page"]');
     await expect(pageBadge.innerText()).resolves.toContain(
       "Loom Cloud (GA); Self-managed (preview, 3.4+)",
     );
@@ -147,11 +147,11 @@ describe("the built site", () => {
       pageBadge.evaluate((element) => getComputedStyle(element, "::before").content),
     ).resolves.toBe('"Available: "');
     const background = await pageBadge
-      .locator("tessera-availability-target")
+      .locator("ascribe-availability-target")
       .first()
       .evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(background).not.toBe("rgba(0, 0, 0, 0)");
-    const section = page.locator('tessera-availability[scope="section"]');
+    const section = page.locator('ascribe-availability[scope="section"]');
     await expect(section.innerText()).resolves.toContain("Self-managed (preview, 3.4+)");
     await page.close();
   });

@@ -99,7 +99,7 @@ import { z } from \"astro/zod\";
 /// contract §4, Q142), and `variant` as written (SPEC §4.3).
 const RESERVED: &str = "
 /** One target of a page's availability: the attributes of a
- * `<tessera-availability-target>`, and the text it shows. */
+ * `<ascribe-availability-target>`, and the text it shows. */
 export const availableTargetSchema = z.strictObject({
   target: z.string(),
   dimension: z.string(),
@@ -109,7 +109,7 @@ export const availableTargetSchema = z.strictObject({
 });
 
 /** A page's availability, for a layout to show with
- * `<tessera-availability scope=\"page\">`. */
+ * `<ascribe-availability scope=\"page\">`. */
 export const availableSchema = z.array(availableTargetSchema);
 export type Available = z.infer<typeof availableSchema>;
 

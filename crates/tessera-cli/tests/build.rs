@@ -185,7 +185,7 @@ fn the_site_output_is_built_under_every_build() {
         stderr(&out)
     );
     let page = read(&built.join("cloud/site/install-agent.md"));
-    assert!(page.contains("<tessera-tabs sync=\"pm\">"), "{page}");
+    assert!(page.contains("<ascribe-tabs sync=\"pm\">"), "{page}");
     assert!(page.contains("(/quickstart/#try-in-browser)"), "{page}");
 }
 

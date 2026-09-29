@@ -56,7 +56,7 @@ fn write(r: &Renderer<'_>, block: &ResolvedBlock, inlines: &[Inline], mode: Mode
         match &inline.kind {
             InlineKind::Text(text) => escape_into(text, st),
             // Raw HTML passes through unchanged (SPEC §9.5, "HTML
-            // passthrough"): an author's own `tessera-attributes` element
+            // passthrough"): an author's own `ascribe-attributes` element
             // gets its effect too (site-render contract §4).
             InlineKind::Html(html) => {
                 st.out.push_str(html);

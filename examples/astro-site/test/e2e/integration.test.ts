@@ -144,7 +144,7 @@ describe("the integration", () => {
       const image = page.getByRole("img", { name: "Checklist of requirements" });
       expect(await image.getAttribute("src")).toMatch(/\/_astro\/requirements\.[\w-]+\.webp$/);
       expect(await image.getAttribute("width")).toBe("300");
-      expect(await page.locator("tessera-attributes").count()).toBe(0);
+      expect(await page.locator("ascribe-attributes").count()).toBe(0);
     } finally {
       await browser.close();
       await server.stop();

@@ -150,7 +150,7 @@ The formatter rewrites Tessera constructs into canonical form (§8.3) and return
 ## Astro integration and elements
 
 - **`@tessera/astro`** runs `tessera build` before Astro loads content. It writes the generated Zod schema and wires the compiled pages into a content collection. It also loads the element library, and adds the markdown plugin that applies explicit heading ids, because Astro's own heading ids come from its slugger.
-- **`@tessera/elements`** holds the custom elements in the light DOM, themed through CSS custom properties. Only `<tessera-tabs>` needs JavaScript, and without it every arm shows with its label (§9.7). Tab selections sync by dimension across the page, and are remembered.
+- **`@tessera/elements`** holds the custom elements in the light DOM, themed through CSS custom properties. Only `<ascribe-tabs>` needs JavaScript, and without it every arm shows with its label (§9.7). Tab selections sync by dimension across the page, and are remembered.
 
 ## VS Code extension
 

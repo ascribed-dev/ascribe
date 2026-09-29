@@ -25,21 +25,21 @@ const { title, description, available } = entry.data;
       <h1>{title}</h1>
       {
         available && available.length > 0 && (
-          <tessera-availability scope="page">
+          <ascribe-availability scope="page">
             {available.map((item, i) => (
               <>
                 {i > 0 && "; "}
-                <tessera-availability-target
+                <ascribe-availability-target
                   target={item.target}
                   dimension={item.dimension}
                   states={item.states.join(" ")}
                   versions={item.versions?.join(" ")}
                 >
                   {item.text}
-                </tessera-availability-target>
+                </ascribe-availability-target>
               </>
             ))}
-          </tessera-availability>
+          </ascribe-availability>
         )
       }
       <nav aria-label="On this page">
