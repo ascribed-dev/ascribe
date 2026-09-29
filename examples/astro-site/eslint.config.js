@@ -2,4 +2,4 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import workspace from "../../eslint.config.js";
 
-export default defineConfig([globalIgnores([".astro/", ".tessera/", ".e2e-tmp/"]), workspace]);
+export default defineConfig([globalIgnores([".astro/", ".ascribe/", ".e2e-tmp/"]), workspace]);

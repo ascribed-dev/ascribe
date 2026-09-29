@@ -79,7 +79,7 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
 
 - **Adapters** (05 to 14, 18, 20): expectations use the format in the README. Points an adapter has to know, all in the README or `INTERPRETATIONS.md`:
   - a resolved outline is source text after includes, availability, build modes, and phrases; links, heading ids, and glossary aren't in it, and a surviving `@available` stays as the annotation;
-  - `Case::content_root()` is the content root whatever the shared model's `content-root` says, and the case directory is the project root, which is where `../shared/...` and `../.tessera/...` files sit;
+  - `Case::content_root()` is the content root whatever the shared model's `content-root` says, and the case directory is the project root, which is where `../shared/...` and `../.ascribe/...` files sit;
   - a loader diagnostic is `file: ascribe.toml` in a single-file case.
 - **Tags**: `parser` cases carry only line-form directives, so they need no structure; `structure` cases carry outlines; `check` cases carry top-level diagnostics; page-level diagnostics under a build always come with `page-check`. A case with several tags waits for all of them. Build expectations for a `resolve`-only case list `pages` and `assets`, never `diagnostics`.
 - **Phase 08**: `tests/conformance/cases/model/` has the two `model-name-multiple-roles` cases, tagged `model`. The rest of §20 needs fixtures there; `model-dimension-value-shared` overlaps that row (`INTERPRETATIONS.md`).

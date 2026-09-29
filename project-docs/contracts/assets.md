@@ -52,11 +52,11 @@ Each emitter writes to its own root, `<output-dir>/<build>/<emitter>/` ([output-
 Every asset has one **mirrored path**, computed from its source path alone:
 
 - inside the content root: the source path itself (`guides/img/settings.png`);
-- outside it: `_tessera/up/`, then the source path with each leading `..` segment replaced by `up` (`../shared/logo.png` becomes `_tessera/up/shared/logo.png`, and `../../x.png` becomes `_tessera/up/up/x.png`).
+- outside it: `_ascribe/up/`, then the source path with each leading `..` segment replaced by `up` (`../shared/logo.png` becomes `_ascribe/up/shared/logo.png`, and `../../x.png` becomes `_ascribe/up/up/x.png`).
 
 Pages are written at their own source paths too (the output-layout contract), so an asset beside a page in the source is beside it in the output, and relative references between them keep their shape.
 
-**File names are never changed**, so there's no naming scheme and no hashing. Two different files can't collide, because two different files have different source paths, and so different mirrored paths. The `_tessera/` directory holds only files Tessera places, so an asset outside the content root can't land on one inside it, unless the content root itself has a `_tessera/` directory. The one remaining collision, two outputs at the same path or at paths that differ only in case, fails the build (output-layout contract, §4).
+**File names are never changed**, so there's no naming scheme and no hashing. Two different files can't collide, because two different files have different source paths, and so different mirrored paths. The `_ascribe/` directory holds only files Tessera places, so an asset outside the content root can't land on one inside it, unless the content root itself has a `_ascribe/` directory. The one remaining collision, two outputs at the same path or at paths that differ only in case, fails the build (output-layout contract, §4).
 
 ### 3.2 Placement in each output
 
@@ -64,12 +64,12 @@ Pages are written at their own source paths too (the output-layout contract), so
 |---|---|---|
 | Plain markdown (phase 18) | Mirrored path, relative reference | Mirrored path, relative reference |
 | JSON (phase 18) | Mirrored path, relative reference | Mirrored path, relative reference |
-| Site, `astro` profile (phase 20) | Mirrored path, relative reference | `_tessera/files/` + mirrored path, root-relative URL |
+| Site, `astro` profile (phase 20) | Mirrored path, relative reference | `_ascribe/files/` + mirrored path, root-relative URL |
 
 The consumer profile decides placement in the site output (SPEC §9.5), through `ConsumerProfile::asset_placement` (`Mirror` or `Published`):
 
 - **Images: mirrored, so Astro processes them.** Astro optimizes an image in a content-collection entry when the entry's markdown refers to it by a relative path; it resolves the path from the entry's file. The site output is the collection, so the mirrored copy is found relative to the page, and Astro's image processing applies as it would to the author's own files. The image must stay a markdown image, not raw HTML (the site-render contract keeps it one).
-- **Link targets: published, because Astro doesn't copy them.** Astro leaves a markdown link to a local file alone, and a relative `href` resolves against the page's URL, not its file, so it would break. These copies go under `_tessera/files/`, which the Astro integration serves at `<base-path>_tessera/files/` (phases 21 and 22), and links use that URL.
+- **Link targets: published, because Astro doesn't copy them.** Astro leaves a markdown link to a local file alone, and a relative `href` resolves against the page's URL, not its file, so it would break. These copies go under `_ascribe/files/`, which the Astro integration serves at `<base-path>_ascribe/files/` (phases 21 and 22), and links use that URL.
 
 Phase 21 verifies both behaviors against the Astro version it targets.
 
@@ -78,7 +78,7 @@ Phase 21 verifies both behaviors against the Astro version it targets.
 Every asset reference in a page is rewritten to point at the copy, including references in content included from fragments. The rewritten reference is relative to **the page's** output location, not the fragment's, since included content becomes part of the page (SPEC §4.2).
 
 - **Relative references** go from the directory of the page's output file to the copy, and always start with `./` or `../` (`tessera_core::RelPath::relative_from`), so no consumer takes them for a package name or a URL. From `guides/install.md` to `_fragments/diagram.png`: `../_fragments/diagram.png`.
-- **URLs** (site links under `astro`) are `base-path`, then `_tessera/files/`, then the mirrored path, with each segment percent-encoded where a URL path needs it. With `base-path = "/docs/"`: `/docs/_tessera/files/downloads/quill.yaml`.
+- **URLs** (site links under `astro`) are `base-path`, then `_ascribe/files/`, then the mirrored path, with each segment percent-encoded where a URL path needs it. With `base-path = "/docs/"`: `/docs/_ascribe/files/downloads/quill.yaml`.
 - **Fragments** from step 2 of §2 are appended after `#`.
 - **Writing the destination.** In markdown outputs, the emitter writes the reference so that CommonMark parses it back to exactly that text: in angle brackets (`<../My Diagrams/a.png>`) when it contains a space or a parenthesis, with `<`, `>`, and `\` backslash-escaped. `%`, `#`, and `?` in a file name are percent-encoded (`%25`, `%23`, `%3F`), since a consumer would otherwise read them as an escape, a fragment, or a query. The JSON output records the rewritten reference as a plain string, next to the asset's source path.
 
@@ -90,7 +90,7 @@ Every asset reference in a page is rewritten to point at the copy, including ref
 
 ## 6. The guarantee
 
-With the source directory, and everything outside the output, removed or moved, every asset reference in a build's output resolves to a file in that output. In the site output, this holds once the consumer serves `_tessera/files/` as §3.2 says. Phases 18 and 20 test it by building a page that includes a fragment with an image beside it, deleting the source, and resolving every reference in the output.
+With the source directory, and everything outside the output, removed or moved, every asset reference in a build's output resolves to a file in that output. In the site output, this holds once the consumer serves `_ascribe/files/` as §3.2 says. Phases 18 and 20 test it by building a page that includes a fragment with an image beside it, deleting the source, and resolving every reference in the output.
 
 ## 7. The preview
 
@@ -108,12 +108,12 @@ docs/                          content root
   downloads/quill.yaml
 ```
 
-The site output of build `site`, with `base-path = "/docs/"`, in `.tessera/build/site/site/`:
+The site output of build `site`, with `base-path = "/docs/"`, in `.ascribe/build/site/site/`:
 
 | Copy | Written in `guides/install.md` as |
 |---|---|
 | `guides/img/settings.png` | `![Settings](./img/settings.png)` |
 | `_fragments/pipeline.png` | `![Pipeline](../_fragments/pipeline.png)` |
-| `_tessera/files/downloads/quill.yaml` | `[sample config](/docs/_tessera/files/downloads/quill.yaml)` |
+| `_ascribe/files/downloads/quill.yaml` | `[sample config](/docs/_ascribe/files/downloads/quill.yaml)` |
 
 In the plain-markdown output, the link is `../downloads/quill.yaml`, and `quill.yaml` is copied to `downloads/quill.yaml`.

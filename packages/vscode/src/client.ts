@@ -215,7 +215,7 @@ function readMaxCrashes(): number {
 /** Resolved Q125: the oldest server this extension is written for (`tessera.minServerVersion` in package.json). */
 function minServerVersion(context: vscode.ExtensionContext) {
   const declared = (context.extension.packageJSON as { tessera?: { minServerVersion?: string } })
-    .tessera?.minServerVersion;
+    .ascribe?.minServerVersion;
   return parseVersion(declared ?? "") ?? { parts: [0, 0, 0] as const, prerelease: undefined };
 }
 

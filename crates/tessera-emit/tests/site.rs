@@ -288,7 +288,7 @@ fn project_widgets_are_elements_named_after_them() {
 }
 
 #[test]
-fn widget_groups_are_wrapped_in_a_tessera_group() {
+fn widget_groups_are_wrapped_in_an_ascribe_group() {
     let source =
         ".Before\n@quill-compare:\nX\n\n.After\n@quill-compare {highlight=true}:\nY\n@end\n";
     assert_eq!(

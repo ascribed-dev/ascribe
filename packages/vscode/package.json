@@ -74,7 +74,7 @@
           "text.html.markdown"
         ],
         "embeddedLanguages": {
-          "meta.embedded.block.tessera": "tessera"
+          "meta.embedded.block.ascribe": "tessera"
         }
       },
       {
@@ -142,37 +142,37 @@
         "language": "markdown",
         "scopes": {
           "tesseraDirective": [
-            "keyword.control.directive.tessera"
+            "keyword.control.directive.ascribe"
           ],
           "tesseraWidget": [
-            "entity.name.function.widget.tessera"
+            "entity.name.function.widget.ascribe"
           ],
           "tesseraAttributeKey": [
-            "entity.other.attribute-name.tessera"
+            "entity.other.attribute-name.ascribe"
           ],
           "tesseraAttributeValue": [
-            "string.unquoted.attribute-value.tessera"
+            "string.unquoted.attribute-value.ascribe"
           ],
           "tesseraColon": [
-            "punctuation.separator.directive.tessera"
+            "punctuation.separator.directive.ascribe"
           ],
           "tesseraEnd": [
-            "keyword.control.end.tessera"
+            "keyword.control.end.ascribe"
           ],
           "tesseraTitle": [
-            "markup.heading.title.tessera"
+            "markup.heading.title.ascribe"
           ],
           "tesseraPhrase": [
-            "variable.other.phrase.tessera"
+            "variable.other.phrase.ascribe"
           ],
           "tesseraPhraseUndeclared": [
-            "invalid.illegal.phrase-undeclared.tessera"
+            "invalid.illegal.phrase-undeclared.ascribe"
           ],
           "tesseraAvailability": [
-            "constant.other.availability.tessera"
+            "constant.other.availability.ascribe"
           ],
           "tesseraAttributeKey.unknown": [
-            "invalid.illegal.attribute-unknown.tessera"
+            "invalid.illegal.attribute-unknown.ascribe"
           ]
         }
       }

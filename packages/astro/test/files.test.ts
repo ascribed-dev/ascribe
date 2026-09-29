@@ -8,8 +8,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { copyPublishedFiles, filesMiddleware } from "../src/files.js";
 
 const siteRoot = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
-mkdirSync(path.join(siteRoot, "_tessera", "files", "downloads"), { recursive: true });
-writeFileSync(path.join(siteRoot, "_tessera", "files", "downloads", "my config.yaml"), "a: 1\n");
+mkdirSync(path.join(siteRoot, "_ascribe", "files", "downloads"), { recursive: true });
+writeFileSync(path.join(siteRoot, "_ascribe", "files", "downloads", "my config.yaml"), "a: 1\n");
 writeFileSync(path.join(siteRoot, "secret.txt"), "not published");
 
 let server: Server;
@@ -30,8 +30,8 @@ beforeAll(async () => {
 afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
 
 describe("filesMiddleware", () => {
-  it("serves a published file at <base>_tessera/files/, with its type", async () => {
-    const response = await fetch(`${origin}/docs/_tessera/files/downloads/my%20config.yaml`);
+  it("serves a published file at <base>_ascribe/files/, with its type", async () => {
+    const response = await fetch(`${origin}/docs/_ascribe/files/downloads/my%20config.yaml`);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("text/yaml; charset=utf-8");
     expect(await response.text()).toBe("a: 1\n");
@@ -40,11 +40,11 @@ describe("filesMiddleware", () => {
   it("passes on anything else, and never leaves the published directory", async () => {
     for (const url of [
       "/docs/other",
-      "/docs/_tessera/files/downloads/nope.yaml",
-      "/docs/_tessera/files/downloads",
-      "/docs/_tessera/files/..%2F..%2Fsecret.txt",
-      "/docs/_tessera/files/%E0%A4%A",
-      "/_tessera/files/downloads/my%20config.yaml",
+      "/docs/_ascribe/files/downloads/nope.yaml",
+      "/docs/_ascribe/files/downloads",
+      "/docs/_ascribe/files/..%2F..%2Fsecret.txt",
+      "/docs/_ascribe/files/%E0%A4%A",
+      "/_ascribe/files/downloads/my%20config.yaml",
     ]) {
       const response = await fetch(`${origin}${url}`);
       expect(await response.text(), url).toBe("next");
@@ -57,7 +57,7 @@ describe("copyPublishedFiles", () => {
     const out = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
     expect(await copyPublishedFiles(siteRoot, pathToFileURL(out + path.sep))).toBe(true);
     expect(
-      readFileSync(path.join(out, "_tessera", "files", "downloads", "my config.yaml"), "utf8"),
+      readFileSync(path.join(out, "_ascribe", "files", "downloads", "my config.yaml"), "utf8"),
     ).toBe("a: 1\n");
   });
 

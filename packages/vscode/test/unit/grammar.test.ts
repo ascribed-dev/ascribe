@@ -43,7 +43,7 @@ beforeAll(async () => {
   grammar = loaded;
 });
 
-/** A highlighted piece of a line: its text, and its Tessera scopes without the `.tessera` suffix. */
+/** A highlighted piece of a line: its text, and its Tessera scopes without the `.ascribe` suffix. */
 type Piece = [text: string, scopes: string[]];
 
 function tokenize(source: string): Piece[][] {
@@ -53,8 +53,8 @@ function tokenize(source: string): Piece[][] {
     state = result.ruleStack;
     return result.tokens.map((token): Piece => {
       const scopes = token.scopes
-        .filter((scope) => scope.endsWith(".tessera"))
-        .map((scope) => scope.replace(/\.tessera$/, ""));
+        .filter((scope) => scope.endsWith(".ascribe"))
+        .map((scope) => scope.replace(/\.ascribe$/, ""));
       return [line.slice(token.startIndex, token.endIndex), scopes];
     });
   });

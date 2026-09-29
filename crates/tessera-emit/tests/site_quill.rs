@@ -43,8 +43,8 @@ fn each_build_lists_its_pages_assets_and_schema() {
         assert_eq!(
             files,
             [
+                "_ascribe/schema.ts",
                 "_fragments/prerequisites.png",
-                "_tessera/schema.ts",
                 "install-agent.md",
                 "keys.md",
                 "playground.png",

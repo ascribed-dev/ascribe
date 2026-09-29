@@ -1,7 +1,7 @@
 //! Assets in the site output follow the asset contract's `astro` rules:
 //! images are mirrored beside their pages and referenced relatively (so
 //! Astro's image processing applies), and other files pages link to are
-//! published under `_tessera/files/` and referenced by URL. The output works
+//! published under `_ascribe/files/` and referenced by URL. The output works
 //! with the source removed (asset contract §6).
 
 #![allow(clippy::expect_used, clippy::panic)]
@@ -50,7 +50,7 @@ fn build_into(dir: &Path) -> PathBuf {
     let cx = EmitContext::new(&project, dir, build);
     let emitter = SiteEmitter::new(project.model());
     let emission = emit(&emitter, &cx, &resolved).expect("emits");
-    let output = OutputDir::lock(&dir.join(".tessera/build")).expect("locked");
+    let output = OutputDir::lock(&dir.join(".ascribe/build")).expect("locked");
     output
         .replace("site", emitter.name(), &emission.files)
         .expect("written");
@@ -139,13 +139,13 @@ fn the_site_output_works_with_the_source_removed() {
     }
 
     // Links to other files are URLs under the base path, served from
-    // `_tessera/files/`: each names a file in the output.
+    // `_ascribe/files/`: each names a file in the output.
     assert_eq!(
         links,
         [
-            "/docs/_tessera/files/_fragments/pipeline.png",
-            "/docs/_tessera/files/downloads/quill.yaml#top",
-            "/docs/_tessera/files/_tessera/up/shared/My%20Manual%20%28v2%29.pdf",
+            "/docs/_ascribe/files/_fragments/pipeline.png",
+            "/docs/_ascribe/files/downloads/quill.yaml#top",
+            "/docs/_ascribe/files/_ascribe/up/shared/My%20Manual%20%28v2%29.pdf",
         ],
         "{page}"
     );
@@ -161,7 +161,7 @@ fn the_site_output_works_with_the_source_removed() {
         assert!(moved.join(&decoded).is_file(), "{link} -> {decoded}");
     }
     assert_eq!(
-        fs::read(moved.join("_tessera/files/downloads/quill.yaml")).expect("a copy"),
+        fs::read(moved.join("_ascribe/files/downloads/quill.yaml")).expect("a copy"),
         b"agent: {}\n"
     );
     // A file used as an image and as a link is copied twice: once mirrored,
@@ -169,7 +169,7 @@ fn the_site_output_works_with_the_source_removed() {
     assert!(moved.join("_fragments/pipeline.png").is_file());
     assert!(
         moved
-            .join("_tessera/files/_fragments/pipeline.png")
+            .join("_ascribe/files/_fragments/pipeline.png")
             .is_file()
     );
 }
@@ -179,7 +179,7 @@ fn the_manifest_lists_each_copy_with_its_source_and_published_ones_with_their_ur
     let dir = project_dir();
     build_into(dir.path());
     let manifest: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(dir.path().join(".tessera/build/site/site.manifest.json"))
+        &fs::read_to_string(dir.path().join(".ascribe/build/site/site.manifest.json"))
             .expect("manifest"),
     )
     .expect("JSON");
@@ -190,13 +190,13 @@ fn the_manifest_lists_each_copy_with_its_source_and_published_ones_with_their_ur
             .find(|f| f["path"] == path)
             .unwrap_or_else(|| panic!("{path} is listed: {files:#?}"))
     };
-    let yaml = entry("_tessera/files/downloads/quill.yaml");
+    let yaml = entry("_ascribe/files/downloads/quill.yaml");
     assert_eq!(yaml["kind"], "asset");
     assert_eq!(yaml["source"], "downloads/quill.yaml");
-    assert_eq!(yaml["url"], "/docs/_tessera/files/downloads/quill.yaml");
+    assert_eq!(yaml["url"], "/docs/_ascribe/files/downloads/quill.yaml");
     let image = entry("guides/img/settings.png");
     assert_eq!(image["kind"], "asset");
     assert!(image.get("url").is_none() || image["url"].is_null());
-    assert_eq!(entry("_tessera/schema.ts")["kind"], "generated");
+    assert_eq!(entry("_ascribe/schema.ts")["kind"], "generated");
     assert_eq!(entry("guides/install.md")["kind"], "page");
 }

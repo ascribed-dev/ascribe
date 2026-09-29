@@ -9,7 +9,7 @@ content/
   Guides/My Setup.md              entry id guides/my-setup; page-level availability
   Reference/Options.md            links to an explicit-id heading; an image beside the page
   _fragments/requirements.md      included by My Setup; its image sits beside the fragment
-  downloads/loom.yaml             linked to, so published under _tessera/files/
+  downloads/loom.yaml             linked to, so published under _ascribe/files/
 src/content.config.ts             the collection
 src/pages/[...slug].astro         the route: base + entry id, and `index` at the base
 src/layouts/Docs.astro            the page, its availability badge, and a table of contents
@@ -42,8 +42,8 @@ The integration finds the binary in `target/` (or `TESSERA_BIN`). `test:e2e` run
 - the fragment's image, and an image beside a page, are processed by Astro (a hashed `.webp` under `/docs/_astro/`) and keep their `width`;
 - the reduced group shows one arm's content and the other group works as tabs;
 - the page and section availability badges render, with the element library's stylesheet;
-- a linked file is served at `/docs/_tessera/files/`;
+- a linked file is served at `/docs/_ascribe/files/`;
 - every heading's id, and Astro's table of contents, equal the ids in `ascribe build --emit json`, at the route the JSON gives;
-- the build fails on a Tessera error and on routing that disagrees with `ascribe.toml`; the dev server serves `_tessera/files/`; the plugin works under `unified()` too; and the root base with trailing slashes routes correctly.
+- the build fails on a Tessera error and on routing that disagrees with `ascribe.toml`; the dev server serves `_ascribe/files/`; the plugin works under `unified()` too; and the root base with trailing slashes routes correctly.
 
 `pnpm test` runs nothing here: the end-to-end test needs the compiler and a browser, so it has its own script (and its own job in `.github/workflows/js.yml`).

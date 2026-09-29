@@ -51,7 +51,7 @@ impl ModelSpec {
         if self.comment {
             t.push_str("# a comment\n");
         }
-        t.push_str("spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\noutput-dir = \".tessera/build\"\n\n");
+        t.push_str("spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\noutput-dir = \".ascribe/build\"\n\n");
         let _ = writeln!(
             t,
             "[phrases]\nproduct = \"{}\"\napi = \"https://api.quill.dev/v3/\"",

@@ -30,7 +30,7 @@ fn all_three_examples_load_with_no_issues() {
 fn minimal_gets_every_default() {
     let m = example("minimal.toml");
     assert_eq!(m.project.content_root, "docs");
-    assert_eq!(m.project.output_dir, ".tessera/build");
+    assert_eq!(m.project.output_dir, ".ascribe/build");
     assert_eq!(m.types.len(), 1);
     assert_eq!(m.types[0].name, "page");
     assert!(m.types[0].default);

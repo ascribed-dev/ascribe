@@ -54,7 +54,7 @@ Ship `tessera build` with the two simplest outputs, plain markdown and JSON, inc
 ### What was built
 
 - **`crates/tessera-emit`**:
-  - `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page(&PageContext, &ResolvedPage)`, and defaults for `place_asset` (mirrored path, relative reference), `generated` (files under `_tessera/`), and `warnings`. `EmitContext::new(&Project, project_root, &Build)` holds the model, the build, file paths and line indexes (for JSON's `source`), and `absolute_url`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once, from `ResolvedPage::assets`.
+  - `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page(&PageContext, &ResolvedPage)`, and defaults for `place_asset` (mirrored path, relative reference), `generated` (files under `_ascribe/`), and `warnings`. `EmitContext::new(&Project, project_root, &Build)` holds the model, the build, file paths and line indexes (for JSON's `source`), and `absolute_url`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once, from `ResolvedPage::assets`.
   - `PlainEmitter` (`plain/`): follows SPEC §9.4's table; see the crate README. It walks the resolved tree and never looks at the build's mode.
   - `JsonEmitter` (`json.rs`): `schemaVersion` 1, one document per page (`.md` becomes `.json`), documented in the crate README.
   - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, `markdown_destination` (asset contract §3, §4). `labels.rs`: the availability line, arm labels, plain text of inlines.
@@ -64,7 +64,7 @@ Ship `tessera build` with the two simplest outputs, plain markdown and JSON, inc
 
 ### Interfaces later phases use
 
-- **Phase 20 (site output)**: implement `Emitter` for the site emitter and override `place_asset` (link targets under `_tessera/files/`, with `Placement::url`, which the store already writes to the manifest) and `generated` (the Zod schema, under `_tessera/`). `emit` and `OutputDir::replace` need no change; add `Emit::Site` to `commands/build.rs` (it's refused now) and swap `DefaultRouter::from_consumer` for the profile's router in `write_outputs` (`SPEC-QUESTION(Q119)`). `EmitContext::absolute_url` and `labels::availability_display` are reusable.
+- **Phase 20 (site output)**: implement `Emitter` for the site emitter and override `place_asset` (link targets under `_ascribe/files/`, with `Placement::url`, which the store already writes to the manifest) and `generated` (the Zod schema, under `_ascribe/`). `emit` and `OutputDir::replace` need no change; add `Emit::Site` to `commands/build.rs` (it's refused now) and swap `DefaultRouter::from_consumer` for the profile's router in `write_outputs` (`SPEC-QUESTION(Q119)`). `EmitContext::absolute_url` and `labels::availability_display` are reusable.
 - **Phase 26**: `emit` plus `OutputDir::replace` per build and emitter is the pipeline to time; `EmitContext::new` indexes every file's lines for each call, so build one per build and share it across emitters.
 - **Phase 14**: `commands/diagnose.rs::diagnose` is the one place `tessera build` calls the checks.
 

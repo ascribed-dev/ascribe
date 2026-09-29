@@ -32,7 +32,7 @@
 //! let root = Path::new(".");
 //! let cx = EmitContext::new(project, root, build);
 //! let emission = emit(&PlainEmitter, &cx, resolved)?;
-//! let output = OutputDir::lock(&root.join(".tessera/build"))?;
+//! let output = OutputDir::lock(&root.join(".ascribe/build"))?;
 //! output.replace(&build.name, PlainEmitter.name(), &emission.files)?;
 //! # Ok(()) }
 //! ```

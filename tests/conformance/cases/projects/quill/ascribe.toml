@@ -5,7 +5,7 @@ spec = "0.1"
 
 [project]
 content-root = "files"
-output-dir = ".tessera/build"
+output-dir = ".ascribe/build"
 
 # Every page is a `page`. Appendix B's frontmatter has `title` and
 # `description`; `available` is reserved and always accepted.

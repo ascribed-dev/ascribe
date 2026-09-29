@@ -1,6 +1,6 @@
 // The integration's contract with Astro, beyond the happy path: it fails the
 // build on Tessera errors and on routing that disagrees with ascribe.toml, it
-// serves `_tessera/files/` in the dev server, and its markdown plugin works
+// serves `_ascribe/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
 import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -91,7 +91,7 @@ describe("the integration", () => {
       await page.getByRole("link", { name: "documentation home" }).click();
       await page.waitForURL(`${server.origin}/`);
       expect(await page.locator("main > h1").textContent()).toBe("Loom documentation");
-      const file = await page.request.get(`${server.origin}/_tessera/files/downloads/loom.yaml`);
+      const file = await page.request.get(`${server.origin}/_ascribe/files/downloads/loom.yaml`);
       expect(file.status()).toBe(200);
     } finally {
       await browser.close();
@@ -99,16 +99,16 @@ describe("the integration", () => {
     }
   });
 
-  it("serves _tessera/files/ and the markdown plugin's ids in the dev server", async () => {
+  it("serves _ascribe/files/ and the markdown plugin's ids in the dev server", async () => {
     const server = await serveDev();
     try {
-      const file = await fetch(`${server.origin}${BASE}/_tessera/files/downloads/loom.yaml`);
+      const file = await fetch(`${server.origin}${BASE}/_ascribe/files/downloads/loom.yaml`);
       expect(file.status).toBe(200);
       expect(await file.text()).toBe("weave:\n  strands: 4\n");
-      const missing = await fetch(`${server.origin}${BASE}/_tessera/files/downloads/nope.yaml`);
+      const missing = await fetch(`${server.origin}${BASE}/_ascribe/files/downloads/nope.yaml`);
       expect(missing.status).toBe(404);
       // Only under the base path, as in the build.
-      const unprefixed = await fetch(`${server.origin}/_tessera/files/downloads/loom.yaml`);
+      const unprefixed = await fetch(`${server.origin}/_ascribe/files/downloads/loom.yaml`);
       expect(unprefixed.status).toBe(404);
       const html = await (await fetch(`${server.origin}${BASE}/guides/my-setup`)).text();
       expect(html).toContain('id="weave-config"');

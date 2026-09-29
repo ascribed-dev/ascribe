@@ -246,7 +246,7 @@ fn assets_are_copied_byte_for_byte() {
     let source = dir.path().join("logo.bin");
     fs::write(&source, [0u8, 159, 146, 150, 255]).expect("write");
     let file = EmittedFile {
-        path: RelPath::parse("_tessera/up/logo.bin").expect("a path"),
+        path: RelPath::parse("_ascribe/up/logo.bin").expect("a path"),
         kind: FileKind::Asset,
         source: Some(RelPath::parse("../logo.bin").expect("a path")),
         url: None,
@@ -254,7 +254,7 @@ fn assets_are_copied_byte_for_byte() {
     };
     replace(&out, "site", &[file]).expect("replaced");
     assert_eq!(
-        fs::read(out.join("site/plain/_tessera/up/logo.bin")).expect("read"),
+        fs::read(out.join("site/plain/_ascribe/up/logo.bin")).expect("read"),
         [0u8, 159, 146, 150, 255]
     );
     let manifest = read(&out.join("site/plain.manifest.json"));

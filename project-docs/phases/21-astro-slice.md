@@ -53,7 +53,7 @@ Prove the whole pipeline in a real Astro site as early as possible, with the sma
 
 ### What was built
 
-- **`packages/astro`** (`@tessera/astro`, private): the integration (`src/index.ts`), `tesseraCollection` (`src/content.ts`, exported as `@tessera/astro/content`), the `<Elements />` component (`src/Elements.astro`), and the markdown plugin. The plugin is `src/attributes.ts` (the site-render contract's rules, once, as a pure function from a hast tree to a list of edits) with an adapter for each of Astro's markdown processors: `src/rehype.ts` (unified) and `src/satteri.ts` (Sätteri). Also `src/project.ts` (reads `ascribe.toml`; checks routing agreement), `src/binary.ts`, `src/run.ts`, and `src/files.ts` (`_tessera/files/`). `packages/astro/README.md` documents the interface. `dist/` is git-ignored: `pnpm --filter @tessera/astro build` (and `--filter @tessera/elements build`) first.
+- **`packages/astro`** (`@tessera/astro`, private): the integration (`src/index.ts`), `tesseraCollection` (`src/content.ts`, exported as `@tessera/astro/content`), the `<Elements />` component (`src/Elements.astro`), and the markdown plugin. The plugin is `src/attributes.ts` (the site-render contract's rules, once, as a pure function from a hast tree to a list of edits) with an adapter for each of Astro's markdown processors: `src/rehype.ts` (unified) and `src/satteri.ts` (Sätteri). Also `src/project.ts` (reads `ascribe.toml`; checks routing agreement), `src/binary.ts`, `src/run.ts`, and `src/files.ts` (`_ascribe/files/`). `packages/astro/README.md` documents the interface. `dist/` is git-ignored: `pnpm --filter @tessera/astro build` (and `--filter @tessera/elements build`) first.
 - **`examples/astro-site`**: a plain Astro site over a small Tessera project (`ascribe.toml`, `content/`) with the four risky integrations of task 3, `base: "/docs"`, `trailingSlash: "never"`. Its README maps each risk to where it is.
 - **The end-to-end test**, `examples/astro-site/test/e2e/` (`pnpm --filter @tessera/example-astro-site test:e2e`), and a manual-dispatch job for it, `astro`, in `.github/workflows/js.yml` (which stays `workflow_dispatch` only).
 - **Questions Q151 to Q155** (below). No Rust changes.
@@ -71,7 +71,7 @@ Written against **Astro 7.3.5** (`@astrojs/markdown-satteri` 0.4.2, `satteri` 0.
 | API | Read in | Result |
 |---|---|---|
 | Integration hooks: `astro:config:setup` (`config`, `command`, `updateConfig`, `logger`), `astro:build:done` (`dir`) | `dist/types/public/integrations.d.ts` | Used as documented. `config.root`, `config.base` (normalized to a trailing `/`), `config.trailingSlash`, and `config.site` are the resolved values. |
-| `glob` loader (`pattern`, `base` as a URL) and its entry id | `dist/content/loaders/glob.js` | `**/*.md` with `!_tessera/**`. The id is what `AstroRouter::entry_id` computes; `Guides/My Setup.md` is `guides/my-setup`, the root page `index`. |
+| `glob` loader (`pattern`, `base` as a URL) and its entry id | `dist/content/loaders/glob.js` | `**/*.md` with `!_ascribe/**`. The id is what `AstroRouter::entry_id` computes; `Guides/My Setup.md` is `guides/my-setup`, the root page `index`. |
 | `markdown.processor` | `dist/core/config/schemas/base.js`, `validate.js`, `@astrojs/internal-helpers/markdown.d.ts` | **The default is Sätteri, not remark** (Q151). `processor.options.hastPlugins` / `.rehypePlugins` is the documented way for an integration to extend it. |
 | Both processors' pass order | `@astrojs/markdown-satteri/dist/satteri-processor.js`, `@astrojs/markdown-remark/dist/index.js` | Sätteri: user hast plugins, then the image marker, then heading ids. Unified: user rehype plugins, then `rehypeImages`, then `rehypeHeadingIds`, then `rehype-raw`. So a plugin at the user hast stage runs first in both, with markers still `raw` nodes. |
 | `astro/zod`, `defineCollection`, `render()` and its `headings` | the generated schema, `content.config.ts`, the page | `schema.ts` from phase 20 compiles and validates the site's frontmatter in the real Astro. |
@@ -81,7 +81,7 @@ Written against **Astro 7.3.5** (`@astrojs/markdown-satteri` 0.4.2, `satteri` 0.
 
 1. **Astro processes a relative image in a collection entry.** Yes. `![…](../_fragments/requirements.png)<marker width=300>` in `Guides/My Setup.md`, a fragment's image mirrored beside the fragment, becomes `/docs/_astro/requirements.<hash>.webp` with `width="300" height="188"` and `loading="lazy"`; the `./weave.png` form beside a page does the same. The asset contract §3 holds as written. (`sharp` must be resolvable from the site: it is an optional dependency of Astro that pnpm doesn't hoist, so the example lists it.)
 2. **The plugin's ids and attributes reach Astro's own passes.** Yes, under both processors. An explicit id is kept by the heading-id pass and appears in Astro's `headings` (the layout's table of contents): `@id: weave-config` on "Weave configuration", where Astro's own slug would be `weave-configuration`. An image's `width` reaches the image processing. Verified in the default (Sätteri) build and in a `unified()` build. The plugin is a hast plugin, not the remark plugin phase 20 assumed (Q151).
-3. **Serving `_tessera/files/`.** Copied into the build output in `astro:build:done` (so `astro preview` and any static host serve it) and served in dev by a Vite middleware, both at `<base>/_tessera/files/`. The sample links to `/docs/_tessera/files/downloads/loom.yaml` and the tests fetch it in build and dev.
+3. **Serving `_ascribe/files/`.** Copied into the build output in `astro:build:done` (so `astro preview` and any static host serve it) and served in dev by a Vite middleware, both at `<base>/_ascribe/files/`. The sample links to `/docs/_ascribe/files/downloads/loom.yaml` and the tests fetch it in build and dev.
 
 **Contract consequences.** None change behavior. Wording: site-render.md §1 says "user remark plugins" and `tests/render/README.md` says "a unified pipeline"; Q151 proposes naming the hast stage (both are wording, and neither is edited here).
 
@@ -97,8 +97,8 @@ Also:
 
 - **The e2e tests build copies of the site under `examples/astro-site/.e2e-tmp/`** (git-ignored, removed afterwards) for the failure and variant cases, so they resolve the same `node_modules`. They run one file at a time (`fileParallelism: false`): the copies and the site share Tessera's locked output directory.
 - **`pnpm test` in the example runs nothing** (`--passWithNoTests`); `test:e2e` is separate because it needs a built compiler and a browser, so the `check` job's `pnpm -r test` still needs neither.
-- **The example has its own `eslint.config.js`** that adds `.astro/`, `.tessera/`, and `.e2e-tmp/` to the workspace's ignores. `examples/` is outside Prettier's scope (`.prettierignore`), as the other examples are.
-- **The generated `_tessera/schema.ts` is imported by `content.config.ts` by path**, so it has to exist when Astro loads the config; the integration builds first, in `astro:config:setup`, which is before that.
+- **The example has its own `eslint.config.js`** that adds `.astro/`, `.ascribe/`, and `.e2e-tmp/` to the workspace's ignores. `examples/` is outside Prettier's scope (`.prettierignore`), as the other examples are.
+- **The generated `_ascribe/schema.ts` is imported by `content.config.ts` by path**, so it has to exist when Astro loads the config; the integration builds first, in `astro:config:setup`, which is before that.
 
 ### How the end-to-end test was run
 
@@ -126,7 +126,7 @@ See the pull request for the status and evidence of each.
 - **Q151 to Q155.**
 - **Dev-mode rebuilds** (phase 22): in `astro dev`, editing a `.md` source doesn't re-run `tessera build`.
 - **The binary from npm** (phase 22).
-- **A mismatch between the two sides' `output-dir`**: the site imports the schema from a path that repeats `[project] output-dir` (`../.tessera/build/site/site/_tessera/schema.ts`), while the integration reads it from `ascribe.toml`. A project with another output directory changes both. A helper could re-export the schema from the virtual module if a site wants a single place.
+- **A mismatch between the two sides' `output-dir`**: the site imports the schema from a path that repeats `[project] output-dir` (`../.ascribe/build/site/site/_ascribe/schema.ts`), while the integration reads it from `ascribe.toml`. A project with another output directory changes both. A helper could re-export the schema from the virtual module if a site wants a single place.
 - **`astro check`** isn't run: `typecheck` for the example covers `test/` only, since `src/content.config.ts` needs Astro's generated types (`astro sync`), which need the compiler.
 - **The sample's `available` text** for `self-managed` needed a label (`labels = { "self-managed" = "Self-managed" }`); without one, the text is lower-case (`self-managed (preview, 3.4+)`), which is the emitter's documented behavior.
 

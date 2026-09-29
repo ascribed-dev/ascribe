@@ -76,7 +76,7 @@ All in `comrak_tessera` (depend on `comrak-tessera.workspace = true`; the rest o
 
 - `tessera::TesseraOptions`: `new()`, `keyword(name, text_primary) -> Self`, `insert(name, text_primary)`, `get(name) -> Option<TesseraKeyword>`, `len()`, `is_empty()`. Names are given without `@`. The caller supplies every keyword, including `end`; the fork knows no built-ins. Phases 05 and 08 build the set from the built-in directives and the content model's widgets.
 - `tessera::TesseraKeyword { text_primary: bool }`.
-- `options.extension.tessera: Option<Arc<TesseraOptions>>`. `None` (the default) is plain comrak.
+- `options.extension.ascribe: Option<Arc<TesseraOptions>>`. `None` (the default) is plain comrak.
 - `nodes::NodeValue::TesseraLine(Box<tessera::NodeTesseraLine>)`, with:
   - `raw: String`: the line from `@` to the end of the line, without the line ending; trailing whitespace is kept. Container indentation and blockquote markers aren't included.
   - `name: String`: the keyword, such as `note` or `end`.
@@ -90,7 +90,7 @@ All in `comrak_tessera` (depend on `comrak-tessera.workspace = true`; the rest o
 
 - **Vendored from the upstream tag rather than the crates.io package**, so upstream's unit tests (`src/tests/`) come along. They run in the workspace, and they caught a real bug during the spike.
 - **The primary is a real `Paragraph`**, the approach the phase suggested. It inherits every paragraph rule (interruption, lazy continuation, indented lines) with no extra code, at the cost of three guards for the paragraph conversions that don't apply to inline content (Q2).
-- **New match arms sit next to old, stable neighbors** (`Document`, `FrontMatter`, `Paragraph`), not at the end next to upstream's newest variant, so upstream's appended variants don't conflict. `handle_tessera_line` sits between block quotes and ATX headings in the block-start chain.
+- **New match arms sit next to old, stable neighbors** (`Document`, `FrontMatter`, `Paragraph`), not at the end next to upstream's newest variant, so upstream's appended variants don't conflict. `handle_ascribe_line` sits between block quotes and ATX headings in the block-start chain.
 - **Up to three spaces of extra indentation are allowed** before a directive line, as for a heading (Q1).
 - **`is_text_primary` uses `try_borrow`**, because some upstream containers finalize their children while holding their own `RefCell` borrow.
 - **Doctests are off** in the fork. The one Tessera doc example is duplicated as the test `module_example`.

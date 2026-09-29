@@ -305,7 +305,7 @@ mod tests {
     fn layout() -> Layout {
         Layout {
             content_root: p("docs"),
-            output_dir: p(".tessera/build"),
+            output_dir: p(".ascribe/build"),
         }
     }
 

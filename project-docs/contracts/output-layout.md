@@ -5,7 +5,7 @@ This contract says where `tessera build` writes each build's output, how it reco
 ## 1. Directory layout
 
 ```
-<output-dir>/                   [project] output-dir, default .tessera/build
+<output-dir>/                   [project] output-dir, default .ascribe/build
   .lock                         held while a build writes (§4)
   .staging/                     work in progress (§4)
   <build>/
@@ -29,9 +29,9 @@ Pages mirror their source paths relative to the content root:
 
 Only pages the build publishes are written (SPEC §9.3); fragments never are.
 
-Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_tessera/files/`.
+Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
-**`_tessera/` is reserved** in every emitter root for files Tessera places other than pages and assets inside the content root: assets from outside the content root (`_tessera/up/`), the site output's published files (`_tessera/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (phase 20 chooses its name under `_tessera/`).
+**`_ascribe/` is reserved** in every emitter root for files Tessera places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (phase 20 chooses its name under `_ascribe/`).
 
 ## 2. What Tessera owns
 
@@ -55,9 +55,9 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
   "build": "site",
   "emitter": "site",
   "files": [
-    { "path": "_tessera/files/downloads/quill.yaml", "kind": "asset", "source": "downloads/quill.yaml",
-      "url": "/docs/_tessera/files/downloads/quill.yaml" },
-    { "path": "_tessera/up/shared/logo.png", "kind": "asset", "source": "../shared/logo.png" },
+    { "path": "_ascribe/files/downloads/quill.yaml", "kind": "asset", "source": "downloads/quill.yaml",
+      "url": "/docs/_ascribe/files/downloads/quill.yaml" },
+    { "path": "_ascribe/up/shared/logo.png", "kind": "asset", "source": "../shared/logo.png" },
     { "path": "guides/img/settings.png", "kind": "asset", "source": "guides/img/settings.png" },
     { "path": "guides/install.md", "kind": "page", "source": "guides/install.md" }
   ]
@@ -73,7 +73,7 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
 | `files[].path` | The file's path relative to the emitter root, `/`-separated. |
 | `files[].kind` | `"page"`, `"asset"`, or `"generated"` (anything else Tessera writes, such as a schema). |
 | `files[].source` | For a page or asset, its source path relative to the content root, starting with `..` for a file outside it. Absent for generated files. |
-| `files[].url` | For a site-output asset under `_tessera/files/`, the URL pages use for it, which the consumer must serve it at (asset contract §3.2). Absent otherwise. |
+| `files[].url` | For a site-output asset under `_ascribe/files/`, the URL pages use for it, which the consumer must serve it at (asset contract §3.2). Absent otherwise. |
 
 The manifest lists files only. Directories are implied by their paths.
 
@@ -100,7 +100,7 @@ A file listed in a manifest that the user has since edited is still Tessera's: t
 
 ## 5. Why this shape
 
-- **One root per build and emitter**, with nothing shared, keeps each output self-contained (SPEC §9.4) and lets a consumer point at exactly one directory, such as an Astro content collection at `.tessera/build/site/site/`.
+- **One root per build and emitter**, with nothing shared, keeps each output self-contained (SPEC §9.4) and lets a consumer point at exactly one directory, such as an Astro content collection at `.ascribe/build/site/site/`.
 - **Mirrored paths** make the output's structure the source's structure, keep relative references between pages and assets valid, and make collisions between different files impossible (asset contract §3.1).
 - **The manifest beside the root, not in it**, keeps the root holding only output, so a consumer loading every file in it loads nothing else.
 - **Failing on a user's file** instead of overwriting it follows the phase plan's rule: output never destroys what Tessera didn't create.

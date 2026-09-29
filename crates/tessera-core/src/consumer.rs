@@ -81,7 +81,7 @@ pub enum AssetPlacement {
     /// relative path from the page (`./`, `../`). The consumer's markdown
     /// pipeline resolves the reference, so its image processing applies.
     Mirror,
-    /// Under the output's `_tessera/files/` directory, which the consumer
+    /// Under the output's `_ascribe/files/` directory, which the consumer
     /// serves as static files, referenced by root-relative URL.
     Published,
 }

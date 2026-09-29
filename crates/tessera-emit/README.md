@@ -10,7 +10,7 @@ Emitters for Tessera's outputs. An emitter renders phase 12's **resolved tree** 
 
 ## Pieces
 
-- `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page`, and the defaults `place_asset` (the mirrored path and a relative reference, asset contract §3), `generated` (files under `_tessera/`), and `warnings`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once.
+- `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page`, and the defaults `place_asset` (the mirrored path and a relative reference, asset contract §3), `generated` (files under `_ascribe/`), and `warnings`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once.
 - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, and `markdown_destination`, which write a reference so CommonMark reads it back as written (asset contract §4).
 - `OutputDir` (`store.rs`): the [output-layout contract](../../project-docs/contracts/output-layout.md): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
 - `labels.rs`: text the outputs share (the availability line and each target's text, an arm's label).
@@ -19,7 +19,7 @@ Emitters for Tessera's outputs. An emitter renders phase 12's **resolved tree** 
 ```rust,ignore
 let cx = EmitContext::new(&project, project_root, build);
 let emission = emit(&PlainEmitter, &cx, &resolved)?;
-let output = OutputDir::lock(&project_root.join(".tessera/build"))?;
+let output = OutputDir::lock(&project_root.join(".ascribe/build"))?;
 output.replace(&build.name, "plain", &emission.files)?;
 ```
 
@@ -44,7 +44,7 @@ Code blocks are always fenced (the fence is longer than any backtick run in the 
 
 ## Site
 
-Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_tessera/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_tessera/schema.ts`. `prepare` refuses a build whose pages share a route (Q143).
+Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`. `prepare` refuses a build whose pages share a route (Q143).
 
 | Source | Output |
 |---|---|
@@ -68,7 +68,7 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ### Zod
 
-`zod::generate(model)` writes the TypeScript module `_tessera/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys, and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema` (Q149). `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @tessera/zod-check test`). Regenerate its fixtures after a change with `TESSERA_BLESS=1 cargo test -p tessera-emit --test zod`.
+`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys, and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema` (Q149). `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @tessera/zod-check test`). Regenerate its fixtures after a change with `TESSERA_BLESS=1 cargo test -p tessera-emit --test zod`.
 
 ## JSON
 

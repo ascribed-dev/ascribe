@@ -24,7 +24,7 @@
 //! it. Links are the consumer's routes, and assets are placed as the `astro`
 //! profile says ([`AstroProfile`]).
 //!
-//! Alongside the pages the emitter writes `_tessera/schema.ts`, the Zod
+//! Alongside the pages the emitter writes `_ascribe/schema.ts`, the Zod
 //! schema of every content type ([`crate::zod`]).
 
 mod blocks;
@@ -45,11 +45,11 @@ use crate::error::EmitError;
 use crate::store::{Contents, EmittedFile, FileKind};
 
 /// The path of the generated Zod schema in the emitter root.
-pub const SCHEMA_PATH: &str = "_tessera/schema.ts";
+pub const SCHEMA_PATH: &str = "_ascribe/schema.ts";
 
 /// The directory in the emitter root that holds link targets, which the
 /// consumer serves as static files (asset contract §3.2).
-pub const FILES_DIR: &str = "_tessera/files";
+pub const FILES_DIR: &str = "_ascribe/files";
 
 /// The site emitter.
 #[derive(Clone, Debug)]

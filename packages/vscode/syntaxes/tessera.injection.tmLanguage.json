@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "Tessera (markdown injection)",
   "scopeName": "tessera.injection",
-  "injectionSelector": "L:text.html.markdown -markup.fenced_code -markup.inline.raw -markup.raw -meta.embedded -comment -text.html.derivative -meta.attributes.tessera -string.unquoted.identifier.primary.tessera -constant.other.availability.tessera -markup.list -markup.quote",
+  "injectionSelector": "L:text.html.markdown -markup.fenced_code -markup.inline.raw -markup.raw -meta.embedded -comment -text.html.derivative -meta.attributes.ascribe -string.unquoted.identifier.primary.ascribe -constant.other.availability.ascribe -markup.list -markup.quote",
   "patterns": [
     {
       "include": "#indented-code"
@@ -39,28 +39,28 @@
     },
     "end-line": {
       "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(end)[ \\t]*$",
-      "name": "meta.directive.end.tessera",
+      "name": "meta.directive.end.ascribe",
       "captures": {
         "1": {
-          "name": "punctuation.definition.directive.tessera"
+          "name": "punctuation.definition.directive.ascribe"
         },
         "2": {
-          "name": "keyword.control.end.tessera"
+          "name": "keyword.control.end.ascribe"
         }
       }
     },
     "directive-identifier": {
       "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(id|include)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(\\S*))?[ \\t]*$",
-      "name": "meta.directive.tessera",
+      "name": "meta.directive.ascribe",
       "captures": {
         "1": {
-          "name": "punctuation.definition.directive.tessera"
+          "name": "punctuation.definition.directive.ascribe"
         },
         "2": {
-          "name": "keyword.control.directive.tessera"
+          "name": "keyword.control.directive.ascribe"
         },
         "3": {
-          "name": "meta.attributes.tessera",
+          "name": "meta.attributes.ascribe",
           "patterns": [
             {
               "include": "#attributes"
@@ -68,25 +68,25 @@
           ]
         },
         "4": {
-          "name": "punctuation.separator.directive.tessera"
+          "name": "punctuation.separator.directive.ascribe"
         },
         "5": {
-          "name": "meta.primary.tessera string.unquoted.identifier.primary.tessera"
+          "name": "meta.primary.ascribe string.unquoted.identifier.primary.ascribe"
         }
       }
     },
     "directive-availability": {
       "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(available)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(.*?))?[ \\t]*$",
-      "name": "meta.directive.tessera",
+      "name": "meta.directive.ascribe",
       "captures": {
         "1": {
-          "name": "punctuation.definition.directive.tessera"
+          "name": "punctuation.definition.directive.ascribe"
         },
         "2": {
-          "name": "keyword.control.directive.tessera"
+          "name": "keyword.control.directive.ascribe"
         },
         "3": {
-          "name": "meta.attributes.tessera",
+          "name": "meta.attributes.ascribe",
           "patterns": [
             {
               "include": "#attributes"
@@ -94,25 +94,25 @@
           ]
         },
         "4": {
-          "name": "punctuation.separator.directive.tessera"
+          "name": "punctuation.separator.directive.ascribe"
         },
         "5": {
-          "name": "meta.primary.tessera constant.other.availability.tessera"
+          "name": "meta.primary.ascribe constant.other.availability.ascribe"
         }
       }
     },
     "directive-builtin": {
       "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(variant|note|steps|details)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(.*?))?[ \\t]*$",
-      "name": "meta.directive.tessera",
+      "name": "meta.directive.ascribe",
       "captures": {
         "1": {
-          "name": "punctuation.definition.directive.tessera"
+          "name": "punctuation.definition.directive.ascribe"
         },
         "2": {
-          "name": "keyword.control.directive.tessera"
+          "name": "keyword.control.directive.ascribe"
         },
         "3": {
-          "name": "meta.attributes.tessera",
+          "name": "meta.attributes.ascribe",
           "patterns": [
             {
               "include": "#attributes"
@@ -120,10 +120,10 @@
           ]
         },
         "4": {
-          "name": "punctuation.separator.directive.tessera"
+          "name": "punctuation.separator.directive.ascribe"
         },
         "5": {
-          "name": "meta.primary.tessera",
+          "name": "meta.primary.ascribe",
           "patterns": [
             {
               "include": "#phrase"
@@ -137,16 +137,16 @@
     },
     "directive-widget": {
       "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)([a-z][a-z0-9]*(?:-[a-z0-9]+)+)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(.*?))?[ \\t]*$",
-      "name": "meta.directive.tessera",
+      "name": "meta.directive.ascribe",
       "captures": {
         "1": {
-          "name": "punctuation.definition.directive.tessera"
+          "name": "punctuation.definition.directive.ascribe"
         },
         "2": {
-          "name": "entity.name.function.widget.tessera"
+          "name": "entity.name.function.widget.ascribe"
         },
         "3": {
-          "name": "meta.attributes.tessera",
+          "name": "meta.attributes.ascribe",
           "patterns": [
             {
               "include": "#attributes"
@@ -154,10 +154,10 @@
           ]
         },
         "4": {
-          "name": "punctuation.separator.directive.tessera"
+          "name": "punctuation.separator.directive.ascribe"
         },
         "5": {
-          "name": "meta.primary.tessera",
+          "name": "meta.primary.ascribe",
           "patterns": [
             {
               "include": "#phrase"
@@ -173,63 +173,63 @@
       "patterns": [
         {
           "match": "\\{",
-          "name": "punctuation.section.attributes.begin.tessera"
+          "name": "punctuation.section.attributes.begin.ascribe"
         },
         {
           "match": "\\}",
-          "name": "punctuation.section.attributes.end.tessera"
+          "name": "punctuation.section.attributes.end.ascribe"
         },
         {
           "match": "[a-z][a-z0-9-]*(?=[ \\t]*=)",
-          "name": "entity.other.attribute-name.tessera"
+          "name": "entity.other.attribute-name.ascribe"
         },
         {
           "match": "=",
-          "name": "punctuation.separator.key-value.tessera"
+          "name": "punctuation.separator.key-value.ascribe"
         },
         {
           "match": "[,|]",
-          "name": "punctuation.separator.attributes.tessera"
+          "name": "punctuation.separator.attributes.ascribe"
         },
         {
           "begin": "\"",
           "end": "\"|$",
-          "name": "string.quoted.double.tessera",
+          "name": "string.quoted.double.ascribe",
           "beginCaptures": {
             "0": {
-              "name": "punctuation.definition.string.begin.tessera"
+              "name": "punctuation.definition.string.begin.ascribe"
             }
           },
           "endCaptures": {
             "0": {
-              "name": "punctuation.definition.string.end.tessera"
+              "name": "punctuation.definition.string.end.ascribe"
             }
           },
           "patterns": [
             {
               "match": "\\\\.",
-              "name": "constant.character.escape.tessera"
+              "name": "constant.character.escape.ascribe"
             }
           ]
         },
         {
           "match": "[^\\s,|{}=\"]+",
-          "name": "string.unquoted.attribute-value.tessera"
+          "name": "string.unquoted.attribute-value.ascribe"
         }
       ]
     },
     "phrase": {
       "match": "(?<!\\\\)(\\{)([a-z][a-z0-9-]*)(\\})",
-      "name": "meta.phrase.tessera",
+      "name": "meta.phrase.ascribe",
       "captures": {
         "1": {
-          "name": "punctuation.definition.phrase.begin.tessera"
+          "name": "punctuation.definition.phrase.begin.ascribe"
         },
         "2": {
-          "name": "variable.other.phrase.tessera"
+          "name": "variable.other.phrase.ascribe"
         },
         "3": {
-          "name": "punctuation.definition.phrase.end.tessera"
+          "name": "punctuation.definition.phrase.end.ascribe"
         }
       }
     }

@@ -32,13 +32,13 @@ trailing-slash = "never"
 
   it("needs no [builds] table: the implicit `site` build has the same output layout", () => {
     const info = readProject(project('spec = "0.1"\n[project]\ncontent-root = "docs"\n'));
-    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".tessera", "build", "site", "site"));
+    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".ascribe", "build", "site", "site"));
   });
 
   it("uses the profile's defaults", () => {
     const info = readProject(project('spec = "0.1"\n'));
     expect(info.consumer).toEqual({ site: undefined, basePath: "/", trailingSlash: "always" });
-    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".tessera", "build", "site", "site"));
+    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".ascribe", "build", "site", "site"));
   });
 
   it("says which file it couldn't read", () => {

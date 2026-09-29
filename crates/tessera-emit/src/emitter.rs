@@ -174,7 +174,7 @@ pub trait Emitter {
     }
 
     /// Generated files the emitter adds to the root besides pages and assets,
-    /// under `_tessera/` (output-layout contract, §1.1).
+    /// under `_ascribe/` (output-layout contract, §1.1).
     ///
     /// # Errors
     ///

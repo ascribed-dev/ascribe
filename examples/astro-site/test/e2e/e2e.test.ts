@@ -156,10 +156,10 @@ describe("the built site", () => {
     await page.close();
   });
 
-  it("serves a linked file at <base>/_tessera/files/", async () => {
+  it("serves a linked file at <base>/_ascribe/files/", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
     const href = await page.getByRole("link", { name: "sample config" }).getAttribute("href");
-    expect(href).toBe(`${BASE}/_tessera/files/downloads/loom.yaml`);
+    expect(href).toBe(`${BASE}/_ascribe/files/downloads/loom.yaml`);
     const response = await page.request.get(`${origin}${href}`);
     expect(response.status()).toBe(200);
     await expect(response.text()).resolves.toBe("weave:\n  strands: 4\n");
@@ -173,7 +173,7 @@ describe("the built site", () => {
       cwd: siteDir,
       stdio: "pipe",
     });
-    const jsonDir = path.join(siteDir, ".tessera", "build", "site", "json");
+    const jsonDir = path.join(siteDir, ".ascribe", "build", "site", "json");
     const documents = jsonFiles(jsonDir).map(
       (file) =>
         JSON.parse(readFileSync(file, "utf8")) as {

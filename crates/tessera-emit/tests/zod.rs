@@ -51,7 +51,7 @@ fn the_quill_schema_and_its_pages_frontmatter_are_the_fixtures() {
     let project = load(&root);
     let emitter = SiteEmitter::new(project.model());
     let out = emit_build(&root, &project, "site", &emitter);
-    check_fixture("quill.schema.ts", &out["_tessera/schema.ts"]);
+    check_fixture("quill.schema.ts", &out["_ascribe/schema.ts"]);
     let pages: BTreeMap<String, serde_json::Value> = out
         .iter()
         .filter(|(path, _)| path.ends_with(".md"))

@@ -11,7 +11,7 @@
 //   // src/content.config.ts
 //   import { defineCollection } from "astro:content";
 //   import { tesseraCollection } from "@tessera/astro/content";
-//   import { schema } from "../.tessera/build/site/site/_tessera/schema.ts";
+//   import { schema } from "../.ascribe/build/site/site/_ascribe/schema.ts";
 //   export const collections = { docs: defineCollection(tesseraCollection({ schema })) };
 //
 //   // a layout's <head>
@@ -99,7 +99,7 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
           if (result.summary !== "") logger.info(result.summary);
         }
 
-        // Dev serving of `_tessera/files/`; the build copies them in `astro:build:done`.
+        // Dev serving of `_ascribe/files/`; the build copies them in `astro:build:done`.
         updateConfig({
           vite: {
             // `Elements.astro` is Astro source, so Vite must compile it, not load it as a Node module.
@@ -129,7 +129,7 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
         });
       },
       "astro:build:done": async ({ dir, logger }) => {
-        if (await copyPublishedFiles(siteRoot, dir)) logger.info("copied _tessera/files/");
+        if (await copyPublishedFiles(siteRoot, dir)) logger.info("copied _ascribe/files/");
       },
     },
   };

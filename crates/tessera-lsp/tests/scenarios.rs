@@ -170,7 +170,7 @@ fn declaring_a_widget_in_the_model_changes_an_unopened_file() {
 }
 
 #[test]
-fn a_model_that_does_not_load_is_reported_on_tessera_toml_and_the_last_model_stays() {
+fn a_model_that_does_not_load_is_reported_on_ascribe_toml_and_the_last_model_stays() {
     let f = Fixture::new(WIDGET_MODEL, &[("docs/w.md", WIDGET_PAGE)]);
     let (page, config) = (f.path("docs/w.md"), f.path("ascribe.toml"));
     let mut client = Client::start(&f.root());

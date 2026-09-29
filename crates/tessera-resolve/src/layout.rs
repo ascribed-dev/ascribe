@@ -64,7 +64,7 @@ mod tests {
     fn layout() -> Layout {
         Layout {
             content_root: p("docs"),
-            output_dir: p(".tessera/build"),
+            output_dir: p(".ascribe/build"),
         }
     }
 
@@ -80,18 +80,18 @@ mod tests {
     fn outside_the_project_and_the_output_directory_are_not() {
         let l = layout();
         assert!(!l.is_allowed(&p("../../outside.png")));
-        assert!(!l.is_allowed(&p("../.tessera/build/site/p.png")));
-        assert!(l.is_allowed(&p("../.tessera/other.png")));
+        assert!(!l.is_allowed(&p("../.ascribe/build/site/p.png")));
+        assert!(l.is_allowed(&p("../.ascribe/other.png")));
     }
 
     #[test]
     fn content_root_at_the_project_root() {
         let l = Layout {
             content_root: RelPath::root(),
-            output_dir: p(".tessera/build"),
+            output_dir: p(".ascribe/build"),
         };
         assert!(l.is_allowed(&p("a.png")));
         assert!(!l.is_allowed(&p("../a.png")));
-        assert!(!l.is_allowed(&p(".tessera/build/x")));
+        assert!(!l.is_allowed(&p(".ascribe/build/x")));
     }
 }

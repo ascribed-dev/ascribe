@@ -232,11 +232,11 @@ fn a_file_outside_the_project_or_in_the_output_directory_does_not_exist() {
         (
             "docs/index.md",
             &format!(
-                "{PAGE}![a](../../outside.png)\n\n![b](../.tessera/build/site/p.png)\n\n![c](../shared/logo.png)\n\n[d](../../outside.md)\n"
+                "{PAGE}![a](../../outside.png)\n\n![b](../.ascribe/build/site/p.png)\n\n![c](../shared/logo.png)\n\n[d](../../outside.md)\n"
             ),
         ),
         ("outside.png", ""),
-        (".tessera/build/site/p.png", ""),
+        (".ascribe/build/site/p.png", ""),
         ("shared/logo.png", ""),
     ]);
     let problems = p.problems(&path("index.md"));

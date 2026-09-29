@@ -29,7 +29,7 @@ spec = "0.1"
 
 [project]
 content-root = "files"
-output-dir = ".tessera/build"
+output-dir = ".ascribe/build"
 
 ###############################################################################
 # Content types and fragments (SPEC §2.2, §7.2)

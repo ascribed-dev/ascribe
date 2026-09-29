@@ -33,7 +33,7 @@ export function readProject(dir: string): ProjectInfo {
   const project = section(table, "project");
   const consumer = section(table, "consumer");
   const outputDir =
-    typeof project["output-dir"] === "string" ? project["output-dir"] : ".tessera/build";
+    typeof project["output-dir"] === "string" ? project["output-dir"] : ".ascribe/build";
   const trailingSlash = consumer["trailing-slash"] === "never" ? "never" : "always";
   return {
     dir,

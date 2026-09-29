@@ -127,7 +127,7 @@ fn with_no_path_only_the_content_root_is_formatted() {
 #[test]
 fn hidden_directories_and_node_modules_are_skipped() {
     let p = Project::new("skip");
-    p.write("docs/.tessera/build/a.md", MESSY);
+    p.write("docs/.ascribe/build/a.md", MESSY);
     p.write("docs/node_modules/pkg/b.md", MESSY);
     p.write("docs/notes.txt", MESSY);
     p.write("docs/real.md", MESSY);

@@ -102,7 +102,7 @@ Write every interface that parallel phases share, as completed deliverables, bef
 3. **The attribute marker** (`<tessera-attributes …></tessera-attributes>`) for heading ids and image attributes, instead of `{#id}` or `{width=600}` blocks, because Astro's GFM and smartypants passes run before user plugins and rewrite text-based blocks.
 4. **Every heading in the site output carries its page id.**
 5. **Q12 settled by removing `heading-ids`, `image-attributes`, `assets`, and `assets-dir`** (and `model-consumer-assets-dir`).
-6. **Assets mirror their source paths**; under `astro`, images stay relative and other linked files are published under `_tessera/files/`.
+6. **Assets mirror their source paths**; under `astro`, images stay relative and other linked files are published under `_ascribe/files/`.
 7. **Asset boundary and case** (Q10, now SPEC §9.4).
 8. **Output ownership through a manifest** that always lists every file Tessera wrote.
 9. **Tabs sync on one dimension**; labeled groups don't sync.
@@ -115,7 +115,7 @@ Write every interface that parallel phases share, as completed deliverables, bef
 
 ### Left open
 
-- **Astro specifics** to verify in phase 21: that relative images in collection entries are processed from the entry's file; that a remark plugin setting `data.hProperties` reaches both Astro's heading-id pass and its image processing; how the integration serves `_tessera/files/`. The contracts say what must happen; phase 21 records how.
+- **Astro specifics** to verify in phase 21: that relative images in collection entries are processed from the entry's file; that a remark plugin setting `data.hProperties` reaches both Astro's heading-id pass and its image processing; how the integration serves `_ascribe/files/`. The contracts say what must happen; phase 21 records how.
 - **Page-level availability in frontmatter**: phase 20 defines the shape layouts read.
 - **Route collisions** (two pages with the same route) have no diagnostic; phase 20 should raise one if its router can produce them.
 - **Merged with main after phase 04**: `project-docs/questions.md` keeps Q1–Q2 then Q3–Q11, and SPEC §3.4 keeps both phases' additions. `Cargo.lock` was regenerated for the second `toml` version phase 04 brought in.

@@ -358,7 +358,7 @@ impl<'s> Loader<'s> {
         let mut info = ProjectInfo {
             value: Project {
                 content_root: "docs".into(),
-                output_dir: ".tessera/build".into(),
+                output_dir: ".ascribe/build".into(),
             },
             content_span: None,
             output_span: None,

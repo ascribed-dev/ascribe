@@ -19,10 +19,10 @@ ascribe build [--build <NAME>]... [--emit site,plain,json] [--format text|json]
 
 ## `ascribe build`
 
-Checks the project, then writes each build's outputs to `<output-dir>/<build>/<emitter>/` (`.tessera/build/` by default), each with a manifest beside it. See `crates/tessera-emit/README.md` for the outputs and `project-docs/contracts/output-layout.md` for how the previous output is replaced.
+Checks the project, then writes each build's outputs to `<output-dir>/<build>/<emitter>/` (`.ascribe/build/` by default), each with a manifest beside it. See `crates/tessera-emit/README.md` for the outputs and `project-docs/contracts/output-layout.md` for how the previous output is replaced.
 
 - `--build <NAME>`: build only this build (repeat for several). By default, every build in `ascribe.toml`.
-- `--emit <OUTPUTS>`: any of `site`, `plain`, and `json`, separated by commas (all three, the default). `site` is markdown plus web components for Astro, with the generated Zod schema in `_tessera/schema.ts`. Links in every output are the `astro` profile's routes (`[consumer] base-path` and `trailing-slash`, and Astro's entry ids for file names). A build whose pages have the same route fails the site output.
+- `--emit <OUTPUTS>`: any of `site`, `plain`, and `json`, separated by commas (all three, the default). `site` is markdown plus web components for Astro, with the generated Zod schema in `_ascribe/schema.ts`. Links in every output are the `astro` profile's routes (`[consumer] base-path` and `trailing-slash`, and Astro's entry ids for file names). A build whose pages have the same route fails the site output.
 - `--format text|json`: how the checks' report is shown, as for `ascribe check`.
 
 The checks run first (file-level and page-level, as `ascribe check` runs them: every build, or only the `--build`s named) and print exactly what `ascribe check` prints on standard output. If any has an error, nothing is written for any build. Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error. Without `[consumer] site` in `ascribe.toml`, plain-markdown links are root-relative, and the build says so.
@@ -96,7 +96,7 @@ Diagnostics are written to standard output; failures that stop the command (exit
 | Field | Type | Meaning |
 |---|---|---|
 | `schema_version` | number | `1` |
-| `tessera_version` | string | The version of `ascribe` that wrote the report |
+| `ascribe_version` | string | The version of `ascribe` that wrote the report |
 | `error` | string or null | Why the command couldn't check the project (exit code 2), or `null`. When it isn't `null`, `diagnostics` holds what was found before that: a content model's problems. |
 | `files_checked` | number | How many source files were checked |
 | `diagnostics` | array | Every diagnostic, in file order and, within a file, in source order |
@@ -124,7 +124,7 @@ An example, for a page that links to a route:
 ```json
 {
   "schema_version": 1,
-  "tessera_version": "0.0.0",
+  "ascribe_version": "0.0.0",
   "error": null,
   "files_checked": 4,
   "diagnostics": [
@@ -167,7 +167,7 @@ When the command can't run, `error` says why (the example is a missing content m
 ```json
 {
   "schema_version": 1,
-  "tessera_version": "0.0.0",
+  "ascribe_version": "0.0.0",
   "error": "no ascribe.toml found in /work or any parent directory; run ascribe from a project, or pass --config",
   "files_checked": 0,
   "diagnostics": [],

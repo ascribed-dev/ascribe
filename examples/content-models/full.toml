@@ -5,7 +5,7 @@ spec = "0.1"
 # §4
 [project]
 content-root = "docs"
-output-dir = ".tessera/build"
+output-dir = ".ascribe/build"
 
 # §5.1: `guide` is the default type; `reference` applies to reference/**.
 [types.guide]

@@ -61,7 +61,7 @@ Emit the site output (markdown plus web components), implement the Astro consume
 
 - **`crates/tessera-emit/src/site/`**: `SiteEmitter` (`Emitter`), and `AstroProfile` (`ConsumerProfile`: routing, the `github` slugger, HTML passthrough, asset placement). `blocks.rs` writes the elements of `packages/elements/CONTRACT.md`, `inline.rs` the inline content and the attribute markers, `frontmatter.rs` the page's frontmatter, `element.rs` the escaping and layout rules.
 - **`crates/tessera-emit/src/render/`**: `render_site_html()`, passing all twelve fixtures in `tests/render/` (eleven from phase 02, one I added: `image-ends-heading`).
-- **`crates/tessera-emit/src/zod/`**: `zod::generate(model)`, written as `_tessera/schema.ts` in the site output.
+- **`crates/tessera-emit/src/zod/`**: `zod::generate(model)`, written as `_ascribe/schema.ts` in the site output.
 - **`crates/tessera-resolve/src/astro.rs`** (new file, in the resolve crate so the source index can use it without a dependency on the emitters): `AstroRouter`, the Astro profile's `Router`, plus `page_for_route` (which page has a route) and `collisions`.
 - **`tessera build --emit site`**, and every output now resolved with `AstroRouter` (Q144); `--emit` defaults to `site,plain,json`.
 - **`tests/zod/`**: a pnpm workspace package (added to `pnpm-workspace.yaml`) that type-checks the generated Zod modules with `tsc` and validates the Quill pages' frontmatter with them. It depends on `zod` (4.6) and aliases `astro/zod` to `zod/v4`, which is what Astro 7.3.5's `astro/zod` re-exports, so it doesn't pull Astro's dependency tree into the workspace; phase 21 runs the real one.
@@ -69,13 +69,13 @@ Emit the site output (markdown plus web components), implement the Astro consume
 
 ### Interfaces later phases use
 
-- **Phase 21 (the Astro plugin):** the marker rules are the site-render contract's; the fixtures in `tests/render/` are the shared test, and `image-ends-heading` is new (Q145). Read `_tessera/schema.ts` (`schema`, `schemas`, `contentTypes`, `availableSchema`) for the collection; the site output root is `<output-dir>/<build>/site/`; `_tessera/files/` must be served at `<base-path>_tessera/files/`. Images stay relative (`./img/a.png`) so Astro processes them. Page-level `available` is a list of targets (Q142); a layout writes `<tessera-availability scope="page">` from it.
+- **Phase 21 (the Astro plugin):** the marker rules are the site-render contract's; the fixtures in `tests/render/` are the shared test, and `image-ends-heading` is new (Q145). Read `_ascribe/schema.ts` (`schema`, `schemas`, `contentTypes`, `availableSchema`) for the collection; the site output root is `<output-dir>/<build>/site/`; `_ascribe/files/` must be served at `<base-path>_ascribe/files/`. Images stay relative (`./img/a.png`) so Astro processes them. Page-level `available` is a list of targets (Q142); a layout writes `<tessera-availability scope="page">` from it.
 - **Phase 25 (preview):** `tessera_emit::render_site_html(markdown)`; `SiteEmitter::new(model)` with `emit`, or the whole pipeline through `tessera build`.
 - **Everyone:** `tessera_resolve::AstroRouter` (`from_consumer`, `route`, `entry_id`, `page_for_route`, `collisions`); `tessera_emit::AstroProfile`.
 
 ### Astro version
 
-Written against **Astro 7.3.5** (`astro/zod` is Zod 4.6). Verified in `node_modules` of that release: the `glob` loader's entry id (`getContentEntryIdAndSlug`: each path segment slugged by `github-slugger` 2.0.0's pure `slug()`, joined with `/`, a final `/index` removed, one extension removed) is what `AstroRouter::entry_id` computes; `astro/zod` re-exports `zod/v4`, where `z.strictObject`, `z.coerce.date()`, and `.default()` are the forms the generated module uses. **Not verified here, and left for phase 21** (as the asset and site-render contracts say): that Astro processes a relative `./img/a.png` in a collection entry's markdown, that a remark plugin setting `hProperties` reaches both Astro's heading-id pass and its image processing, and how the integration serves `_tessera/files/`.
+Written against **Astro 7.3.5** (`astro/zod` is Zod 4.6). Verified in `node_modules` of that release: the `glob` loader's entry id (`getContentEntryIdAndSlug`: each path segment slugged by `github-slugger` 2.0.0's pure `slug()`, joined with `/`, a final `/index` removed, one extension removed) is what `AstroRouter::entry_id` computes; `astro/zod` re-exports `zod/v4`, where `z.strictObject`, `z.coerce.date()`, and `.default()` are the forms the generated module uses. **Not verified here, and left for phase 21** (as the asset and site-render contracts say): that Astro processes a relative `./img/a.png` in a collection entry's markdown, that a remark plugin setting `hProperties` reaches both Astro's heading-id pass and its image processing, and how the integration serves `_ascribe/files/`.
 
 ### Decisions
 
