@@ -26,6 +26,7 @@ if (process.argv.includes("--tests")) {
     entryPoints: {
       run: "test/integration/run.ts",
       "suite/index": "test/integration/suite/index.ts",
+      "suite/activation.it": "test/integration/suite/activation.it.ts",
       "suite/quill.it": "test/integration/suite/quill.it.ts",
       "suite/stub.it": "test/integration/suite/stub.it.ts",
     },
