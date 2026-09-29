@@ -16,13 +16,13 @@ use crate::fs::{FileSystem, Probe, Sources};
 /// rereading the disk. Only what a reference can probe matters, so it holds
 /// paths, not contents.
 pub(crate) struct Overlay {
-    base: Box<dyn FileSystem>,
+    base: Box<dyn FileSystem + Send>,
     added: BTreeSet<RelPath>,
     removed: BTreeSet<RelPath>,
 }
 
 impl Overlay {
-    pub(crate) fn new(base: Box<dyn FileSystem>) -> Overlay {
+    pub(crate) fn new(base: Box<dyn FileSystem + Send>) -> Overlay {
         Overlay {
             base,
             added: BTreeSet::new(),
