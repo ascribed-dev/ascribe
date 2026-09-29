@@ -14,6 +14,7 @@ tessera-syntax.workspace = true
 tessera-model.workspace = true
 tessera-check.workspace = true
 tessera-resolve.workspace = true
+tessera-emit.workspace = true
 lsp-server = "0.10"
 lsp-types = "0.97"
 crossbeam-channel = "0.5"
@@ -26,6 +27,10 @@ tempfile = "3"
 
 [[bench]]
 name = "keystroke"
+harness = false
+
+[[bench]]
+name = "completion"
 harness = false
 
 [lints]

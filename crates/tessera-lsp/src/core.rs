@@ -26,6 +26,7 @@ use tessera_resolve::{
 use crate::compute::to_lsp;
 use crate::docs::Doc;
 use crate::fsx::{BufferFs, LayerFs};
+use crate::nav::Ctx;
 use crate::position::Encoding;
 use crate::uri::{normalize, path_to_uri, relative_to, uri_to_path};
 
@@ -779,5 +780,27 @@ impl Core {
             }
             Kind::Model | Kind::Asset(_) => None,
         }
+    }
+
+    /// What a navigation request needs for a document: the current snapshot,
+    /// the file's content path, the model and its text. `None` for a document
+    /// that isn't a source file of the project.
+    pub(crate) fn nav_target(&self, uri: &Uri) -> Option<Ctx> {
+        let path = Core::doc_path(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        let Kind::Source(content, _) = loaded.classify(&path)? else {
+            return None;
+        };
+        let snapshot = loaded.inc.snapshot();
+        snapshot.file(&content)?;
+        Some(Ctx {
+            snapshot,
+            path: content,
+            model: loaded.model.clone(),
+            model_text: loaded.model_text.clone(),
+            config: self.config.clone()?,
+            content_dir: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
+            encoding: self.encoding,
+        })
     }
 }

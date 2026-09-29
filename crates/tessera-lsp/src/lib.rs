@@ -6,10 +6,15 @@
 //! the editor's build, as the author types. See the README for the design, the
 //! semantic token legend, and how stale results are kept from the editor.
 
+mod complete;
 mod compute;
 mod core;
+mod definition;
 mod docs;
 mod fsx;
+mod hover;
+mod links;
+mod nav;
 mod position;
 mod server;
 mod tokens;

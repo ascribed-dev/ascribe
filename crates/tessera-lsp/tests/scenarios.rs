@@ -52,6 +52,13 @@ fn the_initialize_result_advertises_only_what_is_implemented() {
     assert_eq!(
         keys,
         [
+            "codeLensProvider",
+            "completionProvider",
+            "definitionProvider",
+            "documentLinkProvider",
+            "executeCommandProvider",
+            "hoverProvider",
+            "inlayHintProvider",
             "positionEncoding",
             "semanticTokensProvider",
             "textDocumentSync"

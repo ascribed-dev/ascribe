@@ -7,9 +7,10 @@ computes nothing itself: every diagnostic comes from `tessera_check`, over a
 `tessera_resolve::IncrementalProject`, so the editor and the command line can't
 disagree (SPEC §8, §10).
 
-This is phase 15: initialization, document and file synchronization,
-diagnostics, and semantic tokens. Completion, hover, navigation, CodeLens, and
-inlay hints are phase 16; code actions, rename, and formatting are phase 24.
+Phase 15 built initialization, document and file synchronization, diagnostics,
+and semantic tokens. Phase 16 added completion, hover, go to definition,
+document links, CodeLens, and inlay hints (see [Navigation](#navigation));
+code actions, rename, and formatting are phase 24.
 
 ## Semantic token legend
 
@@ -58,7 +59,9 @@ parity test converts before comparing.)
 ## Capabilities
 
 Advertised: incremental text document sync (open/close, no save), semantic
-tokens (full and range), and the position encoding. Registered dynamically after
+tokens (full and range), the position encoding, and, from phase 16, completion
+(triggered by `@ { ( # / = , |` and a space), hover, definition, document
+links, CodeLens, inlay hints, and one command (`ascribe.openFile`, below). Registered dynamically after
 `initialized`, when the client allows it: `workspace/didChangeWatchedFiles`.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
 advertise pull diagnostics.
@@ -98,6 +101,67 @@ advertise pull diagnostics.
   internal error where a response is owed; the server keeps running. Nothing is
   ever written to stdout except LSP messages.
 
+## Navigation
+
+Every request is answered from the snapshot the project has when the request
+is handled (taken under the lock, computed without it), so an answer never
+comes from a stale project: a request that follows an edit sees the edit. A
+document that isn't a source file of the project (an `untitled:` buffer, a file
+outside the content root, `ascribe.toml`) gets `null`. All positions go through
+the negotiated encoding and `LineIndex`.
+
+**One implementation of the reference rules.** What a link, an image, or an
+include names, and whether it's there, comes from the source index
+(`Project::resolutions`, `FileIndex::includes`), which calls
+`tessera_resolve::references`, the code `ascribe check` uses. The features
+below only *read* those results; where a request needs to resolve text that
+isn't in the index yet (a destination being typed), they call
+`references::reference_target` and `references::include_target`. Availability
+text and labels come from `tessera_emit::labels`, the code the emitter builds
+`<ascribe-availability>` from (element contract §0 and §4).
+
+| Module | Feature |
+|---|---|
+| `complete.rs` | Completion |
+| `hover.rs` | Hover |
+| `definition.rs` | Go to definition |
+| `links.rs` | Document links, CodeLens, inlay hints, and the `ascribe.openFile` command |
+| `nav.rs` | What they share: the request's state (`Ctx`), what is under the cursor (`hit_at`), previews, relative paths |
+
+**Completion** is decided from the line up to the cursor (a file being typed
+rarely parses into the construct the author is in the middle of), and, for what
+each context offers, from the content model and the index:
+
+| Cursor | Offers |
+|---|---|
+| `@` at the start of a line (also after `>` and list markers) | Built-in directives and project widgets, with their descriptions, and `end` |
+| In `{…}` after a directive's name | Its schema's attribute keys (not those already written); after `=`, the allowed values: an enumeration, `true`/`false`, note types, or a dimension's values with their display labels; after `\|`, the members not yet chosen. `@variant`'s keys are the model's dimensions |
+| In `{…}` after an image | `[images.attributes]`'s keys |
+| `@available:` and frontmatter `available:` | At the start: targets (values with labels), dimension names, feature keys (only as the whole spec). After a target: lifecycle states. In a history `(…)`: states |
+| `{` in prose, a title, a heading, a text primary, or a `phrases=true` fence | Declared phrase keys, each showing its value |
+| `@include:` | Source files, relative to the file (or from the content root after a `/`); after `#`, the ids of the file named |
+| A link destination, `](…`, or a reference definition | Pages and headings by **title** (Q161): inserts the relative path and the source id, shows the path as the detail |
+
+Nothing is offered inside inline code or a code fence. A search is cut at 100
+items and marked incomplete, so the client asks again as the author types.
+
+**Hover** (Q162): a link or image (its project-relative path, the title, a
+plain-text preview of the first paragraph), an include (the same; a fragment
+says so), a phrase (its value), an availability spec or feature key (SPEC
+§9.4's text), and a directive or attribute key (its schema).
+
+**Go to definition** (Q163): links and includes to the file or heading;
+`@id`'s primary to its heading; phrases and feature keys to their entries in
+`ascribe.toml`.
+
+**Document links** (Q165) make every link, image, and include destination
+clickable, with `#L<line>` for a heading. **CodeLens** (Q164) puts
+`Includes <file> › <heading>` above each `@include`. Its command,
+`ascribe.openFile`, is the server's own (`workspace/executeCommand`, which the
+language client wires from the capability): it answers by sending
+`window/showDocument`, so **no client code is needed**. **Inlay hints** (Q166)
+show the resolved title inside the `[` of an empty-text link.
+
 ## Performance
 
 `cargo bench -p tessera-lsp --bench keystroke` types into a page, and into a
@@ -128,6 +192,32 @@ update's `Affected` lists. A round also covers what its files include and
 included at the previous round, because a page that starts or stops including a
 fragment changes the diagnostics located in that fragment (an `include-cycle`),
 and `Affected::recheck` doesn't list the fragment.
+
+### Completion
+
+`cargo bench -p tessera-lsp --bench completion` (release build) types the text
+of each completion context into a page of the same generated projects
+(`benches/synthetic`, shared with `keystroke`) and times `didChange` to the
+completion response, with the server checking the edit in the background as it
+would in an editor. 100 requests per context, median / 95th percentile; one run
+on a 4-core 2.1 GHz Xeon container:
+
+| Context | 20 pages | 300 | 1,000 | 3,000 pages |
+|---|---|---|---|---|
+| directive name | 0.11 / 0.15 ms | 0.12 / 0.22 ms | 0.12 / 0.19 ms | 0.12 / 0.21 ms |
+| attribute values | 0.08 / 0.11 ms | 0.06 / 0.13 ms | 0.07 / 0.28 ms | 0.08 / 0.34 ms |
+| phrase | 0.06 / 0.10 ms | 0.06 / 0.14 ms | 0.06 / 0.19 ms | 0.06 / 0.24 ms |
+| include path | 0.35 / 0.59 ms | 0.67 / 0.87 ms | 1.4 / 2.2 ms | 3.6 / 4.7 ms |
+| include id | 0.22 / 0.43 ms | 0.58 / 0.81 ms | 0.60 / 1.1 ms | 0.79 / 2.7 ms |
+| link, nothing typed | 0.20 / 0.30 ms | 0.70 / 0.86 ms | 1.1 / 1.3 ms | 1.7 / 2.0 ms |
+| link, page title | 0.36 / 0.50 ms | 0.90 / 1.8 ms | 2.9 / 4.7 ms | 5.9 / 8.1 ms |
+| link, heading | 0.23 / 0.30 ms | 1.1 / 1.2 ms | 1.6 / 2.2 ms | 2.8 / 3.2 ms |
+
+Every context is far under the 50 ms target at 3,000 pages (the worst 95th
+percentile is 8 ms). Link and include completion scan the snapshot's pages and
+headings (no cache, so it can't be stale), rank the matches, and cut the list at
+100; the cost grows linearly with the project and the ranking is a sort of the
+matches.
 
 ## Library choice
 
@@ -160,4 +250,11 @@ scaffold and the protocol types), over `tower-lsp-server`.
   over stdio and compares its published diagnostics with
   `ascribe check --build <name> --format json`, for every build of
   `examples/quill` and fixture projects with known problems.
-- `benches/keystroke.rs` records the time from an edit to its diagnostics.
+- `tests/navigation.rs` scripts every phase 16 feature over a copy of
+  `examples/quill` (with a features registry added): each completion context,
+  hover, definition, document links, CodeLens and its command, inlay hints,
+  answers after an edit or a deletion, the negotiated encodings, files outside
+  the project, and a request of every kind at every position of several files
+  (including multi-byte text) that must never fail.
+- `benches/keystroke.rs` records the time from an edit to its diagnostics;
+  `benches/completion.rs` the time from an edit to its completion.

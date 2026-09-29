@@ -1262,6 +1262,7 @@ dependencies = [
  "tempfile",
  "tessera-check",
  "tessera-core",
+ "tessera-emit",
  "tessera-model",
  "tessera-resolve",
  "tessera-syntax",

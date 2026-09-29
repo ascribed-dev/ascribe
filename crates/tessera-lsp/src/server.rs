@@ -11,17 +11,24 @@ use lsp_types::notification::{
     DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument, DidOpenTextDocument,
     Notification as _,
 };
-use lsp_types::request::{Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest};
+use lsp_types::request::{
+    CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand, GotoDefinition, HoverRequest,
+    InlayHintRequest, Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest,
+};
 use lsp_types::{
-    InitializeParams, InitializeResult, SemanticTokens, SemanticTokensFullOptions,
-    SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams,
-    SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncOptions, Uri,
+    CodeLensOptions, CompletionOptions, DocumentLinkOptions, ExecuteCommandOptions,
+    GotoDefinitionResponse, HoverProviderCapability, InitializeParams, InitializeResult, OneOf,
+    SemanticTokens, SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
+    SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
+    ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
+    Uri,
 };
 use tessera_core::{LineIndex, Span};
 
 use crate::compute::{Outcome, compute};
 use crate::core::Core;
+use crate::links::OPEN_FILE;
+use crate::nav::Ctx;
 use crate::position::Encoding;
 use crate::tokens::{legend, semantic_tokens};
 use crate::{Options, PublishInfo};
@@ -53,6 +60,9 @@ struct Shared {
     wake: Condvar,
     options: Options,
     idle: Arc<AtomicBool>,
+    /// Whether the client can be asked to show a document
+    /// (`window/showDocument`), which the open-file command needs.
+    show_document: bool,
 }
 
 impl Shared {
@@ -97,6 +107,29 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                     work_done_progress_options: Default::default(),
                 }),
             ),
+            completion_provider: Some(CompletionOptions {
+                resolve_provider: Some(false),
+                trigger_characters: Some(
+                    ["@", "{", "(", "#", "/", "=", ",", "|", " "]
+                        .map(str::to_owned)
+                        .to_vec(),
+                ),
+                ..CompletionOptions::default()
+            }),
+            hover_provider: Some(HoverProviderCapability::Simple(true)),
+            definition_provider: Some(OneOf::Left(true)),
+            document_link_provider: Some(DocumentLinkOptions {
+                resolve_provider: Some(false),
+                work_done_progress_options: Default::default(),
+            }),
+            code_lens_provider: Some(CodeLensOptions {
+                resolve_provider: Some(false),
+            }),
+            inlay_hint_provider: Some(OneOf::Left(true)),
+            execute_command_provider: Some(ExecuteCommandOptions {
+                commands: vec![OPEN_FILE.to_owned()],
+                work_done_progress_options: Default::default(),
+            }),
             ..ServerCapabilities::default()
         },
         server_info: Some(ServerInfo {
@@ -117,11 +150,18 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .unwrap_or(false);
     core.folders = workspace_folders(&params);
     let idle = options.idle.clone().unwrap_or_default();
+    let show_document = params
+        .capabilities
+        .window
+        .as_ref()
+        .and_then(|w| w.show_document.as_ref())
+        .is_some_and(|s| s.support);
     let shared = Arc::new(Shared {
         core: Mutex::new(core),
         wake: Condvar::new(),
         options,
         idle,
+        show_document,
     });
     let worker = {
         let shared = shared.clone();
@@ -290,6 +330,49 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
         match request.method.as_str() {
             SemanticTokensFullRequest::METHOD => semantic_tokens_request(shared, &request, false),
             SemanticTokensRangeRequest::METHOD => semantic_tokens_request(shared, &request, true),
+            Completion::METHOD => navigation(shared, &request, |p: lsp_types::CompletionParams| {
+                let at = p.text_document_position;
+                (at.text_document.uri, move |ctx: &Ctx| {
+                    crate::complete::complete(ctx, at.position)
+                })
+            }),
+            HoverRequest::METHOD => navigation(shared, &request, |p: lsp_types::HoverParams| {
+                let at = p.text_document_position_params;
+                (at.text_document.uri, move |ctx: &Ctx| {
+                    crate::hover::hover(ctx, at.position)
+                })
+            }),
+            GotoDefinition::METHOD => {
+                navigation(shared, &request, |p: lsp_types::GotoDefinitionParams| {
+                    let at = p.text_document_position_params;
+                    (at.text_document.uri, move |ctx: &Ctx| {
+                        crate::definition::definition(ctx, at.position)
+                            .map(GotoDefinitionResponse::Scalar)
+                    })
+                })
+            }
+            DocumentLinkRequest::METHOD => {
+                navigation(shared, &request, |p: lsp_types::DocumentLinkParams| {
+                    (p.text_document.uri, |ctx: &Ctx| {
+                        Some(crate::links::document_links(ctx))
+                    })
+                })
+            }
+            CodeLensRequest::METHOD => {
+                navigation(shared, &request, |p: lsp_types::CodeLensParams| {
+                    (p.text_document.uri, |ctx: &Ctx| {
+                        Some(crate::links::code_lenses(ctx))
+                    })
+                })
+            }
+            InlayHintRequest::METHOD => {
+                navigation(shared, &request, |p: lsp_types::InlayHintParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        Some(crate::links::inlay_hints(ctx, p.range))
+                    })
+                })
+            }
+            ExecuteCommand::METHOD => execute_command(shared, &request),
             method => Err(Response::new_err(
                 request.id.clone(),
                 ErrorCode::MethodNotFound as i32,
@@ -317,6 +400,78 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
 
 fn invalid(id: &RequestId, message: String) -> Response {
     Response::new_err(id.clone(), ErrorCode::InvalidParams as i32, message)
+}
+
+/// Answers a request about one document from the project as it is now: the
+/// snapshot is taken under the lock, and the answer computed without it. A
+/// document that isn't a source file of the project has no answer (`null`).
+fn navigation<P, R, F>(
+    shared: &Shared,
+    request: &Request,
+    read: impl FnOnce(P) -> (Uri, F),
+) -> Result<serde_json::Value, Response>
+where
+    P: serde::de::DeserializeOwned,
+    R: serde::Serialize,
+    F: FnOnce(&Ctx) -> Option<R>,
+{
+    let params: P = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (uri, answer) = read(params);
+    let target = shared.lock().nav_target(&uri);
+    let Some(ctx) = target else {
+        return Ok(serde_json::Value::Null);
+    };
+    match answer(&ctx) {
+        Some(value) => serde_json::to_value(value).map_err(|e| {
+            Response::new_err(
+                request.id.clone(),
+                ErrorCode::InternalError as i32,
+                e.to_string(),
+            )
+        }),
+        None => Ok(serde_json::Value::Null),
+    }
+}
+
+/// `ascribe.openFile`, the command a CodeLens carries: asks the client to show
+/// a file (and a range of it).
+fn execute_command(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let params: lsp_types::ExecuteCommandParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    if params.command != OPEN_FILE {
+        return Err(invalid(
+            &request.id,
+            format!("unknown command {}", params.command),
+        ));
+    }
+    let uri: Option<Uri> = params
+        .arguments
+        .first()
+        .and_then(|v| v.as_str())
+        .and_then(|s| std::str::FromStr::from_str(s).ok());
+    let Some(uri) = uri.filter(|u| crate::uri::uri_to_path(u).is_some()) else {
+        return Err(invalid(&request.id, "expected a file: URI".to_owned()));
+    };
+    let selection: Option<lsp_types::Range> = params
+        .arguments
+        .get(1)
+        .and_then(|v| serde_json::from_value(v.clone()).ok());
+    if shared.show_document {
+        let id = format!("ascribe-show-{}", NEXT.fetch_add(1, Ordering::Relaxed));
+        shared.lock().send(Request::new(
+            RequestId::from(id),
+            "window/showDocument".to_owned(),
+            ShowDocumentParams {
+                uri,
+                external: None,
+                take_focus: Some(true),
+                selection,
+            },
+        ));
+    }
+    Ok(serde_json::Value::Null)
 }
 
 fn semantic_tokens_request(
