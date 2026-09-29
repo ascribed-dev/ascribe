@@ -1009,7 +1009,7 @@ severity = "error"
 level = "file"
 spec = "6"
 rule = "20.6"
-message = "widget name `{name}` is reserved: names starting with tessera- belong to Tessera's element library"
+message = "widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library"
 messages.html = "widget name `{name}` is reserved by HTML and can't be a custom element"
 
 [[diagnostic]]
