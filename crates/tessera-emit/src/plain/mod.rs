@@ -17,14 +17,15 @@
 //! | Links | Absolute URLs (the site's origin, when the content model has one) |
 //!
 //! Pages start with their title as a level-1 heading (Q111). Raw HTML in the
-//! source is written as literal text, since the output has no HTML (Q112).
+//! source keeps its text and loses its tags, since the output has no HTML
+//! (Q112).
 
 mod inline;
 
 use tessera_core::RelPath;
 use tessera_model::{ContentModel, PlainContent};
 use tessera_resolve::{ResolvedBlock, ResolvedKind, ResolvedLink, ResolvedPage};
-use tessera_syntax::{BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
+use tessera_syntax::{Alignment, BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
 
 use crate::emitter::{EmitContext, Emitter, PageContext};
 use crate::error::EmitError;
@@ -50,7 +51,7 @@ impl Emitter for PlainEmitter {
 
     fn warnings(&self, cx: &EmitContext<'_>) -> Vec<String> {
         // content-model.md, decision 10.
-        // SPEC-QUESTION(Q120): the warning isn't a registry diagnostic.
+        // Resolved Q120: the warning isn't a registry diagnostic.
         if cx.site_origin().is_none() {
             vec![
                 "[consumer] site isn't set in tessera.toml, so links in the plain-markdown output are root-relative, not absolute URLs"
@@ -69,7 +70,7 @@ fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
         model: cx.emit.model,
     };
     let mut chunks = Vec::new();
-    // SPEC-QUESTION(Q111): what a plain page starts with.
+    // Resolved Q111: what a plain page starts with.
     if let Some(title) = &page.title {
         // A folded YAML scalar can hold a line break; a heading can't.
         let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -178,14 +179,14 @@ impl Renderer<'_> {
             ResolvedKind::Group { name, arms, .. } => {
                 let mut out = Vec::new();
                 let widget = self.model.widget(name);
-                // SPEC-QUESTION(Q113): a widget group's fallback and arms.
+                // Resolved Q113: a widget group's fallback and arms.
                 if let Some(widget) = widget {
                     out.extend(self.fallback(widget));
                     if widget.plain_content == PlainContent::Drop {
                         return out;
                     }
                 }
-                // SPEC-QUESTION(Q115): one section per arm, led by its label.
+                // Resolved Q115: one section per arm, led by its label.
                 for arm in arms {
                     if let Some(label) = self.arm_label(block, &arm.opener) {
                         out.push(format!("**{label}**"));
@@ -224,7 +225,16 @@ impl Renderer<'_> {
                 vec![self.inlines(block, &p.inlines, Style::default())]
             }
             BlockKind::CodeBlock(c) => vec![fenced(c)],
-            BlockKind::HtmlBlock(h) => vec![html_as_text(&h.literal)],
+            BlockKind::HtmlBlock(h) => {
+                // An HTML block with no text (a comment, a script) leaves
+                // nothing behind (Q112).
+                let text = html_as_text(&h.literal);
+                if text.is_empty() {
+                    Vec::new()
+                } else {
+                    vec![text]
+                }
+            }
             BlockKind::ThematicBreak => vec!["---".to_owned()],
             BlockKind::Table(t) => vec![self.table(block, t)],
             BlockKind::Directive(line) => self.directive(block, line),
@@ -376,7 +386,7 @@ impl Renderer<'_> {
 
     /// A widget's plain fallback, with phrases substituted. The widget's own
     /// title, primary, and attributes aren't shown.
-    // SPEC-QUESTION(Q113): what plain markdown shows of a widget besides its
+    // Resolved Q113: what plain markdown shows of a widget besides its
     // fallback and wrapped content.
     fn fallback(&self, widget: &tessera_model::Widget) -> Vec<String> {
         widget
@@ -413,9 +423,16 @@ impl Renderer<'_> {
             cells.resize(width, String::new());
             lines.push(format!("| {} |", cells.join(" | ")));
             if n == 0 {
-                // SPEC-QUESTION(Q116): the delimiter row isn't in the tree, so
-                // the columns' alignment isn't kept.
-                lines.push(format!("|{}", " --- |".repeat(width)));
+                // Each column keeps its alignment (resolved Q116).
+                let delimiters: Vec<&str> = (0..width)
+                    .map(|i| match table.alignments.get(i) {
+                        Some(Alignment::Left) => ":---",
+                        Some(Alignment::Center) => ":---:",
+                        Some(Alignment::Right) => "---:",
+                        Some(Alignment::None) | None => "---",
+                    })
+                    .collect();
+                lines.push(format!("| {} |", delimiters.join(" | ")));
             }
         }
         lines.join("\n")
@@ -562,14 +579,60 @@ fn fenced(code: &CodeBlock) -> String {
     }
 }
 
-/// Raw HTML written as text (Q112): each line escaped, so that a parser reads
-/// it as prose, and no tag reaches the output.
+/// Raw HTML in the plain output, which has no HTML (resolved Q112): its text
+/// is kept and its tags are dropped, so `<kbd>Ctrl</kbd>` reads `Ctrl`.
+/// Comments, and the contents of `<script>` and `<style>`, aren't text and are
+/// dropped too. Each line is escaped, so a parser reads it as prose.
 fn html_as_text(html: &str) -> String {
-    // SPEC-QUESTION(Q112): raw HTML in the source, in a no-HTML output.
-    html.lines()
+    html_text(html)
+        .lines()
         .map(|l| escape(l.trim(), true))
+        .filter(|l| !l.is_empty())
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+/// The text of raw HTML: tags, comments, and `<script>` and `<style>`
+/// contents removed.
+pub(crate) fn html_text(html: &str) -> String {
+    let mut out = String::with_capacity(html.len());
+    let mut rest = html;
+    while let Some(open) = rest.find('<') {
+        out.push_str(&rest[..open]);
+        let tag = &rest[open..];
+        if let Some(after) = tag.strip_prefix("<!--") {
+            rest = after.find("-->").map_or("", |end| &after[end + 3..]);
+            continue;
+        }
+        // A tag starts with `<` and a letter, `/`, `!`, or `?`; any other
+        // `<` is text, as is one with no `>` after it.
+        let starts_tag = tag[1..]
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphabetic() || matches!(c, '/' | '!' | '?'));
+        let close = if starts_tag { tag.find('>') } else { None };
+        let Some(close) = close else {
+            out.push('<');
+            rest = &tag[1..];
+            continue;
+        };
+        let name: String = tag[1..close]
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
+        rest = &tag[close + 1..];
+        if name == "script" || name == "style" {
+            let end = format!("</{name}");
+            let lower = rest.to_ascii_lowercase();
+            rest = match lower.find(&end) {
+                Some(at) => rest[at..].find('>').map_or("", |gt| &rest[at + gt + 1..]),
+                None => "",
+            };
+        }
+    }
+    out.push_str(rest);
+    out
 }
 
 /// Replaces each `{key}` that names a declared phrase with its value.

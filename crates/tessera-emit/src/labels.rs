@@ -12,9 +12,10 @@ use tessera_syntax::{DirectiveLine, Inline, InlineKind};
 /// Each entry is its target's label, then in parentheses its state and the
 /// version where it begins (`3.4+`). A target with no state is generally
 /// available (`GA`); a bare version is `GA` from that version; a history
-/// lists each step (`preview 3.3+, GA 3.5+`). A dimension name standing for
-/// all its values shows the dimension's label.
-// SPEC-QUESTION(Q114): the exact wording of the availability line.
+/// lists each state and the version it begins at (`preview 3.3, GA 3.5,
+/// deprecated 4.0`). A dimension name standing for all its values shows the
+/// dimension's label. This is the element contract's text for each target
+/// (`packages/elements/CONTRACT.md` §4), as resolved in Q114.
 pub fn availability_display(model: &ContentModel, spec: &AvailabilitySpec) -> String {
     let ga = model
         .lifecycle_state("ga")
@@ -45,7 +46,7 @@ pub fn availability_display(model: &ContentModel, spec: &AvailabilitySpec) -> St
                 } => format!("{}, {}+", state(&s.text), v.text),
                 Detail::History(steps) => steps
                     .iter()
-                    .map(|step| format!("{} {}+", state(&step.state.text), step.version.text))
+                    .map(|step| format!("{} {}", state(&step.state.text), step.version.text))
                     .collect::<Vec<_>>()
                     .join(", "),
             };
@@ -66,7 +67,7 @@ pub fn availability_display_of_text(model: &ContentModel, text: &str) -> Option<
 /// attributes name (SPEC §9.4): the labels of one attribute's values are
 /// joined with ` / `, and several attributes with `, `. `None` for an arm
 /// with no attributes (a labeled arm's label is its title).
-// SPEC-QUESTION(Q115): how an arm with several values or attributes is labeled.
+// Resolved Q115: how an arm with several values or attributes is labeled.
 pub fn dimensional_label(model: &ContentModel, opener: &DirectiveLine) -> Option<String> {
     let block = opener.attributes.as_ref()?;
     let parts: Vec<String> = block

@@ -87,7 +87,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         Ok(found) => found,
         Err(message) => return fail(err, &message),
     };
-    // SPEC-QUESTION(Q119): what `--emit site` does before phase 20.
+    // Resolved Q119: what `--emit site` does before phase 20.
     if args.emit.contains(&Emit::Site) {
         return fail(
             err,
@@ -132,7 +132,7 @@ fn write_outputs(
     let root: &Path = project.root();
     let output_dir = root.join(&model.project.output_dir);
     let output = OutputDir::lock(&output_dir).map_err(store_message)?;
-    // SPEC-QUESTION(Q119): routes come from the default router until phase 20
+    // Resolved Q119: routes come from the default router until phase 20
     // supplies the `astro` profile's.
     let router = DefaultRouter::from_consumer(&model.consumer);
 

@@ -52,7 +52,8 @@ fn write(
     for inline in inlines {
         match &inline.kind {
             InlineKind::Text(text) => escape_into(text, st),
-            InlineKind::Html(text) => escape_into(text, st),
+            // A tag is dropped, and its text is in the text around it (Q112).
+            InlineKind::Html(text) => escape_into(&super::html_text(text), st),
             InlineKind::Phrase(p) => escape_into(&format!("{{{}}}", p.key), st),
             InlineKind::Code(code) => {
                 st.out.push_str(&code_span(code));
@@ -194,7 +195,7 @@ fn image_inline(
     st.line_start = false;
     match destination {
         // The attribute block (`{width=600}`) has no plain-markdown form.
-        // SPEC-QUESTION(Q116): what plain markdown does with image attributes.
+        // Resolved Q116: what plain markdown does with image attributes.
         Some(d) => st
             .out
             .push_str(&format!("![{alt}]({d}{})", title(image.title.as_deref()))),

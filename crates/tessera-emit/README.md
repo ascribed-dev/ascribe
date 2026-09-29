@@ -37,7 +37,7 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 | Phrases, includes, glossary links | Resolved |
 | Links | Absolute URLs with the `[consumer] site` origin; root-relative, with a warning from `tessera build`, without one |
 | Images and linked files | Copied into the output at their mirrored path, and written as relative references |
-| Raw HTML in the source | Literal text (Q112) |
+| Raw HTML in the source | Its text, without the tags; comments, scripts, and styles dropped (Q112) |
 
 Code blocks are always fenced (the fence is longer than any backtick run in the code, and a `phrases=true` info word is dropped), and text is escaped so that an unmodified CommonMark parser reads back the same text.
 
@@ -85,7 +85,7 @@ Every block has a `type`, and:
 | `list` | `ordered`, `start`, `tight`, `items` (each `{children}`) |
 | `html` | `literal` |
 | `thematicBreak` | |
-| `table` | `rows`: each `{header, cells}`, a cell being `{inlines}` |
+| `table` | `alignments`: each column's `none`, `left`, `center`, or `right`; `rows`: each `{header, cells}`, a cell being `{inlines}` |
 | `directive` | A line-form directive that survived: `name`, `attributes`, `title`, `primary`, `binding` (`own`, `heading`, `followingBlock`, `unbound`), `annotation` |
 | `container` | `name`, `attributes`, `title`, `children` |
 | `group` | `name`, `arms`: each `{label, attributes, title, span, children}` |

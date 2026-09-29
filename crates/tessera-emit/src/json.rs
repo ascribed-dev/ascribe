@@ -17,7 +17,7 @@ use crate::emitter::{Emitter, PageContext};
 use crate::error::EmitError;
 use crate::labels::{attribute_values, availability_display, dimensional_label, plain_text};
 
-// SPEC-QUESTION(Q118): the JSON output's shape (SPEC §9.4 says only "the
+// Resolved Q118: the JSON output's shape (SPEC §9.4 says only "the
 // resolved tree, for custom consumers").
 
 /// The version of the JSON schema. It changes only when a field is removed or
@@ -209,6 +209,8 @@ enum BlockBody {
     },
     ThematicBreak,
     Table {
+        /// Each column's alignment: `none`, `left`, `center`, or `right`.
+        alignments: Vec<&'static str>,
         rows: Vec<RowJson>,
     },
     /// A line-form directive that survived: `@available` with its annotation,
@@ -519,6 +521,16 @@ impl Writer<'_, '_> {
                 },
                 BlockKind::ThematicBreak => BlockBody::ThematicBreak,
                 BlockKind::Table(t) => BlockBody::Table {
+                    alignments: t
+                        .alignments
+                        .iter()
+                        .map(|a| match a {
+                            tessera_syntax::Alignment::None => "none",
+                            tessera_syntax::Alignment::Left => "left",
+                            tessera_syntax::Alignment::Center => "center",
+                            tessera_syntax::Alignment::Right => "right",
+                        })
+                        .collect(),
                     rows: t
                         .rows
                         .iter()
