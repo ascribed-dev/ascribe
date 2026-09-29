@@ -33,6 +33,9 @@ struct Ctx<'a> {
     file: &'a SourceFile,
     id: FileId,
     schemas: Vec<DirectiveSchema>,
+    /// The file's link reference definitions, whose destinations hold the
+    /// phrases of the reference forms that use them (Q43).
+    definitions: Vec<tessera_syntax::LinkDefinition>,
     issues: Vec<Issue>,
 }
 
@@ -79,6 +82,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         file,
         id: file.id,
         schemas: model.directive_schemas(),
+        definitions: doc.definitions.clone(),
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());

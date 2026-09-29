@@ -152,25 +152,25 @@ fn problems(outcome: Option<&Outcome>) -> Vec<String> {
 }
 
 #[test]
-fn bundled_samples_are_discovered_and_skipped_with_recorded_reasons() {
-    // Only this sample: every phase that lands removes its tag's skip entry,
-    // so the other bundled cases stop being skipped with an empty registry
-    // (`samples/appendix-b` is tagged `structure`, which phase 06 handles).
-    // The sample is tagged `include` (phase 11 handles it) and `resolve`
-    // (phase 12): a stand-in adapter takes `include`, so the case is skipped
-    // for `resolve` alone, and is again a good example when phase 12 lands if
-    // the stand-in also takes `resolve` and another sample is skipped instead.
+fn bundled_cases_are_discovered_and_skipped_with_recorded_reasons() {
+    // Every phase that lands removes its tag's skip entry, so the bundled
+    // cases stop being skipped with an empty registry. This runs one case
+    // with stand-in adapters for the tags whose phases have landed, so it's
+    // skipped for the one that hasn't. `projects/quill` carries `check`,
+    // `include`, and `resolve` (phases 10, 11, and 12 handle them) and
+    // `page-check` (phase 14): when phase 14 lands, pick a case that is
+    // skipped for a tag that's still unimplemented (`output`, phases 18 and 20).
     let filter = Filter {
-        case: Some("samples/include-and-selection".into()),
+        case: Some("projects/quill".into()),
         ..Filter::default()
     };
     let report = Suite::bundled()
-        .run(&fake_registry(vec!["include"]), &filter)
+        .run(&fake_registry(vec!["check", "include", "resolve"]), &filter)
         .unwrap();
     println!("{}", report.summary());
     assert!(report.success(), "{}", report.summary());
 
-    for id in ["samples/include-and-selection"] {
+    for id in ["projects/quill"] {
         match report.outcome(id) {
             Some(Outcome::Skipped { reasons }) => {
                 assert!(!reasons.is_empty());
@@ -183,8 +183,8 @@ fn bundled_samples_are_discovered_and_skipped_with_recorded_reasons() {
         }
     }
     let summary = report.summary();
-    assert!(summary.contains("skipped samples/include-and-selection"));
-    assert!(summary.contains("tag `resolve`: Adapter for tag `resolve`"));
+    assert!(summary.contains("skipped projects/quill"));
+    assert!(summary.contains("tag `page-check`: Adapter for tag `page-check`"));
 }
 
 #[test]

@@ -12,10 +12,6 @@
 #                                         optional; skips only these checks
 
 [[skip]]
-tag = "resolve"
-reason = "Adapter for tag `resolve` (resolution passes and build modes) not yet implemented; phase 12."
-
-[[skip]]
 tag = "page-check"
 reason = "Adapter for tag `page-check` (page-level diagnostics) not yet implemented; phase 14."
 

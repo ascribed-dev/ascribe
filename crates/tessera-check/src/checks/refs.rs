@@ -11,8 +11,8 @@
 
 use tessera_core::{Issue, Location, Span, diagnostics};
 use tessera_resolve::{
-    RefKind, destination_span, include_issue, include_target, reference_issue, reference_target,
-    resolve_reference,
+    RefKind, destination_phrases, destination_span, include_issue, include_target, reference_issue,
+    reference_target, resolve_reference,
 };
 use tessera_syntax::{Image, Inline, Link, LinkForm, Phrase};
 
@@ -41,6 +41,7 @@ impl Ctx<'_> {
             form: link.form,
             destination: &link.destination,
             phrases: &link.destination_phrases,
+            label: link.label,
             children: &link.children,
             alt: None,
         });
@@ -70,6 +71,7 @@ impl Ctx<'_> {
             form: image.form,
             destination: &image.destination,
             phrases: &image.destination_phrases,
+            label: image.label,
             children: &image.children,
             alt: Some(image.alt),
         });
@@ -77,14 +79,18 @@ impl Ctx<'_> {
 
     /// Runs the shared reference rules on one link or image.
     fn check_reference(&mut self, r: Reference<'_>) {
-        let target = reference_target(
-            r.kind,
+        // A reference form's phrases are its definition's (Q43).
+        let phrases = destination_phrases(
+            self.source(),
             r.form,
-            r.destination,
             r.phrases,
-            &self.file.path,
-            self.model,
+            r.label,
+            r.children,
+            r.alt,
+            r.destination,
+            &self.definitions,
         );
+        let target = reference_target(r.kind, r.destination, phrases, &self.file.path, self.model);
         let resolution = resolve_reference(
             r.kind,
             &target,
@@ -127,6 +133,7 @@ struct Reference<'a> {
     form: LinkForm,
     destination: &'a str,
     phrases: &'a [Phrase],
+    label: Option<Span>,
     children: &'a [Inline],
     alt: Option<Span>,
 }

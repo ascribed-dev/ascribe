@@ -19,9 +19,6 @@ use crate::slug::{default_slugger, slugger_by_name};
 pub enum Resolution {
     /// A URL with a scheme. Nothing to check or copy.
     External,
-    /// A reference form whose definition holds a declared phrase, which can't
-    /// be applied yet ([`crate::Target::Deferred`]). Nothing is said about it.
-    Deferred,
     /// A source file of the project: a page or a fragment.
     Source {
         /// The file's content path.

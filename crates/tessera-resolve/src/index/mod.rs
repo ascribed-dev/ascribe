@@ -30,8 +30,8 @@ use tessera_syntax::{
 };
 
 pub use headings::{ExplicitId, Heading, plain_text as heading_text};
-pub(crate) use refs::target_of;
 pub use refs::{Local, RefKind, Reference, Target};
+pub(crate) use refs::{substitute, target_of};
 
 /// Whether a file is published (SPEC §2.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -201,7 +201,14 @@ pub fn index_file(
 
     let mut visit = |block: &Block| {
         for inlines in walk::own_inlines(block) {
-            refs::collect_references(inlines, source, path, model, &mut references);
+            refs::collect_references(
+                inlines,
+                source,
+                path,
+                model,
+                &document.definitions,
+                &mut references,
+            );
             collect_phrases(inlines, block, model, &mut phrases);
         }
         match &block.kind {
@@ -220,6 +227,13 @@ pub fn index_file(
         }
     };
     walk::walk_blocks(&document.blocks, &mut visit);
+    // A definition's destination holds phrases too, once (Q43), wherever the
+    // links that use it are.
+    for definition in &document.definitions {
+        for phrase in &definition.destination_phrases {
+            phrases.push(phrase_use(phrase, PhrasePlace::Destination, model));
+        }
+    }
     // Destinations are found through the inlines above; sort the phrases they
     // add into document order.
     phrases.sort_by_key(|p: &PhraseUse| p.phrase.span);
