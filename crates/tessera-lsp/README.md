@@ -9,7 +9,8 @@ disagree (SPEC §8, §10).
 
 This is phase 15: initialization, document and file synchronization,
 diagnostics, and semantic tokens. Completion, hover, navigation, CodeLens, and
-inlay hints are phase 16; code actions, rename, and formatting are phase 24.
+inlay hints are phase 16; code actions, rename, and formatting are phase 24;
+the `ascribe/preview` request is phase 25.
 
 ## Semantic token legend
 
@@ -54,6 +55,50 @@ The server uses UTF-16 unless the client offers UTF-8 in
 through `tessera_core::LineIndex`. (The command line's JSON counts columns in
 characters; the two differ for a line with an astral-plane character, and the
 parity test converts before comparing.)
+
+## The preview request: `ascribe/preview`
+
+A custom request (phase 25) that renders a page the way the published site
+does, for the editor's preview. It answers from the current snapshot, so it
+includes unsaved edits, and it writes nothing. For a document and a build it
+resolves the page for the build (`Project::resolve_page`), writes the site
+markdown with `SiteEmitter` (`tessera_emit::emit_page`), and renders it with
+`tessera_emit::render_site_html`, which implements the site-render contract
+that the Astro plugin implements; both pass the fixtures in `tests/render/`,
+so heading ids and image attributes are the site's. No capability is
+advertised: a client that wants it sends the request.
+
+**Params**
+
+```jsonc
+{
+  "textDocument": { "uri": "file:///…/docs/install.md" },
+  "build": "cloud"        // optional: a build name; the default is `[editor] build`
+}
+```
+
+**Result.** Always an object; `page` is `null` when there is nothing to show,
+and `problems` says why. Field names are camelCase.
+
+| Field | Meaning |
+|---|---|
+| `build` | The build the answer is for. |
+| `builds` | Every build of the content model, in order: `{ name, editor, description }`. `editor` marks `[editor] build`, the picker's default. |
+| `projectRoot`, `contentRoot` | Absolute paths. The client may serve the preview files from the content root and nothing wider. |
+| `documentVersion` | The version of the open document the answer is from, or `null` when the file isn't open. A client that sent version *n* and gets an older one has raced its own change notification and asks again. |
+| `problems` | `{ severity: "error" \| "warning" \| "info", message }`: no project, an unknown build, a file that isn't a page (a fragment names the pages that include it), a page the build drops, an emit error, an asset the preview can't show. |
+| `page.path`, `page.route` | The page's content path and its route on the site. |
+| `page.title` | The page's title, phrases substituted. |
+| `page.frontmatter` | What the site output writes as frontmatter, as JSON. `available` is the list of targets a layout hands to `<ascribe-availability>` (Q142). |
+| `page.html` | The page's content as HTML, without frontmatter and without a layout. |
+| `page.assets` | Each asset the page uses: `{ reference, path, kind, servable }`. `reference` is what the HTML writes, before any `#fragment`: an image's `src` is relative to the page (`./_fragments/a.png`), a link target's `href` is the site URL. `path` is the absolute source file, **resolved from the file the reference is written in** (asset contract §7), so a fragment's image is the one beside the fragment. `servable` is `false` for a file outside the content root (Q182). References are percent-encoded as URLs are; compare them after normalizing (`packages/vscode/src/preview/refs.ts` does). |
+| `page.links` | Each link to a page: `{ href, path, id }`, `href` as the HTML writes it, `path` the target file, `id` the heading it names. |
+| `page.sections` | The headings written in the previewed file itself, in order: `{ id, line }`, `line` from 0, for following the cursor. |
+
+Every problem is in `problems`, not in a JSON-RPC error: a malformed request
+(parameters that don't parse) is the only error, `InvalidParams`. Answering
+takes a few milliseconds for a page (the integration test measures the
+median over 20 edits, and the VS Code suite measures edit to drawn).
 
 ## Capabilities
 

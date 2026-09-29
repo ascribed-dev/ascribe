@@ -370,7 +370,7 @@ fn preview_request(shared: &Shared, request: &Request) -> Result<serde_json::Val
     let target = shared.lock().preview_target(&params.text_document.uri);
     let result = match target {
         Ok(target) => crate::preview::preview(&target, params.build.as_deref()),
-        Err(result) => result,
+        Err(result) => *result,
     };
     serde_json::to_value(result).map_err(|e| {
         Response::new_err(

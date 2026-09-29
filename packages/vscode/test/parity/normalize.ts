@@ -17,6 +17,7 @@
 //   compared with straight ones.
 import type { Page } from "playwright-core";
 
+// SPEC-QUESTION(Q184): what the comparison leaves out.
 export interface Tree {
   tag: string;
   attrs: Record<string, string>;

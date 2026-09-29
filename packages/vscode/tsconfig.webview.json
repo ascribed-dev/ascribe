@@ -11,6 +11,8 @@
     "src/preview/protocol.ts",
     "src/preview/html.ts",
     "test/webview",
-    "vitest.config.ts"
+    "test/parity",
+    "vitest.config.ts",
+    "vitest.parity.config.ts"
   ]
 }

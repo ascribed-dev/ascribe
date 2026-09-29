@@ -206,7 +206,7 @@ pub(crate) struct Target {
 
 impl Core {
     /// Takes what `ascribe/preview` needs for a document.
-    pub(crate) fn preview_target(&self, uri: &Uri) -> Result<Target, PreviewResult> {
+    pub(crate) fn preview_target(&self, uri: &Uri) -> Result<Target, Box<PreviewResult>> {
         let document = uri_to_path(uri).map(|p| normalize(&p));
         let Some(loaded) = self.loaded.as_ref() else {
             let reason = match &self.model_problem {
@@ -215,10 +215,10 @@ impl Core {
                 }
                 None => "This workspace has no ascribe.toml, so there is no project to preview.",
             };
-            return Err(PreviewResult {
+            return Err(Box::new(PreviewResult {
                 problems: vec![PreviewProblem::error(reason)],
                 ..PreviewResult::default()
-            });
+            }));
         };
         let document = document.unwrap_or_default();
         let content_root = normalize(&loaded.root.join(loaded.layout.content_root.as_str()));
@@ -295,6 +295,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         )));
         return result;
     };
+    // SPEC-QUESTION(Q181): a fragment has no page; say which pages include it.
     if index.kind == FileKind::Fragment {
         let pages = snapshot.including_pages(path);
         let message = if pages.is_empty() {
@@ -351,7 +352,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
             .map(|p| &p.path),
     );
     for (route, pages) in collisions {
-        if pages.iter().any(|p| *p == path) {
+        if pages.contains(&path) {
             let names: Vec<String> = pages.iter().map(ToString::to_string).collect();
             result.problems.push(PreviewProblem::warning(format!(
                 "{route} is the route of {}, so the site output can't publish them together.",
@@ -381,6 +382,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
             continue;
         }
         let file = normalize(&cx.asset_source(&placed.source));
+        // SPEC-QUESTION(Q182): only the content root is served to the preview.
         let servable = relative_to(&target.content_root, &file)
             .and_then(|rel| RelPath::parse(&rel).ok())
             .is_some_and(|rel| rel.is_inside());
@@ -401,6 +403,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         });
     }
 
+    // SPEC-QUESTION(Q187): page links only; a glossary term's link isn't mapped to a file.
     let mut links: Vec<PreviewLink> = Vec::new();
     let mut sections: Vec<PreviewSection> = Vec::new();
     let lines = LineIndex::new(&index.source);
