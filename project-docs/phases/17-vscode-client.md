@@ -63,6 +63,6 @@ Q121 to Q126 (`project-docs/questions.md`), all with the proposed behavior imple
 
 ### Left open
 
-- **The end-to-end gate.** The `activation` (1 test) and `stub` (8 tests) suites pass in VS Code 1.139.1, run headless with `xvfb-run -a pnpm --filter tessera-vscode test:integration`. The `quill` suite needs phase 15's server (`TESSERA_BIN`) and has not run; until it does, the last acceptance criterion is open.
+- **The end-to-end gate is met.** With phase 15 merged, all three integration suites pass in VS Code 1.139.1, headless: `cargo build -p tessera-cli`, then `TESSERA_BIN=$PWD/target/debug/tessera xvfb-run -a pnpm --filter tessera-vscode test:integration` (`activation` 1, `stub` 8, `quill` 5). The `quill` suite has diagnostics for a page that isn't open, no diagnostics for the example's correct pages, updated diagnostics after an on-disk change, and updated diagnostics for an edit in an open document. The legend contract test runs against phase 15's README (it no longer skips).
 - **Windows and macOS.** The stub server is an extensionless script with a shebang, so the stub suite runs on Linux and macOS only; the `.cmd` shim handling in `environment.ts` is untested.
 - **Bundled binaries** (`bin/<platform>-<arch>/`) don't exist yet; phase 27 packages them.
