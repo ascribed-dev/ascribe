@@ -65,7 +65,7 @@ fn errors_exit_1_and_show_the_source() {
     let out = tessera(dir.path(), &["check"]);
     assert_eq!(code(&out), 1);
     let text = stdout(&out);
-    assert!(text.contains("TSR036"), "{text}");
+    assert!(text.contains("ASC036"), "{text}");
     assert!(text.contains("`gone.md` doesn't exist"), "{text}");
     assert!(text.contains("docs/index.md:5:"), "{text}");
     assert!(text.contains("[Gone](gone.md)"), "the snippet: {text}");
@@ -199,7 +199,7 @@ fn json_output_follows_the_documented_schema() {
         .iter()
         .find(|d| d["slug"] == "link-target-missing")
         .expect("the missing link");
-    assert_eq!(d["code"], "TSR036");
+    assert_eq!(d["code"], "ASC036");
     assert_eq!(d["severity"], "error");
     assert_eq!(d["file"], "docs/index.md");
     assert_eq!(d["message"], "`gone.md` doesn't exist");

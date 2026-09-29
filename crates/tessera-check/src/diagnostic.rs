@@ -45,7 +45,7 @@ pub struct RelatedInfo {
 /// are.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct Diagnostic {
-    /// The registry code, such as `TSR001`.
+    /// The registry code, such as `ASC001`.
     pub code: &'static str,
     /// The registry slug, such as `attribute-unknown-key`.
     pub slug: DiagnosticSlug,
@@ -78,7 +78,7 @@ impl Diagnostic {
     fn with_registry(registry: &'static Registry, issue: &Issue) -> Diagnostic {
         let entry = registry.get(issue.slug);
         Diagnostic {
-            code: entry.map_or("TSR000", |e| e.code.as_str()),
+            code: entry.map_or("ASC000", |e| e.code.as_str()),
             slug: issue.slug,
             severity: entry.map_or(Severity::Error, |e| e.severity),
             message: registry.message(issue),

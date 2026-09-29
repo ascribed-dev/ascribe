@@ -126,7 +126,7 @@ availability = "badge"
 
 ### Validation (`tessera-check`)
 
-- Every row of the spec's diagnostics table (§8.2) gets a stable code (for example `TSR012`), a severity, a source span, and, where one exists, a quick fix. The CLI and the language server share these structures.
+- Every row of the spec's diagnostics table (§8.2) gets a stable code (for example `ASC012`), a severity, a source span, and, where one exists, a quick fix. The CLI and the language server share these structures.
 - File-level checks run per file. Page-level checks run per page and per build, after resolution (§8.1).
 - The CLI prints diagnostics for people (via `miette` or `ariadne`) or as JSON for tools.
 

@@ -61,7 +61,7 @@ impl fmt::Display for Level {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Entry {
-    /// `TSR` and three digits.
+    /// `ASC` and three digits.
     pub code: String,
     /// The stable kebab-case name cases and crates use.
     pub slug: String,

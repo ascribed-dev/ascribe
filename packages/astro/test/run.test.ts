@@ -29,7 +29,7 @@ describe.skipIf(process.platform === "win32")("runBuild", () => {
 
   it("rejects with the compiler's report when the build fails", async () => {
     const binary = script(
-      'echo "[TSR036] Error: link-target-missing"; echo "error: the build failed" >&2; exit 1',
+      'echo "[ASC036] Error: link-target-missing"; echo "error: the build failed" >&2; exit 1',
     );
     const failure = await runBuild({
       binary,

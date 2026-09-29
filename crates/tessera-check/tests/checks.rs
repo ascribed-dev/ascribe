@@ -96,7 +96,7 @@ fn parser_issues_are_reported_once_with_registry_data() {
     let p = project(&[("index.md", &page("@note {type=tip}:\nNever closed."))]);
     let d = one(&p);
     assert_eq!(d.slug.as_str(), "container-unclosed");
-    assert_eq!(d.code, "TSR007");
+    assert_eq!(d.code, "ASC007");
     assert_eq!(d.severity, Severity::Error);
     assert!(d.message.contains("`@note`"), "{}", d.message);
 }

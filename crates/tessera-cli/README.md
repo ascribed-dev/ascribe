@@ -75,7 +75,7 @@ Loads the content model, reads every `.md` file under its content root (skipping
 Each diagnostic shows its code, message, and source, and ends with a summary line:
 
 ```text
-[TSR041] Warning: this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
+[ASC041] Warning: this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
    ╭─[ docs/keys.md:7:15 ]
    │
  7 │ See [Install](/install-agent/).
@@ -106,7 +106,7 @@ Each diagnostic:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `code` | string | The registry code, such as `TSR036` |
+| `code` | string | The registry code, such as `ASC036` |
 | `slug` | string | The registry slug, such as `link-target-missing` |
 | `severity` | string | `"error"` or `"warning"` |
 | `message` | string | What's wrong and what to do about it |
@@ -129,7 +129,7 @@ An example, for a page that links to a route:
   "files_checked": 4,
   "diagnostics": [
     {
-      "code": "TSR041",
+      "code": "ASC041",
       "slug": "link-route",
       "severity": "warning",
       "message": "this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`",
