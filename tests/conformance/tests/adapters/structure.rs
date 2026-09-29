@@ -46,7 +46,7 @@ fn title(source: &str, title: Option<&TitleLine>) -> Option<String> {
     title.map(|t| normalize_ws(&raw_text(source, t.content)))
 }
 
-fn attributes(line: &DirectiveLine) -> Attributes {
+pub(super) fn attributes(line: &DirectiveLine) -> Attributes {
     let mut attributes = Attributes::new();
     if let Some(block) = &line.attributes {
         for a in &block.attributes {

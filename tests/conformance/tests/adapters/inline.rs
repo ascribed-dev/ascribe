@@ -21,7 +21,7 @@ pub(super) fn image(source: &str, image: &Image) -> Node {
 }
 
 /// The image's attributes, the first use of a key winning.
-fn attributes(image: &Image) -> Attributes {
+pub(super) fn attributes(image: &Image) -> Attributes {
     let mut attributes = Attributes::new();
     let Some(block) = image.attributes.as_ref().map(|a| &a.block) else {
         return attributes;

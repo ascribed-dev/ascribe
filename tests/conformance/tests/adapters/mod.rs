@@ -9,6 +9,7 @@ mod format;
 pub mod include;
 mod inline;
 mod model;
+pub mod resolve;
 mod structure;
 mod syntax;
 
@@ -23,4 +24,5 @@ pub fn register(registry: &mut Registry) {
     registry.register(check::CheckAdapter);
     registry.register(model::ModelAdapter);
     registry.register(include::IncludeAdapter);
+    registry.register(resolve::ResolveAdapter);
 }

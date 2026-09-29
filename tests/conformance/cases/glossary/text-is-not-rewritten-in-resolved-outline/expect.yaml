@@ -8,6 +8,8 @@ tags: [resolve]
 builds:
   site:
     pages:
+      # The glossary page is a page too; only `index.md`'s outline is checked.
+      glossary.md:
       index.md:
         outline:
           - paragraph: Copy your API key.

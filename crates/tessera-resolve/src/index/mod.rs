@@ -30,8 +30,8 @@ use tessera_syntax::{
 };
 
 pub use headings::{ExplicitId, Heading, plain_text as heading_text};
-pub(crate) use refs::target_of;
 pub use refs::{Local, RefKind, Reference, Target};
+pub(crate) use refs::{substitute, target_of};
 
 /// Whether a file is published (SPEC §2.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
