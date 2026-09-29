@@ -1130,3 +1130,100 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 2 for images, and option 1 for links: an image with no source is certainly wrong. **Implemented now: exactly that** (`SPEC-QUESTION(Q59)` in `checks/refs.rs`). The registry's message for `image-source-missing` reads badly for an empty path ("the image `(no source)` doesn't exist"; a `#id`-only source shows as written). A dedicated variant, such as `messages.empty = "this image has no source; give it a path between the parentheses"`, needs a registry change, which is the human's to approve when resolving this question.
 - **Affects:** `image-source-missing`; phases 12 and 14.
 - **Resolution:** approved by the repository owner: option 2 for images and option 1 for links: an image with an empty source is `image-source-missing` with a new `empty` message variant ("this image has no source"); a link with only `#id` names its own file. SPEC §5.2 and §5.3 now say so.
+
+### Q81: Page-level problems in content a build removes
+
+- **Section:** SPEC §8.1, §9.3, §5.2
+- **Raised by:** phase 12
+- **Status:** open
+- **Ambiguity:** page-level validation runs "once per build" on the resolved page. The spec says a link to a page a build drops is an error in that build, and that to link to such a page from shared content, put the link in a `@variant` arm the same build removes, which implies a problem in content a build removes isn't reported for that build. It doesn't say the same for the other page-level rows. Example: `@available: self-managed` under a page whose `available: cloud, self-managed 3.3` exceeds its scope, inside an arm `@variant {deployment=self-managed}` that the `cloud-only` build removes; or an `@include: _f.md#missing` in the same arm.
+- **Options:**
+  1. Every page-level problem found on the expanded page is reported in every build, whether or not the build keeps the content. A build then fails for content it doesn't publish.
+  2. A build reports only problems about content it publishes: the same rule the spec gives for links. A problem in content that every build removes is reported by no build, so the phase that runs the page-level checks should include a build that keeps everything (the editor's build, or `switch` builds).
+- **Proposed resolution:** option 2, for every page-level row that depends on what survives: `variant-no-arm-survives` (recorded only when the group itself survives), `available-exceeds-scope`, `include-id-missing`, `include-cycle`, `link-id-removed`, and `link-page-dropped`. Implemented now: option 2 (`SPEC-QUESTION(Q81)` in `crates/tessera-resolve/src/build/mod.rs`; the link rows are in `links.rs`). Problems that don't depend on a build's content (`id-duplicate`, `heading-duplicate-without-id`, computed from the resolved page's headings) follow from the same rule, since they're about the surviving headings.
+- **Affects:** `crates/tessera-resolve/src/build/`; phase 14 (which builds it checks); phases 15 and 18.
+- **Resolution:** filled in by a human.
+
+### Q82: A spec that lists a target both directly and through its dimension name
+
+- **Section:** SPEC §4.4, §9.3
+- **Raised by:** phase 12
+- **Status:** open
+- **Ambiguity:** content is available for target *T* when its spec "lists *T*, directly or through *T*'s dimension name", and the state in effect for *T* counts as available. A spec can list both: `deployment, cloud removed`. Which entry decides the state for `cloud`: `deployment` (generally available) or `cloud removed`?
+- **Options:**
+  1. The direct entry, which is the more specific.
+  2. Available if any entry that lists *T* says so.
+  3. Not available if any entry that lists *T* says so.
+- **Proposed resolution:** option 1: a more specific entry overrides a general one, the way a value overrides a dimension name elsewhere in the spec (`@variant`). Implemented now: option 1 (`SPEC-QUESTION(Q82)` in `crates/tessera-resolve/src/build/availability.rs`). Two entries for the same target (`cloud, cloud removed`) take the first.
+- **Affects:** `crates/tessera-resolve/src/build/availability.rs`; conformance cases: none.
+- **Resolution:** filled in by a human.
+
+### Q83: Several `@available` lines for one heading or block
+
+- **Section:** SPEC §3.8, §4.4
+- **Raised by:** phase 12
+- **Status:** open
+- **Ambiguity:** heading-bound and following-block directives "stack". Two `@available` lines at the top of a section, or above one block, are each valid. What are they together?
+
+  ```
+  ## Streaming
+  @available: cloud
+  @available: cloud beta
+  ```
+- **Options:**
+  1. Content must be available under every one (each narrows the previous), and each is checked against the scope it sits in, in order.
+  2. The first wins; the rest are ignored.
+  3. It's an error.
+- **Proposed resolution:** option 1, with the scope check applied to each in turn, so each mistake is reported once and nothing is dropped by a guess. Implemented now: option 1 (`SPEC-QUESTION(Q83)` in `availability.rs`). Option 3 would need a registry entry.
+- **Affects:** `crates/tessera-resolve/src/build/availability.rs`; the registry, if option 3.
+- **Resolution:** filled in by a human.
+
+### Q84: A heading-bound `@available` whose heading an include left out
+
+- **Section:** SPEC §3.8, §4.2, §4.4
+- **Raised by:** phase 12
+- **Status:** open
+- **Ambiguity:** bindings are decided per source file. `@include {heading=false}: _f.md#install` leaves out the section's heading but not the `@id` and `@available` lines under it, which were bound to that heading. After expansion they sit under whatever heading the including page has above the include (or none).
+
+  ```
+  _f.md:                              index.md:
+  ## Install                          ## Setup
+  @available: cloud                   @include {heading=false}: _f.md#install
+  Run it.
+  ```
+- **Options:**
+  1. Bindings stay per source file. A heading-bound `@available` whose heading is gone describes what is left of its section: the rest of the included content.
+  2. It re-binds to the including page's heading above (`Setup`), so `Run it.` and the rest of `Setup` are `cloud`-only.
+  3. It's dropped: nothing is annotated.
+- **Proposed resolution:** option 1: a fragment means the same wherever it's included, which is the point of SPEC §4.2's per-file rules, and nothing is silently dropped or widened. Implemented now: option 1 (`SPEC-QUESTION(Q84)` in `availability.rs`). The same reading applies to a fragment whose first lines are `@available` with no heading above: it binds the block it touches, as at the start of a document (§3.8), not the including page's heading.
+- **Affects:** `crates/tessera-resolve/src/build/availability.rs`; conformance cases: none.
+- **Resolution:** filled in by a human.
+
+### Q85: Glossary matching, beyond the content model's rules
+
+- **Section:** SPEC §5.4, content-model.md §13
+- **Raised by:** phase 12
+- **Status:** open
+- **Ambiguity:** content-model.md §13 fixes whole-word matching, longest match, prose only, and `first` or `every`. It doesn't say: whether emphasis inside prose counts as prose; where the text is matched, the source or the page after phrases are substituted; what `first` counts when a fragment is included twice or a build removes the first occurrence; whether a term links from its own page; and what happens to a term whose page or `#id` a build doesn't publish.
+- **Options:** (a) match in the resolved text, in document order across the resolved page, emphasis included; a term is never linked on the page it links to; a term whose page the build doesn't publish, or whose id it removes, isn't linked there. (b) The same, but a term whose target isn't published is an error (`link-page-dropped`-like). (c) Match the source text.
+- **Proposed resolution:** option (a). A glossary link is a convenience, not something an author wrote, so a target the build lacks should skip the link rather than fail the build; matching the resolved text is what a reader sees, and "the first occurrence on each page" means the resolved page (content-model.md §13.1). Implemented now: option (a) (`SPEC-QUESTION(Q85)` in `crates/tessera-resolve/src/build/glossary.rs`).
+- **Affects:** `crates/tessera-resolve/src/build/glossary.rs`; phases 18 and 20 (they render the links); phase 15 (hover).
+- **Resolution:** filled in by a human.
+
+### Q86: A state with no version on a versioned target
+
+- **Section:** SPEC §4.4, §9.3
+- **Raised by:** phase 12
+- **Status:** open
+- **Ambiguity:** "A bare target with no version is in effect at every version", and "each state names only the version where it begins". A versioned target given a state with no version (`self-managed preview`) parses, and `check_availability` doesn't report it. In a filter build at `self-managed 3.3`, is the content in preview from the start of time, or never in effect?
+
+  ```
+  @available: self-managed preview
+  ```
+- **Options:**
+  1. The state is in effect at every version (like a bare target).
+  2. No version is at or after "no version", so it's never in effect: the content is never available.
+  3. It's an error (`available-versionless` reads the wrong way round: this is a *missing* version).
+- **Proposed resolution:** option 1, which keeps content and matches "a bare target … at every version". Option 3 needs a registry entry and is the better long-term rule, since the lifecycle then always says when it began. Implemented now: option 1 (`SPEC-QUESTION(Q86)` in `availability.rs`).
+- **Affects:** `crates/tessera-resolve/src/build/availability.rs`; possibly the registry and phase 10.
+- **Resolution:** filled in by a human.

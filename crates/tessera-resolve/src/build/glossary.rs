@@ -15,6 +15,10 @@
 //! A linked occurrence becomes an ordinary link, and is listed in
 //! [`ResolvedBlock::glossary`].
 
+// SPEC-QUESTION(Q85): what the content model leaves open (emphasis, a term's
+// own page, a term whose page the build doesn't publish, and where the text is
+// matched) is settled as the list above says.
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use tessera_core::RelPath;

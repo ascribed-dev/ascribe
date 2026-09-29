@@ -7,13 +7,13 @@
 //!
 //! | Step | Pass | Module |
 //! |---|---|---|
-//! | 1 | Includes (phase 11's [`Project::expand`]) | [`crate::expand`] |
-//! | 2 | Availability: feature keys and inherited scopes | [`availability`] |
-//! | 3 | Build modes: variant selection and availability filter | [`modes`] |
-//! | 4 | Phrases | [`phrases`] |
-//! | 5 | Heading ids: every heading's page id | [`ids`] |
-//! | 6 | Links, and the assets that survive | [`links`] |
-//! | 7 | Glossary | [`glossary`] |
+//! | 1 | Includes (phase 11's [`Project::expand`]) | `expand.rs` |
+//! | 2 | Availability: feature keys and inherited scopes | `availability.rs` |
+//! | 3 | Build modes: variant selection and availability filter | `modes.rs` |
+//! | 4 | Phrases | `phrases.rs` |
+//! | 5 | Heading ids: every heading's page id | `ids.rs` |
+//! | 6 | Links, and the assets that survive | `links.rs` |
+//! | 7 | Glossary | `glossary.rs` |
 //!
 //! Passes 2 to 5 depend only on the page, so a page's headings and page ids
 //! are known without resolving its links; that's what lets a link find its
@@ -53,7 +53,7 @@
 //! assert_eq!(page.blocks.len(), 1);
 //! ```
 
-pub mod availability;
+mod availability;
 mod glossary;
 mod ids;
 mod inlines;
@@ -233,7 +233,8 @@ impl<'p> BuildResolver<'p> {
         let mut mode_problems = Vec::new();
         let mut blocks = modes::apply(blocks, self.build, model, &mut mode_problems);
         // A problem is about what the build publishes: one in content the
-        // build removed isn't recorded (Q81).
+        // build removed isn't recorded.
+        // SPEC-QUESTION(Q81): page-level problems in removed content.
         let live = modes::live(&blocks);
         let mut problems: Vec<_> = expanded
             .problems

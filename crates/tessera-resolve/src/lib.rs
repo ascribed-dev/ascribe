@@ -1,6 +1,6 @@
 //! The project graph and the resolution passes: includes, availability, build modes, phrases, heading ids, links, and glossary.
 //!
-//! Phase 11 builds the **source index** and expands includes; phases 09, 12, and 13 add slugging, build resolution, and incremental updates.
+//! Phase 11 builds the **source index** and expands includes; phase 09 adds slugging, phase 12 **build resolution** ([`build`]), and phase 13 incremental updates.
 //!
 //! # The source index
 //!
@@ -28,8 +28,18 @@
 //! [`Project::assets`] lists the assets a page uses, with where each reference
 //! is written and the includes it came through.
 //!
-//! Nothing here depends on a build: availability, variants, and phrase
-//! substitution in content are phase 12's.
+//! Nothing above depends on a build. What does is [`build`]:
+//!
+//! # Build resolution
+//!
+//! [`Project::resolve_page`], [`Project::resolve_build`], and
+//! [`BuildResolver`] turn expanded pages into [`ResolvedPage`]s for a build:
+//! availability and build modes applied, phrases substituted, every heading
+//! given its page id, links resolved to routes, assets carried, and glossary
+//! terms linked (SPEC §9.2 steps 2 to 7). Problems that only a build finds
+//! (`variant-no-arm-survives`, `available-exceeds-scope`, `link-id-removed`,
+//! `link-page-dropped`) are recorded on the page for the page-level checks
+//! (phase 14) to report. See the [`build`] module for the passes.
 //!
 //! ```
 //! use std::sync::Arc;
