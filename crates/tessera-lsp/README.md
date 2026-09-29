@@ -100,26 +100,34 @@ advertise pull diagnostics.
 
 ## Performance
 
-`cargo bench -p tessera-lsp --bench keystroke` types into a page of a project of
-each size (every page has an include, three links, an image, and headings) and
-times the wait from `didChange` to the `publishDiagnostics` for that version.
-Release build, one run on a 4-core 2.1 GHz Xeon container (a developer laptop is
-faster):
+`cargo bench -p tessera-lsp --bench keystroke` types into a page, and into a
+fragment that pages include, in a project of each size (every page has an
+include, three links, an image, and headings) and times the wait from
+`didChange` to the `publishDiagnostics` for that version. Release build, one
+run on a 4-core 2.1 GHz Xeon container (a developer laptop is faster):
 
-| Pages | Load and first diagnostics | Keystroke median | p95 |
+| Pages | Load and first diagnostics | Page keystroke, median (p95) | Fragment keystroke, median (p95), pages including it |
 |---|---|---|---|
-| 20 | 13 ms | 3.5 ms | 4.0 ms |
-| 100 | 35 ms | 12.5 ms | 14.6 ms |
-| 300 | 112 ms | 39 ms | 48 ms |
-| 1,000 | 322 ms | 157 ms | 204 ms |
-| 3,000 | 1.2 s | 501 ms | 603 ms |
+| 20 | 12 ms | 0.9 ms (1.2) | 0.8 ms (1.1), 0 |
+| 100 | 36 ms | 1.0 ms (1.4) | 0.8 ms (1.1), 1 |
+| 300 | 78 ms | 1.0 ms (1.4) | 1.5 ms (1.9), 3 |
+| 1,000 | 286 ms | 2.0 ms (2.5) | 3.8 ms (4.7), 10 |
+| 3,000 | 825 ms | 3.0 ms (3.6) | 9.0 ms (11.8), 30 |
 
-The 50 ms target holds up to a few hundred pages. Past that the time grows
-linearly, because the page-level checks (`tessera_check::PageChecker`) index the
-whole project and resolve every page of the build on every round; the
-file-level checks are per file and cost about 0.3 ms. Making the page-level
-checks incremental needs a change in `tessera-check`'s `page/` module that this
-phase's brief left out (Q137).
+Both are far under the 50 ms target at 3,000 pages. What is left that grows
+with the project is small: building the checked project from the snapshot's
+texts (about 1 ms per 1,000 files), and the per-file lookups.
+
+How: the file-level checks run for the files of a round only
+(`tessera_check::check_file`). The page-level checks use
+`PageChecker::with_index`, over the snapshot's own index, and
+`PageChecker::check_resolved`, for the pages that can have a diagnostic located
+in a file of the round (the file, when it's a page, and the pages that include
+it); their resolved forms come from a `ResolvedCache` that forgets what each
+update's `Affected` lists. A round also covers what its files include and
+included at the previous round, because a page that starts or stops including a
+fragment changes the diagnostics located in that fragment (an `include-cycle`),
+and `Affected::recheck` doesn't list the fragment.
 
 ## Library choice
 

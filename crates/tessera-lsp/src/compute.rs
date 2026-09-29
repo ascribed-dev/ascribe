@@ -8,7 +8,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, PoisonError};
 
 use lsp_types::{DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString};
 use tessera_check::{
@@ -16,7 +16,7 @@ use tessera_check::{
 };
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
-use tessera_resolve::Snapshot;
+use tessera_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, ResolvedPage, Snapshot};
 
 use crate::core::Core;
 use crate::fsx::LayerFs;
@@ -37,6 +37,10 @@ pub(crate) struct Job {
     /// The version of each open document among `files`, when the job was
     /// taken: what the results are for.
     pub versions: BTreeMap<RelPath, i32>,
+    /// The resolved pages of the editor's build, and the updates to apply to
+    /// them before using them.
+    pub cache: Arc<Mutex<ResolvedCache>>,
+    pub affected: Vec<Affected>,
 }
 
 /// What a round produced: the diagnostics of each file it computed.
@@ -55,7 +59,12 @@ impl Core {
         if loaded.dirty.is_empty() {
             return None;
         }
-        let files = std::mem::take(&mut loaded.dirty);
+        let snapshot = loaded.inc.snapshot();
+        let files = with_included(
+            &snapshot,
+            &mut loaded.direct_includes,
+            std::mem::take(&mut loaded.dirty),
+        );
         let versions = files
             .iter()
             .filter_map(|path| {
@@ -65,7 +74,7 @@ impl Core {
             .collect();
         Some(Job {
             epoch: loaded.epoch,
-            snapshot: loaded.inc.snapshot(),
+            snapshot,
             files,
             root: loaded.root.clone(),
             model: loaded.model.clone(),
@@ -73,6 +82,8 @@ impl Core {
             fs: loaded.fs.clone(),
             encoding,
             versions,
+            cache: loaded.cache.clone(),
+            affected: std::mem::take(&mut loaded.pending),
         })
     }
 
@@ -112,6 +123,67 @@ impl Core {
     }
 }
 
+/// `files` and everything they include, now or at the last round, directly or
+/// through other files. `direct` is what each file included at the last round;
+/// it's updated for `files`.
+///
+/// A page that starts (or stops) including a fragment changes the page-level
+/// diagnostics located *in that fragment* (an `include-cycle` is located where
+/// the cycle closes, and a fragment nobody includes has none, Q104), yet
+/// `Affected::recheck` lists the page and not the fragment, whose own text
+/// didn't change. So a round covers what the files in it reach, and what they
+/// reached before.
+fn with_included(
+    snapshot: &Snapshot,
+    direct: &mut BTreeMap<RelPath, BTreeSet<RelPath>>,
+    files: BTreeSet<RelPath>,
+) -> BTreeSet<RelPath> {
+    let mut all = files.clone();
+    let mut queue: Vec<RelPath> = Vec::new();
+    for path in &files {
+        let now: BTreeSet<RelPath> = snapshot
+            .file(path)
+            .map(|file| {
+                file.includes
+                    .iter()
+                    .filter_map(|i| i.target.clone())
+                    .filter(|t| snapshot.file(t).is_some())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let before = direct.insert(path.clone(), now.clone()).unwrap_or_default();
+        for target in now.into_iter().chain(before) {
+            if all.insert(target.clone()) {
+                queue.push(target);
+            }
+        }
+    }
+    while let Some(path) = queue.pop() {
+        for target in direct.get(&path).into_iter().flatten() {
+            if all.insert(target.clone()) {
+                queue.push(target.clone());
+            }
+        }
+    }
+    // What the files reached in turn is now known for the next round.
+    for path in &all {
+        if !direct.contains_key(path) {
+            let now = snapshot
+                .file(path)
+                .map(|file| {
+                    file.includes
+                        .iter()
+                        .filter_map(|i| i.target.clone())
+                        .filter(|t| snapshot.file(t).is_some())
+                        .collect()
+                })
+                .unwrap_or_default();
+            direct.insert(path.clone(), now);
+        }
+    }
+    all
+}
+
 /// Computes a round. Calls `still_wanted` before each stage; when it says a
 /// newer update has overtaken the round, the round is abandoned.
 pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
@@ -140,13 +212,38 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
     if !still_wanted() {
         return Outcome::Abandoned;
     }
-    // Page level: the editor's build, over the whole project (the source index
-    // is rebuilt from the snapshot's texts), keeping what is located in the
-    // files of the round.
+    // Page level: the editor's build, for the pages that can have a diagnostic
+    // located in a file of the round: the file itself when it's a page, and
+    // the pages that include it (a cycle in a fragment is located in the
+    // fragment). Their resolved forms come from the cache, which first forgets
+    // what the updates since the last round affected; the checks read the
+    // snapshot's own index. Keeping what's located in the files of the round.
     // SPEC-QUESTION(Q134): only the editor's build, not content no build
-    // publishes. SPEC-QUESTION(Q137): whole-project, not incremental.
+    // publishes.
     let build = job.model.editor_default_build().clone();
-    for d in PageChecker::new(&project).check(&build) {
+    let mut pages: BTreeSet<RelPath> = BTreeSet::new();
+    for path in &job.files {
+        if snapshot
+            .file(path)
+            .is_some_and(|f| f.kind == FileKind::Page)
+        {
+            pages.insert(path.clone());
+        }
+        pages.extend(snapshot.including_pages(path));
+    }
+    let router = DefaultRouter::from_consumer(&job.model.consumer);
+    let resolved: Vec<Arc<ResolvedPage>> = {
+        let mut cache = job.cache.lock().unwrap_or_else(PoisonError::into_inner);
+        for affected in &job.affected {
+            cache.apply(affected);
+        }
+        pages
+            .iter()
+            .filter_map(|path| cache.resolve_page(snapshot.project(), path, &build, &router))
+            .collect()
+    };
+    let refs: Vec<&ResolvedPage> = resolved.iter().map(|p| &**p).collect();
+    for d in PageChecker::with_index(&project, snapshot.project()).check_resolved(&build, &refs) {
         if let Some(list) = by_file.get_mut(&d.location.file) {
             list.push(d);
         }
@@ -173,7 +270,6 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
             .collect();
         results.push((path.clone(), lsp));
     }
-    let _ = snapshot;
     Outcome::Done(results)
 }
 

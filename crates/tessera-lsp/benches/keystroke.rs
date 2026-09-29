@@ -245,11 +245,67 @@ fn run(pages: usize) {
     }
     times.sort();
     let q = |f: f64| times[((times.len() as f64 - 1.0) * f).round() as usize];
+
+    // Type into a fragment that pages include (each of the first fragments is
+    // included by `pages / 100` pages).
+    let fragment = root.join("docs/_f/f0.md");
+    let fragment_uri = Uri::from_str(&format!("file://{}", fragment.display())).unwrap();
+    client
+        .conn
+        .sender
+        .send(
+            Notification::new(
+                "textDocument/didOpen".into(),
+                DidOpenTextDocumentParams {
+                    text_document: TextDocumentItem {
+                        uri: fragment_uri.clone(),
+                        language_id: "tessera".into(),
+                        version: 1,
+                        text: "## Shared 0\n\nShared text.\n".into(),
+                    },
+                },
+            )
+            .into(),
+        )
+        .unwrap();
+    let mut fragment_times = Vec::new();
+    for k in 0..KEYSTROKES {
+        let version = 2 + k as i32;
+        let at = "Shared text.".len() as u32 + k as u32;
+        let began = Instant::now();
+        client
+            .conn
+            .sender
+            .send(
+                Notification::new(
+                    "textDocument/didChange".into(),
+                    DidChangeTextDocumentParams {
+                        text_document: VersionedTextDocumentIdentifier {
+                            uri: fragment_uri.clone(),
+                            version,
+                        },
+                        content_changes: vec![TextDocumentContentChangeEvent {
+                            range: Some(Range::new(Position::new(2, at), Position::new(2, at))),
+                            range_length: None,
+                            text: "x".into(),
+                        }],
+                    },
+                )
+                .into(),
+            )
+            .unwrap();
+        client.wait_publish(&fragment_uri, Some(version));
+        fragment_times.push(began.elapsed());
+    }
+    fragment_times.sort();
+    let f = |x: f64| fragment_times[((fragment_times.len() as f64 - 1.0) * x).round() as usize];
     println!(
-        "{pages:>5} pages: load+first diagnostics {load:>10.3?}   keystroke: min {:>9.3?}  median {:>9.3?}  p95 {:>9.3?}",
-        times[0],
+        "{pages:>5} pages: load+first diagnostics {load:>10.3?}   page keystroke: median {:>9.3?} p95 {:>9.3?}   fragment keystroke ({} includers): median {:>9.3?} p95 {:>9.3?}",
         q(0.5),
-        q(0.95)
+        q(0.95),
+        pages / FRAGMENTS,
+        f(0.5),
+        f(0.95)
     );
     client.request("shutdown", json!(null));
     client

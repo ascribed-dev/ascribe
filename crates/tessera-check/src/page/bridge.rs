@@ -44,18 +44,37 @@ impl FileSystem for Held<'_> {
     }
 }
 
+/// The source index a [`PageChecker`](super::PageChecker) reads: built from a
+/// checked project's texts, or one the caller already has (the language server's
+/// incremental index).
+pub(super) enum IndexRef<'p> {
+    Owned(Box<tessera_resolve::Project>),
+    Borrowed(&'p tessera_resolve::Project),
+}
+
+impl std::ops::Deref for IndexRef<'_> {
+    type Target = tessera_resolve::Project;
+
+    fn deref(&self) -> &tessera_resolve::Project {
+        match self {
+            IndexRef::Owned(index) => index,
+            IndexRef::Borrowed(index) => index,
+        }
+    }
+}
+
 /// The source index of `project`, and how its file ids map to the project's.
 ///
 /// `tessera-check` and `tessera-resolve` number source files the same way when
 /// they're in path order, but a project built from parts may not be, so every
 /// location the index reports goes through [`Indexed::file`].
-pub(super) struct Indexed {
-    pub index: tessera_resolve::Project,
+pub(super) struct Indexed<'p> {
+    pub index: IndexRef<'p>,
     ids: HashMap<FileId, FileId>,
 }
 
-impl Indexed {
-    pub fn new(project: &Project) -> Indexed {
+impl<'p> Indexed<'p> {
+    pub fn new(project: &Project) -> Indexed<'p> {
         let index = tessera_resolve::Project::load(
             Arc::new(project.model().clone()),
             project.layout().clone(),
@@ -65,7 +84,19 @@ impl Indexed {
             .files()
             .filter_map(|f| Some((f.file, project.source_at(&f.path)?.id)))
             .collect();
-        Indexed { index, ids }
+        Indexed {
+            index: IndexRef::Owned(Box::new(index)),
+            ids,
+        }
+    }
+
+    /// An index the caller already has, whose file ids are the checked
+    /// project's (no renumbering).
+    pub fn shared(index: &'p tessera_resolve::Project) -> Indexed<'p> {
+        Indexed {
+            index: IndexRef::Borrowed(index),
+            ids: HashMap::new(),
+        }
     }
 
     /// The checked project's id for a file of the index.

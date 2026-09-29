@@ -7,7 +7,7 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crossbeam_channel::Sender;
 use lsp_server::{Message, Notification, Request};
@@ -19,7 +19,9 @@ use lsp_types::{
 use tessera_check::Diagnostic;
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
-use tessera_resolve::{ApplyError, Change, DiskFs, IncrementalProject, Layout, is_source_path};
+use tessera_resolve::{
+    Affected, ApplyError, Change, DiskFs, IncrementalProject, Layout, ResolvedCache, is_source_path,
+};
 
 use crate::compute::to_lsp;
 use crate::docs::Doc;
@@ -63,6 +65,13 @@ pub(crate) struct Loaded {
     pub fs: Arc<LayerFs>,
     /// Files whose diagnostics need computing.
     pub dirty: BTreeSet<RelPath>,
+    /// The pages resolved for the editor's build, kept between rounds. Only the
+    /// worker uses it, and first applies `pending`.
+    pub cache: Arc<Mutex<ResolvedCache>>,
+    /// What updates affected since the last round, in order, for `cache`.
+    pub pending: Vec<Affected>,
+    /// What each file included at the last round (see `compute::with_included`).
+    pub direct_includes: BTreeMap<RelPath, BTreeSet<RelPath>>,
 }
 
 impl Loaded {
@@ -293,6 +302,9 @@ impl Core {
             model_text: text,
             fs: Arc::new(LayerFs::new(disk)),
             dirty,
+            cache: Arc::new(Mutex::new(ResolvedCache::new())),
+            pending: Vec::new(),
+            direct_includes: BTreeMap::new(),
         };
         // What was published for files the new project doesn't have goes.
         let keep: BTreeSet<PathBuf> = snapshot
@@ -590,14 +602,21 @@ impl Core {
 
     /// Queues the files an update affects, and clears the diagnostics of the
     /// ones it removed.
-    fn absorb(&mut self, affected: &tessera_resolve::Affected) {
+    fn absorb(&mut self, affected: &Affected) {
         let Some(loaded) = self.loaded.as_mut() else {
             return;
         };
+        if !affected.is_empty() {
+            loaded.pending.push(affected.clone());
+        }
         loaded.dirty.extend(affected.recheck.iter().cloned());
         let mut cleared = Vec::new();
         for path in &affected.removed {
             loaded.dirty.remove(path);
+            // What a deleted page included no longer has it as an includer.
+            if let Some(targets) = loaded.direct_includes.remove(path) {
+                loaded.dirty.extend(targets);
+            }
             cleared.push(loaded.source_path(path));
         }
         for path in cleared {

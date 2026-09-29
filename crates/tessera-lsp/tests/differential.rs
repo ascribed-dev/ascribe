@@ -17,7 +17,7 @@ use support::{Client, Fixture};
 use tessera_check::{Project, SourceFile, check_project};
 use tessera_core::{FileId, LineIndex, RelPath, WideEncoding, WideLineCol};
 
-const PAGES: [&str; 8] = [
+const PAGES: [&str; 12] = [
     "---\ntitle: X\n---\n# X\n\n@include: _frag.md#a\n",
     "---\ntitle: X\n---\n[l](guide.md#sec) [m](sub/other.md) ![i](pic.png)\n",
     "---\ntitle: X\n---\n# One\n@id: dup\n\n# Two\n@id: dup\n",
@@ -26,9 +26,15 @@ const PAGES: [&str; 8] = [
     "---\ntitle: X\n---\n.T\n@variant {pm=npm}:\nA\n@variant {pm=pnpm}:\nB\n@end\n[l](sub/other.md)\n",
     "no frontmatter\n",
     "---\ntitle: X\navailable: cloud\n---\n# X\n\n[back](index.md)\n",
+    "---\ntitle: X\n---\n# X\n\n@include: _frag.md\n@include: _frag.md\n",
+    "---\ntitle: X\navailable: self-managed\n---\n# Only self-managed\n",
+    "---\ntitle: X\n---\n# X\n\n[to guide](guide.md#setup) [to other](sub/other.md#part)\n",
+    "---\ntitle: X\n---\n# Setup\n@id: setup\n\n# Part\n@id: part\n\n@include: _frag.md#b\n",
 ];
 
-const FRAGMENTS: [&str; 4] = [
+const FRAGMENTS: [&str; 6] = [
+    "## Loop\n@include: _frag.md\n",
+    "## B\n@id: b\n\n@include: sub/other.md\n",
     "## A\n@id: a\n\nText.\n",
     "## B\n@id: b\n",
     "## A\n@id: a\n[x](index.md#missing)\n",
@@ -198,6 +204,7 @@ fn run(seed: u64, steps: usize) {
     let mut rng = Rng(seed);
     let mut version = 10;
     client.settle();
+    let mut trace: Vec<String> = Vec::new();
     for step in 0..steps {
         let rel = world.files[rng.next(world.files.len())];
         let pick = |rng: &mut Rng| -> String {
@@ -287,12 +294,13 @@ fn run(seed: u64, steps: usize) {
                 }
             }
         }
+        trace.push(what.clone());
         client.settle();
         let expected = world.expected();
         let published = world.published(&client);
         assert_eq!(
             published, expected,
-            "seed {seed}, step {step} ({what}): the server disagrees with a fresh check"
+            "seed {seed}, step {step} ({what}): the server disagrees with a fresh check\nsteps: {trace:#?}"
         );
     }
 }

@@ -205,7 +205,7 @@ impl Server {
         if offer_utf8 {
             general["positionEncodings"] = json!(["utf-16", "utf-8"]);
         }
-        let root_uri = format!("file://{}", root.display());
+        let root_uri = file_uri(root);
         server.send(&json!({
             "jsonrpc": "2.0", "id": 1, "method": "initialize",
             "params": {
@@ -376,10 +376,32 @@ impl Server {
     }
 }
 
+/// The `file:` URI of an absolute path: `file:///C:/dir` for a drive path.
+fn file_uri(path: &Path) -> String {
+    let text = path.to_string_lossy().replace('\\', "/");
+    let text = text.strip_prefix("//?/").unwrap_or(&text);
+    if text.starts_with('/') {
+        format!("file://{text}")
+    } else {
+        format!("file:///{text}")
+    }
+}
+
 /// A `file:` URI's path relative to the project root.
 fn rel(root: &Path, uri: &str) -> String {
     let path = uri.strip_prefix("file://").expect("a file URI");
-    let path = percent_decode(path);
+    let mut path = percent_decode(path);
+    // `/c:/dir` names a drive; the project root's drive letter may differ in case.
+    let bytes = path.as_bytes();
+    if bytes.len() > 2 && bytes[0] == b'/' && bytes[1].is_ascii_alphabetic() && bytes[2] == b':' {
+        path.remove(0);
+    }
+    // The server writes a drive letter in upper case, the temp directory may not.
+    let root_text = root.to_string_lossy().replace('\\', "/");
+    if path.as_bytes().get(1) == Some(&b':') && root_text.as_bytes().get(1) == Some(&b':') {
+        path.replace_range(0..1, &root_text[0..1]);
+    }
+    let root = Path::new(&root_text);
     Path::new(&path)
         .strip_prefix(root)
         .unwrap_or_else(|_| panic!("{path} is outside {}", root.display()))
