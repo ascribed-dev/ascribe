@@ -454,7 +454,7 @@ fn steps() -> impl Strategy<Value = Vec<Vec<Op>>> {
 }
 
 fn cases() -> u32 {
-    std::env::var("TESSERA_INCREMENTAL_CASES")
+    std::env::var("ASCRIBE_INCREMENTAL_CASES")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(300)

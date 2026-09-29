@@ -2,7 +2,7 @@
 //! type-checks them with `tsc` and validates frontmatter with them, and a
 //! snapshot of the schema of every field type.
 //!
-//! Run with `TESSERA_BLESS=1` to rewrite the fixtures in `tests/zod/generated/`
+//! Run with `ASCRIBE_BLESS=1` to rewrite the fixtures in `tests/zod/generated/`
 //! after a change; without it the test fails when they're out of date.
 
 #![allow(clippy::expect_used, clippy::panic)]
@@ -23,14 +23,14 @@ fn generated_dir() -> PathBuf {
 /// Checks a fixture against what was generated, or rewrites it.
 fn check_fixture(name: &str, actual: &str) {
     let path = generated_dir().join(name);
-    if std::env::var_os("TESSERA_BLESS").is_some() {
+    if std::env::var_os("ASCRIBE_BLESS").is_some() {
         fs::write(&path, actual).expect("writes the fixture");
         return;
     }
     let expected = fs::read_to_string(&path).unwrap_or_default();
     assert_eq!(
         expected, actual,
-        "tests/zod/generated/{name} is out of date: run `TESSERA_BLESS=1 cargo test -p tessera-emit --test zod`"
+        "tests/zod/generated/{name} is out of date: run `ASCRIBE_BLESS=1 cargo test -p tessera-emit --test zod`"
     );
 }
 

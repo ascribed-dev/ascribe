@@ -9,7 +9,7 @@
 //   activation  a workspace without ascribe.toml: the extension stays inactive
 //   stub        a workspace with ascribe.toml, against test/stub-server
 //   quill       a copy of examples/quill with a broken page added, against the
-//               real `ascribe lsp`. Needs TESSERA_BIN, the path to a built
+//               real `ascribe lsp`. Needs ASCRIBE_BIN, the path to a built
 //               `ascribe`; skipped without it.
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -29,7 +29,7 @@ interface Suite {
 }
 
 const stubServer = path.join(packageRoot, "test/stub-server/ascribe");
-const realServer = process.env["TESSERA_BIN"];
+const realServer = process.env["ASCRIBE_BIN"];
 
 const suites: Suite[] = [
   {
@@ -60,14 +60,14 @@ async function main(): Promise<void> {
   // A process an extension host started has this set, and VS Code would then
   // run as plain Node instead of launching.
   delete process.env["ELECTRON_RUN_AS_NODE"];
-  const only = process.env["TESSERA_SUITE"];
+  const only = process.env["ASCRIBE_SUITE"];
   let failed = false;
   let ran = 0;
   for (const suite of suites) {
     if (only && only !== suite.name) continue;
     if (suite.name === "quill" && !realServer) {
       console.log(
-        "Skipping suite quill: set TESSERA_BIN to a built `ascribe` (phase 15's server).",
+        "Skipping suite quill: set ASCRIBE_BIN to a built `ascribe` (phase 15's server).",
       );
       continue;
     }
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
         version: process.env["VSCODE_VERSION"] ?? "stable",
         extensionDevelopmentPath: packageRoot,
         extensionTestsPath: path.join(packageRoot, "out/integration/suite/index.cjs"),
-        extensionTestsEnv: { TESSERA_SUITE: suite.name, TESSERA_WORKSPACE: workspace },
+        extensionTestsEnv: { ASCRIBE_SUITE: suite.name, ASCRIBE_WORKSPACE: workspace },
         launchArgs: [
           workspace,
           "--disable-extensions",

@@ -2,7 +2,7 @@
 // integration uses a binary someone built (Q152), looked for in this order:
 //
 //   1. the `binary` option,
-//   2. the `TESSERA_BIN` environment variable,
+//   2. the `ASCRIBE_BIN` environment variable,
 //   3. `target/release/ascribe` or `target/debug/ascribe` in the project's
 //      directory or the nearest parent that has one (the Tessera workspace's
 //      `cargo build -p tessera-cli`), the newer of the two.
@@ -25,11 +25,11 @@ export function findBinary(options: {
       );
     return binary;
   }
-  const fromEnv = process.env["TESSERA_BIN"];
+  const fromEnv = process.env["ASCRIBE_BIN"];
   if (fromEnv !== undefined && fromEnv !== "") {
     const binary = path.resolve(fromEnv);
     if (!existsSync(binary))
-      throw new Error(`@ascribed/astro: TESSERA_BIN names ${binary}, which doesn't exist.`);
+      throw new Error(`@ascribed/astro: ASCRIBE_BIN names ${binary}, which doesn't exist.`);
     return binary;
   }
   for (let dir = path.resolve(options.projectDir); ; dir = path.dirname(dir)) {
@@ -42,6 +42,6 @@ export function findBinary(options: {
   }
   throw new Error(
     "@ascribed/astro can't find the `ascribe` binary. Build it with `cargo build -p tessera-cli`, then " +
-      "set the `binary` option of the integration or the TESSERA_BIN environment variable to it.",
+      "set the `binary` option of the integration or the ASCRIBE_BIN environment variable to it.",
   );
 }

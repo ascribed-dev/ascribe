@@ -58,7 +58,7 @@ test:integration:headless` (it runs under `xvfb-run -a`). They have three
 suites: `activation` (no `ascribe.toml`: the extension stays off), `stub` (a
 stub server in `test/stub-server`), and `quill` (the real `ascribe lsp` on a
 copy of `examples/quill` with a broken page added), which runs only when
-`TESSERA_BIN` names a built `ascribe`. `TESSERA_SUITE` runs one suite.
+`ASCRIBE_BIN` names a built `ascribe`. `ASCRIBE_SUITE` runs one suite.
 
 `test/fixtures/markdown.tmLanguage.json` is VS Code's markdown grammar (MIT,
 microsoft/vscode), so the grammar tests see the scopes it really produces.

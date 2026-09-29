@@ -102,7 +102,7 @@ Also:
 
 ### How the end-to-end test was run
 
-Locally, in this container, with Chromium at `/opt/pw-browsers/chromium` (no `TESSERA_CHROMIUM` set), Node 22.22, and a debug `tessera` from `cargo build -p tessera-cli`:
+Locally, in this container, with Chromium at `/opt/pw-browsers/chromium` (no `ASCRIBE_CHROMIUM` set), Node 22.22, and a debug `tessera` from `cargo build -p tessera-cli`:
 
 ```sh
 cargo build -p tessera-cli

@@ -20,20 +20,20 @@ const TYPES: Record<string, string> = {
 
 /** The bundled Chromium in this environment, if there is one; otherwise Playwright's own. */
 function executablePath(): string | undefined {
-  if (process.env["TESSERA_CHROMIUM"]) return process.env["TESSERA_CHROMIUM"];
+  if (process.env["ASCRIBE_CHROMIUM"]) return process.env["ASCRIBE_CHROMIUM"];
   const bundled = "/opt/pw-browsers/chromium";
   return existsSync(bundled) ? bundled : undefined;
 }
 
 const ALL_ENGINES = ["chromium", "firefox", "webkit"] as const;
 export type Engine = (typeof ALL_ENGINES)[number];
-const wanted = process.env["TESSERA_ENGINES"]?.split(",").map((name) => name.trim());
+const wanted = process.env["ASCRIBE_ENGINES"]?.split(",").map((name) => name.trim());
 export const ENGINES: readonly Engine[] = ALL_ENGINES.filter(
   (name) => wanted === undefined || wanted.includes(name),
 );
 
 /**
- * Launch one engine. The suite runs all three; TESSERA_ENGINES (a
+ * Launch one engine. The suite runs all three; ASCRIBE_ENGINES (a
  * comma-separated subset) narrows it on machines that can't install them all.
  */
 export async function launch(engine: Engine): Promise<Browser> {

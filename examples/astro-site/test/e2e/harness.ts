@@ -17,7 +17,7 @@ export const BASE = "/docs";
 
 /** The bundled Chromium in this environment, if there is one; otherwise Playwright's own. */
 export function launchChromium(): Promise<Browser> {
-  const configured = process.env["TESSERA_CHROMIUM"];
+  const configured = process.env["ASCRIBE_CHROMIUM"];
   const bundled = "/opt/pw-browsers/chromium";
   const executablePath = configured ?? (existsSync(bundled) ? bundled : undefined);
   return chromium.launch(executablePath === undefined ? {} : { executablePath });

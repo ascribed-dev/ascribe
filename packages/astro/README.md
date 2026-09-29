@@ -53,7 +53,7 @@ import Elements from "@ascribed/astro/Elements.astro";
 |---|---|
 | `build` | The build whose site output is the collection: a name in `ascribe.toml`. Required. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. |
-| `binary` | The `ascribe` binary, relative to the Astro root. Default: `TESSERA_BIN`, then the newer of `target/release/ascribe` and `target/debug/ascribe` in the project's directory or the nearest parent that has one (Q152). |
+| `binary` | The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then the newer of `target/release/ascribe` and `target/debug/ascribe` in the project's directory or the nearest parent that has one (Q152). |
 
 ## What it does
 

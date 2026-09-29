@@ -307,8 +307,8 @@ fn run(seed: u64, steps: usize) {
 
 #[test]
 fn the_server_agrees_with_a_fresh_check_after_any_sequence() {
-    // `TESSERA_LSP_SEEDS=200` for a longer soak.
-    let seeds: u64 = std::env::var("TESSERA_LSP_SEEDS")
+    // `ASCRIBE_LSP_SEEDS=200` for a longer soak.
+    let seeds: u64 = std::env::var("ASCRIBE_LSP_SEEDS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(8);

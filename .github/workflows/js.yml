@@ -56,7 +56,7 @@ jobs:
       # VS Code needs a display; xvfb provides a virtual one.
       - run: xvfb-run -a pnpm --filter tessera-vscode test:integration
         env:
-          TESSERA_BIN: ${{ github.workspace }}/target/debug/tessera
+          ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
 
   # The Astro end-to-end slice (phase 21): a real `astro build` of
   # examples/astro-site against a locally built `tessera`, with the built
@@ -82,4 +82,4 @@ jobs:
       - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install --with-deps chromium
       - run: pnpm --filter @ascribed/example-astro-site test:e2e
         env:
-          TESSERA_BIN: ${{ github.workspace }}/target/debug/tessera
+          ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe

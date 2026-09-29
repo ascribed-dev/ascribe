@@ -52,7 +52,7 @@ Build `@ascribed/elements`: the custom elements the site output uses, implementi
 
 **Decisions.**
 
-- CI installs Chromium, Firefox, and WebKit (`.github/workflows/js.yml`). Locally Chromium uses `/opt/pw-browsers/chromium` or `TESSERA_CHROMIUM`; `TESSERA_ENGINES` narrows the engines. This session's container couldn't download Firefox or WebKit, so those two engines were verified in CI only.
+- CI installs Chromium, Firefox, and WebKit (`.github/workflows/js.yml`). Locally Chromium uses `/opt/pw-browsers/chromium` or `ASCRIBE_CHROMIUM`; `ASCRIBE_ENGINES` narrows the engines. This session's container couldn't download Firefox or WebKit, so those two engines were verified in CI only.
 - A remembered choice is read from this page's choices first, then `localStorage`, so a failed write can't leave a stale value (tested by making `setItem` throw).
 - Availability badges match the last state as a whole token (`[states="ga"], [states$=" ga"]`), so a project state such as `pre-ga` isn't styled as `ga`. **Contract wording:** §4's example selector `[states$="deprecated"]` has the same suffix problem and should read `[states="deprecated"], [states$=" deprecated"]`; it's an example, not behavior, so I left the contract untouched.
 - Step numbering is compared against rendered reference markers in every engine, since generated counters can't be read back.

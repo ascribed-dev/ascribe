@@ -35,7 +35,7 @@ pnpm --filter @ascribed/example-astro-site build     # or: astro build
 pnpm --filter @ascribed/example-astro-site test:e2e
 ```
 
-The integration finds the binary in `target/` (or `TESSERA_BIN`). `test:e2e` runs a real `astro build`, serves it with `astro preview`, and checks the built HTML in Chromium (`TESSERA_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own):
+The integration finds the binary in `target/` (or `ASCRIBE_BIN`). `test:e2e` runs a real `astro build`, serves it with `astro preview`, and checks the built HTML in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own):
 
 - the root page is at `/docs`, and the links between pages, including the one to the root, land;
 - the explicit-id link lands on its heading;

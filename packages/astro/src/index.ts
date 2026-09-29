@@ -39,7 +39,7 @@ export interface AscribeOptions {
   /** The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. */
   project?: string;
   /**
-   * The `ascribe` binary, relative to the Astro root. Default: `TESSERA_BIN`, then the
+   * The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then the
    * nearest `target/release` or `target/debug` build above the project (Q152).
    */
   binary?: string;
