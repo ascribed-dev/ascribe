@@ -1,9 +1,9 @@
 name: Rust
 
+# Automatic runs (pull requests, pushes to main) are off to save Actions
+# minutes. Run it by hand from the Actions tab ("Run workflow"), and
+# restore the pull_request and push triggers to turn automatic runs back on.
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
