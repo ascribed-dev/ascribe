@@ -93,6 +93,7 @@ Turn expanded pages into resolved pages for a given build: apply availability an
 
 - **Q81 to Q86** (above), none of which changes a case; all are implemented as proposed.
 - **Interim route mapping**: see Router above.
+- **For phase 14: content no build publishes.** Because a build records only problems about content it publishes (Q81), content that *no* build publishes (a model whose builds are all selections, with an arm none of them selects) is never checked at page level. Phase 14 needs to decide whether page-level problems there are reported: it could run one extra `switch` plus `badge` pass over every page for that, or warn that the content is never published.
 - **Duplicate ids** (`id-duplicate`, `heading-duplicate-without-id`) are phase 14's, from `ResolvedPage::headings()`.
 - **Performance**: `BuildResolver` resolves a page's target pages on demand and caches them (`page_id_of` uses a per-page table), but `Project::resolve_page` builds a fresh resolver each call and `Project::expand` isn't cached (phase 11's note). Phase 13 can cache per file; phase 26 measures.
 - **Glossary matching** treats text nodes one at a time: a term split by markup (`**API** key`) isn't matched.
