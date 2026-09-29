@@ -271,11 +271,28 @@ pub struct HtmlBlock {
 }
 
 /// A GFM table. Its rows and cells are kept so that inline content in cells
-/// (phrases, links) is reachable; the delimiter row isn't a node.
+/// (phrases, links) is reachable; the delimiter row isn't a node, but the
+/// alignment it gives each column is kept.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Table {
     /// The header row, then the body rows.
     pub rows: Vec<TableRow>,
+    /// Each column's alignment, from the delimiter row (`:---`, `:---:`,
+    /// `---:`), one per column.
+    pub alignments: Vec<Alignment>,
+}
+
+/// A table column's alignment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Alignment {
+    /// `---`: none given.
+    None,
+    /// `:---`.
+    Left,
+    /// `:---:`.
+    Center,
+    /// `---:`.
+    Right,
 }
 
 /// A table row.

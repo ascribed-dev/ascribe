@@ -868,6 +868,13 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 
 **Plain-markdown output.** Fully resolved CommonMark with no HTML, for LLM consumption, search indexing, and export. Links are absolute URLs.
 
+- A page begins with its title as a level-1 heading, then its page-level availability line, if it has one. Its other frontmatter isn't included.
+- Raw HTML in the source keeps its text and loses its tags, so `<kbd>Ctrl</kbd>` becomes `Ctrl`. Comments, and the contents of `<script>` and `<style>`, are dropped.
+- An availability line gives each target's label, then its state and the version it begins at, as in the element library (§9.7): `Self-managed (preview, 3.4+)`, `Self-managed (GA, 3.3+)`, or, for a history, `Self-managed (preview 3.3, GA 3.5, deprecated 4.0)`. Targets are separated by `; `.
+- A dimensional arm's label joins the labels of one attribute's values with ` / `, and several attributes with `, `. A note without a title leads with its type's label alone (`**Tip**`).
+- A widget becomes its plain fallback followed by its content, unless the widget drops its content; its title, primary, and attributes aren't shown.
+- Image attributes aren't part of plain markdown and are left out. A table keeps each column's alignment.
+
 **JSON output.** The resolved tree, for custom consumers.
 
 | Source | Site output | Plain-markdown output |

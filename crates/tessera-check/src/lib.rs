@@ -38,7 +38,7 @@ mod yaml;
 
 pub use checks::check_file;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
-pub use page::{PageChecker, check_all_builds, check_pages, check_project};
+pub use page::{PageChecker, check_all_builds, check_builds, check_pages, check_project};
 pub use project::{FileEntry, LoadError, MODEL_FILE, Project, ReadFailure, SourceFile};
 pub use registry::{Entry, Level, Registry};
 

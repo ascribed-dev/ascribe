@@ -51,6 +51,8 @@ pub enum Color {
 /// The subcommands.
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Build the documentation set's outputs.
+    Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
     Check(commands::check::Args),
     /// Rewrite Tessera constructs into canonical form.
@@ -60,6 +62,7 @@ pub enum Command {
 impl Command {
     fn run(self, global: &Global) -> ExitCode {
         match self {
+            Command::Build(args) => commands::build::run(global, args),
             Command::Check(args) => commands::check::run(global, args),
             Command::Fmt(args) => commands::fmt::run(global, args),
         }

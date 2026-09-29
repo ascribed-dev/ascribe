@@ -4,7 +4,8 @@ The `tessera` command-line tool.
 
 ```sh
 tessera --version
-tessera check [--config <PATH>] [--build <NAME>] [--format text|json] [--deny-warnings] [--color auto|always|never]
+tessera check [--config <PATH>] [--build <NAME>]... [--format text|json] [--deny-warnings] [--color auto|always|never]
+tessera build [--build <NAME>]... [--emit plain,json] [--format text|json]
 ```
 
 | Command | What it does | Phase |
@@ -14,7 +15,23 @@ tessera check [--config <PATH>] [--build <NAME>] [--format text|json] [--deny-wa
 | `build` | Builds outputs | 18 |
 | `fmt` | Rewrites source into canonical form | 23 |
 
-Only `check` exists so far. Each subcommand is one module under `src/commands/`; see the note at the top of `src/cli.rs` for what a new one needs (its own module, and one variant and one match arm in `cli.rs`).
+`check`, `build`, and `fmt` exist so far. Each subcommand is one module under `src/commands/`; see the note at the top of `src/cli.rs` for what a new one needs (its own module, and one variant and one match arm in `cli.rs`).
+
+## `tessera build`
+
+Checks the project, then writes each build's outputs to `<output-dir>/<build>/<emitter>/` (`.tessera/build/` by default), each with a manifest beside it. See `crates/tessera-emit/README.md` for the outputs and `project-docs/contracts/output-layout.md` for how the previous output is replaced.
+
+- `--build <NAME>`: build only this build (repeat for several). By default, every build in `tessera.toml`.
+- `--emit <OUTPUTS>`: `plain`, `json`, or both (`plain,json`, the default). `site` comes with phase 20; asking for it now is an error.
+- `--format text|json`: how the checks' report is shown, as for `tessera check`.
+
+The checks run first (file-level and page-level, as `tessera check` runs them: every build, or only the `--build`s named) and print exactly what `tessera check` prints on standard output. If any has an error, nothing is written for any build. Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error. Without `[consumer] site` in `tessera.toml`, plain-markdown links are root-relative, and the build says so.
+
+| Code | Meaning |
+|---|---|
+| `0` | Built |
+| `1` | The checks found errors; nothing was written |
+| `2` | The build couldn't run: a usage error, no `tessera.toml`, a content model with errors, another build writing to the output directory, or a file in the output directory that Tessera didn't write and would have to overwrite |
 
 ## Options every command accepts
 

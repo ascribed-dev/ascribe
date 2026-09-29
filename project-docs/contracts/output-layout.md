@@ -86,7 +86,7 @@ A build writes to a staging directory and replaces the previous output only when
 3. **Emit into staging:** `<output-dir>/.staging/<build>/<emitter>/`, removing any leftover staging for that pair first. If emitting fails, or the build has errors (SPEC §8.2: "a build MUST fail on errors"), remove the staging directory and stop. The previous output is untouched.
 4. **Check before touching anything.** Fail, naming every problem, and leave the output untouched, if:
    - a file would be written where a file exists that the previous manifest doesn't list (a user's file is in the way);
-   - a file would be written where a directory exists, or a directory is needed where a file exists;
+   - a file would be written where a directory exists (even one holding only Tessera's files: a directory is removed only when a build empties it), or a directory is needed where a file exists that the previous manifest doesn't list. A file the previous manifest lists, in the way of a directory, is Tessera's: it's removed just before the directory is made (Q117);
    - two new files have the same path, or paths that differ only in case (they'd be one file on macOS and Windows).
 5. **Record ownership first.** Write the manifest listing every file in the previous manifest *and* every new file. Write each manifest by writing a temporary file in `.staging/` and renaming it into place, so it's never half-written.
 6. **Move the new files into place**, replacing the previous build's files at the same paths. A file whose content hasn't changed may be left as it is, so watchers such as Astro's dev server see only real changes.

@@ -74,6 +74,16 @@ pub fn check_project(project: &Project, build: &Build) -> Vec<Diagnostic> {
     out
 }
 
+/// Every diagnostic of a set of builds: the file-level ones once, then the
+/// page-level ones of each build, each distinct problem once with the builds
+/// it appears in (as [`check_all_builds`] does, without the pass over content
+/// no build publishes, which needs every build).
+pub fn check_builds(project: &Project, builds: &[&Build]) -> Vec<Diagnostic> {
+    let mut out = check_files(project);
+    out.extend(PageChecker::new(project).check_builds(builds));
+    out
+}
+
 /// The page-level diagnostics of one build, without the file-level ones.
 pub fn check_pages(project: &Project, build: &Build) -> Vec<Diagnostic> {
     PageChecker::new(project).check(build)
@@ -110,6 +120,16 @@ impl<'p> PageChecker<'p> {
     pub fn check(&self, build: &Build) -> Vec<Diagnostic> {
         let found = self.found(build, &mut |_| {});
         self.finish(vec![(Some(build.name.as_str()), found)])
+    }
+
+    /// The page-level diagnostics of several builds, each distinct problem
+    /// once, naming the builds it appears in.
+    pub fn check_builds(&self, builds: &[&Build]) -> Vec<Diagnostic> {
+        let per_build = builds
+            .iter()
+            .map(|build| (Some(build.name.as_str()), self.found(build, &mut |_| {})))
+            .collect();
+        self.finish(per_build)
     }
 
     /// The page-level diagnostics of every build of the project, and of the
