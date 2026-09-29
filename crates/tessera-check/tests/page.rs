@@ -251,9 +251,11 @@ fn a_problem_two_builds_share_is_one_diagnostic_naming_both() {
         .collect();
     assert_eq!(at(&p, &found), [row("link-id-removed", "index.md", 5)]);
     assert_eq!(found[0].builds, ["cloud", "self-managed"]);
-    // The message names both builds, since it can't name just one.
+    // The message names both builds, with the plural wording (Q102).
     assert!(
-        found[0].message.contains("build `cloud`, `self-managed`"),
+        found[0]
+            .message
+            .starts_with("builds `cloud`, `self-managed` remove the heading"),
         "{}",
         found[0].message
     );

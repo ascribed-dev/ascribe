@@ -128,9 +128,12 @@ fn include_target(index: &Project, site: &IncludeSite) -> Option<String> {
 /// `id-duplicate` and `heading-duplicate-without-id`, from the page's headings
 /// once includes and the build's modes are applied.
 fn headings(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
-    // The first heading with each page id and each text.
+    // The first heading with each page id, and each slug among the headings
+    // without `@id` (the ones numbered against each other, Q7).
     let mut ids: HashMap<&str, Location> = HashMap::new();
-    let mut texts: HashMap<&str, Location> = HashMap::new();
+    let mut slugs: HashMap<String, Location> = HashMap::new();
+    let slugger = tessera_resolve::slug::slugger_by_name(&index.model().consumer.slugger)
+        .unwrap_or_else(tessera_resolve::slug::default_slugger);
     for (block, heading) in page.headings() {
         let own = Location::new(block.file, block.span);
         let cause = (block.file, block.span, block.via.clone());
@@ -162,20 +165,24 @@ fn headings(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
                 push(issue);
             }
         }
-        // SPEC-QUESTION(Q103): equal text, not equal slugs.
-        if heading.text.is_empty() {
+        // SPEC §5.5 (resolved Q103): the slug the text alone gives, among
+        // headings without `@id`. An empty slug is `heading-empty-slug`'s.
+        if heading.explicit {
             continue;
         }
-        match texts.get(heading.text.as_str()) {
+        let slug = slugger.new_scope().slug(&heading.text);
+        if slug.is_empty() {
+            continue;
+        }
+        match slugs.get(&slug) {
             None => {
-                texts.insert(&heading.text, own);
+                slugs.insert(slug, own);
             }
-            Some(first) if !heading.explicit => {
+            Some(first) => {
                 let issue = Issue::new(diagnostics::HEADING_DUPLICATE_WITHOUT_ID, own)
-                    .with_related(*first, "the same text is used here");
+                    .with_related(*first, "the same slug comes from this heading");
                 push(at_include_site(index, issue, &block.via));
             }
-            Some(_) => {}
         }
     }
 }

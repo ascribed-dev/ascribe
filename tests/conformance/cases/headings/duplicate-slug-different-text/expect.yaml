@@ -1,0 +1,14 @@
+description: >-
+  Headings whose text differs but whose slugs are the same (`Set up` and
+  `Set-up` both slug to `set-up`) are duplicates: the later one's id is
+  numbered. A heading after one with an `@id` isn't numbered against it, so
+  `## options` below `## Options` with `@id: options` is an `id-duplicate`
+  instead (Q7, Q103).
+spec: ["5.5", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: heading-duplicate-without-id, file: index.md, line: 9}
+      - {slug: id-duplicate, file: index.md, line: 16}

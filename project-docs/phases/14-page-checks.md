@@ -85,7 +85,7 @@ See the pull request for the status and evidence of each.
 
 ### Left open
 
-- **Q101 to Q104** in `questions.md`, each implemented as proposed: content no build publishes, one problem in several builds (and the plural wording of the three messages that name a build), what "duplicates another heading's text" compares, and fragments that no page includes.
+- **Q101 to Q104** were resolved on 2026-09-28. Q101, Q102, and Q104 as implemented, with Q102's `builds` message variants added to the registry. Q103 changed: duplicates are found by slug among headings without `@id`, not by text, so `Set up` and `Set-up` are duplicates and a heading after one with an `@id` isn't (`collect.rs`).
 - **Fragments no page includes** have no page-level diagnostics (Q104): they aren't in any page.
 - **Performance.** `PageChecker` indexes the project (parsing every file a second time, after `check_files`) and resolves every page once per build, plus once for the unpublished pass when it's needed. `Project::problems` expands the target page for each link whose id isn't among the target's own, and its results are cached across builds. Phases 13 and 26 can cache all of it per file.
 - **The JSON report** has the builds only in the message, because `report/` is shared with phase 18. A `builds` array and an `unpublished` flag on each entry are additive (no schema version change) and are the next change there.
