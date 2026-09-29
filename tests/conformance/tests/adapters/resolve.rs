@@ -11,21 +11,19 @@
 //! replaced by its value. It also gives the assets the build copies and the
 //! page-level problems the resolution records.
 //!
-//! The problems are `variant-no-arm-survives`, `available-exceeds-scope`,
-//! `link-id-removed`, `link-page-dropped`, and what expansion found
-//! (`include-cycle`, `include-id-missing`), at the locations SPEC §8.1 and Q20
-//! give them. Phase 14 reports them; this adapter only reads them off the
-//! resolved pages, for cases that expect them.
+//! The build's page-level diagnostics are not read off the resolved pages: they
+//! are `tessera_check::check_pages`, the same entry point `tessera check`, the
+//! build, and the language server call (phase 14), so a case that expects them
+//! tests what a user sees.
 
 use tessera_conformance::outline::normalize_ws;
 use tessera_conformance::{
     AdapterError, AdapterResult, Arm, BuildResult, Case, ConformanceAdapter, Diagnostic, Directive,
     Form, Group, Node, PageResult,
 };
-use tessera_core::{LineIndex, Span, WideEncoding};
+use tessera_core::Span;
 use tessera_resolve::{
-    DefaultRouter, IncludeSite, Project, ResolvedBlock, ResolvedBuild, ResolvedKind, ResolvedPage,
-    Substitution,
+    DefaultRouter, Project, ResolvedBlock, ResolvedBuild, ResolvedKind, Substitution,
 };
 use tessera_syntax::{BlockKind, Bound, DirectiveLine, InlineKind, PrimaryValue, raw_text};
 
@@ -61,7 +59,8 @@ fn err(e: impl std::fmt::Display) -> AdapterError {
     AdapterError(e.to_string())
 }
 
-/// Resolves the named build of a case.
+/// Resolves the named build of a case: its published pages, its assets, and
+/// its page-level diagnostics from the checks.
 pub fn resolve_build(case: &Case, name: &str) -> Result<BuildResult, AdapterError> {
     let project = load_project(case)?;
     let build = project
@@ -70,7 +69,19 @@ pub fn resolve_build(case: &Case, name: &str) -> Result<BuildResult, AdapterErro
         .ok_or_else(|| err(format!("the case's model has no build `{name}`")))?;
     let router = DefaultRouter::from_consumer(&project.model().consumer);
     let resolved = project.resolve_build(build, &router);
-    result(&project, &resolved)
+    let mut out = result(&project, &resolved)?;
+    out.diagnostics = page_diagnostics(case, name)?;
+    Ok(out)
+}
+
+/// The page-level diagnostics of one build, in the harness's format.
+fn page_diagnostics(case: &Case, name: &str) -> Result<Vec<Diagnostic>, AdapterError> {
+    let project = super::check::project(case)?;
+    let build = project
+        .model()
+        .build(name)
+        .ok_or_else(|| err(format!("the case's model has no build `{name}`")))?;
+    super::check::to_conformance(&project, tessera_check::check_pages(&project, build))
 }
 
 fn result(project: &Project, resolved: &ResolvedBuild) -> Result<BuildResult, AdapterError> {
@@ -83,48 +94,9 @@ fn result(project: &Project, resolved: &ResolvedBuild) -> Result<BuildResult, Ad
                 outputs: Default::default(),
             },
         );
-        for problem in &page.problems {
-            out.diagnostics
-                .push(diagnostic(project, page, &problem.issue.slug, problem)?);
-        }
     }
     out.assets = resolved.assets().iter().map(|p| p.to_string()).collect();
-    out.diagnostics.sort_by(|a, b| {
-        (&a.file, a.line, a.column, &a.slug).cmp(&(&b.file, b.line, b.column, &b.slug))
-    });
-    out.diagnostics.dedup();
     Ok(out)
-}
-
-/// A page problem as a conformance diagnostic. A page-level report goes at the
-/// outermost include site (SPEC §8.1), except a cycle, which is reported
-/// where it closes (Q20).
-fn diagnostic(
-    project: &Project,
-    _page: &ResolvedPage,
-    slug: &tessera_core::DiagnosticSlug,
-    problem: &tessera_resolve::PageProblem,
-) -> Result<Diagnostic, AdapterError> {
-    let at: Option<&IncludeSite> = match (slug.as_str(), problem.via.first()) {
-        ("include-cycle", _) | (_, None) => None,
-        (_, Some(site)) => Some(site),
-    };
-    let (file, span) = match at {
-        Some(site) => (site.file, site.span),
-        None => (problem.issue.location.file, problem.issue.location.span),
-    };
-    let index = project
-        .file_by_id(file)
-        .ok_or_else(|| err(format!("no file {file}")))?;
-    let pos = LineIndex::new(&index.source)
-        .wide_line_col(WideEncoding::Utf32, span.start())
-        .ok_or_else(|| err(format!("bad location in {}", index.path)))?;
-    Ok(Diagnostic {
-        slug: slug.as_str().to_owned(),
-        file: index.path.to_string(),
-        line: pos.line + 1,
-        column: pos.col + 1,
-    })
 }
 
 // ---------------------------------------------------------------------------

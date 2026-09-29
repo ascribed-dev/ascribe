@@ -4,7 +4,7 @@ The `tessera` command-line tool.
 
 ```sh
 tessera --version
-tessera check [--config <PATH>] [--format text|json] [--deny-warnings] [--color auto|always|never]
+tessera check [--config <PATH>] [--build <NAME>] [--format text|json] [--deny-warnings] [--color auto|always|never]
 ```
 
 | Command | What it does | Phase |
@@ -23,7 +23,12 @@ Only `check` exists so far. Each subcommand is one module under `src/commands/`;
 
 ## `tessera check`
 
-Loads the content model, reads every `.md` file under its content root (skipping names that begin with `.`), and reports file-level diagnostics (SPEC §8.1): the same list the language server and the build report, from `tessera_check::check_files`. Page-level checks (ids and link targets that need an assembled page) are reported by the build.
+Loads the content model, reads every `.md` file under its content root (skipping names that begin with `.`), and reports every diagnostic of SPEC §8.1: the file-level ones, then the page-level ones for **every build** of the content model. It's `tessera_check::check_all_builds`; the language server and `tessera build` call the same functions (`check_project` for one build), so their diagnostics are identical.
+
+- **`--build <NAME>`** checks one build only (`tessera_check::check_project`). An unknown name is exit code 2, and the message lists the builds.
+- **Each problem is reported once**, however many builds it appears in. One that doesn't appear in all of them says which, at the end of its message (`only in build `cloud``); the three rows that name a build in their message (`variant-no-arm-survives`, `link-id-removed`, `link-page-dropped`) name every build they appear in.
+- **A problem in included content is at the include site**, with its place in the fragment as a related location (`related` in the JSON), not a second diagnostic.
+- **Content no build publishes** is checked too, so a problem in an arm that none of the builds selects isn't missed. Its diagnostics say "in content that no build publishes". Not with `--build`, which is about one build.
 
 ### Exit codes
 
@@ -54,7 +59,7 @@ Diagnostics are written to standard output; failures that stop the command (exit
 
 ### JSON output
 
-`--format json` writes one JSON document to standard output, whatever the outcome, so a tool can always parse it. The schema is versioned: `schema_version` changes only when a field is removed or changes meaning. New fields can appear without a new version, so ignore fields you don't know.
+`--format json` writes one JSON document to standard output, whatever the outcome, so a tool can always parse it. The schema is versioned: `schema_version` changes only when a field is removed or changes meaning. New fields can appear without a new version, so **consumers must ignore fields they don't know**. (`builds` and `unpublished` were added this way.)
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -77,6 +82,8 @@ Each diagnostic:
 | `range` | object | Where: `start` and `end` positions |
 | `related` | array | Other places that explain it: `{file, range, message}` |
 | `fixes` | array | Edits that would fix it: `{title, file, edits}`, where each edit is `{range, new_text}` and replaces the text in `range` |
+| `builds` | array of strings | The builds a page-level diagnostic appears in, in the content model's order. Empty when the diagnostic doesn't depend on a build (every file-level one) and when it's in content no build publishes (`unpublished`). Each problem appears once, however many builds it's in. With `--build`, only that build. |
+| `unpublished` | boolean | `true` for a problem in content that no build publishes; `builds` is then empty |
 
 A position is `{line, column, offset}`: `line` and `column` start at 1, `column` counts Unicode characters (not bytes or UTF-16 units), and `offset` is the byte offset from the start of the file. A range is `{start, end}`; `end` is just past the last character, and an edit that inserts text has equal positions. Codes, slugs, severities, and message templates come from the diagnostics registry, `tests/conformance/diagnostics.toml`.
 
@@ -114,7 +121,9 @@ An example, for a page that links to a route:
             }
           ]
         }
-      ]
+      ],
+      "builds": [],
+      "unpublished": false
     }
   ],
   "summary": { "errors": 0, "warnings": 1 }
