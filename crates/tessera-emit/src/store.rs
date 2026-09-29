@@ -277,7 +277,7 @@ impl OutputDir {
             let dest = emitter_root.join(file.path.as_str());
             if fs::symlink_metadata(&dest).is_ok() {
                 if dest.is_dir() {
-                    // SPEC-QUESTION(Q117): a directory where this build writes a file.
+                    // Resolved Q117: a directory where this build writes a file.
                     problems.push(format!(
                         "{} is a directory, and a file would be written there",
                         dest.display()
@@ -298,7 +298,7 @@ impl OutputDir {
                 prefix.push_str(segment);
                 let at = emitter_root.join(&prefix);
                 if fs::symlink_metadata(&at).is_ok() && !at.is_dir() {
-                    // SPEC-QUESTION(Q117): a file of Tessera's where this build
+                    // Resolved Q117: a file of Tessera's where this build
                     // needs a directory.
                     if previous_paths.contains(prefix.as_str()) {
                         // Tessera's own file, which this build no longer

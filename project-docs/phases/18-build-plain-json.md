@@ -91,5 +91,5 @@ No case has `outputs:` yet, and none carries the `output` tag, so the `output` s
 - **A case-only rename on a case-insensitive file system** (`Guide.md` to `guide.md`) makes the build fail with "isn't a file Tessera wrote", since the manifest lists the old spelling: safe, and confusing. Fixing it needs telling a case twin of Tessera's file from a user's file, which a case-insensitive listing can't do portably.
 - **An output of a build removed from `tessera.toml`** stays on disk: a build only replaces the outputs it writes, and nothing lists the ones it doesn't. A `tessera clean` (or pruning the manifests of unknown builds) could remove them; it isn't in the phase.
 - **Interrupted builds**: the invariant is tested by making a copy fail while staging (nothing changes), and by reading the code's ordering (manifest with old and new files, then moves, then removals, then the final manifest). There is no test that kills the process between steps.
-- **Table alignment and image attributes** aren't in the plain output (Q116); keeping alignment needs `tessera-syntax` to record it.
+- **Table alignment** is kept since Q116's resolution (`tessera_syntax::Table::alignments`); image attributes aren't part of plain markdown.
 - **Route mapping** is `DefaultRouter`; Q55's inverse mapping (which page a route names) is still in `tessera-resolve`.

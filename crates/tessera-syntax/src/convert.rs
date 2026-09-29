@@ -281,7 +281,17 @@ impl<'a> Converter<'a> {
                 literal: html.literal.clone(),
             }),
             NodeValue::ThematicBreak => BlockKind::ThematicBreak,
-            NodeValue::Table(_) => {
+            NodeValue::Table(table) => {
+                let alignments = table
+                    .alignments
+                    .iter()
+                    .map(|a| match a {
+                        comrak_tessera::nodes::TableAlignment::Left => Alignment::Left,
+                        comrak_tessera::nodes::TableAlignment::Center => Alignment::Center,
+                        comrak_tessera::nodes::TableAlignment::Right => Alignment::Right,
+                        comrak_tessera::nodes::TableAlignment::None => Alignment::None,
+                    })
+                    .collect();
                 let rows = node
                     .children()
                     .map(|row| {
@@ -302,7 +312,7 @@ impl<'a> Converter<'a> {
                     })
                     .collect::<Vec<_>>();
                 span = hull(span, rows.iter().map(|r| r.span));
-                BlockKind::Table(Table { rows })
+                BlockKind::Table(Table { rows, alignments })
             }
             // Nodes from extensions Tessera doesn't enable never appear; if
             // one did, its blocks are kept and the wrapper dropped.

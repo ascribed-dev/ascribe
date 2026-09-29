@@ -98,11 +98,13 @@ fn availability_is_a_line_with_display_labels() {
         body(feature),
         "## Sync\n\nAvailable: Quill Cloud (GA); Self-managed (preview, 3.4+)\n"
     );
-    // A history, a bare version, and a state on a versionless target.
+    // A history, a bare version, and a state on a versionless target. A
+    // history names each state and the version it begins at, as the element
+    // contract does (Q114).
     let history = "@available: sso\n\nPara.\n";
     assert_eq!(
         body(history),
-        "Available: Quill Cloud (Beta); Self-managed (preview 3.3+, GA 3.5+, deprecated 4.0+)\n\nPara.\n"
+        "Available: Quill Cloud (Beta); Self-managed (preview 3.3, GA 3.5, deprecated 4.0)\n\nPara.\n"
     );
     assert_eq!(
         body("@available: self-managed 3.2\n\nPara.\n"),
@@ -202,6 +204,11 @@ fn block_quotes_tables_and_breaks() {
         body("| a | b |\n| --- | --- |\n| 1 | `x\\|y` |\n"),
         "| a | b |\n| --- | --- |\n| 1 | `x\\|y` |\n"
     );
+    // Each column keeps its alignment (Q116).
+    assert_eq!(
+        body("| a | b | c | d |\n| :-- | :-: | --: | --- |\n| 1 | 2 | 3 | 4 |\n"),
+        "| a | b | c | d |\n| :--- | :---: | ---: | --- |\n| 1 | 2 | 3 | 4 |\n"
+    );
 }
 
 #[test]
@@ -215,9 +222,18 @@ fn text_is_escaped_so_it_reads_back_the_same() {
 }
 
 #[test]
-fn raw_html_becomes_literal_text() {
-    assert_eq!(body("<div>\nhi\n</div>\n"), "\\<div>\nhi\n\\</div>\n");
-    assert_eq!(body("a <kbd>x</kbd> b\n"), "a \\<kbd>x\\</kbd> b\n");
+fn raw_html_keeps_its_text_and_drops_its_tags() {
+    // Q112: the output has no HTML, and a reader sees the text, not the tags.
+    assert_eq!(body("<div>\nhi\n</div>\n"), "hi\n");
+    assert_eq!(body("a <kbd>x</kbd> b\n"), "a x b\n");
+    // Comments, scripts, and styles have no text to keep.
+    assert_eq!(body("<!-- note -->\n\nText.\n"), "Text.\n");
+    assert_eq!(
+        body("<script>\nlet x = 1 < 2;\n</script>\n\nText.\n"),
+        "Text.\n"
+    );
+    // A `<` that doesn't start a tag is text.
+    assert_eq!(body("<div>\n1 < 2\n</div>\n"), "1 \\< 2\n");
 }
 
 #[test]
