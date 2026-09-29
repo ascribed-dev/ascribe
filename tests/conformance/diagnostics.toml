@@ -762,6 +762,7 @@ spec = "2.1"
 rule = "20.3"
 message = "`{field}` is reserved by the Tessera spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
 messages.fragment = "`{field}` is reserved by the Tessera spec, and fragments can't use it"
+messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
 
 [[diagnostic]]
 code = "TSR075"

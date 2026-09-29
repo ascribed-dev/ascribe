@@ -1,7 +1,7 @@
 //! Display text that both outputs share: availability lines, the label of a
 //! group's arm, and inline content as plain text.
 
-use tessera_core::availability::{AvailabilitySpec, Detail, parse_availability};
+use tessera_core::availability::{AvailabilitySpec, Detail, Entry, parse_availability};
 use tessera_model::ContentModel;
 use tessera_syntax::{DirectiveLine, Inline, InlineKind};
 
@@ -17,6 +17,17 @@ use tessera_syntax::{DirectiveLine, Inline, InlineKind};
 /// dimension's label. This is the element contract's text for each target
 /// (`packages/elements/CONTRACT.md` §4), as resolved in Q114.
 pub fn availability_display(model: &ContentModel, spec: &AvailabilitySpec) -> String {
+    spec.entries
+        .iter()
+        .map(|entry| availability_target_text(model, entry))
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+/// One target of an availability spec as a person reads it: its label, and in
+/// parentheses its state and version (`Self-managed (preview, 3.4+)`). The
+/// text of a `<tessera-availability-target>` (element contract §4).
+pub fn availability_target_text(model: &ContentModel, entry: &Entry) -> String {
     let ga = model
         .lifecycle_state("ga")
         .map_or("GA", |s| s.label.as_str());
@@ -25,35 +36,29 @@ pub fn availability_display(model: &ContentModel, spec: &AvailabilitySpec) -> St
             .lifecycle_state(name)
             .map_or(name.to_owned(), |s| s.label.clone())
     };
-    spec.entries
-        .iter()
-        .map(|entry| {
-            let target = entry.target.text.as_str();
-            let label = model
-                .value_label(target)
-                .or_else(|| model.dimension(target).map(|d| d.label.as_str()))
-                .unwrap_or(target);
-            let detail = match &entry.detail {
-                Detail::None => ga.to_owned(),
-                Detail::Version(v) => format!("{ga}, {}+", v.text),
-                Detail::State {
-                    state: s,
-                    version: None,
-                } => state(&s.text),
-                Detail::State {
-                    state: s,
-                    version: Some(v),
-                } => format!("{}, {}+", state(&s.text), v.text),
-                Detail::History(steps) => steps
-                    .iter()
-                    .map(|step| format!("{} {}", state(&step.state.text), step.version.text))
-                    .collect::<Vec<_>>()
-                    .join(", "),
-            };
-            format!("{label} ({detail})")
-        })
-        .collect::<Vec<_>>()
-        .join("; ")
+    let target = entry.target.text.as_str();
+    let label = model
+        .value_label(target)
+        .or_else(|| model.dimension(target).map(|d| d.label.as_str()))
+        .unwrap_or(target);
+    let detail = match &entry.detail {
+        Detail::None => ga.to_owned(),
+        Detail::Version(v) => format!("{ga}, {}+", v.text),
+        Detail::State {
+            state: s,
+            version: None,
+        } => state(&s.text),
+        Detail::State {
+            state: s,
+            version: Some(v),
+        } => format!("{}, {}+", state(&s.text), v.text),
+        Detail::History(steps) => steps
+            .iter()
+            .map(|step| format!("{} {}", state(&step.state.text), step.version.text))
+            .collect::<Vec<_>>()
+            .join(", "),
+    };
+    format!("{label} ({detail})")
 }
 
 /// [`availability_display`] for a spec written as text, such as an

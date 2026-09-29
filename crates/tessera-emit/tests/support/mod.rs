@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use tessera_core::FileId;
 use tessera_emit::{Contents, EmitContext, Emitter, emit};
-use tessera_resolve::{DefaultRouter, DiskFs, Layout, Project};
+use tessera_resolve::{AstroRouter, DiskFs, Layout, Project};
 
 /// `examples/quill`, from a test in this crate.
 pub fn quill() -> PathBuf {
@@ -34,7 +34,7 @@ pub fn emit_build(
     emitter: &dyn Emitter,
 ) -> BTreeMap<String, String> {
     let model_build = project.model().build(build).expect("a build of that name");
-    let router = DefaultRouter::from_consumer(&project.model().consumer);
+    let router = AstroRouter::from_consumer(&project.model().consumer);
     let resolved = project.resolve_build(model_build, &router);
     let cx = EmitContext::new(project, root, model_build);
     let emission = emit(emitter, &cx, &resolved).expect("the build emits");
@@ -85,4 +85,32 @@ pub fn plain(project: &Project, build: &str, page: &str) -> String {
 /// A page with frontmatter `title: Test` and this body.
 pub fn page(body: &str) -> String {
     format!("---\ntitle: Test\n---\n\n{body}")
+}
+
+/// One page of a build, as site markdown.
+pub fn site(project: &Project, build: &str, page: &str) -> String {
+    let emitter = tessera_emit::SiteEmitter::new(project.model());
+    emit_build(Path::new("/nowhere"), project, build, &emitter)
+        .remove(page)
+        .unwrap_or_else(|| panic!("the build has no page {page}"))
+}
+
+/// Like [`memory_project`], with files that aren't sources (assets), as
+/// `(project path, text)`.
+pub fn memory_project_with_files(
+    model: &str,
+    files: &[(&str, &str)],
+    assets: &[(&str, &str)],
+) -> Project {
+    let model = tessera_model::load_str(model, FileId::new(0))
+        .unwrap_or_else(|issues| panic!("the model has errors: {issues:?}"));
+    let layout = Layout::from_model(&model);
+    let mut fs = tessera_resolve::MemoryFs::new(&layout);
+    for (path, text) in files {
+        fs = fs.with_source(path, text);
+    }
+    for (path, text) in assets {
+        fs = fs.with_file(path, text);
+    }
+    Project::load(Arc::new(model), layout, &fs)
 }

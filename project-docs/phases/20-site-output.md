@@ -57,4 +57,54 @@ Emit the site output (markdown plus web components), implement the Astro consume
 
 ## Handoff notes
 
-_To be filled in by the implementing agent._
+### What was built
+
+- **`crates/tessera-emit/src/site/`**: `SiteEmitter` (`Emitter`), and `AstroProfile` (`ConsumerProfile`: routing, the `github` slugger, HTML passthrough, asset placement). `blocks.rs` writes the elements of `packages/elements/CONTRACT.md`, `inline.rs` the inline content and the attribute markers, `frontmatter.rs` the page's frontmatter, `element.rs` the escaping and layout rules.
+- **`crates/tessera-emit/src/render/`**: `render_site_html()`, passing all twelve fixtures in `tests/render/` (eleven from phase 02, one I added: `image-ends-heading`).
+- **`crates/tessera-emit/src/zod/`**: `zod::generate(model)`, written as `_tessera/schema.ts` in the site output.
+- **`crates/tessera-resolve/src/astro.rs`** (new file, in the resolve crate so the source index can use it without a dependency on the emitters): `AstroRouter`, the Astro profile's `Router`, plus `page_for_route` (which page has a route) and `collisions`.
+- **`tessera build --emit site`**, and every output now resolved with `AstroRouter` (Q144); `--emit` defaults to `site,plain,json`.
+- **`tests/zod/`**: a pnpm workspace package (added to `pnpm-workspace.yaml`) that type-checks the generated Zod modules with `tsc` and validates the Quill pages' frontmatter with them. It depends on `zod` (4.6) and aliases `astro/zod` to `zod/v4`, which is what Astro 7.3.5's `astro/zod` re-exports, so it doesn't pull Astro's dependency tree into the workspace; phase 21 runs the real one.
+- **Interim route mapping replaced, in the way that adds to it** (Q148): `references::route` still tries `route.md` and `route/index.md` first, then asks `AstroRouter::page_for_route` through the new `SourceSet::pages` (default: empty, so nothing else that implements the trait changes). `tessera check` and the source index agree (`crates/tessera-check/tests/parity.rs` passes).
+
+### Interfaces later phases use
+
+- **Phase 21 (the Astro plugin):** the marker rules are the site-render contract's; the fixtures in `tests/render/` are the shared test, and `image-ends-heading` is new (Q145). Read `_tessera/schema.ts` (`schema`, `schemas`, `contentTypes`, `availableSchema`) for the collection; the site output root is `<output-dir>/<build>/site/`; `_tessera/files/` must be served at `<base-path>_tessera/files/`. Images stay relative (`./img/a.png`) so Astro processes them. Page-level `available` is a list of targets (Q142); a layout writes `<tessera-availability scope="page">` from it.
+- **Phase 25 (preview):** `tessera_emit::render_site_html(markdown)`; `SiteEmitter::new(model)` with `emit`, or the whole pipeline through `tessera build`.
+- **Everyone:** `tessera_resolve::AstroRouter` (`from_consumer`, `route`, `entry_id`, `page_for_route`, `collisions`); `tessera_emit::AstroProfile`.
+
+### Astro version
+
+Written against **Astro 7.3.5** (`astro/zod` is Zod 4.6). Verified in `node_modules` of that release: the `glob` loader's entry id (`getContentEntryIdAndSlug`: each path segment slugged by `github-slugger` 2.0.0's pure `slug()`, joined with `/`, a final `/index` removed, one extension removed) is what `AstroRouter::entry_id` computes; `astro/zod` re-exports `zod/v4`, where `z.strictObject`, `z.coerce.date()`, and `.default()` are the forms the generated module uses. **Not verified here, and left for phase 21** (as the asset and site-render contracts say): that Astro processes a relative `./img/a.png` in a collection entry's markdown, that a remark plugin setting `hProperties` reaches both Astro's heading-id pass and its image processing, and how the integration serves `_tessera/files/`.
+
+### Decisions
+
+Every choice the spec leaves open is a question with the implemented answer: Q141 (image defaults reach every image), Q142 (page-level `available` is a list of targets), Q143 (two pages with one route fail the site output), Q144 (`AstroRouter` for every output; all three outputs by default), Q145 (a marker after an image that ends a heading applies to the image), Q146 (a list that holds an element is loose), Q147 (an image in a `@details` title is its alt text), Q148 (the router finds the page a route names), Q149 (the Zod module), Q150 (`slug` is reserved under the `astro` profile: a content type can't declare it, since Astro would use it as the entry id). All are `open`, implemented as proposed.
+
+Also:
+
+- **The site markdown is a tree walk like the plain emitter's** (`blocks.rs`), sharing its list, quote, fence, and escaping code (now `pub(crate)`), and its handling of following-block directives (the tree keeps them as siblings, and the emitter wraps the block they bind, in stacking order).
+- **Markers are applied to comrak's HTML** (`render/`): comrak writes raw HTML unchanged and escapes `<`, `>`, `&`, and `"` in every value it writes, so a marker is found exactly, and the rules (§2) are decided on the original HTML, so a marker that follows another marker never applies to the image.
+- **`labels.rs`** gained `availability_target_text`, one target's text; `availability_display` uses it, so the plain line is unchanged.
+- **A bug in the plain emitter was fixed on the way**: a heading whose text ends in an already escaped `#` (`## \#`) got `\\#`, which reads as an escaped backslash and a `#`. Both emitters use `escape_closing_hash`; `tests/plain.rs` has a case.
+- **Attributes on a tab label** follow the contract's canonical order (the content model's dimension order), where the plain output labels in written order (phase 18, Q115): the two differ only for an arm whose attributes are written out of order.
+- **`tessera-check`'s page pass** still uses `DefaultRouter` (Q144): a route's text never changes a diagnostic.
+
+### For phase 21 and later
+
+- **The root page.** Astro's entry id for `index.md` is `index` (its regex removes only `/index`), while Tessera's route for that entry is the base path (content-model.md §16). Phase 21's page route must serve the entry with id `index` at the base path, or the root page is at `/index/`. `AstroRouter::entry_id` returns exactly Astro's id, and `index.md` and `index/index.md` are reported as one route.
+- **The root route under `trailing-slash = "never"`** is the base path without its trailing slash (`/docs`), unless the base is `/`, matching Astro's `BASE_URL` and the URL its build writes for the root page. Phase 21 should confirm it in a real build.
+- **Cost of a route-like link.** For each route-like link that the conventional mapping doesn't resolve, `page_of_route` lists and slugs every page. That's fine at Quill's size; at phase 15's benchmark scale a route map built once per source set would be better. Not done here.
+
+### Conformance
+
+`cargo test -p tessera-conformance`: **364 passed, 0 failed, 0 skipped**. No case carries the `output` tag, so the `output` entry in `SKIPS.toml` doesn't gate this phase (phase 18 said the same). `tests/conformance/tests/render_fixtures.rs` covers the new fixture. The site output's own tests are in `crates/tessera-emit/tests/` (`site.rs`, `site_quill.rs` with snapshots for every page of Quill under each build, `site_assets.rs`, `render_fixtures.rs`, `zod.rs`) and `crates/tessera-cli/tests/build.rs`.
+
+### Left open
+
+- **Q141 to Q149** (above).
+- **A tight list that holds an element becomes loose** (Q146), so its items render `<p>`.
+- **Route collisions** are an emitter error, not a registry diagnostic (Q143): `tessera check` doesn't report them, only `tessera build --emit site`.
+- **Raw HTML in a `<summary>`** can't hold a processed image (Q147).
+- **Prettier doesn't format the generated Zod module** (`tests/` is ignored), so its layout is whatever `zod::generate` writes; it is stable, so the fixtures don't churn.
+- **The default of `tessera build`** now includes `site`, so a project with two pages of one route can't build with the defaults; `--emit plain,json` is the way around it.

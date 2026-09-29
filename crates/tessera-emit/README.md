@@ -6,14 +6,15 @@ Emitters for Tessera's outputs. An emitter renders phase 12's **resolved tree** 
 |---|---|---|
 | Plain markdown (`plain/`) | `PlainEmitter` | 18 |
 | JSON (`json/`) | `JsonEmitter` | 18 |
-| Site markdown plus web components (`site/`) | | 20 |
+| Site markdown plus web components (`site/`) | `SiteEmitter` | 20 |
 
 ## Pieces
 
 - `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page`, and the defaults `place_asset` (the mirrored path and a relative reference, asset contract §3), `generated` (files under `_tessera/`), and `warnings`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once.
 - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, and `markdown_destination`, which write a reference so CommonMark reads it back as written (asset contract §4).
 - `OutputDir` (`store.rs`): the [output-layout contract](../../project-docs/contracts/output-layout.md): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
-- `labels.rs`: text both outputs share (the availability line, an arm's label).
+- `labels.rs`: text the outputs share (the availability line and each target's text, an arm's label).
+- `site/`, `render/`, `zod/`: phase 20 (below).
 
 ```rust,ignore
 let cx = EmitContext::new(&project, project_root, build);
@@ -40,6 +41,34 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 | Raw HTML in the source | Its text, without the tags; comments, scripts, and styles dropped (Q112) |
 
 Code blocks are always fenced (the fence is longer than any backtick run in the code, and a `phrases=true` info word is dropped), and text is escaped so that an unmodified CommonMark parser reads back the same text.
+
+## Site
+
+Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_tessera/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_tessera/schema.ts`. `prepare` refuses a build whose pages share a route (Q143).
+
+| Source | Output |
+|---|---|
+| Frontmatter | Passed through, phrases substituted; `available` becomes a list of targets (Q142) |
+| Heading | An ATX heading ending in `<tessera-attributes id="…"></tessera-attributes>` with its page id, after a space |
+| Image | `![alt](./path "title")`, then a marker with its attributes and the model's defaults (Q141) |
+| `@note` | `<tessera-note type label heading>` wrapping the content |
+| `@steps` | `<tessera-steps>` wrapping the list |
+| `@variant` group | `<tessera-tabs sync>` of `<tessera-tab value label>` per surviving arm (a group reduced to one arm is its content) |
+| `@details` | `<details>` with `<summary>` holding the title as HTML |
+| `@available` | `<tessera-availability scope="section|block">` of `<tessera-availability-target target dimension states versions>` |
+| Project widget | An element named after the widget, `<tessera-group widget>` around a group's arms |
+| Glossary term | A link to the term's route, with its definition as the title |
+| Raw HTML | Unchanged |
+
+Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its order, and a wrapping element has a blank line after its opening tag and before its closing tag (SPEC §9.4). `tests/site.rs`, `tests/site_quill.rs` (with the snapshots), and `tests/site_assets.rs` check them.
+
+### `render_site_html`
+
+`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview (phase 25) uses it; the Astro plugin (phase 21) must pass the same fixtures.
+
+### Zod
+
+`zod::generate(model)` writes the TypeScript module `_tessera/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys, and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema` (Q149). `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @tessera/zod-check test`). Regenerate its fixtures after a change with `TESSERA_BLESS=1 cargo test -p tessera-emit --test zod`.
 
 ## JSON
 
@@ -134,4 +163,4 @@ See the [output-layout contract](../../project-docs/contracts/output-layout.md).
 
 ## Tests
 
-`tests/plain.rs` (each construct), `tests/store.rs` (the output-layout contract), `tests/assets.rs` (the output works with the source removed), and `tests/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters). Review snapshot changes with `cargo insta review`; never accept them blindly.
+`tests/plain.rs` (each construct), `tests/store.rs` (the output-layout contract), `tests/assets.rs` (the output works with the source removed), and `tests/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/site.rs`, `tests/site_quill.rs`, `tests/site_assets.rs`, `tests/render_fixtures.rs`, and `tests/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.

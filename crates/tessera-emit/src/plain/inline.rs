@@ -224,7 +224,7 @@ fn asset_destination(
 }
 
 /// ` "title"`, or nothing.
-fn title(title: Option<&str>) -> String {
+pub(crate) fn title(title: Option<&str>) -> String {
     let Some(title) = title.filter(|t| !t.is_empty()) else {
         return String::new();
     };

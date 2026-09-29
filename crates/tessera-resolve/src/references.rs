@@ -22,6 +22,7 @@ use tessera_core::{Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics, p
 use tessera_model::ContentModel;
 use tessera_syntax::{Inline, LinkDefinition, LinkForm, Phrase};
 
+use crate::astro::AstroRouter;
 use crate::fs::{FileSystem, Probe};
 use crate::index::{Local, RefKind, Target};
 use crate::layout::Layout;
@@ -34,6 +35,14 @@ pub trait SourceSet {
 
     /// A source file whose content path differs from `path` only in case.
     fn case_twin(&self, path: &RelPath) -> Option<RelPath>;
+
+    /// Every source file's content path, in path order. A route names the
+    /// page whose route it is (`AstroRouter::page_for_route`), which takes the
+    /// list. A set that can't list its files returns none, and routes are
+    /// found by the conventional mapping alone.
+    fn pages(&self) -> Vec<RelPath> {
+        Vec::new()
+    }
 }
 
 /// What an `@include` primary names.
@@ -233,21 +242,20 @@ pub fn resolve_reference(
         }
     };
     if local.route_like && !matches!(missing, Missing::Case(_)) {
-        return route(local, path, written_in, sources);
+        return route(model, local, path, written_in, sources);
     }
     Resolution::AssetMissing(missing)
 }
 
 /// The page a route-like link most likely names, and the file-path link to
 /// write instead.
-// Resolved Q55: the conventional mapping, `route.md`, else `route/index.md`,
-// whichever is a source file; else `route.md`. This is an interim rule: the
-// build resolution (`crate::build`) routes pages with a `Router`, but the
-// consumer profile's router (phase 20, Astro's) doesn't exist yet, so this
-// mapping, inverted, stays here. When the router exists, ask it which page a
-// route names instead (its inverse of `Router::route`), here and in the
-// `link-route` fix.
+// Resolved Q55, then SPEC-QUESTION(Q148): the conventional mapping first (`route.md`, else
+// `route/index.md`, whichever is a source file), then the consumer profile's
+// router: the page whose route this is, with its base path and the entry ids
+// Astro gives files (`guides/my-setup` for `Guides/My Setup.md`). Otherwise
+// `route.md`, which doesn't exist.
 fn route(
+    model: &ContentModel,
     local: &Local,
     path: &RelPath,
     written_in: &RelPath,
@@ -262,7 +270,9 @@ fn route(
     let (page, page_exists) = [&as_file, &as_directory]
         .into_iter()
         .find(|p| sources.contains(p))
-        .map_or((as_file.clone(), false), |p| (p.clone(), true));
+        .cloned()
+        .or_else(|| page_of_route(model, local, path, sources))
+        .map_or((as_file.clone(), false), |p| (p, true));
     let suggestion = if local.written.starts_with('/') {
         format!("/{page}")
     } else {
@@ -290,6 +300,33 @@ fn route(
         suggestion,
         page_exists,
     }
+}
+
+/// The page the consumer profile's router says has this route. A destination
+/// that starts with `/` is a route as written, which may include the base
+/// path; any other is the route of the content path it names.
+fn page_of_route(
+    model: &ContentModel,
+    local: &Local,
+    path: &RelPath,
+    sources: &dyn SourceSet,
+) -> Option<RelPath> {
+    if !path.is_inside() {
+        return None;
+    }
+    let route = if local.written.starts_with('/') {
+        local.written.clone()
+    } else {
+        format!("/{path}")
+    };
+    let pages: Vec<RelPath> = sources
+        .pages()
+        .into_iter()
+        .filter(|p| !model.is_fragment(p.as_str()))
+        .collect();
+    AstroRouter::from_consumer(&model.consumer)
+        .page_for_route(&route, &pages)
+        .cloned()
 }
 
 /// A path relative to the project root as a content path, when it's inside

@@ -11,6 +11,8 @@ publish.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+serde_yaml.workspace = true
+comrak.workspace = true
 tessera-core.workspace = true
 tessera-model.workspace = true
 tessera-resolve.workspace = true
@@ -18,9 +20,9 @@ tessera-syntax.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-# Reads the plain-markdown output with an unmodified CommonMark parser.
-comrak.workspace = true
+html5ever = "0.39"
 insta.workspace = true
+markup5ever_rcdom = "0.39.0"
 tempfile = "3"
 
 [lints]

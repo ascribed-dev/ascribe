@@ -288,6 +288,49 @@ fn a_link_that_looks_like_a_route_gets_the_route_warning_instead() {
     assert_eq!(problems[2].arg("suggestion"), Some("../guides/install.md"));
 }
 
+/// The consumer profile's router names the page a route belongs to, where the
+/// conventional mapping finds no file (Q148): the base path and the entry ids
+/// Astro gives files.
+#[test]
+fn a_route_names_the_page_the_astro_router_gives_it() {
+    use std::sync::Arc;
+    use tessera_core::FileId;
+    use tessera_resolve::{Layout, MemoryFs, Project};
+
+    let model = tessera_model::load_str(
+        "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[consumer]\nbase-path = \"/docs/\"\n",
+        FileId::new(0),
+    )
+    .expect("a model");
+    let layout = Layout::from_model(&model);
+    let fs = MemoryFs::new(&layout)
+        .with_file(
+            "docs/index.md",
+            &format!(
+                "{PAGE}[a](/docs/guides/my-setup/#x) [b](/guides/my-setup) [c](guides/my-setup/) [d](/docs/nope/)\n"
+            ),
+        )
+        .with_file("docs/guides/My Setup.md", "---\ntitle: S\n---\n")
+        .with_file("docs/_fragments/my-setup.md", "text\n");
+    let p = Project::load(Arc::new(model), layout, &fs);
+    let problems = p.problems(&path("index.md"));
+    assert_eq!(problems.len(), 4);
+    let route = |n: usize| {
+        (
+            problems[n].arg("page").map(str::to_owned),
+            problems[n].arg("suggestion").map(str::to_owned),
+        )
+    };
+    // With and without the base path, and relative to the file.
+    for n in 0..3 {
+        assert_eq!(route(n).0.as_deref(), Some("guides/My Setup.md"), "{n}");
+    }
+    assert_eq!(route(0).1.as_deref(), Some("/guides/My Setup.md#x"));
+    assert_eq!(route(2).1.as_deref(), Some("guides/My Setup.md"));
+    // No page has that route: the conventional guess, with no fix to offer.
+    assert_eq!(route(3).0.as_deref(), Some("docs/nope.md"));
+}
+
 #[test]
 fn an_extensionless_file_that_exists_is_an_asset_not_a_route() {
     let p = project(&[

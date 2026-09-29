@@ -5,14 +5,14 @@ The `tessera` command-line tool.
 ```sh
 tessera --version
 tessera check [--config <PATH>] [--build <NAME>]... [--format text|json] [--deny-warnings] [--color auto|always|never]
-tessera build [--build <NAME>]... [--emit plain,json] [--format text|json]
+tessera build [--build <NAME>]... [--emit site,plain,json] [--format text|json]
 ```
 
 | Command | What it does | Phase |
 |---|---|---|
 | `check` | Checks every source file for problems, without building | 10 |
 | `lsp` | The language server | 15 |
-| `build` | Builds outputs | 18 |
+| `build` | Builds outputs | 18, 20 |
 | `fmt` | Rewrites source into canonical form | 23 |
 
 `check`, `build`, and `fmt` exist so far. Each subcommand is one module under `src/commands/`; see the note at the top of `src/cli.rs` for what a new one needs (its own module, and one variant and one match arm in `cli.rs`).
@@ -22,7 +22,7 @@ tessera build [--build <NAME>]... [--emit plain,json] [--format text|json]
 Checks the project, then writes each build's outputs to `<output-dir>/<build>/<emitter>/` (`.tessera/build/` by default), each with a manifest beside it. See `crates/tessera-emit/README.md` for the outputs and `project-docs/contracts/output-layout.md` for how the previous output is replaced.
 
 - `--build <NAME>`: build only this build (repeat for several). By default, every build in `tessera.toml`.
-- `--emit <OUTPUTS>`: `plain`, `json`, or both (`plain,json`, the default). `site` comes with phase 20; asking for it now is an error.
+- `--emit <OUTPUTS>`: any of `site`, `plain`, and `json`, separated by commas (all three, the default). `site` is markdown plus web components for Astro, with the generated Zod schema in `_tessera/schema.ts`. Links in every output are the `astro` profile's routes (`[consumer] base-path` and `trailing-slash`, and Astro's entry ids for file names). A build whose pages have the same route fails the site output.
 - `--format text|json`: how the checks' report is shown, as for `tessera check`.
 
 The checks run first (file-level and page-level, as `tessera check` runs them: every build, or only the `--build`s named) and print exactly what `tessera check` prints on standard output. If any has an error, nothing is written for any build. Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error. Without `[consumer] site` in `tessera.toml`, plain-markdown links are root-relative, and the build says so.

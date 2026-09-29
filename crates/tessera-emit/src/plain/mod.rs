@@ -20,7 +20,7 @@
 //! source keeps its text and loses its tags, since the output has no HTML
 //! (Q112).
 
-mod inline;
+pub(crate) mod inline;
 
 use tessera_core::RelPath;
 use tessera_model::{ContentModel, PlainContent};
@@ -90,7 +90,7 @@ fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
 /// What kind of list the last emitted block was, so that an adjacent list of
 /// the same kind gets another marker and doesn't merge with it.
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Prev {
+pub(crate) enum Prev {
     None,
     Bullet,
     Ordered,
@@ -209,11 +209,7 @@ impl Renderer<'_> {
                         one_line: true,
                     },
                 );
-                let text = match text.strip_suffix('#') {
-                    // A trailing `#` would read as a closing sequence.
-                    Some(rest) => format!("{rest}\\#"),
-                    None => text,
-                };
+                let text = escape_closing_hash(text);
                 let marks = "#".repeat(usize::from(h.level.clamp(1, 6)));
                 vec![if text.is_empty() {
                     marks
@@ -460,8 +456,22 @@ fn leaf_name(block: &ResolvedBlock) -> Option<&str> {
     }
 }
 
+/// A heading's text with a trailing `#` escaped, so it isn't read as a
+/// closing sequence. A `#` that is already escaped is left alone.
+pub(crate) fn escape_closing_hash(text: String) -> String {
+    let Some(rest) = text.strip_suffix('#') else {
+        return text;
+    };
+    let backslashes = rest.chars().rev().take_while(|c| *c == '\\').count();
+    if backslashes % 2 == 1 {
+        text
+    } else {
+        format!("{rest}\\#")
+    }
+}
+
 /// `> ` before each line; an empty line is just `>`.
-fn quote(text: &str) -> String {
+pub(crate) fn quote(text: &str) -> String {
     text.lines()
         .map(|l| {
             if l.is_empty() {
@@ -476,7 +486,7 @@ fn quote(text: &str) -> String {
 
 /// A list. Each item's blocks are joined with a blank line, except that a
 /// tight list keeps a nested list or a code block directly under its text.
-fn list(
+pub(crate) fn list(
     ordered: bool,
     start: Option<u64>,
     tight: bool,
@@ -539,7 +549,7 @@ fn starts_nested(chunk: &str) -> bool {
 
 /// A code block as a fenced one: the fence is longer than any run of backticks
 /// in the code. A `phrases=true` info word has done its work and is dropped.
-fn fenced(code: &CodeBlock) -> String {
+pub(crate) fn fenced(code: &CodeBlock) -> String {
     let info = code
         .info
         .split_whitespace()

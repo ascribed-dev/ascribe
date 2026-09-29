@@ -129,6 +129,11 @@ fn cases() -> Vec<Case> {
         ),
         case(
             "model-field-reserved",
+            Some("slug"),
+            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nslug = \"string?\" #!\n",
+        ),
+        case(
+            "model-field-reserved",
             Some("fragment"),
             "spec = \"0.1\"\n[fragments.frontmatter]\nvariant = \"string?\" #!\n",
         ),

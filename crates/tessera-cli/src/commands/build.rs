@@ -16,10 +16,11 @@ use std::sync::Arc;
 use clap::{Args as ClapArgs, ValueEnum};
 use tessera_check::{LoadError, Project};
 use tessera_emit::{
-    EmitContext, EmitError, Emitter, JsonEmitter, OutputDir, PlainEmitter, StoreError, emit,
+    EmitContext, EmitError, Emitter, JsonEmitter, OutputDir, PlainEmitter, SiteEmitter, StoreError,
+    emit,
 };
 use tessera_model::Build;
-use tessera_resolve::DefaultRouter;
+use tessera_resolve::AstroRouter;
 
 use crate::cli::Global;
 use crate::commands::check::Format;
@@ -41,7 +42,7 @@ pub struct Args {
         long,
         value_enum,
         value_delimiter = ',',
-        default_values_t = [Emit::Plain, Emit::Json],
+        default_values_t = [Emit::Site, Emit::Plain, Emit::Json],
         value_name = "OUTPUTS"
     )]
     pub emit: Vec<Emit>,
@@ -58,7 +59,7 @@ pub enum Emit {
     Plain,
     /// The resolved tree as JSON.
     Json,
-    /// Markdown plus web components, for a site (not built yet).
+    /// Markdown plus web components, for an Astro site.
     Site,
 }
 
@@ -87,13 +88,6 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         Ok(found) => found,
         Err(message) => return fail(err, &message),
     };
-    // Resolved Q119: what `--emit site` does before phase 20.
-    if args.emit.contains(&Emit::Site) {
-        return fail(
-            err,
-            "the site output isn't available yet; use --emit plain,json",
-        );
-    }
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
     let written = match args.format {
@@ -132,18 +126,20 @@ fn write_outputs(
     let root: &Path = project.root();
     let output_dir = root.join(&model.project.output_dir);
     let output = OutputDir::lock(&output_dir).map_err(store_message)?;
-    // Resolved Q119: routes come from the default router until phase 20
-    // supplies the `astro` profile's.
-    let router = DefaultRouter::from_consumer(&model.consumer);
+    // Resolved Q119; SPEC-QUESTION(Q144): routes come from the `astro` profile's router,
+    // the only profile of spec 0.1, for every output, so a link in the plain
+    // output is the URL the site publishes.
+    let router = AstroRouter::from_consumer(&model.consumer);
 
     let plain = PlainEmitter;
     let json = JsonEmitter;
+    let site = SiteEmitter::new(model);
     let mut emitters: Vec<&dyn Emitter> = Vec::new();
     for e in emit_names {
         let emitter: &dyn Emitter = match e {
             Emit::Plain => &plain,
             Emit::Json => &json,
-            Emit::Site => continue,
+            Emit::Site => &site,
         };
         if !emitters.iter().any(|x| x.name() == emitter.name()) {
             emitters.push(emitter);
@@ -167,7 +163,11 @@ fn write_outputs(
                 .iter()
                 .filter(|f| f.kind == tessera_emit::FileKind::Page)
                 .count();
-            let assets = emission.files.len().saturating_sub(pages);
+            let assets = emission
+                .files
+                .iter()
+                .filter(|f| f.kind == tessera_emit::FileKind::Asset)
+                .count();
             let replaced = output
                 .replace(&build.name, emitter.name(), &emission.files)
                 .map_err(store_message)?;

@@ -139,14 +139,21 @@ impl Loader<'_> {
                 if let Some(fm) = self.require(&path, tt, sp(item), "frontmatter")
                     && let Some(ft) = self.as_table(&fm_path, fm)
                 {
-                    let reserved: &dyn Fn(&str) -> bool = &|n| matches!(n, "available" | "variant");
+                    // SPEC-QUESTION(Q150): under the `astro` profile, `slug` is
+                    // the entry id Astro's loader uses instead of the path.
+                    let reserved: &dyn Fn(&str) -> bool =
+                        &|n| matches!(n, "available" | "variant" | "slug");
                     for (fname, span, _) in entries(ft) {
                         if reserved(fname) {
-                            self.push(
-                                self.issue(diagnostics::MODEL_FIELD_RESERVED, span)
-                                    .with_arg("field", fname)
-                                    .with_arg("type", name),
-                            );
+                            let issue = self
+                                .issue(diagnostics::MODEL_FIELD_RESERVED, span)
+                                .with_arg("field", fname)
+                                .with_arg("type", name);
+                            self.push(if fname == "slug" {
+                                issue.with_variant("slug")
+                            } else {
+                                issue
+                            });
                         }
                     }
                     fields = self.field_table(&fm_path, ft, Some(reserved));
