@@ -1,7 +1,7 @@
 // Runs every fixture in tests/render/ through both markdown processors Astro
 // 7.3 can use, each with the plugin where Astro puts it (tests/render/README.md):
 // the unified pipeline with `rehypeTesseraAttributes`, and Sätteri with
-// `satteriTesseraAttributes`. Not a full Astro build, whose image
+// `satteriAscribeAttributes`. Not a full Astro build, whose image
 // optimization would replace every `src`.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -15,7 +15,7 @@ import remarkSmartypants from "remark-smartypants";
 import { unified } from "unified";
 import { describe, expect, it } from "vitest";
 import rehypeTesseraAttributes from "../src/rehype.js";
-import { satteriTesseraAttributes } from "../src/satteri.js";
+import { satteriAscribeAttributes } from "../src/satteri.js";
 import { firstDifference } from "./html.js";
 
 const root = fileURLToPath(new URL("../../../tests/render/", import.meta.url));
@@ -41,7 +41,7 @@ async function withUnified(markdown: string): Promise<string> {
 // Astro's default Sätteri processor: GFM and smart punctuation on.
 async function withSatteri(markdown: string): Promise<string> {
   const { html } = await markdownToHtml(markdown, {
-    hastPlugins: [satteriTesseraAttributes()],
+    hastPlugins: [satteriAscribeAttributes()],
     features: { gfm: true, smartPunctuation: true },
   });
   return html;

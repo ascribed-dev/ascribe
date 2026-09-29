@@ -1,6 +1,6 @@
 # Element contract
 
-The site output (SPEC §9.4) is markdown plus custom elements. This contract is the interface between the **site emitter**, which writes the elements (phase 20), and the **element library**, `@tessera/elements`, which implements them (phase 19). For each element it gives the tag name, the attributes and what they mean, the expected children, and how it renders with and without JavaScript. The emitter writes exactly this markup; the library implements every element and attribute here, and none beyond them.
+The site output (SPEC §9.4) is markdown plus custom elements. This contract is the interface between the **site emitter**, which writes the elements (phase 20), and the **element library**, `@ascribed/elements`, which implements them (phase 19). For each element it gives the tag name, the attributes and what they mean, the expected children, and how it renders with and without JavaScript. The emitter writes exactly this markup; the library implements every element and attribute here, and none beyond them.
 
 | Tessera source | Site output | Library |
 |---|---|---|

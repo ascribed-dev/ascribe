@@ -1,5 +1,5 @@
 {
-  "name": "@tessera/elements",
+  "name": "@ascribed/elements",
   "version": "0.0.0",
   "description": "Tessera's web component library for the site output.",
   "private": true,

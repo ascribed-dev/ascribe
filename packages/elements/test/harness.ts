@@ -11,7 +11,7 @@ import {
 } from "playwright-core";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const ORIGIN = "http://tessera.test";
+const ORIGIN = "http://ascribe.test";
 const TYPES: Record<string, string> = {
   ".js": "text/javascript",
   ".css": "text/css",

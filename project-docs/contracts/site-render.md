@@ -9,7 +9,7 @@ This contract defines the one syntax the site output uses for both, the **attrib
 
 | Implementation | Phase | Used by |
 |---|---|---|
-| The Astro markdown plugin in `@tessera/astro` | 21 | The published site |
+| The Astro markdown plugin in `@ascribed/astro` | 21 | The published site |
 | `render_site_html()` in `tessera-emit` | 20 | The editor preview (phase 25) |
 
 The shared fixtures in [`tests/render/`](../../tests/render/) are what keep them equal: both must pass every fixture.

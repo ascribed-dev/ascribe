@@ -32,10 +32,10 @@ importers:
 
   examples/astro-site:
     dependencies:
-      '@tessera/astro':
+      '@ascribed/astro':
         specifier: workspace:*
         version: link:../../packages/astro
-      '@tessera/elements':
+      '@ascribed/elements':
         specifier: workspace:*
         version: link:../../packages/elements
       astro:
@@ -57,7 +57,7 @@ importers:
 
   packages/astro:
     dependencies:
-      '@tessera/elements':
+      '@ascribed/elements':
         specifier: workspace:*
         version: link:../elements
       property-information:

@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { findBinary } from "../src/binary.js";
 
-const EXE = process.platform === "win32" ? "tessera.exe" : "tessera";
+const EXE = process.platform === "win32" ? "ascribe.exe" : "ascribe";
 
 function touch(file: string, seconds = 0): string {
   mkdirSync(path.dirname(file), { recursive: true });
@@ -18,7 +18,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("findBinary", () => {
   it("prefers the option, then TESSERA_BIN, then the workspace's target", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+    const root = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
     const workspace = touch(path.join(root, "target", "debug", EXE));
     const project = path.join(root, "docs", "site");
     mkdirSync(project, { recursive: true });
@@ -33,7 +33,7 @@ describe("findBinary", () => {
   });
 
   it("takes the newer of the release and debug builds", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+    const root = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
     touch(path.join(root, "target", "debug", EXE), 2_000);
     const release = touch(path.join(root, "target", "release", EXE), 3_000);
     vi.stubEnv("TESSERA_BIN", "");
@@ -41,7 +41,7 @@ describe("findBinary", () => {
   });
 
   it("says how to point at one when there is none, or the named one is missing", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+    const root = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
     vi.stubEnv("TESSERA_BIN", "");
     // A temporary directory has no `target/` in any parent.
     expect(() => findBinary({ projectDir: root, root })).toThrow(/cargo build -p tessera-cli/);

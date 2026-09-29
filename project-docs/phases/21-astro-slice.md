@@ -15,17 +15,17 @@ Prove the whole pipeline in a real Astro site as early as possible, with the sma
 
 ## Deliverables
 
-- `packages/astro`: a minimal `@tessera/astro`.
+- `packages/astro`: a minimal `@ascribed/astro`.
 - `examples/astro-site`: a plain Astro site (no Starlight) that uses it.
 - An end-to-end test in CI on Linux.
 
 ## Tasks
 
-1. **Minimal integration.** `@tessera/astro`:
+1. **Minimal integration.** `@ascribed/astro`:
    - Runs `tessera build --emit site` for a configured build before Astro loads content. For this phase, it uses the locally built binary; npm distribution is phase 22.
    - Writes the generated Zod schema (phase 20), and exports a helper that defines the content collection over the build output with that schema.
    - Registers a markdown plugin implementing the site-render contract (heading ids and image attributes), so Astro keeps its own heading and table-of-contents handling. The plugin must pass every `tests/render/` fixture, the same fixtures phase 20's renderer passes.
-   - Loads `@tessera/elements` (script and CSS) on pages that render Tessera content.
+   - Loads `@ascribed/elements` (script and CSS) on pages that render Tessera content.
    - Fails the Astro build when Tessera reports errors.
 2. **Sample site.** `examples/astro-site`: a layout that renders a page, its availability badge from frontmatter, and the elements.
 3. **The slice's content.** A small project in the sample site covering exactly the risky integrations:
@@ -53,9 +53,9 @@ Prove the whole pipeline in a real Astro site as early as possible, with the sma
 
 ### What was built
 
-- **`packages/astro`** (`@tessera/astro`, private): the integration (`src/index.ts`), `tesseraCollection` (`src/content.ts`, exported as `@tessera/astro/content`), the `<Elements />` component (`src/Elements.astro`), and the markdown plugin. The plugin is `src/attributes.ts` (the site-render contract's rules, once, as a pure function from a hast tree to a list of edits) with an adapter for each of Astro's markdown processors: `src/rehype.ts` (unified) and `src/satteri.ts` (Sätteri). Also `src/project.ts` (reads `ascribe.toml`; checks routing agreement), `src/binary.ts`, `src/run.ts`, and `src/files.ts` (`_ascribe/files/`). `packages/astro/README.md` documents the interface. `dist/` is git-ignored: `pnpm --filter @tessera/astro build` (and `--filter @tessera/elements build`) first.
+- **`packages/astro`** (`@ascribed/astro`, private): the integration (`src/index.ts`), `ascribeCollection` (`src/content.ts`, exported as `@ascribed/astro/content`), the `<Elements />` component (`src/Elements.astro`), and the markdown plugin. The plugin is `src/attributes.ts` (the site-render contract's rules, once, as a pure function from a hast tree to a list of edits) with an adapter for each of Astro's markdown processors: `src/rehype.ts` (unified) and `src/satteri.ts` (Sätteri). Also `src/project.ts` (reads `ascribe.toml`; checks routing agreement), `src/binary.ts`, `src/run.ts`, and `src/files.ts` (`_ascribe/files/`). `packages/astro/README.md` documents the interface. `dist/` is git-ignored: `pnpm --filter @ascribed/astro build` (and `--filter @ascribed/elements build`) first.
 - **`examples/astro-site`**: a plain Astro site over a small Tessera project (`ascribe.toml`, `content/`) with the four risky integrations of task 3, `base: "/docs"`, `trailingSlash: "never"`. Its README maps each risk to where it is.
-- **The end-to-end test**, `examples/astro-site/test/e2e/` (`pnpm --filter @tessera/example-astro-site test:e2e`), and a manual-dispatch job for it, `astro`, in `.github/workflows/js.yml` (which stays `workflow_dispatch` only).
+- **The end-to-end test**, `examples/astro-site/test/e2e/` (`pnpm --filter @ascribed/example-astro-site test:e2e`), and a manual-dispatch job for it, `astro`, in `.github/workflows/js.yml` (which stays `workflow_dispatch` only).
 - **Questions Q151 to Q155** (below). No Rust changes.
 
 ### Interfaces later phases use
@@ -107,10 +107,10 @@ Locally, in this container, with Chromium at `/opt/pw-browsers/chromium` (no `TE
 ```sh
 cargo build -p tessera-cli
 pnpm install
-pnpm --filter @tessera/elements build
-pnpm --filter @tessera/astro build
-pnpm --filter @tessera/astro test                           # the tests/render/ fixtures under both processors, and unit tests
-pnpm --filter @tessera/example-astro-site test:e2e          # real `astro build`, `astro preview`, Chromium
+pnpm --filter @ascribed/elements build
+pnpm --filter @ascribed/astro build
+pnpm --filter @ascribed/astro test                           # the tests/render/ fixtures under both processors, and unit tests
+pnpm --filter @ascribed/example-astro-site test:e2e          # real `astro build`, `astro preview`, Chromium
 ```
 
 The acceptance criterion says "in CI on Linux". The `astro` job in `.github/workflows/js.yml` runs the same steps, and CI here is manual-only, so **that run waits for a manual dispatch**. Only Chromium is used (Firefox and WebKit aren't part of this test).

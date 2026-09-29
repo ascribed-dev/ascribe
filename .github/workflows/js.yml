@@ -27,7 +27,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # The element library's tests drive Chromium, Firefox, and WebKit.
-      - run: pnpm --filter @tessera/elements exec playwright-core install --with-deps chromium firefox webkit
+      - run: pnpm --filter @ascribed/elements exec playwright-core install --with-deps chromium firefox webkit
       - run: pnpm format:check
       - run: pnpm -r lint
       - run: pnpm -r typecheck
@@ -76,10 +76,10 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - run: cargo build -p tessera-cli --locked
-      - run: pnpm --filter @tessera/elements build
-      - run: pnpm --filter @tessera/astro build
-      - run: pnpm --filter @tessera/astro test
-      - run: pnpm --filter @tessera/example-astro-site exec playwright-core install --with-deps chromium
-      - run: pnpm --filter @tessera/example-astro-site test:e2e
+      - run: pnpm --filter @ascribed/elements build
+      - run: pnpm --filter @ascribed/astro build
+      - run: pnpm --filter @ascribed/astro test
+      - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install --with-deps chromium
+      - run: pnpm --filter @ascribed/example-astro-site test:e2e
         env:
           TESSERA_BIN: ${{ github.workspace }}/target/debug/tessera

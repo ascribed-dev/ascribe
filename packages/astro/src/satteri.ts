@@ -11,7 +11,7 @@ import type { HastNode as SatteriNode, HastVisitorInstance } from "satteri";
 import { findEdits, toProperty, type HastNode } from "./attributes.js";
 
 /** Applies the site-render contract's attribute markers (`ascribe-attributes`). */
-export function satteriTesseraAttributes(): HastVisitorInstance & { name: string } {
+export function satteriAscribeAttributes(): HastVisitorInstance & { name: string } {
   return {
     name: "ascribe-attributes",
     before(root, ctx) {

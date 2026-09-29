@@ -9,7 +9,7 @@ This plan covers building Tessera v1: the compiler, its command-line interface a
 - A Rust compiler that parses, validates, resolves, and emits Tessera documentation sets.
 - The `tessera` binary: `check`, `build`, `fmt`, and `lsp` subcommands.
 - A VS Code extension that hosts the language server, with a live preview.
-- `@tessera/astro`, the Astro integration, and `@tessera/elements`, the web component library.
+- `@ascribed/astro`, the Astro integration, and `@ascribed/elements`, the web component library.
 - Distribution through npm, GitHub releases, and the VS Code Marketplace.
 
 **Not in v1**
@@ -47,9 +47,9 @@ crates/
   tessera-lsp/        language server
   tessera-cli/        the `tessera` binary
 packages/
-  cli/                @tessera/cli and its per-platform binary packages
-  astro/              @tessera/astro
-  elements/           @tessera/elements
+  cli/                @ascribed/cli and its per-platform binary packages
+  astro/              @ascribed/astro
+  elements/           @ascribed/elements
   vscode/             the VS Code extension
 tests/
   conformance/        examples extracted from SPEC.md, with expected results
@@ -149,8 +149,8 @@ The formatter rewrites Tessera constructs into canonical form (§8.3) and return
 
 ## Astro integration and elements
 
-- **`@tessera/astro`** runs `tessera build` before Astro loads content. It writes the generated Zod schema and wires the compiled pages into a content collection. It also loads the element library, and adds the markdown plugin that applies explicit heading ids, because Astro's own heading ids come from its slugger.
-- **`@tessera/elements`** holds the custom elements in the light DOM, themed through CSS custom properties. Only `<ascribe-tabs>` needs JavaScript, and without it every arm shows with its label (§9.7). Tab selections sync by dimension across the page, and are remembered.
+- **`@ascribed/astro`** runs `tessera build` before Astro loads content. It writes the generated Zod schema and wires the compiled pages into a content collection. It also loads the element library, and adds the markdown plugin that applies explicit heading ids, because Astro's own heading ids come from its slugger.
+- **`@ascribed/elements`** holds the custom elements in the light DOM, themed through CSS custom properties. Only `<ascribe-tabs>` needs JavaScript, and without it every arm shows with its label (§9.7). Tab selections sync by dimension across the page, and are remembered.
 
 ## VS Code extension
 
@@ -177,7 +177,7 @@ The extension is a small TypeScript client. The language intelligence lives in `
 | Formatting | Canonical form through `tessera-fmt`, on save if enabled |
 | Title lines | Displayed distinctly, so accidental titles are easy to spot |
 
-**Preview.** A webview renders the current page through the site emitter and `@tessera/elements`, using the same code path as the published site, so the preview and the site match. It updates as the author types, including unsaved changes, and offers a picker for the build whose modes to preview (for example, `switch` or a selected dimension).
+**Preview.** A webview renders the current page through the site emitter and `@ascribed/elements`, using the same code path as the published site, so the preview and the site match. It updates as the author types, including unsaved changes, and offers a picker for the build whose modes to preview (for example, `switch` or a selected dimension).
 
 **Packaging.** Platform-specific extension packages each include the matching binary. The extension checks the project's binary version and warns when it's older than the extension expects.
 
@@ -202,7 +202,7 @@ Each milestone ends with an exit criterion. The language server comes early, rig
 | 4 | Project graph and page-level checks | Fragments; includes with source-path ownership; slugs; links; ids per build | Every page-level row of §8.2 has a passing test; the Quill example checks clean |
 | 5 | Language server and extension v0 | `tessera lsp` with document sync, diagnostics, completion, hover, navigation, CodeLens, inline hints; the extension client, binary lookup, and highlighting | The extension is usable day to day on the example project |
 | 6 | Resolution, plain markdown, JSON | The §9.2 passes; `tessera build`; plain-markdown and JSON emitters; build modes | The Quill example builds under every build mode, with snapshot tests |
-| 7 | Site output and Astro | Site-markdown emitter; Astro consumer profile; Zod generation; `@tessera/astro`; `@tessera/elements`; npm packages for the binary | A sample Astro site renders the Quill page with working tabs, notes, and badges, built in CI |
+| 7 | Site output and Astro | Site-markdown emitter; Astro consumer profile; Zod generation; `@ascribed/astro`; `@ascribed/elements`; npm packages for the binary | A sample Astro site renders the Quill page with working tabs, notes, and badges, built in CI |
 | 8 | Formatter, quick fixes, refactoring | `tessera fmt`; formatting on save; the quick fixes and refactorings above | Formatting conformance examples is idempotent and preserves the tree; refactor tests pass |
 | 9 | Preview | The webview preview through the site emitter, with a build picker | The preview matches the Astro sample's output for the Quill page |
 | 10 | Release | Marketplace and npm publishing; documentation; checks that the Tessera name is available on GitHub, npm, and the Marketplace | v1 published |

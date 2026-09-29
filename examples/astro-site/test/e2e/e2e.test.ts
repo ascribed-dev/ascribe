@@ -1,7 +1,7 @@
 // The Astro end-to-end slice (phase 21): a real `astro build` of this site,
 // then the built HTML checked in Chromium. Run by `pnpm test:e2e`; it needs a
 // built `ascribe` binary (`cargo build -p tessera-cli`, or TESSERA_BIN) and
-// `pnpm --filter @tessera/astro build` and `pnpm --filter @tessera/elements build`.
+// `pnpm --filter @ascribed/astro build` and `pnpm --filter @ascribed/elements build`.
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -207,7 +207,7 @@ describe("the built site", () => {
 function findWorkspaceBinary(): string {
   for (let dir = siteDir; dir !== path.dirname(dir); dir = path.dirname(dir)) {
     for (const profile of ["debug", "release"]) {
-      const candidate = path.join(dir, "target", profile, "tessera");
+      const candidate = path.join(dir, "target", profile, "ascribe");
       try {
         readFileSync(candidate);
         return candidate;
@@ -216,7 +216,7 @@ function findWorkspaceBinary(): string {
       }
     }
   }
-  throw new Error("no tessera binary: run `cargo build -p tessera-cli` or set TESSERA_BIN");
+  throw new Error("no ascribe binary: run `cargo build -p tessera-cli` or set TESSERA_BIN");
 }
 
 function jsonFiles(dir: string): string[] {

@@ -26,7 +26,7 @@ export function readProject(dir: string): ProjectInfo {
     table = parse(readFileSync(configPath, "utf8"));
   } catch (error) {
     throw new Error(
-      `@tessera/astro can't read ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
+      `@ascribed/astro can't read ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error },
     );
   }

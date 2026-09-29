@@ -1,5 +1,5 @@
 {
-  "name": "@tessera/zod-check",
+  "name": "@ascribed/zod-check",
   "version": "0.0.0",
   "description": "Type-checks the Zod schema the site output generates and validates the Quill project's frontmatter with it. `astro/zod` is `zod/v4` (Astro 7.3), so it is aliased to that.",
   "private": true,

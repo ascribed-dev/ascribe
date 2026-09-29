@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { consumerMismatches, normalizeBase, readProject } from "../src/project.js";
 
 function project(toml: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
   writeFileSync(path.join(dir, "ascribe.toml"), toml);
   return dir;
 }
@@ -42,9 +42,9 @@ trailing-slash = "never"
   });
 
   it("says which file it couldn't read", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+    const dir = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
     mkdirSync(path.join(dir, "empty"));
-    expect(() => readProject(path.join(dir, "empty"))).toThrow(/tessera\.toml/);
+    expect(() => readProject(path.join(dir, "empty"))).toThrow(/ascribe\.toml/);
   });
 });
 

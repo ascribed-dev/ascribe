@@ -1,4 +1,4 @@
-# @tessera/elements
+# @ascribed/elements
 
 The custom elements Tessera's site output uses (SPEC §9.7). They implement
 [CONTRACT.md](CONTRACT.md) exactly: `<ascribe-note>`, `<ascribe-steps>`,
@@ -14,9 +14,9 @@ The custom elements Tessera's site output uses (SPEC §9.7). They implement
 
 ```js
 // Registers <ascribe-tabs>, <ascribe-tab>, and <ascribe-group>.
-import "@tessera/elements";
+import "@ascribed/elements";
 // The styles. Import this alone to style the elements without the script.
-import "@tessera/elements/style.css";
+import "@ascribed/elements/style.css";
 ```
 
 The CSS works with no script at all. A site can also link `css/style.css`
@@ -72,9 +72,9 @@ ascribe-availability::before {
 
 ## Tests
 
-`pnpm --filter @tessera/elements test` compiles the library and drives Chromium
+`pnpm --filter @ascribed/elements test` compiles the library and drives Chromium
 through Playwright in Chromium, Firefox, and WebKit. Install them with
-`pnpm --filter @tessera/elements exec playwright-core install chromium firefox webkit`.
+`pnpm --filter @ascribed/elements exec playwright-core install chromium firefox webkit`.
 Chromium uses `/opt/pw-browsers/chromium` when present, or the binary in
 `TESSERA_CHROMIUM`. `TESSERA_ENGINES=chromium` (a comma-separated subset) runs
 fewer engines on a machine that can't install all three.

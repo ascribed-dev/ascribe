@@ -4,7 +4,7 @@
 
 ## Goal
 
-Build `@tessera/elements`: the custom elements the site output uses, implementing `packages/elements/CONTRACT.md` exactly. They must work in any site, render meaningfully without JavaScript, and be accessible.
+Build `@ascribed/elements`: the custom elements the site output uses, implementing `packages/elements/CONTRACT.md` exactly. They must work in any site, render meaningfully without JavaScript, and be accessible.
 
 ## Read first
 
@@ -30,7 +30,7 @@ Build `@tessera/elements`: the custom elements the site output uses, implementin
 - [ ] Every element and attribute in `CONTRACT.md` is implemented, and none beyond it.
 - [ ] Every element renders its content without the script loaded.
 - [ ] Tabs pass keyboard and accessibility tests, and sync across groups with the same `sync` value.
-- [ ] `pnpm --filter @tessera/elements test` passes in CI.
+- [ ] `pnpm --filter @ascribed/elements test` passes in CI.
 
 ## Out of scope
 
@@ -47,7 +47,7 @@ Build `@tessera/elements`: the custom elements the site output uses, implementin
 
 **Public interface for phases 21 and 25.**
 
-- `import "@tessera/elements"` registers the elements; `@tessera/elements/style.css` is the stylesheet, importable without the script. The package exports `dist/index.js` (run `pnpm --filter @tessera/elements build` first; `dist/` is git-ignored) and `css/style.css`.
+- `import "@ascribed/elements"` registers the elements; `@ascribed/elements/style.css` is the stylesheet, importable without the script. The package exports `dist/index.js` (run `pnpm --filter @ascribed/elements build` first; `dist/` is git-ignored) and `css/style.css`.
 - A project styles its own note types or lifecycle states by selecting on `[type="…"]` or `[states$="…"]` and setting `--_color` and `--_background` (see README).
 
 **Decisions.**

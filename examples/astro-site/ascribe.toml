@@ -33,7 +33,7 @@ product = "Loom"
 [images.attributes]
 width = "number?"
 
-# Must agree with `astro.config.mjs`: `@tessera/astro` checks that it does.
+# Must agree with `astro.config.mjs`: `@ascribed/astro` checks that it does.
 [consumer]
 profile = "astro"
 site = "https://docs.example.com"

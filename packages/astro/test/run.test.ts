@@ -6,7 +6,7 @@ import { runBuild } from "../src/run.js";
 
 // A stand-in for the compiler: a shell script, so these run where /bin/sh does.
 function script(body: string): string {
-  const file = path.join(mkdtempSync(path.join(tmpdir(), "tessera-astro-")), "tessera");
+  const file = path.join(mkdtempSync(path.join(tmpdir(), "ascribe-astro-")), "ascribe");
   writeFileSync(file, `#!/bin/sh\n${body}\n`);
   chmodSync(file, 0o755);
   return file;

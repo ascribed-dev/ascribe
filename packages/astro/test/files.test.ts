@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { copyPublishedFiles, filesMiddleware } from "../src/files.js";
 
-const siteRoot = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+const siteRoot = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
 mkdirSync(path.join(siteRoot, "_ascribe", "files", "downloads"), { recursive: true });
 writeFileSync(path.join(siteRoot, "_ascribe", "files", "downloads", "my config.yaml"), "a: 1\n");
 writeFileSync(path.join(siteRoot, "secret.txt"), "not published");
@@ -54,7 +54,7 @@ describe("filesMiddleware", () => {
 
 describe("copyPublishedFiles", () => {
   it("copies the published files into the build output", async () => {
-    const out = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+    const out = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
     expect(await copyPublishedFiles(siteRoot, pathToFileURL(out + path.sep))).toBe(true);
     expect(
       readFileSync(path.join(out, "_ascribe", "files", "downloads", "my config.yaml"), "utf8"),
@@ -62,7 +62,7 @@ describe("copyPublishedFiles", () => {
   });
 
   it("does nothing when a build published none", async () => {
-    const empty = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
+    const empty = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
     expect(await copyPublishedFiles(empty, pathToFileURL(empty + path.sep))).toBe(false);
   });
 });

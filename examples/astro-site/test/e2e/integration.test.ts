@@ -122,8 +122,8 @@ describe("the integration", () => {
     await edit(path.join(root, "astro.config.mjs"), (text) =>
       text
         .replace(
-          'import tessera from "@tessera/astro";',
-          'import { unified } from "@astrojs/markdown-remark";\nimport tessera from "@tessera/astro";',
+          'import ascribe from "@ascribed/astro";',
+          'import { unified } from "@astrojs/markdown-remark";\nimport ascribe from "@ascribed/astro";',
         )
         .replace("integrations:", "markdown: { processor: unified() },\n  integrations:"),
     );

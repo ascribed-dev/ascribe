@@ -1,6 +1,6 @@
 # examples/astro-site
 
-A plain Astro site (no Starlight) built from a small Tessera project with `@tessera/astro`: phase 21's end-to-end slice. Its content covers the integrations most likely to break.
+A plain Astro site (no Starlight) built from a small Tessera project with `@ascribed/astro`: phase 21's end-to-end slice. Its content covers the integrations most likely to break.
 
 ```
 ascribe.toml                      base-path /docs/, trailing-slash never; the `site` build
@@ -29,10 +29,10 @@ test/e2e/                         the end-to-end tests
 ```sh
 cargo build -p tessera-cli
 pnpm install
-pnpm --filter @tessera/elements build
-pnpm --filter @tessera/astro build
-pnpm --filter @tessera/example-astro-site build     # or: astro build
-pnpm --filter @tessera/example-astro-site test:e2e
+pnpm --filter @ascribed/elements build
+pnpm --filter @ascribed/astro build
+pnpm --filter @ascribed/example-astro-site build     # or: astro build
+pnpm --filter @ascribed/example-astro-site test:e2e
 ```
 
 The integration finds the binary in `target/` (or `TESSERA_BIN`). `test:e2e` runs a real `astro build`, serves it with `astro preview`, and checks the built HTML in Chromium (`TESSERA_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own):

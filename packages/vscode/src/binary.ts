@@ -159,7 +159,7 @@ export async function resolveBinary(options: ResolveOptions): Promise<Resolution
     error: {
       message:
         "Couldn't find the Tessera binary, so the language server can't start. " +
-        "Install it in the project (for example, `npm install --save-dev @tessera/cli`), " +
+        "Install it in the project (for example, `npm install --save-dev @ascribed/cli`), " +
         "or set `tessera.path` to a `ascribe` binary.",
       tried,
     },
