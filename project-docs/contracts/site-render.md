@@ -72,6 +72,8 @@ A marker that immediately follows an image, with nothing between the image's clo
 
 A marker after a space, or after anything but an image, doesn't apply.
 
+A marker directly after an image that is also the last inline content of a heading applies to the image, not the heading: this rule names the position exactly, and the heading gets no id from it (Q145). The emitter never writes this, since its heading marker follows a space.
+
 ## 3. What applying a marker does
 
 Each of the marker's attributes is set on the element it applies to (`<h1>`–`<h6>`, or `<img>`), with the same name and its decoded value. The emitter never writes a name the element already has: a heading's marker holds only `id`, and a content model can't declare an image attribute named `src`, `alt`, `title`, or any other name HTML gives a meaning (SPEC §7.2; content-model.md, `model-attribute-reserved`). If a marker written by hand does repeat one, the marker's value replaces the element's.
@@ -86,7 +88,7 @@ Phase 20's emitter writes the site output so that the rules above are all a cons
 
 - **Every heading ends in a marker with its page id**, one space after the heading's text. So the consumer's own slugger never runs on Tessera content, and every heading id on the published page is one `tessera check` validated, including ids numbered for duplicates and ids from `@id`. A heading whose page id is empty (a heading with no text) gets no marker.
 - **Headings are ATX headings**, whatever the source used.
-- **An image with attributes has a marker directly after it**, holding the image's attributes in canonical order (SPEC §8.3). An image without attributes has no marker. A value set's members are joined with single spaces (`platform=cloud|on-prem` becomes `platform="cloud on-prem"`); other values are their text (a quoted string without its quotes and escapes).
+- **An image with attributes has a marker directly after it**, holding the image's attributes in canonical order (SPEC §8.3): every attribute the content model declares that the image writes or that has a default, then any it writes that the model doesn't declare (Q141). An image with neither attributes nor defaults has no marker. A value set's members are joined with single spaces (`platform=cloud|on-prem` becomes `platform="cloud on-prem"`); other values are their text (a quoted string without its quotes and escapes).
 - **The emitter writes markers nowhere else.** Raw HTML an author writes passes through unchanged, as everywhere in the site output, so an author who writes a `tessera-attributes` element gets its effect. Element names starting with `tessera-` belong to Tessera (content-model.md §15), so there's no reason to. Since the emitter's own heading marker is always last, an author's marker inside a heading never applies.
 
 The element contract ([`packages/elements/CONTRACT.md`](../../packages/elements/CONTRACT.md)) covers the custom elements, which are ordinary raw HTML to a renderer.
@@ -115,6 +117,7 @@ Each construct below has at least one fixture in [`tests/render/`](../../tests/r
 | `image-reference-shortcut` | §2.2 | `![alt]` followed by a marker |
 | `image-in-text` | §2.2 | Several images in one paragraph, with text directly after a marker |
 | `image-in-link` | §2.2 | An image inside link text |
+| `image-ends-heading` | §2.1, §2.2 | A marker directly after an image that ends a heading applies to the image, not the heading (Q145) |
 | `attribute-values` | §1, §3 | Escaped quotes, ampersands, and angle brackets decode; spaces and commas stay |
 | `not-a-marker` | §1, §2 | Markers after a space, mid-heading, or in a paragraph, and malformed markers, stay as raw HTML |
 | `raw-html` | §5 | Custom elements wrapping markdown, `<details>`, and markers inside them |

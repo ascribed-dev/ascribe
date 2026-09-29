@@ -64,7 +64,7 @@ impl Renderer<'_> {
             while let Some(directive) = pending.pop() {
                 chunks = self.apply(directive, chunks);
             }
-            // SPEC-QUESTION(Q146): a list holding an element is loose whatever
+            // Resolved Q146: a list holding an element is loose whatever
             // the source said, since the element needs a blank line.
             // A list written straight after another of the same kind would
             // merge with it, so the second gets another marker. A directive
@@ -298,7 +298,7 @@ impl Renderer<'_> {
 
     /// `<details>` with a `<summary>` (contract §5): the title's inline
     /// content is rendered as HTML, since an HTML block holds no markdown.
-    // SPEC-QUESTION(Q147): an image in the title is its alt text.
+    // Resolved Q147: an image in the title is its alt text.
     fn details(&self, block: &ResolvedBlock, line: &DirectiveLine, content: &[String]) -> String {
         let mut out = String::from("<details>\n");
         if let Some(title) = &line.title {

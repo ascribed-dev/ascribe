@@ -249,7 +249,7 @@ pub fn resolve_reference(
 
 /// The page a route-like link most likely names, and the file-path link to
 /// write instead.
-// Resolved Q55, then SPEC-QUESTION(Q148): the conventional mapping first (`route.md`, else
+// Resolved Q55, then Resolved Q148: the conventional mapping first (`route.md`, else
 // `route/index.md`, whichever is a source file), then the consumer profile's
 // router: the page whose route this is, with its base path and the entry ids
 // Astro gives files (`guides/my-setup` for `Guides/My Setup.md`). Otherwise

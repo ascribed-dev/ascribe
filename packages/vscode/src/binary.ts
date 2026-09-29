@@ -85,7 +85,7 @@ export function ancestorsWithin(dir: string, boundary: string): string[] {
  * project's `node_modules/.bin/tessera`, and the binary bundled in the
  * extension. Each candidate must run `--version`.
  *
- * SPEC-QUESTION(Q122): a `tessera.path` that doesn't work is an error, and doesn't fall through:
+ * Resolved Q122: a `tessera.path` that doesn't work is an error, and doesn't fall through:
  * the author asked for that binary, and silently using another would hide the
  * mistake. A project or bundled candidate that doesn't run is skipped.
  *

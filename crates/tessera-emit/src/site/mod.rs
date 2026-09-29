@@ -81,7 +81,7 @@ impl Emitter for SiteEmitter {
     }
 
     fn prepare(&self, _cx: &EmitContext<'_>, build: &ResolvedBuild) -> Result<(), EmitError> {
-        // SPEC-QUESTION(Q143): two pages with one route can't both be
+        // Resolved Q143: two pages with one route can't both be
         // published.
         let collisions = self
             .profile

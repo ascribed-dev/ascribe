@@ -139,7 +139,7 @@ impl Loader<'_> {
                 if let Some(fm) = self.require(&path, tt, sp(item), "frontmatter")
                     && let Some(ft) = self.as_table(&fm_path, fm)
                 {
-                    // SPEC-QUESTION(Q150): under the `astro` profile, `slug` is
+                    // Resolved Q150: under the `astro` profile, `slug` is
                     // the entry id Astro's loader uses instead of the path.
                     let reserved: &dyn Fn(&str) -> bool =
                         &|n| matches!(n, "available" | "variant" | "slug");

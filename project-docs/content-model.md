@@ -502,7 +502,7 @@ loading = { type = "enum(lazy, eager)", default = "lazy" }
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `attributes` | table of attribute types | `{}` | Accepted image attribute keys (`key` rule) and their types (§6). With no entries, an image accepts no attributes, and any attribute block after an image is an error (SPEC §8.2, "Unknown key"). Declaration order is canonical order (SPEC §8.3). |
+| `attributes` | table of attribute types | `{}` | Accepted image attribute keys (`key` rule) and their types (§6). With no entries, an image accepts no attributes, and any attribute block after an image is an error (SPEC §8.2, "Unknown key"). Declaration order is canonical order (SPEC §8.3). A declared default reaches the output: in the site output, every image carries the defaults of attributes it doesn't write (Q141). |
 
 Alt text and titles aren't attributes; they use CommonMark's syntax (SPEC §5.3). Presentation choices aren't image attributes either. Keys HTML already uses on `<img>` (`src`, `alt`, `title`, and its global attributes) are rejected (`model-attribute-reserved`), since the site output writes image attributes onto the `<img>` element (SPEC §7.2).
 
@@ -586,7 +586,7 @@ slugger = "github"
 
 A later profile that offers a choice adds a key for it then. **Decided (Q12).**
 
-**How file paths become routes** (the `astro` profile; phase 20 implements and verifies it against Astro): a page's route is `base-path`, then its path relative to the content root with the `.md` extension removed and each segment slugged the way Astro's content loader computes entry ids; a final `index` segment is dropped (`guides/index.md` → `/guides/`); then the trailing slash per `trailing-slash`. Source files never contain routes (SPEC §5.2).
+**How file paths become routes** (the `astro` profile; phase 20 implements and verifies it against Astro): a page's route is `base-path`, then its path relative to the content root with the `.md` extension removed and each segment slugged the way Astro's content loader computes entry ids; a final `index` segment is dropped (`guides/index.md` → `/guides/`); then the trailing slash per `trailing-slash`. The root `index.md` (Astro's entry id `index`) is at `base-path`, which under `trailing-slash = "never"` loses its final `/` unless it's `/`. Two pages with one entry id (`My File.md` and `my-file.md`, or `index.md` and `index/index.md`) can't both be published, and `tessera build --emit site` fails, naming them (Q143). The same router answers the reverse question, which page a route-like link names, for the `link-route` warning and its fix (Q148). Source files never contain routes (SPEC §5.2).
 
 The `astro` profile's `site`, `base-path`, and `trailing-slash` repeat settings from `astro.config`. The Astro integration (phases 21 and 22) SHOULD check that they agree.
 

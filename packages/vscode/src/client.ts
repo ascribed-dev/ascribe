@@ -200,7 +200,7 @@ function clientOptions(outputChannel: vscode.OutputChannel): LanguageClientOptio
       { scheme: "file", pattern: "**/tessera.toml" },
     ],
     outputChannel,
-    // SPEC-QUESTION(Q124): the server asks for the files it wants watched with dynamic
+    // Resolved Q124: the server asks for the files it wants watched with dynamic
     // registrations (`workspace/didChangeWatchedFiles`), which the client
     // forwards, so files that aren't open are followed too. Watching them
     // here as well would deliver every event twice.
@@ -212,7 +212,7 @@ function readMaxCrashes(): number {
   return Number.isInteger(value) && value >= 1 ? value : 5;
 }
 
-/** SPEC-QUESTION(Q125): the oldest server this extension is written for (`tessera.minServerVersion` in package.json). */
+/** Resolved Q125: the oldest server this extension is written for (`tessera.minServerVersion` in package.json). */
 function minServerVersion(context: vscode.ExtensionContext) {
   const declared = (context.extension.packageJSON as { tessera?: { minServerVersion?: string } })
     .tessera?.minServerVersion;
