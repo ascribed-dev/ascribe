@@ -23,7 +23,7 @@ What follows from that:
 - Running the converters over Elastic's checkout on a developer's machine or
   in CI, to measure them, doesn't share anything. It uses the text as a
   reader would. If that reading is ever in doubt for CI, the Elastic tests are
-  the ones to turn off (`ASCRIBE_CORPORA=skip`); nothing else depends on them.
+  the ones to turn off (leave `ASCRIBE_CORPORA` unset); nothing else depends on them.
 - If a small Astro or Docker excerpt becomes a committed fixture, copy its
   license text next to it and name the file it came from.
 - This is a record of what the repositories say, not legal advice.

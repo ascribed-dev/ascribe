@@ -4,6 +4,7 @@ Measured with `cargo bench` in a release build. Reproduce everything below with:
 
 ```sh
 cargo build --release -p tessera-cli -p tessera-corpora
+export ASCRIBE_CORPORA=fetch   # the Elastic part of the benchmark needs the corpus
 ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p tessera-corpora --bench perf
 ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p tessera-lsp --bench keystroke
 ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p tessera-resolve --bench incremental

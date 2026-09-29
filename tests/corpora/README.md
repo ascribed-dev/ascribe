@@ -18,14 +18,15 @@ Tests and benchmarks against real documentation and a synthetic project of
 ## Running
 
 ```sh
-cargo test --workspace                      # offline-safe: corpus tests skip, with a message
-cargo test --release -p tessera-corpora -- --include-ignored --nocapture
+cargo test --workspace                      # offline and fast: corpus tests skip, with a message, unless cached
+ASCRIBE_CORPORA=fetch cargo test --release -p tessera-corpora -- --include-ignored --nocapture
 corpora fetch|recognize <corpus>|convert <corpus>   # cargo run --release -p tessera-corpora --bin corpora
 ```
 
-`ASCRIBE_CORPORA` sets what a test does about a corpus it can't have: unset
-fetches and skips on failure (a `SKIPPED:` line on stderr says why); `require`
-fails (the CI job); `skip` never touches the network and uses only the cache.
+`ASCRIBE_CORPORA` sets what a test does about a corpus: unset (or `skip`) never
+touches the network, uses a cached checkout if there is one and otherwise
+skips with a `SKIPPED:` line on stderr; `fetch` fetches what isn't cached and
+skips if it can't; `require` fetches and fails if it can't (the CI job).
 `ASCRIBE_CORPORA_DIR` moves the cache. `ASCRIBE_CORPORA_BLESS=1` rewrites the
 recorded recognition and conversion counts after you've reviewed a change.
 

@@ -9,9 +9,12 @@
 //! `git`) they print why they were skipped and pass, so `cargo test
 //! --workspace` is green offline. `ASCRIBE_CORPORA` controls it:
 //!
-//! - unset: fetch if needed, skip if that fails;
-//! - `require`: a corpus that can't be fetched fails the test (the CI job);
-//! - `skip`: never touch the network, use only a checkout already in the cache.
+//! - unset (or `skip`): never touch the network. Use a checkout already in the
+//!   cache, otherwise print why and skip, so a plain `cargo test --workspace`
+//!   stays fast and offline;
+//! - `fetch`: fetch a corpus that isn't cached, and skip if that fails;
+//! - `require`: fetch if needed, and fail the test if the corpus can't be had
+//!   (the CI job).
 
 use std::fmt;
 use std::io::Write as _;
@@ -339,12 +342,12 @@ pub fn fetch(corpus: Corpus) -> Result<Fetched, FetchError> {
 /// What a test does about a corpus it can't have.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
-    /// Fetch if needed; skip when that's impossible.
-    Auto,
-    /// Fail when the corpus can't be had.
-    Require,
-    /// Use only the cache.
+    /// Use only the cache, and skip when the corpus isn't there. The default.
     CacheOnly,
+    /// Fetch if needed; skip when that's impossible.
+    Fetch,
+    /// Fetch if needed; fail when the corpus can't be had.
+    Require,
 }
 
 impl Mode {
@@ -352,8 +355,8 @@ impl Mode {
     pub fn from_env() -> Mode {
         match std::env::var("ASCRIBE_CORPORA").as_deref() {
             Ok("require") => Mode::Require,
-            Ok("skip") => Mode::CacheOnly,
-            _ => Mode::Auto,
+            Ok("fetch") => Mode::Fetch,
+            _ => Mode::CacheOnly,
         }
     }
 }
@@ -367,9 +370,9 @@ pub fn corpus_or_skip(corpus: Corpus) -> Option<Fetched> {
     let mode = Mode::from_env();
     let result = match mode {
         Mode::CacheOnly => cached(corpus).ok_or_else(|| {
-            FetchError::Unavailable("ASCRIBE_CORPORA=skip and the corpus isn't cached".into())
+            FetchError::Unavailable("it isn't cached and fetching is off by default".into())
         }),
-        Mode::Auto | Mode::Require => fetch(corpus),
+        Mode::Fetch | Mode::Require => fetch(corpus),
     };
     match result {
         Ok(found) => Some(found),
@@ -382,7 +385,7 @@ pub fn corpus_or_skip(corpus: Corpus) -> Option<Fetched> {
             let _ = writeln!(
                 std::io::stderr(),
                 "SKIPPED: the {corpus} corpus isn't available ({e}). The test passes without \
-                 checking anything; set ASCRIBE_CORPORA=require to make this a failure."
+                 checking anything; set ASCRIBE_CORPORA=fetch to fetch it, or require to make this a failure."
             );
             None
         }
