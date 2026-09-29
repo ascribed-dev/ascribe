@@ -107,7 +107,7 @@ Content of a file: its parse and index; the pages that include it; and, if what 
 
 ### Conformance
 
-Untouched: `cargo test -p tessera-conformance --test conformance` is 330 passed, 0 failed, 33 skipped, as after phase 12. The parity test (`tessera-check/tests/parity.rs`) passes unchanged.
+Untouched by this phase: `cargo test -p tessera-conformance --test conformance` was 330 passed, 0 failed, 33 skipped before merging `main`, and is 364 passed, 0 failed, 0 skipped after merging phase 14. The parity test (`tessera-check/tests/parity.rs`) passes unchanged.
 
 ### Left open
 
