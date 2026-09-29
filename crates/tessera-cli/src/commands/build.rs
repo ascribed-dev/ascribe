@@ -14,7 +14,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
-use tessera_check::{Diagnostic, LoadError, Project, check_files};
+use tessera_check::{Diagnostic, LoadError, Project, check_all_builds, check_project};
 use tessera_emit::{
     EmitContext, EmitError, Emitter, JsonEmitter, OutputDir, PlainEmitter, StoreError, emit,
 };
@@ -94,14 +94,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     }
 
     // The checks, for every build asked for, before anything is written.
-    let mut diagnostics: Vec<Diagnostic> = Vec::new();
-    for build in &builds {
-        for d in run_checks(&project, build) {
-            if !diagnostics.contains(&d) {
-                diagnostics.push(d);
-            }
-        }
-    }
+    let diagnostics = diagnose(&project, &builds, args.build.is_empty());
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
     let written = match args.format {
@@ -124,14 +117,31 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     }
 }
 
-/// What every check reports for one build.
-///
-/// TODO(phase 14): this is file-level only until `tessera_check::check_project`
-/// (page-level checks per build) lands; then it's
-/// `check_project(project, build)`, and `tessera check` and `tessera build`
-/// report the same list by construction.
-fn run_checks(project: &Project, _build: &Build) -> Vec<Diagnostic> {
-    check_files(project)
+/// Every diagnostic `tessera check` reports for these builds: with no
+/// `--build`, exactly `check`'s list (every build, each problem once with the
+/// builds it appears in); with `--build`, `check_project` for each named
+/// build, and a problem several of them share once.
+fn diagnose(project: &Project, builds: &[&Build], all: bool) -> Vec<Diagnostic> {
+    let mut diagnostics = if all {
+        check_all_builds(project)
+    } else {
+        let mut out: Vec<Diagnostic> = Vec::new();
+        for build in builds {
+            for d in check_project(project, build) {
+                if !out.contains(&d) {
+                    out.push(d);
+                }
+            }
+        }
+        out
+    };
+    let total = if all { builds.len() } else { 1 };
+    for d in &mut diagnostics {
+        if let Some(note) = d.builds_note(total) {
+            d.message = format!("{} ({note})", d.message);
+        }
+    }
+    diagnostics
 }
 
 fn select_builds<'p>(project: &'p Project, names: &[String]) -> Result<Vec<&'p Build>, String> {

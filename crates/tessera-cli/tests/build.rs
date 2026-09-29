@@ -359,3 +359,25 @@ fn a_content_model_with_errors_fails_like_check() {
         stderr(&build)
     );
 }
+
+#[test]
+fn build_reports_what_check_reports_for_page_level_problems_too() {
+    // A duplicate id is found on the assembled page, in every build; a group
+    // with no arm left in the cloud build only in that one.
+    let source = "---\ntitle: Home\n---\n\n## One\n@id: same\n\n## Two\n@id: same\n\n@variant {deployment=self-managed}:\nServer.\n@end\n";
+    let dir = project(MODEL, &[("index.md", source)]);
+    for args in [vec![], vec!["--build", "cloud"], vec!["--build", "site"]] {
+        for format in ["text", "json"] {
+            let mut check = vec!["check", "--format", format];
+            let mut build = vec!["build", "--format", format];
+            check.extend(&args);
+            build.extend(&args);
+            let (check, build) = (tessera(dir.path(), &check), tessera(dir.path(), &build));
+            assert_eq!(code(&check), 1, "{args:?}: {}", stdout(&check));
+            assert_eq!(code(&build), 1, "{args:?}");
+            assert_eq!(stdout(&check), stdout(&build), "{args:?} {format}");
+        }
+    }
+    assert!(stdout(&tessera(dir.path(), &["build"])).contains("id-duplicate"));
+    assert!(!dir.path().join(".tessera").exists());
+}

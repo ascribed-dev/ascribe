@@ -63,8 +63,17 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
 /// `check_files` on the case's project, in the harness's format.
 pub fn file_level_diagnostics(case: &Case) -> Result<Vec<Diagnostic>, AdapterError> {
     let project = project(case)?;
+    to_conformance(&project, check_files(&project))
+}
+
+/// Diagnostics in the harness's format: the file relative to the content root,
+/// a 1-based line, and a column in Unicode scalar values.
+pub fn to_conformance(
+    project: &Project,
+    diagnostics: Vec<tessera_check::Diagnostic>,
+) -> Result<Vec<Diagnostic>, AdapterError> {
     let mut out = Vec::new();
-    for d in check_files(&project) {
+    for d in diagnostics {
         let file = project
             .file(d.location.file)
             .ok_or_else(|| AdapterError(format!("{} has no file", d.slug)))?;
