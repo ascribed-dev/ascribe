@@ -34,6 +34,7 @@ export class ServerController implements vscode.Disposable {
   private readonly output = vscode.window.createOutputChannel("Ascribe");
   private readonly crashes: CrashCounter;
   private starting: Promise<void> = Promise.resolve();
+  private readonly started = new vscode.EventEmitter<void>();
 
   constructor(private readonly context: vscode.ExtensionContext) {
     this.crashes = new CrashCounter(readMaxCrashes());
@@ -46,6 +47,23 @@ export class ServerController implements vscode.Disposable {
 
   get state(): ServerState {
     return this.status;
+  }
+
+  /** Fires each time the server reaches the running state, at the first start and after a restart. */
+  get onDidStart(): vscode.Event<void> {
+    return this.started.event;
+  }
+
+  /**
+   * Sends a custom request to the running server (the preview's
+   * `ascribe/preview`). Rejects when the server isn't running.
+   */
+  request(method: string, params: unknown): Promise<unknown> {
+    const client = this.client;
+    if (!client || this.status !== "running") {
+      return Promise.reject(new Error("the Ascribe language server isn't running"));
+    }
+    return client.sendRequest(method, params);
   }
 
   /** Settles when the current start or restart has finished, successfully or not. */
@@ -81,6 +99,7 @@ export class ServerController implements vscode.Disposable {
     await this.starting.catch(() => undefined);
     await this.stopNow();
     this.output.dispose();
+    this.started.dispose();
   }
 
   private async startNow(): Promise<void> {
@@ -126,7 +145,10 @@ export class ServerController implements vscode.Disposable {
       errorHandler: this.errorHandler(),
     });
     client.onDidChangeState(({ newState }) => {
-      if (newState === State.Running) this.status = "running";
+      if (newState === State.Running) {
+        this.status = "running";
+        this.started.fire();
+      }
     });
     this.client = client;
     try {

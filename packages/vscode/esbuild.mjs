@@ -20,6 +20,33 @@ await build({
   minify: process.argv.includes("--minify"),
 });
 
+// The preview's webview runs in a browser: the element library (`@ascribed/elements`,
+// script and stylesheet) and the preview's own script and stylesheet, each one file
+// the webview loads from the extension's `dist/webview/`. Classic scripts, so the
+// content security policy needs no nonce. Build the element library first
+// (`pnpm --filter @ascribed/elements build`; `pnpm -r build` does).
+const webview = {
+  bundle: true,
+  platform: "browser",
+  target: "es2022",
+  format: "iife",
+  sourcemap: false,
+  logLevel: "info",
+  minify: process.argv.includes("--minify"),
+  outdir: "dist/webview",
+};
+await build({
+  ...webview,
+  entryPoints: {
+    elements: "src/webview/elements.ts",
+    preview: "src/webview/preview.ts",
+  },
+});
+await build({
+  ...webview,
+  entryPoints: { elements: "src/webview/elements.css", preview: "src/webview/preview.css" },
+});
+
 if (process.argv.includes("--tests")) {
   await build({
     ...common,
@@ -27,6 +54,7 @@ if (process.argv.includes("--tests")) {
       run: "test/integration/run.ts",
       "suite/index": "test/integration/suite/index.ts",
       "suite/activation.it": "test/integration/suite/activation.it.ts",
+      "suite/preview.it": "test/integration/suite/preview.it.ts",
       "suite/quill.it": "test/integration/suite/quill.it.ts",
       "suite/stub.it": "test/integration/suite/stub.it.ts",
     },

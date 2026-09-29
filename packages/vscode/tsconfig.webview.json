@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"]
+  },
+  "include": [
+    "src/webview",
+    "src/preview/refs.ts",
+    "src/preview/protocol.ts",
+    "src/preview/html.ts",
+    "test/webview",
+    "vitest.config.ts"
+  ]
+}
