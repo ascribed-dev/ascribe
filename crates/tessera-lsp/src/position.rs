@@ -88,9 +88,7 @@ impl Encoding {
         let Some(line) = index.line_span(pos.line) else {
             return text.len();
         };
-        let end = self
-            .position(index, line.end())
-            .map_or(0, |p| p.character);
+        let end = self.position(index, line.end()).map_or(0, |p| p.character);
         let mut character = pos.character.min(end);
         loop {
             let at = Position {
@@ -136,7 +134,10 @@ mod tests {
             enc.offset_lenient(&index, text, Position::new(0, 99)),
             text.find('\n').expect("a newline")
         );
-        assert_eq!(enc.offset_lenient(&index, text, Position::new(9, 0)), text.len());
+        assert_eq!(
+            enc.offset_lenient(&index, text, Position::new(9, 0)),
+            text.len()
+        );
     }
 
     #[test]

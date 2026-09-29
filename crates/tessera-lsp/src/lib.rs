@@ -16,6 +16,7 @@ mod tokens;
 mod uri;
 
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 use lsp_server::Connection;
 
@@ -39,6 +40,13 @@ pub struct Options {
     /// Called on the worker thread after a round has computed and before it
     /// publishes, so a test can hold the round while newer edits arrive.
     pub before_publish: Option<Arc<dyn Fn(&PublishInfo) + Send + Sync>>,
+    /// Called with the method of each request before it's handled, so a test
+    /// can make a handler panic and see the server survive.
+    pub before_request: Option<Arc<dyn Fn(&str) + Send + Sync>>,
+    /// Set to `true` while the worker has nothing queued and isn't computing,
+    /// and to `false` as soon as a handler queues work: a test's way to wait
+    /// until every result of the messages it sent has been published.
+    pub idle: Option<Arc<AtomicBool>>,
 }
 
 /// Runs the server over standard input and output until the client ends the

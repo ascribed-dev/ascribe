@@ -17,7 +17,8 @@ const PAGE: &str = "---\ntitle: T\n---\n![A logo](logo.png)\n";
 fn project(fs: Option<MemoryFs>) -> Project {
     let model = tessera_model::load_str(MODEL, FileId::new(0)).expect("a model");
     let content_root = RelPath::parse("docs").expect("a path");
-    let sources = Project::from_sources([(RelPath::parse("index.md").expect("a path"), PAGE.into())]);
+    let sources =
+        Project::from_sources([(RelPath::parse("index.md").expect("a path"), PAGE.into())]);
     let root = PathBuf::from("/no/such/project");
     match fs {
         Some(fs) => Project::from_parts_with_fs(
@@ -33,7 +34,10 @@ fn project(fs: Option<MemoryFs>) -> Project {
 }
 
 fn slugs(project: &Project) -> Vec<&'static str> {
-    check_files(project).iter().map(|d| d.slug.as_str()).collect()
+    check_files(project)
+        .iter()
+        .map(|d| d.slug.as_str())
+        .collect()
 }
 
 #[test]

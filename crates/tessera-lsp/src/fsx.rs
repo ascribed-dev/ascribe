@@ -1,8 +1,8 @@
 //! The file systems the server hands to the project and to the checks.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io;
-use std::sync::{PoisonError, RwLock};
+use std::sync::{Mutex, PoisonError, RwLock};
 
 use tessera_core::RelPath;
 use tessera_resolve::{DiskFs, FileSystem, Probe, Sources};
@@ -10,14 +10,27 @@ use tessera_resolve::{DiskFs, FileSystem, Probe, Sources};
 /// The disk with the editor's open source buffers over it, for loading a
 /// project: what the project reads for a source is the buffer when there is
 /// one (an open document's contents win over the file on disk).
+///
+/// It answers each probe from the disk once and remembers the answer. The
+/// incremental project asks its base whether a non-source file was there
+/// *before* an update ("the base plus the changes reported so far"), and by the
+/// time the editor reports a file created or deleted the disk already shows the
+/// new state; remembering what the disk said when a reference first looked
+/// keeps the base what it was when the project read it, and the reported
+/// changes layered over it (`tessera_resolve::incremental`) do the rest.
 pub(crate) struct BufferFs {
     disk: DiskFs,
     buffers: BTreeMap<RelPath, String>,
+    probes: Mutex<HashMap<RelPath, Probe>>,
 }
 
 impl BufferFs {
     pub(crate) fn new(disk: DiskFs, buffers: BTreeMap<RelPath, String>) -> BufferFs {
-        BufferFs { disk, buffers }
+        BufferFs {
+            disk,
+            buffers,
+            probes: Mutex::new(HashMap::new()),
+        }
     }
 }
 
@@ -46,7 +59,13 @@ impl FileSystem for BufferFs {
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {
-        self.disk.probe(project_path)
+        let mut probes = self.probes.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(answer) = probes.get(project_path) {
+            return answer.clone();
+        }
+        let answer = self.disk.probe(project_path);
+        probes.insert(project_path.clone(), answer.clone());
+        answer
     }
 }
 

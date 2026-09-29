@@ -10,10 +10,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use lsp_types::{
-    DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString,
+use lsp_types::{DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString};
+use tessera_check::{
+    Diagnostic, PageChecker, Project, ReadFailure, Severity, SourceFile, check_file,
 };
-use tessera_check::{Diagnostic, PageChecker, Project, ReadFailure, Severity, SourceFile, check_file};
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
 use tessera_resolve::Snapshot;

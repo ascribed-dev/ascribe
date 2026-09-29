@@ -11,7 +11,11 @@ use std::sync::Arc;
 
 use crossbeam_channel::Sender;
 use lsp_server::{Message, Notification, Request};
-use lsp_types::{DidChangeWatchedFilesRegistrationOptions, FileChangeType, FileEvent, FileSystemWatcher, GlobPattern, PublishDiagnosticsParams, Registration, RegistrationParams, TextDocumentContentChangeEvent, Uri};
+use lsp_types::{
+    DidChangeWatchedFilesRegistrationOptions, FileChangeType, FileEvent, FileSystemWatcher,
+    GlobPattern, PublishDiagnosticsParams, Registration, RegistrationParams,
+    TextDocumentContentChangeEvent, Uri,
+};
 use tessera_check::Diagnostic;
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
@@ -247,7 +251,9 @@ impl Core {
                 // every file, and isn't part of what the source index sees.
                 if build_changed {
                     let snapshot = loaded.inc.snapshot();
-                    loaded.dirty.extend(snapshot.files().map(|f| f.path.clone()));
+                    loaded
+                        .dirty
+                        .extend(snapshot.files().map(|f| f.path.clone()));
                     loaded
                         .dirty
                         .extend(snapshot.unreadable().iter().map(|u| u.path.clone()));
@@ -354,7 +360,10 @@ impl Core {
         };
         let encoding = self.encoding;
         let Some(doc) = self.docs.get_mut(&path) else {
-            self.log(&format!("change for a document that isn't open: {}", uri.as_str()));
+            self.log(&format!(
+                "change for a document that isn't open: {}",
+                uri.as_str()
+            ));
             return;
         };
         doc.apply(version, changes, encoding);
@@ -387,10 +396,13 @@ impl Core {
             return;
         };
         if let Some(Kind::Source(content, project)) = loaded.classify(path) {
-            self.apply(vec![Change::Edited {
-                path: content,
-                text,
-            }], &[(project, true)]);
+            self.apply(
+                vec![Change::Edited {
+                    path: content,
+                    text,
+                }],
+                &[(project, true)],
+            );
         }
     }
 
@@ -615,7 +627,12 @@ impl Core {
             (Some(problem), _) => (&problem.text, problem.diagnostics.clone()),
             (None, Some(loaded)) => (
                 &loaded.model_text,
-                loaded.model.warnings.iter().map(Diagnostic::from_issue).collect(),
+                loaded
+                    .model
+                    .warnings
+                    .iter()
+                    .map(Diagnostic::from_issue)
+                    .collect(),
             ),
             (None, None) => return,
         };
@@ -729,6 +746,11 @@ fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {
 }
 
 impl Core {
+    /// Whether files are waiting to have their diagnostics computed.
+    pub(crate) fn has_work(&self) -> bool {
+        self.loaded.as_ref().is_some_and(|l| !l.dirty.is_empty())
+    }
+
     /// What a semantic tokens request needs for a document: the snapshot, the
     /// file's content path, and the model.
     pub(crate) fn tokens_target(

@@ -2,6 +2,7 @@
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::thread;
 
@@ -51,6 +52,7 @@ struct Shared {
     core: Mutex<Core>,
     wake: Condvar,
     options: Options,
+    idle: Arc<AtomicBool>,
 }
 
 impl Shared {
@@ -87,14 +89,14 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                     ..TextDocumentSyncOptions::default()
                 },
             )),
-            semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(
-                SemanticTokensOptions {
+            semantic_tokens_provider: Some(
+                SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
                     legend: legend(),
                     range: Some(true),
                     full: Some(SemanticTokensFullOptions::Bool(true)),
                     work_done_progress_options: Default::default(),
-                },
-            )),
+                }),
+            ),
             ..ServerCapabilities::default()
         },
         server_info: Some(ServerInfo {
@@ -114,10 +116,12 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         .and_then(|c| c.dynamic_registration)
         .unwrap_or(false);
     core.folders = workspace_folders(&params);
+    let idle = options.idle.clone().unwrap_or_default();
     let shared = Arc::new(Shared {
         core: Mutex::new(core),
         wake: Condvar::new(),
         options,
+        idle,
     });
     let worker = {
         let shared = shared.clone();
@@ -128,6 +132,9 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         guarded("start", || {
             core.start();
             core.register_watchers();
+            if core.has_work() {
+                shared.idle.store(false, Ordering::SeqCst);
+            }
         });
     }
     shared.wake.notify_all();
@@ -144,14 +151,17 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
         match message {
             Message::Request(request) => {
                 if shutdown_requested {
-                    connection.sender.send(
-                        Response::new_err(
-                            request.id,
-                            ErrorCode::InvalidRequest as i32,
-                            "the server is shutting down".to_owned(),
+                    connection
+                        .sender
+                        .send(
+                            Response::new_err(
+                                request.id,
+                                ErrorCode::InvalidRequest as i32,
+                                "the server is shutting down".to_owned(),
+                            )
+                            .into(),
                         )
-                        .into(),
-                    ).ok();
+                        .ok();
                 } else if request.method == "shutdown" {
                     shutdown_requested = true;
                     connection
@@ -252,6 +262,9 @@ fn handle_notification(shared: &Shared, notification: Notification) {
             // action (`didSave`, `$/cancelRequest`, `$/setTrace`, …).
             _ => {}
         }
+        if core.has_work() {
+            shared.idle.store(false, Ordering::SeqCst);
+        }
     });
 }
 
@@ -270,14 +283,19 @@ fn parse<T: serde::de::DeserializeOwned>(notification: &Notification) -> Option<
 
 fn handle_request(shared: &Shared, request: Request) -> Response {
     let id = request.id.clone();
-    let result = catch_unwind(AssertUnwindSafe(|| match request.method.as_str() {
-        SemanticTokensFullRequest::METHOD => semantic_tokens_request(shared, &request, false),
-        SemanticTokensRangeRequest::METHOD => semantic_tokens_request(shared, &request, true),
-        method => Err(Response::new_err(
-            request.id.clone(),
-            ErrorCode::MethodNotFound as i32,
-            format!("the server doesn't handle {method}"),
-        )),
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        if let Some(hook) = &shared.options.before_request {
+            hook(&request.method);
+        }
+        match request.method.as_str() {
+            SemanticTokensFullRequest::METHOD => semantic_tokens_request(shared, &request, false),
+            SemanticTokensRangeRequest::METHOD => semantic_tokens_request(shared, &request, true),
+            method => Err(Response::new_err(
+                request.id.clone(),
+                ErrorCode::MethodNotFound as i32,
+                format!("the server doesn't handle {method}"),
+            )),
+        }
     }));
     match result {
         Ok(Ok(value)) => Response::new_ok(id, value),
@@ -356,8 +374,10 @@ fn worker(shared: &Shared) {
                     return;
                 }
                 if let Some(job) = core.plan() {
+                    shared.idle.store(false, Ordering::SeqCst);
                     break job;
                 }
+                shared.idle.store(true, Ordering::SeqCst);
                 core = shared
                     .wake
                     .wait(core)
@@ -365,7 +385,15 @@ fn worker(shared: &Shared) {
             }
         };
         let outcome = catch_unwind(AssertUnwindSafe(|| {
-            compute(&job, &|| job.snapshot.is_current())
+            let outcome = compute(&job, &|| job.snapshot.is_current());
+            if let (Some(hook), Outcome::Done(results)) = (&shared.options.before_publish, &outcome)
+            {
+                hook(&PublishInfo {
+                    version: job.snapshot.version().get(),
+                    files: results.iter().map(|(p, _)| p.to_string()).collect(),
+                });
+            }
+            outcome
         }));
         let outcome = match outcome {
             Ok(outcome) => outcome,
@@ -379,12 +407,6 @@ fn worker(shared: &Shared) {
                 continue;
             }
         };
-        if let (Some(hook), Outcome::Done(results)) = (&shared.options.before_publish, &outcome) {
-            hook(&PublishInfo {
-                version: job.snapshot.version().get(),
-                files: results.iter().map(|(p, _)| p.to_string()).collect(),
-            });
-        }
         let mut core = shared.lock();
         guarded("publishing diagnostics", || core.finish(&job, outcome));
     }
