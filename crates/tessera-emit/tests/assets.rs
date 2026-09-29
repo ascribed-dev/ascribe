@@ -12,7 +12,7 @@ use comrak::nodes::NodeValue;
 use comrak::{Arena, Options, parse_document};
 use tessera_emit::EmitContext;
 use tessera_emit::{Emitter, JsonEmitter, OutputDir, PlainEmitter, emit};
-use tessera_resolve::DefaultRouter;
+use tessera_resolve::AstroRouter;
 
 const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[consumer]\nsite = \"https://docs.example.com\"\n";
 
@@ -80,7 +80,7 @@ fn resolve(root: &Path, page: &str, destination: &str) -> PathBuf {
 fn build_into(dir: &Path, emitter: &dyn Emitter) -> PathBuf {
     let project = support::load(dir);
     let build = project.model().build("site").expect("a build");
-    let router = DefaultRouter::from_consumer(&project.model().consumer);
+    let router = AstroRouter::from_consumer(&project.model().consumer);
     let resolved = project.resolve_build(build, &router);
     let cx = EmitContext::new(&project, dir, build);
     let emission = emit(emitter, &cx, &resolved).expect("emits");

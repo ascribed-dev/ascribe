@@ -60,3 +60,8 @@ description = "Markers after a space, mid-heading, or in a paragraph, and malfor
 name = "elements-passthrough"
 covers = ["raw-html"]
 description = "Custom elements and <details> wrapping markdown pass through, and markers inside them apply."
+
+[[fixture]]
+name = "image-ends-heading"
+covers = ["image-inline", "heading"]
+description = "A marker directly after an image applies to the image, even when the image ends the heading; the emitter's heading marker follows a space."

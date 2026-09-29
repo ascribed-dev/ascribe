@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "paths": { "astro/zod": ["./node_modules/zod/v4/index.d.cts"] }
+  },
+  "include": ["*.ts", "generated/*.ts", "generated/*.json"]
+}

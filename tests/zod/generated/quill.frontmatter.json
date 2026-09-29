@@ -1,0 +1,35 @@
+{
+  "install-agent.md": {
+    "available": [
+      {
+        "dimension": "deployment",
+        "states": [
+          "ga"
+        ],
+        "target": "cloud",
+        "text": "Quill Cloud (GA)"
+      },
+      {
+        "dimension": "deployment",
+        "states": [
+          "preview"
+        ],
+        "target": "self-managed",
+        "text": "self-managed (preview, 3.3+)",
+        "versions": [
+          "3.3"
+        ]
+      }
+    ],
+    "description": "Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.",
+    "title": "Install the Quill agent"
+  },
+  "keys.md": {
+    "description": "Create and rotate the API keys the Quill agent uses.",
+    "title": "API keys"
+  },
+  "quickstart.md": {
+    "description": "Run Quill in the browser with no local setup.",
+    "title": "Try Quill in the browser"
+  }
+}

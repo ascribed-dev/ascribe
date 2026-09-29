@@ -354,3 +354,10 @@ fn escaped_text_reads_back_as_the_same_text() {
         );
     }
 }
+
+#[test]
+fn a_heading_that_ends_in_a_hash_isnt_read_as_closed() {
+    // An escaped `#` is already safe; one that isn't gets escaped.
+    assert_eq!(body("## \\#\n"), "## \\#\n");
+    assert_eq!(body("## C\\#\n"), "## C\\#\n");
+}

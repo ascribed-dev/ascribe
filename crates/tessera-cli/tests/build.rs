@@ -159,15 +159,70 @@ fn a_build_and_an_output_can_be_chosen() {
 }
 
 #[test]
-fn the_site_output_and_unknown_builds_are_refused() {
+fn the_site_output_is_built_under_every_build() {
     let dir = quill();
-    let out = tessera(dir.path(), &["build", "--emit", "plain,site"]);
-    assert_eq!(code(&out), 2);
+    let out = tessera(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    let built = dir.path().join(".tessera/build");
+    for build in ["site", "cloud", "self-managed-3.3"] {
+        let root = built.join(build).join("site");
+        for file in [
+            "install-agent.md",
+            "keys.md",
+            "quickstart.md",
+            "playground.png",
+            "_fragments/prerequisites.png",
+            "_tessera/schema.ts",
+        ] {
+            assert!(root.join(file).is_file(), "{build}/site/{file}");
+        }
+        assert!(built.join(build).join("site.manifest.json").is_file());
+        assert!(!built.join(build).join("plain").exists());
+    }
     assert!(
-        stderr(&out).contains("site output isn't available yet"),
+        stderr(&out).contains("built cloud/site: 3 pages, 3 assets"),
         "{}",
         stderr(&out)
     );
+    let page = read(&built.join("cloud/site/install-agent.md"));
+    assert!(page.contains("<tessera-tabs sync=\"pm\">"), "{page}");
+    assert!(page.contains("(/quickstart/#try-in-browser)"), "{page}");
+}
+
+#[test]
+fn every_output_is_built_by_default() {
+    let dir = quill();
+    let out = tessera(dir.path(), &["build", "--build", "cloud"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let built = dir.path().join(".tessera/build/cloud");
+    for emitter in ["site", "plain", "json"] {
+        assert!(built.join(emitter).is_dir(), "{emitter}");
+    }
+}
+
+#[test]
+fn two_pages_with_one_route_fail_the_site_output() {
+    let dir = project(
+        MODEL,
+        &[("My File.md", &page("A.\n")), ("my-file.md", &page("B.\n"))],
+    );
+    let out = tessera(dir.path(), &["build", "--emit", "site"]);
+    assert_eq!(code(&out), 2, "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("can't publish two pages at one route"),
+        "{}",
+        stderr(&out)
+    );
+    // Nothing is written for the output that failed.
+    assert!(!dir.path().join(".tessera/build/site/site").exists());
+    // The other outputs don't have the problem.
+    let out = tessera(dir.path(), &["build", "--emit", "plain"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+}
+
+#[test]
+fn unknown_builds_are_refused() {
+    let dir = quill();
     let out = tessera(dir.path(), &["build", "--build", "nope"]);
     assert_eq!(code(&out), 2);
     assert!(stderr(&out).contains("no build `nope`"), "{}", stderr(&out));
