@@ -14,11 +14,13 @@ tessera-syntax.workspace = true
 tessera-model.workspace = true
 tessera-check.workspace = true
 tessera-resolve.workspace = true
+tessera-emit.workspace = true
 lsp-server = "0.10"
 lsp-types = "0.97"
 crossbeam-channel = "0.5"
 serde.workspace = true
 serde_json.workspace = true
+serde_yaml.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

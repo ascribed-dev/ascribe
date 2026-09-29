@@ -202,6 +202,70 @@ pub struct Emission {
     pub files: Vec<EmittedFile>,
 }
 
+/// One page as an emitter writes it, and the assets it uses.
+#[derive(Debug)]
+pub struct EmittedPage {
+    /// Where the page is written, relative to the emitter root.
+    pub output: RelPath,
+    /// The page's text.
+    pub text: String,
+    /// The assets the page uses, in document order, each with where the
+    /// emitter places it and how the page refers to it.
+    pub assets: Vec<PlacedAsset>,
+}
+
+/// An asset a page uses, placed by an emitter.
+#[derive(Debug)]
+pub struct PlacedAsset {
+    /// The asset's source path.
+    pub source: RelPath,
+    /// Whether the page uses it as an image or a link target.
+    pub usage: AssetUse,
+    /// Where the emitter puts it and how the page refers to it.
+    pub placement: Placement,
+}
+
+/// Renders one resolved page with `emitter`, and places the assets it uses.
+/// [`emit`] does this for every page of a build; the editor preview does it
+/// for the one page it shows, and skips the rest of the output.
+///
+/// # Errors
+///
+/// When the page can't be rendered.
+pub fn emit_page(
+    emitter: &dyn Emitter,
+    cx: &EmitContext<'_>,
+    page: &ResolvedPage,
+) -> Result<EmittedPage, EmitError> {
+    let output = emitter.page_path(&page.path);
+    let page_cx = PageContext {
+        emit: cx,
+        output: output.clone(),
+        emitter,
+    };
+    let text = emitter.render_page(&page_cx, page)?;
+    let assets = page
+        .assets
+        .iter()
+        .map(|asset| {
+            let usage = match asset.kind {
+                RefKind::Image => AssetUse::Image,
+                RefKind::Link => AssetUse::Link,
+            };
+            PlacedAsset {
+                source: asset.path.clone(),
+                usage,
+                placement: emitter.place_asset(&output, &asset.path, usage),
+            }
+        })
+        .collect();
+    Ok(EmittedPage {
+        output,
+        text,
+        assets,
+    })
+}
+
 /// Renders every page of a resolved build with `emitter`, and lists the
 /// assets those pages use, each once (asset contract, §5).
 ///
@@ -218,30 +282,20 @@ pub fn emit(
     let mut copies: BTreeSet<(RelPath, RelPath)> = BTreeSet::new();
     let mut urls: BTreeMap<RelPath, String> = BTreeMap::new();
     for page in &build.pages {
-        let output = emitter.page_path(&page.path);
-        let page_cx = PageContext {
-            emit: cx,
-            output: output.clone(),
-            emitter,
-        };
-        let text = emitter.render_page(&page_cx, page)?;
+        let emitted = emit_page(emitter, cx, page)?;
         files.push(EmittedFile {
-            path: output.clone(),
+            path: emitted.output,
             kind: FileKind::Page,
             source: Some(page.path.clone()),
             url: None,
-            contents: Contents::Text(text),
+            contents: Contents::Text(emitted.text),
         });
-        for asset in &page.assets {
-            let usage = match asset.kind {
-                RefKind::Image => AssetUse::Image,
-                RefKind::Link => AssetUse::Link,
-            };
-            let placement = emitter.place_asset(&output, &asset.path, usage);
+        for asset in emitted.assets {
+            let placement = asset.placement;
             if let Some(url) = placement.url {
                 urls.insert(placement.copy_to.clone(), url);
             }
-            copies.insert((placement.copy_to, asset.path.clone()));
+            copies.insert((placement.copy_to, asset.source));
         }
     }
     for (copy_to, source) in copies {

@@ -11,6 +11,7 @@ mod core;
 mod docs;
 mod fsx;
 mod position;
+mod preview;
 mod server;
 mod tokens;
 mod uri;
@@ -21,6 +22,10 @@ use std::sync::atomic::AtomicBool;
 use lsp_server::Connection;
 
 pub use position::Encoding;
+pub use preview::{
+    METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage, PreviewParams,
+    PreviewProblem, PreviewResult, PreviewSection,
+};
 pub use server::{Exit, ServeError, serve};
 pub use tokens::{MODIFIERS as TOKEN_MODIFIERS, TYPES as TOKEN_TYPES, legend as token_legend};
 
