@@ -21,6 +21,12 @@ pub enum EmitError {
         /// What went wrong.
         message: String,
     },
+    /// The build can't be written in this output's form, whatever the page.
+    #[error("{message}")]
+    Invalid {
+        /// What's wrong.
+        message: String,
+    },
     /// Replacing the previous output failed (output-layout contract, §4).
     #[error(transparent)]
     Store(#[from] StoreError),

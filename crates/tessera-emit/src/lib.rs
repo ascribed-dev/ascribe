@@ -45,11 +45,16 @@ mod error;
 mod json;
 pub mod labels;
 mod plain;
+pub mod render;
+pub mod site;
 mod store;
+pub mod zod;
 
 pub use assets::Placement;
 pub use emitter::{Emission, EmitContext, Emitter, PageContext, Position, emit};
 pub use error::EmitError;
 pub use json::{JSON_SCHEMA_VERSION, JsonEmitter};
 pub use plain::PlainEmitter;
+pub use render::render_site_html;
+pub use site::{AstroProfile, SiteEmitter};
 pub use store::{Contents, EmittedFile, FileKind, OutputDir, Replaced, StoreError};

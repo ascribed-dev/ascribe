@@ -142,6 +142,17 @@ pub trait Emitter {
     /// their source paths (output-layout contract, §1.1).
     fn page_path(&self, page: &RelPath) -> RelPath;
 
+    /// Checks that the resolved build can be written in this output's form,
+    /// before any page is rendered. The site output refuses two pages with
+    /// the same route.
+    ///
+    /// # Errors
+    ///
+    /// When it can't.
+    fn prepare(&self, _cx: &EmitContext<'_>, _build: &ResolvedBuild) -> Result<(), EmitError> {
+        Ok(())
+    }
+
     /// Renders a page.
     ///
     /// # Errors
@@ -202,6 +213,7 @@ pub fn emit(
     cx: &EmitContext<'_>,
     build: &ResolvedBuild,
 ) -> Result<Emission, EmitError> {
+    emitter.prepare(cx, build)?;
     let mut files = Vec::new();
     let mut copies: BTreeSet<(RelPath, RelPath)> = BTreeSet::new();
     let mut urls: BTreeMap<RelPath, String> = BTreeMap::new();
