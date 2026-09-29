@@ -63,6 +63,6 @@ Q121 to Q126 (`project-docs/questions.md`), all with the proposed behavior imple
 
 ### Left open
 
-- **The end-to-end gate.** The `quill` suite needs phase 15's server, and this session could not run any integration suite: its network policy denies `update.code.visualstudio.com`, so `@vscode/test-electron` couldn't download VS Code. The suites compile and typecheck, and the stub server was exercised over raw JSON-RPC, but none has run inside VS Code. See the pull request for status.
+- **The end-to-end gate.** The `activation` (1 test) and `stub` (8 tests) suites pass in VS Code 1.139.1, run headless with `xvfb-run -a pnpm --filter tessera-vscode test:integration`. The `quill` suite needs phase 15's server (`TESSERA_BIN`) and has not run; until it does, the last acceptance criterion is open.
 - **Windows and macOS.** The stub server is an extensionless script with a shebang, so the stub suite runs on Linux and macOS only; the `.cmd` shim handling in `environment.ts` is untested.
 - **Bundled binaries** (`bin/<platform>-<arch>/`) don't exist yet; phase 27 packages them.
