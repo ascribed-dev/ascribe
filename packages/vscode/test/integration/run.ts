@@ -6,11 +6,11 @@
 // VS Code is downloaded on first use into out/vscode-test.
 //
 // Suites (each opens its own copy of a fixture workspace):
-//   activation  a workspace without tessera.toml: the extension stays inactive
-//   stub        a workspace with tessera.toml, against test/stub-server
+//   activation  a workspace without ascribe.toml: the extension stays inactive
+//   stub        a workspace with ascribe.toml, against test/stub-server
 //   quill       a copy of examples/quill with a broken page added, against the
-//               real `tessera lsp`. Needs TESSERA_BIN, the path to a built
-//               `tessera`; skipped without it.
+//               real `ascribe lsp`. Needs TESSERA_BIN, the path to a built
+//               `ascribe`; skipped without it.
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
     if (only && only !== suite.name) continue;
     if (suite.name === "quill" && !realServer) {
       console.log(
-        "Skipping suite quill: set TESSERA_BIN to a built `tessera` (phase 15's server).",
+        "Skipping suite quill: set TESSERA_BIN to a built `ascribe` (phase 15's server).",
       );
       continue;
     }

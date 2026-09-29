@@ -24,7 +24,7 @@ This plan covers building Tessera v1: the compiler, its command-line interface a
 |---|---|---|
 | Language | Rust | One fast native binary for the CLI, CI, and the editor |
 | Parser base | A fork of [comrak](https://github.com/kivikakk/comrak) | A port of the CommonMark reference parser with source positions, which already adds extensions as block types |
-| Content model | `tessera.toml`; Tessera generates the Zod schema Astro needs | Rust reads it natively, so the language server doesn't need Node; TOML never guesses types |
+| Content model | `ascribe.toml`; Tessera generates the Zod schema Astro needs | Rust reads it natively, so the language server doesn't need Node; TOML never guesses types |
 | Editor integration | The same binary runs as a language server (`tessera lsp`) | Keeps the project index in memory, receives edits as they happen, and gets editor features from the LSP client library |
 | Distribution | The binary through npm, with per-platform packages | Astro projects install it like any dev dependency, and CI and the editor can use the same version |
 | Extension's binary | Bundled in platform-specific extension packages; the project's own `node_modules` copy is preferred when present | Works immediately, and matches CI when the project pins a version |
@@ -39,7 +39,7 @@ crates/
   comrak-tessera/     the forked CommonMark parser
   tessera-core/       shared types: spans, line index, directive schemas, attribute and availability-spec parsers
   tessera-syntax/     Tessera parsing: Tessera lines, structure pass, syntax tree
-  tessera-model/      loads and validates tessera.toml
+  tessera-model/      loads and validates ascribe.toml
   tessera-check/      file- and page-level validation, diagnostics
   tessera-resolve/    project graph and resolution passes
   tessera-emit/       site markdown, plain markdown, JSON; Zod schema generation
@@ -82,7 +82,7 @@ Everything else happens in a **structure pass** over the parsed tree, in `tesser
 
 ### Content model (`tessera-model`)
 
-`tessera-model` loads `tessera.toml` into typed structures and enforces the content model's own rules, such as rejecting a name used in more than one role. Specifying the file's format is part of the first milestone. A sketch:
+`tessera-model` loads `ascribe.toml` into typed structures and enforces the content model's own rules, such as rejecting a name used in more than one role. Specifying the file's format is part of the first milestone. A sketch:
 
 ```toml
 spec = "0.1"
@@ -159,7 +159,7 @@ The extension is a small TypeScript client. The language intelligence lives in `
 **Client responsibilities**
 
 - Find the binary: the project's `node_modules/.bin/tessera` first, then the one bundled in the extension.
-- Start `tessera lsp` through `vscode-languageclient`, and restart it when `tessera.toml` changes in ways the server can't reload in place.
+- Start `tessera lsp` through `vscode-languageclient`, and restart it when `ascribe.toml` changes in ways the server can't reload in place.
 - Provide a TextMate grammar injected into markdown for immediate highlighting, as warp-writer does. The server adds semantic tokens for anything that depends on the content model, such as known keywords, declared phrases, and title lines.
 - Provide the preview (below).
 
@@ -195,7 +195,7 @@ Each milestone ends with an exit criterion. The language server comes early, rig
 
 | # | Milestone | Includes | Exit criterion |
 |---|---|---|---|
-| 0 | Foundations | Repository and workspace; CI; conformance harness that extracts SPEC.md examples; CommonMark suite running against unmodified comrak; the `tessera.toml` format specified | Both test suites run in CI |
+| 0 | Foundations | Repository and workspace; CI; conformance harness that extracts SPEC.md examples; CommonMark suite running against unmodified comrak; the `ascribe.toml` format specified | Both test suites run in CI |
 | 1 | Parser spike | The Tessera-line block in the comrak fork: interrupting paragraphs, no lazy continuation, text primaries that continue across lines | Targeted tests pass; decide whether to continue with the fork |
 | 2 | Parser | The structure pass (forms, containers, groups, titles, bindings, lists and blockquotes); phrase and image-attribute inlines; spans and line index | All §3–§6 conformance examples produce their expected trees; the CommonMark suite passes apart from documented differences |
 | 3 | Content model and file-level checks | `tessera-model`; file-level validation; diagnostic codes; `tessera check` with readable and JSON output | Every file-level row of §8.2 has a passing test |

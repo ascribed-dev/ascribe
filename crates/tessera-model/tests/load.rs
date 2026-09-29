@@ -384,6 +384,6 @@ fn the_output_directory_is_compared_after_resolving_links() {
 
 #[test]
 fn an_unreadable_file_is_reported_not_a_panic() {
-    let issues = load("/no/such/dir/tessera.toml").unwrap_err();
+    let issues = load("/no/such/dir/ascribe.toml").unwrap_err();
     assert_eq!(issues[0].slug.as_str(), "model-toml-syntax");
 }

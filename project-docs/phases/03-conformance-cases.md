@@ -14,7 +14,7 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
 
 ## Deliverables
 
-- `tests/conformance/_model/tessera.toml`: the shared fixture model, based on `examples/content-models/quill.toml`.
+- `tests/conformance/_model/ascribe.toml`: the shared fixture model, based on `examples/content-models/quill.toml`.
 - Conformance cases under `tests/conformance/`, grouped by area.
 - `examples/quill/`: a complete, valid Tessera project built around the SPEC Appendix B page.
 
@@ -37,7 +37,7 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
    - Availability annotations retained in filter builds.
    - Assets: an image beside an included fragment, resolved from the fragment's location.
 5. **Cases for §8.2.** At least one case per row that triggers exactly that diagnostic, at the expected line. Page-level rows need project cases with several files.
-6. **The Quill project.** Build `examples/quill/`: `tessera.toml`, the Appendix B page, and the files it references (`_fragments/prerequisites.md`, `quickstart.md` with a `try-in-browser` id, `keys.md` with a `rotate-keys` id), plus at least one image, including one beside the fragment, so the project is free of errors under every build.
+6. **The Quill project.** Build `examples/quill/`: `ascribe.toml`, the Appendix B page, and the files it references (`_fragments/prerequisites.md`, `quickstart.md` with a `try-in-browser` id, `keys.md` with a `rotate-keys` id), plus at least one image, including one beside the fragment, so the project is free of errors under every build.
 7. **Skips.** Keep a skip entry in `SKIPS.toml` for every tag until the phase that implements it removes the entry.
 
 ## Acceptance criteria
@@ -69,8 +69,8 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
   - §2, §7.2: `frontmatter/` (13), `model/` (2).
   - §9.2 to §9.4: `builds/selection/` (8), `builds/filter/` (9), `builds/assets/` (7), `builds/pages/` (1).
   - `projects/quill/`: the whole Quill project as one case, with no diagnostics under any of its three builds.
-- **`tests/conformance/_model/tessera.toml`**: the shared fixture model, from `quill.toml`, extended with a fragment pattern and schema, three page types (two overlap on `reference/api/**`), features (one with a history), a `sunset` state that isn't available, a `security` note type, image attributes, one widget of each shape (from `full.toml`), and the builds `site`, `cloud-pdf`, `cloud-only`, `npm-only`, `sm-3.3`, `sm-3.4`, and `sm-3.5`. It declares `site` and `cloud-pdf`, as phase 00's sample expects.
-- **`examples/quill/`**: `tessera.toml`, `docs/install-agent.md` (byte for byte the Appendix B page), `quickstart.md` (`try-in-browser`), `keys.md` (`rotate-keys`), `_fragments/prerequisites.md`, and two images, one beside the fragment.
+- **`tests/conformance/_model/ascribe.toml`**: the shared fixture model, from `quill.toml`, extended with a fragment pattern and schema, three page types (two overlap on `reference/api/**`), features (one with a history), a `sunset` state that isn't available, a `security` note type, image attributes, one widget of each shape (from `full.toml`), and the builds `site`, `cloud-pdf`, `cloud-only`, `npm-only`, `sm-3.3`, `sm-3.4`, and `sm-3.5`. It declares `site` and `cloud-pdf`, as phase 00's sample expects.
+- **`examples/quill/`**: `ascribe.toml`, `docs/install-agent.md` (byte for byte the Appendix B page), `quickstart.md` (`try-in-browser`), `keys.md` (`rotate-keys`), `_fragments/prerequisites.md`, and two images, one beside the fragment.
 - **`tests/conformance/tests/suite.rs`** (runs now, in `cargo test`): every SPEC §8.2 row has a case that expects it; every case has a description and `spec`; every question a case names is open in `questions.md`; the Quill example page equals SPEC Appendix B and the `appendix-b` sample; the example equals its project case; every file the example's pages include, link to, or embed exists.
 - **`tests/conformance/INTERPRETATIONS.md`**: the readings the cases lock in, and what the suite doesn't cover. **README** gained "The suite", "Resolved outlines", and "The shared model and the content root".
 - **`project-docs/questions.md`**: Q13 to Q26, each with a proposed resolution. All were resolved on 2026-09-28 as proposed (Q15 through Q30), and the 45 cases that were `provisional` on them no longer are.
@@ -80,7 +80,7 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
 - **Adapters** (05 to 14, 18, 20): expectations use the format in the README. Points an adapter has to know, all in the README or `INTERPRETATIONS.md`:
   - a resolved outline is source text after includes, availability, build modes, and phrases; links, heading ids, and glossary aren't in it, and a surviving `@available` stays as the annotation;
   - `Case::content_root()` is the content root whatever the shared model's `content-root` says, and the case directory is the project root, which is where `../shared/...` and `../.tessera/...` files sit;
-  - a loader diagnostic is `file: tessera.toml` in a single-file case.
+  - a loader diagnostic is `file: ascribe.toml` in a single-file case.
 - **Tags**: `parser` cases carry only line-form directives, so they need no structure; `structure` cases carry outlines; `check` cases carry top-level diagnostics; page-level diagnostics under a build always come with `page-check`. A case with several tags waits for all of them. Build expectations for a `resolve`-only case list `pages` and `assets`, never `diagnostics`.
 - **Phase 08**: `tests/conformance/cases/model/` has the two `model-name-multiple-roles` cases, tagged `model`. The rest of §20 needs fixtures there; `model-dimension-value-shared` overlaps that row (`INTERPRETATIONS.md`).
 

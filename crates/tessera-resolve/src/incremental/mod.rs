@@ -157,7 +157,7 @@ pub enum Change {
         /// The path.
         path: RelPath,
     },
-    /// `tessera.toml` changed and loaded: this is the new model. One that moves
+    /// `ascribe.toml` changed and loaded: this is the new model. One that moves
     /// the content root or the output directory can't be applied in place
     /// ([`ApplyError::LayoutChanged`]).
     Model(Arc<ContentModel>),

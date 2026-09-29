@@ -1,4 +1,4 @@
-// What the integration needs from `tessera.toml`: where a build's site output
+// What the integration needs from `ascribe.toml`: where a build's site output
 // goes, and the consumer settings that must agree with `astro.config`
 // (content-model.md §16). The compiler validates the whole file; this reads
 // only what it compiled.
@@ -8,9 +8,9 @@ import { parse } from "smol-toml";
 
 /** The parts of a Tessera project the integration reads. */
 export interface ProjectInfo {
-  /** The directory holding `tessera.toml`. */
+  /** The directory holding `ascribe.toml`. */
   dir: string;
-  /** The path of `tessera.toml`. */
+  /** The path of `ascribe.toml`. */
   configPath: string;
   /** `[consumer]`, with the profile's defaults. */
   consumer: { site: string | undefined; basePath: string; trailingSlash: "always" | "never" };
@@ -18,9 +18,9 @@ export interface ProjectInfo {
   siteRoot(build: string): string;
 }
 
-/** Reads `tessera.toml` in `dir`. Throws a readable error if it can't be read. */
+/** Reads `ascribe.toml` in `dir`. Throws a readable error if it can't be read. */
 export function readProject(dir: string): ProjectInfo {
-  const configPath = path.join(dir, "tessera.toml");
+  const configPath = path.join(dir, "ascribe.toml");
   let table: Record<string, unknown>;
   try {
     table = parse(readFileSync(configPath, "utf8"));
@@ -65,7 +65,7 @@ export function normalizeBase(base: string): string {
 }
 
 /**
- * The ways `tessera.toml`'s `[consumer]` disagrees with Astro's configuration,
+ * The ways `ascribe.toml`'s `[consumer]` disagrees with Astro's configuration,
  * as sentences. Tessera writes every link with its own settings, so a site
  * whose routes differ would have broken links.
  */

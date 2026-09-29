@@ -53,8 +53,8 @@ Prove the whole pipeline in a real Astro site as early as possible, with the sma
 
 ### What was built
 
-- **`packages/astro`** (`@tessera/astro`, private): the integration (`src/index.ts`), `tesseraCollection` (`src/content.ts`, exported as `@tessera/astro/content`), the `<Elements />` component (`src/Elements.astro`), and the markdown plugin. The plugin is `src/attributes.ts` (the site-render contract's rules, once, as a pure function from a hast tree to a list of edits) with an adapter for each of Astro's markdown processors: `src/rehype.ts` (unified) and `src/satteri.ts` (Sätteri). Also `src/project.ts` (reads `tessera.toml`; checks routing agreement), `src/binary.ts`, `src/run.ts`, and `src/files.ts` (`_tessera/files/`). `packages/astro/README.md` documents the interface. `dist/` is git-ignored: `pnpm --filter @tessera/astro build` (and `--filter @tessera/elements build`) first.
-- **`examples/astro-site`**: a plain Astro site over a small Tessera project (`tessera.toml`, `content/`) with the four risky integrations of task 3, `base: "/docs"`, `trailingSlash: "never"`. Its README maps each risk to where it is.
+- **`packages/astro`** (`@tessera/astro`, private): the integration (`src/index.ts`), `tesseraCollection` (`src/content.ts`, exported as `@tessera/astro/content`), the `<Elements />` component (`src/Elements.astro`), and the markdown plugin. The plugin is `src/attributes.ts` (the site-render contract's rules, once, as a pure function from a hast tree to a list of edits) with an adapter for each of Astro's markdown processors: `src/rehype.ts` (unified) and `src/satteri.ts` (Sätteri). Also `src/project.ts` (reads `ascribe.toml`; checks routing agreement), `src/binary.ts`, `src/run.ts`, and `src/files.ts` (`_tessera/files/`). `packages/astro/README.md` documents the interface. `dist/` is git-ignored: `pnpm --filter @tessera/astro build` (and `--filter @tessera/elements build`) first.
+- **`examples/astro-site`**: a plain Astro site over a small Tessera project (`ascribe.toml`, `content/`) with the four risky integrations of task 3, `base: "/docs"`, `trailingSlash: "never"`. Its README maps each risk to where it is.
 - **The end-to-end test**, `examples/astro-site/test/e2e/` (`pnpm --filter @tessera/example-astro-site test:e2e`), and a manual-dispatch job for it, `astro`, in `.github/workflows/js.yml` (which stays `workflow_dispatch` only).
 - **Questions Q151 to Q155** (below). No Rust changes.
 
@@ -126,7 +126,7 @@ See the pull request for the status and evidence of each.
 - **Q151 to Q155.**
 - **Dev-mode rebuilds** (phase 22): in `astro dev`, editing a `.md` source doesn't re-run `tessera build`.
 - **The binary from npm** (phase 22).
-- **A mismatch between the two sides' `output-dir`**: the site imports the schema from a path that repeats `[project] output-dir` (`../.tessera/build/site/site/_tessera/schema.ts`), while the integration reads it from `tessera.toml`. A project with another output directory changes both. A helper could re-export the schema from the virtual module if a site wants a single place.
+- **A mismatch between the two sides' `output-dir`**: the site imports the schema from a path that repeats `[project] output-dir` (`../.tessera/build/site/site/_tessera/schema.ts`), while the integration reads it from `ascribe.toml`. A project with another output directory changes both. A helper could re-export the schema from the virtual module if a site wants a single place.
 - **`astro check`** isn't run: `typecheck` for the example covers `test/` only, since `src/content.config.ts` needs Astro's generated types (`astro sync`), which need the compiler.
 - **The sample's `available` text** for `self-managed` needed a label (`labels = { "self-managed" = "Self-managed" }`); without one, the text is lower-case (`self-managed (preview, 3.4+)`), which is the emitter's documented behavior.
 

@@ -57,7 +57,7 @@ pub struct EmittedFile {
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
     /// Another build holds the lock.
-    #[error("another tessera build is writing to {dir}")]
+    #[error("another ascribe build is writing to {dir}")]
     Locked {
         /// The output directory.
         dir: String,

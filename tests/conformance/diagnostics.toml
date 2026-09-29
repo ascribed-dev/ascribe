@@ -382,7 +382,7 @@ severity = "error"
 level = "file"
 spec = "6"
 row = "Project widget | Violates its declared schema"
-message = "`@{name}` doesn't match its declaration in tessera.toml: {detail}"
+message = "`@{name}` doesn't match its declaration in ascribe.toml: {detail}"
 messages.missing-attribute = "`@{name}` is missing the required attribute `{key}`"
 
 [[diagnostic]]
@@ -617,7 +617,7 @@ row = "Images | Required image attribute missing"
 message = "this image is missing the required attribute `{key}`"
 
 ###############################################################################
-# Loader rules: project-docs/content-model.md §20. Reported on tessera.toml.
+# Loader rules: project-docs/content-model.md §20. Reported on ascribe.toml.
 # Rules added after phase 02 are appended with the next code.
 ###############################################################################
 
@@ -628,7 +628,7 @@ severity = "error"
 level = "file"
 spec = "7.1"
 rule = "20.1"
-message = "tessera.toml isn't valid TOML: {detail}"
+message = "ascribe.toml isn't valid TOML: {detail}"
 
 [[diagnostic]]
 code = "ASC061"
@@ -675,7 +675,7 @@ severity = "error"
 level = "file"
 spec = "11"
 rule = "20.1"
-message = "tessera.toml targets spec version \"{spec}\", but this processor implements {supported}"
+message = "ascribe.toml targets spec version \"{spec}\", but this processor implements {supported}"
 
 [[diagnostic]]
 code = "ASC066"
@@ -702,7 +702,7 @@ severity = "error"
 level = "file"
 spec = "2.2"
 rule = "20.2"
-message = "`{key}` must be a path relative to tessera.toml, not an absolute path"
+message = "`{key}` must be a path relative to ascribe.toml, not an absolute path"
 
 [[diagnostic]]
 code = "ASC069"

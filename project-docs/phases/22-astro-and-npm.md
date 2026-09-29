@@ -23,7 +23,7 @@ Turn the phase 21 slice into a complete integration, and deliver the `tessera` b
 1. **Binary packages.** Follow the pattern esbuild and Biome use: one package per platform (at least macOS arm64 and x64, Linux x64 and arm64, Windows x64), each containing the binary, declared as optional dependencies of `@tessera/cli`. `@tessera/cli` provides a small `tessera` shim that finds the right binary without a postinstall script. CI cross-compiles release binaries for every platform.
 2. **Integration, completed.**
    - Uses the project's `@tessera/cli` binary.
-   - In `astro dev`, rebuilds when Tessera sources, assets, or `tessera.toml` change, and refreshes the page.
+   - In `astro dev`, rebuilds when Tessera sources, assets, or `ascribe.toml` change, and refreshes the page.
    - Reports Tessera's diagnostics in Astro's terminal output in a readable form.
    - Lets the site choose which Tessera build to use.
 3. **Cross-platform CI.** Run phase 21's end-to-end test on Linux, macOS, and Windows, using binaries from the npm packages built in CI.
@@ -32,7 +32,7 @@ Turn the phase 21 slice into a complete integration, and deliver the `tessera` b
 
 - [ ] Installing `@tessera/cli` from locally packed tarballs on each platform runs `tessera --version`, with no postinstall script.
 - [ ] The end-to-end test passes on all three platforms.
-- [ ] Editing a Tessera file, an asset, or `tessera.toml` in `astro dev` rebuilds and refreshes the page.
+- [ ] Editing a Tessera file, an asset, or `ascribe.toml` in `astro dev` rebuilds and refreshes the page.
 
 ## Out of scope
 

@@ -1,8 +1,8 @@
 # tessera-lsp
 
-The Tessera language server, run as `tessera lsp` (LSP over stdio). It keeps a
+The Tessera language server, run as `ascribe lsp` (LSP over stdio). It keeps a
 project in memory, follows every change to it, and publishes the diagnostics
-`tessera check --build <editor build>` reports, as the author types. It
+`ascribe check --build <editor build>` reports, as the author types. It
 computes nothing itself: every diagnostic comes from `tessera_check`, over a
 `tessera_resolve::IncrementalProject`, so the editor and the command line can't
 disagree (SPEC §8, §10).
@@ -66,17 +66,17 @@ advertise pull diagnostics.
 ## How it works
 
 - **The project** is a `tessera_resolve::IncrementalProject` built from the
-  `tessera.toml` in a workspace folder (the nearest one at or above the
+  `ascribe.toml` in a workspace folder (the nearest one at or above the
   folder, or the first one found below it). Ids follow phase 13: source files
-  have ids from 1, `tessera.toml` is 0, an id names a path and is never reused.
+  have ids from 1, `ascribe.toml` is 0, an id names a path and is never reused.
 - **Changes** reach it as `Change`s from three sources: open documents
   (`didOpen`, `didChange`, `didClose`; an open document's text wins over the
   file on disk, and closing one reverts to the disk), the file watcher (files
   and directories created, changed, deleted, or moved by anything else, sources
-  and assets alike), and `tessera.toml` (open or on disk).
-- **The model.** A `tessera.toml` that loads is applied as `Change::Model`
+  and assets alike), and `ascribe.toml` (open or on disk).
+- **The model.** A `ascribe.toml` that loads is applied as `Change::Model`
   (phase 13's tiers decide what is re-parsed, re-indexed, or re-resolved). One
-  that doesn't load has its problems published on `tessera.toml`, and the
+  that doesn't load has its problems published on `ascribe.toml`, and the
   project keeps the last model that did (Q131). A change to the content root or
   output directory can't be applied in place (`ApplyError::LayoutChanged`, Q92),
   so the server reloads the whole project and republishes everything.
@@ -156,8 +156,8 @@ scaffold and the protocol types), over `tower-lsp-server`.
   scripted scenarios of the acceptance criteria, multi-byte positions, stale
   computations (a hook holds a computation until a newer edit lands), file
   watching, model changes.
-- `crates/tessera-cli/tests/lsp_parity.rs` starts the real `tessera lsp` binary
+- `crates/tessera-cli/tests/lsp_parity.rs` starts the real `ascribe lsp` binary
   over stdio and compares its published diagnostics with
-  `tessera check --build <name> --format json`, for every build of
+  `ascribe check --build <name> --format json`, for every build of
   `examples/quill` and fixture projects with known problems.
 - `benches/keystroke.rs` records the time from an edit to its diagnostics.

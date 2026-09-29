@@ -1,4 +1,4 @@
-# Every section and key in the tessera.toml reference, used at least once.
+# Every section and key in the ascribe.toml reference, used at least once.
 # Reference: project-docs/content-model.md (section numbers in comments).
 spec = "0.1"
 

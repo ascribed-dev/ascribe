@@ -4,7 +4,7 @@
 //   // astro.config.mjs
 //   import tessera from "@tessera/astro";
 //   export default defineConfig({
-//     base: "/docs", trailingSlash: "never",     // as in tessera.toml's [consumer]
+//     base: "/docs", trailingSlash: "never",     // as in ascribe.toml's [consumer]
 //     integrations: [tessera({ build: "site" })],
 //   });
 //
@@ -34,18 +34,18 @@ const SITE_MODULE = "virtual:tessera/site";
 
 /** Options of the integration. */
 export interface TesseraOptions {
-  /** The build whose site output is the collection (a name in `tessera.toml`). */
+  /** The build whose site output is the collection (a name in `ascribe.toml`). */
   build: string;
-  /** The directory holding `tessera.toml`, relative to the Astro root. Default: the root. */
+  /** The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. */
   project?: string;
   /**
-   * The `tessera` binary, relative to the Astro root. Default: `TESSERA_BIN`, then the
+   * The `ascribe` binary, relative to the Astro root. Default: `TESSERA_BIN`, then the
    * nearest `target/release` or `target/debug` build above the project (Q152).
    */
   binary?: string;
 }
 
-/** Runs `tessera build`, checks the site's routing, adds the markdown plugin, and serves published files. */
+/** Runs `ascribe build`, checks the site's routing, adds the markdown plugin, and serves published files. */
 export default function tessera(options: TesseraOptions): AstroIntegration {
   let siteRoot = "";
   return {
@@ -54,10 +54,10 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
       "astro:config:setup": async ({ config, command, logger, updateConfig }) => {
         const root = fileURLToPath(config.root);
         const project = readProject(path.resolve(root, options.project ?? "."));
-        // An unknown build is `tessera build`'s to report: it knows the implicit `site` build (content-model.md §17).
+        // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build (content-model.md §17).
         siteRoot = project.siteRoot(options.build);
 
-        // `tessera.toml`'s routing must be Astro's, or every link Tessera writes is wrong.
+        // `ascribe.toml`'s routing must be Astro's, or every link Tessera writes is wrong.
         const problems = consumerMismatches(project, {
           base: config.base,
           trailingSlash: config.trailingSlash,
@@ -65,7 +65,7 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
         });
         if (problems.length > 0) {
           throw new Error(
-            `@tessera/astro: tessera.toml and astro.config disagree:\n- ${problems.join("\n- ")}`,
+            `@tessera/astro: ascribe.toml and astro.config disagree:\n- ${problems.join("\n- ")}`,
           );
         }
 

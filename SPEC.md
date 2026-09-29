@@ -645,7 +645,7 @@ A **project widget** is a directive defined by a documentation set rather than b
 
 The content model is a documentation set's schema. It is the single contract shared by the authoring environment, the validator, and the compiler: all three read the same declarations, so they can't disagree about what's valid.
 
-The content model is a TOML file named `tessera.toml` at the project root. Processors read it directly. Consumers' own schemas are generated from it rather than maintained separately; for Astro, that's the content collection's Zod schema (§9.6).
+The content model is a TOML file named `ascribe.toml` at the project root. Processors read it directly. Consumers' own schemas are generated from it rather than maintained separately; for Astro, that's the content collection's Zod schema (§9.6).
 
 A content model with errors is reported, and nothing else is checked, since every other check depends on it. The warnings of a content model that loads are reported with the rest of the diagnostics.
 
@@ -895,7 +895,7 @@ In the site output, emitters MUST place a blank line after each opening tag and 
 
 **Assets.** Every output is self-contained: it works without access to the source files. Local files a page references (image sources, and link targets that aren't pages) are copied into the output, and references to them are rewritten to point at the copies. A reference resolves from the file it's written in, so an image referenced inside an included fragment is the one beside the fragment (§4.2). The consumer profile decides where copies go and how references to them are written (§9.5), so that a consumer's own image processing still applies.
 
-A reference MUST resolve to a file inside the project root (the directory containing `tessera.toml`) or the content root, and not inside the output directory; any other reference is treated as a file that doesn't exist (§8.2). File names MUST match exactly, including case, on every platform, so a project checks the same everywhere. References inside raw HTML aren't assets: they pass through unchanged, and the files they name aren't copied.
+A reference MUST resolve to a file inside the project root (the directory containing `ascribe.toml`) or the content root, and not inside the output directory; any other reference is treated as a file that doesn't exist (§8.2). File names MUST match exactly, including case, on every platform, so a project checks the same everywhere. References inside raw HTML aren't assets: they pass through unchanged, and the files they name aren't copied.
 
 ### 9.5 Consumer profile
 

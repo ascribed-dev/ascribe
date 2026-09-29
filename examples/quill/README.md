@@ -3,7 +3,7 @@
 A complete, valid Tessera project: the documentation set for Quill, a made-up docs-sync tool. Its centerpiece is the page from [SPEC Appendix B](../../SPEC.md#appendix-b-complete-example), `docs/install-agent.md`, which is byte for byte the page in the specification.
 
 ```
-tessera.toml                       the content model (SPEC Appendix B, plus image attributes)
+ascribe.toml                       the content model (SPEC Appendix B, plus image attributes)
 docs/
   install-agent.md                 the Appendix B page
   quickstart.md                    has the `try-in-browser` id the page links to

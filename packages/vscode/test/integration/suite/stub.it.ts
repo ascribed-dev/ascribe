@@ -7,7 +7,7 @@ import { activated, diagnosticsOf, uriOf, waitFor, workspace } from "./helpers.j
 const stubDiagnostics = (diagnostics: vscode.Diagnostic[]) =>
   diagnostics.filter((diagnostic) => diagnostic.source === "tessera-stub");
 
-describe("with tessera.toml and the stub server", () => {
+describe("with ascribe.toml and the stub server", () => {
   it("activates, finds the binary named by tessera.path, and starts the server", async () => {
     const api = await activated();
     await api.whenSettled();

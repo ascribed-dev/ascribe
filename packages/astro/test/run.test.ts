@@ -17,12 +17,12 @@ describe.skipIf(process.platform === "win32")("runBuild", () => {
     const binary = script('echo "args: $*"; echo "built site/site: 1 page" >&2');
     const result = await runBuild({
       binary,
-      configPath: "/p/tessera.toml",
+      configPath: "/p/ascribe.toml",
       build: "site",
       cwd: "/",
     });
     expect(result.diagnostics).toBe(
-      "args: build --emit site --build site --config /p/tessera.toml --color never",
+      "args: build --emit site --build site --config /p/ascribe.toml --color never",
     );
     expect(result.summary).toBe("built site/site: 1 page");
   });
@@ -33,7 +33,7 @@ describe.skipIf(process.platform === "win32")("runBuild", () => {
     );
     const failure = await runBuild({
       binary,
-      configPath: "/p/tessera.toml",
+      configPath: "/p/ascribe.toml",
       build: "site",
       cwd: "/",
     }).then(

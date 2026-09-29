@@ -1,7 +1,7 @@
-//! The adapter for `tessera-model`: loading `tessera.toml` (the `model` tag).
+//! The adapter for `tessera-model`: loading `ascribe.toml` (the `model` tag).
 //!
 //! A `model` case's diagnostics are what the loader reports for the case's
-//! content model, in `tessera.toml` (a loader rule is `file: tessera.toml`,
+//! content model, in `ascribe.toml` (a loader rule is `file: ascribe.toml`,
 //! README, "The shared model and the content root"). The rule fixtures for
 //! the rest of content-model.md §20 are in `crates/tessera-model/tests/`.
 
@@ -35,7 +35,7 @@ impl ConformanceAdapter for ModelAdapter {
                 .ok_or_else(|| AdapterError(format!("bad location for {}", issue.slug)))?;
             out.push(Diagnostic {
                 slug: issue.slug.as_str().to_owned(),
-                file: "tessera.toml".to_owned(),
+                file: "ascribe.toml".to_owned(),
                 line: pos.line + 1,
                 column: pos.col + 1,
             });

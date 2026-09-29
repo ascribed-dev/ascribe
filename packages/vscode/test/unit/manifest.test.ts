@@ -26,15 +26,15 @@ describe("package.json", () => {
     expect(manifest.private).toBe(true);
   });
 
-  it("activates only for workspaces that contain tessera.toml", () => {
-    expect(manifest.activationEvents).toEqual(["workspaceContains:**/tessera.toml"]);
+  it("activates only for workspaces that contain ascribe.toml", () => {
+    expect(manifest.activationEvents).toEqual(["workspaceContains:**/ascribe.toml"]);
   });
 
   it("doesn't support untrusted workspaces, since it runs the project's binary", () => {
     expect(manifest.capabilities.untrustedWorkspaces.supported).toBe(false);
   });
 
-  it("hides every command from the palette until a workspace has tessera.toml", () => {
+  it("hides every command from the palette until a workspace has ascribe.toml", () => {
     const hidden = manifest.contributes.menus.commandPalette;
     expect(hidden.map((entry) => entry.command).sort()).toEqual(
       manifest.contributes.commands.map((command) => command.command).sort(),

@@ -8,7 +8,7 @@ use tessera_model::ContentModel;
 ///
 /// Every source path in this crate is a **content path**, relative to the
 /// content root. The layout says where that root is, relative to the
-/// **project root** (the directory containing `tessera.toml`), and where the
+/// **project root** (the directory containing `ascribe.toml`), and where the
 /// output directory is, so that a reference can be checked against the
 /// boundary of what a build may copy.
 #[derive(Clone, Debug, PartialEq, Eq)]

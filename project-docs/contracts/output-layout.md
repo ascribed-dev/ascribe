@@ -13,7 +13,7 @@ This contract says where `tessera build` writes each build's output, how it reco
     <emitter>.manifest.json     what that emitter root holds (§3)
 ```
 
-- `<build>` is the build's name from `tessera.toml`, as written (`site`, `cloud`, `self-managed-3.3`). Build names are unique ignoring case (content-model.md, `model-build-name-case`), and never start with `.`, so they can't clash with `.lock` or `.staging`.
+- `<build>` is the build's name from `ascribe.toml`, as written (`site`, `cloud`, `self-managed-3.3`). Build names are unique ignoring case (content-model.md, `model-build-name-case`), and never start with `.`, so they can't clash with `.lock` or `.staging`.
 - `<emitter>` is `site`, `plain`, or `json`.
 - Each emitter root is complete on its own: its pages, and a copy of every asset they use ([asset contract](assets.md)). Nothing is shared between emitter roots or builds.
 

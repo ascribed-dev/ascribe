@@ -2,7 +2,7 @@
 //!
 //! This is the one implementation of the rules for references: the source
 //! index ([`crate::Project`]) and the file-level checks (`tessera-check`) both
-//! call it, so `tessera check`, the build, and the language server can't
+//! call it, so `ascribe check`, the build, and the language server can't
 //! disagree about whether a file exists. It covers:
 //!
 //! - what a destination names: phrase substitution (SPEC §5.1, Q54),
@@ -139,7 +139,7 @@ pub fn reference_target(
 ///
 /// `span` is the whole link or image, `children` its text (a link) or alt
 /// text as inlines (an image), `alt` an image's alt text as source, and
-/// `label` the label of a full reference. Both `tessera check` and the source
+/// `label` the label of a full reference. Both `ascribe check` and the source
 /// index call this, so the two can't disagree.
 #[allow(clippy::too_many_arguments)]
 pub fn destination_phrases<'a>(

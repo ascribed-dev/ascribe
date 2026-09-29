@@ -7,7 +7,7 @@
 //! files (`tessera-resolve`, `tessera-check`) and the tools that key results
 //! by id (the language server):
 //!
-//! 1. **Id 0 is `tessera.toml`**, always. Source files have ids from 1.
+//! 1. **Id 0 is `ascribe.toml`**, always. Source files have ids from 1.
 //! 2. **A fresh load numbers files in path order**, from 1
 //!    ([`Project::load`](crate::Project::load), `tessera_check::Project::load`).
 //! 3. **An id names a path** for as long as the [`FileIds`] table lives (in an

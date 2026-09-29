@@ -7,7 +7,7 @@
 //! |---|---|---|
 //! | Internal, and LSP clients that negotiate UTF-8 | 0-based | UTF-8 bytes ([`LineCol`]) |
 //! | LSP's default position encoding | 0-based | UTF-16 code units ([`WideEncoding::Utf16`]) |
-//! | `tessera check` output and conformance cases | 1-based | Unicode scalar values ([`WideEncoding::Utf32`]), plus 1 |
+//! | `ascribe check` output and conformance cases | 1-based | Unicode scalar values ([`WideEncoding::Utf32`]), plus 1 |
 //!
 //! Lines end the way CommonMark ends them: at `\n`, at `\r\n`, or at a `\r`
 //! not followed by `\n`. So line numbers here always agree with the parser's.
@@ -363,7 +363,7 @@ mod tests {
 
     #[test]
     fn conformance_columns_are_one_based_scalar_values() {
-        // How `tessera check` and the conformance harness report a column.
+        // How `ascribe check` and the conformance harness report a column.
         let text = "## Ünïcode 😀 {key}";
         let idx = LineIndex::new(text);
         let brace = text.find('{').unwrap();

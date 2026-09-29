@@ -1,6 +1,6 @@
 // The Astro end-to-end slice (phase 21): a real `astro build` of this site,
 // then the built HTML checked in Chromium. Run by `pnpm test:e2e`; it needs a
-// built `tessera` binary (`cargo build -p tessera-cli`, or TESSERA_BIN) and
+// built `ascribe` binary (`cargo build -p tessera-cli`, or TESSERA_BIN) and
 // `pnpm --filter @tessera/astro build` and `pnpm --filter @tessera/elements build`.
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
@@ -167,7 +167,7 @@ describe("the built site", () => {
   });
 
   it("gives every heading the id Tessera validated, at the route Tessera computed", async () => {
-    // `tessera build --emit json` records each page's route and heading ids.
+    // `ascribe build --emit json` records each page's route and heading ids.
     const binary = process.env["TESSERA_BIN"] ?? findWorkspaceBinary();
     execFileSync(binary, ["build", "--build", "site", "--emit", "json", "--color", "never"], {
       cwd: siteDir,

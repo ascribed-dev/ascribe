@@ -14,7 +14,7 @@ This contract defines the one syntax the site output uses for both, the **attrib
 
 The shared fixtures in [`tests/render/`](../../tests/render/) are what keep them equal: both must pass every fixture.
 
-Everything here applies to spec 0.1's only consumer profile, `astro`. It settles content-model.md Q12, which is why `tessera.toml` has no keys for heading ids or image attributes.
+Everything here applies to spec 0.1's only consumer profile, `astro`. It settles content-model.md Q12, which is why `ascribe.toml` has no keys for heading ids or image attributes.
 
 ## 1. The attribute marker
 

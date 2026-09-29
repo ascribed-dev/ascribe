@@ -1,5 +1,5 @@
 # The shared fixture model for conformance cases that don't have their own
-# tessera.toml (tests/conformance/README.md, "The content model").
+# ascribe.toml (tests/conformance/README.md, "The content model").
 #
 # It is examples/content-models/quill.toml (the model SPEC Appendix B assumes),
 # extended only where a rule needs something the Quill model lacks:
@@ -18,7 +18,7 @@
 # Keep additions here rare and purposeful: every case that uses this model
 # sees them. A case that needs something the shared model shouldn't have (a
 # glossary, a required image attribute, no default type, a broken model) has
-# its own tessera.toml.
+# its own ascribe.toml.
 #
 # Where the content root is. The model says `files`, which is the content root
 # of every project case. A single-file case has `input.md` in its directory,

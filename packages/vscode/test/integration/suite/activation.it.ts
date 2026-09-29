@@ -3,9 +3,9 @@ import * as vscode from "vscode";
 import type { TesseraApi } from "../../../src/extension.js";
 import { EXTENSION_ID, sleep, uriOf } from "./helpers.js";
 
-describe("in a workspace without tessera.toml", () => {
+describe("in a workspace without ascribe.toml", () => {
   it("doesn't activate the extension", async () => {
-    // Opening a markdown file must not activate it either: only `tessera.toml` does.
+    // Opening a markdown file must not activate it either: only `ascribe.toml` does.
     await vscode.window.showTextDocument(
       await vscode.workspace.openTextDocument(uriOf("readme.md")),
     );

@@ -1,5 +1,5 @@
-//! `tessera build`: outputs, replacing a previous build, and reporting what
-//! `tessera check` reports, by running the binary.
+//! `ascribe build`: outputs, replacing a previous build, and reporting what
+//! `ascribe check` reports, by running the binary.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -40,7 +40,7 @@ availability = "badge"
 
 fn project(model: &str, files: &[(&str, &str)]) -> TempDir {
     let dir = tempfile::tempdir().expect("a temporary directory");
-    write(&dir.path().join("tessera.toml"), model);
+    write(&dir.path().join("ascribe.toml"), model);
     for (path, text) in files {
         write(&dir.path().join("docs").join(path), text);
     }
@@ -57,12 +57,12 @@ fn read(path: &Path) -> String {
 }
 
 fn tessera(dir: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_tessera"))
+    Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(dir)
         .args(args)
         .env("NO_COLOR", "1")
         .output()
-        .expect("run tessera")
+        .expect("run ascribe")
 }
 
 fn code(output: &Output) -> i32 {
@@ -136,7 +136,7 @@ fn builds_quill_under_every_build_with_both_emitters() {
         "{}",
         stderr(&out)
     );
-    // The report is what `tessera check` prints.
+    // The report is what `ascribe check` prints.
     let check = tessera(dir.path(), &["check"]);
     assert_eq!(stdout(&out), stdout(&check));
     // Building again changes nothing on disk that hasn't changed.
@@ -417,7 +417,7 @@ fn a_build_with_only_warnings_reports_them_and_builds() {
 fn a_content_model_with_errors_fails_like_check() {
     let dir = tempfile::tempdir().expect("a temporary directory");
     write(
-        &dir.path().join("tessera.toml"),
+        &dir.path().join("ascribe.toml"),
         "spec = \"0.1\"\nbogus = 1\n",
     );
     let check = tessera(dir.path(), &["check"]);

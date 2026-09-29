@@ -2,7 +2,7 @@
 //!
 //! A [`Job`] is what one round has to do, taken from the state under the lock.
 //! [`compute`] runs without the lock, from a [`Snapshot`], calling the same
-//! functions `tessera check` does (`tessera_check::check_file`, and the
+//! functions `ascribe check` does (`tessera_check::check_file`, and the
 //! page-level checks of the editor's build); [`Core::finish`] publishes under
 //! the lock, and only what is still current.
 

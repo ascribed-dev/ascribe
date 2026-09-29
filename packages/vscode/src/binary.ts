@@ -81,7 +81,7 @@ export function ancestorsWithin(dir: string, boundary: string): string[] {
 }
 
 /**
- * Finds the `tessera` binary, in order: the `tessera.path` setting, the
+ * Finds the `ascribe` binary, in order: the `tessera.path` setting, the
  * project's `node_modules/.bin/tessera`, and the binary bundled in the
  * extension. Each candidate must run `--version`.
  *
@@ -160,7 +160,7 @@ export async function resolveBinary(options: ResolveOptions): Promise<Resolution
       message:
         "Couldn't find the Tessera binary, so the language server can't start. " +
         "Install it in the project (for example, `npm install --save-dev @tessera/cli`), " +
-        "or set `tessera.path` to a `tessera` binary.",
+        "or set `tessera.path` to a `ascribe` binary.",
       tried,
     },
   };

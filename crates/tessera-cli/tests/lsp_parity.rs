@@ -1,5 +1,5 @@
-//! Diagnostic parity: the diagnostics `tessera lsp` publishes for a build are
-//! the diagnostics `tessera check --build <name> --format json` reports for it:
+//! Diagnostic parity: the diagnostics `ascribe lsp` publishes for a build are
+//! the diagnostics `ascribe check --build <name> --format json` reports for it:
 //! same codes, files, spans, severities, messages, and related places.
 //!
 //! The server runs as a real process over stdio, as an editor starts it, so this
@@ -59,9 +59,9 @@ fn copy_dir(from: &Path, to: &Path) {
     }
 }
 
-/// `tessera.toml` with `[editor] build` set to `build`.
+/// `ascribe.toml` with `[editor] build` set to `build`.
 fn set_editor_build(root: &Path, build: &str) {
-    let path = root.join("tessera.toml");
+    let path = root.join("ascribe.toml");
     let text = fs::read_to_string(&path).expect("model");
     let mut out = String::new();
     let mut skipping = false;
@@ -84,7 +84,7 @@ fn set_editor_build(root: &Path, build: &str) {
 }
 
 fn builds_of(root: &Path) -> Vec<String> {
-    tessera_model::load(root.join("tessera.toml"))
+    tessera_model::load(root.join("ascribe.toml"))
         .expect("the model loads")
         .builds
         .iter()
@@ -92,14 +92,14 @@ fn builds_of(root: &Path) -> Vec<String> {
         .collect()
 }
 
-/// What `tessera check --build <name> --format json` reports.
+/// What `ascribe check --build <name> --format json` reports.
 fn cli_entries(root: &Path, build: &str) -> Vec<Entry> {
-    let output = Command::new(env!("CARGO_BIN_EXE_tessera"))
+    let output = Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .current_dir(root)
         .args(["check", "--build", build, "--format", "json"])
         .env("NO_COLOR", "1")
         .output()
-        .expect("run tessera check");
+        .expect("run ascribe check");
     let report: Value = serde_json::from_slice(&output.stdout).expect("JSON on stdout");
     let offset = |range: &Value, end: &str| range[end]["offset"].as_u64().expect("offset") as usize;
     let mut entries: Vec<Entry> = report["diagnostics"]
@@ -175,14 +175,14 @@ fn read_frame(reader: &mut impl BufRead) -> Option<Value> {
 
 impl Server {
     fn start(root: &Path, offer_utf8: bool) -> Server {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_tessera"))
+        let mut child = Command::new(env!("CARGO_BIN_EXE_ascribe"))
             .arg("lsp")
             .current_dir(root)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()
-            .expect("start tessera lsp");
+            .expect("start ascribe lsp");
         let stdin = child.stdin.take().expect("stdin");
         let stdout = child.stdout.take().expect("stdout");
         let (tx, messages) = mpsc::channel();
@@ -441,7 +441,7 @@ fn check_parity(source: &Path, build: &str, offer_utf8: bool) {
     let got = server.entries(&root);
     assert!(
         reached,
-        "build `{build}` of {}: the server's diagnostics differ from `tessera check`.\nonly in the CLI:\n{:#?}\nonly in the server:\n{:#?}",
+        "build `{build}` of {}: the server's diagnostics differ from `ascribe check`.\nonly in the CLI:\n{:#?}\nonly in the server:\n{:#?}",
         source.display(),
         expected
             .iter()

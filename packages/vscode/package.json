@@ -16,7 +16,7 @@
   ],
   "main": "./dist/extension.cjs",
   "activationEvents": [
-    "workspaceContains:**/tessera.toml"
+    "workspaceContains:**/ascribe.toml"
   ],
   "tessera": {
     "minServerVersion": "0.0.0"
@@ -41,7 +41,7 @@
           "type": "string",
           "default": "",
           "scope": "machine-overridable",
-          "markdownDescription": "Path to the `tessera` binary. When empty, the extension uses the project's `node_modules/.bin/tessera`, then the binary bundled with the extension."
+          "markdownDescription": "Path to the `ascribe` binary. When empty, the extension uses the project's `node_modules/.bin/tessera`, then the binary bundled with the extension."
         },
         "tessera.trace.server": {
           "type": "string",

@@ -41,7 +41,7 @@ pub struct Case {
     pub dir: PathBuf,
     /// Single file or project.
     pub kind: CaseKind,
-    /// The content model the case uses: its own `tessera.toml`, or the shared
+    /// The content model the case uses: its own `ascribe.toml`, or the shared
     /// fixture model. The shared model may not exist yet (phase 03 writes it).
     pub model: PathBuf,
     /// Whether [`Case::model`] is the shared fixture model.
@@ -72,7 +72,7 @@ impl Case {
             }
         };
 
-        let own_model = dir.join("tessera.toml");
+        let own_model = dir.join("ascribe.toml");
         let (model, model_is_shared) = if own_model.is_file() {
             (own_model, false)
         } else {

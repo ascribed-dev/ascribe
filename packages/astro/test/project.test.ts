@@ -6,7 +6,7 @@ import { consumerMismatches, normalizeBase, readProject } from "../src/project.j
 
 function project(toml: string): string {
   const dir = mkdtempSync(path.join(tmpdir(), "tessera-astro-"));
-  writeFileSync(path.join(dir, "tessera.toml"), toml);
+  writeFileSync(path.join(dir, "ascribe.toml"), toml);
   return dir;
 }
 

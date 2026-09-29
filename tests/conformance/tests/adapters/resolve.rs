@@ -12,7 +12,7 @@
 //! page-level problems the resolution records.
 //!
 //! The build's page-level diagnostics are not read off the resolved pages: they
-//! are `tessera_check::check_pages`, the same entry point `tessera check`, the
+//! are `tessera_check::check_pages`, the same entry point `ascribe check`, the
 //! build, and the language server call (phase 14), so a case that expects them
 //! tests what a user sees.
 
@@ -49,7 +49,7 @@ impl ConformanceAdapter for ResolveAdapter {
 
     /// A case that resolves and expects no file-level diagnostics (such as
     /// `samples/include-and-selection`) gets them from the whole file-level
-    /// check, as `tessera check` runs it: the resolution passes don't report.
+    /// check, as `ascribe check` runs it: the resolution passes don't report.
     fn diagnostics(&self, case: &Case) -> AdapterResult<Vec<Diagnostic>> {
         super::file_level_diagnostics(case).map(Some)
     }

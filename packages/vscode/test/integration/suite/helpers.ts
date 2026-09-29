@@ -31,7 +31,7 @@ export async function waitFor<T>(
 
 export const EXTENSION_ID = "tessera.tessera-vscode";
 
-/** The extension, activated (it activates on `tessera.toml`; a command also does). */
+/** The extension, activated (it activates on `ascribe.toml`; a command also does). */
 export async function activated(): Promise<TesseraApi> {
   const extension = vscode.extensions.getExtension<TesseraApi>(EXTENSION_ID);
   assert.ok(extension, `extension ${EXTENSION_ID} isn't installed`);

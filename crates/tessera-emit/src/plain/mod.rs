@@ -54,7 +54,7 @@ impl Emitter for PlainEmitter {
         // Resolved Q120: the warning isn't a registry diagnostic.
         if cx.site_origin().is_none() {
             vec![
-                "[consumer] site isn't set in tessera.toml, so links in the plain-markdown output are root-relative, not absolute URLs"
+                "[consumer] site isn't set in ascribe.toml, so links in the plain-markdown output are root-relative, not absolute URLs"
                     .to_owned(),
             ]
         } else {

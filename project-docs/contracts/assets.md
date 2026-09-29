@@ -11,7 +11,7 @@ Every output is self-contained: it works without access to the source files (SPE
 | 20 | Do the same in the site output, with the `astro` profile's placement |
 | 25 | Resolve the same references to source files for the preview |
 
-Paths below are `/`-separated and relative, as `tessera_core::RelPath` represents them. A **content path** is relative to the content root; the **project root** is the directory containing `tessera.toml`.
+Paths below are `/`-separated and relative, as `tessera_core::RelPath` represents them. A **content path** is relative to the content root; the **project root** is the directory containing `ascribe.toml`.
 
 ## 1. Which references are assets
 

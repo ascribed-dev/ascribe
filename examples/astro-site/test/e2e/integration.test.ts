@@ -1,5 +1,5 @@
 // The integration's contract with Astro, beyond the happy path: it fails the
-// build on Tessera errors and on routing that disagrees with tessera.toml, it
+// build on Tessera errors and on routing that disagrees with ascribe.toml, it
 // serves `_tessera/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
 import { readFile, rm, writeFile } from "node:fs/promises";
@@ -37,7 +37,7 @@ describe("the integration", () => {
     expect(String(failure)).toContain("missing.md");
   });
 
-  it("fails the Astro build when tessera.toml and astro.config disagree on routing", async () => {
+  it("fails the Astro build when ascribe.toml and astro.config disagree on routing", async () => {
     const root = await copySite("routing");
     await edit(path.join(root, "astro.config.mjs"), (text) =>
       text
@@ -54,7 +54,7 @@ describe("the integration", () => {
 
   it("builds a project with no [builds] table (the implicit `site` build), and reports an unknown build", async () => {
     const root = await copySite("implicit");
-    await edit(path.join(root, "tessera.toml"), (text) =>
+    await edit(path.join(root, "ascribe.toml"), (text) =>
       text.replace(/\[builds\.site\][^[]*/, "").replace(/\[editor\][^[]*/, ""),
     );
     await buildSite(root);
@@ -70,7 +70,7 @@ describe("the integration", () => {
 
   it("routes agree under a root base path with trailing slashes", async () => {
     const root = await copySite("always");
-    await edit(path.join(root, "tessera.toml"), (text) =>
+    await edit(path.join(root, "ascribe.toml"), (text) =>
       text
         .replace('base-path = "/docs/"', 'base-path = "/"')
         .replace('trailing-slash = "never"', 'trailing-slash = "always"'),

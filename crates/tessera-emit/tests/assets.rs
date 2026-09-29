@@ -26,7 +26,7 @@ fn project_dir() -> tempfile::TempDir {
         fs::create_dir_all(full.parent().expect("a parent")).expect("directories");
         fs::write(full, bytes).expect("a file");
     };
-    write("tessera.toml", MODEL.as_bytes());
+    write("ascribe.toml", MODEL.as_bytes());
     write(
         "docs/guides/install.md",
         b"---\ntitle: Install\n---\n\n![Settings](img/settings.png)\n\n@include: ../_fragments/prerequisites.md\n\nGet the [sample config](../downloads/quill.yaml#top) and the [manual](../../shared/My%20Manual%20(v2).pdf).\n",

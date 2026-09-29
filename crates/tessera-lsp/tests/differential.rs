@@ -121,7 +121,7 @@ impl World {
             let Some(entry) = project.file(d.location.file) else {
                 continue;
             };
-            if entry.display_path == "tessera.toml" {
+            if entry.display_path == "ascribe.toml" {
                 continue;
             }
             out.entry(entry.display_path.clone()).or_default().push((
@@ -281,14 +281,14 @@ fn run(seed: u64, steps: usize) {
                     };
                 }
                 let text = model(world.build, world.widget);
-                let config = world.fixture.path("tessera.toml");
+                let config = world.fixture.path("ascribe.toml");
                 match world.model_open {
                     Some(v) => {
                         client.replace(&config, v + 1, &text);
                         world.model_open = Some(v + 1);
                     }
                     None => {
-                        world.fixture.write("tessera.toml", &text);
+                        world.fixture.write("ascribe.toml", &text);
                         client.watched(&[(&config, FileChangeType::CHANGED)]);
                     }
                 }

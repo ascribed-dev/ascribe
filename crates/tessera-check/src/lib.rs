@@ -1,7 +1,7 @@
 //! File-level validation of Tessera documents, producing diagnostics.
 //!
 //! [`check_files`] is the single file-level entry point: the command line
-//! (`tessera check`), the build, and the language server all call it, which
+//! (`ascribe check`), the build, and the language server all call it, which
 //! is what makes their results identical. It takes a [`Project`] (the content
 //! model and the source files) and returns [`Diagnostic`]s.
 //!

@@ -273,7 +273,7 @@ fn a_second_build_can_not_take_the_lock() {
     assert!(matches!(err, StoreError::Locked { .. }), "{err}");
     assert!(
         err.to_string()
-            .contains("another tessera build is writing to"),
+            .contains("another ascribe build is writing to"),
         "{err}"
     );
 }

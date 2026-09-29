@@ -1,4 +1,4 @@
-//! `tessera check`: report every file-level and page-level problem, without
+//! `ascribe check`: report every file-level and page-level problem, without
 //! building.
 
 use std::io::{self, Write};
@@ -13,7 +13,7 @@ use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::{Counts, FileTable, json, text};
 
-/// Arguments of `tessera check`.
+/// Arguments of `ascribe check`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
     /// How to show the results.

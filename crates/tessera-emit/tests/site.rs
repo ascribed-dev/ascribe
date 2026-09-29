@@ -44,9 +44,9 @@ fn every_heading_ends_in_a_marker_with_its_page_id() {
 #[test]
 fn a_heading_keeps_its_inline_content_and_a_trailing_hash() {
     assert_eq!(
-        body("## Run `tessera check` in *CI* [now](https://example.com)\n"),
-        "## Run `tessera check` in *CI* [now](https://example.com) \
-         <tessera-attributes id=\"run-tessera-check-in-ci-now\"></tessera-attributes>\n"
+        body("## Run `ascribe check` in *CI* [now](https://example.com)\n"),
+        "## Run `ascribe check` in *CI* [now](https://example.com) \
+         <tessera-attributes id=\"run-ascribe-check-in-ci-now\"></tessera-attributes>\n"
     );
     // A trailing `#` in the text isn't a closing sequence.
     assert_eq!(

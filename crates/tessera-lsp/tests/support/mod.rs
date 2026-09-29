@@ -323,7 +323,7 @@ impl Fixture {
     pub fn new(model: &str, files: &[(&str, &str)]) -> Fixture {
         let dir = tempfile::tempdir().expect("a temp dir");
         let f = Fixture { dir };
-        f.write("tessera.toml", model);
+        f.write("ascribe.toml", model);
         for (path, text) in files {
             f.write(path, text);
         }

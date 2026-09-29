@@ -20,7 +20,7 @@ cargo test -p tessera-conformance --lib --test harness
 
 `cargo test --workspace` runs all of these. The run fails if any case fails or `SKIPS.toml` is stale.
 
-Every case runs through the runner: each area tag has an adapter (`tests/adapters/`), and `SKIPS.toml` holds only the tags whose phase isn't built (`output`). The `page-check` adapter reports a build's diagnostics from `tessera_check::check_pages`, the entry point `tessera check`, `tessera build`, and the language server share.
+Every case runs through the runner: each area tag has an adapter (`tests/adapters/`), and `SKIPS.toml` holds only the tags whose phase isn't built (`output`). The `page-check` adapter reports a build's diagnostics from `tessera_check::check_pages`, the entry point `ascribe check`, `ascribe build`, and the language server share.
 
 ## Layout
 
@@ -29,7 +29,7 @@ tests/conformance/
   README.md          this file
   SKIPS.toml         skipped tags and cases, each with a reason
   diagnostics.toml   the diagnostics registry (phase 02)
-  _model/            the shared fixture model, tessera.toml (phase 03)
+  _model/            the shared fixture model, ascribe.toml (phase 03)
   cases/             the cases, grouped by area: cases/<area>/<case>/
   snapshots/         insta snapshots of expected outputs (phases 18 and 20)
   src/               the harness library (crate tessera-conformance)
@@ -75,9 +75,9 @@ A build's page `outline` is the page after resolution steps 1 to 4 (SPEC §9.2):
 
 ## The shared model and the content root
 
-`_model/tessera.toml` sets `content-root = "files"`, the content root of every project case. A single-file case has `input.md` in its directory, so its content root is the case directory: adapters use `Case::content_root()` as the content root whatever the model says, and the case directory as the project root (the directory a case's `tessera.toml` is in, when it has one). Files a case needs beside the project or outside it (`../shared/logo.png`, `../../shared.png`) sit next to `files/` or next to the case directory.
+`_model/ascribe.toml` sets `content-root = "files"`, the content root of every project case. A single-file case has `input.md` in its directory, so its content root is the case directory: adapters use `Case::content_root()` as the content root whatever the model says, and the case directory as the project root (the directory a case's `ascribe.toml` is in, when it has one). Files a case needs beside the project or outside it (`../shared/logo.png`, `../../shared.png`) sit next to `files/` or next to the case directory.
 
-A diagnostic in `tessera.toml` (a loader rule) is expected in a single-file case, with `file: tessera.toml`, since the case directory is the content root there.
+A diagnostic in `ascribe.toml` (a loader rule) is expected in a single-file case, with `file: ascribe.toml`, since the case directory is the content root there.
 
 ## Cases
 
@@ -100,7 +100,7 @@ A case has one or the other, never both. Paths in `expect.yaml` (diagnostic file
 
 ### The content model
 
-A case may have its own `tessera.toml` in the case directory. Otherwise it uses the shared fixture model, `tests/conformance/_model/tessera.toml`, which phase 03 writes from the Quill model. Prefer the shared model; give a case its own only when it tests the content model itself or needs declarations the shared model shouldn't have.
+A case may have its own `ascribe.toml` in the case directory. Otherwise it uses the shared fixture model, `tests/conformance/_model/ascribe.toml`, which phase 03 writes from the Quill model. Prefer the shared model; give a case its own only when it tests the content model itself or needs declarations the shared model shouldn't have.
 
 ### Line endings
 
@@ -131,7 +131,7 @@ Tags route a case to adapters and let a runner select cases. **Area tags** name 
 | `parser` | Tessera-line recognition, directive heads, attributes, primaries (§3.1–§3.4) | 05 |
 | `structure` | Forms, containers, groups, titles, binding, lists and blockquotes, nesting (§3.5–§3.10, §4) | 06 |
 | `inline` | Phrases, escapes, image attribute blocks (§2.3, §5.1, §5.3) | 07 |
-| `model` | Loading and validating `tessera.toml` (§7) | 08 |
+| `model` | Loading and validating `ascribe.toml` (§7) | 08 |
 | `slug` | Heading slugs and source ids (§5.5) | 09 |
 | `check` | File-level diagnostics (§8.1, §8.2) | 10 |
 | `include` | Includes and the source index (§4.2) | 11 |
@@ -361,7 +361,7 @@ pub trait ConformanceAdapter {
 
 - `handles_tag` decides which cases reach the adapter. Handling a tag means its cases run.
 - Each method returns `Ok(Some(result))`, `Ok(None)` when this adapter doesn't produce that result, or `Err` when it can't process the case. For each check, the runner asks the adapters that handle any of the case's area tags, in registration order, and uses the first `Some`. An expectation that no adapter produces fails the case, unless a skip entry names that check.
-- `Case` gives an adapter the case's `kind`, `content_root()`, `input()` (single-file cases), `source_files()`, and `model` (the `tessera.toml` to load; the shared model may not exist before phase 03).
+- `Case` gives an adapter the case's `kind`, `content_root()`, `input()` (single-file cases), `source_files()`, and `model` (the `ascribe.toml` to load; the shared model may not exist before phase 03).
 - `diagnostics` returns file-level diagnostics for every source file, with `file` relative to the content root. `build` returns the published pages, copied assets, page-level diagnostics, and, per page, the resolved outline and any emitted outputs.
 - `format` returns `source` in canonical form under the case's content model (see Formatting).
 - A panic inside an adapter fails that case; the run continues.

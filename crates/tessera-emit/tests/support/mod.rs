@@ -16,9 +16,9 @@ pub fn quill() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/quill")
 }
 
-/// Loads the project whose `tessera.toml` is in `root`.
+/// Loads the project whose `ascribe.toml` is in `root`.
 pub fn load(root: &Path) -> Project {
-    let model = tessera_model::load_with_file(root.join("tessera.toml"), FileId::new(0))
+    let model = tessera_model::load_with_file(root.join("ascribe.toml"), FileId::new(0))
         .unwrap_or_else(|issues| panic!("the model has errors: {issues:?}"));
     let layout = Layout::from_model(&model);
     let fs = DiskFs::new(root, &layout);

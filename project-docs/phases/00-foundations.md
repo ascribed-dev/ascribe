@@ -29,7 +29,7 @@ Create the repository skeleton every other phase builds in: the Rust workspace, 
 3. **CommonMark baseline.** Add the official CommonMark spec tests (the `spec.json` for the version comrak targets) under `tests/commonmark/`, with a runner that parses each example with the comrak crate from crates.io and compares HTML. Record the pass count. Phase 04 reruns this against the fork.
 4. **Conformance case format.** Define and document, in `tests/conformance/README.md`, how a conformance case is written:
    - A case is a directory. Single-file cases have `input.md`. Project cases have a `files/` tree.
-   - A case may include `tessera.toml`. Otherwise it uses the shared fixture model at `tests/conformance/_model/tessera.toml`, which phase 03 writes.
+   - A case may include `ascribe.toml`. Otherwise it uses the shared fixture model at `tests/conformance/_model/ascribe.toml`, which phase 03 writes.
    - `expect.yaml` holds the expected results:
      - `outline`: an abstract, implementation-independent description of the parsed structure. It describes directives (name, form, attributes, primary, title, binding), containers and groups with their children, and CommonMark block kinds (paragraph, list, list item, code, heading, blockquote, image). It must *not* depend on internal node types or spans.
      - `diagnostics`: expected diagnostics by slug (from the phase 02 registry), with a line number and optionally a column.
@@ -75,7 +75,7 @@ Create the repository skeleton every other phase builds in: the Rust workspace, 
 ### Interfaces later phases use
 
 - **Case format.** `tests/conformance/README.md` is the contract between test authors (phase 03) and implementers. The pieces most likely to matter:
-  - Cases live under `tests/conformance/cases/<area>/<case>/`, not directly under `tests/conformance/`. The shared model is `tests/conformance/_model/tessera.toml`; snapshots go in `tests/conformance/snapshots/`.
+  - Cases live under `tests/conformance/cases/<area>/<case>/`, not directly under `tests/conformance/`. The shared model is `tests/conformance/_model/ascribe.toml`; snapshots go in `tests/conformance/snapshots/`.
   - The outline has **structural** fields, always compared against a default (`form`, `attributes`, `primary`, `title`, `children`, a list's kind), and **content** fields, compared only when written (`text`, `binding`, `info`, `fenced`, `start`, `alt`). Text fields are raw source, whitespace-normalized.
   - A following-block directive and its bound block stay siblings; `binding: following-block` means "the next entry".
   - Top-level `diagnostics` are file-level only; page-level diagnostics go under `builds.<name>.diagnostics`. Columns count Unicode scalar values.

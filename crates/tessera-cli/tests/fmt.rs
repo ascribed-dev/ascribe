@@ -1,4 +1,4 @@
-//! `tessera fmt`: exit statuses, `--check`, and which files it visits.
+//! `ascribe fmt`: exit statuses, `--check`, and which files it visits.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -19,7 +19,7 @@ impl Project {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("docs")).expect("create the project");
         std::fs::write(
-            dir.join("tessera.toml"),
+            dir.join("ascribe.toml"),
             "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n",
         )
         .expect("write the model");
@@ -37,12 +37,12 @@ impl Project {
     }
 
     fn fmt(&self, args: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_tessera"))
+        Command::new(env!("CARGO_BIN_EXE_ascribe"))
             .arg("fmt")
             .args(args)
             .current_dir(&self.dir)
             .output()
-            .expect("run tessera")
+            .expect("run ascribe")
     }
 }
 
@@ -141,11 +141,11 @@ fn hidden_directories_and_node_modules_are_skipped() {
 fn a_project_is_found_from_a_subdirectory() {
     let p = Project::new("subdir");
     p.write("docs/a.md", MESSY);
-    let out = Command::new(env!("CARGO_BIN_EXE_tessera"))
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .args(["fmt", "--check"])
         .current_dir(p.dir.join("docs"))
         .output()
-        .expect("run tessera");
+        .expect("run ascribe");
     assert_eq!(code(&out), 1, "{}", stderr(&out));
 }
 
@@ -153,7 +153,7 @@ fn a_project_is_found_from_a_subdirectory() {
 fn a_widget_from_the_model_is_formatted_in_its_own_order() {
     let p = Project::new("widget");
     p.write(
-        "tessera.toml",
+        "ascribe.toml",
         "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[widgets.quill-labspace]\nforms = [\"line\"]\nprimary = \"none\"\nbinding = \"self\"\nplain-fallback = \"Lab.\"\n\n[widgets.quill-labspace.attributes]\nlab = \"string\"\nheight = \"number?\"\n",
     );
     p.write("docs/a.md", "@quill-labspace {height=3, lab=x}\n");
@@ -168,17 +168,17 @@ fn problems_exit_2() {
     let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("fmt-no-project");
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("create a directory");
-    let out = Command::new(env!("CARGO_BIN_EXE_tessera"))
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
         .args(["fmt", "--check"])
         .current_dir(&dir)
         .output()
-        .expect("run tessera");
+        .expect("run ascribe");
     assert_eq!(code(&out), 2);
-    assert!(stderr(&out).contains("no tessera.toml"), "{}", stderr(&out));
+    assert!(stderr(&out).contains("no ascribe.toml"), "{}", stderr(&out));
 
     // An invalid model.
     let p = Project::new("bad-model");
-    p.write("tessera.toml", "spec = [");
+    p.write("ascribe.toml", "spec = [");
     let out = p.fmt(&[]);
     assert_eq!(code(&out), 2);
     assert!(stderr(&out).contains("isn't a valid content model"));

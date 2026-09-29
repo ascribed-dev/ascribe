@@ -198,7 +198,7 @@ To keep parallel phases from colliding, each phase owns specific paths. Changing
 
 These need a person, not an agent:
 
-- **After 01:** review the `tessera.toml` format.
+- **After 01:** review the `ascribe.toml` format.
 - **After 02:** review the contracts before parallel implementation begins.
 - **After 04:** confirm the go or no-go decision on the comrak fork.
 - **Before 22:** confirm that the npm scope `@tessera` and the package names are available, or choose new ones. Every package name in these phases assumes the scope.

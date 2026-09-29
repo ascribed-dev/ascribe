@@ -36,7 +36,7 @@ export function freePort(): Promise<number> {
   });
 }
 
-/** Builds the site rooted at `root` (the integration runs `tessera build` first). */
+/** Builds the site rooted at `root` (the integration runs `ascribe build` first). */
 export function buildSite(root: string = siteDir): Promise<void> {
   return build({ root, logLevel: "warn" });
 }
@@ -93,7 +93,7 @@ export async function copySite(name: string): Promise<string> {
   const target = path.join(siteDir, ".e2e-tmp", name);
   await rm(target, { recursive: true, force: true });
   await mkdir(target, { recursive: true });
-  for (const entry of ["astro.config.mjs", "tessera.toml", "content", "src"]) {
+  for (const entry of ["astro.config.mjs", "ascribe.toml", "content", "src"]) {
     await cp(path.join(siteDir, entry), path.join(target, entry), { recursive: true });
   }
   return target;

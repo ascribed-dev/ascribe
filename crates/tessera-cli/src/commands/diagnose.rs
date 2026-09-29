@@ -1,4 +1,4 @@
-//! What `tessera check` and `tessera build` share: choosing builds, and the
+//! What `ascribe check` and `ascribe build` share: choosing builds, and the
 //! diagnostics reported for them. One implementation, so the two commands
 //! print the same report.
 

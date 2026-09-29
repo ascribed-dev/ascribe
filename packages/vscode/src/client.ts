@@ -24,7 +24,7 @@ const SHOW_OUTPUT = "Show Output";
 const RESTART = "Restart Server";
 
 /**
- * Owns the language client: finds the binary, starts `tessera lsp`, restarts
+ * Owns the language client: finds the binary, starts `ascribe lsp`, restarts
  * it on request, and gives up after too many crashes.
  */
 export class ServerController implements vscode.Disposable {
@@ -197,7 +197,7 @@ function clientOptions(outputChannel: vscode.OutputChannel): LanguageClientOptio
   return {
     documentSelector: [
       { scheme: "file", language: "markdown" },
-      { scheme: "file", pattern: "**/tessera.toml" },
+      { scheme: "file", pattern: "**/ascribe.toml" },
     ],
     outputChannel,
     // Resolved Q124: the server asks for the files it wants watched with dynamic
@@ -221,12 +221,12 @@ function minServerVersion(context: vscode.ExtensionContext) {
 
 /**
  * The directories to look in for the project's own binary: each folder that
- * holds a `tessera.toml`, and its parents up to the workspace folder (a
+ * holds a `ascribe.toml`, and its parents up to the workspace folder (a
  * monorepo keeps `node_modules` at the top); then the workspace folders.
  */
 async function projectRoots(): Promise<string[]> {
   const roots = new Set<string>();
-  const models = await vscode.workspace.findFiles("**/tessera.toml", "**/node_modules/**", 50);
+  const models = await vscode.workspace.findFiles("**/ascribe.toml", "**/node_modules/**", 50);
   for (const model of models) {
     const folder = vscode.workspace.getWorkspaceFolder(model);
     const dir = path.dirname(model.fsPath);

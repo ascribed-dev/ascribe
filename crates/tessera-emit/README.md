@@ -36,7 +36,7 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 | `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` (Q114) |
 | A project widget | Its `plain-fallback` (phrases substituted), then its wrapped content unless `plain-content = "drop"` (Q113) |
 | Phrases, includes, glossary links | Resolved |
-| Links | Absolute URLs with the `[consumer] site` origin; root-relative, with a warning from `tessera build`, without one |
+| Links | Absolute URLs with the `[consumer] site` origin; root-relative, with a warning from `ascribe build`, without one |
 | Images and linked files | Copied into the output at their mirrored path, and written as relative references |
 | Raw HTML in the source | Its text, without the tags; comments, scripts, and styles dropped (Q112) |
 

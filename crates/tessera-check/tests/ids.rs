@@ -1,4 +1,4 @@
-//! `tessera check` and the incremental project number files the same way.
+//! `ascribe check` and the incremental project number files the same way.
 //!
 //! Every location names its file by id, so the ids have to mean the same
 //! thing to `tessera_resolve::IncrementalProject` (which the language server

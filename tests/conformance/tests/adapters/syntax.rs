@@ -7,7 +7,7 @@
 //! [`super::structure`]. Its diagnostics are the parser's own issues.
 //!
 //! Directive schemas come from the built-ins plus the widgets in the case's
-//! `tessera.toml`. That reader is a stand-in for phase 08's content-model
+//! `ascribe.toml`. That reader is a stand-in for phase 08's content-model
 //! loader, which will replace it.
 
 use tessera_conformance::outline::normalize_ws;

@@ -6,7 +6,7 @@ use std::process::ExitCode;
 pub const OK: u8 = 0;
 /// The documentation set has errors (or warnings under `--deny-warnings`).
 pub const PROBLEMS: u8 = 1;
-/// The command couldn't do its work: a usage error, no `tessera.toml`, a
+/// The command couldn't do its work: a usage error, no `ascribe.toml`, a
 /// content model that doesn't load, or a file that can't be read.
 pub const FAILURE: u8 = 2;
 

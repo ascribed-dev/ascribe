@@ -1,6 +1,6 @@
-# `tessera.toml` reference
+# `ascribe.toml` reference
 
-This is the reference for `tessera.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. Phase 08 implements the loader from this document; phase 03 writes fixtures against it.
+This is the reference for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. Phase 08 implements the loader from this document; phase 03 writes fixtures against it.
 
 SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is marked **Decided (Qn)** and listed in [Decisions](#21-decisions). No item is provisional.
 
@@ -40,7 +40,7 @@ Example files, each valid under this reference:
 
 ### 1.1 The file
 
-- The content model is a TOML 1.0 file named `tessera.toml`. The directory that contains it is the **project root**. Every path in the file is relative to the project root unless a key says otherwise.
+- The content model is a TOML 1.0 file named `ascribe.toml`. The directory that contains it is the **project root**. Every path in the file is relative to the project root unless a key says otherwise.
 - The file is UTF-8.
 - TOML's equivalent spellings are all accepted: a table can be written as a `[header]` section, as an inline table (`key = { … }`), or with dotted keys. This reference shows the most readable form for each section. For example, these are the same:
 
@@ -104,7 +104,7 @@ Each section has a table of keys with these columns:
 
 Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need, maps to one section:
 
-| SPEC declaration | Section of `tessera.toml` | Here |
+| SPEC declaration | Section of `ascribe.toml` | Here |
 |---|---|---|
 | Spec version (§11) | `spec` | [§3](#3-top-level-spec) |
 | Content root (§2.2); output directory (§9.4) | `[project]` | [§4](#4-project) |
@@ -594,7 +594,7 @@ The `astro` profile's `site`, `base-path`, and `trailing-slash` repeat settings 
 
 ## 17. `[builds.<name>]`
 
-Named builds (SPEC §9.3). Each sets a variant mode and an availability mode. These are SPEC §9.3's examples, in `tessera.toml`:
+Named builds (SPEC §9.3). Each sets a variant mode and an availability mode. These are SPEC §9.3's examples, in `ascribe.toml`:
 
 ```toml
 [builds.site]
@@ -664,7 +664,7 @@ A file containing only `spec = "0.1"` is valid. It means:
 
 ## 20. Validation rules
 
-A loader MUST enforce every rule below when it loads `tessera.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
+A loader MUST enforce every rule below when it loads `ascribe.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
 
 - **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`tests/conformance/diagnostics.toml`](../tests/conformance/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
 - **Messages** are templates. `{name}` is a placeholder. Where a rule has several messages, each covers one case of it.
@@ -675,12 +675,12 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 
 | Slug | Rule | Message |
 |---|---|---|
-| `model-toml-syntax` | The file is valid TOML 1.0. | `` tessera.toml isn't valid TOML: {detail} `` |
+| `model-toml-syntax` | The file is valid TOML 1.0. | `` ascribe.toml isn't valid TOML: {detail} `` |
 | `model-unknown-key` | Every key is one this reference defines for its table, except in tables keyed by names the project chooses. | `` unknown key `{key}` in `[{table}]` ``<br>`` unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`? `` |
 | `model-missing-key` | Every required key is present. | `` `[{table}]` is missing the required key `{key}` `` |
 | `model-wrong-type` | Every value has the TOML type its key requires. | `` `{key}` must be {expected}, but it's {found} ``<br>`` `{key}` must be a string, but it's a number; quote it: {key} = "{value}" `` |
 | `model-invalid-value` | A key with a fixed set of values has one of them. | `` `{key}` can't be "{value}"; use one of: {values} `` |
-| `model-spec-unsupported` | `spec` is a version this processor implements. | `` tessera.toml targets spec version "{spec}", but this processor implements {supported} `` |
+| `model-spec-unsupported` | `spec` is a version this processor implements. | `` ascribe.toml targets spec version "{spec}", but this processor implements {supported} `` |
 | `model-invalid-name` | Every name follows its grammar (§1.2). | `` `{name}` isn't a valid {role} name: {rule} ``, for example `` `Deployment` isn't a valid dimension name: use a lowercase letter, then lowercase letters, digits, or hyphens `` |
 | `model-empty-text` | Every `label`, `name`, `term`, `definition`, and `description` is non-empty. | `` `{key}` can't be empty `` |
 
@@ -688,7 +688,7 @@ A loader MUST enforce every rule below when it loads `tessera.toml`, and report 
 
 | Slug | Rule | Message |
 |---|---|---|
-| `model-path-absolute` | `content-root` and `output-dir` are relative paths. | `` `{key}` must be a path relative to tessera.toml, not an absolute path `` |
+| `model-path-absolute` | `content-root` and `output-dir` are relative paths. | `` `{key}` must be a path relative to ascribe.toml, not an absolute path `` |
 | `model-content-root-missing` | The content root exists and is a directory. | `` content root `{path}` doesn't exist ``<br>`` content root `{path}` isn't a directory `` |
 | `model-output-overlaps-content` | The output directory isn't inside the content root, the content root isn't inside the output directory, and they differ (SPEC-derived; phase 01 task 1). | `` output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source ``<br>`` content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output ``<br>`` output directory and content root are both `{path}` `` |
 
@@ -791,7 +791,7 @@ These numbers belong to this document. [`questions.md`](questions.md) numbers it
 11. **HTML passthrough (SPEC §9.5).** The site output depends on raw HTML (custom elements). *Decision:* keep the key, but the `astro` profile accepts only `true` until a profile needs `false`, rather than defining a degraded site output now.
 12. **Heading ids, image attributes, and asset placement (SPEC §9.4, §9.5).** *Decision (phase 02):* no keys. The profile named by `profile` fixes all three, and the `astro` profile has one way to do each: a `<tessera-attributes>` marker for heading ids and image attributes ([site-render contract](contracts/site-render.md)), and mirrored asset copies with relative image references ([asset contract](contracts/assets.md)). A key that accepts one value says nothing, and since unknown keys are errors, adding a key when a second profile needs a choice breaks no existing file, while removing one later would. *Considered:* the phase 01 keys `heading-ids` (`"attribute"` or `"html"`), `image-attributes` (`"attribute"` or `"html"`), `assets` (`"beside-page"` or `"directory"`), and `assets-dir`. Their alternatives were dropped: an `{#id}` attribute block is rewritten by Astro's default smartypants and GFM processing before a plugin sees it (quotes, `--` in ids), which the marker avoids; a raw HTML heading loses the consumer's inline processing and, in Astro, its table-of-contents entry; a raw `<img>` bypasses Astro's image processing; and a shared asset directory needs hashed names to avoid collisions, which mirroring avoids by construction. With them went the loader rule `model-consumer-assets-dir`.
 13. **Filter builds on versioned targets (SPEC §9.3).** A filter is "given a target and, for versioned targets, a version". *Decision:* the version is required for versioned targets, and not allowed for versionless ones. *Considered:* a versioned target with no version means "at every version", but then the "state in effect" is undefined.
-14. **Project defaults.** *Decision:* `content-root = "docs"`, `output-dir = ".tessera/build"`; paths relative to `tessera.toml`, `..` allowed, absolute paths rejected (keeps projects portable). The content root can't be `"."` by default, because the output directory couldn't then sit outside it.
+14. **Project defaults.** *Decision:* `content-root = "docs"`, `output-dir = ".tessera/build"`; paths relative to `ascribe.toml`, `..` allowed, absolute paths rejected (keeps projects portable). The content root can't be `"."` by default, because the output directory couldn't then sit outside it.
 15. **YAML flavor for frontmatter.** *Decision:* the YAML 1.2 core schema (`yes` is a string, `3.10` is a number), and `date` fields accept `YYYY-MM-DD` scalars, quoted or not.
 16. **The editor's default build.** *Decision:* the only build, else the build named `site`, else required.
 17. **Built-in lifecycle states and note types.** *Decision:* built-ins can be relabeled, and states' `available` flags changed, but not removed; `ga` must stay available; new states must set `available` explicitly; new note types need a `label`; built-in states take part in the one-role rule.

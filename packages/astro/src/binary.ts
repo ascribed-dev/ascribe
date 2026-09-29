@@ -1,4 +1,4 @@
-// Finding the `tessera` binary. npm distribution is phase 22's; for now the
+// Finding the `ascribe` binary. npm distribution is phase 22's; for now the
 // integration uses a binary someone built (Q152), looked for in this order:
 //
 //   1. the `binary` option,
@@ -41,7 +41,7 @@ export function findBinary(options: {
     if (path.dirname(dir) === dir) break;
   }
   throw new Error(
-    "@tessera/astro can't find the `tessera` binary. Build it with `cargo build -p tessera-cli`, then " +
+    "@tessera/astro can't find the `ascribe` binary. Build it with `cargo build -p tessera-cli`, then " +
       "set the `binary` option of the integration or the TESSERA_BIN environment variable to it.",
   );
 }

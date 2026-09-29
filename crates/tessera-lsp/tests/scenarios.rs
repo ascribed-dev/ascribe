@@ -132,7 +132,7 @@ fn an_open_buffer_wins_over_the_file_on_disk() {
     assert!(client.codes(&page).is_empty());
 }
 
-// -- Acceptance: a widget declared in tessera.toml --------------------------
+// -- Acceptance: a widget declared in ascribe.toml --------------------------
 
 const WIDGET_PAGE: &str = "---\ntitle: W\n---\n# W\n\n@my-callout: Careful now.\n";
 const WIDGET_MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[widgets.my-callout]\nforms = [\"line\"]\nprimary = \"text\"\nbinding = \"self\"\n";
@@ -140,7 +140,7 @@ const WIDGET_MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"
 #[test]
 fn declaring_a_widget_in_the_model_changes_an_unopened_file() {
     let f = Fixture::new(MODEL, &[("docs/w.md", WIDGET_PAGE)]);
-    let (page, config) = (f.path("docs/w.md"), f.path("tessera.toml"));
+    let (page, config) = (f.path("docs/w.md"), f.path("ascribe.toml"));
     let mut client = Client::start(&f.root());
     client.settle();
     assert_eq!(client.codes(&page), ["directive-unknown"]);
@@ -163,7 +163,7 @@ fn declaring_a_widget_in_the_model_changes_an_unopened_file() {
 
     // Then on disk, with the buffer closed.
     client.close(&config);
-    f.write("tessera.toml", WIDGET_MODEL);
+    f.write("ascribe.toml", WIDGET_MODEL);
     client.watched(&[(&config, FileChangeType::CHANGED)]);
     client.settle();
     assert!(client.codes(&page).is_empty());
@@ -172,7 +172,7 @@ fn declaring_a_widget_in_the_model_changes_an_unopened_file() {
 #[test]
 fn a_model_that_does_not_load_is_reported_on_tessera_toml_and_the_last_model_stays() {
     let f = Fixture::new(WIDGET_MODEL, &[("docs/w.md", WIDGET_PAGE)]);
-    let (page, config) = (f.path("docs/w.md"), f.path("tessera.toml"));
+    let (page, config) = (f.path("docs/w.md"), f.path("ascribe.toml"));
     let mut client = Client::start(&f.root());
     client.open(&config, 1, WIDGET_MODEL);
     client.settle();
@@ -210,7 +210,7 @@ fn changing_the_content_root_reloads_the_project() {
     let (a, b, config) = (
         f.path("docs/a.md"),
         f.path("other/b.md"),
-        f.path("tessera.toml"),
+        f.path("ascribe.toml"),
     );
     let mut client = Client::start(&f.root());
     client.settle();
@@ -443,13 +443,13 @@ fn a_model_that_does_not_load_at_startup_is_reported_and_the_project_loads_once_
         "spec = \"0.1\"\n[project\n",
         &[("docs/a.md", "---\ntitle: A\n---\n[x](nope.md)\n")],
     );
-    let (a, config) = (f.path("docs/a.md"), f.path("tessera.toml"));
+    let (a, config) = (f.path("docs/a.md"), f.path("ascribe.toml"));
     let mut client = Client::start(&f.root());
     client.settle();
     assert!(!client.diagnostics(&config).is_empty());
     assert!(client.diagnostics(&a).is_empty());
 
-    f.write("tessera.toml", MODEL);
+    f.write("ascribe.toml", MODEL);
     client.watched(&[(&config, FileChangeType::CHANGED)]);
     client.settle();
     assert!(client.diagnostics(&config).is_empty());
@@ -509,8 +509,8 @@ fn without_a_project_the_server_stays_quiet_and_picks_one_up_when_it_appears() {
     assert!(client.log.is_empty());
     std::fs::create_dir_all(root.join("docs")).expect("mkdir");
     std::fs::write(root.join("docs/a.md"), "---\ntitle: A\n---\n[x](nope.md)\n").expect("write");
-    std::fs::write(root.join("tessera.toml"), MODEL).expect("write");
-    client.watched(&[(&root.join("tessera.toml"), FileChangeType::CREATED)]);
+    std::fs::write(root.join("ascribe.toml"), MODEL).expect("write");
+    client.watched(&[(&root.join("ascribe.toml"), FileChangeType::CREATED)]);
     client.settle();
     assert_eq!(
         client.codes(&root.join("docs/a.md")),

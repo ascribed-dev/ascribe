@@ -8,13 +8,13 @@ use crate::cli::{Color, Global};
 
 /// Why a project couldn't be loaded, ready to report.
 pub enum Failure {
-    /// No `tessera.toml` was found, or `--config` names none.
+    /// No `ascribe.toml` was found, or `--config` names none.
     Config(String),
     /// Loading failed.
     Load(LoadError),
 }
 
-/// Finds the content model (`--config`, or the nearest `tessera.toml` in the
+/// Finds the content model (`--config`, or the nearest `ascribe.toml` in the
 /// current directory or a parent) and loads the project.
 pub fn load_project(global: &Global) -> Result<Project, Failure> {
     let config = match &global.config {
@@ -25,7 +25,7 @@ pub fn load_project(global: &Global) -> Result<Project, Failure> {
                 .map_err(|e| Failure::Config(format!("can't read the current directory: {e}")))?;
             Project::find_config(&cwd).ok_or_else(|| {
                 Failure::Config(format!(
-                    "no {} found in {} or any parent directory; run tessera from a project, or pass --config",
+                    "no {} found in {} or any parent directory; run ascribe from a project, or pass --config",
                     tessera_check::MODEL_FILE,
                     cwd.display()
                 ))

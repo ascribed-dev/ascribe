@@ -40,7 +40,7 @@ pub enum NodeValue {
 
     // TESSERA: the Tessera-line block.
     /// **Block**. A Tessera line: a directive line or an end line. Enabled
-    /// with the `tessera` option. Contains a paragraph holding its text
+    /// with the `ascribe` option. Contains a paragraph holding its text
     /// primary, if it has one; otherwise has no children. See
     /// [`crate::tessera`].
     ///

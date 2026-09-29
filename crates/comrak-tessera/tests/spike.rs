@@ -629,7 +629,7 @@ fn renders_to_html_and_commonmark() {
     assert_eq!(outline(&cm), outline(md));
 }
 
-/// The example in the `tessera` module's documentation (doctests are off in
+/// The example in the `ascribe` module's documentation (doctests are off in
 /// this crate).
 #[test]
 fn module_example() {

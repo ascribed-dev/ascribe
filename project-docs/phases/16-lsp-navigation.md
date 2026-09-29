@@ -30,7 +30,7 @@ Make authoring fast: completion, hover, go to definition, document links, CodeLe
    - Phrases: the value.
    - `@available` and feature keys: the resolved availability in words.
    - Directives: what the directive does, from its schema.
-3. **Go to definition.** Links and includes go to the target file or heading; `@id` references go to the heading; phrases and feature keys go to their entry in `tessera.toml`.
+3. **Go to definition.** Links and includes go to the target file or heading; `@id` references go to the heading; phrases and feature keys go to their entry in `ascribe.toml`.
 4. **Document links and CodeLens.** Document links make every link and include destination clickable. A CodeLens above each `@include` names the target file and opens it. SPEC §10 allows a CodeLens "or equivalent"; document links are the equivalent for links in prose, where a CodeLens on every link would be noise.
 5. **Inlay hints.** For empty-text links (`[](keys.md#rotate-keys)`), show the resolved title.
 6. **Tests.** Scripted LSP tests for each feature against `examples/quill`.

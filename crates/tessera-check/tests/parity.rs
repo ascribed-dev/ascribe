@@ -1,4 +1,4 @@
-//! `tessera check` and the source index agree about references.
+//! `ascribe check` and the source index agree about references.
 //!
 //! Both run `tessera_resolve::references`, so for the same project on disk
 //! they must report the same file-level problems with includes, links, and
@@ -78,7 +78,7 @@ fn write(root: &Path, path: &str, text: &str) {
 fn tree() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("a temp dir");
     let root = dir.path();
-    write(root, "tessera.toml", MODEL);
+    write(root, "ascribe.toml", MODEL);
     write(root, "docs/index.md", PAGE);
     write(root, "docs/keys.md", "---\ntitle: Keys\n---\n\n## Top\n");
     write(
@@ -104,7 +104,7 @@ fn tree() -> tempfile::TempDir {
 type Found = BTreeSet<(String, String, usize, usize)>;
 
 fn from_check(root: &Path) -> (Found, Vec<(u32, String)>) {
-    let project = Project::load(&root.join("tessera.toml")).expect("the project loads");
+    let project = Project::load(&root.join("ascribe.toml")).expect("the project loads");
     let found = check_files(&project)
         .into_iter()
         .filter(|d| REFERENCE_SLUGS.contains(&d.slug.to_string().as_str()))
@@ -160,7 +160,7 @@ fn check_and_the_source_index_report_the_same_reference_problems() {
     assert_eq!(check_ids, index_ids);
     assert!(
         check_ids.iter().all(|(id, _)| *id >= 1),
-        "id 0 is tessera.toml"
+        "id 0 is ascribe.toml"
     );
     assert!(!check_ids.iter().any(|(_, p)| p.contains(".drafts")));
 

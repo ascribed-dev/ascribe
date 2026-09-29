@@ -53,7 +53,7 @@ pub trait FileSystem {
     /// ends in `.md`, skipping any file or directory whose name starts with `.`
     /// (`.github/`, `.vitepress/`, editor state). Directories are followed
     /// through symbolic links once each.
-    // Resolved Q52: the same rule as `tessera check`'s discovery, which
+    // Resolved Q52: the same rule as `ascribe check`'s discovery, which
     // raised it: which files count as sources.
     fn sources(&self) -> Sources;
 
@@ -74,7 +74,7 @@ pub struct DiskFs {
 }
 
 impl DiskFs {
-    /// The project in `project_root` (the directory with `tessera.toml`).
+    /// The project in `project_root` (the directory with `ascribe.toml`).
     pub fn new(project_root: impl Into<PathBuf>, layout: &Layout) -> DiskFs {
         DiskFs {
             project_root: project_root.into(),

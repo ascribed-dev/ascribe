@@ -5,7 +5,7 @@ use std::ops::Range;
 
 use serde::Serialize;
 
-/// Identifies one file within a session: a source file, or `tessera.toml`.
+/// Identifies one file within a session: a source file, or `ascribe.toml`.
 ///
 /// A `FileId` is an opaque handle. Whoever owns the set of files a session
 /// reads assigns the ids: the project's source index (phase 11) and the

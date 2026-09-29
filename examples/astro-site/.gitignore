@@ -1,4 +1,4 @@
-# The compiler's output (tessera.toml's output-dir) and Astro's.
+# The compiler's output (ascribe.toml's output-dir) and Astro's.
 .tessera/
 .astro/
 dist/

@@ -147,7 +147,7 @@ impl Client {
 fn run(pages: usize) {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
-    write(&root, "tessera.toml", MODEL);
+    write(&root, "ascribe.toml", MODEL);
     for i in 0..pages {
         write(
             &root,

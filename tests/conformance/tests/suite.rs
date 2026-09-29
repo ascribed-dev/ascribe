@@ -176,14 +176,14 @@ fn quill_project_case_matches_the_example() {
             "{path} differs between examples/quill and the project case"
         );
     }
-    let model = std::fs::read_to_string(repo().join("examples/quill/tessera.toml")).unwrap();
+    let model = std::fs::read_to_string(repo().join("examples/quill/ascribe.toml")).unwrap();
     let case_model =
-        std::fs::read_to_string(repo().join("tests/conformance/cases/projects/quill/tessera.toml"))
+        std::fs::read_to_string(repo().join("tests/conformance/cases/projects/quill/ascribe.toml"))
             .unwrap();
     assert_eq!(
         model.replace("content-root = \"docs\"", "content-root = \"files\""),
         case_model,
-        "the case's tessera.toml differs from the example's beyond the content root"
+        "the case's ascribe.toml differs from the example's beyond the content root"
     );
 }
 

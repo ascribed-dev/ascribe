@@ -17,7 +17,7 @@ pub fn repo_root() -> PathBuf {
 }
 
 pub fn shared_model_path() -> PathBuf {
-    repo_root().join("tests/conformance/_model/tessera.toml")
+    repo_root().join("tests/conformance/_model/ascribe.toml")
 }
 
 /// The model in the file at `path`.

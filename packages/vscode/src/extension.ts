@@ -24,7 +24,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Tesser
       await vscode.commands.executeCommand("setContext", "tessera.active", present);
       if (present) await server.restart();
       else
-        void vscode.window.showInformationMessage("Tessera: this workspace has no tessera.toml.");
+        void vscode.window.showInformationMessage("Tessera: this workspace has no ascribe.toml.");
     }),
     vscode.commands.registerCommand("tessera.showOutput", () => server.showOutput()),
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -45,9 +45,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Tesser
   };
 }
 
-/** Whether the workspace holds a `tessera.toml` (not counting `node_modules`). */
+/** Whether the workspace holds a `ascribe.toml` (not counting `node_modules`). */
 async function hasProject(): Promise<boolean> {
-  return (await vscode.workspace.findFiles("**/tessera.toml", "**/node_modules/**", 1)).length > 0;
+  return (await vscode.workspace.findFiles("**/ascribe.toml", "**/node_modules/**", 1)).length > 0;
 }
 
 export async function deactivate(): Promise<void> {

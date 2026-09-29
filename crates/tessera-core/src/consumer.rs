@@ -4,7 +4,7 @@
 //! These are traits so that the crates that need them (resolution, phase 12;
 //! the emitters, phases 18 and 20) don't depend on the crates that implement
 //! them (the slugger, phase 09; the Astro profile, phase 20). Spec 0.1 has one
-//! profile, `astro`, selected by `[consumer] profile` in `tessera.toml`.
+//! profile, `astro`, selected by `[consumer] profile` in `ascribe.toml`.
 //!
 //! Two things SPEC §9.5 lists are not here, because the contracts fix them
 //! for every profile in spec 0.1: how heading ids and image attributes are
