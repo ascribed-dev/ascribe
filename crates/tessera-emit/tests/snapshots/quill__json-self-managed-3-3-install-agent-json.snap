@@ -1,0 +1,1016 @@
+---
+source: crates/tessera-emit/tests/quill.rs
+expression: text
+---
+{
+  "schemaVersion": 1,
+  "format": "tessera-page",
+  "build": "self-managed-3.3",
+  "path": "install-agent.md",
+  "route": "/install-agent/",
+  "site": "https://docs.quill.dev",
+  "title": "Install the Quill agent",
+  "frontmatter": {
+    "available": "cloud, self-managed preview 3.3",
+    "description": "Install and configure the Quill agent to sync your docs to Quill Cloud or a self-managed Quill server.",
+    "title": "Install the Quill agent"
+  },
+  "availability": {
+    "text": "cloud, self-managed preview 3.3",
+    "display": "Quill Cloud (GA); self-managed (preview, 3.3+)",
+    "scope": "page",
+    "feature": null,
+    "source": {
+      "file": "install-agent.md",
+      "span": [0, 197]
+    }
+  },
+  "headings": [
+    {
+      "level": 2,
+      "text": "Prerequisites",
+      "id": "prerequisites",
+      "sourceId": "prerequisites",
+      "explicit": true,
+      "source": {
+        "file": "install-agent.md",
+        "span": [636, 652],
+        "lines": [13, 13]
+      }
+    },
+    {
+      "level": 2,
+      "text": "Install the agent",
+      "id": "install-agent",
+      "sourceId": "install-agent",
+      "explicit": true,
+      "source": {
+        "file": "install-agent.md",
+        "span": [712, 732],
+        "lines": [18, 18]
+      }
+    },
+    {
+      "level": 2,
+      "text": "Connect to Quill",
+      "id": "connect",
+      "sourceId": "connect",
+      "explicit": true,
+      "source": {
+        "file": "install-agent.md",
+        "span": [1360, 1383],
+        "lines": [57, 57]
+      }
+    },
+    {
+      "level": 2,
+      "text": "Troubleshooting",
+      "id": "troubleshooting",
+      "sourceId": "troubleshooting",
+      "explicit": true,
+      "source": {
+        "file": "install-agent.md",
+        "span": [2074, 2092],
+        "lines": [87, 87]
+      }
+    }
+  ],
+  "assets": [
+    {
+      "source": "_fragments/prerequisites.png",
+      "path": "_fragments/prerequisites.png",
+      "reference": "./_fragments/prerequisites.png",
+      "kind": "image",
+      "fragment": null,
+      "writtenIn": "_fragments/prerequisites.md",
+      "span": [120, 168]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "The Quill agent watches your docs repository and syncs changes to Quill. This page covers installing the agent with a package manager, configuring it, and connecting it to Quill Cloud or a self-managed server. If you only want to try Quill, see ",
+          "span": [199, 452]
+        },
+        {
+          "type": "link",
+          "destination": "/quickstart/#try-in-browser",
+          "title": null,
+          "target": {
+            "type": "page",
+            "page": "quickstart.md",
+            "id": "try-in-browser",
+            "url": "/quickstart/#try-in-browser",
+            "textFilled": false
+          },
+          "children": [
+            {
+              "type": "text",
+              "value": "Try Quill in the browser",
+              "span": [453, 481]
+            }
+          ],
+          "span": [452, 512]
+        },
+        {
+          "type": "text",
+          "value": ".",
+          "span": [512, 513]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [199, 513],
+        "lines": [7, 7]
+      },
+      "links": [
+        {
+          "span": [452, 512],
+          "kind": "link",
+          "destination": "quickstart.md#try-in-browser",
+          "target": {
+            "type": "page",
+            "page": "quickstart.md",
+            "id": "try-in-browser",
+            "url": "/quickstart/#try-in-browser",
+            "textFilled": false
+          }
+        }
+      ],
+      "substitutions": [
+        {
+          "span": [203, 212],
+          "key": "product",
+          "value": "Quill"
+        },
+        {
+          "span": [269, 278],
+          "key": "product",
+          "value": "Quill"
+        },
+        {
+          "span": [379, 386],
+          "key": "cloud",
+          "value": "Quill Cloud"
+        },
+        {
+          "span": [437, 446],
+          "key": "product",
+          "value": "Quill"
+        },
+        {
+          "span": [457, 466],
+          "key": "product",
+          "value": "Quill"
+        }
+      ]
+    },
+    {
+      "type": "directive",
+      "name": "note",
+      "attributes": [
+        {
+          "key": "type",
+          "values": ["tip"]
+        }
+      ],
+      "title": [
+        {
+          "type": "text",
+          "value": "Try it without installing",
+          "span": [516, 541]
+        }
+      ],
+      "primary": null,
+      "binding": "followingBlock",
+      "annotation": null,
+      "source": {
+        "file": "install-agent.md",
+        "span": [515, 558],
+        "lines": [9, 10]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "You can run Quill in the browser at play.quill.dev with no local setup.",
+          "span": [559, 634]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [559, 634],
+        "lines": [11, 11]
+      },
+      "substitutions": [
+        {
+          "span": [571, 580],
+          "key": "product",
+          "value": "Quill"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "prerequisites",
+      "sourceId": "prerequisites",
+      "explicit": true,
+      "text": "Prerequisites",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Prerequisites",
+          "span": [639, 652]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [636, 652],
+        "lines": [13, 13]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "prerequisites"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "install-agent.md",
+        "span": [653, 671],
+        "lines": [14, 14]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Before you install the agent, make sure you have:",
+          "span": [0, 49]
+        }
+      ],
+      "source": {
+        "file": "_fragments/prerequisites.md",
+        "span": [0, 49],
+        "lines": [1, 1],
+        "via": [
+          {
+            "file": "install-agent.md",
+            "span": [673, 710],
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "start": null,
+      "tight": true,
+      "items": [
+        {
+          "children": [
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "Node.js 20 or later.",
+                  "span": [53, 73]
+                }
+              ],
+              "source": {
+                "file": "_fragments/prerequisites.md",
+                "span": [53, 73],
+                "lines": [3, 3],
+                "via": [
+                  {
+                    "file": "install-agent.md",
+                    "span": [673, 710],
+                    "line": 16
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "children": [
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "A docs repository that Quill can read.",
+                  "span": [76, 118]
+                }
+              ],
+              "source": {
+                "file": "_fragments/prerequisites.md",
+                "span": [76, 118],
+                "lines": [4, 4],
+                "via": [
+                  {
+                    "file": "install-agent.md",
+                    "span": [673, 710],
+                    "line": 16
+                  }
+                ]
+              },
+              "substitutions": [
+                {
+                  "span": [99, 108],
+                  "key": "product",
+                  "value": "Quill"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "source": {
+        "file": "_fragments/prerequisites.md",
+        "span": [51, 118],
+        "lines": [3, 4],
+        "via": [
+          {
+            "file": "install-agent.md",
+            "span": [673, 710],
+            "line": 16
+          }
+        ]
+      }
+    },
+    {
+      "type": "paragraph",
+      "inlines": [
+        {
+          "type": "image",
+          "destination": "prerequisites.png",
+          "title": null,
+          "target": {
+            "type": "asset",
+            "source": "_fragments/prerequisites.png",
+            "path": "_fragments/prerequisites.png",
+            "reference": "./_fragments/prerequisites.png",
+            "url": null,
+            "fragment": null
+          },
+          "alt": "Checklist of prerequisites",
+          "attributes": [],
+          "span": [120, 168]
+        }
+      ],
+      "source": {
+        "file": "_fragments/prerequisites.md",
+        "span": [120, 168],
+        "lines": [6, 6],
+        "via": [
+          {
+            "file": "install-agent.md",
+            "span": [673, 710],
+            "line": 16
+          }
+        ]
+      },
+      "links": [
+        {
+          "span": [120, 168],
+          "kind": "image",
+          "destination": "prerequisites.png",
+          "target": {
+            "type": "asset",
+            "source": "_fragments/prerequisites.png",
+            "path": "_fragments/prerequisites.png",
+            "reference": "./_fragments/prerequisites.png",
+            "url": null,
+            "fragment": null
+          }
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "install-agent",
+      "sourceId": "install-agent",
+      "explicit": true,
+      "text": "Install the agent",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Install the agent",
+          "span": [715, 732]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [712, 732],
+        "lines": [18, 18]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "install-agent"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "install-agent.md",
+        "span": [733, 751],
+        "lines": [19, 19]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "steps",
+      "attributes": [],
+      "title": null,
+      "primary": null,
+      "binding": "followingBlock",
+      "annotation": null,
+      "source": {
+        "file": "install-agent.md",
+        "span": [753, 759],
+        "lines": [21, 21]
+      }
+    },
+    {
+      "type": "list",
+      "ordered": true,
+      "start": 1,
+      "tight": false,
+      "items": [
+        {
+          "children": [
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "Install the agent package:",
+                  "span": [763, 789]
+                }
+              ],
+              "source": {
+                "file": "install-agent.md",
+                "span": [763, 789],
+                "lines": [22, 22]
+              }
+            },
+            {
+              "type": "group",
+              "name": "variant",
+              "arms": [
+                {
+                  "label": "npm",
+                  "attributes": [
+                    {
+                      "key": "pm",
+                      "values": ["npm"]
+                    }
+                  ],
+                  "title": null,
+                  "span": [794, 862],
+                  "children": [
+                    {
+                      "type": "code",
+                      "fenced": true,
+                      "info": "shell",
+                      "literal": "npm install -g @quill/agent\n",
+                      "source": {
+                        "file": "install-agent.md",
+                        "span": [816, 862],
+                        "lines": [25, 27]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "pnpm",
+                  "attributes": [
+                    {
+                      "key": "pm",
+                      "values": ["pnpm"]
+                    }
+                  ],
+                  "title": null,
+                  "span": [866, 932],
+                  "children": [
+                    {
+                      "type": "code",
+                      "fenced": true,
+                      "info": "shell",
+                      "literal": "pnpm add -g @quill/agent\n",
+                      "source": {
+                        "file": "install-agent.md",
+                        "span": [889, 932],
+                        "lines": [29, 31]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "Yarn",
+                  "attributes": [
+                    {
+                      "key": "pm",
+                      "values": ["yarn"]
+                    }
+                  ],
+                  "title": null,
+                  "span": [936, 1006],
+                  "children": [
+                    {
+                      "type": "code",
+                      "fenced": true,
+                      "info": "shell",
+                      "literal": "yarn global add @quill/agent\n",
+                      "source": {
+                        "file": "install-agent.md",
+                        "span": [959, 1006],
+                        "lines": [33, 35]
+                      }
+                    }
+                  ]
+                }
+              ],
+              "source": {
+                "file": "install-agent.md",
+                "span": [794, 1014],
+                "lines": [24, 36]
+              }
+            }
+          ]
+        },
+        {
+          "children": [
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "Verify the install:",
+                  "span": [1019, 1038]
+                }
+              ],
+              "source": {
+                "file": "install-agent.md",
+                "span": [1019, 1038],
+                "lines": [38, 38]
+              }
+            },
+            {
+              "type": "code",
+              "fenced": true,
+              "info": "shell",
+              "literal": "quill --version\n",
+              "source": {
+                "file": "install-agent.md",
+                "span": [1043, 1077],
+                "lines": [40, 42]
+              }
+            },
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "The command prints the installed version, 3.4.1.",
+                  "span": [1082, 1134]
+                }
+              ],
+              "source": {
+                "file": "install-agent.md",
+                "span": [1082, 1134],
+                "lines": [44, 44]
+              },
+              "substitutions": [
+                {
+                  "span": [1124, 1133],
+                  "key": "version",
+                  "value": "3.4.1"
+                }
+              ]
+            },
+            {
+              "type": "directive",
+              "name": "note",
+              "attributes": [],
+              "title": null,
+              "primary": null,
+              "binding": "followingBlock",
+              "annotation": null,
+              "source": {
+                "file": "install-agent.md",
+                "span": [1139, 1144],
+                "lines": [46, 46]
+              }
+            },
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "The agent needs write access to your repository's ",
+                  "span": [1148, 1198]
+                },
+                {
+                  "type": "code",
+                  "value": ".quill/",
+                  "span": [1198, 1207]
+                },
+                {
+                  "type": "text",
+                  "value": " directory.",
+                  "span": [1207, 1218]
+                }
+              ],
+              "source": {
+                "file": "install-agent.md",
+                "span": [1148, 1218],
+                "lines": [47, 47]
+              }
+            }
+          ]
+        },
+        {
+          "children": [
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "Create ",
+                  "span": [1223, 1230]
+                },
+                {
+                  "type": "code",
+                  "value": "quill.yaml",
+                  "span": [1230, 1242]
+                },
+                {
+                  "type": "text",
+                  "value": " at the root of your repository:",
+                  "span": [1242, 1274]
+                }
+              ],
+              "source": {
+                "file": "install-agent.md",
+                "span": [1223, 1274],
+                "lines": [49, 49]
+              }
+            },
+            {
+              "type": "code",
+              "fenced": true,
+              "info": "yaml phrases=true",
+              "literal": "agent:\n  version: 3.4.1\n  watch: docs/\n",
+              "source": {
+                "file": "install-agent.md",
+                "span": [1279, 1358],
+                "lines": [51, 55]
+              },
+              "substitutions": [
+                {
+                  "span": [1324, 1333],
+                  "key": "version",
+                  "value": "3.4.1"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [760, 1358],
+        "lines": [22, 55]
+      }
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "connect",
+      "sourceId": "connect",
+      "explicit": true,
+      "text": "Connect to Quill",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Connect to Quill",
+          "span": [1363, 1383]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [1360, 1383],
+        "lines": [57, 57]
+      },
+      "substitutions": [
+        {
+          "span": [1374, 1383],
+          "key": "product",
+          "value": "Quill"
+        }
+      ]
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "connect"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "install-agent.md",
+        "span": [1384, 1396],
+        "lines": [58, 58]
+      }
+    },
+    {
+      "type": "group",
+      "name": "variant",
+      "arms": [
+        {
+          "label": "Quill Cloud",
+          "attributes": [
+            {
+              "key": "deployment",
+              "values": ["cloud"]
+            }
+          ],
+          "title": null,
+          "span": [1398, 1566],
+          "children": [
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "Sign in to Quill Cloud and copy an API key from ",
+                  "span": [1427, 1471]
+                },
+                {
+                  "type": "strong",
+                  "children": [
+                    {
+                      "type": "text",
+                      "value": "Settings → Keys",
+                      "span": [1473, 1490]
+                    }
+                  ],
+                  "span": [1471, 1492]
+                },
+                {
+                  "type": "text",
+                  "value": ", then add it to ",
+                  "span": [1492, 1509]
+                },
+                {
+                  "type": "code",
+                  "value": "quill.yaml",
+                  "span": [1509, 1521]
+                },
+                {
+                  "type": "text",
+                  "value": ":",
+                  "span": [1521, 1522]
+                }
+              ],
+              "source": {
+                "file": "install-agent.md",
+                "span": [1427, 1522],
+                "lines": [61, 61]
+              },
+              "substitutions": [
+                {
+                  "span": [1438, 1445],
+                  "key": "cloud",
+                  "value": "Quill Cloud"
+                }
+              ]
+            },
+            {
+              "type": "code",
+              "fenced": true,
+              "info": "yaml",
+              "literal": "cloud:\n  api_key: ${QUILL_KEY}\n",
+              "source": {
+                "file": "install-agent.md",
+                "span": [1524, 1566],
+                "lines": [63, 66]
+              }
+            }
+          ]
+        },
+        {
+          "label": "self-managed",
+          "attributes": [
+            {
+              "key": "deployment",
+              "values": ["self-managed"]
+            }
+          ],
+          "title": null,
+          "span": [1568, 1759],
+          "children": [
+            {
+              "type": "paragraph",
+              "inlines": [
+                {
+                  "type": "text",
+                  "value": "Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.",
+                  "span": [1604, 1696]
+                }
+              ],
+              "source": {
+                "file": "install-agent.md",
+                "span": [1604, 1696],
+                "lines": [69, 69]
+              },
+              "substitutions": [
+                {
+                  "span": [1666, 1675],
+                  "key": "product",
+                  "value": "Quill"
+                }
+              ]
+            },
+            {
+              "type": "code",
+              "fenced": true,
+              "info": "yaml",
+              "literal": "server:\n  url: https://quill.internal.example.com\n",
+              "source": {
+                "file": "install-agent.md",
+                "span": [1698, 1759],
+                "lines": [71, 74]
+              }
+            }
+          ]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [1398, 1764],
+        "lines": [60, 75]
+      }
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "id": "troubleshooting",
+      "sourceId": "troubleshooting",
+      "explicit": true,
+      "text": "Troubleshooting",
+      "inlines": [
+        {
+          "type": "text",
+          "value": "Troubleshooting",
+          "span": [2077, 2092]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [2074, 2092],
+        "lines": [87, 87]
+      }
+    },
+    {
+      "type": "directive",
+      "name": "id",
+      "attributes": [],
+      "title": null,
+      "primary": {
+        "kind": "identifier",
+        "text": "troubleshooting"
+      },
+      "binding": "heading",
+      "annotation": null,
+      "source": {
+        "file": "install-agent.md",
+        "span": [2093, 2113],
+        "lines": [88, 88]
+      }
+    },
+    {
+      "type": "container",
+      "name": "note",
+      "attributes": [
+        {
+          "key": "type",
+          "values": ["warning"]
+        }
+      ],
+      "title": null,
+      "children": [
+        {
+          "type": "paragraph",
+          "inlines": [
+            {
+              "type": "text",
+              "value": "If the agent exits immediately, check the log at ",
+              "span": [2137, 2186]
+            },
+            {
+              "type": "code",
+              "value": "~/.quill/agent.log",
+              "span": [2186, 2206]
+            },
+            {
+              "type": "text",
+              "value": ".",
+              "span": [2206, 2207]
+            }
+          ],
+          "source": {
+            "file": "install-agent.md",
+            "span": [2137, 2207],
+            "lines": [91, 91]
+          }
+        },
+        {
+          "type": "paragraph",
+          "inlines": [
+            {
+              "type": "text",
+              "value": "A common cause is an expired API key. Generate a new key, then restart the agent. See ",
+              "span": [2209, 2295]
+            },
+            {
+              "type": "link",
+              "destination": "/keys/#rotate-keys",
+              "title": null,
+              "target": {
+                "type": "page",
+                "page": "keys.md",
+                "id": "rotate-keys",
+                "url": "/keys/#rotate-keys",
+                "textFilled": true
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Rotate keys",
+                  "span": [2295, 2318]
+                }
+              ],
+              "span": [2295, 2318]
+            },
+            {
+              "type": "text",
+              "value": ".",
+              "span": [2318, 2319]
+            }
+          ],
+          "source": {
+            "file": "install-agent.md",
+            "span": [2209, 2319],
+            "lines": [93, 93]
+          },
+          "links": [
+            {
+              "span": [2295, 2318],
+              "kind": "link",
+              "destination": "keys.md#rotate-keys",
+              "target": {
+                "type": "page",
+                "page": "keys.md",
+                "id": "rotate-keys",
+                "url": "/keys/#rotate-keys",
+                "textFilled": true
+              }
+            }
+          ]
+        }
+      ],
+      "source": {
+        "file": "install-agent.md",
+        "span": [2115, 2324],
+        "lines": [90, 94]
+      }
+    }
+  ]
+}

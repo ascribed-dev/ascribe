@@ -51,4 +51,45 @@ Ship `tessera build` with the two simplest outputs, plain markdown and JSON, inc
 
 ## Handoff notes
 
-_To be filled in by the implementing agent._
+### What was built
+
+- **`crates/tessera-emit`**:
+  - `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page(&PageContext, &ResolvedPage)`, and defaults for `place_asset` (mirrored path, relative reference), `generated` (files under `_tessera/`), and `warnings`. `EmitContext::new(&Project, project_root, &Build)` holds the model, the build, file paths and line indexes (for JSON's `source`), and `absolute_url`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once, from `ResolvedPage::assets`.
+  - `PlainEmitter` (`plain/`): follows SPEC §9.4's table; see the crate README. It walks the resolved tree and never looks at the build's mode.
+  - `JsonEmitter` (`json.rs`): `schemaVersion` 1, one document per page (`.md` becomes `.json`), documented in the crate README.
+  - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, `markdown_destination` (asset contract §3, §4). `labels.rs`: the availability line, arm labels, plain text of inlines.
+  - `OutputDir` (`store.rs`): the whole output-layout contract, §4: lock (`File::try_lock`, so the OS releases it), previous manifest (refuses a file that isn't one, an unknown version, and entries that could leave the emitter root), conflict checks, ownership recorded before files move, unchanged files left alone, stale files removed with the directories they empty, final manifest, staging removed.
+- **`crates/tessera-cli/src/commands/build.rs`**: `tessera build [--build NAME]... [--emit plain,json] [--format text|json]`, plus the wiring (`Command::Build` and its arm in `cli.rs`, `pub mod build;`). `tessera-cli` gained `tessera-emit` and `tessera-resolve` as dependencies. Its README documents the command.
+- **Questions Q111 to Q120** (below).
+
+### Interfaces later phases use
+
+- **Phase 20 (site output)**: implement `Emitter` for the site emitter and override `place_asset` (link targets under `_tessera/files/`, with `Placement::url`, which the store already writes to the manifest) and `generated` (the Zod schema, under `_tessera/`). `emit` and `OutputDir::replace` need no change; add `Emit::Site` to `commands/build.rs` (it's refused now) and swap `DefaultRouter::from_consumer` for the profile's router in `write_outputs` (`SPEC-QUESTION(Q119)`). `EmitContext::absolute_url` and `labels::availability_display` are reusable.
+- **Phase 26**: `emit` plus `OutputDir::replace` per build and emitter is the pipeline to time; `EmitContext::new` indexes every file's lines for each call, so build one per build and share it across emitters.
+- **Phase 14**: `commands/build.rs::run_checks` is the one place `tessera build` calls the checks (see Left open).
+
+### Decisions
+
+- Every choice the spec leaves open is a question with the implemented answer: Q111 (a page starts with its title and page-level availability), Q112 (raw HTML is written as literal text), Q113 (widgets), Q114 (the availability line's wording), Q115 (arm labels; a note with no title), Q116 (image attributes and table alignment are lost in plain markdown), Q117 (a Tessera file where a directory goes is removed; a directory where a file goes fails), Q118 (the JSON shape), Q119 (`tessera build`: checks for every build first, one report, `--emit site` refused, default router), Q120 (the missing-origin warning isn't a registry diagnostic).
+- **Following-block directives are applied by the plain emitter, not by the tree.** The tree keeps `@note`, `@details`, `@available`, and widgets that bind the next block as sibling directive blocks (`Bound::FollowingBlock`); the emitter wraps the block they bind, in stacking order (`plain::Renderer::blocks`).
+- **Availability is rendered from `Annotation::text`** (the spec as shown, Q25) parsed again, so the line shows labels without re-deriving anything from the build. A page's own line comes from `Availability::spec`.
+- **JSON omits the page's availability from each block's chain**: it's in the page's `availability`, and repeating it made every node several times larger.
+- **Files are written as text or copied from the source** (`Contents::Text`, `Contents::Copy`): assets are never read into memory.
+
+### Acceptance criteria
+
+See the pull request for the status and evidence of each.
+
+### Conformance
+
+No case has `outputs:` yet, and none carries the `output` tag, so the `output` skip in `SKIPS.toml` stays: it covers phase 20's site output as well. The tests for this phase are in `crates/tessera-emit/tests/` (`plain.rs`, `store.rs`, `assets.rs`, `quill.rs` with the `insta` snapshots in `tests/snapshots/`) and `crates/tessera-cli/tests/build.rs`.
+
+### Left open
+
+- **Phase 14 wiring.** `run_checks` in `commands/build.rs` calls `check_files` (file-level only). When phase 14 has merged: merge `main`, make it `check_project(project, build)` (its signature is `(&Project, &Build) -> Vec<Diagnostic>`; `check_all_builds` reports each problem once with the builds it appears in and may be what `tessera check` uses, in which case the build should call the same thing so the reports match), delete the dedupe in `build()` if it's not needed, and add the page-level cases to the parity test in `tests/build.rs` (`build_reports_what_check_reports_and_writes_nothing`).
+- **Q111 to Q120** are open, all implemented as proposed.
+- **A case-only rename on a case-insensitive file system** (`Guide.md` to `guide.md`) makes the build fail with "isn't a file Tessera wrote", since the manifest lists the old spelling: safe, and confusing. Fixing it needs telling a case twin of Tessera's file from a user's file, which a case-insensitive listing can't do portably.
+- **An output of a build removed from `tessera.toml`** stays on disk: a build only replaces the outputs it writes, and nothing lists the ones it doesn't. A `tessera clean` (or pruning the manifests of unknown builds) could remove them; it isn't in the phase.
+- **Interrupted builds**: the invariant is tested by making a copy fail while staging (nothing changes), and by reading the code's ordering (manifest with old and new files, then moves, then removals, then the final manifest). There is no test that kills the process between steps.
+- **Table alignment and image attributes** aren't in the plain output (Q116); keeping alignment needs `tessera-syntax` to record it.
+- **Route mapping** is `DefaultRouter`; Q55's inverse mapping (which page a route names) is still in `tessera-resolve`.
