@@ -24,6 +24,8 @@ cargo test -p tessera-conformance --lib --test harness
 
 `tests/source_index_rows.rs` likewise runs, until phases 10 and 14 add adapters for `check` and `page-check`, the rows the source index answers (phase 11): referenced files that don't exist, links to fragments and routes, include cycles and missing include ids, and links to ids. Every case tagged `include` or `slug` also carries `check`, `page-check`, or `resolve`, so the runner skips them all for now; this test compares those rows, in every case that expects diagnostics, with what `tessera-resolve` reports.
 
+`tests/resolve_rows.rs` does the same for build resolution (phase 12): the `resolve` adapter handles every case whose other tags are handled, and this test runs the ones that also carry `page-check` (a group with no surviving arm, a link to an id or a page a build removes, the scope rule for `@available`, the Quill project) through the same adapter, comparing each build's published pages, resolved outlines, assets, and the page-level rows resolution records. Phase 14 deletes it, and `source_index_rows.rs`, when its adapter runs those cases whole.
+
 ## Layout
 
 ```
