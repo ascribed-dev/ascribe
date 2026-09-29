@@ -61,18 +61,19 @@ Show a live preview of the current page in VS Code that matches the published si
 Both additive, and listed in the pull request:
 
 - `crates/tessera-emit/src/emitter.rs`, `lib.rs`: `emit_page`, `EmittedPage`, `PlacedAsset`; `emit` is refactored to call `emit_page`. Its tests (`site`, `plain`, `json`, snapshots) pass unchanged.
-- `crates/tessera-lsp/Cargo.toml`: dependencies on `tessera-emit` and `serde_yaml`.
+- `EmitContext::new` no longer indexes the lines of every file up front: `position` builds the index of the file it is asked about, once (`Mutex`ed cache). Its output is unchanged.
+- `crates/tessera-lsp/Cargo.toml`: dependencies on `tessera-emit` and `serde_yaml`. `core.rs`: one field, `preview_routes`.
 - `.github/workflows/js.yml` (still `workflow_dispatch` only): the `astro` job runs the parity test.
 - `packages/vscode/package.json`, `tsconfig*.json`, `esbuild.mjs`, `vitest*.config.ts`, `test/unit/manifest.test.ts`: the commands, the webview build, a second tsconfig with the DOM library for the webview code and its tests.
 - `project-docs/questions.md`: Q181 to Q187.
 
 ### Decisions
 
-Q181 (which document, and a fragment), Q182 (assets outside the content root), Q183 (the policy is stricter than the site), Q184 (what the parity test leaves out), Q185 (the preview draws the title and page availability), Q186 (the picker's default and memory), Q187 (which links open a file). All `open`, implemented as proposed, marked `SPEC-QUESTION`.
+Q181 (which document, and a fragment), Q182 (assets outside the content root: served from their own directory, after review), Q183 (the policy is stricter than the site), Q184 (what the parity test leaves out), Q185 (the preview draws the title and page availability), Q186 (the picker's default and memory), Q187 (which links open a file). All `open`, implemented as proposed, marked `SPEC-QUESTION`.
 
 Also:
 
-- **The server answers on the request thread** and holds the lock only to clone the snapshot; rendering is outside it. A page takes about 4 ms (median over 20 edits, `an_answer_takes_milliseconds`).
+- **The server answers on the request thread** and holds the lock only to clone the snapshot; rendering is outside it. Review asked for a measurement at 3,000 pages: a first version took 9.6 ms there (it listed every page, checked each against the build, slugged every path for the route check, and indexed the lines of every file), and slowed keystroke-to-diagnostics from 3.1 to 4.0 ms. Now it takes 1.1 ms at 3,000 pages and 0.5 ms at 20, and diagnostics are unchanged (`benches/keystroke.rs`, the README's Performance section): the route groups are cached per set of page paths, and `EmitContext` builds line indexes lazily.
 - **Ordering.** The client sends the change before the request, but the answer says which version it used (`documentVersion`) and the client asks again if that is older than the document's; it never draws a stale page.
 - **References.** The server sends each asset's reference as the emitter wrote it (percent-encoded with `encode_path`); comrak escapes it again when it writes `src` (a space becomes `%20`), so the client compares references after resolving them against a dummy base (`canonicalReference`). Asset URLs get `?v=<mtime>` so a replaced image is fetched again, and a watcher on the content root asks for a render when a file changes on disk.
 - **The page HTML is parsed into an inert `<template>`**, its `<img src>` rewritten there, and then moved into the document, so no request is made for a reference before it is rewritten.
@@ -91,7 +92,7 @@ See the pull request for the status and evidence of each.
 
 - **Q181 to Q187.**
 - **A glossary term's link** in the preview isn't clickable, and a link to a heading in another page opens the file, not the heading (Q187).
-- **Assets outside the content root** show as broken images, with a warning (Q182).
+- **An asset directly in the project root**, in `node_modules`, or in `.git` isn't shown, with a warning (Q182). Other assets outside the content root are served from their own directory.
 - **Windows and macOS** weren't run: everything ran on Linux (VS Code 1.139.1 under `xvfb-run`, Chromium). Paths reach the webview through `Uri.file` and `asWebviewUri`, and the server sends absolute paths it has normalized, which `uri.rs` already handles for drive letters, but nothing here has run on those platforms.
 - **The one flake seen.** Once, in the first full run of the integration suites after a fresh bundle, the `quill` suite's "updates diagnostics after the file changes on disk" timed out (30 s); it passed alone three times and in the next two full runs. It is phase 17's test of the file watcher and doesn't touch the preview; it wasn't investigated further.
 - **The panel serializer** (restoring the panel after a reload) is written but isn't covered by an integration test: the test host can't reload its own window.

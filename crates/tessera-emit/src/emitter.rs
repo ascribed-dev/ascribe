@@ -3,6 +3,7 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, PoisonError};
 
 use tessera_core::{AssetUse, FileId, LineIndex, RelPath, Span, WideEncoding};
 use tessera_model::{Build, ContentModel};
@@ -20,12 +21,11 @@ pub struct EmitContext<'a> {
     /// The build being emitted.
     pub build: &'a Build,
     content_dir: PathBuf,
-    files: HashMap<FileId, SourceFile>,
-}
-
-struct SourceFile {
-    path: RelPath,
-    lines: LineIndex,
+    project: &'a Project,
+    /// The line index of each file a position was asked for, built on first
+    /// use: most emitted pages never need one, and indexing every file of a
+    /// large project would cost the editor's preview time on every keystroke.
+    lines: Mutex<HashMap<FileId, Arc<LineIndex>>>,
 }
 
 /// A position in a source file, counted from 1, with columns in Unicode
@@ -42,38 +42,35 @@ impl<'a> EmitContext<'a> {
     /// A context for emitting `build` of `project`, whose `ascribe.toml` is
     /// in `project_root`. Assets are copied from the content root under it.
     pub fn new(project: &'a Project, project_root: &Path, build: &'a Build) -> EmitContext<'a> {
-        let files = project
-            .files()
-            .map(|f| {
-                (
-                    f.file,
-                    SourceFile {
-                        path: f.path.clone(),
-                        lines: LineIndex::new(&f.source),
-                    },
-                )
-            })
-            .collect();
         EmitContext {
             model: project.model(),
             build,
             content_dir: project_root.join(project.layout().content_root.as_str()),
-            files,
+            project,
+            lines: Mutex::new(HashMap::new()),
         }
     }
 
     /// The content path of a source file.
     pub fn file_path(&self, file: FileId) -> Option<&RelPath> {
-        self.files.get(&file).map(|f| &f.path)
+        self.project.path_of(file)
     }
 
     /// The position of a byte offset in a source file.
     pub fn position(&self, file: FileId, offset: usize) -> Option<Position> {
-        let at = self
-            .files
-            .get(&file)?
-            .lines
-            .wide_line_col(WideEncoding::Utf32, offset)?;
+        let index = {
+            let mut lines = self.lines.lock().unwrap_or_else(PoisonError::into_inner);
+            match lines.get(&file) {
+                Some(index) => index.clone(),
+                None => {
+                    let source = &self.project.file_by_id(file)?.source;
+                    let index = Arc::new(LineIndex::new(source));
+                    lines.insert(file, index.clone());
+                    index
+                }
+            }
+        };
+        let at = index.wide_line_col(WideEncoding::Utf32, offset)?;
         Some(Position {
             line: at.line + 1,
             column: at.col + 1,

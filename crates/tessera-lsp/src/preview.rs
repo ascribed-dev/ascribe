@@ -15,7 +15,10 @@
 //! written in, so a fragment's image is found (contract §7). The client turns
 //! those files into webview URLs.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, PoisonError};
 
 use lsp_types::{TextDocumentIdentifier, Uri};
 use serde::{Deserialize, Serialize};
@@ -57,9 +60,13 @@ pub struct PreviewResult {
     pub builds: Vec<PreviewBuild>,
     /// The project's `ascribe.toml` directory, as a path.
     pub project_root: Option<String>,
-    /// The content root, as a path. Nothing outside it is served to the
-    /// preview.
+    /// The content root, as a path.
     pub content_root: Option<String>,
+    /// The directories outside the content root that the page's assets are
+    /// in and the preview may read (Q182): the directory of each asset that
+    /// is in the project but not in the content root, and nowhere else. Never
+    /// the project root, `node_modules`, or the output directory.
+    pub asset_roots: Vec<String>,
     /// The version of the open document the answer was computed from, or
     /// `null` when the file isn't open (its text is the disk's). A client
     /// that sent version *n* and gets an older one has raced its own edit
@@ -125,8 +132,8 @@ pub struct PreviewAsset {
     pub path: String,
     /// `image` or `link`.
     pub kind: &'static str,
-    /// Whether the file is inside the content root, which is all the
-    /// preview may read. A file outside it (asset contract §2, step 5) is
+    /// Whether the preview may read the file: it is in the content root, or
+    /// in a directory listed in `assetRoots`. A file it may not read is
     /// reported in `problems` and isn't shown.
     pub servable: bool,
 }
@@ -187,13 +194,57 @@ impl PreviewProblem {
     }
 }
 
+/// The groups of pages that share a route, kept between requests: they change
+/// when the set of pages or the content model does, not when a page's text
+/// does, and finding them slugs every page's path.
+/// The pages that share each route.
+type RouteGroups = Arc<Vec<(String, Vec<RelPath>)>>;
+
+/// The model revision and page-path hash the groups were worked out for, and the groups.
+type CachedRoutes = (u64, u64, RouteGroups);
+
+#[derive(Clone, Default)]
+pub(crate) struct RouteCache {
+    entry: Arc<Mutex<Option<CachedRoutes>>>,
+}
+
+impl RouteCache {
+    fn collisions(&self, snapshot: &Snapshot, model: &ContentModel) -> RouteGroups {
+        // What the answer depends on: the model (its consumer settings) and
+        // the paths of the pages. Hashing the paths is the only per-request
+        // work that grows with the project, and it is a string hash per page.
+        let mut hasher = DefaultHasher::new();
+        for page in snapshot.pages() {
+            page.path.as_str().hash(&mut hasher);
+        }
+        let key = (snapshot.model_revision(), hasher.finish());
+        let mut entry = self.entry.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some((revision, paths, groups)) = entry.as_ref()
+            && (*revision, *paths) == key
+        {
+            return groups.clone();
+        }
+        let router = AstroRouter::from_consumer(&model.consumer);
+        let groups: Vec<(String, Vec<RelPath>)> = router
+            .collisions(snapshot.pages().map(|p| &p.path))
+            .into_iter()
+            .map(|(route, pages)| (route, pages.into_iter().cloned().collect()))
+            .collect();
+        let groups = Arc::new(groups);
+        *entry = Some((key.0, key.1, groups.clone()));
+        groups
+    }
+}
+
 /// What the request needs from the server's state, cloned under the lock so
 /// the rendering happens without it.
 pub(crate) struct Target {
     snapshot: Snapshot,
-    model: std::sync::Arc<ContentModel>,
+    model: Arc<ContentModel>,
+    routes: RouteCache,
     root: PathBuf,
     content_root: PathBuf,
+    output_dir: PathBuf,
     /// The document's path on disk.
     document: PathBuf,
     document_version: Option<i32>,
@@ -228,8 +279,10 @@ impl Core {
         Ok(Target {
             snapshot: loaded.inc.snapshot(),
             model: loaded.model.clone(),
+            routes: self.preview_routes.clone(),
             root: loaded.root.clone(),
             content_root,
+            output_dir: normalize(&loaded.root.join(&loaded.model.project.output_dir)),
             document_version: self.docs.get(&document).map(|d| d.version),
             document,
             content_path,
@@ -258,6 +311,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
             .collect(),
         project_root: Some(path_text(&target.root)),
         content_root: Some(path_text(&target.content_root)),
+        asset_roots: Vec::new(),
         document_version: target.document_version,
         page: None,
         problems: Vec::new(),
@@ -343,17 +397,20 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
             return result;
         }
     };
-    // A page is also unreadable to the router when another one has its route
-    // (Q143); the preview shows the page anyway and says so.
-    let collisions = emitter.profile().astro_router().collisions(
-        snapshot
-            .pages()
-            .filter(|p| snapshot.dropped(&p.path, build).is_none())
-            .map(|p| &p.path),
-    );
-    for (route, pages) in collisions {
-        if pages.contains(&path) {
-            let names: Vec<String> = pages.iter().map(ToString::to_string).collect();
+    // Another page with this page's route (Q143): the site output can't
+    // publish both. The groups are worked out once for a set of pages, not per
+    // keystroke (`RouteCache`), and only the members this build publishes count.
+    let collisions = target.routes.collisions(snapshot, model);
+    for (route, pages) in collisions.iter() {
+        if !pages.contains(path) {
+            continue;
+        }
+        let published: Vec<&RelPath> = pages
+            .iter()
+            .filter(|p| snapshot.dropped(p, build).is_none())
+            .collect();
+        if published.len() > 1 {
+            let names: Vec<String> = published.iter().map(|p| p.to_string()).collect();
             result.problems.push(PreviewProblem::warning(format!(
                 "{route} is the route of {}, so the site output can't publish them together.",
                 names.join(" and ")
@@ -382,16 +439,24 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
             continue;
         }
         let file = normalize(&cx.asset_source(&placed.source));
-        // SPEC-QUESTION(Q182): only the content root is served to the preview.
-        let servable = relative_to(&target.content_root, &file)
-            .and_then(|rel| RelPath::parse(&rel).ok())
-            .is_some_and(|rel| rel.is_inside());
-        if !servable {
-            result.problems.push(PreviewProblem::warning(format!(
-                "{} is outside the content root, so the preview can't show it. The published site does.",
-                placed.source
-            )));
-        }
+        let servable = match serve(target, &file) {
+            Ok(root) => {
+                if let Some(root) = root {
+                    let root = path_text(&root);
+                    if !result.asset_roots.contains(&root) {
+                        result.asset_roots.push(root);
+                    }
+                }
+                true
+            }
+            Err(reason) => {
+                result.problems.push(PreviewProblem::warning(format!(
+                    "{} {reason}, so the preview can't show it. The published site does.",
+                    placed.source
+                )));
+                false
+            }
+        };
         assets.push(PreviewAsset {
             reference,
             path: path_text(&file),
@@ -446,6 +511,44 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         sections,
     });
     result
+}
+
+/// Whether the preview may read an asset's file, and if so which directory it
+/// needs besides the content root: none for a file in the content root, else
+/// the file's own directory (Q182). Asset contract §2 step 5 puts an asset
+/// anywhere in the project; the preview serves only the directories pages use,
+/// never the project root itself, the output directory, or what no site wants
+/// served (`node_modules`, `.git`).
+// SPEC-QUESTION(Q182): the directory of each asset outside the content root.
+fn serve(target: &Target, file: &Path) -> Result<Option<PathBuf>, &'static str> {
+    if within(&target.content_root, file) {
+        return Ok(None);
+    }
+    if !within(&target.root, file) {
+        return Err("is outside the project");
+    }
+    if within(&target.output_dir, file) {
+        return Err("is in the output directory");
+    }
+    let hidden = |c: std::path::Component<'_>| {
+        matches!(c.as_os_str().to_str(), Some("node_modules" | ".git"))
+    };
+    if file.components().any(hidden) {
+        return Err("is in node_modules or .git");
+    }
+    match file.parent() {
+        Some(dir) if dir != target.root => Ok(Some(dir.to_path_buf())),
+        _ => Err(
+            "is directly in the project root, which the preview doesn't serve; move it into a directory",
+        ),
+    }
+}
+
+/// Whether `path` is inside `base`.
+fn within(base: &Path, path: &Path) -> bool {
+    relative_to(base, path)
+        .and_then(|rel| RelPath::parse(&rel).ok())
+        .is_some_and(|rel| rel.is_inside())
 }
 
 /// Splits the site output's frontmatter (`---`, YAML, `---`, a blank line)

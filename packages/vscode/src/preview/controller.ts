@@ -92,7 +92,8 @@ export class PreviewController implements vscode.Disposable {
   private seq = 0;
   private roots: string[] = [];
   private contentRoot: string | undefined;
-  private watcher: vscode.FileSystemWatcher | undefined;
+  private assetRoots: string[] = [];
+  private watchers: vscode.FileSystemWatcher[] = [];
   private latest:
     { message: Extract<ToWebview, { type: "render" }>; result: PreviewResult } | undefined;
   private revealed: string | undefined;
@@ -168,20 +169,28 @@ export class PreviewController implements vscode.Disposable {
       VIEW_TYPE,
       panelTitle(this.document),
       { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
-      { ...this.webviewOptions(first?.contentRoot ?? undefined), retainContextWhenHidden: true },
+      {
+        ...this.webviewOptions(first?.contentRoot ?? undefined, first?.assetRoots ?? []),
+        retainContextWhenHidden: true,
+      },
     );
-    this.attach(panel, first?.contentRoot ?? undefined);
+    this.attach(panel, first?.contentRoot ?? undefined, first?.assetRoots ?? []);
     this.schedule(0);
   }
 
-  private attach(panel: vscode.WebviewPanel, contentRoot?: string): void {
+  private attach(
+    panel: vscode.WebviewPanel,
+    contentRoot?: string,
+    assetRoots: string[] = [],
+  ): void {
     this.panel = panel;
     this.ready = false;
     this.revealed = undefined;
     this.latest = undefined;
     panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, "media", "preview.svg");
-    panel.webview.options = this.webviewOptions(contentRoot);
+    panel.webview.options = this.webviewOptions(contentRoot, assetRoots);
     this.contentRoot = contentRoot;
+    this.assetRoots = assetRoots;
     this.setShell();
     this.panelDisposables.push(
       panel.webview.onDidReceiveMessage((message: FromWebview) => void this.receive(message)),
@@ -193,8 +202,8 @@ export class PreviewController implements vscode.Disposable {
   private detach(): void {
     if (this.timer) clearTimeout(this.timer);
     this.timer = undefined;
-    this.watcher?.dispose();
-    this.watcher = undefined;
+    for (const watcher of this.watchers) watcher.dispose();
+    this.watchers = [];
     for (const d of this.panelDisposables) d.dispose();
     this.panelDisposables = [];
     this.panel = undefined;
@@ -204,15 +213,20 @@ export class PreviewController implements vscode.Disposable {
   }
 
   /**
-   * The webview's options. It may read the extension's webview files and the
-   * project's content root, and nothing else: not the workspace, not the
-   * project root (asset contract §2 allows an asset there, outside the
-   * content root; the preview reports it instead of widening this).
+   * The webview's options. It may read the extension's webview files, the
+   * project's content root, and the directory of each asset the page uses
+   * that is outside the content root (asset contract §2 allows those, and the
+   * server names them in `assetRoots`), and nothing else: never the workspace
+   * or the project root.
    */
-  // SPEC-QUESTION(Q182): the content root, not the project root.
-  private webviewOptions(contentRoot: string | undefined): vscode.WebviewOptions {
+  // SPEC-QUESTION(Q182): the content root and the directories of the assets outside it, never the project root.
+  private webviewOptions(
+    contentRoot: string | undefined,
+    assetRoots: string[],
+  ): vscode.WebviewOptions {
     const roots = [vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview")];
     if (contentRoot) roots.push(vscode.Uri.file(contentRoot));
+    for (const root of assetRoots) roots.push(vscode.Uri.file(root));
     this.roots = roots.map((uri) => uri.fsPath);
     return { enableScripts: true, localResourceRoots: roots };
   }
@@ -315,6 +329,7 @@ export class PreviewController implements vscode.Disposable {
         builds: [],
         projectRoot: null,
         contentRoot: null,
+        assetRoots: [],
         documentVersion: null,
         page: null,
         problems: [{ severity: "info", message: reason }],
@@ -331,7 +346,7 @@ export class PreviewController implements vscode.Disposable {
         return;
       }
     }
-    this.followRoots(result.contentRoot ?? undefined);
+    this.followRoots(result.contentRoot ?? undefined, result.assetRoots);
     const assets = this.assetUris(result);
     const message: Extract<ToWebview, { type: "render" }> = {
       type: "render",
@@ -358,30 +373,40 @@ export class PreviewController implements vscode.Disposable {
   }
 
   /** The content root changed (a new `ascribe.toml`, another project): the webview may read the new one. */
-  private followRoots(contentRoot: string | undefined): void {
-    if (!this.panel || contentRoot === this.contentRoot) return;
+  private followRoots(contentRoot: string | undefined, assetRoots: string[]): void {
+    if (!this.panel) return;
+    const same =
+      contentRoot === this.contentRoot &&
+      assetRoots.length === this.assetRoots.length &&
+      assetRoots.every((root, i) => root === this.assetRoots[i]);
+    if (same) return;
     this.contentRoot = contentRoot;
-    this.panel.webview.options = this.webviewOptions(contentRoot);
+    this.assetRoots = assetRoots;
+    this.panel.webview.options = this.webviewOptions(contentRoot, assetRoots);
     // Reloading the document makes the new roots take effect; the webview
     // says `ready` again and gets the latest render.
     this.setShell();
-    this.watchDisk(contentRoot);
+    this.watchDisk();
   }
 
-  private watchDisk(contentRoot: string | undefined): void {
-    this.watcher?.dispose();
-    this.watcher = undefined;
-    if (!contentRoot) return;
-    // Images and other files change on disk without an open document.
-    this.watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(vscode.Uri.file(contentRoot), "**/*"),
-    );
+  private watchDisk(): void {
+    for (const watcher of this.watchers) watcher.dispose();
+    this.watchers = [];
+    // Images and other files change on disk without an open document: watch
+    // every directory the preview reads.
+    const roots = [...(this.contentRoot ? [this.contentRoot] : []), ...this.assetRoots];
     const changed = (): void => {
       if (this.panel) this.schedule(DISK_DEBOUNCE_MS);
     };
-    this.watcher.onDidCreate(changed);
-    this.watcher.onDidChange(changed);
-    this.watcher.onDidDelete(changed);
+    for (const root of roots) {
+      const watcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(vscode.Uri.file(root), "**/*"),
+      );
+      watcher.onDidCreate(changed);
+      watcher.onDidChange(changed);
+      watcher.onDidDelete(changed);
+      this.watchers.push(watcher);
+    }
   }
 
   /** The webview URL of each servable asset, with its modification time so a replaced image is fetched again. */
@@ -408,7 +433,7 @@ export class PreviewController implements vscode.Disposable {
         this.ready = true;
         if (this.latest) void this.panel?.webview.postMessage(this.latest.message);
         else this.schedule(0);
-        if (this.contentRoot && !this.watcher) this.watchDisk(this.contentRoot);
+        if (this.contentRoot && this.watchers.length === 0) this.watchDisk();
         return;
       }
       case "build":

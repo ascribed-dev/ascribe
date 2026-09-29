@@ -298,29 +298,117 @@ fn a_page_a_build_drops_says_so() {
 }
 
 #[test]
-fn a_reference_outside_the_content_root_is_reported_not_served() {
+fn an_asset_beside_the_content_root_is_served_from_its_own_directory() {
     let f = Fixture::new(
         MODEL,
         &[
-            ("docs/page.md", "# Page\n\n![Shared](../shared/logo.png)\n"),
+            (
+                "docs/page.md",
+                "# Page\n\n![Shared](../shared/logo.png)\n\n![Again](../shared/other.png)\n\n![Deep](../assets/icons/i.png)\n",
+            ),
             ("shared/logo.png", "not really a png"),
+            ("shared/other.png", "not really a png"),
+            ("assets/icons/i.png", "not really a png"),
         ],
     );
     let mut client = Client::start(&f.root());
     client.settle();
     let result = preview(&mut client, &f.path("docs/page.md"), None);
-    let asset = &result["page"]["assets"][0];
-    assert_eq!(asset["servable"], false);
-    assert_eq!(asset["reference"], "./_ascribe/up/shared/logo.png");
-    assert!(asset["path"].as_str().unwrap().ends_with("shared/logo.png"));
-    let problems = result["problems"].as_array().unwrap();
+    let assets = result["page"]["assets"].as_array().unwrap();
+    assert_eq!(assets.len(), 3);
+    for asset in assets {
+        assert_eq!(asset["servable"], true, "{asset}");
+    }
+    assert_eq!(assets[0]["reference"], "./_ascribe/up/shared/logo.png");
     assert!(
-        problems[0]["message"]
+        assets[0]["path"]
             .as_str()
             .unwrap()
-            .contains("outside the content root"),
-        "{problems:?}"
+            .ends_with("shared/logo.png")
     );
+    // The directory of each asset, once, and nothing wider: not the project root.
+    let roots: Vec<&str> = result["assetRoots"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r.as_str().unwrap())
+        .collect();
+    assert_eq!(
+        roots,
+        [
+            f.path("shared").to_str().unwrap(),
+            f.path("assets/icons").to_str().unwrap()
+        ]
+    );
+    assert_eq!(result["problems"], json!([]));
+    client.shutdown();
+}
+
+#[test]
+fn assets_the_preview_will_not_serve_are_reported() {
+    let f = Fixture::new(
+        MODEL,
+        &[
+            (
+                "docs/page.md",
+                "# Page\n\n![Root](../logo.png)\n\n![Package](../node_modules/pkg/i.png)\n\n![Inside](inside.png)\n",
+            ),
+            ("logo.png", "x"),
+            ("node_modules/pkg/i.png", "x"),
+            ("docs/inside.png", "x"),
+        ],
+    );
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let result = preview(&mut client, &f.path("docs/page.md"), None);
+    let assets = result["page"]["assets"].as_array().unwrap();
+    let by_name = |name: &str| {
+        assets
+            .iter()
+            .find(|a| a["path"].as_str().unwrap().ends_with(name))
+            .unwrap_or_else(|| panic!("{assets:?}"))
+    };
+    // A file directly in the project root would need the project root served.
+    assert_eq!(by_name("/logo.png")["servable"], false);
+    assert_eq!(by_name("node_modules/pkg/i.png")["servable"], false);
+    assert_eq!(by_name("docs/inside.png")["servable"], true);
+    assert_eq!(result["assetRoots"], json!([]));
+    let messages: Vec<&str> = result["problems"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["message"].as_str().unwrap())
+        .collect();
+    assert_eq!(messages.len(), 2, "{messages:?}");
+    assert!(
+        messages
+            .iter()
+            .any(|m| m.contains("directly in the project root"))
+    );
+    assert!(messages.iter().any(|m| m.contains("node_modules")));
+    client.shutdown();
+}
+
+#[test]
+fn two_pages_with_one_route_are_reported_for_both() {
+    let f = Fixture::new(
+        MODEL,
+        &[
+            ("docs/a.md", "# One\n"),
+            ("docs/a/index.md", "# Two\n"),
+            ("docs/other.md", "# Other\n"),
+        ],
+    );
+    let mut client = Client::start(&f.root());
+    client.settle();
+    for name in ["docs/a.md", "docs/a/index.md"] {
+        let result = preview(&mut client, &f.path(name), None);
+        assert!(!result["page"].is_null());
+        let message = result["problems"][0]["message"].as_str().unwrap();
+        assert!(message.contains("can't publish them together"), "{message}");
+    }
+    let other = preview(&mut client, &f.path("docs/other.md"), None);
+    assert_eq!(other["problems"], json!([]));
     client.shutdown();
 }
 

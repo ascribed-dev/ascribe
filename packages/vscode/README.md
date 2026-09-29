@@ -56,9 +56,11 @@ from the frontmatter (Q185). Assets aren't copied: the server names each
 asset's source file, and the webview shows it from there.
 
 **What the webview may read** (`localResourceRoots`): the extension's
-`dist/webview/` and the project's content root, and nothing else. An asset
-outside the content root (`../shared/logo.png`) is reported and not shown
-(Q182).
+`dist/webview/`, the project's content root, and the directory of each asset
+the page uses that is outside the content root (`../shared/logo.png` makes
+`shared/` readable), and nothing else: never the project root, `node_modules`,
+or the output directory. An asset directly in the project root isn't shown,
+with a warning (Q182).
 
 **Content security policy** (`src/preview/html.ts`, tested in a real browser
 in `test/webview/`):

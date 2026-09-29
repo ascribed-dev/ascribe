@@ -1,4 +1,5 @@
 import * as assert from "node:assert/strict";
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
@@ -165,5 +166,36 @@ describe("the preview, with the real language server on examples/quill", () => {
       .findIndex((text) => text.startsWith("## Streaming sync"));
     editor.selection = new vscode.Selection(line + 3, 0, line + 3, 0);
     await waitFor("a scroll to streaming-sync", () => preview.reveals().includes("streaming-sync"));
+  });
+
+  it("shows an image from a directory beside the content root, and serves only that directory", async () => {
+    mkdirSync(uriOf("shared").fsPath, { recursive: true });
+    copyFileSync(uriOf("docs", "playground.png").fsPath, uriOf("shared", "logo.png").fsPath);
+    const page = uriOf("docs", "shared-image.md");
+    writeFileSync(
+      page.fsPath,
+      "---\ntitle: Shared\n---\n\n## Logo\n@id: logo\n\n![The shared logo](../shared/logo.png)\n",
+    );
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(page));
+    const render = await drawnFor(
+      (r) => r.result.page?.path === "shared-image.md" && r.images !== undefined,
+    );
+    assert.deepEqual(render.result.assetRoots, [uriOf("shared").fsPath]);
+    assert.equal(render.result.problems.length, 0);
+    assert.equal(
+      render.images?.[0]?.loaded,
+      true,
+      `the image at ${render.images?.[0]?.src} loaded`,
+    );
+    const extensionPath = vscode.extensions.getExtension(EXTENSION_ID)?.extensionPath ?? "";
+    assert.deepEqual(
+      preview.localResourceRoots().map((root) => path.resolve(root)),
+      [
+        path.resolve(extensionPath, "dist", "webview"),
+        path.resolve(workspace(), "docs"),
+        path.resolve(workspace(), "shared"),
+      ],
+      "the directory of the asset, not the project root",
+    );
   });
 });

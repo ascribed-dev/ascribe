@@ -21,7 +21,7 @@ export interface PreviewAsset {
   /** The source file, an absolute path. */
   path: string;
   kind: "image" | "link";
-  /** Whether the file is inside the content root, which is all the preview may read. */
+  /** Whether the preview may read the file: it is in the content root or an `assetRoots` directory. */
   servable: boolean;
 }
 
@@ -72,6 +72,8 @@ export interface PreviewResult {
   builds: PreviewBuild[];
   projectRoot: string | null;
   contentRoot: string | null;
+  /** Directories outside the content root that the page's assets are in. */
+  assetRoots: string[];
   documentVersion: number | null;
   page: PreviewPage | null;
   problems: PreviewProblem[];
