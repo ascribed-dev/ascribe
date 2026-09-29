@@ -31,7 +31,7 @@ pub(crate) fn hash_of(value: &(impl Hash + ?Sized)) -> u64 {
 ///
 /// Editing a paragraph, a code block, or the destination of a link leaves it
 /// unchanged, so the pages that link to this one aren't re-resolved for it.
-// SPEC-QUESTION(Q93): what of a file can change how a link to it resolves.
+// Resolved Q93: what of a file can change how a link to it resolves.
 pub(crate) fn structure_signature(index: &FileIndex) -> u64 {
     let mut h = DefaultHasher::new();
     index.kind.hash(&mut h);
@@ -100,7 +100,7 @@ fn blocks(list: &[Block], source: &str, h: &mut DefaultHasher) {
 /// How much of the pipeline a change to the content model reaches.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ModelImpact {
-    // SPEC-QUESTION(Q96): a change to only the model's own warnings.
+    // Resolved Q96: a change to only the model's own warnings.
     /// Only what `tessera.toml` says about itself changed (a warning, or where
     /// something is in the file). No file's result changes; the caller
     /// refreshes the diagnostics of `tessera.toml` (file id 0).
