@@ -5,9 +5,10 @@ use std::io::{self, Write};
 use std::process::ExitCode;
 
 use clap::{Args as ClapArgs, ValueEnum};
-use tessera_check::{Diagnostic, LoadError, Project, check_all_builds, check_project};
+use tessera_check::LoadError;
 
 use crate::cli::Global;
+use crate::commands::diagnose::diagnose;
 use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::{Counts, FileTable, json, text};
@@ -23,11 +24,11 @@ pub struct Args {
     #[arg(long)]
     pub deny_warnings: bool,
 
-    /// Check one build only. By default every build of the content model is
-    /// checked, and each problem is reported once, naming the builds it
-    /// appears in.
+    /// Check only this build (repeat for several). By default every build of
+    /// the content model is checked, and each problem is reported once,
+    /// naming the builds it appears in.
     #[arg(long, value_name = "NAME")]
-    pub build: Option<String>,
+    pub build: Vec<String>,
 }
 
 /// The output format.
@@ -57,8 +58,8 @@ fn check(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         Ok(project) => project,
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
-    let diagnostics = match diagnose(&project, args.build.as_deref()) {
-        Ok(diagnostics) => diagnostics,
+    let diagnostics = match diagnose(&project, &args.build) {
+        Ok((diagnostics, _)) => diagnostics,
         Err(message) => {
             let _ = writeln!(err, "error: {message}");
             return exit::FAILURE;
@@ -83,35 +84,6 @@ fn check(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     } else {
         exit::OK
     }
-}
-
-/// Every diagnostic of the project: those of the named build, or of every
-/// build. A problem in included content is at the include site, and one that
-/// appears in several builds is listed once; the builds it appears in are
-/// added to its message when they aren't all of them.
-fn diagnose(project: &Project, build: Option<&str>) -> Result<Vec<Diagnostic>, String> {
-    let builds = &project.model().builds;
-    let mut diagnostics = match build {
-        None => check_all_builds(project),
-        Some(name) => {
-            let build = project.model().build(name).ok_or_else(|| {
-                let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-                format!(
-                    "the content model has no build `{name}`; its builds are {}",
-                    names.join(", ")
-                )
-            })?;
-            check_project(project, build)
-        }
-    };
-    // With `--build`, the one build is all there is to say.
-    let total = if build.is_some() { 1 } else { builds.len() };
-    for d in &mut diagnostics {
-        if let Some(note) = d.builds_note(total) {
-            d.message = format!("{} ({note})", d.message);
-        }
-    }
-    Ok(diagnostics)
 }
 
 /// Reports a project that couldn't be loaded, and returns the exit code.

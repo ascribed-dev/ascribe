@@ -5,7 +5,7 @@
 use std::path::PathBuf;
 
 use tessera_check::{
-    Diagnostic, Project, SourceFile, check_all_builds, check_files, check_project,
+    Diagnostic, Project, SourceFile, check_all_builds, check_builds, check_files, check_project,
 };
 use tessera_core::{FileId, RelPath};
 
@@ -423,4 +423,36 @@ fn a_message_names_its_builds_when_the_registry_template_has_a_build_placeholder
         let entry = registry.get(slug).expect("an entry");
         assert_eq!(entry.names_build(), names, "{slug}");
     }
+}
+
+#[test]
+fn a_subset_of_builds_merges_what_they_share() {
+    let p = project(&[
+        ("index.md", &page("See [it](keys.md#edge-setup).")),
+        (
+            "keys.md",
+            &page("@variant {deployment=edge}:\n## Edge setup\n@id: edge-setup\n@end"),
+        ),
+    ]);
+    let builds: Vec<_> = p.model().builds.iter().collect();
+    let cloud_and_sm: Vec<_> = builds
+        .iter()
+        .copied()
+        .filter(|b| b.name != "site")
+        .collect();
+    let found: Vec<_> = check_builds(&p, &cloud_and_sm)
+        .into_iter()
+        .filter(|d| d.slug.as_str() == "link-id-removed")
+        .collect();
+    assert_eq!(found.len(), 1, "{found:#?}");
+    assert_eq!(found[0].builds, ["cloud", "self-managed"]);
+    // Every build is `check_all_builds` less the pass over unpublished content.
+    let all = check_builds(&p, &builds);
+    let expected: Vec<_> = check_all_builds(&p)
+        .into_iter()
+        .filter(|d| !d.unpublished)
+        .collect();
+    assert_eq!(all, expected);
+    // One build is `check_project`.
+    assert_eq!(check_builds(&p, &builds[..1]), check_project(&p, builds[0]));
 }

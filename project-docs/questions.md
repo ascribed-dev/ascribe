@@ -1293,3 +1293,116 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1 for now, because the rows are defined on pages and a fragment's ids may legitimately collide with the page's own once it's included. Option 3 is cheap and useful, and needs a registry entry. Implemented now: option 1 (`SPEC-QUESTION(Q104)` in `crates/tessera-check/src/page/mod.rs`).
 - **Affects:** `crates/tessera-check/src/page/`; phase 15 (a fragment open in the editor).
 - **Resolution:** approved by the repository owner: as proposed: a fragment no page includes has no page-level diagnostics; its file-level ones are still reported. A "nothing includes this" warning can come later. SPEC §8.1 now says so.
+
+### Q111: What a plain-markdown page starts with
+
+- **Section:** SPEC §9.4
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** SPEC §9.4 says the plain output is "fully resolved CommonMark" for language models, search indexing, and export, and its table covers the body's constructs. It doesn't say what becomes of the frontmatter. A Tessera page's title lives in the frontmatter (`title`, required by content-model.md decision 3), and the body usually starts at a level-2 heading, so a page written out as its body alone has no title. Page-level `available` is frontmatter too, and the table's `@available` row covers only the directive.
+- **Options:**
+  1. The body only. The output loses the page's title and page-level availability.
+  2. The frontmatter as YAML at the top. A plain CommonMark parser reads it as a thematic break and a setext heading, and "parses as ordinary CommonMark" no longer means what it says.
+  3. The title as a level-1 heading, then the page-level availability as the same `Available:` line the directive gets, then the body. The rest of the frontmatter (`description`, custom fields) isn't in the plain output; the JSON output has it.
+- **Proposed resolution:** option 3. Implemented now: option 3 (`SPEC-QUESTION(Q111)` in `plain/mod.rs`). A page with no `title` gets no heading.
+- **Affects:** `crates/tessera-emit/src/plain/`; the plain snapshots; phase 20 (the site output passes availability through as frontmatter and doesn't need this).
+- **Resolution:** filled in by a human.
+
+### Q112: Raw HTML in the source, in the plain output
+
+- **Section:** SPEC §9.4, §5.3
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** the plain output is "fully resolved CommonMark with no HTML". SPEC §9.4 also says raw HTML in a source page passes through unchanged (for references inside it, "they pass through unchanged"). Both can't hold for a page that has an HTML block or inline HTML, such as `<kbd>Ctrl</kbd>` or a `<div>`. Example: `Press <kbd>Ctrl</kbd>+C.`
+- **Options:**
+  1. Pass the HTML through. The output then has HTML, and the acceptance test for "no HTML" fails on such a page.
+  2. Drop it, tags and content. Content is lost silently.
+  3. Write the HTML as literal text (`Press \<kbd>Ctrl\</kbd>+C.`): the characters stay, no tag reaches a parser, and a reader sees what was written.
+  4. Strip the tags and keep the text between them (`Press Ctrl+C.`), which reads best but needs an HTML parser, and can't handle a `<div>` full of markup.
+- **Proposed resolution:** option 3, the conservative one (it keeps content and meets "no HTML"). Option 4 is friendlier for the inline case and is a possible refinement. Implemented now: option 3 (`SPEC-QUESTION(Q112)` in `plain/mod.rs`; inline HTML goes through the same text escaping).
+- **Affects:** `crates/tessera-emit/src/plain/`; the JSON output keeps the raw HTML as `html` nodes.
+- **Resolution:** filled in by a human.
+
+### Q113: What plain markdown shows of a widget besides its fallback and content
+
+- **Section:** SPEC §6, §9.4; content-model.md §15, decision 8
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** a project widget becomes "its plain fallback, or nothing", and content-model.md keeps wrapped content unless `plain-content = "drop"`. Not settled: (a) a widget's own title line, text primary, and attributes: `@quill-aside {tone=x}: Text` and `.Heading` above a titled widget; (b) a groupable widget (`@quill-compare`), whose arms are alternatives; (c) whether a following-block widget's bound block counts as wrapped content.
+- **Options:**
+  1. (a) Show the widget's title and primary as text. (b) One fallback per arm. (c) The bound block isn't content.
+  2. (a) The title, primary, and attributes are the widget's own parameters, which the fallback stands for, and aren't shown. (b) The fallback once, then the arms as labeled sections (as for `@variant`), unless `plain-content = "drop"`. (c) A block bound by `binding = "block"` is wrapped content, kept or dropped like a container's.
+- **Proposed resolution:** option 2, since the fallback is "a static string, no attribute interpolation" and stands in for the whole widget. A widget with no fallback shows only its content, so nothing is lost silently unless the model says `drop`. Implemented now: option 2 (`SPEC-QUESTION(Q113)` in `plain/mod.rs`).
+- **Affects:** `crates/tessera-emit/src/plain/`; content-model.md §15 if it should say so.
+- **Resolution:** filled in by a human.
+
+### Q114: The wording of the availability line
+
+- **Section:** SPEC §9.4
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** the spec's example, "Available: Quill Cloud (GA); self-managed (preview, 3.4+)", fixes the shape for two entries, and not the rest: an entry with no state (`cloud`), a bare version (`self-managed 3.2`), a history (`self-managed (preview 3.3, ga 3.5)`), a target that is a dimension name (`deployment`), a state with no version, and where the line goes for a page-level or heading-bound spec.
+- **Options:** for each entry: label, then in parentheses the state's display label, then `, N+` for the version where it begins.
+- **Proposed resolution:** an entry with no state is `GA` (it's generally available, SPEC §9.3); a bare version is `GA, 3.2+`; a history lists each step, `preview 3.3+, GA 3.5+`, inside one pair of parentheses; a dimension name shows the dimension's label; a state with no version shows only the state; entries are joined by `; `. The line is a paragraph of its own: under the title for page-level availability, where the `@available` line was for a heading-bound one (after the heading), and before the block for a block-bound one. State labels are the model's (`ga` is `GA` by default). Implemented now: exactly that (`SPEC-QUESTION(Q114)` in `labels.rs`).
+- **Affects:** `crates/tessera-emit/src/labels.rs`; the plain snapshots. The JSON output gives the same text as `display`.
+- **Resolution:** filled in by a human.
+
+### Q115: Labels of a group's arms, and a note with no title
+
+- **Section:** SPEC §9.4, §4.3
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** "each arm as a section with a bold label" and "labels for dimension values come from the content model's display labels". Not settled: an arm that names a value set (`{platform=cloud|on-prem}`) or several dimensions (`{deployment=cloud, pm=npm}`); and what `**Tip: …**` is when the note has no title.
+- **Proposed resolution:** the labels of one attribute's values are joined with ` / `, and several attributes with `, ` (`Quill Cloud / self-managed, npm`); a labeled arm's label is its title. A note with no title is `**Tip**` (the type's label alone). Sections are separated by blank lines, and an arm's content follows its label. Implemented now: exactly that (`SPEC-QUESTION(Q115)` in `labels.rs` and `plain/mod.rs`).
+- **Affects:** `crates/tessera-emit/src/labels.rs`, `plain/mod.rs`.
+- **Resolution:** filled in by a human.
+
+### Q116: What plain markdown loses: image attributes and table alignment
+
+- **Section:** SPEC §9.4, §5.3
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** the plain output is CommonMark. CommonMark has no place for an image's attribute block (`{width=600}`), and tables are GitHub-flavored markdown, not CommonMark. The syntax tree doesn't keep a table's column alignment (the delimiter row isn't a node).
+- **Proposed resolution:** image attributes aren't in the plain output (the JSON output has them, as `attributes`). Tables are written as GFM tables, which every markdown reader for language models handles, with every column left-aligned by default (`---`); an unmodified CommonMark parser reads one as a paragraph of text. Keeping alignment needs the parser to record it. Implemented now: exactly that (`SPEC-QUESTION(Q116)`).
+- **Affects:** `crates/tessera-emit/src/plain/`; `tessera-syntax` if alignment should be kept.
+- **Resolution:** filled in by a human.
+
+### Q117: A file where a directory goes, and the reverse, in a replaced output
+
+- **Section:** output-layout contract §4 (steps 4 and 6)
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** step 4 fails the build when "a file would be written where a directory exists, or a directory is needed where a file exists", to avoid destroying what Tessera doesn't own. It doesn't say what happens when the thing in the way is Tessera's own: the previous output wrote a *file* `a`, and this build needs a directory `a/` (a page or asset `a/b.md`); or the previous output had the directory `a/` (with files Tessera wrote) and this build writes a file `a`.
+- **Proposed resolution:** a file the previous manifest lists, in the way of a directory, is removed just before the directory is made (it's Tessera's, and the manifest already lists it, so ownership holds at every moment). A directory in the way of a file fails the build, even when every file in it is Tessera's: making that work means deleting a tree, and the contract says a directory is removed only when a build empties it. A build can then be retried after removing the directory. Implemented now: exactly that (`SPEC-QUESTION(Q117)` in `store.rs`).
+- **Affects:** `crates/tessera-emit/src/store.rs`; output-layout.md if it should say so.
+- **Resolution:** filled in by a human.
+
+### Q118: The JSON output's shape
+
+- **Section:** SPEC §9.4; phase 18, task 3
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** SPEC §9.4 says only "the resolved tree, for custom consumers", and the phase asks for a documented, versioned schema with each node's source file and span. Every choice of shape is open.
+- **Proposed resolution:** one document per page (`<path>.json`) with `schemaVersion` (`1`), the page's `path`, `route`, `title`, `frontmatter`, page `availability`, `headings`, `assets`, and `blocks`. Every block has a `type`, its `source` (file, byte `span`, first and last `lines`, and the includes it came through as `via`), and where it applies its effective `availability` below page level, its `links`, `glossary` uses, and phrase `substitutions`; inline nodes have a `span` in the block's file. Links carry their resolved `target`, with routes root-relative as the router made them (and the site origin as the page's `site`), and asset targets with the copy's path and the reference written for that page. Spans are UTF-8 byte offsets from the start of the file, and lines count from 1. The schema is in `crates/tessera-emit/README.md`. A field added later doesn't change the version; removing one or changing its meaning does.
+- **Affects:** `crates/tessera-emit/src/json.rs` and README; phase 20 if the site output shares any of it; consumers.
+- **Resolution:** filled in by a human.
+
+### Q119: `tessera build`: several builds, the site output, and routes
+
+- **Section:** SPEC §8.2, §9.1; phase 18, task 6
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** (a) "A build MUST fail on errors", and `tessera build` builds every build by default, but the spec doesn't say whether one build's errors stop the others, or how a diagnostic that appears in every build is shown. (b) `--emit site` names an output phase 20 builds. (c) Phase 12's resolution needs a router; phase 20 supplies Astro's.
+- **Proposed resolution:** (a) The checks run for every selected build, before anything is written, and their diagnostics are shown once each (a file-level diagnostic isn't repeated per build), in the same format as `tessera check`, on standard output, so the report of `tessera check` and `tessera build` is identical. If any build has errors, nothing is written for any build (exit code 1). Progress and warnings go to standard error. (b) `--emit site` is refused with exit code 2 until phase 20, and the default is `plain,json`. (c) `DefaultRouter::from_consumer` until phase 20; the plain output's links then come from the `[consumer]` base path and trailing-slash policy, which is what the `astro` profile does by default. A link the resolution couldn't resolve (an error the checks report) is written as its text if it gets to an emitter anyway. Implemented now: exactly that (`SPEC-QUESTION(Q119)` in `commands/build.rs`).
+- **Affects:** `crates/tessera-cli/src/commands/build.rs`; phase 14 (`check_project`, whose per-build diagnostics this merges), phase 20.
+- **Resolution:** filled in by a human.
+
+### Q120: The missing-site-origin warning has no registry entry
+
+- **Section:** content-model.md decision 10; SPEC §8.2
+- **Raised by:** phase 18
+- **Status:** open
+- **Ambiguity:** without `[consumer] site`, plain-markdown links are root-relative "and `tessera build` warns". SPEC §8.2's table and the diagnostics registry have no row for this, and it isn't about a source location. Registry entries need a code, and the checks are the same across the command line and the editor.
+- **Proposed resolution:** the warning is the build's own message on standard error (`warning: [consumer] site isn't set …`), printed once per build run when the plain output is written, and not a diagnostic (it has no location in a source file, doesn't change the exit code, and isn't part of `tessera check`). If it should be a registry warning (`model-consumer-site-missing`, at the `[consumer]` table, reported only by `tessera build --emit plain`), that's the human's to approve. Implemented now: the message (`SPEC-QUESTION(Q120)` in `plain/mod.rs`).
+- **Affects:** `crates/tessera-emit/src/plain/mod.rs`; the registry if the human prefers a diagnostic.
+- **Resolution:** filled in by a human.

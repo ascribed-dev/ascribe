@@ -1,0 +1,102 @@
+---
+source: crates/tessera-emit/tests/quill.rs
+expression: text
+---
+# Install the Quill agent
+
+Available: Quill Cloud (GA); self-managed (preview, 3.3+)
+
+The Quill agent watches your docs repository and syncs changes to Quill. This page covers installing the agent with a package manager, configuring it, and connecting it to Quill Cloud or a self-managed server. If you only want to try Quill, see [Try Quill in the browser](https://docs.quill.dev/quickstart/#try-in-browser).
+
+> **Tip: Try it without installing**
+>
+> You can run Quill in the browser at play.quill.dev with no local setup.
+
+## Prerequisites
+
+Before you install the agent, make sure you have:
+
+- Node.js 20 or later.
+- A docs repository that Quill can read.
+
+![Checklist of prerequisites](./_fragments/prerequisites.png)
+
+## Install the agent
+
+1. Install the agent package:
+
+   **npm**
+
+   ```shell
+   npm install -g @quill/agent
+   ```
+
+   **pnpm**
+
+   ```shell
+   pnpm add -g @quill/agent
+   ```
+
+   **Yarn**
+
+   ```shell
+   yarn global add @quill/agent
+   ```
+
+2. Verify the install:
+
+   ```shell
+   quill --version
+   ```
+
+   The command prints the installed version, 3.4.1.
+
+   > **Note**
+   >
+   > The agent needs write access to your repository's `.quill/` directory.
+
+3. Create `quill.yaml` at the root of your repository:
+
+   ```yaml
+   agent:
+     version: 3.4.1
+     watch: docs/
+   ```
+
+## Connect to Quill
+
+**Quill Cloud**
+
+Sign in to Quill Cloud and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
+
+```yaml
+cloud:
+  api_key: ${QUILL_KEY}
+```
+
+**self-managed**
+
+Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.
+
+```yaml
+server:
+  url: https://quill.internal.example.com
+```
+
+## Streaming sync
+
+Available: Quill Cloud (GA); self-managed (preview, 3.4+)
+
+Streaming sync pushes changes as you save, instead of on each commit.
+
+Quill Cloud's streaming sync is enabled by default for new Quill Cloud-hosted workspaces.
+
+For event formats, see the [streaming API reference](https://api.quill.dev/v3/streaming).
+
+## Troubleshooting
+
+> **Warning**
+>
+> If the agent exits immediately, check the log at `~/.quill/agent.log`.
+>
+> A common cause is an expired API key. Generate a new key, then restart the agent. See [Rotate keys](https://docs.quill.dev/keys/#rotate-keys).
