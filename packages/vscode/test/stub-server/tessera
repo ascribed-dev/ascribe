@@ -1,0 +1,114 @@
+#!/usr/bin/env node
+// A stand-in for `tessera`, for testing the extension's client without the real
+// language server. `tessera --version` reports a version, and `tessera lsp`
+// speaks just enough LSP to exercise the client:
+//
+//  - a warning on every line of a markdown file that contains "TODO", for open
+//    documents (from their buffers) and for the rest of the project (read from
+//    disk at start-up and whenever a watched file changes);
+//  - a crash (exit code 1) on any file that contains "CRASH".
+//
+// It asks the client to watch `**/*.md` with a dynamic registration, as the
+// real server does (phase 15), so the tests cover on-disk changes.
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import lsp from "vscode-languageserver/node.js";
+
+const {
+  createConnection,
+  DiagnosticSeverity,
+  DidChangeWatchedFilesNotification,
+  FileChangeType,
+  TextDocuments,
+  TextDocumentSyncKind,
+} = lsp;
+import { TextDocument } from "vscode-languageserver-textdocument";
+
+if (process.argv[2] === "--version") {
+  console.log("tessera 0.0.0 (stub)");
+  process.exit(0);
+}
+if (process.argv[2] !== "lsp") {
+  console.error("usage: tessera lsp");
+  process.exit(2);
+}
+
+const connection = createConnection(process.stdin, process.stdout);
+const documents = new TextDocuments(TextDocument);
+let roots = [];
+
+function diagnose(text) {
+  if (text.includes("CRASH")) process.exit(1);
+  const diagnostics = [];
+  text.split("\n").forEach((line, row) => {
+    const column = line.indexOf("TODO");
+    if (column >= 0) {
+      diagnostics.push({
+        severity: DiagnosticSeverity.Warning,
+        range: {
+          start: { line: row, character: column },
+          end: { line: row, character: column + 4 },
+        },
+        message: "stub: TODO found",
+        source: "tessera-stub",
+        code: "stub-todo",
+      });
+    }
+  });
+  return diagnostics;
+}
+
+function publish(uri, text) {
+  void connection.sendDiagnostics({ uri, diagnostics: diagnose(text) });
+}
+
+function markdownFiles(dir) {
+  const found = [];
+  for (const name of readdirSync(dir)) {
+    if (name === "node_modules" || name.startsWith(".")) continue;
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) found.push(...markdownFiles(path));
+    else if (name.endsWith(".md")) found.push(path);
+  }
+  return found;
+}
+
+function publishFromDisk(uri) {
+  if (documents.get(uri)) return; // an open buffer wins over the file
+  try {
+    publish(uri, readFileSync(fileURLToPath(uri), "utf8"));
+  } catch {
+    void connection.sendDiagnostics({ uri, diagnostics: [] }); // deleted
+  }
+}
+
+connection.onInitialize((params) => {
+  roots = (params.workspaceFolders ?? []).map((folder) => fileURLToPath(folder.uri));
+  return { capabilities: { textDocumentSync: TextDocumentSyncKind.Incremental } };
+});
+
+connection.onInitialized(() => {
+  void connection.client.register(DidChangeWatchedFilesNotification.type, {
+    watchers: [{ globPattern: "**/*.md" }, { globPattern: "**/tessera.toml" }],
+  });
+  for (const root of roots) {
+    for (const file of markdownFiles(root)) publishFromDisk(pathToFileURL(file).toString());
+  }
+});
+
+connection.onDidChangeWatchedFiles(({ changes }) => {
+  for (const change of changes) {
+    if (!change.uri.endsWith(".md")) continue;
+    if (change.type === FileChangeType.Deleted) {
+      void connection.sendDiagnostics({ uri: change.uri, diagnostics: [] });
+    } else {
+      publishFromDisk(change.uri);
+    }
+  }
+});
+
+documents.onDidChangeContent(({ document }) => publish(document.uri, document.getText()));
+documents.onDidClose(({ document }) => publishFromDisk(document.uri));
+documents.listen(connection);
+connection.listen();

@@ -32,3 +32,28 @@ jobs:
       - run: pnpm -r lint
       - run: pnpm -r typecheck
       - run: pnpm -r test
+
+  # The VS Code extension's integration tests run in a real VS Code, against a
+  # stub server, and against the real `tessera lsp` on a copy of examples/quill.
+  vscode:
+    name: VS Code extension integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build -p tessera-cli --locked
+      - uses: actions/cache@v4
+        with:
+          path: packages/vscode/out/vscode-test
+          key: vscode-test-${{ runner.os }}
+      # VS Code needs a display; xvfb provides a virtual one.
+      - run: xvfb-run -a pnpm --filter tessera-vscode test:integration
+        env:
+          TESSERA_BIN: ${{ github.workspace }}/target/debug/tessera

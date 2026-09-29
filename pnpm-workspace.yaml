@@ -1,3 +1,7 @@
 packages:
   - packages/*
   - tests/zod
+# esbuild ships its binary in a per-platform package; its postinstall script
+# only swaps in a faster launcher, so it need not run.
+allowBuilds:
+  esbuild: false
