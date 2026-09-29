@@ -1503,76 +1503,76 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §8.2 (content model rows), §10
 - **Raised by:** phase 15
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** `tessera check` stops on a model with errors (exit code 2, Q58). An editor session can't stop: the author is typing the model, and it's invalid at most keystrokes. The spec doesn't say what the editor reports for the rest of the project meanwhile.
 - **Options:** (1) Keep the last model that loaded, keep checking the sources with it, and report the model's problems on `tessera.toml`. (2) Stop reporting anything for the sources until the model loads. (3) Report the sources with an empty model (every widget and phrase unknown), which floods the project with false positives.
 - **Proposed resolution:** option 1, implemented: the model's own problems (with its warnings, as `tessera check` lists them) are published on `tessera.toml`; every other file's diagnostics stay those of the last model that loaded, and update again as soon as one loads. A project whose model has never loaded has no source diagnostics; it loads when the model does.
 - **Affects:** `crates/tessera-lsp/src/core.rs` (`sync_model`), the README.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: a `tessera.toml` that stops loading keeps the last model that loaded in use, and the model's problems are reported as diagnostics on `tessera.toml`. Language-server behavior, not language: no SPEC change.
 
 ### Q132: More than one project in a workspace
 
 - **Section:** SPEC §10; PLAN.md, Editor integration
 - **Raised by:** phase 15
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** the phase says to find "the project's `tessera.toml` from the workspace folders". A workspace can have several folders, and a folder can hold several projects (a monorepo).
 - **Options:** (1) One server serves one project: the first `tessera.toml` found, looking at each folder and its parents in order, then a few levels below each folder. (2) One project per workspace folder. (3) One project per `tessera.toml` found.
 - **Proposed resolution:** option 1, implemented (the chosen path is logged to standard error when there are several folders); the extension can start one server per folder for options 2 and 3, which needs no server change. Folders added later (`workspace/didChangeWorkspaceFolders`) aren't followed.
 - **Affects:** `crates/tessera-lsp/src/core.rs` (`find_config`); phase 17.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, for now: one server serves the first project it finds in the workspace. Serving several projects can come later. Language-server behavior, not language: no SPEC change.
 
 ### Q133: A source file that becomes unreadable while the server runs
 
 - **Section:** SPEC §8.2 (Files: a source file that can't be read, or isn't valid UTF-8)
 - **Raised by:** phase 15
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** at load, an unreadable source is reported as `source-unreadable` and the rest is checked (Q52). `tessera_resolve::IncrementalProject` has no change for "this file exists but can't be read": `Change::Edited` needs text, and a file that stops being valid UTF-8 (or is created that way) can't give it.
 - **Options:** (1) Treat it as deleted until it's readable again, and log it. (2) Add a change to phase 13's API that records an unreadable source, so the editor reports `source-unreadable` as `tessera check` does. (3) Keep the last readable text.
 - **Proposed resolution:** option 2 is right in the end (the editor and the command line then agree), and needs an additive `Change` in `tessera-resolve`; option 1 is implemented until then: a file that becomes unreadable is treated as deleted (its diagnostics are cleared and links to it break), and logged to standard error. A file that is unreadable when the project loads is reported as `tessera check` does, which the parity test covers.
 - **Affects:** `crates/tessera-lsp/src/core.rs` (`collect_present`); `tessera-resolve`'s `Change`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: option 1, as an interim only: a source that becomes unreadable while the server runs is treated as deleted. **Follow-up (not yet scheduled):** add an additive "unreadable" `Change` to `tessera_resolve::IncrementalProject::apply` (option 2), so the editor reports `source-unreadable` on the file, as `tessera check` does (Q52), instead of clearing its diagnostics and breaking the links to it. Language-server behavior, not language: no SPEC change.
 
 ### Q134: What the editor reports for content no build publishes
 
 - **Section:** SPEC §8.1, §10
 - **Raised by:** phase 15
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** §8.1 checks content that no build publishes, as if one build kept everything, and reports its problems as belonging to no build (Q101). §10 wants the diagnostics of §8 as the author types, and the content model has one `[editor] build`. `check_project` for that build doesn't run the pass over unpublished content (`check_all_builds` does).
 - **Options:** (1) The editor reports the editor build's diagnostics only, as `tessera check --build <editor build>` does. (2) It also reports the unpublished-content problems, as plain `tessera check` does. (3) It reports every build's diagnostics.
 - **Proposed resolution:** option 1, implemented, because the phase says to compute the editor's build with `check_project` and the parity test compares with `tessera check --build <name>`. A problem that only shows in another build, or in content no build publishes, appears in `tessera check` and `tessera build`, not in the editor. Option 2 is a one-line change (`check_all_builds` for the editor build's pages plus the unpublished pass) if the human wants it.
 - **Affects:** `crates/tessera-lsp/src/compute.rs`; the parity test.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: the editor reports its own build (`[editor] build`) only, not content that no build publishes; `tessera check` covers that. Language-server behavior, not language: no SPEC change.
 
 ### Q135: Which files the server follows
 
 - **Section:** SPEC §2.1, §10; asset contract §1
 - **Raised by:** phase 15
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** the editor and the file watcher report every file, not only the project's. The spec says which files are sources (Q52) and which files a reference can name (asset contract, boundary), not which events a server should act on.
 - **Options:** act on every event under the workspace; or only on files that can matter: sources, and files a reference can probe (inside the project root or content root, outside the output directory).
 - **Proposed resolution:** the second, implemented: a document that isn't a `file:` URI, isn't `tessera.toml`, and isn't a source or under the project root is ignored (no tokens, no diagnostics); events under `.git`, `.hg`, and `node_modules` are ignored; other files under the project root are assets, whose appearing and disappearing re-checks the references to them. Assets outside the project root and content root can't be named by a reference, so they aren't watched. The watcher is registered as `**/*` and filtered by the server.
 - **Affects:** `crates/tessera-lsp/src/core.rs` (`classify`, `IGNORED_DIRS`).
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: the server follows `file:` documents that are `tessera.toml`, sources, or under the project root; it ignores events under `.git`, `.hg`, and `node_modules`; other files under the project root are assets. Language-server behavior, not language: no SPEC change.
 
 ### Q136: Diagnostics of files that aren't open
 
 - **Section:** SPEC §10; phase 15 task 4
 - **Raised by:** phase 15
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** the phase says diagnostics are published for every affected file, including ones that aren't open, and cleared for deleted files. It doesn't say what closing a file does to its diagnostics, or whether files nobody has opened get any at load.
 - **Options:** (1) Diagnostics are the project's: published for every file at load and kept when a file closes, so the Problems panel shows the whole project. (2) Only open files and files an open file's change affects have them; closing clears. 
 - **Proposed resolution:** option 1, implemented: at load every file with diagnostics gets a publication (a file with none gets nothing), a closed file keeps its diagnostics, and a publication is skipped when nothing changed since the last one for that file and version. A large project with thousands of problems publishes them all at startup; an extension setting could limit that to open files, which needs no server change to the checks.
 - **Affects:** `crates/tessera-lsp/src/core.rs` (`publish`, `did_close`).
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: at load every file with diagnostics gets a publication, a closed file keeps its diagnostics, and a publication is skipped when nothing changed for that file and version. Language-server behavior, not language: no SPEC change.
 
 ### Q137: The page-level checks are whole-project on every keystroke
 
 - **Section:** PLAN.md, Performance targets ("language server responses on a keystroke within about 50 ms"); phase 15 acceptance criteria
 - **Raised by:** phase 15
-- **Status:** open (implemented in phase 15, awaiting resolution)
+- **Status:** resolved (2026-09-29) (implemented in phase 15, awaiting resolution)
 - **Ambiguity:** not a spec question, an architecture one that needs a human's decision because it crosses a phase's ownership. `tessera_check::PageChecker::new` indexes the whole project from source texts, and `check` resolves every page of the build, so page-level diagnostics cost O(project) per keystroke. The file-level checks are incremental already (`check_file` for the files in `Affected::recheck`). Phase 15's brief keeps changes to `tessera-check` to the `FileSystem` constructor, so the server can't hand the page checks the incremental index it already has.
 - **Options:** (1) Leave it: the keystroke latency is under 50 ms up to about 300 pages and grows linearly after (`cargo bench -p tessera-lsp --bench keystroke`; the numbers are in the handoff notes). (2) An additive change in `tessera-check`'s `page/` module (phase 14's): `PageChecker` built from a `tessera_resolve::Snapshot`'s index, and a check of only the pages in `Affected::re_resolve`, with `ResolvedCache` supplying resolved pages. Every diagnostic and its place stay as they are; the parity and differential tests hold it to that.
 - **Proposed resolution:** option 2.
 - **Implemented now:** option 2, approved by the repository owner in the review of the phase 15 pull request. `tessera_check::PageChecker::with_index` (a checker over a caller's index) and `PageChecker::check_resolved` (the diagnostics of given resolved pages) are additive; `check_project`, `check_builds`, `check_all_builds`, `check_pages`, and `PageChecker::new`/`check` are unchanged. The server checks the pages that can have a diagnostic located in a file of the round, over its snapshot's index and a `ResolvedCache`. Keystroke latency at 3,000 pages: about 3 ms for a page, 9 ms for a fragment with 30 includers (`cargo bench -p tessera-lsp --bench keystroke`).
 - **Affects:** `crates/tessera-check/src/page/` (`bridge.rs`, `mod.rs`); `crates/tessera-lsp/src/compute.rs`; phase 26.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: implemented in phase 15 after review: `PageChecker::with_index` over the snapshot's index checks only the pages a round can affect, with a `ResolvedCache` updated from each `Affected`. A keystroke publishes in about 3 ms (page) and 9 ms (fragment) at 3,000 pages, from 501 ms before. `check_project`, `check_builds`, and `check_all_builds` are unchanged. Language-server behavior, not language: no SPEC change.

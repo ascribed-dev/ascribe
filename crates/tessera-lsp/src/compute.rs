@@ -218,7 +218,7 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
     // fragment). Their resolved forms come from the cache, which first forgets
     // what the updates since the last round affected; the checks read the
     // snapshot's own index. Keeping what's located in the files of the round.
-    // SPEC-QUESTION(Q134): only the editor's build, not content no build
+    // Resolved Q134: only the editor's build, not content no build
     // publishes.
     let build = job.model.editor_default_build().clone();
     let mut pages: BTreeSet<RelPath> = BTreeSet::new();

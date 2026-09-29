@@ -32,7 +32,7 @@ use crate::uri::{normalize, path_to_uri, relative_to, uri_to_path};
 /// The content model's file name, at the project root.
 const MODEL_FILE: &str = "tessera.toml";
 
-// SPEC-QUESTION(Q135): which files the server follows.
+// Resolved Q135: which files the server follows.
 /// Directories nothing in a documentation set lives in, whose changes are
 /// ignored.
 const IGNORED_DIRS: [&str; 3] = [".git", "node_modules", ".hg"];
@@ -233,7 +233,7 @@ impl Core {
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
         match tessera_model::load_str_in(&text, FileId::new(0), &root) {
             Err(issues) => {
-                // SPEC-QUESTION(Q131): the project keeps the last model that
+                // Resolved Q131: the project keeps the last model that
                 // loaded, and the problems go on `tessera.toml`.
                 self.model_problem = Some(ModelProblem {
                     text,
@@ -487,7 +487,7 @@ impl Core {
                         mirror.push((project, true));
                     }
                     Err(e) => {
-                        // SPEC-QUESTION(Q133): not readable as UTF-8, which the
+                        // Resolved Q133, as an interim (see its follow-up): not readable as UTF-8, which the
                         // project can't hold after it's loaded, so it counts as
                         // gone.
                         self.log(&format!("can't read {}: {e}", path.display()));
@@ -654,7 +654,7 @@ impl Core {
         self.publish(&config, lsp);
     }
 
-    // SPEC-QUESTION(Q136): a closed file keeps its diagnostics.
+    // Resolved Q136: a closed file keeps its diagnostics.
     /// Publishes a file's diagnostics when they, or the version of the document
     /// they're for, changed since the last time.
     pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
@@ -717,7 +717,7 @@ impl Core {
     }
 }
 
-// SPEC-QUESTION(Q132): one project per server.
+// Resolved Q132: one project per server.
 /// The nearest `tessera.toml` at or above a workspace folder; failing that,
 /// the first one below a folder (a few levels down, skipping hidden and
 /// dependency directories).
