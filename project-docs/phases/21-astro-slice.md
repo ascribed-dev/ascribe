@@ -4,7 +4,7 @@
 
 ## Goal
 
-Prove the whole pipeline in a real Astro site as early as possible, with the smallest integration that works. The full editor experience (phase 16 onward) waits for this slice, because the integration failures it catches, such as asset paths, heading ids, and partial variant selection, are the ones snapshot tests of Tessera's own output miss.
+Prove the whole pipeline in a real Astro site as early as possible, with the smallest integration that works. The full editor experience (phase 16 onward) waits for this slice, because the integration failures it catches, such as asset paths, heading ids, and partial variant selection, are the ones snapshot tests of Ascribe's own output miss.
 
 ## Read first
 
@@ -22,11 +22,11 @@ Prove the whole pipeline in a real Astro site as early as possible, with the sma
 ## Tasks
 
 1. **Minimal integration.** `@ascribed/astro`:
-   - Runs `tessera build --emit site` for a configured build before Astro loads content. For this phase, it uses the locally built binary; npm distribution is phase 22.
+   - Runs `ascribe build --emit site` for a configured build before Astro loads content. For this phase, it uses the locally built binary; npm distribution is phase 22.
    - Writes the generated Zod schema (phase 20), and exports a helper that defines the content collection over the build output with that schema.
    - Registers a markdown plugin implementing the site-render contract (heading ids and image attributes), so Astro keeps its own heading and table-of-contents handling. The plugin must pass every `tests/render/` fixture, the same fixtures phase 20's renderer passes.
-   - Loads `@ascribed/elements` (script and CSS) on pages that render Tessera content.
-   - Fails the Astro build when Tessera reports errors.
+   - Loads `@ascribed/elements` (script and CSS) on pages that render Ascribe content.
+   - Fails the Astro build when Ascribe reports errors.
 2. **Sample site.** `examples/astro-site`: a layout that renders a page, its availability badge from frontmatter, and the elements.
 3. **The slice's content.** A small project in the sample site covering exactly the risky integrations:
    - a page that includes a fragment whose image sits beside the fragment;
@@ -39,7 +39,7 @@ Prove the whole pipeline in a real Astro site as early as possible, with the sma
 
 - [ ] The Astro plugin passes every `tests/render/` fixture.
 - [ ] The end-to-end test passes in CI on Linux, checking each item in task 3.
-- [ ] Heading ids in the built HTML match the page ids `tessera check` validated.
+- [ ] Heading ids in the built HTML match the page ids `ascribe check` validated.
 
 ## Out of scope
 
@@ -54,7 +54,7 @@ Prove the whole pipeline in a real Astro site as early as possible, with the sma
 ### What was built
 
 - **`packages/astro`** (`@ascribed/astro`, private): the integration (`src/index.ts`), `ascribeCollection` (`src/content.ts`, exported as `@ascribed/astro/content`), the `<Elements />` component (`src/Elements.astro`), and the markdown plugin. The plugin is `src/attributes.ts` (the site-render contract's rules, once, as a pure function from a hast tree to a list of edits) with an adapter for each of Astro's markdown processors: `src/rehype.ts` (unified) and `src/satteri.ts` (Sätteri). Also `src/project.ts` (reads `ascribe.toml`; checks routing agreement), `src/binary.ts`, `src/run.ts`, and `src/files.ts` (`_ascribe/files/`). `packages/astro/README.md` documents the interface. `dist/` is git-ignored: `pnpm --filter @ascribed/astro build` (and `--filter @ascribed/elements build`) first.
-- **`examples/astro-site`**: a plain Astro site over a small Tessera project (`ascribe.toml`, `content/`) with the four risky integrations of task 3, `base: "/docs"`, `trailingSlash: "never"`. Its README maps each risk to where it is.
+- **`examples/astro-site`**: a plain Astro site over a small Ascribe project (`ascribe.toml`, `content/`) with the four risky integrations of task 3, `base: "/docs"`, `trailingSlash: "never"`. Its README maps each risk to where it is.
 - **The end-to-end test**, `examples/astro-site/test/e2e/` (`pnpm --filter @ascribed/example-astro-site test:e2e`), and a manual-dispatch job for it, `astro`, in `.github/workflows/js.yml` (which stays `workflow_dispatch` only).
 - **Questions Q151 to Q155** (below). No Rust changes.
 
@@ -95,14 +95,14 @@ Q151 (a hast plugin for both processors), Q152 (finding the binary), Q153 (`<Ele
 
 Also:
 
-- **The e2e tests build copies of the site under `examples/astro-site/.e2e-tmp/`** (git-ignored, removed afterwards) for the failure and variant cases, so they resolve the same `node_modules`. They run one file at a time (`fileParallelism: false`): the copies and the site share Tessera's locked output directory.
+- **The e2e tests build copies of the site under `examples/astro-site/.e2e-tmp/`** (git-ignored, removed afterwards) for the failure and variant cases, so they resolve the same `node_modules`. They run one file at a time (`fileParallelism: false`): the copies and the site share Ascribe's locked output directory.
 - **`pnpm test` in the example runs nothing** (`--passWithNoTests`); `test:e2e` is separate because it needs a built compiler and a browser, so the `check` job's `pnpm -r test` still needs neither.
 - **The example has its own `eslint.config.js`** that adds `.astro/`, `.ascribe/`, and `.e2e-tmp/` to the workspace's ignores. `examples/` is outside Prettier's scope (`.prettierignore`), as the other examples are.
 - **The generated `_ascribe/schema.ts` is imported by `content.config.ts` by path**, so it has to exist when Astro loads the config; the integration builds first, in `astro:config:setup`, which is before that.
 
 ### How the end-to-end test was run
 
-Locally, in this container, with Chromium at `/opt/pw-browsers/chromium` (no `ASCRIBE_CHROMIUM` set), Node 22.22, and a debug `tessera` from `cargo build -p tessera-cli`:
+Locally, in this container, with Chromium at `/opt/pw-browsers/chromium` (no `ASCRIBE_CHROMIUM` set), Node 22.22, and a debug `ascribe` from `cargo build -p tessera-cli`:
 
 ```sh
 cargo build -p tessera-cli
@@ -124,7 +124,7 @@ See the pull request for the status and evidence of each.
 ### Left open
 
 - **Q151 to Q155.**
-- **Dev-mode rebuilds** (phase 22): in `astro dev`, editing a `.md` source doesn't re-run `tessera build`.
+- **Dev-mode rebuilds** (phase 22): in `astro dev`, editing a `.md` source doesn't re-run `ascribe build`.
 - **The binary from npm** (phase 22).
 - **A mismatch between the two sides' `output-dir`**: the site imports the schema from a path that repeats `[project] output-dir` (`../.ascribe/build/site/site/_ascribe/schema.ts`), while the integration reads it from `ascribe.toml`. A project with another output directory changes both. A helper could re-export the schema from the virtual module if a site wants a single place.
 - **`astro check`** isn't run: `typecheck` for the example covers `test/` only, since `src/content.config.ts` needs Astro's generated types (`astro sync`), which need the compiler.

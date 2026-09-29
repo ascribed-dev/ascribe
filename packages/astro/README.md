@@ -1,6 +1,6 @@
 # @ascribed/astro
 
-The Astro integration for Tessera: phase 21's slice, written against **Astro 7.3.5**. Private, like every package here; phase 22 completes and publishes it.
+The Astro integration for Ascribe: phase 21's slice, written against **Astro 7.3.5**. Private, like every package here; phase 22 completes and publishes it.
 
 It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with the generated Zod schema, applies the site output's attribute markers (heading ids and image attributes) so Astro keeps its own heading, table-of-contents, and image handling, loads the element library, and serves the files pages link to.
 
@@ -27,7 +27,7 @@ import { schema } from "../.ascribe/build/site/site/_ascribe/schema.ts";
 export const collections = { docs: defineCollection(ascribeCollection({ schema })) };
 ```
 
-The site imports `schema` from the generated file by path, so `output-dir` and the build name appear there as well as in `ascribe.toml` and the integration's options. That is a deliberate trade-off: Vite compiles the TypeScript file where it is, so the site keeps the schema's exact inferred types (`z.infer` of each content type). A `virtual:tessera/schema` that re-exported it would name the path in one place but hide those types behind a virtual module. A project with another `output-dir` changes both lines. (Q155.)
+The site imports `schema` from the generated file by path, so `output-dir` and the build name appear there as well as in `ascribe.toml` and the integration's options. That is a deliberate trade-off: Vite compiles the TypeScript file where it is, so the site keeps the schema's exact inferred types (`z.infer` of each content type). A `virtual:ascribe/schema` that re-exported it would name the path in one place but hide those types behind a virtual module. A project with another `output-dir` changes both lines. (Q155.)
 
 ```astro
 ---
@@ -39,7 +39,7 @@ import Elements from "@ascribed/astro/Elements.astro";
 
 ## Routes
 
-`AstroRouter` (`crates/tessera-resolve/src/astro.rs`) computes every link Tessera writes, and the site's page route must publish each entry at exactly that URL:
+`AstroRouter` (`crates/tessera-resolve/src/astro.rs`) computes every link Ascribe writes, and the site's page route must publish each entry at exactly that URL:
 
 - the entry id is Astro's own (`guides/my-setup` for `Guides/My Setup.md`);
 - the route is `base` plus the id;
@@ -58,7 +58,7 @@ import Elements from "@ascribed/astro/Elements.astro";
 ## What it does
 
 - **Fails the Astro build** when `ascribe build` reports errors (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` (`site`, `base-path`, `trailing-slash`) disagrees with Astro's `site`, `base`, and `trailingSlash` (Q154).
-- **Adds the markdown plugin** to Astro's markdown processor: `satteriAscribeAttributes` to the default Sätteri processor's `hastPlugins`, or `rehypeTesseraAttributes` to a `unified()` processor's `rehypePlugins` (Q151). Both are exported (`@ascribed/astro/satteri`, `@ascribed/astro/rehype`) for a processor you configure yourself. Any other processor is an error.
+- **Adds the markdown plugin** to Astro's markdown processor: `satteriAscribeAttributes` to the default Sätteri processor's `hastPlugins`, or `rehypeAscribeAttributes` to a `unified()` processor's `rehypePlugins` (Q151). Both are exported (`@ascribed/astro/satteri`, `@ascribed/astro/rehype`) for a processor you configure yourself. Any other processor is an error.
 - **Serves `_ascribe/files/`** at `<base>/_ascribe/files/`: copied into the build output in `astro:build:done`, and served by a dev-server middleware.
 
 Dev-mode rebuilds (re-running `ascribe build` when a source changes) and npm distribution of the binary are phase 22's.

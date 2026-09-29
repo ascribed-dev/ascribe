@@ -48,7 +48,7 @@ describe("the built site", () => {
     }
   });
 
-  it("follows links that only work if Tessera's routes are Astro's", async () => {
+  it("follows links that only work if Ascribe's routes are Astro's", async () => {
     const page = await open(BASE);
     // `[setting up Loom](<Guides/My Setup.md>)`: a slugged, lower-cased entry id.
     await page.getByRole("link", { name: "setting up Loom" }).click();
@@ -166,7 +166,7 @@ describe("the built site", () => {
     await page.close();
   });
 
-  it("gives every heading the id Tessera validated, at the route Tessera computed", async () => {
+  it("gives every heading the id Ascribe validated, at the route Ascribe computed", async () => {
     // `ascribe build --emit json` records each page's route and heading ids.
     const binary = process.env["ASCRIBE_BIN"] ?? findWorkspaceBinary();
     execFileSync(binary, ["build", "--build", "site", "--emit", "json", "--color", "never"], {

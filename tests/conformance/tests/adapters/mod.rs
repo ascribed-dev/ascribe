@@ -1,4 +1,4 @@
-//! Adapters that connect the conformance harness to the Tessera crates.
+//! Adapters that connect the conformance harness to the Ascribe crates.
 //!
 //! Each implementation phase adds a module here (or
 //! extends an existing one), registers it below, and removes the skip entries

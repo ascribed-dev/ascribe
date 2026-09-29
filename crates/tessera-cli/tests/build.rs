@@ -296,7 +296,7 @@ fn removing_a_page_removes_its_old_output_and_leaves_users_files() {
     assert_eq!(read(&built.join("cloud/plain/notes.txt")), "my notes");
     assert_eq!(read(&built.join("cloud/plain/g/mine.md")), "my file");
     assert_eq!(read(&built.join("README.md")), "about this directory");
-    // `g/` held only Tessera's file in the site build, so it's gone there; it still holds the user's in cloud.
+    // `g/` held only Ascribe's file in the site build, so it's gone there; it still holds the user's in cloud.
     assert!(!built.join("site/plain/g").exists());
     assert!(built.join("cloud/plain/g").is_dir());
 }
@@ -339,7 +339,7 @@ fn a_users_file_where_the_build_writes_fails_it_without_touching_anything() {
     let out = tessera(dir.path(), &["build", "--build", "cloud"]);
     assert_eq!(code(&out), 2);
     assert!(
-        stderr(&out).contains("isn't a file Tessera wrote"),
+        stderr(&out).contains("isn't a file Ascribe wrote"),
         "{}",
         stderr(&out)
     );

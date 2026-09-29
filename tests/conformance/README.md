@@ -1,6 +1,6 @@
 # Conformance suite
 
-This directory holds Tessera's conformance cases and the harness that runs them. A case pairs Tessera source with what a conforming processor must produce from it: the parsed structure, the diagnostics, and per-build results. The cases are written by hand from [SPEC.md](../../SPEC.md), not from any implementation, so they're an independent check.
+This directory holds Ascribe's conformance cases and the harness that runs them. A case pairs Ascribe source with what a conforming processor must produce from it: the parsed structure, the diagnostics, and per-build results. The cases are written by hand from [SPEC.md](../../SPEC.md), not from any implementation, so they're an independent check.
 
 Phase 00 defined the format and the harness. Phase 03 writes the cases. Every implementation phase connects its crate through an adapter and removes the skip entries for what it now handles.
 
@@ -35,7 +35,7 @@ tests/conformance/
   src/               the harness library (crate tessera-conformance)
   tests/
     conformance.rs   the runner
-    adapters/        adapters connecting the harness to the Tessera crates
+    adapters/        adapters connecting the harness to the Ascribe crates
     harness.rs       tests of the harness itself, with fixtures in fixtures/
 ```
 
@@ -124,11 +124,11 @@ A case must expect at least one of `outline`, `diagnostics`, `builds`, or `forma
 
 ### Tags
 
-Tags route a case to adapters and let a runner select cases. **Area tags** name the part of Tessera a case exercises. A case can carry several; it runs only when every one of its area tags is handled by an adapter.
+Tags route a case to adapters and let a runner select cases. **Area tags** name the part of Ascribe a case exercises. A case can carry several; it runs only when every one of its area tags is handled by an adapter.
 
 | Tag | Covers | Implemented in |
 |---|---|---|
-| `parser` | Tessera-line recognition, directive heads, attributes, primaries (§3.1–§3.4) | 05 |
+| `parser` | Ascribe-line recognition, directive heads, attributes, primaries (§3.1–§3.4) | 05 |
 | `structure` | Forms, containers, groups, titles, binding, lists and blockquotes, nesting (§3.5–§3.10, §4) | 06 |
 | `inline` | Phrases, escapes, image attribute blocks (§2.3, §5.1, §5.3) | 07 |
 | `model` | Loading and validating `ascribe.toml` (§7) | 08 |
@@ -161,7 +161,7 @@ An outline is a YAML list of blocks. Each block is a mapping with exactly one **
 
 ### What's in an outline
 
-- Every block CommonMark produces, in source order, nested the way CommonMark nests them, plus Tessera's directives and groups.
+- Every block CommonMark produces, in source order, nested the way CommonMark nests them, plus Ascribe's directives and groups.
 - Directive lines, end lines, and title lines are not blocks of their own. A directive line becomes a `directive` block (or opens a group arm); a title line becomes the `title` field of the directive below it; an end line only closes a container.
 - Not included: frontmatter, blank lines, and link reference definitions.
 - A line that looks like a directive but isn't recognized (an unknown keyword, `\@`, `@` inside code) stays whatever CommonMark makes it, usually paragraph text.
@@ -346,7 +346,7 @@ The run also fails when `SKIPS.toml` is stale: a full skip for a tag that an ada
 
 ## Adapters
 
-An adapter connects the harness to an implementation. The harness depends on no Tessera crate; adapters live in `tests/adapters/`, and `tests/adapters/mod.rs` registers them.
+An adapter connects the harness to an implementation. The harness depends on no Ascribe crate; adapters live in `tests/adapters/`, and `tests/adapters/mod.rs` registers them.
 
 ```rust
 pub trait ConformanceAdapter {

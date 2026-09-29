@@ -1,5 +1,5 @@
 // The integration's contract with Astro, beyond the happy path: it fails the
-// build on Tessera errors and on routing that disagrees with ascribe.toml, it
+// build on Ascribe errors and on routing that disagrees with ascribe.toml, it
 // serves `_ascribe/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
 import { readFile, rm, writeFile } from "node:fs/promises";
@@ -24,7 +24,7 @@ async function edit(file: string, change: (text: string) => string): Promise<voi
 }
 
 describe("the integration", () => {
-  it("fails the Astro build when Tessera reports errors", async () => {
+  it("fails the Astro build when Ascribe reports errors", async () => {
     const root = await copySite("errors");
     await edit(path.join(root, "content", "Guides", "My Setup.md"), (text) =>
       text.replace("(../index.md)", "(../missing.md)"),

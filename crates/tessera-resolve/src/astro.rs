@@ -9,7 +9,7 @@
 //! and a final `/index` removed (`getContentEntryIdAndSlug`, Astro 7.3, the
 //! version phase 20 targets). So `Guides/My Setup.md` is `guides/my-setup`
 //! and `guides/index.md` is `guides`. The regex needs the `/`, so the root
-//! `index.md` keeps the id `index`, and so does `index/index.md`. Tessera's
+//! `index.md` keeps the id `index`, and so does `index/index.md`. Ascribe's
 //! route for the id `index` is the base path (content-model.md §16: a final
 //! `index` segment is dropped), so those two pages collide, as they do in
 //! Astro. Under `trailing-slash = "never"` the base path has no trailing

@@ -4,7 +4,7 @@
 
 ## Goal
 
-Generate heading slugs exactly as the consumer does, so ids Tessera validates are the anchors the published site has. Start with a faithful port of `github-slugger`, which Astro uses.
+Generate heading slugs exactly as the consumer does, so ids Ascribe validates are the anchors the published site has. Start with a faithful port of `github-slugger`, which Astro uses.
 
 ## Read first
 

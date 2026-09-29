@@ -1,6 +1,6 @@
-# The Tessera diagnostics registry.
+# The Ascribe diagnostics registry.
 #
-# One entry for every diagnostic a Tessera processor reports: every row of
+# One entry for every diagnostic a Ascribe processor reports: every row of
 # SPEC §8.2, and every loader rule in project-docs/content-model.md §20.
 # Crates report problems by slug (tessera-core's `Issue`, whose slug constants
 # mirror this file); phase 10 maps each slug to its code, severity, and message
@@ -247,7 +247,7 @@ spec = "4.2"
 row = "`@include` | Target file doesn't exist"
 message = "the included file `{path}` doesn't exist"
 messages.case = "the included file `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
-messages.not-source = "`{path}` isn't a Tessera source file, so it can't be included: only `.md` files under the content root can"
+messages.not-source = "`{path}` isn't a Ascribe source file, so it can't be included: only `.md` files under the content root can"
 
 [[diagnostic]]
 code = "ASC022"
@@ -760,8 +760,8 @@ severity = "error"
 level = "file"
 spec = "2.1"
 rule = "20.3"
-message = "`{field}` is reserved by the Tessera spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
-messages.fragment = "`{field}` is reserved by the Tessera spec, and fragments can't use it"
+message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
+messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
 messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
 
 [[diagnostic]]
@@ -1236,7 +1236,7 @@ level = "file"
 spec = "2.1"
 row = "Files | Source file that can't be read, or isn't valid UTF-8"
 message = "this file can't be read: {reason}"
-messages.encoding = "this file isn't valid UTF-8, and Tessera reads source files as UTF-8 text; save it as UTF-8"
+messages.encoding = "this file isn't valid UTF-8, and Ascribe reads source files as UTF-8 text; save it as UTF-8"
 
 [[diagnostic]]
 code = "ASC124"

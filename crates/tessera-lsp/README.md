@@ -1,6 +1,6 @@
 # tessera-lsp
 
-The Tessera language server, run as `ascribe lsp` (LSP over stdio). It keeps a
+The Ascribe language server, run as `ascribe lsp` (LSP over stdio). It keeps a
 project in memory, follows every change to it, and publishes the diagnostics
 `ascribe check --build <editor build>` reports, as the author types. It
 computes nothing itself: every diagnostic comes from `tessera_check`, over a

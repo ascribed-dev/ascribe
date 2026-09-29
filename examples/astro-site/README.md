@@ -1,6 +1,6 @@
 # examples/astro-site
 
-A plain Astro site (no Starlight) built from a small Tessera project with `@ascribed/astro`: phase 21's end-to-end slice. Its content covers the integrations most likely to break.
+A plain Astro site (no Starlight) built from a small Ascribe project with `@ascribed/astro`: phase 21's end-to-end slice. Its content covers the integrations most likely to break.
 
 ```
 ascribe.toml                      base-path /docs/, trailing-slash never; the `site` build
@@ -22,7 +22,7 @@ test/e2e/                         the end-to-end tests
 | A heading with an explicit `@id`, and a link to it from another page | `## Weave configuration` (`@id: weave-config`), linked from `Options.md` |
 | A partial variant selection: one group reduced to one arm, another left as tabs | build `site` selects `deployment = cloud`; the `pm` group stays tabs |
 | An availability annotation | page-level `available` in the frontmatter, and `@available` on `## Streaming` |
-| Routes | links to `guides/my-setup` and to the root page, which only work if Tessera's router and Astro's agree |
+| Routes | links to `guides/my-setup` and to the root page, which only work if Ascribe's router and Astro's agree |
 
 ## Running it
 
@@ -44,6 +44,6 @@ The integration finds the binary in `target/` (or `ASCRIBE_BIN`). `test:e2e` run
 - the page and section availability badges render, with the element library's stylesheet;
 - a linked file is served at `/docs/_ascribe/files/`;
 - every heading's id, and Astro's table of contents, equal the ids in `ascribe build --emit json`, at the route the JSON gives;
-- the build fails on a Tessera error and on routing that disagrees with `ascribe.toml`; the dev server serves `_ascribe/files/`; the plugin works under `unified()` too; and the root base with trailing slashes routes correctly.
+- the build fails on a Ascribe error and on routing that disagrees with `ascribe.toml`; the dev server serves `_ascribe/files/`; the plugin works under `unified()` too; and the root base with trailing slashes routes correctly.
 
 `pnpm test` runs nothing here: the end-to-end test needs the compiler and a browser, so it has its own script (and its own job in `.github/workflows/js.yml`).

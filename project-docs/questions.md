@@ -1,5 +1,7 @@
 # Spec questions
 
+**A note on names.** The project was renamed to Ascribe on 2026-09-29. Entries before that date use the old names; they are historical record and are left as written. The short mapping: the command `tessera` is now `ascribe`; the content model `tessera.toml` is now `ascribe.toml`; the custom elements and the reserved widget prefix `tessera-…` are now `ascribe-…`; the attribute marker `<tessera-attributes>` is now `<ascribe-attributes>`; the npm scope `@tessera` is now `@ascribed`; and the diagnostic codes `TSRnnn` are now `ASCnnn`, with the same numbers.
+
 [SPEC.md](../SPEC.md) is normative, but it has gaps. This file records every place where an implementing agent found the spec ambiguous or silent, so that a human can resolve it. The protocol is in [phases/README.md](phases/README.md#when-the-spec-is-unclear):
 
 1. **Don't guess silently.** Add an entry below with the section, the ambiguity, the options, and your proposed resolution.

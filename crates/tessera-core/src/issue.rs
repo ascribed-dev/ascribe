@@ -35,7 +35,7 @@ impl fmt::Display for DiagnosticSlug {
     }
 }
 
-/// A problem found by any Tessera crate: the parser, the content-model
+/// A problem found by any Ascribe crate: the parser, the content-model
 /// loader, the checks, or resolution.
 ///
 /// An issue says *what* is wrong (its [`slug`](Issue::slug) and message

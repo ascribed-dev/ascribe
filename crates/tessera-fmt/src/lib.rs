@@ -1,9 +1,9 @@
-//! The Tessera formatter, which rewrites Tessera constructs into canonical
+//! The Ascribe formatter, which rewrites Ascribe constructs into canonical
 //! form (SPEC §8.3) and returns minimal text edits.
 //!
 //! [`format`] never re-renders the author's markdown. It works from spans in
 //! the tree `tessera_syntax::parse` returns, and edits only bytes that belong
-//! to a Tessera construct:
+//! to a Ascribe construct:
 //!
 //! - a directive line's head: the space before its attribute block, the
 //!   attribute block itself, the `:` and the space after it, and whitespace
@@ -13,7 +13,7 @@
 //! - the blank lines between a following-block directive and its block.
 //!
 //! Prose, tables, code, and every other line stay byte for byte as written.
-//! Link reference definitions aren't Tessera constructs, so the formatter
+//! Link reference definitions aren't Ascribe constructs, so the formatter
 //! never changes one: it never deletes a line that holds a definition.
 //!
 //! Each rule of SPEC §8.3 is its own function, in `head` (name, colon,

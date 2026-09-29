@@ -1,9 +1,9 @@
 //! The adapter for `tessera-syntax`: what phases 05 and 06 produce.
 //!
-//! It handles the `parser` tag (Tessera-line recognition, directive heads,
+//! It handles the `parser` tag (Ascribe-line recognition, directive heads,
 //! attributes, and primaries, SPEC §3.1–§3.4) and the `structure` tag
 //! (containers, groups, titles, binding, SPEC §3.5–§3.10, §4). Its outline
-//! is `tessera_syntax::parse`'s tree, with the Tessera nodes written by
+//! is `tessera_syntax::parse`'s tree, with the Ascribe nodes written by
 //! [`super::structure`]. Its diagnostics are the parser's own issues.
 //!
 //! Directive schemas come from the built-ins plus the widgets in the case's

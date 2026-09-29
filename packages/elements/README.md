@@ -1,6 +1,6 @@
 # @ascribed/elements
 
-The custom elements Tessera's site output uses (SPEC §9.7). They implement
+The custom elements Ascribe's site output uses (SPEC §9.7). They implement
 [CONTRACT.md](CONTRACT.md) exactly: `<ascribe-note>`, `<ascribe-steps>`,
 `<ascribe-tabs>` with `<ascribe-tab>`, `<ascribe-availability>` with
 `<ascribe-availability-target>`, and `<ascribe-group>`.

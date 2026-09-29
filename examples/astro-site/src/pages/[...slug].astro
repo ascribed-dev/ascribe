@@ -3,7 +3,7 @@ import { getCollection, render } from "astro:content";
 import Docs from "../layouts/Docs.astro";
 
 // A page's route is the base path plus its entry id, and the root page (id
-// `index`) is at the base path itself: what Tessera's router computes for
+// `index`) is at the base path itself: what Ascribe's router computes for
 // every link it writes.
 export async function getStaticPaths() {
   const entries = await getCollection("docs");

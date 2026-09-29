@@ -1,10 +1,10 @@
-//! TESSERA: checks that `FORK.md` lists every file Tessera changed, with the
+//! TESSERA: checks that `FORK.md` lists every file Ascribe changed, with the
 //! number of `// TESSERA:` markers each one has.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-/// Files that are wholly Tessera's. They have no upstream counterpart, so
+/// Files that are wholly Ascribe's. They have no upstream counterpart, so
 /// they aren't in the changed-locations table.
 const TESSERA_FILES: &[&str] = &["src/tessera.rs", "src/parser/tessera.rs"];
 

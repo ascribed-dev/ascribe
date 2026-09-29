@@ -1,6 +1,6 @@
 // Runs every fixture in tests/render/ through both markdown processors Astro
 // 7.3 can use, each with the plugin where Astro puts it (tests/render/README.md):
-// the unified pipeline with `rehypeTesseraAttributes`, and Sätteri with
+// the unified pipeline with `rehypeAscribeAttributes`, and Sätteri with
 // `satteriAscribeAttributes`. Not a full Astro build, whose image
 // optimization would replace every `src`.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -14,7 +14,7 @@ import remarkRehype from "remark-rehype";
 import remarkSmartypants from "remark-smartypants";
 import { unified } from "unified";
 import { describe, expect, it } from "vitest";
-import rehypeTesseraAttributes from "../src/rehype.js";
+import rehypeAscribeAttributes from "../src/rehype.js";
 import { satteriAscribeAttributes } from "../src/satteri.js";
 import { firstDifference } from "./html.js";
 
@@ -31,7 +31,7 @@ async function withUnified(markdown: string): Promise<string> {
     .use(remarkGfm)
     .use(remarkSmartypants)
     .use(remarkRehype, { allowDangerousHtml: true, passThrough: [] })
-    .use(rehypeTesseraAttributes)
+    .use(rehypeAscribeAttributes)
     .use(rehypeRaw)
     .use(rehypeStringify, { allowDangerousHtml: true })
     .process(markdown);

@@ -4,7 +4,7 @@
 //   1. the `binary` option,
 //   2. the `ASCRIBE_BIN` environment variable,
 //   3. `target/release/ascribe` or `target/debug/ascribe` in the project's
-//      directory or the nearest parent that has one (the Tessera workspace's
+//      directory or the nearest parent that has one (the Ascribe workspace's
 //      `cargo build -p tessera-cli`), the newer of the two.
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";

@@ -9,7 +9,7 @@ const STORAGE_PREFIX = "ascribe-tabs:";
 const pageChoices = new Map<string, string>();
 
 /** Every connected, initialized group with a `sync` attribute. */
-const syncedGroups = new Set<TesseraTabs>();
+const syncedGroups = new Set<AscribeTabs>();
 
 let idCounter = 0;
 
@@ -40,9 +40,9 @@ function valuesOf(tab: Element): string[] {
 }
 
 /** A tab panel: one arm of a `@variant` group. Styled by CSS; no behavior. */
-export class TesseraTab extends HTMLElement {}
+export class AscribeTab extends HTMLElement {}
 
-export class TesseraTabs extends HTMLElement {
+export class AscribeTabs extends HTMLElement {
   #tablist: HTMLElement | null = null;
   #tabs: HTMLElement[] = [];
   #buttons: HTMLButtonElement[] = [];

@@ -356,7 +356,7 @@ pub fn format_node_default<T>(
         NodeValue::Code(ref nc) => render_code(context, node, entering, nc),
         NodeValue::CodeBlock(ref ncb) => render_code_block(context, node, entering, ncb),
         NodeValue::Document => Ok(ChildRendering::HTML),
-        // TESSERA: render a Tessera line.
+        // TESSERA: render a Ascribe line.
         NodeValue::TesseraLine(ref ntl) => {
             crate::tessera::render_html(context, node, entering, ntl)
         }

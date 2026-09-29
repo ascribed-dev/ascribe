@@ -1,13 +1,13 @@
-//! Tessera parsing: Tessera lines, the structure pass, and the syntax tree.
+//! Ascribe parsing: Ascribe lines, the structure pass, and the syntax tree.
 //!
-//! [`parse`] reads one source file into a [`ParsedDocument`], Tessera's own
+//! [`parse`] reads one source file into a [`ParsedDocument`], Ascribe's own
 //! syntax tree (see [`tree`]). It builds on `comrak-tessera`, the CommonMark
-//! parser with Tessera's block-level changes, and converts comrak's tree to
-//! Tessera's, so no downstream crate sees comrak's types.
+//! parser with Ascribe's block-level changes, and converts comrak's tree to
+//! Ascribe's, so no downstream crate sees comrak's types.
 //!
 //! What phase 05 produces:
 //!
-//! - every CommonMark block and inline Tessera needs, with exact byte spans;
+//! - every CommonMark block and inline Ascribe needs, with exact byte spans;
 //! - **directive lines** and **end lines**, with the head parsed into name,
 //!   attribute block (and each pair), colon, and primary, each with a span;
 //! - **issues** for what the head gets wrong, by registry slug: malformed
@@ -71,7 +71,7 @@ pub use options::ParseOptions;
 pub use structure::{bound_block, bound_heading};
 pub use tree::*;
 
-/// Parses a Tessera source file.
+/// Parses a Ascribe source file.
 ///
 /// Never panics, whatever the input. Anything malformed is reported in
 /// [`ParsedDocument::issues`] and the tree keeps as much of the source as it

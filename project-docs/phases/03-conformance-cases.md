@@ -16,7 +16,7 @@ Turn SPEC.md into executable expectations: a conformance suite covering every ru
 
 - `tests/conformance/_model/ascribe.toml`: the shared fixture model, based on `examples/content-models/quill.toml`.
 - Conformance cases under `tests/conformance/`, grouped by area.
-- `examples/quill/`: a complete, valid Tessera project built around the SPEC Appendix B page.
+- `examples/quill/`: a complete, valid Ascribe project built around the SPEC Appendix B page.
 
 ## Tasks
 

@@ -257,8 +257,8 @@ pub struct Extension<'c> {
     /// ```
     pub front_matter_delimiter: Option<String>,
 
-    // TESSERA: the Tessera option.
-    /// Enables Tessera lines (directive lines and end lines) for the given
+    // TESSERA: the Ascribe option.
+    /// Enables Ascribe lines (directive lines and end lines) for the given
     /// keywords. See [`crate::tessera`].
     #[cfg_attr(feature = "arbitrary", arbitrary(value = None))]
     pub tessera: Option<Arc<crate::tessera::TesseraOptions>>,

@@ -3,7 +3,7 @@
 //! The site output writes image attributes onto `<img>` elements and project
 //! widgets' attributes onto custom elements (SPEC §9.4), so a key HTML
 //! already gives a meaning there would change the element's behavior or
-//! clash with what Tessera writes. The content-model loader (phase 08)
+//! clash with what Ascribe writes. The content-model loader (phase 08)
 //! rejects them with `model-attribute-reserved` (content-model.md §20.3),
 //! using [`is_reserved_image_attribute`] and [`is_reserved_widget_attribute`].
 //!

@@ -1,4 +1,4 @@
-//! The outline of the Tessera nodes the structure pass makes (phase 06):
+//! The outline of the Ascribe nodes the structure pass makes (phase 06):
 //! directives with their titles, bindings, and children, and groups with
 //! their arms. `syntax.rs` writes the CommonMark blocks and calls
 //! [`node`] for the rest.
@@ -10,7 +10,7 @@ use tessera_syntax::{Block, BlockKind, Bound, DirectiveLine, PrimaryValue, Title
 
 use super::syntax::text;
 
-/// The outline node for a Tessera block, or `None` for an end line that
+/// The outline node for a Ascribe block, or `None` for an end line that
 /// closes nothing (it only has diagnostics).
 pub fn node(source: &str, block: &Block, children: &dyn Fn(&[Block]) -> Vec<Node>) -> Option<Node> {
     match &block.kind {

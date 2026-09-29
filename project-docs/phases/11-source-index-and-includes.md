@@ -103,7 +103,7 @@ After phases 10 and 11 merged, their two implementations of the rules below were
 5. **Whether it's there**: `resolve_reference`, against a `SourceSet` (both projects implement it) and a `FileSystem`, including the route-to-page mapping (Q55: `route.md`, else `route/index.md`; `Resolution::Route::page_exists` says whether to offer the fix).
 6. **The file-level issue**: `reference_issue` and `include_issue`, at the destination as written (Q53, `destination_span`, now also on `Reference::destination_span`), with the `link-route` fix. `Project::problems` adds only the page-level link-id checks.
 
-Behavior that changed for `tessera check` in the consolidation: an `@include` of an existing file that isn't a source (`../README.md`) is now `include-target-missing` (Q63), a route-like link to a file whose name differs only in case is the case error rather than `link-route`, and a `#id`-only link in a fragment is `link-to-fragment` (Q64). Behavior that changed for the source index: source files have ids from 1 (id 0 is `ascribe.toml`, as in `tessera-check`), and its diagnostics point at the destination as written.
+Behavior that changed for `ascribe check` in the consolidation: an `@include` of an existing file that isn't a source (`../README.md`) is now `include-target-missing` (Q63), a route-like link to a file whose name differs only in case is the case error rather than `link-route`, and a `#id`-only link in a fragment is `link-to-fragment` (Q64). Behavior that changed for the source index: source files have ids from 1 (id 0 is `ascribe.toml`, as in `tessera-check`), and its diagnostics point at the destination as written.
 
 ### Left open
 

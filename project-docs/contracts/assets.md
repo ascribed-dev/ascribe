@@ -18,14 +18,14 @@ Paths below are `/`-separated and relative, as `tessera_core::RelPath` represent
 An **asset reference** is either:
 
 - the source of an image (SPEC §5.3), in any CommonMark image form, inline or reference; or
-- the destination of a link (SPEC §5.2) that is local and doesn't name a Tessera source file under the content root.
+- the destination of a link (SPEC §5.2) that is local and doesn't name a Ascribe source file under the content root.
 
 A local destination that names a Markdown file (`.md`) under the content root is a page or a fragment, never an asset: a link to a page becomes a route (SPEC §5.2), and a link to a fragment is an error (`link-to-fragment`). Every other local file is an asset, including a `.md` file outside the content root. An image source is an asset whatever its extension.
 
 Not assets:
 
 - **External destinations**: those with a URL scheme (`https:`, `mailto:`, and so on) or starting with `//`. They pass through unchanged (SPEC §5.2).
-- **References in raw HTML**, such as `<img src="x.png">` in an HTML block. Tessera doesn't parse raw HTML, so it passes through unchanged and the file isn't copied (SPEC §9.4).
+- **References in raw HTML**, such as `<img src="x.png">` in an HTML block. Ascribe doesn't parse raw HTML, so it passes through unchanged and the file isn't copied (SPEC §9.4).
 - **Include paths** (SPEC §4.2). Included content is expanded into the page; the fragment itself isn't copied.
 
 ## 2. Resolving a reference
@@ -56,7 +56,7 @@ Every asset has one **mirrored path**, computed from its source path alone:
 
 Pages are written at their own source paths too (the output-layout contract), so an asset beside a page in the source is beside it in the output, and relative references between them keep their shape.
 
-**File names are never changed**, so there's no naming scheme and no hashing. Two different files can't collide, because two different files have different source paths, and so different mirrored paths. The `_ascribe/` directory holds only files Tessera places, so an asset outside the content root can't land on one inside it, unless the content root itself has a `_ascribe/` directory. The one remaining collision, two outputs at the same path or at paths that differ only in case, fails the build (output-layout contract, §4).
+**File names are never changed**, so there's no naming scheme and no hashing. Two different files can't collide, because two different files have different source paths, and so different mirrored paths. The `_ascribe/` directory holds only files Ascribe places, so an asset outside the content root can't land on one inside it, unless the content root itself has a `_ascribe/` directory. The one remaining collision, two outputs at the same path or at paths that differ only in case, fails the build (output-layout contract, §4).
 
 ### 3.2 Placement in each output
 

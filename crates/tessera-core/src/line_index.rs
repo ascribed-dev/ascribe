@@ -1,6 +1,6 @@
 //! Converting byte offsets to lines and columns, and back.
 //!
-//! Tessera works in UTF-8 byte offsets ([`Span`]). People and
+//! Ascribe works in UTF-8 byte offsets ([`Span`]). People and
 //! protocols want lines and columns, counted in different units:
 //!
 //! | Consumer | Line | Column unit |

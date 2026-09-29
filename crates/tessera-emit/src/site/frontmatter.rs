@@ -1,7 +1,7 @@
 //! A page's frontmatter in the site output (SPEC §9.4, §9.6).
 //!
 //! The page's own frontmatter passes through, with phrases already
-//! substituted where the content model says. The one field Tessera rewrites is
+//! substituted where the content model says. The one field Ascribe rewrites is
 //! the reserved `available`: it is the spec as the author wrote it, which a
 //! layout would have to parse, so it becomes a list of targets a layout can
 //! pass straight to `<ascribe-availability scope="page">` (element contract

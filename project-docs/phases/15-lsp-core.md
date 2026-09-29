@@ -4,7 +4,7 @@
 
 ## Goal
 
-Ship `tessera lsp`: a language server that keeps a Tessera project in memory, follows every change to it, and publishes the same diagnostics `tessera check` reports, as the author types.
+Ship `ascribe lsp`: a language server that keeps a Ascribe project in memory, follows every change to it, and publishes the same diagnostics `ascribe check` reports, as the author types.
 
 ## Read first
 
@@ -15,7 +15,7 @@ Ship `tessera lsp`: a language server that keeps a Tessera project in memory, fo
 ## Deliverables
 
 - `crates/tessera-lsp`: the server.
-- `crates/tessera-cli/src/lsp.rs`: the `tessera lsp` subcommand, speaking LSP over stdio.
+- `crates/tessera-cli/src/lsp.rs`: the `ascribe lsp` subcommand, speaking LSP over stdio.
 - A diagnostic parity test (task 7).
 
 ## Tasks
@@ -29,7 +29,7 @@ Ship `tessera lsp`: a language server that keeps a Tessera project in memory, fo
 4. **Diagnostics.** Compute diagnostics with phase 14's `check_project` for the editor's default build (the content model's `[editor]` setting), and publish them for every affected file, including files that aren't open when an open file's change affects them. Clear diagnostics for deleted files.
 5. **Stale results.** Work is asynchronous and can be overtaken by newer edits. Tag each computation with the snapshot versions it used (phase 13), cancel outdated work where possible, and never publish diagnostics for a document version older than the one the editor currently has.
 6. **Semantic tokens.** Tokens for directive names (built-in versus project widget), attribute keys and values, the trailing colon, end lines, title lines, declared phrases versus undeclared candidates, and availability specs. Title lines get their own token type so accidental titles stand out (SPEC §10).
-7. **Parity test.** For every build of `examples/quill` and a set of fixture projects with known problems, the diagnostics the server publishes equal `tessera check --build <name> --format json` output: same codes, files, and spans. Run it in CI on every platform.
+7. **Parity test.** For every build of `examples/quill` and a set of fixture projects with known problems, the diagnostics the server publishes equal `ascribe check --build <name> --format json` output: same codes, files, and spans. Run it in CI on every platform.
 8. **Robustness.** A panic while handling one request must not take down the server. Log to stderr, never stdout.
 
 ## Acceptance criteria
@@ -46,7 +46,7 @@ Ship `tessera lsp`: a language server that keeps a Tessera project in memory, fo
 
 ## Notes
 
-- The server computes nothing itself; everything comes from the same crates as `tessera check`. If the editor and CLI ever disagree, that's a bug in how the server calls them.
+- The server computes nothing itself; everything comes from the same crates as `ascribe check`. If the editor and CLI ever disagree, that's a bug in how the server calls them.
 
 ## Handoff notes
 
@@ -57,8 +57,8 @@ Ship `tessera lsp`: a language server that keeps a Tessera project in memory, fo
   - `core.rs`: the state under one lock: open documents, the `IncrementalProject`, what is queued, what was published. Document sync, file watching, model changes, reload, publishing.
   - `compute.rs`: one round of diagnostics from a `Snapshot`: `check_file` for each file in `Affected::recheck`, then the editor build's page-level checks; conversion to LSP diagnostics.
   - `tokens.rs`: semantic tokens and the legend. `position.rs`: the negotiated encoding over `LineIndex`. `docs.rs`: incremental text sync. `fsx.rs`: the two file systems below. `uri.rs`: `file:` URIs.
-- **`tessera lsp`** (`crates/tessera-cli/src/commands/lsp.rs`, plus `pub mod lsp;` in `commands/mod.rs` and one variant and one arm in `cli.rs`). No options. Exit code 0 after `shutdown` then `exit`, 1 for `exit` without `shutdown` (the protocol's), 2 when it can't run.
-- **Tests.** `tessera-lsp/tests/scenarios.rs` (22: the acceptance scenarios, models, files, directories, panics, positions), `tokens.rs` (5), `differential.rs` (the server equals a fresh `check_project` after random sequences of edits, disk changes, asset changes, and model changes; `ASCRIBE_LSP_SEEDS=150` ran clean, and two deliberate breakages were caught), unit tests for URIs, positions, and text sync, and `tessera-cli/tests/lsp_parity.rs` (the real `tessera lsp` process against `tessera check --build <name> --format json`, for every build of `examples/quill` and of `tests/fixtures/lsp/problems`, which draws 30 different diagnostic rows, including a file that isn't UTF-8 and lines with astral-plane characters, in UTF-16 and UTF-8). `benches/keystroke.rs` is the benchmark.
+- **`ascribe lsp`** (`crates/tessera-cli/src/commands/lsp.rs`, plus `pub mod lsp;` in `commands/mod.rs` and one variant and one arm in `cli.rs`). No options. Exit code 0 after `shutdown` then `exit`, 1 for `exit` without `shutdown` (the protocol's), 2 when it can't run.
+- **Tests.** `tessera-lsp/tests/scenarios.rs` (22: the acceptance scenarios, models, files, directories, panics, positions), `tokens.rs` (5), `differential.rs` (the server equals a fresh `check_project` after random sequences of edits, disk changes, asset changes, and model changes; `ASCRIBE_LSP_SEEDS=150` ran clean, and two deliberate breakages were caught), unit tests for URIs, positions, and text sync, and `tessera-cli/tests/lsp_parity.rs` (the real `ascribe lsp` process against `ascribe check --build <name> --format json`, for every build of `examples/quill` and of `tests/fixtures/lsp/problems`, which draws 30 different diagnostic rows, including a file that isn't UTF-8 and lines with astral-plane characters, in UTF-16 and UTF-8). `benches/keystroke.rs` is the benchmark.
 
 ### Interfaces later phases use
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Tessera (markdown injection, in lists and quotes)",
+  "name": "Ascribe (markdown injection, in lists and quotes)",
   "scopeName": "ascribe.injection.nested",
   "injectionSelector": "L:text.html.markdown markup.list -markup.fenced_code -markup.inline.raw -markup.raw -meta.embedded -comment -text.html.derivative -meta.attributes.ascribe -string.unquoted.identifier.primary.ascribe -constant.other.availability.ascribe, L:text.html.markdown markup.quote -markup.fenced_code -markup.inline.raw -markup.raw -meta.embedded -comment -text.html.derivative -meta.attributes.ascribe -string.unquoted.identifier.primary.ascribe -constant.other.availability.ascribe",
   "patterns": [

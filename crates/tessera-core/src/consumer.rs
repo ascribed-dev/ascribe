@@ -16,7 +16,7 @@ use crate::RelPath;
 /// Computes heading slugs (SPEC §5.5).
 ///
 /// Implementations reproduce a consumer's algorithm exactly, including how it
-/// numbers duplicates, because the slugs Tessera validates must be the
+/// numbers duplicates, because the slugs Ascribe validates must be the
 /// anchors the consumer publishes. Phase 09 implements `github`, a port of
 /// `github-slugger`, which Astro uses.
 pub trait Slugger: Send + Sync {

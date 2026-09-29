@@ -34,7 +34,7 @@ Build `@ascribed/elements`: the custom elements the site output uses, implementi
 
 ## Out of scope
 
-- Emitting these elements from Tessera source (phase 20).
+- Emitting these elements from Ascribe source (phase 20).
 - Changing the contract. Raise needed changes through the contract process.
 
 ## Handoff notes

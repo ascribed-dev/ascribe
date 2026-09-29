@@ -1,7 +1,7 @@
 // Cases beyond tests/render/ for the marker rules, on hand-built trees.
 import { describe, expect, it } from "vitest";
 import { findEdits, toProperty, type HastNode } from "../src/attributes.js";
-import rehypeTesseraAttributes from "../src/rehype.js";
+import rehypeAscribeAttributes from "../src/rehype.js";
 
 const raw = (value: string): HastNode => ({ type: "raw", value });
 const text = (value: string): HastNode => ({ type: "text", value });
@@ -79,7 +79,7 @@ describe("findEdits", () => {
   });
 });
 
-describe("rehypeTesseraAttributes", () => {
+describe("rehypeAscribeAttributes", () => {
   it("sets properties, removes markers and the space before a heading's", () => {
     const image = element("img", [], { src: "a.png" });
     const heading = element("h2", [text("Title "), open(' id="title"'), close]);
@@ -87,7 +87,7 @@ describe("rehypeTesseraAttributes", () => {
       type: "root" as const,
       children: [heading, element("p", [image, open(' width="600"'), close])],
     };
-    rehypeTesseraAttributes()(tree as never);
+    rehypeAscribeAttributes()(tree as never);
     expect(heading.properties).toEqual({ id: "title" });
     expect(heading.children).toEqual([text("Title")]);
     expect(image.properties).toEqual({ src: "a.png", width: "600" });

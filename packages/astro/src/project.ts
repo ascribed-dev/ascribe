@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parse } from "smol-toml";
 
-/** The parts of a Tessera project the integration reads. */
+/** The parts of a Ascribe project the integration reads. */
 export interface ProjectInfo {
   /** The directory holding `ascribe.toml`. */
   dir: string;
@@ -56,7 +56,7 @@ function section(table: Record<string, unknown>, name: string): Record<string, u
     : {};
 }
 
-/** A base path with a leading and a trailing `/`, as Tessera's router has it. */
+/** A base path with a leading and a trailing `/`, as Ascribe's router has it. */
 export function normalizeBase(base: string): string {
   let result = base.trim();
   if (!result.startsWith("/")) result = `/${result}`;
@@ -66,7 +66,7 @@ export function normalizeBase(base: string): string {
 
 /**
  * The ways `ascribe.toml`'s `[consumer]` disagrees with Astro's configuration,
- * as sentences. Tessera writes every link with its own settings, so a site
+ * as sentences. Ascribe writes every link with its own settings, so a site
  * whose routes differ would have broken links.
  */
 export function consumerMismatches(
@@ -80,7 +80,7 @@ export function consumerMismatches(
       `[consumer] base-path is "${basePath}", but Astro's \`base\` is "${astro.base}". Set them to the same path.`,
     );
   }
-  // Astro's "ignore" serves both forms, so Tessera's links work either way.
+  // Astro's "ignore" serves both forms, so Ascribe's links work either way.
   if (astro.trailingSlash !== "ignore" && astro.trailingSlash !== trailingSlash) {
     problems.push(
       `[consumer] trailing-slash is "${trailingSlash}", but Astro's \`trailingSlash\` is "${astro.trailingSlash}".`,

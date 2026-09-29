@@ -71,7 +71,7 @@ pub mod arena_tree;
 pub mod html;
 pub mod nodes;
 pub mod plugins;
-// TESSERA: Tessera's option, node, and scanner.
+// TESSERA: Ascribe's option, node, and scanner.
 pub mod tessera;
 
 mod character_set;

@@ -1,4 +1,4 @@
-//! Emitters for Tessera's outputs: site markdown, plain markdown, and JSON, plus Zod schema generation.
+//! Emitters for Ascribe's outputs: site markdown, plain markdown, and JSON, plus Zod schema generation.
 //!
 //! Phase 18 adds the plain-markdown and JSON emitters and the shared output
 //! handling; phase 20 adds site output.

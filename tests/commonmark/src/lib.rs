@@ -3,7 +3,7 @@
 //! The suite is renderer-agnostic: [`run`] takes any `&str -> String` HTML
 //! renderer. Phase 00 runs it against unmodified comrak from crates.io to
 //! record a baseline (`baselines/comrak.toml`); phase 04 reruns it against the
-//! `comrak-tessera` fork, with the Tessera option off and on, and records its
+//! `comrak-tessera` fork, with the Ascribe option off and on, and records its
 //! own baselines next to this one.
 //!
 //! A baseline pins the exact set of failing examples, not just a count, so a

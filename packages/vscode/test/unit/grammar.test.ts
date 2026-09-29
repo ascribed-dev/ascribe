@@ -43,7 +43,7 @@ beforeAll(async () => {
   grammar = loaded;
 });
 
-/** A highlighted piece of a line: its text, and its Tessera scopes without the `.ascribe` suffix. */
+/** A highlighted piece of a line: its text, and its Ascribe scopes without the `.ascribe` suffix. */
 type Piece = [text: string, scopes: string[]];
 
 function tokenize(source: string): Piece[][] {

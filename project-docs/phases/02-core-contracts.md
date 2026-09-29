@@ -31,7 +31,7 @@ Write every interface that parallel phases share, as completed deliverables, bef
    - The directory layout: `<output>/<build>/<emitter>/`, mirroring source paths for pages, plus asset locations.
    - A manifest of generated files per build and emitter.
    - **Stale-output policy:** a build writes to a staging directory and replaces the previous output only on success. Files listed in the previous manifest but not produced now are removed. Files the manifest never listed are never deleted; if a user file sits where generated output would go, the build fails with an error rather than overwriting it.
-6. **`project-docs/contracts/site-render.md`** and **`tests/render/`**: the site-render contract. The site output uses syntax a consumer must apply beyond plain CommonMark: explicit heading ids and image attributes (SPEC §9.5). This contract defines exactly what that syntax is and what HTML it must produce. It's implemented twice: by the Astro markdown plugin (phase 21) and by Tessera's own HTML renderer for the preview (phase 20). `tests/render/` holds shared fixtures, site-markdown input paired with expected HTML, that both implementations must pass, which is what keeps the preview and the published site in agreement.
+6. **`project-docs/contracts/site-render.md`** and **`tests/render/`**: the site-render contract. The site output uses syntax a consumer must apply beyond plain CommonMark: explicit heading ids and image attributes (SPEC §9.5). This contract defines exactly what that syntax is and what HTML it must produce. It's implemented twice: by the Astro markdown plugin (phase 21) and by Ascribe's own HTML renderer for the preview (phase 20). `tests/render/` holds shared fixtures, site-markdown input paired with expected HTML, that both implementations must pass, which is what keeps the preview and the published site in agreement.
 
 ## Tasks
 
@@ -104,7 +104,7 @@ Write every interface that parallel phases share, as completed deliverables, bef
 5. **Q12 settled by removing `heading-ids`, `image-attributes`, `assets`, and `assets-dir`** (and `model-consumer-assets-dir`).
 6. **Assets mirror their source paths**; under `astro`, images stay relative and other linked files are published under `_ascribe/files/`.
 7. **Asset boundary and case** (Q10, now SPEC §9.4).
-8. **Output ownership through a manifest** that always lists every file Tessera wrote.
+8. **Output ownership through a manifest** that always lists every file Ascribe wrote.
 9. **Tabs sync on one dimension**; labeled groups don't sync.
 10. **Availability is a badge**, with `<ascribe-availability-target>` children.
 11. **The note's title attribute is `heading`** (Q8, now SPEC §9.4), beside `label`, the type's display label. Widget elements use `heading` for their title lines too.

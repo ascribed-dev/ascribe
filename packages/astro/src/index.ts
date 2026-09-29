@@ -1,4 +1,4 @@
-// @ascribed/astro: the Astro integration for Tessera (phase 21's slice; phase 22
+// @ascribed/astro: the Astro integration for Ascribe (phase 21's slice; phase 22
 // completes it). Written against Astro 7.3.5.
 //
 //   // astro.config.mjs
@@ -22,11 +22,11 @@ import type { AstroIntegration } from "astro";
 import { findBinary } from "./binary.js";
 import { copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
-import rehypeTesseraAttributes from "./rehype.js";
+import rehypeAscribeAttributes from "./rehype.js";
 import { runBuild } from "./run.js";
 import { satteriAscribeAttributes } from "./satteri.js";
 
-export { default as rehypeTesseraAttributes } from "./rehype.js";
+export { default as rehypeAscribeAttributes } from "./rehype.js";
 export { satteriAscribeAttributes } from "./satteri.js";
 
 /** The virtual module `content.ts` reads the resolved site output root from. */
@@ -57,7 +57,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build (content-model.md §17).
         siteRoot = project.siteRoot(options.build);
 
-        // `ascribe.toml`'s routing must be Astro's, or every link Tessera writes is wrong.
+        // `ascribe.toml`'s routing must be Astro's, or every link Ascribe writes is wrong.
         const problems = consumerMismatches(project, {
           base: config.base,
           trailingSlash: config.trailingSlash,
@@ -78,11 +78,11 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         if (processor.name === "satteri" && pluginLists.hastPlugins !== undefined) {
           pluginLists.hastPlugins.push(satteriAscribeAttributes());
         } else if (processor.name === "unified" && pluginLists.rehypePlugins !== undefined) {
-          pluginLists.rehypePlugins.push(rehypeTesseraAttributes);
+          pluginLists.rehypePlugins.push(rehypeAscribeAttributes);
         } else {
           throw new Error(
             `@ascribed/astro: the markdown processor "${processor.name}" is not one it can add its plugin to. ` +
-              "Use Astro's default (satteri) or unified(), or add `rehypeTesseraAttributes` to your own.",
+              "Use Astro's default (satteri) or unified(), or add `rehypeAscribeAttributes` to your own.",
           );
         }
 

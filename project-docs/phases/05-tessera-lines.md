@@ -1,4 +1,4 @@
-# Phase 05: Tessera lines and syntax tree
+# Phase 05: Ascribe lines and syntax tree
 
 **Track:** Parser · **Start after:** 02, 04 (with a go decision) · **Finish after:** 03 · **Parallel with:** 08, 09, 19 · **Unblocks:** 06, 07
 
@@ -17,14 +17,14 @@ Build `tessera-syntax`'s public parsing API and its own syntax tree, and parse e
 - `crates/tessera-core/src/attributes.rs`: the attribute-block parser for SPEC §3.3, producing phase 02's attribute-value type. Phase 07 reuses it for images.
 - In `crates/tessera-syntax`:
   - `parse(source, &ParseOptions) -> ParsedDocument`, where `ParseOptions` carries the directive schemas (built-ins plus project widgets, as `tessera-core` `DirectiveSchema`s).
-  - Tessera's own syntax tree, independent of comrak's types. It covers every CommonMark block and inline kind Tessera needs, including images of every form, plus Tessera nodes: directive lines, end lines, and the node kinds for containers, groups, titles, phrase candidates, and image attributes, which phases 06 and 07 fill in.
-  - Conversion from comrak's tree to Tessera's.
+  - Ascribe's own syntax tree, independent of comrak's types. It covers every CommonMark block and inline kind Ascribe needs, including images of every form, plus Ascribe nodes: directive lines, end lines, and the node kinds for containers, groups, titles, phrase candidates, and image attributes, which phases 06 and 07 fill in.
+  - Conversion from comrak's tree to Ascribe's.
   - The directive-head parser.
 
 ## Tasks
 
 1. **Attribute parser.** Implement SPEC §3.3 and the Appendix A rules exactly: tokens, quoted strings with `\"` and `\\`, value sets, any spaces or tabs, empty `{}`. Return each pair with spans for its key and value. Report malformed input as `Issue`s using registry slugs, never by panicking.
-2. **The syntax tree.** Design node types for the whole of Tessera. Every node has a span. Tessera nodes keep sub-spans (name, attribute block and each pair, colon, primary). The formatter (23) and language server (15) depend on these, so document them. Define the node kinds phases 06 and 07 fill in now, so those phases can run in parallel without both editing the tree types.
+2. **The syntax tree.** Design node types for the whole of Ascribe. Every node has a span. Ascribe nodes keep sub-spans (name, attribute block and each pair, colon, primary). The formatter (23) and language server (15) depend on these, so document them. Define the node kinds phases 06 and 07 fill in now, so those phases can run in parallel without both editing the tree types.
 3. **Directive heads.** For each `TesseraLine`, parse `@name`, optional attributes, optional `:` and primary. A `:` with no primary after it, only whitespace to the end of the line, is a container opener (SPEC §3.1, §3.5); a text primary that ends in `:` is still a primary. Classify the primary by schema: an identifier ends at whitespace, and text is the child paragraph from the fork. Report issues for a primary where the schema allows none, a missing required primary, and malformed attributes. Leave form and container errors to phase 06.
 4. **Misspelled directives.** Lines shaped like directives with unknown names (`@word` followed by `{`, `:`, or the end of the line; SPEC §3.2) stay text in the tree. Record an issue with the closest known name for the "did you mean" warning.
 5. **Conformance.** Implement the adapter's `outline` for what this phase produces (directive lines and CommonMark blocks, before containers exist). Remove the skip entries for the directive-head and attribute cases, and make them pass.
@@ -44,7 +44,7 @@ Build `tessera-syntax`'s public parsing API and its own syntax tree, and parse e
 
 ## Notes
 
-- Downstream crates use Tessera's tree, never comrak's. Keep comrak an implementation detail of `tessera-syntax`.
+- Downstream crates use Ascribe's tree, never comrak's. Keep comrak an implementation detail of `tessera-syntax`.
 
 ## Handoff notes
 
@@ -53,7 +53,7 @@ Build `tessera-syntax`'s public parsing API and its own syntax tree, and parse e
 - **`tessera_core::attributes`** (`parse_attribute_block(text, offset, file) -> Option<ParsedAttributes>`): SPEC §3.3 and Appendix A. Tokens, quoted strings with `\"` and `\\`, value sets, any spaces or tabs, `{}`. It returns the `AttributeBlock` (a span for the block, every pair, key, value, and set member), how many bytes it covered, whether it was closed, and `Issue`s. It recovers from every error, so the rest of a block is still read. It reports `attribute-syntax`, `attribute-bare-key`, `attribute-unquoted-reserved`, and `attribute-duplicate-key` (at the second use). Phase 07 reuses it for images.
 - **`tessera-syntax`**:
   - `parse(source, &ParseOptions) -> ParsedDocument`. `ParseOptions` holds the file id, the `DirectiveSchema`s (`ParseOptions::default()` is the built-ins), and the note types (for the `@note {type=warning}:` suggestion).
-  - `tree`: Tessera's own tree, documented. Blocks (`Heading`, `Paragraph`, `CodeBlock`, `BlockQuote`, `List`/`ListItem`, `HtmlBlock`, `ThematicBreak`, `Table`), inlines (`Text`, `Code`, breaks, `Html`, `Emphasis`, `Strong`, `Link`, `Image` in every form with `LinkForm` and `label`), and the Tessera nodes: `DirectiveLine` (name, `@name` span, attribute block, colon, primary, form) and `EndLine`. Primaries are `PrimaryValue::{Identifier, Text, Line, Unexpected}`. `raw_text(source, span)` reads source text with container prefixes removed.
+  - `tree`: Ascribe's own tree, documented. Blocks (`Heading`, `Paragraph`, `CodeBlock`, `BlockQuote`, `List`/`ListItem`, `HtmlBlock`, `ThematicBreak`, `Table`), inlines (`Text`, `Code`, breaks, `Html`, `Emphasis`, `Strong`, `Link`, `Image` in every form with `LinkForm` and `label`), and the Ascribe nodes: `DirectiveLine` (name, `@name` span, attribute block, colon, primary, form) and `EndLine`. Primaries are `PrimaryValue::{Identifier, Text, Line, Unexpected}`. `raw_text(source, span)` reads source text with container prefixes removed.
   - **Node kinds for later phases**, defined and unused: `Container`, `Group`, `Arm`, `TitleLine` (phase 06), `Phrase` and `ImageAttributes`/`Image::attributes` (phase 07). Phase 05 never produces them (a test checks).
   - The directive-head parser (`head.rs`), the conversion from comrak (`convert.rs`), and misspelled-directive detection (`unknown.rs`).
 - **The conformance adapter** (`tests/conformance/tests/adapters/syntax.rs`): handles the `parser` tag, with an `outline` (flat directives and CommonMark blocks) and `diagnostics` (the parser's issues, with columns in Unicode scalar values). It reads `[widgets]` and `[notes]` from the case's `ascribe.toml` itself, as a stand-in for phase 08's loader.
@@ -63,7 +63,7 @@ Build `tessera-syntax`'s public parsing API and its own syntax tree, and parse e
 
 - **Positions.** `Span` is a byte range into the whole file (frontmatter included); every span covers exactly its source text and never includes a line ending. A test checks this over the 652 CommonMark examples (alone, and with a directive line before, after, and around each), the SPEC, project docs, examples, and every `.md` under `tests/conformance` (so phase 03's inputs are covered as soon as they merge).
 - **Directive lines.** `BlockKind::Directive(DirectiveLine)` and `BlockKind::End(EndLine)`, as flat siblings of the blocks around them. `DirectiveLine::form` is decided by the line alone (`Container` iff there's a colon and nothing after it). A container's content is *not* inside it; phase 06 nests it. `span` runs from `@` to the end of the line, or of the primary's last line; trailing whitespace isn't included.
-- **Text primaries.** `TextPrimary { span, lines, inlines }`. `lines` are the primary's lines with container indentation and `>` markers removed; use `raw_text(source, primary.span)` for the text. The fork's child paragraph is not a separate block in Tessera's tree.
+- **Text primaries.** `TextPrimary { span, lines, inlines }`. `lines` are the primary's lines with container indentation and `>` markers removed; use `raw_text(source, primary.span)` for the text. The fork's child paragraph is not a separate block in Ascribe's tree.
 - **Where the head parser and the block parser agree.** A text primary starts where `comrak-tessera` says (`NodeTesseraLine::text_primary`). Both find the end of an attribute block with the same rule (the first `}` outside a quoted string; a backslash inside quotes hides the next character). `tests/agreement.rs` checks it on 3,000 generated lines per run against the fork.
 - **Issues** (`ParsedDocument::issues`, in source order): `attribute-syntax`, `attribute-bare-key`, `attribute-unquoted-reserved`, `attribute-duplicate-key`, `directive-primary` (a primary where none is taken, and, with the `missing` variant, a required one missing; located at the primary and at `@name`), and `directive-unknown` (with the `suggestion` variant when there's a close name). **Phase 10 shouldn't report these again**; it reports what needs a schema (unknown keys, value types).
 - **Misspelled directives** stay `Paragraph`s. Any line of a paragraph (including a text primary's continuation lines) that is `@` and a lowercase name followed, after optional spaces and tabs, by `{`, `:`, or the end of the line, and whose name isn't known, is reported at `@name`.
@@ -73,7 +73,7 @@ Build `tessera-syntax`'s public parsing API and its own syntax tree, and parse e
 
 - **The tree owns the text.** `Text` and `Code` values are comrak's decoded values; the span is the source. Adjacent `Text` nodes that touch are merged, so phase 07 finds `{key}` in one node.
 - **comrak positions are corrected, not trusted.** Block and inline spans come from comrak's line and byte column, converted with `LineIndex`, then corrected where comrak is wrong: containers grow to cover their last child (a list ending in an indented code block after a tab, and a table, end short); a heading or paragraph loses trailing spaces; table cells put back the byte comrak drops for each `\|` before a position; a line break's span is its line ending; and the fork change above.
-- **A directive line's Tessera-specific parts are computed from the raw line**, anchored at the `@` (`NodeTesseraLine::raw`), not from comrak's columns.
+- **A directive line's Ascribe-specific parts are computed from the raw line**, anchored at the `@` (`NodeTesseraLine::raw`), not from comrak's columns.
 - **Reporting places.** A missing `}` and an unclosed quote are reported at the `{` and the opening quote. A missing required primary is at `@name`; an unexpected primary is at the primary.
 - **A recovered `key=` with no value** keeps the pair with `value: None`, as `AttributeBlock` documents, and reports `attribute-syntax`; a bare key reports `attribute-bare-key`. Unquoted values with whitespace (`{label=Using other images}`) report `attribute-unquoted-reserved` and keep the whole value; a missing comma before another `key=` reports `attribute-syntax`. Only `attribute-syntax` is reported for an unclosed block.
 - **Invalid keys** (`Type`, `my_key`) are reported as `attribute-syntax` and kept, so their values still parse.

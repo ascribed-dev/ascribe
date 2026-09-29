@@ -9,7 +9,7 @@
 //!
 //! The module imports `z` from `astro/zod`, which is Zod 4 in the Astro
 //! version phase 20 targets (7.3, [`crate::site::ASTRO_VERSION`]). Unknown
-//! keys are rejected, as they are in Tessera (`frontmatter-unknown-key`), with
+//! keys are rejected, as they are in Ascribe (`frontmatter-unknown-key`), with
 //! `z.strictObject`.
 //!
 //! # What it exports
@@ -132,7 +132,7 @@ fn type_info(ty: &ContentType) -> String {
 }
 
 /// A `z.strictObject`, with its lines indented by `base` spaces after the
-/// first: unknown keys are errors, as they are in Tessera. With `reserved`,
+/// first: unknown keys are errors, as they are in Ascribe. With `reserved`,
 /// the reserved keys are added.
 fn object(fields: &[Field], reserved: bool, base: usize) -> String {
     let inner = " ".repeat(base + 2);

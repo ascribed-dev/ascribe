@@ -102,7 +102,7 @@ export class ServerController implements vscode.Disposable {
       this.output.appendLine(message);
       for (const line of tried) this.output.appendLine(`  tried ${line}`);
       void vscode.window
-        .showErrorMessage(`Tessera: ${message}`, OPEN_SETTINGS, SHOW_OUTPUT)
+        .showErrorMessage(`Ascribe: ${message}`, OPEN_SETTINGS, SHOW_OUTPUT)
         .then((choice) => {
           if (choice === OPEN_SETTINGS) {
             void vscode.commands.executeCommand("workbench.action.openSettings", "ascribe.path");
@@ -118,7 +118,7 @@ export class ServerController implements vscode.Disposable {
     this.output.appendLine(`Using ${binary.source} binary ${binary.path}`);
     if (binary.warning) {
       this.output.appendLine(binary.warning);
-      void vscode.window.showWarningMessage(`Tessera: ${binary.warning}`);
+      void vscode.window.showWarningMessage(`Ascribe: ${binary.warning}`);
     }
 
     const client = new LanguageClient("ascribe", "Ascribe", serverOptions(binary), {
@@ -137,7 +137,7 @@ export class ServerController implements vscode.Disposable {
       const message = error instanceof Error ? error.message : String(error);
       this.output.appendLine(`The language server didn't start: ${message}`);
       void vscode.window
-        .showErrorMessage(`Tessera: the language server didn't start: ${message}`, SHOW_OUTPUT)
+        .showErrorMessage(`Ascribe: the language server didn't start: ${message}`, SHOW_OUTPUT)
         .then((choice) => {
           if (choice === SHOW_OUTPUT) this.showOutput();
         });
@@ -173,7 +173,7 @@ export class ServerController implements vscode.Disposable {
           `restarted again. See the output for details, then restart it when you've fixed the cause.`;
         this.output.appendLine(message);
         void vscode.window
-          .showErrorMessage(`Tessera: ${message}`, SHOW_OUTPUT, RESTART)
+          .showErrorMessage(`Ascribe: ${message}`, SHOW_OUTPUT, RESTART)
           .then((choice) => {
             if (choice === SHOW_OUTPUT) this.showOutput();
             else if (choice === RESTART) void this.restart();

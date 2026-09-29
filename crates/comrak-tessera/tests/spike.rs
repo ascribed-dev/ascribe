@@ -1,4 +1,4 @@
-//! TESSERA: the phase 04 spike tests for the Tessera-line block.
+//! TESSERA: the phase 04 spike tests for the Ascribe-line block.
 //!
 //! Each test parses a document and compares an outline of the tree: one line
 //! per node, indented by depth, with the text of leaves. The cases required
@@ -645,11 +645,11 @@ fn module_example() {
     let second = root.last_child().unwrap();
     match &second.data().value {
         NodeValue::TesseraLine(line) => assert_eq!(line.raw, "@note: Careful."),
-        other => panic!("expected a Tessera line, got {other:?}"),
+        other => panic!("expected a Ascribe line, got {other:?}"),
     }
 }
 
-/// Tessera lines end GFM blocks as headings do, and follow front matter.
+/// Ascribe lines end GFM blocks as headings do, and follow front matter.
 #[test]
 fn works_alongside_gfm_and_front_matter() {
     let mut options = options();

@@ -1,7 +1,7 @@
 # Written by `COMMONMARK_WRITE_BASELINE=1 cargo test -p tessera-commonmark-suite --test fork`.
-# Every example that fails only with the Tessera option on is justified in README.md.
+# Every example that fails only with the Ascribe option on is justified in README.md.
 spec_version = "0.31.2"
-renderer = "comrak-tessera (the fork), Tessera option off, CommonMark options only, render.unsafe = true"
+renderer = "comrak-tessera (the fork), Ascribe option off, CommonMark options only, render.unsafe = true"
 total = 652
 passed = 652
 failing = []

@@ -1,5 +1,5 @@
 //! The CommonMark spec examples against the `comrak-tessera` fork (phase 04),
-//! twice: with the Tessera option off and with it on.
+//! twice: with the Ascribe option off and with it on.
 //!
 //! - Off, the fork must match unmodified comrak exactly: its baseline,
 //!   `baselines/comrak-tessera-off.toml`, must equal `baselines/comrak.toml`
@@ -24,8 +24,8 @@ use tessera_commonmark_suite::{
 };
 
 const RENDERER_OFF: &str =
-    "comrak-tessera (the fork), Tessera option off, CommonMark options only, render.unsafe = true";
-const RENDERER_ON: &str = "comrak-tessera (the fork), Tessera option on with the built-in keywords, \
+    "comrak-tessera (the fork), Ascribe option off, CommonMark options only, render.unsafe = true";
+const RENDERER_ON: &str = "comrak-tessera (the fork), Ascribe option on with the built-in keywords, \
      `end`, and a project widget, CommonMark options only, render.unsafe = true";
 
 /// The built-in keywords (SPEC §4), `end`, and one project widget, as in the
@@ -112,7 +112,7 @@ fn write_baseline(report: &Report, renderer: &str, path: &Path) -> bool {
         }
     };
     let header = "# Written by `COMMONMARK_WRITE_BASELINE=1 cargo test -p tessera-commonmark-suite --test fork`.\n\
-                  # Every example that fails only with the Tessera option on is justified in README.md.\n";
+                  # Every example that fails only with the Ascribe option on is justified in README.md.\n";
     match std::fs::write(path, format!("{header}{text}")) {
         Ok(()) => {
             println!("wrote {}", path.display());
@@ -125,7 +125,7 @@ fn write_baseline(report: &Report, renderer: &str, path: &Path) -> bool {
     }
 }
 
-/// The examples whose HTML changes when the Tessera option is turned on,
+/// The examples whose HTML changes when the Ascribe option is turned on,
 /// whether or not they pass either way.
 fn changed_by_option(examples: &[Example]) -> Vec<u32> {
     let off = options(false);
@@ -160,7 +160,7 @@ fn check_after_directive_line(examples: &[Example]) -> bool {
         }
     });
     println!(
-        "CommonMark {SPEC_VERSION}, each example after a directive line, Tessera option on: {}",
+        "CommonMark {SPEC_VERSION}, each example after a directive line, Ascribe option on: {}",
         report.pass_count()
     );
     if report.failures.is_empty() {
@@ -190,7 +190,7 @@ fn main() -> ExitCode {
         Ok(upstream) => {
             let problems = upstream.compare(&off);
             if !problems.is_empty() {
-                eprintln!("with the Tessera option off, the fork differs from unmodified comrak:");
+                eprintln!("with the Ascribe option off, the fork differs from unmodified comrak:");
                 for problem in problems {
                     eprintln!("  {problem}");
                 }
@@ -207,7 +207,7 @@ fn main() -> ExitCode {
 
     let changed = changed_by_option(&examples);
     println!(
-        "{} of {} examples render differently with the Tessera option on: {changed:?}",
+        "{} of {} examples render differently with the Ascribe option on: {changed:?}",
         changed.len(),
         examples.len()
     );

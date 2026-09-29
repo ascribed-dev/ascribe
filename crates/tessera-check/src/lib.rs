@@ -1,4 +1,4 @@
-//! File-level validation of Tessera documents, producing diagnostics.
+//! File-level validation of Ascribe documents, producing diagnostics.
 //!
 //! [`check_files`] is the single file-level entry point: the command line
 //! (`ascribe check`), the build, and the language server all call it, which

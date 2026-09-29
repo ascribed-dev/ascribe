@@ -3,7 +3,7 @@ import { ServerController, type ServerState } from "./client.js";
 import type { ResolvedBinary } from "./binary.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
-export interface TesseraApi {
+export interface AscribeApi {
   /** The binary in use, if one was found. */
   binary(): ResolvedBinary | undefined;
   state(): ServerState;
@@ -13,7 +13,7 @@ export interface TesseraApi {
 
 let controller: ServerController | undefined;
 
-export async function activate(context: vscode.ExtensionContext): Promise<TesseraApi> {
+export async function activate(context: vscode.ExtensionContext): Promise<AscribeApi> {
   const server = new ServerController(context);
   controller = server;
 

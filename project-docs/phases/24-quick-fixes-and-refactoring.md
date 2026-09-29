@@ -29,7 +29,7 @@ Let the editor fix problems and keep references intact: code actions for common 
 2. **File rename and move.** Handle `workspace/willRenameFiles`: update every link, include, and asset reference that points at the moved file, including relative paths inside the moved file itself.
 3. **Id rename.** Renaming an `@id`, or a heading whose source id comes from its slug, updates every link and include that names it. Offer to add an `@id` when renaming a heading would change its slug.
 4. **Phrase key rename.** Renaming a phrase key updates `ascribe.toml` and every use.
-5. **Formatting.** Provide document formatting through `tessera-fmt`, and format on save when `tessera.formatOnSave` is enabled.
+5. **Formatting.** Provide document formatting through `tessera-fmt`, and format on save when `ascribe.formatOnSave` is enabled.
 6. **Tests.** Scripted LSP tests for each action and refactoring against copies of `examples/quill`, asserting the resulting workspace edits and that the project still checks clean afterward.
 
 ## Acceptance criteria

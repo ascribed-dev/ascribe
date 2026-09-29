@@ -1,6 +1,6 @@
 [package]
 name = "tessera-lsp"
-description = "The Tessera language server, run as ascribe lsp."
+description = "The Ascribe language server, run as ascribe lsp."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

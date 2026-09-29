@@ -1,7 +1,7 @@
 import * as assert from "node:assert/strict";
 import * as path from "node:path";
 import * as vscode from "vscode";
-import type { TesseraApi } from "../../../src/extension.js";
+import type { AscribeApi } from "../../../src/extension.js";
 
 export const workspace = (): string => {
   const folder = vscode.workspace.workspaceFolders?.[0];
@@ -32,8 +32,8 @@ export async function waitFor<T>(
 export const EXTENSION_ID = "tessera.ascribe-vscode";
 
 /** The extension, activated (it activates on `ascribe.toml`; a command also does). */
-export async function activated(): Promise<TesseraApi> {
-  const extension = vscode.extensions.getExtension<TesseraApi>(EXTENSION_ID);
+export async function activated(): Promise<AscribeApi> {
+  const extension = vscode.extensions.getExtension<AscribeApi>(EXTENSION_ID);
   assert.ok(extension, `extension ${EXTENSION_ID} isn't installed`);
   return extension.isActive ? extension.exports : extension.activate();
 }

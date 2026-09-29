@@ -31,7 +31,7 @@ The checks run first (file-level and page-level, as `ascribe check` runs them: e
 |---|---|
 | `0` | Built |
 | `1` | The checks found errors; nothing was written |
-| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, or a file in the output directory that Tessera didn't write and would have to overwrite |
+| `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, or a file in the output directory that Ascribe didn't write and would have to overwrite |
 
 ## `ascribe lsp`
 

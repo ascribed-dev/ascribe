@@ -1,9 +1,9 @@
-//! Converting comrak's tree to Tessera's.
+//! Converting comrak's tree to Ascribe's.
 //!
 //! comrak reports positions as a 1-based line and a 1-based byte column, with
 //! the *last* character's position as a node's end. This module turns them
 //! into byte offsets with `tessera_core::LineIndex`, and builds every span
-//! from them (Tessera lines' sub-spans come from the head parser instead,
+//! from them (Ascribe lines' sub-spans come from the head parser instead,
 //! anchored at the `@`).
 
 use comrak_tessera::nodes::{LineColumn, Node, NodeLink, NodeValue};
@@ -314,7 +314,7 @@ impl<'a> Converter<'a> {
                 span = hull(span, rows.iter().map(|r| r.span));
                 BlockKind::Table(Table { rows, alignments })
             }
-            // Nodes from extensions Tessera doesn't enable never appear; if
+            // Nodes from extensions Ascribe doesn't enable never appear; if
             // one did, its blocks are kept and the wrapper dropped.
             _ => {
                 for child in node.children() {
@@ -385,7 +385,7 @@ impl<'a> Converter<'a> {
         Span::new(item.start(), item.start() + len)
     }
 
-    // -- Tessera lines ------------------------------------------------------
+    // -- Ascribe lines ------------------------------------------------------
 
     fn tessera_line(
         &mut self,
@@ -712,7 +712,7 @@ impl<'a> Converter<'a> {
             NodeValue::Link(link) => InlineKind::Link(self.link(node, link, span)),
             NodeValue::Image(link) => InlineKind::Image(self.image(node, link, span)),
             _ => {
-                // Inlines from extensions Tessera doesn't enable: keep their
+                // Inlines from extensions Ascribe doesn't enable: keep their
                 // content.
                 for child in node.children() {
                     self.inline(child, out);

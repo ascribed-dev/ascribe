@@ -1,4 +1,4 @@
-//! The Tessera conformance harness.
+//! The Ascribe conformance harness.
 //!
 //! Cases live in `tests/conformance/cases/`, one directory each, with an
 //! `expect.yaml` describing the expected outline, diagnostics, and per-build
@@ -12,7 +12,7 @@
 //! expects is checked against the registry, `diagnostics.toml`
 //! ([`DiagnosticsRegistry`]), whether or not the case runs.
 //!
-//! The harness depends on no Tessera crate. Implementation phases write
+//! The harness depends on no Ascribe crate. Implementation phases write
 //! adapters in `tests/adapters/` and register them in `tests/conformance.rs`.
 
 pub mod adapter;

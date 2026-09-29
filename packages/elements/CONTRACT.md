@@ -2,7 +2,7 @@
 
 The site output (SPEC §9.4) is markdown plus custom elements. This contract is the interface between the **site emitter**, which writes the elements (phase 20), and the **element library**, `@ascribed/elements`, which implements them (phase 19). For each element it gives the tag name, the attributes and what they mean, the expected children, and how it renders with and without JavaScript. The emitter writes exactly this markup; the library implements every element and attribute here, and none beyond them.
 
-| Tessera source | Site output | Library |
+| Ascribe source | Site output | Library |
 |---|---|---|
 | `@note` | [`<ascribe-note>`](#1-ascribe-note) | CSS only |
 | `@steps` | [`<ascribe-steps>`](#2-ascribe-steps) | CSS only |
@@ -198,7 +198,7 @@ The element library may style `details` and `summary`, and implements no element
 
 ## 6. Project widgets
 
-A project widget (SPEC §6) becomes a custom element whose tag is the widget's name (SPEC §9.4). Widget names are valid custom-element names: they contain a hyphen, and content-model.md §15 rejects names starting with `tessera-` and HTML's reserved names. The project supplies the element's implementation; the element library doesn't.
+A project widget (SPEC §6) becomes a custom element whose tag is the widget's name (SPEC §9.4). Widget names are valid custom-element names: they contain a hyphen, and content-model.md §15 rejects names starting with `ascribe-` and HTML's reserved names. The project supplies the element's implementation; the element library doesn't.
 
 **Attributes**, in this order:
 

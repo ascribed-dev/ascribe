@@ -38,7 +38,7 @@ impl fmt::Display for FileId {
 ///
 /// Invariant: `start <= end`. The constructors keep it; the fields are private
 /// so nothing else can break it. Offsets count bytes from the start of the
-/// file, including any frontmatter. Spans produced by Tessera crates always
+/// file, including any frontmatter. Spans produced by Ascribe crates always
 /// fall on `char` boundaries.
 ///
 /// A span doesn't record its file; pair it with a [`FileId`] in a

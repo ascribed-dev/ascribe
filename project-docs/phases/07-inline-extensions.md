@@ -4,7 +4,7 @@
 
 ## Goal
 
-Recognize Tessera's two inline constructs, phrase candidates (`{key}`) and attribute blocks after images, with exact spans, in every place the spec allows them.
+Recognize Ascribe's two inline constructs, phrase candidates (`{key}`) and attribute blocks after images, with exact spans, in every place the spec allows them.
 
 ## Read first
 
@@ -14,7 +14,7 @@ Recognize Tessera's two inline constructs, phrase candidates (`{key}`) and attri
 ## Deliverables
 
 - Changes to the inline parser in `crates/comrak-tessera`, marked `// TESSERA:` and listed in `FORK.md`.
-- `crates/tessera-syntax/src/inline/`: conversion of the new inline nodes into Tessera's tree.
+- `crates/tessera-syntax/src/inline/`: conversion of the new inline nodes into Ascribe's tree.
 
 ## Tasks
 
@@ -47,7 +47,7 @@ Recognize Tessera's two inline constructs, phrase candidates (`{key}`) and attri
 
 ### What was built
 
-- **One fork change** (`crates/comrak-tessera`, listed in `FORK.md`): after an image, `close_bracket_match` skips the attribute block that follows it directly, so the block's contents never become emphasis, links, or code (`![a](b){t="*x"} *y*`). It's one marked hunk, 4 lines of code, in `parser/inlines.rs`. The scan is `tessera::image_attributes_len` (in Tessera's own file), and `tessera::unescape_entities` exposes upstream's entity decoder. Nothing else in the inline parser changed: phrases and escapes needed no fork change (see Decisions).
+- **One fork change** (`crates/comrak-tessera`, listed in `FORK.md`): after an image, `close_bracket_match` skips the attribute block that follows it directly, so the block's contents never become emphasis, links, or code (`![a](b){t="*x"} *y*`). It's one marked hunk, 4 lines of code, in `parser/inlines.rs`. The scan is `tessera::image_attributes_len` (in Ascribe's own file), and `tessera::unescape_entities` exposes upstream's entity decoder. Nothing else in the inline parser changed: phrases and escapes needed no fork change (see Decisions).
 - **`crates/tessera-syntax/src/inline/`**: `extend`, one pass over the finished tree (after every span is final, table cells included), in three files: `mod.rs` (the walk over every block and inline, including phase 06's containers, groups, and `DirectiveLine::title`; it runs after the structure pass and keeps `Arm::title` equal to `opener.title`), `phrase.rs` (candidates, escapes, destinations, fences), `image.rs` (attribute blocks). `convert.rs` has four small edits: it calls `extend`, turns on comrak's `escaped_char_spans`, reads an escape as text whose span includes the backslash, and initializes the new fields.
 - **The conformance adapter**: `tests/conformance/tests/adapters/inline.rs` builds the outline's `image` block; `syntax.rs` calls it in one line and handles the `inline` tag. The `inline` skip entry is gone. 45 cases run and pass (the 36 `parser` cases and the 9 `inline` ones).
 - **Tests**: `crates/tessera-syntax/tests/inline.rs` (32 tests), unit tests in `inline/phrase.rs` and `comrak_tessera::tessera`, and the span checker (`tests/support`) now checks phrases, destinations, fences, and image blocks over every input the span test reads. The phase 05 test that phrases are never produced now covers only phase 06's nodes.

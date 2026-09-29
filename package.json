@@ -1,5 +1,5 @@
 {
-  "name": "tessera-workspace",
+  "name": "ascribe-workspace",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.24.0",

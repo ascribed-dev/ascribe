@@ -1,6 +1,6 @@
-# Tessera for VS Code
+# Ascribe for VS Code
 
-The client for Tessera's language server (`ascribe lsp`), plus immediate syntax
+The client for Ascribe's language server (`ascribe lsp`), plus immediate syntax
 highlighting. The extension stays thin: language intelligence (diagnostics,
 semantic tokens, and later completion and navigation) comes from the server.
 
@@ -29,8 +29,8 @@ it says how to fix that.
 | `ascribe.trace.server` | `off`, `messages`, or `verbose`. |
 | `ascribe.formatOnSave` | Used by the formatter (phase 24); no effect yet. |
 | `ascribe.maxCrashes` | Crashes (since the last manual restart) after which the server isn't restarted again. Default 5. |
-| **Tessera: Restart Language Server** | Stops and starts the server; forgets earlier crashes. |
-| **Tessera: Show Server Output** | Opens the output channel. |
+| **Ascribe: Restart Language Server** | Stops and starts the server; forgets earlier crashes. |
+| **Ascribe: Show Server Output** | Opens the output channel. |
 
 ## Highlighting
 

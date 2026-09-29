@@ -1,6 +1,6 @@
 # tessera-emit
 
-Emitters for Tessera's outputs. An emitter renders phase 12's **resolved tree** (`tessera_resolve::ResolvedPage`) and never works out what a build mode keeps: a selection build that keeps several arms of a group emits them all, and a filter build emits the availability annotations still attached (SPEC §9.2).
+Emitters for Ascribe's outputs. An emitter renders phase 12's **resolved tree** (`tessera_resolve::ResolvedPage`) and never works out what a build mode keeps: a selection build that keeps several arms of a group emits them all, and a filter build emits the availability annotations still attached (SPEC §9.2).
 
 | Output | Emitter | Phase |
 |---|---|---|
@@ -159,7 +159,7 @@ The full documents for Quill are the snapshots in `tests/snapshots/`.
 
 ## Output ownership
 
-See the [output-layout contract](../../project-docs/contracts/output-layout.md). In short: each build's emitter writes to `<output-dir>/<build>/<emitter>/`, beside `<emitter>.manifest.json`, which lists every file Tessera wrote. A build stages its files, checks that no file it doesn't own is in the way, records ownership, moves the files into place, removes the previous manifest's files it no longer produces, and writes the final manifest. It never deletes a file the manifest never listed.
+See the [output-layout contract](../../project-docs/contracts/output-layout.md). In short: each build's emitter writes to `<output-dir>/<build>/<emitter>/`, beside `<emitter>.manifest.json`, which lists every file Ascribe wrote. A build stages its files, checks that no file it doesn't own is in the way, records ownership, moves the files into place, removes the previous manifest's files it no longer produces, and writes the final manifest. It never deletes a file the manifest never listed.
 
 ## Tests
 

@@ -1,6 +1,6 @@
 [package]
 name = "tessera-core"
-description = "Shared types for the Tessera toolchain: spans, the line index, directive schemas, and the attribute and availability-spec parsers."
+description = "Shared types for the Ascribe toolchain: spans, the line index, directive schemas, and the attribute and availability-spec parsers."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

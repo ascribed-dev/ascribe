@@ -1,8 +1,8 @@
 {
   "name": "ascribe-vscode",
-  "displayName": "Tessera",
+  "displayName": "Ascribe",
   "version": "0.0.0",
-  "description": "The Tessera extension for VS Code.",
+  "description": "The Ascribe extension for VS Code.",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
@@ -26,16 +26,16 @@
       {
         "command": "ascribe.restartServer",
         "title": "Restart Language Server",
-        "category": "Tessera"
+        "category": "Ascribe"
       },
       {
         "command": "ascribe.showOutput",
         "title": "Show Server Output",
-        "category": "Tessera"
+        "category": "Ascribe"
       }
     ],
     "configuration": {
-      "title": "Tessera",
+      "title": "Ascribe",
       "properties": {
         "ascribe.path": {
           "type": "string",
@@ -56,7 +56,7 @@
         "ascribe.formatOnSave": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Format Tessera files into canonical form when saving. Used by the formatter (a later phase); it has no effect until the server offers formatting."
+          "markdownDescription": "Format Ascribe files into canonical form when saving. Used by the formatter (a later phase); it has no effect until the server offers formatting."
         },
         "ascribe.maxCrashes": {
           "type": "integer",
