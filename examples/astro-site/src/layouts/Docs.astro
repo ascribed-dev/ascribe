@@ -1,0 +1,59 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Elements from "@tessera/astro/Elements.astro";
+
+interface Props {
+  entry: CollectionEntry<"docs">;
+  headings: { depth: number; slug: string; text: string }[];
+}
+
+const { entry, headings } = Astro.props;
+const { title, description, available } = entry.data;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <Elements />
+    {description && <meta name="description" content={description} />}
+  </head>
+  <body>
+    <main>
+      <h1>{title}</h1>
+      {
+        available && available.length > 0 && (
+          <tessera-availability scope="page">
+            {available.map((item, i) => (
+              <>
+                {i > 0 && "; "}
+                <tessera-availability-target
+                  target={item.target}
+                  dimension={item.dimension}
+                  states={item.states.join(" ")}
+                  versions={item.versions?.join(" ")}
+                >
+                  {item.text}
+                </tessera-availability-target>
+              </>
+            ))}
+          </tessera-availability>
+        )
+      }
+      <nav aria-label="On this page">
+        <ul>
+          {
+            headings.map((heading) => (
+              <li data-depth={heading.depth}>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <article><slot /></article>
+    </main>
+  </body>
+</html>
