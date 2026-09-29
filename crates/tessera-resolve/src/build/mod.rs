@@ -64,10 +64,11 @@ mod router;
 mod tree;
 
 use std::cell::RefCell;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
+use std::sync::Arc;
 
-use tessera_core::{RelPath, Router, Slugger};
+use tessera_core::{FileId, RelPath, Router, Slugger, Span};
 use tessera_model::Build;
 
 pub use router::DefaultRouter;
@@ -117,6 +118,9 @@ impl Project {
     }
 }
 
+/// Page ids of a page's headings, by the file and span each is written at.
+type HeadingTable = HashMap<(FileId, Span), String>;
+
 /// Resolves the pages of one build. See the [module documentation](self).
 pub struct BuildResolver<'p> {
     project: &'p Project,
@@ -125,6 +129,9 @@ pub struct BuildResolver<'p> {
     slugger: Box<dyn Slugger>,
     /// Pages after passes 2 to 5, by path.
     staged: RefCell<BTreeMap<RelPath, Option<Rc<ResolvedPage>>>>,
+    /// The page id of each heading of a staged page, by where it's written,
+    /// so a link finds its target's heading without walking the page.
+    headings: RefCell<BTreeMap<RelPath, Rc<HeadingTable>>>,
 }
 
 impl<'p> BuildResolver<'p> {
@@ -138,6 +145,7 @@ impl<'p> BuildResolver<'p> {
             router,
             slugger,
             staged: RefCell::new(BTreeMap::new()),
+            headings: RefCell::new(BTreeMap::new()),
         }
     }
 
@@ -181,6 +189,28 @@ impl<'p> BuildResolver<'p> {
         staged
     }
 
+    /// The page id, on `page` in this build, of the heading written at `span`
+    /// in `file`. `None` if the build doesn't publish the page, or removes the
+    /// heading. A fragment included twice has its headings twice; this is the
+    /// first.
+    pub(crate) fn page_id_of(&self, page: &RelPath, file: FileId, span: Span) -> Option<String> {
+        if let Some(table) = self.headings.borrow().get(page) {
+            return table.get(&(file, span)).cloned();
+        }
+        let staged = self.stage(page)?;
+        let mut table = HeadingTable::new();
+        for (block, ids) in staged.headings() {
+            table
+                .entry((block.file, block.span))
+                .or_insert_with(|| ids.page_id.clone());
+        }
+        let found = table.get(&(file, span)).cloned();
+        self.headings
+            .borrow_mut()
+            .insert(page.clone(), Rc::new(table));
+        found
+    }
+
     fn run_passes(&self, path: &RelPath) -> Option<ResolvedPage> {
         let project = self.project;
         let model = project.model();
@@ -190,17 +220,34 @@ impl<'p> BuildResolver<'p> {
         }
         // Step 1: includes.
         let expanded = project.expand(path)?;
-        let mut problems = expanded.problems.clone();
         // Step 2: availability.
         let page_availability = availability::page_availability(model, index);
+        let mut scope_problems = Vec::new();
         let blocks = availability::annotate(
             project,
             &expanded.blocks,
             page_availability.clone(),
-            &mut problems,
+            &mut scope_problems,
         );
         // Step 3: build modes.
-        let mut blocks = modes::apply(blocks, self.build, model, &mut problems);
+        let mut mode_problems = Vec::new();
+        let mut blocks = modes::apply(blocks, self.build, model, &mut mode_problems);
+        // A problem is about what the build publishes: one in content the
+        // build removed isn't recorded (Q81).
+        let live = modes::live(&blocks);
+        let mut problems: Vec<_> = expanded
+            .problems
+            .iter()
+            .filter(|p| modes::survives(&blocks, p))
+            .cloned()
+            .collect();
+        problems.extend(
+            scope_problems
+                .into_iter()
+                .filter(|(spec, _)| live.contains(&Arc::as_ptr(spec)))
+                .map(|(_, problem)| problem),
+        );
+        problems.extend(mode_problems);
         // Step 4: phrases.
         phrases::substitute_blocks(project, &mut blocks);
         let frontmatter = index

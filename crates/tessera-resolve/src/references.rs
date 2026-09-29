@@ -241,8 +241,12 @@ pub fn resolve_reference(
 /// The page a route-like link most likely names, and the file-path link to
 /// write instead.
 // Resolved Q55: the conventional mapping, `route.md`, else `route/index.md`,
-// whichever is a source file; else `route.md`, until the consumer profile's
-// router (phase 12) can answer.
+// whichever is a source file; else `route.md`. This is an interim rule: the
+// build resolution (`crate::build`) routes pages with a `Router`, but the
+// consumer profile's router (phase 20, Astro's) doesn't exist yet, so this
+// mapping, inverted, stays here. When the router exists, ask it which page a
+// route names instead (its inverse of `Router::route`), here and in the
+// `link-route` fix.
 fn route(
     local: &Local,
     path: &RelPath,

@@ -9,12 +9,15 @@
 //!   and version, and a page whose frontmatter `available` makes it
 //!   unavailable. What remains keeps its availability annotations.
 
+use std::collections::HashSet;
+use std::sync::Arc;
 use tessera_core::{Issue, Location, diagnostics};
 use tessera_model::{AvailabilityMode, Build, ContentModel, VariantMode};
-use tessera_syntax::DirectiveLine;
+
+use tessera_syntax::{BlockKind, DirectiveLine};
 
 use super::availability::page_availability;
-use super::tree::{DropReason, ResolvedArm, ResolvedBlock, ResolvedKind};
+use super::tree::{Availability, DropReason, ResolvedArm, ResolvedBlock, ResolvedKind};
 use crate::expand::PageProblem;
 use crate::index::FileIndex;
 
@@ -223,4 +226,43 @@ fn conflicts(opener: &DirectiveLine, selection: &[(String, Vec<String>)]) -> boo
                     .any(|v| selected.iter().any(|s| s == v))
             })
     })
+}
+
+/// The availability specs that content in `blocks` is under: each block's
+/// own effective spec and every spec it sits in, by identity.
+pub(crate) fn live(blocks: &[ResolvedBlock]) -> HashSet<*const Availability> {
+    let mut set = HashSet::new();
+    for block in blocks {
+        block.visit(&mut |b| {
+            let mut spec = b.availability.as_ref();
+            while let Some(a) = spec {
+                if !set.insert(Arc::as_ptr(a)) {
+                    break;
+                }
+                spec = a.enclosing.as_ref();
+            }
+        });
+    }
+    set
+}
+
+/// Whether an expansion problem is about content that's still in the tree:
+/// an `@include` that couldn't be expanded stays as its directive, so the
+/// problem stands while that directive is there.
+pub(crate) fn survives(blocks: &[ResolvedBlock], problem: &PageProblem) -> bool {
+    let at = problem.issue.location;
+    let mut found = false;
+    for block in blocks {
+        block.visit(&mut |b| {
+            if b.file == at.file
+                && b.via == problem.via
+                && b.span.contains_span(at.span)
+                && let ResolvedKind::Leaf(leaf) = &b.kind
+                && matches!(&leaf.kind, BlockKind::Directive(line) if line.name == "include")
+            {
+                found = true;
+            }
+        });
+    }
+    found
 }

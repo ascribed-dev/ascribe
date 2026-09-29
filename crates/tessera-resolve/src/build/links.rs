@@ -186,11 +186,7 @@ impl Links<'_, '_> {
                 let Some(heading) = file.heading_by_id(id) else {
                     return (LinkTarget::Unresolved, None);
                 };
-                let staged = self.resolver.stage(&page);
-                let page_id = staged
-                    .as_ref()
-                    .and_then(|p| p.page_id_of(file.file, heading.span))
-                    .map(str::to_owned);
+                let page_id = self.resolver.page_id_of(&page, file.file, heading.span);
                 let Some(page_id) = page_id else {
                     self.problem(
                         Issue::new(diagnostics::LINK_ID_REMOVED, here)

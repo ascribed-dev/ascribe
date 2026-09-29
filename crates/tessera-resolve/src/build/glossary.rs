@@ -75,9 +75,8 @@ fn term_url(
         Some(id) => {
             let file = resolver.project().file(&target)?;
             let heading = file.heading_by_id(id)?;
-            let staged = resolver.stage(&target)?;
-            let page_id = staged.page_id_of(file.file, heading.span)?;
-            Some(router.link(&target, Some(page_id)))
+            let page_id = resolver.page_id_of(&target, file.file, heading.span)?;
+            Some(router.link(&target, Some(&page_id)))
         }
     }
 }

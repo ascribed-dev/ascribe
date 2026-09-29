@@ -17,7 +17,7 @@ use tessera_syntax::{Block, BlockKind, Bound};
 
 use super::tree::ResolvedKind;
 use super::tree::{Annotation, Availability, ResolvedArm, ResolvedBlock, ResolvedItem, Scope};
-use crate::expand::{ExpandedBlock, ExpandedKind, PageProblem};
+use crate::expand::{ExpandedBlock, ExpandedKind, IncludeSite, PageProblem};
 use crate::index::FileIndex;
 use crate::project::Project;
 
@@ -249,20 +249,21 @@ struct Frame {
 /// Resolves availability over a page's expanded blocks (SPEC §9.2 step 2).
 ///
 /// Every block of the result has its effective availability. `page` is the
-/// page-level spec, which every node inherits. Scope problems go into
-/// `problems`.
+/// page-level spec, which every node inherits. Each scope problem goes into
+/// `problems` with the spec that exceeds its scope, so the caller can keep
+/// only the problems of specs that content the build publishes is under.
 pub(crate) fn annotate(
     project: &Project,
     blocks: &[ExpandedBlock],
     page: Option<Arc<Availability>>,
-    problems: &mut Vec<PageProblem>,
+    problems: &mut Vec<(Arc<Availability>, PageProblem)>,
 ) -> Vec<ResolvedBlock> {
     Annotator { project, problems }.list(blocks, &page)
 }
 
 struct Annotator<'a> {
     project: &'a Project,
-    problems: &'a mut Vec<PageProblem>,
+    problems: &'a mut Vec<(Arc<Availability>, PageProblem)>,
 }
 
 /// The `@available` directive line a block is, if it is one.
@@ -321,28 +322,34 @@ impl Annotator<'_> {
     /// the scope it's in.
     fn chain(
         &mut self,
-        declared: &[(Declared, Arc<[crate::expand::IncludeSite]>)],
+        declared: &[(Declared, Arc<[IncludeSite]>)],
         scope: Scope,
         enclosing: Option<Arc<Availability>>,
     ) -> Option<Arc<Availability>> {
         let mut current = enclosing;
         for (d, via) in declared {
-            if let Some(parent) = &current
-                && let Some(why) = exceeds(self.project.model(), &d.spec.spec, &parent.spec)
-            {
-                self.problems.push(PageProblem {
-                    issue: exceeds_issue(d.at, why, parent.scope),
+            let problem = current
+                .as_ref()
+                .and_then(|parent| {
+                    exceeds(self.project.model(), &d.spec.spec, &parent.spec)
+                        .map(|why| exceeds_issue(d.at, why, parent.scope))
+                })
+                .map(|issue| PageProblem {
+                    issue,
                     via: via.clone(),
                 });
-            }
-            current = Some(Arc::new(Availability {
+            let made = Arc::new(Availability {
                 spec: d.spec.spec.clone(),
                 text: d.spec.text.clone(),
                 feature: d.spec.feature.clone(),
                 scope,
                 written_at: d.at,
                 enclosing: current.take(),
-            }));
+            });
+            if let Some(problem) = problem {
+                self.problems.push((made.clone(), problem));
+            }
+            current = Some(made);
         }
         current
     }
@@ -414,9 +421,8 @@ impl Annotator<'_> {
         let mut stack: Vec<Frame> = Vec::new();
         let mut block_scopes: HashMap<usize, Option<Arc<Availability>>> = HashMap::new();
         for (k, block) in blocks.iter().enumerate() {
-            while stack.last().is_some_and(|f| f.end.is_some_and(|e| e <= k)) {
-                stack.pop();
-            }
+            // A section with no heading ends where its content does.
+            stack.retain(|f| f.end.is_none_or(|e| e > k));
             let section = |stack: &[Frame]| {
                 stack
                     .last()
