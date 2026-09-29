@@ -1,0 +1,15 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 752c69665cbd1cbc731a2698299f0827adeeb2b42291a36cb0c0ecf5c9bb83e0 # shrinks to batches = [[Model { spec: 10 }]]
+cc be73b4882239501aa0aae4f009a71705a3c16c6e00b7709b211e2292ce049280 # shrinks to batches = [[Model { spec: 1 }]]
+cc 01919fa64b66e6624d2de915c6a8448894c067388e5f3e968e497b686e608eae # shrinks to batches = [[Write { file: 5, front: 0, body: [], create: false }], [Write { file: 2, front: 0, body: [9], create: false }], [Delete { file: 5 }]]
+cc dc9fa2d439ca3dcb4459d3eb7ca66a92f4cdc552a9ba4190a43dabb735d5198f # shrinks to batches = [[Write { file: 1, front: 0, body: [], create: false }]]
+cc e0c8b7848f57e814e86df9589fc816444ef24d489eb1e6b7bd24f3cdf389a2c8 # shrinks to batches = [[Write { file: 1, front: 0, body: [13], create: false }, Write { file: 0, front: 0, body: [0], create: false }], [Write { file: 0, front: 0, body: [], create: false }]]
+cc 76e31b1fcb833d37cc3e0e37bcea2323d37e75cb0a21518bd694410af3079404 # shrinks to batches = [[Write { file: 6, front: 0, body: [17], create: false }], [Write { file: 4, front: 0, body: [23], create: false }]]
+cc 6ad37e36db27830358127d6d43022225a1fa22fa8f131a1815094b25e64ce083 # shrinks to batches = [[Write { file: 4, front: 0, body: [23], create: false }], [Write { file: 6, front: 0, body: [17], create: false }], [Write { file: 4, front: 0, body: [], create: false }]]
+cc e4d59783cfe489391c1dc2bc79a04d6bfe95aa69e5ecfc6e610dc9287e5f6c00 # shrinks to batches = [[Write { file: 6, front: 0, body: [9], create: false }], [Delete { file: 2 }]]
+cc 5b19686110d515ed18b1eb32bbdbd400f18826a45d048524581ebe884da3e34d # shrinks to batches = [[Write { file: 1, front: 0, body: [7], create: false }], [Write { file: 3, front: 0, body: [], create: false }], [Write { file: 6, front: 0, body: [9], create: false }], [Delete { file: 3 }]]

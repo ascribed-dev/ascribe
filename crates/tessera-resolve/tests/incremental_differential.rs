@@ -1,0 +1,516 @@
+//! The differential property test: after every step of a random sequence of
+//! edits, creations, deletions, renames, asset changes, and model changes,
+//! the incremental project equals a from-scratch load of the same files, and a
+//! consumer that redoes only what [`Affected`] lists holds exactly what a
+//! from-scratch consumer would.
+//!
+//! The second half is what makes `Affected` trustworthy: a file or page left
+//! out of it must be unchanged.
+
+#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
+
+mod incremental_support;
+
+use std::collections::BTreeSet;
+use std::sync::Arc;
+
+use proptest::prelude::*;
+use tessera_core::RelPath;
+use tessera_resolve::{Change, IncrementalProject, Layout, ModelImpact, is_source_path};
+
+use incremental_support::{Consumer, ModelSpec, World, dump, load, path, scratch};
+
+const SOURCES: &[&str] = &[
+    "index.md",
+    "guide.md",
+    "_shared.md",
+    "_deep/inner.md",
+    "glossary.md",
+    "Guide.md",
+    "shared/thing.md",
+    "sub/index.md",
+];
+
+/// Project paths of files that aren't sources.
+const FILES: &[&str] = &[
+    "docs/logo.png",
+    "docs/img/pic.png",
+    "docs/files/a.pdf",
+    "README.md",
+    "docs/.hidden/x.md",
+    "docs/Logo.png",
+    "docs/guide",
+    "docs/files/",
+];
+
+/// File names that differ from another only in case. The base file system and
+/// the overlay may pick different twins for those, so the run that starts from
+/// a non-empty base leaves them out.
+const TWINS: &[&str] = &["docs/Logo.png", "Guide.md"];
+
+const FRONT: &[&str] = &[
+    "",
+    "---\ntitle: Page\n---\n\n",
+    "---\ntitle: '{product} guide'\n---\n\n",
+    "---\ntitle: Cloud only\navailable: cloud\n---\n\n",
+    "---\ntitle: Index\n---\n\n",
+];
+
+const BODY: &[&str] = &[
+    "# Intro\n",
+    "## Setup\n",
+    "## Setup\n",
+    "## {product} tips\n",
+    "## Details\n@id: details\n",
+    "@include: _shared.md\n",
+    "@include: _shared.md#shared-setup\n",
+    "@include: _deep/inner.md\n",
+    "@include: missing.md\n",
+    "@include: /guide.md\n",
+    "[a](guide.md) and [b](guide.md#setup)\n",
+    "[](guide.md)\n",
+    "[](guide.md#setup)\n",
+    "[c](index.md#intro) [x](_shared.md)\n",
+    "[route](/guide) [r2](sub/)\n",
+    "![l](logo.png) ![p](img/pic.png)\n",
+    "[dl](files/a.pdf) [case](GUIDE.md) [o](../README.md)\n",
+    "The API key is here. [g](glossary.md#api)\n",
+    "[ref][r] and [p]({api}x)\n\n[r]: guide.md\n",
+    "@variant {deployment=cloud}:\nCloud text\n@variant {deployment=self-managed}:\nSM text\n@end\n",
+    "## Cloud feature\n@available: cloud\n\nText.\n",
+    "@quill-callout: Heads up\n",
+    "## Shared setup\n",
+    "## API\n@id: api\n",
+    "![l](Logo.png) [dir](files/)\n",
+    "@include: shared/thing.md\n",
+    "Some prose about {extra} and more.\n",
+];
+
+fn models() -> Vec<ModelSpec> {
+    let base = ModelSpec::base();
+    vec![
+        base.clone(),
+        ModelSpec {
+            widgets: 1,
+            ..base.clone()
+        },
+        ModelSpec {
+            widgets: 2,
+            ..base.clone()
+        },
+        ModelSpec {
+            product: "Quill Pro",
+            ..base.clone()
+        },
+        ModelSpec {
+            extra_phrase: true,
+            ..base.clone()
+        },
+        ModelSpec {
+            hybrid: true,
+            ..base.clone()
+        },
+        ModelSpec {
+            cloud_build: false,
+            ..base.clone()
+        },
+        ModelSpec {
+            shared_pattern: true,
+            ..base.clone()
+        },
+        ModelSpec {
+            glossary: false,
+            ..base.clone()
+        },
+        ModelSpec {
+            comment: true,
+            ..base.clone()
+        },
+        ModelSpec {
+            widgets: 1,
+            shared_pattern: true,
+            hybrid: true,
+            ..base
+        },
+    ]
+}
+
+fn render(front: usize, body: &[usize]) -> String {
+    let mut text = FRONT[front % FRONT.len()].to_owned();
+    for at in body {
+        text.push_str(BODY[at % BODY.len()]);
+        text.push('\n');
+    }
+    text
+}
+
+#[derive(Clone, Debug)]
+enum Op {
+    Write {
+        file: usize,
+        front: usize,
+        body: Vec<usize>,
+        create: bool,
+    },
+    Same {
+        file: usize,
+    },
+    Delete {
+        file: usize,
+    },
+    Rename {
+        from: usize,
+        to: usize,
+    },
+    Asset {
+        file: usize,
+        content_form: bool,
+    },
+    Model {
+        spec: usize,
+    },
+}
+
+fn op() -> impl Strategy<Value = Op> {
+    prop_oneof![
+        6 => (0..SOURCES.len(), 0..FRONT.len(), prop::collection::vec(0..BODY.len(), 0..6), any::<bool>())
+            .prop_map(|(file, front, body, create)| Op::Write { file, front, body, create }),
+        1 => (0..SOURCES.len()).prop_map(|file| Op::Same { file }),
+        2 => (0..SOURCES.len()).prop_map(|file| Op::Delete { file }),
+        2 => (0..SOURCES.len(), 0..SOURCES.len()).prop_map(|(from, to)| Op::Rename { from, to }),
+        3 => (0..FILES.len(), any::<bool>()).prop_map(|(file, content_form)| Op::Asset { file, content_form }),
+        2 => (0..models().len()).prop_map(|spec| Op::Model { spec }),
+    ]
+}
+
+fn content_form(layout: &Layout, project_path: &str) -> RelPath {
+    let project = path(project_path.trim_end_matches('/'));
+    let up = "../".repeat(layout.content_root.segments().count());
+    let mut out = String::new();
+    if project.starts_with(&layout.content_root) {
+        let rest: Vec<&str> = project
+            .segments()
+            .skip(layout.content_root.segments().count())
+            .collect();
+        out = rest.join("/");
+    } else {
+        out.push_str(&up);
+        out.push_str(project.as_str());
+    }
+    path(&out)
+}
+
+struct Run {
+    inc: IncrementalProject,
+    world: World,
+    spec: ModelSpec,
+    consumer: Consumer,
+    layout: Layout,
+    twins: bool,
+}
+
+impl Run {
+    fn new(initial: bool) -> Run {
+        let spec = ModelSpec::base();
+        let (inc, world) = if initial {
+            load(
+                &spec,
+                &[
+                    (
+                        "index.md",
+                        "---\ntitle: Home\n---\n\n# Intro\n\n[g](guide.md#setup)\n",
+                    ),
+                    (
+                        "guide.md",
+                        "---\ntitle: Guide\n---\n\n## Setup\n\n@include: _shared.md\n",
+                    ),
+                    ("_shared.md", "## Shared setup\n\n![l](logo.png)\n"),
+                ],
+            )
+        } else {
+            load(&spec, &[])
+        };
+        let mut world = world;
+        if initial {
+            world.files.insert(path("docs/logo.png"));
+        }
+        let layout = Layout::from_model(&spec.model());
+        // The incremental project reads its initial state from a file system
+        // that must have the asset too.
+        let model = spec.model();
+        let inc = if initial {
+            IncrementalProject::load(model, layout.clone(), world.fs(&layout))
+        } else {
+            inc
+        };
+        let consumer = Consumer::from_scratch(&inc.snapshot());
+        Run {
+            inc,
+            world,
+            spec,
+            consumer,
+            layout,
+            twins: !initial,
+        }
+    }
+
+    fn change_for(&mut self, op: &Op, models: &[ModelSpec]) -> Option<Change> {
+        let source = |i: usize| path(SOURCES[i]);
+        Some(match op {
+            Op::Write {
+                file,
+                front,
+                body,
+                create,
+            } => {
+                if !self.twins && SOURCES[*file] == "Guide.md" {
+                    return None;
+                }
+                let text = render(*front, body);
+                let path = source(*file);
+                if *create {
+                    Change::Created { path, text }
+                } else {
+                    Change::Edited { path, text }
+                }
+            }
+            Op::Same { file } => {
+                let path = source(*file);
+                let text = self.world.sources.get(&path)?.clone();
+                Change::Edited { path, text }
+            }
+            Op::Delete { file } => Change::Deleted {
+                path: source(*file),
+            },
+            Op::Rename { from, to } => {
+                if !self.twins && SOURCES[*to] == "Guide.md" {
+                    return None;
+                }
+                Change::Renamed {
+                    from: source(*from),
+                    to: source(*to),
+                }
+            }
+            Op::Asset {
+                file,
+                content_form: as_content,
+            } => {
+                let name = FILES[*file];
+                if !self.twins && TWINS.contains(&name) {
+                    return None;
+                }
+                let project_path = path(name.trim_end_matches('/'));
+                let present = self.world.files.contains(&project_path);
+                // `docs/files/` is a directory name in a link, not a file:
+                // only ever leave it out.
+                if name.ends_with('/') {
+                    return None;
+                }
+                if *as_content {
+                    let content = content_form(&self.layout, name);
+                    if present {
+                        Change::Deleted { path: content }
+                    } else {
+                        Change::Created {
+                            path: content,
+                            text: String::new(),
+                        }
+                    }
+                } else if present {
+                    Change::AssetDeleted { path: project_path }
+                } else {
+                    Change::AssetCreated { path: project_path }
+                }
+            }
+            Op::Model { spec } => {
+                self.spec = models[*spec].clone();
+                Change::Model(self.spec.model())
+            }
+        })
+    }
+
+    fn step(&mut self, batch: &[Op], models: &[ModelSpec]) {
+        let before = self.inc.snapshot();
+        let changes: Vec<Change> = batch
+            .iter()
+            .filter_map(|op| self.change_for(op, models))
+            .collect();
+        // The world sees the changes in order, as the project's batch does.
+        // A rename of a file the batch itself created reads the world's text.
+        let mut applied = Vec::new();
+        for change in &changes {
+            // Keep the world's view of a rename the same as the project's: the
+            // project uses its own text unless an earlier change in the batch
+            // set one, which the world has already applied.
+            self.world.apply(&self.layout, change);
+            applied.push(change.clone());
+        }
+        let affected = self.inc.apply(applied).expect("no layout change");
+        let snapshot = self.inc.snapshot();
+        let model = self.spec.model();
+        let reference = scratch(&self.inc, &model, &self.world);
+
+        // 1. The state equals a from-scratch load.
+        let ours = dump(&snapshot);
+        let theirs = dump(&reference);
+        assert_eq!(
+            ours.len(),
+            theirs.len(),
+            "different numbers of answers after {batch:?}"
+        );
+        for (a, b) in ours.iter().zip(&theirs) {
+            assert_eq!(a, b, "the incremental state differs after {batch:?}");
+        }
+
+        // 2. What Affected leaves out didn't change.
+        self.consumer.update(&snapshot, &affected);
+        let fresh = Consumer::from_scratch(&reference);
+        assert_eq!(
+            self.consumer.files.keys().collect::<Vec<_>>(),
+            fresh.files.keys().collect::<Vec<_>>(),
+            "the files a consumer holds differ after {batch:?}: {affected:?}"
+        );
+        for (path, result) in &fresh.files {
+            assert_eq!(
+                &self.consumer.files[path], result,
+                "{path} changed but isn't in `recheck` after {batch:?}: {affected:?}"
+            );
+        }
+        assert_eq!(
+            self.consumer.pages.keys().collect::<Vec<_>>(),
+            fresh.pages.keys().collect::<Vec<_>>(),
+            "the pages a consumer holds differ after {batch:?}: {affected:?}"
+        );
+        for (key, result) in &fresh.pages {
+            assert_eq!(
+                &self.consumer.pages[key], result,
+                "{key:?} changed but isn't in `re_resolve` after {batch:?}: {affected:?}"
+            );
+        }
+
+        // 3. The bookkeeping is consistent.
+        assert!(affected.parsed.is_subset(&affected.indexed));
+        assert!(
+            affected.recheck.iter().all(|p| snapshot.file(p).is_some()),
+            "recheck lists a file that isn't there"
+        );
+        assert!(
+            affected.removed.iter().all(|p| snapshot.file(p).is_none()),
+            "removed lists a file that is there"
+        );
+        assert!(
+            affected.re_resolve.iter().all(|p| snapshot
+                .file(p)
+                .is_some_and(|f| f.kind == tessera_resolve::FileKind::Page)),
+            "re_resolve lists something that isn't a page"
+        );
+        if affected.is_empty() {
+            assert_eq!(snapshot.version(), before.version());
+            assert!(before.is_current());
+        } else {
+            assert!(snapshot.version() > before.version());
+            assert!(!before.is_current());
+            assert!(snapshot.is_current());
+        }
+        // A file left out of `recheck` is current from the old snapshot.
+        for file in snapshot.files() {
+            let left_out = !affected.recheck.contains(&file.path)
+                && !affected.removed.contains(&file.path)
+                && affected.model.is_none_or(|m| m == ModelImpact::Warnings);
+            if left_out {
+                assert!(self.inc.is_file_current(&before, &file.path));
+            }
+        }
+        // Without a model change, only files whose text changed are reparsed.
+        if affected.model.is_none() {
+            let texts: BTreeSet<&RelPath> = changes
+                .iter()
+                .filter_map(|c| match c {
+                    Change::Created { path, .. }
+                    | Change::Edited { path, .. }
+                    | Change::Deleted { path }
+                        if is_source_path(path) =>
+                    {
+                        Some(path)
+                    }
+                    Change::Renamed { to, .. } if is_source_path(to) => Some(to),
+                    _ => None,
+                })
+                .collect();
+            assert!(
+                affected.parsed.iter().all(|p| texts.contains(p)),
+                "reparsed a file no change named: {affected:?}"
+            );
+        }
+        // Ids are as in the table: every file's id names its path.
+        for file in snapshot.files() {
+            assert_eq!(self.inc.ids().get(&file.path), Some(file.file));
+        }
+    }
+}
+
+fn steps() -> impl Strategy<Value = Vec<Vec<Op>>> {
+    prop::collection::vec(prop::collection::vec(op(), 1..=3), 1..=22)
+}
+
+fn cases() -> u32 {
+    std::env::var("TESSERA_INCREMENTAL_CASES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(300)
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: cases(), max_shrink_iters: 2000, ..ProptestConfig::default() })]
+
+    #[test]
+    fn incremental_equals_from_scratch_starting_empty(batches in steps()) {
+        let models = models();
+        let mut run = Run::new(false);
+        for batch in &batches {
+            run.step(batch, &models);
+        }
+    }
+
+    #[test]
+    fn incremental_equals_from_scratch_starting_from_disk(batches in steps()) {
+        let models = models();
+        let mut run = Run::new(true);
+        for batch in &batches {
+            run.step(batch, &models);
+        }
+    }
+}
+
+/// The harness has to be able to fail: a consumer told less than the truth
+/// ends up holding stale results.
+#[test]
+fn the_differential_check_notices_an_update_that_under_reports() {
+    let spec = ModelSpec::base();
+    let (mut inc, mut world) = load(
+        &spec,
+        &[
+            ("index.md", "---\ntitle: Home\n---\n\n@include: _f.md\n"),
+            ("_f.md", "## One\n"),
+        ],
+    );
+    let layout = Layout::from_model(&spec.model());
+    let mut consumer = Consumer::from_scratch(&inc.snapshot());
+    let change = Change::Edited {
+        path: path("_f.md"),
+        text: "## Two\n".to_owned(),
+    };
+    world.apply(&layout, &change);
+    let mut affected = inc.apply([change]).expect("applies");
+    assert!(
+        affected.re_resolve.contains(&path("index.md")),
+        "the includer is re-resolved"
+    );
+    affected.re_resolve.clear();
+    consumer.update(&inc.snapshot(), &affected);
+    let fresh = Consumer::from_scratch(&scratch(&inc, &Arc::clone(&spec.model()), &world));
+    assert_ne!(
+        consumer.pages, fresh.pages,
+        "the stale page result is detected"
+    );
+}

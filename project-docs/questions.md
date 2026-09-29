@@ -1228,6 +1228,98 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `crates/tessera-resolve/src/build/availability.rs`; possibly the registry and phase 10.
 - **Resolution:** approved by the repository owner: option 1: a state with no version on a versioned target is in effect at every version, as a bare target is. SPEC §4.4 now says so.
 
+### Q91: File ids when files are created, deleted, or renamed
+
+- **Section:** SPEC §8.1 (locations), phases 10, 11, and 15
+- **Raised by:** phase 13
+- **Status:** open
+- **Ambiguity:** Every location names its file by a `FileId`. Phases 10 and 11 number source files 1, 2, … in path order at load, and `tessera.toml` is 0. That is stable only while the file set is: create a file whose path sorts first and, renumbered, every other file's id (and every diagnostic located in it) changes. The language server (phase 15) keeps a project alive across edits and publishes diagnostics by file, so it needs ids that mean the same thing from one update to the next, and `tessera-check` and `tessera-resolve` must agree.
+- **Options:**
+  1. Renumber in path order after every change. Simple; every id can change on any create or delete, so no result can be kept.
+  2. An id names a **path**: assigned when a file first appears at that path, never changed, never reused for another path. A deleted file's id names no live file; a file that returns at the same path gets its id back. A rename is a deletion and a creation.
+  3. An id names a **file**: a rename keeps the id.
+- **Proposed resolution:** option 2. Ids are stable per path for the life of one project (one `FileIds` table); a fresh load numbers in path order, as before; a stale result is one located at an id no live file has. Option 3 needs the project to guess that a deletion and a creation are one move, and everything about the file is re-derived after a rename anyway (relative references resolve from its path). Implemented now: option 2. `tessera_check::Project` accepts any ids (it finds a file by id, not position), so the language server builds one from a snapshot's ids.
+- **Affects:** `crates/tessera-resolve/src/incremental/ids.rs` (`SPEC-QUESTION(Q91)`), `Project::load_with_ids`; phase 15; `tessera-check`'s documentation of ids.
+- **Resolution:** filled in by a human.
+
+### Q92: A change to the content root or output directory
+
+- **Section:** `content-model.md` §2 (`[project]`), PLAN.md (VS Code extension)
+- **Raised by:** phase 13
+- **Status:** open
+- **Ambiguity:** A content path is relative to the content root, and the asset boundary depends on the output directory. If `tessera.toml` changes either, every path means something else, and every file's identity changes. The phase says a model change re-parses, re-indexes, or re-resolves, but not what to do with this one.
+- **Options:**
+  1. Apply it in place: re-enumerate the files from the file system.
+  2. Refuse it (`ApplyError::LayoutChanged`) and leave the caller to load a new project.
+- **Proposed resolution:** option 2. PLAN.md already says the client restarts the server "when `tessera.toml` changes in ways the server can't reload in place". Nothing is applied when the error is returned. Implemented now: option 2.
+- **Affects:** `crates/tessera-resolve/src/incremental/mod.rs` (`SPEC-QUESTION(Q92)`); phase 15.
+- **Resolution:** filled in by a human.
+
+### Q93: What of a target can change how a link resolves
+
+- **Section:** SPEC §5.2, §5.5, §9.2 step 6
+- **Raised by:** phase 13
+- **Status:** open
+- **Ambiguity:** When a file changes, which *other* pages must be re-resolved? A link's resolved form is its target's route, page id, and, when it has no text, its title or heading text, and whether the build publishes the target at all and keeps the heading. The spec lists these inputs but never says that nothing else of the target matters, and that is what lets an edit to a paragraph leave the pages that link to it alone.
+- **Options:**
+  1. Any change to a file re-resolves the pages that link to it (always correct, never fast).
+  2. Only a change to what the spec lists: the file's kind, its frontmatter (title, `variant`, `available`), its headings (level, text, `@id`), and every directive line and how blocks nest (`@available`, `@variant`, `@include` decide which headings survive a build).
+- **Proposed resolution:** option 2. The differential test (every step of thousands of random sequences) compares what a consumer holds after redoing only the listed pages with a from-scratch build, so an input missing from the list fails a test. If a later phase adds something links depend on (a new directive that affects heading ids, say), the signature in `signature.rs` must include it. Implemented now: option 2.
+- **Affects:** `crates/tessera-resolve/src/incremental/signature.rs` (`SPEC-QUESTION(Q93)`); phases 14, 18, 20 if they add link inputs.
+- **Resolution:** filled in by a human.
+
+### Q94: Batches, and updates that change nothing
+
+- **Section:** phase 13 tasks 1 and 3
+- **Raised by:** phase 13
+- **Status:** open
+- **Ambiguity:** An editor and a file watcher report changes in bursts (a `git checkout` is dozens; a save is a delete and a create). Is each change its own version, or is a batch one? And is a version needed when nothing anyone can observe changed (the same text again; an image no one references appearing)?
+- **Options:**
+  1. One version per change.
+  2. One version per call to `apply`, taking the batch's **net effect** per path (created then deleted is nothing; edited back is nothing); none when nothing observable changed.
+- **Proposed resolution:** option 2. A consumer that publishes diagnostics per snapshot would otherwise publish for states no one saw, and would drop results for updates that changed nothing. Ids for files created in a batch are assigned in path order, whatever order the batch lists them. Implemented now: option 2.
+- **Affects:** `crates/tessera-resolve/src/incremental/mod.rs` (`SPEC-QUESTION(Q94)`); phase 15.
+- **Resolution:** filled in by a human.
+
+### Q95: How long a result stays comparable across snapshots
+
+- **Section:** phase 13 task 3
+- **Raised by:** phase 13
+- **Status:** open
+- **Ambiguity:** The language server must not publish a result computed from an out-of-date snapshot. "Out of date" for a file means a later update affected it (its text, or a file it depends on), which needs a record of what each update affected. How much record is kept?
+- **Options:**
+  1. Keep every update's `Affected` forever (unbounded).
+  2. Keep the last 256; a snapshot older than that is treated as stale for every file.
+- **Proposed resolution:** option 2. A consumer has never been 256 updates behind unless something is wrong, and "stale" is the safe answer. Implemented now: option 2 (`IncrementalProject::is_file_current`).
+- **Affects:** `crates/tessera-resolve/src/incremental/mod.rs` (`SPEC-QUESTION(Q95)`); phase 15.
+- **Resolution:** filled in by a human.
+
+### Q96: A model that changes only what tessera.toml says about itself
+
+- **Section:** `content-model.md` §20
+- **Raised by:** phase 13
+- **Status:** open
+- **Ambiguity:** The model's warnings carry spans in `tessera.toml`. Reformatting the file, or adding a comment, changes those spans without changing what the model means. Does that count as a model change?
+- **Options:**
+  1. Yes: every file is re-checked.
+  2. No for files: the model is swapped in (so `Project::model().warnings` is current) and `Affected::model` is `Some(ModelImpact::Warnings)`, which lists no file; the caller refreshes the diagnostics of `tessera.toml` (file id 0) itself.
+- **Proposed resolution:** option 2. Every other model change reaches every file, at the tier of the stage that reads what changed (`ModelImpact`): directive keywords and note types reparse, phrases, fragment patterns, and the slugger re-index, anything else re-checks and re-resolves. The classification destructures `ContentModel` without `..`, so adding a field to the model is a compile error until someone decides which stage reads it. Implemented now: option 2.
+- **Affects:** `crates/tessera-resolve/src/incremental/signature.rs` (`SPEC-QUESTION(Q96)`); phase 15.
+- **Resolution:** filled in by a human.
+
+### Q97: A diagnostic that names a file spelled with different case
+
+- **Section:** SPEC §9.4
+- **Raised by:** phase 13
+- **Status:** open
+- **Ambiguity:** SPEC §9.4 says names match exactly on every platform, and the diagnostics for `include-target-missing` and `link-target-missing` have a `case` variant that names the file whose name differs only in case. So the diagnostic in `a.md` depends on a file `Guide.md` even though `a.md` names `guide.md`: creating or deleting `Guide.md` changes `a.md`'s diagnostics. The spec doesn't say the dependency exists.
+- **Options:**
+  1. Track it: creating or deleting a file re-checks every file with a reference (link, image, or include) whose target differs from it only in case.
+  2. Don't: the diagnostic goes stale until `a.md` is next edited.
+- **Proposed resolution:** option 1, which costs a lowercased-path index. Implemented now: option 1. The differential test found it.
+- **Affects:** `crates/tessera-resolve/src/incremental/mod.rs` (`SPEC-QUESTION(Q97)`).
+- **Resolution:** filled in by a human.
+
 ### Q101: Page-level problems in content that no build publishes
 
 - **Section:** SPEC §8.1, §9.3

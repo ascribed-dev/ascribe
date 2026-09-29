@@ -1,6 +1,6 @@
 //! The project graph and the resolution passes: includes, availability, build modes, phrases, heading ids, links, and glossary.
 //!
-//! Phase 11 builds the **source index** and expands includes; phase 09 adds slugging, phase 12 **build resolution** ([`build`]), and phase 13 incremental updates.
+//! Phase 11 builds the **source index** and expands includes; phase 09 adds slugging, phase 12 **build resolution** ([`build`]), and phase 13 **incremental updates** ([`incremental`]).
 //!
 //! # The source index
 //!
@@ -41,6 +41,16 @@
 //! `link-page-dropped`) are recorded on the page for the page-level checks
 //! (phase 14) to report. See the [`build`] module for the passes.
 //!
+//! # Incremental updates
+//!
+//! An [`IncrementalProject`] keeps a project current as files change:
+//! [`IncrementalProject::apply`] takes [`Change`]s and returns an [`Affected`]
+//! (the files to re-check, the pages to re-resolve), and every state is a
+//! [`Snapshot`] with a [`Version`]. The result always equals loading the same
+//! files from scratch. See the [`incremental`] module for what each change
+//! invalidates, what's cached, how versions tell a consumer whether a result
+//! is current, and the rules for file ids.
+//!
 //! ```
 //! use std::sync::Arc;
 //! use tessera_core::{FileId, RelPath};
@@ -63,6 +73,7 @@
 pub mod build;
 mod expand;
 pub mod fs;
+pub mod incremental;
 mod index;
 mod layout;
 mod project;
@@ -77,10 +88,14 @@ pub use build::{
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,
 };
-pub use fs::{DiskFs, FileSystem, MemoryFs, Probe, Sources};
+pub use fs::{DiskFs, FileSystem, MemoryFs, Probe, Sources, is_source_path};
+pub use incremental::{
+    Affected, ApplyError, Change, FileIds, IncrementalProject, ModelImpact, ResolvedCache,
+    Snapshot, Stats, Version,
+};
 pub use index::{
     AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, PhrasePlace,
-    PhraseUse, RefKind, Reference, Target, heading_text, index_file,
+    PhraseUse, RefKind, Reference, Target, heading_text, index_file, index_parsed, parse_source,
 };
 pub use layout::Layout;
 pub use project::{

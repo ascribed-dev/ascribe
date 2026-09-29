@@ -78,8 +78,12 @@ pub enum LoadError {
 /// A documentation set: its content model and source files.
 ///
 /// The content model is file id 0, and the source files have ids 1, 2, … in
-/// path order, so an id is stable for one loaded project (the same numbering
-/// as `tessera_resolve::Project`). Source texts are held in memory: the
+/// path order when a project is loaded (the same numbering as
+/// `tessera_resolve::Project`). A project built from parts may use any
+/// distinct ids from 1 (it finds a file by id, not by position): the language
+/// server gives the ids of a `tessera_resolve::Snapshot`, which are stable
+/// per path across updates and have gaps where files were deleted
+/// (`tessera_resolve::incremental`, resolved Q91). Source texts are held in memory: the
 /// language server builds a `Project` from its open buffers, and the command
 /// line from the files on disk. Files that aren't sources (images, other
 /// downloads) are looked for on disk, through `tessera_resolve`'s
@@ -209,8 +213,9 @@ impl Project {
     ///
     /// `root` is the project root (the directory of `tessera.toml`),
     /// `content_root` is relative to it, and `model_text` is the content
-    /// model's text (for showing snippets). `sources` should have ids from 1;
-    /// [`Project::from_sources`] assigns them.
+    /// model's text (for showing snippets). `sources` should have distinct ids
+    /// from 1, not necessarily consecutive; [`Project::from_sources`] assigns
+    /// 1, 2, … in path order.
     pub fn from_parts(
         root: PathBuf,
         content_root: RelPath,

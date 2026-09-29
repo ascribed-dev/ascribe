@@ -1,14 +1,14 @@
 //! The project: every source file's index, what the references in them name,
 //! the edges between files, and the problems found on the way.
 
-use std::collections::{BTreeMap, BTreeSet};
-
-use std::sync::Arc;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::sync::{Arc, Mutex};
 use tessera_core::{FileId, Issue, Location, RelPath, Slugger, Span, diagnostics};
 use tessera_model::ContentModel;
 
 use crate::expand::{ExpandedPage, Expander, IncludeSite};
 use crate::fs::FileSystem;
+use crate::incremental::FileIds;
 use crate::index::{FileIndex, FileKind, Heading, Include, RefKind, Reference, index_file};
 use crate::layout::Layout;
 use crate::references::{SourceSet, include_issue, reference_issue, resolve_reference};
@@ -121,6 +121,95 @@ pub(crate) struct ReverseEdges {
     assets: BTreeMap<RelPath, Vec<AssetSite>>,
 }
 
+impl ReverseEdges {
+    /// Records what one file contributes: its includes whose target is in
+    /// `files`, the links that name a source file, and its asset references.
+    /// Each list stays sorted by the linking file and the span, so the result
+    /// doesn't depend on the order files were added in.
+    fn add_file(
+        &mut self,
+        files: &BTreeMap<RelPath, Arc<FileIndex>>,
+        index: &FileIndex,
+        resolutions: &[Resolution],
+    ) {
+        for include in &index.includes {
+            let Some(target) = &include.target else {
+                continue;
+            };
+            if files.contains_key(target) {
+                insert_sorted(
+                    self.includes.entry(target.clone()).or_default(),
+                    IncludeEdge {
+                        file: index.path.clone(),
+                        span: include.span,
+                        section: include.section.clone(),
+                    },
+                    |e| (e.file.clone(), e.span),
+                );
+            }
+        }
+        for (reference, resolution) in index.references.iter().zip(resolutions) {
+            match resolution {
+                Resolution::Source { target, id, .. } => insert_sorted(
+                    self.links.entry(target.clone()).or_default(),
+                    LinkSite {
+                        file: index.path.clone(),
+                        span: reference.span,
+                        id: id.clone(),
+                    },
+                    |e| (e.file.clone(), e.span),
+                ),
+                Resolution::Asset { path, .. } => insert_sorted(
+                    self.assets.entry(path.clone()).or_default(),
+                    AssetSite {
+                        file: index.path.clone(),
+                        span: reference.span,
+                        kind: reference.kind,
+                    },
+                    |e| (e.file.clone(), e.span),
+                ),
+                _ => {}
+            }
+        }
+    }
+
+    /// Forgets everything a file contributed (given what it was, before).
+    fn remove_file(&mut self, index: &FileIndex, resolutions: &[Resolution]) {
+        let path = &index.path;
+        for include in &index.includes {
+            if let Some(target) = &include.target {
+                retain_edges(&mut self.includes, target, |e| &e.file != path);
+            }
+        }
+        for resolution in resolutions {
+            match resolution {
+                Resolution::Source { target, .. } => {
+                    retain_edges(&mut self.links, target, |e| &e.file != path);
+                }
+                Resolution::Asset { path: asset, .. } => {
+                    retain_edges(&mut self.assets, asset, |e| &e.file != path);
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+fn insert_sorted<T>(list: &mut Vec<T>, item: T, key: impl Fn(&T) -> (RelPath, Span)) {
+    let at = key(&item);
+    let position = list.partition_point(|e| key(e) <= at);
+    list.insert(position, item);
+}
+
+fn retain_edges<T>(map: &mut BTreeMap<RelPath, Vec<T>>, key: &RelPath, keep: impl Fn(&T) -> bool) {
+    if let Some(list) = map.get_mut(key) {
+        list.retain(keep);
+        if list.is_empty() {
+            map.remove(key);
+        }
+    }
+}
+
 /// An asset a page uses, with where the reference is.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PageAsset {
@@ -150,19 +239,53 @@ pub struct PageAsset {
 pub struct Project {
     pub(crate) model: Arc<ContentModel>,
     pub(crate) layout: Layout,
-    pub(crate) files: BTreeMap<RelPath, FileIndex>,
-    order: Vec<RelPath>,
-    resolutions: BTreeMap<RelPath, Vec<Resolution>>,
+    pub(crate) files: BTreeMap<RelPath, Arc<FileIndex>>,
+    by_id: HashMap<FileId, RelPath>,
+    resolutions: BTreeMap<RelPath, Arc<Vec<Resolution>>>,
     edges: ReverseEdges,
     unreadable: Vec<Unreadable>,
+    /// Expansions worked out so far, by page. `None` records a path that
+    /// isn't a file. Filled on demand; the incremental update drops the
+    /// entries a change can affect (`crate::incremental`).
+    expansions: Mutex<HashMap<RelPath, Option<Arc<ExpandedPage>>>>,
+}
+
+impl Clone for Project {
+    fn clone(&self) -> Project {
+        Project {
+            model: self.model.clone(),
+            layout: self.layout.clone(),
+            files: self.files.clone(),
+            by_id: self.by_id.clone(),
+            resolutions: self.resolutions.clone(),
+            edges: self.edges.clone(),
+            unreadable: self.unreadable.clone(),
+            expansions: Mutex::new(self.expansion_cache().clone()),
+        }
+    }
 }
 
 impl Project {
     /// Indexes every `.md` file under the content root.
     ///
-    /// Each file gets a [`FileId`], in path order. A file that can't be read
-    /// is left out and listed in [`Project::unreadable`].
+    /// Each file gets a [`FileId`], in path order, from 1 (id 0 is
+    /// `tessera.toml`). A file that can't be read is left out and listed in
+    /// [`Project::unreadable`].
     pub fn load(model: Arc<ContentModel>, layout: Layout, fs: &dyn FileSystem) -> Project {
+        Project::load_with_ids(model, layout, fs, &mut FileIds::default())
+    }
+
+    /// Like [`Project::load`], with ids from `ids`: a file whose path the
+    /// table knows keeps its id, and any other gets the next free one, in path
+    /// order. The table is updated. An [`IncrementalProject`](crate::IncrementalProject)
+    /// numbers files this way, so a from-scratch load with its table is what
+    /// its updates must equal.
+    pub fn load_with_ids(
+        model: Arc<ContentModel>,
+        layout: Layout,
+        fs: &dyn FileSystem,
+        ids: &mut FileIds,
+    ) -> Project {
         let slugger: Box<dyn Slugger> =
             slugger_by_name(&model.consumer.slugger).unwrap_or_else(default_slugger);
         let found = fs.sources();
@@ -171,15 +294,15 @@ impl Project {
         paths.dedup();
 
         let mut files = BTreeMap::new();
-        let mut order = Vec::new();
+        let mut by_id = HashMap::new();
         let mut unreadable = found.unreadable;
         for path in paths {
             match fs.read(&path) {
                 Ok(text) => {
-                    let id = file_id(order.len());
+                    let id = ids.assign(&path);
                     let index = index_file(id, &path, &text, &model, slugger.as_ref());
-                    order.push(path.clone());
-                    files.insert(path, index);
+                    by_id.insert(id, path.clone());
+                    files.insert(path, Arc::new(index));
                 }
                 Err(err) => unreadable.push(Unreadable {
                     path,
@@ -187,20 +310,38 @@ impl Project {
                 }),
             }
         }
+        Project::assemble(model, layout, files, by_id, unreadable, fs)
+    }
 
+    /// A project from indexed files: resolves every reference and builds the
+    /// edges.
+    pub(crate) fn assemble(
+        model: Arc<ContentModel>,
+        layout: Layout,
+        files: BTreeMap<RelPath, Arc<FileIndex>>,
+        by_id: HashMap<FileId, RelPath>,
+        unreadable: Vec<Unreadable>,
+        fs: &dyn FileSystem,
+    ) -> Project {
         let mut project = Project {
             model,
             layout,
             files,
-            order,
+            by_id,
             resolutions: BTreeMap::new(),
             edges: ReverseEdges::default(),
             unreadable,
+            expansions: Mutex::new(HashMap::new()),
         };
         project.resolutions = project
             .files
             .values()
-            .map(|index| (index.path.clone(), project.resolve_file(index, fs)))
+            .map(|index| {
+                (
+                    index.path.clone(),
+                    Arc::new(project.resolve_file(index, fs)),
+                )
+            })
             .collect();
         project.edges = project.build_edges();
         project
@@ -218,7 +359,7 @@ impl Project {
 
     /// Every source file's index, in path order.
     pub fn files(&self) -> impl Iterator<Item = &FileIndex> {
-        self.files.values()
+        self.files.values().map(|f| &**f)
     }
 
     /// The pages: every source file that isn't a fragment, in path order.
@@ -233,17 +374,19 @@ impl Project {
 
     /// One file's index, by content path.
     pub fn file(&self, path: &RelPath) -> Option<&FileIndex> {
-        self.files.get(path)
+        self.files.get(path).map(|f| &**f)
     }
 
     /// The path of a file, by id.
     pub fn path_of(&self, file: FileId) -> Option<&RelPath> {
-        self.order.get(file_index(file))
+        self.by_id.get(&file)
     }
 
     /// The index of a file, by id.
     pub fn file_by_id(&self, file: FileId) -> Option<&FileIndex> {
-        self.path_of(file).and_then(|p| self.files.get(p))
+        self.path_of(file)
+            .and_then(|p| self.files.get(p))
+            .map(|f| &**f)
     }
 
     /// Source files and directories that couldn't be read. They're never
@@ -271,7 +414,7 @@ impl Project {
     /// What every link and image in a file names, in the order of
     /// [`FileIndex::references`].
     pub fn resolutions(&self, path: &RelPath) -> &[Resolution] {
-        self.resolutions.get(path).map_or(&[], Vec::as_slice)
+        self.resolutions.get(path).map_or(&[], |r| r.as_slice())
     }
 
     /// The resolution of one reference of a file, by its span.
@@ -325,8 +468,35 @@ impl Project {
     }
 
     /// Expands a file's includes. `None` if the file isn't in the project.
+    ///
+    /// The expansion is kept: asking again for the same file costs a copy,
+    /// and an incremental update ([`crate::IncrementalProject`]) keeps the
+    /// expansions of the pages a change can't reach. [`Project::expansion`]
+    /// shares it instead of copying.
     pub fn expand(&self, path: &RelPath) -> Option<ExpandedPage> {
-        Expander::new(self).expand(path)
+        self.expansion(path).map(|page| (*page).clone())
+    }
+
+    /// The expansion of a file, shared with the project's cache: the same
+    /// value as [`Project::expand`] without copying it.
+    pub fn expansion(&self, path: &RelPath) -> Option<Arc<ExpandedPage>> {
+        if let Some(hit) = self.expansion_cache().get(path) {
+            return hit.clone();
+        }
+        // Expanding doesn't hold the lock: it may ask for other expansions.
+        let page = Expander::new(self).expand(path).map(Arc::new);
+        self.expansion_cache().insert(path.clone(), page.clone());
+        page
+    }
+
+    fn expansion_cache(
+        &self,
+    ) -> std::sync::MutexGuard<'_, HashMap<RelPath, Option<Arc<ExpandedPage>>>> {
+        // A poisoned lock only means another thread panicked while holding
+        // it; the map is still a valid cache.
+        self.expansions
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// The assets a page uses: every image, and every link to a file that
@@ -337,7 +507,7 @@ impl Project {
     ///
     /// A reference to a file that doesn't exist is a problem, not an asset.
     pub fn assets(&self, page: &RelPath) -> Vec<PageAsset> {
-        self.expand(page)
+        self.expansion(page)
             .map(|expanded| self.page_assets(&expanded))
             .unwrap_or_default()
     }
@@ -414,7 +584,7 @@ impl Project {
 
     // -- Resolution ---------------------------------------------------------
 
-    fn resolve_file(&self, index: &FileIndex, fs: &dyn FileSystem) -> Vec<Resolution> {
+    pub(crate) fn resolve_file(&self, index: &FileIndex, fs: &dyn FileSystem) -> Vec<Resolution> {
         index
             .references
             .iter()
@@ -435,53 +605,103 @@ impl Project {
     fn build_edges(&self) -> ReverseEdges {
         let mut edges = ReverseEdges::default();
         for index in self.files.values() {
-            for include in &index.includes {
-                let Some(target) = &include.target else {
-                    continue;
-                };
-                if self.files.contains_key(target) {
-                    edges
-                        .includes
-                        .entry(target.clone())
-                        .or_default()
-                        .push(IncludeEdge {
-                            file: index.path.clone(),
-                            span: include.span,
-                            section: include.section.clone(),
-                        });
-                }
-            }
-            for (reference, resolution) in
-                index.references.iter().zip(self.resolutions(&index.path))
-            {
-                match resolution {
-                    Resolution::Source { target, id, .. } => {
-                        edges
-                            .links
-                            .entry(target.clone())
-                            .or_default()
-                            .push(LinkSite {
-                                file: index.path.clone(),
-                                span: reference.span,
-                                id: id.clone(),
-                            });
-                    }
-                    Resolution::Asset { path, .. } => {
-                        edges
-                            .assets
-                            .entry(path.clone())
-                            .or_default()
-                            .push(AssetSite {
-                                file: index.path.clone(),
-                                span: reference.span,
-                                kind: reference.kind,
-                            });
-                    }
-                    _ => {}
-                }
-            }
+            edges.add_file(&self.files, index, self.resolutions(&index.path));
         }
         edges
+    }
+
+    // -- Updates (crate::incremental) --------------------------------------
+
+    /// Swaps the content model. Nothing is re-indexed or re-resolved here.
+    pub(crate) fn set_model(&mut self, model: Arc<ContentModel>) {
+        self.model = model;
+    }
+
+    pub(crate) fn set_unreadable(&mut self, unreadable: Vec<Unreadable>) {
+        self.unreadable = unreadable;
+    }
+
+    /// Forgets what a file contributed to the edges, and its resolutions.
+    pub(crate) fn detach_file(&mut self, path: &RelPath) {
+        if let Some(index) = self.files.get(path).cloned() {
+            let resolutions = self.resolutions.get(path).cloned().unwrap_or_default();
+            self.edges.remove_file(&index, &resolutions);
+        }
+    }
+
+    /// Puts a file's index in place (replacing any before it; call
+    /// [`Project::detach_file`] first) without touching its edges.
+    pub(crate) fn put_index(&mut self, index: Arc<FileIndex>) {
+        self.by_id.insert(index.file, index.path.clone());
+        self.files.insert(index.path.clone(), index);
+    }
+
+    /// Removes a file: its index, its resolutions, and its id's entry.
+    pub(crate) fn drop_index(&mut self, path: &RelPath) {
+        if let Some(index) = self.files.remove(path) {
+            self.by_id.remove(&index.file);
+        }
+        self.resolutions.remove(path);
+    }
+
+    pub(crate) fn put_resolutions(&mut self, path: &RelPath, resolutions: Vec<Resolution>) {
+        self.resolutions.insert(path.clone(), Arc::new(resolutions));
+    }
+
+    /// Adds what a file contributes to the edges, from its current index and
+    /// resolutions.
+    pub(crate) fn attach_file(&mut self, path: &RelPath) {
+        if let Some(index) = self.files.get(path).cloned() {
+            let resolutions = self.resolutions.get(path).cloned().unwrap_or_default();
+            self.edges.add_file(&self.files, &index, &resolutions);
+        }
+    }
+
+    /// Recomputes the include edges that point at `target`, after a file
+    /// appeared or disappeared there. `includers` are the files that write an
+    /// `@include` naming it.
+    pub(crate) fn refresh_include_edges(&mut self, target: &RelPath, includers: &[RelPath]) {
+        self.edges.includes.remove(target);
+        if !self.files.contains_key(target) {
+            return;
+        }
+        let mut list = Vec::new();
+        for file in includers {
+            let Some(index) = self.files.get(file) else {
+                continue;
+            };
+            for include in index
+                .includes
+                .iter()
+                .filter(|i| i.target.as_ref() == Some(target))
+            {
+                insert_sorted(
+                    &mut list,
+                    IncludeEdge {
+                        file: file.clone(),
+                        span: include.span,
+                        section: include.section.clone(),
+                    },
+                    |e| (e.file.clone(), e.span),
+                );
+            }
+        }
+        if !list.is_empty() {
+            self.edges.includes.insert(target.clone(), list);
+        }
+    }
+
+    /// Drops the cached expansions of these files, or of all files.
+    pub(crate) fn forget_expansions(&self, paths: Option<&BTreeSet<RelPath>>) {
+        let mut cache = self.expansion_cache();
+        match paths {
+            Some(paths) => cache.retain(|path, _| !paths.contains(path)),
+            None => cache.clear(),
+        }
+    }
+
+    pub(crate) fn resolution_list(&self, path: &RelPath) -> Arc<Vec<Resolution>> {
+        self.resolutions.get(path).cloned().unwrap_or_default()
     }
 
     // -- Problems -----------------------------------------------------------
@@ -540,7 +760,7 @@ impl Project {
         if file.heading_by_id(id).is_some() {
             return Vec::new();
         }
-        let in_fragment = self.expand(target).and_then(|page| {
+        let in_fragment = self.expansion(target).and_then(|page| {
             page.headings(self)
                 .into_iter()
                 .find(|(file_path, heading)| file_path != target && heading.source_id == id)
@@ -557,17 +777,6 @@ impl Project {
         };
         vec![issue]
     }
-}
-
-/// Source files have ids from 1, in path order: id 0 is `tessera.toml`, as
-/// in `tessera-check`, so diagnostics from both can be merged.
-fn file_id(index: usize) -> FileId {
-    // A project never has 2^32 files; saturate rather than wrap.
-    FileId::new(u32::try_from(index + 1).unwrap_or(u32::MAX))
-}
-
-fn file_index(file: FileId) -> usize {
-    (file.index() as usize).wrapping_sub(1)
 }
 
 impl SourceSet for Project {
