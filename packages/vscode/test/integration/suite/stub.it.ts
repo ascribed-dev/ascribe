@@ -84,7 +84,7 @@ describe("with ascribe.toml and the stub server", () => {
     assert.equal(api.state(), "running");
   });
 
-  it("reports a ascribe.path that isn't a working binary, and recovers", async () => {
+  it("reports an ascribe.path that isn't a working binary, and recovers", async () => {
     const api = await activated();
     const config = vscode.workspace.getConfiguration("ascribe");
     const good = config.get<string>("path");

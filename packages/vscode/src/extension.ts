@@ -45,7 +45,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   };
 }
 
-/** Whether the workspace holds a `ascribe.toml` (not counting `node_modules`). */
+/** Whether the workspace holds an `ascribe.toml` (not counting `node_modules`). */
 async function hasProject(): Promise<boolean> {
   return (await vscode.workspace.findFiles("**/ascribe.toml", "**/node_modules/**", 1)).length > 0;
 }

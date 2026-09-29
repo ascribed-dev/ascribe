@@ -22,7 +22,7 @@ Prove, with a small amount of code, that comrak can be forked to support Ascribe
 ## Tasks
 
 1. **Vendor comrak.** Copy the source at the latest release tag into `crates/comrak-tessera`, rename the crate, keep the license, and add it to the workspace. Confirm the CommonMark baseline from phase 00 passes unchanged.
-2. **Options.** Add a Ascribe option to comrak's extension options, carrying the set of known directive keywords (including `end`) and, for each keyword, whether it takes a text primary. Hardcode the built-in set in tests; later phases supply it from the content model.
+2. **Options.** Add an Ascribe option to comrak's extension options, carrying the set of known directive keywords (including `end`) and, for each keyword, whether it takes a text primary. Hardcode the built-in set in tests; later phases supply it from the content model.
 3. **The Ascribe-line block.** Add a leaf block node, `TesseraLine`, holding the raw line and its source position. It's recognized at line start (after container indentation) when the line is `@` followed by a known keyword and then whitespace, `{`, `:`, or the end of the line. It must:
    - **interrupt a paragraph**, as an ATX heading does;
    - **never be a lazy continuation line**, so an unindented directive line after a list item ends the list;
@@ -76,7 +76,7 @@ All in `comrak_tessera` (depend on `comrak-tessera.workspace = true`; the rest o
 
 - `tessera::TesseraOptions`: `new()`, `keyword(name, text_primary) -> Self`, `insert(name, text_primary)`, `get(name) -> Option<TesseraKeyword>`, `len()`, `is_empty()`. Names are given without `@`. The caller supplies every keyword, including `end`; the fork knows no built-ins. Phases 05 and 08 build the set from the built-in directives and the content model's widgets.
 - `tessera::TesseraKeyword { text_primary: bool }`.
-- `options.extension.ascribe: Option<Arc<TesseraOptions>>`. `None` (the default) is plain comrak.
+- `options.extension.tessera: Option<Arc<TesseraOptions>>`. `None` (the default) is plain comrak.
 - `nodes::NodeValue::TesseraLine(Box<tessera::NodeTesseraLine>)`, with:
   - `raw: String`: the line from `@` to the end of the line, without the line ending; trailing whitespace is kept. Container indentation and blockquote markers aren't included.
   - `name: String`: the keyword, such as `note` or `end`.

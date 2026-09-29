@@ -1,3 +1,3 @@
-# Not a Ascribe project
+# Not an Ascribe project
 
 @note: Hello.

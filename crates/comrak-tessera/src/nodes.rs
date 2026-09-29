@@ -39,7 +39,7 @@ pub enum NodeValue {
     FrontMatter(String),
 
     // TESSERA: the Ascribe-line block.
-    /// **Block**. A Ascribe line: a directive line or an end line. Enabled
+    /// **Block**. An Ascribe line: a directive line or an end line. Enabled
     /// with the `ascribe` option. Contains a paragraph holding its text
     /// primary, if it has one; otherwise has no children. See
     /// [`crate::tessera`].

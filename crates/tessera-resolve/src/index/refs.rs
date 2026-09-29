@@ -71,7 +71,7 @@ pub struct Local {
     /// part, still percent-encoded and with its leading `/`: what messages
     /// call the path.
     pub written: String,
-    /// Whether it names a Ascribe source file: a link to a `.md` file inside
+    /// Whether it names an Ascribe source file: a link to a `.md` file inside
     /// the content root, which is a page or a fragment and never an asset
     /// (asset contract, §1). An image is never a source.
     pub source: bool,

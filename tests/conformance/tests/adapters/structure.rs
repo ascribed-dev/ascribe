@@ -10,7 +10,7 @@ use tessera_syntax::{Block, BlockKind, Bound, DirectiveLine, PrimaryValue, Title
 
 use super::syntax::text;
 
-/// The outline node for a Ascribe block, or `None` for an end line that
+/// The outline node for an Ascribe block, or `None` for an end line that
 /// closes nothing (it only has diagnostics).
 pub fn node(source: &str, block: &Block, children: &dyn Fn(&[Block]) -> Vec<Node>) -> Option<Node> {
     match &block.kind {

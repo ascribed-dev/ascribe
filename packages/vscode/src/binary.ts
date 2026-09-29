@@ -85,7 +85,7 @@ export function ancestorsWithin(dir: string, boundary: string): string[] {
  * project's `node_modules/.bin/ascribe`, and the binary bundled in the
  * extension. Each candidate must run `--version`.
  *
- * Resolved Q122: a `ascribe.path` that doesn't work is an error, and doesn't fall through:
+ * Resolved Q122: an `ascribe.path` that doesn't work is an error, and doesn't fall through:
  * the author asked for that binary, and silently using another would hide the
  * mistake. A project or bundled candidate that doesn't run is skipped.
  *
@@ -160,7 +160,7 @@ export async function resolveBinary(options: ResolveOptions): Promise<Resolution
       message:
         "Couldn't find the Ascribe binary, so the language server can't start. " +
         "Install it in the project (for example, `npm install --save-dev @ascribed/cli`), " +
-        "or set `ascribe.path` to a `ascribe` binary.",
+        "or set `ascribe.path` to an `ascribe` binary.",
       tried,
     },
   };

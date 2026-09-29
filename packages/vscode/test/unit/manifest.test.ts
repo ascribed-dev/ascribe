@@ -83,7 +83,7 @@ describe("semantic tokens and the server's legend", () => {
   const types = [...legend.matchAll(/^\| \d+ \| `(ascribe\w+)` \|.*\| `([^`]+)` \|$/gm)].map(
     (match) => ({ id: match[1] ?? "", scope: match[2] ?? "" }),
   );
-  const modifiers = [...legend.matchAll(/^\| \d+ \| `(\w+)` \| A `ascribe/gm)].map(
+  const modifiers = [...legend.matchAll(/^\| \d+ \| `(\w+)` \| An `ascribe/gm)].map(
     (match) => match[1] ?? "",
   );
 

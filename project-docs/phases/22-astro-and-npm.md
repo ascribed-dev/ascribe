@@ -1,6 +1,6 @@
 # Phase 22: Astro integration and npm distribution
 
-**Track:** Web · **Start after:** 21 · **Parallel with:** 16, 25 · **Unblocks:** 27 · **Human checkpoint before starting: confirm the `@tessera` npm scope**
+**Track:** Web · **Start after:** 21 · **Parallel with:** 16, 25 · **Unblocks:** 27 · **Human checkpoint: done. The owner claimed the npm org `@ascribed` (and the GitHub org `ascribed-dev`) on 2026-09-29.**
 
 ## Goal
 
@@ -32,7 +32,7 @@ Turn the phase 21 slice into a complete integration, and deliver the `ascribe` b
 
 - [ ] Installing `@ascribed/cli` from locally packed tarballs on each platform runs `ascribe --version`, with no postinstall script.
 - [ ] The end-to-end test passes on all three platforms.
-- [ ] Editing a Ascribe file, an asset, or `ascribe.toml` in `astro dev` rebuilds and refreshes the page.
+- [ ] Editing an Ascribe file, an asset, or `ascribe.toml` in `astro dev` rebuilds and refreshes the page.
 
 ## Out of scope
 

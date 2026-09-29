@@ -383,7 +383,7 @@ where
                         break;
                     }
                 }
-                // TESSERA: a Ascribe line stays open only while its text
+                // TESSERA: an Ascribe line stays open only while its text
                 // primary's paragraph does.
                 NodeValue::TesseraLine(..) => {
                     if self.blank || !container.last_child_is_open() {

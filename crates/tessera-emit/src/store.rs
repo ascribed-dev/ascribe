@@ -65,7 +65,7 @@ pub enum StoreError {
     /// A file is at a manifest's path but isn't one, so Ascribe can't tell
     /// what it owns.
     #[error(
-        "{path} isn't a Ascribe manifest, so Ascribe can't tell which files in its directory it owns; move or remove it"
+        "{path} isn't an Ascribe manifest, so Ascribe can't tell which files in its directory it owns; move or remove it"
     )]
     NotManifest {
         /// The path.

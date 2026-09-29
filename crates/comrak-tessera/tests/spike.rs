@@ -645,7 +645,7 @@ fn module_example() {
     let second = root.last_child().unwrap();
     match &second.data().value {
         NodeValue::TesseraLine(line) => assert_eq!(line.raw, "@note: Careful."),
-        other => panic!("expected a Ascribe line, got {other:?}"),
+        other => panic!("expected an Ascribe line, got {other:?}"),
     }
 }
 

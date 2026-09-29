@@ -18,7 +18,7 @@ Paths below are `/`-separated and relative, as `tessera_core::RelPath` represent
 An **asset reference** is either:
 
 - the source of an image (SPEC §5.3), in any CommonMark image form, inline or reference; or
-- the destination of a link (SPEC §5.2) that is local and doesn't name a Ascribe source file under the content root.
+- the destination of a link (SPEC §5.2) that is local and doesn't name an Ascribe source file under the content root.
 
 A local destination that names a Markdown file (`.md`) under the content root is a page or a fragment, never an asset: a link to a page becomes a route (SPEC §5.2), and a link to a fragment is an error (`link-to-fragment`). Every other local file is an asset, including a `.md` file outside the content root. An image source is an asset whatever its extension.
 

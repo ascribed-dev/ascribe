@@ -44,6 +44,6 @@ The integration finds the binary in `target/` (or `ASCRIBE_BIN`). `test:e2e` run
 - the page and section availability badges render, with the element library's stylesheet;
 - a linked file is served at `/docs/_ascribe/files/`;
 - every heading's id, and Astro's table of contents, equal the ids in `ascribe build --emit json`, at the route the JSON gives;
-- the build fails on a Ascribe error and on routing that disagrees with `ascribe.toml`; the dev server serves `_ascribe/files/`; the plugin works under `unified()` too; and the root base with trailing slashes routes correctly.
+- the build fails on an Ascribe error and on routing that disagrees with `ascribe.toml`; the dev server serves `_ascribe/files/`; the plugin works under `unified()` too; and the root base with trailing slashes routes correctly.
 
 `pnpm test` runs nothing here: the end-to-end test needs the compiler and a browser, so it has its own script (and its own job in `.github/workflows/js.yml`).

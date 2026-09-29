@@ -43,13 +43,13 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 | `src/lib.rs` | 2 | module list | `pub mod tessera;` |
 | | | re-exports | `parse_document_with_definitions` (phase 23) |
 | `src/nodes.rs` | 5 | `NodeValue` | The `TesseraLine(Box<NodeTesseraLine>)` variant, after `FrontMatter` |
-| | | `NodeValue::block` | A Ascribe line is a block |
+| | | `NodeValue::block` | An Ascribe line is a block |
 | | | `NodeValue::xml_node_name` | `tessera_line` |
-| | | `NodeValue::accepts_lines` | A Ascribe line takes its own line |
-| | | `Node::can_contain_type` | A Ascribe line contains only its primary's paragraph |
+| | | `NodeValue::accepts_lines` | An Ascribe line takes its own line |
+| | | `Node::can_contain_type` | An Ascribe line contains only its primary's paragraph |
 | `src/parser/options.rs` | 1 | `Extension` | The `tessera: Option<Arc<TesseraOptions>>` option, after `front_matter_delimiter` |
 | `src/parser/mod.rs` | 13 | module list | `mod tessera;` |
-| | | `check_open_blocks_inner` | A Ascribe line stays open while its primary's paragraph does |
+| | | `check_open_blocks_inner` | An Ascribe line stays open while its primary's paragraph does |
 | | | `open_new_blocks` | `handle_tessera_line` in the chain of block starts, between block quotes and ATX headings |
 | | | `detect_setext_heading` | A text primary never becomes a setext heading (changed condition) |
 | | | `detect_table` | A text primary never becomes a table header (changed condition) |
@@ -62,8 +62,8 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 | | | `resolve_reference_link_definitions` | Takes the content's first line and column offsets, and records each definition with its positions (`tessera::locate`); the setext and paragraph call sites pass them |
 | | | `parse_reference_inline` | `&mut self` (was `&self`); records the label, destination, and title ranges, and the cleaned values, in the field above. The parsing itself is unchanged |
 | `src/parser/inlines.rs` | 1 | `close_bracket_match` | After an image, skips the attribute block that follows it directly (`![alt](src){width=600}`), so its contents are never parsed as emphasis, links, or code (phase 07). The scan is `tessera::image_attributes_len`, in Ascribe's own file |
-| `src/html.rs` | 1 | `format_node_default` | Renders a Ascribe line with `tessera::render_html` |
-| `src/cm.rs` | 2 | `CommonMarkFormatter::format_node` | Formats a Ascribe line |
+| `src/html.rs` | 1 | `format_node_default` | Renders an Ascribe line with `tessera::render_html` |
+| `src/cm.rs` | 2 | `CommonMarkFormatter::format_node` | Formats an Ascribe line |
 | | | `CommonMarkFormatter::format_tessera_line` | New method, after `format_front_matter` |
 | `src/xml.rs` | 1 | `XmlFormatter::format_node` | A `raw` attribute on `tessera_line` |
 | `src/tests/sourcepos.rs` | 3 | `TESSERA_LINE`, `node_values`, `sourcepos` | Upstream's test requires a case for every node type |

@@ -39,7 +39,7 @@ modifier *n*):
 
 | # | Modifier | Set on |
 |---|---|---|
-| 0 | `unknown` | A `ascribeAttributeKey` the directive's schema (or, for an image, `[images.attributes]`) doesn't declare |
+| 0 | `unknown` | An `ascribeAttributeKey` the directive's schema (or, for an image, `[images.attributes]`) doesn't declare |
 
 A token never overlaps another: a phrase inside a title line splits the title
 token around it. Tokens that span lines are split per line. Positions and
@@ -74,7 +74,7 @@ advertise pull diagnostics.
   file on disk, and closing one reverts to the disk), the file watcher (files
   and directories created, changed, deleted, or moved by anything else, sources
   and assets alike), and `ascribe.toml` (open or on disk).
-- **The model.** A `ascribe.toml` that loads is applied as `Change::Model`
+- **The model.** An `ascribe.toml` that loads is applied as `Change::Model`
   (phase 13's tiers decide what is re-parsed, re-indexed, or re-resolved). One
   that doesn't load has its problems published on `ascribe.toml`, and the
   project keeps the last model that did (Q131). A change to the content root or

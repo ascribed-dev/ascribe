@@ -4,7 +4,7 @@
 
 ## Goal
 
-Ship `ascribe lsp`: a language server that keeps a Ascribe project in memory, follows every change to it, and publishes the same diagnostics `ascribe check` reports, as the author types.
+Ship `ascribe lsp`: a language server that keeps an Ascribe project in memory, follows every change to it, and publishes the same diagnostics `ascribe check` reports, as the author types.
 
 ## Read first
 

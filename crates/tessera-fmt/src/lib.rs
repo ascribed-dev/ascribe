@@ -3,7 +3,7 @@
 //!
 //! [`format`] never re-renders the author's markdown. It works from spans in
 //! the tree `tessera_syntax::parse` returns, and edits only bytes that belong
-//! to a Ascribe construct:
+//! to an Ascribe construct:
 //!
 //! - a directive line's head: the space before its attribute block, the
 //!   attribute block itself, the `:` and the space after it, and whitespace

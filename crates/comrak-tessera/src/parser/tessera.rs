@@ -1,7 +1,7 @@
 //! TESSERA: the block parser's handling of Ascribe lines. This whole file is
 //! Ascribe's; see `FORK.md` and [`crate::tessera`].
 //!
-//! How a Ascribe line fits comrak's block parser:
+//! How an Ascribe line fits comrak's block parser:
 //!
 //! - **Starting.** [`Parser::handle_tessera_line`] runs in `open_new_blocks`
 //!   with the other block starts, so it's tried only at line start, after the
@@ -32,7 +32,7 @@ impl<'a, 'o, 'c> Parser<'a, 'o, 'c>
 where
     'c: 'o,
 {
-    /// Opens a Ascribe line if the line is one. On success, `container` is
+    /// Opens an Ascribe line if the line is one. On success, `container` is
     /// the new node, or its primary's paragraph when it has a text primary,
     /// and the caller adds the rest of the line to it.
     pub(super) fn handle_tessera_line(&mut self, container: &mut Node<'a>, line: &str) -> bool {
@@ -65,18 +65,18 @@ where
     }
 }
 
-/// Whether `node` is the paragraph holding a Ascribe line's text primary.
+/// Whether `node` is the paragraph holding an Ascribe line's text primary.
 ///
 /// The primary is inline content (SPEC §3.4), never a block, so the parser
 /// doesn't turn it into a setext heading or a table header, and doesn't take
 /// link reference definitions from its start.
 ///
-/// Only the parent is checked, since a Ascribe line's only possible child is
+/// Only the parent is checked, since an Ascribe line's only possible child is
 /// that paragraph. That keeps this safe to call while `node` itself is
 /// borrowed, as it is during `finalize`. The parent may be borrowed too: some
 /// containers, such as multiline blockquotes, finalize their children while
-/// holding their own data. A parent that's borrowed isn't a Ascribe line,
-/// because the parser never holds a Ascribe line's data while it works on
+/// holding their own data. A parent that's borrowed isn't an Ascribe line,
+/// because the parser never holds an Ascribe line's data while it works on
 /// the line's paragraph, so a failed borrow means "no".
 // SPEC §3.4: a text primary is always inline content (resolved Q2).
 pub(super) fn is_text_primary(node: Node<'_>) -> bool {

@@ -4,7 +4,7 @@ The client for Ascribe's language server (`ascribe lsp`), plus immediate syntax
 highlighting. The extension stays thin: language intelligence (diagnostics,
 semantic tokens, and later completion and navigation) comes from the server.
 
-It activates when the workspace contains a `ascribe.toml`.
+It activates when the workspace contains an `ascribe.toml`.
 
 ## The `ascribe` binary
 
@@ -13,7 +13,7 @@ The extension looks for the binary, in order:
 1. the `ascribe.path` setting, if set (a path that doesn't work is an error; it
    doesn't fall back);
 2. the project's `node_modules/.bin/ascribe`, looking in each folder that holds
-   a `ascribe.toml` and its parents up to the workspace folder;
+   an `ascribe.toml` and its parents up to the workspace folder;
 3. the binary bundled in the extension, `bin/<platform>-<arch>/ascribe`
    (`ascribe.exe` on Windows). Phase 27 packages these.
 

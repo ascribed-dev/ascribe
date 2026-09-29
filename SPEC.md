@@ -58,7 +58,7 @@ These principles govern the language. They are non-normative, but every normativ
 
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this document are to be interpreted as described in RFC 2119 and RFC 8174 when, and only when, they appear in all capitals.
 
-- A **conforming document** is a Ascribe source file that produces no errors (§8) under a given content model.
+- A **conforming document** is an Ascribe source file that produces no errors (§8) under a given content model.
 - A **processor** is any software that reads Ascribe source: a parser, validator, compiler, or authoring environment.
 - A **conforming processor** parses documents as this specification describes and reports every error listed in §8. It MAY report additional warnings.
 
@@ -66,7 +66,7 @@ Sections marked *non-normative*, examples, and notes are informative.
 
 ### 1.4 Relationship to CommonMark
 
-A Ascribe document is a CommonMark document. Everything CommonMark defines keeps its meaning, except where this specification assigns meaning to text CommonMark treats as ordinary paragraph content (directive lines, title lines, phrases, and attribute blocks after images).
+An Ascribe document is a CommonMark document. Everything CommonMark defines keeps its meaning, except where this specification assigns meaning to text CommonMark treats as ordinary paragraph content (directive lines, title lines, phrases, and attribute blocks after images).
 
 Processors MAY support common CommonMark extensions, such as GitHub Flavored Markdown tables. This specification doesn't depend on them.
 
@@ -82,7 +82,7 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-A Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
 
 - Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, or a mapping of dimensions to values) is a frontmatter value of the wrong type (§8.2).
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
@@ -956,7 +956,7 @@ Source files store real file paths, but authors should rarely need to read or ty
 
 *Note (non-normative): VS Code has no API for hiding text within a line. Hover, CodeLens, and inlay hints are the dependable ways to keep paths out of the author's way.*
 
-*Note (non-normative): general CommonMark formatters don't know that title and directive lines start new blocks. To them, a title line, a directive line, and the text below are one paragraph, so a formatter that reflows paragraphs (for example, Prettier with `proseWrap: always`) joins them into one line and breaks the page. Ascribe projects should format with a Ascribe-aware formatter, or exclude Ascribe sources from other formatters.*
+*Note (non-normative): general CommonMark formatters don't know that title and directive lines start new blocks. To them, a title line, a directive line, and the text below are one paragraph, so a formatter that reflows paragraphs (for example, Prettier with `proseWrap: always`) joins them into one line and breaks the page. Ascribe projects should format with an Ascribe-aware formatter, or exclude Ascribe sources from other formatters.*
 
 ---
 
@@ -1138,7 +1138,7 @@ Notes on the example:
 
 **Markdown, not MDX.** MDX mixes content with code, so every author has to work in JSX. Plain markdown keeps existing tooling and stays readable. MDX-style components are replaced by directives in source and by web components in output.
 
-**`@` rather than `:::` directives.** The colon-fenced "generic directives" syntax was proposed for CommonMark in 2018 and never adopted; its only real implementation is the remark-directive library, and related dialects (MyST, Pandoc, Docusaurus) each differ from it. Ascribe couldn't version or own a grammar built on it. `@` lines also read better unrendered, and `@` almost never collides with prose: across roughly 4,500 pages of Astro, Elastic, and Docker documentation, no prose `@` matched a Ascribe keyword.
+**`@` rather than `:::` directives.** The colon-fenced "generic directives" syntax was proposed for CommonMark in 2018 and never adopted; its only real implementation is the remark-directive library, and related dialects (MyST, Pandoc, Docusaurus) each differ from it. Ascribe couldn't version or own a grammar built on it. `@` lines also read better unrendered, and `@` almost never collides with prose: across roughly 4,500 pages of Astro, Elastic, and Docker documentation, no prose `@` matched an Ascribe keyword.
 
 **One line grammar, attributes first.** Placing attributes before the primary keeps metadata next to the name, and gives a directive's line and container forms the same head. Braces were chosen over brackets because brackets collide with markdown link syntax.
 

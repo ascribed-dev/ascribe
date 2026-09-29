@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parse } from "smol-toml";
 
-/** The parts of a Ascribe project the integration reads. */
+/** The parts of an Ascribe project the integration reads. */
 export interface ProjectInfo {
   /** The directory holding `ascribe.toml`. */
   dir: string;

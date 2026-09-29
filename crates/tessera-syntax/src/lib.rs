@@ -71,7 +71,7 @@ pub use options::ParseOptions;
 pub use structure::{bound_block, bound_heading};
 pub use tree::*;
 
-/// Parses a Ascribe source file.
+/// Parses an Ascribe source file.
 ///
 /// Never panics, whatever the input. Anything malformed is reported in
 /// [`ParsedDocument::issues`] and the tree keeps as much of the source as it

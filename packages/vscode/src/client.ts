@@ -221,7 +221,7 @@ function minServerVersion(context: vscode.ExtensionContext) {
 
 /**
  * The directories to look in for the project's own binary: each folder that
- * holds a `ascribe.toml`, and its parents up to the workspace folder (a
+ * holds an `ascribe.toml`, and its parents up to the workspace folder (a
  * monorepo keeps `node_modules` at the top); then the workspace folders.
  */
 async function projectRoots(): Promise<string[]> {
