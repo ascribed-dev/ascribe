@@ -4,7 +4,7 @@ The `tessera` command-line tool.
 
 ```sh
 tessera --version
-tessera check [--config <PATH>] [--build <NAME>] [--format text|json] [--deny-warnings] [--color auto|always|never]
+tessera check [--config <PATH>] [--build <NAME>]... [--format text|json] [--deny-warnings] [--color auto|always|never]
 tessera build [--build <NAME>]... [--emit plain,json] [--format text|json]
 ```
 

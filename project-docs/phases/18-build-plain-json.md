@@ -66,7 +66,7 @@ Ship `tessera build` with the two simplest outputs, plain markdown and JSON, inc
 
 - **Phase 20 (site output)**: implement `Emitter` for the site emitter and override `place_asset` (link targets under `_tessera/files/`, with `Placement::url`, which the store already writes to the manifest) and `generated` (the Zod schema, under `_tessera/`). `emit` and `OutputDir::replace` need no change; add `Emit::Site` to `commands/build.rs` (it's refused now) and swap `DefaultRouter::from_consumer` for the profile's router in `write_outputs` (`SPEC-QUESTION(Q119)`). `EmitContext::absolute_url` and `labels::availability_display` are reusable.
 - **Phase 26**: `emit` plus `OutputDir::replace` per build and emitter is the pipeline to time; `EmitContext::new` indexes every file's lines for each call, so build one per build and share it across emitters.
-- **Phase 14**: `commands/build.rs::diagnose` is the one place `tessera build` calls the checks.
+- **Phase 14**: `commands/diagnose.rs::diagnose` is the one place `tessera build` calls the checks.
 
 ### Decisions
 
@@ -86,7 +86,7 @@ No case has `outputs:` yet, and none carries the `output` tag, so the `output` s
 
 ### Left open
 
-- **Phase 14 is wired in.** `diagnose` in `commands/build.rs` is `tessera check`'s logic (`check_all_builds` with no `--build`, so the reports are identical; `check_project` per named build otherwise). `check.rs`'s own `diagnose` is private, so the two copies must change together: if it grows, move it into a shared module.
+- **Phase 14 is wired in, through one implementation.** `commands/diagnose.rs` (build selection, the unknown-build error, `check_all_builds` or `tessera_check::check_builds`, and the `builds_note` decoration) is called by both `tessera check` and `tessera build`, and both take `--build` more than once. `check_builds(project, &[&Build])` (new in `tessera-check`, at the reviewer's request) merges a subset of builds as `check_all_builds` merges all of them.
 - **Q111 to Q120** are open, all implemented as proposed.
 - **A case-only rename on a case-insensitive file system** (`Guide.md` to `guide.md`) makes the build fail with "isn't a file Tessera wrote", since the manifest lists the old spelling: safe, and confusing. Fixing it needs telling a case twin of Tessera's file from a user's file, which a case-insensitive listing can't do portably.
 - **An output of a build removed from `tessera.toml`** stays on disk: a build only replaces the outputs it writes, and nothing lists the ones it doesn't. A `tessera clean` (or pruning the manifests of unknown builds) could remove them; it isn't in the phase.

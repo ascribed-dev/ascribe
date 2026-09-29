@@ -170,12 +170,12 @@ fn the_site_output_and_unknown_builds_are_refused() {
     );
     let out = tessera(dir.path(), &["build", "--build", "nope"]);
     assert_eq!(code(&out), 2);
+    assert!(stderr(&out).contains("no build `nope`"), "{}", stderr(&out));
     assert!(
-        stderr(&out).contains("no build named `nope`"),
+        stderr(&out).contains("its builds are site, cloud"),
         "{}",
         stderr(&out)
     );
-    assert!(stderr(&out).contains("`cloud`"), "{}", stderr(&out));
     assert!(!dir.path().join(".tessera").exists());
 }
 
@@ -379,5 +379,65 @@ fn build_reports_what_check_reports_for_page_level_problems_too() {
         }
     }
     assert!(stdout(&tessera(dir.path(), &["build"])).contains("id-duplicate"));
+    assert!(!dir.path().join(".tessera").exists());
+}
+
+#[test]
+fn several_builds_and_unknown_builds_are_reported_as_check_reports_them() {
+    // Two selection builds both drop `sm.md`, which `index.md` links to.
+    let model = format!(
+        "{MODEL}\n[builds.cloud-pdf]\nvariants = {{ deployment = \"cloud\" }}\navailability = \"badge\"\n"
+    );
+    let dir = project(
+        &model,
+        &[
+            ("index.md", &page("[Server](sm.md)\n")),
+            (
+                "sm.md",
+                "---\ntitle: Server\nvariant:\n  deployment: self-managed\n---\n\nx\n",
+            ),
+        ],
+    );
+    for args in [
+        vec![],
+        vec!["--build", "cloud", "--build", "cloud-pdf"],
+        vec!["--build", "cloud"],
+        vec!["--build", "cloud", "--build", "site"],
+        vec!["--build", "nope"],
+        vec!["--build", "cloud", "--build", "nope"],
+    ] {
+        for format in ["text", "json"] {
+            let mut check = vec!["check", "--format", format];
+            let mut build = vec!["build", "--format", format];
+            check.extend(&args);
+            build.extend(&args);
+            let (check, build) = (tessera(dir.path(), &check), tessera(dir.path(), &build));
+            assert_eq!(code(&check), code(&build), "{args:?} {format}");
+            assert_eq!(stdout(&check), stdout(&build), "{args:?} {format}");
+            assert_eq!(
+                stderr(&check),
+                stderr(&build).replace("error: the build failed; nothing was written\n", ""),
+                "{args:?} {format}"
+            );
+        }
+    }
+    // Both builds share one diagnostic that names them.
+    let out = tessera(
+        dir.path(),
+        &["build", "--build", "cloud", "--build", "cloud-pdf"],
+    );
+    assert!(stdout(&out).contains("1 error"), "{}", stdout(&out));
+    assert!(
+        stdout(&out).contains("builds `cloud`, `cloud-pdf`"),
+        "{}",
+        stdout(&out)
+    );
+    let out = tessera(dir.path(), &["build", "--build", "nope"]);
+    assert_eq!(code(&out), 2);
+    assert!(
+        stderr(&out).contains("no build `nope`; its builds are"),
+        "{}",
+        stderr(&out)
+    );
     assert!(!dir.path().join(".tessera").exists());
 }

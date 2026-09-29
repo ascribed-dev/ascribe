@@ -14,7 +14,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
-use tessera_check::{Diagnostic, LoadError, Project, check_all_builds, check_project};
+use tessera_check::{LoadError, Project};
 use tessera_emit::{
     EmitContext, EmitError, Emitter, JsonEmitter, OutputDir, PlainEmitter, StoreError, emit,
 };
@@ -23,6 +23,7 @@ use tessera_resolve::DefaultRouter;
 
 use crate::cli::Global;
 use crate::commands::check::Format;
+use crate::commands::diagnose::diagnose;
 use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::{Counts, FileTable, json, text};
@@ -81,8 +82,9 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         Ok(project) => project,
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
-    let builds = match select_builds(&project, &args.build) {
-        Ok(builds) => builds,
+    // The checks, for every build asked for, before anything is written.
+    let (diagnostics, builds) = match diagnose(&project, &args.build) {
+        Ok(found) => found,
         Err(message) => return fail(err, &message),
     };
     // SPEC-QUESTION(Q119): what `--emit site` does before phase 20.
@@ -92,9 +94,6 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
             "the site output isn't available yet; use --emit plain,json",
         );
     }
-
-    // The checks, for every build asked for, before anything is written.
-    let diagnostics = diagnose(&project, &builds, args.build.is_empty());
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
     let written = match args.format {
@@ -115,56 +114,6 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         Ok(()) => exit::OK,
         Err(message) => fail(err, &message),
     }
-}
-
-/// Every diagnostic `tessera check` reports for these builds: with no
-/// `--build`, exactly `check`'s list (every build, each problem once with the
-/// builds it appears in); with `--build`, `check_project` for each named
-/// build, and a problem several of them share once.
-fn diagnose(project: &Project, builds: &[&Build], all: bool) -> Vec<Diagnostic> {
-    let mut diagnostics = if all {
-        check_all_builds(project)
-    } else {
-        let mut out: Vec<Diagnostic> = Vec::new();
-        for build in builds {
-            for d in check_project(project, build) {
-                if !out.contains(&d) {
-                    out.push(d);
-                }
-            }
-        }
-        out
-    };
-    let total = if all { builds.len() } else { 1 };
-    for d in &mut diagnostics {
-        if let Some(note) = d.builds_note(total) {
-            d.message = format!("{} ({note})", d.message);
-        }
-    }
-    diagnostics
-}
-
-fn select_builds<'p>(project: &'p Project, names: &[String]) -> Result<Vec<&'p Build>, String> {
-    let all = &project.model().builds;
-    if names.is_empty() {
-        return Ok(all.iter().collect());
-    }
-    let mut out: Vec<&Build> = Vec::new();
-    for name in names {
-        let build = all.iter().find(|b| &b.name == name).ok_or_else(|| {
-            format!(
-                "the content model has no build named `{name}`; it has {}",
-                all.iter()
-                    .map(|b| format!("`{}`", b.name))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            )
-        })?;
-        if !out.iter().any(|b| b.name == build.name) {
-            out.push(build);
-        }
-    }
-    Ok(out)
 }
 
 /// Resolves each build and writes its outputs. Errors are ready to print.
