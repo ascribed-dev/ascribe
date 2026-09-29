@@ -42,21 +42,27 @@ export function buildSite(root: string = siteDir): Promise<void> {
 }
 
 /** Serves a built site, returning its origin and a function that stops it. */
-export async function servePreview(root: string = siteDir): Promise<{ origin: string; stop(): Promise<void> }> {
+export async function servePreview(
+  root: string = siteDir,
+): Promise<{ origin: string; stop(): Promise<void> }> {
   const port = await freePort();
   const server = await preview({ root, logLevel: "warn", server: { host: "127.0.0.1", port } });
   return { origin: `http://127.0.0.1:${server.port}`, stop: () => server.stop() };
 }
 
 /** Starts the dev server in its own process, returning its origin and a function that stops it. */
-export async function serveDev(root: string = siteDir): Promise<{ origin: string; stop(): Promise<void> }> {
+export async function serveDev(
+  root: string = siteDir,
+): Promise<{ origin: string; stop(): Promise<void> }> {
   const port = await freePort();
   const script = fileURLToPath(new URL("dev-server.mjs", import.meta.url));
   const child = spawn(process.execPath, [script, root, String(port)], {
     stdio: ["ignore", "pipe", "inherit"],
     // The test runner sets NODE_ENV=test and VITEST*, which Astro's dev server takes for another mode.
     env: {
-      ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("VITEST"))),
+      ...Object.fromEntries(
+        Object.entries(process.env).filter(([name]) => !name.startsWith("VITEST")),
+      ),
       NODE_ENV: "development",
     },
   });
@@ -69,7 +75,9 @@ export async function serveDev(root: string = siteDir): Promise<{ origin: string
   return new Promise((resolve, reject) => {
     let output = "";
     child.once("error", reject);
-    child.once("exit", (code) => reject(new Error(`the dev server exited with ${code}: ${output}`)));
+    child.once("exit", (code) =>
+      reject(new Error(`the dev server exited with ${code}: ${output}`)),
+    );
     child.stdout.on("data", (chunk: Buffer) => {
       output += chunk.toString();
       if (output.includes("READY")) resolve({ origin: `http://127.0.0.1:${port}`, stop });

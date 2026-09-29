@@ -54,12 +54,7 @@ export default function tessera(options: TesseraOptions): AstroIntegration {
       "astro:config:setup": async ({ config, command, logger, updateConfig }) => {
         const root = fileURLToPath(config.root);
         const project = readProject(path.resolve(root, options.project ?? "."));
-        if (!project.builds.includes(options.build)) {
-          throw new Error(
-            `@tessera/astro: ${project.configPath} has no build named "${options.build}"` +
-              ` (it has: ${project.builds.join(", ") || "none"}).`,
-          );
-        }
+        // An unknown build is `tessera build`'s to report: it knows the implicit `site` build (content-model.md §17).
         siteRoot = project.siteRoot(options.build);
 
         // `tessera.toml`'s routing must be Astro's, or every link Tessera writes is wrong.

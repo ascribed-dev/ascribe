@@ -27,6 +27,8 @@ import { schema } from "../.tessera/build/site/site/_tessera/schema.ts";
 export const collections = { docs: defineCollection(tesseraCollection({ schema })) };
 ```
 
+The site imports `schema` from the generated file by path, so `output-dir` and the build name appear there as well as in `tessera.toml` and the integration's options. That is a deliberate trade-off: Vite compiles the TypeScript file where it is, so the site keeps the schema's exact inferred types (`z.infer` of each content type). A `virtual:tessera/schema` that re-exported it would name the path in one place but hide those types behind a virtual module. A project with another `output-dir` changes both lines. (Q155.)
+
 ```astro
 ---
 // A layout

@@ -81,7 +81,9 @@ describe("the built site", () => {
   it("loads the fragment's image, processed by Astro, with the marker's attributes", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
     const image = page.getByRole("img", { name: "Checklist of requirements" });
-    await expect(image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).resolves.toBe(true);
+    await expect(
+      image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
+    ).resolves.toBe(true);
     const attributes = await image.evaluate((element: HTMLImageElement) => ({
       src: element.getAttribute("src"),
       width: element.getAttribute("width"),
@@ -100,8 +102,12 @@ describe("the built site", () => {
   it("processes an image beside its page the same way", async () => {
     const page = await open(`${BASE}/reference/options`);
     const image = page.getByRole("img", { name: "The weave diagram" });
-    await expect(image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).resolves.toBe(true);
-    expect(await image.getAttribute("src")).toMatch(new RegExp(`^${BASE}/_astro/weave\\.[\\w-]+\\.webp$`));
+    await expect(
+      image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
+    ).resolves.toBe(true);
+    expect(await image.getAttribute("src")).toMatch(
+      new RegExp(`^${BASE}/_astro/weave\\.[\\w-]+\\.webp$`),
+    );
     expect(await image.getAttribute("width")).toBe("120");
     await page.close();
   });
@@ -110,12 +116,18 @@ describe("the built site", () => {
     const page = await open(`${BASE}/guides/my-setup`);
     // The `deployment` group is reduced to its cloud arm: plain content, no tabs.
     const connect = page.locator("article");
-    await expect(connect.getByText("Sign in to Loom Cloud and copy your API key.").isVisible()).resolves.toBe(true);
+    await expect(
+      connect.getByText("Sign in to Loom Cloud and copy your API key.").isVisible(),
+    ).resolves.toBe(true);
     await expect(page.getByText("Point the CLI at your own server").count()).resolves.toBe(0);
     await expect(page.locator('tessera-tabs[sync="deployment"]').count()).resolves.toBe(0);
     // The `pm` group is still a switcher.
     const group = page.locator('tessera-tabs[sync="pm"]');
-    await expect(group.getByRole("tab").allTextContents()).resolves.toEqual(["npm", "pnpm", "yarn"]);
+    await expect(group.getByRole("tab").allTextContents()).resolves.toEqual([
+      "npm",
+      "pnpm",
+      "yarn",
+    ]);
     await expect(group.getByText("npm install -g @loom/cli").isVisible()).resolves.toBe(true);
     await expect(group.getByText("pnpm add -g @loom/cli").isVisible()).resolves.toBe(false);
     await group.getByRole("tab", { name: "pnpm" }).click();
@@ -127,9 +139,13 @@ describe("the built site", () => {
   it("renders the availability badges, page-level from frontmatter and section-level", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
     const pageBadge = page.locator('tessera-availability[scope="page"]');
-    await expect(pageBadge.innerText()).resolves.toContain("Loom Cloud (GA); Self-managed (preview, 3.4+)");
+    await expect(pageBadge.innerText()).resolves.toContain(
+      "Loom Cloud (GA); Self-managed (preview, 3.4+)",
+    );
     // The element library's stylesheet applies: a lead-in and a coloured, rounded badge.
-    await expect(pageBadge.evaluate((element) => getComputedStyle(element, "::before").content)).resolves.toBe('"Available: "');
+    await expect(
+      pageBadge.evaluate((element) => getComputedStyle(element, "::before").content),
+    ).resolves.toBe('"Available: "');
     const background = await pageBadge
       .locator("tessera-availability-target")
       .first()
@@ -159,16 +175,29 @@ describe("the built site", () => {
     });
     const jsonDir = path.join(siteDir, ".tessera", "build", "site", "json");
     const documents = jsonFiles(jsonDir).map(
-      (file) => JSON.parse(readFileSync(file, "utf8")) as { path: string; route: string; headings: { id: string }[] },
+      (file) =>
+        JSON.parse(readFileSync(file, "utf8")) as {
+          path: string;
+          route: string;
+          headings: { id: string }[];
+        },
     );
-    expect(documents.map((d) => d.path).sort()).toEqual(["Guides/My Setup.md", "Reference/Options.md", "index.md"]);
+    expect(documents.map((d) => d.path).sort()).toEqual([
+      "Guides/My Setup.md",
+      "Reference/Options.md",
+      "index.md",
+    ]);
     for (const document of documents) {
       // The route is a URL the site serves, and the built HTML has exactly the ids, in order.
       const page = await open(document.route);
-      const ids = await page.locator("article :is(h1, h2, h3, h4, h5, h6)").evaluateAll((elements) => elements.map((e) => e.id));
+      const ids = await page
+        .locator("article :is(h1, h2, h3, h4, h5, h6)")
+        .evaluateAll((elements) => elements.map((e) => e.id));
       expect(ids, document.path).toEqual(document.headings.map((h) => h.id));
       // Astro's table of contents (the layout's nav) recorded the same ids.
-      const toc = await page.locator("nav[aria-label='On this page'] a").evaluateAll((links) => links.map((a) => a.getAttribute("href")));
+      const toc = await page
+        .locator("nav[aria-label='On this page'] a")
+        .evaluateAll((links) => links.map((a) => a.getAttribute("href")));
       expect(toc, document.path).toEqual(document.headings.map((h) => `#${h.id}`));
       await page.close();
     }

@@ -5,7 +5,15 @@
 import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { BASE, buildSite, copySite, launchChromium, serveDev, servePreview, siteDir } from "./harness.js";
+import {
+  BASE,
+  buildSite,
+  copySite,
+  launchChromium,
+  serveDev,
+  servePreview,
+  siteDir,
+} from "./harness.js";
 
 afterAll(async () => {
   await rm(path.join(siteDir, ".e2e-tmp"), { recursive: true, force: true });
@@ -32,7 +40,9 @@ describe("the integration", () => {
   it("fails the Astro build when tessera.toml and astro.config disagree on routing", async () => {
     const root = await copySite("routing");
     await edit(path.join(root, "astro.config.mjs"), (text) =>
-      text.replace('trailingSlash: "never"', 'trailingSlash: "always"').replace('base: "/docs"', 'base: "/manual"'),
+      text
+        .replace('trailingSlash: "never"', 'trailingSlash: "always"')
+        .replace('base: "/docs"', 'base: "/manual"'),
     );
     const failure = await buildSite(root).then(
       () => undefined,
@@ -42,13 +52,33 @@ describe("the integration", () => {
     expect(String(failure)).toContain('trailing-slash is "never"');
   });
 
+  it("builds a project with no [builds] table (the implicit `site` build), and reports an unknown build", async () => {
+    const root = await copySite("implicit");
+    await edit(path.join(root, "tessera.toml"), (text) =>
+      text.replace(/\[builds\.site\][^[]*/, "").replace(/\[editor\][^[]*/, ""),
+    );
+    await buildSite(root);
+    await edit(path.join(root, "astro.config.mjs"), (text) =>
+      text.replace('build: "site"', 'build: "nope"'),
+    );
+    const failure = await buildSite(root).then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(String(failure)).toContain("nope");
+  });
+
   it("routes agree under a root base path with trailing slashes", async () => {
     const root = await copySite("always");
     await edit(path.join(root, "tessera.toml"), (text) =>
-      text.replace('base-path = "/docs/"', 'base-path = "/"').replace('trailing-slash = "never"', 'trailing-slash = "always"'),
+      text
+        .replace('base-path = "/docs/"', 'base-path = "/"')
+        .replace('trailing-slash = "never"', 'trailing-slash = "always"'),
     );
     await edit(path.join(root, "astro.config.mjs"), (text) =>
-      text.replace('base: "/docs"', 'base: "/"').replace('trailingSlash: "never"', 'trailingSlash: "always"'),
+      text
+        .replace('base: "/docs"', 'base: "/"')
+        .replace('trailingSlash: "never"', 'trailingSlash: "always"'),
     );
     await buildSite(root);
     const server = await servePreview(root);
@@ -77,6 +107,9 @@ describe("the integration", () => {
       expect(await file.text()).toBe("weave:\n  strands: 4\n");
       const missing = await fetch(`${server.origin}${BASE}/_tessera/files/downloads/nope.yaml`);
       expect(missing.status).toBe(404);
+      // Only under the base path, as in the build.
+      const unprefixed = await fetch(`${server.origin}/_tessera/files/downloads/loom.yaml`);
+      expect(unprefixed.status).toBe(404);
       const html = await (await fetch(`${server.origin}${BASE}/guides/my-setup`)).text();
       expect(html).toContain('id="weave-config"');
     } finally {
@@ -88,7 +121,10 @@ describe("the integration", () => {
     const root = await copySite("unified");
     await edit(path.join(root, "astro.config.mjs"), (text) =>
       text
-        .replace('import tessera from "@tessera/astro";', 'import { unified } from "@astrojs/markdown-remark";\nimport tessera from "@tessera/astro";')
+        .replace(
+          'import tessera from "@tessera/astro";',
+          'import { unified } from "@astrojs/markdown-remark";\nimport tessera from "@tessera/astro";',
+        )
         .replace("integrations:", "markdown: { processor: unified() },\n  integrations:"),
     );
     await buildSite(root);
@@ -97,9 +133,13 @@ describe("the integration", () => {
     try {
       const page = await browser.newPage();
       await page.goto(`${server.origin}${BASE}/guides/my-setup`);
-      const ids = await page.locator("article :is(h1, h2, h3, h4, h5, h6)").evaluateAll((elements) => elements.map((e) => e.id));
+      const ids = await page
+        .locator("article :is(h1, h2, h3, h4, h5, h6)")
+        .evaluateAll((elements) => elements.map((e) => e.id));
       expect(ids).toEqual(["requirements", "install", "connect", "weave-config", "streaming"]);
-      const toc = await page.locator("nav[aria-label='On this page'] a").evaluateAll((links) => links.map((a) => a.getAttribute("href")));
+      const toc = await page
+        .locator("nav[aria-label='On this page'] a")
+        .evaluateAll((links) => links.map((a) => a.getAttribute("href")));
       expect(toc).toEqual(ids.map((id) => `#${id}`));
       const image = page.getByRole("img", { name: "Checklist of requirements" });
       expect(await image.getAttribute("src")).toMatch(/\/_astro\/requirements\.[\w-]+\.webp$/);

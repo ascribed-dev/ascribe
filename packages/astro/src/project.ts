@@ -12,8 +12,6 @@ export interface ProjectInfo {
   dir: string;
   /** The path of `tessera.toml`. */
   configPath: string;
-  /** The names of the project's builds. */
-  builds: string[];
   /** `[consumer]`, with the profile's defaults. */
   consumer: { site: string | undefined; basePath: string; trailingSlash: "always" | "never" };
   /** The site output's root for a build: `<output-dir>/<build>/site`. */
@@ -40,7 +38,6 @@ export function readProject(dir: string): ProjectInfo {
   return {
     dir,
     configPath,
-    builds: Object.keys(section(table, "builds")),
     consumer: {
       site: typeof consumer["site"] === "string" ? consumer["site"] : undefined,
       basePath: normalizeBase(

@@ -5,7 +5,11 @@
 import process from "node:process";
 import { dev } from "astro";
 
-const server = await dev({ root: process.argv[2], logLevel: "warn", server: { host: "127.0.0.1", port: Number(process.argv[3]) } });
+const server = await dev({
+  root: process.argv[2],
+  logLevel: "warn",
+  server: { host: "127.0.0.1", port: Number(process.argv[3]) },
+});
 process.stdout.write(`READY ${server.address.port}\n`);
 process.on("SIGTERM", () => {
   server.stop().then(() => process.exit(0));

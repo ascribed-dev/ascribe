@@ -53,11 +53,14 @@ export function filesMiddleware(
   base: string,
 ): (req: IncomingMessage, res: ServerResponse, next: () => void) => void {
   const root = publishedDir(siteRoot);
-  const prefixes = [`${base}_tessera/files/`, "/_tessera/files/"];
+  // Only under the base path, as in the build (asset contract §3.2). Vite strips the base from
+  // `req.url` before a plugin's middleware runs, but connect keeps the original in `originalUrl`.
+  const prefix = `${base}_tessera/files/`;
   return (req, res, next) => {
-    const pathname = (req.url ?? "").split(/[?#]/, 1)[0] ?? "";
-    const prefix = prefixes.find((candidate) => pathname.startsWith(candidate));
-    if (prefix === undefined || (req.method !== "GET" && req.method !== "HEAD")) return next();
+    const pathname =
+      ((req as { originalUrl?: string }).originalUrl ?? req.url ?? "").split(/[?#]/, 1)[0] ?? "";
+    if (!pathname.startsWith(prefix) || (req.method !== "GET" && req.method !== "HEAD"))
+      return next();
     let relative: string;
     try {
       relative = decodeURIComponent(pathname.slice(prefix.length));

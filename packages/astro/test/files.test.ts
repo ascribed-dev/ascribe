@@ -44,6 +44,7 @@ describe("filesMiddleware", () => {
       "/docs/_tessera/files/downloads",
       "/docs/_tessera/files/..%2F..%2Fsecret.txt",
       "/docs/_tessera/files/%E0%A4%A",
+      "/_tessera/files/downloads/my%20config.yaml",
     ]) {
       const response = await fetch(`${origin}${url}`);
       expect(await response.text(), url).toBe("next");

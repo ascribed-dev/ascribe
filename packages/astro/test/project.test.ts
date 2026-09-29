@@ -11,7 +11,7 @@ function project(toml: string): string {
 }
 
 describe("readProject", () => {
-  it("reads the output directory, builds, and consumer settings", () => {
+  it("reads the output directory and consumer settings", () => {
     const dir = project(`
 spec = "0.1"
 [project]
@@ -20,17 +20,19 @@ output-dir = "out"
 site = "https://docs.example.com"
 base-path = "/docs"
 trailing-slash = "never"
-[builds.site]
-[builds."self-managed-3.3"]
 `);
     const info = readProject(dir);
-    expect(info.builds).toEqual(["site", "self-managed-3.3"]);
     expect(info.consumer).toEqual({
       site: "https://docs.example.com",
       basePath: "/docs/",
       trailingSlash: "never",
     });
     expect(info.siteRoot("site")).toBe(path.join(dir, "out", "site", "site"));
+  });
+
+  it("needs no [builds] table: the implicit `site` build has the same output layout", () => {
+    const info = readProject(project('spec = "0.1"\n[project]\ncontent-root = "docs"\n'));
+    expect(info.siteRoot("site")).toBe(path.join(info.dir, ".tessera", "build", "site", "site"));
   });
 
   it("uses the profile's defaults", () => {
