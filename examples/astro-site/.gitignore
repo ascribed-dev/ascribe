@@ -1,0 +1,5 @@
+# The compiler's output (tessera.toml's output-dir) and Astro's.
+.tessera/
+.astro/
+dist/
+.e2e-tmp/

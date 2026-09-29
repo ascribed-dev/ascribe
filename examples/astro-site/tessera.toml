@@ -1,0 +1,50 @@
+# The content model for the Astro end-to-end slice (phase 21): a small project
+# that covers the integrations most likely to break. Reference:
+# project-docs/content-model.md.
+spec = "0.1"
+
+[project]
+content-root = "content"
+output-dir = ".tessera/build"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+
+# `@variant {pm=npm}:` and friends: a group the site keeps as tabs.
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm", "yarn"]
+
+# `@variant {deployment=cloud}:`, and `available: cloud, self-managed preview 3.4`.
+[dimensions.deployment]
+label = "Deployment"
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+labels = { cloud = "Loom Cloud", "self-managed" = "Self-managed" }
+
+[phrases]
+product = "Loom"
+
+# `![alt](src){width=300}`.
+[images.attributes]
+width = "number?"
+
+# Must agree with `astro.config.mjs`: `@tessera/astro` checks that it does.
+[consumer]
+profile = "astro"
+site = "https://docs.example.com"
+base-path = "/docs/"
+trailing-slash = "never"
+
+# The site: the deployment group reduces to its cloud arm, and the package
+# manager group stays a switcher.
+[builds.site]
+variants = { deployment = "cloud" }
+availability = "badge"
+
+[editor]
+build = "site"

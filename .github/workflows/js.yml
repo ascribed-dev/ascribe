@@ -57,3 +57,29 @@ jobs:
       - run: xvfb-run -a pnpm --filter tessera-vscode test:integration
         env:
           TESSERA_BIN: ${{ github.workspace }}/target/debug/tessera
+
+  # The Astro end-to-end slice (phase 21): a real `astro build` of
+  # examples/astro-site against a locally built `tessera`, with the built
+  # HTML checked in Chromium. Also runs the markdown plugin's tests/render/
+  # fixtures under both of Astro's markdown processors.
+  astro:
+    name: Astro end-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build -p tessera-cli --locked
+      - run: pnpm --filter @tessera/elements build
+      - run: pnpm --filter @tessera/astro build
+      - run: pnpm --filter @tessera/astro test
+      - run: pnpm --filter @tessera/example-astro-site exec playwright-core install --with-deps chromium
+      - run: pnpm --filter @tessera/example-astro-site test:e2e
+        env:
+          TESSERA_BIN: ${{ github.workspace }}/target/debug/tessera
