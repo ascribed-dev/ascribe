@@ -13,7 +13,7 @@ import {
 } from "vscode-languageclient/node.js";
 import { ancestorsWithin, resolveBinary, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
-import { nodeEnvironment, usesShell } from "./environment.js";
+import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { parseVersion } from "./version.js";
 
 /** Where the server is in its life. */
@@ -187,7 +187,7 @@ export class ServerController implements vscode.Disposable {
 function serverOptions(binary: ResolvedBinary): ServerOptions {
   // Standard input and output carry the protocol; the server logs to stderr.
   return {
-    command: binary.path,
+    command: shellCommand(binary.path),
     args: ["lsp"],
     options: { shell: usesShell(binary.path) },
   };

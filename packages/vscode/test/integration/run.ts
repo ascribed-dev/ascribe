@@ -57,6 +57,9 @@ const suites: Suite[] = [
 ];
 
 async function main(): Promise<void> {
+  // A process an extension host started has this set, and VS Code would then
+  // run as plain Node instead of launching.
+  delete process.env["ELECTRON_RUN_AS_NODE"];
   const only = process.env["TESSERA_SUITE"];
   let failed = false;
   let ran = 0;
@@ -68,7 +71,9 @@ async function main(): Promise<void> {
       );
       continue;
     }
-    const scratch = mkdtempSync(path.join(tmpdir(), `tessera-vscode-${suite.name}-`));
+    const scratch = // Short on purpose: VS Code's IPC socket lives under --user-data-dir, and a
+      // Unix socket path can be at most 103 characters on macOS, where $TMPDIR is long.
+      mkdtempSync(path.join(tmpdir(), "tv-"));
     const workspace = path.join(scratch, "workspace");
     try {
       cpSync(suite.fixture, workspace, { recursive: true });

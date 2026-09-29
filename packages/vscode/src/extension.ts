@@ -19,7 +19,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Tesser
 
   context.subscriptions.push(
     server,
-    vscode.commands.registerCommand("tessera.restartServer", () => server.restart()),
+    vscode.commands.registerCommand("tessera.restartServer", async () => {
+      const present = await hasProject();
+      await vscode.commands.executeCommand("setContext", "tessera.active", present);
+      if (present) await server.restart();
+      else
+        void vscode.window.showInformationMessage("Tessera: this workspace has no tessera.toml.");
+    }),
     vscode.commands.registerCommand("tessera.showOutput", () => server.showOutput()),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration("tessera.maxCrashes")) server.readMaxCrashes();
@@ -27,12 +33,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<Tesser
     }),
   );
 
-  await server.start();
+  // A contributed command activates the extension in any workspace, so start
+  // the server only where there's a project.
+  const found = await hasProject();
+  await vscode.commands.executeCommand("setContext", "tessera.active", found);
+  if (found) await server.start();
   return {
     binary: () => server.binary,
     state: () => server.state,
     whenSettled: () => server.whenSettled(),
   };
+}
+
+/** Whether the workspace holds a `tessera.toml` (not counting `node_modules`). */
+async function hasProject(): Promise<boolean> {
+  return (await vscode.workspace.findFiles("**/tessera.toml", "**/node_modules/**", 1)).length > 0;
 }
 
 export async function deactivate(): Promise<void> {

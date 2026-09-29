@@ -1559,8 +1559,9 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Raised by:** phase 17
 - **Status:** open
 - **Ambiguity:** the extension's tests and install need three things in files other phases own: the pnpm 11 build-script policy for `esbuild` (`allowBuilds` in `pnpm-workspace.yaml`; without a decision `pnpm install` exits 1), a `vscode` job in `.github/workflows/js.yml` (integration tests need Rust, a display, and a VS Code download), and `test/fixtures/markdown.tmLanguage.json`, a copy of VS Code's MIT-licensed markdown grammar.
-- **Proposed resolution:** `allowBuilds: esbuild: false` (esbuild ships its binary in a per-platform package; its postinstall only swaps in a faster launcher); the workflow stays manual-only (`workflow_dispatch`); the grammar is a test fixture, reformatted by Prettier only. Implemented now: exactly that.
+- **Proposed resolution:** `allowBuilds: esbuild: false` (esbuild ships its binary in a per-platform package; its postinstall only swaps in a faster launcher); the workflow stays manual-only (`workflow_dispatch`); the grammar is a test fixture, reformatted by Prettier only, with its MIT license notice beside it (`test/fixtures/markdown.tmLanguage.LICENSE.txt`). Implemented now: exactly that.
 - **Affects:** `pnpm-workspace.yaml`, `.github/workflows/js.yml`.
+- **Resolution:** _to be filled in by a human._
 
 ### Q131: A `tessera.toml` that doesn't load, in a running editor
 

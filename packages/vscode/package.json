@@ -187,6 +187,18 @@
       "[markdown]": {
         "editor.semanticHighlighting.enabled": true
       }
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "tessera.restartServer",
+          "when": "tessera.active"
+        },
+        {
+          "command": "tessera.showOutput",
+          "when": "tessera.active"
+        }
+      ]
     }
   },
   "scripts": {
@@ -204,12 +216,18 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.0.0",
     "@types/vscode": "~1.90.0",
-    "@vscode/test-electron": "^2.5.2",
+    "@vscode/test-electron": "^3.1.0",
     "esbuild": "^0.25.0",
     "mocha": "^11.0.0",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.15",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.2.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Tessera runs the project's own tessera binary (node_modules/.bin/tessera or the tessera.path setting), which is code the workspace supplies."
+    }
   }
 }

@@ -1,5 +1,6 @@
 import * as assert from "node:assert/strict";
 import * as vscode from "vscode";
+import type { TesseraApi } from "../../../src/extension.js";
 import { EXTENSION_ID, sleep, uriOf } from "./helpers.js";
 
 describe("in a workspace without tessera.toml", () => {
@@ -12,5 +13,17 @@ describe("in a workspace without tessera.toml", () => {
     const extension = vscode.extensions.getExtension(EXTENSION_ID);
     assert.ok(extension, "the extension isn't installed");
     assert.equal(extension.isActive, false);
+  });
+
+  it("starts no server when a command activates it anyway", async () => {
+    // Contributed commands add their own activation events (VS Code 1.74+).
+    await vscode.commands.executeCommand("tessera.showOutput");
+    const extension = vscode.extensions.getExtension<TesseraApi>(EXTENSION_ID);
+    assert.ok(extension?.isActive, "the command should have activated the extension");
+    await vscode.commands.executeCommand("tessera.restartServer");
+    const api = extension.exports;
+    await api.whenSettled();
+    assert.equal(api.state(), "stopped");
+    assert.equal(api.binary(), undefined);
   });
 });

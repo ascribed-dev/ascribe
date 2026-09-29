@@ -5,10 +5,12 @@ const read = (relative: string) => readFileSync(new URL(relative, import.meta.ur
 
 interface Manifest {
   private?: boolean;
+  capabilities: { untrustedWorkspaces: { supported: boolean } };
   main: string;
   activationEvents: string[];
   contributes: {
     commands: { command: string }[];
+    menus: { commandPalette: { command: string; when: string }[] };
     configuration: { properties: Record<string, { default: unknown }> };
     grammars: { path: string; injectTo: string[]; scopeName: string }[];
     semanticTokenTypes: { id: string }[];
@@ -26,6 +28,18 @@ describe("package.json", () => {
 
   it("activates only for workspaces that contain tessera.toml", () => {
     expect(manifest.activationEvents).toEqual(["workspaceContains:**/tessera.toml"]);
+  });
+
+  it("doesn't support untrusted workspaces, since it runs the project's binary", () => {
+    expect(manifest.capabilities.untrustedWorkspaces.supported).toBe(false);
+  });
+
+  it("hides every command from the palette until a workspace has tessera.toml", () => {
+    const hidden = manifest.contributes.menus.commandPalette;
+    expect(hidden.map((entry) => entry.command).sort()).toEqual(
+      manifest.contributes.commands.map((command) => command.command).sort(),
+    );
+    for (const entry of hidden) expect(entry.when).toBe("tessera.active");
   });
 
   it("declares the commands and settings the extension reads", () => {

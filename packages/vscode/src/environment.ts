@@ -14,7 +14,7 @@ export const nodeEnvironment: BinaryEnvironment = {
   runVersion(file) {
     return new Promise((resolve, reject) => {
       execFile(
-        file,
+        shellCommand(file),
         ["--version"],
         // A `.cmd` shim, which is what npm links on Windows, needs a shell.
         { timeout: 10_000, windowsHide: true, shell: usesShell(file) },
@@ -27,6 +27,15 @@ export const nodeEnvironment: BinaryEnvironment = {
 };
 
 /** Whether a binary has to be started through a shell (a Windows `.cmd` shim). */
-export function usesShell(file: string): boolean {
-  return process.platform === "win32" && /\.(cmd|bat)$/i.test(file);
+export function usesShell(file: string, platform: NodeJS.Platform = process.platform): boolean {
+  return platform === "win32" && /\.(cmd|bat)$/i.test(file);
+}
+
+/**
+ * The command to give a process API for a binary. With a shell, Node joins the
+ * command and its arguments into one line without quoting, so a path with
+ * spaces (`C:\Users\Jane Doe\...`) has to be quoted here.
+ */
+export function shellCommand(file: string, platform: NodeJS.Platform = process.platform): string {
+  return usesShell(file, platform) ? `"${file}"` : file;
 }
