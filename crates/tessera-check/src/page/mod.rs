@@ -102,7 +102,7 @@ pub fn check_all_builds(project: &Project) -> Vec<Diagnostic> {
 /// builds without indexing it again.
 pub struct PageChecker<'p> {
     project: &'p Project,
-    indexed: Indexed,
+    indexed: Indexed<'p>,
     links: LinkProblems,
 }
 
@@ -114,6 +114,37 @@ impl<'p> PageChecker<'p> {
             indexed: Indexed::new(project),
             links: RefCell::new(HashMap::new()),
         }
+    }
+
+    /// A checker over an index the caller already has, so nothing is indexed
+    /// again: the language server passes its incremental index (a
+    /// `tessera_resolve::Snapshot` dereferences to one). `index` must be an
+    /// index of the same files as `project`, with the same file ids and
+    /// texts; only [`PageChecker::check_resolved`] is meant for it (the other
+    /// methods resolve every page).
+    pub fn with_index(
+        project: &'p Project,
+        index: &'p tessera_resolve::Project,
+    ) -> PageChecker<'p> {
+        PageChecker {
+            project,
+            indexed: Indexed::shared(index),
+            links: RefCell::new(HashMap::new()),
+        }
+    }
+
+    /// The page-level diagnostics of `build` for these resolved pages alone:
+    /// what [`PageChecker::check`] reports for them, and nothing about the
+    /// rest of the project. A diagnostic is located in the page's own file,
+    /// except an `include-cycle`, which is located where the cycle closes (in
+    /// a fragment), so the diagnostics located in a file are those of the
+    /// pages that are the file or include it, transitively.
+    pub fn check_resolved(&self, build: &Build, pages: &[&ResolvedPage]) -> Vec<Diagnostic> {
+        let found = pages
+            .iter()
+            .flat_map(|page| check_page(&self.indexed.index, page, &self.links))
+            .collect();
+        self.finish(vec![(Some(build.name.as_str()), found)])
     }
 
     /// The page-level diagnostics of one build.
