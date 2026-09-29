@@ -9,12 +9,13 @@ mod format;
 pub mod include;
 mod inline;
 mod model;
+mod page_check;
 pub mod resolve;
 mod structure;
 mod syntax;
 
 #[allow(unused_imports)]
-pub use check::file_level_diagnostics;
+pub use check::{file_level_diagnostics, to_conformance};
 use tessera_conformance::Registry;
 
 /// Registers every adapter. Earlier registrations are asked first.
@@ -25,4 +26,5 @@ pub fn register(registry: &mut Registry) {
     registry.register(model::ModelAdapter);
     registry.register(include::IncludeAdapter);
     registry.register(resolve::ResolveAdapter);
+    registry.register(page_check::PageCheckAdapter);
 }

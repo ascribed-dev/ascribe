@@ -4,7 +4,7 @@ The `tessera` command-line tool.
 
 ```sh
 tessera --version
-tessera check [--config <PATH>] [--format text|json] [--deny-warnings] [--color auto|always|never]
+tessera check [--config <PATH>] [--build <NAME>] [--format text|json] [--deny-warnings] [--color auto|always|never]
 ```
 
 | Command | What it does | Phase |
@@ -23,7 +23,12 @@ Only `check` exists so far. Each subcommand is one module under `src/commands/`;
 
 ## `tessera check`
 
-Loads the content model, reads every `.md` file under its content root (skipping names that begin with `.`), and reports file-level diagnostics (SPEC §8.1): the same list the language server and the build report, from `tessera_check::check_files`. Page-level checks (ids and link targets that need an assembled page) are reported by the build.
+Loads the content model, reads every `.md` file under its content root (skipping names that begin with `.`), and reports every diagnostic of SPEC §8.1: the file-level ones, then the page-level ones for **every build** of the content model. It's `tessera_check::check_all_builds`; the language server and `tessera build` call the same functions (`check_project` for one build), so their diagnostics are identical.
+
+- **`--build <NAME>`** checks one build only (`tessera_check::check_project`). An unknown name is exit code 2, and the message lists the builds.
+- **Each problem is reported once**, however many builds it appears in. One that doesn't appear in all of them says which, at the end of its message (`only in build `cloud``); the three rows that name a build in their message (`variant-no-arm-survives`, `link-id-removed`, `link-page-dropped`) name every build they appear in.
+- **A problem in included content is at the include site**, with its place in the fragment as a related location (`related` in the JSON), not a second diagnostic.
+- **Content no build publishes** is checked too, so a problem in an arm that none of the builds selects isn't missed. Its diagnostics say "in content that no build publishes". Not with `--build`, which is about one build.
 
 ### Exit codes
 

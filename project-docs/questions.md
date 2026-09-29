@@ -1227,3 +1227,58 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1, which keeps content and matches "a bare target … at every version". Option 3 needs a registry entry and is the better long-term rule, since the lifecycle then always says when it began. Implemented now: option 1 (`SPEC-QUESTION(Q86)` in `availability.rs`).
 - **Affects:** `crates/tessera-resolve/src/build/availability.rs`; possibly the registry and phase 10.
 - **Resolution:** filled in by a human.
+
+### Q101: Page-level problems in content that no build publishes
+
+- **Section:** SPEC §8.1, §9.3
+- **Raised by:** phase 14 (from phase 12's note on Q81)
+- **Status:** open
+- **Ambiguity:** with Q81 each build reports only problems in content it publishes. Content that *no* build publishes (an arm none of the builds selects, a page every build drops) is then never checked at page level: a duplicate id, a bad include, or a link to a missing id in it is never reported, and it would surface only when someone adds a build that publishes it. The spec doesn't say whether page-level validation covers it.
+- **Options:**
+  1. Report nothing: the content isn't published, so it isn't the build's business.
+  2. Check it with one extra resolution that keeps everything (`switch` and `badge`), and report the problems whose cause is in content no build publishes, as belonging to no build. A problem that exists only because arms that no build keeps together are kept together isn't reported.
+  3. Add a warning (a new registry entry, "content that no build publishes") and check nothing else in it.
+- **Proposed resolution:** option 2. It needs no new diagnostic, it finds what a later build would, and it costs nothing when a build already keeps everything (a `switch` and `badge` build, which most projects have). The diagnostic keeps its own row and severity; `Diagnostic::builds` is empty and `Diagnostic::unpublished` is set, and `tessera check` adds "in content that no build publishes" to its message. Option 3 is a reasonable addition on top, since dead content is worth knowing about. Implemented now: option 2 (`SPEC-QUESTION(Q101)` in `crates/tessera-check/src/page/mod.rs`).
+- **Affects:** `crates/tessera-check/src/page/`; phases 15 and 18 (they show or fail on these); the registry only if option 3 is added.
+- **Resolution:** filled in by a human.
+
+### Q102: One problem in several builds
+
+- **Section:** SPEC §8.1, §8.2
+- **Raised by:** phase 14
+- **Status:** open
+- **Ambiguity:** page-level validation runs once per build, and the rows `variant-no-arm-survives`, `link-id-removed`, and `link-page-dropped` name the build in their message ("build `{build}` removes …"). When two builds have the same problem, one diagnostic can't name a single build, and the spec says a problem is reported once.
+- **Options:**
+  1. One diagnostic per build, each naming its build.
+  2. One diagnostic, its message naming every build, and the builds listed as data.
+  3. One diagnostic whose message doesn't name a build, with the builds as data only (a registry change to the three messages).
+- **Proposed resolution:** option 2 now, reading "build `cloud`, `self-managed` removes …": accurate, but not good English. The better fix is registry message variants for several builds (`builds`, with "builds {builds} remove …"), which the human approves; until then the merged `{build}` is the builds joined by `` `, ` ``. Every diagnostic that appears in some but not all builds also gets "(only in build `a`)" from `tessera check`, and the builds are `Diagnostic::builds` for every tool. Implemented now: option 2 (`SPEC-QUESTION(Q102)` in `crates/tessera-check/src/page/mod.rs`).
+- **Affects:** `tests/conformance/diagnostics.toml` (three messages, if option 3 or the plural variants are chosen); phases 15 and 18.
+- **Resolution:** filled in by a human.
+
+### Q103: What "duplicates another heading's text" compares
+
+- **Section:** SPEC §5.5, §8.2
+- **Raised by:** phase 14
+- **Status:** open
+- **Ambiguity:** `heading-duplicate-without-id` is reported for a heading with no `@id` that "duplicates another heading's text on the page". Two headings can differ in text and still get the same slug (`Options` and `options`, `Set up` and `Set-up`), so the later one's id is numbered and can change when headings move, which is what the warning is about. The row says text, not slug.
+- **Options:**
+  1. Exactly equal text (after phrases are substituted, as the slug is computed): the row as worded.
+  2. Equal slugs: every heading whose id would be numbered.
+- **Proposed resolution:** option 1, which is the row's wording and reports fewer warnings. Option 2 is the more useful rule, and a change to the row's wording. The earlier heading may have an `@id` or not; the later one must not. An empty text is never a duplicate (its own row, `heading-empty-slug`, covers it). Implemented now: option 1 (`SPEC-QUESTION(Q103)` in `crates/tessera-check/src/page/collect.rs`).
+- **Affects:** `crates/tessera-check/src/page/collect.rs`; possibly the row's wording.
+- **Resolution:** filled in by a human.
+
+### Q104: Fragments that no page includes
+
+- **Section:** SPEC §8.1
+- **Raised by:** phase 14
+- **Status:** open
+- **Ambiguity:** page-level validation runs on pages "after includes are expanded". A fragment that no page includes is never part of a page, so the rows that need one (a link to a missing id in it, a duplicate id inside it) are never reported for it, and neither are the page-level rows about content it holds; only its file-level rows are. This is the same gap as Q101 for a whole file, and one an author meets while writing a fragment before including it.
+- **Options:**
+  1. Report nothing for it at page level.
+  2. Check each such fragment as if it were a page of its own.
+  3. Warn that nothing includes it (a new registry entry).
+- **Proposed resolution:** option 1 for now, because the rows are defined on pages and a fragment's ids may legitimately collide with the page's own once it's included. Option 3 is cheap and useful, and needs a registry entry. Implemented now: option 1 (`SPEC-QUESTION(Q104)` in `crates/tessera-check/src/page/mod.rs`).
+- **Affects:** `crates/tessera-check/src/page/`; phase 15 (a fragment open in the editor).
+- **Resolution:** filled in by a human.

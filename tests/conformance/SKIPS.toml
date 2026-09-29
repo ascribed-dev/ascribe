@@ -12,9 +12,5 @@
 #                                         optional; skips only these checks
 
 [[skip]]
-tag = "page-check"
-reason = "Adapter for tag `page-check` (page-level diagnostics) not yet implemented; phase 14."
-
-[[skip]]
 tag = "output"
 reason = "Adapter for tag `output` (plain, site, and JSON outputs) not yet implemented; phases 18 and 20."

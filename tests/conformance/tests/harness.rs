@@ -152,39 +152,33 @@ fn problems(outcome: Option<&Outcome>) -> Vec<String> {
 }
 
 #[test]
-fn bundled_cases_are_discovered_and_skipped_with_recorded_reasons() {
-    // Every phase that lands removes its tag's skip entry, so the bundled
-    // cases stop being skipped with an empty registry. This runs one case
-    // with stand-in adapters for the tags whose phases have landed, so it's
-    // skipped for the one that hasn't. `projects/quill` carries `check`,
-    // `include`, and `resolve` (phases 10, 11, and 12 handle them) and
-    // `page-check` (phase 14): when phase 14 lands, pick a case that is
-    // skipped for a tag that's still unimplemented (`output`, phases 18 and 20).
+fn bundled_cases_are_discovered_and_a_tag_with_no_adapter_or_skip_fails() {
+    // Every phase that lands removes its tag's skip entry, so the only entry
+    // left is `output` (phases 18 and 20), which no case carries yet. With an
+    // empty registry every bundled case therefore fails, naming each tag that
+    // has neither an adapter nor a recorded skip: a case is never skipped
+    // without a reason.
     let filter = Filter {
         case: Some("projects/quill".into()),
         ..Filter::default()
     };
     let report = Suite::bundled()
-        .run(&fake_registry(vec!["check", "include", "resolve"]), &filter)
+        .run(&fake_registry(vec![]), &filter)
         .unwrap();
     println!("{}", report.summary());
-    assert!(report.success(), "{}", report.summary());
-
-    for id in ["projects/quill"] {
-        match report.outcome(id) {
-            Some(Outcome::Skipped { reasons }) => {
-                assert!(!reasons.is_empty());
+    assert!(report.errors.is_empty(), "{:?}", report.errors);
+    match report.outcome("projects/quill") {
+        Some(Outcome::Failed { problems }) => {
+            for tag in ["check", "include", "resolve", "page-check"] {
                 assert!(
-                    reasons.iter().all(|r| r.contains("not yet implemented")),
-                    "{reasons:?}"
+                    problems.iter().any(|p| p.contains(&format!("tag `{tag}`"))
+                        && p.contains("no adapter and no skip entry")),
+                    "{tag}: {problems:?}"
                 );
             }
-            other => panic!("{id}: expected skipped, got {other:?}"),
         }
+        other => panic!("projects/quill: expected a failure, got {other:?}"),
     }
-    let summary = report.summary();
-    assert!(summary.contains("skipped projects/quill"));
-    assert!(summary.contains("tag `page-check`: Adapter for tag `page-check`"));
 }
 
 #[test]

@@ -267,3 +267,89 @@ fn the_quill_example_has_no_errors() {
     let out = tessera(&example, &["check", "--deny-warnings"]);
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
 }
+
+// ---------------------------------------------------------------------------
+// Page-level checks and builds
+
+const BUILDS_MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\nversionless = [\"cloud\", \"self-managed\"]\n\n[builds.site]\nvariants = \"switch\"\navailability = \"badge\"\n\n[builds.cloud]\nvariants = { deployment = \"cloud\" }\navailability = \"badge\"\n";
+
+fn builds_project(files: &[(&str, &str)]) -> TempDir {
+    let dir = project(files);
+    fs::write(dir.path().join("tessera.toml"), BUILDS_MODEL).expect("write the model");
+    dir
+}
+
+const DUPLICATE: &str = "---\ntitle: Home\n---\n\n## A\n@id: same\n\n## B\n@id: same\n";
+const ONLY_SELF_MANAGED: &str =
+    "---\ntitle: Home\n---\n\n@variant {deployment=self-managed}:\nSelf-managed only.\n@end\n";
+
+#[test]
+fn a_page_level_error_fails_the_check() {
+    let dir = builds_project(&[("index.md", DUPLICATE)]);
+    let out = tessera(dir.path(), &["check"]);
+    assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
+    assert!(stdout(&out).contains("id-duplicate"), "{}", stdout(&out));
+    // Both builds have it, and it's reported once.
+    assert_eq!(
+        stdout(&out).matches("id-duplicate").count(),
+        1,
+        "{}",
+        stdout(&out)
+    );
+    assert!(stdout(&out).contains("1 error"), "{}", stdout(&out));
+}
+
+#[test]
+fn a_problem_in_some_builds_names_them() {
+    let dir = builds_project(&[("index.md", ONLY_SELF_MANAGED)]);
+    let out = tessera(dir.path(), &["check"]);
+    assert_eq!(code(&out), 0, "a warning: {}{}", stdout(&out), stderr(&out));
+    assert!(
+        stdout(&out).contains("variant-no-arm-survives"),
+        "{}",
+        stdout(&out)
+    );
+    assert!(stdout(&out).contains("build `cloud`"), "{}", stdout(&out));
+    assert!(stdout(&out).contains("1 warning"), "{}", stdout(&out));
+}
+
+#[test]
+fn build_checks_one_build_only() {
+    let dir = builds_project(&[("index.md", ONLY_SELF_MANAGED)]);
+    let site = tessera(dir.path(), &["check", "--build", "site"]);
+    assert_eq!(code(&site), 0, "{}{}", stdout(&site), stderr(&site));
+    assert!(stdout(&site).contains("0 warnings"), "{}", stdout(&site));
+    let cloud = tessera(
+        dir.path(),
+        &["check", "--build", "cloud", "--deny-warnings"],
+    );
+    assert_eq!(code(&cloud), 1, "{}{}", stdout(&cloud), stderr(&cloud));
+    assert!(stdout(&cloud).contains("variant-no-arm-survives"));
+}
+
+#[test]
+fn an_unknown_build_is_a_failure_that_lists_the_builds() {
+    let dir = builds_project(&[("index.md", DUPLICATE)]);
+    let out = tessera(dir.path(), &["check", "--build", "nope"]);
+    assert_eq!(code(&out), 2, "{}{}", stdout(&out), stderr(&out));
+    assert!(stderr(&out).contains("no build `nope`"), "{}", stderr(&out));
+    assert!(stderr(&out).contains("site, cloud"), "{}", stderr(&out));
+}
+
+#[test]
+fn a_problem_in_a_fragment_is_at_the_include_site() {
+    let dir = builds_project(&[
+        ("_f.md", "See [it](index.md#gone).\n"),
+        ("index.md", "---\ntitle: Home\n---\n\n@include: _f.md\n"),
+    ]);
+    let out = tessera(dir.path(), &["check", "--format", "json"]);
+    assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
+    let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
+    let diagnostics = json["diagnostics"].as_array().expect("a list");
+    assert_eq!(diagnostics.len(), 1, "{diagnostics:#?}");
+    let d = &diagnostics[0];
+    assert_eq!(d["slug"], "link-id-missing");
+    assert_eq!(d["file"], "docs/index.md");
+    assert_eq!(d["range"]["start"]["line"], 5);
+    assert_eq!(d["related"][0]["file"], "docs/_f.md");
+}
