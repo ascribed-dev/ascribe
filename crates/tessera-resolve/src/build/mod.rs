@@ -234,7 +234,7 @@ impl<'p> BuildResolver<'p> {
         let mut blocks = modes::apply(blocks, self.build, model, &mut mode_problems);
         // A problem is about what the build publishes: one in content the
         // build removed isn't recorded.
-        // SPEC-QUESTION(Q81): page-level problems in removed content.
+        // Resolved Q81: page-level problems in removed content.
         let live = modes::live(&blocks);
         let mut problems: Vec<_> = expanded
             .problems
