@@ -1744,3 +1744,58 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 2, the simpler. A page that sets `slug` without a declaration is already an unknown key (`frontmatter-unknown-key`), and a declaration is now a model error, `model-field-reserved` with a third message variant that names the profile's rule. A later profile that doesn't have this rule doesn't reserve it. Implemented now: exactly that (`SPEC-QUESTION(Q150)` in `tessera-model/src/sections.rs`), with the message in the registry and content-model.md §20.
 - **Affects:** `crates/tessera-model/src/sections.rs`, `tests/conformance/diagnostics.toml`, content-model.md §5.1 and §20.
 - **Resolution:** approved by the repository owner: as proposed, option 2: under the `astro` profile, `slug` is a reserved frontmatter key that no content type may declare (`model-field-reserved`, a third message variant), because Astro's loader uses it as the entry id in place of the path. Stated in content-model.md §5.1 and §20, and in the registry.
+
+### Q151: The markdown plugin is a hast plugin, for both of Astro 7.3's markdown processors
+
+- **Section:** site-render contract §3, §5; SPEC §9.5, §9.6
+- **Raised by:** phase 21
+- **Status:** open
+- **Ambiguity:** Phase 20 wrote the site output assuming a remark plugin setting `hProperties`, and `tests/render/README.md` says to run the plugin in "a unified pipeline". Astro 7.3.5 (the targeted version) doesn't run remark by default. Its default `markdown.processor` is **Sätteri** (`@astrojs/markdown-satteri`), a Rust parser with its own mdast and hast plugin lists; the remark/rehype pipeline is the `unified()` processor of `@astrojs/markdown-remark`, which is no longer installed with Astro. So "a remark plugin" would work only for a site that installs `@astrojs/markdown-remark` and switches its processor. Where the plugin sits, and what it is, is not settled by the contract.
+- **Options:** (1) A remark plugin only, and the integration switches the site to `unified()`. (2) A plugin for Astro's default processor only. (3) One rule set on the hast tree, with an adapter for each processor.
+- **Proposed resolution:** option 3. In both processors the markers reach a user hast plugin as two adjacent `raw` nodes (an open tag and a close tag), after markdown has become hast and before Astro's own image and heading-id passes (unified: user rehype plugins run before `rehypeImages` and `rehypeHeadingIds`; Sätteri: user hast plugins run before its image marker and heading ids). So `packages/astro/src/attributes.ts` finds the edits once (a pure function over a hast tree), `rehype.ts` applies them to a unified tree, and `satteri.ts` queues them as Sätteri commands. The integration adds the right one to whichever processor the site uses (`processor.options.hastPlugins` or `.rehypePlugins`, which Astro documents as the way integrations extend a processor), and fails the build for any other processor. The rules are the contract's, unchanged; `tests/render/` runs against both pipelines. Verified in real builds of `examples/astro-site` under each processor: an explicit id survives Astro's heading-id pass and reaches its table of contents (`weave-config`, where Astro's own slug would be `weave-configuration`), and an image's `width` reaches Astro's image processing (`width="300" height="188"`, a hashed `.webp`). Contract wording only: the rationale in §1 says "user remark plugins" and `tests/render/README.md` says "a unified pipeline"; both could name the hast stage instead. No behavior changes.
+- **Affects:** `packages/astro/src/{attributes,rehype,satteri}.ts`; site-render.md §1 (wording), `tests/render/README.md` (wording); phase 22 (the published package's peer dependencies: none on `@astrojs/markdown-remark`).
+- **Resolution:** _open._
+
+### Q152: How the integration finds the `tessera` binary
+
+- **Section:** SPEC §9.6; phases 21 and 22
+- **Raised by:** phase 21
+- **Status:** open
+- **Ambiguity:** Phase 21 runs `tessera build --emit site` from a locally built binary; npm distribution is phase 22's. How the integration finds it isn't specified.
+- **Options:** (1) An integration option only. (2) An environment variable only. (3) The workspace's `target/`. (4) `tessera` on `PATH`.
+- **Proposed resolution:** the first three, in that order: the `binary` option (relative to the Astro root), then `TESSERA_BIN`, then `target/release/tessera` or `target/debug/tessera` (the newer) in the project's directory or the nearest parent that has one. Nothing found is an error that says how to point at a binary. `PATH` is left out: a stray older `tessera` there would build the site with the wrong compiler without saying so. Phase 22 replaces the last step with the npm-installed binary and keeps the option and variable as overrides.
+- **Affects:** `packages/astro/src/binary.ts`; phase 22.
+- **Resolution:** _open._
+
+### Q153: Loading the element library: a component, not an injected script
+
+- **Section:** SPEC §9.6, §9.7
+- **Raised by:** phase 21
+- **Status:** open
+- **Ambiguity:** The integration should "load the element library". The obvious way is `injectScript("page", 'import "@tessera/elements"; import "@tessera/elements/style.css"')`. In Astro 7.3.5 that bundles the script but drops the CSS it imports: the built pages have no stylesheet.
+- **Options:** (1) Inject the script, and tell sites to import the CSS in their layout. (2) A component, `@tessera/astro/Elements.astro`, that imports the stylesheet in its frontmatter and the script in a `<script>`, which a layout puts in its `<head>`. (3) Emit the CSS as a static file and inject a `<link>`.
+- **Proposed resolution:** option 2. Astro links the stylesheet and bundles the script as it does for any component, on exactly the pages whose layout includes it ("pages that render Tessera content", as the phase says), and the site's other pages don't get them. The integration sets `vite.ssr.noExternal` for `@tessera/astro` so an installed copy's `.astro` file is compiled. There is no `elements` option.
+- **Affects:** `packages/astro/src/Elements.astro`; phase 22 (the package's `files`).
+- **Resolution:** _open._
+
+### Q154: `tessera.toml` and `astro.config` must agree on routing, and the integration checks it
+
+- **Section:** content-model.md §16; SPEC §9.5
+- **Raised by:** phase 21
+- **Status:** open
+- **Ambiguity:** content-model.md §16 says the integration SHOULD check that `site`, `base-path`, and `trailing-slash` agree with `astro.config`. It doesn't say what a disagreement does. Tessera writes every link with its own settings, so a site that routes differently has broken links, and nothing else would notice.
+- **Options:** (1) Warn. (2) Fail the build.
+- **Proposed resolution:** fail, before running `tessera build`, naming each difference. `base` is compared as a path with leading and trailing `/`; Astro's `trailingSlash: "ignore"` agrees with either value (both forms are served); `site` is compared by origin, and only when both sides set it. The integration reads `tessera.toml` itself (`smol-toml`) for this, and for `[project] output-dir`, which it needs to find the site output.
+- **Affects:** `packages/astro/src/project.ts`; content-model.md §16 (states the result).
+- **Resolution:** _open._
+
+### Q155: The collection helper reads the site root from the integration
+
+- **Section:** SPEC §9.6
+- **Raised by:** phase 21
+- **Status:** open
+- **Ambiguity:** The integration should "provide the collection configuration and generated schema". The collection is defined in `content.config.ts`, which Astro loads through Vite, before any page exists, and the generated schema is a TypeScript file inside the build output. How does the helper know where the output is, and how does the schema reach it?
+- **Options:** (1) The helper finds `tessera.toml` from the working directory. (2) The helper takes the project and build again as arguments. (3) The integration passes the resolved site root through a virtual module.
+- **Proposed resolution:** option 3, so the integration's options are the one place the project and build are named (a first version used option 1, and a test that built a copy of the site read the original's output). `tesseraCollection({ schema })` from `@tessera/astro/content` is a `glob` loader (`**/*.md`, not `_tessera/**`) over `virtual:tessera/site`'s `siteRoot`; the site imports `schema` from the generated `_tessera/schema.ts` itself, because Vite must compile that TypeScript file and resolve its `astro/zod` import from the site. The helper is a separate entry from the integration because the integration runs in Node and the helper in Vite.
+- **Affects:** `packages/astro/src/content.ts`; `examples/astro-site/src/content.config.ts`; phase 22.
+- **Resolution:** _open._
