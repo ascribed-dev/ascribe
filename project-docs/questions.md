@@ -1499,6 +1499,70 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `crates/tessera-emit/src/plain/mod.rs`; the registry if the human prefers a diagnostic.
 - **Resolution:** approved by the repository owner: as proposed: the missing `[consumer] site` warning is a build message, not a registry diagnostic, since it's about the configuration of an output, not the source.
 
+### Q121: What the TextMate grammar highlights without the content model
+
+- **Section:** SPEC §3.1, §3.2, §3.9, §5.1
+- **Raised by:** phase 17
+- **Status:** open
+- **Ambiguity:** §3.2 makes a line a directive only if its name is a known keyword: a built-in or a project widget the content model declares. A TextMate grammar can't read the content model, so it must decide from the spelling. §3.9 and Q1 allow up to three extra spaces of indentation beyond the container's, but TextMate can't see a list item's content column or a quote's marker width, so "extra" is unknowable there. A directive's text primary continues onto later lines (§3.4), and TextMate can't see past a line.
+- **Options:** (a) highlight only the built-in names and leave every widget to the server; (b) also highlight any hyphenated name (§3.2: widget names always contain a hyphen), so `@api-endpoint` is colored at once, and let the server's `tesseraWidget` tokens confirm it, at the cost that an undeclared `@my-thing` at line start is colored until the server answers (the server can't remove a TextMate color, only add tokens); (c) accept any indentation everywhere, at the cost of coloring indented code.
+- **Proposed resolution:** (b), plus this for indentation: at top level, up to three spaces (four spaces or a tab is indented code and is left alone; the guard rule claims such a line because the markdown grammar's own rule starts at column 0, where an injection wins a tie); inside a list or blockquote, any indentation (TextMate can't tell what the container consumed). Unknown built-in-shaped names (`@warning:`) are not colored. Every `{key}` is colored as a candidate phrase, whether or not declared (`tesseraPhraseUndeclared` marks the undeclared ones once the server answers), except `\{key}`; phrases inside link destinations aren't colored by TextMate, because the markdown grammar tokenizes the destination in a capture the injection doesn't reach. Only the first line of a text primary is colored. Title lines (§3.7) are left to the server. Implemented now: exactly that (`packages/vscode/syntaxes/`, tested in `test/unit/grammar.test.ts` against VS Code's own markdown grammar).
+- **Affects:** `packages/vscode/syntaxes/*.tmLanguage.json`.
+- **Resolution:** _to be filled in by a human._
+
+### Q122: A `tessera.path` that doesn't work
+
+- **Section:** phase 17, task 2
+- **Raised by:** phase 17
+- **Status:** open
+- **Ambiguity:** the binary is found "in order: the `tessera.path` setting if set; the project's `node_modules/.bin/tessera`; the bundled binary". It doesn't say whether a `tessera.path` that names no working binary falls through to the next.
+- **Options:** (a) fall through, so the extension still works; (b) fail with an error that names the setting.
+- **Proposed resolution:** (b). The author asked for that binary; using another silently would hide a typo and run a different version from the one they meant. A project or bundled candidate that doesn't run (missing, not executable, no version in `--version`) is skipped and listed in the output when none works. Implemented now: (b) (`SPEC-QUESTION(Q122)` in `src/binary.ts`).
+- **Affects:** `packages/vscode/src/binary.ts`.
+- **Resolution:** _to be filled in by a human._
+
+### Q123: What counts as a crash, and when the count resets
+
+- **Section:** phase 17, task 3
+- **Raised by:** phase 17
+- **Status:** open
+- **Ambiguity:** "After a configured number of crashes, stop and explain." It doesn't say what the count covers (a session, a time window, since the last successful start), what the default is, or whether the limit is the crash that stops restarts.
+- **Options:** (a) count all crashes in the window's lifetime; (b) count crashes in a sliding time window (`vscode-languageclient`'s own default is five in three minutes); (c) count since the last manual restart.
+- **Proposed resolution:** (c), with the setting `tessera.maxCrashes` (default 5, at least 1): the server is restarted after crashes 1 to `max - 1`, and the crash number `max` stops it, with a message that offers **Show Output** and **Restart Server**. Restarting by hand (the command, or a `tessera.path` change) resets the count. A time window would restart a server that dies once an hour forever, which is a bug worth reporting; a lifetime count is the simplest to explain. Implemented now: (c) (`SPEC-QUESTION(Q123)` in `src/crash.ts`).
+- **Affects:** `packages/vscode/src/crash.ts`, `client.ts`, the `tessera.maxCrashes` setting.
+- **Resolution:** _to be filled in by a human._
+
+### Q124: Who registers file watchers
+
+- **Section:** phase 17, task 3; phase 15, task 3
+- **Raised by:** phase 17
+- **Status:** open
+- **Ambiguity:** phase 17 says to "forward file-watching registrations (phase 15 relies on them for files that aren't open)". Phase 15 registers `workspace/didChangeWatchedFiles` dynamically after `initialized`. The client could also watch `**/*.md` and `**/tessera.toml` itself (`synchronize.fileEvents`), but a server that registers as well would then receive every event twice.
+- **Options:** (a) the client only forwards what the server registers; (b) the client also watches statically.
+- **Proposed resolution:** (a). `vscode-languageclient` implements dynamic registration of `didChangeWatchedFiles` on its own, so the extension adds nothing, and what is watched (the content root, assets, `tessera.toml`) stays the server's decision. The integration tests cover it: a file created, changed, and deleted on disk while not open produces updated diagnostics. Implemented now: (a).
+- **Affects:** `packages/vscode/src/client.ts`; phase 15 must keep registering the watchers.
+- **Resolution:** _to be filled in by a human._
+
+### Q125: The version the extension expects
+
+- **Section:** phase 17, task 2; PLAN.md, Packaging
+- **Raised by:** phase 17
+- **Status:** open
+- **Ambiguity:** "warn when the project's binary is older than the version the extension expects" doesn't say where that version is written down, or what it is before the first release. The compiler is `0.0.0` (`Cargo.toml`).
+- **Proposed resolution:** it's `tessera.minServerVersion` in `packages/vscode/package.json`, `0.0.0` for now (so nothing warns yet), and phase 27 sets it to the release it ships with. The warning applies to a binary from the setting or the project, not to the bundled one (which is the extension's own). A pre-release sorts before its release. Implemented now: exactly that (`SPEC-QUESTION(Q125)` in `src/client.ts`).
+- **Affects:** `packages/vscode/package.json`; phase 27.
+- **Resolution:** _to be filled in by a human._
+
+### Q126: Extension files outside `packages/vscode`
+
+- **Section:** phases/README.md, Ownership
+- **Raised by:** phase 17
+- **Status:** open
+- **Ambiguity:** the extension's tests and install need three things in files other phases own: the pnpm 11 build-script policy for `esbuild` (`allowBuilds` in `pnpm-workspace.yaml`; without a decision `pnpm install` exits 1), a `vscode` job in `.github/workflows/js.yml` (integration tests need Rust, a display, and a VS Code download), and `test/fixtures/markdown.tmLanguage.json`, a copy of VS Code's MIT-licensed markdown grammar.
+- **Proposed resolution:** `allowBuilds: esbuild: false` (esbuild ships its binary in a per-platform package; its postinstall only swaps in a faster launcher); the workflow stays manual-only (`workflow_dispatch`); the grammar is a test fixture, reformatted by Prettier only, with its MIT license notice beside it (`test/fixtures/markdown.tmLanguage.LICENSE.txt`). Implemented now: exactly that.
+- **Affects:** `pnpm-workspace.yaml`, `.github/workflows/js.yml`.
+- **Resolution:** _to be filled in by a human._
+
 ### Q131: A `tessera.toml` that doesn't load, in a running editor
 
 - **Section:** SPEC §8.2 (content model rows), §10

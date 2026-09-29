@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Tessera (markdown injection, in lists and quotes)",
+  "scopeName": "tessera.injection.nested",
+  "injectionSelector": "L:text.html.markdown markup.list -markup.fenced_code -markup.inline.raw -markup.raw -meta.embedded -comment -text.html.derivative -meta.attributes.tessera -string.unquoted.identifier.primary.tessera -constant.other.availability.tessera, L:text.html.markdown markup.quote -markup.fenced_code -markup.inline.raw -markup.raw -meta.embedded -comment -text.html.derivative -meta.attributes.tessera -string.unquoted.identifier.primary.tessera -constant.other.availability.tessera",
+  "patterns": [
+    {
+      "include": "tessera.injection#content"
+    }
+  ]
+}

@@ -1,0 +1,237 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Tessera (markdown injection)",
+  "scopeName": "tessera.injection",
+  "injectionSelector": "L:text.html.markdown -markup.fenced_code -markup.inline.raw -markup.raw -meta.embedded -comment -text.html.derivative -meta.attributes.tessera -string.unquoted.identifier.primary.tessera -constant.other.availability.tessera -markup.list -markup.quote",
+  "patterns": [
+    {
+      "include": "#indented-code"
+    },
+    {
+      "include": "#content"
+    }
+  ],
+  "repository": {
+    "indented-code": {
+      "match": "^(?: {4}|\\t).*$"
+    },
+    "content": {
+      "patterns": [
+        {
+          "include": "#end-line"
+        },
+        {
+          "include": "#directive-identifier"
+        },
+        {
+          "include": "#directive-availability"
+        },
+        {
+          "include": "#directive-builtin"
+        },
+        {
+          "include": "#directive-widget"
+        },
+        {
+          "include": "#phrase"
+        }
+      ]
+    },
+    "end-line": {
+      "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(end)[ \\t]*$",
+      "name": "meta.directive.end.tessera",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.directive.tessera"
+        },
+        "2": {
+          "name": "keyword.control.end.tessera"
+        }
+      }
+    },
+    "directive-identifier": {
+      "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(id|include)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(\\S*))?[ \\t]*$",
+      "name": "meta.directive.tessera",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.directive.tessera"
+        },
+        "2": {
+          "name": "keyword.control.directive.tessera"
+        },
+        "3": {
+          "name": "meta.attributes.tessera",
+          "patterns": [
+            {
+              "include": "#attributes"
+            }
+          ]
+        },
+        "4": {
+          "name": "punctuation.separator.directive.tessera"
+        },
+        "5": {
+          "name": "meta.primary.tessera string.unquoted.identifier.primary.tessera"
+        }
+      }
+    },
+    "directive-availability": {
+      "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(available)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(.*?))?[ \\t]*$",
+      "name": "meta.directive.tessera",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.directive.tessera"
+        },
+        "2": {
+          "name": "keyword.control.directive.tessera"
+        },
+        "3": {
+          "name": "meta.attributes.tessera",
+          "patterns": [
+            {
+              "include": "#attributes"
+            }
+          ]
+        },
+        "4": {
+          "name": "punctuation.separator.directive.tessera"
+        },
+        "5": {
+          "name": "meta.primary.tessera constant.other.availability.tessera"
+        }
+      }
+    },
+    "directive-builtin": {
+      "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)(variant|note|steps|details)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(.*?))?[ \\t]*$",
+      "name": "meta.directive.tessera",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.directive.tessera"
+        },
+        "2": {
+          "name": "keyword.control.directive.tessera"
+        },
+        "3": {
+          "name": "meta.attributes.tessera",
+          "patterns": [
+            {
+              "include": "#attributes"
+            }
+          ]
+        },
+        "4": {
+          "name": "punctuation.separator.directive.tessera"
+        },
+        "5": {
+          "name": "meta.primary.tessera",
+          "patterns": [
+            {
+              "include": "#phrase"
+            },
+            {
+              "include": "text.html.markdown#inline"
+            }
+          ]
+        }
+      }
+    },
+    "directive-widget": {
+      "match": "(?:^|\\G)(?:[ \\t]*>)*[ \\t]*(@)([a-z][a-z0-9]*(?:-[a-z0-9]+)+)(?![A-Za-z0-9_-])[ \\t]*(\\{(?:\"(?:[^\"\\\\\\n]|\\\\.)*(?:\"|$)|[^}\"\\n])*(?:\\}|$))?[ \\t]*(?:(:)[ \\t]*(.*?))?[ \\t]*$",
+      "name": "meta.directive.tessera",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.directive.tessera"
+        },
+        "2": {
+          "name": "entity.name.function.widget.tessera"
+        },
+        "3": {
+          "name": "meta.attributes.tessera",
+          "patterns": [
+            {
+              "include": "#attributes"
+            }
+          ]
+        },
+        "4": {
+          "name": "punctuation.separator.directive.tessera"
+        },
+        "5": {
+          "name": "meta.primary.tessera",
+          "patterns": [
+            {
+              "include": "#phrase"
+            },
+            {
+              "include": "text.html.markdown#inline"
+            }
+          ]
+        }
+      }
+    },
+    "attributes": {
+      "patterns": [
+        {
+          "match": "\\{",
+          "name": "punctuation.section.attributes.begin.tessera"
+        },
+        {
+          "match": "\\}",
+          "name": "punctuation.section.attributes.end.tessera"
+        },
+        {
+          "match": "[a-z][a-z0-9-]*(?=[ \\t]*=)",
+          "name": "entity.other.attribute-name.tessera"
+        },
+        {
+          "match": "=",
+          "name": "punctuation.separator.key-value.tessera"
+        },
+        {
+          "match": "[,|]",
+          "name": "punctuation.separator.attributes.tessera"
+        },
+        {
+          "begin": "\"",
+          "end": "\"|$",
+          "name": "string.quoted.double.tessera",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.tessera"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.tessera"
+            }
+          },
+          "patterns": [
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.tessera"
+            }
+          ]
+        },
+        {
+          "match": "[^\\s,|{}=\"]+",
+          "name": "string.unquoted.attribute-value.tessera"
+        }
+      ]
+    },
+    "phrase": {
+      "match": "(?<!\\\\)(\\{)([a-z][a-z0-9-]*)(\\})",
+      "name": "meta.phrase.tessera",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.phrase.begin.tessera"
+        },
+        "2": {
+          "name": "variable.other.phrase.tessera"
+        },
+        "3": {
+          "name": "punctuation.definition.phrase.end.tessera"
+        }
+      }
+    }
+  }
+}

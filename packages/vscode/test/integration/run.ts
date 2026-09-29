@@ -1,0 +1,118 @@
+// Runs the integration suites in a real VS Code with @vscode/test-electron.
+//
+//   pnpm --filter tessera-vscode test:integration
+//
+// It needs a display: on Linux without one, run it under `xvfb-run -a`.
+// VS Code is downloaded on first use into out/vscode-test.
+//
+// Suites (each opens its own copy of a fixture workspace):
+//   activation  a workspace without tessera.toml: the extension stays inactive
+//   stub        a workspace with tessera.toml, against test/stub-server
+//   quill       a copy of examples/quill with a broken page added, against the
+//               real `tessera lsp`. Needs TESSERA_BIN, the path to a built
+//               `tessera`; skipped without it.
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
+import { runTests } from "@vscode/test-electron";
+
+declare const __dirname: string;
+
+const packageRoot = path.resolve(__dirname, "../..");
+const repositoryRoot = path.resolve(packageRoot, "../..");
+
+interface Suite {
+  name: string;
+  /** Prepares the workspace in a fresh directory and returns extra settings. */
+  prepare(workspace: string): Record<string, unknown>;
+  fixture: string;
+}
+
+const stubServer = path.join(packageRoot, "test/stub-server/tessera");
+const realServer = process.env["TESSERA_BIN"];
+
+const suites: Suite[] = [
+  {
+    name: "activation",
+    fixture: path.join(packageRoot, "test/fixtures/no-model"),
+    prepare: () => ({ "tessera.path": stubServer }),
+  },
+  {
+    name: "stub",
+    fixture: path.join(packageRoot, "test/fixtures/stub-project"),
+    prepare: () => ({ "tessera.path": stubServer, "tessera.maxCrashes": 2 }),
+  },
+  {
+    name: "quill",
+    fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: (workspace) => {
+      cpSync(
+        path.join(packageRoot, "test/fixtures/broken-quill-docs"),
+        path.join(workspace, "docs"),
+        { recursive: true },
+      );
+      return { "tessera.path": realServer };
+    },
+  },
+];
+
+async function main(): Promise<void> {
+  // A process an extension host started has this set, and VS Code would then
+  // run as plain Node instead of launching.
+  delete process.env["ELECTRON_RUN_AS_NODE"];
+  const only = process.env["TESSERA_SUITE"];
+  let failed = false;
+  let ran = 0;
+  for (const suite of suites) {
+    if (only && only !== suite.name) continue;
+    if (suite.name === "quill" && !realServer) {
+      console.log(
+        "Skipping suite quill: set TESSERA_BIN to a built `tessera` (phase 15's server).",
+      );
+      continue;
+    }
+    const scratch = // Short on purpose: VS Code's IPC socket lives under --user-data-dir, and a
+      // Unix socket path can be at most 103 characters on macOS, where $TMPDIR is long.
+      mkdtempSync(path.join(tmpdir(), "tv-"));
+    const workspace = path.join(scratch, "workspace");
+    try {
+      cpSync(suite.fixture, workspace, { recursive: true });
+      const settings = suite.prepare(workspace);
+      mkdirSync(path.join(workspace, ".vscode"), { recursive: true });
+      writeFileSync(
+        path.join(workspace, ".vscode/settings.json"),
+        JSON.stringify(settings, null, 2),
+      );
+      console.log(`\n== Suite ${suite.name}`);
+      await runTests({
+        cachePath: path.join(packageRoot, "out/vscode-test"),
+        version: process.env["VSCODE_VERSION"] ?? "stable",
+        extensionDevelopmentPath: packageRoot,
+        extensionTestsPath: path.join(packageRoot, "out/integration/suite/index.cjs"),
+        extensionTestsEnv: { TESSERA_SUITE: suite.name, TESSERA_WORKSPACE: workspace },
+        launchArgs: [
+          workspace,
+          "--disable-extensions",
+          "--disable-workspace-trust",
+          "--disable-gpu",
+          "--disable-updates",
+          "--no-sandbox",
+          "--skip-welcome",
+          "--skip-release-notes",
+          `--user-data-dir=${path.join(scratch, "user-data")}`,
+          `--extensions-dir=${path.join(scratch, "extensions")}`,
+        ],
+      });
+      ran += 1;
+    } catch (error) {
+      console.error(`Suite ${suite.name} failed:`, error);
+      failed = true;
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  }
+  if (failed) process.exit(1);
+  console.log(`\n${ran} integration suite(s) passed.`);
+}
+
+void main();
