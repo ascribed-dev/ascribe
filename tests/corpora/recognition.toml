@@ -1,0 +1,35 @@
+# The verdict for each class of recognition the corpora produce, unconverted.
+# `intended` follows the specification; `false-positive` must name a finding
+# in FINDINGS.md. tests/recognition.rs fails on a class that has no entry.
+
+[class."phrase-candidate:prose:plain"]
+verdict = "intended"
+why = "Braces around a lowercase key in prose (`/containers/{name}`, `{children}` in MDX, Elastic's `{icon}` roles). SPEC §5.1: literal text, and the warning that says it would silently change if the key were declared. Recorded as FINDINGS R1."
+
+[class."diagnostic:phrase-undeclared:plain"]
+verdict = "intended"
+why = "Braces around a lowercase key in prose (`/containers/{name}`, `{children}` in MDX, Elastic's `{icon}` roles). SPEC §5.1: literal text, and the warning that says it would silently change if the key were declared. Recorded as FINDINGS R1."
+
+[class."phrase-candidate:prose:mustache"]
+verdict = "intended"
+why = "`{{key}}` (Elastic and Hugo substitutions) holds the candidate `{key}` between literal braces. SPEC §5.1 lets a phrase sit against punctuation, so this follows the spec; whether it should is Q191. FINDINGS R2."
+
+[class."diagnostic:phrase-undeclared:mustache"]
+verdict = "intended"
+why = "`{{key}}` (Elastic and Hugo substitutions) holds the candidate `{key}` between literal braces. SPEC §5.1 lets a phrase sit against punctuation, so this follows the spec; whether it should is Q191. FINDINGS R2."
+
+[class."phrase-candidate:prose:directive-fence"]
+verdict = "intended"
+why = "A line of another tool's `:::{name}` directive is a paragraph here and `{name}` is a candidate. Intended: the file isn't Ascribe yet (FINDINGS R3); conversion removes them."
+
+[class."diagnostic:phrase-undeclared:directive-fence"]
+verdict = "intended"
+why = "A line of another tool's `:::{name}` directive is a paragraph here and `{name}` is a candidate. Intended: the file isn't Ascribe yet (FINDINGS R3); conversion removes them."
+
+[class."phrase-candidate:destination"]
+verdict = "intended"
+why = "`{{key}}` inside a link destination (`[x]({{es-apis}})`). SPEC §5.1: destinations take phrases, and an undeclared key is literal; they draw no warning. FINDINGS R2."
+
+[class."diagnostic:frontmatter-syntax"]
+verdict = "intended"
+why = "The page repeats a YAML key (`navigation_title` twice), which is not valid YAML; the check is right. FINDINGS R4."

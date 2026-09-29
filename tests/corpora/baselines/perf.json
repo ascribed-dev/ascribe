@@ -1,0 +1,29 @@
+{
+  "machine": "Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical cores, linux",
+  "margin": 3.0,
+  "floor_ms": 25.0,
+  "targets": {
+    "check/synthetic-3000": 5000.0,
+    "check/synthetic-3000-json": 5000.0,
+    "lsp/keystroke-fragment-3000": 50.0,
+    "lsp/keystroke-page-3000": 50.0,
+    "lsp/completion-3000": 50.0
+  },
+  "metrics": {
+    "build/synthetic-3000-again": 3571.52,
+    "build/synthetic-3000-first": 2714.81,
+    "check/elastic-converted-json": 7374.0,
+    "check/noisy-1000-json": 254.66,
+    "check/noisy-1000-text": 1423.78,
+    "check/synthetic-3000": 781.97,
+    "check/synthetic-3000-json": 781.01,
+    "incremental/add then remove an image": 0.25,
+    "incremental/create then delete a page (two updates)": 0.06,
+    "incremental/edit a fragment's text (30 pages include it)": 0.11,
+    "incremental/edit a paragraph of a page": 0.08,
+    "incremental/edit a paragraph, a snapshot held": 3.01,
+    "incremental/rename a heading in a fragment": 0.19,
+    "lsp/keystroke-fragment-3000": 9.01,
+    "lsp/keystroke-page-3000": 2.98
+  }
+}
