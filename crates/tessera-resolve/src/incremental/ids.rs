@@ -39,7 +39,7 @@ use tessera_core::{FileId, RelPath};
 
 /// The ids of the paths a project has had files at. See the [module
 /// documentation](self) for the rules.
-// SPEC-QUESTION(Q91): ids are per path, never reused, and a rename is a
+// Resolved Q91: ids are per path, never reused, and a rename is a
 // deletion plus a creation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FileIds {

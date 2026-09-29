@@ -312,7 +312,7 @@ pub struct Stats {
     pub resolutions: u64,
 }
 
-// SPEC-QUESTION(Q95): how many updates `is_file_current` can look back over.
+// Resolved Q95: how many updates `is_file_current` can look back over.
 const HISTORY: usize = 256;
 
 struct HistoryEntry {
@@ -639,7 +639,7 @@ impl IncrementalProject {
                     file_state.insert(path, false);
                 }
                 Change::Model(model) => {
-                    // SPEC-QUESTION(Q92): a new content root or output
+                    // Resolved Q92: a new content root or output
                     // directory isn't applied in place.
                     if Layout::from_model(&model) != layout {
                         return Err(ApplyError::LayoutChanged);
@@ -649,7 +649,7 @@ impl IncrementalProject {
             }
         }
 
-        // SPEC-QUESTION(Q94): the batch's net effect, per path.
+        // Resolved Q94: the batch's net effect, per path.
         let mut created: BTreeMap<RelPath, Arc<str>> = BTreeMap::new();
         let mut edited: BTreeMap<RelPath, Arc<str>> = BTreeMap::new();
         let mut gone: BTreeSet<RelPath> = BTreeSet::new();
@@ -922,7 +922,7 @@ impl IncrementalProject {
             // The files that write an `@include` of a path that appeared or
             // disappeared have a problem (or lost one), including one whose
             // diagnostic names a twin that differs only in case.
-            // SPEC-QUESTION(Q97): a diagnostic depends on a case twin.
+            // Resolved Q97: a diagnostic depends on a case twin.
             for path in created.keys().chain(&gone) {
                 for includer in self.include_rev.includers_like(path) {
                     recheck.insert(includer.clone());
