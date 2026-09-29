@@ -1,0 +1,13 @@
+{
+  "files": 3008,
+  "classes": {
+    "diagnostic:frontmatter-syntax": 2,
+    "diagnostic:phrase-undeclared:directive-fence": 12568,
+    "diagnostic:phrase-undeclared:mustache": 40729,
+    "diagnostic:phrase-undeclared:plain": 481,
+    "phrase-candidate:destination": 6607,
+    "phrase-candidate:prose:directive-fence": 12568,
+    "phrase-candidate:prose:mustache": 40729,
+    "phrase-candidate:prose:plain": 481
+  }
+}

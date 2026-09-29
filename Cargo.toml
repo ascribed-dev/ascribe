@@ -13,6 +13,8 @@ members = [
     "crates/tessera-cli",
     "tests/conformance",
     "tests/commonmark",
+    "tests/corpora",
+    "tests/corpora/synthetic",
 ]
 
 [workspace.package]
@@ -33,6 +35,8 @@ tessera-resolve = { path = "crates/tessera-resolve" }
 tessera-emit = { path = "crates/tessera-emit" }
 tessera-fmt = { path = "crates/tessera-fmt" }
 tessera-lsp = { path = "crates/tessera-lsp" }
+# The synthetic project the benchmarks share (phase 26). A dev-dependency only.
+tessera-synthetic = { path = "tests/corpora/synthetic" }
 # The comrak fork (phase 04). Depend on it as `comrak-tessera.workspace = true`.
 comrak-tessera = { path = "crates/comrak-tessera" }
 
