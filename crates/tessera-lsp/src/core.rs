@@ -242,22 +242,10 @@ impl Core {
             self.load_project(model, text);
             return;
         };
-        let build_changed = loaded.model.editor_build != model.editor_build;
         match loaded.inc.apply([Change::Model(model.clone())]) {
             Ok(affected) => {
                 loaded.model = model;
                 loaded.model_text = text;
-                // The editor's build decides the page-level diagnostics of
-                // every file, and isn't part of what the source index sees.
-                if build_changed {
-                    let snapshot = loaded.inc.snapshot();
-                    loaded
-                        .dirty
-                        .extend(snapshot.files().map(|f| f.path.clone()));
-                    loaded
-                        .dirty
-                        .extend(snapshot.unreadable().iter().map(|u| u.path.clone()));
-                }
                 self.absorb(&affected);
             }
             Err(ApplyError::LayoutChanged) => self.load_project(model, text),

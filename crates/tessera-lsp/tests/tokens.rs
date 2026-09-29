@@ -22,8 +22,14 @@ struct Tok {
     text: String,
 }
 
-fn fetch(client: &mut Client, path: &std::path::Path, text: &str, range: Option<(u32, u32, u32, u32)>) -> Vec<Tok> {
-    let legend = client.initialize_result["capabilities"]["semanticTokensProvider"]["legend"].clone();
+fn fetch(
+    client: &mut Client,
+    path: &std::path::Path,
+    text: &str,
+    range: Option<(u32, u32, u32, u32)>,
+) -> Vec<Tok> {
+    let legend =
+        client.initialize_result["capabilities"]["semanticTokensProvider"]["legend"].clone();
     let types: Vec<String> = serde_json::from_value(legend["tokenTypes"].clone()).unwrap();
     let modifiers: Vec<String> = serde_json::from_value(legend["tokenModifiers"].clone()).unwrap();
     let response = match range {
@@ -54,7 +60,11 @@ fn fetch(client: &mut Client, path: &std::path::Path, text: &str, range: Option<
                 token_modifiers_bitset: c[4],
             };
             line += t.delta_line;
-            col = if t.delta_line == 0 { col + t.delta_start } else { t.delta_start };
+            col = if t.delta_line == 0 {
+                col + t.delta_start
+            } else {
+                t.delta_start
+            };
             // The text, for readable assertions (UTF-16 columns).
             let units: Vec<u16> = lines[line as usize].encode_utf16().collect();
             let text = String::from_utf16_lossy(&units[col as usize..(col + t.length) as usize]);
@@ -74,7 +84,10 @@ fn fetch(client: &mut Client, path: &std::path::Path, text: &str, range: Option<
 }
 
 fn summary(tokens: &[Tok]) -> Vec<(String, &str)> {
-    tokens.iter().map(|t| (t.ty.clone(), t.text.as_str())).collect()
+    tokens
+        .iter()
+        .map(|t| (t.ty.clone(), t.text.as_str()))
+        .collect()
 }
 
 fn pairs<'a>(items: &[(&'a str, &'a str)]) -> Vec<(String, &'a str)> {
@@ -132,7 +145,10 @@ fn a_range_request_gives_only_the_tokens_in_it() {
     let all = fetch(&mut client, &path, page, None);
     let some = fetch(&mut client, &path, page, Some((7, 0, 8, 0)));
     assert!(all.len() > some.len());
-    assert_eq!(summary(&some), pairs(&[("tesseraWidget", "@my-callout"), ("tesseraColon", ":")]));
+    assert_eq!(
+        summary(&some),
+        pairs(&[("tesseraWidget", "@my-callout"), ("tesseraColon", ":")])
+    );
 }
 
 #[test]
@@ -155,7 +171,8 @@ fn token_columns_follow_the_negotiated_encoding() {
         "textDocument/semanticTokens/full",
         json!({ "textDocument": { "uri": uri(&path).as_str() } }),
     );
-    let data: Vec<u32> = serde_json::from_value(response.response_result.expect("ok")["data"].clone()).unwrap();
+    let data: Vec<u32> =
+        serde_json::from_value(response.response_result.expect("ok")["data"].clone()).unwrap();
     assert_eq!(data[1], 5); // 😀 is four bytes and a space
     assert_eq!(data[2], 9);
 }
@@ -168,7 +185,10 @@ fn tokens_follow_an_edit_of_an_open_document() {
     let mut client = Client::start(&f.root());
     client.open(&path, 1, page);
     let before = fetch(&mut client, &path, page, None);
-    assert_eq!(summary(&before), pairs(&[("tesseraPhraseUndeclared", "{nope}")]));
+    assert_eq!(
+        summary(&before),
+        pairs(&[("tesseraPhraseUndeclared", "{nope}")])
+    );
     let edited = "---\ntitle: T\n---\nUse {product}.\n";
     client.replace(&path, 2, edited);
     let after = fetch(&mut client, &path, edited, None);

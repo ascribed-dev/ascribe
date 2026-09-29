@@ -262,7 +262,7 @@ impl Client {
 
     /// The codes of the diagnostics last published for a file.
     pub fn codes(&self, path: &Path) -> Vec<String> {
-        let mut codes: Vec<String> = self.diagnostics(path).iter().map(|d| slug(d)).collect();
+        let mut codes: Vec<String> = self.diagnostics(path).iter().map(slug).collect();
         codes.sort();
         codes
     }

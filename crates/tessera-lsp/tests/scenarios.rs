@@ -149,7 +149,11 @@ fn declaring_a_widget_in_the_model_changes_an_unopened_file() {
     client.open(&config, 1, MODEL);
     client.replace(&config, 2, WIDGET_MODEL);
     client.settle();
-    assert!(client.codes(&page).is_empty(), "{:?}", client.diagnostics(&page));
+    assert!(
+        client.codes(&page).is_empty(),
+        "{:?}",
+        client.diagnostics(&page)
+    );
     assert!(client.codes(&config).is_empty());
 
     // Removing it brings the warning back.
@@ -177,7 +181,10 @@ fn a_model_that_does_not_load_is_reported_on_tessera_toml_and_the_last_model_sta
     client.replace(&config, 2, "spec = \"0.1\"\n[project\n");
     client.settle();
     assert!(!client.diagnostics(&config).is_empty());
-    assert_eq!(client.diagnostics(&config)[0].source.as_deref(), Some("tessera"));
+    assert_eq!(
+        client.diagnostics(&config)[0].source.as_deref(),
+        Some("tessera")
+    );
     // The project keeps working with the last model that loaded.
     assert!(client.codes(&page).is_empty());
     client.change(&page, 1, vec![]);
@@ -227,7 +234,10 @@ fn deleting_a_linked_file_produces_broken_link_diagnostics() {
     let f = Fixture::new(
         MODEL,
         &[
-            ("docs/index.md", "---\ntitle: Home\n---\n[Other](other.md) and ![logo](logo.png)\n"),
+            (
+                "docs/index.md",
+                "---\ntitle: Home\n---\n[Other](other.md) and ![logo](logo.png)\n",
+            ),
             ("docs/other.md", "---\ntitle: Other\n---\n"),
             ("docs/logo.png", "not really a png"),
         ],
@@ -331,11 +341,7 @@ fn a_computation_overtaken_by_a_newer_edit_never_publishes() {
         before_publish: Some(Arc::new(move |_| {
             if first.swap(false, std::sync::atomic::Ordering::SeqCst) {
                 arrived_tx.send(()).expect("test is listening");
-                release_rx
-                    .lock()
-                    .expect("lock")
-                    .recv()
-                    .expect("released");
+                release_rx.lock().expect("lock").recv().expect("released");
             }
         })),
         ..Options::default()
@@ -395,7 +401,10 @@ fn positions_count_bytes_when_the_client_offers_utf8() {
     let mut client = Client::start_with(
         &f.root(),
         Setup {
-            encodings: Some(vec![PositionEncodingKind::UTF16, PositionEncodingKind::UTF8]),
+            encodings: Some(vec![
+                PositionEncodingKind::UTF16,
+                PositionEncodingKind::UTF8,
+            ]),
             ..Setup::default()
         },
     );
@@ -422,7 +431,29 @@ fn incremental_edits_after_multi_byte_text_land_where_the_editor_meant() {
     let d = &client.diagnostics(&e)[0];
     assert_eq!(d.range.start.character, 9);
     assert_eq!(d.range.end.character, 9 + "e2.md".len() as u32);
-    assert_eq!(client.publications(&e).last().expect("one").version, Some(2));
+    assert_eq!(
+        client.publications(&e).last().expect("one").version,
+        Some(2)
+    );
+}
+
+#[test]
+fn a_model_that_does_not_load_at_startup_is_reported_and_the_project_loads_once_it_does() {
+    let f = Fixture::new(
+        "spec = \"0.1\"\n[project\n",
+        &[("docs/a.md", "---\ntitle: A\n---\n[x](nope.md)\n")],
+    );
+    let (a, config) = (f.path("docs/a.md"), f.path("tessera.toml"));
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert!(!client.diagnostics(&config).is_empty());
+    assert!(client.diagnostics(&a).is_empty());
+
+    f.write("tessera.toml", MODEL);
+    client.watched(&[(&config, FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(client.diagnostics(&config).is_empty());
+    assert_eq!(client.codes(&a), ["link-target-missing"]);
 }
 
 // -- Files and assets ---------------------------------------------------------
@@ -481,7 +512,10 @@ fn without_a_project_the_server_stays_quiet_and_picks_one_up_when_it_appears() {
     std::fs::write(root.join("tessera.toml"), MODEL).expect("write");
     client.watched(&[(&root.join("tessera.toml"), FileChangeType::CREATED)]);
     client.settle();
-    assert_eq!(client.codes(&root.join("docs/a.md")), ["link-target-missing"]);
+    assert_eq!(
+        client.codes(&root.join("docs/a.md")),
+        ["link-target-missing"]
+    );
 }
 
 // -- Robustness ---------------------------------------------------------------
