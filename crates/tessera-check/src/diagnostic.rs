@@ -3,7 +3,7 @@
 use serde::Serialize;
 use tessera_core::{DiagnosticSlug, Fix, Issue, Location};
 
-use crate::registry::Registry;
+use crate::registry::{Entry, Registry};
 
 /// How serious a diagnostic is. An error means the document isn't
 /// conforming and a build fails; a warning doesn't fail a build (SPEC §8.2).
@@ -59,6 +59,13 @@ pub struct Diagnostic {
     pub related: Vec<RelatedInfo>,
     /// Edits that would fix it.
     pub fixes: Vec<Fix>,
+    /// The builds a page-level diagnostic appears in, in the content model's
+    /// order. Empty for a file-level diagnostic, which doesn't depend on a
+    /// build, and for one in [`unpublished`](Diagnostic::unpublished) content.
+    pub builds: Vec<String>,
+    /// Whether the diagnostic is in content that no build publishes, and so
+    /// belongs to none of them (Q101).
+    pub unpublished: bool,
 }
 
 impl Diagnostic {
@@ -85,7 +92,40 @@ impl Diagnostic {
                 })
                 .collect(),
             fixes: issue.fixes.clone(),
+            builds: Vec::new(),
+            unpublished: false,
         }
+    }
+
+    /// What to add to the message so a reader knows which builds it's about:
+    /// `only in build `a``, `only in builds `a`, `b``, or a note that no build
+    /// publishes the content. `None` for a diagnostic that doesn't depend on
+    /// a build, one that appears in all `total_builds` builds, and one whose
+    /// registry message already names the builds (it has a `{build}`
+    /// placeholder).
+    pub fn builds_note(&self, total_builds: usize) -> Option<String> {
+        if self.unpublished {
+            return Some("in content that no build publishes".to_owned());
+        }
+        // A message with a `{build}` placeholder already names the builds.
+        let names_builds = Registry::global()
+            .get(self.slug)
+            .is_some_and(Entry::names_build);
+        if self.builds.is_empty() || names_builds || self.builds.len() >= total_builds {
+            return None;
+        }
+        let list = self
+            .builds
+            .iter()
+            .map(|b| format!("`{b}`"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let noun = if self.builds.len() == 1 {
+            "build"
+        } else {
+            "builds"
+        };
+        Some(format!("only in {noun} {list}"))
     }
 
     /// Whether this is an error.

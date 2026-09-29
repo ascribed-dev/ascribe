@@ -21,17 +21,24 @@
 //!   asset contract's boundary and exact-case rules.
 //!
 //! Messages, codes, and severities come from the diagnostics registry
-//! (`tests/conformance/diagnostics.toml`), through [`Registry`]. Page-level
-//! checks (phase 14) live elsewhere and build on this crate.
+//! (`tests/conformance/diagnostics.toml`), through [`Registry`].
+//!
+//! **Page-level checks** are in [`page`]: [`check_project`] is the one function
+//! every tool calls for a build (the file-level diagnostics, then the build's
+//! page-level ones), and [`check_all_builds`] runs every build and reports
+//! each distinct problem once, naming the builds it appears in
+//! ([`Diagnostic::builds`]).
 
 mod checks;
 mod diagnostic;
+pub mod page;
 mod project;
 pub mod registry;
 mod yaml;
 
 pub use checks::check_file;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
+pub use page::{PageChecker, check_all_builds, check_pages, check_project};
 pub use project::{FileEntry, LoadError, MODEL_FILE, Project, ReadFailure, SourceFile};
 pub use registry::{Entry, Level, Registry};
 

@@ -40,6 +40,17 @@ pub struct Entry {
     pub messages: HashMap<String, String>,
 }
 
+impl Entry {
+    /// Whether the message names the build: its template, or one of its
+    /// variants, has a `{build}` placeholder. Such a message already says
+    /// which builds it's about.
+    pub fn names_build(&self) -> bool {
+        std::iter::once(&self.message)
+            .chain(self.messages.values())
+            .any(|t| placeholders(t).iter().any(|name| name == "build"))
+    }
+}
+
 /// The parsed diagnostics registry.
 #[derive(Debug)]
 pub struct Registry {

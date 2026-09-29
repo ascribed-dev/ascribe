@@ -368,6 +368,7 @@ Transcludes a file or a heading's section into the current document.
 - The target file and id MUST exist. Include cycles are an error: an include is a cycle when expanding it would, directly or through other includes, include the same section of the same file again, so its expansion would never end.
 - Included content becomes part of the including page. Phrase substitution and build modes (§9) apply to it as they do to the rest of the page.
 - Included headings keep the levels they're written with. Include a section where its levels fit the page.
+- Bindings are decided in the file where a directive is written. With `{heading=false}`, a heading-bound directive under the omitted heading, such as `@available`, still describes the rest of the included section, as it does in the fragment.
 - **Relative paths resolve from the file they're written in.** Every piece of content keeps its source file. Link destinations, image sources, and nested include paths inside a fragment resolve against the fragment's location, not the including page's. A fragment that links to `keys.md` means the `keys.md` next to the fragment, wherever it's included.
 - **Ids are checked on the expanded page.** Headings and `@id`s in included content become ids of the including page, and every id on a page MUST be unique after expansion. Including the same fragment twice on one page, or including a fragment whose ids collide with the page's own, is an error reported at the include site (§8.1).
 - **Links target pages, not fragments.** A fragment isn't published on its own, so a link to a fragment file is an error. A page's linkable ids are its own source ids (§5.5), not those of the fragments it includes: a link naming an id that exists only inside an included fragment is an error, and processors name the fragment when they report it. Link to the page that includes it.
@@ -463,7 +464,7 @@ A spec is a comma-separated list of **targets**, each optionally followed by its
 | `cloud, self-managed preview 3.3` | Two targets |
 
 - A **target** is a value of a declared dimension, or the name of a dimension, which stands for all of its values. A dimension name takes a state but never a version, since its values don't share one version line: write `deployment beta`, or name the value, as in `self-managed beta 3.4`.
-- A **state** is a declared lifecycle state (§7.2). A target with no state is generally available (`ga`). A bare version means generally available since that version.
+- A **state** is a declared lifecycle state (§7.2). A target with no state is generally available (`ga`). A bare version means generally available since that version. A state with no version on a versioned target (`self-managed beta`) is in effect at every version, as a bare target is.
 - Each lifecycle state declares whether content in that state **counts as available**. By default every state counts as available except `removed`.
 - States in a history MUST be in chronological order, compared using the content model's version scheme. A target that the content model declares as versionless takes a single state and no versions.
 - The language has no version ranges, alternatives, or negation. Each state names only the version where it begins.
@@ -475,6 +476,8 @@ A spec is a comma-separated list of **targets**, each optionally followed by its
 - When a scope has a spec, only the targets it lists apply there.
 - A scope with no spec inherits its enclosing scope's availability. A page with no spec applies everywhere.
 - A section or block spec MUST NOT exceed its enclosing scope: it can't list a target the enclosing scope doesn't, or name a version earlier than the enclosing scope does.
+- When a spec lists a target both directly and through its dimension name (`deployment, cloud removed`), the direct entry decides that target's state. If it lists the same target twice, the first entry decides.
+- Several `@available` lines on one heading or block all apply: the content is available only where every one of them allows it, and each is checked against its enclosing scope.
 
 #### Feature keys
 
@@ -601,6 +604,8 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 
 The content model MAY declare a glossary (§7.2). Processors link occurrences of glossary terms to their definitions according to the glossary's settings. Authors don't mark glossary terms in source.
 
+Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on the page it links to, and a term whose target page or heading a build doesn't publish isn't linked in that build.
+
 ### 5.5 Heading ids
 
 Every heading has two ids: one for referring to it in source, and one for its anchor on a published page.
@@ -614,7 +619,7 @@ For a heading with `@id`, both ids are the `@id`, which is what makes it stable.
 - **A heading's text**, for its slug, is the text content of the rendered heading: its text, code spans, link text, and emphasized text, with phrases substituted. Images and raw HTML contribute nothing.
 - A heading without `@id` whose slug is empty, because its text is only punctuation or emoji, can't be linked to reliably, and processors SHOULD warn.
 - Explicit ids don't take part in slug numbering: a slug is numbered only against earlier slugs. A heading whose slug equals another heading's `@id` on the same page therefore duplicates that id, which is an error (§4.1).
-- Processors SHOULD warn when a heading without `@id` contains a phrase, or repeats the text of another heading on the same page. In either case its slug can change without the heading itself being edited.
+- Processors SHOULD warn when a heading without `@id` contains a phrase, or when its slug is the same as another heading's on the same page (`Set up` and `Set-up` both slug to `set-up`), so that its id is numbered. In either case its id can change without the heading itself being edited. Headings with an `@id` don't count, since explicit ids aren't numbered.
 
 ---
 
@@ -683,7 +688,7 @@ A page's content type is the one whose path patterns match it. A page matched by
 Validation happens at two levels.
 
 - **File level.** Each source file on its own: syntax, attributes, directive schemas, frontmatter, and whether referenced files exist.
-- **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes.
+- **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes. A build reports page-level problems only in content it publishes: content a build removes isn't checked for that build, which is what lets a link to a page the build drops sit in an arm the build removes. Content that no build publishes is still checked, as if one build kept everything, and its problems are reported as belonging to no build. A problem that appears in several builds is reported once, naming them. A fragment that no page includes has no page-level problems; its file-level ones are still reported.
 
 A page-level diagnostic is reported at the source location that causes it. A diagnostic about what a link or image names is reported at its destination as written, for an inline link or image, and at the link or image itself for a reference form. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment, as related information rather than as a second diagnostic.
 
@@ -749,7 +754,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Phrases | `{key}` in prose whose key isn't declared | Warning |
 | Headings | No `@id`, and the heading contains a phrase | Warning |
 | Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji) | Warning |
-| Headings | No `@id`, and the heading duplicates another heading's text on the page (page level) | Warning |
+| Headings | No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered (page level) | Warning |
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |

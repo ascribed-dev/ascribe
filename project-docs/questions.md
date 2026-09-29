@@ -1135,20 +1135,20 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §8.1, §9.3, §5.2
 - **Raised by:** phase 12
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** page-level validation runs "once per build" on the resolved page. The spec says a link to a page a build drops is an error in that build, and that to link to such a page from shared content, put the link in a `@variant` arm the same build removes, which implies a problem in content a build removes isn't reported for that build. It doesn't say the same for the other page-level rows. Example: `@available: self-managed` under a page whose `available: cloud, self-managed 3.3` exceeds its scope, inside an arm `@variant {deployment=self-managed}` that the `cloud-only` build removes; or an `@include: _f.md#missing` in the same arm.
 - **Options:**
   1. Every page-level problem found on the expanded page is reported in every build, whether or not the build keeps the content. A build then fails for content it doesn't publish.
   2. A build reports only problems about content it publishes: the same rule the spec gives for links. A problem in content that every build removes is reported by no build, so the phase that runs the page-level checks should include a build that keeps everything (the editor's build, or `switch` builds).
 - **Proposed resolution:** option 2, for every page-level row that depends on what survives: `variant-no-arm-survives` (recorded only when the group itself survives), `available-exceeds-scope`, `include-id-missing`, `include-cycle`, `link-id-removed`, and `link-page-dropped`. Implemented now: option 2 (`SPEC-QUESTION(Q81)` in `crates/tessera-resolve/src/build/mod.rs`; the link rows are in `links.rs`). Problems that don't depend on a build's content (`id-duplicate`, `heading-duplicate-without-id`, computed from the resolved page's headings) follow from the same rule, since they're about the surviving headings.
 - **Affects:** `crates/tessera-resolve/src/build/`; phase 14 (which builds it checks); phases 15 and 18.
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: as proposed: a build reports page-level problems only in content it publishes. SPEC §8.1 now says so. Content that no build publishes is phase 14's to handle.
 
 ### Q82: A spec that lists a target both directly and through its dimension name
 
 - **Section:** SPEC §4.4, §9.3
 - **Raised by:** phase 12
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** content is available for target *T* when its spec "lists *T*, directly or through *T*'s dimension name", and the state in effect for *T* counts as available. A spec can list both: `deployment, cloud removed`. Which entry decides the state for `cloud`: `deployment` (generally available) or `cloud removed`?
 - **Options:**
   1. The direct entry, which is the more specific.
@@ -1156,13 +1156,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. Not available if any entry that lists *T* says so.
 - **Proposed resolution:** option 1: a more specific entry overrides a general one, the way a value overrides a dimension name elsewhere in the spec (`@variant`). Implemented now: option 1 (`SPEC-QUESTION(Q82)` in `crates/tessera-resolve/src/build/availability.rs`). Two entries for the same target (`cloud, cloud removed`) take the first.
 - **Affects:** `crates/tessera-resolve/src/build/availability.rs`; conformance cases: none.
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option 1: the direct entry decides; of two entries for the same target, the first. SPEC §4.4 now says so.
 
 ### Q83: Several `@available` lines for one heading or block
 
 - **Section:** SPEC §3.8, §4.4
 - **Raised by:** phase 12
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** heading-bound and following-block directives "stack". Two `@available` lines at the top of a section, or above one block, are each valid. What are they together?
 
   ```
@@ -1176,13 +1176,13 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. It's an error.
 - **Proposed resolution:** option 1, with the scope check applied to each in turn, so each mistake is reported once and nothing is dropped by a guess. Implemented now: option 1 (`SPEC-QUESTION(Q83)` in `availability.rs`). Option 3 would need a registry entry.
 - **Affects:** `crates/tessera-resolve/src/build/availability.rs`; the registry, if option 3.
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option 1: every `@available` on a scope applies, and each is checked against its enclosing scope. SPEC §4.4 now says so.
 
 ### Q84: A heading-bound `@available` whose heading an include left out
 
 - **Section:** SPEC §3.8, §4.2, §4.4
 - **Raised by:** phase 12
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** bindings are decided per source file. `@include {heading=false}: _f.md#install` leaves out the section's heading but not the `@id` and `@available` lines under it, which were bound to that heading. After expansion they sit under whatever heading the including page has above the include (or none).
 
   ```
@@ -1197,24 +1197,24 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. It's dropped: nothing is annotated.
 - **Proposed resolution:** option 1: a fragment means the same wherever it's included, which is the point of SPEC §4.2's per-file rules, and nothing is silently dropped or widened. Implemented now: option 1 (`SPEC-QUESTION(Q84)` in `availability.rs`). The same reading applies to a fragment whose first lines are `@available` with no heading above: it binds the block it touches, as at the start of a document (§3.8), not the including page's heading.
 - **Affects:** `crates/tessera-resolve/src/build/availability.rs`; conformance cases: none.
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option 1: bindings are decided per source file, so the directive describes the rest of the included section. SPEC §4.2 now says so.
 
 ### Q85: Glossary matching, beyond the content model's rules
 
 - **Section:** SPEC §5.4, content-model.md §13
 - **Raised by:** phase 12
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** content-model.md §13 fixes whole-word matching, longest match, prose only, and `first` or `every`. It doesn't say: whether emphasis inside prose counts as prose; where the text is matched, the source or the page after phrases are substituted; what `first` counts when a fragment is included twice or a build removes the first occurrence; whether a term links from its own page; and what happens to a term whose page or `#id` a build doesn't publish.
 - **Options:** (a) match in the resolved text, in document order across the resolved page, emphasis included; a term is never linked on the page it links to; a term whose page the build doesn't publish, or whose id it removes, isn't linked there. (b) The same, but a term whose target isn't published is an error (`link-page-dropped`-like). (c) Match the source text.
 - **Proposed resolution:** option (a). A glossary link is a convenience, not something an author wrote, so a target the build lacks should skip the link rather than fail the build; matching the resolved text is what a reader sees, and "the first occurrence on each page" means the resolved page (content-model.md §13.1). Implemented now: option (a) (`SPEC-QUESTION(Q85)` in `crates/tessera-resolve/src/build/glossary.rs`).
 - **Affects:** `crates/tessera-resolve/src/build/glossary.rs`; phases 18 and 20 (they render the links); phase 15 (hover).
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option (a): matched in the resolved text, emphasis counts as prose, no self-links, and unpublished targets aren't linked. SPEC §5.4 now says so.
 
 ### Q86: A state with no version on a versioned target
 
 - **Section:** SPEC §4.4, §9.3
 - **Raised by:** phase 12
-- **Status:** open
+- **Status:** resolved (2026-09-28)
 - **Ambiguity:** "A bare target with no version is in effect at every version", and "each state names only the version where it begins". A versioned target given a state with no version (`self-managed preview`) parses, and `check_availability` doesn't report it. In a filter build at `self-managed 3.3`, is the content in preview from the start of time, or never in effect?
 
   ```
@@ -1226,7 +1226,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
   3. It's an error (`available-versionless` reads the wrong way round: this is a *missing* version).
 - **Proposed resolution:** option 1, which keeps content and matches "a bare target … at every version". Option 3 needs a registry entry and is the better long-term rule, since the lifecycle then always says when it began. Implemented now: option 1 (`SPEC-QUESTION(Q86)` in `availability.rs`).
 - **Affects:** `crates/tessera-resolve/src/build/availability.rs`; possibly the registry and phase 10.
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option 1: a state with no version on a versioned target is in effect at every version, as a bare target is. SPEC §4.4 now says so.
 
 ### Q91: File ids when files are created, deleted, or renamed
 
@@ -1319,3 +1319,69 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** option 1, which costs a lowercased-path index. Implemented now: option 1. The differential test found it.
 - **Affects:** `crates/tessera-resolve/src/incremental/mod.rs` (`SPEC-QUESTION(Q97)`).
 - **Resolution:** filled in by a human.
+
+### Q101: Page-level problems in content that no build publishes
+
+- **Section:** SPEC §8.1, §9.3
+- **Raised by:** phase 14 (from phase 12's note on Q81)
+- **Status:** resolved (2026-09-28)
+- **Ambiguity:** with Q81 each build reports only problems in content it publishes. Content that *no* build publishes (an arm none of the builds selects, a page every build drops) is then never checked at page level: a duplicate id, a bad include, or a link to a missing id in it is never reported, and it would surface only when someone adds a build that publishes it. The spec doesn't say whether page-level validation covers it.
+- **Options:**
+  1. Report nothing: the content isn't published, so it isn't the build's business.
+  2. Check it with one extra resolution that keeps everything (`switch` and `badge`), and report the problems whose cause is in content no build publishes, as belonging to no build. A problem that exists only because arms that no build keeps together are kept together isn't reported.
+  3. Add a warning (a new registry entry, "content that no build publishes") and check nothing else in it.
+- **Proposed resolution:** option 2. It needs no new diagnostic, it finds what a later build would, and it costs nothing when a build already keeps everything (a `switch` and `badge` build, which most projects have). The diagnostic keeps its own row and severity; `Diagnostic::builds` is empty and `Diagnostic::unpublished` is set, and `tessera check` adds "in content that no build publishes" to its message. Option 3 is a reasonable addition on top, since dead content is worth knowing about. Implemented now: option 2 (`SPEC-QUESTION(Q101)` in `crates/tessera-check/src/page/mod.rs`).
+- **Affects:** `crates/tessera-check/src/page/`; phases 15 and 18 (they show or fail on these); the registry only if option 3 is added.
+- **Resolution:** approved by the repository owner: as proposed: content no build publishes is checked with one extra pass that keeps everything, and its problems are reported as belonging to no build (`Diagnostic::unpublished`). SPEC §8.1 now says so.
+
+### Q102: One problem in several builds
+
+- **Section:** SPEC §8.1, §8.2
+- **Raised by:** phase 14
+- **Status:** resolved (2026-09-28)
+- **Ambiguity:** page-level validation runs once per build, and the rows `variant-no-arm-survives`, `link-id-removed`, and `link-page-dropped` name the build in their message ("build `{build}` removes …"). When two builds have the same problem, one diagnostic can't name a single build, and the spec says a problem is reported once.
+- **Options:**
+  1. One diagnostic per build, each naming its build.
+  2. One diagnostic, its message naming every build, and the builds listed as data.
+  3. One diagnostic whose message doesn't name a build, with the builds as data only (a registry change to the three messages).
+- **Proposed resolution:** option 2 now, reading "build `cloud`, `self-managed` removes …": accurate, but not good English. The better fix is a `builds` message variant on each of the three rows, chosen when a diagnostic is in several builds, with the placeholder `{builds}` filled with the names quoted and joined (`` `cloud`, `cloud-pdf` ``). The exact texts, to approve and add in one step to `tests/conformance/diagnostics.toml`:
+
+  ```toml
+  # variant-no-arm-survives
+  messages.builds = "builds {builds} remove every arm of this `@variant` group, so none of its content is published in those builds"
+  # link-id-removed
+  messages.builds = "builds {builds} remove the heading `{id}` from `{path}`, so this link would be broken in those builds"
+  # link-page-dropped
+  messages.builds = "builds {builds} don't publish `{path}`, so this link would be broken in those builds; move the link into a `@variant` arm those builds remove"
+  ```
+
+  With them, `check_all_builds` sets `variant = "builds"` and a `builds` argument when a merged diagnostic has more than one build, and nothing else changes. Until then the merged `{build}` is the builds joined by `` `, ` ``. Every diagnostic that appears in some but not all builds also gets "(only in build `a`)" from `tessera check`, and the builds are `Diagnostic::builds` for every tool. Implemented now: option 2 (`SPEC-QUESTION(Q102)` in `crates/tessera-check/src/page/mod.rs`).
+- **Affects:** `tests/conformance/diagnostics.toml` (three messages, if option 3 or the plural variants are chosen); phases 15 and 18.
+- **Resolution:** approved by the repository owner: option 2 with the plural wording: one diagnostic per problem, naming every build it appears in (`Diagnostic::builds`, and `builds` in the JSON output). The three rows whose message names the build gained a `builds` message variant, with the texts proposed here, used when the problem is in more than one build. SPEC §8.1 now says so.
+
+### Q103: What "duplicates another heading's text" compares
+
+- **Section:** SPEC §5.5, §8.2
+- **Raised by:** phase 14
+- **Status:** resolved (2026-09-28)
+- **Ambiguity:** `heading-duplicate-without-id` is reported for a heading with no `@id` that "duplicates another heading's text on the page". Two headings can differ in text and still get the same slug (`Options` and `options`, `Set up` and `Set-up`), so the later one's id is numbered and can change when headings move, which is what the warning is about. The row says text, not slug.
+- **Options:**
+  1. Exactly equal text (after phrases are substituted, as the slug is computed): the row as worded.
+  2. Equal slugs: every heading whose id would be numbered.
+- **Proposed resolution:** option 1, which is the row's wording and reports fewer warnings. Option 2 is the more useful rule, and a change to the row's wording. The earlier heading may have an `@id` or not; the later one must not. An empty text is never a duplicate (its own row, `heading-empty-slug`, covers it). Implemented now: option 1 (`SPEC-QUESTION(Q103)` in `crates/tessera-check/src/page/collect.rs`).
+- **Affects:** `crates/tessera-check/src/page/collect.rs`; possibly the row's wording.
+- **Resolution:** approved by the repository owner: option 2: equal slugs, not equal text, among headings without `@id` (the ones numbered against each other, Q7), so `Set up` and `Set-up` are duplicates. A heading whose slug equals an earlier heading's explicit id is `id-duplicate`, not this warning. The §8.2 row, its registry row and message, and SPEC §5.5 now say slug. Cases: `headings/duplicate-slug-different-text` (new); `directives/id/slug-equals-explicit-id` and `headings/explicit-id-is-stable-source-and-page-id` no longer expect this warning.
+
+### Q104: Fragments that no page includes
+
+- **Section:** SPEC §8.1
+- **Raised by:** phase 14
+- **Status:** resolved (2026-09-28)
+- **Ambiguity:** page-level validation runs on pages "after includes are expanded". A fragment that no page includes is never part of a page, so the rows that need one (a link to a missing id in it, a duplicate id inside it) are never reported for it, and neither are the page-level rows about content it holds; only its file-level rows are. This is the same gap as Q101 for a whole file, and one an author meets while writing a fragment before including it.
+- **Options:**
+  1. Report nothing for it at page level.
+  2. Check each such fragment as if it were a page of its own.
+  3. Warn that nothing includes it (a new registry entry).
+- **Proposed resolution:** option 1 for now, because the rows are defined on pages and a fragment's ids may legitimately collide with the page's own once it's included. Option 3 is cheap and useful, and needs a registry entry. Implemented now: option 1 (`SPEC-QUESTION(Q104)` in `crates/tessera-check/src/page/mod.rs`).
+- **Affects:** `crates/tessera-check/src/page/`; phase 15 (a fragment open in the editor).
+- **Resolution:** approved by the repository owner: as proposed: a fragment no page includes has no page-level diagnostics; its file-level ones are still reported. A "nothing includes this" warning can come later. SPEC §8.1 now says so.
