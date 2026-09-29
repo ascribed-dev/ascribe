@@ -125,9 +125,9 @@ impl<'p> PageChecker<'p> {
         let keeps_everything = model.builds.iter().any(|b| {
             b.variants == VariantMode::Switch && b.availability == AvailabilityMode::Badge
         });
-        // SPEC-QUESTION(Q101): content no build publishes is checked with a
+        // Resolved Q101: content no build publishes is checked with a
         // build that keeps everything, and reported as belonging to no build.
-        // SPEC-QUESTION(Q104): a fragment no page includes is in no page, so
+        // Resolved Q104: a fragment no page includes is in no page, so
         // it isn't part of this pass either.
         if !keeps_everything {
             per_build.push((None, self.unpublished(&published)));
@@ -208,13 +208,17 @@ impl<'p> PageChecker<'p> {
             .into_iter()
             .map(|(_, m)| {
                 let mut issue = m.found.issue;
-                // A row whose message names the build names them all.
-                // SPEC-QUESTION(Q102): the builds joined into the one message.
-                if issue.arg("build").is_some() && !m.builds.is_empty() {
-                    let names = m.builds.join("`, `");
-                    for arg in issue.args.iter_mut().filter(|a| a.name == "build") {
-                        arg.value.clone_from(&names);
-                    }
+                // A row whose message names the build names them all: in
+                // several builds, with its `builds` message variant (resolved
+                // Q102).
+                if issue.arg("build").is_some() && m.builds.len() > 1 {
+                    let names = m
+                        .builds
+                        .iter()
+                        .map(|b| format!("`{b}`"))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    issue = issue.with_variant("builds").with_arg("builds", names);
                 }
                 self.to_project_ids(&mut issue);
                 let mut d = Diagnostic::from_issue(&issue);

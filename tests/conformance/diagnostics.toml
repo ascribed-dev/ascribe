@@ -275,6 +275,7 @@ level = "page"
 spec = "9.3"
 row = "`@variant` | No arm of a group survives a build's selection (page level)"
 message = "build `{build}` removes every arm of this `@variant` group, so none of its content is published in that build"
+messages.builds = "builds {builds} remove every arm of this `@variant` group, so none of its content is published in those builds"
 
 [[diagnostic]]
 code = "TSR025"
@@ -430,6 +431,7 @@ level = "page"
 spec = "9.3"
 row = "Links | Target id is removed by a build (page level, per build)"
 message = "build `{build}` removes the heading `{id}` from `{path}`, so this link would be broken in that build"
+messages.builds = "builds {builds} remove the heading `{id}` from `{path}`, so this link would be broken in those builds"
 
 [[diagnostic]]
 code = "TSR041"
@@ -485,8 +487,8 @@ slug = "heading-duplicate-without-id"
 severity = "warning"
 level = "page"
 spec = "5.5"
-row = "Headings | No `@id`, and the heading duplicates another heading's text on the page (page level)"
-message = "this heading repeats the text of another heading on the page, so its id is numbered and can change when headings move; give it a stable id with `@id`"
+row = "Headings | No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered (page level)"
+message = "this heading's text gives the same slug as another heading on the page, so its id is numbered and can change when headings move; give it a stable id with `@id`"
 
 [[diagnostic]]
 code = "TSR047"
@@ -1210,6 +1212,7 @@ level = "page"
 spec = "5.2"
 row = "Links | Target page isn't published by a build (page level, per build)"
 message = "build `{build}` doesn't publish `{path}`, so this link would be broken in that build; move the link into a `@variant` arm the build removes"
+messages.builds = "builds {builds} don't publish `{path}`, so this link would be broken in those builds; move the link into a `@variant` arm those builds remove"
 
 ###############################################################################
 # SPEC §8.2 rows added for questions Q51, Q52, Q61, and Q65.

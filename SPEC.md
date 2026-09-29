@@ -619,7 +619,7 @@ For a heading with `@id`, both ids are the `@id`, which is what makes it stable.
 - **A heading's text**, for its slug, is the text content of the rendered heading: its text, code spans, link text, and emphasized text, with phrases substituted. Images and raw HTML contribute nothing.
 - A heading without `@id` whose slug is empty, because its text is only punctuation or emoji, can't be linked to reliably, and processors SHOULD warn.
 - Explicit ids don't take part in slug numbering: a slug is numbered only against earlier slugs. A heading whose slug equals another heading's `@id` on the same page therefore duplicates that id, which is an error (§4.1).
-- Processors SHOULD warn when a heading without `@id` contains a phrase, or repeats the text of another heading on the same page. In either case its slug can change without the heading itself being edited.
+- Processors SHOULD warn when a heading without `@id` contains a phrase, or when its slug is the same as another heading's on the same page (`Set up` and `Set-up` both slug to `set-up`), so that its id is numbered. In either case its id can change without the heading itself being edited. Headings with an `@id` don't count, since explicit ids aren't numbered.
 
 ---
 
@@ -688,7 +688,7 @@ A page's content type is the one whose path patterns match it. A page matched by
 Validation happens at two levels.
 
 - **File level.** Each source file on its own: syntax, attributes, directive schemas, frontmatter, and whether referenced files exist.
-- **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes. A build reports page-level problems only in content it publishes: content a build removes isn't checked for that build, which is what lets a link to a page the build drops sit in an arm the build removes.
+- **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes. A build reports page-level problems only in content it publishes: content a build removes isn't checked for that build, which is what lets a link to a page the build drops sit in an arm the build removes. Content that no build publishes is still checked, as if one build kept everything, and its problems are reported as belonging to no build. A problem that appears in several builds is reported once, naming them. A fragment that no page includes has no page-level problems; its file-level ones are still reported.
 
 A page-level diagnostic is reported at the source location that causes it. A diagnostic about what a link or image names is reported at its destination as written, for an inline link or image, and at the link or image itself for a reference form. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment, as related information rather than as a second diagnostic.
 
@@ -754,7 +754,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Phrases | `{key}` in prose whose key isn't declared | Warning |
 | Headings | No `@id`, and the heading contains a phrase | Warning |
 | Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji) | Warning |
-| Headings | No `@id`, and the heading duplicates another heading's text on the page (page level) | Warning |
+| Headings | No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered (page level) | Warning |
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
