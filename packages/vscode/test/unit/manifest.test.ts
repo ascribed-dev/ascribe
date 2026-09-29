@@ -39,23 +39,23 @@ describe("package.json", () => {
     expect(hidden.map((entry) => entry.command).sort()).toEqual(
       manifest.contributes.commands.map((command) => command.command).sort(),
     );
-    for (const entry of hidden) expect(entry.when).toBe("tessera.active");
+    for (const entry of hidden) expect(entry.when).toBe("ascribe.active");
   });
 
   it("declares the commands and settings the extension reads", () => {
     expect(manifest.contributes.commands.map((command) => command.command)).toEqual([
-      "tessera.restartServer",
-      "tessera.showOutput",
+      "ascribe.restartServer",
+      "ascribe.showOutput",
     ]);
     const properties = manifest.contributes.configuration.properties;
     expect(Object.keys(properties).sort()).toEqual([
-      "tessera.formatOnSave",
-      "tessera.maxCrashes",
-      "tessera.path",
-      "tessera.trace.server",
+      "ascribe.formatOnSave",
+      "ascribe.maxCrashes",
+      "ascribe.path",
+      "ascribe.trace.server",
     ]);
-    expect(properties["tessera.formatOnSave"]?.default).toBe(false);
-    expect(properties["tessera.trace.server"]?.default).toBe("off");
+    expect(properties["ascribe.formatOnSave"]?.default).toBe(false);
+    expect(properties["ascribe.trace.server"]?.default).toBe("off");
   });
 
   it("injects its grammars into markdown, and the files exist", () => {
@@ -80,10 +80,10 @@ describe("package.json", () => {
 describe("semantic tokens and the server's legend", () => {
   const readme = new URL("../../../../crates/tessera-lsp/README.md", import.meta.url);
   const legend = existsSync(readme) ? readFileSync(readme, "utf8") : "";
-  const types = [...legend.matchAll(/^\| \d+ \| `(tessera\w+)` \|.*\| `([^`]+)` \|$/gm)].map(
+  const types = [...legend.matchAll(/^\| \d+ \| `(ascribe\w+)` \|.*\| `([^`]+)` \|$/gm)].map(
     (match) => ({ id: match[1] ?? "", scope: match[2] ?? "" }),
   );
-  const modifiers = [...legend.matchAll(/^\| \d+ \| `(\w+)` \| A `tessera/gm)].map(
+  const modifiers = [...legend.matchAll(/^\| \d+ \| `(\w+)` \| A `ascribe/gm)].map(
     (match) => match[1] ?? "",
   );
 

@@ -200,7 +200,7 @@ fn run(pages: usize) {
                 DidOpenTextDocumentParams {
                     text_document: TextDocumentItem {
                         uri: uri.clone(),
-                        language_id: "tessera".into(),
+                        language_id: "ascribe".into(),
                         version: 1,
                         text: text.clone(),
                     },
@@ -259,7 +259,7 @@ fn run(pages: usize) {
                 DidOpenTextDocumentParams {
                     text_document: TextDocumentItem {
                         uri: fragment_uri.clone(),
-                        language_id: "tessera".into(),
+                        language_id: "ascribe".into(),
                         version: 1,
                         text: "## Shared 0\n\nShared text.\n".into(),
                     },

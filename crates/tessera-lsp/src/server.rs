@@ -100,7 +100,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             ..ServerCapabilities::default()
         },
         server_info: Some(ServerInfo {
-            name: "tessera".to_owned(),
+            name: "ascribe".to_owned(),
             version: Some(env!("CARGO_PKG_VERSION").to_owned()),
         }),
     };

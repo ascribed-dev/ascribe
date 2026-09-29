@@ -1,6 +1,6 @@
 // Runs the integration suites in a real VS Code with @vscode/test-electron.
 //
-//   pnpm --filter tessera-vscode test:integration
+//   pnpm --filter ascribe-vscode test:integration
 //
 // It needs a display: on Linux without one, run it under `xvfb-run -a`.
 // VS Code is downloaded on first use into out/vscode-test.
@@ -28,19 +28,19 @@ interface Suite {
   fixture: string;
 }
 
-const stubServer = path.join(packageRoot, "test/stub-server/tessera");
+const stubServer = path.join(packageRoot, "test/stub-server/ascribe");
 const realServer = process.env["TESSERA_BIN"];
 
 const suites: Suite[] = [
   {
     name: "activation",
     fixture: path.join(packageRoot, "test/fixtures/no-model"),
-    prepare: () => ({ "tessera.path": stubServer }),
+    prepare: () => ({ "ascribe.path": stubServer }),
   },
   {
     name: "stub",
     fixture: path.join(packageRoot, "test/fixtures/stub-project"),
-    prepare: () => ({ "tessera.path": stubServer, "tessera.maxCrashes": 2 }),
+    prepare: () => ({ "ascribe.path": stubServer, "ascribe.maxCrashes": 2 }),
   },
   {
     name: "quill",
@@ -51,7 +51,7 @@ const suites: Suite[] = [
         path.join(workspace, "docs"),
         { recursive: true },
       );
-      return { "tessera.path": realServer };
+      return { "ascribe.path": realServer };
     },
   },
 ];

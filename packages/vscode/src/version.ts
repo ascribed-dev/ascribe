@@ -6,7 +6,7 @@ export interface Version {
 
 /**
  * Finds the first `major.minor.patch` (with an optional `-pre-release`) in a
- * string, such as the output of `tessera --version` (`tessera 0.3.1`).
+ * string, such as the output of `ascribe --version` (`ascribe 0.3.1`).
  * Returns `undefined` when there isn't one.
  */
 export function parseVersion(text: string): Version | undefined {

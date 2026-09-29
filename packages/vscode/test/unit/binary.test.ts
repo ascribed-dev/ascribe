@@ -39,8 +39,8 @@ function failed(): never {
 
 const extensionPath = path.resolve("/ext");
 const project = path.resolve("/work/docs");
-const projectBinary = path.join(project, "node_modules", ".bin", "tessera");
-const bundledBinary = path.join(bundledDirectory(extensionPath, "linux", "x64"), "tessera");
+const projectBinary = path.join(project, "node_modules", ".bin", "ascribe");
+const bundledBinary = path.join(bundledDirectory(extensionPath, "linux", "x64"), "ascribe");
 
 function options(env: BinaryEnvironment, overrides: Partial<ResolveOptions> = {}): ResolveOptions {
   return {
@@ -54,47 +54,47 @@ function options(env: BinaryEnvironment, overrides: Partial<ResolveOptions> = {}
 }
 
 describe("resolveBinary", () => {
-  it("prefers the tessera.path setting over everything", async () => {
+  it("prefers the ascribe.path setting over everything", async () => {
     const env = machine({
-      "/custom/tessera": "tessera 0.3.0\n",
-      [projectBinary]: "tessera 0.3.0\n",
-      [bundledBinary]: "tessera 0.3.0\n",
+      "/custom/ascribe": "ascribe 0.3.0\n",
+      [projectBinary]: "ascribe 0.3.0\n",
+      [bundledBinary]: "ascribe 0.3.0\n",
     });
-    const result = await resolveBinary(options(env, { setting: "/custom/tessera" }));
+    const result = await resolveBinary(options(env, { setting: "/custom/ascribe" }));
     expect(result).toMatchObject({
       kind: "found",
-      binary: { path: "/custom/tessera", source: "setting" },
+      binary: { path: "/custom/ascribe", source: "setting" },
     });
-    expect(env.ran).toEqual(["/custom/tessera"]);
+    expect(env.ran).toEqual(["/custom/ascribe"]);
   });
 
   it("treats a blank setting as unset", async () => {
-    const env = machine({ [projectBinary]: "tessera 0.3.0\n" });
+    const env = machine({ [projectBinary]: "ascribe 0.3.0\n" });
     const result = await resolveBinary(options(env, { setting: "   " }));
     expect(result).toMatchObject({ kind: "found", binary: { source: "project" } });
   });
 
   it("fails, rather than falling through, when the setting names no working binary", async () => {
-    const env = machine({ [projectBinary]: "tessera 0.3.0\n", [bundledBinary]: "tessera 0.3.0\n" });
-    const result = await resolveBinary(options(env, { setting: "/nope/tessera" }));
+    const env = machine({ [projectBinary]: "ascribe 0.3.0\n", [bundledBinary]: "ascribe 0.3.0\n" });
+    const result = await resolveBinary(options(env, { setting: "/nope/ascribe" }));
     expect(result.kind).toBe("missing");
     if (result.kind !== "missing") return;
-    expect(result.error.message).toContain("tessera.path");
-    expect(result.error.message).toContain("/nope/tessera");
-    expect(result.error.tried).toEqual(["/nope/tessera: not found"]);
+    expect(result.error.message).toContain("ascribe.path");
+    expect(result.error.message).toContain("/nope/ascribe");
+    expect(result.error.tried).toEqual(["/nope/ascribe: not found"]);
     expect(env.ran).toEqual([]);
   });
 
   it("fails when the setting names a file that can't report a version", async () => {
-    const env = machine({ "/custom/tessera": new Error("Exec format error") });
-    const result = await resolveBinary(options(env, { setting: "/custom/tessera" }));
+    const env = machine({ "/custom/ascribe": new Error("Exec format error") });
+    const result = await resolveBinary(options(env, { setting: "/custom/ascribe" }));
     expect(result.kind).toBe("missing");
     if (result.kind !== "missing") return;
     expect(result.error.tried[0]).toContain("Exec format error");
   });
 
-  it("uses the project's node_modules/.bin/tessera when the setting is unset", async () => {
-    const env = machine({ [projectBinary]: "tessera 0.3.0\n", [bundledBinary]: "tessera 0.3.0\n" });
+  it("uses the project's node_modules/.bin/ascribe when the setting is unset", async () => {
+    const env = machine({ [projectBinary]: "ascribe 0.3.0\n", [bundledBinary]: "ascribe 0.3.0\n" });
     const result = await resolveBinary(options(env));
     expect(result).toMatchObject({
       kind: "found",
@@ -104,8 +104,8 @@ describe("resolveBinary", () => {
 
   it("tries each project root in order", async () => {
     const parent = path.resolve("/work");
-    const parentBinary = path.join(parent, "node_modules", ".bin", "tessera");
-    const env = machine({ [parentBinary]: "tessera 0.3.0\n" });
+    const parentBinary = path.join(parent, "node_modules", ".bin", "ascribe");
+    const env = machine({ [parentBinary]: "ascribe 0.3.0\n" });
     const result = await resolveBinary(options(env, { projectRoots: [project, parent] }));
     expect(result).toMatchObject({ kind: "found", binary: { path: parentBinary } });
   });
@@ -113,7 +113,7 @@ describe("resolveBinary", () => {
   it("skips a project binary that won't run and uses the bundled one", async () => {
     const env = machine({
       [projectBinary]: new Error("EACCES"),
-      [bundledBinary]: "tessera 0.3.0\n",
+      [bundledBinary]: "ascribe 0.3.0\n",
     });
     const result = await resolveBinary(options(env));
     expect(result).toMatchObject({
@@ -123,19 +123,19 @@ describe("resolveBinary", () => {
   });
 
   it("falls back to the bundled binary for the platform and architecture", async () => {
-    const macBinary = path.join(bundledDirectory(extensionPath, "darwin", "arm64"), "tessera");
-    const env = machine({ [macBinary]: "tessera 0.3.0\n" }, "darwin", "arm64");
+    const macBinary = path.join(bundledDirectory(extensionPath, "darwin", "arm64"), "ascribe");
+    const env = machine({ [macBinary]: "ascribe 0.3.0\n" }, "darwin", "arm64");
     const result = await resolveBinary(options(env, { projectRoots: [] }));
     expect(result).toMatchObject({ kind: "found", binary: { path: macBinary, source: "bundled" } });
     expect(macBinary).toContain("darwin-arm64");
   });
 
-  it("names the Windows files: tessera.exe bundled, tessera.cmd in node_modules/.bin", async () => {
-    expect(executableName("win32")).toBe("tessera.exe");
-    expect(projectBinaryName("win32")).toBe("tessera.cmd");
-    expect(executableName("linux")).toBe("tessera");
-    const winBundled = path.join(bundledDirectory(extensionPath, "win32", "x64"), "tessera.exe");
-    const env = machine({ [winBundled]: "tessera 0.3.0\n" }, "win32", "x64");
+  it("names the Windows files: ascribe.exe bundled, ascribe.cmd in node_modules/.bin", async () => {
+    expect(executableName("win32")).toBe("ascribe.exe");
+    expect(projectBinaryName("win32")).toBe("ascribe.cmd");
+    expect(executableName("linux")).toBe("ascribe");
+    const winBundled = path.join(bundledDirectory(extensionPath, "win32", "x64"), "ascribe.exe");
+    const env = machine({ [winBundled]: "ascribe 0.3.0\n" }, "win32", "x64");
     const result = await resolveBinary(options(env, { projectRoots: [] }));
     expect(result).toMatchObject({ kind: "found", binary: { path: winBundled } });
   });
@@ -145,9 +145,9 @@ describe("resolveBinary", () => {
     const result = await resolveBinary(options(env));
     expect(result.kind).toBe("missing");
     if (result.kind !== "missing") return;
-    expect(result.error.message).toContain("Couldn't find the Tessera binary");
+    expect(result.error.message).toContain("Couldn't find the Ascribe binary");
     expect(result.error.message).toContain("npm install");
-    expect(result.error.message).toContain("tessera.path");
+    expect(result.error.message).toContain("ascribe.path");
     expect(result.error.tried).toEqual([
       `${projectBinary}: not found`,
       `${bundledBinary}: not found`,
@@ -164,13 +164,13 @@ describe("resolveBinary", () => {
 
   describe("version", () => {
     it("reads the version the binary prints", async () => {
-      const env = machine({ [projectBinary]: "tessera 1.4.2\n" });
+      const env = machine({ [projectBinary]: "ascribe 1.4.2\n" });
       const result = await resolveBinary(options(env));
       expect(result).toMatchObject({ kind: "found", binary: { version: { parts: [1, 4, 2] } } });
     });
 
     it("warns when the project's binary is older than the extension expects", async () => {
-      const env = machine({ [projectBinary]: "tessera 0.1.9\n" });
+      const env = machine({ [projectBinary]: "ascribe 0.1.9\n" });
       const result = await resolveBinary(options(env));
       expect(result.kind).toBe("found");
       if (result.kind !== "found") return;
@@ -179,7 +179,7 @@ describe("resolveBinary", () => {
     });
 
     it("doesn't warn for the expected version or a newer one", async () => {
-      for (const printed of ["tessera 0.2.0", "tessera 0.2.1", "tessera 1.0.0"]) {
+      for (const printed of ["ascribe 0.2.0", "ascribe 0.2.1", "ascribe 1.0.0"]) {
         const env = machine({ [projectBinary]: printed });
         const result = await resolveBinary(options(env));
         expect(result).toMatchObject({ kind: "found" });
@@ -188,13 +188,13 @@ describe("resolveBinary", () => {
     });
 
     it("warns about an older binary named by the setting, too", async () => {
-      const env = machine({ "/custom/tessera": "tessera 0.0.1" });
-      const result = await resolveBinary(options(env, { setting: "/custom/tessera" }));
+      const env = machine({ "/custom/ascribe": "ascribe 0.0.1" });
+      const result = await resolveBinary(options(env, { setting: "/custom/ascribe" }));
       expect(result.kind === "found" && result.binary.warning).toContain("0.0.1");
     });
 
     it("counts a pre-release as older than its release", async () => {
-      const env = machine({ [projectBinary]: "tessera 0.2.0-beta.1" });
+      const env = machine({ [projectBinary]: "ascribe 0.2.0-beta.1" });
       const result = await resolveBinary(options(env));
       expect(result.kind === "found" && result.binary.warning).toContain("0.2.0-beta.1");
     });

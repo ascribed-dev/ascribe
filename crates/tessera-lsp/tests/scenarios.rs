@@ -40,7 +40,7 @@ fn the_initialize_result_advertises_only_what_is_implemented() {
     assert_eq!(caps["textDocumentSync"]["change"], 2);
     assert_eq!(caps["textDocumentSync"]["openClose"], true);
     let legend = &caps["semanticTokensProvider"]["legend"];
-    assert_eq!(legend["tokenTypes"][6], "tesseraTitle");
+    assert_eq!(legend["tokenTypes"][6], "ascribeTitle");
     assert_eq!(legend["tokenModifiers"][0], "unknown");
     let mut keys: Vec<&str> = caps
         .as_object()
@@ -183,7 +183,7 @@ fn a_model_that_does_not_load_is_reported_on_ascribe_toml_and_the_last_model_sta
     assert!(!client.diagnostics(&config).is_empty());
     assert_eq!(
         client.diagnostics(&config)[0].source.as_deref(),
-        Some("tessera")
+        Some("ascribe")
     );
     // The project keeps working with the last model that loaded.
     assert!(client.codes(&page).is_empty());

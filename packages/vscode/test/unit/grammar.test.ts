@@ -23,8 +23,8 @@ beforeAll(async () => {
   const read = (name: string) =>
     readFileSync(new URL(`../../syntaxes/${name}.tmLanguage.json`, import.meta.url), "utf8");
   const injections: Record<string, string> = {
-    "tessera.injection": read("tessera.injection"),
-    "tessera.injection.nested": read("tessera.injection.nested"),
+    "ascribe.injection": read("ascribe.injection"),
+    "ascribe.injection.nested": read("ascribe.injection.nested"),
   };
   const registry = new Registry({
     onigLib: Promise.resolve({ createOnigScanner, createOnigString }),
@@ -36,7 +36,7 @@ beforeAll(async () => {
       return null;
     },
     getInjections: (scope) =>
-      scope === "text.html.markdown" ? ["tessera.injection", "tessera.injection.nested"] : [],
+      scope === "text.html.markdown" ? ["ascribe.injection", "ascribe.injection.nested"] : [],
   });
   const loaded = await registry.loadGrammar("text.html.markdown");
   if (!loaded) throw new Error("the markdown grammar didn't load");

@@ -5,15 +5,15 @@ import * as vscode from "vscode";
 import { activated, diagnosticsOf, uriOf, waitFor, workspace } from "./helpers.js";
 
 const stubDiagnostics = (diagnostics: vscode.Diagnostic[]) =>
-  diagnostics.filter((diagnostic) => diagnostic.source === "tessera-stub");
+  diagnostics.filter((diagnostic) => diagnostic.source === "ascribe-stub");
 
 describe("with ascribe.toml and the stub server", () => {
-  it("activates, finds the binary named by tessera.path, and starts the server", async () => {
+  it("activates, finds the binary named by ascribe.path, and starts the server", async () => {
     const api = await activated();
     await api.whenSettled();
     assert.equal(api.state(), "running");
     assert.equal(api.binary()?.source, "setting");
-    assert.match(api.binary()?.path ?? "", /stub-server[\\/]tessera$/);
+    assert.match(api.binary()?.path ?? "", /stub-server[\\/]ascribe$/);
   });
 
   it("shows diagnostics for a file that isn't open, from the project scan", async () => {
@@ -57,7 +57,7 @@ describe("with ascribe.toml and the stub server", () => {
 
   it("restarts the server on request", async () => {
     const api = await activated();
-    await vscode.commands.executeCommand("tessera.restartServer");
+    await vscode.commands.executeCommand("ascribe.restartServer");
     await api.whenSettled();
     assert.equal(api.state(), "running");
     // The new server reads the project again.
@@ -66,31 +66,31 @@ describe("with ascribe.toml and the stub server", () => {
 
   it("registers its commands", async () => {
     const commands = await vscode.commands.getCommands(true);
-    assert.ok(commands.includes("tessera.restartServer"));
-    assert.ok(commands.includes("tessera.showOutput"));
-    await vscode.commands.executeCommand("tessera.showOutput");
+    assert.ok(commands.includes("ascribe.restartServer"));
+    assert.ok(commands.includes("ascribe.showOutput"));
+    await vscode.commands.executeCommand("ascribe.showOutput");
   });
 
-  it("stops after tessera.maxCrashes crashes", async () => {
+  it("stops after ascribe.maxCrashes crashes", async () => {
     const api = await activated();
-    // tessera.maxCrashes is 2 in this workspace: the second crash is the last.
+    // ascribe.maxCrashes is 2 in this workspace: the second crash is the last.
     writeFileSync(path.join(workspace(), "docs", "crash.md"), "# Crash\n\nCRASH\n");
     await waitFor("the server to give up", () => api.state() === "failed", 45_000);
     rmSync(path.join(workspace(), "docs", "crash.md"));
 
     // Restarting works once the cause is gone.
-    await vscode.commands.executeCommand("tessera.restartServer");
+    await vscode.commands.executeCommand("ascribe.restartServer");
     await api.whenSettled();
     assert.equal(api.state(), "running");
   });
 
-  it("reports a tessera.path that isn't a working binary, and recovers", async () => {
+  it("reports a ascribe.path that isn't a working binary, and recovers", async () => {
     const api = await activated();
-    const config = vscode.workspace.getConfiguration("tessera");
+    const config = vscode.workspace.getConfiguration("ascribe");
     const good = config.get<string>("path");
     await config.update(
       "path",
-      path.join(workspace(), "no-such-tessera"),
+      path.join(workspace(), "no-such-ascribe"),
       vscode.ConfigurationTarget.Workspace,
     );
     await waitFor("the server to fail", () => api.state() === "failed");

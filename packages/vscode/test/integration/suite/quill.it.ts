@@ -9,7 +9,7 @@ describe("with the real language server on examples/quill", () => {
   const broken = uriOf("docs", "broken.md");
   const original = () => readFileSync(broken.fsPath, "utf8");
 
-  it("starts `ascribe lsp` from the tessera.path setting", async () => {
+  it("starts `ascribe lsp` from the ascribe.path setting", async () => {
     const api = await activated();
     await api.whenSettled();
     assert.equal(api.state(), "running");

@@ -19,24 +19,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<Tesser
 
   context.subscriptions.push(
     server,
-    vscode.commands.registerCommand("tessera.restartServer", async () => {
+    vscode.commands.registerCommand("ascribe.restartServer", async () => {
       const present = await hasProject();
-      await vscode.commands.executeCommand("setContext", "tessera.active", present);
+      await vscode.commands.executeCommand("setContext", "ascribe.active", present);
       if (present) await server.restart();
       else
-        void vscode.window.showInformationMessage("Tessera: this workspace has no ascribe.toml.");
+        void vscode.window.showInformationMessage("Ascribe: this workspace has no ascribe.toml.");
     }),
-    vscode.commands.registerCommand("tessera.showOutput", () => server.showOutput()),
+    vscode.commands.registerCommand("ascribe.showOutput", () => server.showOutput()),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("tessera.maxCrashes")) server.readMaxCrashes();
-      if (event.affectsConfiguration("tessera.path")) void server.restart();
+      if (event.affectsConfiguration("ascribe.maxCrashes")) server.readMaxCrashes();
+      if (event.affectsConfiguration("ascribe.path")) void server.restart();
     }),
   );
 
   // A contributed command activates the extension in any workspace, so start
   // the server only where there's a project.
   const found = await hasProject();
-  await vscode.commands.executeCommand("setContext", "tessera.active", found);
+  await vscode.commands.executeCommand("setContext", "ascribe.active", found);
   if (found) await server.start();
   return {
     binary: () => server.binary,

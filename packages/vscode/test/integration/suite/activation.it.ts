@@ -17,10 +17,10 @@ describe("in a workspace without ascribe.toml", () => {
 
   it("starts no server when a command activates it anyway", async () => {
     // Contributed commands add their own activation events (VS Code 1.74+).
-    await vscode.commands.executeCommand("tessera.showOutput");
+    await vscode.commands.executeCommand("ascribe.showOutput");
     const extension = vscode.extensions.getExtension<TesseraApi>(EXTENSION_ID);
     assert.ok(extension?.isActive, "the command should have activated the extension");
-    await vscode.commands.executeCommand("tessera.restartServer");
+    await vscode.commands.executeCommand("ascribe.restartServer");
     const api = extension.exports;
     await api.whenSettled();
     assert.equal(api.state(), "stopped");

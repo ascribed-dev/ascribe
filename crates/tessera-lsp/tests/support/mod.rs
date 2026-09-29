@@ -186,7 +186,7 @@ impl Client {
             serde_json::to_value(DidOpenTextDocumentParams {
                 text_document: TextDocumentItem {
                     uri: uri(path),
-                    language_id: "tessera".into(),
+                    language_id: "ascribe".into(),
                     version,
                     text: text.into(),
                 },

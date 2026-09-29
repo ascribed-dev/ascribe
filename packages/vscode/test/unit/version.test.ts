@@ -9,17 +9,17 @@ const v = (text: string) => {
 
 describe("parseVersion", () => {
   it("finds the version in --version output", () => {
-    expect(v("tessera 0.3.1\n").parts).toEqual([0, 3, 1]);
-    expect(v("tessera 10.20.30 (abc123)").parts).toEqual([10, 20, 30]);
+    expect(v("ascribe 0.3.1\n").parts).toEqual([0, 3, 1]);
+    expect(v("ascribe 10.20.30 (abc123)").parts).toEqual([10, 20, 30]);
   });
 
   it("reads a pre-release tag", () => {
-    expect(v("tessera 1.0.0-rc.1").prerelease).toBe("rc.1");
-    expect(v("tessera 1.0.0").prerelease).toBeUndefined();
+    expect(v("ascribe 1.0.0-rc.1").prerelease).toBe("rc.1");
+    expect(v("ascribe 1.0.0").prerelease).toBeUndefined();
   });
 
   it("returns undefined without a three-part version", () => {
-    expect(parseVersion("tessera")).toBeUndefined();
+    expect(parseVersion("ascribe")).toBeUndefined();
     expect(parseVersion("1.2")).toBeUndefined();
   });
 });

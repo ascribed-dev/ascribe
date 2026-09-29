@@ -342,7 +342,7 @@ pub(crate) fn to_lsp(
         }),
         code: Some(NumberOrString::String(d.code.to_owned())),
         code_description: None,
-        source: Some("tessera".to_owned()),
+        source: Some("ascribe".to_owned()),
         message: d.message.clone(),
         related_information: (!related_information.is_empty()).then_some(related_information),
         tags: None,

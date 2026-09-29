@@ -196,7 +196,7 @@ impl Core {
         self.next_id += 1;
         let params = RegistrationParams {
             registrations: vec![Registration {
-                id: "tessera-watched-files".to_owned(),
+                id: "ascribe-watched-files".to_owned(),
                 method: "workspace/didChangeWatchedFiles".to_owned(),
                 register_options: serde_json::to_value(options).ok(),
             }],

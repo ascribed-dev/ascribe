@@ -1,4 +1,4 @@
-//! The Tessera language server, run as `ascribe lsp`.
+//! The Ascribe language server, run as `ascribe lsp`.
 //!
 //! It keeps a project in memory ([`tessera_resolve::IncrementalProject`]),
 //! follows every change to it (open documents, files changed on disk, the

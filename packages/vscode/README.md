@@ -10,25 +10,25 @@ It activates when the workspace contains a `ascribe.toml`.
 
 The extension looks for the binary, in order:
 
-1. the `tessera.path` setting, if set (a path that doesn't work is an error; it
+1. the `ascribe.path` setting, if set (a path that doesn't work is an error; it
    doesn't fall back);
-2. the project's `node_modules/.bin/tessera`, looking in each folder that holds
+2. the project's `node_modules/.bin/ascribe`, looking in each folder that holds
    a `ascribe.toml` and its parents up to the workspace folder;
-3. the binary bundled in the extension, `bin/<platform>-<arch>/tessera`
-   (`tessera.exe` on Windows). Phase 27 packages these.
+3. the binary bundled in the extension, `bin/<platform>-<arch>/ascribe`
+   (`ascribe.exe` on Windows). Phase 27 packages these.
 
-It runs `tessera --version` on the candidate, and warns when the version is
-older than `tessera.minServerVersion` in `package.json`. When nothing is found
+It runs `ascribe --version` on the candidate, and warns when the version is
+older than `ascribe.minServerVersion` in `package.json`. When nothing is found
 it says how to fix that.
 
 ## Settings and commands
 
 | | |
 |---|---|
-| `tessera.path` | Path to the `ascribe` binary. |
-| `tessera.trace.server` | `off`, `messages`, or `verbose`. |
-| `tessera.formatOnSave` | Used by the formatter (phase 24); no effect yet. |
-| `tessera.maxCrashes` | Crashes (since the last manual restart) after which the server isn't restarted again. Default 5. |
+| `ascribe.path` | Path to the `ascribe` binary. |
+| `ascribe.trace.server` | `off`, `messages`, or `verbose`. |
+| `ascribe.formatOnSave` | Used by the formatter (phase 24); no effect yet. |
+| `ascribe.maxCrashes` | Crashes (since the last manual restart) after which the server isn't restarted again. Default 5. |
 | **Tessera: Restart Language Server** | Stops and starts the server; forgets earlier crashes. |
 | **Tessera: Show Server Output** | Opens the output channel. |
 
@@ -47,13 +47,13 @@ in step.
 ## Development
 
 ```
-pnpm --filter tessera-vscode build              # bundle to dist/extension.cjs
-pnpm --filter tessera-vscode test               # unit tests (vitest)
-pnpm --filter tessera-vscode test:integration   # VS Code integration tests
+pnpm --filter ascribe-vscode build              # bundle to dist/extension.cjs
+pnpm --filter ascribe-vscode test               # unit tests (vitest)
+pnpm --filter ascribe-vscode test:integration   # VS Code integration tests
 ```
 
 The integration tests download VS Code into `out/vscode-test` and need a
-display: on Linux without one, use `pnpm --filter tessera-vscode
+display: on Linux without one, use `pnpm --filter ascribe-vscode
 test:integration:headless` (it runs under `xvfb-run -a`). They have three
 suites: `activation` (no `ascribe.toml`: the extension stays off), `stub` (a
 stub server in `test/stub-server`), and `quill` (the real `ascribe lsp` on a

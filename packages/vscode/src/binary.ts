@@ -15,7 +15,7 @@ export interface BinaryEnvironment {
 }
 
 export interface ResolveOptions {
-  /** The `tessera.path` setting. Empty or whitespace means unset. */
+  /** The `ascribe.path` setting. Empty or whitespace means unset. */
   setting: string;
   /** Directories whose `node_modules/.bin` may hold the project's binary, nearest first. */
   projectRoots: readonly string[];
@@ -49,12 +49,12 @@ export type Resolution =
 
 /** The binary's file name on a platform. */
 export function executableName(platform: NodeJS.Platform): string {
-  return platform === "win32" ? "tessera.exe" : "tessera";
+  return platform === "win32" ? "ascribe.exe" : "ascribe";
 }
 
 /** The file npm and pnpm link into `node_modules/.bin` on a platform. */
 export function projectBinaryName(platform: NodeJS.Platform): string {
-  return platform === "win32" ? "tessera.cmd" : "tessera";
+  return platform === "win32" ? "ascribe.cmd" : "ascribe";
 }
 
 /** The directory of a bundled binary, `bin/<platform>-<arch>`, under the extension. */
@@ -81,11 +81,11 @@ export function ancestorsWithin(dir: string, boundary: string): string[] {
 }
 
 /**
- * Finds the `ascribe` binary, in order: the `tessera.path` setting, the
- * project's `node_modules/.bin/tessera`, and the binary bundled in the
+ * Finds the `ascribe` binary, in order: the `ascribe.path` setting, the
+ * project's `node_modules/.bin/ascribe`, and the binary bundled in the
  * extension. Each candidate must run `--version`.
  *
- * Resolved Q122: a `tessera.path` that doesn't work is an error, and doesn't fall through:
+ * Resolved Q122: a `ascribe.path` that doesn't work is an error, and doesn't fall through:
  * the author asked for that binary, and silently using another would hide the
  * mistake. A project or bundled candidate that doesn't run is skipped.
  *
@@ -119,7 +119,7 @@ export async function resolveBinary(options: ResolveOptions): Promise<Resolution
       version,
       ...(outdated && {
         warning:
-          `The Tessera binary at ${file} is version ${formatVersion(version)}, older than the ` +
+          `The Ascribe binary at ${file} is version ${formatVersion(version)}, older than the ` +
           `${formatVersion(options.minVersion)} this extension expects. ` +
           `Update it, or some features may not work.`,
       }),
@@ -134,7 +134,7 @@ export async function resolveBinary(options: ResolveOptions): Promise<Resolution
       kind: "missing",
       error: {
         message:
-          `The \`tessera.path\` setting is "${setting}", but that isn't a working Tessera binary. ` +
+          `The \`ascribe.path\` setting is "${setting}", but that isn't a working Ascribe binary. ` +
           `Fix the path, or clear the setting to use the project's or the bundled binary.`,
         tried,
       },
@@ -158,9 +158,9 @@ export async function resolveBinary(options: ResolveOptions): Promise<Resolution
     kind: "missing",
     error: {
       message:
-        "Couldn't find the Tessera binary, so the language server can't start. " +
+        "Couldn't find the Ascribe binary, so the language server can't start. " +
         "Install it in the project (for example, `npm install --save-dev @ascribed/cli`), " +
-        "or set `tessera.path` to a `ascribe` binary.",
+        "or set `ascribe.path` to a `ascribe` binary.",
       tried,
     },
   };

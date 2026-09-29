@@ -23,23 +23,23 @@ Token types, in legend order:
 
 | # | Type | What it marks | Suggested TextMate scope (for `semanticTokenScopes`) |
 |---|---|---|---|
-| 0 | `tesseraDirective` | The `@` and name of a built-in directive (`@note`, `@include`, `@variant`, `@id`, …) | `keyword.control.directive.ascribe` |
-| 1 | `tesseraWidget` | The `@` and name of a project widget (declared in `[widgets]`) | `entity.name.function.widget.ascribe` |
-| 2 | `tesseraAttributeKey` | An attribute key in a directive's or an image's `{…}` block | `entity.other.attribute-name.ascribe` |
-| 3 | `tesseraAttributeValue` | An attribute value: a token, a quoted string (with its quotes), or one member of a value set | `string.unquoted.attribute-value.ascribe` |
-| 4 | `tesseraColon` | The `:` that ends a directive's head: the container colon, or the colon before a primary | `punctuation.separator.directive.ascribe` |
-| 5 | `tesseraEnd` | The `@end` of an end line | `keyword.control.end.ascribe` |
-| 6 | `tesseraTitle` | A title line: the `.` and the title's text (SPEC §3.7). Its own type, so a paragraph that accidentally became a title stands out (SPEC §10) | `markup.heading.title.ascribe` |
-| 7 | `tesseraPhrase` | A declared phrase, `{key}` with its braces (SPEC §5.1) | `variable.other.phrase.ascribe` |
-| 8 | `tesseraPhraseUndeclared` | A `{key}` whose key the content model doesn't declare: literal text, marked so a typo shows | `invalid.illegal.phrase-undeclared.ascribe` |
-| 9 | `tesseraAvailability` | An availability spec: the primary of `@available` (`cloud, self-managed preview 3.3`) | `constant.other.availability.ascribe` |
+| 0 | `ascribeDirective` | The `@` and name of a built-in directive (`@note`, `@include`, `@variant`, `@id`, …) | `keyword.control.directive.ascribe` |
+| 1 | `ascribeWidget` | The `@` and name of a project widget (declared in `[widgets]`) | `entity.name.function.widget.ascribe` |
+| 2 | `ascribeAttributeKey` | An attribute key in a directive's or an image's `{…}` block | `entity.other.attribute-name.ascribe` |
+| 3 | `ascribeAttributeValue` | An attribute value: a token, a quoted string (with its quotes), or one member of a value set | `string.unquoted.attribute-value.ascribe` |
+| 4 | `ascribeColon` | The `:` that ends a directive's head: the container colon, or the colon before a primary | `punctuation.separator.directive.ascribe` |
+| 5 | `ascribeEnd` | The `@end` of an end line | `keyword.control.end.ascribe` |
+| 6 | `ascribeTitle` | A title line: the `.` and the title's text (SPEC §3.7). Its own type, so a paragraph that accidentally became a title stands out (SPEC §10) | `markup.heading.title.ascribe` |
+| 7 | `ascribePhrase` | A declared phrase, `{key}` with its braces (SPEC §5.1) | `variable.other.phrase.ascribe` |
+| 8 | `ascribePhraseUndeclared` | A `{key}` whose key the content model doesn't declare: literal text, marked so a typo shows | `invalid.illegal.phrase-undeclared.ascribe` |
+| 9 | `ascribeAvailability` | An availability spec: the primary of `@available` (`cloud, self-managed preview 3.3`) | `constant.other.availability.ascribe` |
 
 Token modifiers, in legend order (bit *n* of a token's modifier set is
 modifier *n*):
 
 | # | Modifier | Set on |
 |---|---|---|
-| 0 | `unknown` | A `tesseraAttributeKey` the directive's schema (or, for an image, `[images.attributes]`) doesn't declare |
+| 0 | `unknown` | A `ascribeAttributeKey` the directive's schema (or, for an image, `[images.attributes]`) doesn't declare |
 
 A token never overlaps another: a phrase inside a title line splits the title
 token around it. Tokens that span lines are split per line. Positions and

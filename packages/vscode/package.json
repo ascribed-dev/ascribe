@@ -1,5 +1,5 @@
 {
-  "name": "tessera-vscode",
+  "name": "ascribe-vscode",
   "displayName": "Tessera",
   "version": "0.0.0",
   "description": "The Tessera extension for VS Code.",
@@ -18,18 +18,18 @@
   "activationEvents": [
     "workspaceContains:**/ascribe.toml"
   ],
-  "tessera": {
+  "ascribe": {
     "minServerVersion": "0.0.0"
   },
   "contributes": {
     "commands": [
       {
-        "command": "tessera.restartServer",
+        "command": "ascribe.restartServer",
         "title": "Restart Language Server",
         "category": "Tessera"
       },
       {
-        "command": "tessera.showOutput",
+        "command": "ascribe.showOutput",
         "title": "Show Server Output",
         "category": "Tessera"
       }
@@ -37,13 +37,13 @@
     "configuration": {
       "title": "Tessera",
       "properties": {
-        "tessera.path": {
+        "ascribe.path": {
           "type": "string",
           "default": "",
           "scope": "machine-overridable",
-          "markdownDescription": "Path to the `ascribe` binary. When empty, the extension uses the project's `node_modules/.bin/tessera`, then the binary bundled with the extension."
+          "markdownDescription": "Path to the `ascribe` binary. When empty, the extension uses the project's `node_modules/.bin/ascribe`, then the binary bundled with the extension."
         },
-        "tessera.trace.server": {
+        "ascribe.trace.server": {
           "type": "string",
           "enum": [
             "off",
@@ -53,12 +53,12 @@
           "default": "off",
           "description": "Traces the communication between VS Code and the language server."
         },
-        "tessera.formatOnSave": {
+        "ascribe.formatOnSave": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Format Tessera files into canonical form when saving. Used by the formatter (a later phase); it has no effect until the server offers formatting."
         },
-        "tessera.maxCrashes": {
+        "ascribe.maxCrashes": {
           "type": "integer",
           "default": 5,
           "minimum": 1,
@@ -68,18 +68,18 @@
     },
     "grammars": [
       {
-        "scopeName": "tessera.injection",
-        "path": "./syntaxes/tessera.injection.tmLanguage.json",
+        "scopeName": "ascribe.injection",
+        "path": "./syntaxes/ascribe.injection.tmLanguage.json",
         "injectTo": [
           "text.html.markdown"
         ],
         "embeddedLanguages": {
-          "meta.embedded.block.ascribe": "tessera"
+          "meta.embedded.block.ascribe": "ascribe"
         }
       },
       {
-        "scopeName": "tessera.injection.nested",
-        "path": "./syntaxes/tessera.injection.nested.tmLanguage.json",
+        "scopeName": "ascribe.injection.nested",
+        "path": "./syntaxes/ascribe.injection.nested.tmLanguage.json",
         "injectTo": [
           "text.html.markdown"
         ]
@@ -87,52 +87,52 @@
     ],
     "semanticTokenTypes": [
       {
-        "id": "tesseraDirective",
+        "id": "ascribeDirective",
         "superType": "keyword",
         "description": "A built-in directive's `@` and name."
       },
       {
-        "id": "tesseraWidget",
+        "id": "ascribeWidget",
         "superType": "function",
         "description": "A project widget's `@` and name."
       },
       {
-        "id": "tesseraAttributeKey",
+        "id": "ascribeAttributeKey",
         "superType": "property",
         "description": "An attribute key in a `{\u2026}` block."
       },
       {
-        "id": "tesseraAttributeValue",
+        "id": "ascribeAttributeValue",
         "superType": "string",
         "description": "An attribute value."
       },
       {
-        "id": "tesseraColon",
+        "id": "ascribeColon",
         "superType": "operator",
         "description": "The colon that ends a directive's head."
       },
       {
-        "id": "tesseraEnd",
+        "id": "ascribeEnd",
         "superType": "keyword",
         "description": "The `@end` of an end line."
       },
       {
-        "id": "tesseraTitle",
+        "id": "ascribeTitle",
         "superType": "string",
         "description": "A title line (SPEC \u00a73.7), shown distinctly so an accidental title stands out."
       },
       {
-        "id": "tesseraPhrase",
+        "id": "ascribePhrase",
         "superType": "variable",
         "description": "A declared phrase, `{key}`."
       },
       {
-        "id": "tesseraPhraseUndeclared",
+        "id": "ascribePhraseUndeclared",
         "superType": "variable",
         "description": "A `{key}` the content model doesn't declare."
       },
       {
-        "id": "tesseraAvailability",
+        "id": "ascribeAvailability",
         "superType": "constant",
         "description": "An availability spec."
       }
@@ -141,37 +141,37 @@
       {
         "language": "markdown",
         "scopes": {
-          "tesseraDirective": [
+          "ascribeDirective": [
             "keyword.control.directive.ascribe"
           ],
-          "tesseraWidget": [
+          "ascribeWidget": [
             "entity.name.function.widget.ascribe"
           ],
-          "tesseraAttributeKey": [
+          "ascribeAttributeKey": [
             "entity.other.attribute-name.ascribe"
           ],
-          "tesseraAttributeValue": [
+          "ascribeAttributeValue": [
             "string.unquoted.attribute-value.ascribe"
           ],
-          "tesseraColon": [
+          "ascribeColon": [
             "punctuation.separator.directive.ascribe"
           ],
-          "tesseraEnd": [
+          "ascribeEnd": [
             "keyword.control.end.ascribe"
           ],
-          "tesseraTitle": [
+          "ascribeTitle": [
             "markup.heading.title.ascribe"
           ],
-          "tesseraPhrase": [
+          "ascribePhrase": [
             "variable.other.phrase.ascribe"
           ],
-          "tesseraPhraseUndeclared": [
+          "ascribePhraseUndeclared": [
             "invalid.illegal.phrase-undeclared.ascribe"
           ],
-          "tesseraAvailability": [
+          "ascribeAvailability": [
             "constant.other.availability.ascribe"
           ],
-          "tesseraAttributeKey.unknown": [
+          "ascribeAttributeKey.unknown": [
             "invalid.illegal.attribute-unknown.ascribe"
           ]
         }
@@ -191,12 +191,12 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "tessera.restartServer",
-          "when": "tessera.active"
+          "command": "ascribe.restartServer",
+          "when": "ascribe.active"
         },
         {
-          "command": "tessera.showOutput",
-          "when": "tessera.active"
+          "command": "ascribe.showOutput",
+          "when": "ascribe.active"
         }
       ]
     }
@@ -227,7 +227,7 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": false,
-      "description": "Tessera runs the project's own tessera binary (node_modules/.bin/tessera or the tessera.path setting), which is code the workspace supplies."
+      "description": "Ascribe runs the project own ascribe binary (node_modules/.bin/ascribe or the ascribe.path setting), which is code the workspace supplies."
     }
   }
 }
