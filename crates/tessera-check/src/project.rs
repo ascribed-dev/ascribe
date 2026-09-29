@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
@@ -103,7 +104,18 @@ pub struct Project {
     /// Every source file's content path, lowercased, to its real spelling,
     /// for [`SourceSet`].
     source_paths: HashMap<String, RelPath>,
-    disk: DiskFs,
+    fs: Files,
+}
+
+/// The file system a project probes for what isn't a source file. It has a
+/// `Debug` of its own because `dyn FileSystem` doesn't.
+#[derive(Clone)]
+struct Files(Arc<dyn FileSystem + Send + Sync>);
+
+impl std::fmt::Debug for Files {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("FileSystem")
+    }
 }
 
 impl Project {
@@ -223,6 +235,37 @@ impl Project {
         model_text: String,
         sources: Vec<SourceFile>,
     ) -> Project {
+        Project::assemble(root, content_root, model, model_text, sources, None)
+    }
+
+    /// [`Project::from_parts`], with the file system the checks probe for what
+    /// isn't a source file (images, downloads, a route-like link's target)
+    /// instead of the disk.
+    ///
+    /// The language server passes the file system it keeps its source index
+    /// on: the disk with the files the editor and the file watcher have
+    /// reported appearing or disappearing layered over it, so an unsaved or
+    /// just-created image is seen by the file-level checks exactly as it is by
+    /// the source index. Source texts still come from `sources`.
+    pub fn from_parts_with_fs(
+        root: PathBuf,
+        content_root: RelPath,
+        model: ContentModel,
+        model_text: String,
+        sources: Vec<SourceFile>,
+        fs: Arc<dyn FileSystem + Send + Sync>,
+    ) -> Project {
+        Project::assemble(root, content_root, model, model_text, sources, Some(fs))
+    }
+
+    fn assemble(
+        root: PathBuf,
+        content_root: RelPath,
+        model: ContentModel,
+        model_text: String,
+        sources: Vec<SourceFile>,
+        fs: Option<Arc<dyn FileSystem + Send + Sync>>,
+    ) -> Project {
         let model_warnings = model.warnings.iter().map(Diagnostic::from_issue).collect();
         // A file that couldn't be read isn't a source another file can name,
         // as in the source index.
@@ -235,7 +278,7 @@ impl Project {
             content_root,
             output_dir: RelPath::parse(&model.project.output_dir).unwrap_or_default(),
         };
-        let disk = DiskFs::new(&root, &layout);
+        let fs = fs.unwrap_or_else(|| Arc::new(DiskFs::new(&root, &layout)));
         Project {
             root,
             layout,
@@ -244,7 +287,7 @@ impl Project {
             sources,
             model_warnings,
             source_paths,
-            disk,
+            fs: Files(fs),
         }
     }
 
@@ -279,9 +322,10 @@ impl Project {
         &self.layout
     }
 
-    /// The files on disk, for what isn't a source file held in memory.
+    /// The files the checks probe for what isn't a source file held in memory:
+    /// the disk, or the file system given to [`Project::from_parts_with_fs`].
     pub fn file_system(&self) -> &dyn FileSystem {
-        &self.disk
+        &*self.fs.0
     }
 
     /// The content model.

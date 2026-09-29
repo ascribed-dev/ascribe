@@ -21,6 +21,7 @@ tessera-check.workspace = true
 tessera-core.workspace = true
 tessera-emit.workspace = true
 tessera-fmt.workspace = true
+tessera-lsp.workspace = true
 tessera-model.workspace = true
 tessera-resolve.workspace = true
 

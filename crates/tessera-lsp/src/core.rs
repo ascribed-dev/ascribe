@@ -1,0 +1,783 @@
+//! The server's state: open documents, the project, and what to compute.
+//!
+//! Everything here runs under one lock (`server::Shared`). Handlers change the
+//! state and queue work; the worker (`compute`) takes a snapshot of what to do,
+//! computes without the lock, and comes back to publish under it, so a change
+//! and the check that a result is still current are never interleaved.
+
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+
+use crossbeam_channel::Sender;
+use lsp_server::{Message, Notification, Request};
+use lsp_types::{
+    DidChangeWatchedFilesRegistrationOptions, FileChangeType, FileEvent, FileSystemWatcher,
+    GlobPattern, PublishDiagnosticsParams, Registration, RegistrationParams,
+    TextDocumentContentChangeEvent, Uri,
+};
+use tessera_check::Diagnostic;
+use tessera_core::{FileId, LineIndex, RelPath};
+use tessera_model::ContentModel;
+use tessera_resolve::{
+    Affected, ApplyError, Change, DiskFs, IncrementalProject, Layout, ResolvedCache, is_source_path,
+};
+
+use crate::compute::to_lsp;
+use crate::docs::Doc;
+use crate::fsx::{BufferFs, LayerFs};
+use crate::position::Encoding;
+use crate::uri::{normalize, path_to_uri, relative_to, uri_to_path};
+
+/// The content model's file name, at the project root.
+const MODEL_FILE: &str = "tessera.toml";
+
+// Resolved Q135: which files the server follows.
+/// Directories nothing in a documentation set lives in, whose changes are
+/// ignored.
+const IGNORED_DIRS: [&str; 3] = [".git", "node_modules", ".hg"];
+
+/// A model that didn't load: its text and its problems.
+#[derive(Clone, Debug)]
+pub(crate) struct ModelProblem {
+    pub text: String,
+    pub diagnostics: Vec<Diagnostic>,
+}
+
+/// The last diagnostics published for a file.
+struct Published {
+    diagnostics: Vec<lsp_types::Diagnostic>,
+    version: Option<i32>,
+}
+
+/// A loaded project.
+pub(crate) struct Loaded {
+    /// Which load this is: a job computed for an earlier one is dropped.
+    pub epoch: u64,
+    pub root: PathBuf,
+    pub layout: Layout,
+    pub inc: IncrementalProject,
+    /// The latest model that loaded.
+    pub model: Arc<ContentModel>,
+    /// Its text.
+    pub model_text: String,
+    /// What the file-level checks probe for non-source files.
+    pub fs: Arc<LayerFs>,
+    /// Files whose diagnostics need computing.
+    pub dirty: BTreeSet<RelPath>,
+    /// The pages resolved for the editor's build, kept between rounds. Only the
+    /// worker uses it, and first applies `pending`.
+    pub cache: Arc<Mutex<ResolvedCache>>,
+    /// What updates affected since the last round, in order, for `cache`.
+    pub pending: Vec<Affected>,
+    /// What each file included at the last round (see `compute::with_included`).
+    pub direct_includes: BTreeMap<RelPath, BTreeSet<RelPath>>,
+}
+
+impl Loaded {
+    /// The absolute path of a source file.
+    pub(crate) fn source_path(&self, path: &RelPath) -> PathBuf {
+        normalize(
+            &self
+                .root
+                .join(self.layout.content_root.as_str())
+                .join(path.as_str()),
+        )
+    }
+
+    /// What a path on disk is to this project.
+    fn classify(&self, abs: &Path) -> Option<Kind> {
+        let rel = relative_to(&self.root, abs)?;
+        if rel == MODEL_FILE {
+            return Some(Kind::Model);
+        }
+        let project_rel = RelPath::parse(&rel).ok()?;
+        if project_rel
+            .segments()
+            .any(|s| IGNORED_DIRS.contains(&s) || s == "node_modules")
+        {
+            return None;
+        }
+        let content = normalize(&self.root.join(self.layout.content_root.as_str()));
+        if let Some(content_rel) = relative_to(&content, abs)
+            && let Ok(content_path) = RelPath::parse(&content_rel)
+            && content_path.is_inside()
+            && is_source_path(&content_path)
+        {
+            return Some(Kind::Source(content_path, project_rel));
+        }
+        Some(Kind::Asset(project_rel))
+    }
+}
+
+enum Kind {
+    /// `tessera.toml`.
+    Model,
+    /// A source file: its content path and its project path.
+    Source(RelPath, RelPath),
+    /// Any other file: its project path.
+    Asset(RelPath),
+}
+
+/// The server's state.
+pub(crate) struct Core {
+    pub out: Sender<Message>,
+    pub encoding: Encoding,
+    pub folders: Vec<PathBuf>,
+    pub docs: HashMap<PathBuf, Doc>,
+    /// The project's `tessera.toml`, once found.
+    pub config: Option<PathBuf>,
+    pub loaded: Option<Loaded>,
+    /// Set while the current text of `tessera.toml` doesn't load.
+    pub model_problem: Option<ModelProblem>,
+    pub shutdown: bool,
+    pub can_watch: bool,
+    epoch: u64,
+    published: HashMap<PathBuf, Published>,
+    next_id: i32,
+}
+
+impl Core {
+    pub(crate) fn new(out: Sender<Message>) -> Core {
+        Core {
+            out,
+            encoding: Encoding::Utf16,
+            folders: Vec::new(),
+            docs: HashMap::new(),
+            config: None,
+            loaded: None,
+            model_problem: None,
+            shutdown: false,
+            can_watch: false,
+            epoch: 0,
+            published: HashMap::new(),
+            next_id: 0,
+        }
+    }
+
+    pub(crate) fn send(&self, message: impl Into<Message>) {
+        // A closed channel means the client is gone; the main loop notices.
+        let _ = self.out.send(message.into());
+    }
+
+    fn log(&self, text: &str) {
+        eprintln!("tessera-lsp: {text}");
+    }
+
+    // -- Startup ------------------------------------------------------------
+
+    /// Finds the project's `tessera.toml` in the workspace folders and loads it.
+    pub(crate) fn start(&mut self) {
+        if self.config.is_none() {
+            self.config = find_config(&self.folders).map(|p| normalize(&p));
+        }
+        match self.config.clone() {
+            Some(config) => {
+                if self.folders.len() > 1 {
+                    self.log(&format!("using the project at {}", config.display()));
+                }
+                self.sync_model();
+            }
+            None => self.log("no tessera.toml found in the workspace folders"),
+        }
+    }
+
+    /// Asks the client to watch files, when it can.
+    pub(crate) fn register_watchers(&mut self) {
+        if !self.can_watch {
+            return;
+        }
+        let options = DidChangeWatchedFilesRegistrationOptions {
+            watchers: vec![FileSystemWatcher {
+                glob_pattern: GlobPattern::String("**/*".to_owned()),
+                kind: None,
+            }],
+        };
+        self.next_id += 1;
+        let params = RegistrationParams {
+            registrations: vec![Registration {
+                id: "tessera-watched-files".to_owned(),
+                method: "workspace/didChangeWatchedFiles".to_owned(),
+                register_options: serde_json::to_value(options).ok(),
+            }],
+        };
+        self.send(Request::new(
+            lsp_server::RequestId::from(self.next_id),
+            "client/registerCapability".to_owned(),
+            params,
+        ));
+    }
+
+    // -- The model ----------------------------------------------------------
+
+    /// The current text of `tessera.toml`: the open buffer, or the file.
+    fn model_text(&self) -> Option<String> {
+        let config = self.config.as_ref()?;
+        match self.docs.get(config) {
+            Some(doc) => Some(doc.text.clone()),
+            None => std::fs::read_to_string(config).ok(),
+        }
+    }
+
+    /// Reads `tessera.toml` again and brings the project in line with it.
+    pub(crate) fn sync_model(&mut self) {
+        let Some(config) = self.config.clone() else {
+            return;
+        };
+        let Some(text) = self.model_text() else {
+            self.log(&format!("can't read {}", config.display()));
+            return;
+        };
+        let root = config
+            .parent()
+            .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
+        match tessera_model::load_str_in(&text, FileId::new(0), &root) {
+            Err(issues) => {
+                // Resolved Q131: the project keeps the last model that
+                // loaded, and the problems go on `tessera.toml`.
+                self.model_problem = Some(ModelProblem {
+                    text,
+                    diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
+                });
+            }
+            Ok(model) => {
+                self.model_problem = None;
+                self.adopt_model(Arc::new(model), text);
+            }
+        }
+        self.publish_model_diagnostics();
+    }
+
+    fn adopt_model(&mut self, model: Arc<ContentModel>, text: String) {
+        let Some(loaded) = self.loaded.as_mut() else {
+            self.load_project(model, text);
+            return;
+        };
+        match loaded.inc.apply([Change::Model(model.clone())]) {
+            Ok(affected) => {
+                loaded.model = model;
+                loaded.model_text = text;
+                self.absorb(&affected);
+            }
+            Err(ApplyError::LayoutChanged) => self.load_project(model, text),
+        }
+    }
+
+    /// Loads the project from scratch, with the open buffers over the disk:
+    /// the first load, and after a model change that moves the content root or
+    /// the output directory (Q92).
+    fn load_project(&mut self, model: Arc<ContentModel>, text: String) {
+        let Some(config) = self.config.clone() else {
+            return;
+        };
+        let root = config
+            .parent()
+            .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
+        let layout = Layout::from_model(&model);
+        let disk = DiskFs::new(&root, &layout);
+        let content = normalize(&root.join(layout.content_root.as_str()));
+        let buffers: BTreeMap<RelPath, String> = self
+            .docs
+            .iter()
+            .filter_map(|(path, doc)| {
+                let rel = RelPath::parse(&relative_to(&content, path)?).ok()?;
+                (rel.is_inside() && is_source_path(&rel)).then(|| (rel, doc.text.clone()))
+            })
+            .collect();
+        let inc = IncrementalProject::load(
+            model.clone(),
+            layout.clone(),
+            BufferFs::new(disk.clone(), buffers),
+        );
+        let snapshot = inc.snapshot();
+        let mut dirty: BTreeSet<RelPath> = snapshot.files().map(|f| f.path.clone()).collect();
+        dirty.extend(snapshot.unreadable().iter().map(|u| u.path.clone()));
+        self.epoch += 1;
+        let loaded = Loaded {
+            epoch: self.epoch,
+            root,
+            layout,
+            inc,
+            model,
+            model_text: text,
+            fs: Arc::new(LayerFs::new(disk)),
+            dirty,
+            cache: Arc::new(Mutex::new(ResolvedCache::new())),
+            pending: Vec::new(),
+            direct_includes: BTreeMap::new(),
+        };
+        // What was published for files the new project doesn't have goes.
+        let keep: BTreeSet<PathBuf> = snapshot
+            .files()
+            .map(|f| loaded.source_path(&f.path))
+            .chain(
+                snapshot
+                    .unreadable()
+                    .iter()
+                    .map(|u| loaded.source_path(&u.path)),
+            )
+            .chain(self.config.clone())
+            .collect();
+        let gone: Vec<PathBuf> = self
+            .published
+            .keys()
+            .filter(|p| !keep.contains(*p))
+            .cloned()
+            .collect();
+        self.loaded = Some(loaded);
+        for path in gone {
+            self.clear(&path);
+        }
+    }
+
+    // -- Documents ----------------------------------------------------------
+
+    fn doc_path(uri: &Uri) -> Option<PathBuf> {
+        uri_to_path(uri).map(|p| normalize(&p))
+    }
+
+    pub(crate) fn did_open(&mut self, uri: Uri, version: i32, text: String) {
+        let Some(path) = Core::doc_path(&uri) else {
+            return;
+        };
+        self.docs.insert(
+            path.clone(),
+            Doc {
+                uri,
+                version,
+                text: text.clone(),
+            },
+        );
+        self.document_changed(&path, text);
+    }
+
+    pub(crate) fn did_change(
+        &mut self,
+        uri: &Uri,
+        version: i32,
+        changes: Vec<TextDocumentContentChangeEvent>,
+    ) {
+        let Some(path) = Core::doc_path(uri) else {
+            return;
+        };
+        let encoding = self.encoding;
+        let Some(doc) = self.docs.get_mut(&path) else {
+            self.log(&format!(
+                "change for a document that isn't open: {}",
+                uri.as_str()
+            ));
+            return;
+        };
+        doc.apply(version, changes, encoding);
+        let text = doc.text.clone();
+        self.document_changed(&path, text);
+    }
+
+    pub(crate) fn did_close(&mut self, uri: &Uri) {
+        let Some(path) = Core::doc_path(uri) else {
+            return;
+        };
+        if self.docs.remove(&path).is_none() {
+            return;
+        }
+        // Closing reverts to the disk.
+        if self.config.as_ref() == Some(&path) {
+            self.sync_model();
+            return;
+        }
+        self.refresh_from_disk(&path);
+    }
+
+    /// An open document's text changed.
+    fn document_changed(&mut self, path: &Path, text: String) {
+        if self.config.as_deref() == Some(path) {
+            self.sync_model();
+            return;
+        }
+        let Some(loaded) = self.loaded.as_ref() else {
+            return;
+        };
+        if let Some(Kind::Source(content, project)) = loaded.classify(path) {
+            self.apply(
+                vec![Change::Edited {
+                    path: content,
+                    text,
+                }],
+                &[(project, true)],
+            );
+        }
+    }
+
+    // -- Files on disk --------------------------------------------------------
+
+    /// Follows what the file watcher reports: files and directories created,
+    /// changed, or deleted by anything else.
+    pub(crate) fn did_change_watched(&mut self, events: Vec<FileEvent>) {
+        let mut sync_model = false;
+        let mut changes: Vec<Change> = Vec::new();
+        let mut mirror: Vec<(RelPath, bool)> = Vec::new();
+        for event in events {
+            let Some(path) = Core::doc_path(&event.uri) else {
+                continue;
+            };
+            if self.config.is_none()
+                && path.file_name().is_some_and(|n| n == MODEL_FILE)
+                && event.typ != FileChangeType::DELETED
+                && self.folders.iter().any(|f| path.starts_with(f))
+            {
+                self.config = Some(path.clone());
+                sync_model = true;
+                continue;
+            }
+            if self.config.as_deref() == Some(path.as_path()) {
+                // An open buffer wins over the file on disk.
+                if !self.docs.contains_key(&path) {
+                    sync_model = true;
+                }
+                continue;
+            }
+            if event.typ == FileChangeType::DELETED {
+                self.collect_deleted(&path, &mut changes, &mut mirror);
+            } else {
+                self.collect_present(&path, &mut changes, &mut mirror);
+            }
+        }
+        if !changes.is_empty() {
+            self.apply(changes, &mirror);
+        }
+        if sync_model {
+            self.sync_model();
+        }
+    }
+
+    /// A file or directory exists on disk: its files are created or changed.
+    fn collect_present(
+        &self,
+        path: &Path,
+        changes: &mut Vec<Change>,
+        mirror: &mut Vec<(RelPath, bool)>,
+    ) {
+        let Some(loaded) = self.loaded.as_ref() else {
+            return;
+        };
+        let Ok(meta) = std::fs::metadata(path) else {
+            return self.collect_deleted(path, changes, mirror);
+        };
+        if meta.is_dir() {
+            let Ok(entries) = std::fs::read_dir(path) else {
+                return;
+            };
+            for entry in entries.flatten() {
+                self.collect_present(&entry.path(), changes, mirror);
+            }
+            return;
+        }
+        match loaded.classify(path) {
+            Some(Kind::Source(content, project)) => {
+                // An open buffer wins over the file on disk.
+                if self.docs.contains_key(path) {
+                    return;
+                }
+                match std::fs::read_to_string(path) {
+                    Ok(text) => {
+                        changes.push(Change::Edited {
+                            path: content,
+                            text,
+                        });
+                        mirror.push((project, true));
+                    }
+                    Err(e) => {
+                        // Resolved Q133, as an interim (see its follow-up): not readable as UTF-8, which the
+                        // project can't hold after it's loaded, so it counts as
+                        // gone.
+                        self.log(&format!("can't read {}: {e}", path.display()));
+                        changes.push(Change::Deleted { path: content });
+                        mirror.push((project, false));
+                    }
+                }
+            }
+            Some(Kind::Asset(project)) => {
+                changes.push(Change::AssetCreated {
+                    path: project.clone(),
+                });
+                mirror.push((project, true));
+            }
+            Some(Kind::Model) | None => {}
+        }
+    }
+
+    /// A file or directory is gone from disk: it, and everything the project
+    /// knew under it, is deleted.
+    fn collect_deleted(
+        &self,
+        path: &Path,
+        changes: &mut Vec<Change>,
+        mirror: &mut Vec<(RelPath, bool)>,
+    ) {
+        let Some(loaded) = self.loaded.as_ref() else {
+            return;
+        };
+        match loaded.classify(path) {
+            Some(Kind::Source(content, project)) => {
+                if !self.docs.contains_key(path) {
+                    changes.push(Change::Deleted { path: content });
+                    mirror.push((project, false));
+                }
+            }
+            Some(Kind::Asset(project)) => {
+                changes.push(Change::AssetDeleted {
+                    path: project.clone(),
+                });
+                mirror.push((project, false));
+            }
+            Some(Kind::Model) | None => return,
+        }
+        // The path may have been a directory: everything known below it goes.
+        let Some(dir) = relative_to(&loaded.root, path) else {
+            return;
+        };
+        let prefix = format!("{dir}/");
+        let snapshot = loaded.inc.snapshot();
+        let mut assets: BTreeSet<RelPath> = BTreeSet::new();
+        for file in snapshot.files() {
+            let project = loaded.layout.project_path(&file.path);
+            if project.as_str().starts_with(&prefix)
+                && !self.docs.contains_key(&loaded.source_path(&file.path))
+            {
+                changes.push(Change::Deleted {
+                    path: file.path.clone(),
+                });
+                mirror.push((project, false));
+            }
+            for reference in &file.references {
+                if let tessera_resolve::Target::Local(local) = &reference.target
+                    && !local.source
+                    && let Some(asset) = &local.path
+                {
+                    let project = loaded.layout.project_path(asset);
+                    if project.as_str().starts_with(&prefix) {
+                        assets.insert(project);
+                    }
+                }
+            }
+        }
+        for asset in assets {
+            changes.push(Change::AssetDeleted {
+                path: asset.clone(),
+            });
+            mirror.push((asset, false));
+        }
+    }
+
+    /// Brings one file in line with the disk, after its buffer is closed.
+    fn refresh_from_disk(&mut self, path: &Path) {
+        let mut changes = Vec::new();
+        let mut mirror = Vec::new();
+        if path.is_file() {
+            self.collect_present(path, &mut changes, &mut mirror);
+        } else {
+            self.collect_deleted(path, &mut changes, &mut mirror);
+        }
+        if !changes.is_empty() {
+            self.apply(changes, &mirror);
+        }
+    }
+
+    // -- Applying changes -----------------------------------------------------
+
+    /// Applies a batch to the project, and queues what it affects.
+    fn apply(&mut self, changes: Vec<Change>, mirror: &[(RelPath, bool)]) {
+        let Some(loaded) = self.loaded.as_mut() else {
+            return;
+        };
+        for (path, present) in mirror {
+            loaded.fs.set(path, *present);
+        }
+        match loaded.inc.apply(changes) {
+            Ok(affected) => self.absorb(&affected),
+            // Only a model change can fail, and those go through `sync_model`.
+            Err(ApplyError::LayoutChanged) => self.log("unexpected layout change"),
+        }
+    }
+
+    /// Queues the files an update affects, and clears the diagnostics of the
+    /// ones it removed.
+    fn absorb(&mut self, affected: &Affected) {
+        let Some(loaded) = self.loaded.as_mut() else {
+            return;
+        };
+        if !affected.is_empty() {
+            loaded.pending.push(affected.clone());
+        }
+        loaded.dirty.extend(affected.recheck.iter().cloned());
+        let mut cleared = Vec::new();
+        for path in &affected.removed {
+            loaded.dirty.remove(path);
+            // What a deleted page included no longer has it as an includer.
+            if let Some(targets) = loaded.direct_includes.remove(path) {
+                loaded.dirty.extend(targets);
+            }
+            cleared.push(loaded.source_path(path));
+        }
+        for path in cleared {
+            self.clear(&path);
+        }
+    }
+
+    // -- Publishing -------------------------------------------------------------
+
+    /// Publishes the diagnostics of `tessera.toml`: the model's own problems
+    /// when it doesn't load, otherwise its warnings.
+    fn publish_model_diagnostics(&mut self) {
+        let Some(config) = self.config.clone() else {
+            return;
+        };
+        let (text, diagnostics): (&str, Vec<Diagnostic>) = match (&self.model_problem, &self.loaded)
+        {
+            (Some(problem), _) => (&problem.text, problem.diagnostics.clone()),
+            (None, Some(loaded)) => (
+                &loaded.model_text,
+                loaded
+                    .model
+                    .warnings
+                    .iter()
+                    .map(Diagnostic::from_issue)
+                    .collect(),
+            ),
+            (None, None) => return,
+        };
+        let index = LineIndex::new(text);
+        let lsp = diagnostics
+            .iter()
+            .map(|d| to_lsp(d, &index, self.encoding, &|_| None))
+            .collect();
+        self.publish(&config, lsp);
+    }
+
+    // Resolved Q136: a closed file keeps its diagnostics.
+    /// Publishes a file's diagnostics when they, or the version of the document
+    /// they're for, changed since the last time.
+    pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
+        let doc = self.docs.get(path);
+        let version = doc.map(|d| d.version);
+        let is_open = doc.is_some();
+        let changed = match self.published.get(path) {
+            None => !diagnostics.is_empty() || is_open,
+            Some(last) => last.diagnostics != diagnostics || last.version != version,
+        };
+        if !changed {
+            return;
+        }
+        let uri = match doc {
+            Some(doc) => Some(doc.uri.clone()),
+            None => path_to_uri(path),
+        };
+        let Some(uri) = uri else {
+            return;
+        };
+        self.send(Notification::new(
+            "textDocument/publishDiagnostics".to_owned(),
+            PublishDiagnosticsParams {
+                uri,
+                diagnostics: diagnostics.clone(),
+                version,
+            },
+        ));
+        self.published.insert(
+            path.to_path_buf(),
+            Published {
+                diagnostics,
+                version,
+            },
+        );
+    }
+
+    /// Clears a file's diagnostics, when it had any.
+    fn clear(&mut self, path: &Path) {
+        let Some(last) = self.published.remove(path) else {
+            return;
+        };
+        if last.diagnostics.is_empty() {
+            return;
+        }
+        let uri = match self.docs.get(path) {
+            Some(doc) => Some(doc.uri.clone()),
+            None => path_to_uri(path),
+        };
+        if let Some(uri) = uri {
+            self.send(Notification::new(
+                "textDocument/publishDiagnostics".to_owned(),
+                PublishDiagnosticsParams {
+                    uri,
+                    diagnostics: Vec::new(),
+                    version: None,
+                },
+            ));
+        }
+    }
+}
+
+// Resolved Q132: one project per server.
+/// The nearest `tessera.toml` at or above a workspace folder; failing that,
+/// the first one below a folder (a few levels down, skipping hidden and
+/// dependency directories).
+fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {
+    for folder in folders {
+        if let Some(found) = tessera_check::Project::find_config(folder) {
+            return Some(found);
+        }
+    }
+    for folder in folders {
+        let mut level = vec![folder.clone()];
+        for _ in 0..4 {
+            let mut next = Vec::new();
+            for dir in &level {
+                let candidate = dir.join(MODEL_FILE);
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+                let Ok(entries) = std::fs::read_dir(dir) else {
+                    continue;
+                };
+                let mut children: Vec<PathBuf> = entries
+                    .flatten()
+                    .filter(|e| e.path().is_dir())
+                    .filter(|e| {
+                        let name = e.file_name().to_string_lossy().into_owned();
+                        !name.starts_with('.') && name != "node_modules" && name != "target"
+                    })
+                    .map(|e| e.path())
+                    .collect();
+                children.sort();
+                next.extend(children);
+            }
+            level = next;
+        }
+    }
+    None
+}
+
+impl Core {
+    /// Whether files are waiting to have their diagnostics computed.
+    pub(crate) fn has_work(&self) -> bool {
+        self.loaded.as_ref().is_some_and(|l| !l.dirty.is_empty())
+    }
+
+    /// What a semantic tokens request needs for a document: the snapshot, the
+    /// file's content path, and the model.
+    pub(crate) fn tokens_target(
+        &self,
+        uri: &Uri,
+    ) -> Option<(tessera_resolve::Snapshot, RelPath, Arc<ContentModel>)> {
+        let path = Core::doc_path(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        match loaded.classify(&path)? {
+            Kind::Source(content, _) => {
+                let snapshot = loaded.inc.snapshot();
+                snapshot.file(&content)?;
+                Some((snapshot, content, loaded.model.clone()))
+            }
+            Kind::Model | Kind::Asset(_) => None,
+        }
+    }
+}

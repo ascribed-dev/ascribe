@@ -33,6 +33,21 @@ The checks run first (file-level and page-level, as `tessera check` runs them: e
 | `1` | The checks found errors; nothing was written |
 | `2` | The build couldn't run: a usage error, no `tessera.toml`, a content model with errors, another build writing to the output directory, or a file in the output directory that Tessera didn't write and would have to overwrite |
 
+## `tessera lsp`
+
+```
+tessera lsp
+```
+
+Runs the language server, speaking LSP over standard input and output; an
+editor starts it. It takes no options: the workspace folders the editor gives
+say where the project is, and the content model's `[editor] build` says which
+build's diagnostics to report (the same as `tessera check --build <that
+build>`). Standard output carries only LSP messages; logs go to standard error.
+Exit code 0 after `shutdown` and `exit`, 1 when the client exits without
+shutting down, 2 when the server can't run. What it does, its semantic token
+legend, and how it is tested are in [`crates/tessera-lsp`](../tessera-lsp/README.md).
+
 ## Options every command accepts
 
 - `--config <PATH>`: the content model, `tessera.toml`. A directory means the `tessera.toml` in it. By default, the nearest `tessera.toml` in the current directory or a parent, so `tessera check` works from anywhere inside a project.

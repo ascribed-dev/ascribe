@@ -1,0 +1,46 @@
+spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm"]
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+
+[phrases]
+product = "Quill"
+
+[images.attributes]
+width = "number?"
+
+[widgets.my-note]
+forms = ["line", "container"]
+primary = "text?"
+binding = "block"
+title = "accepted"
+
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }
+
+[builds.npm]
+variants = { pm = "npm" }
+availability = "badge"
+
+[editor]
+build = "site"
