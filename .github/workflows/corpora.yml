@@ -1,0 +1,55 @@
+name: Corpora and performance
+
+# Manual only, like the other workflows (Actions minutes). It fetches three
+# documentation repositories, runs the recognition and conversion checks over
+# them, times the benchmarks, and fails when a metric is over its recorded
+# baseline by the margin in tests/corpora/baselines/perf.json (3x plus 25 ms; see
+# tests/corpora/RESULTS.md for why) or over one of the spec's targets.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  # A corpus that can't be fetched is a failure here, not a skip.
+  ASCRIBE_CORPORA: require
+
+jobs:
+  corpora:
+    name: corpora and performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Build the command
+        run: cargo build --release -p tessera-cli -p tessera-corpora
+      - name: Recognition and conversion checks over the corpora
+        run: cargo test --release -p tessera-corpora -- --include-ignored --nocapture
+      - name: Benchmarks
+        env:
+          ASCRIBE_BENCH_OUT: ${{ github.workspace }}/bench-results.jsonl
+        run: |
+          rm -f "$ASCRIBE_BENCH_OUT"
+          cargo bench -p tessera-corpora --bench perf
+          cargo bench -p tessera-lsp --bench keystroke
+          cargo bench -p tessera-resolve --bench incremental
+          # Phase 16's completion benchmark, when it has merged.
+          if [ -f crates/tessera-lsp/benches/completion.rs ]; then
+            cargo bench -p tessera-lsp --bench completion
+          fi
+      - name: Compare with the recorded baselines
+        run: ./target/release/corpora compare bench-results.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-results
+          path: bench-results.jsonl

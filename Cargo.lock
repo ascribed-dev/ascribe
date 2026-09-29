@@ -1220,6 +1220,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "tessera-corpora"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "tessera-check",
+ "tessera-core",
+ "tessera-emit",
+ "tessera-model",
+ "tessera-resolve",
+ "tessera-syntax",
+ "tessera-synthetic",
+ "toml 0.9.12+spec-1.1.0",
+]
+
+[[package]]
 name = "tessera-emit"
 version = "0.0.0"
 dependencies = [
@@ -1267,6 +1285,7 @@ dependencies = [
  "tessera-model",
  "tessera-resolve",
  "tessera-syntax",
+ "tessera-synthetic",
  "thiserror",
 ]
 
@@ -1289,6 +1308,7 @@ dependencies = [
  "tessera-core",
  "tessera-model",
  "tessera-syntax",
+ "tessera-synthetic",
 ]
 
 [[package]]
@@ -1300,6 +1320,10 @@ dependencies = [
  "tessera-commonmark-suite",
  "tessera-core",
 ]
+
+[[package]]
+name = "tessera-synthetic"
+version = "0.0.0"
 
 [[package]]
 name = "thiserror"

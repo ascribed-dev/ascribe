@@ -1878,3 +1878,69 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Proposed resolution:** the second, implemented: `ascribe/preview` lists each page link's `href`, target path, and heading id (from the resolved page), and each asset's reference and source path; a click on a link to another page opens its file; to a heading of the previewed page, scrolls to it; to an asset, opens the file. Any other scheme (`javascript:`, `command:`, `file:`) is ignored: a link in a page must not be able to run a command. **Left out:** a glossary term's link, which is a page route the resolver doesn't map back to a file, and a heading id in another page (the file opens, not the heading).
 - **Affects:** `crates/tessera-lsp/src/preview.rs` (`links`), `packages/vscode/src/preview/controller.ts` (`openLink`).
 - **Resolution:** _to be filled in by a human._
+
+### Q191: `{{key}}` holds a phrase candidate between literal braces
+
+- **Section:** SPEC §5.1
+- **Raised by:** phase 26
+- **Status:** open
+- **Ambiguity:** `Use {{es}} here.` The spec says braces delimit a phrase and it may sit against punctuation, so the parser reads `{es}` as a candidate with a literal `{` before it and `}` after it. Elastic's docs write every substitution as `{{key}}` (48,728 of them in 3,008 pages); Hugo and Jinja use the same shape. Unconverted, each one draws a `phrase-undeclared` warning; converted by hand to `{key}` it's a phrase. But a project that declares `es` and forgets to convert one `{{es}}` gets `{Elasticsearch}` in the output, with no diagnostic (the key is declared, so nothing is undeclared).
+- **Options:** (a) Keep it: `{{es}}` is `{` + phrase + `}`. (b) Treat a candidate whose braces are doubled as literal text with no warning. (c) Keep it, and add a warning for a *declared* key written with doubled braces, since that is almost always a leftover.
+- **Proposed resolution:** (c). It costs nothing for anyone who writes `{{` on purpose (they escape with `\{`), and it catches the migration mistake the corpora show. Implemented now: (a), which is what the spec says.
+- **Affects:** `tests/corpora/FINDINGS.md` R2; `tests/corpora/tests/edge.rs`; phases 07 (inline pass) and 10 (the check).
+- **Resolution:** filled in by a human.
+
+### Q192: There is no way to make an include conditional on availability
+
+- **Section:** SPEC §3.8, §4.2, §4.4
+- **Raised by:** phase 26
+- **Status:** open
+- **Ambiguity:** `@available: ece` above `@include: _snippets/ece-only.md` is `binding-no-block`, because §3.8 says a directive that renders nothing of its own, such as `@include`, isn't a block. The reason is sound, but the pattern is common: in the converted Elastic sample, 17 `applies-item` blocks that hold only an include hit it. The only way to scope an include is to put `@available` inside the fragment, which makes the fragment's availability the same wherever it's included.
+- **Options:** (a) Keep it; the fragment carries its own availability, or the including page wraps the include in something else. (b) Let a following-block directive bind an `@include`: it then applies to the included content as if the directive were on each of its top-level blocks. (c) Give `@include` an `available` attribute.
+- **Proposed resolution:** (b) is the least new syntax but needs a rule for what "the included content" is when the fragment has headings; (c) is explicit and local. Implemented now: (a).
+- **Affects:** `tests/corpora/FINDINGS.md` F1; phases 06 (binding), 12 (resolution).
+- **Resolution:** filled in by a human.
+
+### Q193: A title that starts with a dot can't be written
+
+- **Section:** SPEC §3.7
+- **Raised by:** phase 26
+- **Status:** open
+- **Ambiguity:** A title line is `.` followed by a character that is neither whitespace nor `.`, so `.NET` above a directive is the title `NET`, and `..NET` isn't a title line at all (the arm has no title: `variant-arm-kind`). Tab labels such as `.NET` are ordinary in documentation: the converted samples have 9 (6 in Elastic's APM agent pages, 3 in Docker's build guides). The escape `\.` prevents a title, and there's no escape that keeps a leading dot in one.
+- **Options:** (a) Keep it; authors rename the label. (b) `..` starts a title whose text begins with `.`, so `..NET` is the title `.NET`. (c) Allow a backslash: `.\.NET` is the title `.NET` (an escaped `.` in the title's own text).
+- **Proposed resolution:** (c): it needs no new rule beyond CommonMark's escapes, which already render `\.` as `.` in inline content. Check that the title line's inline parse does that, and add the case to the spec's §3.7 example. Implemented now: (a); the converters emit `..NET` and the arms are reported.
+- **Affects:** `tests/corpora/FINDINGS.md` F2; `tests/corpora/tests/edge.rs`; phase 06.
+- **Resolution:** filled in by a human.
+
+### Q194: A section's `@available` can't name a target its page doesn't
+
+- **Section:** SPEC §4.4 (Scope)
+- **Raised by:** phase 26
+- **Status:** open
+- **Ambiguity:** "A section or block spec MUST NOT exceed its enclosing scope." Elastic's `applies_to` treats the page's spec as where the page is *primarily* relevant and lets a block add other deployments (`applies-item`). Converted faithfully, the sample has 147 `available-exceeds-scope` errors (a page `stack ga`, a block `serverless ga`). Whether that's a mistake in the source or a use the language should support isn't something the spec says.
+- **Options:** (a) Keep containment: a page that varies by target lists all of them, and narrower scopes subtract. (b) Let a narrower scope name other targets, and treat page-level availability as a default, not a bound.
+- **Proposed resolution:** (a): containment is what makes "the content is available only where every spec allows it" (§4.4) computable, and a converter can widen the page's spec to the union. Implemented now: (a); the corpus converter doesn't widen, so the errors are visible.
+- **Affects:** `tests/corpora/FINDINGS.md` F3.
+- **Resolution:** filled in by a human.
+
+### Q195: Only headings can be link targets
+
+- **Section:** SPEC §4.1, §5.2
+- **Raised by:** phase 26
+- **Status:** open
+- **Ambiguity:** Elastic's docs mark arbitrary places (a definition term, a list item, a paragraph) as link targets with `$$$id$$$`: 1,074 of them in 135 files, and 647 of the converted sample's 992 unresolved-anchor errors link to one. `@id` binds a heading, so a link to any other place has nothing to name.
+- **Options:** (a) Keep it: headings only; a page that needs a target inserts a heading. (b) `@id` before a block (a following-block directive) makes that block a link target.
+- **Proposed resolution:** (a) for spec 0.1, and note the migration cost in the converter's documentation; (b) is a reasonable addition later because it doesn't change what exists. Implemented now: (a).
+- **Affects:** `tests/corpora/FINDINGS.md` F4.
+- **Resolution:** filled in by a human.
+
+### Q196: Heading ids can't contain `_`, `.`, or `:`
+
+- **Section:** SPEC §4.1, §5.5
+- **Raised by:** phase 26
+- **Status:** open
+- **Ambiguity:** An id is letters, digits, and hyphens. Elastic's `# Heading [ece_setup]` anchors use `_` and `.` freely: 2,534 of 13,007 explicit anchors do, and they're linked from other pages and from outside the site, so renaming an id changes a published URL fragment. The converter renames and rewrites the links it can see (162 in the sample); external links can't be found.
+- **Options:** (a) Keep it. (b) Allow `_` (and `.`), since HTML ids do.
+- **Proposed resolution:** (b) for `_` and `.` at least: an id that is valid in HTML and in every consumer's slugger costs nothing and keeps migrated URLs. Implemented now: (a).
+- **Affects:** `tests/corpora/FINDINGS.md` F5; phases 06 (`id-invalid`), 09 (slugger).
+- **Resolution:** filled in by a human.

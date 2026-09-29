@@ -17,6 +17,7 @@ tessera-syntax.workspace = true
 [dev-dependencies]
 proptest.workspace = true
 serde_json.workspace = true
+tessera-synthetic.workspace = true
 
 [[bench]]
 name = "incremental"
