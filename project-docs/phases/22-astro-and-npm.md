@@ -68,8 +68,8 @@ Turn the phase 21 slice into a complete integration, and deliver the `ascribe` b
   from that installed package. Native packages use `npm pack` to preserve the
   executable mode; the CLI uses `pnpm pack` to replace workspace protocol
   references with publishable versions. The general JS check builds the CLI
-  before typechecking Astro, which imports its generated declarations. The
-  Linux x64 job retains phase 25 parity.
+  and elements packages before typechecking Astro and VS Code, which import
+  their generated declarations. The Linux x64 job retains phase 25 parity.
   No Rust, contract, SPEC, or phase 24 files changed.
 
 ### Verification and open gates

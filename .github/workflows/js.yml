@@ -30,8 +30,9 @@ jobs:
       - run: pnpm --filter @ascribed/elements exec playwright-core install --with-deps chromium firefox webkit
       - run: pnpm format:check
       - run: pnpm -r lint
-      # Astro resolves the CLI package's generated declarations during typecheck.
+      # Astro and VS Code resolve declarations from these generated package builds.
       - run: pnpm --filter @ascribed/cli build
+      - run: pnpm --filter @ascribed/elements build
       - run: pnpm -r typecheck
       - run: pnpm -r test
 
