@@ -25,32 +25,32 @@ output.replace(&build.name, "plain", &emission.files)?;
 
 ## Plain markdown
 
-Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading (Q111), the page-level `Available:` line if it has one, then its blocks. SPEC §9.4's table, as implemented:
+Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading, the page-level `Available:` line if it has one, then its blocks. SPEC §9.4's table, as implemented:
 
 | Source | Output |
 |---|---|
 | `@note {type=tip}` with a title | `> **Tip: Title**`, a blank quoted line, then the content; without a title, `> **Tip**` |
 | `@steps` | The ordered list |
-| A group | One section per surviving arm: the arm's bold label, then its content (Q115) |
+| A group | One section per surviving arm: the arm's bold label, then its content |
 | `@details` | The title in bold, then the content |
-| `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` (Q114) |
-| A project widget | Its `plain-fallback` (phrases substituted), then its wrapped content unless `plain-content = "drop"` (Q113) |
+| `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` |
+| A project widget | Its `plain-fallback` (phrases substituted), then its wrapped content unless `plain-content = "drop"` |
 | Phrases, includes, glossary links | Resolved |
 | Links | Absolute URLs with the `[consumer] site` origin; root-relative, with a warning from `ascribe build`, without one |
 | Images and linked files | Copied into the output at their mirrored path, and written as relative references |
-| Raw HTML in the source | Its text, without the tags; comments, scripts, and styles dropped (Q112) |
+| Raw HTML in the source | Its text, without the tags; comments, scripts, and styles dropped |
 
 Code blocks are always fenced (the fence is longer than any backtick run in the code, and a `phrases=true` info word is dropped), and text is escaped so that an unmodified CommonMark parser reads back the same text.
 
 ## Site
 
-Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`. `prepare` refuses a build whose pages share a route (Q143).
+Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`. `prepare` refuses a build whose pages share a route.
 
 | Source | Output |
 |---|---|
-| Frontmatter | Passed through, phrases substituted; `available` becomes a list of targets (Q142) |
+| Frontmatter | Passed through, phrases substituted; `available` becomes a list of targets |
 | Heading | An ATX heading ending in `<ascribe-attributes id="…"></ascribe-attributes>` with its page id, after a space |
-| Image | `![alt](./path "title")`, then a marker with its attributes and the model's defaults (Q141) |
+| Image | `![alt](./path "title")`, then a marker with its attributes and the model's defaults |
 | `@note` | `<ascribe-note type label heading>` wrapping the content |
 | `@steps` | `<ascribe-steps>` wrapping the list |
 | `@variant` group | `<ascribe-tabs sync>` of `<ascribe-tab value label>` per surviving arm (a group reduced to one arm is its content) |
@@ -64,11 +64,11 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ### `render_site_html`
 
-`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview (phase 25) uses it; the Astro plugin (phase 21) must pass the same fixtures.
+`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview uses it; the Astro plugin must pass the same fixtures.
 
 ### Zod
 
-`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys, and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema` (Q149). `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p tessera-emit --test zod`.
+`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys, and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema`. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p tessera-emit --test zod`.
 
 ## JSON
 

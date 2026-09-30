@@ -2,10 +2,10 @@
 
 Shared fixtures for the [site-render contract](../../project-docs/contracts/site-render.md). Each pairs site markdown, as Ascribe's site emitter writes it, with the HTML it must render to. Two implementations run them, and both must pass every fixture:
 
-- `render_site_html()` in `tessera-emit` (phase 20), used by the editor preview;
-- the markdown plugin in `@ascribed/astro` (phase 21), used by the published site.
+- `render_site_html()` in `tessera-emit`, used by the editor preview;
+- the markdown plugin in `@ascribed/astro`, used by the published site.
 
-Phase 02 wrote these fixtures. They change only through the contract process (`project-docs/phases/README.md`, "Contracts"); phases 20 and 21 may add fixtures for cases they find.
+Both implementations must keep passing every fixture, so a change to how a construct renders changes the fixture and both implementations together. Add a fixture for any construct whose rendering needs pinning.
 
 ## Layout
 
@@ -16,14 +16,14 @@ tests/render/
   <name>/expected.html the HTML it must render to
 ```
 
-`fixtures.toml` lists each fixture's `covers`: the constructs from the table in the contract's §6. `tests/conformance/tests/render_fixtures.rs` checks that every directory is listed, every listed fixture has both files, and every construct in the contract is covered.
+`fixtures.toml` lists each fixture's `covers`: the constructs it checks. `tests/conformance/tests/render_fixtures.rs` checks that every directory is listed, and every listed fixture has a description, at least one construct, and both files.
 
 ## Running a fixture
 
 1. Render `input.md` as CommonMark, with raw HTML passed through, applying the contract's attribute markers. GFM and typographic replacements (Astro's defaults) may be on: the fixtures contain nothing they change outside markers, and they must not change markers.
 2. Compare the result with `expected.html` as HTML, not as text (below).
 
-For the Astro plugin, render with each markdown processor Astro can run (in Astro 7.3, Sätteri, its default, and `unified()`), with the plugin at the stage it takes in Astro, which is a user hast plugin that runs before Astro's image and heading-id passes (Q151), not with a full Astro build: the fixtures test the transform, and Astro's image optimization would replace every `src`.
+For the Astro plugin, render with each markdown processor Astro can run (in Astro 7.3, Sätteri, its default, and `unified()`), with the plugin at the stage it takes in Astro, which is a user hast plugin that runs before Astro's image and heading-id passes, not with a full Astro build: the fixtures test the transform, and Astro's image optimization would replace every `src`.
 
 ## Comparing HTML
 

@@ -8,7 +8,7 @@ This crate is [comrak](https://github.com/kivikakk/comrak), vendored and changed
 |---|---|
 | Upstream | <https://github.com/kivikakk/comrak> |
 | Release | **v0.55.0**, tag commit `6fbe87fafde3953a9f3bc582804318593d703805` (2026-09-06) |
-| Vendored in | the commit "Vendor comrak v0.55.0 as crates/comrak-tessera" (phase 04), which is the unmodified upstream source |
+| Vendored in | the commit "Vendor comrak v0.55.0 as crates/comrak-tessera", which is the unmodified upstream source |
 | CommonMark | 0.31.2 (upstream's target) |
 
 ## Why fork
@@ -41,7 +41,7 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 | File | Markers | Where | What |
 |---|---|---|---|
 | `src/lib.rs` | 2 | module list | `pub mod tessera;` |
-| | | re-exports | `parse_document_with_definitions` (phase 23) |
+| | | re-exports | `parse_document_with_definitions` |
 | `src/nodes.rs` | 5 | `NodeValue` | The `TesseraLine(Box<NodeTesseraLine>)` variant, after `FrontMatter` |
 | | | `NodeValue::block` | An Ascribe line is a block |
 | | | `NodeValue::xml_node_name` | `tessera_line` |
@@ -55,13 +55,13 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 | | | `detect_table` | A text primary never becomes a table header (changed condition) |
 | | | `finalize_borrowed` | A text primary has no link reference definitions (changed statement) |
 | | | `finalize_borrowed` | A paragraph that starts with link reference definitions starts on the first line after them (phase 05: upstream leaves its start position, and so every inline position in it, on the definitions). **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
-| | | `handle_setext_heading` | The same, for a setext heading's text (phase 05). **Candidate to upstream**, with the row above |
+| | | `handle_setext_heading` | The same, for a setext heading's text. **Candidate to upstream**, with the row above |
 | | | `parse_document` | Delegates to the new `parse_document_with_definitions`, which returns the link reference definitions the parser consumed along with the document (phase 23; the body is upstream's, with the parser kept so its list can be taken) |
 | | | `Parser::parse` | Borrows the parser (`&mut self`, was `mut self`) so the caller can take the definitions |
 | | | `Parser` | Two fields: the definitions found so far, and the last one `parse_reference_inline` read |
 | | | `resolve_reference_link_definitions` | Takes the content's first line and column offsets, and records each definition with its positions (`tessera::locate`); the setext and paragraph call sites pass them |
 | | | `parse_reference_inline` | `&mut self` (was `&self`); records the label, destination, and title ranges, and the cleaned values, in the field above. The parsing itself is unchanged |
-| `src/parser/inlines.rs` | 1 | `close_bracket_match` | After an image, skips the attribute block that follows it directly (`![alt](src){width=600}`), so its contents are never parsed as emphasis, links, or code (phase 07). The scan is `tessera::image_attributes_len`, in Ascribe's own file |
+| `src/parser/inlines.rs` | 1 | `close_bracket_match` | After an image, skips the attribute block that follows it directly (`![alt](src){width=600}`), so its contents are never parsed as emphasis, links, or code. The scan is `tessera::image_attributes_len`, in Ascribe's own file |
 | `src/html.rs` | 1 | `format_node_default` | Renders an Ascribe line with `tessera::render_html` |
 | `src/cm.rs` | 2 | `CommonMarkFormatter::format_node` | Formats an Ascribe line |
 | | | `CommonMarkFormatter::format_tessera_line` | New method, after `format_front_matter` |

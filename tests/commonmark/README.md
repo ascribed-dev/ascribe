@@ -28,7 +28,7 @@ The test fails when the result differs from the baseline in either direction, so
 
 ## The comrak-tessera fork
 
-`tests/fork.rs` runs the suite against the `comrak-tessera` fork (phase 04), with the same options as the baseline:
+`tests/fork.rs` runs the suite against the `comrak-tessera` fork, with the same options as the baseline:
 
 - **Ascribe option off** (`baselines/comrak-tessera-off.toml`): **652 of 652**. The test also fails unless this result matches `baselines/comrak.toml`, so the fork behaves exactly as unmodified comrak.
 - **Ascribe option on** (`baselines/comrak-tessera-on.toml`), with the built-in keywords (`id`, `include`, `variant`, `available`, `note`, `steps`, `details`), `end`, and one project widget (`quill-demo`): **652 of 652**. No example renders differently with the option on.

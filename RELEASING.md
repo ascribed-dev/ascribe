@@ -61,9 +61,9 @@ Add it to the `release` environment as the secret `VSCE_PAT`.
 
 ## Each release
 
-### 1. Approve what's published
+### 1. Check what's published
 
-Nothing in `project-docs/questions.md` that concerns what a release ships is still open (`grep -n 'Status:\*\* open' project-docs/questions.md` finds only the entry format).
+The changelog's section for the release lists what it ships, and nothing in it is unfinished.
 
 ### 2. Set the version
 
