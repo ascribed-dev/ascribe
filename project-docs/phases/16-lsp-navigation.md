@@ -108,7 +108,7 @@ See the pull request for the status and evidence of each.
 
 ### Left open
 
-- **Q161 to Q166** (each implemented as proposed).
+- **Q161 to Q166** were resolved by the repository owner on 2026-09-29 as proposed; SPEC §10 now records the behavior and the accepted implementation limitations below.
 - **Reference-form links** (`[text][label]`) have no document link, because a definition's destination has no span in the tree (Q165). Hover, definition, and hints work for them.
 - **Asset completion** for image sources isn't offered (Q161).
 - **Hints and previews use the source, not a build**: a title with a phrase shows the phrase's value, but build modes don't apply (Q166).

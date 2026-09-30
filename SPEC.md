@@ -945,10 +945,14 @@ An authoring environment is a processor that edits Ascribe source interactively.
   - include paths;
   - link targets, searched by page and heading title and inserted as file paths.
 - **Hover:**
-  - for a link, the full target path and a preview of the target;
-  - for a phrase, its value.
+  - for a link or include, the project-relative target path, title, and a plain-text preview of the first paragraph of the page or target heading's section, with declared phrases replaced and the preview cut at 280 characters;
+  - for a phrase, its value;
+  - for an availability spec or feature key, its resolved availability in the words of §9.4, with a feature's name and key;
+  - for a directive or attribute key, its description from the schema; for a dimension key, its values with their labels.
+- **Go to definition:** links and includes go to the target heading when they name a source id, otherwise to the top of the file. A missing id falls back to the existing file; a missing file has no target. Images and asset links go to their file. An `@id` primary goes to its heading. Declared phrases and feature keys used as a whole availability spec go to their entries in `ascribe.toml`; dimension values and lifecycle states have no definition.
 - **Navigation:** a CodeLens or equivalent that names a link's or include's target file and opens it.
-- **Inline hints:** the resolved text of empty-text links.
+- **Document links:** inline link and image destinations as written, and an include's whole primary, are clickable when their target exists. They open the file or heading; external links open their URL after declared destination phrases are replaced.
+- **Inline hints:** just inside the `[` of an empty-text link, show the existing source target's title (the heading's text for a source id), with declared phrases replaced and a tooltip naming the destination. Images, missing targets, and targets without a title receive no hint. Hints use source titles without applying build modes.
 - **Refactoring:**
   - Renaming or moving a file updates links and includes that point to it.
   - Changing a heading's id updates links to it.
@@ -956,7 +960,15 @@ An authoring environment is a processor that edits Ascribe source interactively.
 - **Formatting** into canonical form (§8.3), with a formatter that understands Ascribe.
 - **Distinct display of title lines**, so a paragraph that accidentally became a title is easy to spot.
 
+Link completion searches pages and the headings of each page's own source file by title, case-insensitively; it does not offer other files' fragments or headings introduced by includes. A page without a title uses its file name. Matches are ranked by title prefix, word prefix, then substring, with paths disambiguating identical titles and pages before headings on a tie. Before any query is typed, offer pages and the current file's own headings. After `#`, offer the named file's source ids, matching its ids and heading titles. Reference-definition destinations are completed like inline link destinations; image-source completion is not required.
+
+Include completion offers every source file, including fragments, and the named file's source ids after `#`. Insert paths relative to the file being edited, or relative to the content root when an include was begun with `/`; a link to the current file's heading inserts `#id`. Percent-encode destinations as needed (§5.2), except in angle-delimited link destinations. Show the target's content path with each link completion to distinguish identical titles. Search on the server, return at most 100 items, and mark truncated lists incomplete so the client can request again as the author types.
+
+Target hovers identify fragments, missing files or ids, route-style links, and case mismatches. An include's CodeLens names its target file and, when applicable, its section, and opens that target; a missing file has no lens.
+
 Source files store real file paths, but authors should rarely need to read or type them.
+
+*Note (non-normative): the language server's include lens uses `ascribe.openFile` through `workspace/executeCommand`, followed by `window/showDocument` for clients that support it. Clients without that capability retain document links. Go to definition in `ascribe.toml` currently recognizes `[phrases]` and `[features.<key>]` table forms only. Reference-form links and their definition lines currently have no document link because the parser does not expose the definition destination span; their hover, go to definition, and hints still work. These are editor implementation choices and limitations, not restrictions on valid source or content models.*
 
 *Note (non-normative): VS Code has no API for hiding text within a line. Hover, CodeLens, and inlay hints are the dependable ways to keep paths out of the author's way.*
 

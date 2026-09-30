@@ -1806,67 +1806,67 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §10 (completion: include paths; link targets "searched by page and heading title and inserted as file paths")
 - **Raised by:** phase 16
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** The spec says link targets are searched by title and inserted as paths. It doesn't say what is searched (fragments? headings of other pages' includes?), what is shown before anything is typed, what the path is written relative to, how a path with a space is written, or what happens in a project with thousands of pages, where every page and heading is tens of thousands of items.
 - **Options:** (1) Offer every page and heading, and let the client filter. (2) Search on the server, rank, and cut the list, marking it incomplete so the client asks again as the author types.
 - **Proposed resolution:** option 2. Links offer **pages** (never fragments, which a link can't name: SPEC §4.2) and the **headings of each page's own file** with source ids (SPEC §5.2), matched on the title (a page's `title`, else its file name; a heading's text) case-insensitively and ranked prefix, then a word's prefix, then substring, then the path; pages before headings on a tie. Nothing typed offers pages only (headings of the current file too). The list is cut at 100 with `isIncomplete`. The inserted text is the path **relative to the file being edited** (`keys.md`, `../keys.md#rotate-keys`; `#id` for a heading of the same file), with spaces and parentheses percent-encoded (SPEC §5.2 decodes destinations, Q62) unless the destination was opened with `<`. The item's `detail` is the target's content path, which tells identical titles apart. After `#`, the ids of the file already named. `@include` offers every source file (pages and fragments), relative to the including file, or from the content root when the author typed a leading `/`, and after `#` the ids of the file it names. Image sources and link reference definitions' destinations: definitions are completed like links; image sources aren't (no asset completion in this phase).
 - **Affects:** `crates/tessera-lsp/src/complete.rs`; phase 24 (quick fixes reuse the relative-path rule).
-- **Resolution:** _open._
+- **Resolution:** approved by the repository owner: as proposed, option 2. Search and rank on the server, return at most 100 items, and mark a truncated list incomplete, including heading-id completion for links and includes. Link completion offers pages and their own headings, not other files' fragments; include completion offers every source file. Insert paths relative to the authoring file (or content-root-relative for an include begun with `/`), percent-encode destinations unless angle-delimited, and show the content path to distinguish identical titles. Reference-definition destinations are completed like links; image-source completion is outside this phase. SPEC §10 now states the completion rules; phase 24 reuses the same path-writing rules.
 
 ### Q162: What hover shows for a target, a feature, and a directive
 
 - **Section:** SPEC §10 (hover: "for a link, the full target path and a preview of the target"); §4.4, §9.4
 - **Raised by:** phase 16
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** "The full target path" (project-relative, or relative to the content root?), and what a "preview" is; what "the resolved availability in words" of a spec or feature key is; what a directive's hover holds.
 - **Options:** For the path: the content path as written in a link, or the project-relative path (`docs/keys.md`). For the preview: raw source, or plain text.
 - **Proposed resolution:** the **project-relative path** (`docs/keys.md#rotate-keys`), because that's what a person searches the file tree for; the **title** (the heading's text for a link with an id, else the page's `title`, declared phrases replaced), and a **plain-text preview of the first paragraph** of the page or of the heading's section, phrases replaced, cut at 280 characters. A fragment says so; a missing file, an id no heading has, a route and a case mismatch are each named. Availability is the text of SPEC §9.4, `Available: Quill Cloud (GA); self-managed (preview, 3.4+)`, built by `tessera_emit::labels` (the element contract §4's text, one implementation); a feature key adds the feature's name and key. A directive shows its description, forms, primary, and attributes from its schema; an attribute key shows its type, default, and description; a dimension key shows the dimension's values with their labels.
 - **Affects:** `crates/tessera-lsp/src/hover.rs`.
-- **Resolution:** _open._
+- **Resolution:** approved by the repository owner: as proposed. A source target's hover shows its project-relative path, title, and a plain-text preview of its first paragraph (or the heading's section), with declared phrases substituted and the preview cut at 280 characters. Fragments, missing files or ids, routes, and case mismatches are identified. Availability uses §9.4's display text; feature hovers add the name and key. Directive and attribute hovers use their schemas, and dimension keys show labeled values. SPEC §10 now clarifies these hovers; the shared label implementation remains an implementation choice.
 
 ### Q163: Where go to definition goes
 
 - **Section:** SPEC §10 (navigation); phase 16 task 3
 - **Raised by:** phase 16
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** "`@id` references go to the heading." An `@id` is a definition, not a reference; references to an id are links and includes with `#id`. Also unsaid: what an image or an asset link goes to, what a link to a missing id goes to, and what a dimension value or a lifecycle state goes to.
 - **Options:** As proposed below, or also "find references" from an `@id` (not requested).
 - **Proposed resolution:** a link or include with `#id` goes to the **heading** with that source id (a heading's `@id` or slug); without an id, to the top of the file; an image or a link to a non-source file goes to that file; a link to a missing file or id goes to the file when it exists and to nothing otherwise. The primary of an `@id` goes to the heading it names. A declared phrase goes to its key under `[phrases]` in `ascribe.toml`; a feature key (a whole `@available` primary, or the frontmatter's `available`) goes to its `[features.<key>]` table. Dimension values and lifecycle states have no definition (they're not features or phrases). Only tables written as `[phrases]` and `[features.<key>]` are found; a model that writes them another way (inline tables under `[features]`) has no target.
 - **Affects:** `crates/tessera-lsp/src/definition.rs`.
-- **Resolution:** _open._
+- **Resolution:** approved by the repository owner: as proposed. Links and includes go to their source heading or file; images and asset links go to the asset file. A missing id falls back to the existing file, and a missing file has no target. An `@id` primary goes to its heading; phrases and whole availability feature keys go to their model entries. Dimension values and lifecycle states have no definition. SPEC §10 now states those targets. The current model-entry lookup supports `[phrases]` and `[features.<key>]` table forms only; other valid TOML forms have no definition target, an accepted editor limitation rather than a restriction on the content model.
 
 ### Q164: How a CodeLens opens a file, with no client code
 
 - **Section:** SPEC §10 ("a CodeLens or equivalent that names a link's or include's target file and opens it")
 - **Raised by:** phase 16
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** A CodeLens carries a client command. `vscode.open` needs a `Uri` object, which the language client can't build from JSON, so the lens can't open a file without extension code; phase 17's extension has no such command, and the phase says the extension needs no changes.
 - **Options:** (1) A command registered by the extension (client work). (2) A command the *server* advertises (`workspace/executeCommand`, which `vscode-languageclient` wires from the capability), whose handler asks the client to show the document with `window/showDocument` (LSP 3.16).
 - **Proposed resolution:** option 2. The lens's command is `ascribe.openFile` with the target's URI and the range to reveal (the heading's, for an include of a section); the server answers by sending `window/showDocument` with `takeFocus`. A client that doesn't advertise `window.showDocument` gets no request (the command does nothing); its document links (which cover every include's path) still open the file. The command takes only `file:` URIs. The lens is on the `@include` line and reads `Includes _fragments/prerequisites.md` or `Includes keys.md › Create a key`; there is none when the target doesn't exist (the diagnostic says so).
 - **Affects:** `crates/tessera-lsp/src/links.rs`, `server.rs`; phase 17 (nothing to add; verify `showDocument` works in the extension host).
-- **Resolution:** _open._
+- **Resolution:** approved by the repository owner: as proposed, option 2. The server advertises `ascribe.openFile`, accepts only `file:` URIs, and uses `window/showDocument` with focus and the target selection when the client supports it. An include's CodeLens names its target file and section; missing files have no lens. Clients without `showDocument` retain document links. SPEC §10 now describes the include lens; the command and LSP transport are implementation choices, not requirements on other authoring environments.
 
 ### Q165: Which destinations are document links, and what they open
 
 - **Section:** SPEC §10 ("Document links make every link and include destination clickable"); phase 16 task 4
 - **Raised by:** phase 16
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** What is the clickable range and target of each form of link; what about external URLs, a link whose target is missing, and reference-form links?
 - **Options:** As below.
 - **Proposed resolution:** the range is the **destination as written** (Q53's `destination_span`), or an include's whole primary (path and `#id`); the target is the file's URI, with `#L<line>` (VS Code's) when the link names a heading past the first line; an external URL is its own target; an image's source is a link too; a target that isn't there has no link. A reference-form link (`[text][label]`) has no destination in the text of the link itself and the parser doesn't yet expose its definition's span, so it has no document link (its hover, definition, and hints work; the definition line itself isn't a link).
 - **Affects:** `crates/tessera-lsp/src/links.rs`.
-- **Resolution:** _open._
+- **Resolution:** approved by the repository owner: as proposed. Document links cover inline link and image destinations as written, and an include's whole primary; they open the target file or heading, or the external URL after declared destination phrases are substituted. Missing files have no document link. VS Code heading links use `#L<line>`. Reference-form links and their definition lines have no document link until the parser exposes a definition destination span; hover, go to definition, and hints still work. SPEC §10 states the clickable targets and records this accepted implementation limitation without changing reference-link semantics.
 
 ### Q166: Where an inlay hint sits, and which links get one
 
 - **Section:** SPEC §5.2, §10 ("Inline hints: the resolved text of empty-text links")
 - **Raised by:** phase 16
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** The hint's position (the text is empty, so there's no text to put it after), its content when the title has a phrase, and whether an image, a link to a missing target, or a link into a fragment gets one.
 - **Options:** Before the `[`, inside it, or after the closing `)`.
 - **Proposed resolution:** **just inside the `[`** (where the text would be), so `[](keys.md#rotate-keys)` reads as `[Rotate keys](keys.md#rotate-keys)`; the label is the target's resolved title (the heading's text for `#id`, else the page's `title`; declared phrases replaced), with a tooltip naming the destination. Only links (not images, which have alt text) whose target is a source file that exists and has a title get one; a missing target is the diagnostic's to report. The title is the source's; it doesn't apply build modes (a build may show something else where a phrase differs), which is what the editor's other features show too.
 - **Affects:** `crates/tessera-lsp/src/links.rs`.
-- **Resolution:** _open._
+- **Resolution:** approved by the repository owner: as proposed. An empty-text link's hint sits just inside `[`, shows its source target's title (the heading's text for an id), substitutes declared phrases, and identifies the destination in a tooltip. Only existing source targets with a title receive hints, not images or missing targets. Hints use source titles without applying build modes, consistently with navigation previews. SPEC §10 now states these rules.
 
 ### Q181: What the preview shows, and what it does for a file that isn't a page
 
