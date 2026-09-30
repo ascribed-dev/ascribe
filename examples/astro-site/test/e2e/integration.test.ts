@@ -222,13 +222,12 @@ describe("the integration", () => {
       await edit(source, (text) =>
         text.replace("(../missing.md)", "(../index.md)").replace("This guide", "Recovered guide"),
       );
-      await expect.poll(
-        async () => {
-          const response = await fetch(`${server.origin}${BASE}/guides/my-setup`);
-          return response.status === 200 && (await response.text()).includes("Recovered guide");
-        },
-        { timeout: 30_000 },
-      ).toBe(true);
+      // The fix lands a few milliseconds after the failed rebuild, and the
+      // watcher drops a second change to a file that close to the first.
+      await untilRebuilt(source, async () => {
+        const response = await fetch(`${server.origin}${BASE}/guides/my-setup`);
+        return response.status === 200 && (await response.text()).includes("Recovered guide");
+      });
     } finally {
       await server.stop();
     }
