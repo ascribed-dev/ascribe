@@ -17,7 +17,8 @@
     "x64"
   ],
   "files": [
-    "bin/ascribe.exe"
+    "bin/ascribe.exe",
+    "THIRD-PARTY-NOTICES"
   ],
   "exports": {
     "./bin/ascribe.exe": "./bin/ascribe.exe"

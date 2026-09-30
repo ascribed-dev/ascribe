@@ -17,7 +17,8 @@
     "arm64"
   ],
   "files": [
-    "bin/ascribe"
+    "bin/ascribe",
+    "THIRD-PARTY-NOTICES"
   ],
   "exports": {
     "./bin/ascribe": "./bin/ascribe"
