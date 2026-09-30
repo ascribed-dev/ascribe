@@ -10,7 +10,7 @@ Install **Ascribe** (`Ascribe.ascribe-vscode`) from the Visual Studio Marketplac
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-The extension activates in a workspace that contains an `ascribe.toml`. It needs VS Code 1.90 or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
+The extension activates in a workspace that contains an `ascribe.toml`. It needs VS Code 1.138 or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
 
 ### Which `ascribe` it runs
 

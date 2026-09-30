@@ -1,6 +1,6 @@
 name: Release
 
-# Manual only, like the other workflows. A person starts it from the Actions
+# Manual only. A person starts it from the Actions
 # tab and picks the version tag under "Use workflow from".
 #
 # With `publish` off (the default), it's a dry run: it builds the binary on
@@ -37,8 +37,8 @@ jobs:
     outputs:
       version: ${{ steps.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
       - id: check
@@ -58,17 +58,17 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   # Each binary is built natively on its own platform, where it's also run.
-  # Linux builds on Ubuntu 22.04, so the binary needs glibc 2.35 or later.
+  # Linux builds on Ubuntu 24.04, so the binary needs glibc 2.39 or later.
   build:
     name: build (${{ matrix.target }})
     needs: version
     strategy:
       matrix:
         include:
-          - { target: darwin-arm64, os: macos-15, exe: ascribe }
-          - { target: linux-arm64, os: ubuntu-22.04-arm, exe: ascribe }
-          - { target: linux-x64, os: ubuntu-22.04, exe: ascribe }
-          - { target: win32-x64, os: windows-2022, exe: ascribe.exe }
+          - { target: darwin-arm64, os: macos-26, exe: ascribe }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, exe: ascribe }
+          - { target: linux-x64, os: ubuntu-24.04, exe: ascribe }
+          - { target: win32-x64, os: windows-2025, exe: ascribe.exe }
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -78,7 +78,7 @@ jobs:
       # Visual C++ redistributable.
       RUSTFLAGS: ${{ matrix.target == 'win32-x64' && '-C target-feature=+crt-static' || '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup toolchain install
       # No build cache: a release is built from scratch.
       - run: cargo build -p tessera-cli --release --locked
@@ -90,7 +90,7 @@ jobs:
           target/release/${{ matrix.exe }} check --config examples/quill --deny-warnings
       # A tarball keeps the executable bit, which an artifact doesn't.
       - run: tar -czf binary-${{ matrix.target }}.tar.gz -C target/release ${{ matrix.exe }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: binary-${{ matrix.target }}
           path: binary-${{ matrix.target }}.tar.gz
@@ -101,14 +101,14 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: binary-*
           path: artifacts
@@ -125,7 +125,7 @@ jobs:
         run: |
           node scripts/release/publish.mjs npm --dry-run
           node scripts/release/publish.mjs marketplace --dry-run
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release
           path: dist/release
@@ -139,23 +139,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: darwin-arm64, os: macos-15, vscode: darwin-arm64 }
-          - { target: linux-arm64, os: ubuntu-22.04-arm, vscode: linux-arm64 }
-          - { target: linux-x64, os: ubuntu-22.04, vscode: linux-x64 }
-          - { target: win32-x64, os: windows-2022, vscode: win32-x64-archive }
+          - { target: darwin-arm64, os: macos-26, vscode: darwin-arm64 }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, vscode: linux-arm64 }
+          - { target: linux-x64, os: ubuntu-24.04, vscode: linux-x64 }
+          - { target: win32-x64, os: windows-2025, vscode: win32-x64-archive }
     runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release
           path: dist/release
@@ -173,7 +173,7 @@ jobs:
       - if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libnss3 libgtk-3-0 libxss1 libasound2 libgbm1
+          sudo apt-get install -y xvfb libnss3 libgtk-3-0t64 libxss1 libasound2t64 libgbm1
       - name: Install the extension package in VS Code and check examples/quill
         env:
           RUN: ${{ runner.os == 'Linux' && 'xvfb-run -a' || '' }}
@@ -190,14 +190,14 @@ jobs:
       # npm provenance signs each package with the workflow's identity.
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
       # npm 11.5.1 or later also supports trusted publishing, with no token.
       - run: npm install --global npm@^11.5.1
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release
           path: dist/release
@@ -212,14 +212,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release
           path: dist/release
@@ -236,11 +236,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release
           path: dist/release
