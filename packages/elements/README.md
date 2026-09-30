@@ -1,6 +1,6 @@
 # @ascribed/elements
 
-The custom elements [Ascribe](https://github.com/KyleBlankRollins/tessera)'s site output uses. They implement
+The custom elements [Ascribe](https://github.com/ascribed-dev/ascribe)'s site output uses. They implement
 [CONTRACT.md](CONTRACT.md) exactly: `<ascribe-note>`, `<ascribe-steps>`,
 `<ascribe-tabs>` with `<ascribe-tab>`, `<ascribe-availability>` with
 `<ascribe-availability-target>`, and `<ascribe-group>`.

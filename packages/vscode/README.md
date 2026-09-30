@@ -1,6 +1,6 @@
 # Ascribe for VS Code
 
-Write [Ascribe](https://github.com/KyleBlankRollins/tessera) documentation with the checks, completion, navigation, and preview a programming language gets. Ascribe is Markdown with directives for the structure documentation needs: callouts, procedures, alternatives by platform or product, availability, and reusable content.
+Write [Ascribe](https://github.com/ascribed-dev/ascribe) documentation with the checks, completion, navigation, and preview a programming language gets. Ascribe is Markdown with directives for the structure documentation needs: callouts, procedures, alternatives by platform or product, availability, and reusable content.
 
 The extension activates in a workspace that contains an `ascribe.toml`.
 
@@ -37,8 +37,8 @@ The extension includes `ascribe` for your platform, so it works immediately. Whe
 
 ## Learn more
 
-- [Editing with Ascribe](https://github.com/KyleBlankRollins/tessera/blob/main/docs/editor.md): everything the extension does.
-- [Getting started](https://github.com/KyleBlankRollins/tessera/blob/main/docs/getting-started.md) with Ascribe.
-- [Diagnostics](https://github.com/KyleBlankRollins/tessera/blob/main/docs/diagnostics.md): every problem Ascribe reports, and its fix.
+- [Editing with Ascribe](https://github.com/ascribed-dev/ascribe/blob/main/docs/editor.md): everything the extension does.
+- [Getting started](https://github.com/ascribed-dev/ascribe/blob/main/docs/getting-started.md) with Ascribe.
+- [Diagnostics](https://github.com/ascribed-dev/ascribe/blob/main/docs/diagnostics.md): every problem Ascribe reports, and its fix.
 
 Other Markdown formatters that reflow paragraphs don't know that Ascribe's directive and title lines start new blocks; exclude Ascribe files from them.

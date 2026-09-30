@@ -22,7 +22,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.90"
 license = "MPL-2.0"
-repository = "https://github.com/KyleBlankRollins/tessera"
+repository = "https://github.com/ascribed-dev/ascribe"
 publish = false
 
 [workspace.dependencies]

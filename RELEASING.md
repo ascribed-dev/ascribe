@@ -20,7 +20,7 @@ npm refuses provenance from a private repository ("Only public source repositori
 Decide where the repository lives first. If it moves (for example, to `ascribed-dev`), update the URLs that name it, which npm checks against the repository that publishes:
 
 ```sh
-git grep -l "KyleBlankRollins/tessera"    # package.json files, Cargo.toml, READMEs, docs
+git grep -l "ascribed-dev/ascribe"    # package.json files, Cargo.toml, READMEs, docs
 ```
 
 **Check:** the repository's Settings page says Public, and `git grep` finds the old location nowhere.

@@ -1,6 +1,6 @@
 # @ascribed/cli
 
-The `ascribe` command for [Ascribe](https://github.com/KyleBlankRollins/tessera): it checks, builds, and formats a documentation project, and runs the language server editors use.
+The `ascribe` command for [Ascribe](https://github.com/ascribed-dev/ascribe): it checks, builds, and formats a documentation project, and runs the language server editors use.
 
 ```sh
 npm install --save-dev @ascribed/cli
@@ -9,7 +9,7 @@ npx ascribe build
 npx ascribe fmt --check
 ```
 
-The [command reference](https://github.com/KyleBlankRollins/tessera/blob/main/docs/cli.md) covers every command, option, output, and exit code, and [Getting started](https://github.com/KyleBlankRollins/tessera/blob/main/docs/getting-started.md) sets up a project.
+The [command reference](https://github.com/ascribed-dev/ascribe/blob/main/docs/cli.md) covers every command, option, output, and exit code, and [Getting started](https://github.com/ascribed-dev/ascribe/blob/main/docs/getting-started.md) sets up a project.
 
 ## Platforms
 

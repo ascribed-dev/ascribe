@@ -8,11 +8,11 @@
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KyleBlankRollins/tessera.git",
+    "url": "git+https://github.com/ascribed-dev/ascribe.git",
     "directory": "packages/vscode"
   },
-  "homepage": "https://github.com/KyleBlankRollins/tessera/tree/main/packages/vscode#readme",
-  "bugs": "https://github.com/KyleBlankRollins/tessera/issues",
+  "homepage": "https://github.com/ascribed-dev/ascribe/tree/main/packages/vscode#readme",
+  "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "publisher": "Ascribe",
   "engines": {
     "vscode": "^1.90.0"

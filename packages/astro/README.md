@@ -1,6 +1,6 @@
 # @ascribed/astro
 
-The [Astro](https://astro.build) integration for [Ascribe](https://github.com/KyleBlankRollins/tessera), for Astro 7.3.5 and later 7.x releases.
+The [Astro](https://astro.build) integration for [Ascribe](https://github.com/ascribed-dev/ascribe), for Astro 7.3.5 and later 7.x releases.
 
 It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro keeps its heading, table-of-contents, and image handling), loads the element library, and serves the files pages link to. In `astro dev`, it rebuilds as you edit.
 
@@ -39,7 +39,7 @@ import Elements from "@ascribed/astro/Elements.astro";
 <head><Elements /></head>
 ```
 
-The [Astro guide](https://github.com/KyleBlankRollins/tessera/blob/main/docs/astro.md) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, and what `astro dev` does.
+The [Astro guide](https://github.com/ascribed-dev/ascribe/blob/main/docs/astro.md) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, and what `astro dev` does.
 
 ## Options
 
