@@ -145,6 +145,32 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
             _ => {}
         }
     }
+    for heading in &file.headings {
+        let start = ctx
+            .encoding
+            .offset_lenient(&index, &file.source, params.range.start);
+        let end = ctx
+            .encoding
+            .offset_lenient(&index, &file.source, params.range.end);
+        if heading.explicit_id.is_some()
+            || heading.source_id.is_empty()
+            || heading.span.end() < start
+            || heading.span.start() > end
+        {
+            continue;
+        }
+        let line_end = file.source[heading.span.start()..]
+            .find(['\r', '\n'])
+            .map_or(file.source.len(), |i| heading.span.start() + i);
+        let edit =
+            tessera_core::TextEdit::insert(line_end, format!("\n@id: {}", heading.source_id));
+        actions.push(action(
+            ctx,
+            "Add a stable @id for this heading",
+            Vec::new(),
+            vec![text_edit(ctx, &file.source, edit)],
+        ));
+    }
     actions
 }
 
@@ -229,17 +255,32 @@ fn blank_line_edit(source: &str, offset: usize) -> Option<Span> {
     let line_end = source[offset..]
         .find(['\r', '\n'])
         .map_or(source.len(), |i| offset + i);
-    if !source.get(line_start..line_end)?.trim().is_empty() {
-        return None;
-    }
-    let after = if source[line_end..].starts_with("\r\n") {
-        line_end + 2
-    } else if line_end < source.len() {
-        line_end + 1
+    let (start, end) = if source.get(line_start..line_end)?.trim().is_empty() {
+        (line_start, line_end)
     } else {
-        line_end
+        let next_start = if source[line_end..].starts_with("\r\n") {
+            line_end + 2
+        } else if line_end < source.len() {
+            line_end + 1
+        } else {
+            return None;
+        };
+        let next_end = source[next_start..]
+            .find(['\r', '\n'])
+            .map_or(source.len(), |i| next_start + i);
+        if !source.get(next_start..next_end)?.trim().is_empty() {
+            return None;
+        }
+        (next_start, next_end)
     };
-    (after > line_start).then_some(Span::new(line_start, after))
+    let after = if source[end..].starts_with("\r\n") {
+        end + 2
+    } else if end < source.len() {
+        end + 1
+    } else {
+        end
+    };
+    (after > start).then_some(Span::new(start, after))
 }
 
 fn phrase_declaration(model: &str, key: &str) -> Option<(usize, String)> {
@@ -250,6 +291,7 @@ fn phrase_declaration(model: &str, key: &str) -> Option<(usize, String)> {
     {
         return None;
     }
+
     let quoted_key = format!("\"{}\"", key.replace('\\', "\\\\").replace('"', "\\\""));
     let declaration = format!("{quoted_key} = \"\"\n");
     let mut section_start = None;

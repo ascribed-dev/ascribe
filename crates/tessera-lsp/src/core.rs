@@ -806,4 +806,13 @@ impl Core {
             encoding: self.encoding,
         })
     }
+
+    /// A project snapshot for workspace-level refactorings.
+    pub(crate) fn project_nav_target(&self) -> Option<Ctx> {
+        let loaded = self.loaded.as_ref()?;
+        let snapshot = loaded.inc.snapshot();
+        let file = snapshot.files().next()?;
+        let uri = path_to_uri(&loaded.source_path(&file.path))?;
+        self.nav_target(&uri)
+    }
 }

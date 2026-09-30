@@ -68,7 +68,7 @@
         "ascribe.formatOnSave": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Format Ascribe files into canonical form when saving. Used by the formatter (a later phase); it has no effect until the server offers formatting."
+          "markdownDescription": "Format Ascribe files into canonical form when saving."
         },
         "ascribe.maxCrashes": {
           "type": "integer",

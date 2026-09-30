@@ -19,6 +19,7 @@ mod links;
 mod nav;
 mod position;
 mod preview;
+mod refactor;
 mod server;
 mod tokens;
 mod uri;

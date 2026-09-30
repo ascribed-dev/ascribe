@@ -53,7 +53,15 @@ impl Default for Setup {
 }
 
 pub fn uri(path: &Path) -> Uri {
-    let text = format!("file://{}", path.display());
+    let path = path.to_string_lossy().replace('\\', "/");
+    let mut text = String::from("file://");
+    for byte in path.bytes() {
+        if byte.is_ascii_alphanumeric() || b"/-._~!$&'()*+,;=:@".contains(&byte) {
+            text.push(byte as char);
+        } else {
+            text.push_str(&format!("%{byte:02X}"));
+        }
+    }
     Uri::from_str(&text).expect("a uri")
 }
 

@@ -24,6 +24,44 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   preview.register();
 
   context.subscriptions.push(
+    vscode.workspace.onWillSaveTextDocument((event) => {
+      if (
+        event.document.languageId !== "markdown" ||
+        !vscode.workspace.getConfiguration("ascribe", event.document.uri).get("formatOnSave", false)
+      ) {
+        return;
+      }
+      event.waitUntil(
+        server
+          .request("textDocument/formatting", {
+            textDocument: { uri: event.document.uri.toString() },
+            options: {
+              tabSize: vscode.workspace.getConfiguration("editor", event.document.uri).get("tabSize", 2),
+              insertSpaces: vscode.workspace
+                .getConfiguration("editor", event.document.uri)
+                .get("insertSpaces", true),
+            },
+          })
+          .then((value) => asTextEdits(value))
+          .catch(() => []),
+      );
+    }),
+    vscode.workspace.onWillRenameFiles((event) =>
+      event.waitUntil(
+        server
+          .request("workspace/willRenameFiles", {
+            files: event.files.map((file) => ({
+              oldUri: file.oldUri.toString(),
+              newUri: file.newUri.toString(),
+            })),
+          })
+          .then((value) => asWorkspaceEdit(value))
+          .catch(() => new vscode.WorkspaceEdit()),
+      ),
+    ),
+  );
+
+  context.subscriptions.push(
     server,
     preview,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
@@ -51,6 +89,52 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     whenSettled: () => server.whenSettled(),
     preview: preview.api,
   };
+}
+
+interface ProtocolPosition {
+  line: number;
+  character: number;
+}
+
+interface ProtocolTextEdit {
+  range: { start: ProtocolPosition; end: ProtocolPosition };
+  newText: string;
+}
+
+interface ProtocolWorkspaceEdit {
+  changes?: Record<string, ProtocolTextEdit[]>;
+}
+
+function asTextEdits(value: unknown): vscode.TextEdit[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((edit: ProtocolTextEdit) =>
+    edit?.range?.start && edit.range.end && typeof edit.newText === "string"
+      ? [vscode.TextEdit.replace(protocolRange(edit.range), edit.newText)]
+      : [],
+  );
+}
+
+function asWorkspaceEdit(value: unknown): vscode.WorkspaceEdit {
+  const result = new vscode.WorkspaceEdit();
+  const changes = (value as ProtocolWorkspaceEdit | null)?.changes;
+  if (!changes || typeof changes !== "object") return result;
+  for (const [uri, edits] of Object.entries(changes)) {
+    for (const edit of edits) {
+      if (edit?.range?.start && edit.range.end && typeof edit.newText === "string") {
+        result.replace(vscode.Uri.parse(uri), protocolRange(edit.range), edit.newText);
+      }
+    }
+  }
+  return result;
+}
+
+function protocolRange(range: { start: ProtocolPosition; end: ProtocolPosition }): vscode.Range {
+  return new vscode.Range(
+    range.start.line,
+    range.start.character,
+    range.end.line,
+    range.end.character,
+  );
 }
 
 /** Whether the workspace holds an `ascribe.toml` (not counting `node_modules`). */
