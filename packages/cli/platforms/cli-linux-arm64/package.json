@@ -2,6 +2,7 @@
   "name": "@ascribed/cli-linux-arm64",
   "version": "0.0.0",
   "description": "Ascribe native binary for Linux arm64.",
+  "private": true,
   "license": "MPL-2.0",
   "os": [
     "linux"

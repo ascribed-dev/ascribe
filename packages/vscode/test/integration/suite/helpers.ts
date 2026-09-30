@@ -29,7 +29,7 @@ export async function waitFor<T>(
   }
 }
 
-export const EXTENSION_ID = "tessera.ascribe-vscode";
+export const EXTENSION_ID = "Ascribe.ascribe-vscode";
 
 /** The extension, activated (it activates on `ascribe.toml`; a command also does). */
 export async function activated(): Promise<AscribeApi> {

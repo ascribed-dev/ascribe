@@ -512,7 +512,7 @@ impl Cx<'_> {
         (items, incomplete)
     }
 
-    // SPEC-QUESTION(Q161)
+    // Resolved Q161
     /// Pages and headings whose title matches what was typed.
     fn search(&self, typed: &str, typed_len: usize, raw: bool) -> CompletionResponse {
         let wanted = typed.trim_start_matches("./").to_lowercase();
@@ -640,7 +640,7 @@ impl Cx<'_> {
 
     // -- Includes --------------------------------------------------------------
 
-    // SPEC-QUESTION(Q161)
+    // Resolved Q161
     /// The primary of an `@include`: files, then, after `#`, ids.
     fn include(&self, typed: &str) -> CompletionResponse {
         if let Some((path_part, id)) = typed.split_once('#') {
