@@ -1,0 +1,9 @@
+{
+  "name": "ascribe-release-smoke",
+  "private": true,
+  "description": "The development extension the release smoke test runs its suite from. It contributes nothing.",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.90.0"
+  }
+}

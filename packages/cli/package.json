@@ -1,10 +1,16 @@
 {
   "name": "@ascribed/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "The Ascribe command-line tool.",
-  "private": true,
   "type": "module",
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyleBlankRollins/tessera.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/KyleBlankRollins/tessera/tree/main/packages/cli#readme",
+  "bugs": "https://github.com/KyleBlankRollins/tessera/issues",
   "files": [
     "dist"
   ],
@@ -37,5 +43,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

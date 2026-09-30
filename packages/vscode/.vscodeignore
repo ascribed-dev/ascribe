@@ -1,0 +1,13 @@
+# The extension package holds only what runs: the bundle, the webview files,
+# the grammars, the icon, and the one binary its target needs (release
+# packaging stages it under bin/). Everything else is excluded.
+**
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+!dist/extension.cjs
+!dist/webview/**
+!syntaxes/**
+!media/**
+!bin/**

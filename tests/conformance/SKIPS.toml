@@ -10,7 +10,3 @@
 #   reason = "<why>"                      required
 #   checks = ["outline" | "diagnostics" | "builds", ...]
 #                                         optional; skips only these checks
-
-[[skip]]
-tag = "output"
-reason = "No adapter for tag `output` (plain, site, and JSON outputs): no case carries it, and the emitters have their own tests in tessera-emit."

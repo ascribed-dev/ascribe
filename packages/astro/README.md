@@ -1,8 +1,12 @@
 # @ascribed/astro
 
-The Astro integration for Ascribe, written against **Astro 7.3.5**. Publishing is reserved for phase 27.
+The [Astro](https://astro.build) integration for [Ascribe](https://github.com/KyleBlankRollins/tessera), for Astro 7.3.5 and later 7.x releases.
 
-It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with the generated Zod schema, applies the site output's attribute markers (heading ids and image attributes) so Astro keeps its own heading, table-of-contents, and image handling, loads the element library, and serves the files pages link to.
+It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro keeps its heading, table-of-contents, and image handling), loads the element library, and serves the files pages link to. In `astro dev`, it rebuilds as you edit.
+
+```sh
+npm install @ascribed/astro
+```
 
 ```js
 // astro.config.mjs
@@ -27,8 +31,6 @@ import { schema } from "../.ascribe/build/site/site/_ascribe/schema.ts";
 export const collections = { docs: defineCollection(ascribeCollection({ schema })) };
 ```
 
-The site imports `schema` from the generated file by path, so `output-dir` and the build name appear there as well as in `ascribe.toml` and the integration's options. That is a deliberate trade-off: Vite compiles the TypeScript file where it is, so the site keeps the schema's exact inferred types (`z.infer` of each content type). A `virtual:ascribe/schema` that re-exported it would name the path in one place but hide those types behind a virtual module. A project with another `output-dir` changes both lines. (Q155.)
-
 ```astro
 ---
 // A layout
@@ -37,54 +39,31 @@ import Elements from "@ascribed/astro/Elements.astro";
 <head><Elements /></head>
 ```
 
-## Routes
-
-`AstroRouter` (`crates/tessera-resolve/src/astro.rs`) computes every link Ascribe writes, and the site's page route must publish each entry at exactly that URL:
-
-- the entry id is Astro's own (`guides/my-setup` for `Guides/My Setup.md`);
-- the route is `base` plus the id;
-- the root `index.md` has the id `index` and is served at `base` itself, with no final `/` under `trailingSlash: "never"` unless the base is `/`.
-
-`examples/astro-site/src/pages/[...slug].astro` is the whole route: `params: { slug: entry.id === "index" ? undefined : entry.id }`.
+The [Astro guide](https://github.com/KyleBlankRollins/tessera/blob/main/docs/astro.md) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, and what `astro dev` does.
 
 ## Options
 
 | Option | Meaning |
 |---|---|
-| `build` | The build whose site output is the collection: a name in `ascribe.toml`. Required. |
-| `project` | The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. |
-| `binary` | The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then the native optional package installed with `@ascribed/cli`. |
+| `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |
+| `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
+| `binary` | The `ascribe` binary, relative to the Astro root. By default, `ASCRIBE_BIN`, then the binary `@ascribed/cli` installed. |
 
-## What it does
-
-- **Fails the Astro build** when `ascribe build` reports errors (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` (`site`, `base-path`, `trailing-slash`) disagrees with Astro's `site`, `base`, and `trailingSlash` (Q154).
-- **Adds the markdown plugin** to Astro's markdown processor: `satteriAscribeAttributes` to the default Sätteri processor's `hastPlugins`, or `rehypeAscribeAttributes` to a `unified()` processor's `rehypePlugins` (Q151). Both are exported (`@ascribed/astro/satteri`, `@ascribed/astro/rehype`) for a processor you configure yourself. Any other processor is an error.
-- **Serves `_ascribe/files/`** at `<base>/_ascribe/files/`: copied into the build output in `astro:build:done`, and served by a dev-server middleware.
-
-In `astro dev`, edits to the Ascribe content root (pages, fragments, and assets) or
-`ascribe.toml` queue serialized builds. Astro refreshes the content collection and
-sends a full-page reload only after successful output. A failed build is logged in
-Astro's terminal; requests return 503 rather than stale content until the source
-is fixed. Compiler diagnostics include source locations and diagnostic codes.
-Generated output is excluded from the source watcher. If a running site's
-`[project] output-dir` changes, restart `astro dev` to reload the collection's
-base and the generated schema import.
-
-## Layout
+## Development
 
 | File | Role |
 |---|---|
 | `src/index.ts` | The integration |
 | `src/content.ts` | `ascribeCollection`, for `content.config.ts` |
 | `src/Elements.astro` | Loads `@ascribed/elements` (stylesheet and script) |
-| `src/attributes.ts` | The site-render contract's marker rules, on a hast tree |
-| `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's markdown processors |
+| `src/attributes.ts` | The attribute-marker rules, on a hast tree |
+| `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's Markdown processors |
 | `src/project.ts`, `src/binary.ts`, `src/run.ts`, `src/files.ts`, `src/dev.ts` | `ascribe.toml`, the binary, running it, serving files, dev rebuilds |
 
-## Tests
+The site imports `schema` from the generated file by path, so the output directory and the build name appear there as well as in `ascribe.toml` and the integration's options. That's deliberate: Vite compiles the TypeScript file where it is, so the site keeps the schema's exact inferred types, which a virtual module re-exporting it would hide.
 
 ```sh
 pnpm --filter @ascribed/astro test
 ```
 
-runs every fixture in `tests/render/` through both processors, each with the plugin where Astro puts it and HTML compared as parsed trees (`tests/render/README.md`), plus unit tests. The end-to-end test is `examples/astro-site`'s.
+runs every fixture in `tests/render/` through both Markdown processors, each with the plugin where Astro puts it, comparing HTML as parsed trees (`tests/render/README.md`), plus unit tests. The end-to-end test is `examples/astro-site`'s.

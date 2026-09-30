@@ -1,36 +1,41 @@
 # @ascribed/cli
 
-The Ascribe command-line tool distributed through npm. The package contains a
-small JavaScript launcher and declares one optional native package for each
-supported target: macOS arm64/x64, Linux arm64/x64, and Windows x64.
+The `ascribe` command for [Ascribe](https://github.com/KyleBlankRollins/tessera): it checks, builds, and formats a documentation project, and runs the language server editors use.
 
-The launcher resolves the matching optional package at runtime and forwards all
-arguments and exit status to its `ascribe` executable. It has no `postinstall`
-script. If optional dependencies were omitted, reinstall with optional
-dependencies enabled; the error identifies the missing package and target.
+```sh
+npm install --save-dev @ascribed/cli
+npx ascribe check
+npx ascribe build
+npx ascribe fmt --check
+```
 
-Integrations can resolve the executable without spawning it:
+The [command reference](https://github.com/KyleBlankRollins/tessera/blob/main/docs/cli.md) covers every command, option, output, and exit code, and [Getting started](https://github.com/KyleBlankRollins/tessera/blob/main/docs/getting-started.md) sets up a project.
+
+## Platforms
+
+The package is a small launcher, plus one optional dependency per platform that holds the native binary: macOS (arm64 and x64), Linux (arm64 and x64, glibc 2.35 or later), and Windows (x64). Your package manager installs only your platform's. There's no install script.
+
+If `ascribe` reports that it can't find its native package, your package manager left out optional dependencies (for example, `npm install --omit=optional`): reinstall with them. The error names the package and platform it looked for.
+
+## Finding the binary from code
+
+Integrations can find the native executable without running the launcher:
 
 ```ts
 import { resolveBinary } from "@ascribed/cli/binary";
 
-const executable = resolveBinary(); // absolute path to the native ascribe binary
+const executable = resolveBinary(); // the absolute path of this platform's ascribe
 ```
 
-`resolveBinary({ platform, arch })` is also supported for packaging tests.
+`resolveBinary({ platform, arch })` resolves another platform's, for packaging tests.
 
-## Staging native binaries
+## Development
 
-Release or CI jobs stage cross-compiled binaries explicitly before packing. Set
-the environment variable for the target and run:
+The platform packages are in `platforms/`. Their binaries aren't in the repository: a release stages each one before packing (`scripts/release/pack.mjs`). To try the launcher with a local build, stage it by hand:
 
 ```sh
-ASCRIBE_BIN_LINUX_X64=target/x86_64-unknown-linux-gnu/release/ascribe \
-  pnpm --filter @ascribed/cli stage-native linux-x64
-pnpm --filter @ascribed/cli pack
+cargo build -p tessera-cli
+ASCRIBE_BIN_DARWIN_ARM64=target/debug/ascribe pnpm --filter @ascribed/cli stage-native darwin-arm64
 ```
 
-The supported variables are `ASCRIBE_BIN_DARWIN_ARM64`,
-`ASCRIBE_BIN_DARWIN_X64`, `ASCRIBE_BIN_LINUX_ARM64`,
-`ASCRIBE_BIN_LINUX_X64`, and `ASCRIBE_BIN_WIN32_X64`. Staging without a target
-stages all five and requires all five variables.
+The variables are `ASCRIBE_BIN_DARWIN_ARM64`, `ASCRIBE_BIN_DARWIN_X64`, `ASCRIBE_BIN_LINUX_ARM64`, `ASCRIBE_BIN_LINUX_X64`, and `ASCRIBE_BIN_WIN32_X64`. Without a target, `stage-native` stages all five and needs all five variables.

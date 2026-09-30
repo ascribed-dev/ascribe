@@ -1,10 +1,16 @@
 {
   "name": "@ascribed/elements",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Ascribe's web component library for the site output.",
-  "private": true,
   "type": "module",
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyleBlankRollins/tessera.git",
+    "directory": "packages/elements"
+  },
+  "homepage": "https://github.com/KyleBlankRollins/tessera/tree/main/packages/elements#readme",
+  "bugs": "https://github.com/KyleBlankRollins/tessera/issues",
   "sideEffects": [
     "./dist/index.js",
     "*.css"
@@ -32,5 +38,8 @@
     "@types/node": "^22.0.0",
     "axe-core": "^4.10.0",
     "playwright-core": "^1.50.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

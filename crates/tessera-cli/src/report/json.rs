@@ -1,5 +1,5 @@
 //! The JSON report: `ascribe check --format json`. The schema is documented,
-//! with an example, in `crates/tessera-cli/README.md`. It's versioned:
+//! with an example, in `docs/cli.md`. It's versioned:
 //! [`SCHEMA_VERSION`] changes only when a field is removed or changes
 //! meaning, and fields may be added without a new version.
 

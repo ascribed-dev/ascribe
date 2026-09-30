@@ -1,19 +1,31 @@
 {
   "name": "@ascribed/cli-linux-arm64",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Ascribe native binary for Linux arm64.",
-  "private": true,
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyleBlankRollins/tessera.git",
+    "directory": "packages/cli/platforms/cli-linux-arm64"
+  },
+  "homepage": "https://github.com/KyleBlankRollins/tessera/tree/main/packages/cli#readme",
+  "bugs": "https://github.com/KyleBlankRollins/tessera/issues",
   "os": [
     "linux"
   ],
   "cpu": [
     "arm64"
   ],
+  "libc": [
+    "glibc"
+  ],
   "files": [
-    "bin"
+    "bin/ascribe"
   ],
   "exports": {
     "./bin/ascribe": "./bin/ascribe"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

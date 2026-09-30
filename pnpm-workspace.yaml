@@ -4,6 +4,8 @@ packages:
   - tests/zod
   - examples/astro-site
 # esbuild ships its binary in a per-platform package; its postinstall script
-# only swaps in a faster launcher, so it need not run.
+# only swaps in a faster launcher, so it need not run. vsce-sign's installs a
+# signing tool that packaging and publishing don't use.
 allowBuilds:
+  "@vscode/vsce-sign": false
   esbuild: false

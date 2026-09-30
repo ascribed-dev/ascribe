@@ -1,8 +1,33 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { AstroIntegration } from "astro";
 import { consumerMismatches, readProject, type ProjectInfo } from "./project.js";
 
 type ServerOptions = Parameters<NonNullable<AstroIntegration["hooks"]["astro:server:setup"]>>[0];
+
+/**
+ * The assets a build copied from outside the content root, as absolute paths,
+ * read from the site output's manifest. Watching the content root doesn't
+ * cover them. A manifest that's missing or unreadable gives none: the next
+ * successful build writes one.
+ */
+export function outsideAssets(project: ProjectInfo, build: string): string[] {
+  const manifest = path.join(path.dirname(project.siteRoot(build)), "site.manifest.json");
+  let files: unknown;
+  try {
+    files = (JSON.parse(readFileSync(manifest, "utf8")) as { files?: unknown }).files;
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(files)) return [];
+  const assets = new Set<string>();
+  for (const entry of files as { kind?: unknown; source?: unknown }[]) {
+    if (entry.kind !== "asset" || typeof entry.source !== "string") continue;
+    const absolute = path.resolve(project.contentRoot, entry.source);
+    if (!absolute.startsWith(project.contentRoot + path.sep)) assets.add(absolute);
+  }
+  return [...assets].sort();
+}
 
 /** Watch source files, serialize compiler runs, and refresh Astro after successful output. */
 export function watchDev(options: {
@@ -21,6 +46,11 @@ export function watchDev(options: {
   let dirty = false;
   let running = false;
   let failed = false;
+  let assets = new Set<string>();
+  const watchAssets = () => {
+    assets = new Set(outsideAssets(project, options.build));
+    if (assets.size > 0) server.watcher.add([...assets]);
+  };
 
   const drain = async () => {
     running = true;
@@ -53,6 +83,7 @@ export function watchDev(options: {
         project = reloaded;
         server.watcher.add(project.contentRoot);
         server.watcher.add(project.configPath);
+        watchAssets();
         await refreshContent();
         server.ws.send({ type: "full-reload" });
       } catch (error) {
@@ -73,7 +104,10 @@ export function watchDev(options: {
   };
   const onChange = (event: string, file: string) => {
     const absolute = path.resolve(file);
-    if (absolute === project.configPath && ["add", "change", "unlink"].includes(event)) {
+    if (
+      (absolute === project.configPath || assets.has(absolute)) &&
+      ["add", "change", "unlink"].includes(event)
+    ) {
       dirty = true;
       schedule();
       return;
@@ -89,6 +123,7 @@ export function watchDev(options: {
   };
   server.watcher.add(project.contentRoot);
   server.watcher.add(project.configPath);
+  watchAssets();
   server.watcher.on("all", onChange);
   server.httpServer?.once("close", () => {
     if (timer) clearTimeout(timer);

@@ -9,7 +9,7 @@
 //  - a crash (exit code 1) on any file that contains "CRASH".
 //
 // It asks the client to watch `**/*.md` with a dynamic registration, as the
-// real server does (phase 15), so the tests cover on-disk changes.
+// real server does, so the tests cover on-disk changes.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -26,7 +26,9 @@ const {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 if (process.argv[2] === "--version") {
-  console.log("ascribe 0.0.0 (stub)");
+  // The extension's own version, so the stub is never older than it expects.
+  const manifest = new URL("../../package.json", import.meta.url);
+  console.log(`ascribe ${JSON.parse(readFileSync(manifest, "utf8")).version} (stub)`);
   process.exit(0);
 }
 if (process.argv[2] !== "lsp") {

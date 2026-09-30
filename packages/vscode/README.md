@@ -1,130 +1,44 @@
 # Ascribe for VS Code
 
-The client for Ascribe's language server (`ascribe lsp`), plus immediate syntax
-highlighting. The extension stays thin: language intelligence (diagnostics,
-semantic tokens, and later completion and navigation) comes from the server.
+Write [Ascribe](https://github.com/KyleBlankRollins/tessera) documentation with the checks, completion, navigation, and preview a programming language gets. Ascribe is Markdown with directives for the structure documentation needs: callouts, procedures, alternatives by platform or product, availability, and reusable content.
 
-It activates when the workspace contains an `ascribe.toml`.
+The extension activates in a workspace that contains an `ascribe.toml`.
+
+## Features
+
+- **Diagnostics as you type**, across the whole project, the same ones `ascribe check` reports in CI. Many come with a quick fix.
+- **Completion** for directives, attributes and their values, phrases, availability, include paths, and links, which you search by page and heading title rather than by path.
+- **Hover** for links and includes (the target's title and first paragraph), phrases (their values), and availability (what it means on the published site).
+- **Navigation**: go to definition, clickable links, a CodeLens on each include, and hints that show the title an empty-text link will get.
+- **Refactoring**: renaming or moving a file updates the links and includes that point to it; renaming a heading's `@id` or a phrase updates its uses.
+- **Formatting** into canonical form, on request or on save.
+- **Highlighting** of directives, phrases, and title lines.
+- **A live preview** that renders the page as the published site does, as you type, for any build.
 
 ## The `ascribe` binary
 
-The extension looks for the binary, in order:
+The extension includes `ascribe` for your platform, so it works immediately. When the project installs its own (`npm install --save-dev @ascribed/cli`), the extension uses that one instead, so the editor matches the version the project pins for CI. The `ascribe.path` setting overrides both.
 
-1. the `ascribe.path` setting, if set (a path that doesn't work is an error; it
-   doesn't fall back);
-2. the project's `node_modules/.bin/ascribe`, looking in each folder that holds
-   an `ascribe.toml` and its parents up to the workspace folder;
-3. the binary bundled in the extension, `bin/<platform>-<arch>/ascribe`
-   (`ascribe.exe` on Windows). Phase 27 packages these.
+## Settings
 
-It runs `ascribe --version` on the candidate, and warns when the version is
-older than `ascribe.minServerVersion` in `package.json`. When nothing is found
-it says how to fix that.
-
-## Settings and commands
-
-| | |
+| Setting | What it does |
 |---|---|
-| `ascribe.path` | Path to the `ascribe` binary. |
-| `ascribe.trace.server` | `off`, `messages`, or `verbose`. |
-| `ascribe.formatOnSave` | When enabled, applies the language server's minimal `tessera-fmt` edits to Markdown before saving. |
-| `ascribe.maxCrashes` | Crashes (since the last manual restart) after which the server isn't restarted again. Default 5. |
-| **Ascribe: Restart Language Server** | Stops and starts the server; forgets earlier crashes. |
-| **Ascribe: Show Server Output** | Opens the output channel. |
-| **Ascribe: Open Preview to the Side** | Opens the preview (also the button in the title bar of a markdown editor). |
-| **Ascribe: Select Preview Build** | Picks the build to preview, as the picker in the preview does. |
+| `ascribe.path` | The `ascribe` binary to run. When empty, the project's, then the included one. |
+| `ascribe.formatOnSave` | Format Ascribe constructs when saving. |
+| `ascribe.maxCrashes` | How many crashes of the language server make the extension stop restarting it. Default 5. |
+| `ascribe.trace.server` | Log the conversation with the language server: `off`, `messages`, or `verbose`. |
 
-## Preview
+## Commands
 
-**Ascribe: Open Preview to the Side** opens a panel that shows the active page
-as the published site shows it, and follows the editor: edits appear within
-about a tenth of a second (the debounce is 100 ms; measured end to end, median
-113 ms, maximum 167 ms over 12 edits in the integration suite), including
-unsaved ones; the scroll position stays; the panel scrolls to the section the
-cursor is in; a click on a link to a page or a file opens it in the editor.
-Its **Build** picker lists the content model's builds and starts at the
-editor's (`[editor] build`).
+- **Ascribe: Open Preview to the Side**, also the preview button in a Markdown editor's title bar.
+- **Ascribe: Select Preview Build**
+- **Ascribe: Restart Language Server**
+- **Ascribe: Show Server Output**
 
-It doesn't render anything itself. It sends the language server the custom
-request `ascribe/preview` (`crates/tessera-lsp/README.md`), whose answer is
-the site markdown (phase 20's `SiteEmitter`) rendered by the same code that
-the Astro plugin's fixtures pin (`render_site_html`, `tests/render/`). The
-webview draws that HTML with `@ascribed/elements`, bundled into
-`dist/webview/` (`elements.js`, `elements.css`) next to the preview's own
-script and stylesheet, and gives the page a title and page-level availability
-from the frontmatter (Q185). Assets aren't copied: the server names each
-asset's source file, and the webview shows it from there.
+## Learn more
 
-**What the webview may read** (`localResourceRoots`): the extension's
-`dist/webview/`, the project's content root, and the directory of each asset
-the page uses that is outside the content root (`../shared/logo.png` makes
-`shared/` readable), and nothing else: never the project root, `node_modules`,
-or the output directory. An asset directly in the project root isn't shown,
-with a warning (Q182).
+- [Editing with Ascribe](https://github.com/KyleBlankRollins/tessera/blob/main/docs/editor.md): everything the extension does.
+- [Getting started](https://github.com/KyleBlankRollins/tessera/blob/main/docs/getting-started.md) with Ascribe.
+- [Diagnostics](https://github.com/KyleBlankRollins/tessera/blob/main/docs/diagnostics.md): every problem Ascribe reports, and its fix.
 
-**Content security policy** (`src/preview/html.ts`, tested in a real browser
-in `test/webview/`):
-
-```
-default-src 'none'; script-src <origin>; style-src <origin>; img-src <origin>; font-src <origin>
-```
-
-`<origin>` is `webview.cspSource`: where VS Code serves the extension's and
-the project's local files. The element library is a script file and a
-stylesheet file; it uses no inline script, sets no inline style (it is styled
-by the stylesheet and `--ascribe-*` custom properties), and needs no
-`eval`, so it runs under the policy with **no `'unsafe-inline'`, no nonce, and no
-`'unsafe-eval'`**. The cost is that raw HTML in a page that needs an inline
-script, an inline `style` attribute, or a remote image behaves differently in
-the preview than on the site (Q183). Link clicks are handled by the
-extension, which opens only `http:`, `https:`, and `mailto:` URLs outside VS
-Code.
-
-`pnpm --filter ascribe-vscode build` bundles the element library, from the
-`@ascribed/elements` package's source and stylesheet, into `dist/webview/`.
-
-## Highlighting
-
-`syntaxes/` holds two TextMate injections into markdown (one for top level, one
-for lists and quotes, where the item's indentation is unknown): directive lines
-(sigil, name, attribute block, colon, and the first line of the primary), `@end`,
-and `{key}` phrases. TextMate can't see past a line, and doesn't know the content
-model, so the rest is the server's semantic tokens: title lines, declared and
-undeclared phrases, project widgets, and a text primary's later lines. The
-`semanticTokenTypes` and `semanticTokenScopes` in `package.json` map the server's
-legend (`crates/tessera-lsp/README.md`) to theme scopes; a unit test keeps them
-in step.
-
-## Development
-
-```
-pnpm --filter ascribe-vscode build              # bundle to dist/extension.cjs
-pnpm --filter ascribe-vscode test               # unit tests and the webview tests (vitest, Chromium)
-pnpm --filter ascribe-vscode test:integration   # VS Code integration tests
-pnpm --filter ascribe-vscode test:parity        # the preview against the Astro site's built HTML
-```
-
-The integration tests download VS Code into `out/vscode-test` and need a
-display: on Linux without one, use `pnpm --filter ascribe-vscode
-test:integration:headless` (it runs under `xvfb-run -a`). They have three
-suites: `activation` (no `ascribe.toml`: the extension stays off), `stub` (a
-stub server in `test/stub-server`), `quill` (the real `ascribe lsp` on a
-copy of `examples/quill` with a broken page added), and `preview` (the preview
-panel against the real server on a copy of `examples/quill`); the last two run
-only when `ASCRIBE_BIN` names a built `ascribe`. `ASCRIBE_SUITE` runs one suite.
-
-The webview tests (`test/webview/`) load the preview's shell and bundles into
-Chromium under the real policy (`/opt/pw-browsers/chromium`, or
-`ASCRIBE_CHROMIUM`) and post the messages the extension sends.
-
-The parity test (`test/parity/`) builds `examples/astro-site` with its own
-`build` script, in place and in two copies under its `.e2e-tmp/` (one with
-every arm of every group, one filtered to the cloud), starts `ascribe lsp` on
-each, and compares each page's preview HTML with Astro's built `<article>`:
-elements, attributes, heading ids, image attributes, and asset URLs by source
-file. It needs `cargo build -p tessera-cli` (or `ASCRIBE_BIN`), and the
-`@ascribed/elements` and `@ascribed/astro` builds (the Astro site uses them). What it leaves out, and why,
-is in `test/parity/normalize.ts` (Q184).
-
-`test/fixtures/markdown.tmLanguage.json` is VS Code's markdown grammar (MIT,
-microsoft/vscode), so the grammar tests see the scopes it really produces.
+Other Markdown formatters that reflow paragraphs don't know that Ascribe's directive and title lines start new blocks; exclude Ascribe files from them.

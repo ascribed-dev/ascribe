@@ -1,9 +1,15 @@
 {
   "name": "@ascribed/cli-darwin-x64",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Ascribe native binary for macOS x64.",
-  "private": true,
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyleBlankRollins/tessera.git",
+    "directory": "packages/cli/platforms/cli-darwin-x64"
+  },
+  "homepage": "https://github.com/KyleBlankRollins/tessera/tree/main/packages/cli#readme",
+  "bugs": "https://github.com/KyleBlankRollins/tessera/issues",
   "os": [
     "darwin"
   ],
@@ -11,9 +17,12 @@
     "x64"
   ],
   "files": [
-    "bin"
+    "bin/ascribe"
   ],
   "exports": {
     "./bin/ascribe": "./bin/ascribe"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

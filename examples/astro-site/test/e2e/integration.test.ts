@@ -2,7 +2,7 @@
 // build on Ascribe errors and on routing that disagrees with ascribe.toml, it
 // serves `_ascribe/files/` in the dev server, and its markdown plugin works
 // under Astro's other processor too.
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
@@ -187,6 +187,26 @@ describe("the integration", () => {
       }
     }, 90_000);
   }
+
+  it("rebuilds in astro dev when a file outside the content root that a page uses changes", async () => {
+    const root = await copySite("dev-outside");
+    const shared = path.join(root, "shared", "notes.txt");
+    await mkdir(path.dirname(shared), { recursive: true });
+    await writeFile(shared, "first\n");
+    await edit(
+      path.join(root, "content", "Guides", "My Setup.md"),
+      (text) => `${text}\nSee the [shared notes](../../shared/notes.txt).\n`,
+    );
+    const server = await serveDev(root);
+    try {
+      const url = `${server.origin}${BASE}/_ascribe/files/_ascribe/up/shared/notes.txt`;
+      expect(await (await fetch(url)).text()).toBe("first\n");
+      await writeFile(shared, "second\n");
+      await untilRebuilt(shared, async () => (await (await fetch(url)).text()) === "second\n");
+    } finally {
+      await server.stop();
+    }
+  }, 90_000);
 
   it("reports a failed dev rebuild without serving stale output, then recovers on the next edit", async () => {
     const root = await copySite("dev-recovery");

@@ -42,6 +42,8 @@
 #                list them in `questions`.
 #   retired      Why the diagnostic is no longer reported. Its code and slug
 #                stay reserved.
+#   fix          How to fix the problem, for docs/diagnostics.md, which is
+#                generated from this file. Every entry that isn't retired has one.
 
 ###############################################################################
 # SPEC §8.2, in table order.
@@ -59,6 +61,7 @@ messages.suggestion = "`@{name}` has no attribute `{key}`; did you mean `{sugges
 messages.none = "`@{name}` takes no attributes, so `{key}` isn't allowed"
 messages.image = "images have no attribute `{key}`; the accepted attributes are: {keys}"
 messages.image-none = "images take no attributes in this project; declare `{key}` in [images.attributes] to allow it"
+fix = "Fix the key's spelling, or remove it. To accept a new image attribute, declare it in `[images.attributes]`; for a project widget, in its `attributes`."
 
 [[diagnostic]]
 code = "ASC002"
@@ -71,6 +74,7 @@ message = "`{key}` must be {expected}, but it's \"{value}\""
 messages.enum = "`{key}` can't be \"{value}\"; use one of: {values}"
 messages.boolean = "`{key}` must be true or false, but it's \"{value}\""
 messages.set = "`{key}` takes a single value, so it can't be a value set"
+fix = "Give a value of the key's declared type: one of the enumeration's values, `true` or `false` for a boolean, or a plain number such as `600` for a number."
 
 [[diagnostic]]
 code = "ASC003"
@@ -80,6 +84,7 @@ level = "file"
 spec = "3.3"
 row = "Attributes | Bare key without a value"
 message = "`{key}` needs a value, such as `{key}=<value>`; booleans are written out too: `{key}=true`"
+fix = "Give the key a value: `key=value`. Booleans are written out too: `open=true`."
 
 [[diagnostic]]
 code = "ASC004"
@@ -89,6 +94,7 @@ level = "file"
 spec = "3.3"
 row = "Attributes | Unquoted value containing a reserved character"
 message = "the value of `{key}` contains `{character}`, so it must be quoted: `{key}=\"{value}\"`"
+fix = "Quote the value: `label=\"Using other images\"`."
 
 [[diagnostic]]
 code = "ASC005"
@@ -99,6 +105,7 @@ spec = "3.2"
 row = "Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name"
 message = "`@{name}` isn't a known directive, so this line is text; write `\\@{name}` if that's what you mean"
 messages.suggestion = "`@{name}` isn't a known directive, so this line is text; did you mean `{suggestion}`?"
+fix = "Correct the directive's name, or declare a project widget with that name in `ascribe.toml`. If the line is meant as text, write `\\@` at its start."
 
 [[diagnostic]]
 code = "ASC006"
@@ -109,6 +116,7 @@ spec = "3.4"
 row = "Directives | Primary given to a directive that takes none, or a required primary missing"
 message = "`@{name}` doesn't take a primary; remove the text after its colon"
 messages.missing = "`@{name}` needs {kind} after its colon, such as `@{name}: {example}`"
+fix = "Remove the text after the colon, or add the primary the directive needs, such as the path in `@include: setup.md`."
 
 [[diagnostic]]
 code = "ASC007"
@@ -118,6 +126,7 @@ level = "file"
 spec = "3.5"
 row = "Container | Container not closed before its enclosing block ends"
 message = "the `@{name}` container opened here isn't closed before {end}; add `@end` where it should end"
+fix = "Add an `@end` line where the container's content ends, indented like its opener."
 
 [[diagnostic]]
 code = "ASC008"
@@ -127,6 +136,7 @@ level = "file"
 spec = "3.5"
 row = "Container | Trailing `:` on a directive with no container form"
 message = "`@{name}` has no container form, so its line can't end in a colon; remove the trailing `:`"
+fix = "Remove the trailing colon. The directive applies to what its binding says, such as the block after it."
 
 [[diagnostic]]
 code = "ASC009"
@@ -136,6 +146,7 @@ level = "file"
 spec = "3.5"
 row = "Container | Container-only directive without a trailing `:`"
 message = "`@{name}` is always a container; end its line with a colon to open it"
+fix = "End the opener's line with a colon, and close the container with `@end`."
 
 [[diagnostic]]
 code = "ASC010"
@@ -145,6 +156,7 @@ level = "file"
 spec = "3.6"
 row = "Container | Container still open when the next arm of its group begins (reported at that arm's opener)"
 message = "the `@{name}` container opened on line {line} is still open where this `@{group}` arm begins; close it with `@end` first"
+fix = "Close the inner container with `@end` before the next arm's opener."
 
 [[diagnostic]]
 code = "ASC011"
@@ -154,6 +166,7 @@ level = "file"
 spec = "3.5"
 row = "Container | End line with no open container"
 message = "this `@end` has no open container to close; if a directive above should be a container, end its line with a colon"
+fix = "Remove the `@end`, or make the directive it should close a container by ending that directive's line with a colon."
 
 [[diagnostic]]
 code = "ASC012"
@@ -163,6 +176,7 @@ level = "file"
 spec = "3.9"
 row = "Container | End line indented differently from its opener"
 message = "this `@end` is indented differently from the `@{name}` it would close; indent them the same"
+fix = "Indent the `@end` exactly as its opener is indented."
 
 [[diagnostic]]
 code = "ASC013"
@@ -172,6 +186,7 @@ level = "file"
 spec = "3.10"
 row = "Container | Nesting deeper than two levels"
 message = "containers are nested {depth} levels deep here; more than two is hard to follow, so flatten them, for example with a following-block form"
+fix = "Flatten the structure: use a directive's following-block form instead of a container, or split the content into sections."
 
 [[diagnostic]]
 code = "ASC014"
@@ -181,6 +196,7 @@ level = "file"
 spec = "3.8"
 row = "Binding | Following-block directive with no following block in its container"
 message = "`@{name}` applies to the block after it, but nothing follows it in this {container}"
+fix = "Put the block the directive applies to directly below it, in the same container, or remove the directive."
 
 [[diagnostic]]
 code = "ASC015"
@@ -190,6 +206,7 @@ level = "file"
 spec = "3.8"
 row = "Binding | Following-block directive bound to a heading"
 message = "`@{name}` applies to the next block, and the next block here is a heading; a directive can't be bound to a heading"
+fix = "Move the directive below the heading, directly above the block it describes."
 
 [[diagnostic]]
 code = "ASC016"
@@ -199,6 +216,7 @@ level = "file"
 spec = "3.8"
 row = "Binding | Blank line between a following-block directive and its block"
 message = "a blank line separates `@{name}` from the block it applies to; remove it so the directive touches its block"
+fix = "Remove the blank line, so the directive touches its block. `ascribe fmt` does this."
 
 [[diagnostic]]
 code = "ASC017"
@@ -208,6 +226,7 @@ level = "file"
 spec = "3.8"
 row = "Binding | Heading-bound directive that isn't at the top of its section"
 message = "`@{name}` applies to its heading's section, so it must come directly under the heading, before any other content"
+fix = "Move the directive directly under its heading, before any other content of the section."
 
 [[diagnostic]]
 code = "ASC018"
@@ -217,6 +236,7 @@ level = "file"
 spec = "3.7"
 row = "Title | Title given to a directive that doesn't accept one"
 message = "this line looks like a title, but `@{name}` below it doesn't take one, so it's text; if that's intended, start it with `\\.` to silence this"
+fix = "Remove the title line, or start it with `\\.` if it's text that begins with a dot."
 
 [[diagnostic]]
 code = "ASC019"
@@ -226,6 +246,7 @@ level = "file"
 spec = "3.7"
 row = "Title | A `. ` line (dot and space) directly above a directive that accepts a title"
 message = "a title line has no space after its dot; write `.{title}` to make this the title of the `@{name}` below"
+fix = "Remove the space after the dot (`.Title`) to make the line a title, or separate it from the directive with a blank line if it's text."
 
 [[diagnostic]]
 code = "ASC020"
@@ -236,6 +257,7 @@ spec = "4.1"
 row = "`@id` | Duplicate id on a page, including ids from included content (page level)"
 message = "the id `{id}` is used more than once on this page; every id on a page must be unique"
 messages.include = "including `{path}` here puts the id `{id}` on this page twice; every id on a page must be unique"
+fix = "Give one of the headings a different `@id`. When the second id comes from an included fragment, change it in the page or in the fragment, or include the fragment once."
 
 [[diagnostic]]
 code = "ASC021"
@@ -247,6 +269,7 @@ row = "`@include` | Target file doesn't exist"
 message = "the included file `{path}` doesn't exist"
 messages.case = "the included file `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.not-source = "`{path}` isn't an Ascribe source file, so it can't be included: only `.md` files under the content root can"
+fix = "Fix the path. It's relative to the including file, or to the content root when it starts with `/`, and the file must be a Markdown source file inside the content root."
 
 [[diagnostic]]
 code = "ASC022"
@@ -256,6 +279,7 @@ level = "page"
 spec = "4.2"
 row = "`@include` | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
+fix = "Fix the `#id`, or give the heading you want to include that id with `@id`."
 
 [[diagnostic]]
 code = "ASC023"
@@ -265,6 +289,7 @@ level = "page"
 spec = "4.2"
 row = "`@include` | Include cycle"
 message = "including `{path}` here creates a cycle: {cycle}"
+fix = "Remove one of the includes in the cycle. A section can't include itself, directly or through other files."
 
 [[diagnostic]]
 code = "ASC024"
@@ -275,6 +300,7 @@ spec = "9.3"
 row = "`@variant` | No arm of a group survives a build's selection (page level)"
 message = "build `{build}` removes every arm of this `@variant` group, so none of its content is published in that build"
 messages.builds = "builds {builds} remove every arm of this `@variant` group, so none of its content is published in those builds"
+fix = "Add an arm for the build's selection, or check the build's `variants` in `ascribe.toml`. If the content is meant to be absent from that build, the warning can be ignored."
 
 [[diagnostic]]
 code = "ASC025"
@@ -285,6 +311,7 @@ spec = "4.3"
 row = "`@variant` | Unknown dimension or value"
 message = "`{dimension}` isn't a declared dimension; the dimensions are: {dimensions}"
 messages.value = "`{value}` isn't a value of `{dimension}`; its values are: {values}"
+fix = "Use a dimension and value declared in `[dimensions]`, or declare them there."
 
 [[diagnostic]]
 code = "ASC026"
@@ -294,6 +321,7 @@ level = "file"
 spec = "4.3"
 row = "`@variant` | Group mixes labeled and dimensional arms"
 message = "this group mixes labeled and dimensional arms; give every arm attributes, or every arm a title"
+fix = "Make every arm of the group dimensional (attributes, such as `{pm=npm}`) or every arm labeled (a title line)."
 
 [[diagnostic]]
 code = "ASC027"
@@ -304,6 +332,7 @@ spec = "4.3"
 row = "`@variant` | Arm has both a title and attributes, or neither"
 message = "this `@variant` arm has both a title and attributes; use one or the other"
 messages.neither = "this `@variant` arm has neither attributes nor a title; add dimension attributes, or a title line above it"
+fix = "Give the arm either attributes or a title line: one, not both and not neither."
 
 [[diagnostic]]
 code = "ASC028"
@@ -313,6 +342,7 @@ level = "file"
 spec = "4.3"
 row = "`@variant` | Dimensional arms share no dimension key"
 message = "the arms of this group have no dimension in common; every arm must name at least one of the same dimensions"
+fix = "Name at least one dimension that every arm of the group shares."
 
 [[diagnostic]]
 code = "ASC029"
@@ -323,6 +353,7 @@ spec = "4.4"
 row = "`@available` | Unknown target or state"
 message = "`{name}` isn't a declared dimension value, dimension, or feature key"
 messages.state = "`{name}` isn't a declared lifecycle state; the states are: {states}"
+fix = "Use a declared dimension value, dimension, feature key, or lifecycle state, or declare the name in `ascribe.toml`."
 
 [[diagnostic]]
 code = "ASC030"
@@ -332,6 +363,7 @@ level = "file"
 spec = "4.4"
 row = "`@available` | History out of chronological order"
 message = "the history for `{target}` must be in chronological order, but {later} comes before {earlier}"
+fix = "List the target's states oldest first: `self-managed (preview 3.3, ga 3.5)`."
 
 [[diagnostic]]
 code = "ASC031"
@@ -342,6 +374,7 @@ spec = "4.4"
 row = "`@available` | Versions given for a versionless target"
 message = "`{target}` is versionless, so it takes a state but no version"
 messages.dimension = "`{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version"
+fix = "Remove the version. A versionless target, or a dimension name, takes a state but no version: `cloud beta`."
 
 [[diagnostic]]
 code = "ASC032"
@@ -352,6 +385,7 @@ spec = "4.4"
 row = "`@available` | Spec exceeds its enclosing scope"
 message = "this availability includes `{target}`, which the enclosing {scope} doesn't"
 messages.version = "this availability starts `{target}` at {version}, earlier than the enclosing {scope}, which starts it at {enclosing}"
+fix = "Narrow this availability to what the enclosing page or section allows, or widen the enclosing one."
 
 [[diagnostic]]
 code = "ASC033"
@@ -361,6 +395,7 @@ level = "file"
 spec = "4.6"
 row = "`@steps` | Bound block isn't an ordered list"
 message = "`@steps` must be followed by an ordered list (`1.`, `2.`, …), but the next block is {found}"
+fix = "Put an ordered list directly below `@steps`."
 
 [[diagnostic]]
 code = "ASC034"
@@ -370,6 +405,7 @@ level = "file"
 spec = "4.7"
 row = "`@details` | Missing title"
 message = "`@details` needs a title line directly above it: the text readers see while the content is collapsed"
+fix = "Add a title line directly above `@details`: `.Show the full configuration`."
 
 # Widgets are validated exactly like built-in directives (SPEC §6), so the
 # generic rows above apply to them. This entry covers what only a widget
@@ -383,6 +419,7 @@ spec = "6"
 row = "Project widget | Violates its declared schema"
 message = "`@{name}` doesn't match its declaration in ascribe.toml: {detail}"
 messages.missing-attribute = "`@{name}` is missing the required attribute `{key}`"
+fix = "Change the widget's use to match its declaration in `[widgets]`, or change the declaration."
 
 [[diagnostic]]
 code = "ASC036"
@@ -394,6 +431,7 @@ row = "Links | Target file doesn't exist"
 message = "`{path}` doesn't exist"
 messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
+fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project."
 
 [[diagnostic]]
 code = "ASC037"
@@ -403,6 +441,7 @@ level = "page"
 spec = "5.2"
 row = "Links | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
+fix = "Fix the `#id`, or give the heading you mean that id with `@id`."
 
 [[diagnostic]]
 code = "ASC038"
@@ -412,6 +451,7 @@ level = "file"
 spec = "4.2"
 row = "Links | Target is a fragment"
 message = "`{path}` is a fragment, which isn't published on its own; link to a page that includes it"
+fix = "Link to a page that includes the fragment."
 
 [[diagnostic]]
 code = "ASC039"
@@ -421,6 +461,7 @@ level = "page"
 spec = "4.2"
 row = "Links | Target id exists only inside a fragment the target page includes (page level)"
 message = "`{id}` is a heading in the fragment `{fragment}`, not in `{path}` itself; link to a page, not to an id that exists only inside a fragment"
+fix = "Link to the page without the `#id`, or to a heading the page itself contains."
 
 [[diagnostic]]
 code = "ASC040"
@@ -431,6 +472,7 @@ spec = "9.3"
 row = "Links | Target id is removed by a build (page level, per build)"
 message = "build `{build}` removes the heading `{id}` from `{path}`, so this link would be broken in that build"
 messages.builds = "builds {builds} remove the heading `{id}` from `{path}`, so this link would be broken in those builds"
+fix = "Put the link in a `@variant` arm that the same build removes, or keep the heading in that build."
 
 [[diagnostic]]
 code = "ASC041"
@@ -440,6 +482,7 @@ level = "file"
 spec = "5.2"
 row = "Links | Destination is a route rather than a file path"
 message = "this looks like the published route of `{page}`; link to the file instead: `{suggestion}`"
+fix = "Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change."
 
 [[diagnostic]]
 code = "ASC042"
@@ -452,6 +495,7 @@ message = "the image `{path}` doesn't exist"
 messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
 messages.empty = "this image has no source; put the image's path between the parentheses"
+fix = "Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project."
 
 [[diagnostic]]
 code = "ASC043"
@@ -461,6 +505,7 @@ level = "file"
 spec = "5.3"
 row = "Images | Missing alt text"
 message = "this image has no alt text; describe it between the brackets for readers who can't see it"
+fix = "Describe the image between the brackets: `![The settings page](settings.png)`."
 
 [[diagnostic]]
 code = "ASC044"
@@ -470,6 +515,7 @@ level = "file"
 spec = "5.1"
 row = "Phrases | `{key}` in prose whose key isn't declared"
 message = "`{key}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{{` to keep it literal"
+fix = "Declare the key in `[phrases]` if it's meant as a phrase. Otherwise write `\\{` to keep the braces as text."
 
 [[diagnostic]]
 code = "ASC045"
@@ -479,6 +525,7 @@ level = "file"
 spec = "5.5"
 row = "Headings | No `@id`, and the heading contains a phrase"
 message = "this heading contains a phrase, so its id changes whenever the phrase's value does; give it a stable id with `@id`"
+fix = "Give the heading a stable id: an `@id` line directly under it."
 
 [[diagnostic]]
 code = "ASC046"
@@ -488,6 +535,7 @@ level = "page"
 spec = "5.5"
 row = "Headings | No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered (page level)"
 message = "this heading's text gives the same slug as another heading on the page, so its id is numbered and can change when headings move; give it a stable id with `@id`"
+fix = "Give the heading a stable id: an `@id` line directly under it."
 
 [[diagnostic]]
 code = "ASC047"
@@ -499,6 +547,7 @@ row = "Frontmatter | Key the file's content type or the fragment schema doesn't 
 message = "`{key}` isn't a field of the content type `{type}`"
 messages.suggestion = "`{key}` isn't a field of the content type `{type}`; did you mean `{suggestion}`?"
 messages.fragment = "`{key}` isn't a field of the fragment schema, [fragments.frontmatter]"
+fix = "Fix the key's spelling or remove it, or declare the field in the content type's `frontmatter` (`[fragments.frontmatter]` for a fragment)."
 
 [[diagnostic]]
 code = "ASC048"
@@ -508,6 +557,7 @@ level = "file"
 spec = "7.2"
 row = "Frontmatter | Required field missing"
 message = "the required field `{field}` is missing; the content type `{type}` needs it"
+fix = "Add the field to the page's frontmatter, or give it a default in the content type."
 
 [[diagnostic]]
 code = "ASC049"
@@ -518,6 +568,7 @@ spec = "7.2"
 row = "Frontmatter | Value doesn't match the field's declared type"
 message = "`{field}` must be {expected}, but it's {found}"
 messages.quote = "`{field}` must be a string, but YAML reads {value} as {found}; quote it: {field}: \"{value}\""
+fix = "Give a value of the field's type. Quote a string that YAML would read as something else: `version: \"3.10\"`."
 
 [[diagnostic]]
 code = "ASC050"
@@ -528,6 +579,7 @@ spec = "2.2"
 row = "Frontmatter | Reserved key (`available`, `variant`) on a fragment"
 message = "`{key}` is reserved for pages, and fragments can't use it"
 messages.available = "`available` is reserved for pages, and fragments can't use it; write `@available` inside the fragment instead"
+fix = "Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it."
 
 [[diagnostic]]
 code = "ASC051"
@@ -538,6 +590,7 @@ spec = "7.2"
 row = "Frontmatter | Page matches more than one content type, or matches none and there's no default type"
 message = "this page matches the content types {types}, but a page can match only one; make their `files` patterns exclusive"
 messages.none = "no content type's `files` match this page, and no type is the default; add a pattern, or set `default = true` on a type"
+fix = "Make the content types' `files` patterns match each page once, or mark one type `default = true` for the pages no pattern matches."
 
 [[diagnostic]]
 code = "ASC052"
@@ -547,6 +600,7 @@ level = "file"
 spec = "3.9"
 row = "Lists | Unindented directive line ends a list"
 message = "this unindented `@{name}` ends the list above it; indent it to the list item's content to keep it in the item"
+fix = "Indent the directive to the list item's content, to keep it in the item. To end the list there, put a blank line before the directive."
 
 [[diagnostic]]
 code = "ASC053"
@@ -556,6 +610,7 @@ level = "file"
 spec = "3.9"
 row = "Lists | Directive line over-indented into an indented code block"
 message = "this `@{name}` is indented four or more spaces past its container's content, so it's part of an indented code block, not a directive"
+fix = "Indent the directive less, to its container's content. If it's meant as code, put it in a fenced code block."
 
 [[diagnostic]]
 code = "ASC054"
@@ -565,6 +620,7 @@ level = "file"
 spec = "4.6"
 row = "Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list)"
 message = "this list continues the numbering of the `@steps` list above it, which usually means an unindented line split that list; indent the line to keep one list"
+fix = "Indent the line that splits the list, so the steps stay one list."
 
 ###############################################################################
 # More SPEC §8.2 rows, appended with the next codes.
@@ -578,6 +634,7 @@ level = "file"
 spec = "3.3"
 row = "Attributes | Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value)"
 message = "this attribute block isn't valid: {detail}"
+fix = "Fix the attribute block: close every quote and brace, give every `=` a value, and separate pairs with commas."
 
 [[diagnostic]]
 code = "ASC056"
@@ -587,6 +644,7 @@ level = "file"
 spec = "3.3"
 row = "Attributes | The same key given more than once"
 message = "`{key}` is given more than once; give each attribute once"
+fix = "Give the key once. For several values of a set-valued key, write a value set: `platform=cloud|on-prem`."
 
 [[diagnostic]]
 code = "ASC057"
@@ -596,6 +654,7 @@ level = "file"
 spec = "4.4"
 row = "`@available` | Spec that doesn't parse, in a directive or in `available` frontmatter"
 message = "\"{spec}\" isn't a valid availability spec: {detail}"
+fix = "Fix the availability spec. Its syntax is in the [directive reference](directives.md#availability-specs)."
 
 [[diagnostic]]
 code = "ASC058"
@@ -605,6 +664,7 @@ level = "file"
 spec = "4.1"
 row = "`@id` | Id containing characters other than letters, digits, hyphens, underscores, and periods"
 message = "`{id}` isn't a valid id: use only letters, digits, hyphens, underscores, and periods"
+fix = "Use only letters, digits, hyphens, underscores, and periods in the id."
 
 [[diagnostic]]
 code = "ASC059"
@@ -614,6 +674,7 @@ level = "file"
 spec = "5.3"
 row = "Images | Required image attribute missing"
 message = "this image is missing the required attribute `{key}`"
+fix = "Add the attribute in the block after the image: `![Alt](image.png){width=600}`."
 
 ###############################################################################
 # Loader rules, reported on ascribe.toml. A new rule is appended with the
@@ -628,6 +689,7 @@ level = "file"
 spec = "7.1"
 rule = "20.1"
 message = "ascribe.toml isn't valid TOML: {detail}"
+fix = "Fix the TOML syntax at the place the message names."
 
 [[diagnostic]]
 code = "ASC061"
@@ -638,6 +700,7 @@ spec = "7.1"
 rule = "20.1"
 message = "unknown key `{key}` in `[{table}]`"
 messages.suggestion = "unknown key `{key}` in `[{table}]`; did you mean `{suggestion}`?"
+fix = "Fix the key's spelling, or remove it."
 
 [[diagnostic]]
 code = "ASC062"
@@ -647,6 +710,7 @@ level = "file"
 spec = "7.1"
 rule = "20.1"
 message = "`[{table}]` is missing the required key `{key}`"
+fix = "Add the key."
 
 [[diagnostic]]
 code = "ASC063"
@@ -657,6 +721,7 @@ spec = "7.1"
 rule = "20.1"
 message = "`{key}` must be {expected}, but it's {found}"
 messages.quote = "`{key}` must be a string, but it's a number; quote it: {key} = \"{value}\""
+fix = "Give the key a value of the expected type. Strings are always quoted in TOML."
 
 [[diagnostic]]
 code = "ASC064"
@@ -666,6 +731,7 @@ level = "file"
 spec = "7.1"
 rule = "20.1"
 message = "`{key}` can't be \"{value}\"; use one of: {values}"
+fix = "Use one of the values the message lists."
 
 [[diagnostic]]
 code = "ASC065"
@@ -675,6 +741,7 @@ level = "file"
 spec = "11"
 rule = "20.1"
 message = "ascribe.toml targets spec version \"{spec}\", but this processor implements {supported}"
+fix = "Set `spec = \"0.1\"`, the specification version this release implements, or update Ascribe."
 
 [[diagnostic]]
 code = "ASC066"
@@ -684,6 +751,7 @@ level = "file"
 spec = "7.2"
 rule = "20.1"
 message = "`{name}` isn't a valid {role} name: {rule}"
+fix = "Rename it following the rule the message gives."
 
 [[diagnostic]]
 code = "ASC067"
@@ -693,6 +761,7 @@ level = "file"
 spec = "7.2"
 rule = "20.1"
 message = "`{key}` can't be empty"
+fix = "Give the key a value, or remove it."
 
 [[diagnostic]]
 code = "ASC068"
@@ -702,6 +771,7 @@ level = "file"
 spec = "2.2"
 rule = "20.2"
 message = "`{key}` must be a path relative to ascribe.toml, not an absolute path"
+fix = "Write the path relative to the directory of `ascribe.toml`."
 
 [[diagnostic]]
 code = "ASC069"
@@ -712,6 +782,7 @@ spec = "2.2"
 rule = "20.2"
 message = "content root `{path}` doesn't exist"
 messages.not-directory = "content root `{path}` isn't a directory"
+fix = "Create the directory, or correct `[project] content-root`."
 
 [[diagnostic]]
 code = "ASC070"
@@ -723,6 +794,7 @@ rule = "20.2"
 message = "output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source"
 messages.content-inside-output = "content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output"
 messages.same = "output directory and content root are both `{path}`"
+fix = "Keep the output directory and the content root apart: neither inside the other, and not the same. The default output directory, `.ascribe/build`, is outside the default content root, `docs`."
 
 [[diagnostic]]
 code = "ASC071"
@@ -732,6 +804,7 @@ level = "file"
 spec = "7.2"
 rule = "20.3"
 message = "only one content type can be the default, but `{a}` and `{b}` both set default = true"
+fix = "Keep `default = true` on one content type only."
 
 [[diagnostic]]
 code = "ASC072"
@@ -741,6 +814,7 @@ level = "file"
 spec = "7.2"
 rule = "20.3"
 message = "content type `{type}` has no `files` and isn't the default, so no page can use it"
+fix = "Give the type `files` patterns, make it the default type, or remove it."
 
 [[diagnostic]]
 code = "ASC073"
@@ -751,6 +825,7 @@ spec = "7.2"
 rule = "20.3"
 message = "content type `{type}` must declare title = \"string\": it's the page title, used for empty link text"
 messages.not-string = "content type `{type}`: `title` must be a required string, not \"{found}\""
+fix = "Declare `title = \"string\"` in the type's `frontmatter`."
 
 [[diagnostic]]
 code = "ASC074"
@@ -762,6 +837,7 @@ rule = "20.3"
 message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
 messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
 messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
+fix = "Remove the field from the type. Every page accepts it already, with the meaning the specification gives it."
 
 [[diagnostic]]
 code = "ASC075"
@@ -771,6 +847,7 @@ level = "file"
 spec = "7.2"
 rule = "20.3"
 message = "\"{type}\" isn't a valid {kind} type: {detail}"
+fix = "Fix the type. The types are `string`, `number`, `boolean`, `date`, `enum(a, b)`, `list(T)`, and, for attributes, `set(T)`; a `?` at the end makes one optional."
 
 [[diagnostic]]
 code = "ASC076"
@@ -781,6 +858,7 @@ spec = "7.2"
 rule = "20.3"
 message = "field `{field}` is an object, so it needs `fields`"
 messages.not-object = "`fields` is only allowed on object fields, and `{field}` is \"{type}\""
+fix = "Give an `object` field its `fields`, or remove `fields` from a field that isn't an object."
 
 [[diagnostic]]
 code = "ASC077"
@@ -793,6 +871,7 @@ message = "`{field}` has an empty enumeration"
 messages.duplicate = "\"{value}\" appears twice in the enumeration for `{field}`"
 messages.both = "`{field}`: list enumeration values in enum(…) or in `values`, not both"
 messages.bare = "`{field}` is a bare enum, so it needs `values`"
+fix = "List the enumeration's values once each, in `enum(a, b)` or in `values`, not both."
 
 [[diagnostic]]
 code = "ASC078"
@@ -802,6 +881,7 @@ level = "file"
 spec = "3.3"
 rule = "20.3"
 message = "\"{value}\" can't be in a value set: members can't contain spaces or any of , | {{ }} = \""
+fix = "Remove spaces and the characters `,` `|` `{` `}` `=` `\"` from the value, or make the attribute a single value instead of a set."
 
 [[diagnostic]]
 code = "ASC079"
@@ -812,6 +892,7 @@ spec = "7.2"
 rule = "20.3"
 message = "default for `{field}` must be {type}, but it's {found}"
 messages.not-a-value = "default \"{value}\" for `{field}` isn't one of: {values}"
+fix = "Give a default of the field's type."
 
 [[diagnostic]]
 code = "ASC080"
@@ -821,6 +902,7 @@ level = "file"
 spec = "5.1"
 rule = "20.3"
 message = "phrases = true only works on string and list(string) fields, and `{field}` is \"{type}\""
+fix = "Remove `phrases = true`, or make the field a `string` or `list(string)`."
 
 [[diagnostic]]
 code = "ASC081"
@@ -832,6 +914,7 @@ rule = "20.3"
 message = "\"{pattern}\" isn't a valid pattern: {detail}"
 messages.leading-slash = "pattern \"{pattern}\" is already relative to the content root; remove the leading /"
 messages.parent = "pattern \"{pattern}\" can't contain .."
+fix = "Fix the pattern. Patterns are relative to the content root, with no leading `/` and no `..` segment."
 
 [[diagnostic]]
 code = "ASC082"
@@ -842,6 +925,7 @@ spec = "7.2"
 row = "Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension"
 rule = "20.4"
 message = "`{name}` is used as both {role-a} and {role-b}; a name can have only one role, so availability specs stay unambiguous"
+fix = "Rename one of them, so that each name has one role."
 
 [[diagnostic]]
 code = "ASC083"
@@ -851,6 +935,7 @@ level = "file"
 spec = "7.2"
 rule = "20.4"
 message = "`{a}` and `{b}` differ only in case; names are case-sensitive, so they're easy to confuse"
+fix = "Rename one of them, so they differ by more than case."
 
 [[diagnostic]]
 code = "ASC084"
@@ -860,6 +945,7 @@ level = "file"
 spec = "7.2"
 rule = "20.4"
 message = "dimension `{dimension}` has no values"
+fix = "Add the dimension's values, or remove the dimension."
 
 [[diagnostic]]
 code = "ASC085"
@@ -869,6 +955,7 @@ level = "file"
 spec = "7.2"
 rule = "20.4"
 message = "`{value}` appears twice in dimensions.{dimension}.values"
+fix = "Remove the repeated value."
 
 # Also the second clause of the SPEC §8.2 "Content model" row, whose entry
 # is model-name-multiple-roles.
@@ -880,6 +967,7 @@ level = "file"
 spec = "7.2"
 rule = "20.4"
 message = "`{value}` is a value of both `{a}` and `{b}`; a value can belong to only one dimension"
+fix = "Rename the value in one of the dimensions."
 
 [[diagnostic]]
 code = "ASC087"
@@ -889,6 +977,7 @@ level = "file"
 spec = "7.2"
 rule = "20.4"
 message = "dimensions.{dimension}.labels has a label for `{value}`, which isn't one of its values: {values}"
+fix = "Correct the label's key, or add the value to the dimension's `values`."
 
 [[diagnostic]]
 code = "ASC088"
@@ -898,6 +987,7 @@ level = "file"
 spec = "7.2"
 rule = "20.4"
 message = "dimensions.{dimension}.versionless lists `{value}`, which isn't one of its values: {values}"
+fix = "Correct the entry, or add the value to the dimension's `values`."
 
 [[diagnostic]]
 code = "ASC089"
@@ -907,6 +997,7 @@ level = "file"
 spec = "7.2"
 rule = "20.4"
 message = "new lifecycle state `{state}` must set available = true or available = false"
+fix = "Add `available = true` or `available = false` to the state."
 
 [[diagnostic]]
 code = "ASC090"
@@ -916,6 +1007,7 @@ level = "file"
 spec = "7.2"
 rule = "20.4"
 message = "`ga` must count as available: content with no lifecycle state is ga"
+fix = "Remove `available = false` from `[lifecycle.ga]`."
 
 [[diagnostic]]
 code = "ASC091"
@@ -925,6 +1017,7 @@ level = "file"
 spec = "4.5"
 rule = "20.4"
 message = "new note type `{type}` needs a label, such as label = \"{Type}\""
+fix = "Give the note type a `label`."
 
 [[diagnostic]]
 code = "ASC092"
@@ -934,6 +1027,7 @@ level = "file"
 spec = "4.4"
 rule = "20.4"
 message = "feature `{key}`: \"{spec}\" isn't a valid availability spec: {detail}"
+fix = "Fix the feature's `available` spec. Its syntax is in the [directive reference](directives.md#availability-specs)."
 
 [[diagnostic]]
 code = "ASC093"
@@ -944,6 +1038,7 @@ spec = "4.4"
 rule = "20.4"
 message = "feature `{key}`: `{name}` isn't a declared dimension value or dimension name"
 messages.state = "feature `{key}`: `{name}` isn't a declared lifecycle state"
+fix = "Use a declared dimension value, dimension, or lifecycle state, or declare the name."
 
 [[diagnostic]]
 code = "ASC094"
@@ -954,6 +1049,7 @@ spec = "4.4"
 rule = "20.4"
 message = "feature `{key}`: `{target}` is versionless, so it takes a state but no version"
 messages.dimension = "feature `{key}`: `{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version"
+fix = "Remove the version. A versionless target, or a dimension name, takes a state but no version."
 
 [[diagnostic]]
 code = "ASC095"
@@ -963,6 +1059,7 @@ level = "file"
 spec = "4.4"
 rule = "20.4"
 message = "feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier}"
+fix = "List the target's states oldest first."
 
 [[diagnostic]]
 code = "ASC096"
@@ -972,6 +1069,7 @@ level = "file"
 spec = "4.4"
 rule = "20.4"
 message = "feature `{key}`: available must be an availability spec, not another feature (`{other}`)"
+fix = "Write the feature's availability out in full. One feature can't refer to another."
 
 [[diagnostic]]
 code = "ASC097"
@@ -981,6 +1079,7 @@ level = "file"
 spec = "5.1"
 rule = "20.5"
 message = "phrase `{key}` must be a quoted string, but it's {found}; write {key} = \"{value}\""
+fix = "Quote the value."
 
 [[diagnostic]]
 code = "ASC098"
@@ -990,6 +1089,7 @@ level = "file"
 spec = "5.4"
 rule = "20.5"
 message = "\"{text}\" is declared by both glossary terms `{a}` and `{b}`"
+fix = "Remove the text from one of the terms, or make the terms distinct."
 
 [[diagnostic]]
 code = "ASC099"
@@ -1000,6 +1100,7 @@ spec = "5.4"
 rule = "20.5"
 message = "glossary term `{id}` links to {path}, which doesn't exist"
 messages.fragment = "glossary term `{id}` links to {path}, which is a fragment; link to a page that includes it"
+fix = "Fix the link, or link to a page that includes the fragment."
 
 [[diagnostic]]
 code = "ASC100"
@@ -1010,6 +1111,7 @@ spec = "6"
 rule = "20.6"
 message = "widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library"
 messages.html = "widget name `{name}` is reserved by HTML and can't be a custom element"
+fix = "Rename the widget, for example with your project's name as its prefix: `quill-aside`."
 
 [[diagnostic]]
 code = "ASC101"
@@ -1019,6 +1121,7 @@ level = "file"
 spec = "6"
 rule = "20.6"
 message = "forms must be [\"line\"], [\"container\"], or [\"line\", \"container\"]"
+fix = "Set `forms` to `[\"line\"]`, `[\"container\"]`, or `[\"line\", \"container\"]`."
 
 [[diagnostic]]
 code = "ASC102"
@@ -1029,6 +1132,7 @@ spec = "6"
 rule = "20.6"
 message = "widget `{name}` has a line form, so it needs a binding: \"self\", \"heading\", \"block\", or \"heading-or-block\""
 messages.container-only = "widget `{name}` is container-only, and a container holds its own content; remove binding"
+fix = "Give a widget with a line form a `binding`. Remove `binding` from a container-only widget."
 
 [[diagnostic]]
 code = "ASC103"
@@ -1039,6 +1143,7 @@ spec = "6"
 rule = "20.6"
 message = "widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use \"{kind}?\""
 messages.container-only = "widget `{name}` is container-only, so it can't take a primary"
+fix = "Make the primary optional (`\"text?\"`), or remove the widget's container form. A container-only widget takes no primary."
 
 [[diagnostic]]
 code = "ASC104"
@@ -1048,6 +1153,7 @@ level = "file"
 spec = "6"
 rule = "20.6"
 message = "widget `{name}` is groupable, so it must be container-only: forms = [\"container\"]"
+fix = "Set `forms = [\"container\"]`, or remove `groupable`."
 
 [[diagnostic]]
 code = "ASC105"
@@ -1057,6 +1163,7 @@ level = "file"
 spec = "6"
 rule = "20.6"
 message = "widget `{name}` doesn't wrap content, so plain-content has no effect; remove it"
+fix = "Remove `plain-content`."
 
 [[diagnostic]]
 code = "ASC106"
@@ -1066,6 +1173,7 @@ level = "file"
 spec = "9.5"
 rule = "20.7"
 message = "the {profile} profile doesn't support {key} = {value}; use {values}"
+fix = "Use one of the values the message lists."
 
 [[diagnostic]]
 code = "ASC107"
@@ -1075,6 +1183,7 @@ level = "file"
 spec = "9.5"
 rule = "20.7"
 message = "site must be an origin such as \"https://docs.example.com\"; put any path in base-path"
+fix = "Set `site` to the origin alone, such as `\"https://docs.example.com\"`, and put any path in `base-path`."
 
 [[diagnostic]]
 code = "ASC108"
@@ -1084,6 +1193,7 @@ level = "file"
 spec = "9.5"
 rule = "20.7"
 message = "base-path must start with \"/\", such as \"/docs/\""
+fix = "Start `base-path` with `/`: `\"/docs/\"`."
 
 [[diagnostic]]
 code = "ASC109"
@@ -1093,6 +1203,7 @@ level = "file"
 spec = "9.3"
 rule = "20.7"
 message = "builds `{a}` and `{b}` differ only in case, so they'd share an output directory on some file systems"
+fix = "Rename one of the builds."
 
 [[diagnostic]]
 code = "ASC110"
@@ -1103,6 +1214,7 @@ spec = "9.3"
 rule = "20.7"
 message = "variants must be \"switch\" or a selection such as {{ deployment = \"cloud\" }}"
 messages.empty = "build `{build}` selects nothing; write variants = \"switch\""
+fix = "Set `variants` to `\"switch\"`, or to a selection that names at least one dimension."
 
 [[diagnostic]]
 code = "ASC111"
@@ -1112,6 +1224,7 @@ level = "file"
 spec = "9.3"
 rule = "20.7"
 message = "build `{build}` selects dimension `{dimension}`, which isn't declared"
+fix = "Correct the dimension's name, or declare the dimension in `[dimensions]`."
 
 [[diagnostic]]
 code = "ASC112"
@@ -1121,6 +1234,7 @@ level = "file"
 spec = "9.3"
 rule = "20.7"
 message = "build `{build}`: `{value}` isn't a value of `{dimension}`; values: {values}"
+fix = "Use one of the values the message lists."
 
 [[diagnostic]]
 code = "ASC113"
@@ -1130,6 +1244,7 @@ level = "file"
 spec = "9.3"
 rule = "20.7"
 message = "availability must be \"badge\" or {{ filter = \"<target> <version>\" }}"
+fix = "Set `availability` to `\"badge\"`, or to `{ filter = \"<target> <version>\" }`."
 
 [[diagnostic]]
 code = "ASC114"
@@ -1140,6 +1255,7 @@ spec = "9.3"
 rule = "20.7"
 message = "build `{build}` filters for `{target}`, which isn't a declared dimension value"
 messages.dimension = "build `{build}` filters for `{target}`, which is a dimension; filter for one of its values: {values}"
+fix = "Filter for a declared dimension value, not a dimension name."
 
 [[diagnostic]]
 code = "ASC115"
@@ -1151,6 +1267,7 @@ rule = "20.7"
 message = "build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as \"{target} 3.3\""
 messages.versionless = "build `{build}`: `{target}` is versionless, so the filter can't name a version"
 messages.invalid = "build `{build}`: \"{version}\" isn't a valid version"
+fix = "Give a versioned target a version (`\"self-managed 3.3\"`), and a versionless target none."
 
 [[diagnostic]]
 code = "ASC116"
@@ -1160,6 +1277,7 @@ level = "file"
 spec = "9.3"
 rule = "20.7"
 message = "build `{build}` filters for `{target}`, but its selection keeps only {dimension} = {values}, so pages marked for `{target}` are dropped"
+fix = "Make the build's `variants` selection keep the target it filters for, or filter for a target it keeps."
 
 [[diagnostic]]
 code = "ASC117"
@@ -1169,6 +1287,7 @@ level = "file"
 spec = "10"
 rule = "20.7"
 message = "editor.build is `{build}`, which isn't a declared build; builds: {builds}"
+fix = "Set `[editor] build` to one of the builds the message lists."
 
 [[diagnostic]]
 code = "ASC118"
@@ -1178,6 +1297,7 @@ level = "file"
 spec = "10"
 rule = "20.7"
 message = "there are several builds and none is named site; set [editor] build to the one the editor should check"
+fix = "Set `[editor] build` to the build the editor should check, or name one of the builds `site`."
 
 [[diagnostic]]
 code = "ASC119"
@@ -1188,6 +1308,7 @@ spec = "7.2"
 rule = "20.3"
 message = "`{key}` can't be an image attribute: HTML already uses it on the <img> element"
 messages.widget = "`{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element"
+fix = "Rename the attribute."
 
 ###############################################################################
 # More SPEC §8.2 rows, appended with the next codes.
@@ -1203,6 +1324,7 @@ row = "Directives | Text on a directive line that fits no part of it: after the 
 message = "`@{name}`'s primary is a single word, so `{extra}` isn't part of it; remove it"
 messages.head = "`{extra}` isn't part of `@{name}`: a directive line has only its name, `{{attributes}}` in braces, and `:` with a primary; remove it, or put attributes in braces"
 messages.end = "`@end` takes nothing after it; remove `{extra}`"
+fix = "Remove the extra text. Text a directive should show belongs in its primary, after the colon, or in its content."
 
 [[diagnostic]]
 code = "ASC121"
@@ -1213,6 +1335,7 @@ spec = "5.2"
 row = "Links | Target page isn't published by a build (page level, per build)"
 message = "build `{build}` doesn't publish `{path}`, so this link would be broken in that build; move the link into a `@variant` arm the build removes"
 messages.builds = "builds {builds} don't publish `{path}`, so this link would be broken in those builds; move the link into a `@variant` arm those builds remove"
+fix = "Put the link in a `@variant` arm that the same build removes, or publish the page in that build."
 
 ###############################################################################
 # More SPEC §8.2 rows, appended with the next codes.
@@ -1226,6 +1349,7 @@ level = "file"
 spec = "2.1"
 row = "Frontmatter | Frontmatter that isn't valid YAML"
 message = "the frontmatter isn't valid YAML: {detail}"
+fix = "Fix the YAML between the `---` lines."
 
 [[diagnostic]]
 code = "ASC123"
@@ -1236,6 +1360,7 @@ spec = "2.1"
 row = "Files | Source file that can't be read, or isn't valid UTF-8"
 message = "this file can't be read: {reason}"
 messages.encoding = "this file isn't valid UTF-8, and Ascribe reads source files as UTF-8 text; save it as UTF-8"
+fix = "Check the file's permissions, and save it as UTF-8."
 
 [[diagnostic]]
 code = "ASC124"
@@ -1245,6 +1370,7 @@ level = "file"
 spec = "5.5"
 row = "Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji)"
 message = "this heading's text gives it an empty id, so nothing can link to it reliably; give it an `@id`"
+fix = "Give the heading an id: an `@id` line directly under it."
 
 [[diagnostic]]
 code = "ASC125"
@@ -1254,6 +1380,7 @@ level = "file"
 spec = "4.2"
 row = "`@include` | `{heading=false}` without an `#id`, which has no effect"
 message = "`heading=false` only applies to an include of a section (`file.md#id`), so it does nothing here; remove it, or name the section"
+fix = "Remove `heading=false`, or include a section: `file.md#id`."
 
 [[diagnostic]]
 code = "ASC126"
@@ -1263,3 +1390,4 @@ level = "file"
 spec = "5.1"
 row = "Phrases | A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool"
 message = "`{key}` is a declared phrase between two more braces, so its value appears between literal braces; remove the outer braces, or write `\\{{` to keep them"
+fix = "Remove the outer braces, or write `\\{` for a brace that's meant."

@@ -1,0 +1,263 @@
+name: Release
+
+# Manual only, like the other workflows. A person starts it from the Actions
+# tab and picks the version tag under "Use workflow from".
+#
+# With `publish` off (the default), it's a dry run: it builds the binary on
+# every platform, packs every npm package and extension package, installs
+# them on every platform and checks them against examples/quill, and runs the
+# publish steps with --dry-run. Nothing leaves the workflow.
+#
+# With `publish` on, three more jobs follow, each waiting for approval in the
+# `release` environment: npm (with provenance), the VS Code Marketplace, and a
+# draft GitHub release with the binaries. A person publishes the draft.
+# RELEASING.md is the whole procedure, with its secrets and how to roll back.
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to npm, the VS Code Marketplace, and a draft GitHub release (each after approval)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version:
+    name: check the version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - id: check
+        env:
+          PUBLISH: ${{ inputs.publish }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_TYPE" = tag ]; then
+            version=$(node scripts/release/version.mjs --check --tag "$REF_NAME")
+          elif [ "$PUBLISH" = true ]; then
+            echo "::error::Publishing runs from the version tag: pick it under \"Use workflow from\"."
+            exit 1
+          else
+            version=$(node scripts/release/version.mjs --check)
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  # Each binary is built natively on its own platform, where it's also run.
+  # Linux builds on Ubuntu 22.04, so the binary needs glibc 2.35 or later.
+  build:
+    name: build (${{ matrix.target }})
+    needs: version
+    strategy:
+      matrix:
+        include:
+          - { target: darwin-arm64, os: macos-15, exe: ascribe }
+          - { target: darwin-x64, os: macos-15-intel, exe: ascribe }
+          - { target: linux-arm64, os: ubuntu-22.04-arm, exe: ascribe }
+          - { target: linux-x64, os: ubuntu-22.04, exe: ascribe }
+          - { target: win32-x64, os: windows-2022, exe: ascribe.exe }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      # On Windows, the C runtime is linked in, so the binary doesn't need the
+      # Visual C++ redistributable.
+      RUSTFLAGS: ${{ matrix.target == 'win32-x64' && '-C target-feature=+crt-static' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install
+      # No build cache: a release is built from scratch.
+      - run: cargo build -p tessera-cli --release --locked
+      - name: Check the binary
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          test "$(target/release/${{ matrix.exe }} --version)" = "ascribe $VERSION"
+          target/release/${{ matrix.exe }} check --config examples/quill --deny-warnings
+      # A tarball keeps the executable bit, which an artifact doesn't.
+      - run: tar -czf binary-${{ matrix.target }}.tar.gz -C target/release ${{ matrix.exe }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: binary-${{ matrix.target }}.tar.gz
+          if-no-files-found: error
+
+  pack:
+    name: pack
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
+          path: artifacts
+      - name: Unpack the binaries
+        run: |
+          for archive in artifacts/*/binary-*.tar.gz; do
+            target=$(basename "$archive" .tar.gz)
+            target=${target#binary-}
+            mkdir -p "binaries/$target"
+            tar -xzf "$archive" -C "binaries/$target"
+          done
+      - run: node scripts/release/pack.mjs --binaries binaries
+      - name: Check the publish steps without publishing
+        run: |
+          node scripts/release/publish.mjs npm --dry-run
+          node scripts/release/publish.mjs marketplace --dry-run
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: dist/release
+          if-no-files-found: error
+
+  # Each platform installs its packages as a user would, and checks them.
+  smoke:
+    name: smoke test (${{ matrix.target }})
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: darwin-arm64, os: macos-15, vscode: darwin-arm64 }
+          - { target: darwin-x64, os: macos-15-intel, vscode: darwin }
+          - { target: linux-arm64, os: ubuntu-22.04-arm, vscode: linux-arm64 }
+          - { target: linux-x64, os: ubuntu-22.04, vscode: linux-x64 }
+          - { target: win32-x64, os: windows-2022, vscode: win32-x64-archive }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: dist/release
+      - name: Install @ascribed/cli from its tarballs and check examples/quill
+        run: |
+          mkdir -p "$RUNNER_TEMP/npm"
+          cd "$RUNNER_TEMP/npm"
+          npm init -y > /dev/null
+          npm install --offline --ignore-scripts --no-audit --no-fund \
+            "$GITHUB_WORKSPACE"/dist/release/npm/ascribed-cli-${{ matrix.target }}-*.tgz \
+            "$GITHUB_WORKSPACE"/dist/release/npm/ascribed-cli-[0-9]*.tgz
+          ./node_modules/.bin/ascribe --version
+          ./node_modules/.bin/ascribe check --config "$GITHUB_WORKSPACE/examples/quill" --deny-warnings
+      # VS Code needs a display and a few libraries on Linux.
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libnss3 libgtk-3-0 libxss1 libasound2 libgbm1
+      - name: Install the extension package in VS Code and check examples/quill
+        env:
+          RUN: ${{ runner.os == 'Linux' && 'xvfb-run -a' || '' }}
+        run: $RUN node scripts/release/smoke-vsix.mjs dist/release/vsix/ascribe-vscode-${{ matrix.target }}-*.vsix --vscode-platform ${{ matrix.vscode }}
+
+  npm:
+    name: publish to npm
+    if: inputs.publish
+    needs: smoke
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      # npm provenance signs each package with the workflow's identity.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+      # npm 11.5.1 or later also supports trusted publishing, with no token.
+      - run: npm install --global npm@^11.5.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: dist/release
+      - run: node scripts/release/publish.mjs npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  marketplace:
+    name: publish to the VS Code Marketplace
+    if: inputs.publish
+    needs: npm
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: dist/release
+      - run: node scripts/release/publish.mjs marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+  github:
+    name: draft the GitHub release
+    if: inputs.publish
+    needs: [version, marketplace]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: dist/release
+      - name: Create the draft, or update its files on a rerun
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          node scripts/release/version.mjs --notes > "$RUNNER_TEMP/notes.md"
+          files=(dist/release/github/* dist/release/vsix/* dist/release/SHA256SUMS)
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            gh release upload "v$VERSION" "${files[@]}" --clobber
+          else
+            prerelease=()
+            if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
+            gh release create "v$VERSION" "${files[@]}" --draft --verify-tag \
+              --title "Ascribe $VERSION" --notes-file "$RUNNER_TEMP/notes.md" "${prerelease[@]}"
+          fi

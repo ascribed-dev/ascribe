@@ -1,6 +1,6 @@
 # @ascribed/elements
 
-The custom elements Ascribe's site output uses (SPEC §9.7). They implement
+The custom elements [Ascribe](https://github.com/KyleBlankRollins/tessera)'s site output uses. They implement
 [CONTRACT.md](CONTRACT.md) exactly: `<ascribe-note>`, `<ascribe-steps>`,
 `<ascribe-tabs>` with `<ascribe-tab>`, `<ascribe-availability>` with
 `<ascribe-availability-target>`, and `<ascribe-group>`.
@@ -8,7 +8,9 @@ The custom elements Ascribe's site output uses (SPEC §9.7). They implement
 - Elements render into the light DOM and are styled by CSS.
 - Only `<ascribe-tabs>` uses JavaScript. Without the script, every tab shows
   with its label; nothing is hidden.
-- The package is `private` until phase 27.
+
+An Astro site gets them through `@ascribed/astro`, whose `<Elements />`
+component loads the stylesheet and the script.
 
 ## Using it
 

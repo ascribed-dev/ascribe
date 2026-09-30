@@ -20,7 +20,7 @@ cargo test -p tessera-conformance --lib --test harness
 
 `cargo test --workspace` runs all of these. The run fails if any case fails or `SKIPS.toml` is stale.
 
-Every case runs through the runner: each area tag has an adapter (`tests/adapters/`), and `SKIPS.toml` holds only the tags whose phase isn't built (`output`). The `page-check` adapter reports a build's diagnostics from `tessera_check::check_pages`, the entry point `ascribe check`, `ascribe build`, and the language server share.
+Every case runs through the runner: each area tag has an adapter (`tests/adapters/`), and `SKIPS.toml` is empty, so nothing is skipped. (No case carries the `output` tag; the emitters' outputs are tested in `tessera-emit`. A case that uses it needs an adapter first.) The `page-check` adapter reports a build's diagnostics from `tessera_check::check_pages`, the entry point `ascribe check`, `ascribe build`, and the language server share.
 
 ## Layout
 

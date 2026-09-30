@@ -88,6 +88,9 @@ pub struct Entry {
     /// Why the diagnostic was retired, if it was.
     #[serde(default)]
     pub retired: Option<String>,
+    /// How to fix the problem, for the diagnostics reference.
+    #[serde(default)]
+    pub fix: Option<String>,
 }
 
 #[derive(Deserialize)]

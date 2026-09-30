@@ -1,11 +1,18 @@
 {
   "name": "ascribe-vscode",
   "displayName": "Ascribe",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "The Ascribe extension for VS Code.",
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyleBlankRollins/tessera.git",
+    "directory": "packages/vscode"
+  },
+  "homepage": "https://github.com/KyleBlankRollins/tessera/tree/main/packages/vscode#readme",
+  "bugs": "https://github.com/KyleBlankRollins/tessera/issues",
   "publisher": "Ascribe",
   "engines": {
     "vscode": "^1.90.0"
@@ -14,13 +21,20 @@
     "Programming Languages",
     "Linters"
   ],
+  "keywords": [
+    "ascribe",
+    "markdown",
+    "documentation",
+    "docs-as-code",
+    "language-server"
+  ],
   "main": "./dist/extension.cjs",
   "activationEvents": [
     "workspaceContains:**/ascribe.toml",
     "onWebviewPanel:ascribe.preview"
   ],
   "ascribe": {
-    "minServerVersion": "0.0.0"
+    "minServerVersion": "0.1.0"
   },
   "contributes": {
     "commands": [
@@ -111,7 +125,7 @@
       {
         "id": "ascribeAttributeKey",
         "superType": "property",
-        "description": "An attribute key in a `{\u2026}` block."
+        "description": "An attribute key in a `{…}` block."
       },
       {
         "id": "ascribeAttributeValue",
@@ -131,7 +145,7 @@
       {
         "id": "ascribeTitle",
         "superType": "string",
-        "description": "A title line (SPEC \u00a73.7), shown distinctly so an accidental title stands out."
+        "description": "A title line (SPEC §3.7), shown distinctly so an accidental title stands out."
       },
       {
         "id": "ascribePhrase",
@@ -241,18 +255,19 @@
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
+    "@ascribed/elements": "workspace:*",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.0.0",
     "@types/vscode": "~1.90.0",
     "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.25.0",
     "mocha": "^11.0.0",
+    "playwright-core": "^1.50.0",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.15",
     "vscode-oniguruma": "^2.0.1",
-    "vscode-textmate": "^9.2.0",
-    "@ascribed/elements": "workspace:*",
-    "playwright-core": "^1.50.0"
+    "vscode-textmate": "^9.2.0"
   },
   "capabilities": {
     "untrustedWorkspaces": {
