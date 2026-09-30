@@ -268,6 +268,7 @@ You can run Quill in the browser with no local setup.
 - The title line MUST be directly above the directive line, with no blank line between.
 - A title line MUST begin a block: it follows a blank line, a heading, a directive line, or the start of its container. A `.` line that continues a paragraph is ordinary text.
 - If the next line isn't a directive that accepts a title, the `.` line is ordinary text. Prose such as `.NET is a framework` is therefore unaffected. When it sits directly on top of a directive that doesn't accept a title, it stays ordinary text, but processors SHOULD warn that it may be a misplaced title (§8.2); `\.` silences the warning.
+- A title whose text starts with a dot escapes it, as CommonMark escapes any punctuation: `.\.NET` is the title `.NET` (Q193). `..NET` isn't a title line.
 - A line that starts with `.` and a space (`. Try it`) is never a title. When it sits directly above a directive that accepts a title, processors SHOULD warn that it was probably meant as one.
 - Titles serve as a note's heading, a `@details` summary, and a labeled `@variant` arm's label (§4.3).
 
@@ -341,7 +342,7 @@ Gives a heading an explicit, stable id.
 @id: config-setup
 ```
 
-- **Form:** line. **Binding:** preceding heading (at the top of the section, §3.8). **Primary:** REQUIRED identifier (letters, digits, hyphens).
+- **Form:** line. **Binding:** preceding heading (at the top of the section, §3.8). **Primary:** REQUIRED identifier (letters, digits, hyphens, underscores, and periods). Underscores and periods are allowed because slugs can contain underscores (`snake_case-names`) and existing sites' anchors use both (`ece_setup`, `v1.2`), so an `@id` can keep a published URL fragment.
 - The id replaces the heading's slug, as both its source id and its page id (§5.5). An id that isn't valid still replaces the slug, so a link that uses it works once the id is fixed, and a heading with several `@id` lines takes the first; each mistake is reported once.
 - The id MUST be unique within its page.
 - The id names the heading's section, which links (§5.2) and `@include` (§4.2) can both target.
@@ -571,6 +572,8 @@ See the [streaming API reference]({api}streaming).
   - `{key}` text in prose whose key isn't declared, which is literal today and would silently become a phrase if the key were declared later (`\{` silences it). Prose here is every inline position: paragraphs, headings, link text, alt text, table cells, titles, and text primaries, but not destinations, fences with `phrases=true`, or frontmatter;
   - when a key is added to the registry, the pages whose existing literal `{key}` text would change.
 
+  Processors SHOULD also warn about a declared phrase written directly between two more braces, `{{key}}`: it's `{`, the phrase, and `}`, so the value appears between literal braces. That spelling is almost always a substitution from another tool (Hugo, Jinja, Elastic's docs) that wasn't converted; `\{` silences the warning for a brace that's meant (Q191).
+
 ### 5.2 Links
 
 Links are CommonMark links. Their destinations are **file paths**.
@@ -723,7 +726,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Title | Title given to a directive that doesn't accept one | Warning |
 | Title | A `. ` line (dot and space) directly above a directive that accepts a title | Warning |
 | `@id` | Duplicate id on a page, including ids from included content (page level) | Error |
-| `@id` | Id containing characters other than letters, digits, and hyphens | Error |
+| `@id` | Id containing characters other than letters, digits, hyphens, underscores, and periods | Error |
 | `@include` | Target file doesn't exist | Error |
 | `@include` | Target id doesn't exist in the target file (page level) | Error |
 | `@include` | Include cycle | Error |
@@ -752,6 +755,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Images | Missing alt text | Warning |
 | Images | Required image attribute missing | Error |
 | Phrases | `{key}` in prose whose key isn't declared | Warning |
+| Phrases | A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool | Warning |
 | Headings | No `@id`, and the heading contains a phrase | Warning |
 | Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji) | Warning |
 | Headings | No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered (page level) | Warning |

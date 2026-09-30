@@ -16,7 +16,8 @@
   ],
   "main": "./dist/extension.cjs",
   "activationEvents": [
-    "workspaceContains:**/ascribe.toml"
+    "workspaceContains:**/ascribe.toml",
+    "onWebviewPanel:ascribe.preview"
   ],
   "ascribe": {
     "minServerVersion": "0.0.0"
@@ -31,6 +32,17 @@
       {
         "command": "ascribe.showOutput",
         "title": "Show Server Output",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.openPreview",
+        "title": "Open Preview to the Side",
+        "category": "Ascribe",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "ascribe.selectPreviewBuild",
+        "title": "Select Preview Build",
         "category": "Ascribe"
       }
     ],
@@ -197,6 +209,21 @@
         {
           "command": "ascribe.showOutput",
           "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.openPreview",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.selectPreviewBuild",
+          "when": "ascribe.active && ascribe.previewOpen"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "ascribe.openPreview",
+          "when": "ascribe.active && resourceLangId == markdown",
+          "group": "navigation"
         }
       ]
     }
@@ -204,10 +231,11 @@
   "scripts": {
     "build": "node esbuild.mjs",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.webview.json",
     "test": "vitest run --passWithNoTests",
     "test:integration": "node esbuild.mjs --tests && node out/integration/run.cjs",
-    "test:integration:headless": "xvfb-run -a pnpm run test:integration"
+    "test:integration:headless": "xvfb-run -a pnpm run test:integration",
+    "test:parity": "vitest run --config vitest.parity.config.ts"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -222,7 +250,9 @@
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.15",
     "vscode-oniguruma": "^2.0.1",
-    "vscode-textmate": "^9.2.0"
+    "vscode-textmate": "^9.2.0",
+    "@ascribed/elements": "workspace:*",
+    "playwright-core": "^1.50.0"
   },
   "capabilities": {
     "untrustedWorkspaces": {

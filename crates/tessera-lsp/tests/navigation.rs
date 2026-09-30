@@ -299,6 +299,8 @@ fn phrases_show_their_values() {
     // Not after the braces are closed, and not in inline code.
     assert!(items(&complete(&mut client, &page, "{product} x$0\n")).is_empty());
     assert!(items(&complete(&mut client, &page, "`{pro$0\n")).is_empty());
+    assert!(items(&complete(&mut client, &page, "Use ``{pro$0}`` here.\n")).is_empty());
+    assert!(items(&complete(&mut client, &page, "Use ``{pro$0\n")).is_empty());
 }
 
 #[test]
@@ -389,6 +391,25 @@ fn link_completion_finds_a_heading_by_title() {
         new_text(&item(&definition, "Rotate keys")),
         "keys.md#rotate-keys"
     );
+}
+
+#[test]
+fn heading_completion_reports_truncation_for_links_and_includes() {
+    let headings = (0..120)
+        .map(|number| format!("## Heading {number}\n"))
+        .collect::<String>();
+    let f = Fixture::new(
+        MODEL,
+        &[("docs/page.md", ""), ("docs/target.md", &headings)],
+    );
+    let page = f.path("docs/page.md");
+    let mut client = Client::start(&f.root());
+
+    for marked in ["[x](target.md#$0\n", "@include: target.md#$0\n"] {
+        let result = complete(&mut client, &page, marked);
+        assert_eq!(result["items"].as_array().unwrap().len(), 100);
+        assert_eq!(result["isIncomplete"], true);
+    }
 }
 
 #[test]
@@ -817,6 +838,24 @@ fn every_link_and_include_is_a_document_link() {
         links[3]["range"],
         json!({ "start": { "line": 2, "character": 10 }, "end": { "line": 2, "character": 37 } })
     );
+}
+
+#[test]
+fn external_document_links_expand_destination_phrases() {
+    let model = format!("{MODEL}\n[phrases]\nsite = \"https://example.com\"\n");
+    let f = Fixture::new(&model, &[("docs/page.md", "See [site]({site}/docs).\n")]);
+    let page = f.path("docs/page.md");
+    let mut client = Client::start(&f.root());
+    client.open(&page, 1, "See [site]({site}/docs).\n");
+
+    let links = client
+        .request(
+            "textDocument/documentLink",
+            json!({ "textDocument": text_doc(&page) }),
+        )
+        .response_result
+        .expect("a result");
+    assert_eq!(links[0]["target"], "https://example.com/docs");
 }
 
 #[test]

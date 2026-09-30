@@ -192,6 +192,8 @@ impl Ctx<'_> {
                             Issue::new(diagnostics::PHRASE_UNDECLARED, self.location(p.span))
                                 .with_arg("key", format!("{{{}}}", p.key));
                         self.report(issue);
+                    } else {
+                        self.check_double_braces(p);
                     }
                 }
                 InlineKind::Emphasis(children) | InlineKind::Strong(children) => {
@@ -309,9 +311,41 @@ impl Ctx<'_> {
         }
     }
 
-    /// `@id` values: letters, digits, and hyphens (SPEC §4.1).
+    /// Resolved Q191: a declared phrase directly between two more braces,
+    /// `{{key}}`, is `{`, the phrase, and `}`: almost always a substitution
+    /// from another tool that wasn't converted. An escaped outer brace
+    /// (`\{{key}}`) is meant, and isn't reported.
+    fn check_double_braces(&mut self, p: &tessera_syntax::Phrase) {
+        let text = self.file.text.as_bytes();
+        let (start, end) = (p.span.start(), p.span.end());
+        let opened = start >= 1
+            && text.get(start - 1) == Some(&b'{')
+            && !(start >= 2 && text.get(start - 2) == Some(&b'\\'));
+        let closed = text.get(end) == Some(&b'}');
+        if !(opened && closed) {
+            return;
+        }
+        let whole = Span::new(start - 1, end + 1);
+        let issue = Issue::new(diagnostics::PHRASE_DOUBLE_BRACES, self.location(whole))
+            .with_arg("key", format!("{{{}}}", p.key))
+            .with_fix(Fix {
+                title: "Remove the outer braces".to_owned(),
+                file: self.id,
+                edits: vec![
+                    TextEdit::delete(Span::new(start - 1, start)),
+                    TextEdit::delete(Span::new(end, end + 1)),
+                ],
+            });
+        self.report(issue);
+    }
+
+    /// `@id` values: letters, digits, hyphens, underscores, and periods
+    /// (SPEC §4.1; Q196).
     fn check_id(&mut self, id: &str, span: Span) {
-        let valid = !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+        let valid = !id.is_empty()
+            && id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
         if !valid {
             let issue = Issue::new(diagnostics::ID_INVALID, self.location(span))
                 .with_arg("id", id.to_owned());

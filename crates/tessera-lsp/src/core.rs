@@ -133,6 +133,8 @@ pub(crate) struct Core {
     pub model_problem: Option<ModelProblem>,
     pub shutdown: bool,
     pub can_watch: bool,
+    /// What `ascribe/preview` keeps between requests (`preview.rs`).
+    pub(crate) preview_routes: crate::preview::RouteCache,
     epoch: u64,
     published: HashMap<PathBuf, Published>,
     next_id: i32,
@@ -150,6 +152,7 @@ impl Core {
             model_problem: None,
             shutdown: false,
             can_watch: false,
+            preview_routes: Default::default(),
             epoch: 0,
             published: HashMap::new(),
             next_id: 0,

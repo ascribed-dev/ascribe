@@ -11,6 +11,8 @@
 //   quill       a copy of examples/quill with a broken page added, against the
 //               real `ascribe lsp`. Needs ASCRIBE_BIN, the path to a built
 //               `ascribe`; skipped without it.
+//   preview     a copy of examples/quill, the preview panel (phase 25), against
+//               the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -54,7 +56,15 @@ const suites: Suite[] = [
       return { "ascribe.path": realServer };
     },
   },
+  {
+    name: "preview",
+    fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: () => ({ "ascribe.path": realServer }),
+  },
 ];
+
+/** The suites that run the real language server. */
+const needsServer = new Set(["quill", "preview"]);
 
 async function main(): Promise<void> {
   // A process an extension host started has this set, and VS Code would then
@@ -65,9 +75,9 @@ async function main(): Promise<void> {
   let ran = 0;
   for (const suite of suites) {
     if (only && only !== suite.name) continue;
-    if (suite.name === "quill" && !realServer) {
+    if (needsServer.has(suite.name) && !realServer) {
       console.log(
-        "Skipping suite quill: set ASCRIBE_BIN to a built `ascribe` (phase 15's server).",
+        `Skipping suite ${suite.name}: set ASCRIBE_BIN to a built \`ascribe\` (phase 15's server).`,
       );
       continue;
     }

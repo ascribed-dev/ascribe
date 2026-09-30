@@ -6,74 +6,33 @@
 //! `main` rather than a benchmark framework: nothing here needs statistics
 //! beyond those.
 //!
-//! The project: 3,000 pages in 30 sections, 100 fragments, and 60 images. Every
-//! page has a title, a few headings, an include of one of the fragments, a
-//! few links to other pages (a third to a heading), and an image; one page in
-//! ten also has an availability marker.
+//! The project is the standard synthetic one (`tessera-synthetic`, shared with
+//! the language server's benchmarks): 3,000 pages in 30 sections, 100
+//! fragments, and 60 images. Every page has a title, a few headings, an include
+//! of one of the fragments, a few links to other pages (a third to a heading),
+//! and an image; one page in ten also has an availability marker.
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::print_stdout)]
 
-use std::fmt::Write as _;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use tessera_core::{FileId, RelPath};
 use tessera_resolve::{Change, IncrementalProject, Layout, MemoryFs, Project};
+use tessera_synthetic::{CONTENT_ROOT, FRAGMENTS, IMAGES, MODEL, Synthetic};
 
-const PAGES: usize = 3000;
-const FRAGMENTS: usize = 100;
-const IMAGES: usize = 60;
 const RUNS: usize = 200;
 
-const MODEL: &str = r#"spec = "0.1"
-
-[project]
-content-root = "docs"
-
-[phrases]
-product = "Quill"
-
-[dimensions.deployment]
-values = ["cloud", "self-managed"]
-versionless = ["cloud"]
-
-[builds.site]
-variants = "switch"
-availability = "badge"
-"#;
-
 fn page_path(i: usize) -> String {
-    format!("s{}/p{i}.md", i % 30)
+    Synthetic::standard().page_path(i)
 }
 
 fn page_text(i: usize, edit: usize) -> String {
-    let mut t = String::new();
-    let _ = write!(
-        t,
-        "---\ntitle: Page {i}\n---\n\n# Page {i}\n\nIntro for {{product}}, revision {edit}.\n\n"
-    );
-    let _ = write!(
-        t,
-        "## Setup\n\nSteps for page {i}.\n\n## Usage\n\nMore.\n\n"
-    );
-    let _ = write!(t, "@include: /_f/f{}.md\n\n", i % FRAGMENTS);
-    for k in 1..=3 {
-        let target = (i * 7 + k * 131) % PAGES;
-        if k == 1 {
-            let _ = writeln!(t, "See [the setup](/{}#setup).", page_path(target));
-        } else {
-            let _ = writeln!(t, "See [page {target}](/{}).", page_path(target));
-        }
-    }
-    let _ = write!(t, "\n![diagram](/img/i{}.png)\n", i % IMAGES);
-    if i.is_multiple_of(10) {
-        t.push_str("\n## Cloud only\n@available: cloud\n\nCloud text.\n");
-    }
-    t
+    Synthetic::standard().page_text(i, &format!("revision {edit}."))
 }
 
 fn fragment_text(i: usize, edit: usize) -> String {
-    format!("## Shared {i}\n\nShared text, revision {edit}.\n")
+    Synthetic::standard().fragment_text(i, &format!("Shared text, revision {edit}."))
 }
 
 fn summarize(name: &str, mut times: Vec<Duration>, note: &str) {
@@ -88,23 +47,25 @@ fn summarize(name: &str, mut times: Vec<Duration>, note: &str) {
 }
 
 fn main() {
+    let synthetic = Synthetic::standard();
+    let pages = synthetic.pages;
     let model = Arc::new(tessera_model::load_str(MODEL, FileId::new(0)).expect("a model"));
     let layout = Layout::from_model(&model);
     let mut fs = MemoryFs::new(&layout);
-    for i in 0..PAGES {
+    for i in 0..pages {
         fs = fs.with_source(&page_path(i), &page_text(i, 0));
     }
     for i in 0..FRAGMENTS {
-        fs = fs.with_source(&format!("_f/f{i}.md"), &fragment_text(i, 0));
+        fs = fs.with_source(&synthetic.fragment_path(i), &fragment_text(i, 0));
     }
     for i in 0..IMAGES {
-        fs = fs.with_file(&format!("docs/img/i{i}.png"), "");
+        fs = fs.with_file(&format!("{CONTENT_ROOT}/{}", synthetic.image_path(i)), "");
     }
 
     let start = Instant::now();
     let scratch = Project::load(model.clone(), layout.clone(), &fs);
     println!(
-        "from-scratch load of {PAGES} pages, {FRAGMENTS} fragments: {:.3?} ({} files)",
+        "from-scratch load of {pages} pages, {FRAGMENTS} fragments: {:.3?} ({} files)",
         start.elapsed(),
         scratch.files().count()
     );
@@ -143,6 +104,7 @@ fn main() {
                 last = Some(affected);
             }
             let affected = last.expect("ran");
+            tessera_synthetic::report::record(&format!("incremental/{name}"), &mut times.clone());
             summarize(
                 name,
                 times,

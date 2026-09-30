@@ -39,7 +39,7 @@ pub(crate) fn document_links(ctx: &Ctx) -> Vec<DocumentLink> {
             continue;
         };
         let (target, tooltip) = match resolution {
-            Resolution::External => (Uri::from_str(&reference.destination).ok(), None),
+            Resolution::External => (Uri::from_str(&reference.expanded_destination).ok(), None),
             other => {
                 let location = resolution_location(ctx, &mut lines, other);
                 let line = location.as_ref().map(|l| l.range.start.line);

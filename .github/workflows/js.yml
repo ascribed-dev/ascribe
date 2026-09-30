@@ -83,3 +83,7 @@ jobs:
       - run: pnpm --filter @ascribed/example-astro-site test:e2e
         env:
           ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
+      # The editor preview (phase 25) against the site this job just proved.
+      - run: pnpm --filter ascribe-vscode test:parity
+        env:
+          ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe

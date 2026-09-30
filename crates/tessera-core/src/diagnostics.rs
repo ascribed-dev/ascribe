@@ -188,7 +188,7 @@ pub const ATTRIBUTE_DUPLICATE_KEY: DiagnosticSlug = DiagnosticSlug("attribute-du
 /// `ASC057`, error, file level: SPEC §8.2, "`@available` | Spec that doesn't parse, in a directive or in `available` frontmatter".
 pub const AVAILABLE_SYNTAX: DiagnosticSlug = DiagnosticSlug("available-syntax");
 
-/// `ASC058`, error, file level: SPEC §8.2, "`@id` | Id containing characters other than letters, digits, and hyphens".
+/// `ASC058`, error, file level: SPEC §8.2, "`@id` | Id containing characters other than letters, digits, hyphens, underscores, and periods".
 pub const ID_INVALID: DiagnosticSlug = DiagnosticSlug("id-invalid");
 
 /// `ASC059`, error, file level: SPEC §8.2, "Images | Required image attribute missing".
@@ -408,6 +408,9 @@ pub const HEADING_EMPTY_SLUG: DiagnosticSlug = DiagnosticSlug("heading-empty-slu
 /// `ASC125`, warning, file level: SPEC §8.2, "`@include` | `{heading=false}` without an `#id`, which has no effect".
 pub const INCLUDE_HEADING_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("include-heading-without-id");
 
+/// `ASC126`, warning, file level: SPEC §8.2, "Phrases | A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool".
+pub const PHRASE_DOUBLE_BRACES: DiagnosticSlug = DiagnosticSlug("phrase-double-braces");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -535,4 +538,5 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_UNREADABLE,
     HEADING_EMPTY_SLUG,
     INCLUDE_HEADING_WITHOUT_ID,
+    PHRASE_DOUBLE_BRACES,
 ];

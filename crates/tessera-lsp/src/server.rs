@@ -373,6 +373,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                 })
             }
             ExecuteCommand::METHOD => execute_command(shared, &request),
+            crate::preview::METHOD => preview_request(shared, &request),
             method => Err(Response::new_err(
                 request.id.clone(),
                 ErrorCode::MethodNotFound as i32,
@@ -510,6 +511,23 @@ fn semantic_tokens_request(
         data,
     })
     .map_err(|e| {
+        Response::new_err(
+            request.id.clone(),
+            ErrorCode::InternalError as i32,
+            e.to_string(),
+        )
+    })
+}
+
+fn preview_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: crate::preview::PreviewParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let target = shared.lock().preview_target(&params.text_document.uri);
+    let result = match target {
+        Ok(target) => crate::preview::preview(&target, params.build.as_deref()),
+        Err(result) => *result,
+    };
+    serde_json::to_value(result).map_err(|e| {
         Response::new_err(
             request.id.clone(),
             ErrorCode::InternalError as i32,

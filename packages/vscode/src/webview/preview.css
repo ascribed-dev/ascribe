@@ -1,0 +1,70 @@
+/* The preview's own chrome. The page itself is styled by the element library's
+   stylesheet and the editor's theme colors. */
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  padding: 0 1.5rem 3rem;
+  color: var(--vscode-editor-foreground, CanvasText);
+  background: var(--vscode-editor-background, Canvas);
+  font-family: var(--vscode-font-family, system-ui, sans-serif);
+  line-height: 1.6;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 -1.5rem 1rem;
+  padding: 0.5rem 1.5rem;
+  background: var(--vscode-editor-background, Canvas);
+  border-bottom: 1px solid
+    var(--vscode-panel-border, color-mix(in srgb, currentColor 25%, transparent));
+}
+
+.toolbar select {
+  color: var(--vscode-dropdown-foreground, inherit);
+  background: var(--vscode-dropdown-background, inherit);
+  border: 1px solid var(--vscode-dropdown-border, currentColor);
+  font: inherit;
+}
+
+[data-role="build-description"] {
+  opacity: 0.7;
+  font-size: 0.85em;
+}
+
+.problems {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.problems li {
+  margin: 0.25rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid currentColor;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.problems li[data-severity="error"] {
+  color: var(--vscode-errorForeground, #c00);
+}
+
+.problems li[data-severity="warning"] {
+  color: var(--vscode-editorWarning-foreground, #b80);
+}
+
+main img {
+  max-width: 100%;
+  height: auto;
+}
+
+main pre {
+  overflow-x: auto;
+}

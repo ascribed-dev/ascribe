@@ -115,9 +115,7 @@ fn report_failure(
     };
     let _ = match args.format {
         Format::Text => {
-            let shown = diagnostics
-                .iter()
-                .try_for_each(|d| text::write_diagnostic(out, &files, d, color));
+            let shown = text::write_diagnostics(out, &files, &diagnostics, color);
             let _ = shown;
             writeln!(err, "error: {message}")
         }

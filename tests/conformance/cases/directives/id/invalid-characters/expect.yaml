@@ -1,6 +1,6 @@
 description: >-
-  An id may contain only letters, digits, and hyphens; an underscore or a
-  dot is an error.
+  An id may contain only letters, digits, hyphens, underscores, and
+  periods (Q196); a colon or a slash is an error.
 spec: ["4.1", "8.2"]
 tags: [check]
 

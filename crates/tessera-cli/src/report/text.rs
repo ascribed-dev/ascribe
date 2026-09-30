@@ -3,7 +3,7 @@
 use std::io::{self, Write};
 use std::ops::Range;
 
-use ariadne::{Config, Label, Report, ReportKind, sources};
+use ariadne::{Cache, Config, FnCache, Label, Report, ReportKind};
 use tessera_check::{Diagnostic, Severity};
 
 use super::{Counts, FileTable};
@@ -18,10 +18,30 @@ pub fn write(
     files_checked: usize,
     color: bool,
 ) -> io::Result<()> {
-    for d in diagnostics {
-        write_diagnostic(out, files, d, color)?;
-    }
+    write_diagnostics(out, files, diagnostics, color)?;
     writeln!(out, "{}", summary(Counts::of(diagnostics), files_checked))
+}
+
+/// Writes each diagnostic with its snippet.
+///
+/// The snippets share one source cache, which reads a file's text and builds
+/// its line table the first time a diagnostic shows that file, so the cost is
+/// the diagnostics plus the files they show, not their product.
+pub fn write_diagnostics(
+    out: &mut dyn Write,
+    files: &FileTable,
+    diagnostics: &[Diagnostic],
+    color: bool,
+) -> io::Result<()> {
+    let mut cache = FnCache::new(|path: &String| {
+        files
+            .text_at(path)
+            .ok_or_else(|| format!("no file {path} in the report"))
+    });
+    for d in diagnostics {
+        write_diagnostic(out, files, &mut cache, d, color)?;
+    }
+    Ok(())
 }
 
 /// The summary line: `checked 12 files: 1 error, 2 warnings`.
@@ -35,10 +55,11 @@ pub fn summary(counts: Counts, files_checked: usize) -> String {
     )
 }
 
-/// Writes one diagnostic with its snippet.
-pub fn write_diagnostic(
+/// Writes one diagnostic with its snippet, from the report's source cache.
+fn write_diagnostic(
     out: &mut dyn Write,
     files: &FileTable,
+    cache: &mut impl Cache<String>,
     d: &Diagnostic,
     color: bool,
 ) -> io::Result<()> {
@@ -64,7 +85,6 @@ pub fn write_diagnostic(
     if let Some(fix) = d.fixes.first() {
         report = report.with_help(&fix.title);
     }
-    let cache = sources(files.texts());
     report.finish().write(cache, out)
 }
 

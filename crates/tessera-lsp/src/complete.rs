@@ -20,7 +20,7 @@ use tessera_core::schema::{AttributeSchema, AttributeType, Attributes, Origin, S
 use tessera_core::{LineIndex, RelPath, percent_decode};
 use tessera_resolve::references::{include_target, reference_target};
 use tessera_resolve::{FileIndex, RefKind, Target};
-use tessera_syntax::{Block, BlockKind, CodeBlock};
+use tessera_syntax::{Block, BlockKind, CodeBlock, Inline, InlineKind};
 
 use crate::hover::{attribute_line, describe_directive, type_name};
 use crate::nav::{Ctx, encode_destination, line_prefix, relative_path};
@@ -380,7 +380,7 @@ impl Cx<'_> {
     /// Prose: `{` starts a phrase (or an image's attribute block), `](` a link
     /// destination. `text` is the line up to the cursor.
     fn prose(&self, text: &str, allow_links: bool) -> Option<CompletionResponse> {
-        if text.matches('`').count() % 2 == 1 {
+        if code_span_at(&self.file.document.blocks, self.offset) || code_span_open(text) {
             return None;
         }
         let brace = text.rfind('{').filter(|&i| !text[i..].contains('}'));
@@ -453,7 +453,8 @@ impl Cx<'_> {
                 Target::Local(local) => local.path,
                 Target::External => None,
             };
-            return list(self.headings_of(target.as_ref(), id, false, angle), false);
+            let (items, incomplete) = self.headings_of(target.as_ref(), id, false, angle);
+            return list(items, incomplete);
         }
         self.search(&percent_decode(raw), raw.len(), angle)
     }
@@ -467,18 +468,19 @@ impl Cx<'_> {
         typed: &str,
         include: bool,
         raw: bool,
-    ) -> Vec<CompletionItem> {
+    ) -> (Vec<CompletionItem>, bool) {
         let Some(target) = target else {
-            return Vec::new();
+            return (Vec::new(), false);
         };
         let Some(file) = self.ctx.snapshot.file(target) else {
-            return Vec::new();
+            return (Vec::new(), false);
         };
         if !include && *target != self.ctx.path && self.ctx.model.is_fragment(target.as_str()) {
-            return Vec::new();
+            return (Vec::new(), false);
         }
         let wanted = percent_decode(typed).to_lowercase();
-        file.headings
+        let mut matches: Vec<_> = file
+            .headings
             .iter()
             .filter(|h| !h.source_id.is_empty())
             .filter(|h| {
@@ -486,7 +488,12 @@ impl Cx<'_> {
                     || h.source_id.to_lowercase().contains(&wanted)
                     || h.text.to_lowercase().contains(&wanted)
             })
-            .take(LIMIT)
+            .take(LIMIT + 1)
+            .collect();
+        let incomplete = matches.len() > LIMIT;
+        matches.truncate(LIMIT);
+        let items = matches
+            .into_iter()
             .enumerate()
             .map(|(i, h)| {
                 let insert = if raw {
@@ -501,7 +508,8 @@ impl Cx<'_> {
                 item.sort_text = Some(format!("{i:03}"));
                 item
             })
-            .collect()
+            .collect();
+        (items, incomplete)
     }
 
     // SPEC-QUESTION(Q161)
@@ -637,7 +645,8 @@ impl Cx<'_> {
     fn include(&self, typed: &str) -> CompletionResponse {
         if let Some((path_part, id)) = typed.split_once('#') {
             let target = include_target(path_part, &self.ctx.path).target;
-            return list(self.headings_of(target.as_ref(), id, true, false), false);
+            let (items, incomplete) = self.headings_of(target.as_ref(), id, true, false);
+            return list(items, incomplete);
         }
         let wanted = percent_decode(typed).to_lowercase();
         let root = wanted.starts_with('/');
@@ -905,6 +914,73 @@ fn code_block_at(blocks: &[Block], offset: usize) -> Option<&CodeBlock> {
         }
     }
     None
+}
+
+fn code_span_at(blocks: &[Block], offset: usize) -> bool {
+    blocks.iter().any(|block| {
+        if !(block.span.start() < offset && offset < block.span.end()) {
+            return false;
+        }
+        match &block.kind {
+            BlockKind::Heading(heading) => code_inline_at(&heading.inlines, offset),
+            BlockKind::Paragraph(paragraph) => code_inline_at(&paragraph.inlines, offset),
+            BlockKind::BlockQuote(quote) => code_span_at(&quote.children, offset),
+            BlockKind::List(list) => list
+                .items
+                .iter()
+                .any(|item| code_span_at(&item.children, offset)),
+            BlockKind::Container(container) => code_span_at(&container.children, offset),
+            BlockKind::Group(group) => group
+                .arms
+                .iter()
+                .any(|arm| code_span_at(&arm.children, offset)),
+            _ => false,
+        }
+    })
+}
+
+fn code_inline_at(inlines: &[Inline], offset: usize) -> bool {
+    inlines.iter().any(|inline| match &inline.kind {
+        InlineKind::Code(_) => inline.span.start() < offset && offset < inline.span.end(),
+        InlineKind::Emphasis(children) | InlineKind::Strong(children) => {
+            code_inline_at(children, offset)
+        }
+        InlineKind::Link(link) => code_inline_at(&link.children, offset),
+        InlineKind::Image(image) => code_inline_at(&image.children, offset),
+        _ => false,
+    })
+}
+
+fn code_span_open(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    let mut index = 0;
+    let mut open_length = None;
+    while index < bytes.len() {
+        if bytes[index] != b'`' {
+            index += 1;
+            continue;
+        }
+        let run_start = index;
+        while bytes.get(index) == Some(&b'`') {
+            index += 1;
+        }
+        let run_length = index - run_start;
+        let escaped = bytes[..run_start]
+            .iter()
+            .rev()
+            .take_while(|byte| **byte == b'\\')
+            .count()
+            % 2
+            == 1;
+        if !escaped {
+            match open_length {
+                None => open_length = Some(run_length),
+                Some(length) if length == run_length => open_length = None,
+                Some(_) => {}
+            }
+        }
+    }
+    open_length.is_some()
 }
 
 #[cfg(test)]

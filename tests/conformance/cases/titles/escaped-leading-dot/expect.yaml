@@ -1,0 +1,16 @@
+description: >-
+  A title whose text starts with a dot escapes it (Q193): `.\.NET` is a title
+  line whose text is `\.NET`, which CommonMark renders as `.NET`. The outline
+  keeps the source text.
+spec: ["3.7", "4.3"]
+tags: [structure]
+
+outline:
+  - group: variant
+    arms:
+      - title: \.NET
+        children:
+          - paragraph: Use the .NET agent.
+      - title: Java
+        children:
+          - paragraph: Use the Java agent.
