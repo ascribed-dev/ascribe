@@ -96,7 +96,7 @@ function showProblems(problems: PreviewProblem[]): void {
   );
 }
 
-// SPEC-QUESTION(Q185): the preview draws the title and the page-level availability itself.
+// Resolved Q185: the preview draws the title and the page-level availability itself.
 /** The page-level availability, as the sample layout writes it (element contract §4). */
 function showAvailability(targets: AvailabilityTarget[]): void {
   if (targets.length === 0) {

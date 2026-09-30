@@ -240,9 +240,7 @@ fn report_failure(
     };
     let _ = match args.format {
         Format::Text => {
-            let _ = diagnostics
-                .iter()
-                .try_for_each(|d| text::write_diagnostic(out, &files, d, color));
+            let _ = text::write_diagnostics(out, &files, &diagnostics, color);
             writeln!(err, "error: {message}")
         }
         Format::Json => json::write(out, &files, &diagnostics, 0, Some(&message)),

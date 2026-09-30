@@ -40,7 +40,7 @@ Astro 4 (`{children}` in MDX, `{stars}`), Docker 25 (`/containers/{name}`,
 written `{icon}\`gear\``). Braces that aren't keys (`{}`, `{ "a": 1 }`, `{2,3}`,
 `{Object}`, `{a b}`) are not candidates (`tests/edge.rs`). Not a false positive.
 
-### R2: `{{key}}` holds the candidate `{key}`: intended, question Q191
+### R2: `{{key}}` holds the candidate `{key}`: intended; resolved by Q191
 
 ```
 Use {{es}} here.
@@ -49,8 +49,10 @@ Use {{es}} here.
 40,729 in Elastic prose and 6,607 in link destinations (`[x]({{es-apis}})`).
 Intended by §5.1 (braces may sit against punctuation), and harmless while the
 key is undeclared. The risk is a *declared* key left in double braces: it
-renders `{Elasticsearch}` with no diagnostic. Q191 proposes a warning for that.
-Owner: phases 07 and 10, if the question is resolved that way.
+renders `{Elasticsearch}` with no diagnostic. **Resolved (Q191):** `ascribe
+check` now warns about it (`phrase-double-braces`, ASC126). On the converted
+Elastic sample, it finds 295 `{{key}}` the converter didn't convert (see
+"Converter limits").
 
 ### R3: another tool's `:::{name}` line: intended
 
@@ -95,7 +97,7 @@ Elastic sample unless noted.
 include in `applies-item` 17 times in this sample. Owner: phases 06 and 12, if
 the language changes. Reproduction: `f1_…` in `tests/edge.rs`.
 
-### F2: a title can't start with a dot (Q193): 9 errors (6 Elastic, 3 Docker)
+### F2: a title can't start with a dot (Q193): 9 errors (6 Elastic, 3 Docker); resolved
 
 ```
 ..NET
@@ -105,7 +107,9 @@ text
 ```
 
 `.NET` above a directive is the title `NET`; `..NET` isn't a title, so the arm
-has none (`variant-arm-kind`). Owner: phase 06. Reproduction: `f2_…`.
+has none (`variant-arm-kind`). **Resolved (Q193):** `.\.NET` is the title
+`.NET`, and the converters write it that way, so the 9 errors are gone.
+Reproduction: `f2_…`.
 
 ### F3: a section can't name a target its page doesn't (Q194): 147 errors
 
@@ -119,7 +123,7 @@ converter doesn't widen the page's spec, so the errors stay visible.
 one is `link-id-missing` (647 of the sample's 992). A further 110 use legacy
 Asciidoc ids (`_configuration_files_…`), which no slugger of ours produces.
 
-### F5: ids can't contain `_` or `.` (Q196): 2,534 of 13,007 anchors
+### F5: ids can't contain `_` or `.` (Q196): 2,534 of 13,007 anchors; resolved
 
 ```
 ## Setup
@@ -127,7 +131,9 @@ Asciidoc ids (`_configuration_files_…`), which no slugger of ours produces.
 ```
 
 `id-invalid`. The converter rewrites the id (`ece-setup`) and the links it
-sees (162); links from outside the site can't be found. Reproduction: `f5_…`.
+sees (162); links from outside the site can't be found. **Resolved (Q196):**
+ids may contain `_` and `.`, so the converter could keep such anchors as they
+are; it still rewrites them. Reproduction: `f5_…`.
 
 ### Converter limits (not findings about the language)
 
@@ -143,13 +149,16 @@ sees (162); links from outside the site can't be found. Reproduction: `f5_…`.
   `heading-duplicate-without-id` (2,146 in Docker).
 - **`{{key}}` in code spans** stays as written (381): phrases never apply in
   code spans (§5.1), so the substitution is lost. That's the spec, not a bug.
+- **`{{key}}` left in prose** (295 in Elastic): substitutions the converter
+  doesn't reach, which `phrase-double-braces` (Q191) now reports. A converter
+  follow-up, not a language one.
 
 ## Performance
 
 Numbers are in `RESULTS.md`; the container is a 4-core 2.1 GHz Xeon, slower
 than a developer laptop and with slow system calls.
 
-### P1: the text report is quadratic (owner: phase 10, `report/text.rs`)
+### P1: the text report is quadratic (owner: phase 10, `report/text.rs`); fixed
 
 ```
 ascribe check          # the default, text
@@ -163,8 +172,10 @@ files, 8.6 MB, about 4,000 diagnostics): **80 s** in text and **3.2 s** as JSON.
 Converted Elastic (21 MB, 2,895): over **100 s** against 7 s. Reproduce with
 `cargo bench -p tessera-corpora --bench perf` (the noisy project, 1,000 pages
 with one warning each: 1.4 s against 0.25 s; the gap grows with the corpus).
-The fix is one cache built once per report. The default output of `ascribe
-check` is unusable on a large project with many diagnostics until then.
+The fix is one cache built once per report. **Fixed:** the report now fills
+one source cache as it goes, so each file's text is read and indexed once; on
+1,000 generated pages with a warning each, text output went from 6.7 s to
+0.54 s (JSON: 0.19 s).
 
 ### P2: system calls (owner: phases 12 and 10, suspected)
 

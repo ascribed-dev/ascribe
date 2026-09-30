@@ -130,11 +130,11 @@ impl FileTable {
         self.entry(id).map(|e| e.text.as_str())
     }
 
-    /// Every file as `(path, text)`, for the snippet renderer.
-    pub fn texts(&self) -> Vec<(String, String)> {
+    /// The text of the file shown as `path`, for the snippet renderer.
+    pub fn text_at(&self, path: &str) -> Option<&str> {
         self.entries
             .iter()
-            .map(|e| (e.path.clone(), e.text.clone()))
-            .collect()
+            .find(|e| e.path == path)
+            .map(|e| e.text.as_str())
     }
 }

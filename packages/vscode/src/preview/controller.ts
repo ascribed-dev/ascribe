@@ -219,7 +219,7 @@ export class PreviewController implements vscode.Disposable {
    * server names them in `assetRoots`), and nothing else: never the workspace
    * or the project root.
    */
-  // SPEC-QUESTION(Q182): the content root and the directories of the assets outside it, never the project root.
+  // Resolved Q182: the content root and the directories of the assets outside it, never the project root.
   private webviewOptions(
     contentRoot: string | undefined,
     assetRoots: string[],
@@ -249,7 +249,7 @@ export class PreviewController implements vscode.Disposable {
   }
 
   /** Makes the active Ascribe document the one previewed. Whether it changed. */
-  // SPEC-QUESTION(Q181): the preview follows the active Ascribe editor.
+  // Resolved Q181: the preview follows the active Ascribe editor.
   private followActiveEditor(): boolean {
     const editor = vscode.window.activeTextEditor;
     if (!editor || !isPreviewable(editor.document) || editor.document === this.document) {
@@ -464,7 +464,7 @@ export class PreviewController implements vscode.Disposable {
     }
   }
 
-  // SPEC-QUESTION(Q186): the editor's build is the default and clears the choice.
+  // Resolved Q186: the editor's build is the default and clears the choice.
   private chooseBuild(name: string): void {
     // Choosing the editor's build is choosing the default, so a later change
     // of `[editor] build` is followed.
@@ -514,7 +514,7 @@ export class PreviewController implements vscode.Disposable {
     void this.panel?.webview.postMessage(message);
   }
 
-  // SPEC-QUESTION(Q187): which links open a file.
+  // Resolved Q187: which links open a file.
   /** A click on a link in the preview: open the file it names. */
   private async openLink(href: string): Promise<void> {
     if (isExternal(href)) {

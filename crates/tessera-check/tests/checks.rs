@@ -264,8 +264,11 @@ fn undeclared_phrases_and_headings_with_phrases() {
 }
 
 #[test]
-fn ids_use_letters_digits_and_hyphens() {
-    let p = project(&[("index.md", &page("## A\n@id: ok-1\n\n## B\n@id: not_ok"))]);
+fn ids_use_letters_digits_hyphens_underscores_and_periods() {
+    let p = project(&[(
+        "index.md",
+        &page("## A\n@id: ok-1\n\n## B\n@id: ok_2.0\n\n## C\n@id: not:ok"),
+    )]);
     assert_eq!(slugs(&p), ["id-invalid"]);
 }
 

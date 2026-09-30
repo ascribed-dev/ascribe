@@ -20,7 +20,7 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Wh
 
 **Directives**
 
-- `@id`'s value is checked against letters, digits, and hyphens only (`v1.2` and `my_id` are invalid; `3-steps` and `Setup-2` are valid).
+- `@id`'s value is checked against letters, digits, hyphens, underscores, and periods (Q196: `my:id` and `a/b` are invalid; `3-steps`, `Setup-2`, `my_id`, and `v1.2` are valid).
 - `@available` states may appear with no version (`cloud beta`, `self-managed sunset 3.1`); a history entry needs a version. A dimension name as an enclosing target covers all its values, and a name inside a single value exceeds it.
 - `available-exceeds-scope` is page level, as the registry says, so its cases expect it under a build.
 - A feature key is checked as the spec it stands for, including against its enclosing scope.

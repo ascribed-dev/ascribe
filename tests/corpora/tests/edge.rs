@@ -123,8 +123,8 @@ fn an_escaped_brace_is_recorded_and_silent() {
 #[test]
 fn double_braces_hold_a_candidate() {
     // `{{es}}` (a mustache substitution) contains the candidate `{es}`. The
-    // spec lets braces sit against punctuation, so this is intended, and
-    // Q191 asks whether it should be.
+    // spec lets braces sit against punctuation, so this is intended; with
+    // `es` declared, `ascribe check` warns (`phrase-double-braces`, Q191).
     let found = classes("Use {{es}} here.\n");
     assert!(
         found.contains(&"phrase-candidate:prose:mustache".to_owned()),
@@ -155,8 +155,14 @@ fn f1_an_availability_line_above_an_include_binds_nothing() {
 }
 
 #[test]
-fn f2_a_title_can_not_start_with_a_dot() {
-    // `.NET` is the title `NET`; `..NET` is no title, so the arm has none.
+fn f2_a_title_that_starts_with_a_dot_escapes_it() {
+    // Resolved Q193: `.\.NET` is the title `.NET`. `..NET` is still no title,
+    // so that arm has none.
+    let found = classes(".\\.NET\n@variant:\ntext\n@end\n");
+    assert!(
+        !found.contains(&"diagnostic:variant-arm-kind".to_owned()),
+        "{found:?}"
+    );
     let found = classes("..NET\n@variant:\ntext\n@end\n");
     assert!(
         found.contains(&"diagnostic:variant-arm-kind".to_owned()),
@@ -165,8 +171,14 @@ fn f2_a_title_can_not_start_with_a_dot() {
 }
 
 #[test]
-fn f5_an_id_can_not_contain_an_underscore() {
-    let found = classes("## Setup\n@id: ece_setup\n");
+fn f5_an_id_can_contain_an_underscore_and_a_period() {
+    // Resolved Q196.
+    let found = classes("## Setup\n@id: ece_setup.v2\n");
+    assert!(
+        !found.contains(&"diagnostic:id-invalid".to_owned()),
+        "{found:?}"
+    );
+    let found = classes("## Setup\n@id: ece:setup\n");
     assert!(
         found.contains(&"diagnostic:id-invalid".to_owned()),
         "{found:?}"

@@ -3,7 +3,7 @@ title: Test
 ---
 
 ## One
-@id: my_id
+@id: my:id
 
 ## Two
-@id: v1.2
+@id: a/b

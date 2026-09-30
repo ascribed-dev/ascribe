@@ -1,0 +1,10 @@
+description: >-
+  A declared phrase directly between two more braces warns (Q191): the value
+  would appear between literal braces. An escaped outer brace is meant, and an
+  undeclared key gets only the undeclared-phrase warning.
+spec: ["5.1", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: phrase-double-braces, line: 5}
+  - {slug: phrase-undeclared, line: 7}

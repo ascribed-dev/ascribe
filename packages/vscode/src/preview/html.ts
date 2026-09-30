@@ -22,7 +22,7 @@
  * - `connect-src`, `frame-src`, `form-action` and the rest fall to
  *   `default-src`, so the page can't reach the network.
  */
-// SPEC-QUESTION(Q183): stricter than the site, which passes raw HTML through.
+// Resolved Q183: stricter than the site, which passes raw HTML through.
 export function contentSecurityPolicy(cspSource: string): string {
   return [
     "default-src 'none'",

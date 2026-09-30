@@ -1806,141 +1806,141 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** SPEC §10 (authoring environment); PLAN.md, VS Code extension, Preview
 - **Raised by:** phase 25
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** The preview shows "the current page". SPEC §10 doesn't say which document that is when the author moves between files, or what to show for a fragment, which isn't a page and has no route, or for a page a build drops (SPEC §9.3).
 - **Options:** (1) Follow the active Ascribe editor, and show a message in place of the page when it isn't previewable: for a fragment, name the pages that include it; for a dropped page, say which build drops it and why. (2) Lock to the document the preview was opened for. (3) For a fragment, show the first page that includes it, with the fragment's part highlighted.
 - **Proposed resolution:** option 1, implemented. It matches how the markdown preview follows the editor, needs no state to get out of step, and never shows content the published site wouldn't have. Option 3 is a better experience for fragment authors and could follow: it needs a way to say which of several including pages to show. The answer to `ascribe/preview` carries `problems` (`info`, `warning`, `error`) for these cases, and the builds and content root even when there is no page, so the client's picker doesn't go blank.
 - **Affects:** `crates/tessera-lsp/src/preview.rs` (`preview`), `packages/vscode/src/preview/controller.ts` (`followActiveEditor`).
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 1: the preview follows the active Ascribe editor; a fragment shows a message naming the pages that include it, and a page the build drops names the build and the reason. Editor behavior, not language: no SPEC change.
 
 ### Q182: An asset outside the content root is served from its own directory
 
 - **Section:** SPEC §9.4 (Assets); asset contract §2 step 5 and §7
 - **Raised by:** phase 25
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** A reference may resolve to a file inside the project root but outside the content root (`../shared/logo.png`, or an `assets/` directory beside `docs/`); the asset contract accepts it and the site output copies it (`_ascribe/up/…`). The preview resolves references the same way (contract §7) and shows them through webview URLs, and a webview reads only the directories in its `localResourceRoots`. The phase's brief says the extension's resources and the content root, nothing wider.
 - **Options:** (1) `localResourceRoots` is the extension's webview files and the content root; an asset outside the content root is reported and shown broken, so the preview differs from the site for a valid project. (2) Add the project root. (3) Add the directory of each such asset.
 - **Proposed resolution:** option 3, implemented (first as option 1, changed after review). The server lists the directories in `assetRoots` and marks each asset `servable`: a file in the content root needs nothing more; a file elsewhere in the project needs its own directory; a file directly in the project root (that directory *is* the project root), in `node_modules` or `.git`, in the output directory, or outside the project isn't served, and a warning says why. The client serves the extension's files, the content root, and those directories, and nothing else. The webview reloads when the set changes, which happens only when a page starts or stops using an asset in another directory (or the reader moves to a page that does).
 - **Affects:** `crates/tessera-lsp/src/preview.rs` (`serve`), `packages/vscode/src/preview/controller.ts` (`webviewOptions`, `followRoots`).
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 3 (changed after review): an asset elsewhere in the project, outside the content root, is served from its own directory (`assetRoots`), because asset contract §2 step 5 allows it and the site publishes it; nothing outside the project root, and not the project root itself, `node_modules`, `.git`, or the output directory. Editor behavior, not language: no SPEC change.
 
 ### Q183: The preview's content security policy is stricter than the site's
 
 - **Section:** SPEC §9.5 (HTML passthrough), §9.7
 - **Raised by:** phase 25
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** The site output passes raw HTML through (SPEC §9.5), so a page can contain a `<script>`, an inline `style` attribute, or an image from another site. The phase asks for a strict content security policy in the webview: only the extension's and the project's local resources.
 - **Options:** (1) Strict: `default-src 'none'`; `script-src`, `style-src`, `img-src`, and `font-src` are the webview's `cspSource` (the extension's and the project's local files), with no `'unsafe-inline'`, no nonce, and no `'unsafe-eval'`. The element library is a script file and a stylesheet file and sets no inline styles, so it runs as it does on the site; raw HTML that needs inline script, inline style, or the network doesn't work in the preview. (2) Allow inline styles. (3) Allow `https:` images.
 - **Proposed resolution:** option 1, implemented and tested in Chromium (`packages/vscode/test/webview/preview.test.ts`): a page's raw `<script>` and `onerror` don't run, a `style` attribute is refused, a remote image is refused, and the tabs work. A page with raw HTML that relies on those looks different in the preview than on the site; the preview says so nowhere but the output channel today. Raw HTML in the content is the author's own, so this is about limiting what the preview can be made to do, not about the author.
 - **Affects:** `packages/vscode/src/preview/html.ts` (`contentSecurityPolicy`).
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 1: the preview's content security policy allows only the extension's files and the project's local resources, with no inline script or style, so raw HTML that needs them, or a remote image, renders differently from the site. Editor behavior, not language: no SPEC change.
 
 ### Q184: What "the same HTML" leaves out in the parity test
 
 - **Section:** SPEC §9.5; site-render contract §5
 - **Raised by:** phase 25
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** The preview's HTML (`render_site_html`) and Astro's built HTML come from different Markdown processors, and Astro adds things to what it renders. "The page's content: the same elements, attributes, heading ids, and image attributes" doesn't say which of Astro's additions don't count.
 - **Options:** Compare everything, and have the test fail on each difference below; or compare the tree of elements, attributes, and text, and leave out what a consumer's own pipeline adds.
 - **Proposed resolution:** the second, implemented in `packages/vscode/test/parity/normalize.ts`, and nothing else is left out: whitespace between nodes; an image's `height`, `loading`, `decoding`, and `data-image-component` (Astro's image service; the author's `alt`, `title`, `width`, and other attributes are compared); the inside of a `<pre>` (Astro highlights with Shiki; the language and the text are compared); and typographic punctuation (Astro's `smartypants`; the contract allows it). An asset URL is compared by the source file it resolves to.
 - **Affects:** `packages/vscode/test/parity/`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: the parity test compares elements, attributes, and text, and leaves out only whitespace between nodes, Astro's image-service attributes, the inside of highlighted `<pre>` blocks, and typographic punctuation. Test scope, not language: no SPEC change.
 
 ### Q185: The preview draws the page's title and availability itself
 
 - **Section:** SPEC §9.6 ("Page layouts are the project's own"); phase 25, Out of scope
 - **Raised by:** phase 25
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** The site's title and page-level availability badges are drawn by the project's layout from the collection's data, not by the emitter. The preview has no layout, but a page without its title or badges is hard to review.
 - **Options:** (1) Draw a default header the way the example's layout does (the title as `<h1>`, then `<ascribe-availability scope="page">` from the frontmatter's `available` list, element contract §4), from the frontmatter the server returns. (2) Show only the body.
 - **Proposed resolution:** option 1, implemented (`packages/vscode/src/webview/preview.ts`), built with DOM calls and text nodes. The parity test compares the title and the `available` targets with the example site's layout. A project's own layout isn't reproduced.
 - **Affects:** `packages/vscode/src/webview/preview.ts`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 1: the preview draws the page's title and page-level availability itself, from the frontmatter, with default styles; it doesn't reproduce a project's layout (phase 25's out-of-scope). Editor behavior, not language: no SPEC change.
 
 ### Q186: The build picker's default and what it remembers
 
 - **Section:** SPEC §9.3; content-model.md §17 (`[editor] build`)
 - **Raised by:** phase 25
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** The picker lists the content model's builds, and the default is the editor's build. It isn't said whether choosing the editor's build again is a choice to keep, what happens to a choice when the content model changes, or whether it is remembered across sessions.
 - **Options:** (1) The picker stores a name, except that choosing the editor's build clears it (so a later change of `[editor] build` is followed); a name that isn't a build any more falls back to the editor's build; nothing is stored across sessions. (2) Always store the name. (3) Store it in workspace state.
 - **Proposed resolution:** option 1, implemented (`controller.ts`, `chooseBuild`, `renderOnce`).
 - **Affects:** `packages/vscode/src/preview/controller.ts`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed, option 1: the picker's default is the editor's build (`[editor] build`); choosing it clears the choice, a build that no longer exists falls back to it, and nothing is stored across sessions. Editor behavior, not language: no SPEC change.
 
 ### Q187: Which links in the preview open a file
 
 - **Section:** SPEC §5.2, §5.4; asset contract §1
 - **Raised by:** phase 25
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** "Clicking a link in the preview opens the target file in the editor." A page's links are of several kinds: another page (a route, maybe with a heading id), a link to a local file that isn't a page (a download), an external URL, a glossary term (a link the emitter adds), a link inside the page.
 - **Options:** Open every kind; or open the ones Ascribe resolved to a file, follow links inside the page in the preview, and open only `http:`, `https:`, and `mailto:` URLs outside VS Code.
 - **Proposed resolution:** the second, implemented: `ascribe/preview` lists each page link's `href`, target path, and heading id (from the resolved page), and each asset's reference and source path; a click on a link to another page opens its file; to a heading of the previewed page, scrolls to it; to an asset, opens the file. Any other scheme (`javascript:`, `command:`, `file:`) is ignored: a link in a page must not be able to run a command. **Left out:** a glossary term's link, which is a page route the resolver doesn't map back to a file, and a heading id in another page (the file opens, not the heading).
 - **Affects:** `crates/tessera-lsp/src/preview.rs` (`links`), `packages/vscode/src/preview/controller.ts` (`openLink`).
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** approved by the repository owner: as proposed: page and asset links open their files, links within the page scroll, and only `http`, `https`, and `mailto` links open outside VS Code. Editor behavior, not language: no SPEC change.
 
 ### Q191: `{{key}}` holds a phrase candidate between literal braces
 
 - **Section:** SPEC §5.1
 - **Raised by:** phase 26
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** `Use {{es}} here.` The spec says braces delimit a phrase and it may sit against punctuation, so the parser reads `{es}` as a candidate with a literal `{` before it and `}` after it. Elastic's docs write every substitution as `{{key}}` (48,728 of them in 3,008 pages); Hugo and Jinja use the same shape. Unconverted, each one draws a `phrase-undeclared` warning; converted by hand to `{key}` it's a phrase. But a project that declares `es` and forgets to convert one `{{es}}` gets `{Elasticsearch}` in the output, with no diagnostic (the key is declared, so nothing is undeclared).
 - **Options:** (a) Keep it: `{{es}}` is `{` + phrase + `}`. (b) Treat a candidate whose braces are doubled as literal text with no warning. (c) Keep it, and add a warning for a *declared* key written with doubled braces, since that is almost always a leftover.
 - **Proposed resolution:** (c). It costs nothing for anyone who writes `{{` on purpose (they escape with `\{`), and it catches the migration mistake the corpora show. Implemented now: (a), which is what the spec says.
 - **Affects:** `tests/corpora/FINDINGS.md` R2; `tests/corpora/tests/edge.rs`; phases 07 (inline pass) and 10 (the check).
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option (c): a declared phrase written directly between two more braces, `{{key}}`, draws a warning, `phrase-double-braces` (ASC126), with a fix that removes the outer braces; an escaped outer brace (`\{{key}}`) doesn't. Stated in SPEC §5.1 and §8.2, and in the registry. On the converted Elastic sample it finds 295 substitutions the converter missed.
 
 ### Q192: There is no way to make an include conditional on availability
 
 - **Section:** SPEC §3.8, §4.2, §4.4
 - **Raised by:** phase 26
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** `@available: ece` above `@include: _snippets/ece-only.md` is `binding-no-block`, because §3.8 says a directive that renders nothing of its own, such as `@include`, isn't a block. The reason is sound, but the pattern is common: in the converted Elastic sample, 17 `applies-item` blocks that hold only an include hit it. The only way to scope an include is to put `@available` inside the fragment, which makes the fragment's availability the same wherever it's included.
 - **Options:** (a) Keep it; the fragment carries its own availability, or the including page wraps the include in something else. (b) Let a following-block directive bind an `@include`: it then applies to the included content as if the directive were on each of its top-level blocks. (c) Give `@include` an `available` attribute.
 - **Proposed resolution:** (b) is the least new syntax but needs a rule for what "the included content" is when the fragment has headings; (c) is explicit and local. Implemented now: (a).
 - **Affects:** `tests/corpora/FINDINGS.md` F1; phases 06 (binding), 12 (resolution).
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option (a) for spec 0.1: `@available` doesn't bind an `@include`; a fragment carries its own availability. Both alternatives add a rule or syntax, and binding to an include needs a rule for included headings, so either is a later, additive change. No SPEC change.
 
 ### Q193: A title that starts with a dot can't be written
 
 - **Section:** SPEC §3.7
 - **Raised by:** phase 26
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** A title line is `.` followed by a character that is neither whitespace nor `.`, so `.NET` above a directive is the title `NET`, and `..NET` isn't a title line at all (the arm has no title: `variant-arm-kind`). Tab labels such as `.NET` are ordinary in documentation: the converted samples have 9 (6 in Elastic's APM agent pages, 3 in Docker's build guides). The escape `\.` prevents a title, and there's no escape that keeps a leading dot in one.
 - **Options:** (a) Keep it; authors rename the label. (b) `..` starts a title whose text begins with `.`, so `..NET` is the title `.NET`. (c) Allow a backslash: `.\.NET` is the title `.NET` (an escaped `.` in the title's own text).
 - **Proposed resolution:** (c): it needs no new rule beyond CommonMark's escapes, which already render `\.` as `.` in inline content. Check that the title line's inline parse does that, and add the case to the spec's §3.7 example. Implemented now: (a); the converters emit `..NET` and the arms are reported.
 - **Affects:** `tests/corpora/FINDINGS.md` F2; `tests/corpora/tests/edge.rs`; phase 06.
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option (c): a title whose text starts with a dot escapes it, `.\.NET`, which is CommonMark's ordinary escape and already worked; `..NET` isn't a title line. Stated in SPEC §3.7, with a conformance case (`titles/escaped-leading-dot`); the corpus converters write it that way.
 
 ### Q194: A section's `@available` can't name a target its page doesn't
 
 - **Section:** SPEC §4.4 (Scope)
 - **Raised by:** phase 26
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** "A section or block spec MUST NOT exceed its enclosing scope." Elastic's `applies_to` treats the page's spec as where the page is *primarily* relevant and lets a block add other deployments (`applies-item`). Converted faithfully, the sample has 147 `available-exceeds-scope` errors (a page `stack ga`, a block `serverless ga`). Whether that's a mistake in the source or a use the language should support isn't something the spec says.
 - **Options:** (a) Keep containment: a page that varies by target lists all of them, and narrower scopes subtract. (b) Let a narrower scope name other targets, and treat page-level availability as a default, not a bound.
 - **Proposed resolution:** (a): containment is what makes "the content is available only where every spec allows it" (§4.4) computable, and a converter can widen the page's spec to the union. Implemented now: (a); the corpus converter doesn't widen, so the errors are visible.
 - **Affects:** `tests/corpora/FINDINGS.md` F3.
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option (a): containment stays. A section or block spec can't exceed its enclosing scope, which is what makes "available only where every spec allows it" (§4.4) computable; a converter widens the page's spec to the union. No SPEC change.
 
 ### Q195: Only headings can be link targets
 
 - **Section:** SPEC §4.1, §5.2
 - **Raised by:** phase 26
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** Elastic's docs mark arbitrary places (a definition term, a list item, a paragraph) as link targets with `$$$id$$$`: 1,074 of them in 135 files, and 647 of the converted sample's 992 unresolved-anchor errors link to one. `@id` binds a heading, so a link to any other place has nothing to name.
 - **Options:** (a) Keep it: headings only; a page that needs a target inserts a heading. (b) `@id` before a block (a following-block directive) makes that block a link target.
 - **Proposed resolution:** (a) for spec 0.1, and note the migration cost in the converter's documentation; (b) is a reasonable addition later because it doesn't change what exists. Implemented now: (a).
 - **Affects:** `tests/corpora/FINDINGS.md` F4.
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option (a) for spec 0.1: only headings are link targets. Letting `@id` make a following block a target is a later, additive change. No SPEC change.
 
 ### Q196: Heading ids can't contain `_`, `.`, or `:`
 
 - **Section:** SPEC §4.1, §5.5
 - **Raised by:** phase 26
-- **Status:** open
+- **Status:** resolved (2026-09-29)
 - **Ambiguity:** An id is letters, digits, and hyphens. Elastic's `# Heading [ece_setup]` anchors use `_` and `.` freely: 2,534 of 13,007 explicit anchors do, and they're linked from other pages and from outside the site, so renaming an id changes a published URL fragment. The converter renames and rewrites the links it can see (162 in the sample); external links can't be found.
 - **Options:** (a) Keep it. (b) Allow `_` (and `.`), since HTML ids do.
 - **Proposed resolution:** (b) for `_` and `.` at least: an id that is valid in HTML and in every consumer's slugger costs nothing and keeps migrated URLs. Implemented now: (a).
 - **Affects:** `tests/corpora/FINDINGS.md` F5; phases 06 (`id-invalid`), 09 (slugger).
-- **Resolution:** filled in by a human.
+- **Resolution:** approved by the repository owner: option (b): an id may contain letters, digits, hyphens, underscores, and periods, but not `:` or other characters. Slugs can already contain `_` (`snake_case-names`), so an `@id` could not pin an id Ascribe itself generates; both are valid in HTML ids and URL fragments, and they keep migrated anchors. Stated in SPEC §4.1 and §8.2, the registry message, and the conformance cases.

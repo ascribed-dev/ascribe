@@ -349,7 +349,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         )));
         return result;
     };
-    // SPEC-QUESTION(Q181): a fragment has no page; say which pages include it.
+    // Resolved Q181: a fragment has no page; say which pages include it.
     if index.kind == FileKind::Fragment {
         let pages = snapshot.including_pages(path);
         let message = if pages.is_empty() {
@@ -468,7 +468,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         });
     }
 
-    // SPEC-QUESTION(Q187): page links only; a glossary term's link isn't mapped to a file.
+    // Resolved Q187: page links only; a glossary term's link isn't mapped to a file.
     let mut links: Vec<PreviewLink> = Vec::new();
     let mut sections: Vec<PreviewSection> = Vec::new();
     let lines = LineIndex::new(&index.source);
@@ -519,7 +519,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
 /// anywhere in the project; the preview serves only the directories pages use,
 /// never the project root itself, the output directory, or what no site wants
 /// served (`node_modules`, `.git`).
-// SPEC-QUESTION(Q182): the directory of each asset outside the content root.
+// Resolved Q182: the directory of each asset outside the content root.
 fn serve(target: &Target, file: &Path) -> Result<Option<PathBuf>, &'static str> {
     if within(&target.content_root, file) {
         return Ok(None);

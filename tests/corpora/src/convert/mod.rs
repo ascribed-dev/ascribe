@@ -253,7 +253,10 @@ pub(crate) fn push_title(out: &mut Vec<String>, indent: &str, title: &str) {
     if out.last().is_some_and(|l| !l.trim().is_empty()) {
         out.push(String::new());
     }
-    out.push(format!("{indent}.{}", title.trim()));
+    let title = title.trim();
+    // A title that starts with a dot escapes it (Q193): `.\.NET`.
+    let escape = if title.starts_with('.') { "\\" } else { "" };
+    out.push(format!("{indent}.{escape}{title}"));
 }
 
 /// Adds a blank line unless the output already ends with one.
