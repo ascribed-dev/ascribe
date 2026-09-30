@@ -1868,6 +1868,47 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Affects:** `crates/tessera-lsp/src/links.rs`.
 - **Resolution:** approved by the repository owner: as proposed. An empty-text link's hint sits just inside `[`, shows its source target's title (the heading's text for an id), substitutes declared phrases, and identifies the destination in a tooltip. Only existing source targets with a title receive hints, not images or missing targets. Hints use source titles without applying build modes, consistently with navigation previews. SPEC §10 now states these rules.
 
+### Q171: The npm packages that carry the binary
+
+- **Section:** phase 22, task 1; PLAN.md, Key decisions (distribution)
+- **Raised by:** phase 22 (recorded at review, 2026-09-30; the phase made the choice without a question)
+- **Status:** open
+- **Ambiguity:** phase 22 says "one package per platform ... declared as optional dependencies of `@ascribed/cli`" without naming them or saying how the right one is found.
+- **Options:** (a) `@ascribed/cli-<os>-<cpu>` packages, each with `os` and `cpu` so npm installs only the matching one, and a shim in `@ascribed/cli` that picks it by `process.platform` and `process.arch` (esbuild's and Biome's pattern); (b) a postinstall download.
+- **Proposed resolution:** (a), implemented: `@ascribed/cli-{darwin-arm64,darwin-x64,linux-arm64,linux-x64,win32-x64}`, each holding `bin/ascribe` (`ascribe.exe` on Windows); `@ascribed/cli` has the `ascribe` shim and exports `resolveBinary()` from `@ascribed/cli/binary`. No install scripts. An unsupported platform is an error that lists the supported ones.
+- **Affects:** `packages/cli`; phase 27 (what it publishes).
+- **Resolution:** _to be filled in by a human._
+
+### Q172: Where the Astro integration finds the binary once it's on npm
+
+- **Section:** phase 22, task 2; Q152
+- **Raised by:** phase 22 (recorded at review, 2026-09-30)
+- **Status:** open
+- **Ambiguity:** Q152 set the order `binary` option, `ASCRIBE_BIN`, then the workspace's `target/`, and said phase 22 replaces the last step with the npm-installed binary.
+- **Proposed resolution:** implemented as Q152 foresaw: the `binary` option, then `ASCRIBE_BIN`, then the project's installed `@ascribed/cli` (`resolveBinary()`); the workspace's `target/` is no longer searched. An override that names a missing file is an error.
+- **Affects:** `packages/astro/src/binary.ts`.
+- **Resolution:** _to be filled in by a human._
+
+### Q173: How `astro dev` rebuilds, and what a failed rebuild does
+
+- **Section:** phase 22, task 2
+- **Raised by:** phase 22 (recorded at review, 2026-09-30)
+- **Status:** open
+- **Ambiguity:** "In `astro dev`, rebuilds when Ascribe sources, assets, or `ascribe.toml` change, and refreshes the page." It doesn't say how changes are batched, what a request during a rebuild gets, what a failed rebuild does, or which files are watched.
+- **Proposed resolution:** as implemented (`packages/astro/src/dev.ts`): changes under the content root (outside the output directory) and to `ascribe.toml` are batched for 50 ms, and builds run one at a time; a request that arrives while a rebuild is due or running waits for it; after a successful rebuild the collection is refreshed and the page gets a full reload; after a failed one the compiler's diagnostics are logged and pages answer HTTP 503 ("fix the source and save to retry") until an edit builds cleanly, so stale pages are never served. A change of `[project] output-dir` needs a restart of `astro dev`, which it says. **Known gap:** an asset elsewhere in the project, outside the content root (asset contract §2 step 5), isn't watched, so editing it doesn't rebuild in dev; the build and the preview (Q182) handle it. Recommend adding each such asset's directory to the watcher, as the preview does.
+- **Affects:** `packages/astro/src/dev.ts`.
+- **Resolution:** _to be filled in by a human._
+
+### Q174: How CI builds and packs the platform packages
+
+- **Section:** phase 22, task 3
+- **Raised by:** phase 22 (recorded at review, 2026-09-30)
+- **Status:** open
+- **Ambiguity:** "CI cross-compiles release binaries for every platform" doesn't say how, or how the packages are packed for the end-to-end test.
+- **Proposed resolution:** as implemented (the manual-only `astro` matrix in `.github/workflows/js.yml`): each platform builds natively on its own runner (Ubuntu x64 and arm64, macOS x64 and arm64, Windows x64) rather than cross-compiling, so each binary is built and run where it ships; the platform package is packed with `npm pack` (it keeps the executable bit) and `@ascribed/cli` with `pnpm pack` (it rewrites `workspace:*`), both installed with `npm --offline --ignore-scripts`, and phase 21's browser suite runs against the installed binary. The platform results wait for a manual run.
+- **Affects:** `.github/workflows/js.yml`, `packages/cli/scripts/stage-native.mjs`; phase 27's release workflow.
+- **Resolution:** _to be filled in by a human._
+
 ### Q181: What the preview shows, and what it does for a file that isn't a page
 
 - **Section:** SPEC §10 (authoring environment); PLAN.md, VS Code extension, Preview
