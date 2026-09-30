@@ -205,6 +205,56 @@ fn deleting_a_file_makes_broken_references_in_the_files_that_used_it() {
 }
 
 #[test]
+fn a_file_that_becomes_unreadable_is_listed_until_a_change_to_its_path() {
+    // Resolved Q133: it leaves the index like a deleted file, but it still
+    // exists, so it's listed as unreadable (its `source-unreadable`), not
+    // removed.
+    let (mut inc, _) = load(
+        &ModelSpec::base(),
+        &[
+            ("index.md", "---\ntitle: Home\n---\n\n[guide](guide.md)\n"),
+            ("guide.md", "---\ntitle: Guide\n---\n\nGuide.\n"),
+        ],
+    );
+    let unreadable = || Change::Unreadable {
+        path: path("guide.md"),
+        reason: "stream did not contain valid UTF-8".to_owned(),
+    };
+    let listed = |inc: &IncrementalProject| -> Vec<RelPath> {
+        inc.snapshot()
+            .unreadable()
+            .iter()
+            .map(|u| u.path.clone())
+            .collect()
+    };
+
+    let affected = inc.apply([unreadable()]).unwrap();
+    assert_eq!(affected.unreadable, set(&["guide.md"]));
+    assert!(affected.removed.is_empty());
+    assert!(affected.recheck.contains(&path("index.md")));
+    assert!(inc.snapshot().file(&path("guide.md")).is_none());
+    assert_eq!(listed(&inc), [path("guide.md")]);
+
+    // The same news again changes nothing.
+    assert!(inc.apply([unreadable()]).unwrap().is_empty());
+
+    // Readable again: back in the index, and off the list.
+    let affected = inc
+        .apply([edited("guide.md", "---\ntitle: Guide\n---\n")])
+        .unwrap();
+    assert!(affected.recheck.contains(&path("guide.md")));
+    assert!(affected.unreadable.is_empty());
+    assert!(inc.snapshot().file(&path("guide.md")).is_some());
+    assert!(listed(&inc).is_empty());
+
+    // Unreadable, then deleted: removed, and off the list.
+    inc.apply([unreadable()]).unwrap();
+    let affected = inc.apply([deleted("guide.md")]).unwrap();
+    assert_eq!(affected.removed, set(&["guide.md"]));
+    assert!(listed(&inc).is_empty());
+}
+
+#[test]
 fn renaming_a_heading_updates_the_links_that_show_it() {
     let (mut inc, _) = load(
         &ModelSpec::base(),

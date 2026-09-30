@@ -149,6 +149,15 @@ impl World {
                     self.files.insert(layout.project_path(to));
                 }
             }
+            // The world has no unreadable files: the index drops one as it
+            // drops a deleted file, and the unit tests check the list.
+            Change::Unreadable { path, .. } => {
+                if is_source_path(path) {
+                    self.sources.remove(path);
+                } else {
+                    self.files.insert(layout.project_path(path));
+                }
+            }
             Change::AssetCreated { path } => {
                 self.files.insert(path.clone());
             }

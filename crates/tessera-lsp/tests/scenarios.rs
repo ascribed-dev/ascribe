@@ -132,6 +132,27 @@ fn changing_an_unopened_fragment_on_disk_updates_the_including_page() {
 }
 
 #[test]
+fn a_file_that_stops_being_readable_reports_source_unreadable() {
+    // Resolved Q133: as `ascribe check` does (Q52), not as if it were deleted.
+    let f = project();
+    let fragment = f.path("docs/_setup.md");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert!(client.codes(&fragment).is_empty());
+
+    std::fs::write(&fragment, b"# Install\n\xff\xfe not UTF-8\n").expect("write");
+    client.watched(&[(&fragment, FileChangeType::CHANGED)]);
+    client.settle();
+    assert_eq!(client.codes(&fragment), ["source-unreadable"]);
+
+    f.write("docs/_setup.md", FRAGMENT);
+    client.watched(&[(&fragment, FileChangeType::CHANGED)]);
+    client.settle();
+    assert!(client.codes(&fragment).is_empty());
+    assert!(client.codes(&f.path("docs/index.md")).is_empty());
+}
+
+#[test]
 fn an_open_buffer_wins_over_the_file_on_disk() {
     let f = project();
     let (page, fragment) = (f.path("docs/index.md"), f.path("docs/_setup.md"));

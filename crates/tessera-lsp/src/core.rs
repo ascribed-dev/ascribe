@@ -490,13 +490,21 @@ impl Core {
                         });
                         mirror.push((project, true));
                     }
-                    Err(e) => {
-                        // Resolved Q133, as an interim (see its follow-up): not readable as UTF-8, which the
-                        // project can't hold after it's loaded, so it counts as
-                        // gone.
-                        self.log(&format!("can't read {}: {e}", path.display()));
+                    // Gone between the event and the read: a deletion.
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                         changes.push(Change::Deleted { path: content });
                         mirror.push((project, false));
+                    }
+                    Err(e) => {
+                        // Resolved Q133: a source that exists but can't be
+                        // read (not UTF-8, or refused) is reported as
+                        // `source-unreadable`, as `ascribe check` does (Q52).
+                        self.log(&format!("can't read {}: {e}", path.display()));
+                        changes.push(Change::Unreadable {
+                            path: content,
+                            reason: e.to_string(),
+                        });
+                        mirror.push((project, true));
                     }
                 }
             }
@@ -622,6 +630,14 @@ impl Core {
                 loaded.dirty.extend(targets);
             }
             cleared.push(loaded.source_path(path));
+        }
+        // A file that can't be read left the index like a deleted one, but it
+        // still exists: its diagnostic is `source-unreadable` (Q133).
+        for path in &affected.unreadable {
+            if let Some(targets) = loaded.direct_includes.remove(path) {
+                loaded.dirty.extend(targets);
+            }
+            loaded.dirty.insert(path.clone());
         }
         for path in cleared {
             self.clear(&path);

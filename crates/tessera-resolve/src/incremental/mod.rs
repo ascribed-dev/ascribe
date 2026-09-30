@@ -21,6 +21,7 @@
 //! |---|---|
 //! | **A source file's contents** | That file's parse and index. Every page that includes it, directly or through other files ([`Affected::re_resolve`]). If what others see of it changed (its frontmatter, headings, directives; see below), also the pages that link to it or to a page that includes it (their link targets, page ids, and empty-text link titles), and the re-check of those files, of the files that include it, and of the pages that include a fragment that links to it. If it is a glossary target, every page. |
 //! | **A file created, deleted, or renamed** | The same as a content change of that file, and every reference that resolves, or used to resolve, to that path: links, images, includes, route-like links (which look for `route.md` and `route/index.md`), and case-differing names, found through an index from each file to the paths its references can depend on. A rename is a deletion and a creation. |
+//! | **A source file that can't be read** ([`Change::Unreadable`]) | The same as deleting it: it leaves the index. It is listed in [`Project::unreadable`] (and [`Affected::unreadable`]) until a later change to its path, as a file that can't be read at load is (Q52, Q133). |
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
 //! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, or slugger re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
 //!
@@ -101,7 +102,7 @@ use signature::{Fingerprints, structure_signature};
 use crate::fs::{FileSystem, is_source_path};
 use crate::index::{FileIndex, FileKind, Target, index_parsed, parse_source};
 use crate::layout::Layout;
-use crate::project::Project;
+use crate::project::{Project, Unreadable};
 use crate::slug::{default_slugger, slugger_by_name};
 
 /// One change to the project, as the editor or the file watcher reports it.
@@ -134,6 +135,18 @@ pub enum Change {
     Deleted {
         /// The file's content path.
         path: RelPath,
+    },
+    /// A source file exists but can't be read: it isn't valid UTF-8, or the
+    /// operating system refuses. It leaves the index, as a deletion does, and
+    /// is listed in [`Project::unreadable`], so its `source-unreadable`
+    /// diagnostic shows, until a later change to its path (Q133). A path that
+    /// isn't a source is a non-source file that exists, like
+    /// [`Change::AssetCreated`].
+    Unreadable {
+        /// The file's content path.
+        path: RelPath,
+        /// The operating system's reason.
+        reason: String,
     },
     /// A file moved. A source file keeps its text (send [`Change::Edited`] as
     /// well if the move changed it). Moving a non-source file to a source
@@ -223,6 +236,11 @@ pub struct Affected {
     /// Files that no longer exist: their diagnostics go away, and results
     /// located at their ids are stale.
     pub removed: BTreeSet<RelPath>,
+    /// Source files that exist but became unreadable, or whose reason
+    /// changed: they left the index (results located at their ids are
+    /// stale), and each now has a `source-unreadable` diagnostic
+    /// ([`Project::unreadable`], Q133).
+    pub unreadable: BTreeSet<RelPath>,
     /// Pages whose resolved form, in any build, may differ from before.
     /// Every page after a model change beyond [`ModelImpact::Warnings`].
     pub re_resolve: BTreeSet<RelPath>,
@@ -595,11 +613,23 @@ impl IncrementalProject {
         // The net effect of the batch, per path.
         let mut source_state: BTreeMap<RelPath, Option<Arc<str>>> = BTreeMap::new();
         let mut file_state: BTreeMap<RelPath, bool> = BTreeMap::new();
+        // Resolved Q133: a source path's last word on whether it can't be
+        // read. Any other change to the path clears it.
+        let mut unreadable_state: BTreeMap<RelPath, Option<String>> = BTreeMap::new();
         let mut new_model: Option<Arc<ContentModel>> = None;
         for change in changes {
             match change {
+                Change::Unreadable { path, reason } => {
+                    if is_source_path(&path) {
+                        source_state.insert(path.clone(), None);
+                        unreadable_state.insert(path, Some(reason));
+                    } else {
+                        file_state.insert(layout.project_path(&path), true);
+                    }
+                }
                 Change::Created { path, text } | Change::Edited { path, text } => {
                     if is_source_path(&path) {
+                        unreadable_state.insert(path.clone(), None);
                         source_state.insert(path, Some(Arc::from(text)));
                     } else {
                         file_state.insert(layout.project_path(&path), true);
@@ -607,6 +637,7 @@ impl IncrementalProject {
                 }
                 Change::Deleted { path } => {
                     if is_source_path(&path) {
+                        unreadable_state.insert(path.clone(), None);
                         source_state.insert(path, None);
                     } else {
                         file_state.insert(layout.project_path(&path), false);
@@ -622,12 +653,14 @@ impl IncrementalProject {
                         None
                     };
                     if is_source_path(&from) {
+                        unreadable_state.insert(from.clone(), None);
                         source_state.insert(from, None);
                     } else {
                         file_state.insert(layout.project_path(&from), false);
                     }
                     if is_source_path(&to) {
                         if let Some(text) = text {
+                            unreadable_state.insert(to.clone(), None);
                             source_state.insert(to, Some(text));
                         }
                     } else {
@@ -674,6 +707,39 @@ impl IncrementalProject {
             .into_iter()
             .filter(|(path, present)| self.fs.has(path) != *present)
             .collect();
+        // The unreadable list after the batch: an entry a change touched goes,
+        // and the batch's own entries come in, in path order.
+        let old_unreadable = self.project.unreadable();
+        let mut new_unreadable: Vec<Unreadable> = old_unreadable
+            .iter()
+            .filter(|u| !unreadable_state.contains_key(&u.path))
+            .cloned()
+            .collect();
+        for (path, reason) in &unreadable_state {
+            if let Some(reason) = reason {
+                new_unreadable.push(Unreadable {
+                    path: path.clone(),
+                    reason: reason.clone(),
+                });
+            }
+        }
+        new_unreadable.sort_by(|a, b| a.path.cmp(&b.path));
+        let unreadable_changed = new_unreadable != old_unreadable;
+        // Files that now can't be read, or can't be read for a new reason.
+        let now_unreadable: BTreeSet<RelPath> = new_unreadable
+            .iter()
+            .filter(|u| !old_unreadable.contains(u))
+            .map(|u| u.path.clone())
+            .collect();
+        // Files that couldn't be read and are gone, without becoming a source
+        // the index holds (a deletion): their diagnostic goes.
+        let no_longer_unreadable: BTreeSet<RelPath> = old_unreadable
+            .iter()
+            .filter(|u| {
+                !new_unreadable.iter().any(|n| n.path == u.path) && !created.contains_key(&u.path)
+            })
+            .map(|u| u.path.clone())
+            .collect();
         let (new_model, impact) = match new_model {
             Some(model) => {
                 let fingerprints = Fingerprints::of(&model);
@@ -688,6 +754,7 @@ impl IncrementalProject {
             && gone.is_empty()
             && file_changes.is_empty()
             && impact.is_none()
+            && !unreadable_changed
         {
             return Ok(Affected {
                 version: self.version,
@@ -696,6 +763,7 @@ impl IncrementalProject {
                 indexed: BTreeSet::new(),
                 recheck: BTreeSet::new(),
                 removed: BTreeSet::new(),
+                unreadable: BTreeSet::new(),
                 re_resolve: BTreeSet::new(),
                 model: None,
             });
@@ -853,16 +921,8 @@ impl IncrementalProject {
             dirty.extend(self.include_rev.dependents(path));
         }
         project.forget_expansions(Some(&dirty));
-        if !project.unreadable().is_empty() {
-            let kept: Vec<_> = project
-                .unreadable()
-                .iter()
-                .filter(|u| !touched.contains(&u.path))
-                .cloned()
-                .collect();
-            if kept.len() != project.unreadable().len() {
-                project.set_unreadable(kept);
-            }
+        if unreadable_changed {
+            project.set_unreadable(new_unreadable);
         }
 
         // A file appearing that no reference names changes nothing anyone can
@@ -872,6 +932,7 @@ impl IncrementalProject {
             && gone.is_empty()
             && impact.is_none()
             && res_changed.is_empty()
+            && !unreadable_changed
         {
             return Ok(Affected {
                 version: previous,
@@ -880,6 +941,7 @@ impl IncrementalProject {
                 indexed,
                 recheck: BTreeSet::new(),
                 removed: BTreeSet::new(),
+                unreadable: BTreeSet::new(),
                 re_resolve: BTreeSet::new(),
                 model: None,
             });
@@ -991,7 +1053,7 @@ impl IncrementalProject {
         self.history.push_back(HistoryEntry {
             version,
             recheck: (!everything).then(|| recheck.clone()),
-            removed: gone.clone(),
+            removed: gone.iter().chain(&now_unreadable).cloned().collect(),
         });
         while self.history.len() > HISTORY {
             self.history.pop_front();
@@ -1002,7 +1064,14 @@ impl IncrementalProject {
             parsed,
             indexed,
             recheck,
-            removed: gone,
+            // A file that can't be read still exists: it's listed as
+            // unreadable, not removed.
+            removed: gone
+                .into_iter()
+                .filter(|p| !now_unreadable.contains(p))
+                .chain(no_longer_unreadable)
+                .collect(),
+            unreadable: now_unreadable,
             re_resolve,
             model: impact,
         })
