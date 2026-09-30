@@ -419,7 +419,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
     }
 
     let (frontmatter, body) = split_frontmatter(&emitted.text);
-    let frontmatter = serde_yaml::from_str::<serde_yaml::Value>(frontmatter)
+    let frontmatter = serde_yaml_ng::from_str::<serde_yaml_ng::Value>(frontmatter)
         .ok()
         .and_then(|v| serde_json::to_value(v).ok())
         .filter(Json::is_object)

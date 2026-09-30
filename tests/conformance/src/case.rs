@@ -26,7 +26,7 @@ pub enum CaseError {
     },
     /// `expect.yaml` isn't valid.
     #[error("invalid expect.yaml: {0}")]
-    Yaml(#[from] serde_yaml::Error),
+    Yaml(#[from] serde_yaml_ng::Error),
     /// The case breaks a rule of the case format.
     #[error("{0}")]
     Format(String),
@@ -55,7 +55,7 @@ impl Case {
     pub fn load(id: String, dir: &Path, shared_model: &Path) -> Result<Case, CaseError> {
         let expect_path = dir.join("expect.yaml");
         let text = read(&expect_path)?;
-        let expect: Expect = serde_yaml::from_str(&text)?;
+        let expect: Expect = serde_yaml_ng::from_str(&text)?;
 
         let has_input = dir.join("input.md").is_file();
         let has_files = dir.join("files").is_dir();

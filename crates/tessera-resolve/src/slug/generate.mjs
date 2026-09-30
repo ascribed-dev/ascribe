@@ -5,6 +5,10 @@
 //
 // The Rust port is checked against this package's actual output, so run this
 // against the version recorded in `mod.rs` and commit the result.
+
+// The spreads split strings into code points on purpose: they build pools of
+// characters for the random fixtures, and whole grapheme clusters aren't wanted.
+/* oxlint-disable typescript/no-misused-spread */
 import { createRequire } from 'node:module'
 import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

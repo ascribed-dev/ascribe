@@ -542,7 +542,7 @@ fn the_file_level_checks_see_the_layered_files_like_the_source_index() {
 #[test]
 fn without_a_project_the_server_stays_quiet_and_picks_one_up_when_it_appears() {
     let dir = tempfile::tempdir().expect("dir");
-    let root = dir.path().canonicalize().expect("real");
+    let root = support::real_path(dir.path());
     let mut client = Client::start(&root);
     client.settle();
     assert!(client.log.is_empty());

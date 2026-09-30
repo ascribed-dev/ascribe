@@ -100,7 +100,7 @@ git push origin main
 
 Actions → **Release** → Run workflow, from `main`, with **publish** unchecked. It builds the binary on each platform, packs everything, installs the npm packages and each extension package on its platform and checks them against `examples/quill`, and runs the publish steps with `--dry-run`.
 
-**Check:** every job passes. Download the `release` artifact and look it over: `npm/` has seven tarballs, `vsix/` four packages, `github/` four archives.
+**Check:** every job passes, and the Rust and JavaScript workflows are green on the same commit. A failing job on any platform stops the release: don't tag until it's fixed. Download the `release` artifact and look it over: `npm/` has seven tarballs, `vsix/` four packages, `github/` four archives.
 
 ### 6. Tag
 
@@ -160,6 +160,6 @@ Unpublishing (`npm unpublish @ascribed/cli@0.2.0`) is allowed only within 72 hou
 ## Known limitations
 
 - **Intel Macs:** not supported. There's no `darwin-x64` npm package or extension package, so npm installs no binary there (`ascribe` says the platform isn't supported) and the Marketplace doesn't offer the extension.
-- **Linux:** the binaries are built on Ubuntu 22.04 and need glibc 2.35 or later. Alpine and other musl systems aren't supported; npm won't install the Linux packages there.
+- **Linux:** the binaries are built on Ubuntu 24.04 and need glibc 2.39 or later. Alpine and other musl systems aren't supported; npm won't install the Linux packages there.
 - **macOS and Windows downloads:** the binaries in the GitHub release aren't signed with a Developer ID or Authenticode certificate. A binary downloaded with a browser is quarantined on macOS (`xattr -d com.apple.quarantine ascribe` clears it) and may trigger SmartScreen on Windows. Binaries installed from npm or inside the extension aren't affected.
-- **Actions:** the workflow uses `macos-15`, `ubuntu-22.04`, `ubuntu-22.04-arm`, and `windows-2022` runners. If GitHub retires one, update both `build` and `smoke`.
+- **Actions:** the workflow uses `macos-26`, `ubuntu-24.04`, `ubuntu-24.04-arm`, and `windows-2025` runners. If GitHub retires one, update both `build` and `smoke`.

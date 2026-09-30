@@ -396,8 +396,12 @@ fn rel(root: &Path, uri: &str) -> String {
     if bytes.len() > 2 && bytes[0] == b'/' && bytes[1].is_ascii_alphabetic() && bytes[2] == b':' {
         path.remove(0);
     }
-    // The server writes a drive letter in upper case, the temp directory may not.
+    // `canonicalize` gives a Windows path the `\\?\` prefix; URIs don't carry it.
     let root_text = root.to_string_lossy().replace('\\', "/");
+    let root_text = root_text
+        .strip_prefix("//?/")
+        .unwrap_or(&root_text)
+        .to_string();
     if path.as_bytes().get(1) == Some(&b':') && root_text.as_bytes().get(1) == Some(&b':') {
         path.replace_range(0..1, &root_text[0..1]);
     }

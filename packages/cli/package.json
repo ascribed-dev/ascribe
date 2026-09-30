@@ -27,9 +27,11 @@
       "default": "./dist/binary.js"
     }
   },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "stage-native": "node ./scripts/stage-native.mjs"
@@ -41,7 +43,7 @@
     "@ascribed/cli-win32-x64": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^24.0.0"
   },
   "publishConfig": {
     "access": "public"

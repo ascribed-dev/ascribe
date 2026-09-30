@@ -9,7 +9,7 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
-serde_yaml.workspace = true
+serde_yaml_ng.workspace = true
 tessera-core.workspace = true
 tessera-model.workspace = true
 tessera-syntax.workspace = true

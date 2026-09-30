@@ -60,10 +60,11 @@ fn page_conflicts(index: &FileIndex, selection: &[(String, Vec<String>)]) -> boo
             return false;
         };
         let values: Vec<&str> = match value {
-            serde_yaml::Value::String(s) => vec![s.as_str()],
-            serde_yaml::Value::Sequence(items) => {
-                items.iter().filter_map(serde_yaml::Value::as_str).collect()
-            }
+            serde_yaml_ng::Value::String(s) => vec![s.as_str()],
+            serde_yaml_ng::Value::Sequence(items) => items
+                .iter()
+                .filter_map(serde_yaml_ng::Value::as_str)
+                .collect(),
             _ => return false,
         };
         !values.iter().any(|v| selected.iter().any(|s| s == v))

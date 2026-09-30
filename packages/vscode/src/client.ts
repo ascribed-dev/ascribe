@@ -10,7 +10,7 @@ import {
   type ErrorHandlerResult,
   type LanguageClientOptions,
   type ServerOptions,
-} from "vscode-languageclient/node.js";
+} from "vscode-languageclient/node";
 import { ancestorsWithin, resolveBinary, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
@@ -31,7 +31,7 @@ export class ServerController implements vscode.Disposable {
   private client: LanguageClient | undefined;
   private current: ResolvedBinary | undefined;
   private status: ServerState = "stopped";
-  private readonly output = vscode.window.createOutputChannel("Ascribe");
+  private readonly output = vscode.window.createOutputChannel("Ascribe", { log: true });
   private readonly crashes: CrashCounter;
   private starting: Promise<void> = Promise.resolve();
   private readonly started = new vscode.EventEmitter<void>();
@@ -227,7 +227,7 @@ function serverOptions(binary: ResolvedBinary): ServerOptions {
 }
 
 function clientOptions(
-  outputChannel: vscode.OutputChannel,
+  outputChannel: vscode.LogOutputChannel,
   reportRenameError: (error: unknown) => void,
 ): LanguageClientOptions {
   return {

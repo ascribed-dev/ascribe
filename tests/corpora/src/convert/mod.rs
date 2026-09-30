@@ -307,10 +307,10 @@ pub(crate) fn frontmatter(
 }
 
 /// A page's description from its frontmatter YAML, when it's a plain string.
-pub(crate) fn description_of(front: &serde_yaml::Value) -> Option<String> {
+pub(crate) fn description_of(front: &serde_yaml_ng::Value) -> Option<String> {
     front
         .get("description")
-        .and_then(serde_yaml::Value::as_str)
+        .and_then(serde_yaml_ng::Value::as_str)
         .map(|s| s.split_whitespace().collect::<Vec<_>>().join(" "))
         .filter(|s| !s.is_empty())
 }

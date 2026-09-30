@@ -7,7 +7,7 @@
 //! key or value that causes it. A problem with no place of its own, such as a
 //! missing field, is reported at the file's first line (SPEC §8.1).
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 use tessera_core::{Fix, Issue, Location, Span, TextEdit, diagnostics};
 use tessera_model::{FrontmatterSchema, TypeMatch, validate_frontmatter};
 use tessera_syntax::Frontmatter;
@@ -54,7 +54,7 @@ impl Ctx<'_> {
                 let value = if content.trim().is_empty() {
                     Value::Null
                 } else {
-                    match serde_yaml::from_str::<Value>(content) {
+                    match serde_yaml_ng::from_str::<Value>(content) {
                         Ok(v) => v,
                         Err(e) => {
                             // SPEC §8.2: at the YAML

@@ -62,7 +62,7 @@ corepack enable && pnpm install
 pnpm -r test                           # the packages
 ```
 
-Each crate and package has a README with its own details. [RELEASING.md](RELEASING.md) is how a release is made. The crates keep the project's working name, Tessera.
+Each crate and package has a README with its own details. [CONTRIBUTING.md](CONTRIBUTING.md) says what CI checks, and [SECURITY.md](SECURITY.md) how to report a vulnerability. [RELEASING.md](RELEASING.md) is how a release is made. The crates keep the project's working name, Tessera.
 
 ## License
 

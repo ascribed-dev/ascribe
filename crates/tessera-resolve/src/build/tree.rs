@@ -42,7 +42,7 @@ pub struct ResolvedPage {
     /// The frontmatter, with phrases substituted in the fields the content
     /// model says take them (`phrases = true`). `None` when the file has no
     /// frontmatter or it isn't valid YAML.
-    pub frontmatter: Option<serde_yaml::Value>,
+    pub frontmatter: Option<serde_yaml_ng::Value>,
     /// The page's title: the frontmatter `title`, substituted.
     pub title: Option<String>,
     /// The page-level availability (the frontmatter `available`, after

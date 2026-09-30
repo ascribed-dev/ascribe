@@ -31,6 +31,7 @@ import { basename, join, relative } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
 import { checkVersion, extension, npmPackages, root, targets } from "./manifests.mjs";
+import { thirdPartyNotices } from "./notices.mjs";
 
 class ReleaseError extends Error {}
 process.on("uncaughtException", (error) => {
@@ -53,7 +54,8 @@ if (problems.length > 0) fail(problems.join("\n"));
 const wanted = options.targets?.split(",") ?? targets.map((t) => t.target);
 const selected = wanted.map((name) => {
   const target = targets.find((t) => t.target === name);
-  if (!target) fail(`unknown target ${name}; the targets are ${targets.map((t) => t.target)}`);
+  if (!target)
+    fail(`unknown target ${name}; the targets are ${targets.map((t) => t.target).join(", ")}`);
   const binary = join(options.binaries, name, target.exe);
   if (!existsSync(binary)) fail(`no binary for ${name} at ${binary}`);
   return { ...target, binary };
@@ -77,6 +79,14 @@ try {
     copyTemporary(join(root, "LICENSE"), join(root, dir, "LICENSE"));
   }
   copyTemporary(join(root, "CHANGELOG.md"), join(root, extension.dir, "CHANGELOG.md"));
+  // The packages that hold the binary carry the license text of the crates in it.
+  const notices = join(out, "THIRD-PARTY-NOTICES");
+  writeFileSync(notices, thirdPartyNotices());
+  for (const { dir, target } of [...npmPackages, extension]) {
+    if (target !== undefined || dir === extension.dir) {
+      copyTemporary(notices, join(root, dir, "THIRD-PARTY-NOTICES"));
+    }
+  }
 
   step("Building the JavaScript packages");
   pnpm([
@@ -130,6 +140,7 @@ try {
     copyFileSync(target.binary, join(stage, target.exe));
     if (!target.exe.endsWith(".exe")) chmodSync(join(stage, target.exe), 0o755);
     copyFileSync(join(root, "LICENSE"), join(stage, "LICENSE"));
+    copyFileSync(notices, join(stage, "THIRD-PARTY-NOTICES"));
     const name = basename(stage);
     if (target.target.startsWith("win32")) {
       run("zip", ["-q", "-r", `${name}.zip`, name], join(out, "github"));
@@ -164,8 +175,14 @@ function checkTarball(file) {
   }
   const listing = tar(["-tzvf", file]);
   if (!listing.includes("package/LICENSE")) fail(`${where} has no LICENSE`);
+  if (
+    manifest.name.startsWith("@ascribed/cli-") &&
+    !listing.includes("package/THIRD-PARTY-NOTICES")
+  ) {
+    fail(`${where} has no THIRD-PARTY-NOTICES`);
+  }
   const binary = listing.split("\n").find((l) => l.endsWith("package/bin/ascribe"));
-  if (binary !== undefined && !/^-rwx/.test(binary)) {
+  if (binary !== undefined && !binary.startsWith("-rwx")) {
     fail(`${where} bin/ascribe isn't executable: ${binary}`);
   }
   process.stdout.write(`checked ${basename(file)}\n`);
@@ -183,10 +200,14 @@ function checkVsix(file, target) {
   const entry = `extension/bin/${target.target}/${target.exe}`;
   const line = listing.split("\n").find((l) => l.endsWith(entry));
   if (!line) fail(`${where} has no ${entry}`);
-  if (!target.exe.endsWith(".exe") && !/^-rwx/.test(line)) {
+  if (!target.exe.endsWith(".exe") && !line.startsWith("-rwx")) {
     fail(`${where} ${entry} isn't executable: ${line}`);
   }
-  for (const needed of ["extension/dist/extension.cjs", "extension/dist/webview/elements.js"]) {
+  for (const needed of [
+    "extension/THIRD-PARTY-NOTICES",
+    "extension/dist/extension.cjs",
+    "extension/dist/webview/elements.js",
+  ]) {
     if (!listing.includes(needed)) fail(`${where} has no ${needed}`);
   }
   const bins = listing.split("\n").filter((l) => l.includes("extension/bin/") && !l.endsWith("/"));

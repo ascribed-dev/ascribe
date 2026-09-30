@@ -288,14 +288,14 @@ fn check_project_of(job: &Job) -> Project {
         .collect();
     // Files the project couldn't read are still sources, reported and not
     // checked, with ids past every other.
-    let mut next = snapshot
+    let first = snapshot
         .files()
         .map(|f| f.file.index())
         .max()
         .map_or(1, |max| max + 1);
-    for unreadable in snapshot.unreadable() {
+    for (id, unreadable) in (first..).zip(snapshot.unreadable()) {
         sources.push(SourceFile {
-            id: FileId::new(next),
+            id: FileId::new(id),
             path: unreadable.path.clone(),
             text: String::new(),
             unreadable: Some(ReadFailure {
@@ -303,7 +303,6 @@ fn check_project_of(job: &Job) -> Project {
                 not_utf8: unreadable.reason.contains("valid UTF-8"),
             }),
         });
-        next += 1;
     }
     sources.sort_by(|a, b| a.path.cmp(&b.path));
     Project::from_parts_with_fs(

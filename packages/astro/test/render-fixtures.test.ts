@@ -72,10 +72,10 @@ describe("tests/render fixtures", () => {
   it("fails when the plugin isn't applied", async () => {
     const input = readFileSync(`${root}heading-id/input.md`, "utf8");
     const expected = readFileSync(`${root}heading-id/expected.html`, "utf8");
-    const { html } = await markdownToHtml(input, { features: { gfm: true } });
+    const { html } = markdownToHtml(input, { features: { gfm: true } });
     expect(firstDifference(expected, html)).toContain("expected attributes");
     const image = readFileSync(`${root}image-inline/input.md`, "utf8");
     const imageExpected = readFileSync(`${root}image-inline/expected.html`, "utf8");
-    expect(firstDifference(imageExpected, (await markdownToHtml(image)).html)).toBeDefined();
+    expect(firstDifference(imageExpected, markdownToHtml(image).html)).toBeDefined();
   });
 });

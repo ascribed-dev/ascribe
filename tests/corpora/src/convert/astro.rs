@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 
 use super::{
     Converted, blank, closes_fence, description_of, first_heading, frontmatter, model_footer,
@@ -20,7 +20,7 @@ pub fn convert(pages: &[(String, String)]) -> Converted {
     for (path, text) in pages {
         let md = md_path(path);
         let (front, body) = split_frontmatter(text);
-        let front: Option<Value> = front.and_then(|f| serde_yaml::from_str(f).ok());
+        let front: Option<Value> = front.and_then(|f| serde_yaml_ng::from_str(f).ok());
         let body = convert_body(&md, body, &mut out, &mut targets);
         let stem = md.rsplit('/').next().unwrap_or(&md).trim_end_matches(".md");
         let title = front

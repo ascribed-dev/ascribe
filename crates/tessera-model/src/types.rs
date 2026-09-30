@@ -1,7 +1,7 @@
 //! Field types and attribute types, and frontmatter
 //! validation against them.
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 use tessera_core::{Issue, Location, diagnostics};
 
 use crate::names::suggest;
@@ -191,7 +191,7 @@ impl Cx<'_> {
         }
     }
 
-    fn object(&mut self, path: &str, fields: &[Field], map: Option<&serde_yaml::Mapping>) {
+    fn object(&mut self, path: &str, fields: &[Field], map: Option<&serde_yaml_ng::Mapping>) {
         let join = |name: &str| {
             if path.is_empty() {
                 name.to_owned()
@@ -312,7 +312,7 @@ pub fn default_mismatch(ty: &FieldType, v: &Value) -> Option<String> {
             description: None,
         }],
     };
-    let mut map = serde_yaml::Mapping::new();
+    let mut map = serde_yaml_ng::Mapping::new();
     map.insert(Value::String("default".into()), v.clone());
     let at = Location::new(tessera_core::FileId::new(0), 0..0);
     validate_frontmatter(&schema, &Value::Mapping(map), at)
@@ -358,7 +358,7 @@ mod tests {
     }
 
     fn run(owner: SchemaOwner, yaml: &str) -> Vec<(String, String)> {
-        let value: Value = serde_yaml::from_str(yaml).unwrap();
+        let value: Value = serde_yaml_ng::from_str(yaml).unwrap();
         let at = Location::new(FileId::new(0), 0..0);
         validate_frontmatter(&schema(owner), &value, at)
             .into_iter()
@@ -432,7 +432,7 @@ mod tests {
 
     #[test]
     fn did_you_mean() {
-        let value: Value = serde_yaml::from_str("title: x\ntitel: y").unwrap();
+        let value: Value = serde_yaml_ng::from_str("title: x\ntitel: y").unwrap();
         let at = Location::new(FileId::new(0), 0..0);
         let issues = validate_frontmatter(&schema(page()), &value, at);
         assert_eq!(issues[0].variant, Some("suggestion"));

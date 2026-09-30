@@ -129,6 +129,11 @@ fn apply_workspace_edit_with_encoding(
             .strip_prefix("file://")
             .expect("file URI")
             .replace("%20", " ");
+        // A drive path, `C:/dir`, follows a third slash.
+        let path = match path.strip_prefix('/') {
+            Some(drive) if drive.as_bytes().get(1) == Some(&b':') => drive.to_string(),
+            _ => path,
+        };
         let path = PathBuf::from(path);
         let original = std::fs::read_to_string(&path).expect("edit source exists");
         std::fs::write(

@@ -23,7 +23,7 @@
 //! Each entry has the attributes of a `<ascribe-availability-target>` and its
 //! text. `variant` passes through as written.
 
-use serde_yaml::{Mapping, Value};
+use serde_yaml_ng::{Mapping, Value};
 use tessera_resolve::ResolvedPage;
 
 use super::blocks::availability_target;
@@ -55,7 +55,7 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
     if map.is_empty() {
         return Ok(String::new());
     }
-    let yaml = serde_yaml::to_string(&Value::Mapping(map)).map_err(|e| EmitError::Render {
+    let yaml = serde_yaml_ng::to_string(&Value::Mapping(map)).map_err(|e| EmitError::Render {
         page: page.path.to_string(),
         message: format!("can't write the frontmatter: {e}"),
     })?;

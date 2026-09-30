@@ -7,7 +7,7 @@
 //! and never scanned for phrases or markup again. Each replacement is also
 //! listed as a [`Substitution`] over the block's source text.
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 use tessera_core::{RelPath, Span};
 use tessera_model::{ContentModel, FieldType, TypeMatch};
 use tessera_syntax::{BlockKind, Inline, InlineKind, LinkForm, Phrase};
