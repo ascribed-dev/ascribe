@@ -10,8 +10,8 @@ disagree (SPEC §8, §10).
 Phase 15 built initialization, document and file synchronization, diagnostics,
 and semantic tokens. Phase 16 added completion, hover, go to definition,
 document links, CodeLens, and inlay hints (see [Navigation](#navigation));
-the `ascribe/preview` request is phase 25; code actions, rename, and formatting
-are phase 24.
+phase 24 adds code actions, rename, and formatting; the `ascribe/preview`
+request is phase 25.
 
 ## Semantic token legend
 
@@ -109,10 +109,19 @@ page paths), not per request. See the table under Performance.
 Advertised: incremental text document sync (open/close, no save), semantic
 tokens (full and range), the position encoding, and, from phase 16, completion
 (triggered by `@ { ( # / = , |` and a space), hover, definition, document
-links, CodeLens, inlay hints, and one command (`ascribe.openFile`, below). Registered dynamically after
-`initialized`, when the client allows it: `workspace/didChangeWatchedFiles`.
+links, CodeLens, inlay hints, code actions, document formatting, rename, and one
+command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
+for files. Registered dynamically after `initialized`, when the client allows it:
+`workspace/didChangeWatchedFiles`.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
 advertise pull diagnostics.
+
+Code actions carry the checker's existing diagnostic fixes (including the
+router's reverse route suggestion) and the Ascribe-specific repairs. Rename and
+file-move edits use the current project snapshot, including open buffers, its
+source index, and reverse references. Formatting returns only the minimal edits
+from `tessera-fmt`; the VS Code client applies those edits on save when
+`ascribe.formatOnSave` is enabled, and requests file-move edits before renaming.
 
 ## How it works
 

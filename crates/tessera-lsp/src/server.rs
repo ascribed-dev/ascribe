@@ -12,16 +12,18 @@ use lsp_types::notification::{
     Notification as _,
 };
 use lsp_types::request::{
-    CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand, GotoDefinition, HoverRequest,
-    InlayHintRequest, Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest,
+    CodeActionRequest, CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, Rename, Request as _,
+    SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
 };
 use lsp_types::{
-    CodeLensOptions, CompletionOptions, DocumentLinkOptions, ExecuteCommandOptions,
-    GotoDefinitionResponse, HoverProviderCapability, InitializeParams, InitializeResult, OneOf,
-    SemanticTokens, SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
+    CodeActionProviderCapability, CodeLensOptions, CompletionOptions, DocumentFormattingParams,
+    DocumentLinkOptions, ExecuteCommandOptions, GotoDefinitionResponse, HoverProviderCapability,
+    InitializeParams, InitializeResult, OneOf, RenameOptions, SemanticTokens,
+    SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
     ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    Uri,
+    Uri, WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
 };
 use tessera_core::{LineIndex, Span};
 
@@ -126,6 +128,19 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 resolve_provider: Some(false),
             }),
             inlay_hint_provider: Some(OneOf::Left(true)),
+            code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
+            document_formatting_provider: Some(OneOf::Left(true)),
+            rename_provider: Some(OneOf::Right(RenameOptions {
+                prepare_provider: Some(false),
+                work_done_progress_options: Default::default(),
+            })),
+            workspace: Some(WorkspaceServerCapabilities {
+                file_operations: Some(WorkspaceFileOperationsServerCapabilities {
+                    will_rename: Some(crate::refactor::file_operation_capability()),
+                    ..WorkspaceFileOperationsServerCapabilities::default()
+                }),
+                ..WorkspaceServerCapabilities::default()
+            }),
             execute_command_provider: Some(ExecuteCommandOptions {
                 commands: vec![OPEN_FILE.to_owned()],
                 work_done_progress_options: Default::default(),
@@ -372,6 +387,20 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
+            CodeActionRequest::METHOD => {
+                navigation(shared, &request, |p: lsp_types::CodeActionParams| {
+                    (p.text_document.uri.clone(), move |ctx: &Ctx| {
+                        Some(crate::code_action::actions(ctx, p))
+                    })
+                })
+            }
+            Formatting::METHOD => navigation(shared, &request, |p: DocumentFormattingParams| {
+                (p.text_document.uri.clone(), move |ctx: &Ctx| {
+                    Some(crate::formatting::format(ctx, p))
+                })
+            }),
+            Rename::METHOD => rename_request(shared, &request),
+            WillRenameFiles::METHOD => will_rename_request(shared, &request),
             ExecuteCommand::METHOD => execute_command(shared, &request),
             crate::preview::METHOD => preview_request(shared, &request),
             method => Err(Response::new_err(
@@ -433,6 +462,61 @@ where
         }),
         None => Ok(serde_json::Value::Null),
     }
+}
+
+fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::RenameParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let uri = params.text_document_position.text_document.uri.clone();
+    let context = {
+        let core = shared.lock();
+        let is_model = core
+            .config
+            .as_ref()
+            .zip(crate::uri::uri_to_path(&uri))
+            .is_some_and(|(config, path)| {
+                crate::uri::normalize(config) == crate::uri::normalize(&path)
+            });
+        if is_model {
+            core.project_nav_target().and_then(|ctx| {
+                crate::refactor::rename_model_key(
+                    &ctx,
+                    params.text_document_position.position,
+                    &params.new_name,
+                )
+            })
+        } else {
+            core.nav_target(&uri)
+                .and_then(|ctx| crate::refactor::rename(&ctx, params))
+        }
+    };
+    match context {
+        Some(edit) => serde_json::to_value(edit).map_err(|e| {
+            Response::new_err(
+                request.id.clone(),
+                ErrorCode::InternalError as i32,
+                e.to_string(),
+            )
+        }),
+        None => Ok(serde_json::Value::Null),
+    }
+}
+
+fn will_rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::RenameFilesParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let edit = shared
+        .lock()
+        .project_nav_target()
+        .and_then(|ctx| crate::refactor::will_rename(&ctx, params))
+        .unwrap_or_default();
+    serde_json::to_value(edit).map_err(|e| {
+        Response::new_err(
+            request.id.clone(),
+            ErrorCode::InternalError as i32,
+            e.to_string(),
+        )
+    })
 }
 
 /// `ascribe.openFile`, the command a CodeLens carries: asks the client to show

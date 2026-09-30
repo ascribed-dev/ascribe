@@ -24,6 +24,36 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   preview.register();
 
   context.subscriptions.push(
+    vscode.workspace.onWillSaveTextDocument((event) => {
+      if (
+        event.document.languageId !== "markdown" ||
+        !vscode.workspace.getConfiguration("ascribe", event.document.uri).get("formatOnSave", false)
+      ) {
+        return;
+      }
+      event.waitUntil(
+        server
+          .request("textDocument/formatting", {
+            textDocument: { uri: event.document.uri.toString() },
+            options: {
+              tabSize: vscode.workspace
+                .getConfiguration("editor", event.document.uri)
+                .get("tabSize", 2),
+              insertSpaces: vscode.workspace
+                .getConfiguration("editor", event.document.uri)
+                .get("insertSpaces", true),
+            },
+          })
+          .then((value) => asTextEdits(value))
+          .catch((error: unknown) => {
+            server.reportFeatureError("format on save", error);
+            return [];
+          }),
+      );
+    }),
+  );
+
+  context.subscriptions.push(
     server,
     preview,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
@@ -51,6 +81,63 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     whenSettled: () => server.whenSettled(),
     preview: preview.api,
   };
+}
+
+interface ProtocolPosition {
+  line: number;
+  character: number;
+}
+
+interface ProtocolTextEdit {
+  range: { start: ProtocolPosition; end: ProtocolPosition };
+  newText: string;
+}
+
+function asTextEdits(value: unknown): vscode.TextEdit[] {
+  if (!Array.isArray(value)) {
+    throw new Error("the language server returned invalid formatting edits");
+  }
+  return value.map((edit: unknown) => {
+    if (!isProtocolTextEdit(edit)) {
+      throw new Error("the language server returned an invalid formatting edit");
+    }
+    return vscode.TextEdit.replace(protocolRange(edit.range), edit.newText);
+  });
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isProtocolPosition(value: unknown): value is ProtocolPosition {
+  return (
+    isRecord(value) &&
+    typeof value.line === "number" &&
+    Number.isInteger(value.line) &&
+    value.line >= 0 &&
+    typeof value.character === "number" &&
+    Number.isInteger(value.character) &&
+    value.character >= 0
+  );
+}
+
+function isProtocolTextEdit(value: unknown): value is ProtocolTextEdit {
+  return (
+    isRecord(value) &&
+    isRecord(value.range) &&
+    isProtocolPosition(value.range.start) &&
+    isProtocolPosition(value.range.end) &&
+    typeof value.newText === "string"
+  );
+}
+
+function protocolRange(range: { start: ProtocolPosition; end: ProtocolPosition }): vscode.Range {
+  return new vscode.Range(
+    range.start.line,
+    range.start.character,
+    range.end.line,
+    range.end.character,
+  );
 }
 
 /** Whether the workspace holds an `ascribe.toml` (not counting `node_modules`). */
