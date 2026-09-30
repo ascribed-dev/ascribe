@@ -1,6 +1,6 @@
 # examples/astro-site
 
-A plain Astro site (no Starlight) built from a small Ascribe project with `@ascribed/astro`: phase 21's end-to-end slice. Its content covers the integrations most likely to break.
+A plain Astro site (no Starlight) built from a small Ascribe project with `@ascribed/astro` and `@ascribed/cli`. Its content covers the integrations most likely to break.
 
 ```
 ascribe.toml                      base-path /docs/, trailing-slash never; the `site` build
@@ -27,15 +27,24 @@ test/e2e/                         the end-to-end tests
 ## Running it
 
 ```sh
-cargo build -p tessera-cli
 pnpm install
+# For local workspace development only, stage a native binary into the optional package:
+cargo build -p tessera-cli
+ASCRIBE_BIN_DARWIN_ARM64="$PWD/target/debug/ascribe" pnpm --filter @ascribed/cli stage-native darwin-arm64
+pnpm --filter @ascribed/cli build
 pnpm --filter @ascribed/elements build
 pnpm --filter @ascribed/astro build
 pnpm --filter @ascribed/example-astro-site build     # or: astro build
 pnpm --filter @ascribed/example-astro-site test:e2e
 ```
 
-The integration finds the binary in `target/` (or `ASCRIBE_BIN`). `test:e2e` runs a real `astro build`, serves it with `astro preview`, and checks the built HTML in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own):
+Use the matching target name and environment variable from `packages/cli/README.md`
+on other platforms. The integration resolves the project's installed `@ascribed/cli`
+native package by default; `binary` and `ASCRIBE_BIN` can override it.
+`astro dev` rebuilds and refreshes when a source, asset, or `ascribe.toml`
+changes, and returns 503 while an invalid source is being fixed.
+
+`test:e2e` runs a real `astro build`, serves it with `astro preview`, and checks the built HTML in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own):
 
 - the root page is at `/docs`, and the links between pages, including the one to the root, land;
 - the explicit-id link lands on its heading;

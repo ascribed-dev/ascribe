@@ -5,6 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { resolveBinary } from "@ascribed/cli/binary";
 import type { Browser, BrowserContext, Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { BASE, buildSite, launchChromium, servePreview, siteDir } from "./harness.js";
@@ -168,7 +169,7 @@ describe("the built site", () => {
 
   it("gives every heading the id Ascribe validated, at the route Ascribe computed", async () => {
     // `ascribe build --emit json` records each page's route and heading ids.
-    const binary = process.env["ASCRIBE_BIN"] ?? findWorkspaceBinary();
+    const binary = process.env["ASCRIBE_BIN"] ?? resolveBinary();
     execFileSync(binary, ["build", "--build", "site", "--emit", "json", "--color", "never"], {
       cwd: siteDir,
       stdio: "pipe",
@@ -203,21 +204,6 @@ describe("the built site", () => {
     }
   });
 });
-
-function findWorkspaceBinary(): string {
-  for (let dir = siteDir; dir !== path.dirname(dir); dir = path.dirname(dir)) {
-    for (const profile of ["debug", "release"]) {
-      const candidate = path.join(dir, "target", profile, "ascribe");
-      try {
-        readFileSync(candidate);
-        return candidate;
-      } catch {
-        // Try the next.
-      }
-    }
-  }
-  throw new Error("no ascribe binary: run `cargo build -p tessera-cli` or set ASCRIBE_BIN");
-}
 
 function jsonFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>

@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - packages/cli/platforms/*
   - tests/zod
   - examples/astro-site
 # esbuild ships its binary in a per-platform package; its postinstall script

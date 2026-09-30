@@ -1,0 +1,18 @@
+{
+  "name": "@ascribed/cli-win32-x64",
+  "version": "0.0.0",
+  "description": "Ascribe native binary for Windows x64.",
+  "license": "MPL-2.0",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bin"
+  ],
+  "exports": {
+    "./bin/ascribe.exe": "./bin/ascribe.exe"
+  }
+}

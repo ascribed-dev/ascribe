@@ -36,6 +36,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ascribed/cli": "workspace:*",
     "@ascribed/elements": "workspace:*",
     "property-information": "^7.2.0",
     "smol-toml": "^1.9.0"

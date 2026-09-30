@@ -58,13 +58,23 @@ jobs:
         env:
           ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
 
-  # The Astro end-to-end slice (phase 21): a real `astro build` of
-  # examples/astro-site against a locally built `ascribe`, with the built
-  # HTML checked in Chromium. Also runs the markdown plugin's tests/render/
-  # fixtures under both of Astro's markdown processors.
+  # Native release binaries are packed into the optional npm packages and
+  # installed with scripts disabled before exercising the real Astro site.
   astro:
-    name: Astro end-to-end
-    runs-on: ubuntu-latest
+    name: Astro npm end-to-end (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, target: linux-x64, env_target: LINUX_X64, exe: ascribe }
+          - { os: ubuntu-24.04-arm, target: linux-arm64, env_target: LINUX_ARM64, exe: ascribe }
+          - { os: macos-15-intel, target: darwin-x64, env_target: DARWIN_X64, exe: ascribe }
+          - { os: macos-latest, target: darwin-arm64, env_target: DARWIN_ARM64, exe: ascribe }
+          - { os: windows-latest, target: win32-x64, env_target: WIN32_X64, exe: ascribe.exe }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -75,15 +85,26 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build -p tessera-cli --locked
+      - run: cargo build -p tessera-cli --release --locked
+      - run: echo "ASCRIBE_BIN_${{ matrix.env_target }}=$GITHUB_WORKSPACE/target/release/${{ matrix.exe }}" >> "$GITHUB_ENV"
+      - run: pnpm --filter @ascribed/cli stage-native ${{ matrix.target }}
+      - run: pnpm --filter @ascribed/cli build
+      - name: Pack and install npm CLI without lifecycle scripts
+        run: |
+          mkdir -p "$RUNNER_TEMP/ascribe-tarballs" "$RUNNER_TEMP/ascribe-install"
+          pnpm -C packages/cli/platforms/cli-${{ matrix.target }} pack --pack-destination "$RUNNER_TEMP/ascribe-tarballs"
+          pnpm -C packages/cli pack --pack-destination "$RUNNER_TEMP/ascribe-tarballs"
+          npm install --prefix "$RUNNER_TEMP/ascribe-install" --offline --ignore-scripts --no-audit --no-fund "$RUNNER_TEMP/ascribe-tarballs/"*.tgz
+          "$RUNNER_TEMP/ascribe-install/node_modules/.bin/ascribe" --version
+          echo "ASCRIBE_BIN=$(node -p "require.resolve('@ascribed/cli-${{ matrix.target }}/bin/${{ matrix.exe }}', { paths: [process.env.RUNNER_TEMP + '/ascribe-install'] })")" >> "$GITHUB_ENV"
       - run: pnpm --filter @ascribed/elements build
       - run: pnpm --filter @ascribed/astro build
       - run: pnpm --filter @ascribed/astro test
       - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install --with-deps chromium
+        if: runner.os == 'Linux'
+      - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install chromium
+        if: runner.os != 'Linux'
       - run: pnpm --filter @ascribed/example-astro-site test:e2e
-        env:
-          ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
       # The editor preview (phase 25) against the site this job just proved.
       - run: pnpm --filter ascribe-vscode test:parity
-        env:
-          ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
+        if: matrix.target == 'linux-x64'
