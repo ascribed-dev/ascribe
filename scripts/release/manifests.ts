@@ -7,8 +7,34 @@ import { fileURLToPath } from "node:url";
 
 export const root = resolve(fileURLToPath(import.meta.url), "..", "..", "..");
 
-/** The supported platforms: npm's `os-cpu`, which is also `vsce --target`'s name. */
-export const targets = [
+/** A supported platform. */
+export interface Target {
+  /** npm's `os-cpu`, which is also `vsce --target`'s name. */
+  target: string;
+  /** The Rust target triple. */
+  rust: string;
+  /** The binary's file name. */
+  exe: string;
+}
+
+/** A published npm package: a platform's binary (with its `target`), or a JavaScript package. */
+export interface NpmPackage {
+  name: string;
+  dir: string;
+  target?: string;
+}
+
+/** The fields of a `package.json` the release scripts read or write. */
+export interface PackageManifest {
+  name: string;
+  version: string;
+  publisher?: string;
+  repository?: { url?: string };
+  ascribe?: { minServerVersion?: string };
+}
+
+/** The supported platforms. */
+export const targets: readonly Target[] = [
   { target: "darwin-arm64", rust: "aarch64-apple-darwin", exe: "ascribe" },
   { target: "linux-arm64", rust: "aarch64-unknown-linux-gnu", exe: "ascribe" },
   { target: "linux-x64", rust: "x86_64-unknown-linux-gnu", exe: "ascribe" },
@@ -19,7 +45,7 @@ export const targets = [
  * The published npm packages, in the order they're published: a package
  * comes after everything it depends on.
  */
-export const npmPackages = [
+export const npmPackages: readonly NpmPackage[] = [
   ...targets.map(({ target }) => ({
     name: `@ascribed/cli-${target}`,
     dir: `packages/cli/platforms/cli-${target}`,
@@ -35,25 +61,31 @@ export const extension = { id: "Ascribe.ascribe-vscode", dir: "packages/vscode" 
 /** `x.y.z` or `x.y.z-pre.n`: what the scripts accept as a version. */
 export const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 
-export function readJson(path) {
-  return JSON.parse(readFileSync(join(root, path), "utf8"));
+export function readJson(path: string): PackageManifest {
+  return JSON.parse(readFileSync(join(root, path), "utf8")) as PackageManifest;
 }
 
-export function writeJson(path, value) {
+export function writeJson(path: string, value: unknown): void {
   writeFileSync(join(root, path), `${JSON.stringify(value, null, 2)}\n`);
 }
 
 /** The Cargo workspace's version, from `[workspace.package]`. */
-export function cargoVersion() {
+export function cargoVersion(): string {
   const toml = readFileSync(join(root, "Cargo.toml"), "utf8");
-  const match = /\[workspace\.package\][^[]*?\nversion = "([^"]+)"/.exec(toml);
-  if (!match) throw new Error("Cargo.toml has no [workspace.package] version");
-  return match[1];
+  const version = /\[workspace\.package\][^[]*?\nversion = "([^"]+)"/.exec(toml)?.[1];
+  if (version === undefined) throw new Error("Cargo.toml has no [workspace.package] version");
+  return version;
+}
+
+/** A file that carries the version, and the version it says. */
+export interface FoundVersion {
+  file: string;
+  version: string | undefined;
 }
 
 /** Every place the version is written, and what each says now. */
-export function versions() {
-  const found = [{ file: "Cargo.toml", version: cargoVersion() }];
+export function versions(): FoundVersion[] {
+  const found: FoundVersion[] = [{ file: "Cargo.toml", version: cargoVersion() }];
   for (const { dir } of [...npmPackages, extension]) {
     const file = `${dir}/package.json`;
     found.push({ file, version: readJson(file).version });
@@ -71,9 +103,9 @@ export function versions() {
  * the changelog has a section for it, and, given a tag, that the tag is
  * `v<version>`. Returns the version and the problems found.
  */
-export function checkVersion(tag) {
+export function checkVersion(tag?: string): { version: string; problems: string[] } {
   const found = versions();
-  const version = found[0].version;
+  const version = cargoVersion();
   const problems = found
     .filter((entry) => entry.version !== version)
     .map((entry) => `${entry.file} says ${entry.version}, but Cargo.toml says ${version}`);
@@ -88,7 +120,7 @@ export function checkVersion(tag) {
 }
 
 /** The changelog's section for a version, without its heading, or undefined. */
-export function changelogSection(version) {
+export function changelogSection(version: string): string | undefined {
   const text = readFileSync(join(root, "CHANGELOG.md"), "utf8");
   const lines = text.split("\n");
   const start = lines.findIndex((line) => line.startsWith(`## ${version}`));

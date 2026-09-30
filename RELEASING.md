@@ -68,14 +68,14 @@ Nothing in `project-docs/questions.md` that concerns what a release ships is sti
 ### 2. Set the version
 
 ```sh
-node scripts/release/version.mjs 0.2.0
+node scripts/release/version.ts 0.2.0
 ```
 
 This sets the version in `Cargo.toml` (and `Cargo.lock`), every published `package.json`, and the extension's `ascribe.minServerVersion`, which makes the extension warn about a project binary older than itself. Lower `minServerVersion` by hand if the release still works with older binaries.
 
 In `CHANGELOG.md`, write the release's section as `## 0.2.0 (YYYY-MM-DD)`, with today's date. For 0.1.0, replace `(unreleased)` with the date.
 
-**Check:** `node scripts/release/version.mjs --check` prints the version.
+**Check:** `node scripts/release/version.ts --check` prints the version.
 
 ### 3. Check everything locally
 

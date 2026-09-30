@@ -31,7 +31,7 @@ const executable = resolveBinary(); // the absolute path of this platform's ascr
 
 ## Development
 
-The platform packages are in `platforms/`. Their binaries aren't in the repository: a release stages each one before packing (`scripts/release/pack.mjs`). To try the launcher with a local build, stage it by hand:
+The platform packages are in `platforms/`. Their binaries aren't in the repository: a release stages each one before packing (`scripts/release/pack.ts`). To try the launcher with a local build, stage it by hand:
 
 ```sh
 cargo build -p tessera-cli

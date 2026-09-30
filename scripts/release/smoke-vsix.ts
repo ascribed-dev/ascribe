@@ -2,7 +2,7 @@
 // examples/quill: once with the binary bundled in the package, and once with a
 // project binary in node_modules/.bin, which the extension must prefer.
 //
-//   node scripts/release/smoke-vsix.mjs <file.vsix> [--vscode-platform <name>]
+//   node scripts/release/smoke-vsix.ts <file.vsix> [--vscode-platform <name>]
 //
 // --vscode-platform picks which VS Code build to download, by
 // @vscode/test-electron's names: darwin-arm64, linux-x64, linux-arm64, and
@@ -16,23 +16,22 @@ import {
   mkdirSync,
   mkdtempSync,
   readdirSync,
+  readFileSync,
   rmSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { createRequire } from "node:module";
+import { stripTypeScriptTypes } from "node:module";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
-import { extension, root } from "./manifests.mjs";
-
-const require = createRequire(join(root, extension.dir, "package.json"));
-const {
+import {
   downloadAndUnzipVSCode,
   resolveCliArgsFromVSCodeExecutablePath,
   runTests,
-} = require("@vscode/test-electron");
+} from "@vscode/test-electron";
+import { extension, root } from "./manifests.ts";
 
 const { values: options, positionals } = parseArgs({
   allowPositionals: true,
@@ -40,10 +39,11 @@ const { values: options, positionals } = parseArgs({
 });
 const [vsixArgument] = positionals;
 if (vsixArgument === undefined) {
-  process.stderr.write("usage: smoke-vsix.mjs <file.vsix> [--vscode-platform <name>]\n");
+  process.stderr.write("usage: smoke-vsix.ts <file.vsix> [--vscode-platform <name>]\n");
   process.exit(2);
 }
 const vsix = resolve(vsixArgument);
+const smokeDir = join(root, "scripts", "release", "smoke");
 const platform = options["vscode-platform"];
 
 // A process an extension host started has this set, and VS Code would then run
@@ -53,7 +53,7 @@ delete process.env.ELECTRON_RUN_AS_NODE;
 const vscodeExecutablePath = await downloadAndUnzipVSCode({
   cachePath: join(root, extension.dir, "out", "vscode-test"),
   version: process.env.VSCODE_VERSION ?? "stable",
-  ...(platform && { platform }),
+  ...(platform === undefined ? {} : { platform }),
 });
 
 // Short on purpose: VS Code's IPC socket lives under the user data directory,
@@ -66,8 +66,9 @@ try {
   // directories under ./.vscode-test; these are the smoke test's.
   const [cli, ...cliArgs] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath, {
     reuseMachineInstall: true,
-    ...(platform && { platform }),
+    ...(platform === undefined ? {} : { platform }),
   });
+  if (cli === undefined) throw new Error("VS Code's command line couldn't be found");
   const install = spawnSync(
     cli,
     [
@@ -89,7 +90,14 @@ try {
     { recursive: true },
   );
 
-  await smoke("bundled", workspace, extensions);
+  // VS Code loads the suite as CommonJS, and not as TypeScript: write it as JavaScript.
+  const suite = join(scratch, "suite.cjs");
+  writeFileSync(
+    suite,
+    stripTypeScriptTypes(readFileSync(join(smokeDir, "suite.cts"), "utf8"), { mode: "strip" }),
+  );
+
+  await smoke("bundled", workspace, extensions, suite);
 
   // A project binary: a launcher in node_modules/.bin that runs the bundled
   // binary, as npm's link to @ascribed/cli's launcher would run the project's.
@@ -112,7 +120,7 @@ try {
     writeFileSync(join(bin, "ascribe"), `#!/bin/sh\nexec "${bundled}" "$@"\n`);
     chmodSync(join(bin, "ascribe"), 0o755);
   }
-  await smoke("project", workspace, extensions);
+  await smoke("project", workspace, extensions, suite);
   unlinkSync(join(bin, process.platform === "win32" ? "ascribe.cmd" : "ascribe"));
 } catch (error) {
   process.stderr.write(
@@ -124,12 +132,17 @@ try {
 }
 process.exit(failed ? 1 : 0);
 
-async function smoke(source, workspace, extensions) {
+async function smoke(
+  source: string,
+  workspace: string,
+  extensions: string,
+  suite: string,
+): Promise<void> {
   process.stdout.write(`\n== ${source} binary\n`);
   await runTests({
     vscodeExecutablePath,
-    extensionDevelopmentPath: join(root, "scripts", "release", "smoke"),
-    extensionTestsPath: join(root, "scripts", "release", "smoke", "suite.cjs"),
+    extensionDevelopmentPath: smokeDir,
+    extensionTestsPath: suite,
     extensionTestsEnv: { SMOKE_EXPECT_SOURCE: source, SMOKE_WORKSPACE: workspace },
     launchArgs: [
       workspace,
@@ -146,8 +159,8 @@ async function smoke(source, workspace, extensions) {
 }
 
 /** The target the installed package was built for, from its file name. */
-function target() {
-  const match = /ascribe-vscode-([a-z0-9]+-[a-z0-9]+)-/.exec(vsix);
-  if (!match) throw new Error(`can't tell the target from the file name ${vsix}`);
-  return match[1];
+function target(): string {
+  const target = /ascribe-vscode-([a-z0-9]+-[a-z0-9]+)-/.exec(vsix)?.[1];
+  if (target === undefined) throw new Error(`can't tell the target from the file name ${vsix}`);
+  return target;
 }

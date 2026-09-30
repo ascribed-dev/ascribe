@@ -1,11 +1,11 @@
 // Sets or checks Ascribe's one version.
 //
-//   node scripts/release/version.mjs 0.2.0     set it everywhere
-//   node scripts/release/version.mjs --check   check every file agrees, and
+//   node scripts/release/version.ts 0.2.0     set it everywhere
+//   node scripts/release/version.ts --check   check every file agrees, and
 //                                              the changelog has the version
-//   node scripts/release/version.mjs --check --tag v0.2.0
+//   node scripts/release/version.ts --check --tag v0.2.0
 //                                              also check the tag matches
-//   node scripts/release/version.mjs --notes   print the changelog section,
+//   node scripts/release/version.ts --notes   print the changelog section,
 //                                              for the GitHub release
 //
 // Setting it also sets the extension's `ascribe.minServerVersion`: the
@@ -25,11 +25,12 @@ import {
   readJson,
   root,
   writeJson,
-} from "./manifests.mjs";
+} from "./manifests.ts";
 
 const args = process.argv.slice(2);
+const [first] = args;
 
-if (args[0] === "--check") {
+if (first === "--check") {
   const tagAt = args.indexOf("--tag");
   const { version, problems } = checkVersion(tagAt === -1 ? undefined : args[tagAt + 1]);
   if (problems.length > 0) {
@@ -37,7 +38,7 @@ if (args[0] === "--check") {
     process.exit(1);
   }
   process.stdout.write(`${version}\n`);
-} else if (args[0] === "--notes") {
+} else if (first === "--notes") {
   const version = cargoVersion();
   const notes = changelogSection(version);
   if (notes === undefined) {
@@ -45,8 +46,8 @@ if (args[0] === "--check") {
     process.exit(1);
   }
   process.stdout.write(`${notes}\n`);
-} else if (args.length === 1 && VERSION.test(args[0])) {
-  const version = args[0];
+} else if (args.length === 1 && first !== undefined && VERSION.test(first)) {
+  const version = first;
   const cargo = join(root, "Cargo.toml");
   const toml = readFileSync(cargo, "utf8");
   const updated = toml.replace(
@@ -60,7 +61,7 @@ if (args[0] === "--check") {
     const file = `${dir}/package.json`;
     const manifest = readJson(file);
     manifest.version = version;
-    if (dir === extension.dir) manifest.ascribe.minServerVersion = version;
+    if (dir === extension.dir) (manifest.ascribe ??= {}).minServerVersion = version;
     writeJson(file, manifest);
   }
   process.stdout.write(`Set the version to ${version}.\n`);
@@ -69,7 +70,7 @@ if (args[0] === "--check") {
   }
 } else {
   process.stderr.write(
-    "usage: node scripts/release/version.mjs <version> | --check [--tag v<version>] | --notes\n",
+    "usage: node scripts/release/version.ts <version> | --check [--tag v<version>] | --notes\n",
   );
   process.exit(2);
 }

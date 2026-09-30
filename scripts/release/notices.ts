@@ -2,7 +2,7 @@
 // into the `ascribe` binary, which the binary's archives and packages must
 // carry alongside Ascribe's own LICENSE.
 //
-//   node scripts/release/notices.mjs [--out <file>]
+//   node scripts/release/notices.ts [--out <file>]
 //
 // The crate list is what Cargo resolves for `tessera-cli`'s normal
 // dependencies, so a crate that's only a build tool or a test dependency isn't
@@ -15,28 +15,51 @@ import { dirname, join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { root } from "./manifests.mjs";
+import { root } from "./manifests.ts";
 
 const LICENSE_FILE = /^(licen[cs]e|copying|unlicense|notice)(?![a-z])/i;
 /** In-repo crates that aren't Ascribe's own code. */
 const VENDORED = new Set(["comrak-tessera"]);
 
+/** The parts of `cargo metadata`'s output that the notices read. */
+interface CargoMetadata {
+  packages: CargoPackage[];
+  workspace_members: string[];
+  resolve: {
+    nodes: { id: string; deps: { pkg: string; dep_kinds: { kind: string | null }[] }[] }[];
+  };
+}
+
+interface CargoPackage {
+  id: string;
+  name: string;
+  version: string;
+  license: string | null;
+  manifest_path: string;
+}
+
+/** Crates that share one license text. */
+interface Group {
+  text: string;
+  crates: CargoPackage[];
+}
+
 /** The notices for the `ascribe` binary, as text. */
-export function thirdPartyNotices() {
+export function thirdPartyNotices(): string {
   const metadata = JSON.parse(
     execFileSync("cargo", ["metadata", "--format-version", "1", "--locked"], {
       cwd: root,
       encoding: "utf8",
       maxBuffer: 256 * 1024 * 1024,
     }),
-  );
+  ) as CargoMetadata;
   const packages = new Map(metadata.packages.map((p) => [p.id, p]));
   const nodes = new Map(metadata.resolve.nodes.map((n) => [n.id, n]));
   const start = metadata.packages.find((p) => p.name === "tessera-cli");
   if (!start) throw new Error("the workspace has no tessera-cli package");
 
-  const seen = new Set();
-  const visit = (id) => {
+  const seen = new Set<string>();
+  const visit = (id: string): void => {
     if (seen.has(id)) return;
     seen.add(id);
     for (const dep of nodes.get(id)?.deps ?? []) {
@@ -46,9 +69,10 @@ export function thirdPartyNotices() {
   visit(start.id);
 
   const workspace = new Set(metadata.workspace_members);
-  const groups = new Map();
+  const groups = new Map<string, Group>();
   for (const id of seen) {
     const pkg = packages.get(id);
+    if (pkg === undefined) throw new Error(`cargo metadata has no package ${id}`);
     if (workspace.has(id) && !VENDORED.has(pkg.name)) continue;
     const dir = dirname(pkg.manifest_path);
     const texts = readdirSync(dir)
@@ -58,8 +82,9 @@ export function thirdPartyNotices() {
       .filter((text) => text !== "");
     const text = texts.join("\n\n---\n\n");
     const key = createHash("sha256").update(text).digest("hex");
-    if (!groups.has(key)) groups.set(key, { text, crates: [] });
-    groups.get(key).crates.push(pkg);
+    let group = groups.get(key);
+    if (group === undefined) groups.set(key, (group = { text, crates: [] }));
+    group.crates.push(pkg);
   }
 
   const sections = [...groups.values()]
@@ -67,7 +92,7 @@ export function thirdPartyNotices() {
       ...group,
       crates: group.crates.sort((a, b) => a.name.localeCompare(b.name)),
     }))
-    .sort((a, b) => a.crates[0].name.localeCompare(b.crates[0].name))
+    .sort((a, b) => firstName(a).localeCompare(firstName(b)))
     .map(({ text, crates }) => {
       const list = crates
         .map((c) => `  ${c.name} ${c.version} (${c.license ?? "see its repository"})`)
@@ -84,6 +109,10 @@ export function thirdPartyNotices() {
     sections.join(`\n\n${"=".repeat(72)}\n\n`),
     "",
   ].join("\n");
+}
+
+function firstName(group: Group): string {
+  return group.crates[0]?.name ?? "";
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

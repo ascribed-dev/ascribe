@@ -1,6 +1,6 @@
 // Packs a release from already-built binaries. Publishes nothing.
 //
-//   node scripts/release/pack.mjs --binaries <dir> [--targets a,b] [--out <dir>]
+//   node scripts/release/pack.ts --binaries <dir> [--targets a,b] [--out <dir>]
 //
 // <dir> holds one directory per target with its binary: darwin-arm64/ascribe,
 // win32-x64/ascribe.exe, and so on. By default every target is required;
@@ -30,11 +30,19 @@ import {
 import { basename, join, relative } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
-import { checkVersion, extension, npmPackages, root, targets } from "./manifests.mjs";
-import { thirdPartyNotices } from "./notices.mjs";
+import {
+  checkVersion,
+  extension,
+  npmPackages,
+  root,
+  targets,
+  type PackageManifest,
+  type Target,
+} from "./manifests.ts";
+import { thirdPartyNotices } from "./notices.ts";
 
 class ReleaseError extends Error {}
-process.on("uncaughtException", (error) => {
+process.on("uncaughtException", (error: Error) => {
   process.stderr.write(`error: ${error instanceof ReleaseError ? error.message : error.stack}\n`);
   process.exit(1);
 });
@@ -46,7 +54,8 @@ const { values: options } = parseArgs({
     out: { type: "string", default: join(root, "dist", "release") },
   },
 });
-if (options.binaries === undefined) fail("--binaries <dir> is required");
+const binaries = options.binaries;
+if (binaries === undefined) fail("--binaries <dir> is required");
 
 const { version, problems } = checkVersion();
 if (problems.length > 0) fail(problems.join("\n"));
@@ -56,7 +65,7 @@ const selected = wanted.map((name) => {
   const target = targets.find((t) => t.target === name);
   if (!target)
     fail(`unknown target ${name}; the targets are ${targets.map((t) => t.target).join(", ")}`);
-  const binary = join(options.binaries, name, target.exe);
+  const binary = join(binaries, name, target.exe);
   if (!existsSync(binary)) fail(`no binary for ${name} at ${binary}`);
   return { ...target, binary };
 });
@@ -66,8 +75,8 @@ rmSync(out, { recursive: true, force: true });
 for (const dir of ["npm", "vsix", "github"]) mkdirSync(join(out, dir), { recursive: true });
 
 // Files copied into packages for packing, removed afterwards.
-const temporary = [];
-const copyTemporary = (from, to) => {
+const temporary: string[] = [];
+const copyTemporary = (from: string, to: string): void => {
   if (existsSync(to)) return;
   copyFileSync(from, to);
   temporary.push(to);
@@ -82,10 +91,9 @@ try {
   // The packages that hold the binary carry the license text of the crates in it.
   const notices = join(out, "THIRD-PARTY-NOTICES");
   writeFileSync(notices, thirdPartyNotices());
-  for (const { dir, target } of [...npmPackages, extension]) {
-    if (target !== undefined || dir === extension.dir) {
-      copyTemporary(notices, join(root, dir, "THIRD-PARTY-NOTICES"));
-    }
+  const withBinary = [...npmPackages.filter((pkg) => pkg.target !== undefined), extension];
+  for (const { dir } of withBinary) {
+    copyTemporary(notices, join(root, dir, "THIRD-PARTY-NOTICES"));
   }
 
   step("Building the JavaScript packages");
@@ -163,12 +171,17 @@ step(`Packed ${version} in ${relative(process.cwd(), out) || "."}`);
 for (const file of listFiles(out)) process.stdout.write(`  ${relative(out, file)}\n`);
 
 /** A packed npm package: its manifest and the executable bit of a native binary. */
-function checkTarball(file) {
-  const manifest = JSON.parse(tar(["-xzOf", file, "package/package.json"]));
+function checkTarball(file: string): void {
+  const manifest = JSON.parse(tar(["-xzOf", file, "package/package.json"])) as PackageManifest & {
+    private?: boolean;
+    dependencies?: Record<string, string>;
+    optionalDependencies?: Record<string, string>;
+    peerDependencies?: Record<string, string>;
+  };
   const where = `${basename(file)}:`;
   if (manifest.version !== version) fail(`${where} version ${manifest.version}, not ${version}`);
   if (manifest.private) fail(`${where} is private`);
-  for (const field of ["dependencies", "optionalDependencies", "peerDependencies"]) {
+  for (const field of ["dependencies", "optionalDependencies", "peerDependencies"] as const) {
     for (const [name, range] of Object.entries(manifest[field] ?? {})) {
       if (String(range).startsWith("workspace:")) fail(`${where} ${name} is ${range}`);
     }
@@ -189,9 +202,9 @@ function checkTarball(file) {
 }
 
 /** A VS Code extension package: its manifest, and the binary for its target. */
-function checkVsix(file, target) {
+function checkVsix(file: string, target: Target): void {
   const where = `${basename(file)}:`;
-  const manifest = JSON.parse(unzip(["-p", file, "extension/package.json"]));
+  const manifest = JSON.parse(unzip(["-p", file, "extension/package.json"])) as PackageManifest;
   if (`${manifest.publisher}.${manifest.name}` !== extension.id) {
     fail(`${where} is ${manifest.publisher}.${manifest.name}, not ${extension.id}`);
   }
@@ -215,46 +228,46 @@ function checkVsix(file, target) {
   process.stdout.write(`checked ${basename(file)}\n`);
 }
 
-function listFiles(dir) {
+function listFiles(dir: string): string[] {
   return readdirSync(dir, { recursive: true })
     .map((entry) => join(dir, String(entry)))
     .filter((path) => statSync(path).isFile() && basename(path) !== "SHA256SUMS")
     .sort();
 }
 
-function sha256(file) {
+function sha256(file: string): string {
   return createHash("sha256").update(readFileSync(file)).digest("hex");
 }
 
-function tar(args) {
+function tar(args: string[]): string {
   return execFileSync("tar", args, { encoding: "utf8" });
 }
 
-function unzip(args) {
+function unzip(args: string[]): string {
   return execFileSync("unzip", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
 }
 
 /** Runs pnpm, through corepack when pnpm itself isn't on the path. */
-function pnpm(args, cwd = root) {
+function pnpm(args: string[], cwd = root): void {
   const direct = spawnSync("pnpm", ["--version"], { stdio: "ignore", shell: isWindows() });
   if (direct.status === 0) run("pnpm", args, cwd);
   else run("corepack", ["pnpm", ...args], cwd);
 }
 
-function run(command, args, cwd = root) {
+function run(command: string, args: string[], cwd = root): void {
   const result = spawnSync(command, args, { cwd, stdio: "inherit", shell: isWindows() });
   if (result.status !== 0) fail(`${command} ${args.join(" ")} failed`);
 }
 
-function isWindows() {
+function isWindows(): boolean {
   return process.platform === "win32";
 }
 
-function step(message) {
+function step(message: string): void {
   process.stdout.write(`\n== ${message}\n`);
 }
 
 /** Stops the script. It throws, so the cleanup in `finally` still runs. */
-function fail(message) {
+function fail(message: string): never {
   throw new ReleaseError(message);
 }

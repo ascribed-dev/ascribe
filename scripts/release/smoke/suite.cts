@@ -1,14 +1,29 @@
 // Runs inside VS Code, with the packaged extension installed. Checks that it
 // starts a language server from the binary it's expected to use, and that the
 // server reports the broken page's diagnostic.
-const assert = require("node:assert/strict");
-const path = require("node:path");
-const vscode = require("vscode");
+const assert: typeof import("node:assert/strict") = require("node:assert/strict");
+const path: typeof import("node:path") = require("node:path");
+const vscode: typeof import("vscode") = require("vscode");
 
-exports.run = async function run() {
+/** The part of the extension's API the suite uses. */
+interface AscribeApi {
+  binary():
+    | {
+        path: string;
+        source: string;
+        version: { parts: number[] };
+        warning?: string;
+      }
+    | undefined;
+  state(): string;
+  whenSettled(): Promise<void>;
+}
+
+exports.run = async function run(): Promise<void> {
   const expected = process.env.SMOKE_EXPECT_SOURCE;
   const workspace = process.env.SMOKE_WORKSPACE;
-  const extension = vscode.extensions.getExtension("Ascribe.ascribe-vscode");
+  assert.ok(workspace, "SMOKE_WORKSPACE isn't set");
+  const extension = vscode.extensions.getExtension<AscribeApi>("Ascribe.ascribe-vscode");
   assert.ok(extension, "the extension Ascribe.ascribe-vscode isn't installed");
   const api = await extension.activate();
   await api.whenSettled();
@@ -34,7 +49,7 @@ exports.run = async function run() {
       .map((d) => String(typeof d.code === "object" ? d.code.value : d.code));
     if (codes.includes("ASC001")) break;
     if (Date.now() > deadline) assert.fail(`no ASC001 on broken.md; got ${codes.join(", ")}`);
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise<void>((resolve) => setTimeout(resolve, 200));
   }
   process.stdout.write(
     `smoke: ${extension.id} ${extension.packageJSON.version} on ${process.platform}-${process.arch} ` +

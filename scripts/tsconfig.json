@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    // Node runs these files as they are, stripping their types, so they can't
+    // use syntax that needs a transform (enums, namespaces, parameter properties).
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "declaration": false,
+    "sourceMap": false,
+    "types": ["node"]
+  },
+  "include": ["release/**/*.ts", "release/**/*.cts"]
+}

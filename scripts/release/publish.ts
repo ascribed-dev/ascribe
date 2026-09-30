@@ -1,10 +1,10 @@
-// Publishes a packed release (scripts/release/pack.mjs's output).
+// Publishes a packed release (scripts/release/pack.ts's output).
 //
-//   node scripts/release/publish.mjs npm [--from <dir>] [--dry-run]
-//   node scripts/release/publish.mjs marketplace [--from <dir>] [--dry-run]
+//   node scripts/release/publish.ts npm [--from <dir>] [--dry-run]
+//   node scripts/release/publish.ts marketplace [--from <dir>] [--dry-run]
 //
 // Every target is required, unless --targets names the ones packed (a local
-// dry run on one machine, like pack.mjs's).
+// dry run on one machine, like pack.ts's).
 //
 // npm: publishes every tarball in dependency order (the platform packages,
 // then @ascribed/cli, @ascribed/elements, and @ascribed/astro), with
@@ -22,7 +22,15 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
-import { checkVersion, extension, npmPackages, readJson, root, targets } from "./manifests.mjs";
+import {
+  checkVersion,
+  extension,
+  npmPackages,
+  readJson,
+  root,
+  targets,
+  type PackageManifest,
+} from "./manifests.ts";
 
 const { values: options, positionals } = parseArgs({
   allowPositionals: true,
@@ -44,18 +52,18 @@ if (problems.length > 0) fail(problems.join("\n"));
 
 if (registry === "npm") publishNpm();
 else if (registry === "marketplace") publishMarketplace();
-else fail("usage: publish.mjs npm|marketplace [--from <dir>] [--dry-run]");
+else fail("usage: publish.ts npm|marketplace [--from <dir>] [--dry-run]");
 
-function publishNpm() {
+function publishNpm(): void {
   checkRepository();
   const dir = join(options.from, "npm");
-  const tarballs = new Map(
+  const tarballs = new Map<string, string>(
     readdirSync(dir).map((file) => {
       const manifest = JSON.parse(
         execFileSync("tar", ["-xzOf", join(dir, file), "package/package.json"], {
           encoding: "utf8",
         }),
-      );
+      ) as PackageManifest;
       return [manifest.name, join(dir, file)];
     }),
   );
@@ -65,11 +73,13 @@ function publishNpm() {
   // A pre-release goes to the `next` tag, so `npm install` keeps the last release.
   const tag = version.includes("-") ? "next" : "latest";
   for (const { name } of expected) {
+    const tarball = tarballs.get(name);
+    if (tarball === undefined) fail(`no tarball for ${name} in ${dir}`);
     if (isPublished(name)) {
       log(`${name}@${version} is already on npm; skipping`);
       continue;
     }
-    const args = ["publish", tarballs.get(name), "--access", "public", "--tag", tag];
+    const args = ["publish", tarball, "--access", "public", "--tag", tag];
     // Provenance needs the workflow's OIDC token, which only a real publish has.
     if (dryRun) args.push("--dry-run");
     else if (process.env.GITHUB_ACTIONS === "true") args.push("--provenance");
@@ -79,7 +89,7 @@ function publishNpm() {
 }
 
 /** Whether npm already has this version of a package. */
-function isPublished(name) {
+function isPublished(name: string): boolean {
   const result = spawnSync("npm", ["view", `${name}@${version}`, "version"], {
     encoding: "utf8",
     shell: process.platform === "win32",
@@ -93,7 +103,7 @@ function isPublished(name) {
  * npm checks that a package with provenance names the repository that built
  * it. Checking first stops a mismatch before anything is published.
  */
-function checkRepository() {
+function checkRepository(): void {
   const repository = process.env.GITHUB_REPOSITORY;
   if (repository === undefined) return;
   for (const { dir } of [...npmPackages, extension]) {
@@ -107,7 +117,7 @@ function checkRepository() {
   }
 }
 
-function publishMarketplace() {
+function publishMarketplace(): void {
   const dir = join(options.from, "vsix");
   const packages = selected.map((target) => ({
     target,
@@ -120,7 +130,7 @@ function publishMarketplace() {
   for (const { target, file } of packages) {
     const manifest = JSON.parse(
       execFileSync("unzip", ["-p", file, "extension/package.json"], { encoding: "utf8" }),
-    );
+    ) as PackageManifest;
     const id = `${manifest.publisher}.${manifest.name}`;
     if (id !== extension.id || manifest.version !== version) {
       fail(`${file} is ${id} ${manifest.version}, not ${extension.id} ${version}`);
@@ -136,7 +146,7 @@ function publishMarketplace() {
   }
 }
 
-function run(command, args) {
+function run(command: string, args: string[]): void {
   const result = spawnSync(command, args, {
     cwd: root,
     stdio: "inherit",
@@ -145,11 +155,11 @@ function run(command, args) {
   if (result.status !== 0) fail(`${command} ${args.join(" ")} failed`);
 }
 
-function log(message) {
+function log(message: string): void {
   process.stdout.write(`${message}\n`);
 }
 
-function fail(message) {
+function fail(message: string): never {
   process.stderr.write(`error: ${message}\n`);
   process.exit(1);
 }
