@@ -20,7 +20,7 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.90"
+rust-version = "1.98"
 license = "MPL-2.0"
 repository = "https://github.com/ascribed-dev/ascribe"
 publish = false
@@ -48,7 +48,7 @@ insta = { version = "1", features = ["yaml"] }
 proptest = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
+serde_yaml_ng = "0.10"
 thiserror = "2"
 toml = "0.9"
 

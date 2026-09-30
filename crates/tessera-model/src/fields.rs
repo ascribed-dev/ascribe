@@ -1,7 +1,7 @@
 //! Field types and attribute types: parsing the short
 //! form, reading the table form, and building fields and attribute schemas.
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 use tessera_core::{AttributeSchema, AttributeType, DefaultValue, SetMember, Span, diagnostics};
 use toml::de::{DeTable, DeValue};
 

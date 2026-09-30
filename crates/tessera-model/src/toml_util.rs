@@ -1,6 +1,6 @@
 //! Helpers over the spanned TOML tree.
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 use tessera_core::Span;
 use toml::Spanned;
 use toml::de::{DeTable, DeValue};

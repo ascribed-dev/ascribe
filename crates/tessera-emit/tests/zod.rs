@@ -41,7 +41,7 @@ fn frontmatter_of(page: &str) -> serde_json::Value {
         .and_then(|rest| rest.split_once("\n---\n"))
         .map(|(yaml, _)| yaml)
         .expect("a page with frontmatter");
-    let value: serde_yaml::Value = serde_yaml::from_str(yaml).expect("YAML");
+    let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(yaml).expect("YAML");
     serde_json::to_value(value).expect("JSON")
 }
 

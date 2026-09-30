@@ -28,7 +28,7 @@
 
 use std::fmt::Write as _;
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 use tessera_model::{ContentModel, ContentType, Field, FieldType};
 
 /// The Zod module for a content model.
@@ -220,7 +220,7 @@ fn literal(value: &Value) -> String {
                 .map(|(k, v)| {
                     let key = match k {
                         Value::String(s) => json(s),
-                        other => json(serde_yaml::to_string(other).unwrap_or_default().trim()),
+                        other => json(serde_yaml_ng::to_string(other).unwrap_or_default().trim()),
                     };
                     format!("{key}: {}", literal(v))
                 })
@@ -277,7 +277,7 @@ mod tests {
     fn values_become_literals() {
         assert_eq!(json("a \"b\"\n"), "\"a \\\"b\\\"\\n\"");
         assert_eq!(
-            literal(&serde_yaml::from_str("[1, two, true]").unwrap_or_default()),
+            literal(&serde_yaml_ng::from_str("[1, two, true]").unwrap_or_default()),
             "[1, \"two\", true]"
         );
     }

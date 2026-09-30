@@ -1,6 +1,6 @@
 //! Where things are in a frontmatter block.
 //!
-//! `serde_yaml` reads values but forgets where they were, and the checks
+//! `serde_yaml_ng` reads values but forgets where they were, and the checks
 //! report a frontmatter problem at the line of the key or value that causes
 //! it (SPEC §8.1). [`YamlIndex`] reads the same text with an event parser
 //! that keeps positions, and answers "where is `author.name`?" or "where is

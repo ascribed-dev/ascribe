@@ -5,7 +5,7 @@
 
 use std::collections::BTreeSet;
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 
 use super::{
     Converted, blank, closes_fence, description_of, first_heading, frontmatter, id_from_anchor,
@@ -27,7 +27,7 @@ pub fn convert(pages: &[(String, String)]) -> Converted {
             _ => path.clone(),
         };
         let (front, body) = split_frontmatter(text);
-        let front: Option<Value> = front.and_then(|f| serde_yaml::from_str(f).ok());
+        let front: Option<Value> = front.and_then(|f| serde_yaml_ng::from_str(f).ok());
         let body = convert_body(&md, body, &known, &mut out);
         let stem = md.rsplit('/').next().unwrap_or(&md).trim_end_matches(".md");
         let title = front
@@ -94,10 +94,11 @@ fn shortcode(line: &str) -> Option<(&str, &str, bool)> {
     let (inner, percent) =
         if let Some(i) = t.strip_prefix("{{<").and_then(|r| r.strip_suffix(">}}")) {
             (i, false)
-        } else if let Some(i) = t.strip_prefix("{{%").and_then(|r| r.strip_suffix("%}}")) {
-            (i, true)
         } else {
-            return None;
+            (
+                t.strip_prefix("{{%").and_then(|r| r.strip_suffix("%}}"))?,
+                true,
+            )
         };
     let inner = inner.trim();
     let (name, rest) = inner.split_once(char::is_whitespace).unwrap_or((inner, ""));

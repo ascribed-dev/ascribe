@@ -306,13 +306,10 @@ fn a_fence_holds_candidates_only_with_phrases_true() {
         .blocks
         .iter()
         .map(|b| match &b.kind {
-            BlockKind::CodeBlock(c) => Some(
-                c.phrases
-                    .as_ref()
-                    .map(|p| p.iter().map(|p| cut(source, p.span)).collect())
-                    .unwrap_or_default(),
-            )
-            .filter(|_| c.phrases.is_some()),
+            BlockKind::CodeBlock(c) => c
+                .phrases
+                .as_ref()
+                .map(|p| p.iter().map(|p| cut(source, p.span)).collect()),
             _ => None,
         })
         .collect();

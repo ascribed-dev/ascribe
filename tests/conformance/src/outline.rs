@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_yaml::{Mapping, Value};
+use serde_yaml_ng::{Mapping, Value};
 
 /// A sequence of blocks: a document, or the children of a container.
 pub type Outline = Vec<Node>;
@@ -624,7 +624,7 @@ fn node_to_value(node: &Node) -> Value {
 
 /// Renders an outline as YAML, in the form test authors write.
 pub fn outline_to_yaml(outline: &Outline) -> String {
-    serde_yaml::to_string(&outline_to_value(outline))
+    serde_yaml_ng::to_string(&outline_to_value(outline))
         .unwrap_or_else(|e| format!("<couldn't render outline: {e}>"))
 }
 
@@ -993,7 +993,7 @@ mod tests {
     use super::*;
 
     fn parse(yaml: &str) -> Result<Outline, OutlineError> {
-        let v: Value = serde_yaml::from_str(yaml).unwrap();
+        let v: Value = serde_yaml_ng::from_str(yaml).unwrap();
         outline_from_value(&v, "outline")
     }
 

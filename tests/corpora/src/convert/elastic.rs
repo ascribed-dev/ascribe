@@ -6,7 +6,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use serde_yaml::Value;
+use serde_yaml_ng::Value;
 
 use super::{
     Converted, Extra, blank, closes_fence, description_of, first_heading, frontmatter,
@@ -115,7 +115,7 @@ fn rewrite_anchor_links(
 
 /// `subs:` of `docset.yml`.
 fn subs(docset: &str) -> BTreeMap<String, String> {
-    let Ok(value) = serde_yaml::from_str::<Value>(docset) else {
+    let Ok(value) = serde_yaml_ng::from_str::<Value>(docset) else {
         return BTreeMap::new();
     };
     let mut out = BTreeMap::new();
@@ -164,7 +164,7 @@ fn is_fragment(path: &str) -> bool {
 
 fn convert_page(path: &str, text: &str, ctx: &mut Ctx, out: &mut Converted) -> String {
     let (front, body) = split_frontmatter(text);
-    let front: Option<Value> = front.and_then(|f| serde_yaml::from_str(f).ok());
+    let front: Option<Value> = front.and_then(|f| serde_yaml_ng::from_str(f).ok());
     let body = convert_body(path, body, ctx, out);
     if is_fragment(path) {
         return body;

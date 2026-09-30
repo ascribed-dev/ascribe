@@ -21,7 +21,7 @@ lsp-types = "0.97"
 crossbeam-channel = "0.5"
 serde.workspace = true
 serde_json.workspace = true
-serde_yaml.workspace = true
+serde_yaml_ng.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

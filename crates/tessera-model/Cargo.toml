@@ -10,7 +10,7 @@ publish.workspace = true
 
 [dependencies]
 tessera-core.workspace = true
-serde_yaml.workspace = true
+serde_yaml_ng.workspace = true
 # `preserve_order` keeps declaration order.
 toml = { workspace = true, features = ["preserve_order"] }
 
