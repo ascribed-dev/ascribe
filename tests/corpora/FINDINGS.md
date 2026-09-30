@@ -177,7 +177,7 @@ one source cache as it goes, so each file's text is read and indexed once; on
 1,000 generated pages with a warning each, text output went from 6.7 s to
 0.54 s (JSON: 0.19 s).
 
-### P2: system calls (owner: phases 12 and 10, suspected)
+### P2: system calls (owner: phases 12 and 10, suspected); fixed
 
 `strace -c -f ascribe check --format json` on converted Elastic: 23,280
 `getdents64`, 24,985 `openat`, 72,804 `write` for 3,008 pages. System time is
@@ -185,7 +185,11 @@ one source cache as it goes, so each file's text is read and indexed once; on
 case-exact existence probe that lists the parent directory each time (the asset
 contract's exact-case rule); the writes are the JSON report going out
 unbuffered. Both would be much cheaper on a laptop and are fixable without
-touching results.
+touching results. **Fixed (2026-09-30):** a one-shot command's `DiskFs` lists
+each directory once (`DiskFs::with_listing_cache`; the language server's stays
+uncached, since its disk changes), and `check` and `build` buffer their output.
+On an Apple-silicon laptop, `ascribe check` of converted Elastic went from 3.4
+to 3.8 s (1.4 s of it system time) to 2.0 s (0.23 s).
 
 ### P3: page-level checks dominate on real pages (owner: phase 14)
 
@@ -195,9 +199,13 @@ against 0.5 KB, and phase 14's notes already say `PageChecker` indexes the
 project a second time and resolves every page per build. See the miss recorded
 in `RESULTS.md`.
 
-### P4: an unchanged `ascribe build` isn't faster than the first (watch)
+### P4: an unchanged `ascribe build` isn't faster than the first; fixed
 
 3,000 pages, plain and JSON: first build 2.7 s, unchanged rebuild 3.6 s (2.3 to
 4.0 s across runs). "Unchanged files left alone" costs a read of each, but the
 rebuild should not cost more than writing them. Owner: phase 18; measure again
-before acting.
+before acting. **Measured, then fixed (2026-09-30):** every file was written to
+staging, both copies read back to compare, and staging deleted. The store now
+compares the new bytes with the file in place first and leaves an identical
+file alone, never staging it. On a laptop, 3,000 pages, plain and JSON: first
+build 2.2 s, unchanged rebuild 1.1 s (it was 2.7 to 3.1 s).

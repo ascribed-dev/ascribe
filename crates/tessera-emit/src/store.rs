@@ -320,14 +320,30 @@ impl OutputDir {
             return Err(StoreError::Conflicts(problems));
         }
 
-        // Step 3: emit into staging.
+        // Step 3: emit into staging, except a file whose destination already
+        // holds exactly its bytes: it stays where it is, untouched, so an
+        // unchanged rebuild writes (and reads back) nothing it doesn't need
+        // to (phase 26, P4).
         if staging.exists() {
             fs::remove_dir_all(staging).map_err(io_err("can't remove", staging))?;
         }
         fs::create_dir_all(staging).map_err(io_err("can't create", staging))?;
+        let mut in_place: BTreeSet<&RelPath> = BTreeSet::new();
+        let mut made: BTreeSet<PathBuf> = BTreeSet::new();
         for file in files {
+            let current = emitter_root.join(file.path.as_str());
+            let same = match &file.contents {
+                Contents::Text(text) => holds(&current, text.as_bytes()),
+                Contents::Copy(from) => same_content(from, &current),
+            };
+            if same {
+                in_place.insert(&file.path);
+                continue;
+            }
             let dest = staging.join(file.path.as_str());
-            if let Some(parent) = dest.parent() {
+            if let Some(parent) = dest.parent()
+                && made.insert(parent.to_path_buf())
+            {
                 fs::create_dir_all(parent).map_err(io_err("can't create", parent))?;
             }
             match &file.contents {
@@ -365,7 +381,7 @@ impl OutputDir {
         for file in files {
             let staged = staging.join(file.path.as_str());
             let dest = emitter_root.join(file.path.as_str());
-            if same_content(&staged, &dest) {
+            if in_place.contains(&file.path) || same_content(&staged, &dest) {
                 replaced.unchanged += 1;
                 continue;
             }
@@ -475,6 +491,16 @@ fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
         }
     }
     Ok(manifest.files)
+}
+
+/// Whether the file at `dest` exists and holds exactly `bytes`.
+fn holds(dest: &Path, bytes: &[u8]) -> bool {
+    match fs::metadata(dest) {
+        Ok(meta) if meta.is_file() && meta.len() == bytes.len() as u64 => {
+            fs::read(dest).is_ok_and(|current| current == bytes)
+        }
+        _ => false,
+    }
 }
 
 /// Whether the file at `dest` exists with the same bytes as `staged`.

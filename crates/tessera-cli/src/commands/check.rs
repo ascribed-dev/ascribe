@@ -43,8 +43,10 @@ pub enum Format {
 /// Runs the command. Exit codes: 0 with no errors, 1 with errors (or with
 /// warnings under `--deny-warnings`), 2 when the project can't be checked.
 pub fn run(global: &Global, args: Args) -> ExitCode {
+    // Buffered: a report is many small writes, and a locked stdout flushes
+    // at every line.
     let stdout = io::stdout();
-    let mut out = stdout.lock();
+    let mut out = io::BufWriter::new(stdout.lock());
     let stderr = io::stderr();
     let mut err = stderr.lock();
     let code = check(global, &args, &mut out, &mut err);

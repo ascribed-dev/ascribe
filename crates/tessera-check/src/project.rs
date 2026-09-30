@@ -278,7 +278,9 @@ impl Project {
             content_root,
             output_dir: RelPath::parse(&model.project.output_dir).unwrap_or_default(),
         };
-        let fs = fs.unwrap_or_else(|| Arc::new(DiskFs::new(&root, &layout)));
+        // A caller that doesn't bring a file system is a one-shot command (or a
+        // test): the disk doesn't change while it runs, so listings are kept.
+        let fs = fs.unwrap_or_else(|| Arc::new(DiskFs::with_listing_cache(&root, &layout)));
         Project {
             root,
             layout,

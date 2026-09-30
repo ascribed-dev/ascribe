@@ -68,8 +68,10 @@ pub enum Emit {
 /// `ascribe.toml`, a content model with errors, or an output that couldn't be
 /// written.
 pub fn run(global: &Global, args: Args) -> ExitCode {
+    // Buffered: a report is many small writes, and a locked stdout flushes
+    // at every line.
     let stdout = io::stdout();
-    let mut out = stdout.lock();
+    let mut out = io::BufWriter::new(stdout.lock());
     let stderr = io::stderr();
     let mut err = stderr.lock();
     let code = build(global, &args, &mut out, &mut err);

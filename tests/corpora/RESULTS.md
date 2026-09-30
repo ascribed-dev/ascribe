@@ -38,6 +38,12 @@ over 100 s on this sample (FINDINGS P1), which is a far bigger problem than the
 miss. Follow-ups: P1, P2, P3 in `FINDINGS.md`, owned by phases 10, 12, 14. The
 miss isn't accepted by anyone; it's recorded.
 
+**Update, 2026-09-30.** P1, P2, and P4 are fixed (`FINDINGS.md`). On an
+Apple-silicon laptop, `ascribe check` of the converted Elastic sample takes
+**2.0 s** in either format (it was 3.4 to 3.8 s there before the fixes), which
+meets the target. What's left is P3's page-level work (1.75 s of user time),
+recorded and not changed.
+
 ## The numbers
 
 Synthetic project (3,000 pages, 100 fragments, 60 images), median of the runs:

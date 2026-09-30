@@ -104,8 +104,21 @@ fn unchanged_files_are_left_alone() {
     let dir = tempfile::tempdir().expect("a temporary directory");
     let out = dir.path().join("out");
     replace(&out, "site", &[page("a.md", "A"), page("b.md", "B")]).expect("first");
+    let modified = |name: &str| {
+        fs::metadata(out.join("site/plain").join(name))
+            .and_then(|m| m.modified())
+            .expect("a modification time")
+    };
+    let a_before = modified("a.md");
     let replaced = replace(&out, "site", &[page("a.md", "A"), page("b.md", "B2")]).expect("second");
     assert_eq!((replaced.written, replaced.unchanged), (1, 1));
+    // The unchanged file is the same file, never rewritten (phase 26, P4).
+    assert_eq!(modified("a.md"), a_before);
+    assert_eq!(read(&out.join("site/plain/b.md")), "B2");
+    // Same length, different bytes: written.
+    let replaced = replace(&out, "site", &[page("a.md", "A"), page("b.md", "B3")]).expect("third");
+    assert_eq!((replaced.written, replaced.unchanged), (1, 1));
+    assert_eq!(read(&out.join("site/plain/b.md")), "B3");
 }
 
 #[test]

@@ -4,10 +4,11 @@
 //! language server can index unsaved buffers, and tests can build a project in
 //! memory. A [`DiskFs`] reads a real project; a [`MemoryFs`] holds one.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use tessera_core::RelPath;
 
@@ -71,19 +72,63 @@ pub trait FileSystem {
 pub struct DiskFs {
     project_root: PathBuf,
     content_root: RelPath,
+    /// Directory listings, kept for the life of the value when it was made
+    /// with [`DiskFs::with_listing_cache`]; `None` lists every time.
+    listings: Option<Arc<Mutex<Listings>>>,
 }
+
+/// Each directory's entry names, or `None` for one that can't be listed.
+type Listings = HashMap<PathBuf, Option<Arc<[String]>>>;
 
 impl DiskFs {
     /// The project in `project_root` (the directory with `ascribe.toml`).
+    /// Every probe reads the disk, so a long-lived value sees files come and
+    /// go (the language server's).
     pub fn new(project_root: impl Into<PathBuf>, layout: &Layout) -> DiskFs {
         DiskFs {
             project_root: project_root.into(),
             content_root: layout.content_root.clone(),
+            listings: None,
+        }
+    }
+
+    /// Like [`DiskFs::new`], but each directory a probe looks in is listed
+    /// once and remembered, for a one-shot command (`ascribe check`,
+    /// `ascribe build`) that reads a disk that doesn't change while it runs.
+    /// A probe lists every directory on its path, so without this a large
+    /// project lists the same directories tens of thousands of times.
+    pub fn with_listing_cache(project_root: impl Into<PathBuf>, layout: &Layout) -> DiskFs {
+        DiskFs {
+            listings: Some(Arc::default()),
+            ..DiskFs::new(project_root, layout)
         }
     }
 
     fn content_dir(&self) -> PathBuf {
         self.project_root.join(self.content_root.as_str())
+    }
+
+    /// The names in a directory, or `None` when it can't be listed.
+    fn list(&self, dir: &Path) -> Option<Arc<[String]>> {
+        let read = || -> Option<Arc<[String]>> {
+            let entries = fs::read_dir(dir).ok()?;
+            Some(
+                entries
+                    .flatten()
+                    .map(|e| e.file_name().to_string_lossy().into_owned())
+                    .collect(),
+            )
+        };
+        let Some(listings) = &self.listings else {
+            return read();
+        };
+        let mut listings = listings
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        listings
+            .entry(dir.to_path_buf())
+            .or_insert_with(read)
+            .clone()
     }
 }
 
@@ -111,19 +156,18 @@ impl FileSystem for DiskFs {
                 actual.push("..".to_owned());
                 continue;
             }
-            let Ok(entries) = fs::read_dir(&dir) else {
+            let Some(entries) = self.list(&dir) else {
                 return Probe::Missing;
             };
             let mut exact = None;
             let mut folded = None;
-            for entry in entries.flatten() {
-                let name = entry.file_name().to_string_lossy().into_owned();
-                if name == *segment {
-                    exact = Some(name);
+            for name in entries.iter() {
+                if name == segment {
+                    exact = Some(name.clone());
                     break;
                 }
                 if folded.is_none() && name.to_lowercase() == segment.to_lowercase() {
-                    folded = Some(name);
+                    folded = Some(name.clone());
                 }
             }
             let name = match (exact, folded) {
