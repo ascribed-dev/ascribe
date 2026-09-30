@@ -373,6 +373,56 @@ fn undeclared_phrase_can_be_escaped_or_declared() {
 }
 
 #[test]
+fn phrase_declaration_adds_a_line_after_a_table_header_at_eof() {
+    let f = quill();
+    let model = read(&f, "ascribe.toml");
+    let phrases = model
+        .find("\n[phrases]\n")
+        .map(|offset| offset + 1)
+        .expect("phrases table");
+    let after_phrases = &model[phrases..];
+    let next_table = after_phrases
+        .find("\n[images.attributes]")
+        .expect("next table");
+    let without_phrases = format!("{}{}", &model[..phrases], &after_phrases[next_table + 1..]);
+    write(
+        &f,
+        "ascribe.toml",
+        &format!("{}\n[phrases]", without_phrases.trim_end_matches('\n')),
+    );
+
+    let path = f.path("docs/keys.md");
+    let text = format!("{}\nA {{phase24-only}} phrase.\n", read(&f, "docs/keys.md"));
+    write(&f, "docs/keys.md", &text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let diag = client
+        .diagnostics(&path)
+        .into_iter()
+        .find(|diag| {
+            support::slug(diag) == "phrase-undeclared" && diag.message.contains("phase24-only")
+        })
+        .map(|diag| serde_json::to_value(diag).expect("serialize diagnostic"))
+        .expect("phase24-only phrase diagnostic");
+    let action = actions(&mut client, &path, diag)
+        .into_iter()
+        .find(|action| action["title"] == "Declare phrase in ascribe.toml")
+        .expect("phrase declaration action");
+    let changed = apply_workspace_edit(&f, &action["edit"]);
+    notify_changed(&mut client, &changed);
+
+    let model = read(&f, "ascribe.toml");
+    assert!(
+        model.ends_with("[phrases]\n\"phase24-only\" = \"\"\n"),
+        "{model:?}"
+    );
+    assert!(!client.diagnostics(&path).iter().any(|d| {
+        support::slug(d) == "phrase-undeclared" && d.message.contains("phase24-only")
+    }));
+    assert_no_errors(&client);
+}
+
+#[test]
 fn route_action_rewrites_the_destination_to_a_file_path() {
     let f = quill();
     let path = f.path("docs/keys.md");
@@ -570,13 +620,26 @@ fn file_move_updates_incoming_and_outgoing_relative_references() {
     let new = f.path("docs/guides/my guides/keys.md");
     let old_asset = f.path("docs/playground.png");
     let new_asset = f.path("docs/my images/playground.png");
+    let old_hash_asset = f.path("docs/hash#asset.png");
+    let new_hash_asset = f.path("docs/my images/hash#asset.png");
     std::fs::create_dir_all(new.parent().expect("parent")).expect("mkdir");
     std::fs::create_dir_all(new_asset.parent().expect("parent")).expect("mkdir");
+    std::fs::write(&old_hash_asset, "asset").expect("create asset");
+    let model = read(&f, "ascribe.toml").replace(
+        "[images.attributes]",
+        "asset = \"playground.png\"\n\n[images.attributes]",
+    );
+    write(&f, "ascribe.toml", &model);
     let linking = format!(
         "{}\n[Keys][keys-ref]\n\n[keys-ref]: keys.md#rotate-keys\n",
         read(&f, "docs/install-agent.md")
     );
     write(&f, "docs/install-agent.md", &linking);
+    let quickstart = format!(
+        "{}\n![Phrase asset]({{asset}})\n![Hash asset](hash%23asset.png)\n",
+        read(&f, "docs/quickstart.md")
+    );
+    write(&f, "docs/quickstart.md", &quickstart);
     let mut client = Client::start(&f.root());
     client.settle();
     let result = client
@@ -591,6 +654,10 @@ fn file_move_updates_incoming_and_outgoing_relative_references() {
                     {
                         "oldUri": uri(&old_asset).as_str(),
                         "newUri": uri(&new_asset).as_str()
+                    },
+                    {
+                        "oldUri": uri(&old_hash_asset).as_str(),
+                        "newUri": uri(&new_hash_asset).as_str()
                     }
                 ]
             }),
@@ -600,6 +667,7 @@ fn file_move_updates_incoming_and_outgoing_relative_references() {
     let changed = apply_workspace_edit(&f, &result);
     std::fs::rename(&old, &new).expect("move");
     std::fs::rename(&old_asset, &new_asset).expect("move asset");
+    std::fs::rename(&old_hash_asset, &new_hash_asset).expect("move hash asset");
     let mut events: Vec<_> = changed
         .iter()
         .filter(|path| *path != &old && *path != &old_asset)
@@ -609,6 +677,8 @@ fn file_move_updates_incoming_and_outgoing_relative_references() {
     events.push((&new, FileChangeType::CREATED));
     events.push((&old_asset, FileChangeType::DELETED));
     events.push((&new_asset, FileChangeType::CREATED));
+    events.push((&old_hash_asset, FileChangeType::DELETED));
+    events.push((&new_hash_asset, FileChangeType::CREATED));
     client.watched(&events);
     client.settle();
 
@@ -625,9 +695,67 @@ fn file_move_updates_incoming_and_outgoing_relative_references() {
         read(&f, "docs/guides/my guides/keys.md").contains("../../install-agent.md#install-agent")
     );
     assert!(read(&f, "docs/quickstart.md").contains("my%20images/playground.png"));
+    assert!(
+        read(&f, "docs/quickstart.md").contains("my%20images/{asset}"),
+        "{}",
+        read(&f, "docs/quickstart.md")
+    );
+    assert!(read(&f, "docs/quickstart.md").contains("my%20images/hash%23asset.png"));
+    assert!(read(&f, "ascribe.toml").contains("asset = \"playground.png\""));
     assert!(changed.contains(&f.path("docs/install-agent.md")));
     assert!(changed.contains(&old));
     assert!(changed.contains(&f.path("docs/quickstart.md")));
+    assert_no_errors(&client);
+}
+
+#[test]
+fn moving_a_renamed_phrase_destination_updates_its_single_declaration() {
+    let f = quill();
+    let old = f.path("docs/hash#asset.png");
+    let new = f.path("docs/my images/renamed#asset.png");
+    std::fs::create_dir_all(new.parent().expect("parent")).expect("mkdir");
+    std::fs::write(&old, "asset").expect("create asset");
+    let model = read(&f, "ascribe.toml").replace(
+        "[images.attributes]",
+        "hash-asset = \"hash%23asset.png\"\n\n[images.attributes]",
+    );
+    write(&f, "ascribe.toml", &model);
+    let quickstart = format!(
+        "{}\n![Hash asset]({{hash-asset}})\n",
+        read(&f, "docs/quickstart.md")
+    );
+    write(&f, "docs/quickstart.md", &quickstart);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let result = client
+        .request(
+            "workspace/willRenameFiles",
+            json!({
+                "files": [{
+                    "oldUri": uri(&old).as_str(),
+                    "newUri": uri(&new).as_str()
+                }]
+            }),
+        )
+        .response_result
+        .expect("will rename");
+    let changed = apply_workspace_edit(&f, &result);
+    std::fs::rename(&old, &new).expect("move asset");
+    let mut events: Vec<_> = changed
+        .iter()
+        .map(|path| (path.as_path(), FileChangeType::CHANGED))
+        .collect();
+    events.push((&old, FileChangeType::DELETED));
+    events.push((&new, FileChangeType::CREATED));
+    client.watched(&events);
+    client.settle();
+
+    assert!(read(&f, "docs/quickstart.md").contains("![Hash asset]({hash-asset})"));
+    assert!(
+        read(&f, "ascribe.toml").contains("hash-asset = \"my%20images/renamed%23asset.png\""),
+        "{}",
+        read(&f, "ascribe.toml")
+    );
     assert_no_errors(&client);
 }
 

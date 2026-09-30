@@ -342,6 +342,7 @@ pub(crate) fn encode_destination(path: &str) -> String {
             '<' => out.push_str("%3C"),
             '>' => out.push_str("%3E"),
             '%' => out.push_str("%25"),
+            '#' => out.push_str("%23"),
             c => out.push(c),
         }
     }
@@ -369,6 +370,7 @@ mod tests {
             "My%20Setup%20%281%29.md"
         );
         assert_eq!(encode_destination("a/b.md"), "a/b.md");
+        assert_eq!(encode_destination("hash#name.md"), "hash%23name.md");
     }
 
     #[test]

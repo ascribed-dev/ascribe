@@ -321,7 +321,7 @@ fn phrase_declaration(model: &str, key: &str) -> Option<(usize, String)> {
         } else {
             section_end
         };
-        let prefix = if insert > start && !model[..insert].ends_with('\n') {
+        let prefix = if !model[..insert].ends_with('\n') {
             "\n"
         } else {
             ""

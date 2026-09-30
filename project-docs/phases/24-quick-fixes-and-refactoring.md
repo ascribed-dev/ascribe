@@ -58,22 +58,27 @@ Let the editor fix problems and keep references intact: code actions for common 
   opted-in-fence occurrences; escaped text and ordinary code are not indexed.
 - `workspace/willRenameFiles` uses indexed local targets and their source spans
   to update links, reference definitions, includes, assets, and relative
-  references in moved sources. Moves outside the content root or to an existing
-  destination return no edits. External targets are left alone.
+  references in moved sources. Phrase-backed destinations keep their
+  placeholders when a moved path can be expressed as a path prefix; when a
+  whole-path phrase has one parsed use and the target needs a different path,
+  its value is updated in `ascribe.toml`. Moves outside the content root or to
+  an existing destination return no edits. External targets are left alone.
 - `textDocument/formatting` returns `tessera-fmt`'s minimal edits only. The VS
   Code extension applies them before save when `ascribe.formatOnSave` is true
-  and requests file-operation edits before workspace renames.
+  and requests file-operation edits before workspace renames. Failed requests
+  are reported in the Ascribe output and surfaced to the user instead of being
+  silently treated as successful no-op edits.
 
 ### Validation
 
 - `cargo fmt --all -- --check` — passed.
 - `cargo clippy --workspace --all-targets -- -D warnings` — passed.
 - `cargo test --workspace` — passed; the conformance harness reports 366
-  passed, 0 failed, 0 skipped. The LSP's 16 scripted Phase 24 tests all pass.
+  passed, 0 failed, 0 skipped. The LSP's 18 scripted Phase 24 tests all pass.
 - `cargo test -p tessera-conformance` — passed.
 - `corepack pnpm --filter @ascribed/elements build` — passed.
 - VS Code ESLint, TypeScript typecheck, Prettier check, and the non-browser
-  Vitest suite — passed (76 tests).
+  Vitest suite — passed (83 tests).
 - Full VS Code Vitest cannot launch its Playwright webview suite because the
   installed Chromium headless shell is absent. The real VS Code integration
   bundle builds, but the extension host could not be downloaded:

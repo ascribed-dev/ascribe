@@ -9,7 +9,7 @@ use lsp_types::{
     WorkspaceEdit,
 };
 use tessera_core::{Destination, LineIndex, RelPath, Span, TextEdit as ByteEdit};
-use tessera_resolve::{FileIndex, Target};
+use tessera_resolve::{FileIndex, PhrasePlace, Target};
 use tessera_syntax::{Block, BlockKind, InlineKind};
 
 use crate::nav::{Ctx, Lines, directive_at, encode_destination, hit_at, identifier_primary};
@@ -53,6 +53,7 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
     }
 
     let mut edits: HashMap<RelPath, Vec<ByteEdit>> = HashMap::new();
+    let mut phrase_edits = HashMap::new();
     for file in ctx.snapshot.files() {
         let new_owner = remap(&file.path, &mappings);
         for reference in &file.references {
@@ -71,11 +72,57 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
                 let Some(raw) = file.source.get(span.range()) else {
                     continue;
                 };
+                let raw_path_end = raw.find(['?', '#']).unwrap_or(raw.len());
+                let raw_path = &raw[..raw_path_end];
+                let destination_phrase = file.phrases.iter().find(|phrase| {
+                    phrase.place == PhrasePlace::Destination
+                        && span.start() <= phrase.phrase.key_span.start()
+                        && phrase.phrase.key_span.end() <= span.end()
+                        && raw_path == format!("{{{}}}", phrase.phrase.key)
+                });
+                let new_path =
+                    destination_path(local.written.starts_with('/'), &new_owner, &new_target);
+                if destination_phrase.is_some()
+                    && let Some(replacement) =
+                        preserved_phrase_destination(raw, &local.written, &new_path)
+                {
+                    if raw != replacement {
+                        edits
+                            .entry(file.path.clone())
+                            .or_default()
+                            .push(ByteEdit::replace(span, replacement));
+                    }
+                    continue;
+                }
+                if let Some(phrase) = destination_phrase
+                    && phrase_uses(ctx, &phrase.phrase.key) == 1
+                    && let Some(value) = ctx.model.phrase(&phrase.phrase.key)
+                    && let Some(span) = phrase_value_span(&ctx.model_text, &phrase.phrase.key)
+                {
+                    let old_value_path_end = value.find(['?', '#']).unwrap_or(value.len());
+                    let phrase_value = format!("{new_path}{}", &value[old_value_path_end..]);
+                    if phrase_value != value {
+                        phrase_edits.insert(
+                            phrase.phrase.key.clone(),
+                            TextEdit {
+                                range: ctx.encoding.range(&LineIndex::new(&ctx.model_text), span),
+                                new_text: serde_json::to_string(&phrase_value).ok()?,
+                            },
+                        );
+                    }
+                    continue;
+                }
                 let replacement = rewrite_destination(
                     raw,
                     local.written.starts_with('/'),
                     &new_owner,
                     &new_target,
+                    &local.written,
+                    file.phrases.iter().any(|phrase| {
+                        phrase.place == PhrasePlace::Destination
+                            && span.start() <= phrase.phrase.key_span.start()
+                            && phrase.phrase.key_span.end() <= span.end()
+                    }),
                 );
                 if raw != replacement {
                     edits
@@ -100,8 +147,14 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
                 Destination::Local(local) => local,
                 Destination::External => continue,
             };
-            let replacement =
-                rewrite_destination(raw, local.root_relative, &new_owner, &new_target);
+            let replacement = rewrite_destination(
+                raw,
+                local.root_relative,
+                &new_owner,
+                &new_target,
+                &include.written,
+                false,
+            );
             if raw != replacement {
                 edits
                     .entry(file.path.clone())
@@ -110,7 +163,15 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
             }
         }
     }
-    Some(workspace_edit(ctx, edits))
+    let mut result = workspace_edit(ctx, edits);
+    if !phrase_edits.is_empty() {
+        let uri = crate::uri::path_to_uri(&ctx.config)?;
+        result
+            .changes
+            .get_or_insert_with(HashMap::new)
+            .insert(uri, phrase_edits.into_values().collect());
+    }
+    Some(result)
 }
 
 pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
@@ -307,7 +368,14 @@ fn destination_spans(file: &FileIndex, inline: Option<Span>, url: &str) -> Vec<S
         .collect()
 }
 
-fn rewrite_destination(raw: &str, root_relative: bool, from: &RelPath, target: &RelPath) -> String {
+fn rewrite_destination(
+    raw: &str,
+    root_relative: bool,
+    from: &RelPath,
+    target: &RelPath,
+    old_written: &str,
+    has_phrase: bool,
+) -> String {
     let angle = raw.starts_with('<') && raw.ends_with('>');
     let inner = raw
         .strip_prefix('<')
@@ -315,14 +383,124 @@ fn rewrite_destination(raw: &str, root_relative: bool, from: &RelPath, target: &
         .unwrap_or(raw);
     let suffix_at = inner.find(['?', '#']).unwrap_or(inner.len());
     let suffix = &inner[suffix_at..];
+    let path = destination_path(root_relative, from, target);
+    let path = if has_phrase {
+        preserved_phrase_path(inner, old_written, &path).unwrap_or(path)
+    } else {
+        path
+    };
+    let mut result = format!("{path}{suffix}");
+    if angle {
+        result = format!("<{result}>");
+    }
+    result
+}
+
+fn preserved_phrase_destination(raw: &str, old_written: &str, new_path: &str) -> Option<String> {
+    let angle = raw.starts_with('<') && raw.ends_with('>');
+    let inner = raw
+        .strip_prefix('<')
+        .and_then(|r| r.strip_suffix('>'))
+        .unwrap_or(raw);
+    let suffix_at = inner.find(['?', '#']).unwrap_or(inner.len());
+    let suffix = &inner[suffix_at..];
+    let path = preserved_phrase_path(inner, old_written, new_path)?;
+    let result = format!("{path}{suffix}");
+    Some(if angle { format!("<{result}>") } else { result })
+}
+
+fn preserved_phrase_path(raw: &str, old_written: &str, new_path: &str) -> Option<String> {
+    let raw_path_end = raw.find(['?', '#']).unwrap_or(raw.len());
+    let raw_path = &raw[..raw_path_end];
+    let old_path_end = old_written.find(['?', '#']).unwrap_or(old_written.len());
+    let old_path = &old_written[..old_path_end];
+    let prefix = new_path.strip_suffix(old_path)?;
+    let is_boundary = prefix.is_empty()
+        || prefix.ends_with('/')
+        || (old_path.starts_with('/') && raw_path.starts_with('/'));
+    if !is_boundary {
+        return None;
+    }
+    Some(
+        if !prefix.is_empty() && !prefix.ends_with('/') && !raw_path.starts_with('/') {
+            format!("{prefix}/{raw_path}")
+        } else {
+            format!("{prefix}{raw_path}")
+        },
+    )
+}
+
+fn destination_path(root_relative: bool, from: &RelPath, target: &RelPath) -> String {
     let path = if root_relative {
         format!("/{target}")
     } else {
         crate::nav::relative_path(target, from)
     };
-    let mut result = encode_destination(&path);
-    result.push_str(suffix);
-    if angle { format!("<{result}>") } else { result }
+    encode_destination(&path)
+}
+
+fn phrase_uses(ctx: &Ctx, key: &str) -> usize {
+    ctx.snapshot
+        .files()
+        .flat_map(|file| file.phrases.iter())
+        .filter(|phrase| phrase.phrase.key == key)
+        .count()
+}
+
+fn phrase_value_span(source: &str, key: &str) -> Option<Span> {
+    let mut phrases = false;
+    let mut at = 0;
+    for line in source.split_inclusive('\n') {
+        let start = at;
+        at += line.len();
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') && !trimmed.starts_with("[[") {
+            phrases = trimmed == "[phrases]";
+            continue;
+        }
+        if !phrases || trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let Some((name, _)) = trimmed.split_once('=') else {
+            continue;
+        };
+        if name.trim().trim_matches(['"', '\'']) != key {
+            continue;
+        }
+        let equals = line.find('=')? + 1;
+        let lead = line[equals..].len() - line[equals..].trim_start().len();
+        let value_start = equals + lead;
+        let value = line.get(value_start..)?;
+        if value.starts_with("\"\"\"") || value.starts_with("'''") {
+            return None;
+        }
+        let quote = *value.as_bytes().first()?;
+        let end = match quote {
+            b'"' => {
+                let mut escaped = false;
+                let mut end = None;
+                for (offset, byte) in value.as_bytes().iter().copied().enumerate().skip(1) {
+                    if byte == b'"' && !escaped {
+                        end = Some(offset + 1);
+                        break;
+                    }
+                    escaped = byte == b'\\' && !escaped;
+                    if byte != b'\\' {
+                        escaped = false;
+                    }
+                }
+                end?
+            }
+            b'\'' => value[1..].find('\'')? + 2,
+            _ => return None,
+        };
+        let rest = value.get(end..)?.trim();
+        if !rest.is_empty() && !rest.starts_with('#') {
+            return None;
+        }
+        return Some(Span::new(start + value_start, start + value_start + end));
+    }
+    None
 }
 
 fn remap(path: &RelPath, mappings: &[(RelPath, RelPath)]) -> RelPath {

@@ -45,7 +45,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
             },
           })
           .then((value) => asTextEdits(value))
-          .catch(() => []),
+          .catch((error: unknown) => {
+            server.reportFeatureError("format on save", error);
+            return [];
+          }),
       );
     }),
     vscode.workspace.onWillRenameFiles((event) =>
@@ -58,7 +61,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
             })),
           })
           .then((value) => asWorkspaceEdit(value))
-          .catch(() => new vscode.WorkspaceEdit()),
+          .catch((error: unknown) => {
+            server.reportFeatureError("preparing workspace rename", error);
+            throw error;
+          }),
       ),
     ),
   );
@@ -103,31 +109,64 @@ interface ProtocolTextEdit {
   newText: string;
 }
 
-interface ProtocolWorkspaceEdit {
-  changes?: Record<string, ProtocolTextEdit[]>;
-}
-
 function asTextEdits(value: unknown): vscode.TextEdit[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((edit: ProtocolTextEdit) =>
-    edit?.range?.start && edit.range.end && typeof edit.newText === "string"
-      ? [vscode.TextEdit.replace(protocolRange(edit.range), edit.newText)]
-      : [],
-  );
+  if (!Array.isArray(value)) {
+    throw new Error("the language server returned invalid formatting edits");
+  }
+  return value.map((edit: unknown) => {
+    if (!isProtocolTextEdit(edit)) {
+      throw new Error("the language server returned an invalid formatting edit");
+    }
+    return vscode.TextEdit.replace(protocolRange(edit.range), edit.newText);
+  });
 }
 
 function asWorkspaceEdit(value: unknown): vscode.WorkspaceEdit {
+  if (!isRecord(value)) throw new Error("the language server returned an invalid workspace edit");
   const result = new vscode.WorkspaceEdit();
-  const changes = (value as ProtocolWorkspaceEdit | null)?.changes;
-  if (!changes || typeof changes !== "object") return result;
+  const changes = value.changes;
+  if (changes === undefined) {
+    throw new Error("the language server returned a workspace edit without changes");
+  }
+  if (!isRecord(changes)) throw new Error("the language server returned invalid workspace changes");
   for (const [uri, edits] of Object.entries(changes)) {
+    if (!Array.isArray(edits)) {
+      throw new Error("the language server returned invalid workspace edits");
+    }
     for (const edit of edits) {
-      if (edit?.range?.start && edit.range.end && typeof edit.newText === "string") {
-        result.replace(vscode.Uri.parse(uri), protocolRange(edit.range), edit.newText);
+      if (!isProtocolTextEdit(edit)) {
+        throw new Error("the language server returned an invalid workspace edit");
       }
+      result.replace(vscode.Uri.parse(uri), protocolRange(edit.range), edit.newText);
     }
   }
   return result;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isProtocolPosition(value: unknown): value is ProtocolPosition {
+  return (
+    isRecord(value) &&
+    typeof value.line === "number" &&
+    Number.isInteger(value.line) &&
+    value.line >= 0 &&
+    typeof value.character === "number" &&
+    Number.isInteger(value.character) &&
+    value.character >= 0
+  );
+}
+
+function isProtocolTextEdit(value: unknown): value is ProtocolTextEdit {
+  return (
+    isRecord(value) &&
+    isRecord(value.range) &&
+    isProtocolPosition(value.range.start) &&
+    isProtocolPosition(value.range.end) &&
+    typeof value.newText === "string"
+  );
 }
 
 function protocolRange(range: { start: ProtocolPosition; end: ProtocolPosition }): vscode.Range {

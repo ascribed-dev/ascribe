@@ -91,6 +91,15 @@ export class ServerController implements vscode.Disposable {
     this.output.show(true);
   }
 
+  reportFeatureError(feature: string, error: unknown): void {
+    const message = error instanceof Error ? error.message : String(error);
+    const detail = `Ascribe: ${feature} failed: ${message}`;
+    this.output.appendLine(detail);
+    void vscode.window.showErrorMessage(detail, SHOW_OUTPUT).then((choice) => {
+      if (choice === SHOW_OUTPUT) this.showOutput();
+    });
+  }
+
   readMaxCrashes(): void {
     this.crashes.setLimit(readMaxCrashes());
   }
