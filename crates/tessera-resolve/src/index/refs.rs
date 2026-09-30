@@ -35,6 +35,8 @@ pub struct Reference {
     /// The destination, with escapes decoded and `<>` removed. For a
     /// reference form, that of the link reference definition (SPEC §5.3, Q23).
     pub destination: String,
+    /// The destination after substituting the parser's phrase candidates.
+    pub expanded_destination: String,
     /// How the reference was written.
     pub form: LinkForm,
     /// Whether the link has no text, so it takes its target's title
@@ -126,6 +128,7 @@ pub(crate) fn collect_references(
             destination,
             definitions,
         );
+        let expanded_destination = substitute(destination, phrases, model);
         out.push(Reference {
             kind,
             span: inline.span,
@@ -138,6 +141,7 @@ pub(crate) fn collect_references(
                 destination,
             ),
             destination: destination.clone(),
+            expanded_destination,
             form,
             text_empty,
             target: target_of(kind, destination, phrases, written_in, model),

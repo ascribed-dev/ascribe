@@ -79,6 +79,7 @@ impl Client {
             "capabilities": {
                 "general": general,
                 "workspace": { "didChangeWatchedFiles": { "dynamicRegistration": setup.watch } },
+                "window": { "showDocument": { "support": true } },
             },
         });
         let mut client = Client {

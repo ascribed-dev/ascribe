@@ -31,5 +31,9 @@ tessera-synthetic.workspace = true
 name = "keystroke"
 harness = false
 
+[[bench]]
+name = "completion"
+harness = false
+
 [lints]
 workspace = true

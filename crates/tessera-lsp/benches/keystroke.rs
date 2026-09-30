@@ -33,63 +33,10 @@ use tessera_lsp::{Options, serve};
 use tessera_synthetic::{
     CONTENT_ROOT, FRAGMENT_BODY, FRAGMENTS, Synthetic, TYPING_LINE, TYPING_PREFIX,
 };
+mod synthetic;
+use synthetic::Client;
 
 const KEYSTROKES: usize = 100;
-
-struct Client {
-    conn: Connection,
-    next: i32,
-}
-
-impl Client {
-    fn request(&mut self, method: &str, params: serde_json::Value) -> Response {
-        self.next += 1;
-        let id = RequestId::from(self.next);
-        self.conn
-            .sender
-            .send(Request::new(id.clone(), method.to_owned(), params).into())
-            .unwrap();
-        loop {
-            match self.conn.receiver.recv().unwrap() {
-                Message::Response(r) if r.id == id => return r,
-                Message::Request(r) => {
-                    self.conn
-                        .sender
-                        .send(Response::new_ok(r.id, serde_json::Value::Null).into())
-                        .unwrap();
-                }
-                _ => {}
-            }
-        }
-    }
-
-    /// Reads until the publication for `uri` with `version` (any, when
-    /// `None`) arrives.
-    fn wait_publish(&mut self, uri: &Uri, version: Option<i32>) -> PublishDiagnosticsParams {
-        loop {
-            match self
-                .conn
-                .receiver
-                .recv_timeout(Duration::from_secs(60))
-                .unwrap()
-            {
-                Message::Notification(n) if n.method == "textDocument/publishDiagnostics" => {
-                    let p: PublishDiagnosticsParams = serde_json::from_value(n.params).unwrap();
-                    if &p.uri == uri && (version.is_none() || p.version == version) {
-                        return p;
-                    }
-                }
-                Message::Request(r) => {
-                    self.conn
-                        .sender
-                        .send(Response::new_ok(r.id, serde_json::Value::Null).into())
-                        .unwrap();
-                }
-                _ => {}
-            }
-        }
-    }
-}
 
 fn run(pages: usize) {
     let dir = tempfile::tempdir().unwrap();
