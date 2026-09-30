@@ -20,7 +20,7 @@ tessera-syntax.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-html5ever = "0.39"
+html5ever = "0.40"
 insta.workspace = true
 markup5ever_rcdom = "0.39.0"
 tempfile = "3"
