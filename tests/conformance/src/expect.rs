@@ -7,10 +7,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::outline::{Outline, deserialize_outline, serialize_outline};
 
-/// Tags that mark a case rather than name an area. They aren't routed to
-/// adapters and need no skip entry.
-pub const MARKER_TAGS: &[&str] = &["provisional"];
-
 /// Everything a case expects. See `tests/conformance/README.md`.
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -21,13 +17,8 @@ pub struct Expect {
     /// SPEC.md sections the case covers, for example `"3.5"` or `"B"`.
     #[serde(default)]
     pub spec: Vec<String>,
-    /// Area tags (and marker tags such as `provisional`) used to route the
-    /// case to adapters and to select cases.
+    /// Area tags, used to route the case to adapters and to select cases.
     pub tags: Vec<String>,
-    /// `questions.md` entries the case depends on, for example `Q3`.
-    /// Required when the case is tagged `provisional`.
-    #[serde(default)]
-    pub questions: Vec<String>,
     /// The expected outline of `input.md`. Single-file cases only.
     #[serde(
         default,
@@ -48,21 +39,6 @@ pub struct Expect {
     /// Per-build expectations, keyed by build name from the content model.
     #[serde(default)]
     pub builds: BTreeMap<String, BuildExpect>,
-}
-
-impl Expect {
-    /// The case's area tags: its tags minus marker tags.
-    pub fn area_tags(&self) -> impl Iterator<Item = &str> {
-        self.tags
-            .iter()
-            .map(String::as_str)
-            .filter(|t| !MARKER_TAGS.contains(t))
-    }
-
-    /// Whether the case is tagged `provisional`.
-    pub fn is_provisional(&self) -> bool {
-        self.tags.iter().any(|t| t == "provisional")
-    }
 }
 
 /// An expected diagnostic.

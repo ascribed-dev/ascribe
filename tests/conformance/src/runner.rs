@@ -196,7 +196,7 @@ impl Suite {
             note_partial(entry);
         }
 
-        let tags: Vec<&str> = case.expect.area_tags().collect();
+        let tags: Vec<&str> = case.expect.tags.iter().map(String::as_str).collect();
         let mut problems = Vec::new();
         let mut reasons = Vec::new();
         for tag in &tags {
@@ -379,8 +379,7 @@ impl Suite {
 
 /// Checks the slugs a case expects against the registry, whether or not the
 /// case runs: each must be registered, at the level where the case expects
-/// it, and a provisional diagnostic needs a provisional case that lists its
-/// questions.
+/// it.
 fn check_slugs(case: &Case, registry: &DiagnosticsRegistry) -> Vec<String> {
     let e = &case.expect;
     let file_level = e
@@ -417,20 +416,6 @@ fn check_slugs(case: &Case, registry: &DiagnosticsRegistry) -> Vec<String> {
                 "{at}: `{}` is a {}-level diagnostic; {hint}",
                 d.slug, entry.level
             ));
-        }
-        if !entry.provisional.is_empty() {
-            let missing: Vec<&String> = entry
-                .provisional
-                .iter()
-                .filter(|q| !e.questions.contains(q))
-                .collect();
-            if !e.is_provisional() || !missing.is_empty() {
-                problems.push(format!(
-                    "{at}: `{}` is provisional ({}); tag the case `provisional` and list those questions",
-                    d.slug,
-                    entry.provisional.join(", ")
-                ));
-            }
         }
     }
     problems

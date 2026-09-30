@@ -1,10 +1,9 @@
 # The site-render fixtures. See README.md.
 #
 # Each fixture is a directory here with input.md (site markdown) and
-# expected.html. `covers` names the constructs from the table in
-# project-docs/contracts/site-render.md §6 that the fixture checks; every
-# construct is covered at least once (tests/conformance/tests/render_fixtures.rs
-# checks this).
+# expected.html. `covers` names the constructs the fixture checks.
+# tests/conformance/tests/render_fixtures.rs checks that every fixture is
+# listed here, with a description, and has both files.
 
 [[fixture]]
 name = "heading-id"

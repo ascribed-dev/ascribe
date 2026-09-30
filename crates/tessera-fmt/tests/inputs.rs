@@ -205,7 +205,7 @@ fn examples_and_docs() {
     let root = repo_root();
     let quill = model_at(&root.join("examples/content-models/quill.toml"));
     let mut count = 0;
-    for dir in [root.join("examples"), root.join("project-docs")] {
+    for dir in [root.join("examples")] {
         for path in markdown_files(&dir) {
             let source = std::fs::read_to_string(&path).expect("readable");
             let name = path.display().to_string();

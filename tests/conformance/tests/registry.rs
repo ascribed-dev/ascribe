@@ -1,7 +1,5 @@
 //! Checks the diagnostics registry, `tests/conformance/diagnostics.toml`,
-//! against the documents it comes from: every SPEC §8.2 row, every loader
-//! rule in content-model.md §20, the SPEC sections it cites, and the
-//! questions its provisional entries depend on.
+//! against SPEC.md: every §8.2 row and the sections it cites.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -64,45 +62,6 @@ fn spec_rows() -> Vec<(String, Severity)> {
         .collect()
 }
 
-/// content-model.md §20's rules: slug, severity, subsection, and messages.
-fn model_rules() -> Vec<(String, Severity, String, Vec<String>)> {
-    let cm = read("project-docs/content-model.md");
-    let mut out = Vec::new();
-    let mut subsection = String::new();
-    for line in cm.lines() {
-        if let Some(rest) = line.strip_prefix("### 20.") {
-            subsection = format!("20.{}", rest.split(' ').next().unwrap());
-        }
-        if !line.starts_with("| `model-") {
-            continue;
-        }
-        let c = cells(line);
-        let slug = c[0].split('`').nth(1).unwrap().to_owned();
-        let severity = if c[0].contains("**warning**") {
-            Severity::Warning
-        } else {
-            Severity::Error
-        };
-        let messages = c[2]
-            .split("<br>")
-            .map(|m| {
-                let m = m.split(", for example").next().unwrap().trim();
-                m.strip_prefix("`` ")
-                    .and_then(|m| m.strip_suffix(" ``"))
-                    .unwrap_or_else(|| panic!("{slug}: message {m:?}"))
-                    .to_owned()
-            })
-            .collect();
-        out.push((slug, severity, subsection.clone(), messages));
-    }
-    out
-}
-
-/// A template with its literal braces unescaped, as content-model.md writes it.
-fn unescape(template: &str) -> String {
-    template.replace("{{", "{").replace("}}", "}")
-}
-
 fn templates(e: &Entry) -> Vec<&String> {
     std::iter::once(&e.message)
         .chain(e.messages.values())
@@ -141,42 +100,18 @@ fn every_spec_row_has_exactly_one_entry() {
 }
 
 #[test]
-fn every_loader_rule_has_one_entry_with_its_messages() {
-    let reg = registry();
-    let rules = model_rules();
-    let model_entries: Vec<&Entry> = reg
-        .entries
-        .iter()
-        .filter(|e| e.slug.starts_with("model-"))
-        .collect();
-    // Codes follow the order rules were added, so compare by slug.
-    let mut ours: Vec<&str> = model_entries.iter().map(|e| e.slug.as_str()).collect();
-    let mut theirs: Vec<&str> = rules.iter().map(|r| r.0.as_str()).collect();
-    ours.sort_unstable();
-    theirs.sort_unstable();
-    assert_eq!(
-        ours, theirs,
-        "model- entries must match content-model.md §20"
-    );
-    for (slug, severity, subsection, messages) in &rules {
-        let e = reg.get(slug).unwrap();
-        assert_eq!(&e.severity, severity, "{slug}");
-        assert_eq!(e.level, Level::File, "{slug}");
-        assert_eq!(e.rule.as_ref(), Some(subsection), "{slug}");
-        let ours: BTreeSet<String> = templates(e).into_iter().map(|t| unescape(t)).collect();
-        let theirs: BTreeSet<String> = messages.iter().cloned().collect();
+fn loader_rules_are_file_level_and_grouped() {
+    for e in registry().entries {
+        let is_rule = e.slug.starts_with("model-");
         assert_eq!(
-            ours, theirs,
-            "{slug}: messages differ from content-model.md"
-        );
-    }
-    for e in &reg.entries {
-        assert_eq!(
-            e.rule.is_some(),
-            e.slug.starts_with("model-"),
-            "{}: `rule` is for loader rules, which start with model-",
+            e.group.is_some(),
+            is_rule,
+            "{}: `group` is for loader rules, which start with model-",
             e.slug
         );
+        if is_rule {
+            assert_eq!(e.level, Level::File, "{}", e.slug);
+        }
     }
 }
 
@@ -198,8 +133,8 @@ fn codes_are_sequential_and_slugs_unique() {
         });
         assert!(kebab, "{} isn't kebab-case", e.slug);
         assert!(
-            e.row.is_some() || e.rule.is_some() || !e.provisional.is_empty(),
-            "{}: every entry comes from a §8.2 row, a loader rule, or a question",
+            e.row.is_some() || e.group.is_some(),
+            "{}: every entry comes from a §8.2 row or a loader rule",
             e.slug
         );
     }
@@ -244,19 +179,5 @@ fn spec_sections_exist() {
             e.slug,
             e.spec
         );
-    }
-}
-
-#[test]
-fn provisional_entries_name_open_questions() {
-    let questions = read("project-docs/questions.md");
-    for e in registry().entries {
-        for q in &e.provisional {
-            assert!(
-                questions.contains(&format!("### {q}: ")),
-                "{}: {q} isn't an entry in questions.md",
-                e.slug
-            );
-        }
     }
 }

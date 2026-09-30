@@ -1,9 +1,9 @@
 //! Checks on the conformance suite as a whole, and on `examples/quill`.
 //!
 //! The suite's cases run through the adapters; these tests check the suite
-//! itself. They keep the suite complete (every SPEC §8.2 row has a case, and every
-//! provisional case names an open question) and keep the Quill example project
-//! identical to the SPEC's Appendix B page and to its conformance case.
+//! itself. They keep the suite complete (every SPEC §8.2 row has a case) and
+//! keep the Quill example project identical to the SPEC's Appendix B page and
+//! to its conformance case.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -68,41 +68,6 @@ fn every_case_says_what_it_checks() {
             "case {} lists no SPEC sections",
             case.id
         );
-    }
-}
-
-/// The ids of the questions in `project-docs/questions.md` whose status is open.
-fn open_questions() -> BTreeSet<String> {
-    let text = std::fs::read_to_string(repo().join("project-docs/questions.md")).unwrap();
-    let mut open = BTreeSet::new();
-    let mut current: Option<String> = None;
-    for line in text.lines() {
-        if let Some(rest) = line.strip_prefix("### ")
-            && let Some((id, _)) = rest.split_once(':')
-            && id.starts_with('Q')
-        {
-            current = Some(id.to_owned());
-        } else if let Some(id) = &current
-            && line.starts_with("- **Status:** open")
-        {
-            open.insert(id.clone());
-        }
-    }
-    open
-}
-
-#[test]
-fn provisional_cases_name_open_questions() {
-    let open = open_questions();
-    for case in cases() {
-        for q in &case.expect.questions {
-            assert!(
-                open.contains(q),
-                "case {} depends on {q}, which is not an open question in questions.md; \
-                 when a question is resolved, update the case and remove its `provisional` tag",
-                case.id
-            );
-        }
     }
 }
 

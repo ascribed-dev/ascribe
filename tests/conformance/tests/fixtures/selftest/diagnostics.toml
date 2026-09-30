@@ -15,12 +15,3 @@ severity = "error"
 level = "page"
 spec = "8.2"
 message = "this page is bad"
-
-[[diagnostic]]
-code = "ASC003"
-slug = "maybe-bad"
-severity = "warning"
-level = "file"
-spec = "8.2"
-provisional = ["Q1"]
-message = "this line might be bad"

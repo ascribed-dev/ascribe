@@ -95,7 +95,6 @@ fn appendix_b_and_examples() {
     for dir in [
         root.join("tests/conformance"),
         root.join("examples"),
-        root.join("project-docs"),
         root.join("SPEC.md"),
     ] {
         let files = if dir.is_file() {

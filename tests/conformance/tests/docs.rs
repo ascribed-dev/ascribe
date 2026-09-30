@@ -44,19 +44,19 @@ fn the_diagnostics_reference_is_current() {
     );
 }
 
-/// The sections of the content-model reference that loader rules are grouped
-/// by, as they're titled in the diagnostics reference.
+/// The groups loader rules are listed in, as they're titled in the
+/// diagnostics reference.
 const RULE_GROUPS: &[(&str, &str)] = &[
-    ("20.1", "The file"),
-    ("20.2", "`[project]`"),
-    ("20.3", "Content types, fields, and attributes"),
+    ("file", "The file"),
+    ("project", "`[project]`"),
+    ("content-types", "Content types, fields, and attributes"),
     (
-        "20.4",
+        "names",
         "Dimensions, names, lifecycle states, notes, and features",
     ),
-    ("20.5", "Phrases and the glossary"),
-    ("20.6", "Widgets"),
-    ("20.7", "The consumer, builds, and the editor"),
+    ("phrases", "Phrases and the glossary"),
+    ("widgets", "Widgets"),
+    ("consumer", "The consumer, builds, and the editor"),
 ];
 
 fn render(registry: &DiagnosticsRegistry, anchors: &BTreeMap<String, String>) -> String {
@@ -121,11 +121,11 @@ fn render(registry: &DiagnosticsRegistry, anchors: &BTreeMap<String, String>) ->
     }
 
     out.push_str("\n## The content model\n");
-    for (rule, title) in RULE_GROUPS {
+    for (group, title) in RULE_GROUPS {
         let _ = write!(out, "\n### {title}\n");
         for entry in active
             .iter()
-            .filter(|e| is_model(e) && model_group(e) == *rule)
+            .filter(|e| is_model(e) && model_group(e) == *group)
         {
             write_entry(&mut out, entry, None, anchors);
         }
@@ -158,10 +158,10 @@ fn is_model(entry: &Entry) -> bool {
 }
 
 /// The group a content-model diagnostic is listed in. The one-role rule for
-/// names is a SPEC §8.2 row rather than a loader rule, so it has no `rule`; it
-/// goes with the other rules about names.
+/// names is a SPEC §8.2 row rather than a loader rule, so it has no `group`;
+/// it goes with the other rules about names.
 fn model_group(entry: &Entry) -> &str {
-    entry.rule.as_deref().unwrap_or("20.4")
+    entry.group.as_deref().unwrap_or("names")
 }
 
 fn write_entry(

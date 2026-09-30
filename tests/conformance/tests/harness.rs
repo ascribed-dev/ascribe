@@ -221,9 +221,7 @@ fn every_outcome_in_the_fixture_suite() {
             "fake/partial",
             "fake/pass",
             "fake/project",
-            "fake/provisional",
             "skipped/whole",
-            "slugs/provisional-untagged",
             "slugs/unknown",
             "slugs/wrong-level",
             "unhandled/mixed",
@@ -246,13 +244,8 @@ fn every_outcome_in_the_fixture_suite() {
     assert_eq!(problems(report.outcome("unhandled/no-adapter")), vec![msg]);
     assert_eq!(problems(report.outcome("unhandled/mixed")), vec![msg]);
 
-    // Passing cases, including a project case with outputs and a provisional case.
-    for id in [
-        "fake/pass",
-        "fake/project",
-        "fake/provisional",
-        "fake/format-pass",
-    ] {
+    // Passing cases, including a project case with outputs.
+    for id in ["fake/pass", "fake/project", "fake/format-pass"] {
         assert_eq!(
             report.outcome(id),
             Some(&Outcome::Passed {
@@ -304,19 +297,13 @@ fn every_outcome_in_the_fixture_suite() {
             "builds.site.diagnostics: `bad-line` is a file-level diagnostic; expect it in the top-level `diagnostics`",
         ]
     );
-    assert_eq!(
-        problems(report.outcome("slugs/provisional-untagged")),
-        vec![
-            "diagnostics: `maybe-bad` is provisional (Q1); tag the case `provisional` and list those questions"
-        ]
-    );
 
     assert_eq!(
         (report.passed(), report.failed(), report.skipped()),
-        (5, 10, 1)
+        (4, 9, 1)
     );
     assert!(!report.success());
-    assert!(summary.contains("conformance: 5 passed, 10 failed, 1 skipped, 0 suite error(s)"));
+    assert!(summary.contains("conformance: 4 passed, 9 failed, 1 skipped, 0 suite error(s)"));
 }
 
 #[test]
