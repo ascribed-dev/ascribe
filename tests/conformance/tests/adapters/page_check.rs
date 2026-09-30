@@ -1,4 +1,4 @@
-//! The adapter for page-level checks (phase 14).
+//! The adapter for page-level checks.
 //!
 //! It handles the `page-check` tag. A case with it expects, per build, the
 //! diagnostics `tessera_check::check_pages` reports for that build: the same

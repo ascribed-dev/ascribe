@@ -1,5 +1,5 @@
 // Serving `_ascribe/files/`: the files pages link to that aren't pages or
-// images (asset contract §3.2). Astro doesn't copy them, so the integration
+// images. Astro doesn't copy them, so the integration
 // does: into the build's output directory, and in dev through a middleware.
 // Both put them at `<base>_ascribe/files/`, the URL the site output links to.
 import { createReadStream } from "node:fs";
@@ -53,7 +53,7 @@ export function filesMiddleware(
   base: string,
 ): (req: IncomingMessage, res: ServerResponse, next: () => void) => void {
   const root = publishedDir(siteRoot);
-  // Only under the base path, as in the build (asset contract §3.2). Vite strips the base from
+  // Only under the base path, as in the build. Vite strips the base from
   // `req.url` before a plugin's middleware runs, but connect keeps the original in `originalUrl`.
   const prefix = `${base}_ascribe/files/`;
   return (req, res, next) => {

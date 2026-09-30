@@ -1,9 +1,8 @@
 //! The `ascribe` binary.
 //!
 //! The command structure is in [`cli`]: one module per subcommand under
-//! `commands/`, so a phase adds a subcommand with its own module and a line
-//! in `cli.rs`. Phase 10 builds `check`; phases 15, 18, and 23 add `lsp`,
-//! `build`, and `fmt`.
+//! `commands/` (`check`, `build`, `fmt`, `lsp`), so a new subcommand is its
+//! own module and a line in `cli.rs`.
 
 mod cli;
 mod commands;

@@ -42,7 +42,7 @@ fn each_file_has_its_own_numbering() {
 
 #[test]
 fn an_explicit_id_is_the_source_id_and_takes_no_part_in_numbering() {
-    // Q7: a slug is numbered only against earlier slugs, so the second
+    // A slug is numbered only against earlier slugs, so the second
     // heading's slug is `setup`, the same as the first's `@id`.
     let p = project(&[(
         "docs/a.md",
@@ -103,7 +103,7 @@ fn a_heading_in_a_container_is_numbered_with_the_rest_of_the_file() {
 
 #[test]
 fn a_heading_with_an_empty_slug_is_flagged() {
-    // Resolved Q61: an empty slug, and its numbered repeats.
+    // An empty slug, and its numbered repeats.
     let p = project(&[(
         "docs/a.md",
         &format!("{PAGE}## ???\n\n## 🎉\n\n## Real\n\n## Named\n@id: named\n"),

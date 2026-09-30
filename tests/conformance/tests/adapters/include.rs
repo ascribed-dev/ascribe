@@ -1,4 +1,4 @@
-//! The adapter for `tessera-resolve`'s source index: what phase 11 produces.
+//! The adapter for `tessera-resolve`'s source index.
 //!
 //! It handles the `include` tag (includes and the source index, SPEC §4.2) and
 //! the `slug` tag (heading slugs and source ids, SPEC §5.5).
@@ -37,7 +37,7 @@ fn err(e: impl std::fmt::Display) -> AdapterError {
 /// Indexes a case as a project: the case directory is the project root, and
 /// `Case::content_root` the content root, whatever the model says.
 ///
-/// The model is read with `load_str`, as phase 10's adapter reads it, which
+/// The model is read with `load_str`, as the `check` adapter reads it, which
 /// skips the file-system rules (the shared model's `content-root = "files"`
 /// doesn't exist for a single-file case).
 pub fn load_project(case: &Case) -> Result<Project, AdapterError> {

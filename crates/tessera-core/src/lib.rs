@@ -3,9 +3,9 @@
 //! Every other Ascribe crate depends on this one, and on nothing else for
 //! these types. It holds types and traits only, with the small amount of
 //! behavior they need to be exact (line and column conversion, applying
-//! edits, normalizing paths). The parsers that live here are added by later
-//! phases: the attribute parser (phase 05, [`attributes`]) and the
-//! availability-spec parser (phase 08, `availability`).
+//! edits, normalizing paths), and two small parsers every crate shares: the
+//! attribute parser ([`attributes`]) and the availability-spec parser
+//! (`availability`).
 //!
 //! | Module | Contents |
 //! |---|---|
@@ -21,9 +21,8 @@
 //! | [`reserved`] | Attribute keys a content model can't declare (SPEC §7.2) |
 //! | [`consumer`] | The [`Slugger`], [`Router`], and [`ConsumerProfile`] traits (SPEC §9.5) |
 //!
-//! These types are a contract between phases (see
-//! `project-docs/phases/README.md`, "Contracts"). They change only through an
-//! approved entry in `project-docs/questions.md`.
+//! Every other crate builds on these types, so a change here is a change to
+//! all of them.
 
 pub mod attribute_block;
 pub mod attributes;

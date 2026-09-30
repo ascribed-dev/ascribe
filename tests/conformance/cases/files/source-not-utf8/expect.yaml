@@ -1,6 +1,6 @@
 description: >-
   A source file that isn't valid UTF-8 is an error on that file, and the rest
-  of the project is still checked (Q52).
+  of the project is still checked.
 spec: ["2.1", "8.2"]
 tags: [check]
 

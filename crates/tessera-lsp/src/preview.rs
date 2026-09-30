@@ -1,18 +1,18 @@
 //! The `ascribe/preview` request: a page rendered as the site renders it, for
-//! the editor's preview (phase 25).
+//! the editor's preview.
 //!
 //! The answer comes from the current snapshot, so it includes unsaved edits,
 //! and goes through the same steps as `ascribe build --emit site`: the page is
-//! resolved for the build (phase 12), written as site markdown by
-//! [`SiteEmitter`] (phase 20), and rendered by [`render_site_html`], which
-//! implements the site-render contract the Astro plugin implements. Nothing
-//! is written to disk, and no third renderer exists.
+//! resolved for the build, written as site markdown by [`SiteEmitter`], and
+//! rendered by [`render_site_html`], which applies the same attribute markers
+//! the Astro plugin applies. Nothing is written to disk, and there's no
+//! renderer of the preview's own.
 //!
-//! The site output refers to assets by paths relative to the page (asset
-//! contract §3), which a webview can't load. So the answer lists every asset
+//! The site output refers to assets by paths relative to the page, which a
+//! webview can't load. So the answer lists every asset
 //! the page uses, each with the reference exactly as the HTML writes it and
 //! the source file it resolves to, resolved from the file the reference is
-//! written in, so a fragment's image is found (contract §7). The client turns
+//! written in, so a fragment's image is found. The client turns
 //! those files into webview URLs.
 
 use std::collections::hash_map::DefaultHasher;
@@ -63,7 +63,7 @@ pub struct PreviewResult {
     /// The content root, as a path.
     pub content_root: Option<String>,
     /// The directories outside the content root that the page's assets are
-    /// in and the preview may read (Q182): the directory of each asset that
+    /// in and the preview may read: the directory of each asset that
     /// is in the project but not in the content root, and nowhere else. Never
     /// the project root, `node_modules`, or the output directory.
     pub asset_roots: Vec<String>,
@@ -104,7 +104,7 @@ pub struct PreviewPage {
     /// The page's title (its frontmatter `title`, phrases substituted).
     pub title: Option<String>,
     /// The frontmatter the site output writes, as JSON: `available` is the
-    /// list of targets a layout passes to `<ascribe-availability>` (Q142).
+    /// list of targets a layout passes to `<ascribe-availability>`.
     pub frontmatter: Json,
     /// The page's content as HTML: the site markdown after
     /// [`render_site_html`], without its frontmatter and without a layout.
@@ -124,8 +124,8 @@ pub struct PreviewPage {
 pub struct PreviewAsset {
     /// The reference as the HTML writes it, before any `#fragment`: an
     /// `<img src>` for an image, an `<a href>` for a link target. Relative
-    /// to the page for an image, root-relative for a link target (asset
-    /// contract §3.2). Percent-encoded as a URL is.
+    /// to the page for an image, root-relative for a link target.
+    /// Percent-encoded as a URL is.
     pub reference: String,
     /// The source file, as an absolute path: the file the reference names,
     /// resolved from the file it is written in.
@@ -349,7 +349,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         )));
         return result;
     };
-    // Resolved Q181: a fragment has no page; say which pages include it.
+    // A fragment has no page; say which pages include it.
     if index.kind == FileKind::Fragment {
         let pages = snapshot.including_pages(path);
         let message = if pages.is_empty() {
@@ -397,7 +397,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
             return result;
         }
     };
-    // Another page with this page's route (Q143): the site output can't
+    // Another page with this page's route: the site output can't
     // publish both. The groups are worked out once for a set of pages, not per
     // keystroke (`RouteCache`), and only the members this build publishes count.
     let collisions = target.routes.collisions(snapshot, model);
@@ -468,7 +468,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         });
     }
 
-    // Resolved Q187: page links only; a glossary term's link isn't mapped to a file.
+    // Page links only; a glossary term's link isn't mapped to a file.
     let mut links: Vec<PreviewLink> = Vec::new();
     let mut sections: Vec<PreviewSection> = Vec::new();
     let lines = LineIndex::new(&index.source);
@@ -515,11 +515,10 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
 
 /// Whether the preview may read an asset's file, and if so which directory it
 /// needs besides the content root: none for a file in the content root, else
-/// the file's own directory (Q182). Asset contract §2 step 5 puts an asset
-/// anywhere in the project; the preview serves only the directories pages use,
+/// the file's own directory. An asset may be anywhere in the project (except
+/// the output directory); the preview serves only the directories pages use,
 /// never the project root itself, the output directory, or what no site wants
 /// served (`node_modules`, `.git`).
-// Resolved Q182: the directory of each asset outside the content root.
 fn serve(target: &Target, file: &Path) -> Result<Option<PathBuf>, &'static str> {
     if within(&target.content_root, file) {
         return Ok(None);

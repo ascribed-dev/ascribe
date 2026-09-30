@@ -1,4 +1,4 @@
-//! Replacing a previous output (output-layout contract, §4).
+//! Replacing a previous output.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -112,7 +112,7 @@ fn unchanged_files_are_left_alone() {
     let a_before = modified("a.md");
     let replaced = replace(&out, "site", &[page("a.md", "A"), page("b.md", "B2")]).expect("second");
     assert_eq!((replaced.written, replaced.unchanged), (1, 1));
-    // The unchanged file is the same file, never rewritten (phase 26, P4).
+    // The unchanged file is the same file, never rewritten.
     assert_eq!(modified("a.md"), a_before);
     assert_eq!(read(&out.join("site/plain/b.md")), "B2");
     // Same length, different bytes: written.

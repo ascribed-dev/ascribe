@@ -7,7 +7,8 @@
 //! rules `ascribe check` runs). This pass adds what only a build knows: which
 //! pages the build publishes, and what a heading's page id is there. It
 //! records the links whose target a build removes (`link-id-removed`,
-//! `link-page-dropped`) for phase 14 to report, and carries the assets the
+//! `link-page-dropped`) for the page-level checks to report, and carries the
+//! assets the
 //! surviving content references.
 
 use tessera_core::{Issue, Location, RelPath, Span, diagnostics};
@@ -138,7 +139,7 @@ impl Links<'_, '_> {
         id: Option<&str>,
         is_fragment: bool,
     ) -> (LinkTarget, Option<String>) {
-        // SPEC §5.2 (Q64): a `#id` alone in a fragment names a heading of the
+        // SPEC §5.2: a `#id` alone in a fragment names a heading of the
         // fragment itself, which the page that includes it publishes. Any
         // other link to a fragment is an error.
         let names_itself = matches!(&reference.target, Target::Local(l) if l.written.is_empty());

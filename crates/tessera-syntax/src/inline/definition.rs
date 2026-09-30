@@ -1,4 +1,4 @@
-//! Phrase candidates in link reference definitions (SPEC §5.1, resolved Q43).
+//! Phrase candidates in link reference definitions (SPEC §5.1).
 //!
 //! The destination of `[ref]: {api}streaming "title"` is a link destination,
 //! so phrases apply in it, as in an inline link's. Backslash escapes apply

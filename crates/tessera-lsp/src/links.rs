@@ -14,7 +14,6 @@ use tessera_resolve::{RefKind, Resolution};
 use crate::definition::{resolution_location, source_location};
 use crate::nav::{Ctx, Lines, substitute_phrases};
 
-// Resolved Q164
 /// The command a CodeLens carries. The client runs it through the server
 /// (`workspace/executeCommand`), which asks the client to show the document,
 /// so no client code is involved.
@@ -25,7 +24,6 @@ fn with_line(uri: Uri, line: u32) -> Option<Uri> {
     Uri::from_str(&format!("{}#L{}", uri.as_str(), line + 1)).ok()
 }
 
-// Resolved Q165
 /// Every link, image, and include destination of the file.
 pub(crate) fn document_links(ctx: &Ctx) -> Vec<DocumentLink> {
     let Some(file) = ctx.file() else {
@@ -142,7 +140,6 @@ pub(crate) fn code_lenses(ctx: &Ctx) -> Vec<CodeLens> {
     out
 }
 
-// Resolved Q166
 /// The resolved title after the `[` of each empty-text link in `range`.
 pub(crate) fn inlay_hints(ctx: &Ctx, range: Range) -> Vec<InlayHint> {
     let Some(file) = ctx.file() else {

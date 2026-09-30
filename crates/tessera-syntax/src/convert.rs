@@ -411,7 +411,7 @@ impl<'a> Converter<'a> {
             .or(head.unexpected_start);
         let extra = first.map(|start| Span::new(at + start, at + head.content_end));
         if let Some(extra) = extra {
-            // SPEC §3.1: an end line is `@end` alone (resolved Q30).
+            // SPEC §3.1: an end line is `@end` alone.
             let issue = Issue::new(diagnostics::DIRECTIVE_EXTRA_TEXT, self.location(extra))
                 .with_variant("end")
                 .with_arg("name", name)
@@ -440,8 +440,7 @@ impl<'a> Converter<'a> {
             .unexpected_start
             .map(|start| Span::new(at + start, at + head.content_end));
         if let Some(span) = unexpected {
-            // SPEC §3.1: nothing else may appear on a directive line
-            // (resolved Q30).
+            // SPEC §3.1: nothing else may appear on a directive line.
             self.report(
                 Issue::new(diagnostics::DIRECTIVE_EXTRA_TEXT, self.location(span))
                     .with_variant("head")
@@ -530,7 +529,7 @@ impl<'a> Converter<'a> {
         match schema.map(|s| s.primary) {
             Some(Primary::Identifier { .. }) => {
                 // SPEC §3.4: text after the token is kept in `trailing` and
-                // reported (resolved Q15 and Q30).
+                // reported.
                 let token_len = rest.find([' ', '\t']).unwrap_or(rest.len());
                 let after = &rest[token_len..];
                 let trailing = after.trim_start_matches([' ', '\t']);

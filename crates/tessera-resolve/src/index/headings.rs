@@ -30,19 +30,19 @@ pub struct Heading {
     pub explicit_id: Option<ExplicitId>,
     /// The heading's **source id**: its `@id`, or its slug, numbered within
     /// the file by the slugger (SPEC §5.5). Only headings without `@id` take
-    /// part in numbering (Q7). Empty for a heading whose slug is empty.
+    /// part in numbering. Empty for a heading whose slug is empty.
     pub source_id: String,
     /// The section: the heading and every block after it in the same list of
     /// blocks, up to the next heading of the same or a higher level. A
     /// heading in a container, list item, or block quote has a section that
-    /// stops at the end of that container (SPEC §3.8, Q18, Q32).
+    /// stops at the end of that container (SPEC §3.8).
     pub section: Span,
     /// Whether the heading's text contains a declared phrase, which makes a
     /// slug that changes when the phrase's value does (SPEC §5.5).
     pub has_phrase: bool,
     /// Whether the slug is empty: the heading has no `@id`, and its text is
     /// only characters the slugger removes (punctuation, emoji).
-    /// `ascribe check` reports it (SPEC §5.5, resolved Q61).
+    /// `ascribe check` reports it (SPEC §5.5).
     pub empty_slug: bool,
 }
 
@@ -110,7 +110,7 @@ fn collect_list(blocks: &[Block], model: &ContentModel, out: &mut Vec<Heading>) 
         }
     }
     // Explicit ids: an `@id` binds the heading before it in this list.
-    // SPEC §4.1 (resolved Q68): the first `@id` with a value wins, valid or not.
+    // SPEC §4.1: the first `@id` with a value wins, valid or not.
     for (i, block) in blocks.iter().enumerate() {
         let BlockKind::Directive(line) = &block.kind else {
             continue;
@@ -147,7 +147,7 @@ pub fn plain_text(inlines: &[Inline], model: &ContentModel) -> String {
 fn push_text(inlines: &[Inline], model: &ContentModel, out: &mut String) {
     for inline in inlines {
         match &inline.kind {
-            // SPEC §5.5 (resolved Q67): the text content of the rendered
+            // SPEC §5.5: the text content of the rendered
             // heading; an image and raw HTML contribute nothing.
             InlineKind::Text(t) | InlineKind::Code(t) => out.push_str(t),
             InlineKind::SoftBreak | InlineKind::HardBreak => out.push('\n'),

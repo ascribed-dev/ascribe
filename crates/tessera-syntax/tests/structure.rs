@@ -1,4 +1,4 @@
-//! The structure pass (phase 06): containers, groups and arms, titles,
+//! The structure pass: containers, groups and arms, titles,
 //! bindings, and the structural issues of SPEC §8.2. The conformance suite
 //! checks the same rules against the spec's own examples; these tests cover
 //! the tree's shape and the pass's invariants.
@@ -141,7 +141,7 @@ fn unclosed_containers_are_reported_at_their_openers() {
 #[test]
 fn containers_cant_straddle_list_items() {
     // The note is unclosed at the end of its item; the `@end` in the next
-    // item is another container's, so it's reported too (SPEC §3.9, resolved Q19).
+    // item is another container's, so it's reported too (SPEC §3.9).
     let d = doc("- One\n\n  @note:\n  Inside.\n- Two\n\n  @end\n");
     assert_eq!(slugs(&d), ["container-unclosed", "end-indent-mismatch"]);
     let d = doc("- One\n\n  @note:\n  Inside.\n  @end\n- Two\n");
@@ -169,7 +169,7 @@ fn extra_indentation_in_the_same_container_still_closes() {
 
 #[test]
 fn form_errors_report_once_and_keep_the_structure() {
-    // SPEC §3.5 (resolved Q16): the colon line opens a container even as an error.
+    // SPEC §3.5: the colon line opens a container even as an error.
     let d = doc("@steps:\n1. One.\n@end\n");
     assert_eq!(slugs(&d), ["container-colon-unexpected"]);
     assert!(matches!(&d.blocks[0].kind, BlockKind::Container(c) if c.end.is_some()));
@@ -309,7 +309,7 @@ fn required_titles_and_variant_arm_rules() {
 
 #[test]
 fn group_issues_are_reported_at_the_first_opener() {
-    // SPEC §3.6 (resolved Q17).
+    // SPEC §3.6.
     let source = ".T\n@variant:\nX.\n@variant {a=b}:\nY.\n";
     let d = doc(source);
     let mixed = d
@@ -372,7 +372,7 @@ Bound.
 
 #[test]
 fn heading_bound_errors() {
-    // SPEC §3.8 (resolved Q18).
+    // SPEC §3.8.
     assert_eq!(
         slugs(&doc("@id: orphan\n\nText.\n")),
         ["binding-not-section-top"]
@@ -413,7 +413,7 @@ fn following_block_errors_and_warnings() {
 
 #[test]
 fn a_one_line_note_is_a_block_a_directive_can_bind() {
-    // SPEC §3.8 (resolved Q31): the three spellings of a cloud-only note.
+    // SPEC §3.8: the three spellings of a cloud-only note.
     for source in [
         "@available: cloud\n@note: Streaming sync is in preview.\n",
         "@available: cloud\n@note\nStreaming sync is in preview.\n",

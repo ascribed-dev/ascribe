@@ -1,4 +1,4 @@
-//! Name grammars (content-model.md §1.2) and small text helpers.
+//! Name grammars and small text helpers.
 
 /// SPEC Appendix A `name-word`: a letter, then letters, digits, `_`, or `-`.
 pub fn is_name_word(s: &str) -> bool {

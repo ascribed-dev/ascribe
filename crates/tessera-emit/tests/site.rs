@@ -339,7 +339,7 @@ fn images_carry_their_attributes_and_the_models_defaults() {
     );
     let out = strip_frontmatter(&site(&project, "site", "index.md"));
     // Canonical order is the model's: width, height, loading, theme. The
-    // default `loading` applies to every image (Q141).
+    // default `loading` applies to every image.
     assert_eq!(
         out,
         "![Shot](./shot.png \"T\")<ascribe-attributes width=\"600\" loading=\"lazy\" theme=\"dark light\"></ascribe-attributes>\n\n\

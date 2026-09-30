@@ -1,5 +1,5 @@
 description: >-
-  A title whose text starts with a dot escapes it (Q193): `.\.NET` is a title
+  A title whose text starts with a dot escapes it: `.\.NET` is a title
   line whose text is `\.NET`, which CommonMark renders as `.NET`. The outline
   keeps the source text.
 spec: ["3.7", "4.3"]

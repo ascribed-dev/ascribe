@@ -29,7 +29,7 @@ pub(crate) struct ResolvedSpec {
     pub feature: Option<String>,
 }
 
-/// Replaces a bare feature key by the spec it stands for (SPEC §4.4, Q25);
+/// Replaces a bare feature key by the spec it stands for (SPEC §4.4);
 /// any other spec stands for itself.
 pub(crate) fn resolve_spec(
     model: &ContentModel,
@@ -103,7 +103,6 @@ impl Availability {
 /// target's dimension name, and the state in effect at the version counts as
 /// available. A direct entry wins over one through the dimension name
 /// (`cloud removed` beside `deployment`).
-// Resolved Q82: which entry applies when both name the target.
 pub(crate) fn spec_allows(
     model: &ContentModel,
     spec: &AvailabilitySpec,
@@ -138,7 +137,6 @@ pub(crate) fn spec_allows(
 /// a state with no version is in effect at every version (a versionless
 /// target's single state). When the build has no version (a versionless
 /// target) an entry that has one is treated as in effect.
-// Resolved Q86: a state with no version on a versioned target.
 fn state_in_effect<'a>(entry: &'a Entry, version: Option<&Version>) -> Option<&'a str> {
     let started = |start: &Version| version.is_none_or(|v| v.compare(start).is_ge());
     match &entry.detail {
@@ -322,7 +320,6 @@ impl Annotator<'_> {
 
     /// Chains `declared` specs onto `enclosing`, recording each that exceeds
     /// the scope it's in.
-    // Resolved Q83: several `@available` for one heading or block.
     fn chain(
         &mut self,
         declared: &[(Declared, Arc<[IncludeSite]>)],
@@ -387,7 +384,7 @@ impl Annotator<'_> {
                         Some(k) => for_heading.entry(k).or_default().push(i),
                         // The heading was left out (`{heading=false}`): the
                         // directive describes what's left of its section.
-                        // Resolved Q84: bindings are per source file.
+                        // Bindings are per source file.
                         None => orphans.push(i),
                     }
                 }
@@ -554,7 +551,7 @@ impl Annotator<'_> {
     }
 
     /// What a surviving `@available` declares: its spec as shown, with a
-    /// feature key replaced by its spec (Q25).
+    /// feature key replaced by its spec.
     fn annotation(&self, block: &ExpandedBlock) -> Option<Annotation> {
         let line = available_line(block)?;
         let index = self.project.file_by_id(block.file)?;

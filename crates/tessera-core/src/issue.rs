@@ -39,8 +39,8 @@ impl fmt::Display for DiagnosticSlug {
 /// loader, the checks, or resolution.
 ///
 /// An issue says *what* is wrong (its [`slug`](Issue::slug) and message
-/// arguments) and *where*. It carries no code, severity, or text: phase 10
-/// looks those up in the registry by slug and turns the issue into a
+/// arguments) and *where*. It carries no code, severity, or text: the checks
+/// look those up in the registry by slug and turn the issue into a
 /// user-facing diagnostic, so every tool words and ranks a problem the same
 /// way.
 ///
@@ -73,7 +73,7 @@ pub struct Issue {
     /// Other places that help explain the problem, such as the first use of
     /// a duplicated id, or the fragment line behind an include-site report.
     pub related: Vec<Related>,
-    /// Edits that would fix the problem, offered as quick fixes (phase 24).
+    /// Edits that would fix the problem, offered as quick fixes.
     pub fixes: Vec<Fix>,
 }
 

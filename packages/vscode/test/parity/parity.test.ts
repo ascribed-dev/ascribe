@@ -1,4 +1,4 @@
-// The preview against the published site (phase 25): for each page of the
+// The preview against the published site: for each page of the
 // Astro end-to-end slice under each build, the HTML the language server's
 // `ascribe/preview` returns has to be the HTML Astro built, for the page's
 // content: the same elements, attributes, heading ids, and image attributes.

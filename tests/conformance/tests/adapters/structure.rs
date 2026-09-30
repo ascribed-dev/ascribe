@@ -1,4 +1,4 @@
-//! The outline of the Ascribe nodes the structure pass makes (phase 06):
+//! The outline of the Ascribe nodes the structure pass makes:
 //! directives with their titles, bindings, and children, and groups with
 //! their arms. `syntax.rs` writes the CommonMark blocks and calls
 //! [`node`] for the rest.

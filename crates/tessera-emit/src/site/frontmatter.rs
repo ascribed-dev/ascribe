@@ -5,7 +5,7 @@
 //! the reserved `available`: it is the spec as the author wrote it, which a
 //! layout would have to parse, so it becomes a list of targets a layout can
 //! pass straight to `<ascribe-availability scope="page">` (element contract
-//! §4). Q142.
+//! §4).
 //!
 //! ```yaml
 //! available:
@@ -30,8 +30,6 @@ use super::blocks::availability_target;
 use crate::emitter::PageContext;
 use crate::error::EmitError;
 
-// Resolved Q142: `available` is the list of targets, not the source's
-// spec string.
 /// The page's frontmatter block, `---` lines included and a blank line after,
 /// or an empty string when the page has nothing to put in it.
 pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError> {

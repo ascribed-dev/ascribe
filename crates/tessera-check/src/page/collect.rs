@@ -4,7 +4,7 @@
 //! the source index's link-id problems for the links the page publishes, and
 //! the duplicate ids and headings of its resolved headings.
 //!
-//! Where a problem is reported (SPEC §8.1, Q20): at the source location that
+//! Where a problem is reported (SPEC §8.1): at the source location that
 //! causes it; when that's inside included content, at the outermost include
 //! site (`via[0]`), with the location in the fragment as related information;
 //! and once, at the later of the places that together cause it.
@@ -17,7 +17,7 @@ use tessera_core::{DiagnosticSlug, FileId, Issue, Location, Related, Span, diagn
 use tessera_resolve::{IncludeSite, Project, ResolvedBlock, ResolvedPage};
 
 /// A page-level issue and where its cause is, for deciding whether any build
-/// publishes that content (Q101).
+/// publishes that content.
 #[derive(Clone, Debug)]
 pub(super) struct Found {
     /// The issue, located where it's reported. Ids are the index's.
@@ -78,7 +78,7 @@ fn recorded(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
     for problem in &page.problems {
         let inner = problem.issue.location;
         // A cycle is reported where it closes, in the file containing that
-        // include (Q20); everything else at the outermost include site.
+        // include; everything else at the outermost include site.
         let issue = if problem.issue.slug == diagnostics::INCLUDE_CYCLE {
             problem.issue.clone()
         } else {
@@ -129,7 +129,7 @@ fn include_target(index: &Project, site: &IncludeSite) -> Option<String> {
 /// once includes and the build's modes are applied.
 fn headings(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
     // The first heading with each page id, and each slug among the headings
-    // without `@id` (the ones numbered against each other, Q7).
+    // without `@id` (the ones numbered against each other).
     let mut ids: HashMap<&str, Location> = HashMap::new();
     let mut slugs: HashMap<String, Location> = HashMap::new();
     let slugger = tessera_resolve::slug::slugger_by_name(&index.model().consumer.slugger)
@@ -165,7 +165,7 @@ fn headings(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
                 push(issue);
             }
         }
-        // SPEC §5.5 (resolved Q103): the slug the text alone gives, among
+        // SPEC §5.5: the slug the text alone gives, among
         // headings without `@id`. An empty slug is `heading-empty-slug`'s.
         if heading.explicit {
             continue;
@@ -189,7 +189,7 @@ fn headings(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
 
 /// `link-id-missing` and `link-id-in-fragment`, which the source index finds
 /// once for the file a link is written in, for the links this page publishes.
-/// A link in an arm the build removed isn't the build's problem (Q81).
+/// A link in an arm the build removed isn't the build's problem.
 fn link_ids(index: &Project, page: &ResolvedPage, cache: &LinkProblems, out: &mut Vec<Found>) {
     page.visit(&mut |block: &ResolvedBlock| {
         if block.links.is_empty() {
@@ -214,7 +214,7 @@ fn link_ids(index: &Project, page: &ResolvedPage, cache: &LinkProblems, out: &mu
         for issue in problems.iter() {
             let at = issue.location;
             // The issue is at the link's destination, or at the whole link
-            // for a reference form (Q53): inside one of this block's links.
+            // for a reference form: inside one of this block's links.
             let inside =
                 |link: Span| link.start() <= at.span.start() && at.span.end() <= link.end();
             if at.file == block.file && block.links.iter().any(|l| inside(l.span)) {

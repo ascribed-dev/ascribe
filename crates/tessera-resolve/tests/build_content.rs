@@ -150,7 +150,7 @@ fn explicit_ids_are_page_ids_and_dont_take_part_in_numbering() {
     )]);
     let resolved = resolve(&p, "index.md", "site");
     // The slug `intro` is numbered only against earlier slugs, so the first
-    // `Intro` is `intro` (which duplicates the `@id`: page-level, phase 14).
+    // `Intro` is `intro` (which duplicates the `@id`, a page-level check).
     assert_eq!(
         headings(&resolved)
             .iter()
@@ -312,7 +312,7 @@ fn a_link_follows_its_targets_page_id_when_an_include_moves_the_slug() {
 
 #[test]
 fn a_hash_only_link_in_a_fragment_points_at_the_page_id_on_each_including_page() {
-    // Q64: `[](#top)` in the fragment names the fragment's own heading, which
+    // `[](#top)` in the fragment names the fragment's own heading, which
     // is `top` on one page and `top-1` on the other.
     let p = project(&[
         ("a.md", &page("# Top\n\n@include: _f.md\n")),
@@ -441,7 +441,7 @@ fn links_with_a_missing_target_or_an_id_only_in_a_fragment_are_left_unresolved_w
 
 #[test]
 fn a_reference_link_resolves_through_its_definition_and_its_phrases() {
-    // Q43: `{api}` in a definition is a URL, and a definition can name a page.
+    // `{api}` in a definition is a URL, and a definition can name a page.
     let p = project(&[
         (
             "index.md",

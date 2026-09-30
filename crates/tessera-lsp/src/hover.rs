@@ -125,7 +125,6 @@ fn describe_resolution(ctx: &Ctx, resolution: &Resolution, destination: &str) ->
     }
 }
 
-// Resolved Q162
 /// A source file, or a heading in it: its full path and a preview.
 fn describe_source(ctx: &Ctx, target: &RelPath, id: Option<&str>, fragment: bool) -> String {
     let snapshot: &Snapshot = &ctx.snapshot;

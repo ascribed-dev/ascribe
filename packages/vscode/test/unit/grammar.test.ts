@@ -158,7 +158,7 @@ describe("directive lines", () => {
     expect(rest?.every(([, scopes]) => scopes.length === 0)).toBe(true);
   });
 
-  describe("indentation (Q1)", () => {
+  describe("indentation", () => {
     it("allows up to three extra spaces before a directive line and @end", () => {
       for (const indent of ["", " ", "  ", "   "]) {
         expect(highlighted(`${indent}@note: Hello.`), JSON.stringify(indent)).toBe(true);

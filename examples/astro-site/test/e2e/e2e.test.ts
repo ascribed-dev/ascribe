@@ -1,4 +1,4 @@
-// The Astro end-to-end slice (phase 21): a real `astro build` of this site,
+// The Astro end-to-end test: a real `astro build` of this site,
 // then the built HTML checked in Chromium. Run by `pnpm test:e2e`; it needs a
 // built `ascribe` binary (`cargo build -p tessera-cli`, or ASCRIBE_BIN) and
 // `pnpm --filter @ascribed/astro build` and `pnpm --filter @ascribed/elements build`.

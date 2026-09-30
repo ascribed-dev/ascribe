@@ -12,11 +12,11 @@ why = "Braces around a lowercase key in prose (`/containers/{name}`, `{children}
 
 [class."phrase-candidate:prose:mustache"]
 verdict = "intended"
-why = "`{{key}}` (Elastic and Hugo substitutions) holds the candidate `{key}` between literal braces. SPEC §5.1 lets a phrase sit against punctuation, so this follows the spec; whether it should is Q191. FINDINGS R2."
+why = "`{{key}}` (Elastic and Hugo substitutions) holds the candidate `{key}` between literal braces. SPEC §5.1 lets a phrase sit against punctuation, so this follows the spec; with the key declared, `ascribe check` warns (`phrase-double-braces`). FINDINGS R2."
 
 [class."diagnostic:phrase-undeclared:mustache"]
 verdict = "intended"
-why = "`{{key}}` (Elastic and Hugo substitutions) holds the candidate `{key}` between literal braces. SPEC §5.1 lets a phrase sit against punctuation, so this follows the spec; whether it should is Q191. FINDINGS R2."
+why = "`{{key}}` (Elastic and Hugo substitutions) holds the candidate `{key}` between literal braces. SPEC §5.1 lets a phrase sit against punctuation, so this follows the spec; with the key declared, `ascribe check` warns (`phrase-double-braces`). FINDINGS R2."
 
 [class."phrase-candidate:prose:directive-fence"]
 verdict = "intended"

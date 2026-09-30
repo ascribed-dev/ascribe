@@ -1,4 +1,4 @@
-description: "An end line with extra spaces in the same container still closes it, and the formatter removes them (resolved Q19)."
+description: "An end line with extra spaces in the same container still closes it, and the formatter removes them."
 spec: ["8.3"]
 tags: [format]
 formatted: formatted.md

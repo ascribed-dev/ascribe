@@ -1,4 +1,4 @@
-//! Phase 07: phrase candidates and image attribute blocks (SPEC §2.3, §5.1,
+//! Phrase candidates and image attribute blocks (SPEC §2.3, §5.1,
 //! §5.3), with exact spans, in every place the spec allows them.
 
 #![allow(clippy::panic, clippy::expect_used)]
@@ -364,7 +364,7 @@ fn a_fence_in_a_list_and_a_quote_has_exact_spans() {
     assert_eq!(found, ["{one}", "{two}"]);
 }
 
-// SPEC §5.1 (resolved Q42): backslashes don't escape in code.
+// SPEC §5.1: backslashes don't escape in code.
 #[test]
 fn a_backslash_does_not_escape_in_a_fence() {
     let d = doc("```phrases=true\n\\{a}\n```\n");
@@ -415,7 +415,7 @@ fn destinations_of_every_shape() {
         ("[t]()\n", vec![]),
         ("[t][r]\n\n[r]: {a}x\n", vec![]),
         ("[t]\n\n[t]: {a}x\n", vec![]),
-        // SPEC §5.1 (resolved Q43): an autolink's destination holds
+        // SPEC §5.1: an autolink's destination holds
         // candidates, and a backslash doesn't escape there.
         ("<https://x.org/{a}>\n", vec!["{a}"]),
         ("<https://{host}/x/{b}>\n", vec!["{host}", "{b}"]),
@@ -611,7 +611,7 @@ fn only_image_of(inlines: &[Inline]) -> &Image {
     }
 }
 
-// SPEC §5.1, §5.3 (resolved Q41)
+// SPEC §5.1, §5.3
 #[test]
 fn a_bare_key_directly_after_an_image_is_an_attribute_block() {
     let source = "![a](s.png){product}\n";

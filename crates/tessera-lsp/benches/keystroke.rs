@@ -130,7 +130,7 @@ fn run(pages: usize) {
     times.sort();
     let q = |f: f64| times[((times.len() as f64 - 1.0) * f).round() as usize];
 
-    // The same keystrokes with the preview open (phase 25): each change is
+    // The same keystrokes with the preview open: each change is
     // followed by an `ascribe/preview` request for the page, as the editor sends
     // it after its debounce. `preview` is the time from the change to the
     // answer; `with preview` is the time from the change to its diagnostics,

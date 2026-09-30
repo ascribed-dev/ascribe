@@ -1,17 +1,15 @@
-# Every section and key in the ascribe.toml reference, used at least once.
-# Reference: project-docs/content-model.md (section numbers in comments).
+# Every section and key of ascribe.toml, used at least once.
 spec = "0.1"
 
-# §4
 [project]
 content-root = "docs"
 output-dir = ".ascribe/build"
 
-# §5.1: `guide` is the default type; `reference` applies to reference/**.
+# `guide` is the default type; `reference` applies to reference/**.
 [types.guide]
 default = true
 
-# §6: short forms, then table forms.
+# Short forms, then table forms.
 [types.guide.frontmatter]
 title = { type = "string", phrases = true, description = "The page title, shown in navigation and the browser tab." }
 description = "string?"
@@ -34,14 +32,12 @@ files = ["reference/**", "api/**/*.md"]
 title = "string"
 api-version = "string?"
 
-# §5.3
 [fragments]
 patterns = ["includes/**", "**/*.partial.md"]
 
 [fragments.frontmatter]
 owner = "string?"
 
-# §7
 [dimensions.deployment]
 label = "Deployment"
 values = ["cloud", "self-managed"]
@@ -53,11 +49,10 @@ label = "Package manager"
 values = ["npm", "pnpm", "yarn"]
 labels = { yarn = "Yarn" }
 
-# §8
 [versions]
 scheme = "numeric"
 
-# §9: a new state, and a built-in state relabeled.
+# A new state, and a built-in state relabeled.
 [lifecycle.sunset]
 available = false
 label = "sunset"
@@ -65,7 +60,6 @@ label = "sunset"
 [lifecycle.beta]
 label = "Beta"
 
-# §10
 [features.streaming-sync]
 name = "Streaming sync"
 available = "cloud, self-managed preview 3.4"
@@ -74,14 +68,13 @@ available = "cloud, self-managed preview 3.4"
 name = "Single sign-on"
 available = "cloud beta, self-managed (preview 3.3, ga 3.5, deprecated 4.0)"
 
-# §11: a new note type, and a built-in type relabeled.
+# A new note type, and a built-in type relabeled.
 [notes.security]
 label = "Security"
 
 [notes.tip]
 label = "Pro tip"
 
-# §12
 [phrases]
 product = "Quill"
 cloud = "Quill Cloud"
@@ -89,7 +82,6 @@ version = "3.4.1"
 api = "https://api.quill.dev/v3/"
 support-email = "support@quill.dev"
 
-# §13
 [glossary]
 match = "first"
 case-sensitive = false
@@ -105,14 +97,13 @@ term = "Quill Server"
 definition = "The self-managed Quill server."
 case-sensitive = true
 
-# §14: declaration order is canonical attribute order.
+# Declaration order is canonical attribute order.
 [images.attributes]
 width = "number?"
 height = "number?"
 loading = { type = "enum(lazy, eager)", default = "lazy" }
 theme = "set(enum(light, dark))?"
 
-# §15
 # `@quill-labspace {lab=first-sync}`: stands alone.
 [widgets.quill-labspace]
 description = "An embedded, runnable Quill lab."
@@ -166,7 +157,7 @@ forms = ["container"]
 plain-fallback = "This section is interactive. See it at docs.quill.dev."
 plain-content = "drop"
 
-# §16: every key, overriding the astro profile's defaults where allowed.
+# Every key, overriding the astro profile's defaults where allowed.
 [consumer]
 profile = "astro"
 site = "https://docs.quill.dev"
@@ -175,7 +166,6 @@ trailing-slash = "never"
 slugger = "github"
 html = true
 
-# §17
 [builds.site]
 variants = "switch"
 availability = "badge"
@@ -188,6 +178,5 @@ availability = { filter = "cloud" }
 variants = { deployment = "self-managed", pm = ["npm", "pnpm"] }
 availability = { filter = "self-managed 3.5" }
 
-# §18
 [editor]
 build = "site"

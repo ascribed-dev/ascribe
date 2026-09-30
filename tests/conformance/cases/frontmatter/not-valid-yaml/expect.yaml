@@ -1,6 +1,5 @@
 description: >-
-  Frontmatter that isn't valid YAML is a syntax error, not a type mismatch
-  (Q51).
+  Frontmatter that isn't valid YAML is a syntax error, not a type mismatch.
 spec: ["2.1", "8.2"]
 tags: [check]
 

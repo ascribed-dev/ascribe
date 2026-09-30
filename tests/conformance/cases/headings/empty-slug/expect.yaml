@@ -1,6 +1,6 @@
 description: >-
   A heading with no `@id` whose text is only emoji or punctuation has an
-  empty slug, which is a warning; one with an `@id` is fine (Q61).
+  empty slug, which is a warning; one with an `@id` is fine.
 spec: ["5.5", "8.2"]
 tags: [check]
 

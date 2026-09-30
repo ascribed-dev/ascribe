@@ -2,7 +2,7 @@
 //!
 //! A [`ResolvedPage`] is a page after includes are expanded and the build's
 //! passes have run (SPEC §9.2). It has the shape of the source, so emitters
-//! (phases 18 and 20) and page-level checks (phase 14) work from what
+//! and page-level checks work from what
 //! survived rather than re-deriving it from the build's mode:
 //!
 //! - every block keeps the **file and span** it was written in, and the
@@ -51,9 +51,10 @@ pub struct ResolvedPage {
     /// The blocks that survived the build, includes expanded.
     pub blocks: Vec<ResolvedBlock>,
     /// The assets the surviving content references, in document order, each
-    /// with where it's written (the asset contract, §5).
+    /// with where it's written.
     pub assets: Vec<PageAsset>,
-    /// Problems found while resolving, for phase 14 to report: what expansion
+    /// Problems found while resolving, for the page-level checks to report:
+    /// what expansion
     /// found (`include-cycle`, `include-id-missing`), then per build
     /// `variant-no-arm-survives`, `available-exceeds-scope`,
     /// `link-id-removed`, and `link-page-dropped`. Each is located where its
@@ -296,7 +297,7 @@ pub enum LinkTarget {
         text_filled: bool,
     },
     /// A local file the build copies. The reference is rewritten by the
-    /// emitter (asset contract, §4).
+    /// emitter.
     Asset {
         /// The asset's source path.
         path: RelPath,
@@ -324,7 +325,7 @@ pub struct GlossaryUse {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Annotation {
     /// The spec as shown: what was written, or, for a feature key, the spec
-    /// the key stands for (Q25).
+    /// the key stands for.
     pub text: String,
     /// The feature key, when the primary was one.
     pub feature: Option<String>,
@@ -382,7 +383,7 @@ pub enum DropReason {
     /// and none of the selected values.
     Variant,
     /// The page's `available` frontmatter makes it unavailable for the
-    /// build's target and version (Q24).
+    /// build's target and version.
     Unavailable,
 }
 

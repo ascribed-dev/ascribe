@@ -1,6 +1,5 @@
 # The content model for examples/quill: the model SPEC Appendix B assumes (see
-# examples/content-models/quill.toml), plus image attributes. Reference:
-# project-docs/content-model.md.
+# examples/content-models/quill.toml), plus image attributes.
 spec = "0.1"
 
 [project]

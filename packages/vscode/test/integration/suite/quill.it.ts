@@ -3,7 +3,7 @@ import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import * as vscode from "vscode";
 import { activated, diagnosticsOf, uriOf } from "./helpers.js";
 
-// The real `ascribe lsp` (phase 15) on a copy of examples/quill with a broken
+// The real `ascribe lsp` on a copy of examples/quill with a broken
 // page, `docs/broken.md`, added (its unknown attribute key is a §8.2 error).
 describe("with the real language server on examples/quill", () => {
   const broken = uriOf("docs", "broken.md");

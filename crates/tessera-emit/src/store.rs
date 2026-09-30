@@ -1,4 +1,4 @@
-//! Output ownership (`project-docs/contracts/output-layout.md`): staging,
+//! Output ownership: staging,
 //! the manifest, and replacing a previous build's output without ever
 //! touching a file Ascribe didn't write.
 
@@ -142,8 +142,7 @@ struct ManifestFile {
     url: Option<String>,
 }
 
-/// The output directory, locked for one build (output-layout contract, §4,
-/// step 1). The lock is released when this is dropped, or by the operating
+/// The output directory, locked for one build. The lock is released when this is dropped, or by the operating
 /// system if the process dies.
 #[derive(Debug)]
 pub struct OutputDir {
@@ -197,8 +196,8 @@ impl OutputDir {
             .join(format!("{emitter}.manifest.json"))
     }
 
-    /// Replaces the output of one build and emitter with `files`
-    /// (output-layout contract, §4, steps 2 to 9): stages them, checks that
+    /// Replaces the output of one build and emitter with `files`:
+    /// stages them, checks that
     /// nothing that isn't Ascribe's is in the way, records ownership, moves
     /// the files into place, removes what the previous output had and this
     /// one doesn't, and writes the final manifest.
@@ -277,7 +276,6 @@ impl OutputDir {
             let dest = emitter_root.join(file.path.as_str());
             if fs::symlink_metadata(&dest).is_ok() {
                 if dest.is_dir() {
-                    // Resolved Q117: a directory where this build writes a file.
                     problems.push(format!(
                         "{} is a directory, and a file would be written there",
                         dest.display()
@@ -298,8 +296,7 @@ impl OutputDir {
                 prefix.push_str(segment);
                 let at = emitter_root.join(&prefix);
                 if fs::symlink_metadata(&at).is_ok() && !at.is_dir() {
-                    // Resolved Q117: a file of Ascribe's where this build
-                    // needs a directory.
+                    // A file where this build needs a directory.
                     if previous_paths.contains(prefix.as_str()) {
                         // Ascribe's own file, which this build no longer
                         // produces as a file: it's removed before the
@@ -323,7 +320,7 @@ impl OutputDir {
         // Step 3: emit into staging, except a file whose destination already
         // holds exactly its bytes: it stays where it is, untouched, so an
         // unchanged rebuild writes (and reads back) nothing it doesn't need
-        // to (phase 26, P4).
+        // to.
         if staging.exists() {
             fs::remove_dir_all(staging).map_err(io_err("can't remove", staging))?;
         }
@@ -456,7 +453,7 @@ impl OutputDir {
 }
 
 /// Reads the manifest at `path`. No file means no previous output. A file that
-/// isn't a manifest is an error (output-layout contract, §4, step 2).
+/// isn't a manifest is an error.
 fn read_manifest(path: &Path) -> Result<Vec<ManifestFile>, StoreError> {
     let shown = path.display().to_string();
     let bytes = match fs::read(path) {

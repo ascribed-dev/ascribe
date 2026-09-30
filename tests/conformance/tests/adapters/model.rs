@@ -2,8 +2,8 @@
 //!
 //! A `model` case's diagnostics are what the loader reports for the case's
 //! content model, in `ascribe.toml` (a loader rule is `file: ascribe.toml`,
-//! README, "The shared model and the content root"). The rule fixtures for
-//! the rest of content-model.md §20 are in `crates/tessera-model/tests/`.
+//! README, "The shared model and the content root"). The fixtures for the
+//! other loader rules are in `crates/tessera-model/tests/`.
 
 use tessera_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic};
 use tessera_core::{FileId, LineIndex, WideEncoding};

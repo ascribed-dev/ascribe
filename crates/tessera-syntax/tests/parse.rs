@@ -11,7 +11,7 @@ fn doc(source: &str) -> ParsedDocument {
 }
 
 /// The first block's directive line: a line-form directive, or the opener of
-/// a container or of a group's first arm (phase 06 nests those).
+/// a container or of a group's first arm (the structure pass nests those).
 fn directive(source: &str) -> (ParsedDocument, DirectiveLine) {
     let d = doc(source);
     let line = match d.blocks.first().map(|b| &b.kind) {
@@ -33,7 +33,7 @@ fn extra_text(d: &ParsedDocument) -> &tessera_core::Issue {
     found.unwrap_or_else(|| panic!("not reported: {:?}", d.issues))
 }
 
-/// The slugs of the issues the head parser reports (phase 05). The structure
+/// The slugs of the issues the head parser reports. The structure
 /// pass's issues (binding, containers, titles) have their own tests.
 fn slugs(d: &ParsedDocument) -> Vec<&'static str> {
     const STRUCTURE: &[&str] = &[
@@ -484,13 +484,13 @@ fn blocks_and_inlines() {
 fn produces_the_nodes_of_phase_06_and_07() {
     let d = doc(".Title\n@note:\nx\n@end\n@variant {a=b}:\n{phrase} ![i](s){w=1}\n@end\n");
     let text = format!("{:?}", d.blocks);
-    // Phase 06: containers, groups, and attached titles. A title line is
+    // The structure pass: containers, groups, and attached titles. A title line is
     // never a block of its own.
     for produced in ["Container(", "Group(", "TitleLine {"] {
         assert!(text.contains(produced), "{produced}");
     }
     assert!(!text.contains("Title("));
-    // Phase 07: phrase candidates and image attributes.
+    // The inline pass: phrase candidates and image attributes.
     assert!(text.contains("Phrase("));
     assert!(text.contains("ImageAttributes"));
 }

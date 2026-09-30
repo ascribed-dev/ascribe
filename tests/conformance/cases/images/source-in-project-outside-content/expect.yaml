@@ -1,6 +1,5 @@
 description: >-
-  An image in the project root but outside the content root is allowed
-  (Q10), and is copied under its source path.
+  An image in the project root but outside the content root is allowed, and is copied under its source path.
 spec: ["5.3", "9.4"]
 tags: [check, resolve]
 

@@ -6,9 +6,9 @@
 //! with `..` segments for files outside it, such as an image elsewhere in the
 //! project.
 //!
-//! [`classify_destination`] and [`LocalDestination::resolve`] implement the
-//! resolution rules of `project-docs/contracts/assets.md` ("Resolving a
-//! reference"). Phase 11 applies them to links, images, and includes alike.
+//! [`classify_destination`] and [`LocalDestination::resolve`] resolve a
+//! destination from the file it's written in, the same way for links,
+//! images, and includes.
 
 use std::fmt;
 
@@ -223,8 +223,9 @@ impl LocalDestination {
     /// Resolves the destination from the file it's written in, given as a
     /// content path. For included content that's the fragment, not the page
     /// that includes it (SPEC §4.2). The result may start with `..` when the
-    /// destination leads outside the content root; whether that's allowed is
-    /// the asset contract's rule, checked against the file system.
+    /// destination leads outside the content root; whether that's allowed
+    /// (inside the project root, not in the output directory) is checked
+    /// against the file system.
     pub fn resolve(&self, written_in: &RelPath) -> Result<RelPath, PathError> {
         if self.path.is_empty() && !self.root_relative {
             return Ok(written_in.clone());

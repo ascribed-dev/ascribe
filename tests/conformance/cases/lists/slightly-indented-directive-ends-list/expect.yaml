@@ -1,6 +1,6 @@
 description: >-
   A directive indented less than the item's content column is outside the
-  item (Q1): as a heading would, it ends the list.
+  item: as a heading would, it ends the list.
 spec: ["1.5", "3.9", "8.2"]
 tags: [structure, check]
 

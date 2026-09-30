@@ -23,7 +23,7 @@ use crate::index::FileIndex;
 
 /// Why the build doesn't publish this page, if it doesn't (SPEC §9.3): its
 /// `variant` frontmatter conflicts with the selection, or its `available`
-/// frontmatter makes it unavailable in a filter build (Q24).
+/// frontmatter makes it unavailable in a filter build.
 pub(crate) fn drop_reason(
     model: &ContentModel,
     index: &FileIndex,
@@ -45,7 +45,7 @@ pub(crate) fn drop_reason(
 
 /// Whether a page's `variant` frontmatter names a selected dimension and none
 /// of its selected values (SPEC §9.3). A value that isn't the shape SPEC §4.3
-/// gives (a value or a list of values, Q57) names nothing.
+/// gives (a value or a list of values) names nothing.
 fn page_conflicts(index: &FileIndex, selection: &[(String, Vec<String>)]) -> bool {
     let Some(variant) = index
         .frontmatter

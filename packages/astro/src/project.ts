@@ -1,6 +1,6 @@
 // What the integration needs from `ascribe.toml`: where a build's site output
-// goes, and the consumer settings that must agree with `astro.config`
-// (content-model.md §16). The compiler validates the whole file; this reads
+// goes, and the consumer settings that must agree with `astro.config`.
+// The compiler validates the whole file; this reads
 // only what it compiled.
 import { readFileSync } from "node:fs";
 import path from "node:path";

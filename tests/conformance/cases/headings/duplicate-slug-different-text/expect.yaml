@@ -3,7 +3,7 @@ description: >-
   `Set-up` both slug to `set-up`) are duplicates: the later one's id is
   numbered. A heading after one with an `@id` isn't numbered against it, so
   `## options` below `## Options` with `@id: options` is an `id-duplicate`
-  instead (Q7, Q103).
+  instead.
 spec: ["5.5", "8.2"]
 tags: [page-check]
 

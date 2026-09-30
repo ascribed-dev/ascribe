@@ -56,7 +56,7 @@ impl Pass<'_> {
             self.report_title_missing(&line, schema.origin);
         }
 
-        // SPEC §3.5 (resolved Q16): the form is decided by the line's colon, and an
+        // SPEC §3.5: the form is decided by the line's colon, and an
         // error in it doesn't change what the line opens. A colon line opens
         // a container even where that's an error, and a container-only
         // directive without its colon opens one as if it had it, so each
@@ -68,7 +68,7 @@ impl Pass<'_> {
                 .with_arg("name", line.name.clone());
             self.report(issue);
         } else if container_only && line.colon.is_none() && line.attributes_closed {
-            // SPEC §3.3 (resolved Q36): with an unclosed attribute block the colon
+            // SPEC §3.3: with an unclosed attribute block the colon
             // can't be known, so only the block is reported.
             let issue = Issue::new(
                 diagnostics::CONTAINER_COLON_MISSING,
@@ -103,8 +103,8 @@ impl Pass<'_> {
             }
         }
         self.open.push(line.name.clone());
-        // SPEC §3.10 (resolved Q17): a group is one container level, however
-        // many arms it has. SPEC §3.10 (resolved Q33): levels count containers open in
+        // SPEC §3.10: a group is one container level, however
+        // many arms it has. SPEC §3.10: levels count containers open in
         // enclosing list items and block quotes too.
         if self.open.len() > 2 {
             let issue = Issue::new(
@@ -170,7 +170,7 @@ impl Pass<'_> {
             push(frames, root, node);
             return;
         }
-        // SPEC §3.9 rule 3 (resolved Q19): an end line in another CommonMark container
+        // SPEC §3.9 rule 3: an end line in another CommonMark container
         // than an opener it would otherwise close doesn't close it. It's
         // `end-indent-mismatch` when a container is open around it, or one was
         // left unclosed earlier (which is reported there too); only an end
@@ -212,7 +212,7 @@ impl Pass<'_> {
         }
         while let Some(frame) = frames.pop() {
             self.open.pop();
-            // A group is reported at its first opener (SPEC §3.6, resolved Q17).
+            // A group is reported at its first opener (SPEC §3.6).
             let first = frame
                 .arms
                 .as_ref()
@@ -306,7 +306,7 @@ impl Pass<'_> {
     /// The rules about a whole `@variant` group: all arms labeled or all
     /// dimensional, and dimensional arms share a key (SPEC §4.3).
     ///
-    /// SPEC §3.6 (resolved Q17): these are reported at the group's first opener.
+    /// SPEC §3.6: these are reported at the group's first opener.
     fn check_group(&mut self, name: &str, arms: &[Arm]) {
         if !self.is_variant(name) {
             return;

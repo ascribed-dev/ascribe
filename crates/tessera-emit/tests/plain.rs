@@ -92,7 +92,7 @@ fn availability_is_a_line_with_display_labels() {
         body(source),
         "## Streaming\n\nAvailable: Quill Cloud (GA); Self-managed (preview, 3.4+)\n\nText.\n"
     );
-    // A feature key shows the spec it stands for (Q25).
+    // A feature key shows the spec it stands for.
     let feature = "## Sync\n@available: streaming-sync\n";
     assert_eq!(
         body(feature),
@@ -100,7 +100,7 @@ fn availability_is_a_line_with_display_labels() {
     );
     // A history, a bare version, and a state on a versionless target. A
     // history names each state and the version it begins at, as the element
-    // contract does (Q114).
+    // contract does.
     let history = "@available: sso\n\nPara.\n";
     assert_eq!(
         body(history),
@@ -204,7 +204,7 @@ fn block_quotes_tables_and_breaks() {
         body("| a | b |\n| --- | --- |\n| 1 | `x\\|y` |\n"),
         "| a | b |\n| --- | --- |\n| 1 | `x\\|y` |\n"
     );
-    // Each column keeps its alignment (Q116).
+    // Each column keeps its alignment.
     assert_eq!(
         body("| a | b | c | d |\n| :-- | :-: | --: | --- |\n| 1 | 2 | 3 | 4 |\n"),
         "| a | b | c | d |\n| :--- | :---: | ---: | --- |\n| 1 | 2 | 3 | 4 |\n"
@@ -223,7 +223,7 @@ fn text_is_escaped_so_it_reads_back_the_same() {
 
 #[test]
 fn raw_html_keeps_its_text_and_drops_its_tags() {
-    // Q112: the output has no HTML, and a reader sees the text, not the tags.
+    // The output has no HTML, and a reader sees the text, not the tags.
     assert_eq!(body("<div>\nhi\n</div>\n"), "hi\n");
     assert_eq!(body("a <kbd>x</kbd> b\n"), "a x b\n");
     // Comments, scripts, and styles have no text to keep.

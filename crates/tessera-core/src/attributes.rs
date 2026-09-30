@@ -6,7 +6,7 @@
 //! part, plus the [`Issue`]s for anything malformed. It never panics, and it
 //! recovers from every error so the rest of the block is still read: the
 //! language server needs the keys of a half-typed block, and the checks
-//! (phase 10) still see the valid pairs.
+//! still see the valid pairs.
 //!
 //! What it reports, by registry slug:
 //!
@@ -17,7 +17,7 @@
 //! | `attribute-unquoted-reserved` | An unquoted value with whitespace, `=`, `{`, or `"` in it |
 //! | `attribute-duplicate-key` | A key given twice (reported at the second) |
 //!
-//! Keys and values are checked against a schema later (phase 10): this
+//! Keys and values are checked against a schema later, by the checks: this
 //! parser records only the form of a value (token, quoted string, or set).
 //!
 //! # Where the block ends

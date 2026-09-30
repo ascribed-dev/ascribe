@@ -1,4 +1,4 @@
-//! The `astro` profile's router (SPEC §9.5, content-model.md §16): which URL
+//! The `astro` profile's router (SPEC §9.5): which URL
 //! each page has on a site whose content collection is the site output.
 //!
 //! A page's route is the `[consumer] base-path`, then its **entry id**, then
@@ -7,11 +7,11 @@
 //! collection's base, without the extension, with each segment slugged by
 //! `github-slugger` (the pure `slug()`, without numbering), joined with `/`,
 //! and a final `/index` removed (`getContentEntryIdAndSlug`, Astro 7.3, the
-//! version phase 20 targets). So `Guides/My Setup.md` is `guides/my-setup`
+//! version the site output targets). So `Guides/My Setup.md` is `guides/my-setup`
 //! and `guides/index.md` is `guides`. The regex needs the `/`, so the root
 //! `index.md` keeps the id `index`, and so does `index/index.md`. Ascribe's
-//! route for the id `index` is the base path (content-model.md §16: a final
-//! `index` segment is dropped), so those two pages collide, as they do in
+//! route for the id `index` is the base path (a final `index` segment is
+//! dropped), so those two pages collide, as they do in
 //! Astro. Under `trailing-slash = "never"` the base path has no trailing
 //! slash (Astro's `BASE_URL`, and the build's URL for the root page), unless
 //! it is `/`.

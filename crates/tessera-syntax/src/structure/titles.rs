@@ -55,8 +55,8 @@ impl Pass<'_> {
                         });
                         continue;
                     }
-                    // Q11 (resolved): the line stays a paragraph, and the
-                    // warning is reported.
+                    // The line stays a paragraph, and the warning is
+                    // reported.
                     (Shape::Title, false) => {
                         let issue =
                             Issue::new(diagnostics::TITLE_NOT_ACCEPTED, self.location(block.span))

@@ -1,5 +1,5 @@
 //! Links, images, and assets: what each names, from which file, and what's
-//! wrong with it (SPEC §5.2, §5.3, §9.4; the asset contract).
+//! wrong with it (SPEC §5.2, §5.3, §9.4).
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -289,7 +289,7 @@ fn a_link_that_looks_like_a_route_gets_the_route_warning_instead() {
 }
 
 /// The consumer profile's router names the page a route belongs to, where the
-/// conventional mapping finds no file (Q148): the base path and the entry ids
+/// conventional mapping finds no file: the base path and the entry ids
 /// Astro gives files.
 #[test]
 fn a_route_names_the_page_the_astro_router_gives_it() {
@@ -367,7 +367,7 @@ fn links_to_pages_and_ids_are_checked_against_the_targets_own_source_ids() {
             // `other` was replaced by the `@id`.
             ("link-id-missing", "other"),
             ("link-id-missing", "nope"),
-            // Q6: an id that exists only in an included fragment.
+            // An id that exists only in an included fragment.
             ("link-id-in-fragment", "from-fragment"),
         ]
     );
@@ -422,7 +422,7 @@ fn a_phrase_in_an_inline_destination_is_applied_before_it_is_resolved() {
 
 #[test]
 fn a_phrase_in_a_definitions_destination_is_applied_like_an_inline_ones() {
-    // Q43: `{api}` in a definition is a URL, as it is inline.
+    // `{api}` in a definition is a URL, as it is inline.
     let p = project(&[(
         "docs/index.md",
         &format!(
@@ -575,7 +575,7 @@ fn missing_reasons_are_told_apart() {
 
 #[test]
 fn an_image_with_no_path_is_missing_but_a_fragment_only_link_is_not() {
-    // Resolved Q59, as phase 10 implements it.
+    // An image needs a file; a link can name a place on its own page.
     let p = project(&[(
         "docs/index.md",
         &format!("{PAGE}![A]()\n\n![B](#top)\n\n[Self](#top)\n\n## Top\n"),

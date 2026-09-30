@@ -12,8 +12,7 @@
 //! aren't blocks), is never touched; the rule then leaves the gap alone.
 //!
 //! A gap between two blocks of a list item is left alone too: it may be what
-//! makes the list loose, and closing it would change how the list renders
-//! (Q74).
+//! makes the list loose, and closing it would change how the list renders.
 //!
 //! A directive whose text primary would swallow the block once nothing
 //! separates them is left alone too.
@@ -23,7 +22,7 @@ use tessera_syntax::{Block, BlockKind, Bound, PrimaryValue};
 
 use crate::{Ctx, Owner};
 
-// Resolved Q74: a gap with a text primary before it, with a line that
+// A gap with a text primary before it, with a line that
 // isn't blank (a definition), or between blocks of a list item is left alone.
 /// Applies the rule to the directive at `blocks[index]`, if it's a
 /// following-block directive with something after it in the same container.

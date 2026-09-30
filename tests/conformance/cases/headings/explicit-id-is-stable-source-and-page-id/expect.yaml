@@ -3,7 +3,7 @@ description: >-
   when an included fragment repeats the heading text. The fragment's heading
   has no `@id` but its slug (`setup`) collides with no other heading's slug,
   since the page's heading has an explicit id, so nothing is numbered and
-  nothing is reported (Q103).
+  nothing is reported.
 spec: ["4.1", "5.5"]
 tags: [page-check, slug]
 

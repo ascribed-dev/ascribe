@@ -21,7 +21,7 @@
 //! |---|---|
 //! | **A source file's contents** | That file's parse and index. Every page that includes it, directly or through other files ([`Affected::re_resolve`]). If what others see of it changed (its frontmatter, headings, directives; see below), also the pages that link to it or to a page that includes it (their link targets, page ids, and empty-text link titles), and the re-check of those files, of the files that include it, and of the pages that include a fragment that links to it. If it is a glossary target, every page. |
 //! | **A file created, deleted, or renamed** | The same as a content change of that file, and every reference that resolves, or used to resolve, to that path: links, images, includes, route-like links (which look for `route.md` and `route/index.md`), and case-differing names, found through an index from each file to the paths its references can depend on. A rename is a deletion and a creation. |
-//! | **A source file that can't be read** ([`Change::Unreadable`]) | The same as deleting it: it leaves the index. It is listed in [`Project::unreadable`] (and [`Affected::unreadable`]) until a later change to its path, as a file that can't be read at load is (Q52, Q133). |
+//! | **A source file that can't be read** ([`Change::Unreadable`]) | The same as deleting it: it leaves the index. It is listed in [`Project::unreadable`] (and [`Affected::unreadable`]) until a later change to its path, as a file that can't be read at load is. |
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
 //! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, or slugger re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
 //!
@@ -139,7 +139,7 @@ pub enum Change {
     /// A source file exists but can't be read: it isn't valid UTF-8, or the
     /// operating system refuses. It leaves the index, as a deletion does, and
     /// is listed in [`Project::unreadable`], so its `source-unreadable`
-    /// diagnostic shows, until a later change to its path (Q133). A path that
+    /// diagnostic shows, until a later change to its path. A path that
     /// isn't a source is a non-source file that exists, like
     /// [`Change::AssetCreated`].
     Unreadable {
@@ -181,7 +181,7 @@ pub enum Change {
 pub enum ApplyError {
     /// The new model has a different content root or output directory, which
     /// changes what every path means. Load a new project instead (the
-    /// language server restarts, PLAN.md).
+    /// language server does).
     LayoutChanged,
 }
 
@@ -239,7 +239,7 @@ pub struct Affected {
     /// Source files that exist but became unreadable, or whose reason
     /// changed: they left the index (results located at their ids are
     /// stale), and each now has a `source-unreadable` diagnostic
-    /// ([`Project::unreadable`], Q133).
+    /// ([`Project::unreadable`]).
     pub unreadable: BTreeSet<RelPath>,
     /// Pages whose resolved form, in any build, may differ from before.
     /// Every page after a model change beyond [`ModelImpact::Warnings`].
@@ -330,7 +330,7 @@ pub struct Stats {
     pub resolutions: u64,
 }
 
-// Resolved Q95: how many updates `is_file_current` can look back over.
+// How many updates `is_file_current` can look back over.
 const HISTORY: usize = 256;
 
 struct HistoryEntry {
@@ -613,7 +613,7 @@ impl IncrementalProject {
         // The net effect of the batch, per path.
         let mut source_state: BTreeMap<RelPath, Option<Arc<str>>> = BTreeMap::new();
         let mut file_state: BTreeMap<RelPath, bool> = BTreeMap::new();
-        // Resolved Q133: a source path's last word on whether it can't be
+        // A source path's last word on whether it can't be
         // read. Any other change to the path clears it.
         let mut unreadable_state: BTreeMap<RelPath, Option<String>> = BTreeMap::new();
         let mut new_model: Option<Arc<ContentModel>> = None;
@@ -674,7 +674,7 @@ impl IncrementalProject {
                     file_state.insert(path, false);
                 }
                 Change::Model(model) => {
-                    // Resolved Q92: a new content root or output
+                    // A new content root or output
                     // directory isn't applied in place.
                     if Layout::from_model(&model) != layout {
                         return Err(ApplyError::LayoutChanged);
@@ -684,7 +684,7 @@ impl IncrementalProject {
             }
         }
 
-        // Resolved Q94: the batch's net effect, per path.
+        // The batch's net effect, per path.
         let mut created: BTreeMap<RelPath, Arc<str>> = BTreeMap::new();
         let mut edited: BTreeMap<RelPath, Arc<str>> = BTreeMap::new();
         let mut gone: BTreeSet<RelPath> = BTreeSet::new();
@@ -986,7 +986,6 @@ impl IncrementalProject {
             // The files that write an `@include` of a path that appeared or
             // disappeared have a problem (or lost one), including one whose
             // diagnostic names a twin that differs only in case.
-            // Resolved Q97: a diagnostic depends on a case twin.
             for path in created.keys().chain(&gone) {
                 for includer in self.include_rev.includers_like(path) {
                     recheck.insert(includer.clone());

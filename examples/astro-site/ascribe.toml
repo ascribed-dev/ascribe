@@ -1,6 +1,5 @@
-# The content model for the Astro end-to-end slice (phase 21): a small project
-# that covers the integrations most likely to break. Reference:
-# project-docs/content-model.md.
+# The content model for the Astro end-to-end example: a small project that
+# covers the integrations most likely to break.
 spec = "0.1"
 
 [project]

@@ -2,8 +2,9 @@
 //! the site-render contract defines (`project-docs/contracts/site-render.md`
 //! §6): every construct has a fixture, and every fixture is complete.
 //!
-//! The fixtures themselves run in phases 20 and 21, against the two
-//! implementations of the contract.
+//! The fixtures themselves run against the two implementations:
+//! `tessera-emit`'s `render_site_html` and `@ascribed/astro`'s markdown
+//! plugin.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 

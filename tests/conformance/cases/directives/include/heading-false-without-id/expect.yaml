@@ -1,6 +1,6 @@
 description: >-
   `{heading=false}` on an include of a whole file has no effect, which is a
-  warning; on an include of a section it drops the heading (Q65).
+  warning; on an include of a section it drops the heading.
 spec: ["4.2", "8.2"]
 tags: [check]
 

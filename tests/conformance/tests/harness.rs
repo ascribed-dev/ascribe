@@ -153,8 +153,7 @@ fn problems(outcome: Option<&Outcome>) -> Vec<String> {
 
 #[test]
 fn bundled_cases_are_discovered_and_a_tag_with_no_adapter_or_skip_fails() {
-    // Every phase that lands removes its tag's skip entry, so the only entry
-    // left is `output` (phases 18 and 20), which no case carries yet. With an
+    // The only skip entry left is `output`, which no case carries. With an
     // empty registry every bundled case therefore fails, naming each tag that
     // has neither an adapter nor a recorded skip: a case is never skipped
     // without a reason.

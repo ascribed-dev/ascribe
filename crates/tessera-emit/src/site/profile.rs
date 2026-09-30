@@ -7,10 +7,9 @@
 //! - **HTML passthrough:** always on (the profile supports only `html = true`).
 //! - **Assets:** images stay beside their page, referenced by a relative
 //!   path, so Astro's image processing applies; other files a page links to
-//!   are published under `_ascribe/files/` (asset contract §3.2).
-//! - **Heading ids and image attributes:** the site-render contract's
-//!   `<ascribe-attributes>` marker, which the Astro markdown plugin applies
-//!   (phase 21). They aren't settings.
+//!   are published under `_ascribe/files/`.
+//! - **Heading ids and image attributes:** the `<ascribe-attributes>`
+//!   marker, which the Astro markdown plugin applies. They aren't settings.
 
 use tessera_core::{AssetPlacement, AssetUse, ConsumerProfile, Router, Slugger};
 use tessera_model::Consumer;

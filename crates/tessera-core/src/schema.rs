@@ -4,8 +4,8 @@
 //! and validate one directive: its forms, primary, binding, title rule,
 //! whether it groups, and its attributes. Built-in schemas come from
 //! [`builtin_schemas`]; project widgets' come from the content model
-//! (phase 08 converts each `[widgets.<name>]` table into one). The parser
-//! (phases 05 and 06) takes the full set as input, so a declared widget is
+//! (the loader converts each `[widgets.<name>]` table into one). The parser
+//! takes the full set as input, so a declared widget is
 //! "recognized, parsed, and validated exactly like a built-in directive"
 //! (SPEC §6).
 
@@ -252,7 +252,7 @@ impl Primary {
 }
 
 /// What a line-form directive applies to (SPEC §3.8). The names match
-/// `binding` in a widget declaration (content-model.md §15).
+/// `binding` in a widget declaration in `ascribe.toml`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Binding {
     /// `"self"`: its own primary, or nothing (it stands alone), like `@include`.
@@ -308,7 +308,7 @@ pub struct AttributeSchema {
     pub description: Option<String>,
 }
 
-/// An attribute's type (SPEC §3.3; content-model.md §6).
+/// An attribute's type (SPEC §3.3), as `ascribe.toml` declares it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AttributeType {
     /// A token or quoted string.

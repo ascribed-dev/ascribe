@@ -1,4 +1,4 @@
-//! The adapter interface that implementation phases provide.
+//! The adapter interface that connects the harness to the Ascribe crates.
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -64,7 +64,7 @@ pub type AdapterResult<T> = Result<Option<T>, AdapterError>;
 ///
 /// An adapter declares the tags it handles, and produces results for cases
 /// carrying them. Every method has a default that produces nothing, so an
-/// adapter implements only what its phase builds. Adapters live in the
+/// adapter implements only what it covers. Adapters live in the
 /// conformance crate's `tests/adapters/` module and are registered in
 /// `tests/conformance.rs`; the harness itself depends on no Ascribe crate.
 pub trait ConformanceAdapter {

@@ -129,7 +129,7 @@ impl Core {
 ///
 /// A page that starts (or stops) including a fragment changes the page-level
 /// diagnostics located *in that fragment* (an `include-cycle` is located where
-/// the cycle closes, and a fragment nobody includes has none, Q104), yet
+/// the cycle closes, and a fragment nobody includes has none), yet
 /// `Affected::recheck` lists the page and not the fragment, whose own text
 /// didn't change. So a round covers what the files in it reach, and what they
 /// reached before.
@@ -218,7 +218,7 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
     // fragment). Their resolved forms come from the cache, which first forgets
     // what the updates since the last round affected; the checks read the
     // snapshot's own index. Keeping what's located in the files of the round.
-    // Resolved Q134: only the editor's build, not content no build
+    // Only the editor's build, not content no build
     // publishes.
     let build = job.model.editor_default_build().clone();
     let mut pages: BTreeSet<RelPath> = BTreeSet::new();
@@ -287,7 +287,7 @@ fn check_project_of(job: &Job) -> Project {
         })
         .collect();
     // Files the project couldn't read are still sources, reported and not
-    // checked (Q52), with ids past every other.
+    // checked, with ids past every other.
     let mut next = snapshot
         .files()
         .map(|f| f.file.index())

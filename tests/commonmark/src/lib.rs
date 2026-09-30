@@ -1,10 +1,9 @@
 //! Runs the official CommonMark spec examples against a markdown renderer.
 //!
 //! The suite is renderer-agnostic: [`run`] takes any `&str -> String` HTML
-//! renderer. Phase 00 runs it against unmodified comrak from crates.io to
-//! record a baseline (`baselines/comrak.toml`); phase 04 reruns it against the
-//! `comrak-tessera` fork, with the Ascribe option off and on, and records its
-//! own baselines next to this one.
+//! renderer. `baselines/comrak.toml` records unmodified comrak from
+//! crates.io; the `comrak-tessera` fork's baselines, with the Ascribe option
+//! off and on, are next to it.
 //!
 //! A baseline pins the exact set of failing examples, not just a count, so a
 //! change that fixes one example and breaks another is still caught.

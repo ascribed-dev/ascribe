@@ -42,7 +42,7 @@ pub struct Case {
     /// Single file or project.
     pub kind: CaseKind,
     /// The content model the case uses: its own `ascribe.toml`, or the shared
-    /// fixture model. The shared model may not exist yet (phase 03 writes it).
+    /// fixture model.
     pub model: PathBuf,
     /// Whether [`Case::model`] is the shared fixture model.
     pub model_is_shared: bool,

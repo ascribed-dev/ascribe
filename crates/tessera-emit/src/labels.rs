@@ -15,7 +15,7 @@ use tessera_syntax::{DirectiveLine, Inline, InlineKind};
 /// lists each state and the version it begins at (`preview 3.3, GA 3.5,
 /// deprecated 4.0`). A dimension name standing for all its values shows the
 /// dimension's label. This is the element contract's text for each target
-/// (`packages/elements/CONTRACT.md` §4), as resolved in Q114.
+/// (`packages/elements/CONTRACT.md` §4).
 pub fn availability_display(model: &ContentModel, spec: &AvailabilitySpec) -> String {
     spec.entries
         .iter()
@@ -72,7 +72,6 @@ pub fn availability_display_of_text(model: &ContentModel, text: &str) -> Option<
 /// attributes name (SPEC §9.4): the labels of one attribute's values are
 /// joined with ` / `, and several attributes with `, `. `None` for an arm
 /// with no attributes (a labeled arm's label is its title).
-// Resolved Q115: how an arm with several values or attributes is labeled.
 pub fn dimensional_label(model: &ContentModel, opener: &DirectiveLine) -> Option<String> {
     let block = opener.attributes.as_ref()?;
     let parts: Vec<String> = block

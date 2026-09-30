@@ -40,7 +40,7 @@ pub struct Sources {
 
 /// Whether a content path names a source file: exactly `.md`, inside the
 /// content root (no leading `..`), and not in or under anything whose name
-/// starts with `.` (Q52). Discovery ([`FileSystem::sources`]) and the
+/// starts with `.`. Discovery ([`FileSystem::sources`]) and the
 /// incremental update ([`crate::Change`]) use the same rule.
 pub fn is_source_path(path: &RelPath) -> bool {
     path.is_inside()
@@ -54,7 +54,7 @@ pub trait FileSystem {
     /// ends in `.md`, skipping any file or directory whose name starts with `.`
     /// (`.github/`, `.vitepress/`, editor state). Directories are followed
     /// through symbolic links once each.
-    // Resolved Q52: the same rule as `ascribe check`'s discovery, which
+    // The same rule as `ascribe check`'s discovery, which
     // raised it: which files count as sources.
     fn sources(&self) -> Sources;
 

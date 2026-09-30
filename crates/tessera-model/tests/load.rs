@@ -1,5 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-//! Loading the phase 01 examples, the filesystem rules, and the queries.
+//! Loading the example content models (`examples/content-models`), the
+//! file-system rules, and the queries.
 
 use std::path::{Path, PathBuf};
 
@@ -62,7 +63,7 @@ fn minimal_gets_every_default() {
 #[test]
 fn quill_matches_the_spec_appendix_b_model() {
     let m = example("quill.toml");
-    // Declaration order of dimensions is kept (content-model.md §1.1).
+    // Declaration order of dimensions is kept.
     let dims: Vec<_> = m.dimensions.iter().map(|d| d.name.as_str()).collect();
     assert_eq!(dims, ["pm", "deployment"]);
     let deployment = m.dimension("deployment").unwrap();
@@ -287,7 +288,7 @@ fn availability_specs_are_checked_against_the_model() {
 
 #[test]
 fn a_version_on_a_dimension_name_is_an_error() {
-    // SPEC §4.4 (resolved Q29): whether the dimension is mixed or all versioned.
+    // SPEC §4.4: whether the dimension is mixed or all versioned.
     let toml = "spec = \"0.1\"\n[dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\nversionless = [\"cloud\"]\n[dimensions.sdk]\nvalues = [\"python\", \"js\"]\n";
     let m = load_str(toml, FileId::new(0)).unwrap();
     for bad in [

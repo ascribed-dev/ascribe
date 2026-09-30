@@ -393,7 +393,7 @@ impl<'s> Loader<'s> {
     }
 
     /// The output directory / content root relation, and the content root's
-    /// existence (content-model.md §4, §20.2).
+    /// existence.
     fn project_paths(&mut self, project: &ProjectInfo, table: Option<&V<'_>>) {
         let fallback = table.map_or(Span::empty(0), sp);
         let content_span = project.content_span.unwrap_or(fallback);
@@ -761,7 +761,8 @@ impl<'s> Loader<'s> {
 
     // ---- names and roles -----------------------------------------------------
 
-    /// The one-role rule (SPEC §7.2) and the case warning (content-model.md §6(c)).
+    /// The one-role rule (SPEC §7.2), and the warning for names that differ
+    /// only in case.
     fn check_roles(
         &mut self,
         dimensions: &[Dimension],

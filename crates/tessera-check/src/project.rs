@@ -25,8 +25,7 @@ pub struct SourceFile {
     /// The text; empty when the file couldn't be read.
     pub text: String,
     /// Why the file couldn't be read, if it couldn't. It's reported as
-    /// `source-unreadable`, and nothing else is checked in it (SPEC §8.2,
-    /// resolved Q52).
+    /// `source-unreadable`, and nothing else is checked in it (SPEC §8.2).
     pub unreadable: Option<ReadFailure>,
 }
 
@@ -84,7 +83,7 @@ pub enum LoadError {
 /// distinct ids from 1 (it finds a file by id, not by position): the language
 /// server gives the ids of a `tessera_resolve::Snapshot`, which are stable
 /// per path across updates and have gaps where files were deleted
-/// (`tessera_resolve::incremental`, resolved Q91). Source texts are held in memory: the
+/// (`tessera_resolve::incremental`). Source texts are held in memory: the
 /// language server builds a `Project` from its open buffers, and the command
 /// line from the files on disk. Files that aren't sources (images, other
 /// downloads) are looked for on disk, through `tessera_resolve`'s

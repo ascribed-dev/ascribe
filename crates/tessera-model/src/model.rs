@@ -1,5 +1,4 @@
-//! The typed content model (content-model.md) and the queries other crates
-//! ask of it.
+//! The typed content model and the queries other crates ask of it.
 
 use tessera_core::availability::{AvailabilitySpec, Detail, Entry, Name, Version};
 use tessera_core::{AttributeSchema, DirectiveSchema, Issue, Span, builtin_schemas};
@@ -7,12 +6,12 @@ use tessera_core::{AttributeSchema, DirectiveSchema, Issue, Span, builtin_schema
 use crate::pattern::Pattern;
 use crate::types::FrontmatterSchema;
 
-/// The spec versions this crate implements (`spec`, content-model.md §3).
+/// The spec versions this crate implements (`spec`).
 pub const SUPPORTED_SPECS: &[&str] = &["0.1"];
 
 /// A loaded, validated `ascribe.toml`.
 ///
-/// Every default from content-model.md §19 is applied: the implicit `page`
+/// Every default is applied: the implicit `page`
 /// type and `site` build exist when their tables are absent, and the built-in
 /// lifecycle states and note types are always present. Collections keep
 /// declaration order.
@@ -28,7 +27,7 @@ pub struct ContentModel {
     pub fragments: Fragments,
     /// `[dimensions.<name>]`, in declaration order. That order is the
     /// canonical order of `@variant` attributes and decides which dimension a
-    /// tab group syncs on (content-model.md §1.1).
+    /// tab group syncs on.
     pub dimensions: Vec<Dimension>,
     /// `[versions] scheme`.
     pub version_scheme: VersionScheme,
@@ -50,7 +49,7 @@ pub struct ContentModel {
     pub consumer: Consumer,
     /// `[builds.<name>]`, or the implicit `site` build.
     pub builds: Vec<Build>,
-    /// The build the editor checks by default (`[editor] build`, §18).
+    /// The build the editor checks by default (`[editor] build`).
     pub editor_build: String,
     /// Warnings found while loading (`model-name-case`,
     /// `model-build-filter-excluded`). A model with errors doesn't load, so
@@ -67,7 +66,7 @@ pub struct Project {
     pub output_dir: String,
 }
 
-/// A page content type (§5.1).
+/// A page content type.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ContentType {
     /// The type's name.
@@ -80,7 +79,7 @@ pub struct ContentType {
     pub frontmatter: FrontmatterSchema,
 }
 
-/// `[fragments]` (§5.3).
+/// `[fragments]`.
 #[derive(Clone, Debug)]
 pub struct Fragments {
     /// Additional fragment patterns.
@@ -89,7 +88,7 @@ pub struct Fragments {
     pub frontmatter: FrontmatterSchema,
 }
 
-/// A dimension (§7).
+/// A dimension.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Dimension {
     /// The dimension's name.
@@ -111,7 +110,7 @@ pub struct DimensionValue {
     pub versionless: bool,
 }
 
-/// The version scheme (§8).
+/// The version scheme.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VersionScheme {
     /// Dotted numbers of any length, compared numerically with missing
@@ -119,7 +118,7 @@ pub enum VersionScheme {
     Numeric,
 }
 
-/// A lifecycle state (§9).
+/// A lifecycle state.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LifecycleState {
     /// The state's name.
@@ -132,7 +131,7 @@ pub struct LifecycleState {
     pub builtin: bool,
 }
 
-/// A feature (§10).
+/// A feature.
 #[derive(Clone, Debug)]
 pub struct Feature {
     /// The feature key.
@@ -145,7 +144,7 @@ pub struct Feature {
     pub available: AvailabilitySpec,
 }
 
-/// A note type (§11).
+/// A note type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NoteType {
     /// The type (the value of `@note`'s `type` attribute).
@@ -156,7 +155,7 @@ pub struct NoteType {
     pub builtin: bool,
 }
 
-/// A phrase (§12).
+/// A phrase.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Phrase {
     /// The phrase key.
@@ -165,7 +164,7 @@ pub struct Phrase {
     pub value: String,
 }
 
-/// Which glossary occurrences are linked (§13.1).
+/// Which glossary occurrences are linked.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GlossaryMatch {
     /// The first occurrence of each term on each page.
@@ -174,7 +173,7 @@ pub enum GlossaryMatch {
     Every,
 }
 
-/// `[glossary]` (§13).
+/// `[glossary]`.
 #[derive(Clone, Debug)]
 pub struct Glossary {
     /// Which occurrences are linked.
@@ -185,7 +184,7 @@ pub struct Glossary {
     pub terms: Vec<GlossaryTerm>,
 }
 
-/// A glossary term (§13.2).
+/// A glossary term.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GlossaryTerm {
     /// The term id.
@@ -204,7 +203,7 @@ pub struct GlossaryTerm {
     pub case_sensitive: bool,
 }
 
-/// A project widget (§15).
+/// A project widget.
 #[derive(Clone, Debug)]
 pub struct Widget {
     /// The directive schema, exactly as `tessera-core` defines it.
@@ -224,7 +223,7 @@ pub enum PlainContent {
     Drop,
 }
 
-/// How trailing slashes appear in routes (§16).
+/// How trailing slashes appear in routes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TrailingSlash {
     /// `/guides/setup/`.
@@ -233,7 +232,7 @@ pub enum TrailingSlash {
     Never,
 }
 
-/// `[consumer]` (§16).
+/// `[consumer]`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Consumer {
     /// The profile; `"astro"`.
@@ -250,7 +249,7 @@ pub struct Consumer {
     pub html: bool,
 }
 
-/// A build's variant mode (§17).
+/// A build's variant mode.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum VariantMode {
     /// Keep every arm and page.
@@ -259,7 +258,7 @@ pub enum VariantMode {
     Select(Vec<(String, Vec<String>)>),
 }
 
-/// A build's availability mode (§17).
+/// A build's availability mode.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AvailabilityMode {
     /// Keep everything and annotate it.
@@ -273,7 +272,7 @@ pub enum AvailabilityMode {
     },
 }
 
-/// A build (§17).
+/// A build.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Build {
     /// The build name.
@@ -284,7 +283,7 @@ pub struct Build {
     pub availability: AvailabilityMode,
 }
 
-/// Which content type applies to a page (§5.1).
+/// Which content type applies to a page.
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeMatch<'a> {
     /// Exactly one type applies (by `files`, or the default).
@@ -453,13 +452,13 @@ impl ContentModel {
 
     /// Whether a file (path relative to the content root, `/`-separated) is a
     /// fragment: any segment begins with `_`, or a fragment pattern matches
-    /// (SPEC §2.2, content-model.md §5.3).
+    /// (SPEC §2.2).
     pub fn is_fragment(&self, path: &str) -> bool {
         path.split('/').any(|s| s.starts_with('_'))
             || self.fragments.patterns.iter().any(|p| p.matches(path))
     }
 
-    /// Which content type applies to a page (content-model.md §5.1). Don't
+    /// Which content type applies to a page. Don't
     /// call it for fragments.
     pub fn type_for(&self, path: &str) -> TypeMatch<'_> {
         let matching: Vec<&ContentType> = self
@@ -512,7 +511,7 @@ pub(crate) fn check_entries(
             problems.push(AvailabilityProblem::UnknownTarget(target.clone()));
         }
         // SPEC §4.4: a dimension name takes no version, whether or not its
-        // values are versionless (resolved Q29).
+        // values are versionless.
         let dimension = dimensions.iter().find(|d| d.name == target.text);
         let check_version = |v: &Version, problems: &mut Vec<AvailabilityProblem>| {
             if let Some(d) = dimension {
@@ -575,7 +574,7 @@ pub(crate) fn check_entries(
 
 /// `None` when `name` isn't a target. `Some(true)` when it is a versionless
 /// dimension value. A dimension name is `Some(false)`; versions on it are
-/// rejected separately (Q29).
+/// rejected separately.
 fn target_is_versionless(dimensions: &[Dimension], name: &str) -> Option<bool> {
     if dimensions.iter().any(|d| d.name == name) {
         return Some(false);

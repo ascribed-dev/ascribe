@@ -1,8 +1,8 @@
 description: >-
   Explicit ids do not take part in slug numbering, so a heading whose slug
-  equals another heading's `@id` duplicates it (Q7). That's the only
+  equals another heading's `@id` duplicates it. That's the only
   problem: with the first heading's id explicit, nothing is numbered, so
-  `heading-duplicate-without-id` doesn't apply (Q103).
+  `heading-duplicate-without-id` doesn't apply.
 spec: ["4.1", "5.5", "8.2"]
 tags: [page-check, slug]
 

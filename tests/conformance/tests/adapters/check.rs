@@ -1,4 +1,4 @@
-//! The adapter for `tessera-check`: file-level diagnostics (phase 10).
+//! The adapter for `tessera-check`: file-level diagnostics.
 //!
 //! It handles the `check` tag. Its diagnostics are `tessera_check::check_files`
 //! on a project built from the case: the case's content model, and every

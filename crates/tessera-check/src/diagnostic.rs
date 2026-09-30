@@ -64,7 +64,7 @@ pub struct Diagnostic {
     /// build, and for one in [`unpublished`](Diagnostic::unpublished) content.
     pub builds: Vec<String>,
     /// Whether the diagnostic is in content that no build publishes, and so
-    /// belongs to none of them (Q101).
+    /// belongs to none of them.
     pub unpublished: bool,
 }
 

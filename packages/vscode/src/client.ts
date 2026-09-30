@@ -245,7 +245,7 @@ function clientOptions(
           }),
       },
     },
-    // Resolved Q124: the server asks for the files it wants watched with dynamic
+    // The server asks for the files it wants watched with dynamic
     // registrations (`workspace/didChangeWatchedFiles`), which the client
     // forwards, so files that aren't open are followed too. Watching them
     // here as well would deliver every event twice.
@@ -257,7 +257,7 @@ function readMaxCrashes(): number {
   return Number.isInteger(value) && value >= 1 ? value : 5;
 }
 
-/** Resolved Q125: the oldest server this extension is written for (`ascribe.minServerVersion` in package.json). */
+/** The oldest server this extension is written for (`ascribe.minServerVersion` in package.json). */
 function minServerVersion(context: vscode.ExtensionContext) {
   const declared = (context.extension.packageJSON as { ascribe?: { minServerVersion?: string } })
     .ascribe?.minServerVersion;

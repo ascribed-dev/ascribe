@@ -33,7 +33,6 @@ use crate::uri::{normalize, path_to_uri, relative_to, uri_to_path};
 /// The content model's file name, at the project root.
 const MODEL_FILE: &str = "ascribe.toml";
 
-// Resolved Q135: which files the server follows.
 /// Directories nothing in a documentation set lives in, whose changes are
 /// ignored.
 const IGNORED_DIRS: [&str; 3] = [".git", "node_modules", ".hg"];
@@ -237,7 +236,7 @@ impl Core {
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
         match tessera_model::load_str_in(&text, FileId::new(0), &root) {
             Err(issues) => {
-                // Resolved Q131: the project keeps the last model that
+                // The project keeps the last model that
                 // loaded, and the problems go on `ascribe.toml`.
                 self.model_problem = Some(ModelProblem {
                     text,
@@ -269,7 +268,7 @@ impl Core {
 
     /// Loads the project from scratch, with the open buffers over the disk:
     /// the first load, and after a model change that moves the content root or
-    /// the output directory (Q92).
+    /// the output directory.
     fn load_project(&mut self, model: Arc<ContentModel>, text: String) {
         let Some(config) = self.config.clone() else {
             return;
@@ -496,9 +495,9 @@ impl Core {
                         mirror.push((project, false));
                     }
                     Err(e) => {
-                        // Resolved Q133: a source that exists but can't be
+                        // A source that exists but can't be
                         // read (not UTF-8, or refused) is reported as
-                        // `source-unreadable`, as `ascribe check` does (Q52).
+                        // `source-unreadable`, as `ascribe check` does.
                         self.log(&format!("can't read {}: {e}", path.display()));
                         changes.push(Change::Unreadable {
                             path: content,
@@ -632,7 +631,7 @@ impl Core {
             cleared.push(loaded.source_path(path));
         }
         // A file that can't be read left the index like a deleted one, but it
-        // still exists: its diagnostic is `source-unreadable` (Q133).
+        // still exists: its diagnostic is `source-unreadable`.
         for path in &affected.unreadable {
             if let Some(targets) = loaded.direct_includes.remove(path) {
                 loaded.dirty.extend(targets);
@@ -674,7 +673,7 @@ impl Core {
         self.publish(&config, lsp);
     }
 
-    // Resolved Q136: a closed file keeps its diagnostics.
+    // A closed file keeps its diagnostics.
     /// Publishes a file's diagnostics when they, or the version of the document
     /// they're for, changed since the last time.
     pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
@@ -737,7 +736,7 @@ impl Core {
     }
 }
 
-// Resolved Q132: one project per server.
+// One project per server.
 /// The nearest `ascribe.toml` at or above a workspace folder; failing that,
 /// the first one below a folder (a few levels down, skipping hidden and
 /// dependency directories).

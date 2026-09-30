@@ -4,7 +4,7 @@
 //! recursively, and gives the result as an [`ExpandedPage`]: the file's blocks
 //! with the included blocks in place of the directive. The expansion is
 //! independent of any build: availability, variants, and phrases are applied
-//! afterwards (phase 12).
+//! afterwards, by build resolution.
 //!
 //! Every block in the result keeps the file it was written in and its span
 //! there ([`ExpandedBlock::file`], [`ExpandedBlock::span`]), and the chain of
@@ -47,7 +47,7 @@ pub struct ExpandedPage {
 /// fragment. A page-level report goes at the outermost include site, `via[0]`
 /// (SPEC §8.1), with the issue's own location as related information; an
 /// include cycle is reported where it closes, in the file containing that
-/// include (Q20).
+/// include.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PageProblem {
     /// The problem: `include-id-missing` or `include-cycle`.
@@ -355,7 +355,7 @@ impl<'p> Expander<'p> {
             }
         };
 
-        // Resolved Q66: a cycle is expanding the same file, or the same
+        // A cycle is expanding the same file, or the same
         // section of it, again while it's still being expanded.
         if let Some(at) = self.stack.iter().position(|k| *k == key) {
             self.report_cycle(file, include, at, via);
@@ -369,7 +369,7 @@ impl<'p> Expander<'p> {
         });
         let chain: Arc<[IncludeSite]> = Arc::from(chain);
 
-        // Resolved Q65: `heading=false` drops the included section's own
+        // `heading=false` drops the included section's own
         // heading; without an id there's no section heading, so it drops
         // nothing.
         let blocks = if include.section.is_some() && !include.heading {
@@ -400,7 +400,7 @@ impl<'p> Expander<'p> {
     }
 
     /// An include that would expand something already being expanded closes a
-    /// cycle; it's reported where it closes (Q20).
+    /// cycle; it's reported where it closes.
     fn report_cycle(
         &mut self,
         file: &FileIndex,

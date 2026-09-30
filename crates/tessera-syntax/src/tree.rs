@@ -6,9 +6,8 @@
 //! of the file (frontmatter included). A span covers exactly the source text
 //! of its node, from its first character through its last, without the line
 //! ending after it. Ascribe nodes keep sub-spans for their parts (name,
-//! attribute block, each pair, colon, primary), which the formatter (phase
-//! 23) and the language server (phase 15) use to edit, highlight, and
-//! complete them.
+//! attribute block, each pair, colon, primary), which the formatter and the
+//! language server use to edit, highlight, and complete them.
 //!
 //! # Shape
 //!
@@ -16,10 +15,10 @@
 //! blocks nest as CommonMark nests them (block quotes and list items hold
 //! blocks). The Ascribe nodes come in two layers:
 //!
-//! - **Phase 05 reads lines.** A directive line is a
+//! - **Reading lines.** A directive line is a
 //!   [`BlockKind::Directive`] and an end line a [`BlockKind::End`], each with
 //!   its head parsed into parts. A container opener has [`Form::Container`].
-//! - **Phase 06 (the structure pass, run by `parse`) gives them structure.**
+//! - **The structure pass (run by `parse`) gives them structure.**
 //!   A container opener and the blocks up to its end line become a
 //!   [`BlockKind::Container`]; a run of openers of a groupable directive
 //!   becomes a [`BlockKind::Group`] of [`Arm`]s, closed by one end line. A
@@ -29,14 +28,11 @@
 //!   What stays flat: line-form directives, which are siblings of the blocks
 //!   around them (a following-block directive and its block are neighbors),
 //!   and end lines that close nothing, which are reported.
-//! - **Phase 07 fills in inline extensions**: [`InlineKind::Phrase`] for a
+//! - **The inline pass fills in inline extensions**: [`InlineKind::Phrase`] for a
 //!   `{key}` candidate in text (and [`Link::destination_phrases`],
 //!   [`Image::destination_phrases`], and [`CodeBlock::phrases`] where a
 //!   candidate isn't an inline node), and [`Image::attributes`] for the
 //!   attribute block after an image.
-//!
-//! Those node kinds exist now, and are documented, so phases 06 and 07 can
-//! run in parallel without both editing this file.
 //!
 //! # Text
 //!
@@ -82,8 +78,8 @@ pub struct ParsedDocument {
 
 /// A link reference definition (CommonMark), `[label]: destination "title"`,
 /// which can span several lines and sit in a list item or block quote. Its
-/// destination is a link destination, so phrases apply in it (SPEC §5.1,
-/// resolved Q43), and so do backslash escapes.
+/// destination is a link destination, so phrases apply in it (SPEC §5.1),
+/// and so do backslash escapes.
 ///
 /// A definition is only recognized where CommonMark recognizes one: at the
 /// start of a paragraph. A leading `[label]: /url` in a directive's text
@@ -322,7 +318,7 @@ pub struct TableCell {
 ///
 /// The form is decided by the directive line alone: an empty primary after a
 /// colon opens a container, and anything else is line form. Whether the
-/// directive's schema permits that form is a structure check (phase 06).
+/// directive's schema permits that form is a structure check.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Form {
     /// A single line.
@@ -428,7 +424,7 @@ pub struct IdentifierPrimary {
     pub text: String,
     /// Text after the token on the same line, trimmed (`@include: my file.md`
     /// has ` file.md`). Kept, not dropped, and reported as
-    /// `directive-extra-text` (SPEC §3.4, resolved Q15 and Q30).
+    /// `directive-extra-text` (SPEC §3.4).
     pub trailing: Option<Span>,
 }
 
@@ -478,7 +474,7 @@ pub struct Container {
     /// The opener: a directive line that opens a container, and whose title
     /// is in [`DirectiveLine::title`]. Its form is [`Form::Container`], except
     /// for a container-only directive written without its colon, which is
-    /// still an opener and is reported (SPEC §3.5, resolved Q16).
+    /// still an opener and is reported (SPEC §3.5).
     pub opener: DirectiveLine,
     /// The blocks between the opener and the end line.
     pub children: Vec<Block>,
@@ -487,7 +483,7 @@ pub struct Container {
 }
 
 /// A group of arms (SPEC §3.6): a run of openers of one groupable directive,
-/// closed by one end line. It's one container level for nesting (SPEC §3.10, resolved Q17).
+/// closed by one end line. It's one container level for nesting (SPEC §3.10).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Group {
     /// The groupable directive's keyword.
@@ -564,7 +560,7 @@ pub enum InlineKind {
     Link(Link),
     /// An image, in any of CommonMark's forms.
     Image(Image),
-    /// A phrase candidate, `{key}` (SPEC §5.1). **Phase 07 fills this in.**
+    /// A phrase candidate, `{key}` (SPEC §5.1), from the inline pass.
     Phrase(Phrase),
 }
 

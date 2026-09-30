@@ -1,4 +1,4 @@
-//! Field types and attribute types (content-model.md §6): parsing the short
+//! Field types and attribute types: parsing the short
 //! form, reading the table form, and building fields and attribute schemas.
 
 use serde_yaml::Value;
@@ -414,7 +414,7 @@ impl Loader<'_> {
             }
             (AttributeType::Boolean, DeValue::Boolean(b)) => Some(DefaultValue::Boolean(*b)),
             // `DefaultValue` has no number variant, so a number default is
-            // its source text (resolved Q28).
+            // its source text.
             (AttributeType::Number, DeValue::Integer(i)) => {
                 Some(DefaultValue::Text(i.as_str().to_owned()))
             }
@@ -663,7 +663,7 @@ fn default_value<'a, 'i>(entry: &'a V<'i>, span: Span) -> Option<&'a V<'i>> {
     t.get("default").filter(|d| sp(*d) == span)
 }
 
-/// `string` and `list(string)` accept phrases (content-model.md §6.2).
+/// `string` and `list(string)` accept phrases.
 fn phrase_capable(ty: &FieldType) -> bool {
     match ty {
         FieldType::String => true,

@@ -1,9 +1,10 @@
 //! After any sequence of edits, file changes, and model changes, what the server
 //! has published is what a fresh `check_project` over the same files reports.
 //!
-//! This is the server-level counterpart of phase 13's differential test: it
-//! holds the incremental bookkeeping (which files to recompute, the layered
-//! file system, the currency checks) to the one property that matters.
+//! This is the server-level counterpart of `tessera-resolve`'s differential
+//! test (`incremental_differential.rs`): it holds the incremental bookkeeping
+//! (which files to recompute, the layered file system, the currency checks)
+//! to the one property that matters.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 

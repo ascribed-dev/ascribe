@@ -1,5 +1,5 @@
 //! Content types, fragments, glossary, images, widgets, consumer, builds,
-//! and editor (content-model.md §5, §13–§18).
+//! and editor.
 
 use std::collections::HashMap;
 
@@ -17,7 +17,7 @@ use crate::pattern::{Pattern, PatternError};
 use crate::toml_util::{V, entries, join, sp};
 use crate::types::{Field, FieldType, FrontmatterSchema, SchemaOwner};
 
-/// HTML's reserved custom-element names (content-model.md §15).
+/// HTML's reserved custom-element names.
 const HTML_RESERVED_ELEMENTS: &[&str] = &[
     "annotation-xml",
     "color-profile",
@@ -139,7 +139,7 @@ impl Loader<'_> {
                 if let Some(fm) = self.require(&path, tt, sp(item), "frontmatter")
                     && let Some(ft) = self.as_table(&fm_path, fm)
                 {
-                    // Resolved Q150: under the `astro` profile, `slug` is
+                    // Under the `astro` profile, `slug` is
                     // the entry id Astro's loader uses instead of the path.
                     let reserved: &dyn Fn(&str) -> bool =
                         &|n| matches!(n, "available" | "variant" | "slug");
@@ -191,7 +191,7 @@ impl Loader<'_> {
         out
     }
 
-    /// Every page type declares `title` as a required string (§5.1).
+    /// Every page type declares `title` as a required string.
     fn check_title(
         &mut self,
         type_name: &str,

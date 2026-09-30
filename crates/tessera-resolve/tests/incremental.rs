@@ -206,7 +206,7 @@ fn deleting_a_file_makes_broken_references_in_the_files_that_used_it() {
 
 #[test]
 fn a_file_that_becomes_unreadable_is_listed_until_a_change_to_its_path() {
-    // Resolved Q133: it leaves the index like a deleted file, but it still
+    // It leaves the index like a deleted file, but it still
     // exists, so it's listed as unreadable (its `source-unreadable`), not
     // removed.
     let (mut inc, _) = load(

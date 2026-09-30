@@ -153,7 +153,7 @@ impl Pass<'_> {
                 .collect();
         }
         if form != LinkForm::Inline {
-            // SPEC §5.1 (resolved Q43): a reference form's destination is in
+            // SPEC §5.1: a reference form's destination is in
             // its definition, whose candidates are recorded by `definition`.
             return Vec::new();
         }
@@ -174,7 +174,7 @@ impl Pass<'_> {
     }
 
     /// Records the candidates in a fence that opts in with `phrases=true`.
-    // SPEC §5.1 (resolved Q42): backslashes don't escape in code, so `\{key}` is a
+    // SPEC §5.1: backslashes don't escape in code, so `\{key}` is a
     // candidate here.
     pub(super) fn code_block(&mut self, span: Span, code: &mut CodeBlock) {
         if !code.fenced || !code.info.split_whitespace().any(|w| w == "phrases=true") {

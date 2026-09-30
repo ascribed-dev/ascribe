@@ -1,6 +1,5 @@
 //! Glossary terms (SPEC §5.4, §9.2 step 7): linking the occurrences of the
-//! content model's glossary terms in prose, as the glossary's settings say
-//! (content-model.md §13).
+//! content model's glossary terms in prose, as the glossary's settings say.
 //!
 //! - Occurrences match **whole words**, and where terms overlap the
 //!   **longest** match wins (`API key` over `API`).
@@ -15,7 +14,7 @@
 //! A linked occurrence becomes an ordinary link, and is listed in
 //! [`ResolvedBlock::glossary`].
 
-// Resolved Q85: what the content model leaves open (emphasis, a term's
+// What the content model leaves open (emphasis, a term's
 // own page, a term whose page the build doesn't publish, and where the text is
 // matched) is settled as the list above says.
 

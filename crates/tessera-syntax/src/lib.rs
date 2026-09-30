@@ -5,7 +5,7 @@
 //! parser with Ascribe's block-level changes, and converts comrak's tree to
 //! Ascribe's, so no downstream crate sees comrak's types.
 //!
-//! What phase 05 produces:
+//! Reading lines produces:
 //!
 //! - every CommonMark block and inline Ascribe needs, with exact byte spans;
 //! - **directive lines** and **end lines**, with the head parsed into name,
@@ -14,7 +14,7 @@
 //!   attribute blocks, a primary the directive doesn't take or lacks, and a
 //!   directive-shaped line with an unknown name (which stays text).
 //!
-//! What phase 06's structure pass (`src/structure/`) adds, in the same call:
+//! The structure pass (`src/structure/`) adds, in the same call:
 //!
 //! - **containers** ([`Container`]) holding the blocks between an opener and
 //!   its end line, and **groups** ([`Group`]) of [`Arm`]s for runs of openers
@@ -27,8 +27,8 @@
 //!   containers and stray end lines, nesting, binding, titles, `@variant`
 //!   groups, `@steps` and `@details`, and the list warnings.
 //!
-//!
-//! Phase 07 adds the inline extensions (in `src/inline/`):
+//! The inline pass (`src/inline/`), which runs after the structure pass,
+//! adds:
 //!
 //! - **phrase candidates** (`{key}`, SPEC §5.1) as [`InlineKind::Phrase`] in
 //!   text, and in link and image destinations ([`Link::destination_phrases`]),
@@ -39,14 +39,11 @@
 //!   every form of image, parsed by `tessera_core::parse_attribute_block`,
 //!   with their issues in [`ParsedDocument::issues`].
 //!
-//! Phase 23 adds **link reference definitions** ([`ParsedDocument::definitions`]),
-//! a side list rather than blocks: each has exact spans for its label,
+//! **Link reference definitions** ([`ParsedDocument::definitions`]) are a side
+//! list rather than blocks: each has exact spans for its label,
 //! destination, and title, and the phrase candidates in its destination
 //! ([`LinkDefinition::destination_phrases`], SPEC §5.1). The parser consumes
 //! them, so the fork reports them (`comrak_tessera::parse_document_with_definitions`).
-//!
-//! Phase 06 owns `src/structure/` and phase 07 owns `src/inline/`. The inline
-//! pass runs after the structure pass.
 //!
 //! ```
 //! use tessera_syntax::{parse, ParseOptions, BlockKind, PrimaryValue};

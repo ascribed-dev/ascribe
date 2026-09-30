@@ -1,4 +1,4 @@
-//! Real-documentation corpora and performance checks for Ascribe (phase 26).
+//! Real-documentation corpora and performance checks for Ascribe.
 //!
 //! - [`corpus`]: the three corpora (Astro, Elastic, Docker) and fetching them
 //!   at pinned commits. Nothing is committed.

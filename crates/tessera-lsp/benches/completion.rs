@@ -7,8 +7,8 @@
 //! projects of `keystroke.rs` (`benches/synthetic`), of 20 to 3,000 pages,
 //! starts the server in-process, opens a page, and for each kind of completion
 //! types into it and asks, `SAMPLES` times, while the server checks the edit in
-//! the background as it would in an editor. The target (SPEC §10's authoring
-//! environment, phase 16) is 50 ms at 3,000 pages; the process exits non-zero
+//! the background as it would in an editor. The target is 50 ms at 3,000
+//! pages; the process exits non-zero
 //! if any 95th percentile misses it.
 
 #![allow(

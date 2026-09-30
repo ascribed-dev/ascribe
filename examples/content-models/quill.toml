@@ -1,5 +1,5 @@
 # The content model SPEC Appendix B assumes: the documentation set for Quill,
-# a made-up docs-sync tool. Reference: project-docs/content-model.md.
+# a made-up docs-sync tool.
 spec = "0.1"
 
 [project]

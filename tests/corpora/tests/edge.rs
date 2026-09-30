@@ -1,4 +1,5 @@
-//! Minimal reproductions of the recognition risks the phase names, written by
+//! Minimal reproductions of the main recognition risks (prose `@`, braces, and
+//! lines that start with `.`), written by
 //! hand (no corpus, so they run offline). Each says what the parser and
 //! file-level checks find in one small page, and whether that is intended.
 
@@ -124,7 +125,7 @@ fn an_escaped_brace_is_recorded_and_silent() {
 fn double_braces_hold_a_candidate() {
     // `{{es}}` (a mustache substitution) contains the candidate `{es}`. The
     // spec lets braces sit against punctuation, so this is intended; with
-    // `es` declared, `ascribe check` warns (`phrase-double-braces`, Q191).
+    // `es` declared, `ascribe check` warns (`phrase-double-braces`).
     let found = classes("Use {{es}} here.\n");
     assert!(
         found.contains(&"phrase-candidate:prose:mustache".to_owned()),
@@ -156,7 +157,7 @@ fn f1_an_availability_line_above_an_include_binds_nothing() {
 
 #[test]
 fn f2_a_title_that_starts_with_a_dot_escapes_it() {
-    // Resolved Q193: `.\.NET` is the title `.NET`. `..NET` is still no title,
+    // `.\.NET` is the title `.NET`. `..NET` is still no title,
     // so that arm has none.
     let found = classes(".\\.NET\n@variant:\ntext\n@end\n");
     assert!(
@@ -172,7 +173,6 @@ fn f2_a_title_that_starts_with_a_dot_escapes_it() {
 
 #[test]
 fn f5_an_id_can_contain_an_underscore_and_a_period() {
-    // Resolved Q196.
     let found = classes("## Setup\n@id: ece_setup.v2\n");
     assert!(
         !found.contains(&"diagnostic:id-invalid".to_owned()),

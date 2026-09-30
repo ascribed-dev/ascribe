@@ -1,4 +1,4 @@
-description: "Closing the gap would turn this loose list tight and change how it renders, so it stays (Q74)."
+description: "Closing the gap would turn this loose list tight and change how it renders, so it stays."
 spec: ["8.3"]
 tags: [format]
 formatted: input.md

@@ -8,7 +8,6 @@ use tessera_resolve::Resolution;
 
 use crate::nav::{Ctx, Hit, Lines, directive_at, hit_at, identifier_primary};
 
-// Resolved Q163
 /// Where the thing at a position is defined.
 pub(crate) fn definition(ctx: &Ctx, position: Position) -> Option<Location> {
     let file = ctx.file()?;

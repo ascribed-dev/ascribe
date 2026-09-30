@@ -13,11 +13,11 @@
 // - the inside of a `<pre>`: Astro highlights code with Shiki (`<span>`s
 //   with inline colors); the language and the text are compared;
 // - typographic punctuation: Astro's `smartypants` turns quotes and dashes
-//   into curly ones (the site-render contract allows it); both sides are
+//   into curly ones, which never happens inside a marker; both sides are
 //   compared with straight ones.
 import type { Page } from "playwright-core";
 
-// Resolved Q184: what the comparison leaves out.
+// What the comparison leaves out.
 export interface Tree {
   tag: string;
   attrs: Record<string, string>;

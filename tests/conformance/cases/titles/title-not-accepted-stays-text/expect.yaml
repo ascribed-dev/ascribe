@@ -1,6 +1,6 @@
 description: >-
   A `.` line directly above a directive that takes no title is a paragraph,
-  and the directive has no title (Q11).
+  and the directive has no title.
 spec: ["3.7"]
 tags: [structure]
 

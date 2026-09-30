@@ -44,7 +44,6 @@ pub(crate) fn image_rule(ctx: &mut Ctx<'_>, block: &AttributeBlock) {
         return;
     }
     if block.attributes.is_empty() {
-        // Resolved Q76.
         // `![a](b){}{cloud}`: without its `{}`, `{cloud}` would be the
         // image's attribute block.
         if !ctx.source[block.span.end()..].starts_with('{') {
@@ -67,7 +66,7 @@ fn declared_keys(ctx: &Ctx<'_>, name: &str) -> Option<Vec<String>> {
     Some(match &schema.attributes {
         Attributes::Declared(attributes) => attributes.iter().map(|a| a.key.clone()).collect(),
         // `@variant`'s attributes are dimension names, and the model's order
-        // is the canonical one (content-model.md §1.1).
+        // is the canonical one.
         Attributes::Dimensions => ctx
             .model
             .dimensions
@@ -77,7 +76,7 @@ fn declared_keys(ctx: &Ctx<'_>, name: &str) -> Option<Vec<String>> {
     })
 }
 
-// Resolved Q75: a block with an undeclared key keeps its order; a bare
+// A block with an undeclared key keeps its order; a bare
 // or repeated key leaves the block alone.
 /// Rewrites a non-empty `block` into canonical form, if that's safe.
 fn rule(ctx: &mut Ctx<'_>, block: &AttributeBlock, keys: Option<&[String]>) {

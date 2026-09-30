@@ -5,7 +5,7 @@
 //!
 //! | Source | Site output |
 //! |---|---|
-//! | Frontmatter | Passed through; `available` as a list of targets (Q142) |
+//! | Frontmatter | Passed through; `available` as a list of targets |
 //! | Heading | An ATX heading ending in a `<ascribe-attributes>` marker with its page id |
 //! | Image with attributes | The image, then a marker with the attributes |
 //! | `@note` | `<ascribe-note type label heading>` wrapping the content |
@@ -18,10 +18,9 @@
 //! | Raw HTML | Passed through unchanged |
 //!
 //! The element contract (`packages/elements/CONTRACT.md`) is the interface
-//! with the element library; the site-render contract
-//! (`project-docs/contracts/site-render.md`) is the interface with the
-//! consumer's markdown pipeline, and [`crate::render_site_html`] implements
-//! it. Links are the consumer's routes, and assets are placed as the `astro`
+//! with the element library; the `<ascribe-attributes>` markers are the
+//! interface with the consumer's markdown pipeline, and
+//! [`crate::render_site_html`] applies them. Links are the consumer's routes, and assets are placed as the `astro`
 //! profile says ([`AstroProfile`]).
 //!
 //! Alongside the pages the emitter writes `_ascribe/schema.ts`, the Zod
@@ -48,7 +47,7 @@ use crate::store::{Contents, EmittedFile, FileKind};
 pub const SCHEMA_PATH: &str = "_ascribe/schema.ts";
 
 /// The directory in the emitter root that holds link targets, which the
-/// consumer serves as static files (asset contract §3.2).
+/// consumer serves as static files.
 pub const FILES_DIR: &str = "_ascribe/files";
 
 /// The site emitter.
@@ -81,7 +80,7 @@ impl Emitter for SiteEmitter {
     }
 
     fn prepare(&self, _cx: &EmitContext<'_>, build: &ResolvedBuild) -> Result<(), EmitError> {
-        // Resolved Q143: two pages with one route can't both be
+        // Two pages with one route can't both be
         // published.
         let collisions = self
             .profile

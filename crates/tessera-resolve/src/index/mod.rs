@@ -4,15 +4,15 @@
 //! [`index_file`] is a pure function of the file's id, path, and text, the
 //! content model, and the slugger. It never touches the file system, and it
 //! doesn't know which other files exist, so the result can be cached and
-//! reused until the file's text or the model changes (phase 13).
+//! reused until the file's text or the model changes.
 //!
 //! What it records:
 //!
 //! - the parsed tree and the frontmatter, and the file's **title**;
 //! - the **headings**, with their sections and **source ids** (SPEC §5.5);
 //! - the **includes**, each with the path it names, resolved (SPEC §4.2);
-//! - the **references**: links and images, each resolved from this file
-//!   (asset contract, §2), and so each **asset reference** among them;
+//! - the **references**: links and images, each resolved from this file,
+//!   and so each **asset reference** among them;
 //! - every **phrase candidate**, and every **`@available`** directive.
 
 mod headings;
@@ -158,7 +158,7 @@ pub struct AvailabilityMarker {
     /// What the directive binds, as the structure pass decided.
     pub binding: Option<Bound>,
     /// The primary read as an availability spec. A bare name may be a feature
-    /// key instead; the model decides (phase 12).
+    /// key instead; build resolution decides, from the model.
     pub spec: Option<Result<AvailabilitySpec, AvailabilityError>>,
 }
 
@@ -255,7 +255,7 @@ pub fn index_parsed(
         }
     };
     walk::walk_blocks(&document.blocks, &mut visit);
-    // A definition's destination holds phrases too, once (Q43), wherever the
+    // A definition's destination holds phrases too, once, wherever the
     // links that use it are.
     for definition in &document.definitions {
         for phrase in &definition.destination_phrases {

@@ -1,6 +1,6 @@
 description: >-
   An image beside the case directory exists on disk but is outside the
-  project root, so it is reported as not existing (Q10).
+  project root, so it is reported as not existing.
 spec: ["5.3", "9.4", "8.2"]
 tags: [check]
 

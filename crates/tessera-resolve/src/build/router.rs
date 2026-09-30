@@ -1,8 +1,8 @@
 //! A simple default [`Router`], for tests and for callers with no consumer
 //! profile of their own.
 //!
-//! Phase 20 supplies the `astro` profile's router. This one follows the
-//! common convention: a page's route is the base path, the page's path
+//! The `astro` profile has its own ([`crate::AstroRouter`]). This one follows
+//! the common convention: a page's route is the base path, the page's path
 //! without `.md`, and a trailing slash; `index.md` is its directory's route.
 
 use tessera_core::{RelPath, Router};

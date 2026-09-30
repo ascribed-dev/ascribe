@@ -11,7 +11,7 @@
 //   quill       a copy of examples/quill with a broken page added, against the
 //               real `ascribe lsp`. Needs ASCRIBE_BIN, the path to a built
 //               `ascribe`; skipped without it.
-//   preview     a copy of examples/quill, the preview panel (phase 25), against
+//   preview     a copy of examples/quill, the preview panel, against
 //               the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -77,7 +77,7 @@ async function main(): Promise<void> {
     if (only && only !== suite.name) continue;
     if (needsServer.has(suite.name) && !realServer) {
       console.log(
-        `Skipping suite ${suite.name}: set ASCRIBE_BIN to a built \`ascribe\` (phase 15's server).`,
+        `Skipping suite ${suite.name}: set ASCRIBE_BIN to a built \`ascribe\` (the language server).`,
       );
       continue;
     }

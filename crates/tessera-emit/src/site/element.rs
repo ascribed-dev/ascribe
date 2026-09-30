@@ -83,7 +83,7 @@ pub(crate) fn empty(name: &str, attrs: &Attrs) -> String {
     format!("{}{}", open(name, attrs), close(name))
 }
 
-/// The attribute marker (site-render contract §1): an empty
+/// The attribute marker: an empty
 /// `ascribe-attributes` element holding `attrs`.
 pub(crate) fn marker(attrs: &[(String, String)]) -> String {
     let mut out = Attrs::new();

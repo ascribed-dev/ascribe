@@ -1,4 +1,4 @@
-description: "A gap in a block quote is closed; a gap between the blocks of a list item stays, because it may be what makes the list loose (Q74)."
+description: "A gap in a block quote is closed; a gap between the blocks of a list item stays, because it may be what makes the list loose."
 spec: ["8.3"]
 tags: [format]
 formatted: formatted.md

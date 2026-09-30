@@ -138,7 +138,7 @@ fn a_clean_project_has_no_diagnostics_in_any_build() {
 #[test]
 fn a_problem_in_a_fragment_is_reported_at_the_include_site_and_noted_in_the_fragment() {
     // The link's target id doesn't exist. The link is in `_f.md`, which
-    // `index.md` includes at line 6 (SPEC §8.1, Q20).
+    // `index.md` includes at line 6 (SPEC §8.1).
     let p = project(&[
         ("_f.md", "See [it](other.md#gone).\n"),
         ("index.md", &page("@include: _f.md")),
@@ -251,7 +251,7 @@ fn a_problem_two_builds_share_is_one_diagnostic_naming_both() {
         .collect();
     assert_eq!(at(&p, &found), [row("link-id-removed", "index.md", 5)]);
     assert_eq!(found[0].builds, ["cloud", "self-managed"]);
-    // The message names both builds, with the plural wording (Q102).
+    // The message names both builds, with the plural wording.
     assert!(
         found[0]
             .message
@@ -264,7 +264,7 @@ fn a_problem_two_builds_share_is_one_diagnostic_naming_both() {
 #[test]
 fn a_link_in_a_removed_arm_is_not_that_builds_problem() {
     // The arm holds a link to a missing id. `cloud` removes the arm, so only
-    // the builds that keep it report the problem (Q81).
+    // the builds that keep it report the problem.
     let p = project(&[
         (
             "index.md",

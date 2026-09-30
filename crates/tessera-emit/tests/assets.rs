@@ -1,5 +1,5 @@
 //! Self-contained output: assets are copied, references are rewritten, and
-//! the output works with the source directory removed (asset contract, §6).
+//! the output works with the source directory removed.
 
 #![allow(clippy::expect_used, clippy::panic)]
 

@@ -3,10 +3,9 @@
 //! The checks run first, for every build asked for, and print exactly what
 //! `ascribe check` prints (the same report code on the same diagnostics). A
 //! build with errors writes nothing (SPEC §8.2: "a build MUST fail on
-//! errors"). Otherwise each build is resolved once (phase 12) and each
-//! output is written from that resolved tree (phase 18), into a staging
-//! directory that replaces the previous output only on success
-//! (`project-docs/contracts/output-layout.md`).
+//! errors"). Otherwise each build is resolved once and each output is
+//! written from that resolved tree, into a staging
+//! directory that replaces the previous output only on success.
 
 use std::io::{self, Write};
 use std::path::Path;
@@ -128,9 +127,9 @@ fn write_outputs(
     let root: &Path = project.root();
     let output_dir = root.join(&model.project.output_dir);
     let output = OutputDir::lock(&output_dir).map_err(store_message)?;
-    // Resolved Q119; Resolved Q144: routes come from the `astro` profile's router,
-    // the only profile of spec 0.1, for every output, so a link in the plain
-    // output is the URL the site publishes.
+    // Routes come from the `astro` profile's router, the only profile of spec
+    // 0.1, for every output, so a link in the plain output is the URL the site
+    // publishes.
     let router = AstroRouter::from_consumer(&model.consumer);
 
     let plain = PlainEmitter;
@@ -214,8 +213,8 @@ fn fail(err: &mut dyn Write, message: &str) -> u8 {
     exit::FAILURE
 }
 
-/// Reports a project that couldn't be loaded, as `ascribe check` does
-/// (resolved Q58): a content model with errors is a configuration failure
+/// Reports a project that couldn't be loaded, as `ascribe check` does:
+/// a content model with errors is a configuration failure
 /// (exit code 2), and its diagnostics are shown.
 fn report_failure(
     failure: Failure,

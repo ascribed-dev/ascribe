@@ -76,7 +76,7 @@ owner = "string?"
 # Dimensions, versions, lifecycle, features (SPEC §4.3, §4.4)
 ###############################################################################
 
-# Order matters: `pm` first, then `deployment` (content-model.md §1.1).
+# Order matters: `pm` first, then `deployment`.
 [dimensions.pm]
 label = "Package manager"
 values = ["npm", "pnpm", "yarn"]

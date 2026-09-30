@@ -85,7 +85,7 @@ export function ancestorsWithin(dir: string, boundary: string): string[] {
  * project's `node_modules/.bin/ascribe`, and the binary bundled in the
  * extension. Each candidate must run `--version`.
  *
- * Resolved Q122: an `ascribe.path` that doesn't work is an error, and doesn't fall through:
+ * An `ascribe.path` that doesn't work is an error, and doesn't fall through:
  * the author asked for that binary, and silently using another would hide the
  * mistake. A project or bundled candidate that doesn't run is skipped.
  *

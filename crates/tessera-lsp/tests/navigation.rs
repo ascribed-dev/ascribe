@@ -1,4 +1,4 @@
-//! Scripted requests for phase 16's features (completion, hover, go to
+//! Scripted requests for the navigation features (completion, hover, go to
 //! definition, document links, CodeLens, inlay hints), against a copy of
 //! `examples/quill` with a features registry added.
 

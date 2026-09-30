@@ -1,6 +1,6 @@
 description: >-
   A setext underline does not turn a primary into a heading; it is
-  continuation text (Q2).
+  continuation text.
 spec: ["3.4"]
 tags: [parser]
 

@@ -64,7 +64,7 @@ describe("findEdits", () => {
     expect(edits[0]?.trim).toEqual([{ node: heading.children?.[3], value: " B" }]);
   });
 
-  it("gives a marker after an image to the image, not the heading that image ends (Q145)", () => {
+  it("gives a marker after an image to the image, not the heading that image ends", () => {
     const image = element("img");
     const heading = element("h2", [text("A "), image, open(' width="3"'), close]);
     const edits = findEdits({ type: "root", children: [heading] });

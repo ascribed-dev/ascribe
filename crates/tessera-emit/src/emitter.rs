@@ -136,7 +136,7 @@ pub trait Emitter {
     fn name(&self) -> &'static str;
 
     /// Where a page is written, relative to the emitter root. Pages mirror
-    /// their source paths (output-layout contract, §1.1).
+    /// their source paths.
     fn page_path(&self, page: &RelPath) -> RelPath;
 
     /// Checks that the resolved build can be written in this output's form,
@@ -158,7 +158,7 @@ pub trait Emitter {
     fn render_page(&self, cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String, EmitError>;
 
     /// Where a copy of `asset` goes, and how the page written at `page_output`
-    /// refers to it (asset contract, §3.2). The default is the mirrored path
+    /// refers to it. The default is the mirrored path
     /// and a relative reference, which is what the plain-markdown and JSON
     /// outputs do.
     fn place_asset(&self, page_output: &RelPath, asset: &RelPath, _usage: AssetUse) -> Placement {
@@ -171,7 +171,7 @@ pub trait Emitter {
     }
 
     /// Generated files the emitter adds to the root besides pages and assets,
-    /// under `_ascribe/` (output-layout contract, §1.1).
+    /// under `_ascribe/`.
     ///
     /// # Errors
     ///
@@ -264,7 +264,7 @@ pub fn emit_page(
 }
 
 /// Renders every page of a resolved build with `emitter`, and lists the
-/// assets those pages use, each once (asset contract, §5).
+/// assets those pages use, each once.
 ///
 /// # Errors
 ///

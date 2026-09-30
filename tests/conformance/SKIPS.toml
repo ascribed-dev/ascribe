@@ -1,8 +1,8 @@
 # Skipped conformance cases and tags. See README.md, "Skips".
 #
 # Every skip is deliberate and has a reason; the runner prints each one. A case
-# whose area tag has neither an adapter nor an entry here fails. When a phase
-# registers an adapter for a tag, it removes that tag's entry: the runner
+# whose area tag has neither an adapter nor an entry here fails. When an
+# adapter is registered for a tag, remove that tag's entry: the runner
 # reports a full tag skip for a handled tag as an error.
 #
 # Entries:
@@ -13,4 +13,4 @@
 
 [[skip]]
 tag = "output"
-reason = "Adapter for tag `output` (plain, site, and JSON outputs) not yet implemented; phases 18 and 20."
+reason = "No adapter for tag `output` (plain, site, and JSON outputs): no case carries it, and the emitters have their own tests in tessera-emit."

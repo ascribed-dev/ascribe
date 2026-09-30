@@ -165,7 +165,7 @@ fn config_names_the_model() {
 
 #[test]
 fn a_source_that_isnt_utf8_is_an_error_and_the_rest_is_checked() {
-    // SPEC §8.2 (resolved Q52).
+    // SPEC §8.2.
     let dir = project(&[("index.md", WITH_ERROR)]);
     fs::write(dir.path().join("docs/bad.md"), [0xff, 0xfe, 0x00]).expect("write bytes");
     let out = tessera(dir.path(), &["check", "--format", "json"]);

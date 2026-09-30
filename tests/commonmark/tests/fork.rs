@@ -1,4 +1,4 @@
-//! The CommonMark spec examples against the `comrak-tessera` fork (phase 04),
+//! The CommonMark spec examples against the `comrak-tessera` fork,
 //! twice: with the Ascribe option off and with it on.
 //!
 //! - Off, the fork must match unmodified comrak exactly: its baseline,

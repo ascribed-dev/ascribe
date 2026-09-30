@@ -12,8 +12,8 @@
 //! expects is checked against the registry, `diagnostics.toml`
 //! ([`DiagnosticsRegistry`]), whether or not the case runs.
 //!
-//! The harness depends on no Ascribe crate. Implementation phases write
-//! adapters in `tests/adapters/` and register them in `tests/conformance.rs`.
+//! The harness depends on no Ascribe crate. Adapters live in
+//! `tests/adapters/` and are registered in `tests/conformance.rs`.
 
 pub mod adapter;
 pub mod case;

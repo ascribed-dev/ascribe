@@ -744,7 +744,7 @@ fn a_directive_in_an_included_fragment_is_recorded_at_the_include_site_chain() {
     );
 }
 
-// -- Problems concern what a build publishes (Q81) ---------------------------
+// -- Problems concern what a build publishes ---------------------------
 
 #[test]
 fn a_scope_problem_in_content_a_build_removes_is_not_recorded_for_that_build() {

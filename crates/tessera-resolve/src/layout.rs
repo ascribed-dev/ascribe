@@ -1,10 +1,11 @@
-//! Where the content root and the output directory sit, and the asset
-//! contract's boundary rule (`project-docs/contracts/assets.md`, §2 step 5).
+//! Where the content root and the output directory sit, and the boundary rule
+//! for local files: a file must be inside the content root or the project
+//! root, and not inside the output directory.
 
 use tessera_core::RelPath;
 use tessera_model::ContentModel;
 
-/// The project's directories, as the asset contract needs them.
+/// The project's directories, as the boundary rule needs them.
 ///
 /// Every source path in this crate is a **content path**, relative to the
 /// content root. The layout says where that root is, relative to the
@@ -44,7 +45,7 @@ impl Layout {
 
     /// Whether a build may copy the file at this content path: it's inside the
     /// content root or inside the project root, and not inside the output
-    /// directory (SPEC §9.4, Q10).
+    /// directory (SPEC §9.4).
     pub fn is_allowed(&self, content_path: &RelPath) -> bool {
         let in_project = self.project_path(content_path);
         let inside = content_path.is_inside() || in_project.is_inside();

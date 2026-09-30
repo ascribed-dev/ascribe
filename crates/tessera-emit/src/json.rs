@@ -1,8 +1,8 @@
 //! The JSON output (SPEC §9.4): the resolved tree, for custom consumers.
 //!
-//! One document per page, at the page's path with `.json` in place of `.md`
-//! (output-layout contract, §1.1). The schema is versioned by
-//! `schemaVersion` and documented in the crate's README.
+//! One document per page, at the page's path with `.json` in place of `.md`.
+//! The schema is versioned by `schemaVersion` and documented in the crate's
+//! README.
 
 use serde::Serialize;
 use tessera_core::availability::parse_availability;
@@ -17,8 +17,8 @@ use crate::emitter::{Emitter, PageContext};
 use crate::error::EmitError;
 use crate::labels::{attribute_values, availability_display, dimensional_label, plain_text};
 
-// Resolved Q118: the JSON output's shape (SPEC §9.4 says only "the
-// resolved tree, for custom consumers").
+// SPEC §9.4 fixes only "the resolved tree, for custom consumers"; the shape
+// below is Ascribe's own, versioned by `JSON_SCHEMA_VERSION`.
 
 /// The version of the JSON schema. It changes only when a field is removed or
 /// changes meaning; fields can be added without a new version.

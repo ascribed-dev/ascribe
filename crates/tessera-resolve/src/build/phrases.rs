@@ -169,7 +169,7 @@ pub(crate) fn merge_text(list: &mut Vec<Inline>) {
 // -- Frontmatter ------------------------------------------------------------
 
 /// The frontmatter with phrases substituted in the fields the content model
-/// says take them (`phrases = true`, content-model.md §12): a `string`, or
+/// says take them (`phrases = true`): a `string`, or
 /// each item of a `list(string)`, however deep in objects.
 pub(crate) fn frontmatter(model: &ContentModel, path: &RelPath, value: &Value) -> Value {
     let mut out = value.clone();

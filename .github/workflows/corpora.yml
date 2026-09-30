@@ -42,10 +42,7 @@ jobs:
           cargo bench -p tessera-corpora --bench perf
           cargo bench -p tessera-lsp --bench keystroke
           cargo bench -p tessera-resolve --bench incremental
-          # Phase 16's completion benchmark, when it has merged.
-          if [ -f crates/tessera-lsp/benches/completion.rs ]; then
-            cargo bench -p tessera-lsp --bench completion
-          fi
+          cargo bench -p tessera-lsp --bench completion
       - name: Compare with the recorded baselines
         run: ./target/release/corpora compare bench-results.jsonl
       - uses: actions/upload-artifact@v4

@@ -50,7 +50,7 @@ pub struct Version {
 }
 
 impl Version {
-    /// Compares two versions under the `numeric` scheme (content-model.md §8):
+    /// Compares two versions under the `numeric` versioning scheme:
     /// component by component from the left, numerically, with missing
     /// trailing components treated as `0`. `3.4` equals `3.4.0`, and `3.10`
     /// is later than `3.9`.

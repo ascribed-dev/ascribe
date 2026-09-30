@@ -222,7 +222,7 @@ fn a_missing_field_is_reported_on_the_first_line() {
 
 #[test]
 fn frontmatter_that_is_not_yaml_is_a_syntax_error() {
-    // SPEC §8.2 (resolved Q51).
+    // SPEC §8.2.
     let p = project(&[("index.md", "---\ntitle: [oops\n---\n\nText.\n")]);
     let d = one(&p);
     assert_eq!(d.slug.as_str(), "frontmatter-syntax");
@@ -291,8 +291,8 @@ fn attribute_types_and_required_attributes() {
     );
 }
 
-/// The route of a page whose file name Astro slugs is found by the router
-/// (Q148), so the fix is offered.
+/// The route of a page whose file name Astro slugs is found by the router,
+/// so the fix is offered.
 #[test]
 fn a_route_whose_page_has_a_slugged_file_name_gets_a_fix() {
     let p = project(&[

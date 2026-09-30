@@ -38,7 +38,7 @@ impl Pass<'_> {
         for (i, block) in children.iter().enumerate() {
             let class = match &block.kind {
                 BlockKind::Directive(line) => {
-                    // SPEC §3.8 (resolved Q18), SPEC §3.8 (resolved Q32): a section starts at a heading in this
+                    // SPEC §3.8, SPEC §3.8: a section starts at a heading in this
                     // same list of blocks. Before the first one there is no
                     // section, so nothing is at the top of one.
                     let top = i > 0
@@ -85,7 +85,7 @@ impl Pass<'_> {
 
     fn classify(&self, line: &DirectiveLine, top: bool) -> Class {
         if !line.attributes_closed {
-            // SPEC §3.3 (resolved Q36).
+            // SPEC §3.3.
             return Class::Unreadable;
         }
         let Some(schema) = self.options.schema(&line.name) else {
@@ -119,7 +119,7 @@ impl Pass<'_> {
             return Bound::Unbound;
         };
         let at = self.location(line.name_span);
-        // SPEC §3.8 (resolved Q31): directives that bind the following block stack:
+        // SPEC §3.8: directives that bind the following block stack:
         // they all describe the block the last of them touches. A line-form
         // directive that is its own text (`@note: text`) renders as a block,
         // so it can be bound; one that stands alone (`@include`, `@id`) or an

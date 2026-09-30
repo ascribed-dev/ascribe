@@ -7,7 +7,7 @@
 //!
 //! | Step | Pass | Module |
 //! |---|---|---|
-//! | 1 | Includes (phase 11's [`Project::expand`]) | `expand.rs` |
+//! | 1 | Includes ([`Project::expand`]) | `expand.rs` |
 //! | 2 | Availability: feature keys and inherited scopes | `availability.rs` |
 //! | 3 | Build modes: variant selection and availability filter | `modes.rs` |
 //! | 4 | Phrases | `phrases.rs` |
@@ -22,7 +22,8 @@
 //! result.
 //!
 //! What it does not do is **report** anything. Page-level problems are
-//! recorded on the page ([`ResolvedPage::problems`]) for phase 14:
+//! recorded on the page ([`ResolvedPage::problems`]) for the page-level
+//! checks:
 //! `include-cycle` and `include-id-missing` from expansion,
 //! `available-exceeds-scope`, `variant-no-arm-survives` (a group with no
 //! surviving arm), `link-id-removed`, and `link-page-dropped`.
@@ -234,7 +235,6 @@ impl<'p> BuildResolver<'p> {
         let mut blocks = modes::apply(blocks, self.build, model, &mut mode_problems);
         // A problem is about what the build publishes: one in content the
         // build removed isn't recorded.
-        // Resolved Q81: page-level problems in removed content.
         let live = modes::live(&blocks);
         let mut problems: Vec<_> = expanded
             .problems

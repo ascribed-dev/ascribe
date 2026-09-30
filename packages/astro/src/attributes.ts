@@ -1,5 +1,5 @@
-// The attribute marker of the site-render contract
-// (project-docs/contracts/site-render.md), found and applied on a hast tree.
+// The site output's attribute marker (`<ascribe-attributes>`), found and
+// applied on a hast tree.
 //
 // Both markdown processors Astro 7.3 can run hand a user plugin the same tree
 // at the same point: after markdown became hast, before Astro's own image and
@@ -58,7 +58,7 @@ export function findEdits(root: HastNode): Edit[] {
       const marker = children.slice(i, last + 1);
       const before = children[i - 1];
       if (before !== undefined && before.type === "element" && before.tagName === "img") {
-        // Directly after an image, whatever else the marker ends (Q145).
+        // Directly after an image, whatever else the marker ends.
         edits.push({ target: before, attributes, remove: marker, trim: [] });
       } else if (isHeading && last === children.length - 1) {
         edits.push({
@@ -103,14 +103,14 @@ function parseOpen(tag: string): Attribute[] | undefined {
   return attributes;
 }
 
-/** The contract's four escapes; any other `&` is literal (site-render §1). */
+/** The marker's four escapes; any other `&` is literal. */
 function decode(value: string): string {
   return value.replace(/&(quot|amp|lt|gt);/g, (_, name: string) =>
     name === "quot" ? '"' : name === "amp" ? "&" : name === "lt" ? "<" : ">",
   );
 }
 
-/** The spaces, tabs, and line breaks directly before `children[i]` (site-render §2.1). */
+/** The spaces, tabs, and line breaks directly before `children[i]`, which a heading's marker removes. */
 function trailingWhitespace(children: HastNode[], i: number): Edit["trim"] {
   const trim: Edit["trim"] = [];
   for (let j = i - 1; j >= 0; j--) {

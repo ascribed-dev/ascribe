@@ -57,7 +57,7 @@ impl Ctx<'_> {
                     match serde_yaml::from_str::<Value>(content) {
                         Ok(v) => v,
                         Err(e) => {
-                            // SPEC §8.2 (resolved Q51): at the YAML
+                            // SPEC §8.2: at the YAML
                             // parser's position.
                             let at = e.location().map_or(first_line, |l| {
                                 Span::empty(fm.content.start() + l.index())
@@ -163,7 +163,7 @@ impl Ctx<'_> {
     /// The reserved keys on a page (SPEC §2.1): `available` holds an
     /// availability spec and `variant` a mapping of dimensions to values.
     fn check_reserved_keys(&mut self, value: &Value, index: &YamlIndex, first_line: Span) {
-        // SPEC §2.1 (resolved Q57): a value of the wrong shape is a type mismatch.
+        // SPEC §2.1: a value of the wrong shape is a type mismatch.
         let Value::Mapping(map) = value else { return };
         if let Some(v) = map.get("available") {
             let node = index.get("available");

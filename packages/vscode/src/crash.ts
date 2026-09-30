@@ -1,5 +1,5 @@
 /**
- * Resolved Q123: Counts language server crashes and decides whether to restart it. The count
+ * Counts language server crashes and decides whether to restart it. The count
  * covers the time since the last manual restart, since a server that keeps
  * dying on start-up is a problem to report, not to retry forever.
  */

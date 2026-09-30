@@ -35,9 +35,9 @@ tessera-resolve = { path = "crates/tessera-resolve" }
 tessera-emit = { path = "crates/tessera-emit" }
 tessera-fmt = { path = "crates/tessera-fmt" }
 tessera-lsp = { path = "crates/tessera-lsp" }
-# The synthetic project the benchmarks share (phase 26). A dev-dependency only.
+# The synthetic project the benchmarks share. A dev-dependency only.
 tessera-synthetic = { path = "tests/corpora/synthetic" }
-# The comrak fork (phase 04). Depend on it as `comrak-tessera.workspace = true`.
+# The comrak fork. Depend on it as `comrak-tessera.workspace = true`.
 comrak-tessera = { path = "crates/comrak-tessera" }
 
 # External crates shared across the workspace.
@@ -57,7 +57,7 @@ missing_docs = "warn"
 unsafe_code = "forbid"
 
 [workspace.lints.clippy]
-# Libraries never panic on user input (phases README, Conventions). Tests are
+# Libraries never panic on user input. Tests are
 # exempt through clippy.toml; documented invariants use a local `#[allow]`.
 unwrap_used = "warn"
 expect_used = "warn"

@@ -1,7 +1,7 @@
-//! The synthetic project the performance tests share (phase 26).
+//! The synthetic project the performance tests share.
 //!
-//! One generator, so the benchmarks of phases 13 (`incremental`), 15
-//! (`keystroke`), 16 (completion), and 26 (`check`, `build`) measure the same
+//! One generator, so the benchmarks (`incremental`, `keystroke`, `completion`,
+//! and `check` and `build` in `perf`) measure the same
 //! project and their numbers can be compared. It returns plain strings and has
 //! no dependencies, so any crate can use it as a dev-dependency.
 //!

@@ -358,7 +358,7 @@ fn a_cycle_among_fragments_no_page_includes_is_found_when_the_fragment_is_expand
 
 #[test]
 fn an_include_of_a_section_of_the_including_file_is_not_a_cycle() {
-    // Resolved Q66: a cycle is expanding the same file, or the same
+    // A cycle is expanding the same file, or the same
     // section, again while it's still being expanded.
     let p = project(&[("docs/_a.md", "## Y\n\nWhy.\n\n## X\n\n@include: _a.md#y\n")]);
     let page = expand(&p, "_a.md");
@@ -384,8 +384,8 @@ fn the_same_fragment_included_twice_is_expanded_twice() {
         ("docs/_f.md", "## Shared\n@id: shared\n\nText.\n"),
     ]);
     let page = expand(&p, "index.md");
-    // Not a cycle, and not this phase's to call a duplicate: id uniqueness is
-    // checked on the page (phase 14).
+    // Not a cycle, and not expansion's to call a duplicate: id uniqueness is
+    // a page-level check.
     assert!(page.problems.is_empty());
     assert_eq!(
         texts(&p, &page),
@@ -415,6 +415,6 @@ fn a_page_id_of_an_included_section_is_still_its_source_id_in_the_fragment() {
     let page = expand(&p, "index.md");
     let headings = page.headings(&p);
     assert_eq!(headings.len(), 2);
-    // Each is `setup` in its own file: page ids are phase 12's.
+    // Each is `setup` in its own file: page ids come from build resolution.
     assert!(headings.iter().all(|(_, h)| h.source_id == "setup"));
 }

@@ -8,8 +8,8 @@ use serde::Serialize;
 /// Identifies one file within a session: a source file, or `ascribe.toml`.
 ///
 /// A `FileId` is an opaque handle. Whoever owns the set of files a session
-/// reads assigns the ids: the project's source index (phase 11) and the
-/// language server's file table (phase 15) do, and a tool that reads a single
+/// reads assigns the ids: the project's source index and the language
+/// server's file table do, and a tool that reads a single
 /// file can use any id. An id is meaningful only within the table that
 /// assigned it, and says nothing about the file's path.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]

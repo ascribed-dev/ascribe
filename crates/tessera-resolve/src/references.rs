@@ -5,15 +5,15 @@
 //! call it, so `ascribe check`, the build, and the language server can't
 //! disagree about whether a file exists. It covers:
 //!
-//! - what a destination names: phrase substitution (SPEC §5.1, Q54),
+//! - what a destination names: phrase substitution (SPEC §5.1),
 //!   external or local, a source file or an asset, and whether it looks like
-//!   a route (SPEC §5.2, Q22) ([`reference_target`], [`include_target`]);
-//! - whether it's there: the asset contract's boundary (SPEC §9.4, Q10,
+//!   a route (SPEC §5.2) ([`reference_target`], [`include_target`]);
+//! - whether it's there: the boundary rule (SPEC §9.4,
 //!   [`Layout::is_allowed`]) and exact-case names on every platform
 //!   ([`FileSystem::probe`]) ([`resolve_reference`]);
-//! - the page a route most likely names (Q55);
+//! - the page a route most likely names;
 //! - the file-level issue, if any ([`reference_issue`], [`include_issue`]),
-//!   located at the destination as written (Q53).
+//!   located at the destination as written.
 //!
 //! Page-level problems, such as a link to an id the target page lacks, are
 //! the source index's ([`crate::Project::problems`]).
@@ -61,7 +61,7 @@ pub struct IncludeTarget {
 /// What an `@include` primary names, resolved from the file it's written in
 /// (SPEC §4.2).
 pub fn include_target(primary: &str, written_in: &RelPath) -> IncludeTarget {
-    // SPEC §4.2 (resolved Q62): an include path is decoded as a link
+    // SPEC §4.2: an include path is decoded as a link
     // destination is, so `my%20snippet.md` names `my snippet.md`, and an
     // empty id (`file.md#`) includes the whole file.
     let (path, section) = match primary.split_once('#') {
@@ -87,9 +87,9 @@ pub fn include_target(primary: &str, written_in: &RelPath) -> IncludeTarget {
 }
 
 /// The file-level issue with an include, if any: its target isn't a source
-/// file of the project. Only a source file can be included (SPEC §4.2,
-/// resolved Q63): a file outside the content root, or that isn't Markdown,
-/// gets the `not-source` message, whether or not it exists on disk.
+/// file of the project. Only a source file can be included (SPEC §4.2): a
+/// file outside the content root, or that isn't Markdown, gets the
+/// `not-source` message, whether or not it exists on disk.
 ///
 /// `written` and `target` are an [`IncludeTarget`]'s. `at` is the primary.
 pub fn include_issue(
@@ -133,7 +133,7 @@ pub fn reference_target(
 ///
 /// An inline form, or an autolink, carries them itself (`own`). A reference
 /// form's destination is its link reference definition's, so they are the
-/// definition's (SPEC §5.1, resolved Q43): the definition whose normalized
+/// definition's (SPEC §5.1): the definition whose normalized
 /// label is the reference's label, else, if the label can't be read back from
 /// the source, the first definition with the same decoded destination.
 ///
@@ -204,7 +204,7 @@ pub fn resolve_reference(
     let Some(path) = &local.path else {
         return Resolution::AssetMissing(Missing::Absent);
     };
-    // SPEC §5.3 (resolved Q59): an image with no path (`![a]()`, `![a](#x)`)
+    // SPEC §5.3: an image with no path (`![a]()`, `![a](#x)`)
     // has no source, which is reported. A link with only a `#id` names the
     // file it's in.
     if kind == RefKind::Image && local.written.is_empty() {
@@ -249,7 +249,7 @@ pub fn resolve_reference(
 
 /// The page a route-like link most likely names, and the file-path link to
 /// write instead.
-// Resolved Q55, then Resolved Q148: the conventional mapping first (`route.md`, else
+// The conventional mapping first (`route.md`, else
 // `route/index.md`, whichever is a source file), then the consumer profile's
 // router: the page whose route this is, with its base path and the entry ids
 // Astro gives files (`guides/my-setup` for `Guides/My Setup.md`). Otherwise
@@ -346,7 +346,7 @@ fn content_path_of(layout: &Layout, project_path: &RelPath) -> Option<RelPath> {
 ///
 /// `at` is the whole link or image; `destination` is the destination as
 /// written, when it's known ([`destination_span`]). Diagnostics about the
-/// file are reported there (Q53).
+/// file are reported there.
 pub fn reference_issue(
     kind: RefKind,
     target: &Target,
@@ -355,7 +355,7 @@ pub fn reference_issue(
     at: Location,
     destination: Option<Span>,
 ) -> Option<Issue> {
-    // SPEC §8.1 (resolved Q53): the destination as written for inline forms,
+    // SPEC §8.1: the destination as written for inline forms,
     // the whole link or image for reference forms.
     let here = Location::new(at.file, destination.unwrap_or(at.span));
     let written = match target {
@@ -424,7 +424,7 @@ pub fn reference_issue(
             Some(issue)
         }
         Resolution::Source { fragment, .. } => {
-            // SPEC §5.2 (resolved Q64): a `#id` alone in a fragment names a
+            // SPEC §5.2: a `#id` alone in a fragment names a
             // heading of the fragment itself, which each including page
             // publishes; only a link to a fragment *file* is an error.
             let names_itself = matches!(target, Target::Local(l) if l.written.is_empty());

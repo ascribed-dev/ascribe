@@ -1,6 +1,6 @@
 description: >-
   A file outside the project root and content root is treated as not
-  existing, even when it exists on disk (Q10). The file `outside.md` sits
+  existing, even when it exists on disk. The file `outside.md` sits
   beside the case directory.
 spec: ["5.2", "9.4", "8.2"]
 tags: [check]

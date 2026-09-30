@@ -1,9 +1,8 @@
-//! TESSERA: the phase 04 spike tests for the Ascribe-line block.
+//! TESSERA: tests for the Ascribe-line block.
 //!
 //! Each test parses a document and compares an outline of the tree: one line
-//! per node, indented by depth, with the text of leaves. The cases required
-//! by the phase come first, in the phase file's order, followed by the edge
-//! cases the spike turned up.
+//! per node, indented by depth, with the text of leaves. The required cases
+//! come first, followed by edge cases.
 
 use std::fmt::Write as _;
 use std::sync::Arc;
@@ -13,8 +12,8 @@ use comrak_tessera::tessera::TesseraOptions;
 use comrak_tessera::{Arena, Options, format_commonmark, markdown_to_html, parse_document};
 
 /// The built-in keywords (SPEC §4) plus `end`, and one project widget. Of the
-/// built-ins, only `@note` takes a text primary. Later phases supply this set
-/// from the content model.
+/// built-ins, only `@note` takes a text primary. In real use the content
+/// model supplies this set.
 fn keywords() -> TesseraOptions {
     TesseraOptions::new()
         .keyword("id", false)
@@ -80,7 +79,7 @@ fn tessera_lines<'a>(root: Node<'a>) -> Vec<Node<'a>> {
 }
 
 // ---------------------------------------------------------------------------
-// The phase's required cases (phase 04, task 4)
+// The required cases
 // ---------------------------------------------------------------------------
 
 /// A directive line directly after a paragraph line starts a new block.
@@ -393,7 +392,7 @@ document
     );
 }
 
-/// SPEC §3.4 (resolved Q2): the primary stays inline content, so a setext
+/// SPEC §3.4: the primary stays inline content, so a setext
 /// underline doesn't make it a heading (`===` continues it, and `---` is a
 /// thematic break), and it holds no link reference definitions.
 #[test]
@@ -496,7 +495,7 @@ document
     );
 }
 
-/// SPEC §1.5 and §3.9 (resolved Q1): up to three spaces of indentation beyond the
+/// SPEC §1.5 and §3.9: up to three spaces of indentation beyond the
 /// container's, as for an ATX heading.
 #[test]
 fn up_to_three_spaces_of_extra_indentation_are_allowed() {

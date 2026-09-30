@@ -9,12 +9,12 @@
 // `rehypeImages` copies an `<img>`'s properties into the image it optimizes,
 // and `rehypeHeadingIds` keeps an id a heading already has and records it for
 // the table of contents. A rehype plugin, not a remark one, so that both of
-// Astro's processors can share `findEdits` (Q151).
+// Astro's processors can share `findEdits`.
 
 import type { Root } from "hast";
 import { findEdits, toProperty, type HastNode } from "./attributes.js";
 
-/** Applies the site-render contract's attribute markers (`ascribe-attributes`). */
+/** Applies the site output's attribute markers (`ascribe-attributes`). */
 export default function rehypeAscribeAttributes(): (tree: Root) => void {
   return (tree) => {
     const edits = findEdits(tree as HastNode);

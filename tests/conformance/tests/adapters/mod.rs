@@ -1,8 +1,8 @@
 //! Adapters that connect the conformance harness to the Ascribe crates.
 //!
-//! Each implementation phase adds a module here (or
-//! extends an existing one), registers it below, and removes the skip entries
-//! for the tags it now handles from `SKIPS.toml`.
+//! A new adapter is a module here (or an extension of an existing one),
+//! registered below; the skip entries for the tags it handles come out of
+//! `SKIPS.toml`.
 
 mod check;
 mod format;

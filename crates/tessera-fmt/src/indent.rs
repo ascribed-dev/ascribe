@@ -1,4 +1,4 @@
-//! Indentation of directive lines and end lines (SPEC §3.9, §8.3, Q1, Q19).
+//! Indentation of directive lines and end lines (SPEC §3.9, §8.3).
 //!
 //! A directive line, or an end line, belongs to the container that owns it:
 //! the document, a list item, or a block quote. It may be indented up to
@@ -55,7 +55,7 @@ pub(crate) fn content_width(source: &str, marker: Span) -> Option<usize> {
     Some(marker.end() - start + width)
 }
 
-// Resolved Q73: block quotes keep the marker and one space; a
+// Block quotes keep the marker and one space; a
 // directive on a marker's line, and indentation with a tab, are left alone.
 /// Removes the extra spaces before the directive or end line whose `@` is at
 /// `at`.

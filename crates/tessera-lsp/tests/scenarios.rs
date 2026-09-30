@@ -1,5 +1,5 @@
-//! The scripted scenarios of phase 15's acceptance criteria, over an in-memory
-//! connection.
+//! Scripted scenarios of the server's core behavior (diagnostics, open
+//! buffers, file changes, the model, exit), over an in-memory connection.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
@@ -133,7 +133,7 @@ fn changing_an_unopened_fragment_on_disk_updates_the_including_page() {
 
 #[test]
 fn a_file_that_stops_being_readable_reports_source_unreadable() {
-    // Resolved Q133: as `ascribe check` does (Q52), not as if it were deleted.
+    // As `ascribe check` does, not as if it were deleted.
     let f = project();
     let fragment = f.path("docs/_setup.md");
     let mut client = Client::start(&f.root());

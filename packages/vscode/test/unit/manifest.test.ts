@@ -79,8 +79,8 @@ describe("package.json", () => {
 /**
  * The language server's semantic token legend is a contract (see
  * crates/tessera-lsp/README.md): the extension must map every type and
- * modifier it declares to a theme scope. Skipped while that README has no
- * legend (phase 15 not merged).
+ * modifier it declares to a theme scope. Skipped if that README has no
+ * legend.
  */
 describe("semantic tokens and the server's legend", () => {
   const readme = new URL("../../../../crates/tessera-lsp/README.md", import.meta.url);

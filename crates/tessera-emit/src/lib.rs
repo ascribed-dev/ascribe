@@ -1,11 +1,8 @@
 //! Emitters for Ascribe's outputs: site markdown, plain markdown, and JSON, plus Zod schema generation.
 //!
-//! Phase 18 adds the plain-markdown and JSON emitters and the shared output
-//! handling; phase 20 adds site output.
-//!
 //! # What an emitter does
 //!
-//! An [`Emitter`] renders pages from phase 12's **resolved tree**
+//! An [`Emitter`] renders pages from the **resolved tree**
 //! ([`tessera_resolve::ResolvedPage`]). It writes what survived the build and
 //! never works out what a build mode would keep (SPEC §9.2), so a selection
 //! build that keeps several arms of a group emits all of them, and a filter
@@ -13,14 +10,12 @@
 //!
 //! [`emit`] walks a [`tessera_resolve::ResolvedBuild`] and returns an
 //! [`Emission`]: every page, and one copy of every asset the surviving pages
-//! use, at the paths and with the references the
-//! [asset contract](../../../project-docs/contracts/assets.md) gives.
+//! use: images mirrored beside the pages that use them, other files under
+//! the output's own directory, and references rewritten to match.
 //!
 //! # Writing the output
 //!
-//! [`OutputDir`] implements the
-//! [output-layout contract](../../../project-docs/contracts/output-layout.md):
-//! it locks the output directory, stages the files, replaces the previous
+//! [`OutputDir`] owns the output directory: it locks the output directory, stages the files, replaces the previous
 //! output only when the new one is complete, removes files the previous
 //! manifest listed that this build no longer produces, and never touches a
 //! file a manifest didn't list.

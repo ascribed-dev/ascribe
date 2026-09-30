@@ -1,7 +1,7 @@
 //! Loads and validates a documentation set's content model, `ascribe.toml`.
 //!
-//! [`load`] reads the file, checks it against every rule in
-//! `project-docs/content-model.md` §20, and returns a typed
+//! [`load`] reads the file, checks it against every loading rule (each a
+//! `model-` diagnostic in the registry), and returns a typed
 //! [`ContentModel`], or the [`Issue`]s that stopped it. Every issue is
 //! reported by registry slug, at the span of the offending key or value in
 //! `ascribe.toml`.

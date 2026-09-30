@@ -35,7 +35,7 @@ pub enum Resolution {
     },
     /// A local file a build copies: an image source, or a link target that
     /// isn't a source file. It exists, with exactly this name, and is inside
-    /// the boundary (asset contract, §2).
+    /// the boundary.
     Asset {
         /// Its content path, starting with `..` when it's outside the content
         /// root.
@@ -46,7 +46,7 @@ pub enum Resolution {
     /// A local file that doesn't exist, or that a build may not copy.
     AssetMissing(Missing),
     /// A link that looks like a published route rather than a file path, and
-    /// names no file (SPEC §5.2, Q22).
+    /// names no file (SPEC §5.2).
     Route {
         /// The page it probably means, as a content path.
         page: String,
@@ -67,7 +67,7 @@ pub enum Missing {
     /// every platform (SPEC §9.4). Holds the real path, as a content path.
     Case(RelPath),
     /// The file is outside the project, or inside the output directory, so it
-    /// is treated as not existing (SPEC §9.4, Q10).
+    /// is treated as not existing (SPEC §9.4).
     Outside,
 }
 
@@ -503,7 +503,7 @@ impl Project {
     /// isn't a source file, in the page after its includes are expanded,
     /// resolved from the file each reference is written in, in document
     /// order. Build modes aren't applied: a build keeps only the references
-    /// that survive it (phase 12).
+    /// that survive it.
     ///
     /// A reference to a file that doesn't exist is a problem, not an asset.
     pub fn assets(&self, page: &RelPath) -> Vec<PageAsset> {
@@ -569,8 +569,7 @@ impl Project {
 
     /// Headings with no `@id` whose slug is empty (SPEC §5.5): a heading made
     /// only of punctuation or emoji. Nothing can link to it usefully.
-    /// `ascribe check` reports them as `heading-empty-slug` (SPEC §5.5,
-    /// resolved Q61).
+    /// `ascribe check` reports them as `heading-empty-slug` (SPEC §5.5).
     pub fn empty_slug_headings(&self) -> Vec<(RelPath, &Heading)> {
         self.files()
             .flat_map(|f| {
@@ -730,7 +729,6 @@ impl Project {
         .collect();
         // A link's `#id` names a heading of its target page, or, for a `#id`
         // alone in a fragment, of the fragment itself (SPEC §5.2, resolved
-        // Q64).
         let names_itself =
             matches!(&reference.target, crate::index::Target::Local(l) if l.written.is_empty());
         if let Resolution::Source {
@@ -746,7 +744,7 @@ impl Project {
     }
 
     /// A link's `#id` must be a source id of the target page itself, not of a
-    /// fragment it includes (SPEC §4.2, §5.2, Q6).
+    /// fragment it includes (SPEC §4.2, §5.2).
     fn link_id_problem(
         &self,
         _reference: &Reference,

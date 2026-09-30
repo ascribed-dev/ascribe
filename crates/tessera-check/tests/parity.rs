@@ -184,16 +184,16 @@ fn an_existing_file_that_isnt_a_source_cant_be_included() {
         .iter()
         .filter(|(slug, file, ..)| slug == "include-target-missing" && *file == readme)
         .collect();
-    // `missing.md`, `../README.md` (exists, but isn't a source: Q63), and
+    // `missing.md`, `../README.md` (exists, but isn't a source), and
     // `_F.md` (a case twin of `_f.md`).
     assert_eq!(includes.len(), 3, "{includes:#?}");
 }
 
 #[test]
 fn a_definitions_phrases_are_applied_to_the_references_that_use_it() {
-    // Q43: `{here}.png` in a definition is `keys.png`, which doesn't exist,
+    // `{here}.png` in a definition is `keys.png`, which doesn't exist,
     // and `{api}` is a URL. Both implementations agree, at the reference
-    // (Q53: a reference form's diagnostics point at the whole link).
+    // (a reference form's diagnostics point at the whole link).
     let dir = tree();
     let (check, _) = from_check(dir.path());
     let page = fs::read_to_string(dir.path().join("docs/index.md")).expect("the page");

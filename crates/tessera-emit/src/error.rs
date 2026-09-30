@@ -27,7 +27,7 @@ pub enum EmitError {
         /// What's wrong.
         message: String,
     },
-    /// Replacing the previous output failed (output-layout contract, §4).
+    /// Replacing the previous output failed.
     #[error(transparent)]
     Store(#[from] StoreError),
 }

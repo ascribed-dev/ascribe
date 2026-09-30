@@ -64,7 +64,7 @@ impl Renderer<'_> {
             while let Some(directive) = pending.pop() {
                 chunks = self.apply(directive, chunks);
             }
-            // Resolved Q146: a list holding an element is loose whatever
+            // A list holding an element is loose whatever
             // the source said, since the element needs a blank line.
             // A list written straight after another of the same kind would
             // merge with it, so the second gets another marker. A directive
@@ -140,7 +140,7 @@ impl Renderer<'_> {
     }
 
     /// An ATX heading ending in a marker with its page id, one space after the
-    /// text (site-render contract §4). A heading whose page id is empty gets
+    /// text. A heading whose page id is empty gets
     /// no marker.
     fn heading(&self, block: &ResolvedBlock, heading: &tessera_syntax::Heading) -> String {
         let text = self.inlines(
@@ -298,7 +298,7 @@ impl Renderer<'_> {
 
     /// `<details>` with a `<summary>` (contract §5): the title's inline
     /// content is rendered as HTML, since an HTML block holds no markdown.
-    // Resolved Q147: an image in the title is its alt text.
+    // An image in the title is its alt text.
     fn details(&self, block: &ResolvedBlock, line: &DirectiveLine, content: &[String]) -> String {
         let mut out = String::from("<details>\n");
         if let Some(title) = &line.title {

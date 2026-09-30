@@ -1,4 +1,4 @@
-//! The adapter for `tessera-syntax`: what phases 05 and 06 produce.
+//! The adapter for `tessera-syntax`: directive lines and the structure pass.
 //!
 //! It handles the `parser` tag (Ascribe-line recognition, directive heads,
 //! attributes, and primaries, SPEC §3.1–§3.4) and the `structure` tag
@@ -7,8 +7,8 @@
 //! [`super::structure`]. Its diagnostics are the parser's own issues.
 //!
 //! Directive schemas come from the built-ins plus the widgets in the case's
-//! `ascribe.toml`. That reader is a stand-in for phase 08's content-model
-//! loader, which will replace it.
+//! `ascribe.toml`, read with only what parsing needs, so a case can test the
+//! parser without a model the loader would accept.
 
 use tessera_conformance::outline::normalize_ws;
 use tessera_conformance::{
@@ -44,7 +44,7 @@ impl ConformanceAdapter for SyntaxAdapter {
     }
 
     fn diagnostics(&self, case: &Case) -> AdapterResult<Vec<Diagnostic>> {
-        // A case tagged `check` gets the whole file-level check (phase 10),
+        // A case tagged `check` gets the whole file-level check,
         // which includes these issues and the checks that need the model.
         if case.expect.area_tags().any(|t| t == "check") {
             return Ok(None);
@@ -117,8 +117,8 @@ fn options(case: &Case) -> Result<ParseOptions, AdapterError> {
     Ok(options)
 }
 
-/// A widget's schema from its `[widgets.<name>]` table (content-model.md
-/// §15). Only what parsing needs: forms, primary, binding, title, groupable.
+/// A widget's schema from its `[widgets.<name>]` table. Only what parsing
+/// needs: forms, primary, binding, title, groupable.
 fn widget_schema(name: &str, widget: &toml::Table) -> DirectiveSchema {
     let forms: Vec<&str> = widget
         .get("forms")
@@ -201,7 +201,7 @@ fn outline(source: &str, blocks: &[Block]) -> Vec<Node> {
             BlockKind::ThematicBreak => Some(Node::ThematicBreak),
             BlockKind::Table(_) => Some(Node::Table),
             // Directives, containers, groups, and the end lines that close
-            // nothing (phase 06).
+            // nothing.
             _ => structure::node(source, block, &|blocks| outline(source, blocks)),
         };
         out.extend(node);

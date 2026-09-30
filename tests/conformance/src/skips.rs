@@ -182,7 +182,7 @@ reason = "no adapter yet"
 
 [[skip]]
 case = "structure/foo"
-reason = "diagnostics come in phase 10"
+reason = "diagnostics aren't checked yet"
 checks = ["diagnostics"]
 "#,
         )

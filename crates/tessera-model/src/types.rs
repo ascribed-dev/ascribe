@@ -1,4 +1,4 @@
-//! Field types and attribute types (content-model.md §6), and frontmatter
+//! Field types and attribute types, and frontmatter
 //! validation against them.
 
 use serde_yaml::Value;
@@ -140,9 +140,9 @@ pub fn is_calendar_date(s: &str) -> bool {
     (1..=days).contains(&d)
 }
 
-/// Validates parsed frontmatter against a schema (content-model.md §5).
+/// Validates parsed frontmatter against a schema.
 ///
-/// `value` is the frontmatter parsed as YAML (the core schema; §5.2). `at`
+/// `value` is the frontmatter parsed as YAML (the core schema). `at`
 /// is where the frontmatter is; every issue is reported there, and names the
 /// offending field in its `field` or `key` argument (a path such as
 /// `author.name` or `tags[1]`), so a caller with finer spans can relocate it.
@@ -154,7 +154,7 @@ pub fn is_calendar_date(s: &str) -> bool {
 /// - `frontmatter-type-mismatch`;
 /// - `frontmatter-reserved-in-fragment`, for `available` and `variant` in a
 ///   fragment. On a page, those two keys are accepted here; their values are
-///   checked elsewhere (SPEC §4.3, §4.4).
+///   checked elsewhere (SPEC §4.3).
 ///
 /// Choosing which schema applies to a page is [`crate::ContentModel::type_for`].
 pub fn validate_frontmatter(schema: &FrontmatterSchema, value: &Value, at: Location) -> Vec<Issue> {

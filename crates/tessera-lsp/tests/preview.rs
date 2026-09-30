@@ -1,4 +1,4 @@
-//! `ascribe/preview` (phase 25), over an in-memory connection.
+//! `ascribe/preview`, over an in-memory connection.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 

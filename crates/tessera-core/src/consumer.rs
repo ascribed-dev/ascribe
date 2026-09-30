@@ -1,15 +1,14 @@
 //! The consumer profile (SPEC §9.5) and the pieces it's made of: heading
 //! slugs, routes, and asset placement.
 //!
-//! These are traits so that the crates that need them (resolution, phase 12;
-//! the emitters, phases 18 and 20) don't depend on the crates that implement
-//! them (the slugger, phase 09; the Astro profile, phase 20). Spec 0.1 has one
-//! profile, `astro`, selected by `[consumer] profile` in `ascribe.toml`.
+//! These are traits so that the crates that need them (resolution and the
+//! emitters) don't depend on the crates that implement them (the slugger and
+//! the Astro profile). Spec 0.1 has one profile, `astro`, selected by
+//! `[consumer] profile` in `ascribe.toml`.
 //!
-//! Two things SPEC §9.5 lists are not here, because the contracts fix them
-//! for every profile in spec 0.1: how heading ids and image attributes are
-//! written (`project-docs/contracts/site-render.md`), and HTML passthrough
-//! beyond a yes or no.
+//! Two things SPEC §9.5 lists are not here, because spec 0.1 fixes them for
+//! every profile: how heading ids and image attributes are written (the
+//! `<ascribe-attributes>` marker), and HTML passthrough beyond a yes or no.
 
 use crate::RelPath;
 
@@ -17,15 +16,15 @@ use crate::RelPath;
 ///
 /// Implementations reproduce a consumer's algorithm exactly, including how it
 /// numbers duplicates, because the slugs Ascribe validates must be the
-/// anchors the consumer publishes. Phase 09 implements `github`, a port of
-/// `github-slugger`, which Astro uses.
+/// anchors the consumer publishes. `github` is a port of `github-slugger`,
+/// which Astro uses.
 pub trait Slugger: Send + Sync {
     /// The name the content model uses for this algorithm (`[consumer] slugger`).
     fn name(&self) -> &str;
 
     /// Starts an empty scope. Duplicates are numbered within one scope: one
-    /// per source file for source ids (phase 11), one per expanded page and
-    /// build for page ids (phase 12).
+    /// per source file for source ids, one per expanded page and build for
+    /// page ids.
     fn new_scope(&self) -> Box<dyn SlugScope + Send + '_>;
 }
 
@@ -64,7 +63,7 @@ pub trait Router: Send + Sync {
     }
 }
 
-/// How a page uses an asset (`project-docs/contracts/assets.md`).
+/// How a page uses an asset.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum AssetUse {
     /// The source of an image.
@@ -74,7 +73,6 @@ pub enum AssetUse {
 }
 
 /// Where the site output puts an asset's copy, and how it refers to it.
-/// The rules for each are in `project-docs/contracts/assets.md`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum AssetPlacement {
     /// At its mirrored path inside the emitter's output, referenced by a
@@ -88,8 +86,8 @@ pub enum AssetPlacement {
 
 /// A consumer profile (SPEC §9.5): how the site output fits one consumer.
 ///
-/// Phase 20 implements the `astro` profile. The plain-markdown and JSON
-/// outputs don't depend on any profile, except for routes in links.
+/// The plain-markdown and JSON outputs don't depend on any profile, except
+/// for routes in links.
 pub trait ConsumerProfile: Send + Sync {
     /// The profile's name, as in `[consumer] profile`.
     fn name(&self) -> &str;
@@ -101,8 +99,7 @@ pub trait ConsumerProfile: Send + Sync {
     fn slugger(&self) -> &dyn Slugger;
 
     /// Whether the consumer renders raw HTML in markdown. The site output's
-    /// elements need it; the `astro` profile always returns `true` (Q11 in
-    /// content-model.md).
+    /// elements need it, so the `astro` profile always returns `true`.
     fn html_passthrough(&self) -> bool;
 
     /// Where the site output puts a copy of an asset used this way.

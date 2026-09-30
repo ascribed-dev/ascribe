@@ -1,5 +1,5 @@
 description: >-
-  A table delimiter row does not turn a primary into a table (Q2).
+  A table delimiter row does not turn a primary into a table.
 spec: ["3.4"]
 tags: [parser]
 

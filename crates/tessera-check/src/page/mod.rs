@@ -22,7 +22,7 @@
 //! A problem is reported at the source location that causes it. One inside
 //! included content is reported at the include site (the outermost `@include`,
 //! `via[0]`), with its location in the fragment as related information, not a
-//! second diagnostic (SPEC §8.1, Q20). One that several places cause is
+//! second diagnostic (SPEC §8.1). One that several places cause is
 //! reported once, at the later of them.
 //!
 //! [`check_all_builds`] reports each distinct problem once, however many
@@ -30,17 +30,17 @@
 //!
 //! # Content no build publishes
 //!
-//! A build records only the problems in content it publishes (Q81), so
+//! A build records only the problems in content it publishes, so
 //! content that *no* build publishes (an arm none of the builds selects, a
 //! page every build drops) would never be checked at page level.
 //! [`check_all_builds`] therefore resolves the project once more with a build
 //! that keeps everything (`switch` and `badge`) and reports the problems whose
 //! cause is in content no real build publishes, marked
-//! [`Diagnostic::unpublished`] (Q101). It costs nothing when a build already
+//! [`Diagnostic::unpublished`]. It costs nothing when a build already
 //! keeps everything.
 //!
 //! A fragment that no page includes is part of no page, so it has no
-//! page-level diagnostics of its own (Q104).
+//! page-level diagnostics of its own.
 
 mod bridge;
 mod collect;
@@ -176,9 +176,9 @@ impl<'p> PageChecker<'p> {
         let keeps_everything = model.builds.iter().any(|b| {
             b.variants == VariantMode::Switch && b.availability == AvailabilityMode::Badge
         });
-        // Resolved Q101: content no build publishes is checked with a
+        // Content no build publishes is checked with a
         // build that keeps everything, and reported as belonging to no build.
-        // Resolved Q104: a fragment no page includes is in no page, so
+        // A fragment no page includes is in no page, so
         // it isn't part of this pass either.
         if !keeps_everything {
             per_build.push((None, self.unpublished(&published)));
@@ -261,7 +261,6 @@ impl<'p> PageChecker<'p> {
                 let mut issue = m.found.issue;
                 // A row whose message names the build names them all: in
                 // several builds, with its `builds` message variant (resolved
-                // Q102).
                 if issue.arg("build").is_some() && m.builds.len() > 1 {
                     let names = m
                         .builds

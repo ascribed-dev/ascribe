@@ -1,5 +1,5 @@
 description: >-
-  Letters, digits, hyphens, underscores, and periods are valid (Q196),
+  Letters, digits, hyphens, underscores, and periods are valid,
   including a leading digit or capital.
 spec: ["4.1"]
 tags: [check]

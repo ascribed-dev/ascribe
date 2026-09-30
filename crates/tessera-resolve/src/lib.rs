@@ -1,7 +1,5 @@
 //! The project graph and the resolution passes: includes, availability, build modes, phrases, heading ids, links, and glossary.
 //!
-//! Phase 11 builds the **source index** and expands includes; phase 09 adds slugging, phase 12 **build resolution** ([`build`]), and phase 13 **incremental updates** ([`incremental`]).
-//!
 //! # The source index
 //!
 //! [`Project::load`] indexes every `.md` file under the content root, with
@@ -12,8 +10,7 @@
 //!   (SPEC §5.5), titles, includes, links, images, phrase candidates, and
 //!   availability markers;
 //! - what every link and image **names** once the project's files are known
-//!   ([`Resolution`]), resolved from the file it's written in
-//!   (`project-docs/contracts/assets.md`);
+//!   ([`Resolution`]), resolved from the file it's written in;
 //! - the edges between files, forward and back: [`Project::includers`],
 //!   [`Project::including_pages`], [`Project::links_to`],
 //!   [`Project::links_to_id`], and [`Project::asset_users`];
@@ -39,7 +36,7 @@
 //! terms linked (SPEC §9.2 steps 2 to 7). Problems that only a build finds
 //! (`variant-no-arm-survives`, `available-exceeds-scope`, `link-id-removed`,
 //! `link-page-dropped`) are recorded on the page for the page-level checks
-//! (phase 14) to report. See the [`build`] module for the passes.
+//! to report. See the [`build`] module for the passes.
 //!
 //! # Incremental updates
 //!

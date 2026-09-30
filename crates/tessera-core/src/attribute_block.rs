@@ -1,10 +1,9 @@
 //! Parsed attribute blocks (SPEC §3.3): the output of the attribute parser.
 //!
-//! One grammar serves directives and images, so one set of types does too.
-//! Phase 05 writes the parser (`attributes.rs`, producing these types), and
-//! phase 07 reuses it for images. The types record each value's *form*
+//! One grammar serves directives and images, so one set of types does too
+//! (the parser is `attributes.rs`). The types record each value's *form*
 //! (token, quoted string, or value set), never its type: types come from the
-//! schema (SPEC §3.3), and the checks (phase 10) interpret values against it.
+//! schema (SPEC §3.3), and the checks interpret values against it.
 //!
 //! Every part keeps its span, in the coordinates of the file being parsed,
 //! so the formatter can rewrite spacing and quoting and the language server

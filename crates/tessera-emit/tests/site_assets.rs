@@ -1,8 +1,8 @@
-//! Assets in the site output follow the asset contract's `astro` rules:
+//! Assets in the site output follow the `astro` profile's rules:
 //! images are mirrored beside their pages and referenced relatively (so
 //! Astro's image processing applies), and other files pages link to are
 //! published under `_ascribe/files/` and referenced by URL. The output works
-//! with the source removed (asset contract §6).
+//! with the source removed.
 
 #![allow(clippy::expect_used, clippy::panic)]
 

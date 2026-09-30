@@ -1,5 +1,5 @@
 //! TESSERA: the link reference definitions `parse_document_with_definitions`
-//! returns, with their positions (phase 23). `tessera-syntax`'s tests cover
+//! returns, with their positions. `tessera-syntax`'s tests cover
 //! them in every container and check every span; this checks the fork's API.
 
 use std::sync::Arc;

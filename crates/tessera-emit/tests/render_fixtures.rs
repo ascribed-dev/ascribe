@@ -1,6 +1,6 @@
-//! `render_site_html()` against every fixture in `tests/render/` (site-render
-//! contract §6): each `input.md` renders to its `expected.html`, compared as
-//! parsed HTML, not as text (`tests/render/README.md`).
+//! `render_site_html()` against every fixture in `tests/render/`: each
+//! `input.md` renders to its `expected.html`, compared as parsed HTML, not as
+//! text (`tests/render/README.md`).
 
 #![allow(clippy::expect_used, clippy::panic)]
 

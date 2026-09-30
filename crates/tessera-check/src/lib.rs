@@ -18,7 +18,7 @@
 //!   a phrase and have no `@id`, and `@id` values.
 //! - **Checks that need the file system**: `@include` targets, link
 //!   destinations (files, fragments, routes), and image sources, all with the
-//!   asset contract's boundary and exact-case rules.
+//!   boundary and exact-case rules for local files.
 //!
 //! Messages, codes, and severities come from the diagnostics registry
 //! (`tests/conformance/diagnostics.toml`), through [`Registry`].
@@ -49,7 +49,7 @@ pub use registry::{Entry, Level, Registry};
 /// Never panics on user input. Sorting is stable, so two tools that call it
 /// on the same project get the same list.
 pub fn check_files(project: &Project) -> Vec<Diagnostic> {
-    // Resolved Q58: the content model's warnings are part of the list.
+    // The content model's warnings are part of the list.
     let mut out: Vec<Diagnostic> = project.model_warnings().to_vec();
     for file in project.sources() {
         out.extend(check_file(project, file));

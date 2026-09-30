@@ -1,5 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-//! One failing fixture per validation rule in content-model.md §20, checking
+//! One failing fixture per loading rule (each `model-` diagnostic), checking
 //! the slug, the message variant, and the line the issue points at.
 //!
 //! In a fixture, `#!` at the end of a line marks the line the issue must

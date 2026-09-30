@@ -1,5 +1,4 @@
-//! Assets: where copies go and how references to them are written
-//! (`project-docs/contracts/assets.md`, §3 and §4).
+//! Assets: where copies go and how references to them are written.
 
 use tessera_core::RelPath;
 
@@ -13,11 +12,11 @@ pub struct Placement {
     /// one. Not yet escaped for markdown (see [`markdown_destination`]).
     pub reference: String,
     /// For a copy the consumer must serve, the URL pages use for it. It's
-    /// recorded in the manifest (output-layout contract, §3).
+    /// recorded in the manifest.
     pub url: Option<String>,
 }
 
-/// The mirrored path of an asset (asset contract, §3.1): the source path
+/// The mirrored path of an asset: the source path
 /// itself inside the content root, and `_ascribe/up/…` outside it, with each
 /// leading `..` replaced by `up`.
 pub fn mirrored_path(source: &RelPath) -> RelPath {
@@ -37,8 +36,7 @@ pub fn mirrored_path(source: &RelPath) -> RelPath {
 }
 
 /// The reference from the page written at `page_output` to `copy`: relative
-/// to the page's directory, and always starting with `./` or `../` (asset
-/// contract, §4).
+/// to the page's directory, and always starting with `./` or `../`.
 pub fn relative_reference(page_output: &RelPath, copy: &RelPath) -> String {
     let dir = page_output.parent().unwrap_or_else(RelPath::root);
     copy.relative_from(&dir)
@@ -46,7 +44,7 @@ pub fn relative_reference(page_output: &RelPath, copy: &RelPath) -> String {
 }
 
 /// Percent-encodes the characters of a file path that a reader would take for
-/// an escape, a fragment, or a query: `%`, `#`, and `?` (asset contract, §4).
+/// an escape, a fragment, or a query: `%`, `#`, and `?`.
 /// Spaces and parentheses stay, and [`markdown_destination`] brackets them.
 pub fn encode_path(path: &str) -> String {
     let mut out = String::with_capacity(path.len());

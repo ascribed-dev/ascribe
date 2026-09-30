@@ -41,7 +41,7 @@ where
         };
         // Up to three spaces of indentation beyond the container's are
         // allowed, as for an ATX heading; `self.first_nonspace` skips them.
-        // SPEC §1.5 and §3.9 rule 5 (resolved Q1).
+        // SPEC §1.5 and §3.9 rule 5.
         let start = self.first_nonspace;
         let Some(scanned) = scan_line(&line[start..], options) else {
             return false;
@@ -78,7 +78,7 @@ where
 /// holding their own data. A parent that's borrowed isn't an Ascribe line,
 /// because the parser never holds an Ascribe line's data while it works on
 /// the line's paragraph, so a failed borrow means "no".
-// SPEC §3.4: a text primary is always inline content (resolved Q2).
+// SPEC §3.4: a text primary is always inline content.
 pub(super) fn is_text_primary(node: Node<'_>) -> bool {
     node.parent().is_some_and(|parent| {
         parent

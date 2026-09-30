@@ -1,13 +1,13 @@
-//! [`render_site_html`]: site markdown to HTML, following the site-render
-//! contract (`project-docs/contracts/site-render.md`).
+//! [`render_site_html`]: site markdown to HTML, with the site output's
+//! attribute markers applied.
 //!
 //! It is comrak's CommonMark rendering with raw HTML passed through (SPEC
-//! §9.5, "HTML passthrough"), plus the two things the contract adds: a
+//! §9.5, "HTML passthrough"), plus the two things the markers add: a
 //! `<ascribe-attributes>` marker that ends a heading gives the heading its
 //! attributes (its `id`), and one directly after an image gives the `<img>`
-//! its attributes. The editor preview (phase 25) renders with it. The Astro
-//! markdown plugin (phase 21) does the same in Astro's pipeline, and
-//! `tests/render/`'s fixtures keep them equal.
+//! its attributes. The editor preview renders with it. The Astro markdown
+//! plugin (`@ascribed/astro`) does the same in Astro's pipeline, and
+//! `tests/render/`'s fixtures keep the two equal.
 //!
 //! # How markers are found
 //!
@@ -32,7 +32,7 @@ const MARKER: &str = "ascribe-attributes";
 
 /// Renders site markdown as HTML: CommonMark with raw HTML allowed, GFM's
 /// tables, strikethrough, bare links, and task lists as Astro's defaults have
-/// them, and the contract's attribute markers applied.
+/// them, and the attribute markers applied.
 pub fn render_site_html(markdown: &str) -> String {
     apply_markers(&markdown_to_html(markdown, &options()))
 }
@@ -72,13 +72,12 @@ struct Edit {
     text: String,
 }
 
-/// Applies the contract's rules (§2, §3) to rendered HTML.
+/// Applies the marker rules to rendered HTML.
 fn apply_markers(html: &str) -> String {
     let mut edits: Vec<Edit> = Vec::new();
     for marker in markers(html) {
         // A marker directly after an image applies to the image, even at the
         // end of a heading: the image rule is the more specific one.
-        // Resolved Q145
         if let Some(edit) = image_edit(html, &marker) {
             edits.push(edit);
         } else if let Some(mut found) = heading_edits(html, &marker) {
@@ -100,7 +99,7 @@ fn apply_markers(html: &str) -> String {
     out
 }
 
-/// Every well-formed marker in the HTML, in order (contract §1): the open
+/// Every well-formed marker in the HTML, in order: the open
 /// tag with zero or more ` name="value"` attributes, then directly the
 /// closing tag.
 fn markers(html: &str) -> Vec<Found> {
@@ -163,8 +162,8 @@ fn attribute_name_len(text: &str) -> Option<usize> {
     Some(end)
 }
 
-/// `&quot;`, `&amp;`, `&lt;`, and `&gt;` decoded; any other `&` is literal
-/// (contract §1). One pass, so `&amp;lt;` is `&lt;`.
+/// `&quot;`, `&amp;`, `&lt;`, and `&gt;` decoded; any other `&` is literal.
+/// One pass, so `&amp;lt;` is `&lt;`.
 fn decode(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     let mut rest = value;
@@ -201,7 +200,7 @@ fn encode(value: &str) -> String {
     out
 }
 
-/// A marker that ends a heading (contract §2.1): the heading's opening tag
+/// A marker that ends a heading: the heading's opening tag
 /// gets the attributes, and the marker and the whitespace before it go.
 fn heading_edits(html: &str, marker: &Found) -> Option<Vec<Edit>> {
     let after = &html[marker.end..];
@@ -232,7 +231,7 @@ fn heading_edits(html: &str, marker: &Found) -> Option<Vec<Edit>> {
     ])
 }
 
-/// A marker directly after an `<img … />` tag (contract §2.2): the tag gets
+/// A marker directly after an `<img … />` tag: the tag gets
 /// the attributes, replacing any it has by the same name (§3), and the
 /// marker goes.
 fn image_edit(html: &str, marker: &Found) -> Option<Edit> {

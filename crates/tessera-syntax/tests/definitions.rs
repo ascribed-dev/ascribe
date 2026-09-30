@@ -1,6 +1,6 @@
 //! Link reference definitions (CommonMark), which comrak consumes: they are
 //! in `ParsedDocument::definitions` with exact spans, and phrases apply in
-//! their destinations (SPEC §5.1, resolved Q43).
+//! their destinations (SPEC §5.1).
 
 #![allow(clippy::panic, clippy::expect_used)]
 

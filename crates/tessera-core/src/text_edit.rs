@@ -8,8 +8,8 @@ use crate::Span;
 ///
 /// An empty span inserts; an empty `new_text` deletes. The span is in the
 /// file's text *before* any of the edits it's applied with (edits in a set
-/// are simultaneous, as in LSP). Diagnostic fixes (phase 10), the formatter
-/// (phase 23), and refactorings (phase 24) all produce these, and the
+/// are simultaneous, as in LSP). Diagnostic fixes, the formatter, and
+/// refactorings all produce these, and the
 /// language server sends them to the editor unchanged.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct TextEdit {

@@ -358,7 +358,7 @@ fn a_container_and_its_end_line_in_a_list_item() {
 
 #[test]
 fn an_end_line_with_extra_spaces_still_closes_and_loses_them() {
-    // Q19: extra spaces in the same container don't matter, and canonical
+    // Extra spaces in the same container don't matter, and canonical
     // form removes them.
     check("@note:\nText.\n   @end\n", "@note:\nText.\n@end\n");
     check(

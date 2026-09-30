@@ -34,7 +34,7 @@ struct Ctx<'a> {
     id: FileId,
     schemas: Vec<DirectiveSchema>,
     /// The file's link reference definitions, whose destinations hold the
-    /// phrases of the reference forms that use them (Q43).
+    /// phrases of the reference forms that use them.
     definitions: Vec<tessera_syntax::LinkDefinition>,
     issues: Vec<Issue>,
 }
@@ -181,7 +181,7 @@ impl Ctx<'_> {
         for inline in inlines {
             match &inline.kind {
                 InlineKind::Phrase(p) => {
-                    // Resolved Q56: every inline position where a
+                    // Every inline position where a
                     // candidate is recorded, and no destination, fence, or
                     // frontmatter.
                     // SPEC §5.1: a `{key}` in prose whose key isn't declared
@@ -217,7 +217,7 @@ impl Ctx<'_> {
     }
 
     /// A heading with no `@id` (SPEC §5.5) whose slug changes whenever a
-    /// phrase's value does, or whose slug is empty (resolved Q61).
+    /// phrase's value does, or whose slug is empty.
     fn heading(&mut self, siblings: &[Block], index: usize, span: Span, h: &Heading) {
         let has_id = siblings[index + 1..]
             .iter()
@@ -291,8 +291,7 @@ impl Ctx<'_> {
         }
     }
 
-    /// `{heading=false}` only applies to an include of a section (SPEC §4.2,
-    /// resolved Q65).
+    /// `{heading=false}` only applies to an include of a section (SPEC §4.2).
     fn check_include_heading(&mut self, d: &DirectiveLine, primary: &str) {
         let Some(attribute) = d.attributes.as_ref().and_then(|a| a.get("heading")) else {
             return;
@@ -311,7 +310,7 @@ impl Ctx<'_> {
         }
     }
 
-    /// Resolved Q191: a declared phrase directly between two more braces,
+    /// A declared phrase directly between two more braces,
     /// `{{key}}`, is `{`, the phrase, and `}`: almost always a substitution
     /// from another tool that wasn't converted. An escaped outer brace
     /// (`\{{key}}`) is meant, and isn't reported.
@@ -340,7 +339,7 @@ impl Ctx<'_> {
     }
 
     /// `@id` values: letters, digits, hyphens, underscores, and periods
-    /// (SPEC §4.1; Q196).
+    /// (SPEC §4.1).
     fn check_id(&mut self, id: &str, span: Span) {
         let valid = !id.is_empty()
             && id

@@ -16,9 +16,8 @@
 //! | Phrases, includes, glossary links | Resolved |
 //! | Links | Absolute URLs (the site's origin, when the content model has one) |
 //!
-//! Pages start with their title as a level-1 heading (Q111). Raw HTML in the
-//! source keeps its text and loses its tags, since the output has no HTML
-//! (Q112).
+//! Pages start with their title as a level-1 heading. Raw HTML in the
+//! source keeps its text and loses its tags, since the output has no HTML.
 
 pub(crate) mod inline;
 
@@ -50,8 +49,9 @@ impl Emitter for PlainEmitter {
     }
 
     fn warnings(&self, cx: &EmitContext<'_>) -> Vec<String> {
-        // content-model.md, decision 10.
-        // Resolved Q120: the warning isn't a registry diagnostic.
+        // Without a site origin, links can only be root-relative. This is
+        // about an output's configuration, not the source, so it's a build
+        // warning rather than a registry diagnostic.
         if cx.site_origin().is_none() {
             vec![
                 "[consumer] site isn't set in ascribe.toml, so links in the plain-markdown output are root-relative, not absolute URLs"
@@ -70,7 +70,6 @@ fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
         model: cx.emit.model,
     };
     let mut chunks = Vec::new();
-    // Resolved Q111: what a plain page starts with.
     if let Some(title) = &page.title {
         // A folded YAML scalar can hold a line break; a heading can't.
         let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -179,14 +178,12 @@ impl Renderer<'_> {
             ResolvedKind::Group { name, arms, .. } => {
                 let mut out = Vec::new();
                 let widget = self.model.widget(name);
-                // Resolved Q113: a widget group's fallback and arms.
                 if let Some(widget) = widget {
                     out.extend(self.fallback(widget));
                     if widget.plain_content == PlainContent::Drop {
                         return out;
                     }
                 }
-                // Resolved Q115: one section per arm, led by its label.
                 for arm in arms {
                     if let Some(label) = self.arm_label(block, &arm.opener) {
                         out.push(format!("**{label}**"));
@@ -223,7 +220,7 @@ impl Renderer<'_> {
             BlockKind::CodeBlock(c) => vec![fenced(c)],
             BlockKind::HtmlBlock(h) => {
                 // An HTML block with no text (a comment, a script) leaves
-                // nothing behind (Q112).
+                // nothing behind.
                 let text = html_as_text(&h.literal);
                 if text.is_empty() {
                     Vec::new()
@@ -382,8 +379,6 @@ impl Renderer<'_> {
 
     /// A widget's plain fallback, with phrases substituted. The widget's own
     /// title, primary, and attributes aren't shown.
-    // Resolved Q113: what plain markdown shows of a widget besides its
-    // fallback and wrapped content.
     fn fallback(&self, widget: &tessera_model::Widget) -> Vec<String> {
         widget
             .plain_fallback
@@ -419,7 +414,7 @@ impl Renderer<'_> {
             cells.resize(width, String::new());
             lines.push(format!("| {} |", cells.join(" | ")));
             if n == 0 {
-                // Each column keeps its alignment (resolved Q116).
+                // Each column keeps its alignment.
                 let delimiters: Vec<&str> = (0..width)
                     .map(|i| match table.alignments.get(i) {
                         Some(Alignment::Left) => ":---",
@@ -589,7 +584,7 @@ pub(crate) fn fenced(code: &CodeBlock) -> String {
     }
 }
 
-/// Raw HTML in the plain output, which has no HTML (resolved Q112): its text
+/// Raw HTML in the plain output, which has no HTML: its text
 /// is kept and its tags are dropped, so `<kbd>Ctrl</kbd>` reads `Ctrl`.
 /// Comments, and the contents of `<script>` and `<style>`, aren't text and are
 /// dropped too. Each line is escaped, so a parser reads it as prose.

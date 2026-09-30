@@ -1,6 +1,6 @@
 //! Converting a corpus's constructs to Ascribe, at volume.
 //!
-//! The converters are scripts in the sense the phase asks for: text to text,
+//! The converters are scripts: text to text,
 //! line by line, no parsing of Markdown beyond what is needed to leave code
 //! alone. They are **not complete** (SPEC §9 has nothing to say about most of
 //! what these docs use), and they aren't meant to be: they produce realistic
@@ -254,7 +254,7 @@ pub(crate) fn push_title(out: &mut Vec<String>, indent: &str, title: &str) {
         out.push(String::new());
     }
     let title = title.trim();
-    // A title that starts with a dot escapes it (Q193): `.\.NET`.
+    // A title that starts with a dot escapes it: `.\.NET`.
     let escape = if title.starts_with('.') { "\\" } else { "" };
     out.push(format!("{indent}.{escape}{title}"));
 }

@@ -3,8 +3,8 @@
 //!
 //! It differs from the plain output's inline writer in what the site output
 //! keeps: raw inline HTML passes through unchanged (the Astro profile
-//! requires `html = true`, Q112 is only for the plain output), an image
-//! followed by its attribute marker (site-render contract §4), links as the
+//! requires `html = true` is only for the plain output), an image
+//! followed by its attribute marker, links as the
 //! consumer's routes and URLs, and a glossary link with its term's
 //! definition as the title (element contract §7).
 
@@ -57,7 +57,7 @@ fn write(r: &Renderer<'_>, block: &ResolvedBlock, inlines: &[Inline], mode: Mode
             InlineKind::Text(text) => escape_into(text, st),
             // Raw HTML passes through unchanged (SPEC §9.5, "HTML
             // passthrough"): an author's own `ascribe-attributes` element
-            // gets its effect too (site-render contract §4).
+            // gets its effect too.
             InlineKind::Html(html) => {
                 st.out.push_str(html);
                 st.line_start = false;
@@ -203,8 +203,8 @@ fn image_inline(
         "![{alt}]({destination}{})",
         title(image.title.as_deref())
     ));
-    // Directly after the image, with nothing between (site-render contract
-    // §4): the marker that gives the `<img>` its attributes.
+    // Directly after the image, with nothing between: the marker that gives
+    // the `<img>` its attributes.
     let attributes = image_attributes(r, image);
     if !attributes.is_empty() {
         st.out.push_str(&marker(&attributes));
@@ -214,8 +214,8 @@ fn image_inline(
 /// The attributes an image carries: those written and the model's defaults,
 /// in the order the content model declares them, then any it doesn't declare
 /// in written order. A value set's members are joined with spaces; other
-/// values are their text (site-render contract §4).
-// Resolved Q141: a declared default reaches every image, as a widget's
+/// values are their text.
+// A declared default reaches every image, as a widget's
 // does.
 fn image_attributes(r: &Renderer<'_>, image: &Image) -> Vec<(String, String)> {
     let written = image.attributes.as_ref().map(|a| &a.block);

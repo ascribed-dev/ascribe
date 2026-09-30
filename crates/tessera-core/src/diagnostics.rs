@@ -5,11 +5,10 @@
 //! with one of these ([`Issue::new`](crate::Issue::new)); since
 //! [`DiagnosticSlug`] can't be constructed outside this crate, a misspelled or
 //! unregistered slug is a compile error. A test keeps this list equal to the
-//! registry, so adding a diagnostic means adding it in both places, through
-//! the contract process.
+//! registry, so adding a diagnostic means adding it in both places.
 //!
 //! The registry holds each diagnostic's code, severity, level, SPEC section,
-//! and message templates; phase 10 reads them from there.
+//! and message templates; the checks read them from there.
 
 use crate::DiagnosticSlug;
 
@@ -194,200 +193,200 @@ pub const ID_INVALID: DiagnosticSlug = DiagnosticSlug("id-invalid");
 /// `ASC059`, error, file level: SPEC §8.2, "Images | Required image attribute missing".
 pub const IMAGE_ATTRIBUTE_MISSING: DiagnosticSlug = DiagnosticSlug("image-attribute-missing");
 
-/// `ASC060`, error, file level: loader rule, content-model.md §20.1.
+/// `ASC060`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TOML_SYNTAX: DiagnosticSlug = DiagnosticSlug("model-toml-syntax");
 
-/// `ASC061`, error, file level: loader rule, content-model.md §20.1.
+/// `ASC061`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_UNKNOWN_KEY: DiagnosticSlug = DiagnosticSlug("model-unknown-key");
 
-/// `ASC062`, error, file level: loader rule, content-model.md §20.1.
+/// `ASC062`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_MISSING_KEY: DiagnosticSlug = DiagnosticSlug("model-missing-key");
 
-/// `ASC063`, error, file level: loader rule, content-model.md §20.1.
+/// `ASC063`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_WRONG_TYPE: DiagnosticSlug = DiagnosticSlug("model-wrong-type");
 
-/// `ASC064`, error, file level: loader rule, content-model.md §20.1.
+/// `ASC064`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_INVALID_VALUE: DiagnosticSlug = DiagnosticSlug("model-invalid-value");
 
-/// `ASC065`, error, file level: loader rule, content-model.md §20.1.
+/// `ASC065`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_SPEC_UNSUPPORTED: DiagnosticSlug = DiagnosticSlug("model-spec-unsupported");
 
-/// `ASC066`, error, file level: loader rule, content-model.md §20.1.
+/// `ASC066`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_INVALID_NAME: DiagnosticSlug = DiagnosticSlug("model-invalid-name");
 
-/// `ASC067`, error, file level: loader rule, content-model.md §20.1.
+/// `ASC067`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_EMPTY_TEXT: DiagnosticSlug = DiagnosticSlug("model-empty-text");
 
-/// `ASC068`, error, file level: loader rule, content-model.md §20.2.
+/// `ASC068`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_PATH_ABSOLUTE: DiagnosticSlug = DiagnosticSlug("model-path-absolute");
 
-/// `ASC069`, error, file level: loader rule, content-model.md §20.2.
+/// `ASC069`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_CONTENT_ROOT_MISSING: DiagnosticSlug = DiagnosticSlug("model-content-root-missing");
 
-/// `ASC070`, error, file level: loader rule, content-model.md §20.2.
+/// `ASC070`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_OUTPUT_OVERLAPS_CONTENT: DiagnosticSlug =
     DiagnosticSlug("model-output-overlaps-content");
 
-/// `ASC071`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC071`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TYPE_MULTIPLE_DEFAULTS: DiagnosticSlug =
     DiagnosticSlug("model-type-multiple-defaults");
 
-/// `ASC072`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC072`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TYPE_UNREACHABLE: DiagnosticSlug = DiagnosticSlug("model-type-unreachable");
 
-/// `ASC073`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC073`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TYPE_TITLE: DiagnosticSlug = DiagnosticSlug("model-type-title");
 
-/// `ASC074`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC074`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_FIELD_RESERVED: DiagnosticSlug = DiagnosticSlug("model-field-reserved");
 
-/// `ASC075`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC075`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TYPE_SYNTAX: DiagnosticSlug = DiagnosticSlug("model-type-syntax");
 
-/// `ASC076`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC076`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_TYPE_FIELDS: DiagnosticSlug = DiagnosticSlug("model-type-fields");
 
-/// `ASC077`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC077`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_ENUM_VALUES: DiagnosticSlug = DiagnosticSlug("model-enum-values");
 
-/// `ASC078`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC078`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_SET_TOKEN: DiagnosticSlug = DiagnosticSlug("model-set-token");
 
-/// `ASC079`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC079`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_DEFAULT_TYPE: DiagnosticSlug = DiagnosticSlug("model-default-type");
 
-/// `ASC080`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC080`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_PHRASES_FIELD_TYPE: DiagnosticSlug = DiagnosticSlug("model-phrases-field-type");
 
-/// `ASC081`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC081`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_PATTERN_SYNTAX: DiagnosticSlug = DiagnosticSlug("model-pattern-syntax");
 
 /// `ASC082`, error, file level: SPEC §8.2, "Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension".
 pub const MODEL_NAME_MULTIPLE_ROLES: DiagnosticSlug = DiagnosticSlug("model-name-multiple-roles");
 
-/// `ASC083`, warning, file level: loader rule, content-model.md §20.4.
+/// `ASC083`, warning, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_NAME_CASE: DiagnosticSlug = DiagnosticSlug("model-name-case");
 
-/// `ASC084`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC084`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_DIMENSION_EMPTY: DiagnosticSlug = DiagnosticSlug("model-dimension-empty");
 
-/// `ASC085`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC085`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_DIMENSION_VALUE_DUPLICATE: DiagnosticSlug =
     DiagnosticSlug("model-dimension-value-duplicate");
 
-/// `ASC086`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC086`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_DIMENSION_VALUE_SHARED: DiagnosticSlug =
     DiagnosticSlug("model-dimension-value-shared");
 
-/// `ASC087`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC087`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_LABEL_UNDECLARED: DiagnosticSlug = DiagnosticSlug("model-label-undeclared");
 
-/// `ASC088`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC088`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_VERSIONLESS_UNDECLARED: DiagnosticSlug =
     DiagnosticSlug("model-versionless-undeclared");
 
-/// `ASC089`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC089`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_LIFECYCLE_AVAILABLE_REQUIRED: DiagnosticSlug =
     DiagnosticSlug("model-lifecycle-available-required");
 
-/// `ASC090`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC090`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_LIFECYCLE_GA_UNAVAILABLE: DiagnosticSlug =
     DiagnosticSlug("model-lifecycle-ga-unavailable");
 
-/// `ASC091`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC091`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_NOTE_LABEL_REQUIRED: DiagnosticSlug = DiagnosticSlug("model-note-label-required");
 
-/// `ASC092`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC092`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_AVAILABILITY_SYNTAX: DiagnosticSlug = DiagnosticSlug("model-availability-syntax");
 
-/// `ASC093`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC093`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_AVAILABILITY_UNKNOWN_NAME: DiagnosticSlug =
     DiagnosticSlug("model-availability-unknown-name");
 
-/// `ASC094`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC094`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_AVAILABILITY_VERSIONLESS: DiagnosticSlug =
     DiagnosticSlug("model-availability-versionless");
 
-/// `ASC095`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC095`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_AVAILABILITY_HISTORY_ORDER: DiagnosticSlug =
     DiagnosticSlug("model-availability-history-order");
 
-/// `ASC096`, error, file level: loader rule, content-model.md §20.4.
+/// `ASC096`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_FEATURE_NESTED: DiagnosticSlug = DiagnosticSlug("model-feature-nested");
 
-/// `ASC097`, error, file level: loader rule, content-model.md §20.5.
+/// `ASC097`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_PHRASE_VALUE_TYPE: DiagnosticSlug = DiagnosticSlug("model-phrase-value-type");
 
-/// `ASC098`, error, file level: loader rule, content-model.md §20.5.
+/// `ASC098`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_GLOSSARY_DUPLICATE_TERM: DiagnosticSlug =
     DiagnosticSlug("model-glossary-duplicate-term");
 
-/// `ASC099`, error, file level: loader rule, content-model.md §20.5.
+/// `ASC099`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_GLOSSARY_LINK: DiagnosticSlug = DiagnosticSlug("model-glossary-link");
 
-/// `ASC100`, error, file level: loader rule, content-model.md §20.6.
+/// `ASC100`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_WIDGET_RESERVED_NAME: DiagnosticSlug = DiagnosticSlug("model-widget-reserved-name");
 
-/// `ASC101`, error, file level: loader rule, content-model.md §20.6.
+/// `ASC101`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_WIDGET_FORMS: DiagnosticSlug = DiagnosticSlug("model-widget-forms");
 
-/// `ASC102`, error, file level: loader rule, content-model.md §20.6.
+/// `ASC102`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_WIDGET_BINDING: DiagnosticSlug = DiagnosticSlug("model-widget-binding");
 
-/// `ASC103`, error, file level: loader rule, content-model.md §20.6.
+/// `ASC103`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_WIDGET_CONTAINER_PRIMARY: DiagnosticSlug =
     DiagnosticSlug("model-widget-container-primary");
 
-/// `ASC104`, error, file level: loader rule, content-model.md §20.6.
+/// `ASC104`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_WIDGET_GROUPABLE_FORM: DiagnosticSlug =
     DiagnosticSlug("model-widget-groupable-form");
 
-/// `ASC105`, error, file level: loader rule, content-model.md §20.6.
+/// `ASC105`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_WIDGET_PLAIN_CONTENT: DiagnosticSlug = DiagnosticSlug("model-widget-plain-content");
 
-/// `ASC106`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC106`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_CONSUMER_UNSUPPORTED: DiagnosticSlug = DiagnosticSlug("model-consumer-unsupported");
 
-/// `ASC107`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC107`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_CONSUMER_SITE: DiagnosticSlug = DiagnosticSlug("model-consumer-site");
 
-/// `ASC108`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC108`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_CONSUMER_BASE_PATH: DiagnosticSlug = DiagnosticSlug("model-consumer-base-path");
 
-/// `ASC109`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC109`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_NAME_CASE: DiagnosticSlug = DiagnosticSlug("model-build-name-case");
 
-/// `ASC110`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC110`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_VARIANTS: DiagnosticSlug = DiagnosticSlug("model-build-variants");
 
-/// `ASC111`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC111`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_UNKNOWN_DIMENSION: DiagnosticSlug =
     DiagnosticSlug("model-build-unknown-dimension");
 
-/// `ASC112`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC112`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_UNKNOWN_VALUE: DiagnosticSlug = DiagnosticSlug("model-build-unknown-value");
 
-/// `ASC113`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC113`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_AVAILABILITY: DiagnosticSlug = DiagnosticSlug("model-build-availability");
 
-/// `ASC114`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC114`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_FILTER_TARGET: DiagnosticSlug = DiagnosticSlug("model-build-filter-target");
 
-/// `ASC115`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC115`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_FILTER_VERSION: DiagnosticSlug = DiagnosticSlug("model-build-filter-version");
 
-/// `ASC116`, warning, file level: loader rule, content-model.md §20.7.
+/// `ASC116`, warning, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_BUILD_FILTER_EXCLUDED: DiagnosticSlug =
     DiagnosticSlug("model-build-filter-excluded");
 
-/// `ASC117`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC117`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_EDITOR_BUILD_UNKNOWN: DiagnosticSlug = DiagnosticSlug("model-editor-build-unknown");
 
-/// `ASC118`, error, file level: loader rule, content-model.md §20.7.
+/// `ASC118`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_EDITOR_BUILD_REQUIRED: DiagnosticSlug =
     DiagnosticSlug("model-editor-build-required");
 
-/// `ASC119`, error, file level: loader rule, content-model.md §20.3.
+/// `ASC119`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_ATTRIBUTE_RESERVED: DiagnosticSlug = DiagnosticSlug("model-attribute-reserved");
 
 /// `ASC120`, error, file level: SPEC §8.2, "Directives | Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary".

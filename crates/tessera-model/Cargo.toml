@@ -11,7 +11,7 @@ publish.workspace = true
 [dependencies]
 tessera-core.workspace = true
 serde_yaml.workspace = true
-# `preserve_order` keeps declaration order (content-model.md §1.1).
+# `preserve_order` keeps declaration order.
 toml = { workspace = true, features = ["preserve_order"] }
 
 [lints]

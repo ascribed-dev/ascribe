@@ -268,7 +268,7 @@ pub(super) fn required_missing<'a>(
         .collect()
 }
 
-/// SPEC §3.3 / content-model.md §6: `["-"] 1*DIGIT ["." 1*DIGIT]`.
+/// SPEC §3.3: `["-"] 1*DIGIT ["." 1*DIGIT]`.
 fn is_number(text: &str) -> bool {
     let text = text.strip_prefix('-').unwrap_or(text);
     let (whole, fraction) = match text.split_once('.') {

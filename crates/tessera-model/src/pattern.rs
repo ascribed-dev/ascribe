@@ -1,4 +1,4 @@
-//! Glob patterns (content-model.md §1.3).
+//! Glob patterns.
 
 /// A compiled pattern, matched against a path relative to the content root.
 #[derive(Clone, Debug, PartialEq, Eq)]

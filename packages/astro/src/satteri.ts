@@ -5,12 +5,12 @@
 // user's plugins, its image marker (which reads an `<img>`'s properties), and
 // its heading ids (which keeps an id a heading already has). A user plugin
 // therefore runs before both, and sees a marker as two `raw` nodes, as the
-// unified processor's plugin does. The rules are `findEdits`'s (Q151).
+// unified processor's plugin does. The rules are `findEdits`'s.
 
 import type { HastNode as SatteriNode, HastVisitorInstance } from "satteri";
 import { findEdits, toProperty, type HastNode } from "./attributes.js";
 
-/** Applies the site-render contract's attribute markers (`ascribe-attributes`). */
+/** Applies the site output's attribute markers (`ascribe-attributes`). */
 export function satteriAscribeAttributes(): HastVisitorInstance & { name: string } {
   return {
     name: "ascribe-attributes",

@@ -99,7 +99,6 @@ pub(crate) fn primary_gap(ctx: &mut Ctx<'_>, line: &DirectiveLine) {
     }
 }
 
-// Resolved Q72: only a container's colon loses trailing whitespace.
 /// Nothing after a container's `:`, not even whitespace.
 pub(crate) fn container_trailing(ctx: &mut Ctx<'_>, line: &DirectiveLine) {
     if line.form != Form::Container {

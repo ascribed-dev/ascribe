@@ -16,7 +16,7 @@ impl Pass<'_> {
     /// Attaches the attribute block directly after `inline`, an image, and
     /// grows the image's span to cover it.
     ///
-    /// SPEC §5.1, §5.3 (resolved Q41): any `{…}` closed on the same line and directly
+    /// SPEC §5.1, §5.3: any `{…}` closed on the same line and directly
     /// after an image is an attribute block, including `{key}`, which is a
     /// bare key there and not a phrase.
     pub(super) fn image_attributes(&mut self, inline: &mut Inline) {

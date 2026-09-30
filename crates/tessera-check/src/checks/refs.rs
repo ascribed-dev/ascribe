@@ -4,9 +4,9 @@
 //! Every rule about what a reference names, and whether it's there, lives in
 //! `tessera_resolve::references`: the same code the source index runs, so
 //! `ascribe check` and the source index can't disagree. That covers phrase
-//! substitution in destinations (Q54), the asset contract's boundary and
-//! exact-case rules (Q10), routes (Q22, Q55), and where a diagnostic points
-//! (Q53). This module runs those rules on each reference of a file, and adds
+//! substitution in destinations, the boundary and exact-case rules for
+//! local files, routes, and where a diagnostic points.
+//! This module runs those rules on each reference of a file, and adds
 //! the image checks that need the content model.
 
 use tessera_core::{Issue, Location, Span, diagnostics};
@@ -79,7 +79,7 @@ impl Ctx<'_> {
 
     /// Runs the shared reference rules on one link or image.
     fn check_reference(&mut self, r: Reference<'_>) {
-        // A reference form's phrases are its definition's (Q43).
+        // A reference form's phrases are its definition's.
         let phrases = destination_phrases(
             self.source(),
             r.form,

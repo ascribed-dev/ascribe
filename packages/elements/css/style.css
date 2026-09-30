@@ -97,7 +97,7 @@ ascribe-note[type="caution"] {
   --_background: var(--ascribe-caution-background);
 }
 
-/* The heading line: `label: heading`, or `label` alone with no heading (Q12). */
+/* The heading line: `label: heading`, or `label` alone with no heading. */
 ascribe-note::before {
   content: attr(label);
   display: block;

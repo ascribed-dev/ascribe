@@ -1,4 +1,4 @@
-//! The structure pass (phase 06): turns the flat sequence of directive lines
+//! The structure pass: turns the flat sequence of directive lines
 //! and blocks that tree conversion produces into Ascribe's structure.
 //!
 //! [`crate::parse`] runs it after conversion. It works one *scope* at a time:
@@ -18,7 +18,8 @@
 //!    neighbors run.
 //!
 //! Everything here reads one file and the directive schemas. What needs
-//! another file, or the content model's data, is for later phases.
+//! another file, or the content model's data, is for later passes (the source
+//! index and build resolution).
 
 mod bind;
 mod lists;
@@ -95,7 +96,7 @@ pub(crate) struct Pass<'a> {
     open: Vec<String>,
     /// Containers left unclosed when their scope ended, as (keyword, opener),
     /// outermost first. A later end line in another scope may be the one
-    /// their author meant (SPEC §3.9, resolved Q19).
+    /// their author meant (SPEC §3.9).
     orphans: Vec<(String, Span)>,
 }
 

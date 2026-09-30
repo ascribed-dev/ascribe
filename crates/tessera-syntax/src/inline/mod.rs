@@ -1,4 +1,4 @@
-//! Phase 07: Ascribe's inline extensions (SPEC §5.1 and §5.3).
+//! Ascribe's inline extensions (SPEC §5.1 and §5.3).
 //!
 //! [`extend`] runs over the finished tree, after every span is final, and
 //! adds what comrak's inline parser doesn't know:

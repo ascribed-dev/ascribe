@@ -1,14 +1,14 @@
-//! The Zod schema of a content model's frontmatter (SPEC §9.6; Q149): a TypeScript
+//! The Zod schema of a content model's frontmatter (SPEC §9.6): a TypeScript
 //! module Astro's content collections take as their `schema`.
 //!
 //! [`generate`] writes one schema per content type, with the reserved
-//! `available` and `variant` keys added (content-model.md §5.1). The schemas
+//! `available` and `variant` keys added. The schemas
 //! describe the frontmatter the site output writes, not the source's: in
-//! particular `available` is the list of targets the site emitter writes
-//! (Q142), not the spec string an author wrote.
+//! particular `available` is the list of targets the site emitter writes,
+//! not the spec string an author wrote.
 //!
 //! The module imports `z` from `astro/zod`, which is Zod 4 in the Astro
-//! version phase 20 targets (7.3, [`crate::site::ASTRO_VERSION`]). Unknown
+//! version the site output targets (7.3, [`crate::site::ASTRO_VERSION`]). Unknown
 //! keys are rejected, as they are in Ascribe (`frontmatter-unknown-key`), with
 //! `z.strictObject`.
 //!
@@ -96,7 +96,7 @@ import { z } from \"astro/zod\";
 ";
 
 /// The reserved keys: `available` as the site output writes it (element
-/// contract §4, Q142), and `variant` as written (SPEC §4.3).
+/// contract §4), and `variant` as written (SPEC §4.3).
 const RESERVED: &str = "
 /** One target of a page's availability: the attributes of a
  * `<ascribe-availability-target>`, and the text it shows. */

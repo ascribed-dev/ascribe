@@ -1,5 +1,5 @@
-// @ascribed/astro: the Astro integration for Ascribe (phase 21's slice; phase 22
-// completes it). Written against Astro 7.3.5.
+// @ascribed/astro: the Astro integration for Ascribe. Written against Astro
+// 7.3.5.
 //
 //   // astro.config.mjs
 //   import ascribe from "@ascribed/astro";
@@ -64,7 +64,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       "astro:config:setup": async ({ config, command, logger, updateConfig }) => {
         const root = fileURLToPath(config.root);
         const project = readProject(path.resolve(root, options.project ?? "."));
-        // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build (content-model.md §17).
+        // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build.
         siteRoot = project.siteRoot(options.build);
 
         // `ascribe.toml`'s routing must be Astro's, or every link Ascribe writes is wrong.
@@ -79,7 +79,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           );
         }
 
-        // Where a markdown plugin goes depends on the processor Astro 7.3 runs (Q151).
+        // Where a markdown plugin goes depends on the processor Astro 7.3 runs.
         const processor = config.markdown.processor;
         const pluginLists = processor.options as {
           rehypePlugins?: unknown[];

@@ -1,5 +1,4 @@
-//! The adapter for `tessera-resolve`'s build resolution: what phase 12
-//! produces.
+//! The adapter for `tessera-resolve`'s build resolution.
 //!
 //! It handles the `resolve` tag (resolution passes and build modes, SPEC
 //! §9.2, §9.3). For a build it resolves every page of the case's project with
@@ -13,7 +12,7 @@
 //!
 //! The build's page-level diagnostics are not read off the resolved pages: they
 //! are `tessera_check::check_pages`, the same entry point `ascribe check`, the
-//! build, and the language server call (phase 14), so a case that expects them
+//! build, and the language server call, so a case that expects them
 //! tests what a user sees.
 
 use tessera_conformance::outline::normalize_ws;
@@ -223,7 +222,7 @@ fn directive(
         Some(PrimaryValue::Text(p)) => Some(text(source, p.span, subs)),
         Some(PrimaryValue::Identifier(p)) => Some(p.text.clone()),
         // A surviving `@available` shows the spec a feature key stands for
-        // (SPEC §4.4, Q25).
+        // (SPEC §4.4).
         Some(PrimaryValue::Line(p)) => Some(
             block
                 .annotation

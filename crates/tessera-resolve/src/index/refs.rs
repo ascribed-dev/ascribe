@@ -30,10 +30,10 @@ pub struct Reference {
     /// the definition.
     pub span: Span,
     /// The destination as written, for an inline link or image: where a
-    /// diagnostic about the file it names points (Q53).
+    /// diagnostic about the file it names points.
     pub destination_span: Option<Span>,
     /// The destination, with escapes decoded and `<>` removed. For a
-    /// reference form, that of the link reference definition (SPEC §5.3, Q23).
+    /// reference form, that of the link reference definition (SPEC §5.3).
     pub destination: String,
     /// The destination after substituting the parser's phrase candidates.
     pub expanded_destination: String,
@@ -74,11 +74,11 @@ pub struct Local {
     /// call the path.
     pub written: String,
     /// Whether it names an Ascribe source file: a link to a `.md` file inside
-    /// the content root, which is a page or a fragment and never an asset
-    /// (asset contract, §1). An image is never a source.
+    /// the content root, which is a page or a fragment and never an asset.
+    /// An image is never a source.
     pub source: bool,
     /// Whether a link looks like a published route rather than a file path:
-    /// its last segment has no extension, or it ends in `/` (SPEC §5.2, Q22).
+    /// its last segment has no extension, or it ends in `/` (SPEC §5.2).
     /// It only counts if no such file exists.
     pub route_like: bool,
 }
@@ -117,7 +117,7 @@ pub(crate) fn collect_references(
             ),
             _ => return,
         };
-        // A reference form's destination is in its definition (Q43).
+        // A reference form's destination is in its definition.
         let phrases = crate::references::destination_phrases(
             source,
             form,
@@ -156,7 +156,7 @@ pub(crate) fn target_of(
     written_in: &RelPath,
     model: &ContentModel,
 ) -> Target {
-    // A reference form's `phrases` are its definition's (Q43): the caller
+    // A reference form's `phrases` are its definition's: the caller
     // passes them, so every form is substituted the same way.
     let text = substitute(destination, phrases, model);
     match classify_destination(&text) {

@@ -5,7 +5,7 @@ import * as vscode from "vscode";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
 import { EXTENSION_ID, activated, sleep, uriOf, waitFor, workspace } from "./helpers.js";
 
-// The preview panel (phase 25) with the real `ascribe lsp` on a copy of
+// The preview panel with the real `ascribe lsp` on a copy of
 // examples/quill: the webview loads for real, so a render is "drawn" when the
 // webview says it has put the page in its document.
 describe("the preview, with the real language server on examples/quill", () => {
@@ -92,7 +92,7 @@ describe("the preview, with the real language server on examples/quill", () => {
     const sorted = [...times].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
     console.log(`edit to drawn, ms: ${times.join(" ")} (median ${median}, max ${sorted.at(-1)})`);
-    // "Within about half a second" (phase 25): the typical edit. One edit
+    // "Within about half a second": the typical edit. One edit
     // may be slower when the machine is busy (a full run starts four VS Code
     // windows in turn), so the slowest has a looser bound that still catches
     // a real regression.

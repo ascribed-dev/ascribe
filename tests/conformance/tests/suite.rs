@@ -1,7 +1,7 @@
 //! Checks on the conformance suite as a whole, and on `examples/quill`.
 //!
-//! The suite's cases run in the implementation phases; these tests run now.
-//! They keep the suite complete (every SPEC §8.2 row has a case, and every
+//! The suite's cases run through the adapters; these tests check the suite
+//! itself. They keep the suite complete (every SPEC §8.2 row has a case, and every
 //! provisional case names an open question) and keep the Quill example project
 //! identical to the SPEC's Appendix B page and to its conformance case.
 
