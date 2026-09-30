@@ -350,6 +350,15 @@ pub(crate) fn to_lsp(
             "slug": d.slug.as_str(),
             "builds": d.builds,
             "unpublished": d.unpublished,
+            "fixes": d.fixes.iter().filter(|fix| fix.file == d.location.file).map(|fix| {
+                serde_json::json!({
+                    "title": fix.title,
+                    "edits": fix.edits.iter().map(|edit| serde_json::json!({
+                        "range": encoding.range(index, edit.span),
+                        "newText": edit.new_text,
+                    })).collect::<Vec<_>>(),
+                })
+            }).collect::<Vec<_>>(),
         })),
     }
 }

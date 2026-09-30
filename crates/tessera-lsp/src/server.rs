@@ -12,16 +12,17 @@ use lsp_types::notification::{
     Notification as _,
 };
 use lsp_types::request::{
-    CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand, GotoDefinition, HoverRequest,
-    InlayHintRequest, Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest,
+    CodeActionRequest, CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, Request as _,
+    SemanticTokensFullRequest, SemanticTokensRangeRequest,
 };
 use lsp_types::{
-    CodeLensOptions, CompletionOptions, DocumentLinkOptions, ExecuteCommandOptions,
-    GotoDefinitionResponse, HoverProviderCapability, InitializeParams, InitializeResult, OneOf,
-    SemanticTokens, SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
-    SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
-    ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    Uri,
+    CodeActionProviderCapability, CodeLensOptions, CompletionOptions, DocumentFormattingParams,
+    DocumentLinkOptions, ExecuteCommandOptions, GotoDefinitionResponse, HoverProviderCapability,
+    InitializeParams, InitializeResult, OneOf, SemanticTokens, SemanticTokensFullOptions,
+    SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams,
+    SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo, ShowDocumentParams,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions, Uri,
 };
 use tessera_core::{LineIndex, Span};
 
@@ -126,6 +127,8 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 resolve_provider: Some(false),
             }),
             inlay_hint_provider: Some(OneOf::Left(true)),
+            code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
+            document_formatting_provider: Some(OneOf::Left(true)),
             execute_command_provider: Some(ExecuteCommandOptions {
                 commands: vec![OPEN_FILE.to_owned()],
                 work_done_progress_options: Default::default(),
@@ -372,6 +375,18 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
+            CodeActionRequest::METHOD => {
+                navigation(shared, &request, |p: lsp_types::CodeActionParams| {
+                    (p.text_document.uri.clone(), move |ctx: &Ctx| {
+                        Some(crate::code_action::actions(ctx, p))
+                    })
+                })
+            }
+            Formatting::METHOD => navigation(shared, &request, |p: DocumentFormattingParams| {
+                (p.text_document.uri.clone(), move |ctx: &Ctx| {
+                    Some(crate::formatting::format(ctx, p))
+                })
+            }),
             ExecuteCommand::METHOD => execute_command(shared, &request),
             crate::preview::METHOD => preview_request(shared, &request),
             method => Err(Response::new_err(
