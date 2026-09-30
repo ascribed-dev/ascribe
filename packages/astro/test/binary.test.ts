@@ -4,6 +4,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { findBinary } from "../src/binary.js";
 
+vi.mock("@ascribed/cli/binary", () => ({
+  resolveBinary: vi.fn(() => "/mock/ascribe"),
+}));
+
 function touch(file: string): string {
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, "");
@@ -20,7 +24,7 @@ describe("findBinary", () => {
     const viaEnv = touch(path.join(root, "bin", "from-env"));
 
     vi.stubEnv("ASCRIBE_BIN", "");
-    expect(findBinary({ root })).toMatch(/ascribe(?:\.exe)?$/);
+    expect(findBinary({ root })).toBe("/mock/ascribe");
     vi.stubEnv("ASCRIBE_BIN", viaEnv);
     expect(findBinary({ root })).toBe(viaEnv);
     expect(findBinary({ binary: "bin/from-option", root })).toBe(viaOption);

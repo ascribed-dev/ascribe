@@ -39,7 +39,7 @@ export function readProject(dir: string): ProjectInfo {
   const outputDir =
     typeof project["output-dir"] === "string" ? project["output-dir"] : ".ascribe/build";
   const contentDir =
-    typeof project["content-root"] === "string" ? project["content-root"] : "content";
+    typeof project["content-root"] === "string" ? project["content-root"] : "docs";
   const trailingSlash = consumer["trailing-slash"] === "never" ? "never" : "always";
   return {
     dir,

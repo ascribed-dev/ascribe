@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { AstroIntegration } from "astro";
-import { readProject, type ProjectInfo } from "./project.js";
+import { consumerMismatches, readProject, type ProjectInfo } from "./project.js";
 
 type ServerOptions = Parameters<NonNullable<AstroIntegration["hooks"]["astro:server:setup"]>>[0];
 
@@ -10,10 +10,12 @@ export function watchDev(options: {
   refreshContent: () => Promise<void>;
   logger: ServerOptions["logger"];
   project: ProjectInfo;
+  astro: { base: string; trailingSlash: string; site: string | undefined };
   build: string;
   rebuild: () => Promise<void>;
 }): void {
-  const { server, refreshContent, logger, project, rebuild } = options;
+  const { server, refreshContent, logger, rebuild } = options;
+  let project = options.project;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let pending: Promise<void> = Promise.resolve();
   let dirty = false;
@@ -22,6 +24,8 @@ export function watchDev(options: {
 
   const drain = async () => {
     running = true;
+    const previousProject = project;
+    const previousSiteRoot = previousProject.siteRoot(options.build);
     while (dirty) {
       dirty = false;
       try {
@@ -34,10 +38,21 @@ export function watchDev(options: {
     }
     if (!failed) {
       try {
-        if (readProject(project.dir).siteRoot(options.build) !== project.siteRoot(options.build))
+        const reloaded = readProject(project.dir);
+        if (reloaded.siteRoot(options.build) !== previousSiteRoot) {
           throw new Error(
             "ascribe.toml changed output-dir; restart astro dev to reload the collection.",
           );
+        }
+        const mismatches = consumerMismatches(reloaded, options.astro);
+        if (mismatches.length > 0) {
+          throw new Error(
+            `@ascribed/astro: ascribe.toml and astro.config disagree:\n- ${mismatches.join("\n- ")}`,
+          );
+        }
+        project = reloaded;
+        server.watcher.add(project.contentRoot);
+        server.watcher.add(project.configPath);
         await refreshContent();
         server.ws.send({ type: "full-reload" });
       } catch (error) {

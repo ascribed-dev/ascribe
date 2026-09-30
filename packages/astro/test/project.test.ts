@@ -37,6 +37,7 @@ trailing-slash = "never"
 
   it("uses the profile's defaults", () => {
     const info = readProject(project('spec = "0.1"\n'));
+    expect(info.contentRoot).toBe(path.join(info.dir, "docs"));
     expect(info.consumer).toEqual({ site: undefined, basePath: "/", trailingSlash: "always" });
     expect(info.siteRoot("site")).toBe(path.join(info.dir, ".ascribe", "build", "site", "site"));
   });

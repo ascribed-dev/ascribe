@@ -50,6 +50,13 @@ export interface AscribeOptions {
 export default function ascribe(options: AscribeOptions): AstroIntegration {
   let siteRoot = "";
   let devProject: ReturnType<typeof readProject> | undefined;
+  let devConfig:
+    | {
+        base: string;
+        trailingSlash: string;
+        site: string | undefined;
+      }
+    | undefined;
   let rebuild: (() => Promise<void>) | undefined;
   return {
     name: "@ascribed/astro",
@@ -88,6 +95,12 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               "Use Astro's default (satteri) or unified(), or add `rehypeAscribeAttributes` to your own.",
           );
         }
+
+        devConfig = {
+          base: config.base,
+          trailingSlash: config.trailingSlash,
+          site: config.site,
+        };
 
         if (command !== "preview") {
           const binary = findBinary({ binary: options.binary, root });
@@ -136,7 +149,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         });
       },
       "astro:server:setup": ({ server, refreshContent, logger }) => {
-        if (devProject && rebuild) {
+        if (devProject && rebuild && devConfig) {
           if (!refreshContent)
             throw new Error("@ascribed/astro: this Astro version does not support refreshContent.");
           watchDev({
@@ -144,6 +157,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             refreshContent: () => refreshContent({}),
             logger,
             project: devProject,
+            astro: devConfig,
             build: options.build,
             rebuild,
           });
