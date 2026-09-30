@@ -20,6 +20,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
 import { findBinary } from "./binary.js";
+import { watchDev } from "./dev.js";
 import { copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
 import rehypeAscribeAttributes from "./rehype.js";
@@ -39,8 +40,8 @@ export interface AscribeOptions {
   /** The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. */
   project?: string;
   /**
-   * The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then the
-   * nearest `target/release` or `target/debug` build above the project (Q152).
+   * The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then
+   * the platform binary installed with `@ascribed/cli`.
    */
   binary?: string;
 }
@@ -48,6 +49,15 @@ export interface AscribeOptions {
 /** Runs `ascribe build`, checks the site's routing, adds the markdown plugin, and serves published files. */
 export default function ascribe(options: AscribeOptions): AstroIntegration {
   let siteRoot = "";
+  let devProject: ReturnType<typeof readProject> | undefined;
+  let devConfig:
+    | {
+        base: string;
+        trailingSlash: string;
+        site: string | undefined;
+      }
+    | undefined;
+  let rebuild: (() => Promise<void>) | undefined;
   return {
     name: "@ascribed/astro",
     hooks: {
@@ -86,17 +96,27 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           );
         }
 
+        devConfig = {
+          base: config.base,
+          trailingSlash: config.trailingSlash,
+          site: config.site,
+        };
+
         if (command !== "preview") {
-          const binary = findBinary({ binary: options.binary, projectDir: project.dir, root });
-          logger.info(`running ${path.basename(binary)} build for "${options.build}"`);
-          const result = await runBuild({
-            binary,
-            configPath: project.configPath,
-            build: options.build,
-            cwd: project.dir,
-          });
-          if (result.diagnostics.split("\n").length > 1) logger.warn(result.diagnostics);
-          if (result.summary !== "") logger.info(result.summary);
+          const binary = findBinary({ binary: options.binary, root });
+          rebuild = async () => {
+            logger.info(`running ${path.basename(binary)} build for "${options.build}"`);
+            const result = await runBuild({
+              binary,
+              configPath: project.configPath,
+              build: options.build,
+              cwd: project.dir,
+            });
+            if (result.diagnostics !== "") logger.warn(result.diagnostics);
+            if (result.summary !== "") logger.info(result.summary);
+          };
+          await rebuild();
+          if (command === "dev") devProject = project;
         }
 
         // Dev serving of `_ascribe/files/`; the build copies them in `astro:build:done`.
@@ -127,6 +147,21 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             ],
           },
         });
+      },
+      "astro:server:setup": ({ server, refreshContent, logger }) => {
+        if (devProject && rebuild && devConfig) {
+          if (!refreshContent)
+            throw new Error("@ascribed/astro: this Astro version does not support refreshContent.");
+          watchDev({
+            server,
+            refreshContent: () => refreshContent({}),
+            logger,
+            project: devProject,
+            astro: devConfig,
+            build: options.build,
+            rebuild,
+          });
+        }
       },
       "astro:build:done": async ({ dir, logger }) => {
         if (await copyPublishedFiles(siteRoot, dir)) logger.info("copied _ascribe/files/");

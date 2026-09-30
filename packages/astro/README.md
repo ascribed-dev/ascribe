@@ -1,6 +1,6 @@
 # @ascribed/astro
 
-The Astro integration for Ascribe: phase 21's slice, written against **Astro 7.3.5**. Private, like every package here; phase 22 completes and publishes it.
+The Astro integration for Ascribe, written against **Astro 7.3.5**. Publishing is reserved for phase 27.
 
 It runs `ascribe build --emit site` before Astro loads content, gives you a content collection over the output with the generated Zod schema, applies the site output's attribute markers (heading ids and image attributes) so Astro keeps its own heading, table-of-contents, and image handling, loads the element library, and serves the files pages link to.
 
@@ -53,7 +53,7 @@ import Elements from "@ascribed/astro/Elements.astro";
 |---|---|
 | `build` | The build whose site output is the collection: a name in `ascribe.toml`. Required. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. Default: the root. |
-| `binary` | The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then the newer of `target/release/ascribe` and `target/debug/ascribe` in the project's directory or the nearest parent that has one (Q152). |
+| `binary` | The `ascribe` binary, relative to the Astro root. Default: `ASCRIBE_BIN`, then the native optional package installed with `@ascribed/cli`. |
 
 ## What it does
 
@@ -61,7 +61,14 @@ import Elements from "@ascribed/astro/Elements.astro";
 - **Adds the markdown plugin** to Astro's markdown processor: `satteriAscribeAttributes` to the default Sätteri processor's `hastPlugins`, or `rehypeAscribeAttributes` to a `unified()` processor's `rehypePlugins` (Q151). Both are exported (`@ascribed/astro/satteri`, `@ascribed/astro/rehype`) for a processor you configure yourself. Any other processor is an error.
 - **Serves `_ascribe/files/`** at `<base>/_ascribe/files/`: copied into the build output in `astro:build:done`, and served by a dev-server middleware.
 
-Dev-mode rebuilds (re-running `ascribe build` when a source changes) and npm distribution of the binary are phase 22's.
+In `astro dev`, edits to the Ascribe content root (pages, fragments, and assets) or
+`ascribe.toml` queue serialized builds. Astro refreshes the content collection and
+sends a full-page reload only after successful output. A failed build is logged in
+Astro's terminal; requests return 503 rather than stale content until the source
+is fixed. Compiler diagnostics include source locations and diagnostic codes.
+Generated output is excluded from the source watcher. If a running site's
+`[project] output-dir` changes, restart `astro dev` to reload the collection's
+base and the generated schema import.
 
 ## Layout
 
@@ -72,7 +79,7 @@ Dev-mode rebuilds (re-running `ascribe build` when a source changes) and npm dis
 | `src/Elements.astro` | Loads `@ascribed/elements` (stylesheet and script) |
 | `src/attributes.ts` | The site-render contract's marker rules, on a hast tree |
 | `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's markdown processors |
-| `src/project.ts`, `src/binary.ts`, `src/run.ts`, `src/files.ts` | `ascribe.toml`, the binary, running it, serving published files |
+| `src/project.ts`, `src/binary.ts`, `src/run.ts`, `src/files.ts`, `src/dev.ts` | `ascribe.toml`, the binary, running it, serving files, dev rebuilds |
 
 ## Tests
 

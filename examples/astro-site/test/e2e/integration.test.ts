@@ -117,6 +117,82 @@ describe("the integration", () => {
     }
   });
 
+  for (const [name, relative, replace, expected] of [
+    [
+      "source",
+      "content/Guides/My Setup.md",
+      (text: string) => text.replace("This guide sets up", "This updated guide sets up"),
+      "This updated guide sets up",
+    ],
+    [
+      "asset",
+      "content/downloads/loom.yaml",
+      (text: string) => text.replace("strands: 4", "strands: 8"),
+      "strands: 8",
+    ],
+    [
+      "model",
+      "ascribe.toml",
+      (text: string) => text.replace('product = "Loom"', 'product = "Updated Loom"'),
+      "Sign in to Updated Loom Cloud",
+    ],
+  ] as const) {
+    it(`rebuilds and refreshes the page when a ${name} changes in astro dev`, async () => {
+      const root = await copySite(`dev-${name}`);
+      const server = await serveDev(root);
+      const browser = await launchChromium();
+      try {
+        const page = await browser.newPage();
+        await page.goto(`${server.origin}${BASE}/guides/my-setup`);
+        let loads = 0;
+        page.on("load", () => loads++);
+        await edit(path.join(root, relative), replace);
+        if (name === "asset") {
+          await expect.poll(async () => {
+            const response = await page.request.get(
+              `${server.origin}${BASE}/_ascribe/files/downloads/loom.yaml`,
+            );
+            return (await response.text()).includes(expected);
+          }, { timeout: 45_000 }).toBe(true);
+        } else {
+          await expect.poll(async () =>
+            (await page.locator("article").innerText()).includes(expected),
+          { timeout: 45_000 }).toBe(true);
+        }
+        await expect.poll(() => loads, { timeout: 45_000 }).toBeGreaterThan(0);
+      } finally {
+        await browser.close();
+        await server.stop();
+      }
+    }, 90_000);
+  }
+
+  it("reports a failed dev rebuild without serving stale output, then recovers on the next edit", async () => {
+    const root = await copySite("dev-recovery");
+    const server = await serveDev(root);
+    try {
+      const source = path.join(root, "content", "Guides", "My Setup.md");
+      await fetch(`${server.origin}${BASE}/guides/my-setup`);
+      await edit(source, (text) => text.replace("(../index.md)", "(../missing.md)"));
+      await expect.poll(
+        async () => (await fetch(`${server.origin}${BASE}/guides/my-setup`)).status,
+        { timeout: 30_000 },
+      ).toBe(503);
+      await edit(source, (text) =>
+        text.replace("(../missing.md)", "(../index.md)").replace("This guide", "Recovered guide"),
+      );
+      await expect.poll(
+        async () => {
+          const response = await fetch(`${server.origin}${BASE}/guides/my-setup`);
+          return response.status === 200 && (await response.text()).includes("Recovered guide");
+        },
+        { timeout: 30_000 },
+      ).toBe(true);
+    } finally {
+      await server.stop();
+    }
+  }, 90_000);
+
   it("applies markers under the unified() processor too", async () => {
     const root = await copySite("unified");
     await edit(path.join(root, "astro.config.mjs"), (text) =>

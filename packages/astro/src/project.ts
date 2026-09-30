@@ -12,6 +12,10 @@ export interface ProjectInfo {
   dir: string;
   /** The path of `ascribe.toml`. */
   configPath: string;
+  /** Source files and assets watched during development. */
+  contentRoot: string;
+  /** Generated output, never treated as a source change. */
+  outputRoot: string;
   /** `[consumer]`, with the profile's defaults. */
   consumer: { site: string | undefined; basePath: string; trailingSlash: "always" | "never" };
   /** The site output's root for a build: `<output-dir>/<build>/site`. */
@@ -34,10 +38,13 @@ export function readProject(dir: string): ProjectInfo {
   const consumer = section(table, "consumer");
   const outputDir =
     typeof project["output-dir"] === "string" ? project["output-dir"] : ".ascribe/build";
+  const contentDir = typeof project["content-root"] === "string" ? project["content-root"] : "docs";
   const trailingSlash = consumer["trailing-slash"] === "never" ? "never" : "always";
   return {
     dir,
     configPath,
+    contentRoot: path.resolve(dir, contentDir),
+    outputRoot: path.resolve(dir, outputDir),
     consumer: {
       site: typeof consumer["site"] === "string" ? consumer["site"] : undefined,
       basePath: normalizeBase(

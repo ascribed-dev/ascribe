@@ -1,13 +1,40 @@
 {
   "name": "@ascribed/cli",
   "version": "0.0.0",
-  "description": "The ascribe binary, distributed through npm.",
-  "private": true,
+  "description": "The Ascribe command-line tool.",
   "type": "module",
   "license": "MPL-2.0",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "ascribe": "dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./binary": {
+      "types": "./dist/binary.d.ts",
+      "default": "./dist/binary.js"
+    }
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run",
+    "stage-native": "node ./scripts/stage-native.mjs"
+  },
+  "optionalDependencies": {
+    "@ascribed/cli-darwin-arm64": "workspace:*",
+    "@ascribed/cli-darwin-x64": "workspace:*",
+    "@ascribed/cli-linux-arm64": "workspace:*",
+    "@ascribed/cli-linux-x64": "workspace:*",
+    "@ascribed/cli-win32-x64": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
   }
 }
