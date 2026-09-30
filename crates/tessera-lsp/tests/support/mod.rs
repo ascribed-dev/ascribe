@@ -67,6 +67,10 @@ pub fn real_path(path: &Path) -> PathBuf {
 pub fn uri(path: &Path) -> Uri {
     let path = path.to_string_lossy().replace('\\', "/");
     let mut text = String::from("file://");
+    // A drive path, `C:/dir`, follows a third slash.
+    if !path.starts_with('/') {
+        text.push('/');
+    }
     for byte in path.bytes() {
         if byte.is_ascii_alphanumeric() || b"/-._~!$&'()*+,;=:@".contains(&byte) {
             text.push(byte as char);
@@ -358,7 +362,10 @@ impl Fixture {
     }
 
     pub fn path(&self, rel: &str) -> PathBuf {
-        self.root().join(rel)
+        // A relative path is written with `/`; the paths the server reports
+        // use the platform's separator.
+        self.root()
+            .join(rel.replace('/', std::path::MAIN_SEPARATOR_STR))
     }
 
     pub fn write(&self, rel: &str, text: &str) {

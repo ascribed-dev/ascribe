@@ -45,6 +45,11 @@ fn html(result: &Value) -> &str {
     result["page"]["html"].as_str().expect("html")
 }
 
+/// Whether a path the server reported ends with `suffix`, written with `/`.
+fn path_ends_with(path: &Value, suffix: &str) -> bool {
+    path.as_str().unwrap().replace('\\', "/").ends_with(suffix)
+}
+
 #[test]
 fn renders_the_quill_page_as_the_site_does() {
     let f = quill();
@@ -90,12 +95,7 @@ fn a_fragments_image_resolves_from_the_fragment() {
     let assets = result["page"]["assets"].as_array().expect("assets");
     let image = assets
         .iter()
-        .find(|a| {
-            a["path"]
-                .as_str()
-                .unwrap()
-                .ends_with("docs/_fragments/prerequisites.png")
-        })
+        .find(|a| path_ends_with(&a["path"], "docs/_fragments/prerequisites.png"))
         .unwrap_or_else(|| panic!("{assets:?}"));
     assert_eq!(image["reference"], "./_fragments/prerequisites.png");
     assert_eq!(image["kind"], "image");
@@ -320,12 +320,7 @@ fn an_asset_beside_the_content_root_is_served_from_its_own_directory() {
         assert_eq!(asset["servable"], true, "{asset}");
     }
     assert_eq!(assets[0]["reference"], "./_ascribe/up/shared/logo.png");
-    assert!(
-        assets[0]["path"]
-            .as_str()
-            .unwrap()
-            .ends_with("shared/logo.png")
-    );
+    assert!(path_ends_with(&assets[0]["path"], "shared/logo.png"));
     // The directory of each asset, once, and nothing wider: not the project root.
     let roots: Vec<&str> = result["assetRoots"]
         .as_array()
@@ -365,7 +360,7 @@ fn assets_the_preview_will_not_serve_are_reported() {
     let by_name = |name: &str| {
         assets
             .iter()
-            .find(|a| a["path"].as_str().unwrap().ends_with(name))
+            .find(|a| path_ends_with(&a["path"], name))
             .unwrap_or_else(|| panic!("{assets:?}"))
     };
     // A file directly in the project root would need the project root served.
