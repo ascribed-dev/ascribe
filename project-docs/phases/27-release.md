@@ -40,7 +40,7 @@ Prepare Ascribe v1 for release, and verify the release gates. A person makes eve
 - [ ] Every release gate passes, with evidence in the report. (Every gate passes on macOS arm64; parity and end to end on the other platforms wait for manual CI runs.)
 - [ ] Every open question is resolved or deferred with a reason. (Q171 to Q174 await approval.)
 - [ ] Release workflows pass a dry run. (Their scripts pass locally for both macOS targets; the workflow's own dry run waits for Actions.)
-- [ ] Each platform's extension package installs locally and works with `examples/quill`. (darwin-arm64 and darwin-x64 do; the other three are the workflow's smoke jobs.)
+- [ ] Each platform's extension package installs locally and works with `examples/quill`. (darwin-arm64 does; the other three are the workflow's smoke jobs.)
 - [x] Documentation covers installing, writing, building, and editing.
 - [ ] The release checklist is complete and reviewed by a person. (Complete; waits for review.)
 
@@ -52,6 +52,6 @@ Prepare Ascribe v1 for release, and verify the release gates. A person makes eve
 
 The report is [release-report.md](../release-report.md), and the checklist is [RELEASING.md](../../RELEASING.md).
 
-- **Done:** version 0.1.0 everywhere (`scripts/release/version.mjs`); `CHANGELOG.md`; `private` removed from the eight npm packages, with repository metadata; per-platform VSIX packaging; `scripts/release/{pack,publish,smoke-vsix}.mjs`; `.github/workflows/release.yml`; `docs/` and a root README; the diagnostics reference generated from the registry (a `fix` per diagnostic); `SKIPS.toml` emptied; the Q173 gap closed (`astro dev` watches assets outside the content root).
-- **Verified locally (macOS arm64, and darwin-x64 under Rosetta):** every gate, the pack and publish dry runs, and the extension smoke test (bundled binary, then the project's binary preferred).
+- **Done:** version 0.1.0 everywhere (`scripts/release/version.mjs`); `CHANGELOG.md`; `private` removed from the seven npm packages, with repository metadata; Intel Macs (`darwin-x64`) dropped, at the owner's request; per-platform VSIX packaging; `scripts/release/{pack,publish,smoke-vsix}.mjs`; `.github/workflows/release.yml`; `docs/` and a root README; the diagnostics reference generated from the registry (a `fix` per diagnostic); `SKIPS.toml` emptied; the Q173 gap closed (`astro dev` watches assets outside the content root).
+- **Verified locally (macOS arm64):** every gate, the pack and publish dry runs, and the extension smoke test (bundled binary, then the project's binary preferred).
 - **Waiting on a person:** approving Q171 to Q174; making the repository public, since npm provenance needs it; creating the `release` environment and its two secrets; running `rust.yml`, `js.yml`, and the release workflow's dry run for Linux and Windows; reviewing the checklist; publishing.

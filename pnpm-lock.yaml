@@ -119,9 +119,6 @@ importers:
       '@ascribed/cli-darwin-arm64':
         specifier: workspace:*
         version: link:platforms/cli-darwin-arm64
-      '@ascribed/cli-darwin-x64':
-        specifier: workspace:*
-        version: link:platforms/cli-darwin-x64
       '@ascribed/cli-linux-arm64':
         specifier: workspace:*
         version: link:platforms/cli-linux-arm64
@@ -133,8 +130,6 @@ importers:
         version: link:platforms/cli-win32-x64
 
   packages/cli/platforms/cli-darwin-arm64: {}
-
-  packages/cli/platforms/cli-darwin-x64: {}
 
   packages/cli/platforms/cli-linux-arm64: {}
 

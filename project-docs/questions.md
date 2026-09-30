@@ -1875,7 +1875,7 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 - **Status:** open
 - **Ambiguity:** phase 22 says "one package per platform ... declared as optional dependencies of `@ascribed/cli`" without naming them or saying how the right one is found.
 - **Options:** (a) `@ascribed/cli-<os>-<cpu>` packages, each with `os` and `cpu` so npm installs only the matching one, and a shim in `@ascribed/cli` that picks it by `process.platform` and `process.arch` (esbuild's and Biome's pattern); (b) a postinstall download.
-- **Proposed resolution:** (a), implemented: `@ascribed/cli-{darwin-arm64,darwin-x64,linux-arm64,linux-x64,win32-x64}`, each holding `bin/ascribe` (`ascribe.exe` on Windows); `@ascribed/cli` has the `ascribe` shim and exports `resolveBinary()` from `@ascribed/cli/binary`. No install scripts. An unsupported platform is an error that lists the supported ones.
+- **Proposed resolution:** (a), implemented: `@ascribed/cli-{darwin-arm64,linux-arm64,linux-x64,win32-x64}`, each holding `bin/ascribe` (`ascribe.exe` on Windows); `@ascribed/cli` has the `ascribe` shim and exports `resolveBinary()` from `@ascribed/cli/binary`. No install scripts. An unsupported platform is an error that lists the supported ones. **Update (2026-09-30):** the repository owner dropped Intel Macs (`darwin-x64`) before the first release, since Apple is ending support for them; an Intel Mac gets the unsupported-platform error.
 - **Affects:** `packages/cli`; phase 27 (what it publishes).
 - **Resolution:** _to be filled in by a human._
 

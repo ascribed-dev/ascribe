@@ -5,7 +5,6 @@ const require = createRequire(import.meta.url);
 
 const packages: Record<string, string> = {
   "darwin-arm64": "@ascribed/cli-darwin-arm64",
-  "darwin-x64": "@ascribed/cli-darwin-x64",
   "linux-arm64": "@ascribed/cli-linux-arm64",
   "linux-x64": "@ascribed/cli-linux-x64",
   "win32-x64": "@ascribed/cli-win32-x64",
@@ -24,7 +23,7 @@ export function nativePackageName(
   if (name === undefined) {
     throw new Error(
       `@ascribed/cli does not support ${currentPlatform}/${currentArch}. ` +
-        "Supported platforms are darwin arm64/x64, linux arm64/x64, and win32 x64.",
+        "Supported platforms are darwin arm64, linux arm64/x64, and win32 x64.",
     );
   }
   return name;

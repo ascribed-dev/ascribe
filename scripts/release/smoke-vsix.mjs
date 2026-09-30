@@ -4,10 +4,9 @@
 //
 //   node scripts/release/smoke-vsix.mjs <file.vsix> [--vscode-platform <name>]
 //
-// --vscode-platform picks which VS Code build to download, for a package
-// whose target isn't the machine's own (`darwin` runs the x64 build under
-// Rosetta on Apple silicon). @vscode/test-electron's names: darwin,
-// darwin-arm64, linux-x64, linux-arm64, win32-x64-archive.
+// --vscode-platform picks which VS Code build to download, by
+// @vscode/test-electron's names: darwin-arm64, linux-x64, linux-arm64, and
+// win32-x64-archive. By default, the machine's own.
 //
 // On Linux without a display, run it under `xvfb-run -a`.
 import { spawnSync } from "node:child_process";

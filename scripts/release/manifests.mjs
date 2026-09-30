@@ -10,7 +10,6 @@ export const root = resolve(fileURLToPath(import.meta.url), "..", "..", "..");
 /** The supported platforms: npm's `os-cpu`, which is also `vsce --target`'s name. */
 export const targets = [
   { target: "darwin-arm64", rust: "aarch64-apple-darwin", exe: "ascribe" },
-  { target: "darwin-x64", rust: "x86_64-apple-darwin", exe: "ascribe" },
   { target: "linux-arm64", rust: "aarch64-unknown-linux-gnu", exe: "ascribe" },
   { target: "linux-x64", rust: "x86_64-unknown-linux-gnu", exe: "ascribe" },
   { target: "win32-x64", rust: "x86_64-pc-windows-msvc", exe: "ascribe.exe" },

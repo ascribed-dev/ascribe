@@ -1,12 +1,12 @@
 # Releasing Ascribe
 
-A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), eight npm packages, and five VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person starts it, approves each publishing step, and publishes the GitHub release at the end. Nothing is published without that person.
+A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), seven npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person starts it, approves each publishing step, and publishes the GitHub release at the end. Nothing is published without that person.
 
 | What | Where | Published by |
 |---|---|---|
-| `@ascribed/cli-darwin-arm64`, `-darwin-x64`, `-linux-arm64`, `-linux-x64`, `-win32-x64` | npm | the `npm` job |
+| `@ascribed/cli-darwin-arm64`, `-linux-arm64`, `-linux-x64`, `-win32-x64` | npm | the `npm` job |
 | `@ascribed/cli`, `@ascribed/elements`, `@ascribed/astro` | npm | the `npm` job |
-| `Ascribe.ascribe-vscode`, for each of the five platforms | VS Code Marketplace | the `marketplace` job |
+| `Ascribe.ascribe-vscode`, for each of the four platforms | VS Code Marketplace | the `marketplace` job |
 | `ascribe-<version>-<platform>.tar.gz` (`.zip` for Windows), the `.vsix` files, `SHA256SUMS` | GitHub release | the `github` job drafts it; you publish it |
 
 ## Before the first release
@@ -15,7 +15,7 @@ Do these once. Each says how to check it.
 
 ### 1. Make the repository public
 
-npm refuses provenance from a private repository ("Only public source repositories are supported when publishing with provenance"), and a private repository on a free plan can't require reviewers on an environment. A public repository also runs Actions on standard runners at no cost. A release run hasn't been timed yet; expect roughly an hour of runner time across its sixteen jobs, a third of it on macOS runners, which a private repository bills at ten times the Linux rate.
+npm refuses provenance from a private repository ("Only public source repositories are supported when publishing with provenance"), and a private repository on a free plan can't require reviewers on an environment. A public repository also runs Actions on standard runners at no cost. A release run hasn't been timed yet; expect under an hour of runner time across its thirteen jobs, two of them on macOS runners, which a private repository bills at ten times the Linux rate.
 
 Decide where the repository lives first. If it moves (for example, to `ascribed-dev`), update the URLs that name it, which npm checks against the repository that publishes:
 
@@ -46,7 +46,7 @@ Add it to the `release` environment as the secret `NPM_TOKEN`.
 
 **Check:** `npm whoami --//registry.npmjs.org/:_authToken=<token>` prints your user name.
 
-After the first release, you can replace the token with npm's trusted publishing: for each of the eight packages, Settings → Trusted publishing → GitHub Actions, with this repository, the workflow `release.yml`, and the environment `release`. Then delete the token and the secret. The workflow already uses an npm that supports it.
+After the first release, you can replace the token with npm's trusted publishing: for each of the seven packages, Settings → Trusted publishing → GitHub Actions, with this repository, the workflow `release.yml`, and the environment `release`. Then delete the token and the secret. The workflow already uses an npm that supports it.
 
 ### 4. VS Code Marketplace: a publishing token
 
@@ -100,7 +100,7 @@ git push origin main
 
 Actions → **Release** → Run workflow, from `main`, with **publish** unchecked. It builds the binary on each platform, packs everything, installs the npm packages and each extension package on its platform and checks them against `examples/quill`, and runs the publish steps with `--dry-run`.
 
-**Check:** every job passes. Download the `release` artifact and look it over: `npm/` has eight tarballs, `vsix/` five packages, `github/` five archives.
+**Check:** every job passes. Download the `release` artifact and look it over: `npm/` has seven tarballs, `vsix/` four packages, `github/` four archives.
 
 ### 6. Tag
 
@@ -115,7 +115,7 @@ Actions → **Release** → Run workflow, from the tag `v0.2.0` (under "Use work
 
 1. **Approve `npm`.** **Check:** `npm view @ascribed/cli@0.2.0 version` and `npm view @ascribed/astro@0.2.0 version` print `0.2.0`, and each package's npm page shows a provenance badge.
 2. **Approve `marketplace`.** **Check:** the Marketplace page for `Ascribe.ascribe-vscode` shows 0.2.0 (it can take a few minutes to appear).
-3. **Approve `github`.** **Check:** a draft release `v0.2.0` exists with ten binaries and packages and `SHA256SUMS`, and the changelog section as its notes.
+3. **Approve `github`.** **Check:** a draft release `v0.2.0` exists with eight archives and packages and `SHA256SUMS`, and the changelog section as its notes.
 
 ### 8. Try it as a user
 
@@ -151,7 +151,7 @@ npm deprecate @ascribed/cli@0.2.0 "Broken; use 0.2.1"          # for each packag
 npm dist-tag add @ascribed/cli@0.1.0 latest                     # point `latest` back
 ```
 
-Unpublishing (`npm unpublish @ascribed/cli@0.2.0`) is allowed only within 72 hours and when nothing depends on the version; prefer deprecating. Keep the eight packages at one version: move the tags of all of them together.
+Unpublishing (`npm unpublish @ascribed/cli@0.2.0`) is allowed only within 72 hours and when nothing depends on the version; prefer deprecating. Keep the seven packages at one version: move the tags of all of them together.
 
 **A published extension version is bad:** the Marketplace has no rollback to an earlier version. Publish a fixed patch version. Unpublishing (`vsce unpublish`, or from the publisher's management page) removes the whole extension and its install count, so reserve it for emergencies.
 
@@ -159,6 +159,7 @@ Unpublishing (`npm unpublish @ascribed/cli@0.2.0`) is allowed only within 72 hou
 
 ## Known limitations
 
+- **Intel Macs:** not supported. There's no `darwin-x64` npm package or extension package, so npm installs no binary there (`ascribe` says the platform isn't supported) and the Marketplace doesn't offer the extension.
 - **Linux:** the binaries are built on Ubuntu 22.04 and need glibc 2.35 or later. Alpine and other musl systems aren't supported; npm won't install the Linux packages there.
 - **macOS and Windows downloads:** the binaries in the GitHub release aren't signed with a Developer ID or Authenticode certificate. A binary downloaded with a browser is quarantined on macOS (`xattr -d com.apple.quarantine ascribe` clears it) and may trigger SmartScreen on Windows. Binaries installed from npm or inside the extension aren't affected.
-- **Actions:** the workflow uses `macos-15`, `macos-15-intel`, `ubuntu-22.04`, `ubuntu-22.04-arm`, and `windows-2022` runners. If GitHub retires one, update both `build` and `smoke`.
+- **Actions:** the workflow uses `macos-15`, `ubuntu-22.04`, `ubuntu-22.04-arm`, and `windows-2022` runners. If GitHub retires one, update both `build` and `smoke`.

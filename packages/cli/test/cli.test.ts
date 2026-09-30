@@ -4,12 +4,17 @@ import { nativeBinaryPath, nativePackageName, resolveBinary } from "../src/binar
 describe("platform selection", () => {
   it.each([
     ["darwin", "arm64", "@ascribed/cli-darwin-arm64"],
-    ["darwin", "x64", "@ascribed/cli-darwin-x64"],
     ["linux", "arm64", "@ascribed/cli-linux-arm64"],
     ["linux", "x64", "@ascribed/cli-linux-x64"],
     ["win32", "x64", "@ascribed/cli-win32-x64"],
   ])("maps %s/%s to %s", (platform, arch, expected) => {
     expect(nativePackageName(platform, arch)).toBe(expected);
+  });
+
+  it("rejects Intel Macs, which aren't supported", () => {
+    expect(() => nativePackageName("darwin", "x64")).toThrow(
+      /does not support darwin\/x64.*Supported platforms are darwin arm64,/,
+    );
   });
 
   it("rejects unsupported targets with an actionable message", () => {

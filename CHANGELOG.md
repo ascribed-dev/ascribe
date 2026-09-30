@@ -20,7 +20,7 @@ The first release. It implements version 0.1 of the [Ascribe specification](SPEC
 - `ascribe fmt`: rewrites Ascribe constructs into canonical form; `--check` for CI.
 - `ascribe lsp`: the language server.
 - 126 diagnostics, each with a code (`ASC001` to `ASC126`) and a stable name. See [docs/diagnostics.md](docs/diagnostics.md).
-- Binaries for macOS (arm64 and x64), Linux (arm64 and x64, glibc), and Windows (x64).
+- Binaries for macOS on Apple silicon, Linux (arm64 and x64, glibc), and Windows (x64). Intel Macs aren't supported.
 
 ### The editor
 

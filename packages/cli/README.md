@@ -13,7 +13,7 @@ The [command reference](https://github.com/KyleBlankRollins/tessera/blob/main/do
 
 ## Platforms
 
-The package is a small launcher, plus one optional dependency per platform that holds the native binary: macOS (arm64 and x64), Linux (arm64 and x64, glibc 2.35 or later), and Windows (x64). Your package manager installs only your platform's. There's no install script.
+The package is a small launcher, plus one optional dependency per platform that holds the native binary: macOS on Apple silicon, Linux (arm64 and x64, glibc 2.35 or later), and Windows (x64). Your package manager installs only your platform's. There's no install script. Intel Macs aren't supported.
 
 If `ascribe` reports that it can't find its native package, your package manager left out optional dependencies (for example, `npm install --omit=optional`): reinstall with them. The error names the package and platform it looked for.
 
@@ -38,4 +38,4 @@ cargo build -p tessera-cli
 ASCRIBE_BIN_DARWIN_ARM64=target/debug/ascribe pnpm --filter @ascribed/cli stage-native darwin-arm64
 ```
 
-The variables are `ASCRIBE_BIN_DARWIN_ARM64`, `ASCRIBE_BIN_DARWIN_X64`, `ASCRIBE_BIN_LINUX_ARM64`, `ASCRIBE_BIN_LINUX_X64`, and `ASCRIBE_BIN_WIN32_X64`. Without a target, `stage-native` stages all five and needs all five variables.
+The variables are `ASCRIBE_BIN_DARWIN_ARM64`, `ASCRIBE_BIN_LINUX_ARM64`, `ASCRIBE_BIN_LINUX_X64`, and `ASCRIBE_BIN_WIN32_X64`. Without a target, `stage-native` stages all four and needs all four variables.

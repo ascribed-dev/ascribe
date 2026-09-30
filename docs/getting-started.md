@@ -2,7 +2,7 @@
 
 Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project, writes a first page, and publishes it with Astro.
 
-You need [Node.js](https://nodejs.org) 22 or later. Ascribe runs on macOS (Apple silicon and Intel), Linux (x64 and arm64, with glibc 2.35 or later), and Windows (x64).
+You need [Node.js](https://nodejs.org) 22 or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc 2.35 or later), and Windows (x64).
 
 ## Install the command
 

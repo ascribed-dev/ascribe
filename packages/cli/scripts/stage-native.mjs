@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 const targets = [
   ["darwin", "arm64", "ASCRIBE_BIN_DARWIN_ARM64"],
-  ["darwin", "x64", "ASCRIBE_BIN_DARWIN_X64"],
   ["linux", "arm64", "ASCRIBE_BIN_LINUX_ARM64"],
   ["linux", "x64", "ASCRIBE_BIN_LINUX_X64"],
   ["win32", "x64", "ASCRIBE_BIN_WIN32_X64"],
