@@ -2,5 +2,5 @@
 # Pinned stable toolchain. Bump it deliberately, in its own commit, and fix any
 # new fmt or clippy findings in the same change.
 channel = "1.90.0"
-components = ["rustfmt", "clippy"]
+components = ["rustfmt", "clippy", "rust-analyzer"]
 profile = "minimal"
