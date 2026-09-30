@@ -52,17 +52,28 @@ fn the_initialize_result_advertises_only_what_is_implemented() {
     assert_eq!(
         keys,
         [
+            "codeActionProvider",
             "codeLensProvider",
             "completionProvider",
             "definitionProvider",
+            "documentFormattingProvider",
             "documentLinkProvider",
             "executeCommandProvider",
             "hoverProvider",
             "inlayHintProvider",
             "positionEncoding",
+            "renameProvider",
             "semanticTokensProvider",
-            "textDocumentSync"
+            "textDocumentSync",
+            "workspace"
         ]
+    );
+    assert_eq!(caps["codeActionProvider"], true);
+    assert_eq!(caps["documentFormattingProvider"], true);
+    assert_eq!(caps["renameProvider"]["prepareProvider"], false);
+    assert_eq!(
+        caps["workspace"]["fileOperations"]["willRename"]["filters"][0]["pattern"]["glob"],
+        "**/*"
     );
     // The file watcher is registered dynamically.
     assert!(

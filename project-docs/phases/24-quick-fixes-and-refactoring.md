@@ -34,11 +34,11 @@ Let the editor fix problems and keep references intact: code actions for common 
 
 ## Acceptance criteria
 
-- [ ] Each quick fix above has a test that applies it and shows the diagnostic gone.
-- [ ] Moving `keys.md` into a subdirectory updates every link to it, and the project still checks clean.
-- [ ] Renaming an `@id` updates every link and include that names it.
-- [ ] Renaming a phrase key updates `ascribe.toml` and every use.
-- [ ] Format on save applies `tessera-fmt`'s edits and nothing else.
+- [x] Each quick fix above has a test that applies it and shows the diagnostic gone.
+- [x] Moving `keys.md` into a subdirectory updates every link to it, and the project still checks clean.
+- [x] Renaming an `@id` updates every link and include that names it.
+- [x] Renaming a phrase key updates `ascribe.toml` and every use.
+- [x] Format on save applies `tessera-fmt`'s edits and nothing else.
 
 ## Out of scope
 
@@ -46,4 +46,51 @@ Let the editor fix problems and keep references intact: code actions for common 
 
 ## Handoff notes
 
-_To be filled in by the implementing agent._
+### Interfaces
+
+- `textDocument/codeAction` reads the current diagnostic context. Diagnostic
+  `data` carries the checker's same-file `Fix` objects; the route-to-file action
+  therefore uses the resolver's reverse-route suggestion. The additional
+  repairs edit the source or add a phrase entry to `ascribe.toml`.
+- `textDocument/rename` handles explicit IDs, heading-derived IDs, and phrase
+  keys. It uses the current `nav::Ctx` snapshot, parsed phrase uses, heading
+  index, includes, and references. Phrase renames include parsed destination and
+  opted-in-fence occurrences; escaped text and ordinary code are not indexed.
+- `workspace/willRenameFiles` uses indexed local targets and their source spans
+  to update links, reference definitions, includes, assets, and relative
+  references in moved sources. Moves outside the content root or to an existing
+  destination return no edits. External targets are left alone.
+- `textDocument/formatting` returns `tessera-fmt`'s minimal edits only. The VS
+  Code extension applies them before save when `ascribe.formatOnSave` is true
+  and requests file-operation edits before workspace renames.
+
+### Validation
+
+- `cargo fmt --all -- --check` — passed.
+- `cargo clippy --workspace --all-targets -- -D warnings` — passed.
+- `cargo test --workspace` — passed; the conformance harness reports 366
+  passed, 0 failed, 0 skipped. The LSP's 16 scripted Phase 24 tests all pass.
+- `cargo test -p tessera-conformance` — passed.
+- `corepack pnpm --filter @ascribed/elements build` — passed.
+- VS Code ESLint, TypeScript typecheck, Prettier check, and the non-browser
+  Vitest suite — passed (76 tests).
+- Full VS Code Vitest cannot launch its Playwright webview suite because the
+  installed Chromium headless shell is absent. The real VS Code integration
+  bundle builds, but the extension host could not be downloaded:
+  `getaddrinfo ENOTFOUND update.code.visualstudio.com`.
+- `target/debug/ascribe check --config examples/quill/ascribe.toml --format json`
+  — passed with no diagnostics.
+
+### Limitations and evidence
+
+- The scripted tests run the language server on temporary copies of
+  `examples/quill`; they apply returned workspace edits, notify the server, and
+  check the resulting diagnostics. The file-move case includes a page, a
+  referenced asset, inline and reference-style links, an include, outgoing
+  relative references, and percent-encoded paths.
+- The workspace file-operation filter is for files, not directory rename
+  operations. Moves are confined to the configured content root.
+- Platform-specific Windows/macOS VS Code behavior is not established by the
+  Linux test run. The browser-dependent webview and real extension-host gates
+  remain pending due to the missing browser and blocked VS Code download. No
+  workflow was dispatched.

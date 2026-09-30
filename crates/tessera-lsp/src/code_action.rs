@@ -183,6 +183,7 @@ fn action(
     workspace_action(ctx, title, diagnostics, edits, None)
 }
 
+#[allow(clippy::mutable_key_type)]
 fn workspace_action(
     ctx: &Ctx,
     title: &str,
@@ -231,22 +232,18 @@ fn container_colon_edit(
     let line_end = source[line.span.start()..]
         .find(['\r', '\n'])
         .map_or(source.len(), |i| line.span.start() + i);
-    let segment = source.get(line.span.start()..line_end)?;
     if slug == "container-colon-missing" {
-        if segment.contains(':') {
+        if line.colon.is_some() {
             return None;
         }
+        let segment = source.get(line.span.start()..line_end)?;
         let trim = segment.trim_end_matches([' ', '\t']).len();
         Some(tessera_core::TextEdit::insert(
             line.span.start() + trim,
             ":",
         ))
     } else {
-        let colon = segment.find(':')?;
-        Some(tessera_core::TextEdit::delete(Span::new(
-            line.span.start() + colon,
-            line.span.start() + colon + 1,
-        )))
+        Some(tessera_core::TextEdit::delete(line.colon?))
     }
 }
 

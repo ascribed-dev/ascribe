@@ -27,7 +27,7 @@ it says how to fix that.
 |---|---|
 | `ascribe.path` | Path to the `ascribe` binary. |
 | `ascribe.trace.server` | `off`, `messages`, or `verbose`. |
-| `ascribe.formatOnSave` | Formats Ascribe markdown on save through the language server's Ascribe-aware formatter. |
+| `ascribe.formatOnSave` | When enabled, applies the language server's minimal `tessera-fmt` edits to Markdown before saving. |
 | `ascribe.maxCrashes` | Crashes (since the last manual restart) after which the server isn't restarted again. Default 5. |
 | **Ascribe: Restart Language Server** | Stops and starts the server; forgets earlier crashes. |
 | **Ascribe: Show Server Output** | Opens the output channel. |

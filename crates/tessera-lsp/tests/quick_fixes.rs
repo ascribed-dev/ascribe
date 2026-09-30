@@ -227,6 +227,37 @@ fn stray_container_colon_action_removes_the_diagnostic() {
 }
 
 #[test]
+fn quick_fix_uses_the_current_unsaved_buffer() {
+    let f = quill();
+    let path = f.path("docs/keys.md");
+    let on_disk = read(&f, "docs/keys.md");
+    let unsaved = format!("{on_disk}\n@variant {{deployment=cloud}}\nCloud text.\n@end\n");
+    let mut client = Client::start(&f.root());
+    client.open(&path, 1, &unsaved);
+    client.settle();
+    let diag = diagnostic(&client, &path, "container-colon-missing");
+    let action = actions(&mut client, &path, diag)
+        .into_iter()
+        .find(|action| action["title"] == "Add a trailing colon")
+        .expect("colon action");
+    let edits = action["edit"]["changes"][uri(&path).as_str()]
+        .as_array()
+        .expect("edits");
+    let fixed = apply_edit(&unsaved, edits);
+    client.replace(&path, 2, &fixed);
+    client.settle();
+    assert!(fixed.contains("@variant {deployment=cloud}:\nCloud text."));
+    assert!(
+        !client
+            .diagnostics(&path)
+            .iter()
+            .any(|d| support::slug(d) == "container-colon-missing")
+    );
+    assert_eq!(read(&f, "docs/keys.md"), on_disk);
+    assert_no_errors(&client);
+}
+
+#[test]
 fn typo_action_suggests_a_warning_note() {
     let f = quill();
     let path = f.path("docs/keys.md");
@@ -378,8 +409,10 @@ fn route_action_uses_utf8_positions_after_multibyte_text() {
         read(&f, "docs/keys.md")
     );
     write(&f, "docs/keys.md", &text);
-    let mut setup = Setup::default();
-    setup.encodings = Some(vec![PositionEncodingKind::UTF8]);
+    let setup = Setup {
+        encodings: Some(vec![PositionEncodingKind::UTF8]),
+        ..Setup::default()
+    };
     let mut client = Client::start_with(&f.root(), setup);
     client.settle();
     let diag = diagnostic(&client, &path, "link-route");
@@ -489,15 +522,17 @@ fn heading_rename_updates_fragment_links_and_offers_a_stable_id() {
             "context": { "diagnostics": [] }
         }),
     );
-    assert!(
-        result
-            .response_result
-            .expect("code actions")
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|action| action["title"] == "Add a stable @id for this heading")
-    );
+    let action = result.response_result.expect("code actions");
+    let action = action
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|action| action["title"] == "Add a stable @id for this heading")
+        .expect("stable id action");
+    let changed = apply_workspace_edit(&f, &action["edit"]);
+    notify_changed(&mut action_client, &changed);
+    assert!(read(&f, "docs/keys.md").contains("@id: protect-secrets"));
+    assert_no_errors(&action_client);
 }
 
 #[test]
@@ -523,6 +558,9 @@ fn formatting_returns_only_tessera_fmt_edits() {
     let formatted = apply_edit(&text, edits);
     let expected = format!("{original}\n@note {{type=tip}}: Be careful.\n");
     assert_eq!(formatted, expected);
+    write(&f, "docs/keys.md", &formatted);
+    notify_changed(&mut client, std::slice::from_ref(&path));
+    assert_no_errors(&client);
 }
 
 #[test]
@@ -655,4 +693,25 @@ fn renaming_an_explicit_id_updates_links_and_includes() {
     assert!(read(&f, "docs/install-agent.md").contains("keys.md#turn-keys"));
     assert!(read(&f, "docs/install-agent.md").contains("@include: keys.md#turn-keys"));
     assert_no_errors(&client);
+}
+
+#[test]
+fn id_rename_rejects_invalid_and_conflicting_ids() {
+    let f = quill();
+    let path = f.path("docs/keys.md");
+    let text = read(&f, "docs/keys.md");
+    let offset = text.find("rotate-keys").expect("id");
+    let mut client = Client::start(&f.root());
+    client.settle();
+    for new_name in ["not an id", "create-key"] {
+        let result = client.request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&path).as_str() },
+                "position": position(&text, offset),
+                "newName": new_name
+            }),
+        );
+        assert!(result.response_result.expect("rename result").is_null());
+    }
 }

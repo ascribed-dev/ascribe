@@ -36,7 +36,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
           .request("textDocument/formatting", {
             textDocument: { uri: event.document.uri.toString() },
             options: {
-              tabSize: vscode.workspace.getConfiguration("editor", event.document.uri).get("tabSize", 2),
+              tabSize: vscode.workspace
+                .getConfiguration("editor", event.document.uri)
+                .get("tabSize", 2),
               insertSpaces: vscode.workspace
                 .getConfiguration("editor", event.document.uri)
                 .get("insertSpaces", true),

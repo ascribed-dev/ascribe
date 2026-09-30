@@ -120,7 +120,7 @@ pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
         ctx.encoding
             .offset_lenient(&index, &file.source, params.text_document_position.position);
     if let Some(crate::nav::Hit::Phrase(phrase)) = hit_at(file, offset) {
-        if !valid_id_or_phrase(&params.new_name) {
+        if !valid_phrase_key(&params.new_name) {
             return None;
         }
         return rename_phrase(ctx, &phrase.phrase.key, &params.new_name, None);
@@ -131,7 +131,13 @@ pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
         && span.start() <= offset
         && offset <= span.end()
     {
-        if !valid_id_or_phrase(&params.new_name) {
+        if !valid_id_or_phrase(&params.new_name)
+            || old == params.new_name
+            || file
+                .headings
+                .iter()
+                .any(|heading| heading.source_id == params.new_name && heading.source_id != old)
+        {
             return None;
         }
         let mut edits = HashMap::new();
@@ -150,7 +156,7 @@ pub(crate) fn rename_model_key(
     position: lsp_types::Position,
     new_name: &str,
 ) -> Option<WorkspaceEdit> {
-    if !valid_id_or_phrase(new_name) {
+    if !valid_phrase_key(new_name) {
         return None;
     }
     let index = LineIndex::new(&ctx.model_text);
@@ -158,16 +164,21 @@ pub(crate) fn rename_model_key(
         .encoding
         .offset_lenient(&index, &ctx.model_text, position);
     let (old, span) = phrase_entry_at(&ctx.model_text, offset)?;
-    rename_phrase(ctx, &old, new_name, Some((span, true)))
+    rename_phrase(ctx, &old, new_name, Some(span))
 }
 
+#[allow(clippy::mutable_key_type)]
 fn rename_phrase(
     ctx: &Ctx,
     old: &str,
     new: &str,
-    config_key: Option<(Span, bool)>,
+    config_key: Option<Span>,
 ) -> Option<WorkspaceEdit> {
-    if old == new || !ctx.model.has_phrase(old) || ctx.model.has_phrase(new) {
+    if !valid_phrase_key(new)
+        || old == new
+        || !ctx.model.has_phrase(old)
+        || ctx.model.has_phrase(new)
+    {
         return None;
     }
     let mut edits: HashMap<RelPath, Vec<ByteEdit>> = HashMap::new();
@@ -183,16 +194,12 @@ fn rename_phrase(
     }
     let mut result = workspace_edit(ctx, edits);
     let mut changes = result.changes.take().unwrap_or_default();
-    let (span, include_quotes) = match config_key {
-        Some(entry) => entry,
-        None => (phrase_entry_span(&ctx.model_text, old)?, false),
-    };
-    let model_span = if include_quotes { span } else { span };
+    let model_span = config_key.or_else(|| phrase_entry_span(&ctx.model_text, old))?;
     let model_edit = TextEdit {
         range: ctx
             .encoding
             .range(&LineIndex::new(&ctx.model_text), model_span),
-        new_text: toml_key(new, ctx.model_text.get(model_span.range()).unwrap_or("")),
+        new_text: new.to_owned(),
     };
     changes.insert(crate::uri::path_to_uri(&ctx.config)?, vec![model_edit]);
     result.changes = Some(changes);
@@ -306,7 +313,7 @@ fn rewrite_destination(raw: &str, root_relative: bool, from: &RelPath, target: &
         .strip_prefix('<')
         .and_then(|r| r.strip_suffix('>'))
         .unwrap_or(raw);
-    let suffix_at = inner.find('#').unwrap_or(inner.len());
+    let suffix_at = inner.find(['?', '#']).unwrap_or(inner.len());
     let suffix = &inner[suffix_at..];
     let path = if root_relative {
         format!("/{target}")
@@ -336,6 +343,7 @@ fn remap(path: &RelPath, mappings: &[(RelPath, RelPath)]) -> RelPath {
     path.clone()
 }
 
+#[allow(clippy::mutable_key_type)]
 fn workspace_edit(ctx: &Ctx, mut edits: HashMap<RelPath, Vec<ByteEdit>>) -> WorkspaceEdit {
     let mut lines = Lines::new(ctx);
     let changes = edits
@@ -377,7 +385,13 @@ fn valid_id_or_phrase(name: &str) -> bool {
             .all(|c| c.is_alphanumeric() || matches!(c, '-' | '_' | '.'))
 }
 
-fn heading_text_at<'a>(blocks: &'a [Block], offset: usize, source: &str) -> Option<(Span, Span)> {
+fn valid_phrase_key(name: &str) -> bool {
+    let mut chars = name.chars();
+    chars.next().is_some_and(|c| c.is_ascii_lowercase())
+        && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+}
+
+fn heading_text_at(blocks: &[Block], offset: usize, source: &str) -> Option<(Span, Span)> {
     for block in blocks {
         match &block.kind {
             BlockKind::Heading(heading) if block.span.contains(offset) => {
@@ -458,9 +472,7 @@ fn phrase_entry_span(source: &str, key: &str) -> Option<Span> {
             let lead = line.len() - line.trim_start().len();
             let before_eq = line.find('=')?;
             let raw_name = line[lead..before_eq].trim_end();
-            let quote = usize::from(raw_name.starts_with('"') || raw_name.starts_with('\''));
-            let end = start + lead + raw_name.len() - quote;
-            return Some(Span::new(start + lead + quote, end));
+            return Some(Span::new(start + lead, start + lead + raw_name.len()));
         }
     }
     None
@@ -486,9 +498,7 @@ fn phrase_entry_span_at(source: &str, offset: usize) -> Option<Span> {
         let lead = line.len() - line.trim_start().len();
         let before_eq = line.find('=')?;
         let raw_name = line[lead..before_eq].trim_end();
-        let quote = usize::from(raw_name.starts_with('"') || raw_name.starts_with('\''));
-        let end = start + lead + raw_name.len() - quote;
-        let span = Span::new(start + lead + quote, end);
+        let span = Span::new(start + lead, start + lead + raw_name.len());
         if span.start() <= offset
             && offset <= span.end()
             && start <= offset
@@ -499,12 +509,4 @@ fn phrase_entry_span_at(source: &str, offset: usize) -> Option<Span> {
         }
     }
     None
-}
-
-fn toml_key(new: &str, old_spelling: &str) -> String {
-    if old_spelling.starts_with('"') || old_spelling.starts_with('\'') {
-        format!("\"{}\"", new.replace('\\', "\\\\").replace('"', "\\\""))
-    } else {
-        new.to_owned()
-    }
 }
