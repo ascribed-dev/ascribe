@@ -15,7 +15,7 @@
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "publisher": "Ascribe",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.138.0"
   },
   "categories": [
     "Programming Languages",
@@ -244,7 +244,6 @@
   },
   "scripts": {
     "build": "node esbuild.mjs",
-    "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.webview.json",
     "test": "vitest run --passWithNoTests",
     "test:integration": "node esbuild.mjs --tests && node out/integration/run.cjs",
@@ -252,19 +251,19 @@
     "test:parity": "vitest run --config vitest.parity.config.ts"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^10.1.2"
   },
   "devDependencies": {
     "@ascribed/elements": "workspace:*",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.0.0",
-    "@types/vscode": "~1.90.0",
+    "@types/node": "^24.0.0",
+    "@types/vscode": "~1.138.0",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.0.0",
-    "esbuild": "^0.25.0",
-    "mocha": "^11.0.0",
+    "esbuild": "^0.28.2",
+    "mocha": "^12.0.2",
     "playwright-core": "^1.50.0",
-    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver": "^10.1.2",
     "vscode-languageserver-textdocument": "^1.0.15",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.2.0"

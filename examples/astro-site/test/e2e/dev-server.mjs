@@ -12,5 +12,8 @@ const server = await dev({
 });
 process.stdout.write(`READY ${server.address.port}\n`);
 process.on("SIGTERM", () => {
-  server.stop().then(() => process.exit(0));
+  server.stop().then(
+    () => process.exit(0),
+    () => process.exit(1),
+  );
 });

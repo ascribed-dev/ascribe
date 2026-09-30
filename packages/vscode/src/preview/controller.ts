@@ -586,7 +586,7 @@ export class PreviewController implements vscode.Disposable {
   }
 
   private wake(): void {
-    for (const waiter of [...this.waiters]) waiter();
+    for (const waiter of this.waiters) waiter();
   }
 
   dispose(): void {

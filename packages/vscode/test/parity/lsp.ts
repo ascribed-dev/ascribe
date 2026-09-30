@@ -4,8 +4,8 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
 interface Pending {
-  resolve(value: unknown): void;
-  reject(error: Error): void;
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
 }
 
 export class LspClient {

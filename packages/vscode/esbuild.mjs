@@ -7,7 +7,7 @@ import { build } from "esbuild";
 const common = {
   bundle: true,
   platform: "node",
-  target: "node22",
+  target: "node24",
   sourcemap: true,
   logLevel: "info",
 };

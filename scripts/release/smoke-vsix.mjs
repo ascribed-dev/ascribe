@@ -115,7 +115,9 @@ try {
   await smoke("project", workspace, extensions);
   unlinkSync(join(bin, process.platform === "win32" ? "ascribe.cmd" : "ascribe"));
 } catch (error) {
-  process.stderr.write(`smoke test failed: ${error instanceof Error ? error.message : error}\n`);
+  process.stderr.write(
+    `smoke test failed: ${error instanceof Error ? error.message : String(error)}\n`,
+  );
   failed = true;
 } finally {
   rmSync(scratch, { recursive: true, force: true });
