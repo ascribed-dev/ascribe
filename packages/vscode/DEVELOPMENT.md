@@ -4,7 +4,7 @@ How the extension is built and tested. The user guide is the [README](README.md)
 
 ## The binary
 
-`src/binary.ts` finds the `ascribe` binary: the `ascribe.path` setting, then the project's `node_modules/.bin/ascribe` (in each folder that holds an `ascribe.toml`, and its parents up to the workspace folder), then the binary bundled at `bin/<platform>-<arch>/ascribe` (`ascribe.exe` on Windows). It runs `--version` on each candidate, and warns when the version is older than `ascribe.minServerVersion` in `package.json`, which a release sets to its own version. Release packaging (`scripts/release/pack.mjs`) stages the one binary each platform's package needs under `bin/`.
+`src/binary.ts` finds the `ascribe` binary: the `ascribe.path` setting, then the project's `node_modules/.bin/ascribe` (in each folder that holds an `ascribe.toml`, and its parents up to the workspace folder), then the binary bundled at `bin/<platform>-<arch>/ascribe` (`ascribe.exe` on Windows). It runs `--version` on each candidate, and warns when the version is older than `ascribe.minServerVersion` in `package.json`, which a release sets to its own version. Release packaging (`scripts/release/pack.ts`) stages the one binary each platform's package needs under `bin/`.
 
 ## The preview
 

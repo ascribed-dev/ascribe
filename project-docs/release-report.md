@@ -1,23 +1,23 @@
 # Release report: Ascribe 0.1.0
 
-Prepared 2026-09-30 for the first release. Everything here was run on one machine, an Apple-silicon Mac (macOS, arm64). Nothing ran in GitHub Actions: CI is manual-only, and no Actions minutes were available. **The repository owner decided not to verify Linux and Windows for 0.1.0**, so the platform parts of the parity and end-to-end gates are accepted as unverified. The release workflow still builds and smoke-tests those platforms when it runs, and a failure there stops the release before anything is published.
+Prepared 2026-09-30 for the first release, and updated the same day after the repository went public and CI was re-enabled. The gate results below were first run on one machine, an Apple-silicon Mac (macOS, arm64). Since then, [PR #39](https://github.com/ascribed-dev/ascribe/pull/39) re-enabled CI and brought the toolchains and dependencies up to date, and its checks pass on macOS, Linux (x64 and arm64), and Windows: clippy and tests, the JavaScript checks, the VS Code integration tests, and the Astro end-to-end suite on all four platforms. That replaces the owner's earlier decision to accept Linux and Windows unverified. The release workflow's own dry run hasn't run yet; it builds and smoke-tests every platform, and a failure there stops the release before anything is published.
 
 ## Summary
 
 | | Status | What's left |
 |---|---|---|
 | Gate: no unintentional skips | **Passes** | Nothing |
-| Gate: diagnostic parity | **Passes on macOS arm64**; Linux and Windows accepted unverified by the owner | Nothing |
-| Gate: end to end | **Passes on macOS arm64**; Linux and Windows accepted unverified by the owner | Nothing |
+| Gate: diagnostic parity | **Passes** on macOS arm64 locally, and on Linux, macOS, and Windows in CI (PR #39) | Nothing |
+| Gate: end to end | **Passes** on macOS arm64 locally, and on Linux x64 and arm64, macOS arm64, and Windows x64 in CI (PR #39) | Nothing |
 | Gate: performance | **Passes**, every target met | Nothing |
 | Open questions | **None open.** Q171 to Q174 resolved as implemented, on the owner's delegation | Nothing |
-| Release workflows | Ready; **dry run passes locally for darwin-arm64** | The workflow's own dry run, in Actions |
+| Release workflows | Ready; **dry run passes locally for darwin-arm64**; moved to Ubuntu 24.04, macOS 26, and Windows 2025 runners | The workflow's own dry run, in Actions. Nothing is tagged until it passes on every platform |
 | Extension packages | **darwin-arm64 installs and works** with `examples/quill` | The other three are smoke-tested by the release run itself |
 | Documentation | Written | Your review |
 | Release checklist | [RELEASING.md](../RELEASING.md) | Your review |
 | Names | All available or already yours | Nothing |
 
-Two things block publishing, and both are yours to decide: **the repository is private**, and npm refuses provenance from a private repository; and **the `release` environment doesn't exist yet**. [RELEASING.md](../RELEASING.md), "Before the first release", covers both.
+Publishing needs the following from you. **The repository is public now**, which npm provenance requires. **The `release` environment** must exist before the publish jobs can run; [RELEASING.md](../RELEASING.md), "Before the first release", covers it. Before merging PR #39, make the `rust.yml` and `js.yml` checks required in branch protection.
 
 ## Release gates
 
@@ -33,7 +33,7 @@ On macOS arm64:
 - `crates/tessera-cli/tests/build.rs`: `ascribe build` reports what `ascribe check` reports. Passes.
 - The VS Code extension's `quill` integration suite, against the real server: 7 passing.
 
-The gate asks for every platform. `rust.yml` runs these tests on Ubuntu, macOS, and Windows; for 0.1.0 the owner accepted Linux and Windows unverified.
+The gate asks for every platform. `rust.yml` runs these tests on Ubuntu, macOS, and Windows, and all three pass on PR #39. Getting Windows to pass took fixes to the tests only (paths and URIs in the `tessera-lsp` and `lsp_parity` tests); the server was correct.
 
 ### End to end
 
@@ -43,7 +43,7 @@ On macOS arm64, with the native package staged as npm installs it:
 - VS Code integration suites: activation 2, stub 8, quill 7, preview 9, all passing.
 - Preview parity with the built Astro site (`test:parity`): 16 passed.
 
-The gate asks for every platform in CI: `js.yml`'s `astro` matrix covers Linux x64 and arm64, macOS arm64, and Windows x64. For 0.1.0 the owner accepted Linux and Windows unverified. The release workflow's `smoke` jobs still install the packed CLI and the extension on all four platforms before anything is published.
+The gate asks for every platform in CI: `js.yml`'s `astro` matrix covers Linux x64 and arm64, macOS arm64, and Windows x64, and all four pass on PR #39. The first CI run found one test that failed on Linux and sometimes on Windows, and had failed the same way on `main`: the dev-recovery test wrote its fix a few milliseconds after the failed rebuild, and the file watcher dropped the second change. It now rewrites the file until it's rebuilt, like the other watch tests. The release workflow's `smoke` jobs also install the packed CLI and the extension on all four platforms before anything is published.
 
 ### Performance
 
@@ -80,25 +80,26 @@ Checked 2026-09-30. Nothing was registered.
 
 ## Versioning
 
-One version, **0.1.0**, set by `node scripts/release/version.mjs 0.1.0` in `Cargo.toml` (every crate inherits it, so `ascribe --version` is `ascribe 0.1.0`), `Cargo.lock`, all seven npm packages, the extension, and the extension's `ascribe.minServerVersion`. 0.1.0 matches the specification's version, `spec = "0.1"`; one command changes it if you prefer 1.0.0. `version.mjs --check` verifies that every file agrees, that the changelog has the version, and, in the workflow, that the tag matches. The changelog is [CHANGELOG.md](../CHANGELOG.md); its 0.1.0 section is dated when you release.
+One version, **0.1.0**, set by `node scripts/release/version.ts 0.1.0` in `Cargo.toml` (every crate inherits it, so `ascribe --version` is `ascribe 0.1.0`), `Cargo.lock`, all seven npm packages, the extension, and the extension's `ascribe.minServerVersion`. 0.1.0 matches the specification's version, `spec = "0.1"`; one command changes it if you prefer 1.0.0. `version.ts --check` verifies that every file agrees, that the changelog has the version, and, in the workflow, that the tag matches. The changelog is [CHANGELOG.md](../CHANGELOG.md); its 0.1.0 section is dated when you release.
 
 ## Packages
 
+- **Third-party notices:** `scripts/release/notices.ts` generates `THIRD-PARTY-NOTICES` from the crates compiled into the binary, grouped by license text. The GitHub archives, the platform npm packages, and the extension packages include it, and `pack.ts` fails if a package is missing it.
 - **npm:** `private` is removed from the seven published packages. Each gains `repository` (which npm provenance checks against the building repository), `homepage`, `bugs`, and `publishConfig.access = public`. The platform packages ship only their binary (`files`), and the Linux ones declare `libc: glibc`, so npm doesn't install a glibc binary on Alpine. Packed tarballs are checked for the version, resolved `workspace:` ranges, a LICENSE, and an executable binary. The packed CLI installs offline and checks `examples/quill` cleanly.
 - **Extension:** one VSIX per platform (`vsce package --target`), each holding only its own binary under `bin/<platform>-<arch>/`, plus the bundle, webview files, grammars, README, changelog, and license (`.vscodeignore` allowlists them). The extension stays `private` on npm, which it isn't published to.
-- **Extension smoke test** (`scripts/release/smoke-vsix.mjs`): installs a VSIX into a fresh VS Code, opens a copy of `examples/quill` with a broken page, and checks that the server runs from the **bundled** binary and reports `ASC001`; then adds a project `node_modules/.bin/ascribe` and checks that the extension **prefers the project's binary**. Passes for darwin-arm64.
+- **Extension smoke test** (`scripts/release/smoke-vsix.ts`): installs a VSIX into a fresh VS Code, opens a copy of `examples/quill` with a broken page, and checks that the server runs from the **bundled** binary and reports `ASC001`; then adds a project `node_modules/.bin/ascribe` and checks that the extension **prefers the project's binary**. Passes for darwin-arm64.
 
 ## Release workflow
 
-[`.github/workflows/release.yml`](../.github/workflows/release.yml), manual only (`workflow_dispatch`), like the other workflows:
+[`.github/workflows/release.yml`](../.github/workflows/release.yml), manual only (`workflow_dispatch`); the Rust and JavaScript workflows run on pull requests and pushes to `main`, and the corpora workflow runs weekly. Every action in every workflow is pinned to a commit SHA, and Dependabot watches Cargo, npm, and Actions.
 
 1. `version`: the version is consistent, and matches the tag when publishing.
-2. `build` (4 platforms, natively): `cargo build --release --locked`; checks `--version` and `ascribe check` on `examples/quill`. Windows links the C runtime statically; Linux builds on Ubuntu 22.04 (glibc 2.35).
-3. `pack`: `scripts/release/pack.mjs`, then `publish.mjs --dry-run` for npm and the Marketplace.
+2. `build` (4 platforms, natively): `cargo build --release --locked`; checks `--version` and `ascribe check` on `examples/quill`. Windows links the C runtime statically; Linux builds on Ubuntu 24.04 (glibc 2.39), macOS on macOS 26, and Windows on Windows Server 2025.
+3. `pack`: `scripts/release/pack.ts`, then `publish.ts --dry-run` for npm and the Marketplace.
 4. `smoke` (4 platforms): installs the packed CLI and checks `examples/quill`; runs the extension smoke test.
 5. With `publish` checked, each waiting for approval in the `release` environment: `npm` (with provenance), `marketplace`, and `github` (a **draft** release with the archives, the VSIX files, and `SHA256SUMS`). Every step skips what's already published, so a failed run can be repeated.
 
-Local evidence: `actionlint` passes on every workflow. The scripts the jobs run (`pack.mjs`, `publish.mjs --dry-run`, `smoke-vsix.mjs`) ran here for darwin-arm64. The workflow itself hasn't run: its first run is the dry run in RELEASING.md, step 5.
+Local evidence: `actionlint` passes on every workflow. The scripts the jobs run (`pack.ts`, `publish.ts --dry-run`, `smoke-vsix.ts`) ran here for darwin-arm64. The workflow itself hasn't run: its first run is the dry run in RELEASING.md, step 5.
 
 ## Documentation
 
@@ -112,5 +113,6 @@ The package READMEs, which npm and the Marketplace show, are rewritten for users
 
 - The binaries aren't signed with an Apple Developer ID or a Windows Authenticode certificate. It matters only for binaries downloaded from the GitHub release with a browser; npm and the extension aren't affected. RELEASING.md says how users clear the macOS quarantine.
 - Intel Macs aren't supported (dropped at the owner's request): no `darwin-x64` npm package or extension package.
-- Linux needs glibc 2.35 or later; musl systems such as Alpine aren't supported.
-- Linux and Windows are unverified before the release, by the owner's decision; the release run's smoke jobs are their first test.
+- Linux needs glibc 2.39 or later; musl systems such as Alpine aren't supported.
+- Node.js 24 or later is required, VS Code 1.138 or later for the extension, and Rust 1.98 to build from source. There's no support for older versions.
+- The JavaScript packages are on TypeScript 7.0. typescript-eslint doesn't support it, so linting is Oxlint, with its type-aware rules, instead of ESLint. `html5ever` stays at 0.39 (a dev-dependency) because `markup5ever_rcdom` has no release for 0.40.
