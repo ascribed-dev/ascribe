@@ -19,6 +19,26 @@ afterAll(async () => {
   await rm(path.join(siteDir, ".e2e-tmp"), { recursive: true, force: true });
 });
 
+/**
+ * Polls `check` until it's true, rewriting `file` unchanged every three
+ * seconds. The dev server's watcher can still be starting when a test edits a
+ * freshly copied site on a busy machine, and a change it misses is never
+ * rebuilt; the rewrite reports the same edit again.
+ */
+async function untilRebuilt(file: string, check: () => Promise<boolean>): Promise<void> {
+  const deadline = Date.now() + 45_000;
+  let touched = Date.now();
+  for (;;) {
+    if (await check()) return;
+    if (Date.now() > deadline) throw new Error(`no rebuild after editing ${file}`);
+    if (Date.now() - touched > 3_000) {
+      await writeFile(file, await readFile(file));
+      touched = Date.now();
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
 async function edit(file: string, change: (text: string) => string): Promise<void> {
   await writeFile(file, change(await readFile(file, "utf8")));
 }
@@ -146,18 +166,19 @@ describe("the integration", () => {
         await page.goto(`${server.origin}${BASE}/guides/my-setup`);
         let loads = 0;
         page.on("load", () => loads++);
-        await edit(path.join(root, relative), replace);
+        const file = path.join(root, relative);
+        await edit(file, replace);
         if (name === "asset") {
-          await expect.poll(async () => {
+          await untilRebuilt(file, async () => {
             const response = await page.request.get(
               `${server.origin}${BASE}/_ascribe/files/downloads/loom.yaml`,
             );
             return (await response.text()).includes(expected);
-          }, { timeout: 45_000 }).toBe(true);
+          });
         } else {
-          await expect.poll(async () =>
+          await untilRebuilt(file, async () =>
             (await page.locator("article").innerText()).includes(expected),
-          { timeout: 45_000 }).toBe(true);
+          );
         }
         await expect.poll(() => loads, { timeout: 45_000 }).toBeGreaterThan(0);
       } finally {

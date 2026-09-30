@@ -9,6 +9,28 @@ describe("with the real language server on examples/quill", () => {
   const broken = uriOf("docs", "broken.md");
   const original = () => readFileSync(broken.fsPath, "utf8");
 
+  /**
+   * Writes `text` to the broken page on disk until its diagnostics match,
+   * writing it again every two seconds. The server's file watcher is
+   * registered after it starts, and a write that lands before VS Code's
+   * watcher is live is never reported: on a busy machine that can take
+   * seconds, and a single write then waits forever.
+   */
+  async function writeUntil(
+    text: string,
+    predicate: (all: vscode.Diagnostic[]) => boolean,
+  ): Promise<vscode.Diagnostic[]> {
+    const deadline = Date.now() + 30_000;
+    for (;;) {
+      writeFileSync(broken.fsPath, text);
+      try {
+        return await diagnosticsOf(broken, predicate, 2_000);
+      } catch (error) {
+        if (Date.now() > deadline) throw error;
+      }
+    }
+  }
+
   it("starts `ascribe lsp` from the ascribe.path setting", async () => {
     const api = await activated();
     await api.whenSettled();
@@ -32,11 +54,11 @@ describe("with the real language server on examples/quill", () => {
   it("updates diagnostics after the file changes on disk", async () => {
     const text = original();
     try {
-      writeFileSync(broken.fsPath, text.replace("{colour=red}", "{type=tip}"));
-      await diagnosticsOf(broken, (all) => all.length === 0);
-
-      writeFileSync(broken.fsPath, text.replace("{colour=red}", "{colour=blue, size=big}"));
-      const diagnostics = await diagnosticsOf(broken, (all) => all.length >= 2);
+      await writeUntil(text.replace("{colour=red}", "{type=tip}"), (all) => all.length === 0);
+      const diagnostics = await writeUntil(
+        text.replace("{colour=red}", "{colour=blue, size=big}"),
+        (all) => all.length >= 2,
+      );
       assert.ok(diagnostics.length >= 2);
     } finally {
       writeFileSync(broken.fsPath, text);
