@@ -30,6 +30,8 @@ jobs:
       - run: pnpm --filter @ascribed/elements exec playwright-core install --with-deps chromium firefox webkit
       - run: pnpm format:check
       - run: pnpm -r lint
+      # Astro resolves the CLI package's generated declarations during typecheck.
+      - run: pnpm --filter @ascribed/cli build
       - run: pnpm -r typecheck
       - run: pnpm -r test
 
@@ -92,7 +94,9 @@ jobs:
       - name: Pack and install npm CLI without lifecycle scripts
         run: |
           mkdir -p "$RUNNER_TEMP/ascribe-tarballs" "$RUNNER_TEMP/ascribe-install"
-          pnpm -C packages/cli/platforms/cli-${{ matrix.target }} pack --pack-destination "$RUNNER_TEMP/ascribe-tarballs"
+          # npm pack preserves the executable mode on the staged native binary.
+          npm pack ./packages/cli/platforms/cli-${{ matrix.target }} --pack-destination "$RUNNER_TEMP/ascribe-tarballs"
+          # pnpm pack rewrites workspace:* references in the CLI manifest for npm.
           pnpm -C packages/cli pack --pack-destination "$RUNNER_TEMP/ascribe-tarballs"
           npm install --prefix "$RUNNER_TEMP/ascribe-install" --offline --ignore-scripts --no-audit --no-fund "$RUNNER_TEMP/ascribe-tarballs/"*.tgz
           "$RUNNER_TEMP/ascribe-install/node_modules/.bin/ascribe" --version

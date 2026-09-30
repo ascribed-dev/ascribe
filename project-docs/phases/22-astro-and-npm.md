@@ -65,7 +65,11 @@ Turn the phase 21 slice into a complete integration, and deliver the `ascribe` b
   it stages and packs the matching optional package and CLI, installs the two
   tarballs with `npm --offline --ignore-scripts`, checks `ascribe --version`,
   and runs the original phase 21 browser suite with `ASCRIBE_BIN` resolved
-  from that installed package. The Linux x64 job retains phase 25 parity.
+  from that installed package. Native packages use `npm pack` to preserve the
+  executable mode; the CLI uses `pnpm pack` to replace workspace protocol
+  references with publishable versions. The general JS check builds the CLI
+  before typechecking Astro, which imports its generated declarations. The
+  Linux x64 job retains phase 25 parity.
   No Rust, contract, SPEC, or phase 24 files changed.
 
 ### Verification and open gates
@@ -91,12 +95,20 @@ cargo clippy --workspace --all-targets --locked -- -D warnings # passed
 cargo test --workspace --locked --quiet                       # passed; conformance 366/366, 0 skipped
 ```
 
-`pnpm pack --dry-run --json` lists `dist/index.js` in the CLI archive
-and `bin/ascribe` in the staged macOS arm64 native archive. Actual tarball
-creation/install was blocked by the local command permission policy; therefore
-**the tarball installation acceptance criterion is not locally verified**.
-The matrix workflow has not been dispatched and Linux, Windows, and macOS x64
-e2e results remain **pending**. With owner authorization, manually run the
+Pack dry runs list `dist/index.js` in the CLI archive and `bin/ascribe` in the
+staged macOS arm64 native archive. The macOS arm64 native and CLI tarballs were
+packed with `npm pack` and `pnpm pack`, respectively, then installed with
+`npm --offline --ignore-scripts`; the installed `ascribe --version` succeeded.
+Use `npm pack` for the native archive: `pnpm pack` normalizes the executable to
+mode 0644, which causes `EACCES` after installation. Use `pnpm pack` for the
+CLI archive because `npm pack` leaves its `workspace:*` dependencies
+uninstallable by npm. The local run exercised both package managers with the
+native archive from `npm pack` and the CLI archive from `pnpm pack`. The real
+Astro browser suite (19 tests) and production build also passed with
+`ASCRIBE_BIN` pointing to the extracted binary from the local tarball install.
+
+The JavaScript workflow has not been dispatched, so Linux, Windows, and macOS
+x64 e2e results remain **pending**. With owner authorization, manually run the
 **JavaScript** workflow (`.github/workflows/js.yml`) on this PR's branch in
 Actions (or `gh workflow run js.yml --ref phase/22-astro-and-npm`), inspect all
 five `Astro npm end-to-end` jobs, and only then check the platform acceptance
