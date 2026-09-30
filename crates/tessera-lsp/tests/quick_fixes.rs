@@ -586,6 +586,90 @@ fn heading_rename_updates_fragment_links_and_offers_a_stable_id() {
 }
 
 #[test]
+fn heading_rename_updates_ids_changed_by_slug_renumbering() {
+    let f = quill();
+    let target = f.path("docs/keys.md");
+    let text = format!(
+        "{}\n## Repeated heading\n\nFirst.\n\n## Repeated heading\n\nSecond.\n",
+        read(&f, "docs/keys.md")
+    );
+    let source = format!(
+        "{}\n[First](keys.md#repeated-heading)\n[Second](keys.md#repeated-heading-1)\n@include: keys.md#repeated-heading-1\n",
+        read(&f, "docs/install-agent.md")
+    );
+    write(&f, "docs/keys.md", &text);
+    write(&f, "docs/install-agent.md", &source);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let heading_at = text.find("Repeated heading").expect("first heading");
+    let result = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&target).as_str() },
+                "position": position(&text, heading_at),
+                "newName": "Unique heading"
+            }),
+        )
+        .response_result
+        .expect("rename heading");
+    let changed = apply_workspace_edit(&f, &result);
+    notify_changed(&mut client, &changed);
+
+    assert!(read(&f, "docs/keys.md").contains("## Unique heading"));
+    let source = read(&f, "docs/install-agent.md");
+    assert!(source.contains("[First](keys.md#unique-heading)"));
+    assert!(source.contains("[Second](keys.md#repeated-heading)"));
+    assert!(source.contains("@include: keys.md#repeated-heading"));
+    assert_no_errors(&client);
+}
+
+#[test]
+fn stable_id_action_keeps_setext_headings_intact() {
+    let f = quill();
+    let target = f.path("docs/keys.md");
+    let text = format!(
+        "{}\nSetext heading\n--------------\n\nSetext content.\n",
+        read(&f, "docs/keys.md")
+    );
+    let source = format!(
+        "{}\n[Setext](keys.md#setext-heading)\n",
+        read(&f, "docs/install-agent.md")
+    );
+    write(&f, "docs/keys.md", &text);
+    write(&f, "docs/install-agent.md", &source);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let heading_at = text.find("Setext heading").expect("heading");
+    let result = client.request(
+        "textDocument/codeAction",
+        json!({
+            "textDocument": { "uri": uri(&target).as_str() },
+            "range": {
+                "start": position(&text, heading_at),
+                "end": position(&text, heading_at + "Setext heading".len())
+            },
+            "context": { "diagnostics": [] }
+        }),
+    );
+    let response = result.response_result.expect("code actions");
+    let action = response
+        .as_array()
+        .expect("actions")
+        .iter()
+        .find(|action| action["title"] == "Add a stable @id for this heading")
+        .expect("stable id action");
+    let changed = apply_workspace_edit(&f, &action["edit"]);
+    notify_changed(&mut client, &changed);
+
+    assert!(
+        read(&f, "docs/keys.md").contains("Setext heading\n--------------\n@id: setext-heading\n")
+    );
+    assert_no_errors(&client);
+    assert!(changed.contains(&target));
+}
+
+#[test]
 fn formatting_returns_only_tessera_fmt_edits() {
     let f = quill();
     let path = f.path("docs/keys.md");
@@ -820,6 +904,46 @@ fn renaming_an_explicit_id_updates_links_and_includes() {
     assert!(read(&f, "docs/keys.md").contains("@id: turn-keys"));
     assert!(read(&f, "docs/install-agent.md").contains("keys.md#turn-keys"));
     assert!(read(&f, "docs/install-agent.md").contains("@include: keys.md#turn-keys"));
+    assert_no_errors(&client);
+}
+
+#[test]
+fn renaming_a_phrase_backed_fragment_updates_its_declaration() {
+    let f = quill();
+    let model = read(&f, "ascribe.toml").replace(
+        "api = \"https://api.quill.dev/v3/\"",
+        "api = \"https://api.quill.dev/v3/\"\nrotate-link = \"keys.md#rotate-keys\"",
+    );
+    write(&f, "ascribe.toml", &model);
+    let path = f.path("docs/keys.md");
+    let source_path = f.path("docs/install-agent.md");
+    let source = format!(
+        "{}\n[Phrase link]({{rotate-link}})\n",
+        read(&f, "docs/install-agent.md")
+    );
+    write(&f, "docs/install-agent.md", &source);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let original = read(&f, "docs/keys.md");
+    let offset = original.find("rotate-keys").expect("id");
+    let result = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&path).as_str() },
+                "position": position(&original, offset),
+                "newName": "turn-keys"
+            }),
+        )
+        .response_result
+        .expect("rename");
+    let changed = apply_workspace_edit(&f, &result);
+    notify_changed(&mut client, &changed);
+
+    assert!(read(&f, "docs/keys.md").contains("@id: turn-keys"));
+    assert!(read(&f, "ascribe.toml").contains("rotate-link = \"keys.md#turn-keys\""));
+    assert!(read(&f, "docs/install-agent.md").contains("[Phrase link]({rotate-link})"));
+    assert!(changed.contains(&source_path) || changed.contains(&f.path("ascribe.toml")));
     assert_no_errors(&client);
 }
 

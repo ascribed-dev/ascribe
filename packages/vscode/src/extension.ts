@@ -51,22 +51,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
           }),
       );
     }),
-    vscode.workspace.onWillRenameFiles((event) =>
-      event.waitUntil(
-        server
-          .request("workspace/willRenameFiles", {
-            files: event.files.map((file) => ({
-              oldUri: file.oldUri.toString(),
-              newUri: file.newUri.toString(),
-            })),
-          })
-          .then((value) => asWorkspaceEdit(value))
-          .catch((error: unknown) => {
-            server.reportFeatureError("preparing workspace rename", error);
-            throw error;
-          }),
-      ),
-    ),
   );
 
   context.subscriptions.push(
@@ -119,28 +103,6 @@ function asTextEdits(value: unknown): vscode.TextEdit[] {
     }
     return vscode.TextEdit.replace(protocolRange(edit.range), edit.newText);
   });
-}
-
-function asWorkspaceEdit(value: unknown): vscode.WorkspaceEdit {
-  if (!isRecord(value)) throw new Error("the language server returned an invalid workspace edit");
-  const result = new vscode.WorkspaceEdit();
-  const changes = value.changes;
-  if (changes === undefined) {
-    throw new Error("the language server returned a workspace edit without changes");
-  }
-  if (!isRecord(changes)) throw new Error("the language server returned invalid workspace changes");
-  for (const [uri, edits] of Object.entries(changes)) {
-    if (!Array.isArray(edits)) {
-      throw new Error("the language server returned invalid workspace edits");
-    }
-    for (const edit of edits) {
-      if (!isProtocolTextEdit(edit)) {
-        throw new Error("the language server returned an invalid workspace edit");
-      }
-      result.replace(vscode.Uri.parse(uri), protocolRange(edit.range), edit.newText);
-    }
-  }
-  return result;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -74,15 +74,13 @@ Let the editor fix problems and keep references intact: code actions for common 
 - `cargo fmt --all -- --check` — passed.
 - `cargo clippy --workspace --all-targets -- -D warnings` — passed.
 - `cargo test --workspace` — passed; the conformance harness reports 366
-  passed, 0 failed, 0 skipped. The LSP's 18 scripted Phase 24 tests all pass.
+  passed, 0 failed, 0 skipped. The LSP's 21 scripted Phase 24 tests all pass.
 - `cargo test -p tessera-conformance` — passed.
 - `corepack pnpm --filter @ascribed/elements build` — passed.
 - VS Code ESLint, TypeScript typecheck, Prettier check, and the non-browser
   Vitest suite — passed (83 tests).
-- Full VS Code Vitest cannot launch its Playwright webview suite because the
-  installed Chromium headless shell is absent. The real VS Code integration
-  bundle builds, but the extension host could not be downloaded:
-  `getaddrinfo ENOTFOUND update.code.visualstudio.com`.
+- The real VS Code activation, stub-server, Quill language-server, and preview
+  integration suites passed on macOS with a locally built `ascribe` binary.
 - `target/debug/ascribe check --config examples/quill/ascribe.toml --format json`
   — passed with no diagnostics.
 
@@ -95,7 +93,7 @@ Let the editor fix problems and keep references intact: code actions for common 
   relative references, and percent-encoded paths.
 - The workspace file-operation filter is for files, not directory rename
   operations. Moves are confined to the configured content root.
-- Platform-specific Windows/macOS VS Code behavior is not established by the
-  Linux test run. The browser-dependent webview and real extension-host gates
-  remain pending due to the missing browser and blocked VS Code download. No
-  workflow was dispatched.
+- Windows and Linux VS Code behavior are not established by the macOS
+  integration run. The separate Playwright webview suite remains pending
+  because the installed Chromium headless shell is absent. No workflow was
+  dispatched.

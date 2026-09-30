@@ -150,7 +150,9 @@ export class ServerController implements vscode.Disposable {
     }
 
     const client = new LanguageClient("ascribe", "Ascribe", serverOptions(binary), {
-      ...clientOptions(this.output),
+      ...clientOptions(this.output, (error) =>
+        this.reportFeatureError("preparing workspace rename", error),
+      ),
       errorHandler: this.errorHandler(),
     });
     client.onDidChangeState(({ newState }) => {
@@ -224,13 +226,25 @@ function serverOptions(binary: ResolvedBinary): ServerOptions {
   };
 }
 
-function clientOptions(outputChannel: vscode.OutputChannel): LanguageClientOptions {
+function clientOptions(
+  outputChannel: vscode.OutputChannel,
+  reportRenameError: (error: unknown) => void,
+): LanguageClientOptions {
   return {
     documentSelector: [
       { scheme: "file", language: "markdown" },
       { scheme: "file", pattern: "**/ascribe.toml" },
     ],
     outputChannel,
+    middleware: {
+      workspace: {
+        willRenameFiles: (event, next) =>
+          next(event).then(undefined, (error: unknown) => {
+            reportRenameError(error);
+            throw error;
+          }),
+      },
+    },
     // Resolved Q124: the server asks for the files it wants watched with dynamic
     // registrations (`workspace/didChangeWatchedFiles`), which the client
     // forwards, so files that aren't open are followed too. Watching them

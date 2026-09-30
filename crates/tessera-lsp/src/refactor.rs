@@ -202,12 +202,20 @@ pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
             return None;
         }
         let mut edits = HashMap::new();
+        let mut phrase_edits = HashMap::new();
         edits
             .entry(ctx.path.clone())
             .or_insert_with(Vec::new)
             .push(ByteEdit::replace(span, params.new_name.clone()));
-        add_id_reference_edits(ctx, &ctx.path, old, &params.new_name, &mut edits);
-        return Some(workspace_edit(ctx, edits));
+        add_id_reference_edits(
+            ctx,
+            &ctx.path,
+            old,
+            &params.new_name,
+            &mut edits,
+            &mut phrase_edits,
+        )?;
+        return workspace_edit_with_config(ctx, workspace_edit(ctx, edits), phrase_edits);
     }
     rename_heading(ctx, offset, &params.new_name)
 }
@@ -282,6 +290,9 @@ fn rename_heading(ctx: &Ctx, offset: usize, new_text: &str) -> Option<WorkspaceE
         &ctx.model,
         slugger.as_ref(),
     );
+    if indexed.headings.len() != file.headings.len() {
+        return None;
+    }
     let new_id = indexed.headings.get(old_heading)?.source_id.clone();
     let old_id = &file.headings.get(old_heading)?.source_id;
     if new_id != *old_id
@@ -298,10 +309,28 @@ fn rename_heading(ctx: &Ctx, offset: usize, new_text: &str) -> Option<WorkspaceE
         .entry(ctx.path.clone())
         .or_insert_with(Vec::new)
         .push(edit);
-    if new_id != *old_id {
-        add_id_reference_edits(ctx, &ctx.path, old_id, &new_id, &mut edits);
+    let mut phrase_edits = HashMap::new();
+    let mut id_changes = HashMap::new();
+    for (old, new) in file.headings.iter().zip(&indexed.headings) {
+        if old.source_id != new.source_id
+            && id_changes
+                .insert(old.source_id.clone(), new.source_id.clone())
+                .is_some_and(|previous| previous != new.source_id)
+        {
+            return None;
+        }
     }
-    Some(workspace_edit(ctx, edits))
+    for (old_id, new_id) in id_changes {
+        add_id_reference_edits(
+            ctx,
+            &ctx.path,
+            &old_id,
+            &new_id,
+            &mut edits,
+            &mut phrase_edits,
+        )?;
+    }
+    workspace_edit_with_config(ctx, workspace_edit(ctx, edits), phrase_edits)
 }
 
 fn add_id_reference_edits(
@@ -310,7 +339,8 @@ fn add_id_reference_edits(
     old_id: &str,
     new_id: &str,
     edits: &mut HashMap<RelPath, Vec<ByteEdit>>,
-) {
+    phrase_edits: &mut HashMap<String, TextEdit>,
+) -> Option<()> {
     for file in ctx.snapshot.files() {
         for include in &file.includes {
             if include.target.as_ref() != Some(target) || include.section.as_deref() != Some(old_id)
@@ -319,10 +349,8 @@ fn add_id_reference_edits(
             }
             if let Some(span) = include.primary
                 && let Some(raw) = file.source.get(span.range())
-                && let Some(hash) = raw.find('#')
             {
-                let mut replacement = raw[..=hash].to_owned();
-                replacement.push_str(&encode_destination(new_id));
+                let replacement = replace_fragment(raw, new_id);
                 edits
                     .entry(file.path.clone())
                     .or_default()
@@ -338,13 +366,51 @@ fn add_id_reference_edits(
             }
             for span in destination_spans(file, reference.destination_span, &reference.destination)
             {
-                if let Some(raw) = file.source.get(span.range())
-                    && let Some(hash) = raw.find('#')
-                {
-                    let mut replacement = raw[..=hash].to_owned();
-                    replacement.push_str(&encode_destination(new_id));
-                    if raw.ends_with('>') && !replacement.ends_with('>') {
-                        replacement.push('>');
+                if let Some(raw) = file.source.get(span.range()) {
+                    if let Some(hash) = raw.find('#') {
+                        let mut replacement = raw[..=hash].to_owned();
+                        replacement.push_str(&encode_destination(new_id));
+                        if raw.ends_with('>') && !replacement.ends_with('>') {
+                            replacement.push('>');
+                        }
+                        edits
+                            .entry(file.path.clone())
+                            .or_default()
+                            .push(ByteEdit::replace(span, replacement));
+                        continue;
+                    }
+                    let raw_path_end = raw.find('?').unwrap_or(raw.len());
+                    let phrase = file.phrases.iter().find(|phrase| {
+                        phrase.place == PhrasePlace::Destination
+                            && span.start() <= phrase.phrase.key_span.start()
+                            && phrase.phrase.key_span.end() <= span.end()
+                            && raw[..raw_path_end] == format!("{{{}}}", phrase.phrase.key)
+                    });
+                    if let Some(phrase) = phrase
+                        && phrase_uses(ctx, &phrase.phrase.key) == 1
+                        && let Some(value) = ctx.model.phrase(&phrase.phrase.key)
+                        && let Some(updated) = replace_phrase_fragment(value, old_id, new_id)
+                        && let Some(model_span) =
+                            phrase_value_span(&ctx.model_text, &phrase.phrase.key)
+                    {
+                        phrase_edits.insert(
+                            phrase.phrase.key.clone(),
+                            TextEdit {
+                                range: ctx
+                                    .encoding
+                                    .range(&LineIndex::new(&ctx.model_text), model_span),
+                                new_text: serde_json::to_string(&updated).ok()?,
+                            },
+                        );
+                        continue;
+                    }
+                    let new_path =
+                        destination_path(local.written.starts_with('/'), &file.path, target);
+                    let query_start = local.written.find('?').unwrap_or(local.written.len());
+                    let mut replacement =
+                        format!("{new_path}{}#{new_id}", &local.written[query_start..]);
+                    if raw.starts_with('<') && raw.ends_with('>') {
+                        replacement = format!("<{replacement}>");
                     }
                     edits
                         .entry(file.path.clone())
@@ -354,6 +420,42 @@ fn add_id_reference_edits(
             }
         }
     }
+    Some(())
+}
+
+fn replace_fragment(raw: &str, new_id: &str) -> String {
+    if let Some(hash) = raw.find('#') {
+        format!("{}#{}", &raw[..hash], encode_destination(new_id))
+    } else {
+        format!("{raw}#{}", encode_destination(new_id))
+    }
+}
+
+fn replace_phrase_fragment(value: &str, old_id: &str, new_id: &str) -> Option<String> {
+    let Destination::Local(local) = tessera_core::classify_destination(value) else {
+        return None;
+    };
+    if local.fragment.as_deref() != Some(old_id) {
+        return None;
+    }
+    let hash = value.find('#')?;
+    Some(format!("{}#{}", &value[..hash], encode_destination(new_id)))
+}
+
+#[allow(clippy::mutable_key_type)]
+fn workspace_edit_with_config(
+    ctx: &Ctx,
+    mut result: WorkspaceEdit,
+    phrase_edits: HashMap<String, TextEdit>,
+) -> Option<WorkspaceEdit> {
+    if phrase_edits.is_empty() {
+        return Some(result);
+    }
+    let uri = crate::uri::path_to_uri(&ctx.config)?;
+    let mut changes = result.changes.take().unwrap_or_default();
+    changes.insert(uri, phrase_edits.into_values().collect());
+    result.changes = Some(changes);
+    Some(result)
 }
 
 fn destination_spans(file: &FileIndex, inline: Option<Span>, url: &str) -> Vec<Span> {

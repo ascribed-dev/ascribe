@@ -159,11 +159,15 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
         {
             continue;
         }
-        let line_end = file.source[heading.span.start()..]
-            .find(['\r', '\n'])
-            .map_or(file.source.len(), |i| heading.span.start() + i);
-        let edit =
-            tessera_core::TextEdit::insert(line_end, format!("\n@id: {}", heading.source_id));
+        let line_ending = if file.source.contains("\r\n") {
+            "\r\n"
+        } else {
+            "\n"
+        };
+        let edit = tessera_core::TextEdit::insert(
+            heading.span.end(),
+            format!("{line_ending}@id: {}", heading.source_id),
+        );
         actions.push(action(
             ctx,
             "Add a stable @id for this heading",

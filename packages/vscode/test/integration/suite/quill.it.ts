@@ -1,6 +1,5 @@
 import * as assert from "node:assert/strict";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import * as path from "node:path";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import * as vscode from "vscode";
 import { activated, diagnosticsOf, uriOf } from "./helpers.js";
 
@@ -57,13 +56,19 @@ describe("with the real language server on examples/quill", () => {
   it("formats through tessera-fmt on save when enabled", async () => {
     const file = uriOf("docs", "format-on-save.md");
     const input = "@note{type = tip}: Save safely.\n";
-    writeFileSync(file.fsPath, input);
+    writeFileSync(file.fsPath, "placeholder\n");
     const config = vscode.workspace.getConfiguration("ascribe");
     const previous = config.get("formatOnSave", false);
     await config.update("formatOnSave", true, vscode.ConfigurationTarget.Workspace);
     try {
       const document = await vscode.workspace.openTextDocument(file);
-      await vscode.window.showTextDocument(document);
+      const editor = await vscode.window.showTextDocument(document);
+      await editor.edit((edit) =>
+        edit.replace(
+          new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length)),
+          input,
+        ),
+      );
       await document.save();
       assert.equal(readFileSync(file.fsPath, "utf8"), "@note {type=tip}: Save safely.\n");
     } finally {
@@ -73,29 +78,30 @@ describe("with the real language server on examples/quill", () => {
   });
 
   it("updates file references before a workspace rename", async () => {
-    const target = uriOf("docs", "phase24-move.md");
-    const moved = uriOf("docs", "guides", "phase24-move.md");
-    const linking = uriOf("docs", "phase24-link.md");
-    mkdirSync(path.dirname(moved.fsPath), { recursive: true });
-    writeFileSync(target.fsPath, "## Phase 24 move target\n");
-    writeFileSync(linking.fsPath, "[Move](phase24-move.md#phase-24-move-target)\n");
+    const target = uriOf("docs", "keys.md");
+    const moved = uriOf("docs", "guides", "keys.md");
+    const linking = uriOf("docs", "install-agent.md");
+    const originalTarget = readFileSync(target.fsPath, "utf8");
+    const originalLinking = readFileSync(linking.fsPath, "utf8");
     try {
       await vscode.workspace.openTextDocument(target);
       await vscode.workspace.openTextDocument(linking);
-      await diagnosticsOf(linking, (all) => all.length === 0);
       const edit = new vscode.WorkspaceEdit();
       edit.renameFile(target, moved);
       assert.equal(await vscode.workspace.applyEdit(edit), true);
       assert.ok(
-        readFileSync(linking.fsPath, "utf8").includes(
-          "guides/phase24-move.md#phase-24-move-target",
-        ),
+        (await vscode.workspace.openTextDocument(linking))
+          .getText()
+          .includes("See [](guides/keys.md#rotate-keys)."),
       );
-      await diagnosticsOf(linking, (all) => all.length === 0);
+      const reverse = new vscode.WorkspaceEdit();
+      reverse.renameFile(moved, target);
+      assert.equal(await vscode.workspace.applyEdit(reverse), true);
+      assert.equal((await vscode.workspace.openTextDocument(linking)).getText(), originalLinking);
     } finally {
-      rmSync(target.fsPath, { force: true });
       rmSync(moved.fsPath, { force: true });
-      rmSync(linking.fsPath, { force: true });
+      writeFileSync(target.fsPath, originalTarget);
+      writeFileSync(linking.fsPath, originalLinking);
     }
   });
 });
