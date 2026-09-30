@@ -63,7 +63,7 @@ Add it to the `release` environment as the secret `VSCE_PAT`.
 
 ### 1. Approve what's published
 
-Everything in `project-docs/questions.md` that concerns what a release ships is resolved (for 0.1.0: Q171 to Q174).
+Nothing in `project-docs/questions.md` that concerns what a release ships is still open (`grep -n 'Status:\*\* open' project-docs/questions.md` finds only the entry format).
 
 ### 2. Set the version
 

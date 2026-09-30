@@ -37,8 +37,8 @@ Prepare Ascribe v1 for release, and verify the release gates. A person makes eve
 
 ## Acceptance criteria
 
-- [ ] Every release gate passes, with evidence in the report. (Every gate passes on macOS arm64; parity and end to end on the other platforms wait for manual CI runs.)
-- [ ] Every open question is resolved or deferred with a reason. (Q171 to Q174 await approval.)
+- [x] Every release gate passes, with evidence in the report. (On macOS arm64; the repository owner accepted Linux and Windows unverified for 0.1.0.)
+- [x] Every open question is resolved or deferred with a reason. (Q171 to Q174 resolved on the owner's delegation.)
 - [ ] Release workflows pass a dry run. (Their scripts pass locally for both macOS targets; the workflow's own dry run waits for Actions.)
 - [ ] Each platform's extension package installs locally and works with `examples/quill`. (darwin-arm64 does; the other three are the workflow's smoke jobs.)
 - [x] Documentation covers installing, writing, building, and editing.
@@ -54,4 +54,5 @@ The report is [release-report.md](../release-report.md), and the checklist is [R
 
 - **Done:** version 0.1.0 everywhere (`scripts/release/version.mjs`); `CHANGELOG.md`; `private` removed from the seven npm packages, with repository metadata; Intel Macs (`darwin-x64`) dropped, at the owner's request; per-platform VSIX packaging; `scripts/release/{pack,publish,smoke-vsix}.mjs`; `.github/workflows/release.yml`; `docs/` and a root README; the diagnostics reference generated from the registry (a `fix` per diagnostic); `SKIPS.toml` emptied; the Q173 gap closed (`astro dev` watches assets outside the content root).
 - **Verified locally (macOS arm64):** every gate, the pack and publish dry runs, and the extension smoke test (bundled binary, then the project's binary preferred).
-- **Waiting on a person:** approving Q171 to Q174; making the repository public, since npm provenance needs it; creating the `release` environment and its two secrets; running `rust.yml`, `js.yml`, and the release workflow's dry run for Linux and Windows; reviewing the checklist; publishing.
+- **Decided by the owner:** Q171 to Q174 resolved as implemented (delegated); Linux and Windows not verified before 0.1.0.
+- **Waiting on a person:** renaming the repository and moving it to `ascribed-dev`, then updating the URLs that name it; making it public, since npm provenance needs it; creating the `release` environment and its two secrets; the release workflow's dry run; reviewing the checklist; publishing.

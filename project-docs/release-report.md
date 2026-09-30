@@ -1,18 +1,18 @@
 # Release report: Ascribe 0.1.0
 
-Prepared 2026-09-30 for the first release. Everything here was run on one machine, an Apple-silicon Mac (macOS, arm64). Nothing ran in GitHub Actions: CI is manual-only, and no Actions minutes were available. Linux and Windows are unverified until the release workflow's dry run, or `rust.yml` and `js.yml`, run by hand.
+Prepared 2026-09-30 for the first release. Everything here was run on one machine, an Apple-silicon Mac (macOS, arm64). Nothing ran in GitHub Actions: CI is manual-only, and no Actions minutes were available. **The repository owner decided not to verify Linux and Windows for 0.1.0**, so the platform parts of the parity and end-to-end gates are accepted as unverified. The release workflow still builds and smoke-tests those platforms when it runs, and a failure there stops the release before anything is published.
 
 ## Summary
 
 | | Status | What's left |
 |---|---|---|
 | Gate: no unintentional skips | **Passes** | Nothing |
-| Gate: diagnostic parity | **Passes on macOS arm64** | Run `rust.yml` by hand for Linux and Windows |
-| Gate: end to end | **Passes on macOS arm64** | Run `js.yml` by hand for the other four platforms |
+| Gate: diagnostic parity | **Passes on macOS arm64**; Linux and Windows accepted unverified by the owner | Nothing |
+| Gate: end to end | **Passes on macOS arm64**; Linux and Windows accepted unverified by the owner | Nothing |
 | Gate: performance | **Passes**, every target met | Nothing |
-| Open questions | Q171 to Q174 **await your approval** | Approve, or amend |
+| Open questions | **None open.** Q171 to Q174 resolved as implemented, on the owner's delegation | Nothing |
 | Release workflows | Ready; **dry run passes locally for darwin-arm64** | The workflow's own dry run, in Actions |
-| Extension packages | **darwin-arm64 installs and works** with `examples/quill` | The other three: the workflow's smoke jobs |
+| Extension packages | **darwin-arm64 installs and works** with `examples/quill` | The other three are smoke-tested by the release run itself |
 | Documentation | Written | Your review |
 | Release checklist | [RELEASING.md](../RELEASING.md) | Your review |
 | Names | All available or already yours | Nothing |
@@ -33,7 +33,7 @@ On macOS arm64:
 - `crates/tessera-cli/tests/build.rs`: `ascribe build` reports what `ascribe check` reports. Passes.
 - The VS Code extension's `quill` integration suite, against the real server: 7 passing.
 
-The gate asks for every platform. `rust.yml` runs these tests on Ubuntu, macOS, and Windows, and waits for a manual run.
+The gate asks for every platform. `rust.yml` runs these tests on Ubuntu, macOS, and Windows; for 0.1.0 the owner accepted Linux and Windows unverified.
 
 ### End to end
 
@@ -43,7 +43,7 @@ On macOS arm64, with the native package staged as npm installs it:
 - VS Code integration suites: activation 2, stub 8, quill 7, preview 9, all passing.
 - Preview parity with the built Astro site (`test:parity`): 16 passed.
 
-The gate asks for every platform in CI: `js.yml`'s `astro` matrix (Linux x64 and arm64, macOS arm64, Windows x64) waits for a manual run. The release workflow's `smoke` jobs also install the packed CLI and the extension on all four platforms.
+The gate asks for every platform in CI: `js.yml`'s `astro` matrix covers Linux x64 and arm64, macOS arm64, and Windows x64. For 0.1.0 the owner accepted Linux and Windows unverified. The release workflow's `smoke` jobs still install the packed CLI and the extension on all four platforms before anything is published.
 
 ### Performance
 
@@ -59,14 +59,12 @@ The Elastic miss recorded in `tests/corpora/RESULTS.md` (7.4 s on the phase's co
 
 ## Open questions
 
-Q171 to Q174 are open, recorded at the review of phase 22, and each describes what's implemented:
+None. Q171 to Q174, recorded at the review of phase 22, are resolved as implemented, on the repository owner's delegation (2026-09-30):
 
-- **Q171:** the npm packages that carry the binary: `@ascribed/cli-<os>-<cpu>`, with a launcher in `@ascribed/cli`.
+- **Q171:** the npm packages that carry the binary: `@ascribed/cli-<os>-<cpu>` for four platforms, with a launcher in `@ascribed/cli`.
 - **Q172:** where the Astro integration finds the binary: `binary`, then `ASCRIBE_BIN`, then the installed `@ascribed/cli`.
-- **Q173:** how `astro dev` rebuilds, and what a failed rebuild does. **Its known gap is now closed:** the integration reads the site output's manifest after each build and watches each asset outside the content root (`packages/astro/src/dev.ts`, with a unit test and an end-to-end test that fails without the change).
+- **Q173:** how `astro dev` rebuilds, and what a failed rebuild does. Its known gap is closed: the integration reads the site output's manifest after each build and watches each asset outside the content root (`packages/astro/src/dev.ts`, with a unit test and an end-to-end test that fails without the change).
 - **Q174:** how CI builds the platform packages: natively on each platform, packed with `npm pack` and `pnpm pack`.
-
-Recommendation: approve all four as implemented. They concern what's published, so the checklist's first step is their approval.
 
 ## Names
 
@@ -115,4 +113,4 @@ The package READMEs, which npm and the Marketplace show, are rewritten for users
 - The binaries aren't signed with an Apple Developer ID or a Windows Authenticode certificate. It matters only for binaries downloaded from the GitHub release with a browser; npm and the extension aren't affected. RELEASING.md says how users clear the macOS quarantine.
 - Intel Macs aren't supported (dropped at the owner's request): no `darwin-x64` npm package or extension package.
 - Linux needs glibc 2.35 or later; musl systems such as Alpine aren't supported.
-- Linux and Windows are verified only by CI runs that haven't happened yet.
+- Linux and Windows are unverified before the release, by the owner's decision; the release run's smoke jobs are their first test.

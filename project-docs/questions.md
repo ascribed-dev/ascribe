@@ -1872,42 +1872,42 @@ These numbers are separate from the decisions in [content-model.md](content-mode
 
 - **Section:** phase 22, task 1; PLAN.md, Key decisions (distribution)
 - **Raised by:** phase 22 (recorded at review, 2026-09-30; the phase made the choice without a question)
-- **Status:** open
+- **Status:** resolved (2026-09-30)
 - **Ambiguity:** phase 22 says "one package per platform ... declared as optional dependencies of `@ascribed/cli`" without naming them or saying how the right one is found.
 - **Options:** (a) `@ascribed/cli-<os>-<cpu>` packages, each with `os` and `cpu` so npm installs only the matching one, and a shim in `@ascribed/cli` that picks it by `process.platform` and `process.arch` (esbuild's and Biome's pattern); (b) a postinstall download.
 - **Proposed resolution:** (a), implemented: `@ascribed/cli-{darwin-arm64,linux-arm64,linux-x64,win32-x64}`, each holding `bin/ascribe` (`ascribe.exe` on Windows); `@ascribed/cli` has the `ascribe` shim and exports `resolveBinary()` from `@ascribed/cli/binary`. No install scripts. An unsupported platform is an error that lists the supported ones. **Update (2026-09-30):** the repository owner dropped Intel Macs (`darwin-x64`) before the first release, since Apple is ending support for them; an Intel Mac gets the unsupported-platform error.
 - **Affects:** `packages/cli`; phase 27 (what it publishes).
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** resolved on the repository owner's delegation: as proposed, option (a): `@ascribed/cli` is a launcher with one optional dependency per platform, `@ascribed/cli-{darwin-arm64,linux-arm64,linux-x64,win32-x64}`, each declaring `os` and `cpu` (and `libc: glibc` on Linux) and holding only its binary; `resolveBinary()` from `@ascribed/cli/binary` finds it; no install scripts; an unsupported platform, including an Intel Mac, is an error that lists the supported ones. Distribution, not language: no SPEC change.
 
 ### Q172: Where the Astro integration finds the binary once it's on npm
 
 - **Section:** phase 22, task 2; Q152
 - **Raised by:** phase 22 (recorded at review, 2026-09-30)
-- **Status:** open
+- **Status:** resolved (2026-09-30)
 - **Ambiguity:** Q152 set the order `binary` option, `ASCRIBE_BIN`, then the workspace's `target/`, and said phase 22 replaces the last step with the npm-installed binary.
 - **Proposed resolution:** implemented as Q152 foresaw: the `binary` option, then `ASCRIBE_BIN`, then the project's installed `@ascribed/cli` (`resolveBinary()`); the workspace's `target/` is no longer searched. An override that names a missing file is an error.
 - **Affects:** `packages/astro/src/binary.ts`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** resolved on the repository owner's delegation: as proposed: the `binary` option, then `ASCRIBE_BIN`, then the project's installed `@ascribed/cli` (`resolveBinary()`); the workspace's `target/` isn't searched, and an override that names a missing file is an error. Integration behavior, not language: no SPEC change.
 
 ### Q173: How `astro dev` rebuilds, and what a failed rebuild does
 
 - **Section:** phase 22, task 2
 - **Raised by:** phase 22 (recorded at review, 2026-09-30)
-- **Status:** open
+- **Status:** resolved (2026-09-30)
 - **Ambiguity:** "In `astro dev`, rebuilds when Ascribe sources, assets, or `ascribe.toml` change, and refreshes the page." It doesn't say how changes are batched, what a request during a rebuild gets, what a failed rebuild does, or which files are watched.
 - **Proposed resolution:** as implemented (`packages/astro/src/dev.ts`): changes under the content root (outside the output directory) and to `ascribe.toml` are batched for 50 ms, and builds run one at a time; a request that arrives while a rebuild is due or running waits for it; after a successful rebuild the collection is refreshed and the page gets a full reload; after a failed one the compiler's diagnostics are logged and pages answer HTTP 503 ("fix the source and save to retry") until an edit builds cleanly, so stale pages are never served. A change of `[project] output-dir` needs a restart of `astro dev`, which it says. **Known gap:** an asset elsewhere in the project, outside the content root (asset contract §2 step 5), isn't watched, so editing it doesn't rebuild in dev; the build and the preview (Q182) handle it. Recommend adding each such asset's directory to the watcher, as the preview does. **Update (2026-09-30, phase 27):** the gap is closed. After each successful build, the integration reads the site output's manifest and watches each asset whose source is outside the content root (`outsideAssets` in `dev.ts`); a unit test covers the manifest, and an end-to-end test in `examples/astro-site` edits a linked file in `shared/` beside the content root and waits for the rebuild (it fails without the change).
 - **Affects:** `packages/astro/src/dev.ts`.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** resolved on the repository owner's delegation: as proposed, with the known gap closed: changes to sources and assets under the content root (outside the output directory), to assets elsewhere in the project that the last successful build used (read from the site manifest), and to `ascribe.toml` are batched for 50 ms and built one at a time; a request waits for a due or running rebuild; a successful rebuild refreshes the collection and fully reloads the page; a failed one logs the diagnostics and answers HTTP 503 until an edit builds cleanly; a change of `[project] output-dir` needs a restart, which the integration says. Integration behavior, not language: no SPEC change.
 
 ### Q174: How CI builds and packs the platform packages
 
 - **Section:** phase 22, task 3
 - **Raised by:** phase 22 (recorded at review, 2026-09-30)
-- **Status:** open
+- **Status:** resolved (2026-09-30)
 - **Ambiguity:** "CI cross-compiles release binaries for every platform" doesn't say how, or how the packages are packed for the end-to-end test.
 - **Proposed resolution:** as implemented (the manual-only `astro` matrix in `.github/workflows/js.yml`): each platform builds natively on its own runner (Ubuntu x64 and arm64, macOS x64 and arm64, Windows x64) rather than cross-compiling, so each binary is built and run where it ships; the platform package is packed with `npm pack` (it keeps the executable bit) and `@ascribed/cli` with `pnpm pack` (it rewrites `workspace:*`), both installed with `npm --offline --ignore-scripts`, and phase 21's browser suite runs against the installed binary. The platform results wait for a manual run.
 - **Affects:** `.github/workflows/js.yml`, `packages/cli/scripts/stage-native.mjs`; phase 27's release workflow.
-- **Resolution:** _to be filled in by a human._
+- **Resolution:** resolved on the repository owner's delegation: as proposed: each binary is built natively on its own platform's runner, not cross-compiled, in `js.yml`'s `astro` matrix and in the release workflow (which builds Linux on Ubuntu 22.04, for glibc 2.35, and links Windows' C runtime statically); platform packages are packed with `npm pack`, which keeps the executable bit, and the others with `pnpm pack`, which resolves `workspace:` ranges (`scripts/release/pack.mjs`). For 0.1.0 the owner chose not to verify Linux and Windows before release; the release workflow's build and smoke jobs still run on them. No SPEC change.
 
 ### Q181: What the preview shows, and what it does for a file that isn't a page
 
