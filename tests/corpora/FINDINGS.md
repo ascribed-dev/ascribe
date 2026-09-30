@@ -2,8 +2,7 @@
 
 Every false positive, language question, and performance problem the corpora
 and the benchmarks turned up, at the pinned commits (`src/corpus.rs`). Each has
-a minimal reproduction and an owner. Language questions are in
-`project-docs/questions.md` (Q191 to Q196); no GitHub issues were opened.
+a minimal reproduction and an owner.
 
 - **R**: recognition, over the unconverted Markdown.
 - **F**: found by converting: the language.
@@ -40,7 +39,7 @@ Astro 4 (`{children}` in MDX, `{stars}`), Docker 25 (`/containers/{name}`,
 written `{icon}\`gear\``). Braces that aren't keys (`{}`, `{ "a": 1 }`, `{2,3}`,
 `{Object}`, `{a b}`) are not candidates (`tests/edge.rs`). Not a false positive.
 
-### R2: `{{key}}` holds the candidate `{key}`: intended; resolved by Q191
+### R2: `{{key}}` holds the candidate `{key}`: intended; `ascribe check` now reports it
 
 ```
 Use {{es}} here.
@@ -49,7 +48,7 @@ Use {{es}} here.
 40,729 in Elastic prose and 6,607 in link destinations (`[x]({{es-apis}})`).
 Intended by §5.1 (braces may sit against punctuation), and harmless while the
 key is undeclared. The risk is a *declared* key left in double braces: it
-renders `{Elasticsearch}` with no diagnostic. **Resolved (Q191):** `ascribe
+renders `{Elasticsearch}` with no diagnostic. **Resolved:** `ascribe
 check` now warns about it (`phrase-double-braces`, ASC126). On the converted
 Elastic sample, it finds 295 `{{key}}` the converter didn't convert (see
 "Converter limits").
@@ -86,7 +85,7 @@ The converters (`src/convert/`) turn each corpus's constructs into Ascribe. What
 they produce is realistic enough to expose these. Counts are for the converted
 Elastic sample unless noted.
 
-### F1: no availability for an include (Q192): 17 errors
+### F1: no availability for an include: 17 errors
 
 ```
 @available: cloud
@@ -97,7 +96,7 @@ Elastic sample unless noted.
 include in `applies-item` 17 times in this sample. Owner: phases 06 and 12, if
 the language changes. Reproduction: `f1_…` in `tests/edge.rs`.
 
-### F2: a title can't start with a dot (Q193): 9 errors (6 Elastic, 3 Docker); resolved
+### F2: a title can't start with a dot: 9 errors (6 Elastic, 3 Docker); resolved
 
 ```
 ..NET
@@ -107,23 +106,23 @@ text
 ```
 
 `.NET` above a directive is the title `NET`; `..NET` isn't a title, so the arm
-has none (`variant-arm-kind`). **Resolved (Q193):** `.\.NET` is the title
+has none (`variant-arm-kind`). **Resolved:** `.\.NET` is the title
 `.NET`, and the converters write it that way, so the 9 errors are gone.
 Reproduction: `f2_…`.
 
-### F3: a section can't name a target its page doesn't (Q194): 147 errors
+### F3: a section can't name a target its page doesn't: 147 errors
 
 Page `available: stack ga`, a block `@available: serverless ga`:
 `available-exceeds-scope`. §4.4 says so; Elastic's `applies_to` doesn't. The
 converter doesn't widen the page's spec, so the errors stay visible.
 
-### F4: only headings can be link targets (Q195): 647 unresolved anchors
+### F4: only headings can be link targets: 647 unresolved anchors
 
 `$$$anchor$$$` marks any place in Elastic's docs (1,074 in 135 files); a link to
 one is `link-id-missing` (647 of the sample's 992). A further 110 use legacy
 Asciidoc ids (`_configuration_files_…`), which no slugger of ours produces.
 
-### F5: ids can't contain `_` or `.` (Q196): 2,534 of 13,007 anchors; resolved
+### F5: ids can't contain `_` or `.`: 2,534 of 13,007 anchors; resolved
 
 ```
 ## Setup
@@ -131,7 +130,7 @@ Asciidoc ids (`_configuration_files_…`), which no slugger of ours produces.
 ```
 
 `id-invalid`. The converter rewrites the id (`ece-setup`) and the links it
-sees (162); links from outside the site can't be found. **Resolved (Q196):**
+sees (162); links from outside the site can't be found. **Resolved:**
 ids may contain `_` and `.`, so the converter could keep such anchors as they
 are; it still rewrites them. Reproduction: `f5_…`.
 
@@ -150,7 +149,7 @@ are; it still rewrites them. Reproduction: `f5_…`.
 - **`{{key}}` in code spans** stays as written (381): phrases never apply in
   code spans (§5.1), so the substitution is lost. That's the spec, not a bug.
 - **`{{key}}` left in prose** (295 in Elastic): substitutions the converter
-  doesn't reach, which `phrase-double-braces` (Q191) now reports. A converter
+  doesn't reach, which `phrase-double-braces` now reports. A converter
   follow-up, not a language one.
 
 ## Performance

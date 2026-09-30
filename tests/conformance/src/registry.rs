@@ -2,9 +2,8 @@
 //!
 //! The harness reads it to check the slugs cases expect: every slug must be
 //! registered, file-level slugs belong in a case's top-level `diagnostics`
-//! and page-level ones under `builds.<name>.diagnostics`, and a case that
-//! expects a provisional diagnostic must be tagged `provisional` and list its
-//! questions. The file's format is documented in its header.
+//! and page-level ones under `builds.<name>.diagnostics`. The file's format
+//! is documented in its header.
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -79,12 +78,9 @@ pub struct Entry {
     /// The SPEC §8.2 row, as `<construct> | <condition>`.
     #[serde(default)]
     pub row: Option<String>,
-    /// The content-model.md §20 subsection of a loader rule.
+    /// The group of the diagnostics reference a loader rule is listed in.
     #[serde(default)]
-    pub rule: Option<String>,
-    /// `questions.md` entries the diagnostic depends on.
-    #[serde(default)]
-    pub provisional: Vec<String>,
+    pub group: Option<String>,
     /// Why the diagnostic was retired, if it was.
     #[serde(default)]
     pub retired: Option<String>,

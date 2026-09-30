@@ -108,7 +108,7 @@ running is noticed. Re-record after an intended change with
 `corpora compare results.jsonl --record`, on the machine the job runs on, and
 say so in the commit.
 
-## Completion (phase 16)
+## Completion
 
 Phase 16 hadn't merged when this was written. The hook: a
 `crates/tessera-lsp/benches/completion.rs` that builds `Synthetic::standard()`

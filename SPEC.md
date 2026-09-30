@@ -268,7 +268,7 @@ You can run Quill in the browser with no local setup.
 - The title line MUST be directly above the directive line, with no blank line between.
 - A title line MUST begin a block: it follows a blank line, a heading, a directive line, or the start of its container. A `.` line that continues a paragraph is ordinary text.
 - If the next line isn't a directive that accepts a title, the `.` line is ordinary text. Prose such as `.NET is a framework` is therefore unaffected. When it sits directly on top of a directive that doesn't accept a title, it stays ordinary text, but processors SHOULD warn that it may be a misplaced title (§8.2); `\.` silences the warning.
-- A title whose text starts with a dot escapes it, as CommonMark escapes any punctuation: `.\.NET` is the title `.NET` (Q193). `..NET` isn't a title line.
+- A title whose text starts with a dot escapes it, as CommonMark escapes any punctuation: `.\.NET` is the title `.NET`. `..NET` isn't a title line.
 - A line that starts with `.` and a space (`. Try it`) is never a title. When it sits directly above a directive that accepts a title, processors SHOULD warn that it was probably meant as one.
 - Titles serve as a note's heading, a `@details` summary, and a labeled `@variant` arm's label (§4.3).
 
@@ -572,7 +572,7 @@ See the [streaming API reference]({api}streaming).
   - `{key}` text in prose whose key isn't declared, which is literal today and would silently become a phrase if the key were declared later (`\{` silences it). Prose here is every inline position: paragraphs, headings, link text, alt text, table cells, titles, and text primaries, but not destinations, fences with `phrases=true`, or frontmatter;
   - when a key is added to the registry, the pages whose existing literal `{key}` text would change.
 
-  Processors SHOULD also warn about a declared phrase written directly between two more braces, `{{key}}`: it's `{`, the phrase, and `}`, so the value appears between literal braces. That spelling is almost always a substitution from another tool (Hugo, Jinja, Elastic's docs) that wasn't converted; `\{` silences the warning for a brace that's meant (Q191).
+  Processors SHOULD also warn about a declared phrase written directly between two more braces, `{{key}}`: it's `{`, the phrase, and `}`, so the value appears between literal braces. That spelling is almost always a substitution from another tool (Hugo, Jinja, Elastic's docs) that wasn't converted; `\{` silences the warning for a brace that's meant.
 
 ### 5.2 Links
 

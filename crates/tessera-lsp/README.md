@@ -15,7 +15,7 @@ request is phase 25.
 
 ## Semantic token legend
 
-**This legend is a contract with the VS Code client (phase 17). The order of the
+**This legend is a contract with the VS Code client. The order of the
 types and modifiers is what the wire format indexes, so entries are only ever
 appended, never reordered or renamed.** The server sends the legend in its
 `initialize` result; a client that reads it from there needs nothing from here
@@ -59,7 +59,7 @@ parity test converts before comparing.)
 
 ## The preview request: `ascribe/preview`
 
-A custom request (phase 25) that renders a page the way the published site
+A custom request that renders a page the way the published site
 does, for the editor's preview. It answers from the current snapshot, so it
 includes unsaved edits, and it writes nothing. For a document and a build it
 resolves the page for the build (`Project::resolve_page`), writes the site
@@ -86,14 +86,14 @@ and `problems` says why. Field names are camelCase.
 | `build` | The build the answer is for. |
 | `builds` | Every build of the content model, in order: `{ name, editor, description }`. `editor` marks `[editor] build`, the picker's default. |
 | `projectRoot`, `contentRoot` | Absolute paths. |
-| `assetRoots` | Directories outside the content root that the page's assets are in and the preview may read (Q182): the directory of each asset that is in the project but not in the content root. The client may serve the content root and these, and nothing wider. |
+| `assetRoots` | Directories outside the content root that the page's assets are in and the preview may read: the directory of each asset that is in the project but not in the content root. The client may serve the content root and these, and nothing wider. |
 | `documentVersion` | The version of the open document the answer is from, or `null` when the file isn't open. A client that sent version *n* and gets an older one has raced its own change notification and asks again. |
 | `problems` | `{ severity: "error" \| "warning" \| "info", message }`: no project, an unknown build, a file that isn't a page (a fragment names the pages that include it), a page the build drops, an emit error, an asset the preview can't show. |
 | `page.path`, `page.route` | The page's content path and its route on the site. |
 | `page.title` | The page's title, phrases substituted. |
-| `page.frontmatter` | What the site output writes as frontmatter, as JSON. `available` is the list of targets a layout hands to `<ascribe-availability>` (Q142). |
+| `page.frontmatter` | What the site output writes as frontmatter, as JSON. `available` is the list of targets a layout hands to `<ascribe-availability>`. |
 | `page.html` | The page's content as HTML, without frontmatter and without a layout. |
-| `page.assets` | Each asset the page uses: `{ reference, path, kind, servable }`. `reference` is what the HTML writes, before any `#fragment`: an image's `src` is relative to the page (`./_fragments/a.png`), a link target's `href` is the site URL. `path` is the absolute source file, **resolved from the file the reference is written in** (asset contract §7), so a fragment's image is the one beside the fragment. `servable` is `true` when the file is in the content root or in a directory of `assetRoots`; a file directly in the project root, in `node_modules` or `.git`, or in the output directory isn't served (Q182), and `problems` says so. References are percent-encoded as URLs are; compare them after normalizing (`packages/vscode/src/preview/refs.ts` does). |
+| `page.assets` | Each asset the page uses: `{ reference, path, kind, servable }`. `reference` is what the HTML writes, before any `#fragment`: an image's `src` is relative to the page (`./_fragments/a.png`), a link target's `href` is the site URL. `path` is the absolute source file, **resolved from the file the reference is written in** (asset contract §7), so a fragment's image is the one beside the fragment. `servable` is `true` when the file is in the content root or in a directory of `assetRoots`; a file directly in the project root, in `node_modules` or `.git`, or in the output directory isn't served, and `problems` says so. References are percent-encoded as URLs are; compare them after normalizing (`packages/vscode/src/preview/refs.ts` does). |
 | `page.links` | Each link to a page: `{ href, path, id }`, `href` as the HTML writes it, `path` the target file, `id` the heading it names. |
 | `page.sections` | The headings written in the previewed file itself, in order: `{ id, line }`, `line` from 0, for following the cursor. |
 
@@ -137,8 +137,8 @@ from `tessera-fmt`; the VS Code client applies those edits on save when
 - **The model.** An `ascribe.toml` that loads is applied as `Change::Model`
   (phase 13's tiers decide what is re-parsed, re-indexed, or re-resolved). One
   that doesn't load has its problems published on `ascribe.toml`, and the
-  project keeps the last model that did (Q131). A change to the content root or
-  output directory can't be applied in place (`ApplyError::LayoutChanged`, Q92),
+  project keeps the last model that did. A change to the content root or
+  output directory can't be applied in place (`ApplyError::LayoutChanged`),
   so the server reloads the whole project and republishes everything.
 - **Diagnostics** are `tessera_check::check_file` for each file in
   `Affected::recheck`, plus the page-level diagnostics of the editor's build
@@ -197,26 +197,26 @@ each context offers, from the content model and the index:
 | `@available:` and frontmatter `available:` | At the start: targets (values with labels), dimension names, feature keys (only as the whole spec). After a target: lifecycle states. In a history `(…)`: states |
 | `{` in prose, a title, a heading, a text primary, or a `phrases=true` fence | Declared phrase keys, each showing its value |
 | `@include:` | Source files, relative to the file (or from the content root after a `/`); after `#`, the ids of the file named |
-| A link destination, `](…`, or a reference definition | Pages and headings by **title** (Q161): inserts the relative path and the source id, shows the path as the detail |
+| A link destination, `](…`, or a reference definition | Pages and headings by **title**: inserts the relative path and the source id, shows the path as the detail |
 
 Nothing is offered inside inline code or a code fence. A search is cut at 100
 items and marked incomplete, so the client asks again as the author types.
 
-**Hover** (Q162): a link or image (its project-relative path, the title, a
+**Hover**: a link or image (its project-relative path, the title, a
 plain-text preview of the first paragraph), an include (the same; a fragment
 says so), a phrase (its value), an availability spec or feature key (SPEC
 §9.4's text), and a directive or attribute key (its schema).
 
-**Go to definition** (Q163): links and includes to the file or heading;
+**Go to definition**: links and includes to the file or heading;
 `@id`'s primary to its heading; phrases and feature keys to their entries in
 `ascribe.toml`.
 
-**Document links** (Q165) make every link, image, and include destination
-clickable, with `#L<line>` for a heading. **CodeLens** (Q164) puts
+**Document links** make every link, image, and include destination
+clickable, with `#L<line>` for a heading. **CodeLens** puts
 `Includes <file> › <heading>` above each `@include`. Its command,
 `ascribe.openFile`, is the server's own (`workspace/executeCommand`, which the
 language client wires from the capability): it answers by sending
-`window/showDocument`, so **no client code is needed**. **Inlay hints** (Q166)
+`window/showDocument`, so **no client code is needed**. **Inlay hints**
 show the resolved title inside the `[` of an empty-text link.
 
 ## Performance

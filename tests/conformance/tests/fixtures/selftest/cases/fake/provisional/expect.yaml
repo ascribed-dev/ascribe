@@ -1,5 +1,0 @@
-# `provisional` is a marker tag: it needs no adapter or skip entry.
-tags: [fake, provisional]
-questions: [Q1]
-outline:
-  - paragraph: Hello.

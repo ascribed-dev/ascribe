@@ -2,7 +2,7 @@
 
 This directory holds Ascribe's conformance cases and the harness that runs them. A case pairs Ascribe source with what a conforming processor must produce from it: the parsed structure, the diagnostics, and per-build results. The cases are written by hand from [SPEC.md](../../SPEC.md), not from any implementation, so they're an independent check.
 
-Phase 00 defined the format and the harness. Phase 03 writes the cases. Every implementation phase connects its crate through an adapter and removes the skip entries for what it now handles.
+This file documents the case format and the harness. Each crate connects through an adapter and removes the skip entries for what it handles.
 
 ## Running
 
@@ -28,10 +28,10 @@ Every case runs through the runner: each area tag has an adapter (`tests/adapter
 tests/conformance/
   README.md          this file
   SKIPS.toml         skipped tags and cases, each with a reason
-  diagnostics.toml   the diagnostics registry (phase 02)
-  _model/            the shared fixture model, ascribe.toml (phase 03)
+  diagnostics.toml   the diagnostics registry
+  _model/            the shared fixture model, ascribe.toml
   cases/             the cases, grouped by area: cases/<area>/<case>/
-  snapshots/         insta snapshots of expected outputs (phases 18 and 20)
+  snapshots/         insta snapshots of expected outputs
   src/               the harness library (crate tessera-conformance)
   tests/
     conformance.rs   the runner
@@ -41,7 +41,7 @@ tests/conformance/
 
 ## The suite
 
-Phase 03 wrote the cases from SPEC.md, not from any implementation. They're grouped by what they check:
+The cases were written from SPEC.md, not from any implementation. They're grouped by what they check:
 
 | Directory | Checks |
 |---|---|
@@ -54,21 +54,21 @@ Phase 03 wrote the cases from SPEC.md, not from any implementation. They're grou
 | `format/` | Canonical form (§8.3): each rule, what the formatter leaves alone, and constructs with errors |
 | `builds/selection/`, `builds/filter/`, `builds/assets/`, `builds/pages/` | Resolution and build modes, availability filtering, assets, which files are pages (§9.2–§9.4) |
 | `projects/quill/` | The whole Quill project of `examples/quill`, with no diagnostics under any build |
-| `samples/` | The two worked examples from phase 00 |
+| `samples/` | The two worked examples |
 
-Every row of SPEC §8.2 has at least one case that expects it; `tests/suite.rs` keeps that true. Cases that depend on an open entry in `project-docs/questions.md` are tagged `provisional`, and the same test requires the entries they name to be open. [`INTERPRETATIONS.md`](INTERPRETATIONS.md) lists the readings of the spec the cases lock in, and what the suite doesn't cover.
+Every row of SPEC §8.2 has at least one case that expects it; `tests/suite.rs` keeps that true. [`INTERPRETATIONS.md`](INTERPRETATIONS.md) lists the readings of the spec the cases lock in, and what the suite doesn't cover.
 
 Conventions the cases follow:
 
 - **A page needs a title.** The shared model's default type requires `title`, so a single-file case that expects diagnostics starts with a three-line frontmatter block. Diagnostic lines count it. A case that expects only an outline has none, and neither does a fragment.
-- **A case checks one kind of thing.** Recognition and structure are separate from diagnostics (`parser` and `structure` cases carry an outline; `check` cases carry diagnostics), so each phase's cases run when its own adapter exists. A case carries several tags only when it needs several adapters.
+- **A case checks one kind of thing.** Recognition and structure are separate from diagnostics (`parser` and `structure` cases carry an outline; `check` cases carry diagnostics), so a case runs when its own adapter exists. A case carries several tags only when it needs several adapters.
 - **Page-level diagnostics need the `page-check` tag**, and top-level (file-level) diagnostics need `check`.
 
 ## Resolved outlines
 
 A build's page `outline` is the page after resolution steps 1 to 4 (SPEC §9.2): includes replaced, availability resolved, the build's modes applied, and phrases substituted. Its text is still the page's source text, so:
 
-- links keep their file-path destinations and empty link text, heading ids aren't shown, and glossary terms aren't linked (steps 5 to 7); those show up as diagnostics and, in phases 18 and 20, as outputs;
+- links keep their file-path destinations and empty link text, heading ids aren't shown, and glossary terms aren't linked (steps 5 to 7); those show up as diagnostics and in the emitters' outputs;
 - an `@available` directive that survives a filter stays in the outline as the annotation, with its binding; content a filter removes takes its directive with it, and a section is its heading and everything up to the next heading of the same or a higher level, subsections included;
 - a group that a selection reduces to several arms stays a group with the arms' own attributes, and one arm becomes that arm's blocks;
 - an escape stays as written (`\{product}`).
@@ -100,7 +100,7 @@ A case has one or the other, never both. Paths in `expect.yaml` (diagnostic file
 
 ### The content model
 
-A case may have its own `ascribe.toml` in the case directory. Otherwise it uses the shared fixture model, `tests/conformance/_model/ascribe.toml`, which phase 03 writes from the Quill model. Prefer the shared model; give a case its own only when it tests the content model itself or needs declarations the shared model shouldn't have.
+A case may have its own `ascribe.toml` in the case directory. Otherwise it uses the shared fixture model, `tests/conformance/_model/ascribe.toml`, written from the Quill model. Prefer the shared model; give a case its own only when it tests the content model itself or needs declarations the shared model shouldn't have.
 
 ### Line endings
 
@@ -112,7 +112,6 @@ A case may have its own `ascribe.toml` in the case directory. Otherwise it uses 
 description: A trailing colon opens a container.   # optional; say what the case checks
 spec: ["3.5"]                                     # optional; SPEC.md sections covered
 tags: [structure]                                 # required; at least one area tag
-questions: [Q4]                                   # required if tagged provisional
 
 outline: [...]         # single-file cases only; the expected parse (see Outline)
 formatted: formatted.md  # single-file cases only; what formatting input.md gives (see Formatting)
@@ -141,10 +140,6 @@ Tags route a case to adapters and let a runner select cases. **Area tags** name 
 | `format` | Canonical form (§8.3) | 23 |
 
 A new area tag needs an entry in `SKIPS.toml` (or an adapter) before any case uses it.
-
-**Marker tags** describe a case instead of naming an area, and need neither an adapter nor a skip entry. There's one:
-
-- `provisional`: the case depends on an unresolved entry in [`project-docs/questions.md`](../../project-docs/questions.md). List the entries in `questions`. When a human resolves the question, update the case and remove the tag.
 
 ## Outline
 
@@ -270,7 +265,7 @@ diagnostics:
     file: guides/setup.md       # required in project cases
 ```
 
-- `slug` names an entry of the diagnostics registry, `tests/conformance/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and a `page`-level slug under a build; and a slug whose entry is `provisional` needs a case tagged `provisional` that lists the entry's questions.
+- `slug` names an entry of the diagnostics registry, `tests/conformance/diagnostics.toml` (its header documents the format). Cases refer to diagnostics by slug, never by code or message. The runner checks every expected slug before the case runs, even when the case is skipped: the slug must be registered; a `file`-level slug goes in the top-level `diagnostics` and and a `page`-level slug under a build.
 - `line` is 1-based and counts every line of the file, including frontmatter.
 - `column` is 1-based and counts Unicode scalar values (characters), not bytes or UTF-16 units. It's compared only when written.
 - `file` is relative to the content root. It defaults to `input.md` in single-file cases.
@@ -324,11 +319,11 @@ The runner formats `input.md` through the adapter (`ConformanceAdapter::format`,
 ```toml
 [[skip]]
 tag = "structure"
-reason = "Adapter for tag `structure` not yet implemented; phase 06."
+reason = "Adapter for tag `structure` not yet implemented."
 
 [[skip]]
 case = "check/attributes/bare-key"
-reason = "The bare-key diagnostic arrives with phase 10."
+reason = "The bare-key diagnostic isn't implemented yet."
 checks = ["diagnostics"]
 ```
 
@@ -342,7 +337,7 @@ For each case, the runner decides:
 3. If any area tag is skipped, the case is skipped, with every applicable reason.
 4. Otherwise, the case runs, minus any checks named by partial skip entries for the case or its tags.
 
-The run also fails when `SKIPS.toml` is stale: a full skip for a tag that an adapter now handles, or a skip for a case that doesn't exist. So when a phase registers an adapter, it must remove its tag's entry, and its cases start running.
+The run also fails when `SKIPS.toml` is stale: a full skip for a tag that an adapter now handles, or a skip for a case that doesn't exist. So when an adapter is registered, it must remove its tag's entry, and its cases start running.
 
 ## Adapters
 
@@ -361,16 +356,16 @@ pub trait ConformanceAdapter {
 
 - `handles_tag` decides which cases reach the adapter. Handling a tag means its cases run.
 - Each method returns `Ok(Some(result))`, `Ok(None)` when this adapter doesn't produce that result, or `Err` when it can't process the case. For each check, the runner asks the adapters that handle any of the case's area tags, in registration order, and uses the first `Some`. An expectation that no adapter produces fails the case, unless a skip entry names that check.
-- `Case` gives an adapter the case's `kind`, `content_root()`, `input()` (single-file cases), `source_files()`, and `model` (the `ascribe.toml` to load; the shared model may not exist before phase 03).
+- `Case` gives an adapter the case's `kind`, `content_root()`, `input()` (single-file cases), `source_files()`, and `model` (the `ascribe.toml` to load).
 - `diagnostics` returns file-level diagnostics for every source file, with `file` relative to the content root. `build` returns the published pages, copied assets, page-level diagnostics, and, per page, the resolved outline and any emitted outputs.
 - `format` returns `source` in canonical form under the case's content model (see Formatting).
 - A panic inside an adapter fails that case; the run continues.
 
-To connect a phase: add the crate as a dev-dependency of `tessera-conformance`, implement the trait in a module under `tests/adapters/`, register it, remove the tag's entry from `SKIPS.toml`, and make the cases pass.
+To connect a crate: add the crate as a dev-dependency of `tessera-conformance`, implement the trait in a module under `tests/adapters/`, register it, remove the tag's entry from `SKIPS.toml`, and make the cases pass.
 
 ## Worked example: the Appendix B page
 
-The case `cases/samples/appendix-b` is the complete page from SPEC Appendix B, as `input.md`. It's a single-file case that expects only an outline: the page includes and links to files a single-file case doesn't have, so its file-level diagnostics wouldn't be clean. (`examples/quill`, from phase 03, is the full project.)
+The case `cases/samples/appendix-b` is the complete page from SPEC Appendix B, as `input.md`. It's a single-file case that expects only an outline: the page includes and links to files a single-file case doesn't have, so its file-level diagnostics wouldn't be clean. (`examples/quill` is the full project.)
 
 Its `expect.yaml`:
 
@@ -519,4 +514,4 @@ The second sample, `cases/samples/include-and-selection`, is a small project cas
 - Put each SPEC.md example in at least one case, and record the section in `spec`.
 - Expect only what the case is about. Leave out content fields that don't matter to it.
 - For every rule that can be broken, write a passing case and a failing one.
-- Never guess where the spec is silent. Record a question, tag the case `provisional`, and list the question in `questions`.
+- Never guess where the spec is silent. Raise it so the spec can decide, and leave the case out until it does.

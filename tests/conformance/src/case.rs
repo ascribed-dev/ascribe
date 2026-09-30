@@ -94,11 +94,8 @@ impl Case {
     fn validate(&self) -> Result<(), CaseError> {
         let e = &self.expect;
         let fail = |m: String| Err(CaseError::Format(m));
-        if e.area_tags().next().is_none() {
+        if e.tags.is_empty() {
             return fail("a case needs at least one area tag".into());
-        }
-        if e.is_provisional() && e.questions.is_empty() {
-            return fail("a provisional case must list the `questions` it depends on".into());
         }
         if e.outline.is_none()
             && e.diagnostics.is_none()

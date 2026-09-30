@@ -1,4 +1,4 @@
-# Corpora and performance (phase 26)
+# Corpora and performance
 
 Tests and benchmarks against real documentation and a synthetic project of
 3,000 pages. Nothing from the corpora is committed (`LICENSES.md`).

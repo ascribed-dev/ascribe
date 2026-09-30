@@ -1,5 +1,0 @@
-# A provisional diagnostic needs a provisional case listing its questions.
-tags: [fake]
-diagnostics:
-  - slug: maybe-bad
-    line: 1
