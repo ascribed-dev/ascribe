@@ -416,7 +416,7 @@ fn two_pages_with_one_route_are_reported_for_both() {
 fn a_workspace_without_a_project_answers_with_a_problem() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("a.md"), "# A\n").unwrap();
-    let root = dir.path().canonicalize().unwrap();
+    let root = support::real_path(dir.path());
     let mut client = Client::start(&root);
     client.settle();
     let result = preview(&mut client, &root.join("a.md"), None);

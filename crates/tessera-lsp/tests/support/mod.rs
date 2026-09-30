@@ -52,6 +52,18 @@ impl Default for Setup {
     }
 }
 
+/// The real path of `path`, with symlinks resolved. On Windows, `canonicalize`
+/// writes a drive path as `\\?\C:\dir`; clients send `C:\dir`, so that's the
+/// form returned.
+pub fn real_path(path: &Path) -> PathBuf {
+    let real = path.canonicalize().expect("a real path");
+    let text = real.to_string_lossy();
+    match text.strip_prefix(r"\\?\") {
+        Some(drive) if drive.as_bytes().get(1) == Some(&b':') => PathBuf::from(drive),
+        _ => real,
+    }
+}
+
 pub fn uri(path: &Path) -> Uri {
     let path = path.to_string_lossy().replace('\\', "/");
     let mut text = String::from("file://");
@@ -342,7 +354,7 @@ impl Fixture {
     /// The project root, with symlinks resolved (the server normalizes paths
     /// lexically, so tests use the real path everywhere).
     pub fn root(&self) -> PathBuf {
-        self.dir.path().canonicalize().expect("a real path")
+        real_path(self.dir.path())
     }
 
     pub fn path(&self, rel: &str) -> PathBuf {
