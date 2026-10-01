@@ -34,7 +34,9 @@ exports.run = async function run(): Promise<void> {
   assert.equal(binary.source, expected, `expected the ${expected} binary, got ${binary.path}`);
   if (expected === "bundled") {
     const dir = path.join(extension.extensionPath, "bin", `${process.platform}-${process.arch}`);
-    assert.equal(path.dirname(binary.path), dir);
+    // Windows paths are case-insensitive, and VS Code writes the drive letter in lower case.
+    const fold = (p: string): string => (process.platform === "win32" ? p.toLowerCase() : p);
+    assert.equal(fold(path.dirname(binary.path)), fold(dir));
   }
   const version = binary.version.parts.join(".");
   assert.equal(version, extension.packageJSON.version, "the binary's version");
