@@ -2,7 +2,7 @@
 
 Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, `@ascribed/astro`, `@ascribed/elements`), and the VS Code extension share one version. Versions follow [semantic versioning](https://semver.org/); while the major version is 0, a minor version may change behavior.
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-10-01)
 
 The first release. It implements version 0.1 of the [Ascribe specification](SPEC.md).
 
