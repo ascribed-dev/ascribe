@@ -47,6 +47,7 @@ export class ProjectServer implements vscode.Disposable {
   private requested = false;
   private starting: Promise<void> = Promise.resolve();
   private readonly started = new vscode.EventEmitter<void>();
+  private disposed = false;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -143,6 +144,7 @@ export class ProjectServer implements vscode.Disposable {
   async dispose(): Promise<void> {
     await this.starting.catch(() => undefined);
     await this.stopNow();
+    this.disposed = true;
     this.channel?.dispose();
     this.started.dispose();
   }
@@ -192,7 +194,7 @@ export class ProjectServer implements vscode.Disposable {
     const client = new ProjectClient("ascribe", this.output.name, serverOptions(binary), {
       ...clientOptions(
         this.project,
-        this.output,
+        untilDisposed(this.output, () => this.disposed),
         (uri) => this.host.ownedElsewhere(this.project, uri),
         (error) => this.reportFeatureError("preparing workspace rename", error),
       ),
@@ -280,6 +282,26 @@ class ProjectClient extends LanguageClient {
     }
     super.registerFeature(feature);
   }
+}
+
+/**
+ * The output channel as the language client sees it. The client writes to it
+ * after it has stopped: the server process's exit, and its last lines on
+ * stderr, come later. A disposed channel throws on every write, so once the
+ * project's server is disposed (its `ascribe.toml` went away) they're dropped.
+ */
+function untilDisposed(
+  channel: vscode.LogOutputChannel,
+  disposed: () => boolean,
+): vscode.LogOutputChannel {
+  return new Proxy(channel, {
+    get(target, property) {
+      const value: unknown = Reflect.get(target, property);
+      if (typeof value !== "function") return value;
+      return (...args: unknown[]): unknown =>
+        disposed() ? undefined : (value as (...a: unknown[]) => unknown).apply(target, args);
+    },
+  });
 }
 
 function serverOptions(binary: ResolvedBinary): ServerOptions {
