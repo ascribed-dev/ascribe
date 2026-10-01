@@ -2,13 +2,14 @@ import * as vscode from "vscode";
 import type { Middleware } from "vscode-languageclient/node";
 
 /**
- * Middleware that keeps a server from seeing the files of projects nested
- * inside its own folder. A document selector can only include a folder, so a
- * parent project's selector also matches a nested project's files; these
- * guards drop them before they reach the parent: document sync, every feature
+ * Middleware that keeps a server from seeing files that aren't its project's.
+ * A document selector can only include a folder, so a parent project's
+ * selector also matches a nested project's files, and the server's file
+ * watcher and rename filter (`**` globs) cover the whole window. These guards
+ * drop such files before they reach the server: document sync, every feature
  * request, pushed diagnostics, watched-file events, and renames.
  *
- * `excluded` says whether a file belongs to a nested project.
+ * `excluded` says whether a file belongs to another project, or to none.
  */
 export function scopeMiddleware(excluded: (uri: vscode.Uri) => boolean): Middleware {
   const skip = (document: vscode.TextDocument) => excluded(document.uri);

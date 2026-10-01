@@ -36,8 +36,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       ) {
         return;
       }
+      const server = projects.serverFor(event.document.uri);
+      if (!server || server.state !== "running") return;
       event.waitUntil(
-        projects
+        server
           .request("textDocument/formatting", {
             textDocument: { uri: event.document.uri.toString() },
             options: {
@@ -51,7 +53,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
           })
           .then((value) => asTextEdits(value))
           .catch((error: unknown) => {
-            projects.current()?.reportFeatureError("format on save", error);
+            server.reportFeatureError("format on save", error);
             return [];
           }),
       );
@@ -119,6 +121,8 @@ interface ProtocolTextEdit {
 }
 
 function asTextEdits(value: unknown): vscode.TextEdit[] {
+  // `null` is a valid answer: nothing to format (a file outside the content root).
+  if (value === null) return [];
   if (!Array.isArray(value)) {
     throw new Error("the language server returned invalid formatting edits");
   }

@@ -3,6 +3,7 @@ import {
   channelName,
   globFolder,
   nestedProjects,
+  ownedElsewhere,
   owningProject,
   samePath,
   type Project,
@@ -138,5 +139,37 @@ describe("channelName", () => {
 
   it("falls back to the folder when there's no workspace folder", () => {
     expect(channelName(project("/elsewhere/x"), undefined, false)).toBe("Ascribe (/elsewhere/x)");
+  });
+});
+
+describe("ownedElsewhere", () => {
+  const a = project("/repo/a");
+  const b = project("/repo/b");
+  const nested = project("/repo/a/docs/sub");
+  const all = [a, b, nested];
+
+  it("is false for the project's own files, including its ascribe.toml", () => {
+    expect(ownedElsewhere(a, "/repo/a/docs/x.md", all)).toBe(false);
+    expect(ownedElsewhere(a, a.config, all)).toBe(false);
+  });
+
+  it("is true for a sibling project's files", () => {
+    expect(ownedElsewhere(a, "/repo/b/docs/x.md", all)).toBe(true);
+    expect(ownedElsewhere(b, "/repo/a/docs/x.md", all)).toBe(true);
+  });
+
+  it("is true for a nested project's files, and false for the nested project's own", () => {
+    expect(ownedElsewhere(a, "/repo/a/docs/sub/x.md", all)).toBe(true);
+    expect(ownedElsewhere(nested, "/repo/a/docs/sub/x.md", all)).toBe(false);
+  });
+
+  it("is true for a file outside every project", () => {
+    expect(ownedElsewhere(a, "/repo/target/debug/out.md", all)).toBe(true);
+  });
+
+  it("compares Windows paths case-insensitively", () => {
+    const win = project("C:\\repo\\a");
+    expect(ownedElsewhere(win, "c:\\Repo\\A\\x.md", [win])).toBe(false);
+    expect(ownedElsewhere(win, "C:\\repo\\b\\x.md", [win, project("C:\\repo\\b")])).toBe(true);
   });
 });

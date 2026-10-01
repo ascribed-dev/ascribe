@@ -29,8 +29,8 @@ const RESTART = "Restart Server";
 export interface ProjectHost {
   /** The name of the project's output channel. */
   channelName(project: Project): string;
-  /** Whether a project nested inside `project` owns the file. */
-  ownedByNested(project: Project, uri: vscode.Uri): boolean;
+  /** Whether a file belongs to some other project than `project`, or to none. */
+  ownedElsewhere(project: Project, uri: vscode.Uri): boolean;
 }
 
 /**
@@ -118,6 +118,11 @@ export class ProjectServer implements vscode.Disposable {
     return this.starting;
   }
 
+  /** Writes a line to the project's output channel. */
+  log(message: string): void {
+    this.output.appendLine(message);
+  }
+
   showOutput(): void {
     this.output.show(true);
   }
@@ -188,7 +193,7 @@ export class ProjectServer implements vscode.Disposable {
       ...clientOptions(
         this.project,
         this.output,
-        (uri) => this.host.ownedByNested(this.project, uri),
+        (uri) => this.host.ownedElsewhere(this.project, uri),
         (error) => this.reportFeatureError("preparing workspace rename", error),
       ),
       errorHandler: this.errorHandler(),
@@ -260,6 +265,10 @@ export class ProjectServer implements vscode.Disposable {
  * commands to the extension. The client would register each one as a VS Code
  * command, and a second project's server (which offers the same ones) would
  * fail to start with "command already exists".
+ *
+ * `ascribe.openFile` (`OPEN_FILE` in crates/tessera-lsp/src/links.rs) is the
+ * server's only command; the extension registers it in `extension.ts`. A
+ * command the server adds needs the same treatment.
  */
 class ProjectClient extends LanguageClient {
   override registerFeature(feature: Parameters<LanguageClient["registerFeature"]>[0]): void {
@@ -285,10 +294,10 @@ function serverOptions(binary: ResolvedBinary): ServerOptions {
 function clientOptions(
   project: Project,
   outputChannel: vscode.LogOutputChannel,
-  ownedByNested: (uri: vscode.Uri) => boolean,
+  ownedElsewhere: (uri: vscode.Uri) => boolean,
   reportRenameError: (error: unknown) => void,
 ): LanguageClientOptions {
-  const scope = scopeMiddleware(ownedByNested);
+  const scope = scopeMiddleware(ownedElsewhere);
   const folder = globFolder(project.folder);
   const folderUri = vscode.Uri.file(project.folder);
   return {

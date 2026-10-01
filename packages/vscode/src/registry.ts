@@ -1,7 +1,14 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
-import { channelName, nestedProjects, owningProject, samePath, type Project } from "./projects.js";
+import {
+  channelName,
+  nestedProjects,
+  ownedElsewhere,
+  owningProject,
+  samePath,
+  type Project,
+} from "./projects.js";
 
 /** `ascribe.startServers`: when a project's server starts. */
 export type StartServers = "onDemand" | "all";
@@ -18,6 +25,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private readonly byConfig = new Map<string, ProjectServer>();
   /** The nested projects each server was started with, to restart it when they change. */
   private readonly nestedAtStart = new Map<ProjectServer, string>();
+  private warnedOfCap = false;
   private refreshing: Promise<void> = Promise.resolve();
   private readonly projectsChanged = new vscode.EventEmitter<void>();
   private readonly started = new vscode.EventEmitter<void>();
@@ -136,13 +144,8 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     );
   }
 
-  ownedByNested(project: Project, uri: vscode.Uri): boolean {
-    const owner = owningProject(uri.fsPath, this.projects);
-    return (
-      owner !== undefined &&
-      owner.config !== project.config &&
-      nestedProjects(project, this.projects).some((nested) => nested.config === owner.config)
-    );
+  ownedElsewhere(project: Project, uri: vscode.Uri): boolean {
+    return ownedElsewhere(project, uri.fsPath, this.projects);
   }
 
   async dispose(): Promise<void> {
@@ -155,12 +158,20 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   }
 
   private async refreshNow(): Promise<void> {
+    // One more than the cap, to know there were more.
     const found = await vscode.workspace.findFiles(
       "**/ascribe.toml",
       "**/node_modules/**",
-      MAX_PROJECTS,
+      MAX_PROJECTS + 1,
     );
-    const configs = found.map((uri) => uri.fsPath).sort();
+    const all = found.map((uri) => uri.fsPath).sort();
+    const configs = all.slice(0, MAX_PROJECTS);
+    if (all.length > MAX_PROJECTS && !this.warnedOfCap) {
+      this.warnedOfCap = true;
+      this.servers[0]?.log(
+        `This workspace has more than ${MAX_PROJECTS} ascribe.toml files; only the first ${MAX_PROJECTS} (in path order) get a language server.`,
+      );
+    }
     let changed = false;
 
     for (const [config, server] of this.byConfig) {

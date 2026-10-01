@@ -41,6 +41,19 @@ export function owningProject(file: string, projects: readonly Project[]): Proje
   return owner;
 }
 
+/**
+ * Whether a file belongs to some other project than `project`, or to none: a
+ * nested project, a sibling, or a file outside every project. A project's
+ * server never needs these files, since a project's files lie inside its folder.
+ */
+export function ownedElsewhere(
+  project: Project,
+  file: string,
+  projects: readonly Project[],
+): boolean {
+  return owningProject(file, projects)?.config !== project.config;
+}
+
 /** The projects nested inside `project`, whose files it doesn't own. */
 export function nestedProjects(project: Project, projects: readonly Project[]): Project[] {
   const folder = comparable(project.folder);
