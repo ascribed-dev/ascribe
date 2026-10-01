@@ -211,6 +211,10 @@ jobs:
     needs: npm
     runs-on: ubuntu-latest
     environment: release
+    permissions:
+      contents: read
+      # The login below exchanges the workflow's OIDC token for a Microsoft Entra token.
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -223,9 +227,14 @@ jobs:
         with:
           name: release
           path: dist/release
+      # Signs in as the managed identity that is a Contributor on the Marketplace
+      # publisher. RELEASING.md describes it. No token is stored.
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
       - run: node scripts/release/publish.ts marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
   github:
     name: draft the GitHub release

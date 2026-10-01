@@ -9,6 +9,40 @@ A release publishes one version of everything: the `ascribe` binaries (on a GitH
 | `Ascribe.ascribe-vscode`, for each of the four platforms | VS Code Marketplace | the `marketplace` job |
 | `ascribe-<version>-<platform>.tar.gz` (`.zip` for Windows), the `.vsix` files, `SHA256SUMS` | GitHub release | the `github` job drafts it; you publish it |
 
+## How a release runs
+
+A person starts the workflow by hand: Actions → **Release** → Run workflow, picking the version tag under "Use workflow from". Nothing runs automatically.
+
+```
+version ─→ build (4 platforms) ─→ pack ─→ smoke (4 platforms)
+                                              │   with `publish` checked, each of these
+                                              ▼   waits for approval in the `release` environment
+                                            npm ─→ marketplace ─→ github (draft release)
+```
+
+Without `publish`, it's a dry run: everything up to `smoke` runs, and the publish steps run with `--dry-run`. Nothing leaves the workflow.
+
+### Who owns what
+
+| Thing | Where it lives | How it's reached |
+|---|---|---|
+| Source and CI | GitHub organization `ascribed-dev`, repository `ascribe` (organization id 335742967, repository id 1393013016) | The `release` environment requires a reviewer and allows only `v*` tags. |
+| npm packages | npm organization `ascribed` | `NPM_TOKEN`, a secret on the `release` environment. |
+| VS Code extension | Marketplace publisher `Ascribe`, created by a personal Microsoft account (the owner) | The managed identity below is a Contributor member. |
+| The managed identity `ascribe-vscode-publisher` | Resource group `ascribe-release`, region East US, in the Azure tenant and subscription that account's free Azure sign-up created | A federated credential trusts the workflow (below). |
+| An Azure DevOps organization | Connected to that tenant | It exists only to give the identity an Azure DevOps profile. It has no projects or pipelines. |
+
+### The Marketplace login
+
+The `marketplace` job publishes without a token. Each hop checks the one before it:
+
+1. The job runs in the `release` environment with `id-token: write`, so GitHub issues it an OIDC token. This repository issues *immutable* subject claims, so the subject is `repo:ascribed-dev@335742967/ascribe@1393013016:environment:release` (check with `gh api repos/ascribed-dev/ascribe/actions/oidc/customization/sub`).
+2. `azure/login` sends that token to Microsoft Entra. Entra looks for a federated credential on the managed identity whose issuer, subject, and audience (`api://AzureADTokenExchange`) match exactly. If one does, the job is signed in as the identity.
+3. `vsce publish --azure-credential` asks Entra for a token for the Marketplace and publishes with it.
+4. The Marketplace checks that the identity's *Azure DevOps profile id* is a member of the `Ascribe` publisher with the Contributor role. That id is neither the Azure resource id, the client id, nor the object id.
+
+The only values the workflow holds are `AZURE_CLIENT_ID` and `AZURE_TENANT_ID`, as variables on the `release` environment. They aren't secrets, and nothing in the repository can sign in without a token GitHub issues to a run in that environment.
+
 ## Before the first release
 
 Do these once. Each says how to check it.
@@ -48,16 +82,19 @@ Add it to the `release` environment as the secret `NPM_TOKEN`.
 
 After the first release, you can replace the token with npm's trusted publishing: for each of the seven packages, Settings → Trusted publishing → GitHub Actions, with this repository, the workflow `release.yml`, and the environment `release`. Then delete the token and the secret. The workflow already uses an npm that supports it.
 
-### 4. VS Code Marketplace: a publishing token
+### 4. VS Code Marketplace: a managed identity
 
-The publisher is `Ascribe`. In Azure DevOps (dev.azure.com), with the account that manages the publisher: User settings → Personal access tokens → **New Token**:
+The publisher is `Ascribe`. Microsoft is retiring Azure DevOps personal access tokens on December 1, 2026, so the release signs in as a Microsoft Entra managed identity instead of using a token. The workflow's `azure/login` step trades the job's GitHub OIDC token for an Entra token, and `vsce publish --azure-credential` publishes with it. Nothing is stored. Set this up once:
 
-- **Organization:** All accessible organizations.
-- **Scopes:** Custom defined → Marketplace → **Manage**.
+1. **An Azure account** with its own Microsoft Entra tenant and a subscription. A personal Microsoft account has no tenant until it signs up at [azure.microsoft.com/free](https://azure.microsoft.com/free/).
+2. **A user-assigned managed identity** (Azure portal → Managed Identities → Create), named `ascribe-vscode-publisher`, in a region that supports federated credentials, such as East US.
+3. **A federated credential** on it (Settings → Federated credentials → Add credential → GitHub Actions deploying Azure resources): organization `ascribed-dev`, repository `ascribe`, entity type **Environment**, environment `release`. This repository issues immutable subject claims, so check that the subject reads `repo:ascribed-dev@335742967/ascribe@1393013016:environment:release`, with the audience `api://AzureADTokenExchange`. A wrong subject saves without an error and fails later.
+4. **An Azure DevOps organization connected to that tenant** (dev.azure.com, created while signed in as a member user of the tenant, not a guest). Add the identity as a user: Organization settings → Users → Add users, by the identity's name. This gives it an Azure DevOps profile, which the Marketplace needs.
+5. **The identity's Azure DevOps profile id.** Run `az rest -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me --resource 499b84ac-1321-427f-aa17-267ca6975798` as the identity: a one-off workflow job in the `release` environment that signs in with `azure/login` and runs that command. The `id` in the response is the profile id. It isn't the client ID, object ID, or resource ID.
+6. **Add the identity to the publisher.** At marketplace.visualstudio.com/manage, open `Ascribe` → Members → Add, paste the profile id, and give it the **Contributor** role.
+7. **Two variables on the `release` environment** (Settings → Environments → release → Environment variables; they aren't secrets): `AZURE_CLIENT_ID`, the identity's client ID, and `AZURE_TENANT_ID`, the directory (tenant) ID.
 
-Add it to the `release` environment as the secret `VSCE_PAT`.
-
-**Check:** `VSCE_PAT=<token> npx @vscode/vsce verify-pat Ascribe` says the token can publish.
+**Check:** the identity is listed under the publisher's Members as Contributor, the two variables exist on the environment, and the `marketplace` job's login step succeeds on a real release.
 
 ## Each release
 
@@ -154,6 +191,46 @@ npm dist-tag add @ascribed/cli@0.1.0 latest                     # point `latest`
 Unpublishing (`npm unpublish @ascribed/cli@0.2.0`) is allowed only within 72 hours and when nothing depends on the version; prefer deprecating. Keep the seven packages at one version: move the tags of all of them together.
 
 **A published extension version is bad:** the Marketplace has no rollback to an earlier version. Publish a fixed patch version. Unpublishing (`vsce unpublish`, or from the publisher's management page) removes the whole extension and its install count, so reserve it for emergencies.
+
+### The Marketplace identity: failures we've seen, and a one-off check
+
+| Where | What you see | What it means | What to do |
+|---|---|---|---|
+| Azure portal sign-in | `AADSTS16000 … does not exist in tenant 'Microsoft Services'` | A personal Microsoft account has no Entra tenant of its own. | Sign up at [azure.microsoft.com/free](https://azure.microsoft.com/free/) in a private window. That creates the tenant. |
+| Marketplace → Members → Add | `Not a valid User Id` | You entered the Azure resource id, client id, or object id. | Enter the Azure DevOps profile id (item 5 of the identity setup). |
+| The profile call in a one-off job | `VSS011031: There is no profile for the authenticated user` | The identity isn't a user of an Azure DevOps organization connected to the tenant. | Item 4 of the identity setup. Organization settings → Microsoft Entra must show the tenant. An organization created with a personal account isn't connected, and its Add users box won't find the identity. Reportedly an Entra guest can't add a service principal by name, so use a member user of the tenant. |
+| Any job in the `release` environment | The job never starts, or the deployment is rejected | "Selected branches and tags" is on with no rules, which blocks every ref. | Add the `v*` tag rule ("Before the first release", step 2). A one-off run from a branch needs a temporary branch rule for that branch, removed afterward. |
+| `azure/login` | An error about no matching federated identity record | The credential's subject, issuer, or audience differs from the token's. A wrong subject saves without an error. | The login step prints the token's `subject claim`. Compare it with the credential character by character. |
+| `vsce publish`, after a good login | A 401 or 403 from the Marketplace | The usual cause is that the identity isn't a Contributor on the publisher, or the profile id entered was wrong. | Check Members on the publisher page. |
+
+If you recreate the identity, repeat items 2 to 7 of the identity setup: the new identity has a new client id and a new profile id.
+
+**Reading the identity's profile id (item 5 of the identity setup).** Only the identity can ask for it, so it takes a one-off job on GitHub. A workflow can only be dispatched if its file exists on `main`, so do it on a scratch branch that replaces `release.yml` for the run, and never merge it:
+
+1. Create a branch, replace `.github/workflows/release.yml` with the file below, and push it.
+2. In the `release` environment's deployment rules, add a temporary branch rule for that branch.
+3. Run `gh workflow run release.yml --ref <branch>`, then approve the deployment on the run's page.
+4. Read the `id` in the log, then delete the branch and the rule.
+
+```yaml
+name: Release
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    environment: release
+    steps:
+      - uses: azure/login@<the commit SHA release.yml uses>
+        with:
+          client-id: <the identity's client id>
+          tenant-id: <the tenant id>
+          allow-no-subscriptions: true
+      - run: az rest -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me --resource 499b84ac-1321-427f-aa17-267ca6975798
+```
 
 **The GitHub release is bad:** while it's a draft, `gh release delete v0.2.0` removes it. After publishing, edit it, or mark it a pre-release while a fix is prepared.
 
