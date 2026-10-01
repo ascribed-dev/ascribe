@@ -13,6 +13,10 @@ export interface AscribeApi {
   binary(folder?: string): ResolvedBinary | undefined;
   /** The server's state for the project in `folder` (`stopped` when it has none). */
   state(folder?: string): ServerState;
+  /** Every project in the workspace, by folder, with its server's state. */
+  projects(): { folder: string; state: ServerState }[];
+  /** Fires with a project's folder each time its server starts or restarts. */
+  onDidStartServer: vscode.Event<string>;
   /** Settles when every start or restart under way is over. */
   whenSettled(): Promise<void>;
   /** The preview, for tests. */
@@ -102,6 +106,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   return {
     binary: (folder) => projects.serverAt(folder)?.binary,
     state: (folder) => projects.serverAt(folder)?.state ?? "stopped",
+    projects: () =>
+      projects.servers.map((server) => ({ folder: server.project.folder, state: server.state })),
+    onDidStartServer: (listener, thisArgs, disposables) =>
+      projects.onDidStart(
+        (server) => listener.call(thisArgs, server.project.folder),
+        undefined,
+        disposables,
+      ),
     whenSettled: () => projects.whenSettled(),
     preview: preview.api,
   };
