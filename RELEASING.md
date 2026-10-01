@@ -27,7 +27,7 @@ Without `publish`, it's a dry run: everything up to `smoke` runs, and the publis
 | Thing | Where it lives | How it's reached |
 |---|---|---|
 | Source and CI | GitHub organization `ascribed-dev`, repository `ascribe` (organization id 335742967, repository id 1393013016) | The `release` environment requires a reviewer and allows only `v*` tags. |
-| npm packages | npm organization `ascribed` | `NPM_TOKEN`, a secret on the `release` environment. |
+| npm packages | npm organization `ascribed` | Trusted publishing: each package trusts the `release` environment of this repository's `release.yml`. There is no token. |
 | VS Code extension | Marketplace publisher `Ascribe`, created by a personal Microsoft account (the owner) | The managed identity below is a Contributor member. |
 | The managed identity `ascribe-vscode-publisher` | Resource group `ascribe-release`, region East US, in the Azure tenant and subscription that account's free Azure sign-up created | A federated credential trusts the workflow (below). |
 | An Azure DevOps organization | Connected to that tenant | It exists only to give the identity an Azure DevOps profile. It has no projects or pipelines. |
@@ -68,19 +68,25 @@ Settings → Environments → **New environment** → `release`:
 
 **Check:** the environment lists you as a required reviewer and allows only `v*` tags.
 
-### 3. npm: a publishing token
+### 3. npm: trusted publishing
 
-On npmjs.com, as an owner of the `ascribed` organization: Access Tokens → **Generate New Token** → Granular Access Token:
+The `npm` job publishes without a token. npm trades the job's GitHub OIDC token for a short-lived publish token, and signs a provenance statement. Each of the seven packages has to trust this repository's workflow. Do it once per package, with your own npm login (`npm login`, with two-factor authentication). A token that bypasses two-factor authentication can't change this setting.
 
-- **Packages and scopes:** Read and write, for the `@ascribed` scope.
-- **Organizations:** no access.
-- **Expiration:** as short as your release schedule allows.
+```sh
+npm trust github @ascribed/cli --file release.yml --repo ascribed-dev/ascribe --env release --allow-publish --dry-run
+```
 
-Add it to the `release` environment as the secret `NPM_TOKEN`.
+Drop `--dry-run`, and repeat for `@ascribed/cli-darwin-arm64`, `@ascribed/cli-linux-arm64`, `@ascribed/cli-linux-x64`, `@ascribed/cli-win32-x64`, `@ascribed/elements`, and `@ascribed/astro`. The same form is on each package's npm page: Settings → Trusted Publisher.
 
-**Check:** `npm whoami --//registry.npmjs.org/:_authToken=<token>` prints your user name.
+- Every field is case-sensitive and exact, and npm doesn't validate it when you save. A mistake appears only when you publish.
+- The workflow file is `release.yml`, without its path. Renaming the workflow breaks publishing until each package is changed: a trusted publisher can be revoked and recreated, but not edited.
+- Allow `npm publish` only. The release stages nothing and moves no dist-tags.
+- Once a release has published through it, set each package's Settings → Publishing access to **Require two-factor authentication and disallow tokens**. That stops any token from publishing, including a leaked one, and trusted publishing keeps working.
+- In the workflow, leave `registry-url` out of `setup-node`. It writes an empty `_authToken` line, which stops npm from starting the OIDC exchange.
 
-After the first release, you can replace the token with npm's trusted publishing: for each of the seven packages, Settings → Trusted publishing → GitHub Actions, with this repository, the workflow `release.yml`, and the environment `release`. Then delete the token and the secret. The workflow already uses an npm that supports it.
+**Check:** `npm trust list @ascribed/cli` (for each package) shows the repository, `release.yml`, and the `release` environment. The real check is a release: the `npm` job succeeds, and each package's page shows a provenance badge.
+
+**A package that doesn't exist yet** can't have a trusted publisher, because npm needs the package to exist first. Its first publish needs a token: a granular access token on npmjs.com with **Read and write** on the `@ascribed` scope and **Bypass two-factor authentication** ticked. Without the bypass option, npm asks for a one-time password (`EOTP`), which a CI job can't give. Put it in the `release` environment as `NPM_TOKEN`, set `NODE_AUTH_TOKEN` from it for that one run, and delete it once the package exists and trusts the workflow.
 
 ### 4. VS Code Marketplace: a managed identity
 
