@@ -48,16 +48,19 @@ Add it to the `release` environment as the secret `NPM_TOKEN`.
 
 After the first release, you can replace the token with npm's trusted publishing: for each of the seven packages, Settings → Trusted publishing → GitHub Actions, with this repository, the workflow `release.yml`, and the environment `release`. Then delete the token and the secret. The workflow already uses an npm that supports it.
 
-### 4. VS Code Marketplace: a publishing token
+### 4. VS Code Marketplace: a managed identity
 
-The publisher is `Ascribe`. In Azure DevOps (dev.azure.com), with the account that manages the publisher: User settings → Personal access tokens → **New Token**:
+The publisher is `Ascribe`. Microsoft is retiring Azure DevOps personal access tokens on December 1, 2026, so the release signs in as a Microsoft Entra managed identity instead of using a token. The workflow's `azure/login` step trades the job's GitHub OIDC token for an Entra token, and `vsce publish --azure-credential` publishes with it. Nothing is stored. Set this up once:
 
-- **Organization:** All accessible organizations.
-- **Scopes:** Custom defined → Marketplace → **Manage**.
+1. **An Azure account** with its own Microsoft Entra tenant and a subscription. A personal Microsoft account has no tenant until it signs up at [azure.microsoft.com/free](https://azure.microsoft.com/free/).
+2. **A user-assigned managed identity** (Azure portal → Managed Identities → Create), named `ascribe-vscode-publisher`, in a region that supports federated credentials, such as East US.
+3. **A federated credential** on it (Settings → Federated credentials → Add credential → GitHub Actions deploying Azure resources): organization `ascribed-dev`, repository `ascribe`, entity type **Environment**, environment `release`. This repository issues immutable subject claims, so check that the subject reads `repo:ascribed-dev@335742967/ascribe@1393013016:environment:release`, with the audience `api://AzureADTokenExchange`. A wrong subject saves without an error and fails later.
+4. **An Azure DevOps organization connected to that tenant** (dev.azure.com, created while signed in as a member user of the tenant, not a guest). Add the identity as a user: Organization settings → Users → Add users, by the identity's name. This gives it an Azure DevOps profile, which the Marketplace needs.
+5. **The identity's Azure DevOps profile id.** Run `az rest -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me --resource 499b84ac-1321-427f-aa17-267ca6975798` as the identity: a one-off workflow job in the `release` environment that signs in with `azure/login` and runs that command. The `id` in the response is the profile id. It isn't the client ID, object ID, or resource ID.
+6. **Add the identity to the publisher.** At marketplace.visualstudio.com/manage, open `Ascribe` → Members → Add, paste the profile id, and give it the **Contributor** role.
+7. **Two variables on the `release` environment** (Settings → Environments → release → Environment variables; they aren't secrets): `AZURE_CLIENT_ID`, the identity's client ID, and `AZURE_TENANT_ID`, the directory (tenant) ID.
 
-Add it to the `release` environment as the secret `VSCE_PAT`.
-
-**Check:** `VSCE_PAT=<token> npx @vscode/vsce verify-pat Ascribe` says the token can publish.
+**Check:** the identity is listed under the publisher's Members as Contributor, the two variables exist on the environment, and the `marketplace` job's login step succeeds on a real release.
 
 ## Each release
 

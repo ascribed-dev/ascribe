@@ -11,7 +11,9 @@
 // provenance when it runs in GitHub Actions. Needs NODE_AUTH_TOKEN (or npm
 // trusted publishing).
 //
-// marketplace: publishes every extension package. Needs VSCE_PAT.
+// marketplace: publishes every extension package, authenticating with Microsoft
+// Entra (`vsce publish --azure-credential`). Sign in first, as the workflow
+// does with azure/login; there is no token.
 //
 // Both skip what's already published, so a release that failed partway can be
 // run again. With --dry-run, nothing is published: npm checks each tarball
@@ -125,7 +127,6 @@ function publishMarketplace(): void {
   }));
   const missing = packages.filter((p) => !existsSync(p.file)).map((p) => p.target);
   if (missing.length > 0) fail(`no extension package for ${missing.join(", ")} in ${dir}`);
-  if (!dryRun && !process.env.VSCE_PAT) fail("VSCE_PAT isn't set");
 
   for (const { target, file } of packages) {
     const manifest = JSON.parse(
@@ -142,7 +143,7 @@ function publishMarketplace(): void {
     log(`publishing ${id} ${version} for ${target}`);
     // --skip-duplicate makes a rerun skip a target that's already published.
     const vsce = join(root, extension.dir, "node_modules", ".bin", "vsce");
-    run(vsce, ["publish", "--packagePath", file, "--skip-duplicate"]);
+    run(vsce, ["publish", "--packagePath", file, "--skip-duplicate", "--azure-credential"]);
   }
 }
 
