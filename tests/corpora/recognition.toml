@@ -1,6 +1,6 @@
 # The verdict for each class of recognition the corpora produce, unconverted.
 # `intended` follows the specification; `false-positive` must name a finding
-# in FINDINGS.md. tests/recognition.rs fails on a class that has no entry.
+# (its id in FINDINGS.md). tests/recognition.rs fails on a class that has no entry.
 
 [class."phrase-candidate:prose:plain"]
 verdict = "intended"

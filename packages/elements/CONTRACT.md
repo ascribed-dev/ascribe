@@ -16,7 +16,7 @@ A change to this contract changes the site emitter (`crates/tessera-emit`), the 
 
 ## 0. Rules for every element
 
-**Light DOM, CSS, no behavior.** Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology (SPEC §9.7). They're styled with CSS and themed with custom properties whose names start with `--ascribe-`; phase 19 documents the list. Only `<ascribe-tabs>` runs JavaScript. Everything else must render meaningfully with the library's CSS and no script, and must stay readable with neither.
+**Light DOM, CSS, no behavior.** Elements render into the light DOM, so site styles apply and content stays visible to search engines and assistive technology (SPEC §9.7). They're styled with CSS and themed with custom properties whose names start with `--ascribe-`; the package README lists them. Only `<ascribe-tabs>` runs JavaScript. Everything else must render meaningfully with the library's CSS and no script, and must stay readable with neither.
 
 **How the emitter writes elements.** Custom elements are raw HTML blocks in CommonMark, so the layout matters:
 
@@ -30,7 +30,7 @@ A change to this contract changes the site emitter (`crates/tessera-emit`), the 
 
 **Plain text of inline content.** Where an attribute holds a title or label written as inline markdown, its value is the inline content's text: phrases substituted (they already are, in the resolved page), code spans as their text, emphasis and links as their text, images as their alt text, raw inline HTML dropped, and line breaks as single spaces. So ``.Try the *new* `quill` CLI`` becomes `Try the new quill CLI`.
 
-**Labels** come from the content model: note types' `label` (content-model.md §11), dimensions' and dimension values' `labels` (§7), and lifecycle states' `label` (§9). A value without a declared label is shown as itself.
+**Labels** come from the content model: note types' `label` (docs/contracts/content-model.md §11), dimensions' and dimension values' `labels` (§7), and lifecycle states' `label` (§9). A value without a declared label is shown as itself.
 
 ## 1. `<ascribe-note>`
 
@@ -198,7 +198,7 @@ The element library may style `details` and `summary`, and implements no element
 
 ## 6. Project widgets
 
-A project widget (SPEC §6) becomes a custom element whose tag is the widget's name (SPEC §9.4). Widget names are valid custom-element names: they contain a hyphen, and content-model.md §15 rejects names starting with `ascribe-` and HTML's reserved names. The project supplies the element's implementation; the element library doesn't.
+A project widget (SPEC §6) becomes a custom element whose tag is the widget's name (SPEC §9.4). Widget names are valid custom-element names: they contain a hyphen, and docs/contracts/content-model.md §15 rejects names starting with `ascribe-` and HTML's reserved names. The project supplies the element's implementation; the element library doesn't.
 
 **Attributes**, in this order:
 
@@ -206,7 +206,7 @@ A project widget (SPEC §6) becomes a custom element whose tag is the widget's n
 2. `primary`: an identifier primary, if the widget takes one and it's given. A text primary is content instead (below).
 3. Each attribute in the widget's declaration, in declared order, with the value given or, if absent, its declared default. A value set's members are joined by single spaces; booleans are `true` or `false`; other values are their text. An attribute with neither a value nor a default is left out. A declaration can't use `heading`, `primary`, or HTML's global or event-handler attribute names (SPEC §7.2; content-model.md, `model-attribute-reserved`), so these never clash.
 
-**Children and placement**, by the widget's form and binding (content-model.md §15):
+**Children and placement**, by the widget's form and binding (docs/contracts/content-model.md §15):
 
 | Widget | Element |
 |---|---|
@@ -222,4 +222,4 @@ A wrapping widget follows §0's layout for elements that wrap markdown; an empty
 
 ## 7. Glossary terms
 
-There's no element for glossary terms. In the site output, an occurrence the glossary links (content-model.md §13) is an ordinary markdown link to the term's `link` target, as a route, with the term's definition as the link title: `[API key](/docs/reference/glossary/#api-key "A secret token that authenticates the Quill agent.")`. Terms without a `link` stay plain text (content-model.md Q7).
+There's no element for glossary terms. In the site output, an occurrence the glossary links (docs/contracts/content-model.md §13) is an ordinary markdown link to the term's `link` target, as a route, with the term's definition as the link title: `[API key](/docs/reference/glossary/#api-key "A secret token that authenticates the Quill agent.")`. Terms without a `link` stay plain text (content-model.md Q7).

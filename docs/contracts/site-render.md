@@ -7,14 +7,14 @@ The site output (SPEC §9.4) is CommonMark with raw HTML: custom elements for As
 
 This contract defines the one syntax the site output uses for both, the **attribute marker**, and exactly what HTML it must produce. It has two implementations, which must agree:
 
-| Implementation | Phase | Used by |
-|---|---|---|
-| The Astro markdown plugin in `@ascribed/astro` | 21 | The published site |
-| `render_site_html()` in `tessera-emit` | 20 | The editor preview (phase 25) |
+| Implementation | Used by |
+|---|---|
+| The Astro markdown plugin in `@ascribed/astro` | The published site |
+| `render_site_html()` in `tessera-emit` | The editor preview |
 
 The shared fixtures in [`tests/render/`](../../tests/render/) are what keep them equal: both must pass every fixture.
 
-Everything here applies to spec 0.1's only consumer profile, `astro`. It settles content-model.md Q12, which is why `ascribe.toml` has no keys for heading ids or image attributes.
+Everything here applies to spec 0.1's only consumer profile, `astro`. It settles content-model.md §21, item 12, which is why `ascribe.toml` has no keys for heading ids or image attributes.
 
 ## 1. The attribute marker
 
@@ -38,7 +38,7 @@ CommonMark parses the two tags as two adjacent raw inline HTML nodes. (An implem
 
 Every alternative is changed by Astro's markdown processing before a plugin can see it. Each of Astro's markdown processors (Sätteri, its default in Astro 7.3, and `unified()`) applies GFM and typographic replacements before a user plugin sees the tree, so an attribute block written as text, such as `## Setup {#setup}` or `![a](b.png){caption="x"}`, reaches the plugin with its quotes curled and its `--` and `...` turned into dashes and ellipses, and an id like `__init__` can become strong emphasis. A raw HTML node is never touched by either: its text is exactly what Ascribe wrote. The marker also degrades quietly. A consumer without the plugin renders it as an empty element: invisible, and for a heading, an element carrying the right `id` inside the heading, so links still land.
 
-The other options considered, and why they lost, are in content-model.md §21, Q12.
+The other options considered, and why they lost, are in content-model.md §21, item 12.
 
 ## 2. Where a marker applies
 
@@ -72,7 +72,7 @@ A marker that immediately follows an image, with nothing between the image's clo
 
 A marker after a space, or after anything but an image, doesn't apply.
 
-A marker directly after an image that is also the last inline content of a heading applies to the image, not the heading: this rule names the position exactly, and the heading gets no id from it (Q145). The emitter never writes this, since its heading marker follows a space.
+A marker directly after an image that is also the last inline content of a heading applies to the image, not the heading: this rule names the position exactly, and the heading gets no id from it. The emitter never writes this, since its heading marker follows a space.
 
 ## 3. What applying a marker does
 
@@ -80,15 +80,15 @@ Each of the marker's attributes is set on the element it applies to (`<h1>`–`<
 
 The resulting HTML is the CommonMark rendering of the input with the marker removed, plus those attributes. Nothing else changes: implementations don't renumber, deduplicate, or validate ids, since Ascribe has already assigned and checked them.
 
-In Astro, "set on the element" means the attributes must reach the element before Astro's own processing of it: the heading's `id` before Astro's heading-id pass, which keeps an existing id and records it for the table of contents, and an image's attributes before Astro's image processing, which receives the `<img>`'s properties. Phase 21 verifies both against the Astro version it targets, and records the plugin's position in the pipeline.
+In Astro, "set on the element" means the attributes must reach the element before Astro's own processing of it: the heading's `id` before Astro's heading-id pass, which keeps an existing id and records it for the table of contents, and an image's attributes before Astro's image processing, which receives the `<img>`'s properties. The Astro plugin is tested against the Astro version it targets for both.
 
 ## 4. What the site emitter guarantees
 
-Phase 20's emitter writes the site output so that the rules above are all a consumer needs:
+The site emitter writes the site output so that the rules above are all a consumer needs:
 
 - **Every heading ends in a marker with its page id**, one space after the heading's text. So the consumer's own slugger never runs on Ascribe content, and every heading id on the published page is one `ascribe check` validated, including ids numbered for duplicates and ids from `@id`. A heading whose page id is empty (a heading with no text) gets no marker.
 - **Headings are ATX headings**, whatever the source used.
-- **An image with attributes has a marker directly after it**, holding the image's attributes in canonical order (SPEC §8.3): every attribute the content model declares that the image writes or that has a default, then any it writes that the model doesn't declare (Q141). An image with neither attributes nor defaults has no marker. A value set's members are joined with single spaces (`platform=cloud|on-prem` becomes `platform="cloud on-prem"`); other values are their text (a quoted string without its quotes and escapes).
+- **An image with attributes has a marker directly after it**, holding the image's attributes in canonical order (SPEC §8.3): every attribute the content model declares that the image writes or that has a default, then any it writes that the model doesn't declare. An image with neither attributes nor defaults has no marker. A value set's members are joined with single spaces (`platform=cloud|on-prem` becomes `platform="cloud on-prem"`); other values are their text (a quoted string without its quotes and escapes).
 - **The emitter writes markers nowhere else.** Raw HTML an author writes passes through unchanged, as everywhere in the site output, so an author who writes an `ascribe-attributes` element gets its effect. Element names starting with `ascribe-` belong to Ascribe (content-model.md §15), so there's no reason to. Since the emitter's own heading marker is always last, an author's marker inside a heading never applies.
 
 The element contract ([`packages/elements/CONTRACT.md`](../../packages/elements/CONTRACT.md)) covers the custom elements, which are ordinary raw HTML to a renderer.
@@ -117,7 +117,7 @@ Each construct below has at least one fixture in [`tests/render/`](../../tests/r
 | `image-reference-shortcut` | §2.2 | `![alt]` followed by a marker |
 | `image-in-text` | §2.2 | Several images in one paragraph, with text directly after a marker |
 | `image-in-link` | §2.2 | An image inside link text |
-| `image-ends-heading` | §2.1, §2.2 | A marker directly after an image that ends a heading applies to the image, not the heading (Q145) |
+| `image-ends-heading` | §2.1, §2.2 | A marker directly after an image that ends a heading applies to the image, not the heading |
 | `attribute-values` | §1, §3 | Escaped quotes, ampersands, and angle brackets decode; spaces and commas stay |
 | `not-a-marker` | §1, §2 | Markers after a space, mid-heading, or in a paragraph, and malformed markers, stay as raw HTML |
 | `raw-html` | §5 | Custom elements wrapping markdown, `<details>`, and markers inside them |

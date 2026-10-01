@@ -62,16 +62,16 @@ Pages are written at their own source paths too (the output-layout contract), so
 
 | Output | Images | Link targets |
 |---|---|---|
-| Plain markdown (phase 18) | Mirrored path, relative reference | Mirrored path, relative reference |
-| JSON (phase 18) | Mirrored path, relative reference | Mirrored path, relative reference |
-| Site, `astro` profile (phase 20) | Mirrored path, relative reference | `_ascribe/files/` + mirrored path, root-relative URL |
+| Plain markdown | Mirrored path, relative reference | Mirrored path, relative reference |
+| JSON | Mirrored path, relative reference | Mirrored path, relative reference |
+| Site, `astro` profile | Mirrored path, relative reference | `_ascribe/files/` + mirrored path, root-relative URL |
 
 The consumer profile decides placement in the site output (SPEC §9.5), through `ConsumerProfile::asset_placement` (`Mirror` or `Published`):
 
 - **Images: mirrored, so Astro processes them.** Astro optimizes an image in a content-collection entry when the entry's markdown refers to it by a relative path; it resolves the path from the entry's file. The site output is the collection, so the mirrored copy is found relative to the page, and Astro's image processing applies as it would to the author's own files. The image must stay a markdown image, not raw HTML (the site-render contract keeps it one).
-- **Link targets: published, because Astro doesn't copy them.** Astro leaves a markdown link to a local file alone, and a relative `href` resolves against the page's URL, not its file, so it would break. These copies go under `_ascribe/files/`, which the Astro integration serves at `<base-path>_ascribe/files/` (phases 21 and 22), and links use that URL.
+- **Link targets: published, because Astro doesn't copy them.** Astro leaves a markdown link to a local file alone, and a relative `href` resolves against the page's URL, not its file, so it would break. These copies go under `_ascribe/files/`, which the Astro integration serves at `<base-path>_ascribe/files/`, and links use that URL.
 
-Phase 21 verifies both behaviors against the Astro version it targets.
+The Astro integration's tests verify both behaviors against the Astro version it targets.
 
 ## 4. Rewriting references
 
@@ -85,16 +85,16 @@ Every asset reference in a page is rewritten to point at the copy, including ref
 ## 5. Copying
 
 - Each asset is copied once per emitter output, however many pages or references use it, byte for byte. A symbolic link is copied as the file it points to.
-- Only assets referenced by content that survives the build are copied (phase 12 carries the surviving references). An asset used only in an arm or page a build removes isn't in that build's output. The conformance format's `builds.<name>.assets` lists exactly these, by source path.
+- Only assets referenced by content that survives the build are copied (the resolved tree carries the surviving references). An asset used only in an arm or page a build removes isn't in that build's output. The conformance format's `builds.<name>.assets` lists exactly these, by source path.
 - Every copy is listed in the output's manifest, with its source path (output-layout contract, §3).
 
 ## 6. The guarantee
 
-With the source directory, and everything outside the output, removed or moved, every asset reference in a build's output resolves to a file in that output. In the site output, this holds once the consumer serves `_ascribe/files/` as §3.2 says. Phases 18 and 20 test it by building a page that includes a fragment with an image beside it, deleting the source, and resolving every reference in the output.
+With the source directory, and everything outside the output, removed or moved, every asset reference in a build's output resolves to a file in that output. In the site output, this holds once the consumer serves `_ascribe/files/` as §3.2 says. The output tests check it by building a page that includes a fragment with an image beside it, deleting the source, and resolving every reference in the output.
 
 ## 7. The preview
 
-The editor preview (phase 25) doesn't copy assets. It resolves references with the same rules (§1 and §2), from the file each reference is written in, and rewrites them to webview URLs of the source files. So a fragment's image shows in the preview exactly as it's found for a build.
+The editor preview doesn't copy assets. It resolves references with the same rules (§1 and §2), from the file each reference is written in, and rewrites them to webview URLs of the source files. So a fragment's image shows in the preview exactly as it's found for a build.
 
 ## Example
 

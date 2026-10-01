@@ -7,11 +7,10 @@ computes nothing itself: every diagnostic comes from `tessera_check`, over a
 `tessera_resolve::IncrementalProject`, so the editor and the command line can't
 disagree (SPEC §8, §10).
 
-Phase 15 built initialization, document and file synchronization, diagnostics,
-and semantic tokens. Phase 16 added completion, hover, go to definition,
-document links, CodeLens, and inlay hints (see [Navigation](#navigation));
-phase 24 adds code actions, rename, and formatting; the `ascribe/preview`
-request is phase 25.
+It provides initialization, document and file synchronization, diagnostics, and
+semantic tokens; completion, hover, go to definition, document links, CodeLens,
+and inlay hints (see [Navigation](#navigation)); code actions, rename, and
+formatting; and the custom `ascribe/preview` request.
 
 ## Semantic token legend
 
@@ -107,7 +106,7 @@ page paths), not per request. See the table under Performance.
 ## Capabilities
 
 Advertised: incremental text document sync (open/close, no save), semantic
-tokens (full and range), the position encoding, and, from phase 16, completion
+tokens (full and range), the position encoding, and completion
 (triggered by `@ { ( # / = , |` and a space), hover, definition, document
 links, CodeLens, inlay hints, code actions, document formatting, rename, and one
 command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
@@ -127,7 +126,7 @@ from `tessera-fmt`; the VS Code client applies those edits on save when
 
 - **The project** is a `tessera_resolve::IncrementalProject` built from the
   `ascribe.toml` in a workspace folder (the nearest one at or above the
-  folder, or the first one found below it). Ids follow phase 13: source files
+  folder, or the first one found below it). File ids follow `tessera-resolve`: source files
   have ids from 1, `ascribe.toml` is 0, an id names a path and is never reused.
 - **Changes** reach it as `Change`s from three sources: open documents
   (`didOpen`, `didChange`, `didClose`; an open document's text wins over the
@@ -135,7 +134,7 @@ from `tessera-fmt`; the VS Code client applies those edits on save when
   and directories created, changed, deleted, or moved by anything else, sources
   and assets alike), and `ascribe.toml` (open or on disk).
 - **The model.** An `ascribe.toml` that loads is applied as `Change::Model`
-  (phase 13's tiers decide what is re-parsed, re-indexed, or re-resolved). One
+  (`tessera-resolve`'s tiers decide what is re-parsed, re-indexed, or re-resolved). One
   that doesn't load has its problems published on `ascribe.toml`, and the
   project keeps the last model that did. A change to the content root or
   output directory can't be applied in place (`ApplyError::LayoutChanged`),
@@ -309,10 +308,9 @@ scaffold and the protocol types), over `tower-lsp-server`.
   dependency tree of the binary that also runs `check` and `build`.
 - Handling a panic per request is a `catch_unwind` around a plain function call.
 - `tower-lsp-server`'s advantages (typed request handlers, less boilerplate)
-  matter more for the many small requests of phases 16 and 24. Those phases can
-  add a dispatch table over the same loop; if a later phase's requests turn out
-  to need async, the state and the worker in this crate don't depend on the
-  loop.
+  matter more for a server with many small requests. More requests can be added
+  as a dispatch table over the same loop; if they ever need async, the state and
+  the worker in this crate don't depend on the loop.
 
 ## Testing
 
@@ -324,7 +322,7 @@ scaffold and the protocol types), over `tower-lsp-server`.
   over stdio and compares its published diagnostics with
   `ascribe check --build <name> --format json`, for every build of
   `examples/quill` and fixture projects with known problems.
-- `tests/navigation.rs` scripts every phase 16 feature over a copy of
+- `tests/navigation.rs` scripts every navigation feature over a copy of
   `examples/quill` (with a features registry added): each completion context,
   hover, definition, document links, CodeLens and its command, inlay hints,
   answers after an edit or a deletion, the negotiated encodings, files outside

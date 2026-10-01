@@ -1,14 +1,14 @@
-# `ascribe.toml` reference
+# `ascribe.toml` format contract
 
-This is the reference for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. Phase 08 implements the loader from this document; phase 03 writes fixtures against it.
+This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `tessera-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../content-model.md).
 
-SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is marked **Decided (Qn)** and listed in [Decisions](#21-decisions). No item is provisional.
+SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is listed in [Decisions](#21-decisions).
 
 Example files, each valid under this reference:
 
-- [`examples/content-models/minimal.toml`](../examples/content-models/minimal.toml): the smallest valid model.
-- [`examples/content-models/quill.toml`](../examples/content-models/quill.toml): the model SPEC Appendix B assumes.
-- [`examples/content-models/full.toml`](../examples/content-models/full.toml): every section and key.
+- [`examples/content-models/minimal.toml`](../../examples/content-models/minimal.toml): the smallest valid model.
+- [`examples/content-models/quill.toml`](../../examples/content-models/quill.toml): the model SPEC Appendix B assumes.
+- [`examples/content-models/full.toml`](../../examples/content-models/full.toml): every section and key.
 
 ## Contents
 
@@ -54,7 +54,7 @@ Example files, each valid under this reference:
 
 - **Keys are kebab-case** (`content-root`, `trailing-slash`), matching Ascribe's attribute keys. TOML allows hyphens in bare keys, so they need no quotes.
 - **Unknown keys are errors**, everywhere, with a did-you-mean suggestion. A misspelled key is otherwise a silently ignored setting. The exceptions are the tables whose keys are names the project chooses (`[phrases]`, `[types]`, `[dimensions]`, and so on); their keys are validated as names instead.
-- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order (SPEC §8.3). It MUST also preserve the order of the `[dimensions]` tables, which is the canonical order of `@variant` attributes and decides which dimension a tab group syncs on (the [element contract](../packages/elements/CONTRACT.md), §3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
+- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order (SPEC §8.3). It MUST also preserve the order of the `[dimensions]` tables, which is the canonical order of `@variant` attributes and decides which dimension a tab group syncs on (the [element contract](../../packages/elements/CONTRACT.md), §3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
 
 ### 1.2 Names
 
@@ -67,7 +67,7 @@ Several kinds of name appear in the file. Each has a grammar from SPEC Appendix 
 | widget name | SPEC A `widget-name` | Lowercase words of letters and digits joined by single hyphens, with at least one hyphen; starting with a letter | Widget names |
 | build name | This reference | A letter, then letters, digits, `_`, `-`, or `.` | Build names |
 
-Dimension names follow the stricter `key` rule, not just `name-word`, because they're also written as attribute keys in `@variant {deployment=cloud}` (SPEC §3.3, §4.3). **Decided (Q6).**
+Dimension names follow the stricter `key` rule, not just `name-word`, because they're also written as attribute keys in `@variant {deployment=cloud}` (SPEC §3.3, §4.3).
 
 Build names allow `.` so that names like `self-managed-3.3` work. A name containing `.` must be quoted in a TOML header: `[builds."self-managed-3.3"]`.
 
@@ -123,7 +123,7 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Consumer profile (§9.5) | `[consumer]` | [§16](#16-consumer) |
 | Builds (§9.3) | `[builds.<name>]` | [§17](#17-buildsname) |
 | Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§20](#20-validation-rules) |
-| The editor's default build (PLAN, phase 15) | `[editor]` | [§18](#18-editor) |
+| The editor's default build | `[editor]` | [§18](#18-editor) |
 
 ---
 
@@ -135,7 +135,7 @@ spec = "0.1"
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `spec` | string | **required** | The version of the Ascribe specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`. **Decided (Q21).** |
+| `spec` | string | **required** | The version of the Ascribe specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`. |
 
 The only other top-level keys are the tables in §4–§18. Anything else is an unknown key.
 
@@ -154,11 +154,11 @@ output-dir = ".ascribe/build"
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `content-root` | string (path) | `"docs"` | The content root (SPEC §2.2): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It MUST exist and be a directory. |
-| `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/` (see the [output-layout contract](contracts/output-layout.md)). It need not exist. |
+| `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/` (see the [output-layout contract](output-layout.md)). It need not exist. |
 
 **Rules** (§20): both paths are relative (`model-path-absolute`). The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and they MUST NOT be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
 
-The defaults are **Decided (Q14)**. `".ascribe/build"` keeps generated output out of the way of both the source and a consumer's own `dist/`.
+The defaults: `".ascribe/build"` keeps generated output out of the way of both the source and a consumer's own `dist/`.
 
 ---
 
@@ -184,7 +184,7 @@ title = "string"
 api-version = "string"
 ```
 
-`<name>` is the type's name (`key` rule). It appears in diagnostics and in generated code (the Zod schema's name, phase 20).
+`<name>` is the type's name (`key` rule). It appears in diagnostics and in generated code (the Zod schema's name).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -199,17 +199,17 @@ api-version = "string"
 3. If none match and a default type exists, the default applies.
 4. If none match and there's no default type, it's an error on the page.
 
-A type with neither `files` nor `default = true` could never apply, and is an error (`model-type-unreachable`). The rules in steps 2 and 4 are document diagnostics, listed in SPEC §8.2. **Decided (Q1, Q2).**
+A type with neither `files` nor `default = true` could never apply, and is an error (`model-type-unreachable`). The rules in steps 2 and 4 are document diagnostics, listed in SPEC §8.2.
 
-**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page (SPEC §5.2). The field MAY accept phrases (§12). **Decided (Q3).**
+**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page (SPEC §5.2). The field MAY accept phrases (§12).
 
-**Reserved keys.** `available` (SPEC §4.4) and `variant` (SPEC §4.3) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type MUST NOT declare them (`model-field-reserved`). Generated consumer schemas include them automatically. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type MUST NOT declare it (`model-field-reserved`, Q150).
+**Reserved keys.** `available` (SPEC §4.4) and `variant` (SPEC §4.3) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type MUST NOT declare them (`model-field-reserved`). Generated consumer schemas include them automatically. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type MUST NOT declare it (`model-field-reserved`).
 
-**Unknown frontmatter keys.** A page whose frontmatter has a key its type doesn't declare (and that isn't reserved) is an error on the page. **Decided (Q1).**
+**Unknown frontmatter keys.** A page whose frontmatter has a key its type doesn't declare (and that isn't reserved) is an error on the page.
 
 ### 5.2 Frontmatter values
 
-Frontmatter is YAML. For type checking, processors parse it with the YAML 1.2 **core schema**: `true` and `false` are booleans (`yes`, `no`, `on`, and `off` are strings), and `3.10` is the number 3.1. So a `string` field whose value is `3.10` unquoted is a type error, and the message suggests quoting it. **Decided (Q15).**
+Frontmatter is YAML. For type checking, processors parse it with the YAML 1.2 **core schema**: `true` and `false` are booleans (`yes`, `no`, `on`, and `off` are strings), and `3.10` is the number 3.1. So a `string` field whose value is `3.10` unquoted is a type error, and the message suggests quoting it.
 
 ### 5.3 Fragments
 
@@ -228,7 +228,7 @@ owner = "string?"
 
 Content types never apply to fragments, even when a type's `files` match a fragment's path.
 
-**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter MUST NOT use them (an error on the fragment), and `[fragments.frontmatter]` MUST NOT declare them (`model-field-reserved`). Use `@available` inside the fragment instead. **Decided (Q4).**
+**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter MUST NOT use them (an error on the fragment), and `[fragments.frontmatter]` MUST NOT declare them (`model-field-reserved`). Use `@available` inside the fragment instead.
 
 ---
 
@@ -324,7 +324,7 @@ labels = { cloud = "Quill Cloud", self-managed = "Self-managed" }
 | `label` | string | the dimension's name | The display label for the dimension itself, used where a dimension name appears as an availability target or names a tab group. |
 | `versionless` | array of strings | `[]` | Values that are versionless (SPEC §4.4): availability for them takes a single state and no versions. Every entry MUST be a declared value. Values not listed are versioned. |
 
-**Rules.** A value MUST belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. **Decided (Q6).** Dimension names and values also take part in the one-role rule (§20).
+**Rules.** A value MUST belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. Dimension names and values also take part in the one-role rule (§20).
 
 ---
 
@@ -343,7 +343,7 @@ scheme = "numeric"
 
 **The `numeric` scheme.** A version is any string matching SPEC Appendix A's `version` rule: numbers separated by dots (`3`, `3.4`, `3.4.1`). Versions compare component by component, numerically, from the left, with missing trailing components treated as `0`: `3.4` equals `3.4.0`, `3.10` is later than `3.9`, and `4` is later than `3.99.1`. Leading zeros don't matter (`3.04` equals `3.4`). This is semantic versioning's `major.minor.patch` ordering. It has no pre-release or build suffixes, because the spec's grammar doesn't allow them; express a pre-release with a lifecycle state (`preview 3.4`) instead.
 
-No other scheme is defined. The table exists so a later spec version can add one without changing the file's shape. **Decided (Q5)**: the phase plan named the default "semantic versioning"; this reference names it `numeric` because it accepts any number of components and has no pre-release syntax.
+No other scheme is defined. The table exists so a later spec version can add one without changing the file's shape. The scheme is named `numeric`, not "semantic versioning", because it accepts any number of components and has no pre-release syntax.
 
 ---
 
@@ -377,7 +377,7 @@ label = "Generally available"
 | `available` | boolean | built-in states: as in the table above; new states: **required** | Whether content in this state counts as available (SPEC §4.4, §9.3). A new state must say so explicitly. |
 | `label` | string | built-in states: as in the table above; new states: the state's name | The display label used in availability annotations, such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" (SPEC §9.4). |
 
-**Rules.** `ga` MUST count as available (`model-lifecycle-ga-unavailable`), because content with no state is `ga` (SPEC §4.4). Lifecycle states take part in the one-role rule, including the built-in ones: a dimension value named `beta` is an error. **Decided (Q17).**
+**Rules.** `ga` MUST count as available (`model-lifecycle-ga-unavailable`), because content with no state is `ga` (SPEC §4.4). Lifecycle states take part in the one-role rule, including the built-in ones: a dimension value named `beta` is an error.
 
 ---
 
@@ -398,7 +398,7 @@ available = "cloud, self-managed preview 3.4"
 | `name` | string | **required** | The feature's display name, shown on hover and available to emitters. |
 | `available` | string (availability spec) | **required** | The feature's availability, in SPEC §4.4's syntax. |
 
-**Rules.** The spec is checked like one written in a document: it MUST parse (`model-availability-syntax`); every target MUST be a declared dimension value or dimension name, and every state a declared state (`model-availability-unknown-name`); versionless targets and dimension names take no versions (`model-availability-versionless`); histories MUST be in chronological order (`model-availability-history-order`). It MUST NOT be a feature key itself (`model-feature-nested`), so features never refer to each other. **Decided (Q19).** Feature keys take part in the one-role rule.
+**Rules.** The spec is checked like one written in a document: it MUST parse (`model-availability-syntax`); every target MUST be a declared dimension value or dimension name, and every state a declared state (`model-availability-unknown-name`); versionless targets and dimension names take no versions (`model-availability-versionless`); histories MUST be in chronological order (`model-availability-history-order`). It MUST NOT be a feature key itself (`model-feature-nested`), so features never refer to each other. Feature keys take part in the one-role rule.
 
 ---
 
@@ -445,7 +445,7 @@ Every key is a phrase key (`key` rule, the same rule as SPEC Appendix A's `phras
 title = { type = "string", phrases = true }
 ```
 
-Only `string` and `list(string)` fields can accept phrases (`model-phrases-field-type`). By default, no field does. The setting lives on the field, not in `[phrases]`, so that a phrase key can never collide with a setting's name. **Decided (Q20).**
+Only `string` and `list(string)` fields can accept phrases (`model-phrases-field-type`). By default, no field does. The setting lives on the field, not in `[phrases]`, so that a phrase key can never collide with a setting's name.
 
 ---
 
@@ -483,7 +483,7 @@ link = "/reference/glossary.md#api-key"
 | `link` | string (path) | none | Where the full definition lives: a source file path relative to the content root, with an optional `#id`, written as in a link (SPEC §5.2; a leading `/` is allowed and means the same). It MUST name a page, not a fragment. Occurrences are linked here. |
 | `case-sensitive` | boolean | the `[glossary]` setting | Overrides `case-sensitive` for this term, for terms like `Go` that collide with ordinary words. |
 
-**Matching**, which phase 12 implements: occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term with no `link` isn't linked in the site or plain-markdown output; its definition still reaches the editor and the JSON output. **Decided (Q7)**: SPEC §5.4 says only that occurrences are linked to definitions.
+**Matching**: occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term with no `link` isn't linked in the site or plain-markdown output; its definition still reaches the editor and the JSON output. SPEC §5.4 says only that occurrences are linked to definitions.
 
 **Rules.** No two terms or aliases may be the same text (compared ignoring case when either is case-insensitive; `model-glossary-duplicate-term`). The `link` file MUST exist and not be a fragment (`model-glossary-link`); its `#id` is checked with the page-level link checks, since ids depend on parsing.
 
@@ -502,7 +502,7 @@ loading = { type = "enum(lazy, eager)", default = "lazy" }
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `attributes` | table of attribute types | `{}` | Accepted image attribute keys (`key` rule) and their types (§6). With no entries, an image accepts no attributes, and any attribute block after an image is an error (SPEC §8.2, "Unknown key"). Declaration order is canonical order (SPEC §8.3). A declared default reaches the output: in the site output, every image carries the defaults of attributes it doesn't write (Q141). |
+| `attributes` | table of attribute types | `{}` | Accepted image attribute keys (`key` rule) and their types (§6). With no entries, an image accepts no attributes, and any attribute block after an image is an error (SPEC §8.2, "Unknown key"). Declaration order is canonical order (SPEC §8.3). A declared default reaches the output: in the site output, every image carries the defaults of attributes it doesn't write. |
 
 Alt text and titles aren't attributes; they use CommonMark's syntax (SPEC §5.3). Presentation choices aren't image attributes either. Keys HTML already uses on `<img>` (`src`, `alt`, `title`, and its global attributes) are rejected (`model-attribute-reserved`), since the site output writes image attributes onto the `<img>` element (SPEC §7.2).
 
@@ -524,7 +524,7 @@ lab = "string"
 height = "number?"
 ```
 
-`<name>` is the widget's name (SPEC A `widget-name`: lowercase, with at least one hyphen). Names starting with `ascribe-` are reserved for Ascribe's element library, and the names HTML reserves for itself (`annotation-xml`, `color-profile`, `font-face`, `font-face-src`, `font-face-uri`, `font-face-format`, `font-face-name`, `missing-glyph`) aren't allowed, because the site output emits a widget as a custom element with the widget's name (SPEC §9.4). **Decided (Q9).**
+`<name>` is the widget's name (SPEC A `widget-name`: lowercase, with at least one hyphen). Names starting with `ascribe-` are reserved for Ascribe's element library, and the names HTML reserves for itself (`annotation-xml`, `color-profile`, `font-face`, `font-face-src`, `font-face-uri`, `font-face-format`, `font-face-name`, `missing-glyph`) aren't allowed, because the site output emits a widget as a custom element with the widget's name (SPEC §9.4).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -534,8 +534,8 @@ height = "number?"
 | `title` | string | `"none"` | Whether the widget takes a title line (SPEC §3.7): `"none"`, `"accepted"`, or `"required"`. |
 | `groupable` | boolean | `false` | Whether a run of the widget's openers forms a group of arms (SPEC §3.6). |
 | `attributes` | table of attribute types | `{}` | The attribute schema: keys (`key` rule) and types (§6). Declaration order is canonical order (SPEC §8.3). The keys `heading` and `primary`, HTML's global attributes (including `title`), `aria-` keys, and event-handler attributes such as `onclick`, are rejected (`model-attribute-reserved`): the site output writes these attributes onto the widget's element (SPEC §7.2). |
-| `plain-fallback` | string | none | Plain-text fallback for the plain-markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing. **Decided (Q8).** |
-| `plain-content` | string | `"keep"` | For a widget that wraps content, whether the plain-markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`. **Decided (Q8).** |
+| `plain-fallback` | string | none | Plain-text fallback for the plain-markdown output (SPEC §6, §9.4): CommonMark text written in place of the widget. Phrases in it are substituted. It isn't a template: attribute values aren't inserted. Without it, the widget itself emits nothing. |
+| `plain-content` | string | `"keep"` | For a widget that wraps content, whether the plain-markdown output keeps that content (`"keep"`) after the fallback, or drops it (`"drop"`). Allowed only when the widget wraps content: it has container form, or its binding is `block` or `heading-or-block`. |
 | `description` | string | none | Help text for the editor's hover and completion. |
 
 **Binding values:**
@@ -550,10 +550,10 @@ height = "number?"
 **Rules** (§20):
 
 - A widget with container form MUST NOT have a required primary, since a container opener's primary is empty (SPEC §3.5). A container-only widget's primary MUST be `"none"` (`model-widget-container-primary`).
-- A groupable widget MUST be container-only, since group arms are containers (SPEC §3.6) (`model-widget-groupable-form`). **Decided (Q9).**
+- A groupable widget MUST be container-only, since group arms are containers (SPEC §3.6) (`model-widget-groupable-form`).
 - `binding` is required with line form and not allowed without it (`model-widget-binding`).
 
-The site output's element for a widget (tag name and attributes) is defined by the [element contract](../packages/elements/CONTRACT.md), not here.
+The site output's element for a widget (tag name and attributes) is defined by the [element contract](../../packages/elements/CONTRACT.md), not here.
 
 ---
 
@@ -573,22 +573,22 @@ slugger = "github"
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `profile` | string | `"astro"` | The consumer profile. Supported: `"astro"`. |
-| `site` | string (URL) | none | The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain-markdown output needs it to write absolute links (SPEC §9.4). Without it, plain-markdown links are root-relative (they start with `base-path`) and `ascribe build` warns. **Decided (Q10).** |
+| `site` | string (URL) | none | The published site's origin, such as `"https://docs.quill.dev"`: an `http` or `https` URL with no path, query, or fragment. The plain-markdown output needs it to write absolute links (SPEC §9.4). Without it, plain-markdown links are root-relative (they start with `base-path`) and `ascribe build` warns. |
 | `base-path` | string | `"/"` | **Routing.** The URL path every route starts with, such as `"/docs/"`, including any locale prefix (`"/en/"`). It MUST start with `/`. A trailing `/` is optional and doesn't change the meaning. |
 | `trailing-slash` | string | `"always"` | **Routing.** Whether page URLs end in `/`: `"always"` (`/guides/setup/`) or `"never"` (`/guides/setup`). Match the consumer's own setting (Astro's `trailingSlash` and `build.format`). |
-| `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids (SPEC §5.5), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses (phase 09). |
-| `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. **Decided (Q11).** |
+| `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids (SPEC §5.5), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses. |
+| `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. |
 
 **Heading ids, image attributes, and assets** (SPEC §9.5) are part of the profile, not keys. The `astro` profile has exactly one way to do each, defined by the contracts:
 
-- **Heading ids and image attributes:** the site output writes each as a `<ascribe-attributes>` marker that the consumer's markdown plugin applies, so the consumer keeps its own heading, table-of-contents, and image processing. See [`contracts/site-render.md`](contracts/site-render.md).
-- **Assets:** copies mirror their source paths inside each output, and images are referenced relatively so Astro's image processing still applies. Other files a page links to are published under `_ascribe/files/`. See [`contracts/assets.md`](contracts/assets.md).
+- **Heading ids and image attributes:** the site output writes each as a `<ascribe-attributes>` marker that the consumer's markdown plugin applies, so the consumer keeps its own heading, table-of-contents, and image processing. See [`contracts/site-render.md`](site-render.md).
+- **Assets:** copies mirror their source paths inside each output, and images are referenced relatively so Astro's image processing still applies. Other files a page links to are published under `_ascribe/files/`. See [`contracts/assets.md`](assets.md).
 
-A later profile that offers a choice adds a key for it then. **Decided (Q12).**
+A later profile that offers a choice adds a key for it then.
 
-**How file paths become routes** (the `astro` profile; phase 20 implements and verifies it against Astro): a page's route is `base-path`, then its path relative to the content root with the `.md` extension removed and each segment slugged the way Astro's content loader computes entry ids; a final `index` segment is dropped (`guides/index.md` → `/guides/`); then the trailing slash per `trailing-slash`. The root `index.md` (Astro's entry id `index`) is at `base-path`, which under `trailing-slash = "never"` loses its final `/` unless it's `/`. Two pages with one entry id (`My File.md` and `my-file.md`, or `index.md` and `index/index.md`) can't both be published, and `ascribe build --emit site` fails, naming them (Q143). The same router answers the reverse question, which page a route-like link names, for the `link-route` warning and its fix (Q148). Source files never contain routes (SPEC §5.2).
+**How file paths become routes** (the `astro` profile, verified against Astro): a page's route is `base-path`, then its path relative to the content root with the `.md` extension removed and each segment slugged the way Astro's content loader computes entry ids; a final `index` segment is dropped (`guides/index.md` → `/guides/`); then the trailing slash per `trailing-slash`. The root `index.md` (Astro's entry id `index`) is at `base-path`, which under `trailing-slash = "never"` loses its final `/` unless it's `/`. Two pages with one entry id (`My File.md` and `my-file.md`, or `index.md` and `index/index.md`) can't both be published, and `ascribe build --emit site` fails, naming them. The same router answers the reverse question, which page a route-like link names, for the `link-route` warning and its fix. Source files never contain routes (SPEC §5.2).
 
-The `astro` profile's `site`, `base-path`, and `trailing-slash` repeat settings from `astro.config`. The Astro integration (phases 21 and 22) checks that they agree, and fails the build, naming each difference, when they don't. It compares `base-path` as a path with a leading and a trailing `/`, treats Astro's `trailingSlash: "ignore"` as agreeing with either value, and compares `site` by origin when both sides set it (Q154).
+The `astro` profile's `site`, `base-path`, and `trailing-slash` repeat settings from `astro.config`. The Astro integration checks that they agree, and fails the build, naming each difference, when they don't. It compares `base-path` as a path with a leading and a trailing `/`, treats Astro's `trailingSlash: "ignore"` as agreeing with either value, and compares `site` by origin when both sides set it.
 
 ---
 
@@ -615,7 +615,7 @@ availability = { filter = "self-managed 3.3" }
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `variants` | string or table | `"switch"` | The variant mode. `"switch"` keeps every arm and page. A **selection** is a table from dimension names to a value or an array of values: `{ deployment = "cloud" }`, `{ pm = ["npm", "pnpm"] }`. Every dimension MUST be declared and every value a value of that dimension. An empty table is an error; write `"switch"`. |
-| `availability` | string or table | `"badge"` | The availability mode. `"badge"` keeps everything and annotates it. `{ filter = "<target> [<version>]" }` removes content not available for the target at the version. The target MUST be a declared dimension value, not a dimension name. A versioned target MUST have a version, and a versionless one MUST NOT (**Decided (Q13)**). The version follows the version scheme (§8). |
+| `availability` | string or table | `"badge"` | The availability mode. `"badge"` keeps everything and annotates it. `{ filter = "<target> [<version>]" }` removes content not available for the target at the version. The target MUST be a declared dimension value, not a dimension name. A versioned target MUST have a version, and a versionless one MUST NOT. The version follows the version scheme (§8). |
 
 **Rules.** Build names MUST be unique ignoring case (`model-build-name-case`), since they become directory names and some file systems ignore case. A build that filters for a target its own selection excludes (for example, selecting `deployment = "cloud"` and filtering for `self-managed 3.3`) is legal but almost certainly a mistake, so the loader warns (`model-build-filter-excluded`).
 
@@ -634,7 +634,7 @@ build = "site"
 |---|---|---|---|
 | `build` | string | see below | The build whose page-level diagnostics the language server reports by default (SPEC §8.1 checks pages once per build). It MUST name a declared build. |
 
-**Default.** If only one build exists, that build. Otherwise, the build named `site`, if there is one. Otherwise the key is required (`model-editor-build-required`). **Decided (Q16).**
+**Default.** If only one build exists, that build. Otherwise, the build named `site`, if there is one. Otherwise the key is required (`model-editor-build-required`).
 
 ---
 
@@ -645,7 +645,7 @@ A file containing only `spec = "0.1"` is valid. It means:
 | Section | When absent |
 |---|---|
 | `[project]` | `content-root = "docs"`, `output-dir = ".ascribe/build"` |
-| `[types]` | One implicit default page type, named `page`, with frontmatter `title = "string"` and nothing else. If `[types]` declares any type, there's no implicit type. **Decided (Q18).** |
+| `[types]` | One implicit default page type, named `page`, with frontmatter `title = "string"` and nothing else. If `[types]` declares any type, there's no implicit type. |
 | `[fragments]` | Only paths with a `_` segment are fragments. The fragment schema has no fields, so a fragment's frontmatter can't have any keys. |
 | `[dimensions]` | No dimensions. Any `@variant` arm with attributes, or `variant` frontmatter, is an error. |
 | `[versions]` | `scheme = "numeric"` |
@@ -657,7 +657,7 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[images]` | No image attributes. |
 | `[widgets]` | No project widgets. |
 | `[consumer]` | `profile = "astro"` with its defaults. |
-| `[builds]` | One implicit build, `site`, with `variants = "switch"` and `availability = "badge"`. If `[builds]` declares any build, there's no implicit one. **Decided (Q18).** |
+| `[builds]` | One implicit build, `site`, with `variants = "switch"` and `availability = "badge"`. If `[builds]` declares any build, there's no implicit one. |
 | `[editor]` | `build` as in §18. |
 
 ---
@@ -666,9 +666,9 @@ A file containing only `spec = "0.1"` is valid. It means:
 
 A loader MUST enforce every rule below when it loads `ascribe.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
 
-- **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`tests/conformance/diagnostics.toml`](../tests/conformance/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
+- **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`tests/conformance/diagnostics.toml`](../../tests/conformance/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
 - **Messages** are templates. `{name}` is a placeholder. Where a rule has several messages, each covers one case of it.
-- Rules about documents, such as a page matching no content type or an unknown frontmatter key, aren't loader rules; see Q1.
+- Rules about documents, such as a page matching no content type or an unknown frontmatter key, aren't loader rules.
 - **Filesystem rules** (`model-content-root-missing`, `model-glossary-link`) need the project directory. A loader given only the file's text, such as an unsaved editor buffer or a unit test, skips them; `ascribe check` and the language server always run them.
 
 ### 20.1 File and structure
@@ -690,7 +690,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 |---|---|---|
 | `model-path-absolute` | `content-root` and `output-dir` are relative paths. | `` `{key}` must be a path relative to ascribe.toml, not an absolute path `` |
 | `model-content-root-missing` | The content root exists and is a directory. | `` content root `{path}` doesn't exist ``<br>`` content root `{path}` isn't a directory `` |
-| `model-output-overlaps-content` | The output directory isn't inside the content root, the content root isn't inside the output directory, and they differ (SPEC-derived; phase 01 task 1). | `` output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source ``<br>`` content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output ``<br>`` output directory and content root are both `{path}` `` |
+| `model-output-overlaps-content` | The output directory isn't inside the content root, the content root isn't inside the output directory, and they differ (derived from the spec). | `` output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source ``<br>`` content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output ``<br>`` output directory and content root are both `{path}` `` |
 
 ### 20.3 Content types, fragments, and fields
 
@@ -699,7 +699,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-type-multiple-defaults` | At most one type sets `default = true`. | `` only one content type can be the default, but `{a}` and `{b}` both set default = true `` |
 | `model-type-unreachable` | Every type has `files` or `default = true`. | `` content type `{type}` has no `files` and isn't the default, so no page can use it `` |
 | `model-type-title` | Every page type declares `title` as a required `string`. | `` content type `{type}` must declare title = "string": it's the page title, used for empty link text ``<br>`` content type `{type}`: `title` must be a required string, not "{found}" `` |
-| `model-field-reserved` | No content type or fragment schema declares `available` or `variant`, and no content type declares `slug` (Q150). | `` `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]` ``<br>`` `{field}` is reserved by the Ascribe spec, and fragments can't use it ``<br>`` `slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]` `` |
+| `model-field-reserved` | No content type or fragment schema declares `available` or `variant`, and no content type declares `slug`. | `` `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]` ``<br>`` `{field}` is reserved by the Ascribe spec, and fragments can't use it ``<br>`` `slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]` `` |
 | `model-type-syntax` | Every field and attribute type parses under §6.1, and is allowed where it's used: no `date`, `list`, or `object` for attributes; no `set` for fields; `object`, `list(object)`, and bare `enum` only in table form. | `` "{type}" isn't a valid {kind} type: {detail} ``, for example `` "strng?" isn't a valid field type: expected string, number, boolean, date, enum(…), or list(…) `` |
 | `model-type-fields` | `fields` is present exactly when the type is `object` or `list(object)`, optional or not. | `` field `{field}` is an object, so it needs `fields` ``<br>`` `fields` is only allowed on object fields, and `{field}` is "{type}" `` |
 | `model-enum-values` | An enumeration has at least one value and no duplicates, and its values come from exactly one of `enum(…)` and `values`. `values` appears only with bare `enum`. | `` `{field}` has an empty enumeration ``<br>`` "{value}" appears twice in the enumeration for `{field}` ``<br>`` `{field}`: list enumeration values in enum(…) or in `values`, not both ``<br>`` `{field}` is a bare enum, so it needs `values` `` |
@@ -717,7 +717,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-name-case` (**warning**) | No two names in those roles differ only in case. | `` `{a}` and `{b}` differ only in case; names are case-sensitive, so they're easy to confuse `` |
 | `model-dimension-empty` | `values` has at least one value. | `` dimension `{dimension}` has no values `` |
 | `model-dimension-value-duplicate` | No value appears twice in one dimension. | `` `{value}` appears twice in dimensions.{dimension}.values `` |
-| `model-dimension-value-shared` | No value belongs to two dimensions (Q6). | `` `{value}` is a value of both `{a}` and `{b}`; a value can belong to only one dimension `` |
+| `model-dimension-value-shared` | No value belongs to two dimensions. | `` `{value}` is a value of both `{a}` and `{b}`; a value can belong to only one dimension `` |
 | `model-label-undeclared` | Every key in a dimension's `labels` is one of its values. | `` dimensions.{dimension}.labels has a label for `{value}`, which isn't one of its values: {values} `` |
 | `model-versionless-undeclared` | Every entry in a dimension's `versionless` is one of its values. | `` dimensions.{dimension}.versionless lists `{value}`, which isn't one of its values: {values} `` |
 | `model-lifecycle-available-required` | A new lifecycle state sets `available`. | `` new lifecycle state `{state}` must set available = true or available = false `` |
@@ -727,7 +727,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-availability-unknown-name` | Every target in a feature's spec is a declared dimension value or dimension name, and every state is a declared lifecycle state. | `` feature `{key}`: `{name}` isn't a declared dimension value or dimension name ``<br>`` feature `{key}`: `{name}` isn't a declared lifecycle state `` |
 | `model-availability-versionless` | A versionless target, or a dimension name, has no versions in a feature's spec (SPEC §4.4). | `` feature `{key}`: `{target}` is versionless, so it takes a state but no version ``<br>`` feature `{key}`: `{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version `` |
 | `model-availability-history-order` | A history in a feature's spec is in chronological order under the version scheme. | `` feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier} `` |
-| `model-feature-nested` | A feature's `available` isn't itself a feature key (Q19). | `` feature `{key}`: available must be an availability spec, not another feature (`{other}`) `` |
+| `model-feature-nested` | A feature's `available` isn't itself a feature key. | `` feature `{key}`: available must be an availability spec, not another feature (`{other}`) `` |
 
 ### 20.5 Versions, phrases, glossary, and images
 
@@ -743,11 +743,11 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 
 | Slug | Rule | Message |
 |---|---|---|
-| `model-widget-reserved-name` | The name doesn't start with `ascribe-` and isn't one of HTML's reserved custom-element names (Q9). | `` widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library ``<br>`` widget name `{name}` is reserved by HTML and can't be a custom element `` |
+| `model-widget-reserved-name` | The name doesn't start with `ascribe-` and isn't one of HTML's reserved custom-element names. | `` widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library ``<br>`` widget name `{name}` is reserved by HTML and can't be a custom element `` |
 | `model-widget-forms` | `forms` is non-empty, has no duplicates, and contains only `"line"` and `"container"`. | `` forms must be ["line"], ["container"], or ["line", "container"] `` |
 | `model-widget-binding` | `binding` is present when `forms` includes `"line"`, and absent otherwise. | `` widget `{name}` has a line form, so it needs a binding: "self", "heading", "block", or "heading-or-block" ``<br>`` widget `{name}` is container-only, and a container holds its own content; remove binding `` |
 | `model-widget-container-primary` | With container form, the primary isn't required; a container-only widget's primary is `"none"`. | `` widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use "{kind}?" ``<br>`` widget `{name}` is container-only, so it can't take a primary `` |
-| `model-widget-groupable-form` | A groupable widget is container-only (Q9). | `` widget `{name}` is groupable, so it must be container-only: forms = ["container"] `` |
+| `model-widget-groupable-form` | A groupable widget is container-only. | `` widget `{name}` is groupable, so it must be container-only: forms = ["container"] `` |
 | `model-widget-plain-content` | `plain-content` is set only on widgets that wrap content: container form, or binding `block` or `heading-or-block`. | `` widget `{name}` doesn't wrap content, so plain-content has no effect; remove it `` |
 
 `primary`, `title`, and `binding` values are covered by `model-invalid-value`; attribute types by §20.3.
@@ -765,18 +765,16 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-build-unknown-value` | Every selected value is a value of its dimension. | `` build `{build}`: `{value}` isn't a value of `{dimension}`; values: {values} `` |
 | `model-build-availability` | `availability` is `"badge"` or a table with exactly one key, `filter`. | `` availability must be "badge" or { filter = "<target> <version>" } `` |
 | `model-build-filter-target` | The filter's target is a declared dimension value. | `` build `{build}` filters for `{target}`, which isn't a declared dimension value ``<br>`` build `{build}` filters for `{target}`, which is a dimension; filter for one of its values: {values} `` |
-| `model-build-filter-version` | The filter has a version exactly when its target is versioned (Q13), and the version follows SPEC Appendix A's `version` rule. | `` build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as "{target} 3.3" ``<br>`` build `{build}`: `{target}` is versionless, so the filter can't name a version ``<br>`` build `{build}`: "{version}" isn't a valid version `` |
+| `model-build-filter-version` | The filter has a version exactly when its target is versioned, and the version follows SPEC Appendix A's `version` rule. | `` build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as "{target} 3.3" ``<br>`` build `{build}`: `{target}` is versionless, so the filter can't name a version ``<br>`` build `{build}`: "{version}" isn't a valid version `` |
 | `model-build-filter-excluded` (**warning**) | A build's filter target isn't a value its own selection drops. | `` build `{build}` filters for `{target}`, but its selection keeps only {dimension} = {values}, so pages marked for `{target}` are dropped `` |
 | `model-editor-build-unknown` | `editor.build` names a declared build. | `` editor.build is `{build}`, which isn't a declared build; builds: {builds} `` |
-| `model-editor-build-required` | When there are several builds and none is named `site`, `editor.build` is set (Q16). | `` there are several builds and none is named site; set [editor] build to the one the editor should check `` |
+| `model-editor-build-required` | When there are several builds and none is named `site`, `editor.build` is set. | `` there are several builds and none is named site; set [editor] build to the one the editor should check `` |
 
 ---
 
 ## 21. Decisions
 
-Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recommended below, at the human checkpoint after phase 01, except item 12, which phase 02 settled when it wrote the site-render and asset contracts. Items 1, 2, 3, 4, and 6 are now also stated in SPEC.md (§2.1, §5.2, §7.2, §8.2). Each item keeps the alternatives that were considered.
-
-These numbers belong to this document. [`questions.md`](questions.md) numbers its entries separately, from Q1; elsewhere, a bare Qn (in a `SPEC-QUESTION` comment, a conformance case's `questions`, or the diagnostics registry's `provisional`) means a `questions.md` entry.
+Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recommended below, except item 12, which was settled when the site-render and asset contracts were written. Items 1, 2, 3, 4, and 6 are now also stated in SPEC.md (§2.1, §5.2, §7.2, §8.2). Each item keeps the alternatives that were considered.
 
 1. **Frontmatter diagnostics (SPEC §8.2).** §8.1 says file-level validation covers frontmatter, but §8.2 has no rows for it. *Decision:* add file-level error rows: unknown frontmatter key; missing required field; value doesn't match the field's type; reserved key (`available`, `variant`) on a fragment; page matches more than one content type; page matches no content type and there's no default.
 2. **Assigning content types to pages (SPEC §7.2).** The spec doesn't say how a page gets its type. *Decision:* `files` patterns per type plus at most one `default = true` type; a page matching several types is an error, with no precedence. *Considered:* first match in file order (TOML tables are formally unordered); most specific pattern (hard to define); a frontmatter `type` key (would need a new reserved key).
@@ -784,12 +782,12 @@ These numbers belong to this document. [`questions.md`](questions.md) numbers it
 4. **Reserved keys in fragments (SPEC §2.1, §4.3, §4.4).** `available` and `variant` are defined for pages. *Decision:* fragments can't use them in spec 0.1; use `@available` inside the fragment. *Considered:* fragment `available` applies to everything the fragment contributes, like a section spec.
 5. **Version scheme name (SPEC §4.4).** *Decision:* call the one scheme `numeric`: dotted numbers of any length, compared numerically with missing components as 0. The grammar has no pre-release syntax, so "semver" would overpromise. *Considered:* call it `semver` and cap versions at three components, which needs a new document diagnostic.
 6. **Name rules beyond the one-role rule (SPEC §4.3, §4.4, §7.2).** *Decision:* (a) a dimension value belongs to only one dimension, since `cloud` in a spec must mean one thing; (b) dimension names follow the `key` rule, since they're attribute keys; (c) warn on names that differ only in case. (a) and (b) are stated in SPEC §7.2.
-7. **Glossary (SPEC §5.4).** The spec gives no format or matching rules. *Decision:* terms with a required plain-text `definition` and an optional `link`; occurrences link to `link`; terms without it aren't linked in site or plain output. Whole-word matching, longest term wins, prose only (not headings, link text, or code), `first` per resolved page by default. Phase 02 decided that no term element is needed: in the site output an occurrence is an ordinary link whose title is the definition (see the [element contract](../packages/elements/CONTRACT.md)).
+7. **Glossary (SPEC §5.4).** The spec gives no format or matching rules. *Decision:* terms with a required plain-text `definition` and an optional `link`; occurrences link to `link`; terms without it aren't linked in site or plain output. Whole-word matching, longest term wins, prose only (not headings, link text, or code), `first` per resolved page by default. No term element is needed: in the site output an occurrence is an ordinary link whose title is the definition (see the [element contract](../../packages/elements/CONTRACT.md)).
 8. **Widget plain fallback (SPEC §6, §9.4).** *Decision:* a static CommonMark string with phrases substituted and no attribute interpolation (no behavior); a widget that wraps content keeps that content in plain output unless `plain-content = "drop"`, since silently losing content is worse than showing it. The spec's "or nothing" then applies to the widget itself, not its content.
 9. **Widget schema constraints (SPEC §3.5, §3.6, §6).** *Decision:* groupable widgets are container-only; widgets with container form have no required primary; names starting with `ascribe-` and HTML's reserved custom-element names are rejected.
 10. **Absolute links in plain output (SPEC §9.4).** Plain-markdown links are "absolute URLs", which needs the site's origin. *Decision:* optional `[consumer] site`; without it, links are root-relative and `ascribe build` warns.
 11. **HTML passthrough (SPEC §9.5).** The site output depends on raw HTML (custom elements). *Decision:* keep the key, but the `astro` profile accepts only `true` until a profile needs `false`, rather than defining a degraded site output now.
-12. **Heading ids, image attributes, and asset placement (SPEC §9.4, §9.5).** *Decision (phase 02):* no keys. The profile named by `profile` fixes all three, and the `astro` profile has one way to do each: a `<ascribe-attributes>` marker for heading ids and image attributes ([site-render contract](contracts/site-render.md)), and mirrored asset copies with relative image references ([asset contract](contracts/assets.md)). A key that accepts one value says nothing, and since unknown keys are errors, adding a key when a second profile needs a choice breaks no existing file, while removing one later would. *Considered:* the phase 01 keys `heading-ids` (`"attribute"` or `"html"`), `image-attributes` (`"attribute"` or `"html"`), `assets` (`"beside-page"` or `"directory"`), and `assets-dir`. Their alternatives were dropped: an `{#id}` attribute block is rewritten by Astro's default smartypants and GFM processing before a plugin sees it (quotes, `--` in ids), which the marker avoids; a raw HTML heading loses the consumer's inline processing and, in Astro, its table-of-contents entry; a raw `<img>` bypasses Astro's image processing; and a shared asset directory needs hashed names to avoid collisions, which mirroring avoids by construction. With them went the loader rule `model-consumer-assets-dir`.
+12. **Heading ids, image attributes, and asset placement (SPEC §9.4, §9.5).** *Decision:* no keys. The profile named by `profile` fixes all three, and the `astro` profile has one way to do each: a `<ascribe-attributes>` marker for heading ids and image attributes ([site-render contract](site-render.md)), and mirrored asset copies with relative image references ([asset contract](assets.md)). A key that accepts one value says nothing, and since unknown keys are errors, adding a key when a second profile needs a choice breaks no existing file, while removing one later would. *Considered:* the keys first drafted, `heading-ids` (`"attribute"` or `"html"`), `image-attributes` (`"attribute"` or `"html"`), `assets` (`"beside-page"` or `"directory"`), and `assets-dir`. Their alternatives were dropped: an `{#id}` attribute block is rewritten by Astro's default smartypants and GFM processing before a plugin sees it (quotes, `--` in ids), which the marker avoids; a raw HTML heading loses the consumer's inline processing and, in Astro, its table-of-contents entry; a raw `<img>` bypasses Astro's image processing; and a shared asset directory needs hashed names to avoid collisions, which mirroring avoids by construction. With them went the loader rule `model-consumer-assets-dir`.
 13. **Filter builds on versioned targets (SPEC §9.3).** A filter is "given a target and, for versioned targets, a version". *Decision:* the version is required for versioned targets, and not allowed for versionless ones. *Considered:* a versioned target with no version means "at every version", but then the "state in effect" is undefined.
 14. **Project defaults.** *Decision:* `content-root = "docs"`, `output-dir = ".ascribe/build"`; paths relative to `ascribe.toml`, `..` allowed, absolute paths rejected (keeps projects portable). The content root can't be `"."` by default, because the output directory couldn't then sit outside it.
 15. **YAML flavor for frontmatter.** *Decision:* the YAML 1.2 core schema (`yes` is a string, `3.10` is a number), and `date` fields accept `YYYY-MM-DD` scalars, quoted or not.

@@ -10,7 +10,6 @@ target/
 crates/
 tests/
 examples/
-project-docs/
 
 # Generated and third-party files.
 pnpm-lock.yaml
