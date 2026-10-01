@@ -1,6 +1,8 @@
 import * as path from "node:path";
 import { statSync } from "node:fs";
 import * as vscode from "vscode";
+import type { ProjectServer } from "../client.js";
+import type { ProjectRegistry } from "../registry.js";
 import { shellHtml } from "./html.js";
 import type {
   FromWebview,
@@ -12,6 +14,7 @@ import type {
   WebviewAsset,
 } from "./protocol.js";
 import { canonicalReference, isExternal, splitFragment } from "./refs.js";
+import { BuildChoices, previewProblems } from "./routing.js";
 
 /** The custom request the language server answers (`crates/tessera-lsp/README.md`). */
 export const PREVIEW_REQUEST = "ascribe/preview";
@@ -26,13 +29,6 @@ const DISK_DEBOUNCE_MS = 250;
 
 /** The schemes a link in the preview may open outside VS Code. */
 const EXTERNAL_SCHEMES = new Set(["http:", "https:", "mailto:"]);
-
-/** What the preview needs from the language client. */
-export interface PreviewServer {
-  request(method: string, params: unknown): Promise<unknown>;
-  /** Fires each time the server has started (and restarted). */
-  onDidStart: vscode.Event<void>;
-}
 
 /** One render, as the tests see it. */
 export interface RenderRecord {
@@ -76,8 +72,9 @@ export interface PreviewApi {
 
 /**
  * The preview panel: one webview beside the editor that shows the page of the
- * active Ascribe document, rendered by the language server (`ascribe/preview`)
- * through the site emitter, and drawn with the element library.
+ * active Ascribe document, rendered by the language server of the project
+ * that owns it (`ascribe/preview`) through the site emitter, and drawn with
+ * the element library.
  */
 export class PreviewController implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
@@ -85,7 +82,7 @@ export class PreviewController implements vscode.Disposable {
   private panelDisposables: vscode.Disposable[] = [];
   private ready = false;
   private document: vscode.TextDocument | undefined;
-  private selectedBuild: string | undefined;
+  private readonly builds = new BuildChoices();
   private timer: NodeJS.Timeout | undefined;
   private refreshing = false;
   private again = false;
@@ -94,8 +91,14 @@ export class PreviewController implements vscode.Disposable {
   private contentRoot: string | undefined;
   private assetRoots: string[] = [];
   private watchers: vscode.FileSystemWatcher[] = [];
+  /** The last render, and the folder of the project it is from (none for a file outside every project). */
   private latest:
-    { message: Extract<ToWebview, { type: "render" }>; result: PreviewResult } | undefined;
+    | {
+        message: Extract<ToWebview, { type: "render" }>;
+        result: PreviewResult;
+        folder: string | undefined;
+      }
+    | undefined;
   private revealed: string | undefined;
   private log: RenderRecord[] = [];
   private revealLog: string[] = [];
@@ -103,7 +106,7 @@ export class PreviewController implements vscode.Disposable {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly server: PreviewServer,
+    private readonly projects: ProjectRegistry,
   ) {}
 
   /** Registers the commands, the listeners, and the panel serializer. */
@@ -131,7 +134,13 @@ export class PreviewController implements vscode.Disposable {
         if (this.panel && event.textEditor.document === this.document)
           this.followCursor(event.textEditor);
       }),
-      this.server.onDidStart(() => {
+      // The previewed project's server started or restarted: it has the
+      // project's current state now. Other projects' servers don't matter.
+      this.projects.onDidStart((server) => {
+        if (this.panel && this.server() === server) this.schedule(0);
+      }),
+      // A project appeared or went away: the file may have another owner.
+      this.projects.onDidChangeProjects(() => {
         if (this.panel) this.schedule(0);
       }),
     );
@@ -164,7 +173,7 @@ export class PreviewController implements vscode.Disposable {
     this.followActiveEditor();
     // The content root is needed before the panel exists: it's one of the
     // directories the webview may read, and is fixed when the panel is made.
-    const first = await this.query();
+    const first = this.document && (await this.query(this.document));
     const panel = vscode.window.createWebviewPanel(
       VIEW_TYPE,
       panelTitle(this.document),
@@ -269,13 +278,23 @@ export class PreviewController implements vscode.Disposable {
     }, delay);
   }
 
-  private async query(): Promise<PreviewResult | undefined> {
-    const document = this.document;
-    if (!document) return undefined;
+  /** The server of the project that owns the previewed document. */
+  private server(): ProjectServer | undefined {
+    return this.document && this.projects.serverFor(this.document.uri);
+  }
+
+  /**
+   * Asks the server of the project that owns a document for its page, in the
+   * build chosen in that project, starting the server if it hasn't started.
+   */
+  private async query(document: vscode.TextDocument): Promise<PreviewResult | undefined> {
+    const server = await this.projects.ensureStartedFor(document.uri);
+    if (!server) return undefined;
     const params: PreviewParams = { textDocument: { uri: document.uri.toString() } };
-    if (this.selectedBuild !== undefined) params.build = this.selectedBuild;
+    const build = this.builds.get(server.project.folder);
+    if (build !== undefined) params.build = build;
     try {
-      return (await this.server.request(PREVIEW_REQUEST, params)) as PreviewResult;
+      return (await server.request(PREVIEW_REQUEST, params)) as PreviewResult;
     } catch {
       return undefined;
     }
@@ -308,7 +327,7 @@ export class PreviewController implements vscode.Disposable {
       // but the server may answer from an older version if the notification
       // is still on its way; the answer says which version it used.
       for (let attempt = 0; attempt < 20; attempt++) {
-        result = await this.query();
+        result = await this.query(document);
         if (
           !result ||
           result.documentVersion === null ||
@@ -320,11 +339,30 @@ export class PreviewController implements vscode.Disposable {
       }
     }
     if (!this.panel || panel !== this.panel) return;
-    if (!result) {
-      const reason = document
-        ? "The Ascribe language server isn't running, so there is nothing to preview."
-        : "Open an Ascribe page to preview it.";
-      result = {
+    const server = document && this.projects.serverFor(document.uri);
+    const folder = server?.project.folder;
+    // A build the content model no longer has (its file changed): back to the editor's.
+    const chosen = folder === undefined ? undefined : this.builds.get(folder);
+    if (
+      result &&
+      folder !== undefined &&
+      chosen !== undefined &&
+      result.builds.length > 0 &&
+      !result.builds.some((b) => b.name === chosen)
+    ) {
+      this.builds.set(folder, undefined);
+      this.again = true;
+      return;
+    }
+    const problems = previewProblems({
+      file: document?.uri.fsPath,
+      project: server && this.projects.name(server.project),
+      state: server?.state,
+      result,
+      show: (file) => vscode.workspace.asRelativePath(file),
+    });
+    result = {
+      ...(result ?? {
         build: "",
         builds: [],
         projectRoot: null,
@@ -332,20 +370,9 @@ export class PreviewController implements vscode.Disposable {
         assetRoots: [],
         documentVersion: null,
         page: null,
-        problems: [{ severity: "info", message: reason }],
-      };
-    }
-    // A build the content model no longer has (its file changed): back to the editor's.
-    if (
-      this.selectedBuild !== undefined &&
-      !result.builds.some((b) => b.name === this.selectedBuild)
-    ) {
-      if (result.builds.length > 0) {
-        this.selectedBuild = undefined;
-        this.again = true;
-        return;
-      }
-    }
+      }),
+      problems,
+    };
     this.followRoots(result.contentRoot ?? undefined, result.assetRoots);
     const assets = this.assetUris(result);
     const message: Extract<ToWebview, { type: "render" }> = {
@@ -357,9 +384,9 @@ export class PreviewController implements vscode.Disposable {
       available: result.page?.frontmatter.available ?? [],
       html: result.page?.html ?? null,
       assets,
-      problems: result.problems,
+      problems,
     };
-    this.latest = { message, result };
+    this.latest = { message, result, folder };
     this.log.push({
       seq: message.seq,
       document: document?.uri.toString() ?? "",
@@ -442,6 +469,9 @@ export class PreviewController implements vscode.Disposable {
       case "open":
         await this.openLink(message.href);
         return;
+      case "showOutput":
+        this.server()?.showOutput();
+        return;
       case "rendered": {
         const record = this.log.find((r) => r.seq === message.seq);
         if (record) {
@@ -464,11 +494,13 @@ export class PreviewController implements vscode.Disposable {
     }
   }
 
-  // The editor's build is the default and clears the choice.
+  /** Chooses a build in the project of the last render, whose builds the picker lists. */
   private chooseBuild(name: string): void {
+    const folder = this.latest?.folder;
+    if (folder === undefined) return;
     // Choosing the editor's build is choosing the default, so a later change
     // of `[editor] build` is followed.
-    this.selectedBuild = name === this.editorBuild() ? undefined : name;
+    this.builds.set(folder, name === this.editorBuild() ? undefined : name);
     this.schedule(0);
   }
 

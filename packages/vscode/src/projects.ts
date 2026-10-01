@@ -14,7 +14,7 @@ export interface Project {
  * letter or a UNC prefix) are also case-folded, whatever platform this runs
  * on, so the answer doesn't depend on the host.
  */
-function comparable(file: string): string {
+export function comparable(file: string): string {
   const windows = /^[a-zA-Z]:|^\\\\/.test(file);
   const normal = windows
     ? path.win32.normalize(file).replace(/\\/g, "/").toLowerCase()
@@ -23,7 +23,7 @@ function comparable(file: string): string {
 }
 
 /** Whether `file` is `folder` or lies below it. */
-function within(file: string, folder: string): boolean {
+export function within(file: string, folder: string): boolean {
   const f = comparable(file);
   const d = comparable(folder);
   return f === d || f.startsWith(d.endsWith("/") ? d : `${d}/`);
@@ -77,23 +77,34 @@ function slashed(file: string): string {
   return /^[a-zA-Z]:|^\\\\/.test(file) ? file.replace(/\\/g, "/") : file;
 }
 
+/** A workspace folder: its path and its name. */
+export interface WorkspaceFolder {
+  path: string;
+  name: string;
+}
+
 /**
- * The output channel's name: `Ascribe` for a workspace with one project, and
- * otherwise `Ascribe (<folder relative to its workspace folder>)`, using the
- * workspace folder's name for a project at its root.
+ * A project's name for people: its folder relative to its workspace folder,
+ * with forward slashes, or the workspace folder's name for a project at its
+ * root, or the whole folder for a project outside every workspace folder.
  */
-export function channelName(
-  project: Project,
-  workspace: { path: string; name: string } | undefined,
-  only: boolean,
-): string {
-  if (only) return "Ascribe";
-  if (!workspace || !within(project.folder, workspace.path)) {
-    return `Ascribe (${slashed(project.folder)})`;
-  }
+export function projectName(project: Project, workspace: WorkspaceFolder | undefined): string {
+  if (!workspace || !within(project.folder, workspace.path)) return slashed(project.folder);
   const base = slashed(workspace.path).replace(/\/+$/, "");
   const relative = slashed(project.folder)
     .slice(base.length)
     .replace(/^\/+|\/+$/g, "");
-  return `Ascribe (${relative === "" ? workspace.name : relative})`;
+  return relative === "" ? workspace.name : relative;
+}
+
+/**
+ * The output channel's name: `Ascribe` for a workspace with one project, and
+ * otherwise `Ascribe (<project name>)`.
+ */
+export function channelName(
+  project: Project,
+  workspace: WorkspaceFolder | undefined,
+  only: boolean,
+): string {
+  return only ? "Ascribe" : `Ascribe (${projectName(project, workspace)})`;
 }

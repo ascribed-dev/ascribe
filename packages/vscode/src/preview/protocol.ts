@@ -79,6 +79,15 @@ export interface PreviewResult {
   problems: PreviewProblem[];
 }
 
+/**
+ * A problem as the preview shows it: one from the server, or one of the
+ * extension's own, which may offer an action.
+ */
+export interface ShownProblem extends PreviewProblem {
+  /** A button after the message: `showOutput` opens the output of the previewed project's server. */
+  action?: "showOutput";
+}
+
 /** An asset the webview should show: the reference and the URL that reaches its source file. */
 export interface WebviewAsset {
   reference: string;
@@ -97,7 +106,7 @@ export type ToWebview =
       available: AvailabilityTarget[];
       html: string | null;
       assets: WebviewAsset[];
-      problems: PreviewProblem[];
+      problems: ShownProblem[];
     }
   | { type: "reveal"; id: string };
 
@@ -106,6 +115,7 @@ export type FromWebview =
   | { type: "ready" }
   | { type: "build"; name: string }
   | { type: "open"; href: string }
+  | { type: "showOutput" }
   | { type: "rendered"; seq: number; report: RenderReport }
   | { type: "images"; seq: number; images: ImageReport[] };
 

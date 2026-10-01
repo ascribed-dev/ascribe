@@ -296,6 +296,25 @@ describe("the preview webview", () => {
     await preview.page.close();
   });
 
+  it("offers the server's output beside a problem that asks for it", async () => {
+    const preview = await open();
+    await preview.send(
+      render(1, null, {
+        builds: [],
+        problems: [
+          { severity: "info", message: "x.md is a fragment." },
+          { severity: "error", message: "The server failed.", action: "showOutput" },
+        ],
+      }),
+    );
+    await preview.next("rendered");
+    const items = preview.page.locator("[data-role=problems] li");
+    await expect(items.nth(0).locator("button").count()).resolves.toBe(0);
+    await items.nth(1).getByRole("button", { name: "Show Output" }).click();
+    await expect(preview.next("showOutput")).resolves.toEqual({ type: "showOutput" });
+    await preview.page.close();
+  });
+
   it("shows the page-level availability the way the sample layout does", async () => {
     const preview = await open();
     await preview.send(

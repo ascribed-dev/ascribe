@@ -6,8 +6,10 @@ import {
   nestedProjects,
   ownedElsewhere,
   owningProject,
+  projectName,
   samePath,
   type Project,
+  type WorkspaceFolder,
 } from "./projects.js";
 
 /** `ascribe.startServers`: when a project's server starts. */
@@ -28,7 +30,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private warnedOfCap = false;
   private refreshing: Promise<void> = Promise.resolve();
   private readonly projectsChanged = new vscode.EventEmitter<void>();
-  private readonly started = new vscode.EventEmitter<void>();
+  private readonly started = new vscode.EventEmitter<ProjectServer>();
   private readonly disposables: vscode.Disposable[] = [];
 
   constructor(private readonly context: vscode.ExtensionContext) {}
@@ -47,8 +49,8 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     return this.projectsChanged.event;
   }
 
-  /** Fires each time any server reaches the running state. */
-  get onDidStart(): vscode.Event<void> {
+  /** Fires with a server each time it reaches the running state. */
+  get onDidStart(): vscode.Event<ProjectServer> {
     return this.started.event;
   }
 
@@ -115,7 +117,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     return server;
   }
 
-  /** Sends a request to the current server, for the preview until it routes by file. */
+  /** Sends a request to the current server: for the server's own commands, which name no file. */
   request(method: string, params: unknown): Promise<unknown> {
     const server = this.current();
     if (!server) return Promise.reject(new Error("the Ascribe language server isn't running"));
@@ -136,12 +138,12 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   }
 
   channelName(project: Project): string {
-    const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.folder));
-    return channelName(
-      project,
-      folder && { path: folder.uri.fsPath, name: folder.name },
-      this.byConfig.size <= 1,
-    );
+    return channelName(project, workspaceFolderOf(project), this.byConfig.size <= 1);
+  }
+
+  /** A project's name for people: its folder relative to its workspace folder. */
+  name(project: Project): string {
+    return projectName(project, workspaceFolderOf(project));
   }
 
   ownedElsewhere(project: Project, uri: vscode.Uri): boolean {
@@ -185,8 +187,13 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     for (const config of configs) {
       let server = this.byConfig.get(config);
       if (!server) {
-        server = new ProjectServer(this.context, { config, folder: path.dirname(config) }, this);
-        server.onDidStart(() => this.started.fire());
+        const created = new ProjectServer(
+          this.context,
+          { config, folder: path.dirname(config) },
+          this,
+        );
+        created.onDidStart(() => this.started.fire(created));
+        server = created;
         changed = true;
       }
       next.set(config, server);
@@ -232,6 +239,11 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     }
     await this.ensureStartedFor(document.uri);
   }
+}
+
+function workspaceFolderOf(project: Project): WorkspaceFolder | undefined {
+  const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.folder));
+  return folder && { path: folder.uri.fsPath, name: folder.name };
 }
 
 function readStartServers(): StartServers {

@@ -5,7 +5,9 @@ import {
   nestedProjects,
   ownedElsewhere,
   owningProject,
+  projectName,
   samePath,
+  within,
   type Project,
 } from "../../src/projects.js";
 
@@ -139,6 +141,35 @@ describe("channelName", () => {
 
   it("falls back to the folder when there's no workspace folder", () => {
     expect(channelName(project("/elsewhere/x"), undefined, false)).toBe("Ascribe (/elsewhere/x)");
+  });
+});
+
+describe("projectName", () => {
+  it("is the folder relative to its workspace folder, or the workspace folder's name", () => {
+    const workspace = { path: "/repo", name: "repo" };
+    expect(projectName(project("/repo/examples/quill"), workspace)).toBe("examples/quill");
+    expect(projectName(project("/repo"), workspace)).toBe("repo");
+  });
+
+  it("is the whole folder outside every workspace folder", () => {
+    expect(projectName(project("/elsewhere/x"), undefined)).toBe("/elsewhere/x");
+    expect(projectName(project("C:\\elsewhere\\x"), { path: "C:\\repo", name: "repo" })).toBe(
+      "C:/elsewhere/x",
+    );
+  });
+});
+
+describe("within", () => {
+  it("is true for the folder and what lies below it, and false for a lookalike", () => {
+    expect(within("/repo/docs", "/repo/docs")).toBe(true);
+    expect(within("/repo/docs/a/b.md", "/repo/docs/")).toBe(true);
+    expect(within("/repo/docs-old/a.md", "/repo/docs")).toBe(false);
+    expect(within("/repo/a.md", "/repo/docs")).toBe(false);
+  });
+
+  it("folds case and separators on Windows paths", () => {
+    expect(within("c:\\Repo\\Docs\\a.md", "C:/repo/docs")).toBe(true);
+    expect(within("D:\\repo\\docs\\a.md", "C:\\repo\\docs")).toBe(false);
   });
 });
 
