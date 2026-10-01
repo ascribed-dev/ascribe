@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { ServerState } from "./client.js";
+import type { ProjectServer, ServerState } from "./client.js";
 import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
@@ -69,12 +69,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         void vscode.window.showInformationMessage("Ascribe: this workspace has no ascribe.toml.");
         return;
       }
-      // Nothing running yet (servers start on demand): start the current project's.
+      // Restarts the servers that have started; the others start when they're needed.
       if (projects.servers.every((server) => server.state === "stopped")) {
-        await projects.current()?.start();
-      } else {
-        await projects.restartRunning();
+        void vscode.window.showInformationMessage(
+          "Ascribe: no language server is running. A project's server starts when you open one of its files.",
+        );
+        return;
       }
+      await projects.restartRunning();
     }),
     // The server's own command (a code lens opens the file it names). One
     // registration for every project, answered by the active file's server.
@@ -84,7 +86,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         arguments: args,
       }),
     ),
-    vscode.commands.registerCommand("ascribe.showOutput", () => projects.current()?.showOutput()),
+    vscode.commands.registerCommand("ascribe.showOutput", async () => {
+      const active = vscode.window.activeTextEditor?.document.uri;
+      const server = (active && projects.serverFor(active)) ?? (await pickServer(projects));
+      server?.showOutput();
+    }),
     projects.onDidChangeProjects(() => void updateActive(projects)),
   );
 
@@ -100,6 +106,31 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     preview: preview.api,
   };
 }
+
+/** The only project's server, or the one picked from a list when there are several. */
+async function pickServer(projects: ProjectRegistry): Promise<ProjectServer | undefined> {
+  const servers = projects.servers;
+  if (servers.length <= 1) return servers[0];
+  const picked = await vscode.window.showQuickPick(
+    servers.map((server) => ({
+      label: projects.name(server.project),
+      description: STATE_NAMES[server.state],
+      server,
+    })),
+    {
+      title: "Show Server Output",
+      placeHolder: "The project whose language server output to show",
+    },
+  );
+  return picked?.server;
+}
+
+const STATE_NAMES: Record<ServerState, string> = {
+  stopped: "not started",
+  starting: "starting",
+  running: "running",
+  failed: "failed",
+};
 
 /** Tells VS Code whether the workspace has a project, for the `ascribe.active` conditions. */
 function updateActive(projects: ProjectRegistry): Thenable<unknown> {
