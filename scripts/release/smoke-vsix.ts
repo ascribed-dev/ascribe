@@ -50,8 +50,13 @@ const platform = options["vscode-platform"];
 // as plain Node instead of launching.
 delete process.env.ELECTRON_RUN_AS_NODE;
 
+// The download helper makes this directory without its parents, and `out/` is
+// build output that a fresh checkout doesn't have.
+const cachePath = join(root, extension.dir, "out", "vscode-test");
+mkdirSync(cachePath, { recursive: true });
+
 const vscodeExecutablePath = await downloadAndUnzipVSCode({
-  cachePath: join(root, extension.dir, "out", "vscode-test"),
+  cachePath,
   version: process.env.VSCODE_VERSION ?? "stable",
   ...(platform === undefined ? {} : { platform }),
 });
