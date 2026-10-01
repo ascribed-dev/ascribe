@@ -602,6 +602,25 @@ fn a_workspace_folder_that_is_the_project_root_loads_it() {
     assert_eq!(client.shutdown(), Exit::Clean);
 }
 
+#[test]
+fn a_model_created_below_the_workspace_folder_is_not_adopted() {
+    let dir = tempfile::tempdir().expect("dir");
+    let root = support::real_path(dir.path());
+    let mut client = Client::start(&root);
+    client.settle();
+    let nested = root.join("nested").join("proj");
+    std::fs::create_dir_all(nested.join("docs")).expect("mkdir");
+    let page = nested.join("docs").join("a.md");
+    std::fs::write(&page, "---\ntitle: A\n---\n[x](nope.md)\n").expect("write");
+    std::fs::write(nested.join("ascribe.toml"), MODEL).expect("write");
+    client.watched(&[(&nested.join("ascribe.toml"), FileChangeType::CREATED)]);
+    client.settle();
+    client.open(&page, 1, "---\ntitle: A\n---\n[x](nope.md)\n");
+    client.settle();
+    assert!(client.log.is_empty(), "{:?}", client.log);
+    assert_eq!(client.shutdown(), Exit::Clean);
+}
+
 // -- Robustness ---------------------------------------------------------------
 
 #[test]

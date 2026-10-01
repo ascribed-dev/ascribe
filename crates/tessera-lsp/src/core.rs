@@ -423,9 +423,13 @@ impl Core {
             if self.config.is_none()
                 && path.file_name().is_some_and(|n| n == MODEL_FILE)
                 && event.typ != FileChangeType::DELETED
-                && self.folders.iter().any(|f| path.starts_with(f))
+                && self
+                    .folders
+                    .iter()
+                    .any(|f| path.parent() == Some(f.as_path()))
             {
                 self.config = Some(path.clone());
+                self.log(&start_message(Some(&path), &self.folders));
                 sync_model = true;
                 continue;
             }
@@ -745,6 +749,7 @@ fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {
 fn start_message(config: Option<&Path>, folders: &[PathBuf]) -> String {
     match config {
         Some(config) => format!("using the project at {}", config.display()),
+        None if folders.is_empty() => "no workspace folder, so no project".to_owned(),
         None => {
             let listed: Vec<String> = folders.iter().map(|f| f.display().to_string()).collect();
             format!("no ascribe.toml at or above {}", listed.join(", "))
@@ -817,6 +822,14 @@ mod tests {
         let config = PathBuf::from("proj").join("ascribe.toml");
         let text = start_message(Some(&config), &[PathBuf::from("proj")]);
         assert_eq!(text, format!("using the project at {}", config.display()));
+    }
+
+    #[test]
+    fn the_start_message_says_when_there_is_no_workspace_folder() {
+        assert_eq!(
+            start_message(None, &[]),
+            "no workspace folder, so no project"
+        );
     }
 
     #[test]
