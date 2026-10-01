@@ -26,6 +26,14 @@ exports.run = async function run(): Promise<void> {
   const extension = vscode.extensions.getExtension<AscribeApi>("Ascribe.ascribe-vscode");
   assert.ok(extension, "the extension Ascribe.ascribe-vscode isn't installed");
   const api = await extension.activate();
+  // A project's server starts when one of its files is opened.
+  const page = vscode.Uri.file(path.join(workspace, "docs", "broken.md"));
+  await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(page));
+  const startBy = Date.now() + 30_000;
+  while (api.state() === "stopped") {
+    if (Date.now() > startBy) assert.fail("opening broken.md didn't start the server");
+    await new Promise<void>((resolve) => setTimeout(resolve, 200));
+  }
   await api.whenSettled();
 
   const binary = api.binary();
@@ -42,8 +50,6 @@ exports.run = async function run(): Promise<void> {
   assert.equal(version, extension.packageJSON.version, "the binary's version");
   assert.equal(binary.warning, undefined);
 
-  const page = vscode.Uri.file(path.join(workspace, "docs", "broken.md"));
-  await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(page));
   const deadline = Date.now() + 30_000;
   for (;;) {
     const codes = vscode.languages
