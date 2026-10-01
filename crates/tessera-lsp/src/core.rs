@@ -119,7 +119,8 @@ enum Kind {
     Asset(RelPath),
 }
 
-/// The server's state.
+/// The server's state. It serves one project, found by looking upward from the
+/// workspace folder.
 pub(crate) struct Core {
     pub out: Sender<Message>,
     pub encoding: Encoding,
@@ -169,19 +170,15 @@ impl Core {
 
     // -- Startup ------------------------------------------------------------
 
-    /// Finds the project's `ascribe.toml` in the workspace folders and loads it.
+    /// Finds the project's `ascribe.toml` at or above the workspace folders
+    /// and loads it.
     pub(crate) fn start(&mut self) {
         if self.config.is_none() {
             self.config = find_config(&self.folders).map(|p| normalize(&p));
         }
-        match self.config.clone() {
-            Some(config) => {
-                if self.folders.len() > 1 {
-                    self.log(&format!("using the project at {}", config.display()));
-                }
-                self.sync_model();
-            }
-            None => self.log("no ascribe.toml found in the workspace folders"),
+        self.log(&start_message(self.config.as_deref(), &self.folders));
+        if self.config.is_some() {
+            self.sync_model();
         }
     }
 
@@ -736,44 +733,23 @@ impl Core {
     }
 }
 
-// One project per server.
-/// The nearest `ascribe.toml` at or above a workspace folder; failing that,
-/// the first one below a folder (a few levels down, skipping hidden and
-/// dependency directories).
+/// The nearest `ascribe.toml` at or above a workspace folder, trying the
+/// folders in order. It never looks below a folder.
 fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {
-    for folder in folders {
-        if let Some(found) = tessera_check::Project::find_config(folder) {
-            return Some(found);
+    folders
+        .iter()
+        .find_map(|folder| tessera_check::Project::find_config(folder))
+}
+
+/// The line logged at startup: the project chosen, or why there is none.
+fn start_message(config: Option<&Path>, folders: &[PathBuf]) -> String {
+    match config {
+        Some(config) => format!("using the project at {}", config.display()),
+        None => {
+            let listed: Vec<String> = folders.iter().map(|f| f.display().to_string()).collect();
+            format!("no ascribe.toml at or above {}", listed.join(", "))
         }
     }
-    for folder in folders {
-        let mut level = vec![folder.clone()];
-        for _ in 0..4 {
-            let mut next = Vec::new();
-            for dir in &level {
-                let candidate = dir.join(MODEL_FILE);
-                if candidate.is_file() {
-                    return Some(candidate);
-                }
-                let Ok(entries) = std::fs::read_dir(dir) else {
-                    continue;
-                };
-                let mut children: Vec<PathBuf> = entries
-                    .flatten()
-                    .filter(|e| e.path().is_dir())
-                    .filter(|e| {
-                        let name = e.file_name().to_string_lossy().into_owned();
-                        !name.starts_with('.') && name != "node_modules" && name != "target"
-                    })
-                    .map(|e| e.path())
-                    .collect();
-                children.sort();
-                next.extend(children);
-            }
-            level = next;
-        }
-    }
-    None
 }
 
 impl Core {
@@ -829,5 +805,26 @@ impl Core {
         let file = snapshot.files().next()?;
         let uri = path_to_uri(&loaded.source_path(&file.path))?;
         self.nav_target(&uri)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_start_message_names_the_project() {
+        let config = PathBuf::from("proj").join("ascribe.toml");
+        let text = start_message(Some(&config), &[PathBuf::from("proj")]);
+        assert_eq!(text, format!("using the project at {}", config.display()));
+    }
+
+    #[test]
+    fn the_start_message_says_when_there_is_no_project() {
+        let folders = [PathBuf::from("a"), PathBuf::from("b")];
+        assert_eq!(
+            start_message(None, &folders),
+            "no ascribe.toml at or above a, b"
+        );
     }
 }

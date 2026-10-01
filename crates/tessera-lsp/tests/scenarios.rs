@@ -557,6 +557,51 @@ fn without_a_project_the_server_stays_quiet_and_picks_one_up_when_it_appears() {
     );
 }
 
+#[test]
+fn a_project_only_below_the_workspace_folder_is_not_loaded() {
+    let outer = tempfile::tempdir().expect("dir");
+    let outer_root = support::real_path(outer.path());
+    let inner = outer_root.join("nested").join("proj");
+    std::fs::create_dir_all(inner.join("docs")).expect("mkdir");
+    std::fs::write(inner.join("ascribe.toml"), MODEL).expect("write");
+    let page = inner.join("docs").join("bad.md");
+    std::fs::write(&page, "---\ntitle: Bad\n---\n[x](nope.md)\n").expect("write");
+    let mut client = Client::start(&outer_root);
+    client.settle();
+    client.open(&page, 1, "---\ntitle: Bad\n---\n[x](nope.md)\n");
+    client.settle();
+    assert!(client.log.is_empty(), "{:?}", client.log);
+    assert_eq!(client.shutdown(), Exit::Clean);
+}
+
+#[test]
+fn a_workspace_folder_inside_a_project_finds_the_parents_ascribe_toml() {
+    let f = project();
+    let page = f.path("docs/bad.md");
+    let text = "---\ntitle: Bad\n---\n[x](nope.md)\n";
+    f.write("docs/bad.md", text);
+    let mut client = Client::start(&f.path("docs"));
+    client.settle();
+    client.open(&page, 1, text);
+    client.settle();
+    assert_eq!(client.codes(&page), ["link-target-missing"]);
+    assert_eq!(client.shutdown(), Exit::Clean);
+}
+
+#[test]
+fn a_workspace_folder_that_is_the_project_root_loads_it() {
+    let f = project();
+    let page = f.path("docs/bad.md");
+    let text = "---\ntitle: Bad\n---\n[x](nope.md)\n";
+    f.write("docs/bad.md", text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    client.open(&page, 1, text);
+    client.settle();
+    assert_eq!(client.codes(&page), ["link-target-missing"]);
+    assert_eq!(client.shutdown(), Exit::Clean);
+}
+
 // -- Robustness ---------------------------------------------------------------
 
 #[test]
