@@ -1,6 +1,6 @@
 # tessera-emit
 
-Emitters for Ascribe's outputs. An emitter renders phase 12's **resolved tree** (`tessera_resolve::ResolvedPage`) and never works out what a build mode keeps: a selection build that keeps several arms of a group emits them all, and a filter build emits the availability annotations still attached (SPEC §9.2).
+Emitters for Ascribe's outputs. An emitter renders the **resolved tree** (`tessera_resolve::ResolvedPage`) and never works out what a build mode keeps: a selection build that keeps several arms of a group emits them all, and a filter build emits the availability annotations still attached (SPEC §9.2).
 
 | Output | Emitter | Phase |
 |---|---|---|
@@ -14,7 +14,7 @@ Emitters for Ascribe's outputs. An emitter renders phase 12's **resolved tree** 
 - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, and `markdown_destination`, which write a reference so CommonMark reads it back as written (asset contract §4).
 - `OutputDir` (`store.rs`): the [output-layout contract](../../project-docs/contracts/output-layout.md): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
 - `labels.rs`: text the outputs share (the availability line and each target's text, an arm's label).
-- `site/`, `render/`, `zod/`: phase 20 (below).
+- `site/`, `render/`, `zod/`: the site output (below).
 
 ```rust,ignore
 let cx = EmitContext::new(&project, project_root, build);

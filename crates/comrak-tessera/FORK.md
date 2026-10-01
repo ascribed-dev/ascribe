@@ -13,7 +13,9 @@ This crate is [comrak](https://github.com/kivikakk/comrak), vendored and changed
 
 ## Why fork
 
-Ascribe changes CommonMark's block structure: a directive line interrupts a paragraph, is never a lazy continuation line, follows CommonMark's container rules, and, when it has a text primary, continues onto following lines as a paragraph does (SPEC §3.2, §3.4, §3.9). These rules have to live inside the block parser. Walking the tree an unmodified parser produces can't recover the right structure: unmodified comrak folds an unindented `@note` into the list item above it, where Ascribe ends the list. comrak has no extension point for new block types, so the new block is added to a fork. See [`SPIKE.md`](SPIKE.md) for the evaluation and [PLAN.md](../../project-docs/PLAN.md#parser-comrak-tessera-tessera-syntax) for the design.
+Ascribe changes CommonMark's block structure: a directive line interrupts a paragraph, is never a lazy continuation line, follows CommonMark's container rules, and, when it has a text primary, continues onto following lines as a paragraph does (SPEC §3.2, §3.4, §3.9). These rules have to live inside the block parser. Walking the tree an unmodified parser produces can't recover the right structure: unmodified comrak folds an unindented `@note` into the list item above it, where Ascribe ends the list. comrak has no extension point for new block types, so the new block is added to a fork.
+
+The alternative was markdown-rs, a state-machine CommonMark parser built for MDX. Adding a block construct there means writing a new construct in its tokenizer (states, events, and the resolver), integrating it with its document and flow content types, and teaching its event-to-tree conversion about it, and its extension points are designed around MDX's needs. It would also need its own fork, with its own merge burden, and the CommonMark baseline would have to be redone. In the comrak fork, every block-level requirement fits the existing block-parser model, which is a port of the CommonMark reference implementation: the CommonMark 0.31.2 suite passes 652 of 652 with the Ascribe option off and on (see [`tests/commonmark/README.md`](../../tests/commonmark/README.md)), upstream's own unit tests pass, and parsing a 7 MB document takes about 120 ms with the option on or off.
 
 ## What was vendored
 
@@ -54,9 +56,9 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 | | | `detect_setext_heading` | A text primary never becomes a setext heading (changed condition) |
 | | | `detect_table` | A text primary never becomes a table header (changed condition) |
 | | | `finalize_borrowed` | A text primary has no link reference definitions (changed statement) |
-| | | `finalize_borrowed` | A paragraph that starts with link reference definitions starts on the first line after them (phase 05: upstream leaves its start position, and so every inline position in it, on the definitions). **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
+| | | `finalize_borrowed` | A paragraph that starts with link reference definitions starts on the first line after them (upstream leaves its start position, and so every inline position in it, on the definitions). **Candidate to upstream** (comrak bug; tested by `tests/sourcepos.rs`) |
 | | | `handle_setext_heading` | The same, for a setext heading's text. **Candidate to upstream**, with the row above |
-| | | `parse_document` | Delegates to the new `parse_document_with_definitions`, which returns the link reference definitions the parser consumed along with the document (phase 23; the body is upstream's, with the parser kept so its list can be taken) |
+| | | `parse_document` | Delegates to the new `parse_document_with_definitions`, which returns the link reference definitions the parser consumed along with the document (the body is upstream's, with the parser kept so its list can be taken) |
 | | | `Parser::parse` | Borrows the parser (`&mut self`, was `mut self`) so the caller can take the definitions |
 | | | `Parser` | Two fields: the definitions found so far, and the last one `parse_reference_inline` read |
 | | | `resolve_reference_link_definitions` | Takes the content's first line and column offsets, and records each definition with its positions (`tessera::locate`); the setext and paragraph call sites pass them |
@@ -70,13 +72,13 @@ Every change to an upstream file is marked in the code with a `// TESSERA:` comm
 
 In total: 76 lines added and 3 changed in 8 upstream source files (48 of the added lines are code; the rest are comments), in 20 hunks, plus 13 lines in one upstream test. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
 
-Phase 23 (link reference definitions) added 68 lines and changed 7 in two upstream files, in 7 hunks (`lib.rs` and `parser/mod.rs`; about half the added lines are comments), and the definition types and `locate` in `src/tessera.rs`. It adds no node and no `NodeValue` variant, and doesn't change what is parsed.
+Link reference definition support added 68 lines and changed 7 in two upstream files, in 7 hunks (`lib.rs` and `parser/mod.rs`; about half the added lines are comments), and the definition types and `locate` in `src/tessera.rs`. It adds no node and no `NodeValue` variant, and doesn't change what is parsed.
 
-Also Ascribe's, outside `src/`: `Cargo.toml`, this file, `SPIKE.md`, and the spike tests in `tests/spike.rs`.
+Also Ascribe's, outside `src/`: `Cargo.toml`, this file, and the spike tests in `tests/spike.rs`.
 
 ## Merging an upstream release
 
-The likeliest conflicts are the two upstream signatures phase 23 changed to return definitions: `Parser::parse` (`&mut self`, was `mut self`) and `resolve_reference_link_definitions` (an extra `origin` parameter, and its two call sites), plus `parse_reference_inline` (`&mut self`). Take upstream's version and reapply those changes from the table below.
+The likeliest conflicts are the upstream signatures changed to return link reference definitions: `Parser::parse` (`&mut self`, was `mut self`) and `resolve_reference_link_definitions` (an extra `origin` parameter, and its two call sites), plus `parse_reference_inline` (`&mut self`). Take upstream's version and reapply those changes from the table below.
 
 Ascribe's changes are a patch against a pristine upstream release. To move to a new release:
 
@@ -107,4 +109,24 @@ Ascribe's changes are a patch against a pristine upstream release. To move to a 
 7. **Run everything**: `cargo test -p comrak-tessera` (upstream's tests and the spike tests), `cargo test -p tessera-commonmark-suite` (the CommonMark suite against the fork, off and on), then the whole workspace with fmt and clippy. If the CommonMark version changed, update `tests/commonmark/spec.json` and rewrite the baselines.
 8. **Update this file**: the version table, and the changed-locations table if anything moved.
 
-A dry run of this procedure is recorded in `SPIKE.md`: the v0.55.0 patch applies without conflicts to v0.54.0, v0.52.0, and v0.50.0 (where it also builds and passes the tests with a one-line fix), and with two rejected hunks to v0.45.0.
+A dry run of this procedure measured how the patch survives upstream churn, by applying the v0.55.0 patch to older releases (the same distance a merge forward would cover):
+
+| Release | Released | Lines upstream changed between it and v0.55.0, in the six files Ascribe hooks into | Patch |
+|---|---|---|---|
+| v0.54.0 | 2026-07 | 6 | Applies cleanly |
+| v0.52.0 | 2026-04 | 487 | Applies cleanly |
+| v0.50.0 | 2026-01 | 1,169 | Applies cleanly, **builds with a one-line fix** (a renderer helper, `Context::lf`, that v0.50.0 lacks), and passes all of v0.50.0's unit tests (397, plus the 5 scanner tests) and all 22 spike tests |
+| v0.45.0 | 2025-10 | 3,836, including 1,519 in `parser/mod.rs` | 20 of 22 hunks apply; 2 in `nodes.rs` are rejected |
+
+The first version of the patch added each new `match` arm at the end, next to upstream's newest variant, and conflicted with every older release, because upstream appends its own new node types there. Moving Ascribe's arms next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`) is what made it apply cleanly. Expect a merge to take an hour or two of mechanical work, plus reading upstream's changelog for new rules that convert a paragraph into something else, which would need the `is_text_primary` guard.
+
+comrak is actively maintained (a minor release roughly monthly) and makes breaking API changes in minor releases. Vendoring insulates Ascribe from those until it chooses to merge, and nothing forces frequent merges: the fork only needs upstream for bug fixes and CommonMark spec updates.
+
+## Things to know when changing the fork
+
+- **Positions are line and column, not byte offsets.** comrak's sourcepos is 1-based line and byte column. `tessera-syntax` converts them to byte offsets with its line index, and computes sub-spans (name, attributes, colon, primary) from `NodeTesseraLine::raw`, the node's start column, and `text_primary`. The edge cases are tabs, CRLF, and blockquote markers inside a multi-line primary. The primary's inline nodes already carry correct positions.
+- **The primary is a paragraph in the tree.** Consumers must not treat an Ascribe line's child as a block of content. It's the directive's primary.
+- **Head parsing is deliberately minimal here.** The fork only finds where a text primary starts: past an attribute block with quoted strings, and a `:`. A head it can't read (an unclosed `{`, text after the name) gets no primary, so it doesn't continue onto the next line. `crates/tessera-syntax/src/head.rs` parses the whole head, and `tests/agreement.rs` there checks that it and this scanner agree on where the primary starts. Keep them in agreement.
+- **Inline extensions** go into `parser/inlines.rs`, a 2,700-line hand-written inline parser with a byte-dispatch `match`. `{` is already dispatched there for another extension (Phoenix HEEx, off in Ascribe), and comrak's `attributes` feature already parses `{…}` after images and links, though with a different grammar (Pandoc style, not Ascribe's `key=value, key=value`).
+- **comrak's CommonMark renderer isn't Ascribe-aware.** It drops the escape in `\@note`, so its output of that text is a directive. Ascribe's formatter must escape a line-initial `@keyword` (and `.` title lines and `{key}` phrases) itself if it reuses any of comrak's rendering.
+- **Extensions Ascribe doesn't use aren't guarded.** With comrak's description-lists extension on, a text primary could still become a description term. Ascribe doesn't enable it; if it ever does, it needs the same guard.

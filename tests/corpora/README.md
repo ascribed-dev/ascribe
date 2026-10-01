@@ -5,7 +5,7 @@ Tests and benchmarks against real documentation and a synthetic project of
 
 | | |
 |---|---|
-| `synthetic/` | `tessera-synthetic`: the 3,000-page project every benchmark shares (phases 13, 15, 26; phase 16's completion benchmark should too). No dependencies. |
+| `synthetic/` | `tessera-synthetic`: the 3,000-page project every benchmark shares. No dependencies. |
 | `src/corpus.rs` | The three corpora, and fetching them: shallow, sparse, blobless clones at pinned commits into `target/corpora/`. |
 | `src/recognize.rs` | What the parser finds in unconverted Markdown, classed. |
 | `src/convert/` | Elastic, Astro, and Docker constructs to Ascribe, at volume. |
