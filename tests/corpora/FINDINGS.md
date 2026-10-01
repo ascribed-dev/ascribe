@@ -2,7 +2,7 @@
 
 Every false positive, language question, and performance problem the corpora
 and the benchmarks turned up, at the pinned commits (`src/corpus.rs`). Each has
-a minimal reproduction and an owner.
+a minimal reproduction.
 
 - **R**: recognition, over the unconverted Markdown.
 - **F**: found by converting: the language.
@@ -93,8 +93,8 @@ Elastic sample unless noted.
 ```
 
 `binding-no-block`: §3.8 says `@include` isn't a block. Elastic wraps an
-include in `applies-item` 17 times in this sample. Owner: phases 06 and 12, if
-the language changes. Reproduction: `f1_…` in `tests/edge.rs`.
+include in `applies-item` 17 times in this sample. It changes only if the
+language does. Reproduction: `f1_…` in `tests/edge.rs`.
 
 ### F2: a title can't start with a dot: 9 errors (6 Elastic, 3 Docker); resolved
 
@@ -157,7 +157,7 @@ are; it still rewrites them. Reproduction: `f5_…`.
 Numbers are in `RESULTS.md`; the container is a 4-core 2.1 GHz Xeon, slower
 than a developer laptop and with slow system calls.
 
-### P1: the text report is quadratic (owner: phase 10, `report/text.rs`); fixed
+### P1: the text report is quadratic (`report/text.rs`); fixed
 
 ```
 ascribe check          # the default, text
@@ -176,7 +176,7 @@ one source cache as it goes, so each file's text is read and indexed once; on
 1,000 generated pages with a warning each, text output went from 6.7 s to
 0.54 s (JSON: 0.19 s).
 
-### P2: system calls (owner: phases 12 and 10, suspected); fixed
+### P2: system calls; fixed
 
 `strace -c -f ascribe check --format json` on converted Elastic: 23,280
 `getdents64`, 24,985 `openat`, 72,804 `write` for 3,008 pages. System time is
@@ -190,20 +190,19 @@ uncached, since its disk changes), and `check` and `build` buffer their output.
 On an Apple-silicon laptop, `ascribe check` of converted Elastic went from 3.4
 to 3.8 s (1.4 s of it system time) to 2.0 s (0.23 s).
 
-### P3: page-level checks dominate on real pages (owner: phase 14)
+### P3: page-level checks dominate on real pages; open
 
 Converted Elastic: file-level checks 1.2 s, all builds 8.7 s in process. The
 same 3,000 pages of the synthetic project take 0.7 s: real pages average 7 KB
-against 0.5 KB, and phase 14's notes already say `PageChecker` indexes the
-project a second time and resolves every page per build. See the miss recorded
-in `RESULTS.md`.
+against 0.5 KB, and `PageChecker` indexes the project a second time and
+resolves every page per build. See "Elastic: where the time went" in
+`RESULTS.md`.
 
 ### P4: an unchanged `ascribe build` isn't faster than the first; fixed
 
 3,000 pages, plain and JSON: first build 2.7 s, unchanged rebuild 3.6 s (2.3 to
 4.0 s across runs). "Unchanged files left alone" costs a read of each, but the
-rebuild should not cost more than writing them. Owner: phase 18; measure again
-before acting. **Measured, then fixed (2026-09-30):** every file was written to
+rebuild should not cost more than writing them. **Measured, then fixed (2026-09-30):** every file was written to
 staging, both copies read back to compare, and staging deleted. The store now
 compares the new bytes with the file in place first and leaves an identical
 file alone, never staging it. On a laptop, 3,000 pages, plain and JSON: first
