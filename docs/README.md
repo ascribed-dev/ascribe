@@ -12,6 +12,7 @@
 
 These contracts say what an emitter writes and what a consumer can rely on. They matter if you're changing Ascribe's outputs or writing a consumer, and not if you're writing documentation with it.
 
+- [The `ascribe.toml` format](contracts/content-model.md): the normative contract for the content model file, with the rules a loader enforces and the decisions behind them. The [reference](content-model.md) above is the guide for writing one.
 - [Output layout](contracts/output-layout.md): where `ascribe build` writes each build's output, how it records what it wrote, and how it replaces a previous output.
 - [Assets](contracts/assets.md): where assets go in each output and how pages refer to them.
 - [Site render](contracts/site-render.md): the markers the site output writes and how a consumer renders them. The fixtures are in [`tests/render/`](../tests/render/).
