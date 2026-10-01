@@ -184,7 +184,7 @@ export class ProjectServer implements vscode.Disposable {
       void vscode.window.showWarningMessage(`Ascribe: ${binary.warning}`);
     }
 
-    const client = new LanguageClient("ascribe", this.output.name, serverOptions(binary), {
+    const client = new ProjectClient("ascribe", this.output.name, serverOptions(binary), {
       ...clientOptions(
         this.project,
         this.output,
@@ -252,6 +252,24 @@ export class ProjectServer implements vscode.Disposable {
         return { action: CloseAction.DoNotRestart, handled: true };
       },
     };
+  }
+}
+
+/**
+ * A language client that leaves the server's `workspace/executeCommand`
+ * commands to the extension. The client would register each one as a VS Code
+ * command, and a second project's server (which offers the same ones) would
+ * fail to start with "command already exists".
+ */
+class ProjectClient extends LanguageClient {
+  override registerFeature(feature: Parameters<LanguageClient["registerFeature"]>[0]): void {
+    if (
+      "registrationType" in feature &&
+      feature.registrationType.method === "workspace/executeCommand"
+    ) {
+      return;
+    }
+    super.registerFeature(feature);
   }
 }
 

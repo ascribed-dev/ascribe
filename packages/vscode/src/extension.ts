@@ -74,6 +74,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         await projects.restartRunning();
       }
     }),
+    // The server's own command (a code lens opens the file it names). One
+    // registration for every project, answered by the active file's server.
+    vscode.commands.registerCommand("ascribe.openFile", (...args: unknown[]) =>
+      projects.request("workspace/executeCommand", {
+        command: "ascribe.openFile",
+        arguments: args,
+      }),
+    ),
     vscode.commands.registerCommand("ascribe.showOutput", () => projects.current()?.showOutput()),
     projects.onDidChangeProjects(() => void updateActive(projects)),
   );
