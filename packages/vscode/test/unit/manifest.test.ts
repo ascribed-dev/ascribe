@@ -11,7 +11,9 @@ interface Manifest {
   contributes: {
     commands: { command: string }[];
     menus: { commandPalette: { command: string; when: string }[] };
-    configuration: { properties: Record<string, { default: unknown }> };
+    configuration: {
+      properties: Record<string, { default: unknown; enum?: string[]; scope?: string }>;
+    };
     grammars: { path: string; injectTo: string[]; scopeName: string }[];
     semanticTokenTypes: { id: string }[];
     semanticTokenModifiers: { id: string }[];
@@ -57,10 +59,18 @@ describe("package.json", () => {
       "ascribe.formatOnSave",
       "ascribe.maxCrashes",
       "ascribe.path",
+      "ascribe.startServers",
       "ascribe.trace.server",
     ]);
     expect(properties["ascribe.formatOnSave"]?.default).toBe(false);
     expect(properties["ascribe.trace.server"]?.default).toBe("off");
+    expect(properties["ascribe.startServers"]?.default).toBe("onDemand");
+  });
+
+  it("lets startServers be on demand or all, per window", () => {
+    const setting = manifest.contributes.configuration.properties["ascribe.startServers"];
+    expect(setting?.enum).toEqual(["onDemand", "all"]);
+    expect(setting?.scope).toBe("window");
   });
 
   it("injects its grammars into markdown, and the files exist", () => {

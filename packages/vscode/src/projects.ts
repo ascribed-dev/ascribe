@@ -53,3 +53,34 @@ export function nestedProjects(project: Project, projects: readonly Project[]): 
 export function samePath(a: string, b: string): boolean {
   return comparable(a) === comparable(b);
 }
+
+/** A folder as a glob pattern: forward slashes, and glob characters escaped. */
+export function globFolder(folder: string): string {
+  return folder.replace(/\\/g, "/").replace(/[*?[{]/g, "[$&]");
+}
+
+/** A path with forward slashes, if it's a Windows path. */
+function slashed(file: string): string {
+  return /^[a-zA-Z]:|^\\\\/.test(file) ? file.replace(/\\/g, "/") : file;
+}
+
+/**
+ * The output channel's name: `Ascribe` for a workspace with one project, and
+ * otherwise `Ascribe (<folder relative to its workspace folder>)`, using the
+ * workspace folder's name for a project at its root.
+ */
+export function channelName(
+  project: Project,
+  workspace: { path: string; name: string } | undefined,
+  only: boolean,
+): string {
+  if (only) return "Ascribe";
+  if (!workspace || !within(project.folder, workspace.path)) {
+    return `Ascribe (${slashed(project.folder)})`;
+  }
+  const base = slashed(workspace.path).replace(/\/+$/, "");
+  const relative = slashed(project.folder)
+    .slice(base.length)
+    .replace(/^\/+|\/+$/g, "");
+  return `Ascribe (${relative === "" ? workspace.name : relative})`;
+}

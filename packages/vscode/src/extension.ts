@@ -1,26 +1,31 @@
 import * as vscode from "vscode";
-import { ServerController, type ServerState } from "./client.js";
+import type { ServerState } from "./client.js";
+import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
-  /** The binary in use, if one was found. */
-  binary(): ResolvedBinary | undefined;
-  state(): ServerState;
-  /** Settles when the current start or restart is over. */
+  /**
+   * The binary in use, if one was found, for the project in `folder`: the only
+   * or first project when it's omitted.
+   */
+  binary(folder?: string): ResolvedBinary | undefined;
+  /** The server's state for the project in `folder` (`stopped` when it has none). */
+  state(folder?: string): ServerState;
+  /** Settles when every start or restart under way is over. */
   whenSettled(): Promise<void>;
   /** The preview, for tests. */
   preview: PreviewApi;
 }
 
-let controller: ServerController | undefined;
+let registry: ProjectRegistry | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<AscribeApi> {
-  const server = new ServerController(context);
-  controller = server;
+  const projects = new ProjectRegistry(context);
+  registry = projects;
 
-  const preview = new PreviewController(context, server);
+  const preview = new PreviewController(context, projects);
   preview.register();
 
   context.subscriptions.push(
@@ -32,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
         return;
       }
       event.waitUntil(
-        server
+        projects
           .request("textDocument/formatting", {
             textDocument: { uri: event.document.uri.toString() },
             options: {
@@ -46,7 +51,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
           })
           .then((value) => asTextEdits(value))
           .catch((error: unknown) => {
-            server.reportFeatureError("format on save", error);
+            projects.current()?.reportFeatureError("format on save", error);
             return [];
           }),
       );
@@ -54,33 +59,45 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   );
 
   context.subscriptions.push(
-    server,
+    projects,
     preview,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
-      const present = await hasProject();
-      await vscode.commands.executeCommand("setContext", "ascribe.active", present);
-      if (present) await server.restart();
-      else
+      await projects.refresh();
+      if (projects.projects.length === 0) {
         void vscode.window.showInformationMessage("Ascribe: this workspace has no ascribe.toml.");
+        return;
+      }
+      // Nothing running yet (servers start on demand): start the current project's.
+      if (projects.servers.every((server) => server.state === "stopped")) {
+        await projects.current()?.start();
+      } else {
+        await projects.restartRunning();
+      }
     }),
-    vscode.commands.registerCommand("ascribe.showOutput", () => server.showOutput()),
-    vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("ascribe.maxCrashes")) server.readMaxCrashes();
-      if (event.affectsConfiguration("ascribe.path")) void server.restart();
-    }),
+    vscode.commands.registerCommand("ascribe.showOutput", () => projects.current()?.showOutput()),
+    projects.onDidChangeProjects(() => void updateActive(projects)),
   );
 
-  // A contributed command activates the extension in any workspace, so start
-  // the server only where there's a project.
-  const found = await hasProject();
-  await vscode.commands.executeCommand("setContext", "ascribe.active", found);
-  if (found) await server.start();
+  // A contributed command activates the extension in any workspace, so
+  // discover projects here and start servers only where there are some.
+  projects.register();
+  await projects.refresh();
+  await updateActive(projects);
   return {
-    binary: () => server.binary,
-    state: () => server.state,
-    whenSettled: () => server.whenSettled(),
+    binary: (folder) => projects.serverAt(folder)?.binary,
+    state: (folder) => projects.serverAt(folder)?.state ?? "stopped",
+    whenSettled: () => projects.whenSettled(),
     preview: preview.api,
   };
+}
+
+/** Tells VS Code whether the workspace has a project, for the `ascribe.active` conditions. */
+function updateActive(projects: ProjectRegistry): Thenable<unknown> {
+  return vscode.commands.executeCommand(
+    "setContext",
+    "ascribe.active",
+    projects.projects.length > 0,
+  );
 }
 
 interface ProtocolPosition {
@@ -140,12 +157,7 @@ function protocolRange(range: { start: ProtocolPosition; end: ProtocolPosition }
   );
 }
 
-/** Whether the workspace holds an `ascribe.toml` (not counting `node_modules`). */
-async function hasProject(): Promise<boolean> {
-  return (await vscode.workspace.findFiles("**/ascribe.toml", "**/node_modules/**", 1)).length > 0;
-}
-
 export async function deactivate(): Promise<void> {
-  await controller?.dispose();
-  controller = undefined;
+  await registry?.dispose();
+  registry = undefined;
 }

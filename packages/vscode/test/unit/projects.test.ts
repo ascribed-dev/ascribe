@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { nestedProjects, owningProject, samePath, type Project } from "../../src/projects.js";
+import {
+  channelName,
+  globFolder,
+  nestedProjects,
+  owningProject,
+  samePath,
+  type Project,
+} from "../../src/projects.js";
 
 const project = (folder: string): Project => ({
   folder,
@@ -95,5 +102,41 @@ describe("samePath", () => {
     expect(samePath("/a/b/", "/a/b")).toBe(true);
     expect(samePath("/a/B", "/a/b")).toBe(false);
     expect(samePath("C:\\A\\b", "c:/a/B")).toBe(true);
+  });
+});
+
+describe("globFolder", () => {
+  it("uses forward slashes and escapes glob characters", () => {
+    expect(globFolder("C:\\repo\\docs")).toBe("C:/repo/docs");
+    expect(globFolder("/a/[b]/c*/d?/{e}")).toBe("/a/[[]b]/c[*]/d[?]/[{]e}");
+  });
+});
+
+describe("channelName", () => {
+  const workspace = { path: "/repo", name: "repo" };
+
+  it("is plain for a workspace with one project", () => {
+    expect(channelName(project("/repo/docs"), workspace, true)).toBe("Ascribe");
+  });
+
+  it("shows the folder relative to its workspace folder", () => {
+    expect(channelName(project("/repo/examples/quill"), workspace, false)).toBe(
+      "Ascribe (examples/quill)",
+    );
+  });
+
+  it("uses the workspace folder's name for a project at its root", () => {
+    expect(channelName(project("/repo"), workspace, false)).toBe("Ascribe (repo)");
+    expect(channelName(project("/repo/"), workspace, false)).toBe("Ascribe (repo)");
+  });
+
+  it("keeps Windows case and shows forward slashes", () => {
+    expect(
+      channelName(project("C:\\Repo\\Docs\\Quill"), { path: "c:\\repo", name: "Repo" }, false),
+    ).toBe("Ascribe (Docs/Quill)");
+  });
+
+  it("falls back to the folder when there's no workspace folder", () => {
+    expect(channelName(project("/elsewhere/x"), undefined, false)).toBe("Ascribe (/elsewhere/x)");
   });
 });

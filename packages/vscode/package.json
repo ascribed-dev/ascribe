@@ -69,6 +69,20 @@
           "scope": "machine-overridable",
           "markdownDescription": "Path to the `ascribe` binary. When empty, the extension uses the project's `node_modules/.bin/ascribe`, then the binary bundled with the extension."
         },
+        "ascribe.startServers": {
+          "type": "string",
+          "enum": [
+            "onDemand",
+            "all"
+          ],
+          "enumDescriptions": [
+            "Start a project's language server the first time one of its files is opened.",
+            "Start every project's language server when the workspace opens."
+          ],
+          "default": "onDemand",
+          "scope": "window",
+          "markdownDescription": "When to start the language server of each `ascribe.toml` project in the workspace. A project whose server hasn't started shows no problems in the Problems panel."
+        },
         "ascribe.trace.server": {
           "type": "string",
           "enum": [

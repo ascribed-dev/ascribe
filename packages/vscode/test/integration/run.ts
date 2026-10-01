@@ -33,6 +33,9 @@ interface Suite {
 const stubServer = path.join(packageRoot, "test/stub-server/ascribe");
 const realServer = process.env["ASCRIBE_BIN"];
 
+// These suites check a server that's running from the start, with no file open.
+const startAll = { "ascribe.startServers": "all" };
+
 const suites: Suite[] = [
   {
     name: "activation",
@@ -42,7 +45,7 @@ const suites: Suite[] = [
   {
     name: "stub",
     fixture: path.join(packageRoot, "test/fixtures/stub-project"),
-    prepare: () => ({ "ascribe.path": stubServer, "ascribe.maxCrashes": 2 }),
+    prepare: () => ({ "ascribe.path": stubServer, "ascribe.maxCrashes": 2, ...startAll }),
   },
   {
     name: "quill",
@@ -53,13 +56,13 @@ const suites: Suite[] = [
         path.join(workspace, "docs"),
         { recursive: true },
       );
-      return { "ascribe.path": realServer };
+      return { "ascribe.path": realServer, ...startAll };
     },
   },
   {
     name: "preview",
     fixture: path.join(repositoryRoot, "examples/quill"),
-    prepare: () => ({ "ascribe.path": realServer }),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
   },
 ];
 
