@@ -238,10 +238,12 @@ ascribe-tabs > [role="tablist"] > [role="tab"]:focus-visible {
 
 /* <ascribe-availability> -------------------------------------------------- */
 
+/* The `; ` between targets is for readers without CSS; as badges it would
+   read as a stray mark, so it's transparent here and only spaces them. */
 ascribe-availability {
   display: block;
   margin-block: var(--ascribe-space-small);
-  color: var(--ascribe-muted-color);
+  color: transparent;
   font-family: var(--ascribe-font-family);
   font-size: var(--ascribe-font-size-small);
 }
@@ -249,6 +251,7 @@ ascribe-availability {
 /* The lead-in is generated content, so a site can restyle or translate it. */
 ascribe-availability::before {
   content: "Available: ";
+  color: var(--ascribe-muted-color);
 }
 
 ascribe-availability-target {
