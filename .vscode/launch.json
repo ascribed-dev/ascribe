@@ -22,7 +22,7 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode",
         "--disable-extensions",
-        "${workspaceFolder}/packages/vscode/test/fixtures/monorepo"
+        "${workspaceFolder}/examples/monorepo"
       ],
       "outFiles": ["${workspaceFolder}/packages/vscode/dist/**/*.cjs"],
       "preLaunchTask": "extension: prepare"

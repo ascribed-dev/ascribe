@@ -1,0 +1,48 @@
+# The security team's handbook. It sits inside the engineering handbook's
+# content root, but it's a project of its own, with its own content model: the
+# handbook's checks, builds, and language server leave these files to it.
+spec = "0.1"
+
+[project]
+content-root = "content"
+output-dir = ".ascribe/build"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+
+# Policies record who owns them, how often they're reviewed, and since when
+# they apply.
+[types.policy]
+files = ["policies/**"]
+
+[types.policy.frontmatter]
+title = "string"
+owner = "string"
+review = "enum(quarterly, yearly)"
+effective = "date"
+
+[notes.policy]
+label = "Policy"
+
+[phrases]
+team = "Security"
+channel = "#security"
+report = "security@lantern.example"
+
+# Severity names are case-sensitive, so "sev1" in a URL isn't linked.
+[glossary]
+case-sensitive = true
+
+[glossary.terms.sev1]
+term = "SEV1"
+definition = "An incident with customer data exposed or the service down for everyone."
+link = "/incident-response.md#severity-levels"
+
+[glossary.terms.sev2]
+term = "SEV2"
+definition = "An incident that degrades the service for some customers, with no data exposed."
+link = "/incident-response.md#severity-levels"

@@ -313,6 +313,30 @@ fn the_quill_example_has_no_errors() {
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
 }
 
+/// The projects of `examples/monorepo`, one nested in another's content root.
+const MONOREPO_PROJECTS: [&str; 3] = ["docs", "handbook", "handbook/pages/security"];
+
+#[test]
+fn the_monorepo_examples_projects_have_no_problems_and_are_canonical() {
+    let example = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/monorepo");
+    for project in MONOREPO_PROJECTS {
+        let dir = project
+            .split('/')
+            .fold(example.clone(), |dir, part| dir.join(part));
+        for args in [&["check", "--deny-warnings"][..], &["fmt", "--check"][..]] {
+            let out = tessera(&dir, args);
+            assert_eq!(
+                code(&out),
+                0,
+                "{project}: ascribe {}\n{}{}",
+                args.join(" "),
+                stdout(&out),
+                stderr(&out)
+            );
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Page-level checks and builds
 
