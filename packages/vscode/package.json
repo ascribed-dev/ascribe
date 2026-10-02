@@ -1,7 +1,7 @@
 {
   "name": "ascribe-vscode",
   "displayName": "Ascribe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Ascribe extension for VS Code.",
   "private": true,
   "type": "module",
@@ -34,7 +34,7 @@
     "onWebviewPanel:ascribe.preview"
   ],
   "ascribe": {
-    "minServerVersion": "0.1.0"
+    "minServerVersion": "0.1.1"
   },
   "contributes": {
     "commands": [

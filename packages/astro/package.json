@@ -1,6 +1,6 @@
 {
   "name": "@ascribed/astro",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Astro integration for Ascribe.",
   "type": "module",
   "license": "MPL-2.0",
