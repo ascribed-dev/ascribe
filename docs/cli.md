@@ -179,6 +179,6 @@ Rewrites Ascribe constructs into canonical form: the spacing of directive lines 
 
 ## `ascribe lsp`
 
-Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options: the editor's workspace folders say where the project is, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error.
+Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and doesn't use `--config`: its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error, starting with the project it uses.
 
-The VS Code extension runs it for you. See [Editing](editor.md). Any editor with an LSP client can run `ascribe lsp` too.
+The VS Code extension runs it for you, one server for each project in the workspace. See [Editing](editor.md). Any editor with an LSP client can run `ascribe lsp` too; for several projects, start one per project ([Other editors](editor.md#other-editors)).

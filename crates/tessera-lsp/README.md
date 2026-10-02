@@ -12,6 +12,37 @@ semantic tokens; completion, hover, go to definition, document links, CodeLens,
 and inlay hints (see [Navigation](#navigation)); code actions, rename, and
 formatting; and the custom `ascribe/preview` request.
 
+## The project
+
+A server serves one project, which it finds at startup:
+
+- Its workspace folders are `initialize`'s `workspaceFolders`, or its
+  `rootUri` when there are none.
+- For each folder in order, it looks for `ascribe.toml` in the folder and then
+  in each parent, and takes the first it finds (`find_config` in
+  `src/core.rs`). It never looks below a folder: a folder whose projects are
+  all in subfolders has none.
+- It logs one line to stderr saying what it found:
+  `tessera-lsp: using the project at <path to ascribe.toml>`,
+  `tessera-lsp: no ascribe.toml at or above <folders, comma-separated>`, or
+  `tessera-lsp: no workspace folder, so no project`.
+- A server with no project publishes nothing, and the preview request answers
+  with a problem saying so. When the file watcher reports an `ascribe.toml`
+  created or changed directly in one of its workspace folders (not in a parent
+  or a subfolder), it loads that project and logs `using the project at …`.
+  That needs the client to allow the dynamic registration of
+  `workspace/didChangeWatchedFiles`.
+- Once a server has a project, it keeps it until it exits. It doesn't follow
+  `workspace/didChangeWorkspaceFolders`.
+
+A client with several projects starts one server per project, with the folder
+that holds its `ascribe.toml` as the workspace folder, and sends each server
+the documents of its own project; the VS Code extension does
+(`packages/vscode/src/registry.ts`). The server knows nothing of other
+projects: it reads and checks every source file under its content root,
+including the files of a project nested there, and leaving those to the
+nested project's server is the client's job.
+
 ## Semantic token legend
 
 **This legend is a contract with the VS Code client. The order of the
@@ -125,8 +156,7 @@ from `tessera-fmt`; the VS Code client applies those edits on save when
 ## How it works
 
 - **The project** is a `tessera_resolve::IncrementalProject` built from the
-  `ascribe.toml` in a workspace folder (the nearest one at or above the
-  folder, or the first one found below it). File ids follow `tessera-resolve`: source files
+  `ascribe.toml` found as [The project](#the-project) says. File ids follow `tessera-resolve`: source files
   have ids from 1, `ascribe.toml` is 0, an id names a path and is never reused.
 - **Changes** reach it as `Change`s from three sources: open documents
   (`didOpen`, `didChange`, `didClose`; an open document's text wins over the
@@ -317,7 +347,7 @@ scaffold and the protocol types), over `tower-lsp-server`.
 - `tests/` drives the server in-process over `Connection::memory()`: the
   scripted scenarios of the acceptance criteria, multi-byte positions, stale
   computations (a hook holds a computation until a newer edit lands), file
-  watching, model changes.
+  watching, model changes, and which project a workspace folder gets.
 - `crates/tessera-cli/tests/lsp_parity.rs` starts the real `ascribe lsp` binary
   over stdio and compares its published diagnostics with
   `ascribe check --build <name> --format json`, for every build of

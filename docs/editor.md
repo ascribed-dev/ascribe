@@ -10,23 +10,25 @@ Install **Ascribe** (`Ascribe.ascribe-vscode`) from the Visual Studio Marketplac
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-The extension activates in a workspace that contains an `ascribe.toml`. It needs VS Code 1.138 or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
+The extension activates in a workspace that has an `ascribe.toml` anywhere in it, and a workspace can hold several projects (see [Workspaces with several projects](#workspaces-with-several-projects)). It needs VS Code 1.138 or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
 
 ### Which `ascribe` it runs
 
-The extension includes an `ascribe` binary for your platform, so it works immediately. It looks for a binary in this order:
+The extension includes an `ascribe` binary for your platform, so it works immediately. For each project, it looks for a binary in this order:
 
-1. The `ascribe.path` setting, if you set it. A path that doesn't work is an error; the extension doesn't fall back.
-2. The project's own `node_modules/.bin/ascribe`, installed with `npm install --save-dev @ascribed/cli`. It looks in each folder that holds an `ascribe.toml`, and its parents up to the workspace folder, so a monorepo works.
+1. The `ascribe.path` setting, if you set it. It applies to every project. A path that doesn't work is an error; the extension doesn't fall back.
+2. The project's own `node_modules/.bin/ascribe`, installed with `npm install --save-dev @ascribed/cli`. It looks in the folder that holds the project's `ascribe.toml`, then in each parent up to the workspace folder, so a project in a monorepo finds the `node_modules` at the repository root.
 3. The binary included in the extension.
 
-A project that installs `@ascribed/cli` gets exactly the version it pins, in the editor as in CI. When that version is older than the extension expects, the extension warns you to update it. **Ascribe: Show Server Output** shows which binary is in use.
+A project that installs `@ascribed/cli` gets exactly the version it pins, in the editor as in CI, and two projects in one workspace can pin different versions. When a version is older than the extension expects, the extension warns you to update it. **Ascribe: Show Server Output** shows which binary a project uses.
 
 ## What it does
 
 ### Diagnostics
 
-Every [diagnostic](diagnostics.md) appears as you type, including in unsaved files, for the whole project: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the build named by `[editor] build` in `ascribe.toml`.
+Every [diagnostic](diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the build named by `[editor] build` in `ascribe.toml`.
+
+In a workspace with several projects, the Problems panel lists only the projects whose language server is running. See [The Problems panel](#the-problems-panel).
 
 ### Quick fixes
 
@@ -79,33 +81,80 @@ Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon a
 
 ### Preview
 
-**Ascribe: Open Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, scrolls to the section the cursor is in, and opens a page or file you click in the editor. Its **Build** picker shows the page as any build publishes it, starting with the editor's build.
+**Ascribe: Open Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, scrolls to the section the cursor is in, and opens a page or file you click in the editor. Its **Build** picker shows the page as any build publishes it, starting with the editor's build. In a workspace with several projects, each project keeps its own choice of build.
 
 A fragment isn't a page, so the preview names the pages that include it instead. A page a build doesn't publish says which build drops it, and why.
 
+A file with no `ascribe.toml` above it has nothing to preview: "This file isn't part of an Ascribe project (no ascribe.toml above it)." A file in a project's folder but outside its content root isn't a page either, and the preview names both: "handbook/README.md is in the project handbook, but outside its content root (handbook/pages), so there is no page to preview."
+
 The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts and loads nothing remote, so raw HTML that needs either looks different in the preview than on the site.
+
+## Workspaces with several projects
+
+Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window. Folders named `node_modules` aren't searched.
+
+A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
+
+Each project runs its own `ascribe`, found as [Which `ascribe` it runs](#which-ascribe-it-runs) describes.
+
+### When servers start
+
+A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It then runs until you close the window or delete its `ascribe.toml`. A project you never open costs nothing.
+
+To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
+
+An `ascribe.toml` you add or delete is picked up as you work. The extension serves at most 50 projects in a workspace: the first 50 by path.
+
+Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
+
+### The Problems panel
+
+The Problems panel lists diagnostics only for the projects whose server is running. A project whose files you haven't opened shows nothing there, even if it has problems. Open one of its files, or set `ascribe.startServers` to `"all"`, to see them.
+
+`ascribe check` checks a project whether or not the editor has it open. Run it in the project's folder, or from anywhere with `--config` naming the project's folder or its `ascribe.toml`:
+
+```sh
+npx ascribe check --config handbook
+```
+
+### Commands and output
+
+Commands act on the project that owns the active file: the preview, its **Build** picker, and **Show Server Output**. **Restart Language Server** restarts every project's server that has started. [Commands](#commands) has the details.
+
+Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is just `Ascribe`.
+
+A channel's name is set when the channel is first needed, usually when its project's server first starts. So if a workspace with one project gains a second, the first project's channel keeps the name `Ascribe`, beside `Ascribe (<other project>)`, until you reload the window.
+
+When it starts, a server logs the `ascribe.toml` it uses: `using the project at <path>`.
 
 ## Settings
 
 | Setting | Default | What it does |
 |---|---|---|
-| `ascribe.path` | empty | The `ascribe` binary to run. When empty, the project's, then the included one. |
+| `ascribe.path` | empty | The `ascribe` binary to run, for every project. When empty, each project's own, then the included one. Changing it restarts the servers that have started. |
+| `ascribe.startServers` | `onDemand` | When each project's language server starts: `onDemand`, the first time one of its files is opened, or `all`, when the workspace opens. See [When servers start](#when-servers-start). |
 | `ascribe.formatOnSave` | `false` | Format Ascribe constructs when saving. |
-| `ascribe.maxCrashes` | `5` | After this many crashes of the language server, since it was last restarted by hand, the extension stops restarting it and explains why. |
+| `ascribe.maxCrashes` | `5` | After this many crashes of a project's language server, since it was last restarted by hand, the extension stops restarting it and explains why. |
 | `ascribe.trace.server` | `off` | `messages` or `verbose` logs the conversation with the server, for reporting a problem. |
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| **Ascribe: Restart Language Server** | Stops and starts the server, and forgets earlier crashes. |
-| **Ascribe: Show Server Output** | Opens the server's log. |
-| **Ascribe: Open Preview to the Side** | Opens the preview. |
-| **Ascribe: Select Preview Build** | Picks the build the preview shows. |
+| **Ascribe: Restart Language Server** | Stops and starts every project's server that has started, including one that stopped after crashing, and forgets earlier crashes. A server that hasn't started stays off until it's needed; when none has, the command says so. It also picks up `ascribe.toml` files added or deleted. |
+| **Ascribe: Show Server Output** | Opens the log of the active file's project. When no file of a project is active and the workspace has several projects, it asks which, showing whether each one's server is running. |
+| **Ascribe: Open Preview to the Side** | Opens the preview of the active page, starting its project's server if it hasn't started. |
+| **Ascribe: Select Preview Build** | Picks the build the preview shows, for the previewed page's project. |
 
 ## Other editors
 
-Any editor with a Language Server Protocol client can run `ascribe lsp` from a project installed with `@ascribed/cli`. It speaks LSP over standard input and output, and needs the workspace folder that holds `ascribe.toml`. The preview is a VS Code feature.
+Any editor with a Language Server Protocol client can run `ascribe lsp` from a project installed with `@ascribed/cli`. It speaks LSP over standard input and output. The preview is a VS Code feature.
+
+A server serves one project: the nearest `ascribe.toml` at or above the workspace folder the editor gives it. It never looks below that folder, so a server started at the root of a repository whose projects are all in subfolders has no project. For a workspace with several projects, start one `ascribe lsp` per project, rooted at the folder that holds its `ascribe.toml`, and give each file to the server of the nearest `ascribe.toml` above it. In Neovim, for example, `root_markers = { "ascribe.toml" }` in the server's `vim.lsp.config` does both.
+
+When it starts, the server logs to standard error which project it uses: `using the project at <path>`, or, when it finds none, `no ascribe.toml at or above <folder>`. A server with no project reports nothing. If an `ascribe.toml` is then created in the workspace folder itself, the server loads it, when the editor supports watching files for the server.
+
+When one project is nested in another's content root, the outer project's server checks the nested project's files too, as `ascribe check` for the outer project does, so your editor may show diagnostics from both. The VS Code extension shows only those of the nearest project.
 
 ## Other formatters
 

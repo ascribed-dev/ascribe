@@ -5,7 +5,7 @@
 - [`ascribe.toml` reference](content-model.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
 - [Command reference](cli.md): `ascribe check`, `build`, `fmt`, and `lsp`, their options, outputs, and exit codes.
 - [Diagnostics](diagnostics.md): every problem Ascribe reports, with its code and fix.
-- [Editing](editor.md): the VS Code extension.
+- [Editing](editor.md): the VS Code extension, workspaces with several projects, and other editors.
 - [Astro](astro.md): publishing a site with `@ascribed/astro`.
 
 ## For implementers
