@@ -1,0 +1,31 @@
+{
+  // Run and debug the VS Code extension from this checkout. See
+  // packages/vscode/DEVELOPMENT.md, "Running it locally".
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Extension: examples/quill",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode",
+        "--disable-extensions",
+        "${workspaceFolder}/examples/quill"
+      ],
+      "outFiles": ["${workspaceFolder}/packages/vscode/dist/**/*.cjs"],
+      "preLaunchTask": "extension: prepare"
+    },
+    {
+      "name": "Extension: several projects",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode",
+        "--disable-extensions",
+        "${workspaceFolder}/packages/vscode/test/fixtures/monorepo"
+      ],
+      "outFiles": ["${workspaceFolder}/packages/vscode/dist/**/*.cjs"],
+      "preLaunchTask": "extension: prepare"
+    }
+  ]
+}

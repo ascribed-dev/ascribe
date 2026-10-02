@@ -15,4 +15,9 @@ coverage/
 
 # OS and editor files
 .DS_Store
+# The shared launch and task configurations for running the extension; the
+# rest of .vscode/ is each person's own.
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
 THIRD-PARTY-NOTICES
