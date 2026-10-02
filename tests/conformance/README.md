@@ -100,7 +100,7 @@ A case has one or the other, never both. Paths in `expect.yaml` (diagnostic file
 
 ### The content model
 
-A case may have its own `ascribe.toml` in the case directory. Otherwise it uses the shared fixture model, `tests/conformance/_model/ascribe.toml`, written from the Quill model. Prefer the shared model; give a case its own only when it tests the content model itself or needs declarations the shared model shouldn't have.
+A case may have its own `ascribe.toml` in the case directory. Otherwise it uses the shared fixture model, `tests/conformance/_model/ascribe.toml`, written from the Quill model. Prefer the shared model; give a case its own only when it tests the content model itself or needs declarations the shared model shouldn't have. An `ascribe.toml` inside `files/` isn't the case's model: it makes its directory another project's folder, which the case's project skips (SPEC §2.1), as in `files/nested-project-skipped`.
 
 ### Line endings
 

@@ -1,0 +1,5 @@
+# Another project, nested in this one's content root.
+spec = "0.1"
+
+[project]
+content-root = "content"

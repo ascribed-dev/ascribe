@@ -1,0 +1,25 @@
+# A project nested inside handbook/'s content root, from examples/quill's
+# content model. Only this project declares the `edition` phrase.
+spec = "0.1"
+
+[project]
+content-root = "content"
+output-dir = ".ascribe/build"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+
+[phrases]
+product = "Quill"
+edition = "Nested"
+
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+[editor]
+build = "site"

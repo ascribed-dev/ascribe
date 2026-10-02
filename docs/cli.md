@@ -167,7 +167,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](directives.md#canonical-form).
 
-- With no paths, it formats every `.md` file under the content root. Given files or directories, it formats the `.md` files among them. Directories whose names start with `.`, and `node_modules`, are skipped.
+- With no paths, it formats every `.md` file under the content root. Given files or directories, it formats the `.md` files among them. Directories whose names start with `.`, `node_modules`, and directories inside the searched ones that hold an `ascribe.toml` other than the project's own (another project, formatted under its own model) are skipped.
 - It lists each file it changed.
 - `--check` changes nothing, and lists each file that would change. Use it in CI.
 
@@ -179,6 +179,6 @@ Rewrites Ascribe constructs into canonical form: the spacing of directive lines 
 
 ## `ascribe lsp`
 
-Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options: the editor's workspace folders say where the project is, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error.
+Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error, starting with the project it uses.
 
-The VS Code extension runs it for you. See [Editing](editor.md). Any editor with an LSP client can run `ascribe lsp` too.
+The VS Code extension runs it for you, one server for each project in the workspace. See [Editing](editor.md). Any editor with an LSP client can run `ascribe lsp` too; for several projects, start one per project ([Other editors](editor.md#other-editors)).

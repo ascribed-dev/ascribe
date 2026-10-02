@@ -99,10 +99,12 @@ impl Loaded {
             return None;
         }
         let content = normalize(&self.root.join(self.layout.content_root.as_str()));
+        // A file in a nested project's folder is no source of this one, open
+        // or not, as a file in a hidden directory isn't.
         if let Some(content_rel) = relative_to(&content, abs)
             && let Ok(content_path) = RelPath::parse(&content_rel)
             && content_path.is_inside()
-            && is_source_path(&content_path)
+            && self.inc.snapshot().is_source(&content_path)
         {
             return Some(Kind::Source(content_path, project_rel));
         }
@@ -119,7 +121,8 @@ enum Kind {
     Asset(RelPath),
 }
 
-/// The server's state.
+/// The server's state. It serves one project, found by looking upward from the
+/// workspace folder.
 pub(crate) struct Core {
     pub out: Sender<Message>,
     pub encoding: Encoding,
@@ -169,19 +172,15 @@ impl Core {
 
     // -- Startup ------------------------------------------------------------
 
-    /// Finds the project's `ascribe.toml` in the workspace folders and loads it.
+    /// Finds the project's `ascribe.toml` at or above the workspace folders
+    /// and loads it.
     pub(crate) fn start(&mut self) {
         if self.config.is_none() {
             self.config = find_config(&self.folders).map(|p| normalize(&p));
         }
-        match self.config.clone() {
-            Some(config) => {
-                if self.folders.len() > 1 {
-                    self.log(&format!("using the project at {}", config.display()));
-                }
-                self.sync_model();
-            }
-            None => self.log("no ascribe.toml found in the workspace folders"),
+        self.log(&start_message(self.config.as_deref(), &self.folders));
+        if self.config.is_some() {
+            self.sync_model();
         }
     }
 
@@ -262,13 +261,26 @@ impl Core {
                 loaded.model_text = text;
                 self.absorb(&affected);
             }
-            Err(ApplyError::LayoutChanged) => self.load_project(model, text),
+            Err(ApplyError::LayoutChanged | ApplyError::NestedProjectChanged) => {
+                self.load_project(model, text);
+            }
         }
     }
 
+    /// Loads the project again with the model it has, after a change the
+    /// incremental update can't apply in place.
+    fn reload(&mut self) {
+        let Some(loaded) = self.loaded.as_ref() else {
+            return;
+        };
+        let (model, text) = (loaded.model.clone(), loaded.model_text.clone());
+        self.load_project(model, text);
+    }
+
     /// Loads the project from scratch, with the open buffers over the disk:
-    /// the first load, and after a model change that moves the content root or
-    /// the output directory.
+    /// the first load, after a model change that moves the content root or
+    /// the output directory, and when a nested project's `ascribe.toml`
+    /// appears or goes.
     fn load_project(&mut self, model: Arc<ContentModel>, text: String) {
         let Some(config) = self.config.clone() else {
             return;
@@ -426,9 +438,13 @@ impl Core {
             if self.config.is_none()
                 && path.file_name().is_some_and(|n| n == MODEL_FILE)
                 && event.typ != FileChangeType::DELETED
-                && self.folders.iter().any(|f| path.starts_with(f))
+                && self
+                    .folders
+                    .iter()
+                    .any(|f| path.parent() == Some(f.as_path()))
             {
                 self.config = Some(path.clone());
+                self.log(&start_message(Some(&path), &self.folders));
                 sync_model = true;
                 continue;
             }
@@ -550,6 +566,16 @@ impl Core {
         let prefix = format!("{dir}/");
         let snapshot = loaded.inc.snapshot();
         let mut assets: BTreeSet<RelPath> = BTreeSet::new();
+        // A nested project's folder, or one holding it, going takes its
+        // `ascribe.toml` with it.
+        for folder in snapshot.nested_projects() {
+            if let Ok(model) = folder.join(MODEL_FILE) {
+                let project = loaded.layout.project_path(&model);
+                if project.as_str().starts_with(&prefix) {
+                    assets.insert(project);
+                }
+            }
+        }
         for file in snapshot.files() {
             let project = loaded.layout.project_path(&file.path);
             if project.as_str().starts_with(&prefix)
@@ -606,7 +632,15 @@ impl Core {
         }
         match loaded.inc.apply(changes) {
             Ok(affected) => self.absorb(&affected),
-            // Only a model change can fail, and those go through `sync_model`.
+            // A nested project's `ascribe.toml` came or went, which changes
+            // which files are sources: the disk and the open buffers are read
+            // again.
+            Err(ApplyError::NestedProjectChanged) => {
+                self.log("a nested project appeared or went away; loading the project again");
+                self.reload();
+            }
+            // Only a model change moves the layout, and those go through
+            // `sync_model`.
             Err(ApplyError::LayoutChanged) => self.log("unexpected layout change"),
         }
     }
@@ -736,44 +770,24 @@ impl Core {
     }
 }
 
-// One project per server.
-/// The nearest `ascribe.toml` at or above a workspace folder; failing that,
-/// the first one below a folder (a few levels down, skipping hidden and
-/// dependency directories).
+/// The nearest `ascribe.toml` at or above a workspace folder, trying the
+/// folders in order. It never looks below a folder.
 fn find_config(folders: &[PathBuf]) -> Option<PathBuf> {
-    for folder in folders {
-        if let Some(found) = tessera_check::Project::find_config(folder) {
-            return Some(found);
+    folders
+        .iter()
+        .find_map(|folder| tessera_check::Project::find_config(folder))
+}
+
+/// The line logged at startup: the project chosen, or why there is none.
+fn start_message(config: Option<&Path>, folders: &[PathBuf]) -> String {
+    match config {
+        Some(config) => format!("using the project at {}", config.display()),
+        None if folders.is_empty() => "no workspace folder, so no project".to_owned(),
+        None => {
+            let listed: Vec<String> = folders.iter().map(|f| f.display().to_string()).collect();
+            format!("no ascribe.toml at or above {}", listed.join(", "))
         }
     }
-    for folder in folders {
-        let mut level = vec![folder.clone()];
-        for _ in 0..4 {
-            let mut next = Vec::new();
-            for dir in &level {
-                let candidate = dir.join(MODEL_FILE);
-                if candidate.is_file() {
-                    return Some(candidate);
-                }
-                let Ok(entries) = std::fs::read_dir(dir) else {
-                    continue;
-                };
-                let mut children: Vec<PathBuf> = entries
-                    .flatten()
-                    .filter(|e| e.path().is_dir())
-                    .filter(|e| {
-                        let name = e.file_name().to_string_lossy().into_owned();
-                        !name.starts_with('.') && name != "node_modules" && name != "target"
-                    })
-                    .map(|e| e.path())
-                    .collect();
-                children.sort();
-                next.extend(children);
-            }
-            level = next;
-        }
-    }
-    None
 }
 
 impl Core {
@@ -829,5 +843,34 @@ impl Core {
         let file = snapshot.files().next()?;
         let uri = path_to_uri(&loaded.source_path(&file.path))?;
         self.nav_target(&uri)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_start_message_names_the_project() {
+        let config = PathBuf::from("proj").join("ascribe.toml");
+        let text = start_message(Some(&config), &[PathBuf::from("proj")]);
+        assert_eq!(text, format!("using the project at {}", config.display()));
+    }
+
+    #[test]
+    fn the_start_message_says_when_there_is_no_workspace_folder() {
+        assert_eq!(
+            start_message(None, &[]),
+            "no workspace folder, so no project"
+        );
+    }
+
+    #[test]
+    fn the_start_message_says_when_there_is_no_project() {
+        let folders = [PathBuf::from("a"), PathBuf::from("b")];
+        assert_eq!(
+            start_message(None, &folders),
+            "no ascribe.toml at or above a, b"
+        );
     }
 }

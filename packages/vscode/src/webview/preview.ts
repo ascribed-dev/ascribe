@@ -15,8 +15,8 @@ import type {
   FromWebview,
   ImageReport,
   PreviewBuild,
-  PreviewProblem,
   RenderReport,
+  ShownProblem,
   ToWebview,
   WebviewAsset,
 } from "../preview/protocol.js";
@@ -85,12 +85,19 @@ function showBuilds(next: PreviewBuild[], current: string): void {
   buildDescription.textContent = builds.find((b) => b.name === current)?.description ?? "";
 }
 
-function showProblems(problems: PreviewProblem[]): void {
+function showProblems(problems: ShownProblem[]): void {
   problemList.replaceChildren(
     ...problems.map((problem) => {
       const item = document.createElement("li");
       item.dataset["severity"] = problem.severity;
       item.textContent = problem.message;
+      if (problem.action === "showOutput") {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = "Show Output";
+        button.addEventListener("click", () => post({ type: "showOutput" }));
+        item.append(" ", button);
+      }
       return item;
     }),
   );

@@ -2,7 +2,9 @@
 //! edits, creations, deletions, renames, asset changes, and model changes,
 //! the incremental project equals a from-scratch load of the same files, and a
 //! consumer that redoes only what [`Affected`] lists holds exactly what a
-//! from-scratch consumer would.
+//! from-scratch consumer would. A step that adds or removes a nested project's
+//! `ascribe.toml` is refused, exactly then, and the project is loaded again,
+//! as the language server does.
 //!
 //! The second half is what makes `Affected` trustworthy: a file or page left
 //! out of it must be unchanged.
@@ -16,7 +18,7 @@ use std::sync::Arc;
 
 use proptest::prelude::*;
 use tessera_core::RelPath;
-use tessera_resolve::{Change, IncrementalProject, Layout, ModelImpact, is_source_path};
+use tessera_resolve::{ApplyError, Change, IncrementalProject, Layout, ModelImpact};
 
 use incremental_support::{Consumer, ModelSpec, World, dump, load, path, scratch};
 
@@ -29,6 +31,8 @@ const SOURCES: &[&str] = &[
     "Guide.md",
     "shared/thing.md",
     "sub/index.md",
+    "nested/page.md",
+    "nested/sub/deep.md",
 ];
 
 /// Project paths of files that aren't sources.
@@ -41,12 +45,19 @@ const FILES: &[&str] = &[
     "docs/Logo.png",
     "docs/guide",
     "docs/files/",
+    // Each makes its directory a nested project's folder.
+    "docs/nested/ascribe.toml",
+    "docs/nested/sub/ascribe.toml",
 ];
 
 /// File names that differ from another only in case. The base file system and
 /// the overlay may pick different twins for those, so the run that starts from
 /// a non-empty base leaves them out.
 const TWINS: &[&str] = &["docs/Logo.png", "Guide.md"];
+
+/// Files that make a nested project, which loads the project again, from a
+/// non-empty base: the run that has twins leaves them out.
+const NESTED: &[&str] = &["docs/nested/ascribe.toml", "docs/nested/sub/ascribe.toml"];
 
 const FRONT: &[&str] = &[
     "",
@@ -84,6 +95,8 @@ const BODY: &[&str] = &[
     "![l](Logo.png) [dir](files/)\n",
     "@include: shared/thing.md\n",
     "Some prose about {extra} and more.\n",
+    "@include: nested/page.md\n",
+    "[n](nested/sub/deep.md) ![i](nested/page.md)\n",
 ];
 
 fn models() -> Vec<ModelSpec> {
@@ -233,6 +246,11 @@ impl Run {
         let mut world = world;
         if initial {
             world.files.insert(path("docs/logo.png"));
+            // A nested project from the start, with a page in it.
+            world.files.insert(path("docs/nested/ascribe.toml"));
+            world
+                .sources
+                .insert(path("nested/page.md"), "---\ntitle: N\n---\n".to_owned());
         }
         let layout = Layout::from_model(&spec.model());
         // The incremental project reads its initial state from a file system
@@ -296,7 +314,7 @@ impl Run {
                 content_form: as_content,
             } => {
                 let name = FILES[*file];
-                if !self.twins && TWINS.contains(&name) {
+                if !self.twins && TWINS.contains(&name) || self.twins && NESTED.contains(&name) {
                     return None;
                 }
                 let project_path = path(name.trim_end_matches('/'));
@@ -335,6 +353,7 @@ impl Run {
             .iter()
             .filter_map(|op| self.change_for(op, models))
             .collect();
+        let nested_before = self.world.nested(&self.layout);
         // The world sees the changes in order, as the project's batch does.
         // A rename of a file the batch itself created reads the world's text.
         let mut applied = Vec::new();
@@ -345,9 +364,40 @@ impl Run {
             self.world.apply(&self.layout, change);
             applied.push(change.clone());
         }
-        let affected = self.inc.apply(applied).expect("no layout change");
-        let snapshot = self.inc.snapshot();
+        let nested_after = self.world.nested(&self.layout);
         let model = self.spec.model();
+        let affected = match self.inc.apply(applied) {
+            Ok(affected) => {
+                assert_eq!(
+                    nested_before, nested_after,
+                    "the nested projects changed, and {batch:?} was applied in place"
+                );
+                affected
+            }
+            Err(ApplyError::NestedProjectChanged) => {
+                assert_ne!(
+                    nested_before, nested_after,
+                    "{batch:?} was refused, but the nested projects didn't change"
+                );
+                // Nothing was applied; the project is loaded again.
+                assert_eq!(self.inc.version(), before.version());
+                self.inc = IncrementalProject::load(
+                    model.clone(),
+                    self.layout.clone(),
+                    self.world.fs(&self.layout),
+                );
+                let reference = scratch(&self.inc, &model, &self.world);
+                assert_eq!(
+                    dump(&self.inc.snapshot()),
+                    dump(&reference),
+                    "a fresh load differs after {batch:?}"
+                );
+                self.consumer = Consumer::from_scratch(&self.inc.snapshot());
+                return;
+            }
+            Err(ApplyError::LayoutChanged) => panic!("no model moves the content root"),
+        };
+        let snapshot = self.inc.snapshot();
         let reference = scratch(&self.inc, &model, &self.world);
 
         // 1. The state equals a from-scratch load.
@@ -429,11 +479,11 @@ impl Run {
                     Change::Created { path, .. }
                     | Change::Edited { path, .. }
                     | Change::Deleted { path }
-                        if is_source_path(path) =>
+                        if before.is_source(path) =>
                     {
                         Some(path)
                     }
-                    Change::Renamed { to, .. } if is_source_path(to) => Some(to),
+                    Change::Renamed { to, .. } if before.is_source(to) => Some(to),
                     _ => None,
                 })
                 .collect();

@@ -28,7 +28,8 @@ pub struct Cli {
 #[derive(Debug, clap::Args)]
 pub struct Global {
     /// The content model, `ascribe.toml`. By default, the nearest one in the
-    /// current directory or a parent.
+    /// current directory or a parent. Not for `lsp`, whose project comes from
+    /// the editor.
     #[arg(long, global = true, value_name = "PATH")]
     pub config: Option<PathBuf>,
 

@@ -11,7 +11,8 @@ use std::sync::Arc;
 use tessera_core::{FileId, RelPath};
 use tessera_model::{ContentModel, load_str};
 use tessera_resolve::{
-    Change, DefaultRouter, FileIds, IncrementalProject, Layout, MemoryFs, Project, is_source_path,
+    Change, DefaultRouter, FileIds, FileSystem, IncrementalProject, Layout, MemoryFs, Project,
+    in_nested_project, is_source_path,
 };
 
 /// What differs between the models the tests use. Each field is read by a
@@ -117,45 +118,74 @@ impl World {
         fs
     }
 
-    /// The same change to the world as to the project.
+    /// The folders of the projects nested in the content root: the
+    /// directories below it that hold an `ascribe.toml`.
+    pub fn nested(&self, layout: &Layout) -> Vec<RelPath> {
+        self.fs(layout).sources().nested
+    }
+
+    /// Whether a content path names a source file, by the same rule as the
+    /// project's: by its path, and not in a nested project's folder.
+    pub fn is_source(&self, layout: &Layout, path: &RelPath) -> bool {
+        is_source_path(path) && !in_nested_project(path, &self.nested(layout))
+    }
+
+    fn put_source(&mut self, layout: &Layout, path: &RelPath, text: String) {
+        self.files.remove(&layout.project_path(path));
+        self.sources.insert(path.clone(), text);
+    }
+
+    fn put_file(&mut self, layout: &Layout, path: &RelPath) {
+        self.sources.remove(path);
+        self.files.insert(layout.project_path(path));
+    }
+
+    fn remove(&mut self, layout: &Layout, path: &RelPath) {
+        self.sources.remove(path);
+        self.files.remove(&layout.project_path(path));
+    }
+
+    /// The same change to the world as to the project. A file in a nested
+    /// project's folder is kept as a file that isn't a source, with no text,
+    /// as the project keeps it.
     pub fn apply(&mut self, layout: &Layout, change: &Change) {
         match change {
             Change::Created { path, text } | Change::Edited { path, text } => {
-                if is_source_path(path) {
-                    self.sources.insert(path.clone(), text.clone());
+                if self.is_source(layout, path) {
+                    self.put_source(layout, path, text.clone());
                 } else {
-                    self.files.insert(layout.project_path(path));
+                    self.put_file(layout, path);
                 }
             }
-            Change::Deleted { path } => {
-                if is_source_path(path) {
-                    self.sources.remove(path);
-                } else {
-                    self.files.remove(&layout.project_path(path));
-                }
-            }
+            Change::Deleted { path } => self.remove(layout, path),
             Change::Renamed { from, to } => {
-                let text = if is_source_path(from) {
-                    self.sources.remove(from)
+                // A source kept as a file (it was made in a nested project's
+                // folder that has since gone) reads as empty, as from `fs`.
+                let text = if self.is_source(layout, from) {
+                    self.sources.get(from).cloned().or_else(|| {
+                        self.files
+                            .contains(&layout.project_path(from))
+                            .then(String::new)
+                    })
                 } else {
-                    self.files.remove(&layout.project_path(from));
                     None
                 };
-                if is_source_path(to) {
+                self.remove(layout, from);
+                if self.is_source(layout, to) {
                     if let Some(text) = text {
-                        self.sources.insert(to.clone(), text);
+                        self.put_source(layout, to, text);
                     }
                 } else {
-                    self.files.insert(layout.project_path(to));
+                    self.put_file(layout, to);
                 }
             }
             // The world has no unreadable files: the index drops one as it
             // drops a deleted file, and the unit tests check the list.
             Change::Unreadable { path, .. } => {
-                if is_source_path(path) {
-                    self.sources.remove(path);
+                if self.is_source(layout, path) {
+                    self.remove(layout, path);
                 } else {
-                    self.files.insert(layout.project_path(path));
+                    self.put_file(layout, path);
                 }
             }
             Change::AssetCreated { path } => {

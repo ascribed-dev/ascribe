@@ -52,6 +52,20 @@ body {
   background: color-mix(in srgb, currentColor 8%, transparent);
 }
 
+.problems button {
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  color: var(--vscode-button-foreground, ButtonText);
+  background: var(--vscode-button-background, ButtonFace);
+  border: 1px solid var(--vscode-button-border, transparent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.problems button:hover {
+  background: var(--vscode-button-hoverBackground, ButtonFace);
+}
+
 .problems li[data-severity="error"] {
   color: var(--vscode-errorForeground, #c00);
 }

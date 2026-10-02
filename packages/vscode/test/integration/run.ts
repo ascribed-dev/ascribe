@@ -13,6 +13,9 @@
 //               `ascribe`; skipped without it.
 //   preview     a copy of examples/quill, the preview panel, against
 //               the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//   monorepo    test/fixtures/monorepo, several projects (one nested in
+//               another) with servers started on demand, against the real
+//               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -33,6 +36,9 @@ interface Suite {
 const stubServer = path.join(packageRoot, "test/stub-server/ascribe");
 const realServer = process.env["ASCRIBE_BIN"];
 
+// These suites check a server that's running from the start, with no file open.
+const startAll = { "ascribe.startServers": "all" };
+
 const suites: Suite[] = [
   {
     name: "activation",
@@ -42,7 +48,7 @@ const suites: Suite[] = [
   {
     name: "stub",
     fixture: path.join(packageRoot, "test/fixtures/stub-project"),
-    prepare: () => ({ "ascribe.path": stubServer, "ascribe.maxCrashes": 2 }),
+    prepare: () => ({ "ascribe.path": stubServer, "ascribe.maxCrashes": 2, ...startAll }),
   },
   {
     name: "quill",
@@ -53,24 +59,34 @@ const suites: Suite[] = [
         path.join(workspace, "docs"),
         { recursive: true },
       );
-      return { "ascribe.path": realServer };
+      return { "ascribe.path": realServer, ...startAll };
     },
   },
   {
     name: "preview",
     fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
+    name: "monorepo",
+    fixture: path.join(packageRoot, "test/fixtures/monorepo"),
+    // The default `ascribe.startServers`: the suite checks what starts when.
     prepare: () => ({ "ascribe.path": realServer }),
   },
 ];
 
 /** The suites that run the real language server. */
-const needsServer = new Set(["quill", "preview"]);
+const needsServer = new Set(["quill", "preview", "monorepo"]);
 
 async function main(): Promise<void> {
   // A process an extension host started has this set, and VS Code would then
   // run as plain Node instead of launching.
   delete process.env["ELECTRON_RUN_AS_NODE"];
   const only = process.env["ASCRIBE_SUITE"];
+  if (only && !suites.some((suite) => suite.name === only)) {
+    console.error(`There is no suite named ${only}.`);
+    process.exit(1);
+  }
   let failed = false;
   let ran = 0;
   for (const suite of suites) {

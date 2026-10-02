@@ -17,8 +17,16 @@ pub struct Args {}
 /// Runs the server until the client ends the session. Standard output carries
 /// LSP messages and nothing else; logs go to standard error. Exit codes follow
 /// the protocol: 0 after `shutdown` then `exit`, 1 when the client exits
-/// without shutting down, 2 when the server can't run.
-pub fn run(_global: &Global, _args: Args) -> ExitCode {
+/// without shutting down, 2 when the server can't run or is given `--config`.
+pub fn run(global: &Global, _args: Args) -> ExitCode {
+    // The project comes from the editor's workspace folders, so a `--config`
+    // would be ignored; refuse it rather than look as if it were used.
+    if global.config.is_some() {
+        eprintln!(
+            "error: `ascribe lsp` doesn't take --config: its project is the nearest ascribe.toml at or above the editor's workspace folder"
+        );
+        return exit::code(exit::FAILURE);
+    }
     match tessera_lsp::run_stdio() {
         Ok(Exit::Clean) => exit::code(exit::OK),
         Ok(Exit::Abrupt) => exit::code(exit::PROBLEMS),

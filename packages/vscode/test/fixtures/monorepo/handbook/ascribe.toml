@@ -1,0 +1,34 @@
+# A project at handbook/, from examples/quill's content model. The project in
+# pages/nested is inside its content root.
+spec = "0.1"
+
+[project]
+content-root = "pages"
+output-dir = ".ascribe/build"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+
+[dimensions.deployment]
+label = "Deployment"
+values = ["cloud", "self-managed"]
+versionless = ["cloud"]
+labels = { cloud = "Quill Cloud" }
+
+[phrases]
+product = "Quill"
+
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }
+
+[editor]
+build = "site"

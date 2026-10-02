@@ -14,6 +14,8 @@ import {
 import { ancestorsWithin, resolveBinary, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
+import { globFolder, type Project } from "./projects.js";
+import { scopeMiddleware } from "./scope.js";
 import { parseVersion } from "./version.js";
 
 /** Where the server is in its life. */
@@ -23,21 +25,44 @@ const OPEN_SETTINGS = "Open Settings";
 const SHOW_OUTPUT = "Show Output";
 const RESTART = "Restart Server";
 
+/** What a project's server needs to know about the workspace around it. */
+export interface ProjectHost {
+  /** The name of the project's output channel. */
+  channelName(project: Project): string;
+  /** Whether a file belongs to some other project than `project`, or to none. */
+  ownedElsewhere(project: Project, uri: vscode.Uri): boolean;
+}
+
 /**
- * Owns the language client: finds the binary, starts `ascribe lsp`, restarts
- * it on request, and gives up after too many crashes.
+ * Owns one project's language client: finds the binary, starts `ascribe lsp`
+ * rooted at the project's folder, restarts it on request, and gives up after
+ * too many crashes.
  */
-export class ServerController implements vscode.Disposable {
+export class ProjectServer implements vscode.Disposable {
   private client: LanguageClient | undefined;
   private current: ResolvedBinary | undefined;
   private status: ServerState = "stopped";
-  private readonly output = vscode.window.createOutputChannel("Ascribe", { log: true });
+  private channel: vscode.LogOutputChannel | undefined;
   private readonly crashes: CrashCounter;
+  private requested = false;
   private starting: Promise<void> = Promise.resolve();
   private readonly started = new vscode.EventEmitter<void>();
+  private disposed = false;
 
-  constructor(private readonly context: vscode.ExtensionContext) {
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    readonly project: Project,
+    private readonly host: ProjectHost,
+  ) {
     this.crashes = new CrashCounter(readMaxCrashes());
+  }
+
+  /** The output channel, created when first needed so its name reflects the workspace then. */
+  private get output(): vscode.LogOutputChannel {
+    this.channel ??= vscode.window.createOutputChannel(this.host.channelName(this.project), {
+      log: true,
+    });
+    return this.channel;
   }
 
   /** The binary the running (or last started) server uses. */
@@ -71,20 +96,32 @@ export class ServerController implements vscode.Disposable {
     return this.starting;
   }
 
-  /** Starts the server, unless it's already running. */
+  /**
+   * Starts the server, once. Later calls wait for that start; a server that
+   * failed isn't tried again until it's restarted.
+   */
   start(): Promise<void> {
-    this.starting = this.starting.then(() => this.startNow());
+    if (!this.requested) {
+      this.requested = true;
+      this.starting = this.starting.then(() => this.startNow());
+    }
     return this.starting;
   }
 
   /** Stops the server and starts it again, forgetting earlier crashes. */
   restart(): Promise<void> {
+    this.requested = true;
     this.crashes.reset();
     this.starting = this.starting.then(async () => {
       await this.stopNow();
       await this.startNow();
     });
     return this.starting;
+  }
+
+  /** Writes a line to the project's output channel. */
+  log(message: string): void {
+    this.output.appendLine(message);
   }
 
   showOutput(): void {
@@ -107,7 +144,8 @@ export class ServerController implements vscode.Disposable {
   async dispose(): Promise<void> {
     await this.starting.catch(() => undefined);
     await this.stopNow();
-    this.output.dispose();
+    this.disposed = true;
+    this.channel?.dispose();
     this.started.dispose();
   }
 
@@ -115,9 +153,12 @@ export class ServerController implements vscode.Disposable {
     if (this.client) return;
     this.status = "starting";
 
+    const workspaceFolder =
+      vscode.workspace.getWorkspaceFolder(vscode.Uri.file(this.project.folder))?.uri.fsPath ??
+      this.project.folder;
     const resolution = await resolveBinary({
       setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
-      projectRoots: await projectRoots(),
+      projectRoots: ancestorsWithin(this.project.folder, workspaceFolder),
       extensionPath: this.context.extensionPath,
       minVersion: minServerVersion(this.context),
       env: nodeEnvironment,
@@ -149,12 +190,20 @@ export class ServerController implements vscode.Disposable {
       void vscode.window.showWarningMessage(`Ascribe: ${binary.warning}`);
     }
 
-    const client = new LanguageClient("ascribe", "Ascribe", serverOptions(binary), {
-      ...clientOptions(this.output, (error) =>
-        this.reportFeatureError("preparing workspace rename", error),
-      ),
-      errorHandler: this.errorHandler(),
-    });
+    const client = new ProjectClient(
+      "ascribe",
+      this.output.name,
+      serverOptions(binary, workspaceFolder),
+      {
+        ...clientOptions(
+          this.project,
+          untilDisposed(this.output, () => this.disposed),
+          (uri) => this.host.ownedElsewhere(this.project, uri),
+          (error) => this.reportFeatureError("preparing workspace rename", error),
+        ),
+        errorHandler: this.errorHandler(),
+      },
+    );
     client.onDidChangeState(({ newState }) => {
       if (newState === State.Running) {
         this.status = "running";
@@ -217,32 +266,92 @@ export class ServerController implements vscode.Disposable {
   }
 }
 
-function serverOptions(binary: ResolvedBinary): ServerOptions {
+/**
+ * A language client that leaves the server's `workspace/executeCommand`
+ * commands to the extension. The client would register each one as a VS Code
+ * command, and a second project's server (which offers the same ones) would
+ * fail to start with "command already exists".
+ *
+ * `ascribe.openFile` (`OPEN_FILE` in crates/tessera-lsp/src/links.rs) is the
+ * server's only command; the extension registers it in `extension.ts`. A
+ * command the server adds needs the same treatment.
+ */
+class ProjectClient extends LanguageClient {
+  override registerFeature(feature: Parameters<LanguageClient["registerFeature"]>[0]): void {
+    if (
+      "registrationType" in feature &&
+      feature.registrationType.method === "workspace/executeCommand"
+    ) {
+      return;
+    }
+    super.registerFeature(feature);
+  }
+}
+
+/**
+ * The output channel as the language client sees it. The client writes to it
+ * after it has stopped: the server process's exit, and its last lines on
+ * stderr, come later. A disposed channel throws on every write, so once the
+ * project's server is disposed (its `ascribe.toml` went away) they're dropped.
+ */
+function untilDisposed(
+  channel: vscode.LogOutputChannel,
+  disposed: () => boolean,
+): vscode.LogOutputChannel {
+  return new Proxy(channel, {
+    get(target, property) {
+      const value: unknown = Reflect.get(target, property);
+      if (typeof value !== "function") return value;
+      return (...args: unknown[]): unknown =>
+        disposed() ? undefined : (value as (...a: unknown[]) => unknown).apply(target, args);
+    },
+  });
+}
+
+/**
+ * How to run the server. It runs in the workspace folder, not the project's:
+ * the client would otherwise use the project folder (its `workspaceFolder`),
+ * and Windows can't delete or rename a folder that a running process is in.
+ * The server finds its project from `initialize`, not from where it runs.
+ */
+function serverOptions(binary: ResolvedBinary, cwd: string): ServerOptions {
   // Standard input and output carry the protocol; the server logs to stderr.
   return {
     command: shellCommand(binary.path),
     args: ["lsp"],
-    options: { shell: usesShell(binary.path) },
+    options: { cwd, shell: usesShell(binary.path) },
   };
 }
 
 function clientOptions(
+  project: Project,
   outputChannel: vscode.LogOutputChannel,
+  ownedElsewhere: (uri: vscode.Uri) => boolean,
   reportRenameError: (error: unknown) => void,
 ): LanguageClientOptions {
+  const scope = scopeMiddleware(ownedElsewhere);
+  const folder = globFolder(project.folder);
+  const folderUri = vscode.Uri.file(project.folder);
   return {
+    // Rooting the server at the project's folder is what makes it load this
+    // project: it looks for `ascribe.toml` upward from its workspace folder.
+    workspaceFolder: { uri: folderUri, name: path.basename(project.folder), index: 0 },
     documentSelector: [
-      { scheme: "file", language: "markdown" },
-      { scheme: "file", pattern: "**/ascribe.toml" },
+      { scheme: "file", language: "markdown", pattern: `${folder}/**` },
+      { scheme: "file", pattern: `${folder}/ascribe.toml` },
     ],
     outputChannel,
     middleware: {
+      ...scope,
       workspace: {
+        ...scope.workspace,
         willRenameFiles: (event, next) =>
-          next(event).then(undefined, (error: unknown) => {
-            reportRenameError(error);
-            throw error;
-          }),
+          (scope.workspace?.willRenameFiles ?? ((e, n) => n(e)))(event, (filtered) =>
+            next(filtered).then(undefined, (error: unknown) => {
+              reportRenameError(error);
+              throw error;
+            }),
+          ),
       },
     },
     // The server asks for the files it wants watched with dynamic
@@ -262,21 +371,4 @@ function minServerVersion(context: vscode.ExtensionContext) {
   const declared = (context.extension.packageJSON as { ascribe?: { minServerVersion?: string } })
     .ascribe?.minServerVersion;
   return parseVersion(declared ?? "") ?? { parts: [0, 0, 0] as const, prerelease: undefined };
-}
-
-/**
- * The directories to look in for the project's own binary: each folder that
- * holds an `ascribe.toml`, and its parents up to the workspace folder (a
- * monorepo keeps `node_modules` at the top); then the workspace folders.
- */
-async function projectRoots(): Promise<string[]> {
-  const roots = new Set<string>();
-  const models = await vscode.workspace.findFiles("**/ascribe.toml", "**/node_modules/**", 50);
-  for (const model of models) {
-    const folder = vscode.workspace.getWorkspaceFolder(model);
-    const dir = path.dirname(model.fsPath);
-    for (const root of ancestorsWithin(dir, folder?.uri.fsPath ?? dir)) roots.add(root);
-  }
-  for (const folder of vscode.workspace.workspaceFolders ?? []) roots.add(folder.uri.fsPath);
-  return [...roots];
 }

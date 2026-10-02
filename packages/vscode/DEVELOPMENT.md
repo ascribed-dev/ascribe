@@ -4,7 +4,11 @@ How the extension is built and tested. The user guide is the [README](README.md)
 
 ## The binary
 
-`src/binary.ts` finds the `ascribe` binary: the `ascribe.path` setting, then the project's `node_modules/.bin/ascribe` (in each folder that holds an `ascribe.toml`, and its parents up to the workspace folder), then the binary bundled at `bin/<platform>-<arch>/ascribe` (`ascribe.exe` on Windows). It runs `--version` on each candidate, and warns when the version is older than `ascribe.minServerVersion` in `package.json`, which a release sets to its own version. Release packaging (`scripts/release/pack.ts`) stages the one binary each platform's package needs under `bin/`.
+`src/binary.ts` finds the `ascribe` binary: the `ascribe.path` setting, then the project's `node_modules/.bin/ascribe` (in the project's folder, and its parents up to the workspace folder), then the binary bundled at `bin/<platform>-<arch>/ascribe` (`ascribe.exe` on Windows). It runs `--version` on each candidate, and warns when the version is older than `ascribe.minServerVersion` in `package.json`, which a release sets to its own version. Release packaging (`scripts/release/pack.ts`) stages the one binary each platform's package needs under `bin/`.
+
+## Projects
+
+`src/registry.ts` finds every `ascribe.toml` in the workspace (outside `node_modules`, at most 50) and keeps a `ProjectServer` (`src/client.ts`) for each: one `ascribe lsp`, with the project's folder as its workspace folder, its own binary, output channel, and crash count. A server starts the first time a file of its project is opened or previewed, or at discovery with `ascribe.startServers: "all"`. `src/projects.ts` decides which project owns a file (the nearest `ascribe.toml` above it), and each client is kept to its own project's files (`src/scope.ts`), so a parent project's server never sees a nested project's open documents. The server leaves a nested project's files out of its sources anyway; the middleware is a second guard. The user-facing behavior is in [docs/editor.md](../../docs/editor.md#workspaces-with-several-projects).
 
 ## The preview
 
@@ -78,12 +82,13 @@ pnpm --filter ascribe-vscode test:parity        # the preview against the Astro 
 
 The integration tests download VS Code into `out/vscode-test` and need a
 display: on Linux without one, use `pnpm --filter ascribe-vscode
-test:integration:headless` (it runs under `xvfb-run -a`). They have three
+test:integration:headless` (it runs under `xvfb-run -a`). They have five
 suites: `activation` (no `ascribe.toml`: the extension stays off), `stub` (a
 stub server in `test/stub-server`), `quill` (the real `ascribe lsp` on a
-copy of `examples/quill` with a broken page added), and `preview` (the preview
-panel against the real server on a copy of `examples/quill`); the last two run
-only when `ASCRIBE_BIN` names a built `ascribe`. `ASCRIBE_SUITE` runs one suite.
+copy of `examples/quill` with a broken page added), `preview` (the preview
+panel against the real server on a copy of `examples/quill`), and `monorepo`
+(several projects, one nested in another, in `test/fixtures/monorepo`); the
+last three run only when `ASCRIBE_BIN` names a built `ascribe`. `ASCRIBE_SUITE` runs one suite.
 
 The webview tests (`test/webview/`) load the preview's shell and bundles into
 Chromium under the real policy (`/opt/pw-browsers/chromium`, or

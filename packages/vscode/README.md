@@ -2,7 +2,7 @@
 
 Write [Ascribe](https://github.com/ascribed-dev/ascribe) documentation with the checks, completion, navigation, and preview a programming language gets. Ascribe is Markdown with directives for the structure documentation needs: callouts, procedures, alternatives by platform or product, availability, and reusable content.
 
-The extension activates in a workspace that contains an `ascribe.toml`.
+The extension activates in a workspace that contains an `ascribe.toml`. A workspace can hold several projects, each with its own language server: see [workspaces with several projects](https://github.com/ascribed-dev/ascribe/blob/main/docs/editor.md#workspaces-with-several-projects).
 
 ## Features
 
@@ -17,13 +17,14 @@ The extension activates in a workspace that contains an `ascribe.toml`.
 
 ## The `ascribe` binary
 
-The extension includes `ascribe` for your platform, so it works immediately. When the project installs its own (`npm install --save-dev @ascribed/cli`), the extension uses that one instead, so the editor matches the version the project pins for CI. The `ascribe.path` setting overrides both.
+The extension includes `ascribe` for your platform, so it works immediately. When a project installs its own (`npm install --save-dev @ascribed/cli`), the extension uses that one for it instead, so the editor matches the version the project pins for CI. The `ascribe.path` setting overrides both.
 
 ## Settings
 
 | Setting | What it does |
 |---|---|
-| `ascribe.path` | The `ascribe` binary to run. When empty, the project's, then the included one. |
+| `ascribe.path` | The `ascribe` binary to run, for every project. When empty, each project's own, then the included one. |
+| `ascribe.startServers` | When each project's language server starts: `onDemand` (default), the first time one of its files is opened, or `all`, when the workspace opens. |
 | `ascribe.formatOnSave` | Format Ascribe constructs when saving. |
 | `ascribe.maxCrashes` | How many crashes of the language server make the extension stop restarting it. Default 5. |
 | `ascribe.trace.server` | Log the conversation with the language server: `off`, `messages`, or `verbose`. |
