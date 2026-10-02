@@ -78,10 +78,18 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
 
   /**
    * Looks for projects again, adding servers for new ones and stopping those
-   * of deleted ones, then starts whatever should now be running. Calls queue.
+   * of deleted ones, then starts whatever should now be running. Calls queue,
+   * and one that fails is logged without stopping the ones after it.
    */
   refresh(): Promise<void> {
-    this.refreshing = this.refreshing.then(() => this.refreshNow());
+    this.refreshing = this.refreshing
+      .then(() => this.refreshNow())
+      .catch((error: unknown) => {
+        const message = `Looking for projects failed: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`;
+        // The extension host's log, and the first project's output.
+        console.error(`Ascribe: ${message}`);
+        this.servers[0]?.log(message);
+      });
     return this.refreshing;
   }
 

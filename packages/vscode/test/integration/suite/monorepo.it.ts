@@ -89,16 +89,38 @@ describe("with several projects, one nested in another", () => {
    */
   async function createProject(folder: string): Promise<void> {
     const config = path.join(folder, "ascribe.toml");
+    // Seen independently of the extension, to say why on a timeout.
+    const watcher = vscode.workspace.createFileSystemWatcher("**/ascribe.toml");
+    let created = 0;
+    watcher.onDidCreate((uri) => {
+      if (samePath(uri.fsPath, config)) created++;
+    });
     const deadline = Date.now() + 30_000;
-    for (;;) {
-      rmSync(config, { force: true });
-      copyFileSync(uriOf("docs", "ascribe.toml").fsPath, config);
-      try {
-        await waitFor(`the project in ${path.basename(folder)}`, () => known(folder), 2_000);
-        return;
-      } catch (error) {
-        if (Date.now() > deadline) throw error;
+    try {
+      for (;;) {
+        rmSync(config, { force: true });
+        copyFileSync(uriOf("docs", "ascribe.toml").fsPath, config);
+        try {
+          await waitFor(`the project in ${path.basename(folder)}`, () => known(folder), 2_000);
+          return;
+        } catch (error) {
+          if (Date.now() > deadline) {
+            const found = (await vscode.workspace.findFiles("**/ascribe.toml")).some((uri) =>
+              samePath(uri.fsPath, config),
+            );
+            throw new Error(
+              `${String(error)}. Its ascribe.toml was reported created ${created} times, and ` +
+                `findFiles ${found ? "finds" : "doesn't find"} it. Known projects: ` +
+                api
+                  .projects()
+                  .map((project) => project.folder)
+                  .join(", "),
+            );
+          }
+        }
       }
+    } finally {
+      watcher.dispose();
     }
   }
 
