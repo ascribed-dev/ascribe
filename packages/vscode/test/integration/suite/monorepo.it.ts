@@ -354,6 +354,8 @@ describe("with several projects, one nested in another", () => {
         }
       } finally {
         await settings.update("startServers", undefined, vscode.ConfigurationTarget.Workspace);
+        // Its server is still running. On Windows this fails if the server
+        // runs in the project's folder, which a running process locks.
         rmSync(idle, { recursive: true, force: true });
       }
     });

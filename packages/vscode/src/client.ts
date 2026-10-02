@@ -153,13 +153,12 @@ export class ProjectServer implements vscode.Disposable {
     if (this.client) return;
     this.status = "starting";
 
+    const workspaceFolder =
+      vscode.workspace.getWorkspaceFolder(vscode.Uri.file(this.project.folder))?.uri.fsPath ??
+      this.project.folder;
     const resolution = await resolveBinary({
       setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
-      projectRoots: ancestorsWithin(
-        this.project.folder,
-        vscode.workspace.getWorkspaceFolder(vscode.Uri.file(this.project.folder))?.uri.fsPath ??
-          this.project.folder,
-      ),
+      projectRoots: ancestorsWithin(this.project.folder, workspaceFolder),
       extensionPath: this.context.extensionPath,
       minVersion: minServerVersion(this.context),
       env: nodeEnvironment,
@@ -191,15 +190,20 @@ export class ProjectServer implements vscode.Disposable {
       void vscode.window.showWarningMessage(`Ascribe: ${binary.warning}`);
     }
 
-    const client = new ProjectClient("ascribe", this.output.name, serverOptions(binary), {
-      ...clientOptions(
-        this.project,
-        untilDisposed(this.output, () => this.disposed),
-        (uri) => this.host.ownedElsewhere(this.project, uri),
-        (error) => this.reportFeatureError("preparing workspace rename", error),
-      ),
-      errorHandler: this.errorHandler(),
-    });
+    const client = new ProjectClient(
+      "ascribe",
+      this.output.name,
+      serverOptions(binary, workspaceFolder),
+      {
+        ...clientOptions(
+          this.project,
+          untilDisposed(this.output, () => this.disposed),
+          (uri) => this.host.ownedElsewhere(this.project, uri),
+          (error) => this.reportFeatureError("preparing workspace rename", error),
+        ),
+        errorHandler: this.errorHandler(),
+      },
+    );
     client.onDidChangeState(({ newState }) => {
       if (newState === State.Running) {
         this.status = "running";
@@ -304,12 +308,18 @@ function untilDisposed(
   });
 }
 
-function serverOptions(binary: ResolvedBinary): ServerOptions {
+/**
+ * How to run the server. It runs in the workspace folder, not the project's:
+ * the client would otherwise use the project folder (its `workspaceFolder`),
+ * and Windows can't delete or rename a folder that a running process is in.
+ * The server finds its project from `initialize`, not from where it runs.
+ */
+function serverOptions(binary: ResolvedBinary, cwd: string): ServerOptions {
   // Standard input and output carry the protocol; the server logs to stderr.
   return {
     command: shellCommand(binary.path),
     args: ["lsp"],
-    options: { shell: usesShell(binary.path) },
+    options: { cwd, shell: usesShell(binary.path) },
   };
 }
 
