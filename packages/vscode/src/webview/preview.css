@@ -2,6 +2,66 @@
    stylesheet and the editor's theme colors. */
 :root {
   color-scheme: light dark;
+
+  /* The element library's defaults are light-theme colors. Take them from the
+     editor's theme instead, so notes, badges, steps and tabs read in dark and
+     high-contrast themes too. Accents are the theme's chart colors; each tint
+     is its accent over the editor background, so the page's text stays
+     readable on it. The fallbacks are the library's own values. */
+  --ascribe-border-color: var(--vscode-widget-border, var(--vscode-panel-border, #d0d7de));
+  --ascribe-muted-color: var(--vscode-descriptionForeground, #57606a);
+
+  --ascribe-note-color: var(--vscode-charts-blue, #0969da);
+  --ascribe-tip-color: var(--vscode-charts-green, #1a7f37);
+  --ascribe-important-color: var(--vscode-charts-purple, #8250df);
+  --ascribe-warning-color: var(--vscode-charts-yellow, #9a6700);
+  --ascribe-caution-color: var(--vscode-charts-red, #cf222e);
+  --ascribe-note-background: color-mix(in srgb, var(--ascribe-note-color) 12%, transparent);
+  --ascribe-tip-background: color-mix(in srgb, var(--ascribe-tip-color) 12%, transparent);
+  --ascribe-important-background: color-mix(
+    in srgb,
+    var(--ascribe-important-color) 12%,
+    transparent
+  );
+  --ascribe-warning-background: color-mix(in srgb, var(--ascribe-warning-color) 12%, transparent);
+  --ascribe-caution-background: color-mix(in srgb, var(--ascribe-caution-color) 12%, transparent);
+
+  --ascribe-steps-color: var(--vscode-button-background, #0969da);
+  --ascribe-steps-marker-text-color: var(--vscode-button-foreground, #ffffff);
+
+  --ascribe-tab-color: var(--vscode-foreground, #57606a);
+  --ascribe-tab-active-color: var(--vscode-textLink-foreground, #0969da);
+  --ascribe-tab-focus-color: var(--vscode-focusBorder, #0969da);
+  --ascribe-tab-hover-background: var(--vscode-toolbar-hoverBackground, #f6f8fa);
+
+  --ascribe-state-color: var(--vscode-descriptionForeground, #57606a);
+  --ascribe-state-ga-color: var(--vscode-charts-green, #1a7f37);
+  --ascribe-state-preview-color: var(--vscode-charts-purple, #8250df);
+  --ascribe-state-beta-color: var(--vscode-charts-blue, #0969da);
+  --ascribe-state-deprecated-color: var(--vscode-charts-yellow, #9a6700);
+  --ascribe-state-removed-color: var(--vscode-charts-red, #cf222e);
+  --ascribe-state-background: color-mix(in srgb, var(--ascribe-state-color) 15%, transparent);
+  --ascribe-state-ga-background: color-mix(in srgb, var(--ascribe-state-ga-color) 15%, transparent);
+  --ascribe-state-preview-background: color-mix(
+    in srgb,
+    var(--ascribe-state-preview-color) 15%,
+    transparent
+  );
+  --ascribe-state-beta-background: color-mix(
+    in srgb,
+    var(--ascribe-state-beta-color) 15%,
+    transparent
+  );
+  --ascribe-state-deprecated-background: color-mix(
+    in srgb,
+    var(--ascribe-state-deprecated-color) 15%,
+    transparent
+  );
+  --ascribe-state-removed-background: color-mix(
+    in srgb,
+    var(--ascribe-state-removed-color) 15%,
+    transparent
+  );
 }
 
 body {
@@ -27,15 +87,30 @@ body {
     var(--vscode-panel-border, color-mix(in srgb, currentColor 25%, transparent));
 }
 
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
 .toolbar select {
+  /* As wide as the chosen build, not the longest one, so the arrow sits by the name. */
+  field-sizing: content;
+  padding: 0.125rem 0.375rem;
   color: var(--vscode-dropdown-foreground, inherit);
   background: var(--vscode-dropdown-background, inherit);
   border: 1px solid var(--vscode-dropdown-border, currentColor);
+  border-radius: 2px;
   font: inherit;
 }
 
+.toolbar select:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, Highlight);
+  outline-offset: -1px;
+}
+
 [data-role="build-description"] {
-  opacity: 0.7;
+  color: var(--vscode-descriptionForeground, inherit);
   font-size: 0.85em;
 }
 
@@ -79,6 +154,23 @@ main img {
   height: auto;
 }
 
+/* A code block is one box, like the editor's own Markdown preview; VS Code's
+   default webview style only tints each `code` run. */
 main pre {
   overflow-x: auto;
+  padding: 0.75rem 1rem;
+  border-radius: var(--ascribe-radius, 0.375rem);
+  background: var(
+    --vscode-textCodeBlock-background,
+    color-mix(in srgb, currentColor 8%, transparent)
+  );
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  line-height: 1.4;
+}
+
+main pre code {
+  padding: 0;
+  color: inherit;
+  background: none;
+  font-family: inherit;
 }
