@@ -258,6 +258,8 @@
   },
   "scripts": {
     "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "stage-server": "node scripts/stage-server.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.webview.json",
     "test": "vitest run --passWithNoTests",
     "test:integration": "node esbuild.mjs --tests && node out/integration/run.cjs",

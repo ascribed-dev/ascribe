@@ -1,8 +1,21 @@
 // Bundles the extension into one file the extension host can load, and the
-// integration tests into the files the test runner loads.
+// integration tests into the files the test runner loads. `--watch` rebuilds
+// the extension and the webview files on each change, until stopped.
 import process from "node:process";
 import { URL, fileURLToPath } from "node:url";
-import { build } from "esbuild";
+import { build, context } from "esbuild";
+
+const watch = process.argv.includes("--watch");
+
+/** Builds once, or, with `--watch`, builds and then rebuilds on each change. */
+async function bundle(options) {
+  if (!watch) {
+    await build(options);
+    return;
+  }
+  const ctx = await context(options);
+  await ctx.watch();
+}
 
 const common = {
   bundle: true,
@@ -12,7 +25,7 @@ const common = {
   logLevel: "info",
 };
 
-await build({
+await bundle({
   ...common,
   entryPoints: ["src/extension.ts"],
   outfile: "dist/extension.cjs",
@@ -46,14 +59,14 @@ const webview = {
   minify: process.argv.includes("--minify"),
   outdir: "dist/webview",
 };
-await build({
+await bundle({
   ...webview,
   entryPoints: {
     elements: "src/webview/elements.ts",
     preview: "src/webview/preview.ts",
   },
 });
-await build({
+await bundle({
   ...webview,
   entryPoints: { elements: "src/webview/elements.css", preview: "src/webview/preview.css" },
 });

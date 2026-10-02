@@ -1,0 +1,51 @@
+{
+  // Tasks for running the VS Code extension from this checkout. See
+  // packages/vscode/DEVELOPMENT.md, "Running it locally".
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "server: build",
+      "detail": "Build the ascribe binary (target/debug/ascribe).",
+      "type": "shell",
+      "command": "cargo build -p tessera-cli",
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "extension: stage server",
+      "detail": "Put the debug ascribe where the extension looks for its bundled one.",
+      "type": "shell",
+      "command": "corepack pnpm --filter ascribe-vscode stage-server",
+      "dependsOn": "server: build",
+      "problemMatcher": []
+    },
+    {
+      "label": "extension: build",
+      "detail": "Bundle the extension and the preview's webview files.",
+      "type": "shell",
+      "command": "corepack pnpm --filter ascribe-vscode build",
+      "problemMatcher": []
+    },
+    {
+      "label": "extension: prepare",
+      "detail": "Build and stage the server, and build the extension.",
+      "dependsOn": ["extension: stage server", "extension: build"],
+      "problemMatcher": []
+    },
+    {
+      "label": "extension: watch",
+      "detail": "Rebuild the extension and the webview files on each change.",
+      "type": "shell",
+      "command": "corepack pnpm --filter ascribe-vscode watch",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "esbuild",
+        "pattern": { "regexp": "^✘ \\[ERROR\\] (.*)$", "message": 1 },
+        "background": {
+          "activeBegin": true,
+          "beginsPattern": "\\[watch\\] build started",
+          "endsPattern": "\\[watch\\] build finished"
+        }
+      }
+    }
+  ]
+}

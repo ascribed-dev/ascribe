@@ -2,6 +2,30 @@
 
 How the extension is built and tested. The user guide is the [README](README.md) and [docs/editor.md](../../docs/editor.md).
 
+## Running it locally
+
+Open the repository in VS Code and press F5, or pick a configuration in **Run and Debug**:
+
+- **Extension: examples/quill** opens `examples/quill`, one project.
+- **Extension: several projects** opens `test/fixtures/monorepo`, a folder with several projects, one nested in another.
+
+Either one runs the `extension: prepare` task first, then opens an Extension Development Host: a second VS Code window running this checkout's extension, with your other extensions turned off. The task builds the server (`cargo build -p tessera-cli`), copies it to `bin/<platform>-<arch>/`, where the extension looks for its bundled binary, and bundles the extension and the webview files. The development window loads this extension in place of an installed copy of Ascribe. Breakpoints in `src/` work in the first window.
+
+After changing the extension, rebuild and run **Developer: Reload Window** in the development window. To rebuild on each save, run the `extension: watch` task (or `pnpm --filter ascribe-vscode watch`), then only reload. After changing the server, run the `extension: stage server` task and restart it with **Ascribe: Restart Language Server**.
+
+Without VS Code's Run and Debug, the same steps from a terminal are:
+
+```sh
+cargo build -p tessera-cli
+pnpm --filter ascribe-vscode stage-server
+pnpm --filter ascribe-vscode build
+code --extensionDevelopmentPath="$PWD/packages/vscode" examples/quill
+```
+
+The server logs to the development window's **Ascribe** output channels (**Ascribe: Show Server Output**). The extension's own errors are in **Help → Toggle Developer Tools** there, and in the **Debug Console** of the first window.
+
+`bin/` is ignored by git, and release packaging empties it before it stages each target's binary, so a binary staged here never ships. `stage-server` takes another binary as an argument, such as a release build.
+
 ## The binary
 
 `src/binary.ts` finds the `ascribe` binary: the `ascribe.path` setting, then the project's `node_modules/.bin/ascribe` (in the project's folder, and its parents up to the workspace folder), then the binary bundled at `bin/<platform>-<arch>/ascribe` (`ascribe.exe` on Windows). It runs `--version` on each candidate, and warns when the version is older than `ascribe.minServerVersion` in `package.json`, which a release sets to its own version. Release packaging (`scripts/release/pack.ts`) stages the one binary each platform's package needs under `bin/`.
@@ -75,6 +99,8 @@ in step.
 
 ```
 pnpm --filter ascribe-vscode build              # bundle to dist/extension.cjs
+pnpm --filter ascribe-vscode watch              # rebuild on each change
+pnpm --filter ascribe-vscode stage-server       # copy target/debug/ascribe into bin/
 pnpm --filter ascribe-vscode test               # unit tests and the webview tests (vitest, Chromium)
 pnpm --filter ascribe-vscode test:integration   # VS Code integration tests
 pnpm --filter ascribe-vscode test:parity        # the preview against the Astro site's built HTML
