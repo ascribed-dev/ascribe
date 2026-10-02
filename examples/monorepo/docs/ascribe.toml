@@ -1,0 +1,95 @@
+# The public documentation for Lantern, a made-up feature-flag service. One of
+# three Ascribe projects in examples/monorepo; see its README.
+spec = "0.1"
+
+[project]
+content-root = "content"
+output-dir = ".ascribe/build"
+
+# Guides are the default. Reference pages say which version they describe.
+[types.guide]
+default = true
+
+[types.guide.frontmatter]
+title = { type = "string", phrases = true }
+description = "string?"
+
+[types.reference]
+files = ["reference/**"]
+
+[types.reference.frontmatter]
+title = "string"
+description = "string?"
+since = "string"
+
+# `@variant {platform=macos}:` for install steps.
+[dimensions.platform]
+label = "Platform"
+values = ["linux", "macos", "windows"]
+labels = { linux = "Linux", macos = "macOS", windows = "Windows" }
+
+# `@variant {edition=cloud}:` and `@available: self-hosted 2.4`.
+[dimensions.edition]
+label = "Edition"
+values = ["cloud", "self-hosted"]
+versionless = ["cloud"]
+labels = { cloud = "Lantern Cloud", self-hosted = "Self-hosted" }
+
+# Named availability: when audit logs leave beta, one edit here updates every
+# page that says `@available: audit-log`.
+[features.audit-log]
+name = "Audit log"
+available = "cloud, self-hosted beta 2.4"
+
+[features.scheduled-rollouts]
+name = "Scheduled rollouts"
+available = "cloud preview"
+
+[phrases]
+product = "Lantern"
+cloud = "Lantern Cloud"
+version = "2.5.0"
+api = "https://api.lantern.example/v2/"
+
+# Terms are linked to the glossary page wherever they first appear on a page.
+[glossary]
+match = "first"
+
+[glossary.terms.flag]
+term = "feature flag"
+aliases = ["feature flags"]
+definition = "A named switch that turns a behavior on or off without a deploy."
+link = "/reference/glossary.md#feature-flag"
+
+[glossary.terms.rollout]
+term = "rollout"
+aliases = ["rollouts"]
+definition = "A plan for turning a flag on for a growing share of users."
+link = "/reference/glossary.md#rollout"
+
+[glossary.terms.segment]
+term = "segment"
+aliases = ["segments"]
+definition = "A saved group of users, matched by their attributes."
+link = "/reference/glossary.md#segment"
+
+[images.attributes]
+width = "number?"
+
+[consumer]
+profile = "astro"
+site = "https://docs.lantern.example"
+
+# The published site: every arm as a switcher, availability as badges.
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+# The docs shipped with the self-hosted server: edition groups reduce to their
+# self-hosted arm, and what 2.5 doesn't have (scheduled rollouts) is removed.
+[builds.self-hosted]
+variants = { edition = "self-hosted" }
+availability = { filter = "self-hosted 2.5" }
+
+[editor]
+build = "site"

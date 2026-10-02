@@ -42,7 +42,7 @@ Read [Getting started](docs/getting-started.md), then the rest of the [documenta
 | [`@ascribed/astro`](packages/astro) | The Astro integration |
 | [`@ascribed/elements`](packages/elements) | The web components the site output uses |
 
-The [specification](SPEC.md) defines the language. [`examples/quill`](examples/quill) is a small, complete project, and [`examples/astro-site`](examples/astro-site) publishes one with Astro.
+The [specification](SPEC.md) defines the language. [`examples/quill`](examples/quill) is a small, complete project, [`examples/monorepo`](examples/monorepo) is a repository with several, and [`examples/astro-site`](examples/astro-site) publishes one with Astro.
 
 ## Working on Ascribe
 

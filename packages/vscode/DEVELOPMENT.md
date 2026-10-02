@@ -7,7 +7,7 @@ How the extension is built and tested. The user guide is the [README](README.md)
 Open the repository in VS Code and press F5, or pick a configuration in **Run and Debug**:
 
 - **Extension: examples/quill** opens `examples/quill`, one project.
-- **Extension: several projects** opens `test/fixtures/monorepo`, a folder with several projects, one nested in another.
+- **Extension: several projects** opens [`examples/monorepo`](../../examples/monorepo), a repository with code and three projects, one nested in another. Its README lists things to try.
 
 Either one runs the `extension: prepare` task first, then opens an Extension Development Host: a second VS Code window running this checkout's extension, with your other extensions turned off. The task builds the server (`cargo build -p tessera-cli`), copies it to `bin/<platform>-<arch>/`, where the extension looks for its bundled binary, and bundles the extension and the webview files. The development window loads this extension in place of an installed copy of Ascribe. Breakpoints in `src/` work in the first window.
 

@@ -1,0 +1,38 @@
+# Lantern Labs' internal engineering handbook. One of three Ascribe projects in
+# examples/monorepo; see its README. The security team's handbook is a project
+# of its own inside this one's content root (pages/security/), so it isn't one
+# of this project's sources.
+spec = "0.1"
+
+[project]
+content-root = "pages"
+output-dir = ".ascribe/build"
+
+# Every page names the team that keeps it current.
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+description = "string?"
+owner = "string"
+
+[notes.policy]
+label = "Policy"
+
+[phrases]
+company = "Lantern Labs"
+product = "Lantern"
+help = "#eng-help"
+docs = "https://docs.lantern.example/"
+
+# `@team-contact {channel=team-platform}: platform` shows who to ask.
+[widgets.team-contact]
+description = "A card naming a team and the chat channel to reach it."
+forms = ["line"]
+primary = "identifier"
+binding = "self"
+plain-fallback = "Ask the team in its chat channel."
+
+[widgets.team-contact.attributes]
+channel = "string"

@@ -1,0 +1,3 @@
+- Your Google account, for email and calendar.
+- GitHub: accept the invitation to the `lantern-labs` organization.
+- The deploy dashboard: sign in with Google, and ask in {help} for access.
