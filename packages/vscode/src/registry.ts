@@ -176,12 +176,6 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     );
     const all = found.map((uri) => uri.fsPath).sort();
     const configs = all.slice(0, MAX_PROJECTS);
-    if (all.length > MAX_PROJECTS && !this.warnedOfCap) {
-      this.warnedOfCap = true;
-      this.servers[0]?.log(
-        `This workspace has more than ${MAX_PROJECTS} ascribe.toml files; only the first ${MAX_PROJECTS} (in path order) get a language server.`,
-      );
-    }
     let changed = false;
 
     for (const [config, server] of this.byConfig) {
@@ -208,6 +202,14 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     }
     this.byConfig.clear();
     for (const [config, server] of next) this.byConfig.set(config, server);
+
+    // After the servers exist, so the first project's output can say so.
+    if (all.length > MAX_PROJECTS && !this.warnedOfCap) {
+      this.warnedOfCap = true;
+      this.servers[0]?.log(
+        `This workspace has more than ${MAX_PROJECTS} ascribe.toml files; only the first ${MAX_PROJECTS} (in path order) get a language server.`,
+      );
+    }
 
     // A server started before a nested project appeared (or went away) has
     // already been sent that project's files; starting it over drops them.
