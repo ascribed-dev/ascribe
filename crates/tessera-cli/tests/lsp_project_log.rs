@@ -116,3 +116,15 @@ fn the_server_logs_the_nearest_project() {
     let status = child.wait().expect("the server exits");
     assert!(status.success(), "the server exits with 0: {status:?}");
 }
+
+#[test]
+fn the_server_refuses_a_config_option() {
+    let output = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .args(["lsp", "--config", "ascribe.toml"])
+        .stdin(Stdio::null())
+        .output()
+        .expect("run ascribe lsp");
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("doesn't take --config"), "stderr: {stderr}");
+}
