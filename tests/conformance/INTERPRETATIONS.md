@@ -32,6 +32,7 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Th
 - Include and link paths resolve from the file they're written in; a bare name is never searched for (§4.2). Names match exactly, including case, on every platform, and a file outside the project root or in the output directory is reported as not existing (SPEC §9.4).
 - Source ids are per file (§5.5): a link's `#id` names a heading of the target file, computed with duplicates numbered (`steps`, `steps-1`) and phrases substituted. Page ids appear on the expanded page, so a page-id such as `setup-1` is not a link target.
 - A link to an empty-text target, a same-file `#id`, an external URL, and `mailto:` are valid. A link to a non-page local file is an asset link.
+- A link or an include naming a Markdown file that isn't a source because it's in a directory whose name starts with `.`, or in a nested project's folder (§2.1), is reported as a target that doesn't exist, with the plain message; an image or another file there is an ordinary local file, and is copied.
 - `heading-duplicate-without-id` and `id-duplicate` are checked on the expanded page, so a fragment's headings count. They are reported once each, at the later occurrence.
 
 **Builds**

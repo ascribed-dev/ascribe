@@ -28,6 +28,11 @@ pub enum Probe {
     CaseMismatch(RelPath),
 }
 
+/// The name of a project's content model file. A directory below the content
+/// root that holds one is another project's folder, unless it's the project's
+/// own.
+pub(crate) const MODEL_FILE: &str = "ascribe.toml";
+
 /// The source files a file system holds, and the places it couldn't look.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Sources {
@@ -36,24 +41,45 @@ pub struct Sources {
     /// Directories and entries that couldn't be read. They aren't skipped
     /// silently: the project lists them ([`crate::Project::unreadable`]).
     pub unreadable: Vec<Unreadable>,
+    /// The directories skipped because they hold an `ascribe.toml`: the
+    /// folders of other projects nested in the content root, as content
+    /// paths, in any order. One nested in another isn't listed.
+    pub nested: Vec<RelPath>,
+    /// The project's own folder, the directory that holds its `ascribe.toml`,
+    /// as a content path, when it's below the content root (a content root
+    /// above the project root, such as `..`). It's never skipped.
+    pub own_folder: Option<RelPath>,
 }
 
-/// Whether a content path names a source file: exactly `.md`, inside the
-/// content root (no leading `..`), and not in or under anything whose name
-/// starts with `.`. Discovery ([`FileSystem::sources`]) and the
-/// incremental update ([`crate::Change`]) use the same rule.
+/// Whether a content path names a source file by its path alone: exactly
+/// `.md`, inside the content root (no leading `..`), and not in or under
+/// anything whose name starts with `.`. A file that passes is still not a
+/// source when it's inside a nested project's folder ([`in_nested_project`]),
+/// which takes knowing which directories hold an `ascribe.toml`. Discovery
+/// ([`FileSystem::sources`]) and the incremental update ([`crate::Change`])
+/// use the same rule; [`crate::Project::is_source`] applies both parts.
 pub fn is_source_path(path: &RelPath) -> bool {
     path.is_inside()
         && path.extension() == Some("md")
         && !path.segments().any(|s| s.starts_with('.'))
 }
 
+/// Whether a content path is in or under one of `nested`, the folders of
+/// projects nested in the content root ([`Sources::nested`]).
+pub fn in_nested_project(path: &RelPath, nested: &[RelPath]) -> bool {
+    nested.iter().any(|dir| path.starts_with(dir))
+}
+
 /// The files of a project.
 pub trait FileSystem {
     /// Every source file under the content root: exactly the files whose name
     /// ends in `.md`, skipping any file or directory whose name starts with `.`
-    /// (`.github/`, `.vitepress/`, editor state). Directories are followed
-    /// through symbolic links once each.
+    /// (`.github/`, `.vitepress/`, editor state), and any directory below the
+    /// content root that holds an `ascribe.toml` (another project's folder,
+    /// listed in [`Sources::nested`]). Neither the content root itself nor
+    /// the project's own folder is ever skipped, so a project whose content
+    /// root is its own folder, or above it, keeps its files. Directories are
+    /// followed through symbolic links once each.
     // The same rule as `ascribe check`'s discovery, which
     // raised it: which files count as sources.
     fn sources(&self) -> Sources;
@@ -136,8 +162,12 @@ impl FileSystem for DiskFs {
     fn sources(&self) -> Sources {
         let mut out = Sources::default();
         let mut seen = BTreeSet::new();
-        walk(&self.content_dir(), &RelPath::root(), &mut seen, &mut out);
+        let walk_from = Walk {
+            own: fs::canonicalize(&self.project_root).ok(),
+        };
+        walk_from.walk(&self.content_dir(), &RelPath::root(), &mut seen, &mut out);
         out.paths.sort();
+        out.nested.sort();
         out
     }
 
@@ -195,58 +225,83 @@ impl FileSystem for DiskFs {
     }
 }
 
-/// Collects source files under `dir`, as paths relative to the content root.
-/// `seen` holds the canonical directories already walked, so a symbolic link
-/// back up the tree can't loop.
-fn walk(dir: &Path, rel: &RelPath, seen: &mut BTreeSet<PathBuf>, out: &mut Sources) {
-    let unreadable = |out: &mut Sources, path: &Path, err: io::Error| {
-        out.unreadable.push(Unreadable {
-            path: rel.clone(),
-            reason: format!("{}: {err}", path.display()),
-        });
-    };
-    let canonical = match fs::canonicalize(dir) {
-        Ok(canonical) => canonical,
-        Err(err) => return unreadable(out, dir, err),
-    };
-    if !seen.insert(canonical) {
-        return;
-    }
-    let entries = match fs::read_dir(dir) {
-        Ok(entries) => entries,
-        Err(err) => return unreadable(out, dir, err),
-    };
-    for entry in entries {
-        let entry = match entry {
-            Ok(entry) => entry,
-            Err(err) => {
-                unreadable(out, dir, err);
-                continue;
-            }
+/// What a walk of the content root needs to know besides the tree.
+struct Walk {
+    /// The project root, canonical: the project's own folder, whose
+    /// `ascribe.toml` doesn't make it another project's.
+    own: Option<PathBuf>,
+}
+
+impl Walk {
+    /// Collects source files under `dir`, as paths relative to the content root,
+    /// and the nested projects' folders it skips. `seen` holds the canonical
+    /// directories already walked, so a symbolic link back up the tree can't loop.
+    fn walk(&self, dir: &Path, rel: &RelPath, seen: &mut BTreeSet<PathBuf>, out: &mut Sources) {
+        let unreadable = |out: &mut Sources, path: &Path, err: io::Error| {
+            out.unreadable.push(Unreadable {
+                path: rel.clone(),
+                reason: format!("{}: {err}", path.display()),
+            });
         };
-        let name = entry.file_name().to_string_lossy().into_owned();
-        if name.starts_with('.') {
-            continue;
+        let canonical = match fs::canonicalize(dir) {
+            Ok(canonical) => canonical,
+            Err(err) => return unreadable(out, dir, err),
+        };
+        let own = self.own.as_ref() == Some(&canonical);
+        if !seen.insert(canonical) {
+            return;
         }
-        let path = entry.path();
-        let Ok(child) = rel.join(&name) else {
-            continue;
+        let entries = match fs::read_dir(dir) {
+            Ok(entries) => entries,
+            Err(err) => return unreadable(out, dir, err),
         };
-        // `metadata` follows symbolic links.
-        let meta = match fs::metadata(&path) {
-            Ok(meta) => meta,
-            Err(err) => {
-                out.unreadable.push(Unreadable {
-                    path: child,
-                    reason: format!("{}: {err}", path.display()),
-                });
+        let mut listed = Vec::new();
+        for entry in entries {
+            match entry {
+                Ok(entry) => listed.push(entry),
+                Err(err) => unreadable(out, dir, err),
+            }
+        }
+        if own && !rel.is_root() && out.own_folder.is_none() {
+            out.own_folder = Some(rel.clone());
+        }
+        // A directory below the content root with an `ascribe.toml` is another
+        // project's folder, unless it's this project's own: none of it is a
+        // source of this one.
+        if !rel.is_root()
+            && !own
+            && listed
+                .iter()
+                .any(|e| e.file_name() == MODEL_FILE && e.path().is_file())
+        {
+            out.nested.push(rel.clone());
+            return;
+        }
+        for entry in listed {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if name.starts_with('.') {
                 continue;
             }
-        };
-        if meta.is_dir() {
-            walk(&path, &child, seen, out);
-        } else if meta.is_file() && name.ends_with(".md") {
-            out.paths.push(child);
+            let path = entry.path();
+            let Ok(child) = rel.join(&name) else {
+                continue;
+            };
+            // `metadata` follows symbolic links.
+            let meta = match fs::metadata(&path) {
+                Ok(meta) => meta,
+                Err(err) => {
+                    out.unreadable.push(Unreadable {
+                        path: child,
+                        reason: format!("{}: {err}", path.display()),
+                    });
+                    continue;
+                }
+            };
+            if meta.is_dir() {
+                self.walk(&path, &child, seen, out);
+            } else if meta.is_file() && name.ends_with(".md") {
+                out.paths.push(child);
+            }
         }
     }
 }
@@ -257,6 +312,7 @@ fn walk(dir: &Path, rel: &RelPath, seen: &mut BTreeSet<PathBuf>, out: &mut Sourc
 pub struct MemoryFs {
     content_root: RelPath,
     files: BTreeMap<RelPath, String>,
+    own_folder: Option<RelPath>,
 }
 
 impl MemoryFs {
@@ -265,6 +321,7 @@ impl MemoryFs {
         MemoryFs {
             content_root: layout.content_root.clone(),
             files: BTreeMap::new(),
+            own_folder: None,
         }
     }
 
@@ -274,6 +331,15 @@ impl MemoryFs {
         if let Ok(path) = RelPath::parse(project_path) {
             self.files.insert(path, text.to_owned());
         }
+        self
+    }
+
+    /// Says which directory below the content root, as a content path, is the
+    /// project's own folder, when the content root is above the project root
+    /// (`..`): the `ascribe.toml` there is the project's own, so the folder
+    /// isn't skipped. Files in it are added with [`MemoryFs::with_source`].
+    pub fn with_own_folder(mut self, content_path: &str) -> MemoryFs {
+        self.own_folder = RelPath::parse(content_path).ok();
         self
     }
 
@@ -301,15 +367,40 @@ impl MemoryFs {
 
 impl FileSystem for MemoryFs {
     fn sources(&self) -> Sources {
-        let paths = self
+        let content: BTreeSet<RelPath> = self
             .files
             .keys()
             .filter_map(|p| self.content_path(p))
-            .filter(is_source_path)
+            .collect();
+        // The directories below the content root that hold an `ascribe.toml`,
+        // outermost first, keeping only those the walk would reach: not
+        // hidden, and not inside another one. The project's own folder isn't
+        // another project's.
+        let mut nested: Vec<RelPath> = Vec::new();
+        let mut holding: Vec<RelPath> = content
+            .iter()
+            .filter(|p| p.file_name() == Some(MODEL_FILE))
+            .filter_map(RelPath::parent)
+            .filter(|dir| !dir.is_root() && dir.is_inside())
+            .filter(|dir| Some(dir) != self.own_folder.as_ref())
+            .filter(|dir| !dir.segments().any(|s| s.starts_with('.')))
+            .collect();
+        holding.sort_by_key(|dir| dir.segments().count());
+        for dir in holding {
+            if !in_nested_project(&dir, &nested) {
+                nested.push(dir);
+            }
+        }
+        nested.sort();
+        let paths = content
+            .into_iter()
+            .filter(|p| is_source_path(p) && !in_nested_project(p, &nested))
             .collect();
         Sources {
             paths,
             unreadable: Vec::new(),
+            nested,
+            own_folder: self.own_folder.clone(),
         }
     }
 
@@ -394,6 +485,148 @@ mod tests {
         fs::write(dir.join("docs/guides/b.markdown"), "y").expect("write");
         let disk = DiskFs::new(&dir, &layout());
         assert_eq!(disk.sources().paths, [p("guides/a.md"), p("index.md")]);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// A path under `dir`, from a `/`-separated relative one.
+    fn at(dir: &Path, rel: &str) -> PathBuf {
+        rel.split('/')
+            .fold(dir.to_path_buf(), |path, s| path.join(s))
+    }
+
+    #[test]
+    fn a_nested_projects_folder_is_skipped() {
+        let fs = MemoryFs::new(&layout())
+            .with_source("index.md", "x")
+            .with_source("guides/a.md", "y")
+            .with_source("nested/ascribe.toml", "")
+            .with_source("nested/content/index.md", "y")
+            .with_source("nested/deeper/ascribe.toml", "")
+            .with_source("nested/deeper/b.md", "y")
+            .with_source(".hidden/ascribe.toml", "")
+            .with_source("guides/shared/ascribe.toml/c.md", "y")
+            // Only the exact name counts.
+            .with_source("cased/Ascribe.toml", "")
+            .with_source("cased/d.md", "y");
+        let found = fs.sources();
+        assert_eq!(
+            found.paths,
+            [
+                p("cased/d.md"),
+                p("guides/a.md"),
+                p("guides/shared/ascribe.toml/c.md"),
+                p("index.md")
+            ]
+        );
+        assert_eq!(found.nested, [p("nested")]);
+
+        let dir =
+            std::env::temp_dir().join(format!("tessera-resolve-nested-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        for sub in [
+            "docs/nested/content",
+            "docs/nested/deeper",
+            "docs/guides",
+            "docs/.hidden",
+        ] {
+            fs::create_dir_all(at(&dir, sub)).expect("create dirs");
+        }
+        fs::write(at(&dir, "docs/index.md"), "x").expect("write");
+        fs::write(at(&dir, "docs/guides/a.md"), "y").expect("write");
+        fs::write(at(&dir, "docs/nested/ascribe.toml"), "").expect("write");
+        fs::write(at(&dir, "docs/nested/content/index.md"), "y").expect("write");
+        fs::write(at(&dir, "docs/nested/deeper/ascribe.toml"), "").expect("write");
+        fs::write(at(&dir, "docs/nested/deeper/b.md"), "y").expect("write");
+        fs::write(at(&dir, "docs/.hidden/ascribe.toml"), "").expect("write");
+        // A directory named `ascribe.toml` isn't a file.
+        fs::create_dir_all(at(&dir, "docs/guides/shared/ascribe.toml")).expect("create dirs");
+        fs::write(at(&dir, "docs/guides/shared/ascribe.toml/c.md"), "y").expect("write");
+        let found = DiskFs::new(&dir, &layout()).sources();
+        assert_eq!(
+            found.paths,
+            [
+                p("guides/a.md"),
+                p("guides/shared/ascribe.toml/c.md"),
+                p("index.md")
+            ]
+        );
+        assert_eq!(found.nested, [p("nested")]);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_content_root_at_the_project_root_keeps_its_own_ascribe_toml() {
+        let layout = Layout {
+            content_root: RelPath::root(),
+            output_dir: p(".ascribe/build"),
+        };
+        let fs = MemoryFs::new(&layout)
+            .with_file("ascribe.toml", "")
+            .with_file("index.md", "x")
+            .with_file("guides/a.md", "y")
+            .with_file("nested/ascribe.toml", "")
+            .with_file("nested/b.md", "y");
+        let found = fs.sources();
+        assert_eq!(found.paths, [p("guides/a.md"), p("index.md")]);
+        assert_eq!(found.nested, [p("nested")]);
+
+        let dir = std::env::temp_dir().join(format!("tessera-resolve-root-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(at(&dir, "guides")).expect("create dirs");
+        fs::create_dir_all(at(&dir, "nested")).expect("create dirs");
+        fs::write(at(&dir, "ascribe.toml"), "").expect("write");
+        fs::write(at(&dir, "index.md"), "x").expect("write");
+        fs::write(at(&dir, "guides/a.md"), "y").expect("write");
+        fs::write(at(&dir, "nested/ascribe.toml"), "").expect("write");
+        fs::write(at(&dir, "nested/b.md"), "y").expect("write");
+        let found = DiskFs::new(&dir, &layout).sources();
+        assert_eq!(found.paths, [p("guides/a.md"), p("index.md")]);
+        assert_eq!(found.nested, [p("nested")]);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_projects_own_folder_is_never_skipped() {
+        // `content-root = ".."`: the project, in `proj/`, is below its own
+        // content root.
+        let layout = Layout {
+            content_root: p(".."),
+            output_dir: p("../../out"),
+        };
+        let fs = MemoryFs::new(&layout)
+            .with_own_folder("proj")
+            .with_source("index.md", "x")
+            .with_source("proj/ascribe.toml", "")
+            .with_source("proj/own.md", "y")
+            .with_source("proj/sub/ascribe.toml", "")
+            .with_source("proj/sub/b.md", "y")
+            .with_source("other/ascribe.toml", "")
+            .with_source("other/c.md", "y");
+        let found = fs.sources();
+        assert_eq!(found.paths, [p("index.md"), p("proj/own.md")]);
+        assert_eq!(found.nested, [p("other"), p("proj/sub")]);
+        assert_eq!(found.own_folder, Some(p("proj")));
+
+        let dir = std::env::temp_dir().join(format!("tessera-resolve-own-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        for sub in ["ws/proj/sub", "ws/other"] {
+            fs::create_dir_all(at(&dir, sub)).expect("create dirs");
+        }
+        for (file, text) in [
+            ("ws/index.md", "x"),
+            ("ws/proj/ascribe.toml", ""),
+            ("ws/proj/own.md", "y"),
+            ("ws/proj/sub/ascribe.toml", ""),
+            ("ws/proj/sub/b.md", "y"),
+            ("ws/other/ascribe.toml", ""),
+            ("ws/other/c.md", "y"),
+        ] {
+            fs::write(at(&dir, file), text).expect("write");
+        }
+        let found = DiskFs::new(at(&dir, "ws/proj"), &layout).sources();
+        assert_eq!(found.paths, [p("index.md"), p("proj/own.md")]);
+        assert_eq!(found.nested, [p("other"), p("proj/sub")]);
+        assert_eq!(found.own_folder, Some(p("proj")));
         let _ = fs::remove_dir_all(&dir);
     }
 

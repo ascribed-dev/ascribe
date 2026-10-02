@@ -93,7 +93,7 @@ The preview shows images and files from the content root, and from directories e
 
 Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window. Folders named `node_modules` aren't searched.
 
-A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
+A file belongs to the nearest `ascribe.toml` above it, and only that project's server reports on it. Projects can be nested: a file in `handbook/internal/` belongs to `handbook/internal/ascribe.toml`, not to `handbook/ascribe.toml`. A project nested in another's content root isn't part of it: the outer project's server, `ascribe check`, and `ascribe build` skip the nested project's folder, so a link or an include from the outer project to one of its pages is reported as a missing file. A file in a project's folder but outside its content root isn't one of the project's sources, and gets no diagnostics.
 
 Each project runs its own `ascribe`, found as [Which `ascribe` it runs](#which-ascribe-it-runs) describes.
 
@@ -154,7 +154,7 @@ A server serves one project: the nearest `ascribe.toml` at or above the workspac
 
 When it starts, the server logs to standard error which project it uses: `using the project at <path>`, or, when it finds none, `no ascribe.toml at or above <folder>`. A server with no project reports nothing. If an `ascribe.toml` is then created in the workspace folder itself, the server loads it, when the editor supports watching files for the server.
 
-When one project is nested in another's content root, the outer project's server checks the nested project's files too, as `ascribe check` for the outer project does, so your editor may show diagnostics from both. The VS Code extension shows only those of the nearest project.
+When one project is nested in another's content root, the outer project's server leaves the nested project's files alone, open or not, so each file gets diagnostics from one server only. A nested project's `ascribe.toml` created or deleted while the server runs changes which files it checks, when the editor supports watching files for the server.
 
 ## Other formatters
 

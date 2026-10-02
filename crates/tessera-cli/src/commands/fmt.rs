@@ -3,8 +3,9 @@
 //!
 //! - **What it formats.** Every `.md` file under each path (a file, or a
 //!   directory searched recursively), or, with no path, under the project's
-//!   content root. Directories whose names start with `.` and `node_modules`
-//!   are skipped.
+//!   content root. Directories whose names start with `.`, `node_modules`,
+//!   and directories below the starting one that hold an `ascribe.toml`
+//!   (another project's folder, unless it's this project's own) are skipped.
 //! - **The project.** `--config`, or the nearest `ascribe.toml` at or above the
 //!   current directory. Its content model decides which lines are directives.
 //! - **Without `--check`** files are rewritten in place, and each file that
@@ -72,9 +73,10 @@ fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<us
     } else {
         options.paths.clone()
     };
+    let own = std::fs::canonicalize(&project).ok();
     let mut files = Vec::new();
     for root in &roots {
-        collect(root, &mut files)?;
+        collect(root, own.as_deref(), &mut files)?;
     }
     files.sort();
     files.dedup();
@@ -142,8 +144,23 @@ fn load_model(path: &Path) -> Result<ContentModel, String> {
     })
 }
 
-/// Adds every `.md` file at or under `path` to `files`.
-fn collect(path: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
+/// Whether a directory holds a file named exactly `ascribe.toml` and isn't
+/// `own`, this project's folder: it's another project's folder, whose files
+/// that project's model formats.
+fn holds_model(dir: &Path, own: Option<&Path>) -> bool {
+    if own.is_some() && std::fs::canonicalize(dir).ok().as_deref() == own {
+        return false;
+    }
+    std::fs::read_dir(dir).is_ok_and(|entries| {
+        entries
+            .flatten()
+            .any(|e| e.file_name() == tessera_check::MODEL_FILE && e.path().is_file())
+    })
+}
+
+/// Adds every `.md` file at or under `path` to `files`. `own` is the project's
+/// folder, canonical.
+fn collect(path: &Path, own: Option<&Path>, files: &mut Vec<PathBuf>) -> Result<(), String> {
     let meta = std::fs::metadata(path).map_err(|e| format!("{}: {e}", path.display()))?;
     if meta.is_file() {
         files.push(path.to_owned());
@@ -156,8 +173,8 @@ fn collect(path: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
         let name = entry.file_name();
         let name = name.to_string_lossy();
         if child.is_dir() {
-            if !name.starts_with('.') && name != "node_modules" {
-                collect(&child, files)?;
+            if !name.starts_with('.') && name != "node_modules" && !holds_model(&child, own) {
+                collect(&child, own, files)?;
             }
         } else if child.extension().is_some_and(|e| e == "md") {
             files.push(child);

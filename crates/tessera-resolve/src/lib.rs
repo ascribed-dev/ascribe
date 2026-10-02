@@ -87,7 +87,7 @@ pub use build::{
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,
 };
-pub use fs::{DiskFs, FileSystem, MemoryFs, Probe, Sources, is_source_path};
+pub use fs::{DiskFs, FileSystem, MemoryFs, Probe, Sources, in_nested_project, is_source_path};
 pub use incremental::{
     Affected, ApplyError, Change, FileIds, IncrementalProject, ModelImpact, ResolvedCache,
     Snapshot, Stats, Version,

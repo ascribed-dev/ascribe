@@ -138,6 +138,41 @@ fn hidden_directories_and_node_modules_are_skipped() {
 }
 
 #[test]
+fn a_nested_project_is_skipped() {
+    let p = Project::new("nested");
+    p.write("docs/nested/ascribe.toml", "spec = \"0.1\"\n");
+    p.write("docs/nested/content/a.md", MESSY);
+    p.write("docs/real.md", MESSY);
+    let out = p.fmt(&["--check"]);
+    assert_eq!(code(&out), 1);
+    assert_eq!(stdout(&out).lines().count(), 1, "{}", stdout(&out));
+    assert!(stdout(&out).contains("real.md"));
+}
+
+#[test]
+fn a_content_root_above_the_project_keeps_the_projects_own_folder() {
+    // The project is `ws/proj`, and its content root is `ws`.
+    let p = Project::new("own-folder");
+    p.write(
+        "ws/proj/ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"..\"\noutput-dir = \"../../out\"\n",
+    );
+    p.write("ws/proj/own.md", MESSY);
+    p.write("ws/other/ascribe.toml", "spec = \"0.1\"\n");
+    p.write("ws/other/b.md", MESSY);
+    p.write("ws/top.md", MESSY);
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .args(["fmt", "--check"])
+        .current_dir(p.dir.join("ws").join("proj"))
+        .output()
+        .expect("run ascribe");
+    assert_eq!(code(&out), 1, "{}", stderr(&out));
+    assert_eq!(stdout(&out).lines().count(), 2, "{}", stdout(&out));
+    assert!(stdout(&out).contains("own.md"), "{}", stdout(&out));
+    assert!(stdout(&out).contains("top.md"), "{}", stdout(&out));
+}
+
+#[test]
 fn a_project_is_found_from_a_subdirectory() {
     let p = Project::new("subdir");
     p.write("docs/a.md", MESSY);

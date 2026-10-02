@@ -13,6 +13,10 @@ use crate::Project;
 /// texts held in memory (the language server's buffers as much as the files
 /// on disk), and everything else, such as images, from the project's own file
 /// system.
+///
+/// It reports no nested projects' folders, so `Project::is_source` on an index
+/// built from it goes by the path alone: fine for the page checks, which only
+/// read the sources listed here, and those already leave such folders out.
 struct Held<'p>(&'p Project);
 
 impl FileSystem for Held<'_> {
@@ -28,6 +32,9 @@ impl FileSystem for Held<'_> {
                 .map(|s| s.path.clone())
                 .collect(),
             unreadable: Vec::new(),
+            // See the type's documentation.
+            nested: Vec::new(),
+            own_folder: None,
         }
     }
 

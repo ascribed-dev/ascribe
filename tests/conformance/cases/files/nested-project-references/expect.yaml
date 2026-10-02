@@ -1,0 +1,21 @@
+description: >-
+  A nested project's files are skipped exactly as a hidden directory's are. A
+  link or an include naming a Markdown file in either is to a file that isn't
+  a source, which is reported as a target that doesn't exist; an image in
+  either is an ordinary local file, and is copied.
+spec: ["2.1", "4.2", "5.2", "9.4"]
+tags: [check, page-check, resolve]
+
+diagnostics:
+  - {slug: link-target-missing, file: index.md, line: 5}
+  - {slug: link-target-missing, file: index.md, line: 5}
+  - {slug: include-target-missing, file: index.md, line: 9}
+  - {slug: include-target-missing, file: index.md, line: 11}
+builds:
+  site:
+    pages:
+      index.md:
+    assets:
+      - .hidden/logo.png
+      - nested/logo.png
+    diagnostics: []

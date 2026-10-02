@@ -1,0 +1,14 @@
+description: >-
+  A directory below the content root that holds an `ascribe.toml` is another
+  project's folder, and is skipped with everything in it, so its files are
+  neither checked nor published. Other directories are sources as usual.
+spec: ["2.1"]
+tags: [check, page-check, resolve]
+
+diagnostics: []
+builds:
+  site:
+    pages:
+      index.md:
+      guides/setup.md:
+    diagnostics: []

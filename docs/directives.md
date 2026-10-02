@@ -28,7 +28,7 @@ This page describes the language as you write it. The [Ascribe specification](..
 
 ([SPEC §2](../SPEC.md#2-documents))
 
-A project's source files are the `.md` files under its **content root** (`docs/` unless `ascribe.toml` says otherwise). Files and directories whose names start with `.` are skipped. Each file is a page or a fragment:
+A project's source files are the `.md` files under its **content root** (`docs/` unless `ascribe.toml` says otherwise). Files and directories whose names start with `.` are skipped, and so is a directory below the content root that holds an `ascribe.toml`, with everything in it, unless it's the project's own folder: that is another project, with sources of its own. Each file is a page or a fragment:
 
 - A **page** is published on its own.
 - A **fragment** exists only to be included in other files. A file is a fragment when any part of its path starts with `_` (`_warning.md`, `_snippets/setup.md`), or when it matches one of the `[fragments] patterns` in `ascribe.toml`.

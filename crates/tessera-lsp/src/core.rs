@@ -99,10 +99,12 @@ impl Loaded {
             return None;
         }
         let content = normalize(&self.root.join(self.layout.content_root.as_str()));
+        // A file in a nested project's folder is no source of this one, open
+        // or not, as a file in a hidden directory isn't.
         if let Some(content_rel) = relative_to(&content, abs)
             && let Ok(content_path) = RelPath::parse(&content_rel)
             && content_path.is_inside()
-            && is_source_path(&content_path)
+            && self.inc.snapshot().is_source(&content_path)
         {
             return Some(Kind::Source(content_path, project_rel));
         }
@@ -259,13 +261,26 @@ impl Core {
                 loaded.model_text = text;
                 self.absorb(&affected);
             }
-            Err(ApplyError::LayoutChanged) => self.load_project(model, text),
+            Err(ApplyError::LayoutChanged | ApplyError::NestedProjectChanged) => {
+                self.load_project(model, text);
+            }
         }
     }
 
+    /// Loads the project again with the model it has, after a change the
+    /// incremental update can't apply in place.
+    fn reload(&mut self) {
+        let Some(loaded) = self.loaded.as_ref() else {
+            return;
+        };
+        let (model, text) = (loaded.model.clone(), loaded.model_text.clone());
+        self.load_project(model, text);
+    }
+
     /// Loads the project from scratch, with the open buffers over the disk:
-    /// the first load, and after a model change that moves the content root or
-    /// the output directory.
+    /// the first load, after a model change that moves the content root or
+    /// the output directory, and when a nested project's `ascribe.toml`
+    /// appears or goes.
     fn load_project(&mut self, model: Arc<ContentModel>, text: String) {
         let Some(config) = self.config.clone() else {
             return;
@@ -551,6 +566,16 @@ impl Core {
         let prefix = format!("{dir}/");
         let snapshot = loaded.inc.snapshot();
         let mut assets: BTreeSet<RelPath> = BTreeSet::new();
+        // A nested project's folder, or one holding it, going takes its
+        // `ascribe.toml` with it.
+        for folder in snapshot.nested_projects() {
+            if let Ok(model) = folder.join(MODEL_FILE) {
+                let project = loaded.layout.project_path(&model);
+                if project.as_str().starts_with(&prefix) {
+                    assets.insert(project);
+                }
+            }
+        }
         for file in snapshot.files() {
             let project = loaded.layout.project_path(&file.path);
             if project.as_str().starts_with(&prefix)
@@ -607,7 +632,15 @@ impl Core {
         }
         match loaded.inc.apply(changes) {
             Ok(affected) => self.absorb(&affected),
-            // Only a model change can fail, and those go through `sync_model`.
+            // A nested project's `ascribe.toml` came or went, which changes
+            // which files are sources: the disk and the open buffers are read
+            // again.
+            Err(ApplyError::NestedProjectChanged) => {
+                self.log("a nested project appeared or went away; loading the project again");
+                self.reload();
+            }
+            // Only a model change moves the layout, and those go through
+            // `sync_model`.
             Err(ApplyError::LayoutChanged) => self.log("unexpected layout change"),
         }
     }

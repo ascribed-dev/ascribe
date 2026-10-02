@@ -4,6 +4,10 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## 0.1.1 (unreleased)
 
+### The language
+
+- **Behavior change:** a directory under the content root that holds an `ascribe.toml`, other than the project's own folder, is another project's folder, and is skipped like a directory whose name starts with `.`. `ascribe check`, `ascribe build`, `ascribe fmt`, and the language server leave its files to that project, so an editor shows each file's diagnostics from one project only. A link or an include from the outer project to a Markdown file in it is reported as a missing file.
+
 ### The editor
 
 - A workspace can hold several Ascribe projects. Every `ascribe.toml` is a project with its own language server, and a file belongs to the nearest `ascribe.toml` above it, so projects can be nested. Diagnostics, completion, the preview, format on save, and the other features use the project that owns the file. See [Workspaces with several projects](docs/editor.md#workspaces-with-several-projects).

@@ -23,6 +23,7 @@
 //! | **A file created, deleted, or renamed** | The same as a content change of that file, and every reference that resolves, or used to resolve, to that path: links, images, includes, route-like links (which look for `route.md` and `route/index.md`), and case-differing names, found through an index from each file to the paths its references can depend on. A rename is a deletion and a creation. |
 //! | **A source file that can't be read** ([`Change::Unreadable`]) | The same as deleting it: it leaves the index. It is listed in [`Project::unreadable`] (and [`Affected::unreadable`]) until a later change to its path, as a file that can't be read at load is. |
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
+//! | **A nested project's `ascribe.toml` created or deleted** | Nothing: it changes which files are sources (a nested project's files aren't), so the batch is refused ([`ApplyError::NestedProjectChanged`]) and the caller loads the project again. A file created, changed, or deleted inside a nested project's folder is a non-source file. |
 //! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, or slugger re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
 //!
 //! "What others see of a file" is [`structure_signature`]'s hash: the kind
@@ -99,7 +100,7 @@ use cache::ParseCache;
 use overlay::Overlay;
 use signature::{Fingerprints, structure_signature};
 
-use crate::fs::{FileSystem, is_source_path};
+use crate::fs::{FileSystem, MODEL_FILE, in_nested_project, is_source_path};
 use crate::index::{FileIndex, FileKind, Target, index_parsed, parse_source};
 use crate::layout::Layout;
 use crate::project::{Project, Unreadable};
@@ -114,9 +115,9 @@ use crate::slug::{default_slugger, slugger_by_name};
 #[derive(Clone, Debug)]
 pub enum Change {
     /// A file appeared, with this text. A source file is an `.md` file under
-    /// the content root, not inside a directory whose name starts with `.`. A
-    /// path that isn't a source is a non-source file appearing, like
-    /// [`Change::AssetCreated`].
+    /// the content root, not inside a directory whose name starts with `.` or
+    /// a nested project's folder ([`Project::is_source`]). A path that isn't
+    /// a source is a non-source file appearing, like [`Change::AssetCreated`].
     Created {
         /// The file's content path.
         path: RelPath,
@@ -183,6 +184,13 @@ pub enum ApplyError {
     /// changes what every path means. Load a new project instead (the
     /// language server does).
     LayoutChanged,
+    /// An `ascribe.toml` appeared in, or disappeared from, a directory below
+    /// the content root other than the project's own folder
+    /// ([`Project::own_folder`]), which makes that directory another
+    /// project's folder or stops it being one ([`Project::nested_projects`]),
+    /// and so changes which files are sources. Load a new project instead
+    /// (the language server does).
+    NestedProjectChanged,
 }
 
 impl fmt::Display for ApplyError {
@@ -190,6 +198,9 @@ impl fmt::Display for ApplyError {
         match self {
             ApplyError::LayoutChanged => f.write_str(
                 "the content root or the output directory changed; load the project again",
+            ),
+            ApplyError::NestedProjectChanged => f.write_str(
+                "a project nested in the content root appeared or went away; load the project again",
             ),
         }
     }
@@ -402,6 +413,30 @@ fn fold(path: &RelPath) -> String {
     path.as_str().to_lowercase()
 }
 
+/// The folder an `ascribe.toml` at this path (relative to the project root)
+/// would make a nested project's, as a content path: a directory below the
+/// content root, not the content root itself, whose name and whose parents'
+/// names don't start with `.`. `None` for any other file. The project's own
+/// `ascribe.toml` gives its own folder, when that's below the content root.
+fn nested_folder(layout: &Layout, project_path: &RelPath) -> Option<RelPath> {
+    if project_path.file_name() != Some(MODEL_FILE)
+        || !project_path.starts_with(&layout.content_root)
+    {
+        return None;
+    }
+    let rest: Vec<&str> = project_path
+        .segments()
+        .skip(layout.content_root.segments().count())
+        .collect();
+    let (_, dir) = rest.split_last()?;
+    if dir.is_empty() || dir.iter().any(|s| s.starts_with('.')) {
+        return None;
+    }
+    RelPath::parse(&dir.join("/"))
+        .ok()
+        .filter(RelPath::is_inside)
+}
+
 /// Which files write an `@include` naming each path, whether or not that path
 /// is a file. It's what finds every page an include reaches, through files
 /// that are there and files that aren't yet.
@@ -603,12 +638,19 @@ impl IncrementalProject {
     /// # Errors
     ///
     /// [`ApplyError::LayoutChanged`] when a [`Change::Model`] moves the content
-    /// root or the output directory. Nothing is applied.
+    /// root or the output directory, and [`ApplyError::NestedProjectChanged`]
+    /// when the batch adds or removes a nested project's `ascribe.toml`.
+    /// Nothing is applied.
     pub fn apply(
         &mut self,
         changes: impl IntoIterator<Item = Change>,
     ) -> Result<Affected, ApplyError> {
         let layout = self.project.layout().clone();
+        // Which files are sources: the nested projects stay what they were at
+        // load, since a batch that would change them is refused below.
+        let nested = self.project.nested_projects().to_vec();
+        let own_folder = self.project.own_folder().cloned();
+        let is_source = |path: &RelPath| is_source_path(path) && !in_nested_project(path, &nested);
 
         // The net effect of the batch, per path.
         let mut source_state: BTreeMap<RelPath, Option<Arc<str>>> = BTreeMap::new();
@@ -620,7 +662,7 @@ impl IncrementalProject {
         for change in changes {
             match change {
                 Change::Unreadable { path, reason } => {
-                    if is_source_path(&path) {
+                    if is_source(&path) {
                         source_state.insert(path.clone(), None);
                         unreadable_state.insert(path, Some(reason));
                     } else {
@@ -628,7 +670,7 @@ impl IncrementalProject {
                     }
                 }
                 Change::Created { path, text } | Change::Edited { path, text } => {
-                    if is_source_path(&path) {
+                    if is_source(&path) {
                         unreadable_state.insert(path.clone(), None);
                         source_state.insert(path, Some(Arc::from(text)));
                     } else {
@@ -636,7 +678,7 @@ impl IncrementalProject {
                     }
                 }
                 Change::Deleted { path } => {
-                    if is_source_path(&path) {
+                    if is_source(&path) {
                         unreadable_state.insert(path.clone(), None);
                         source_state.insert(path, None);
                     } else {
@@ -644,7 +686,7 @@ impl IncrementalProject {
                     }
                 }
                 Change::Renamed { from, to } => {
-                    let text = if is_source_path(&from) {
+                    let text = if is_source(&from) {
                         match source_state.get(&from) {
                             Some(state) => state.clone(),
                             None => self.project.file(&from).map(|f| f.source.clone()),
@@ -652,13 +694,13 @@ impl IncrementalProject {
                     } else {
                         None
                     };
-                    if is_source_path(&from) {
+                    if is_source(&from) {
                         unreadable_state.insert(from.clone(), None);
                         source_state.insert(from, None);
                     } else {
                         file_state.insert(layout.project_path(&from), false);
                     }
-                    if is_source_path(&to) {
+                    if is_source(&to) {
                         if let Some(text) = text {
                             unreadable_state.insert(to.clone(), None);
                             source_state.insert(to, Some(text));
@@ -682,6 +724,25 @@ impl IncrementalProject {
                     new_model = Some(model);
                 }
             }
+        }
+
+        // A nested project's `ascribe.toml` arrives as any other file that isn't
+        // a source does. One appearing where there is no nested project, or
+        // going where there is one, changes which files are sources. The
+        // project's own never does.
+        let nested_changed = file_state.iter().any(|(path, present)| {
+            let folder =
+                nested_folder(&layout, path).filter(|dir| Some(dir) != own_folder.as_ref());
+            folder.is_some_and(|dir| {
+                if *present {
+                    !in_nested_project(&dir, &nested)
+                } else {
+                    nested.contains(&dir)
+                }
+            })
+        });
+        if nested_changed {
+            return Err(ApplyError::NestedProjectChanged);
         }
 
         // The batch's net effect, per path.

@@ -621,6 +621,173 @@ fn a_model_created_below_the_workspace_folder_is_not_adopted() {
     assert_eq!(client.shutdown(), Exit::Clean);
 }
 
+// -- A project nested in the content root -------------------------------------
+
+const BROKEN: &str = "---\ntitle: Broken\n---\n[x](nope.md)\n";
+
+#[test]
+fn a_nested_projects_files_get_nothing_on_disk_open_or_watched() {
+    let f = Fixture::new(
+        MODEL,
+        &[
+            (
+                "docs/index.md",
+                "---\ntitle: Home\n---\n[n](nested/docs/a.md)\n",
+            ),
+            ("docs/broken.md", BROKEN),
+            ("docs/nested/ascribe.toml", MODEL),
+            ("docs/nested/docs/a.md", BROKEN),
+        ],
+    );
+    let (index, broken, on_disk) = (
+        f.path("docs/index.md"),
+        f.path("docs/broken.md"),
+        f.path("docs/nested/docs/a.md"),
+    );
+    let mut client = Client::start(&f.root());
+    client.settle();
+    // The outer project's own file with the same problem is reported, and its
+    // link into the nested project names a file that isn't one of its sources.
+    assert_eq!(client.codes(&broken), ["link-target-missing"]);
+    assert_eq!(client.codes(&index), ["link-target-missing"]);
+    assert!(client.publications(&on_disk).is_empty());
+
+    // Open, edited, and a buffer with no file on disk: still not sources.
+    let buffer = f.path("docs/nested/docs/unsaved.md");
+    client.open(&on_disk, 1, BROKEN);
+    client.replace(&on_disk, 2, &format!("{BROKEN}[y](gone.md)\n"));
+    client.open(&buffer, 1, BROKEN);
+    // Created and changed on disk, as the file watcher reports them.
+    f.write("docs/nested/docs/b.md", BROKEN);
+    client.watched(&[
+        (&f.path("docs/nested/docs/b.md"), FileChangeType::CREATED),
+        (&on_disk, FileChangeType::CHANGED),
+    ]);
+    client.settle();
+    for file in [&on_disk, &buffer, &f.path("docs/nested/docs/b.md")] {
+        assert!(
+            client.publications(file).is_empty(),
+            "{}: {:?}",
+            file.display(),
+            client.publications(file)
+        );
+    }
+    assert_eq!(client.codes(&broken), ["link-target-missing"]);
+    assert_eq!(client.shutdown(), Exit::Clean);
+}
+
+#[test]
+fn a_nested_project_appearing_and_going_changes_the_sources() {
+    let f = Fixture::new(
+        MODEL,
+        &[
+            ("docs/index.md", "---\ntitle: Home\n---\n[s](sub/a.md)\n"),
+            ("docs/sub/a.md", BROKEN),
+        ],
+    );
+    let (index, on_disk, buffer, config) = (
+        f.path("docs/index.md"),
+        f.path("docs/sub/a.md"),
+        f.path("docs/sub/unsaved.md"),
+        f.path("docs/sub/ascribe.toml"),
+    );
+    let mut client = Client::start(&f.root());
+    client.open(&buffer, 1, BROKEN);
+    client.settle();
+    assert!(client.codes(&index).is_empty());
+    assert_eq!(client.codes(&on_disk), ["link-target-missing"]);
+    assert_eq!(client.codes(&buffer), ["link-target-missing"]);
+
+    // `docs/sub` becomes another project's folder: its files' diagnostics are
+    // cleared, and the link into it names a file that isn't a source.
+    f.write("docs/sub/ascribe.toml", MODEL);
+    client.watched(&[(&config, FileChangeType::CREATED)]);
+    client.settle();
+    assert!(client.diagnostics(&on_disk).is_empty());
+    assert!(client.diagnostics(&buffer).is_empty());
+    assert!(!client.publications(&on_disk).is_empty());
+    assert_eq!(client.codes(&index), ["link-target-missing"]);
+    // An edit to the open buffer there isn't checked.
+    let published = client.publications(&buffer).len();
+    client.replace(&buffer, 2, &format!("{BROKEN}[y](gone.md)\n"));
+    client.settle();
+    assert_eq!(client.publications(&buffer).len(), published);
+
+    // And back.
+    f.remove("docs/sub/ascribe.toml");
+    client.watched(&[(&config, FileChangeType::DELETED)]);
+    client.settle();
+    assert!(client.codes(&index).is_empty());
+    assert_eq!(client.codes(&on_disk), ["link-target-missing"]);
+    assert_eq!(
+        client.codes(&buffer),
+        ["link-target-missing", "link-target-missing"]
+    );
+
+    // Deleting the nested project's whole folder takes its `ascribe.toml`
+    // with it: a file made there later is a source again.
+    f.write("docs/sub/ascribe.toml", MODEL);
+    client.watched(&[(&config, FileChangeType::CREATED)]);
+    client.settle();
+    assert!(client.diagnostics(&on_disk).is_empty());
+    client.close(&buffer);
+    std::fs::remove_dir_all(f.path("docs/sub")).expect("remove");
+    client.watched(&[(&f.path("docs/sub"), FileChangeType::DELETED)]);
+    client.settle();
+    f.write("docs/sub/a.md", BROKEN);
+    client.watched(&[(&on_disk, FileChangeType::CREATED)]);
+    client.settle();
+    assert_eq!(client.codes(&on_disk), ["link-target-missing"]);
+    assert!(client.codes(&index).is_empty());
+    assert_eq!(client.shutdown(), Exit::Clean);
+}
+
+#[test]
+fn a_content_root_above_the_project_keeps_the_projects_own_folder() {
+    // The project is `ws/proj`, and its content root is `ws`.
+    let dir = tempfile::tempdir().expect("dir");
+    let ws = support::real_path(dir.path()).join("ws");
+    let proj = ws.join("proj");
+    let other = ws.join("other");
+    std::fs::create_dir_all(&proj).expect("mkdir");
+    std::fs::create_dir_all(other.join("docs")).expect("mkdir");
+    let model = MODEL.replace(
+        "content-root = \"docs\"",
+        "content-root = \"..\"\noutput-dir = \"../../out\"",
+    );
+    std::fs::write(proj.join("ascribe.toml"), &model).expect("write");
+    std::fs::write(proj.join("own.md"), BROKEN).expect("write");
+    std::fs::write(ws.join("index.md"), "---\ntitle: Home\n---\n").expect("write");
+    std::fs::write(other.join("ascribe.toml"), MODEL).expect("write");
+    std::fs::write(other.join("docs").join("a.md"), BROKEN).expect("write");
+    let mut client = Client::start(&proj);
+    client.settle();
+    assert_eq!(client.codes(&proj.join("own.md")), ["link-target-missing"]);
+    assert!(
+        client
+            .publications(&other.join("docs").join("a.md"))
+            .is_empty()
+    );
+
+    // The project's own `ascribe.toml` changing reloads nothing else, and a
+    // file created in the project's folder is a source.
+    std::fs::write(proj.join("ascribe.toml"), format!("{model}\n")).expect("write");
+    std::fs::write(proj.join("new.md"), BROKEN).expect("write");
+    client.watched(&[
+        (&proj.join("ascribe.toml"), FileChangeType::CHANGED),
+        (&proj.join("new.md"), FileChangeType::CREATED),
+    ]);
+    client.settle();
+    assert_eq!(client.codes(&proj.join("own.md")), ["link-target-missing"]);
+    assert_eq!(client.codes(&proj.join("new.md")), ["link-target-missing"]);
+    assert!(
+        client
+            .publications(&other.join("docs").join("a.md"))
+            .is_empty()
+    );
+    assert_eq!(client.shutdown(), Exit::Clean);
+}
+
 // -- Robustness ---------------------------------------------------------------
 
 #[test]

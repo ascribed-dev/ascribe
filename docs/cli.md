@@ -167,7 +167,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](directives.md#canonical-form).
 
-- With no paths, it formats every `.md` file under the content root. Given files or directories, it formats the `.md` files among them. Directories whose names start with `.`, and `node_modules`, are skipped.
+- With no paths, it formats every `.md` file under the content root. Given files or directories, it formats the `.md` files among them. Directories whose names start with `.`, `node_modules`, and directories inside the searched ones that hold an `ascribe.toml` other than the project's own (another project, formatted under its own model) are skipped.
 - It lists each file it changed.
 - `--check` changes nothing, and lists each file that would change. Use it in CI.
 

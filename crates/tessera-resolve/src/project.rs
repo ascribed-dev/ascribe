@@ -230,6 +230,13 @@ pub struct PageAsset {
     pub via: Arc<[IncludeSite]>,
 }
 
+/// The folders below the content root that [`FileSystem::sources`] found
+/// holding an `ascribe.toml`: other projects', and the project's own.
+pub(crate) struct Folders {
+    nested: Vec<RelPath>,
+    own: Option<RelPath>,
+}
+
 /// The source index of a project: independent of any build.
 ///
 /// It holds one [`FileIndex`] per source file, what every link and image
@@ -244,6 +251,8 @@ pub struct Project {
     resolutions: BTreeMap<RelPath, Arc<Vec<Resolution>>>,
     edges: ReverseEdges,
     unreadable: Vec<Unreadable>,
+    nested: Vec<RelPath>,
+    own_folder: Option<RelPath>,
     /// Expansions worked out so far, by page. `None` records a path that
     /// isn't a file. Filled on demand; the incremental update drops the
     /// entries a change can affect (`crate::incremental`).
@@ -260,6 +269,8 @@ impl Clone for Project {
             resolutions: self.resolutions.clone(),
             edges: self.edges.clone(),
             unreadable: self.unreadable.clone(),
+            nested: self.nested.clone(),
+            own_folder: self.own_folder.clone(),
             expansions: Mutex::new(self.expansion_cache().clone()),
         }
     }
@@ -296,6 +307,9 @@ impl Project {
         let mut files = BTreeMap::new();
         let mut by_id = HashMap::new();
         let mut unreadable = found.unreadable;
+        let mut nested = found.nested;
+        nested.sort();
+        nested.dedup();
         for path in paths {
             match fs.read(&path) {
                 Ok(text) => {
@@ -310,7 +324,11 @@ impl Project {
                 }),
             }
         }
-        Project::assemble(model, layout, files, by_id, unreadable, fs)
+        let folders = Folders {
+            nested,
+            own: found.own_folder,
+        };
+        Project::assemble(model, layout, files, by_id, unreadable, folders, fs)
     }
 
     /// A project from indexed files: resolves every reference and builds the
@@ -321,6 +339,7 @@ impl Project {
         files: BTreeMap<RelPath, Arc<FileIndex>>,
         by_id: HashMap<FileId, RelPath>,
         unreadable: Vec<Unreadable>,
+        folders: Folders,
         fs: &dyn FileSystem,
     ) -> Project {
         let mut project = Project {
@@ -331,6 +350,8 @@ impl Project {
             resolutions: BTreeMap::new(),
             edges: ReverseEdges::default(),
             unreadable,
+            nested: folders.nested,
+            own_folder: folders.own,
             expansions: Mutex::new(HashMap::new()),
         };
         project.resolutions = project
@@ -393,6 +414,28 @@ impl Project {
     /// skipped silently.
     pub fn unreadable(&self) -> &[Unreadable] {
         &self.unreadable
+    }
+
+    /// The folders of other projects nested in the content root: the
+    /// directories below it that hold an `ascribe.toml`, as content paths, in
+    /// path order ([`Sources::nested`](crate::Sources::nested)). Nothing in
+    /// them is a source of this project.
+    pub fn nested_projects(&self) -> &[RelPath] {
+        &self.nested
+    }
+
+    /// The project's own folder as a content path, when it's below the content
+    /// root ([`Sources::own_folder`](crate::Sources::own_folder)): its
+    /// `ascribe.toml` is the project's own, not a nested project's.
+    pub fn own_folder(&self) -> Option<&RelPath> {
+        self.own_folder.as_ref()
+    }
+
+    /// Whether a content path names a source file of this project, whether or
+    /// not a file is there: [`is_source_path`](crate::is_source_path), and
+    /// not inside a nested project's folder ([`Project::nested_projects`]).
+    pub fn is_source(&self, path: &RelPath) -> bool {
+        crate::is_source_path(path) && !crate::in_nested_project(path, &self.nested)
     }
 
     /// The title of a file (its frontmatter `title`), or, with an id, of the

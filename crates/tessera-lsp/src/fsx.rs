@@ -5,11 +5,12 @@ use std::io;
 use std::sync::{Mutex, PoisonError, RwLock};
 
 use tessera_core::RelPath;
-use tessera_resolve::{DiskFs, FileSystem, Probe, Sources};
+use tessera_resolve::{DiskFs, FileSystem, Probe, Sources, in_nested_project};
 
 /// The disk with the editor's open source buffers over it, for loading a
 /// project: what the project reads for a source is the buffer when there is
-/// one (an open document's contents win over the file on disk).
+/// one (an open document's contents win over the file on disk). A buffer in a
+/// nested project's folder isn't a source, as the file on disk isn't.
 ///
 /// It answers each probe from the disk once and remembers the answer. The
 /// incremental project asks its base whether a non-source file was there
@@ -38,7 +39,7 @@ impl FileSystem for BufferFs {
     fn sources(&self) -> Sources {
         let mut sources = self.disk.sources();
         for path in self.buffers.keys() {
-            if !sources.paths.contains(path) {
+            if !sources.paths.contains(path) && !in_nested_project(path, &sources.nested) {
                 sources.paths.push(path.clone());
             }
         }

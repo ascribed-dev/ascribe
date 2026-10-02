@@ -164,6 +164,51 @@ fn config_names_the_model() {
 }
 
 #[test]
+fn a_project_nested_in_the_content_root_is_left_to_its_own_check() {
+    let dir = project(&[
+        ("index.md", CLEAN),
+        ("nested/ascribe.toml", MODEL),
+        ("nested/docs/bad.md", WITH_ERROR),
+    ]);
+    let out = tessera(dir.path(), &["check"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    assert!(
+        stdout(&out).contains("checked 1 file: 0 errors, 0 warnings"),
+        "{}",
+        stdout(&out)
+    );
+    // The nested project checks it.
+    let nested = tessera(&dir.path().join("docs").join("nested"), &["check"]);
+    assert_eq!(code(&nested), 1, "{}", stdout(&nested));
+    assert!(stdout(&nested).contains("ASC036"), "{}", stdout(&nested));
+}
+
+#[test]
+fn a_content_root_above_the_project_keeps_the_projects_own_folder() {
+    // The project is `ws/proj`, and its content root is `ws`.
+    let dir = tempfile::tempdir().expect("a temporary directory");
+    let ws = dir.path().join("ws");
+    let proj = ws.join("proj");
+    write(
+        &proj.join("ascribe.toml"),
+        &MODEL.replace(
+            "content-root = \"docs\"",
+            "content-root = \"..\"\noutput-dir = \"../../out\"",
+        ),
+    );
+    write(&proj.join("own.md"), WITH_ERROR);
+    write(&ws.join("index.md"), CLEAN);
+    write(&ws.join("other").join("ascribe.toml"), MODEL);
+    write(&ws.join("other").join("docs").join("bad.md"), WITH_ERROR);
+    let out = tessera(&proj, &["check"]);
+    assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
+    let text = stdout(&out);
+    assert!(text.contains("checked 2 files: 1 error"), "{text}");
+    assert!(text.contains("own.md"), "{text}");
+    assert!(!text.contains("bad.md"), "{text}");
+}
+
+#[test]
 fn a_source_that_isnt_utf8_is_an_error_and_the_rest_is_checked() {
     // SPEC §8.2.
     let dir = project(&[("index.md", WITH_ERROR)]);

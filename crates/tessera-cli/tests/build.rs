@@ -145,6 +145,28 @@ fn builds_quill_under_every_build_with_both_emitters() {
 }
 
 #[test]
+fn a_project_nested_in_the_content_root_is_not_built() {
+    let dir = project(
+        MODEL,
+        &[
+            ("index.md", &page("Home.\n")),
+            ("nested/ascribe.toml", MODEL),
+            ("nested/docs/inner.md", &page("[Gone](gone.md)\n")),
+        ],
+    );
+    let out = tessera(dir.path(), &["build", "--build", "site", "--emit", "plain"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    let plain = dir.path().join(".ascribe/build/site/plain");
+    assert!(plain.join("index.md").is_file());
+    assert!(!plain.join("nested").exists());
+    assert!(
+        stderr(&out).contains("built site/plain: 1 page"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+#[test]
 fn a_build_and_an_output_can_be_chosen() {
     let dir = quill();
     let out = tessera(

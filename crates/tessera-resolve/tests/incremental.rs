@@ -799,3 +799,225 @@ fn a_batch_is_taken_by_its_net_effect() {
     assert!(inc.snapshot().file(&path(".hidden/x.md")).is_none());
     assert_eq!(inc.version(), version);
 }
+
+// -- Nested projects ---------------------------------------------------------------
+
+/// A project with another nested in its content root, at `docs/nested`, whose
+/// page the outer project's home page links to.
+fn with_a_nested_project() -> IncrementalProject {
+    let model = ModelSpec::base().model();
+    let layout = Layout::from_model(&model);
+    let fs = MemoryFs::new(&layout)
+        .with_source(
+            "index.md",
+            "---\ntitle: H\n---\n\n[n](nested/content/a.md)\n",
+        )
+        .with_source("nested/ascribe.toml", "")
+        .with_source("nested/content/a.md", "---\ntitle: N\n---\n");
+    IncrementalProject::load(model, layout, fs)
+}
+
+#[test]
+fn a_change_inside_a_nested_project_is_not_a_source() {
+    let mut inc = with_a_nested_project();
+    let files = |inc: &IncrementalProject| -> Vec<RelPath> {
+        inc.snapshot().files().map(|f| f.path.clone()).collect()
+    };
+    let snapshot = inc.snapshot();
+    assert_eq!(snapshot.nested_projects(), [path("nested")]);
+    assert!(!snapshot.is_source(&path("nested/content/a.md")));
+    assert!(snapshot.is_source(&path("nested.md")));
+    assert_eq!(files(&inc), [path("index.md")]);
+    // The link names a file that isn't a source, as one into a hidden
+    // directory does.
+    let problems = |inc: &IncrementalProject| inc.snapshot().problems(&path("index.md")).len();
+    assert_eq!(problems(&inc), 1);
+
+    // Nothing names these, so they change nothing anyone can see.
+    let version = inc.version();
+    for change in [
+        created("nested/content/b.md", "---\ntitle: B\n---\n"),
+        edited("nested/content/a.md", "---\ntitle: Changed\n---\n"),
+        Change::Unreadable {
+            path: path("nested/content/c.md"),
+            reason: "refused".to_owned(),
+        },
+    ] {
+        let affected = inc.apply([change]).unwrap();
+        assert!(affected.is_empty(), "{affected:?}");
+    }
+    assert_eq!(inc.version(), version);
+    assert!(inc.snapshot().unreadable().is_empty());
+
+    // Deleted and created again: the link is still to a file that isn't a
+    // source.
+    inc.apply([deleted("nested/content/a.md")]).unwrap();
+    assert_eq!(problems(&inc), 1);
+    inc.apply([created("nested/content/a.md", "---\ntitle: N\n---\n")])
+        .unwrap();
+    assert_eq!(problems(&inc), 1);
+    assert_eq!(files(&inc), [path("index.md")]);
+
+    // A source moved into the nested project leaves this one, and one moved
+    // out of it has no text the project knows (as for any file that isn't a
+    // source), so it isn't created.
+    inc.apply([
+        created("guide.md", "---\ntitle: G\n---\n"),
+        Change::Renamed {
+            from: path("guide.md"),
+            to: path("nested/content/guide.md"),
+        },
+        Change::Renamed {
+            from: path("nested/content/b.md"),
+            to: path("b.md"),
+        },
+    ])
+    .unwrap();
+    assert_eq!(files(&inc), [path("index.md")]);
+}
+
+#[test]
+fn a_nested_project_appearing_is_refused_so_the_project_is_loaded_again() {
+    let (mut inc, _) = load(
+        &ModelSpec::base(),
+        &[("index.md", "x\n"), ("sub/a.md", "---\ntitle: A\n---\n")],
+    );
+    let version = inc.version();
+    assert!(inc.snapshot().nested_projects().is_empty());
+    for change in [
+        created("sub/ascribe.toml", ""),
+        edited("sub/ascribe.toml", ""),
+        Change::AssetCreated {
+            path: path("docs/sub/ascribe.toml"),
+        },
+        Change::Renamed {
+            from: path("sub/notes.toml"),
+            to: path("sub/ascribe.toml"),
+        },
+    ] {
+        assert_eq!(
+            inc.apply([edited("index.md", "y\n"), change]).unwrap_err(),
+            ApplyError::NestedProjectChanged
+        );
+    }
+    // Nothing was applied, not even the edit before it.
+    assert_eq!(inc.version(), version);
+    assert_eq!(
+        &*inc.snapshot().file(&path("index.md")).unwrap().source,
+        "x\n"
+    );
+    assert!(inc.snapshot().file(&path("sub/a.md")).is_some());
+
+    // None of these is a nested project: a directory whose name starts with
+    // `.`, the project root (outside the content root), and a directory
+    // outside the content root.
+    for change in [
+        created(".hidden/ascribe.toml", ""),
+        Change::AssetCreated {
+            path: path("ascribe.toml"),
+        },
+        Change::AssetCreated {
+            path: path("tools/ascribe.toml"),
+        },
+        created("sub/Ascribe.toml", ""),
+    ] {
+        inc.apply([change]).unwrap();
+    }
+    assert!(inc.snapshot().file(&path("sub/a.md")).is_some());
+}
+
+#[test]
+fn a_nested_project_going_is_refused_so_the_project_is_loaded_again() {
+    let mut inc = with_a_nested_project();
+    let version = inc.version();
+    for change in [
+        deleted("nested/ascribe.toml"),
+        Change::AssetDeleted {
+            path: path("docs/nested/ascribe.toml"),
+        },
+        Change::Renamed {
+            from: path("nested/ascribe.toml"),
+            to: path("nested/old.toml"),
+        },
+    ] {
+        assert_eq!(
+            inc.apply([change]).unwrap_err(),
+            ApplyError::NestedProjectChanged
+        );
+    }
+    assert_eq!(inc.version(), version);
+    // One in a nested project's folder, or the one already there, changes
+    // nothing about which files are sources.
+    inc.apply([created("nested/deeper/ascribe.toml", "")])
+        .unwrap();
+    inc.apply([Change::AssetCreated {
+        path: path("docs/nested/ascribe.toml"),
+    }])
+    .unwrap();
+    assert_eq!(inc.snapshot().nested_projects(), [path("nested")]);
+}
+
+#[test]
+fn a_content_root_at_the_project_root_is_not_a_nested_project() {
+    // The layout of `content-root = "."`.
+    let model = ModelSpec::base().model();
+    let layout = Layout {
+        content_root: RelPath::root(),
+        ..Layout::from_model(&model)
+    };
+    let fs = MemoryFs::new(&layout)
+        .with_file("ascribe.toml", "")
+        .with_file("index.md", "x\n");
+    let mut inc = IncrementalProject::load(model, layout, fs);
+    assert!(inc.snapshot().nested_projects().is_empty());
+    assert!(inc.snapshot().file(&path("index.md")).is_some());
+    // The project's own `ascribe.toml` coming and going isn't a nested
+    // project's.
+    inc.apply([deleted("ascribe.toml")]).unwrap();
+    inc.apply([created("ascribe.toml", "")]).unwrap();
+    inc.apply([created("guide.md", "y\n")]).unwrap();
+    assert!(inc.snapshot().file(&path("guide.md")).is_some());
+}
+
+#[test]
+fn the_projects_own_ascribe_toml_below_the_content_root_is_not_a_nested_project() {
+    // `content-root = ".."`: the project's folder, `proj/`, is below its
+    // content root.
+    let model = ModelSpec::base().model();
+    let layout = Layout {
+        content_root: path(".."),
+        output_dir: path("../../out"),
+    };
+    let fs = MemoryFs::new(&layout)
+        .with_own_folder("proj")
+        .with_source("index.md", "x\n")
+        .with_source("proj/ascribe.toml", "")
+        .with_source("proj/own.md", "y\n");
+    let mut inc = IncrementalProject::load(model, layout, fs);
+    let snapshot = inc.snapshot();
+    assert!(snapshot.nested_projects().is_empty());
+    assert_eq!(snapshot.own_folder(), Some(&path("proj")));
+    assert!(snapshot.file(&path("proj/own.md")).is_some());
+    // The project's own `ascribe.toml`, by content path or by project path,
+    // coming and going.
+    for change in [
+        edited("proj/ascribe.toml", "changed"),
+        deleted("proj/ascribe.toml"),
+        created("proj/ascribe.toml", ""),
+        Change::AssetDeleted {
+            path: path("ascribe.toml"),
+        },
+        Change::AssetCreated {
+            path: path("ascribe.toml"),
+        },
+    ] {
+        inc.apply([change]).unwrap();
+    }
+    inc.apply([created("proj/new.md", "z\n")]).unwrap();
+    assert!(inc.snapshot().file(&path("proj/new.md")).is_some());
+    // Another folder in the content root is still another project's.
+    assert_eq!(
+        inc.apply([created("other/ascribe.toml", "")]).unwrap_err(),
+        ApplyError::NestedProjectChanged
+    );
+}

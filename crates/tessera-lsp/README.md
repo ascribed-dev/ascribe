@@ -38,10 +38,13 @@ A server serves one project, which it finds at startup:
 A client with several projects starts one server per project, with the folder
 that holds its `ascribe.toml` as the workspace folder, and sends each server
 the documents of its own project; the VS Code extension does
-(`packages/vscode/src/registry.ts`). The server knows nothing of other
-projects: it reads and checks every source file under its content root,
-including the files of a project nested there, and leaving those to the
-nested project's server is the client's job.
+(`packages/vscode/src/registry.ts`). The server checks only its own project's
+sources: a directory below its content root that holds an `ascribe.toml`,
+other than the project's own folder, is another project's folder, and nothing
+in it is a source, whether on disk or open in the editor. When the file
+watcher reports such an `ascribe.toml` created or deleted, the server loads
+its project again and logs
+`tessera-lsp: a nested project appeared or went away; loading the project again`.
 
 ## Semantic token legend
 

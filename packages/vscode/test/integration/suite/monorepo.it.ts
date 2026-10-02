@@ -158,12 +158,18 @@ describe("with several projects, one nested in another", () => {
       await api.whenSettled();
       assert.deepEqual(codes(docsPage), ["ASC036"]);
       assertRunning([folder.docs(), folder.handbook()]);
-      // The handbook's server reads the nested project's page too (it is in the
-      // handbook's content root), and finds two problems in it; neither is shown,
-      // and the nested project's server hasn't started.
+      // The nested project's page is in the handbook's content root, but in
+      // another project's folder: the handbook's server doesn't read it, and the
+      // nested project's server hasn't started, so it has no diagnostics.
       await throughHandbook();
       assert.deepEqual(vscode.languages.getDiagnostics(nestedPage), []);
       assert.deepEqual(vscode.languages.getDiagnostics(handbookPage), []);
+      // So to the handbook it isn't a source: a link to it names a missing file.
+      await edit(handbookPage, (text) => `${text}\nSee [](nested/content/index.md).\n`);
+      await diagnosticsOf(handbookPage, () => codes(handbookPage).join() === "ASC036");
+      await restore(handbookPage);
+      await diagnosticsOf(handbookPage, (all) => all.length === 0);
+      assert.deepEqual(vscode.languages.getDiagnostics(nestedPage), []);
     });
 
     it("restarts the running servers and leaves the others stopped", async () => {
@@ -186,8 +192,10 @@ describe("with several projects, one nested in another", () => {
       await diagnosticsOf(nestedPage, (all) => all.length > 0);
       await api.whenSettled();
       assertRunning([folder.docs(), folder.handbook(), folder.nested()]);
-      // `{edition}` is declared only in the nested project: the handbook's
-      // server reports it (ASC044), and the ASC001 a second time.
+      // `{edition}` is declared only in the nested project, so the page has no
+      // ASC044, which the handbook's model would give it, and its ASC001 is
+      // reported once. Once the handbook's server has answered an edit, it has
+      // published whatever it would for the page.
       await throughHandbook();
       assert.deepEqual(codes(nestedPage), ["ASC001"]);
 
