@@ -5,7 +5,7 @@
 // sees a token and makes no requests.
 
 import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
@@ -367,15 +367,28 @@ async function aheadBehind(root: string, head: string): Promise<{ ahead: number;
  * the file's on disk.
  */
 async function unsavedText(file: string): Promise<{ saved: string; current: string } | undefined> {
-  const document = vscode.workspace.textDocuments.find(
-    (doc) => doc.uri.scheme === "file" && comparable(doc.uri.fsPath) === comparable(file),
-  );
-  if (!document?.isDirty) return undefined;
+  // The file's path comes from git, a real path; the editor's is the path the
+  // workspace was opened with, which may go through a link (macOS's /var).
+  const real = comparable(await realPath(file));
+  let document: vscode.TextDocument | undefined;
+  for (const doc of vscode.workspace.textDocuments) {
+    if (doc.uri.scheme !== "file" || !doc.isDirty) continue;
+    if (comparable(await realPath(doc.uri.fsPath)) === real) {
+      document = doc;
+      break;
+    }
+  }
+  if (!document) return undefined;
   try {
     return { saved: await readFile(file, "utf8"), current: document.getText() };
   } catch {
     return undefined;
   }
+}
+
+/** `file` with its links resolved, or as it is when it can't be. */
+function realPath(file: string): Promise<string> {
+  return realpath(file).catch(() => file);
 }
 
 /** A failure as a sentence. */
