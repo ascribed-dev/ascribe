@@ -176,6 +176,28 @@ describe("placing threads", () => {
     ]);
   });
 
+  test("moves threads with a saved edit, without reading GitHub again", async () => {
+    const original = repo.read(INSTALL);
+    const fake = github({ threads: [threads[0] as ReturnType<typeof thread>] });
+    const s = session(fake);
+    try {
+      expect(threadIds((await s.threads(installPage)).blocks)).toEqual({
+        "guides/install.md:7-8": ["right"],
+      });
+      const reads = fake.operations().length;
+      // Two more lines at the top: H line 5 is now W line 9.
+      repo.write(INSTALL, `new 0\nnew 00\n${original}`);
+      const moved = await s.threads({
+        ...installPage,
+        anchors: [{ source: "guides/install.md:9-10", via: [] }],
+      });
+      expect(threadIds(moved.blocks)).toEqual({ "guides/install.md:9-10": ["right"] });
+      expect(fake.operations()).toHaveLength(reads);
+    } finally {
+      repo.write(INSTALL, original);
+    }
+  });
+
   test("marks outdated threads, with their original text", async () => {
     const placed = await session(github({ threads })).threads(installPage);
     const outdated = placed.blocks.flatMap((b) => b.threads).find((t) => t.id === "outdated");
