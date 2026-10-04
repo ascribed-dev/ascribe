@@ -24,7 +24,7 @@ Part of [Review](README.md). Needs no other phase, and can run at the same time 
 ascribe diff [--base <REV>] [--build <NAME>]... [--format text|json]
 ```
 
-- **The base** is a git revision. By default, the merge base of `HEAD` and the repository's default branch (`origin/HEAD`, falling back to `main`, then `master`). The comparison is from the merge base of `<REV>` and `HEAD`, as a pull request shows it, not from `<REV>` itself. `--base-exact` compares against `<REV>` itself.
+- **The base** is a git revision. By default, the merge base of `HEAD` and the repository's default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists). The comparison is from the merge base of `<REV>` and `HEAD`, as a pull request shows it, not from `<REV>` itself. `--base-exact` compares against `<REV>` itself.
 - **The other side** is the working tree, unsaved edits excluded: what a build would publish now.
 - **Text output:** per build, the changed pages with counts (`guides/install.md: 2 changed, 1 added`), and whether each page's own file changed or only something it uses did.
 - **Exit codes:** `0` whether or not there are changes; `2` when it can't run (not a git repository, an unknown revision, `git` not found, or the project can't load on either side). `--exit-code` makes changes exit `1`, as `git diff` does.
@@ -56,16 +56,17 @@ Set a size limit: above a number of blocks or words (choose one, test it), a pai
 ```jsonc
 {
   "schema_version": 1,
-  "base": { "requested": "origin/main", "commit": "…", "mergeBase": "…" },
-  "repository": { "root": "/…", "projectPrefix": "docs/" },
+  "base": { "requested": "origin/main", "commit": "…", "merge_base": "…" },
+  "repository": { "root": "/…", "project_prefix": "docs/" },
   "builds": [{
     "build": "site",
     "pages": [{
       "path": "guides/install.md",
       "route": "/guides/install/",
       "status": "changed",               // added | removed | changed
-      "ownFileChanged": false,
+      "own_file_changed": false,
       "because": ["_fragments/prereqs.md"],  // changed files this page's change comes from
+      "page_changed": [],                // title | frontmatter | availability | route
       "changes": [{
         "kind": "changed",               // added | removed | changed | moved
         "now": { "source": "guides/install.md:12-14", "via": [] },

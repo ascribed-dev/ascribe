@@ -1,6 +1,6 @@
 [package]
 name = "tessera-cli"
-description = "The tessera command-line tool: check, build, fmt, and lsp."
+description = "The tessera command-line tool: check, build, diff, fmt, and lsp."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -19,6 +19,7 @@ serde.workspace = true
 serde_json.workspace = true
 tessera-check.workspace = true
 tessera-core.workspace = true
+tessera-diff.workspace = true
 tessera-emit.workspace = true
 tessera-fmt.workspace = true
 tessera-lsp.workspace = true

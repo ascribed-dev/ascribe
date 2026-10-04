@@ -1,7 +1,7 @@
 //! The `ascribe` binary.
 //!
 //! The command structure is in [`cli`]: one module per subcommand under
-//! `commands/` (`check`, `build`, `fmt`, `lsp`), so a new subcommand is its
+//! `commands/` (`check`, `build`, `diff`, `fmt`, `lsp`), so a new subcommand is its
 //! own module and a line in `cli.rs`.
 
 mod cli;

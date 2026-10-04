@@ -1,5 +1,5 @@
-//! Times `ascribe check` and `ascribe build` on the 3,000-page synthetic
-//! project and on the converted Elastic corpus.
+//! Times `ascribe check`, `ascribe build`, and `ascribe diff` on the
+//! 3,000-page synthetic project and on the converted Elastic corpus.
 //!
 //! Run with `cargo bench -p tessera-corpora --bench perf` (build the CLI first
 //! with `cargo build --release -p tessera-cli`; the bench finds `ascribe` next
@@ -7,7 +7,8 @@
 //! prints:
 //!
 //! - **the command**: wall time of `ascribe check` (and, for the synthetic
-//!   project, `ascribe build`), process start to exit, output to /dev/null;
+//!   project, `ascribe build` and `ascribe diff`), process start to exit,
+//!   output to /dev/null;
 //! - **the library phases** the command is made of, in-process: loading the
 //!   project, the file-level checks, and the page-level checks of every build;
 //!   and, for a build, resolving and emitting plain markdown.
@@ -129,6 +130,106 @@ fn phases(name: &str, dir: &Path) {
     );
 }
 
+/// `ascribe diff` on the synthetic project in a git repository: with nothing
+/// changed, with one page changed, with a fragment that 100 pages include
+/// changed, and with a phrase every page uses changed. Skipped when `git`
+/// isn't there.
+fn diff(bin: &Path, dir: &Path) {
+    let root = dir.join("synthetic-git");
+    std::fs::create_dir_all(&root).expect("creates");
+    let project = Synthetic::standard();
+    project.write_to(&root).expect("writes");
+    // One fragment that the first 100 pages include.
+    let docs = root.join(CONTENT_ROOT);
+    std::fs::write(
+        docs.join("_f").join("wide.md"),
+        "Shared by a hundred pages.\n",
+    )
+    .expect("writes");
+    for i in 0..100 {
+        let path = docs.join(project.page_path(i));
+        let text = std::fs::read_to_string(&path).expect("reads");
+        std::fs::write(&path, format!("{text}\n@include: /_f/wide.md\n")).expect("writes");
+    }
+    let git = |args: &[&str]| {
+        Command::new("git")
+            .current_dir(&root)
+            .args([
+                "-c",
+                "user.name=bench",
+                "-c",
+                "user.email=bench@example.com",
+            ])
+            .args(["-c", "commit.gpgsign=false"])
+            .args(args)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|s| s.success())
+    };
+    if !(git(&["init", "-q", "-b", "main"])
+        && git(&["add", "-A"])
+        && git(&["commit", "-q", "-m", "base"]))
+    {
+        println!("ascribe diff: skipped (git isn't available)");
+        println!();
+        return;
+    }
+    println!("synthetic project in git: 3,000 pages, 100 of them including one more fragment");
+    let args = ["diff", "--base", "main", "--format", "json"];
+    time_cli(
+        "  ascribe diff (nothing changed)",
+        "diff/synthetic-3000-unchanged",
+        bin,
+        &root,
+        &args,
+        3,
+    );
+
+    let one = docs.join(project.page_path(1234));
+    let text = std::fs::read_to_string(&one).expect("reads");
+    std::fs::write(&one, text.replace("welcome.", "welcome back.")).expect("writes");
+    time_cli(
+        "  ascribe diff (one page changed)",
+        "diff/synthetic-3000-one-page",
+        bin,
+        &root,
+        &args,
+        3,
+    );
+    std::fs::write(&one, text).expect("writes");
+
+    let wide = docs.join("_f").join("wide.md");
+    std::fs::write(&wide, "Shared by a hundred pages, and changed.\n").expect("writes");
+    time_cli(
+        "  ascribe diff (fragment used by 100 pages changed)",
+        "diff/synthetic-3000-fragment",
+        bin,
+        &root,
+        &args,
+        3,
+    );
+    std::fs::write(&wide, "Shared by a hundred pages.\n").expect("writes");
+
+    let model = root.join("ascribe.toml");
+    let text = std::fs::read_to_string(&model).expect("reads");
+    std::fs::write(
+        &model,
+        text.replace("product = \"Quill\"", "product = \"Quill Cloud\""),
+    )
+    .expect("writes");
+    time_cli(
+        "  ascribe diff (phrase used by every page changed)",
+        "diff/synthetic-3000-phrase",
+        bin,
+        &root,
+        &args,
+        3,
+    );
+    std::fs::write(&model, text).expect("writes");
+    println!();
+}
+
 fn machine() {
     let cpu = std::fs::read_to_string("/proc/cpuinfo")
         .ok()
@@ -189,6 +290,8 @@ fn main() {
         3,
     );
     println!();
+
+    diff(&bin, dir.path());
 
     // The same command on a project with a diagnostic on every page: the text
     // report is the default, and FINDINGS.md P1 is about what it costs.

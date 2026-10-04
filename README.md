@@ -50,7 +50,7 @@ The compiler is a Rust workspace; the npm packages and the extension are a pnpm 
 
 | Directory | Contents |
 |---|---|
-| `crates/` | The compiler: `tessera-syntax` (parsing), `tessera-model` (`ascribe.toml`), `tessera-resolve` (includes, builds, links), `tessera-check`, `tessera-emit` (outputs), `tessera-fmt`, `tessera-lsp`, `tessera-cli` (the `ascribe` binary), and `comrak-tessera`, a fork of the CommonMark parser |
+| `crates/` | The compiler: `tessera-syntax` (parsing), `tessera-model` (`ascribe.toml`), `tessera-resolve` (includes, builds, links), `tessera-check`, `tessera-emit` (outputs), `tessera-diff` (what changed since a git revision), `tessera-fmt`, `tessera-lsp`, `tessera-cli` (the `ascribe` binary), and `comrak-tessera`, a fork of the CommonMark parser |
 | `packages/` | `cli`, `astro`, `elements`, and `vscode` |
 | `tests/` | The conformance suite and its diagnostics registry, the CommonMark suite, real-world corpora, and cross-implementation fixtures |
 | `examples/` | Example projects and content models |
