@@ -219,7 +219,9 @@ fn anchors_mark_the_site_output_and_the_manifest_says_so() {
     assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
     let page = read(&built.join("site/quickstart.md"));
     assert!(
-        page.contains("<!--ascribe-anchor tag=\"h2\" source=\"quickstart.md:6-6\"-->\n## Try in the browser"),
+        page.contains(
+            "<!--ascribe-anchor tag=\"h2\" source=\"quickstart.md:6-6\"-->\n## Try in the browser"
+        ),
         "{page}"
     );
     assert!(read(&built.join("site.manifest.json")).contains("\"anchors\": true"));
