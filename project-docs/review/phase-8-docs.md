@@ -12,6 +12,7 @@ Part of [Review](README.md). Requires phases 1 to 7. Docs, and fixes for what th
 - `docs/review.md`, grown piece by piece through phases 3 to 7.
 - `docs/README.md` (the docs' index), `docs/editor.md`, `docs/astro.md`, `docs/cli.md`, `packages/vscode/README.md` (the Marketplace page), `packages/astro/README.md`, `packages/review/README.md`.
 - `CHANGELOG.md`'s unreleased section.
+- `scripts/review-fixture/setup.ts`: builds the repository the pass runs on ([The fixture](#the-fixture)).
 - [`mockup.html`](mockup.html): the reference the built UI is checked against in the pass, and the source of the guide's wording (Page preview, Site preview, unsent, detached, outdated).
 
 ## Design
@@ -30,11 +31,44 @@ Part of [Review](README.md). Requires phases 1 to 7. Docs, and fixes for what th
 
 Link it from `docs/README.md`, `docs/editor.md`, `docs/astro.md`, and both package READMEs, and remove what those repeat.
 
+### The fixture
+
+The pass runs on a repository made for it, not on this one: `ascribed-dev/review-fixture`, private. A script builds it from nothing, so every pass starts from the same pull request and the comments an earlier pass left are gone:
+
+```sh
+pnpm --filter @ascribed/review build
+node scripts/review-fixture/setup.ts ascribed-dev/review-fixture
+```
+
+It needs `git`, and `gh` signed in with write access to that repository. It closes the fixture's open pull request, force-pushes both branches, opens a new pull request, seeds its threads, and leaves a checkout at the pull request's head, with the commands to open each view. It refuses a repository it didn't build. `--local` makes the checkout alone, with no GitHub: enough for the changes, without threads.
+
+The repository is the Lantern docs from `examples/monorepo`, in a `docs/` subfolder, with `examples/astro-site`'s site around them. The pull request has two commits, and its threads were made between them:
+
+| What review has to handle | Where the fixture has it |
+|---|---|
+| A page's own file changed: a block reworded, added, and removed | `guides/rollouts.md` |
+| A fragment two pages include | `_fragments/prerequisites.md`, on `getting-started.md` and `guides/create-flags.md` |
+| A page changed only through a fragment | `guides/create-flags.md` |
+| A phrase changed (`{version}`), so pages change through `ascribe.toml` | `getting-started.md`, `guides/self-hosting.md` |
+| A variant arm changed | The Linux install command in `getting-started.md` |
+| Two threads on one block | The opening paragraph of `guides/rollouts.md` |
+| An outdated thread: its line was reworded by the second commit | "Start at 1% or lower…" in `guides/rollouts.md` |
+| Threads whose lines the second commit moved | Every thread in `guides/rollouts.md` |
+| A thread on removed text | The removed note in `guides/rollouts.md` |
+| A multi-line thread, on a fragment | `_fragments/prerequisites.md`, lines 3 to 5 |
+| A resolved thread | `_fragments/prerequisites.md`, line 3 |
+| A comment in the review summary, on a line away from the changes | The last paragraph of `guides/rollouts.md` |
+| A comment in the review summary, on a file the pull request doesn't touch | `guides/self-hosting.md` |
+
+Not in it, so made by hand during the pass: a detached thread (delete a commented block locally), unpushed commits, a checkout behind the pull request, and a comment from someone else (every seeded comment is from whoever ran the script).
+
+If `examples/monorepo` changes so the script's edits no longer apply, the script stops and says which; update it in the same pull request as the example.
+
 ### The pass
 
-In a scratch repository (not this one) with a site set up like `examples/astro-site`:
+On the fixture:
 
-1. Open a pull request that changes a page, a fragment used by several pages, a phrase, and a variant arm; add a few review comments on GitHub, one on the fragment and one on a line later removed.
+1. Build it with the script, and open the checkout it leaves.
 2. With the mockup open beside it, review it three ways: the CI report, the page preview, the site preview. Go through the mockup's **Try** buttons and **State** menu and reproduce each one in the real thing. List every difference in the pull request, and for each say whether the build or the mockup should change. In each, check the changed pages list, the marks, each thread's placement, and switching to the other views.
 3. Comment from the page preview and from the site preview, including on a page whose file isn't in the pull request; submit; confirm on GitHub.
 4. Repeat the editor steps on Windows if a machine is available, and say if not.

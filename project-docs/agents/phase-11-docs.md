@@ -38,7 +38,7 @@ Then one more agent that has only what `ascribe agents sync` writes (Codex, or C
 
 For each run, record: whether the project passes at the end; how many times the person had to step in; whether the agent ran the check itself; and anything it got wrong that a tool could have told it. Put the table in the pull request and in `project-docs/agents/pass-results.md`.
 
-Do not post to this repository's pull requests; use a scratch repository for task 6.
+Do not post to this repository's pull requests. For task 6, use the review fixture, rebuilt first (`scripts/review-fixture/setup.ts`; see the review plan's [phase 8](../review/phase-8-docs.md#the-fixture)).
 
 ### What to do with the results
 
