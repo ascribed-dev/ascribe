@@ -31,3 +31,7 @@ Each changed block gets a label (Added, Changed, Removed, Moved) and a bar in th
 The blocks are found by their anchors: the element with exactly a change's anchor, or, when there's none (a paragraph in a tight list item has no element of its own), the smallest anchored element with the same file and includes whose lines contain it.
 
 The colors are the `--ascribe-review-*` custom properties at the top of `marks.css`, with light and dark values.
+
+## The static report
+
+`src/report/` is the script of `ascribe diff --format html`'s report, which draws the list of changed pages and each page with its marks. It isn't an entry point: `pnpm --filter @ascribed/review embed` bundles it with the marks and `@ascribed/elements` into `crates/tessera-diff/src/html/`, where the binary embeds it, along with one stylesheet made of the element library's, `marks.css`, and `src/report/report.css`. Run it after changing any of them; `test/embedded.test.ts` fails until you do.

@@ -5,7 +5,7 @@ The `ascribe` command checks, builds, and formats an Ascribe project, and runs t
 ```text
 ascribe check [--build <NAME>]... [--format text|json] [--deny-warnings]
 ascribe build [--build <NAME>]... [--emit site,plain,json] [--format text|json]
-ascribe diff  [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json] [--exit-code]
+ascribe diff  [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html] [--exit-code]
 ascribe fmt   [--check] [PATHS]...
 ascribe lsp
 ascribe --version
@@ -173,6 +173,7 @@ Shows what changed between a git revision and the working tree, as readers will 
 - `--base-exact` compares with the revision itself instead of the merge base.
 - `--build <NAME>` compares only that build. Repeat it for several. By default, every build in `ascribe.toml`.
 - `--format json` writes one JSON document instead of text (see [Diff JSON](#diff-json)).
+- `--format html` writes one self-contained HTML file that shows every changed page rendered, with its changes marked (see [The HTML report](#the-html-report)).
 - `--exit-code` exits with `1` when anything changed, as `git diff --exit-code` does.
 
 The other side is the working tree: the files on disk, committed or not, as `ascribe build` would read them now. Unsaved editor changes aren't included. The base is read from git, `ascribe.toml` included, so a change to the content model is compared too; if the project didn't exist at the base, every page is added. `ascribe diff` needs `git` on the path, and nothing else: no network and no GitHub account.
@@ -196,6 +197,25 @@ cloud: no changes
 | `0` | Compared, whether or not anything changed |
 | `1` | With `--exit-code`: something changed |
 | `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, no merge base (a shallow clone, or unrelated histories), `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error. |
+
+### The HTML report
+
+`--format html` writes one HTML file to standard output, with everything in it: its styles and script, the element library, and every image a changed page uses, up to 1 MB each (a larger one shows as a placeholder naming its file). It makes no network requests, so it opens from a CI artifact, an email, or a disk with nothing else:
+
+```sh
+ascribe diff --format html > review.html
+```
+
+It lists the changed pages of each build, with counts, and marks a page that changed only through something it uses ("via `_fragments/prereqs.md`"). With more than one build changed, a picker switches between them. Each page is rendered as it is now, the way the editor's page preview renders it: Ascribe's bare render, without the site's layout, navigation, or styles. On it:
+
+- an **added** block has a solid bar in the margin and the label Added;
+- a **changed** block has a dashed bar and the label Changed, with the words added highlighted and the words removed struck through;
+- a **removed** block is shown where it was, from the base, struck through and collapsed to one line, with **Show** to expand it;
+- a **moved** block has a double bar and the label Moved, with a link to a stub at its old place, and back.
+
+**Show: Changes / As it will be / As it was** switches between the marks, the page as it will be with none, and the page as it was at the base. The arrows step through the changes ("3 of 10 on this page"), and after the last one offer the next changed page. Hovering over a block shows the source file and line it came from (`guides/install.md:12`). The colors work in light and dark, and every mark has a label as well as a color.
+
+A report renders at most 300 changed pages; the rest are listed by name, and the report says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [Review](review.md#report-in-ci) has a GitHub Actions job that uploads the report on every pull request.
 
 ### Diff JSON
 

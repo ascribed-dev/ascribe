@@ -1,0 +1,400 @@
+/*
+ * The static report's own styles: its frame (the list of changed pages and
+ * the controls) and a plain style for the pages, which are Ascribe's bare
+ * render without the site's. The marks' styles are marks.css; the
+ * elements' are @ascribed/elements' style.css.
+ */
+
+:root {
+  --r-page: #ffffff;
+  --r-ink: #1d2330;
+  --r-muted: #5b6475;
+  --r-side: #f3f4f7;
+  --r-line: #d3d8e0;
+  --r-accent: #1f6feb;
+  --r-accent-ink: #ffffff;
+  --r-code: #f0f2f6;
+  --r-notice: #fff6bf;
+  --r-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --r-page: #1e2026;
+    --r-ink: #d9dde5;
+    --r-muted: #929bab;
+    --r-side: #23262d;
+    --r-line: #343a45;
+    --r-accent: #5aa2ff;
+    --r-accent-ink: #0b1220;
+    --r-code: #282c35;
+    --r-notice: #3b3514;
+
+    /* The element library's colors, for a dark page. */
+    --ascribe-border-color: #343a45;
+    --ascribe-muted-color: #929bab;
+    --ascribe-note-color: #5aa2ff;
+    --ascribe-note-background: #172a45;
+    --ascribe-tip-color: #4fc572;
+    --ascribe-tip-background: #133520;
+    --ascribe-important-color: #c59bff;
+    --ascribe-important-background: #2d2440;
+    --ascribe-warning-color: #dcb13a;
+    --ascribe-warning-background: #3a2f0d;
+    --ascribe-caution-color: #ff8279;
+    --ascribe-caution-background: #401918;
+    --ascribe-steps-color: #5aa2ff;
+    --ascribe-steps-marker-text-color: #0b1220;
+    --ascribe-tab-color: #929bab;
+    --ascribe-tab-active-color: #5aa2ff;
+    --ascribe-tab-focus-color: #5aa2ff;
+    --ascribe-tab-hover-background: #272b33;
+    --ascribe-state-color: #929bab;
+    --ascribe-state-background: #272b33;
+    --ascribe-state-ga-color: #4fc572;
+    --ascribe-state-ga-background: #133520;
+    --ascribe-state-preview-color: #c59bff;
+    --ascribe-state-preview-background: #2d2440;
+    --ascribe-state-beta-color: #5aa2ff;
+    --ascribe-state-beta-background: #172a45;
+    --ascribe-state-deprecated-color: #dcb13a;
+    --ascribe-state-deprecated-background: #3a2f0d;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--r-page);
+  color: var(--r-ink);
+  font: 14px/1.5 var(--r-ui);
+}
+
+.r {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.r-head {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--r-line);
+  background: var(--r-side);
+}
+
+.r-sub {
+  color: var(--r-muted);
+  font-size: 12.5px;
+}
+
+.r-head .r-notice {
+  margin-top: 8px;
+}
+
+.r-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.r-side {
+  width: 300px;
+  flex: none;
+  overflow: auto;
+  border-right: 1px solid var(--r-line);
+  background: var(--r-side);
+  padding: 12px;
+}
+
+.r-side h2,
+.r-side h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--r-muted);
+  margin: 16px 0 6px;
+}
+
+.r-build {
+  display: block;
+  font-size: 12px;
+  color: var(--r-muted);
+  margin-bottom: 4px;
+}
+
+.r-side select {
+  width: 100%;
+  font: inherit;
+  padding: 4px;
+  color: inherit;
+  background: var(--r-page);
+  border: 1px solid var(--r-line);
+  border-radius: 4px;
+}
+
+.r-pages,
+.r-omitted {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.r-pages a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 5px;
+  color: inherit;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+}
+
+.r-pages a:hover {
+  background: var(--r-page);
+}
+
+.r-pages a[aria-current="page"] {
+  background: var(--r-page);
+  border-left-color: var(--r-accent);
+}
+
+.r-pages a:focus-visible,
+.r button:focus-visible,
+.r select:focus-visible {
+  outline: 2px solid var(--r-accent);
+  outline-offset: 1px;
+}
+
+.r-page-title {
+  display: block;
+  font-weight: 600;
+}
+
+.r-page-path,
+.r-page-via {
+  display: block;
+  font-family: var(--r-mono);
+  font-size: 11.5px;
+  color: var(--r-muted);
+  overflow-wrap: anywhere;
+}
+
+.r-page-counts {
+  display: block;
+  font-size: 12px;
+}
+
+.r-omitted li {
+  font-family: var(--r-mono);
+  font-size: 11.5px;
+  color: var(--r-muted);
+  padding: 2px 8px;
+}
+
+.r-main {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 0 24px 48px;
+}
+
+.r-controls {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--r-page);
+  border-bottom: 1px solid var(--r-line);
+  padding: 8px 0;
+  margin-bottom: 12px;
+}
+
+.r-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.r-grow {
+  flex: 1;
+  min-width: 200px;
+  overflow-wrap: anywhere;
+}
+
+.r-show {
+  font-size: 12px;
+  color: var(--r-muted);
+}
+
+.r-seg {
+  display: inline-flex;
+  border: 1px solid var(--r-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.r-seg button,
+.r-ghost,
+.r-primary,
+.r-link {
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.r-seg button + button {
+  border-left: 1px solid var(--r-line);
+}
+
+.r-seg button[aria-pressed="true"] {
+  background: var(--r-accent);
+  color: var(--r-accent-ink);
+}
+
+.r-ghost {
+  border: 1px solid var(--r-line);
+  border-radius: 6px;
+}
+
+.r-sq {
+  min-width: 30px;
+  padding: 3px 0;
+}
+
+.r-link {
+  color: var(--r-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 3px 4px;
+}
+
+.r-primary {
+  background: var(--r-accent);
+  color: var(--r-accent-ink);
+  border-radius: 6px;
+}
+
+.r-legend {
+  font-size: 12.5px;
+  color: var(--r-muted);
+  margin-top: 6px;
+}
+
+.r-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  background: var(--r-notice);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 8px;
+}
+
+.r-banner,
+.r-empty {
+  color: var(--r-muted);
+  font-style: italic;
+}
+
+.r-image {
+  display: inline-block;
+  border: 1px dashed var(--r-line);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--r-muted);
+  font-size: 12.5px;
+}
+
+/* The page: Ascribe's bare render, in a readable measure. */
+.r-page-heading {
+  font-size: 1.9em;
+  margin: 8px 0 12px;
+}
+
+.r-page {
+  position: relative;
+  max-width: 46rem;
+  padding-left: 12px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.r-page img {
+  max-width: 100%;
+  height: auto;
+}
+
+.r-page a {
+  color: var(--r-accent);
+}
+
+.r-page code {
+  font-family: var(--r-mono);
+  font-size: 0.875em;
+  background: var(--r-code);
+  border-radius: 3px;
+  padding: 0.1em 0.3em;
+}
+
+.r-page pre {
+  background: var(--r-code);
+  border-radius: 6px;
+  padding: 10px 12px;
+  overflow: auto;
+}
+
+.r-page pre code {
+  background: none;
+  padding: 0;
+}
+
+.r-page table {
+  border-collapse: collapse;
+}
+
+.r-page th,
+.r-page td {
+  border: 1px solid var(--r-line);
+  padding: 4px 8px;
+}
+
+.r-page blockquote {
+  margin-inline: 0;
+  padding-inline-start: 12px;
+  border-inline-start: 3px solid var(--r-line);
+  color: var(--r-muted);
+}
+
+@media (max-width: 760px) {
+  .r-body {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .r-side {
+    width: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--r-line);
+    overflow: visible;
+  }
+
+  .r-main {
+    overflow: visible;
+    padding: 0 12px 32px;
+  }
+}

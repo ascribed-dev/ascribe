@@ -27,6 +27,7 @@ tessera-model.workspace = true
 tessera-resolve.workspace = true
 
 [dev-dependencies]
+insta.workspace = true
 # Integration tests copy example projects to a temporary directory.
 tempfile = "3"
 

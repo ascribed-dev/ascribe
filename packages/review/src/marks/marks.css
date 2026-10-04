@@ -166,7 +166,8 @@
 }
 
 [data-ascribe-show="changes"] .ascribe-removed:not(.ascribe-open) .ascribe-removed-body,
-[data-ascribe-show="changes"] .ascribe-removed:not(.ascribe-open) .ascribe-removed-body * {
+[data-ascribe-show="changes"] .ascribe-removed:not(.ascribe-open) .ascribe-removed-body > * {
+  overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
