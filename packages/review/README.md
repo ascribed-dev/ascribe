@@ -70,11 +70,11 @@ Finds the open pull request whose head is the checkout's current branch and retu
 | Method | What it does |
 |---|---|
 | `threads(page)` | The page's threads, placed (see [`placeOnPage`](#placeonpagepage-threads)). Reads the pull request once and caches it until `refresh()` or a change made through the session. |
-| `comment(anchor, body, page)` | Comments on a block. The comment becomes a review thread on the block's file, at its lines at the pull request's head commit (moved back through any local edits), on the right side, in the viewer's pending review, which is created on the first comment. If the block's lines aren't at the head commit, it rejects with `push-first`. If the file isn't in the pull request, or GitHub can't anchor a comment to the line, the comment is held in the pending review's body instead, quoting the block's text, linking its lines, and ending with a hidden marker (below); it reaches the pull request's conversation when the review is submitted. Resolves with the new thread. |
-| `reply(threadId, body, when)` | Replies to a review thread: `"withReview"` holds the reply in the pending review; `"now"` sends it at once. If GitHub puts a reply sent with `"now"` into the viewer's pending review instead, the reply is deleted again and the call rejects with `reply-held`. |
+| `comment(anchor, body, page)` | Comments on a block. The comment becomes a review thread on the block's file, at its lines at the pull request's head commit (moved back through any local edits), on the right side, in the viewer's pending review, which is created on the first comment. If any of the block's lines isn't at the head commit unchanged, it rejects with `push-first`. If the file isn't in the pull request, or GitHub can't anchor a comment to the lines (it can only anchor to lines near the pull request's changes), the comment is held in the pending review's body instead, quoting the block's text, linking its lines, and ending with a hidden marker (below); it reaches the pull request's conversation when the review is submitted. GitHub can't add a body to a pending review created without one, so the session creates its review with a placeholder body, `<!-- ascribe:review -->`, which is never shown or sent; if the pending review was started on GitHub with no body, a held comment rejects with `cant-hold`. Resolves with the new thread. |
+| `reply(threadId, body, when)` | Replies to a review thread: `"withReview"` holds the reply in the pending review; `"now"` sends it at once. While the viewer has a pending review, GitHub puts every reply into it, so a reply sent with `"now"` then is deleted again and the call rejects with `reply-held`: offer `"now"` only when `pending().count` is 0. |
 | `resolve(threadId, resolved)` | Resolves or reopens a thread, at once. |
 | `pending()` | What's in the viewer's pending review: its `id`, new `threads`, `replies` to existing threads, held `conversation` comments, and the `count` of all of them. |
-| `submit(event, body?)` | Submits the pending review as `"COMMENT"`, `"APPROVE"`, or `"REQUEST_CHANGES"`, with the held conversation comments ahead of `body`. |
+| `submit(event, body?)` | Submits the pending review as `"COMMENT"`, `"APPROVE"`, or `"REQUEST_CHANGES"`, with the held conversation comments ahead of `body` (and without the placeholder). |
 | `discard()` | Deletes the pending review and everything in it. |
 | `refresh()` | Forgets what's cached. |
 
@@ -123,8 +123,9 @@ Failures reject with a `ReviewError`, whose `message` is a sentence to show and 
 | `rate-limited` | GitHub's secondary rate limit. `retryAfter` is the seconds to wait, when GitHub says. |
 | `refused` | GitHub answered with an error. |
 | `network` | The request didn't reach GitHub, or the answer wasn't JSON. |
-| `push-first` | The block's lines aren't at the pull request's head commit. |
+| `push-first` | The block's lines aren't all at the pull request's head commit, unchanged. |
 | `reply-held` | A reply can't be sent at once while the viewer has a pending review. |
+| `cant-hold` | The viewer's pending review was started on GitHub without a body, and GitHub can't add one to hold a comment. Submit or discard it on GitHub first. |
 | `not-found` | The thread, or something else named, isn't there. |
 | `git` | `git` failed, isn't on the path, or the directory isn't a repository. |
 
@@ -138,7 +139,7 @@ Failures reject with a `ReviewError`, whose `message` is a sentence to show and 
 
 Moves threads into the working tree's terms. Threads on files outside the content root are left out. Each other thread gets its content `path` and either `lines` or a `detached` reason:
 
-- A thread on the right side is at its line at the pull request's head commit, moved through the working tree's changes since (`git diff --unified=0`). If the line is gone, it's detached (`"line-gone"`), with the text it was on as `quote`.
+- A thread on the right side is at its line at the pull request's head commit, moved through the working tree's changes since (`git diff --unified=0`). A reworded line moves onto the text that replaced it, and the thread is marked `outdated`, with the text it was on as `quote`. If the line was deleted, the thread is detached (`"line-gone"`), with the same `quote`.
 - An outdated thread is at its original line at its original commit, moved the same way, and keeps that text as `quote`. It stays marked `outdated`.
 - A thread on the left side keeps its line, on the diff's base.
 - A thread on a whole file is detached (`"file"`).
@@ -159,4 +160,4 @@ A thread goes on the smallest block that holds all its lines (failing that, its 
 
 ### Lines
 
-`lineMap(root, commit, file, "to-worktree" | "to-commit")` maps line numbers of a repository file between a commit and the working tree; `parseHunks` and `shiftLine` do the same for a diff in hand; `linesAt` reads lines of a file at a commit.
+`lineMap(root, commit, file, "to-worktree" | "to-commit")` maps line numbers of a repository file between a commit and the working tree; `parseHunks` and `shiftLine` do the same for a diff in hand; `linesAt` reads lines of a file at a commit. A line maps to `{ line, replaced }`: a replaced line maps onto the lines that replaced it, at the same offset (or their last line), with `replaced` set, and a deleted line maps to `undefined`.

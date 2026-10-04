@@ -186,6 +186,22 @@ describe("placing threads", () => {
     });
   });
 
+  test("keeps a thread on reworded text in its place, marked outdated, with what it said", async () => {
+    const original = repo.read(INSTALL);
+    try {
+      // H line 5 is W line 7.
+      repo.write(INSTALL, original.replace("line 5\n", "line five\n"));
+      const placed = await session(
+        github({ threads: [threads[0] as ReturnType<typeof thread>] }),
+      ).threads(installPage);
+      expect(placed.blocks.flatMap((b) => b.threads)).toMatchObject([
+        { id: "right", outdated: true, lines: { first: 7, last: 7 }, quote: "line 5" },
+      ]);
+    } finally {
+      repo.write(INSTALL, original);
+    }
+  });
+
   test("shows a fragment's thread on every page that includes it", async () => {
     const placed = await session(github({ threads })).threads(otherPage);
     expect(threadIds(placed.blocks)).toEqual({
@@ -288,23 +304,42 @@ describe("placing threads", () => {
 });
 
 describe("posting", () => {
-  function postingFake(reviews: ReturnType<typeof review>[] = []) {
+  /**
+   * A fake that posts the way GitHub does: a line away from the diff's changes
+   * gets no thread and no error, and a pending review created without a body
+   * can't be given one.
+   */
+  function postingFake(reviews: ReturnType<typeof review>[] = [], diffLines = [1, 5, 6]) {
+    const bodies = new Map(reviews.map((r) => [r.id, r.body]));
     return github({ reviews })
-      .on("AddReview", () => ({ addPullRequestReview: { pullRequestReview: { id: "PRR_new" } } }))
+      .on("AddReview", (v) => {
+        bodies.set("PRR_new", (v["body"] as string | undefined) ?? "");
+        return { addPullRequestReview: { pullRequestReview: { id: "PRR_new" } } };
+      })
       .on("AddThread", (v) => ({
         addPullRequestReviewThread: {
-          thread: thread({
-            id: "PRRT_new",
-            path: String(v["path"]),
-            line: Number(v["line"]),
-            startLine: v["startLine"] as number | null,
-            comments: [comment({ body: String(v["body"]), state: "PENDING" })],
-          }),
+          thread: diffLines.includes(Number(v["line"]))
+            ? thread({
+                id: "PRRT_new",
+                path: String(v["path"]),
+                line: Number(v["line"]),
+                startLine: v["startLine"] as number | null,
+                comments: [comment({ body: String(v["body"]), state: "PENDING" })],
+              })
+            : null,
         },
       }))
-      .on("UpdateReview", () => ({
-        updatePullRequestReview: { pullRequestReview: { id: "PRR_new" } },
-      }));
+      .on("UpdateReview", (v) => {
+        const id = String(v["reviewId"]);
+        if (bodies.get(id) === "") {
+          throw new ReviewError(
+            "refused",
+            "GitHub refused the request: Could not edit a review with a missing body.",
+          );
+        }
+        bodies.set(id, String(v["body"]));
+        return { updatePullRequestReview: { pullRequestReview: { id } } };
+      });
   }
 
   test("a comment on a block becomes a thread at its lines at the head commit, in a new pending review", async () => {
@@ -315,7 +350,7 @@ describe("posting", () => {
       installPage,
     );
     expect(fake.mutations().map((c) => [c.operation, c.variables])).toEqual([
-      ["AddReview", { pullRequestId: "PR_7", commit: head }],
+      ["AddReview", { pullRequestId: "PR_7", commit: head, body: "<!-- ascribe:review -->" }],
       [
         "AddThread",
         { reviewId: "PRR_new", path: INSTALL, body: "Unclear.", line: 6, startLine: 5 },
@@ -393,6 +428,47 @@ describe("posting", () => {
     expect(created.kind).toBe("conversation");
   });
 
+  test("falls back to the conversation when GitHub returns no thread for a line away from the diff", async () => {
+    const fake = postingFake();
+    const created = await session(fake).comment(
+      { source: "guides/install.md:4-30", via: [] },
+      "Long.",
+      installPage,
+    );
+    const mutations = fake.mutations();
+    expect(mutations.map((c) => c.operation)).toEqual(["AddReview", "AddThread", "UpdateReview"]);
+    // The placeholder the review was created with is replaced by the comment.
+    const body = String(mutations[2]?.variables["body"]);
+    expect(body).not.toContain("ascribe:review");
+    expect(body.endsWith("<!-- ascribe:anchor guides/install.md:4-30 build=site -->")).toBe(true);
+    expect(created).toMatchObject({ kind: "conversation", comments: [{ pending: true }] });
+  });
+
+  test("a pending review started on GitHub without a body can't hold a comment", async () => {
+    const fake = postingFake([review({ id: "PRR_web", state: "PENDING", mine: true })]);
+    await expect(
+      session(fake).comment(
+        { source: "_fragments/prereqs.md:1-3", via: ["guides/install.md:25"] },
+        "x",
+        installPage,
+      ),
+    ).rejects.toMatchObject({ code: "cant-hold" });
+  });
+
+  test("refuses a block with lines reworded locally", async () => {
+    const fake = postingFake();
+    const original = repo.read(INSTALL);
+    try {
+      repo.write(INSTALL, original.replace("line 4\n", "line 4, reworded\n"));
+      await expect(
+        session(fake).comment({ source: "guides/install.md:6-6", via: [] }, "x", installPage),
+      ).rejects.toMatchObject({ code: "push-first" });
+    } finally {
+      repo.write(INSTALL, original);
+    }
+    expect(fake.mutations()).toEqual([]);
+  });
+
   test("held conversation comments are read back and counted as pending", async () => {
     const body = "Q?\n\n<!-- ascribe:anchor _fragments/prereqs.md:1-3 build=site -->";
     const fake = github({
@@ -416,6 +492,22 @@ describe("posting", () => {
     const placed = await session(fake).threads(otherPage);
     expect(placed.blocks[0]?.threads.map((t) => [t.id, t.comments[0]?.pending])).toEqual([
       ["PRR_mine", true],
+    ]);
+  });
+
+  test("a review holding only the placeholder holds nothing, and submits without it", async () => {
+    const fake = github({
+      reviews: [
+        review({ id: "PRR_mine", state: "PENDING", mine: true, body: "<!-- ascribe:review -->" }),
+      ],
+    }).on("SubmitReview", () => ({
+      submitPullRequestReview: { pullRequestReview: { id: "PRR_mine", state: "COMMENTED" } },
+    }));
+    const s = session(fake);
+    expect((await s.pending()).count).toBe(0);
+    await s.submit("COMMENT");
+    expect(fake.mutations().map((c) => [c.operation, c.variables])).toEqual([
+      ["SubmitReview", { reviewId: "PRR_mine", event: "COMMENT", body: null }],
     ]);
   });
 

@@ -122,8 +122,8 @@ query Files($owner: String!, $name: String!, $number: Int!, $after: String) {
 }`;
 
 export const ADD_REVIEW = `
-mutation AddReview($pullRequestId: ID!, $commit: GitObjectID) {
-  addPullRequestReview(input: { pullRequestId: $pullRequestId, commitOID: $commit }) {
+mutation AddReview($pullRequestId: ID!, $commit: GitObjectID, $body: String!) {
+  addPullRequestReview(input: { pullRequestId: $pullRequestId, commitOID: $commit, body: $body }) {
     pullRequestReview { id }
   }
 }`;

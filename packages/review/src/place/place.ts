@@ -116,32 +116,37 @@ export async function locateThreads(
       result(undefined, "line-gone", hunkQuote(thread, "RIGHT"));
       continue;
     }
-    const quote = thread.outdated
-      ? ((await linesAt(context.root, commit, thread.repositoryPath, start, last)) ??
-        hunkQuote(thread, "RIGHT"))
-      : undefined;
+    const original = async () =>
+      (await linesAt(context.root, commit, thread.repositoryPath, start, last)) ??
+      hunkQuote(thread, "RIGHT");
     const map = await mapFor(commit, thread.repositoryPath);
     const mappedLast = map.map(last);
     if (mappedLast === undefined) {
-      result(
-        undefined,
-        "line-gone",
-        quote ??
-          (await linesAt(context.root, commit, thread.repositoryPath, start, last)) ??
-          hunkQuote(thread, "RIGHT"),
-      );
+      result(undefined, "line-gone", await original());
       continue;
     }
     // When the first line went but the last stayed, the thread keeps what's left.
-    let first = mappedLast;
+    let first = mappedLast.line;
+    let replaced = mappedLast.replaced;
     for (let line = start; line < last; line++) {
       const mapped = map.map(line);
-      if (mapped !== undefined) {
-        first = Math.min(mapped, mappedLast);
-        break;
+      if (mapped === undefined) {
+        replaced = true;
+        continue;
       }
+      replaced ||= mapped.replaced;
+      if (first === mappedLast.line) first = Math.min(mapped.line, mappedLast.line);
     }
-    result({ first, last: mappedLast }, undefined, quote);
+    // Reworded text keeps its place, marked outdated, with what it said.
+    const outdated = thread.outdated || replaced;
+    located.push({
+      ...thread,
+      path,
+      lines: { first, last: mappedLast.line },
+      detached: undefined,
+      outdated,
+      quote: outdated ? await original() : thread.quote,
+    });
   }
   return located;
 }

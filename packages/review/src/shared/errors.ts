@@ -19,6 +19,11 @@ export type ReviewErrorCode =
   | "push-first"
   /** A reply can't be sent at once while the viewer has a pending review. */
   | "reply-held"
+  /**
+   * A comment GitHub can't anchor can't be held in the viewer's pending
+   * review, which was started on GitHub without a summary.
+   */
+  | "cant-hold"
   /** The thread, or another object named, isn't in the pull request. */
   | "not-found"
   /** `git` failed, or the checkout isn't a git repository. */

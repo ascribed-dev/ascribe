@@ -15,7 +15,7 @@ import {
 import { ReviewError } from "../shared/errors.js";
 import { gitMaybe } from "../shared/git.js";
 import type { Thread, ThreadComment } from "../shared/types.js";
-import { formatSection, joinSections } from "./marker.js";
+import { formatSection, joinSections, PLACEHOLDER, withoutPlaceholder } from "./marker.js";
 import {
   ADD_REPLY,
   ADD_REVIEW,
@@ -327,10 +327,10 @@ export function createSession(options: SessionOptions): ReviewSession {
     if (known !== undefined) return known;
     const data = await mutate<{ addPullRequestReview: { pullRequestReview: { id: string } } }>(
       ADD_REVIEW,
-      { pullRequestId: pullRequest.id, commit: pullRequest.headOid },
+      { pullRequestId: pullRequest.id, commit: pullRequest.headOid, body: PLACEHOLDER },
     );
     changed();
-    known = { id: data.addPullRequestReview.pullRequestReview.id, body: "" };
+    known = { id: data.addPullRequestReview.pullRequestReview.id, body: PLACEHOLDER };
     return known;
   };
 
@@ -363,9 +363,19 @@ export function createSession(options: SessionOptions): ReviewSession {
       }
       const repositoryPath = `${contentPrefix}${range.path}`;
       const map = await lineMap(root, pullRequest.headOid, repositoryPath, "to-commit");
-      const first = map.map(range.first);
-      const last = map.map(range.last);
-      if (first === undefined || last === undefined) {
+      // Every line of the block has to be at the head commit, unchanged.
+      const lines: number[] = [];
+      for (let line = range.first; line <= range.last; line++) {
+        const mapped = map.map(line);
+        if (mapped !== undefined && !mapped.replaced) lines.push(mapped.line);
+      }
+      const first = lines[0];
+      const last = lines.at(-1);
+      if (
+        first === undefined ||
+        last === undefined ||
+        lines.length !== range.last - range.first + 1
+      ) {
         throw new ReviewError(
           "push-first",
           pullRequest.local === "missing"
@@ -391,10 +401,13 @@ export function createSession(options: SessionOptions): ReviewSession {
             },
           );
           changed();
+          // GitHub answers a line away from the diff's changes with no thread
+          // and no error: it can't anchor the comment there.
           const thread = data.addPullRequestReviewThread.thread;
-          if (thread === null) throw new ReviewError("refused", "GitHub didn't create the thread.");
-          await readRestOfComments(transport, thread);
-          return toThread(thread);
+          if (thread !== null) {
+            await readRestOfComments(transport, thread);
+            return toThread(thread);
+          }
         } catch (error) {
           if (!(
             error instanceof ReviewError &&
@@ -424,8 +437,19 @@ export function createSession(options: SessionOptions): ReviewSession {
           url: blobUrl(pullRequest, repositoryPath, first, last),
         },
       });
-      const held = joinSections([review.body, section], undefined);
-      await mutate(UPDATE_REVIEW, { reviewId: review.id, body: held });
+      const held = joinSections([withoutPlaceholder(review.body), section], undefined);
+      try {
+        await mutate(UPDATE_REVIEW, { reviewId: review.id, body: held });
+      } catch (error) {
+        if (error instanceof ReviewError && /missing body/i.test(error.message)) {
+          throw new ReviewError(
+            "cant-hold",
+            "You have unsent comments started on GitHub, and GitHub can't add this comment to them. Submit or discard them on GitHub, then comment again.",
+            { cause: error },
+          );
+        }
+        throw error;
+      }
       changed();
       known = { id: review.id, body: held };
       const [thread] = markedThreads(
@@ -505,7 +529,7 @@ export function createSession(options: SessionOptions): ReviewSession {
       await mutate(SUBMIT_REVIEW, {
         reviewId: review.id,
         event,
-        body: joinSections([review.body], body),
+        body: joinSections([withoutPlaceholder(review.body)], body) || null,
       });
       changed();
       known = undefined;

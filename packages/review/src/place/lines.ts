@@ -26,11 +26,20 @@ export function parseHunks(diff: string): Hunk[] {
   return hunks;
 }
 
+/** Where a line is on the other side of a diff. */
+export interface Shifted {
+  line: number;
+  /** Whether the diff replaced the line: its text changed, and `line` is where the new text is. */
+  replaced: boolean;
+}
+
 /**
- * Where line `line` of the old side is on the new side, or `undefined` if the
- * diff removed or replaced it. Hunks come from a diff with no context lines.
+ * Where line `line` of the old side is on the new side. A line the diff
+ * replaced maps onto the lines that replaced it, at the same offset clamped to
+ * them, with `replaced` set; a line it only deleted maps to `undefined`. Hunks
+ * come from a diff with no context lines.
  */
-export function shiftLine(hunks: readonly Hunk[], line: number): number | undefined {
+export function shiftLine(hunks: readonly Hunk[], line: number): Shifted | undefined {
   let delta = 0;
   for (const hunk of hunks) {
     if (hunk.oldCount === 0) {
@@ -39,16 +48,20 @@ export function shiftLine(hunks: readonly Hunk[], line: number): number | undefi
       continue;
     }
     const end = hunk.oldStart + hunk.oldCount;
-    if (line >= hunk.oldStart && line < end) return undefined;
+    if (line >= hunk.oldStart && line < end) {
+      if (hunk.newCount === 0) return undefined;
+      const offset = Math.min(line - hunk.oldStart, hunk.newCount - 1);
+      return { line: hunk.newStart + offset, replaced: true };
+    }
     if (line >= end) delta += hunk.newCount - hunk.oldCount;
   }
-  return line + delta;
+  return { line: line + delta, replaced: false };
 }
 
 /** Maps line numbers of a file from one side to the other. */
 export interface LineMap {
-  /** The line on the other side, or `undefined` if it isn't there. */
-  map(line: number): number | undefined;
+  /** Where the line is on the other side, or `undefined` if it was deleted. */
+  map(line: number): Shifted | undefined;
   /** Whether the file is the same on both sides. */
   identity: boolean;
 }
@@ -81,7 +94,7 @@ export async function lineMap(
     `:(literal)${file}`,
   ]);
   const hunks = parseHunks(diff);
-  if (hunks.length === 0) return { map: (line) => line, identity: true };
+  if (hunks.length === 0) return { map: (line) => ({ line, replaced: false }), identity: true };
   return { map: (line) => shiftLine(hunks, line), identity: false };
 }
 

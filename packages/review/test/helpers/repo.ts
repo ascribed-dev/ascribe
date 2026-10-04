@@ -1,6 +1,6 @@
 // Temporary git repositories for tests.
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -8,6 +8,7 @@ export interface TempRepo {
   root: string;
   git(...args: string[]): string;
   write(file: string, text: string): void;
+  read(file: string): string;
   commit(message: string): string;
   remove(): void;
 }
@@ -38,6 +39,9 @@ export function tempRepo(): TempRepo {
       const full = path.join(root, ...file.split("/"));
       mkdirSync(path.dirname(full), { recursive: true });
       writeFileSync(full, text);
+    },
+    read(file) {
+      return readFileSync(path.join(root, ...file.split("/")), "utf8");
     },
     commit(message) {
       git("add", "-A");

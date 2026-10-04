@@ -9,7 +9,15 @@ export {
   type Anchor,
   type SourceRange,
 } from "./anchor.js";
-export { lineMap, linesAt, parseHunks, shiftLine, type Hunk, type LineMap } from "./lines.js";
+export {
+  lineMap,
+  linesAt,
+  parseHunks,
+  shiftLine,
+  type Hunk,
+  type LineMap,
+  type Shifted,
+} from "./lines.js";
 export {
   locateThreads,
   placeOnPage,

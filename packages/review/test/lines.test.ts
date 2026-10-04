@@ -23,18 +23,31 @@ describe("shifting a line through hunks", () => {
     ]);
   });
 
+  const kept = (line: number) => ({ line, replaced: false });
+  const replaced = (line: number) => ({ line, replaced: true });
+
   test("lines before, between, and after hunks move by what came before them", () => {
-    expect(shiftLine(hunks, 1)).toBe(1);
-    expect(shiftLine(hunks, 2)).toBe(4);
-    expect(shiftLine(hunks, 19)).toBe(21);
-    expect(shiftLine(hunks, 21)).toBe(22);
-    expect(shiftLine(hunks, 27)).toBe(29);
+    expect(shiftLine(hunks, 1)).toEqual(kept(1));
+    expect(shiftLine(hunks, 2)).toEqual(kept(4));
+    expect(shiftLine(hunks, 19)).toEqual(kept(21));
+    expect(shiftLine(hunks, 21)).toEqual(kept(22));
+    expect(shiftLine(hunks, 27)).toEqual(kept(29));
   });
 
-  test("removed and replaced lines are gone", () => {
+  test("deleted lines are gone, and replaced lines map onto their replacement", () => {
     expect(shiftLine(hunks, 20)).toBeUndefined();
-    expect(shiftLine(hunks, 25)).toBeUndefined();
-    expect(shiftLine(hunks, 26)).toBeUndefined();
+    expect(shiftLine(hunks, 25)).toEqual(replaced(26));
+    expect(shiftLine(hunks, 26)).toEqual(replaced(27));
+  });
+
+  test("a replaced line past the end of a shorter replacement maps onto its last line", () => {
+    const shorter = parseHunks("@@ -5,3 +5 @@");
+    expect([5, 6, 7, 8].map((l) => shiftLine(shorter, l))).toEqual([
+      replaced(5),
+      replaced(5),
+      replaced(5),
+      kept(6),
+    ]);
   });
 });
 
@@ -55,14 +68,20 @@ describe("line maps between a commit and the working tree", () => {
 
     const forward = await lineMap(repo.root, head, "docs/a b.md", "to-worktree");
     expect(forward.identity).toBe(false);
-    expect([1, 2, 19, 20, 21].map((l) => forward.map(l))).toEqual([1, 4, 21, undefined, 22]);
+    expect([1, 2, 19, 20, 21].map((l) => forward.map(l)?.line)).toEqual([1, 4, 21, undefined, 22]);
 
     const back = await lineMap(repo.root, head, "docs/a b.md", "to-commit");
-    expect([1, 2, 3, 4, 22].map((l) => back.map(l))).toEqual([1, undefined, undefined, 2, 21]);
+    expect([1, 2, 3, 4, 22].map((l) => back.map(l)?.line)).toEqual([
+      1,
+      undefined,
+      undefined,
+      2,
+      21,
+    ]);
 
     const same = await lineMap(repo.root, head, "docs/same.md", "to-worktree");
     expect(same.identity).toBe(true);
-    expect(same.map(1)).toBe(1);
+    expect(same.map(1)).toEqual({ line: 1, replaced: false });
 
     expect(await linesAt(repo.root, head, "docs/a b.md", 19, 20)).toBe("line 19\nline 20");
   });

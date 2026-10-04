@@ -18,6 +18,18 @@ export interface MarkedSection {
 
 const MARKER = /<!-- ascribe:anchor (\S+)(?: build=(\S+))? -->/g;
 
+/**
+ * The summary a pending review starts with. GitHub can't edit the summary of
+ * a pending review created without one, so the session's reviews start with
+ * this, which reading and submitting remove.
+ */
+export const PLACEHOLDER = "<!-- ascribe:review -->";
+
+/** `body` without the placeholder summary. */
+export function withoutPlaceholder(body: string): string {
+  return body.split(PLACEHOLDER).join("").trim();
+}
+
 /** The marker for a block. */
 export function marker(source: string, build: string | undefined): string {
   return `<!-- ascribe:anchor ${source}${build === undefined ? "" : ` build=${build}`} -->`;
@@ -57,7 +69,8 @@ export function formatSection(options: {
  * Splits a body into its marked sections, and the text after the last marker
  * (`rest`), which isn't anchored.
  */
-export function parseSections(body: string): { sections: MarkedSection[]; rest: string } {
+export function parseSections(text: string): { sections: MarkedSection[]; rest: string } {
+  const body = withoutPlaceholder(text);
   const sections: MarkedSection[] = [];
   let start = 0;
   for (const match of body.matchAll(MARKER)) {
