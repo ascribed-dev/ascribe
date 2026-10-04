@@ -56,6 +56,9 @@ pub enum Command {
     Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
     Check(commands::check::Args),
+    /// Show what changed between a git revision and the working tree, page
+    /// by page, as readers will see it.
+    Diff(commands::diff::Args),
     /// Rewrite Ascribe constructs into canonical form.
     Fmt(commands::fmt::Args),
     /// Run the language server, speaking LSP over standard input and output.
@@ -67,6 +70,7 @@ impl Command {
         match self {
             Command::Build(args) => commands::build::run(global, args),
             Command::Check(args) => commands::check::run(global, args),
+            Command::Diff(args) => commands::diff::run(global, args),
             Command::Fmt(args) => commands::fmt::run(global, args),
             Command::Lsp(args) => commands::lsp::run(global, args),
         }
