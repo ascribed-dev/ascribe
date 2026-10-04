@@ -103,6 +103,10 @@ export const PANEL_CSS = `
   background: var(--notice);
   font-size: 12.5px;
 }
+.notice code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+}
 .spacer {
   flex: 1;
 }

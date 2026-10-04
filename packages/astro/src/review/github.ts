@@ -54,7 +54,8 @@ export async function connect(projectDir: string): Promise<Connection> {
         message: `${CHANGES_ONLY} Comments need GitHub: run \`gh auth login --hostname ${host}\`, then Refresh.`,
       };
     }
-    return { state: "error", message: messageOf(error) };
+    // The first line: what `gh` or GitHub said, without any trace after it.
+    return { state: "error", message: messageOf(error).split("\n")[0] ?? "" };
   }
   if (session === undefined) {
     return {

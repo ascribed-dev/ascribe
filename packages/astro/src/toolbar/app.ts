@@ -858,7 +858,12 @@ class ReviewApp {
 
   private notice(text: string): HTMLElement {
     const notice = this.el("div", "notice");
-    notice.append(this.el("span", "", text), this.el("span", "spacer"));
+    const words = this.el("span", "");
+    // A command or a setting is written in backticks: show it as code.
+    text.split("`").forEach((part, i) => {
+      if (part !== "") words.append(i % 2 === 1 ? this.el("code", "", part) : part);
+    });
+    notice.append(words, this.el("span", "spacer"));
     return notice;
   }
 
