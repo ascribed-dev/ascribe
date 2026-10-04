@@ -33,6 +33,10 @@ use crate::{BaseInfo, Report};
 /// The report's script: `packages/review/src/report/`, bundled with the
 /// marks and the element library.
 const SCRIPT: &str = include_str!("report.js");
+/// The script's SHA-256, in base64: the content security policy lets only
+/// it run, so nothing in a page's HTML (an event handler, a `javascript:`
+/// link) can.
+const SCRIPT_HASH: &str = include_str!("report.js.sha256");
 /// The report's stylesheet: the element library's, the marks', and the
 /// report's own.
 const STYLE: &str = include_str!("report.css");
@@ -284,7 +288,7 @@ fn page_shell(title: &str, json: &str) -> String {
          <head>\n\
          <meta charset=\"utf-8\">\n\
          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\
-         <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'\">\n\
+         <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-{SCRIPT_HASH}'\">\n\
          <meta name=\"generator\" content=\"Ascribe {version}\">\n\
          <title>{title}</title>\n\
          <style>\n{STYLE}</style>\n\
@@ -292,7 +296,7 @@ fn page_shell(title: &str, json: &str) -> String {
          <body>\n\
          <div id=\"ascribe-review\"><noscript>This report draws its pages with JavaScript; turn it on to see them.</noscript></div>\n\
          <script type=\"application/json\" id=\"ascribe-review-data\">{json}</script>\n\
-         <script>\n{SCRIPT}</script>\n\
+         <script>{SCRIPT}</script>\n\
          </body>\n\
          </html>\n",
         version = env!("CARGO_PKG_VERSION"),

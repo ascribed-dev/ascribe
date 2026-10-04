@@ -235,6 +235,11 @@ body {
   color: var(--r-muted);
 }
 
+.r-quiet {
+  font-size: 13px;
+  color: var(--r-muted);
+}
+
 .r-seg {
   display: inline-flex;
   border: 1px solid var(--r-line);

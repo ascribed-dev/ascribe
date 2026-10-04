@@ -6,10 +6,11 @@ import { bundle, target } from "../embed.js";
 
 describe("the report files the crate embeds", () => {
   it("are current", async () => {
-    const { js, css } = await bundle();
+    const { js, css, hash } = await bundle();
     const stale = "is out of date: run `pnpm --filter @ascribed/review embed`";
     expect(readFileSync(target.js, "utf8") === js, `${target.js} ${stale}`).toBe(true);
     expect(readFileSync(target.css, "utf8") === css, `${target.css} ${stale}`).toBe(true);
+    expect(readFileSync(target.hash, "utf8") === hash, `${target.hash} ${stale}`).toBe(true);
   });
 
   it("make no network requests", async () => {

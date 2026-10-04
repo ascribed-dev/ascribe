@@ -10,7 +10,7 @@ Seeing what a change does to your pages as readers will see them, not as a diff 
 ascribe diff --format html > review.html
 ```
 
-The file holds everything it shows, images included, and makes no network requests, so it opens anywhere, with no checkout, no build, and no account. The pages are Ascribe's bare render, the same as the editor's page preview, without your site's layout, navigation, or styles.
+The file holds everything it shows, images included, and makes no network requests, so it opens anywhere, with no checkout, no build, and no account. Nothing in a page runs: scripts, event handlers, and `javascript:` links in a page's HTML are left out, and the file's content security policy lets only its own script run, so a report from a pull request you don't trust yet is safe to open. The pages are Ascribe's bare render, the same as the editor's page preview, without your site's layout, navigation, or styles.
 
 ## Report in CI
 

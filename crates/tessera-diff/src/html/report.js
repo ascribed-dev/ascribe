@@ -768,13 +768,25 @@
       placeholder.textContent = text;
       img.replaceWith(placeholder);
     }
-    for (const el of Array.from(fragment.querySelectorAll("[src], [srcset], [poster]"))) {
+    for (const el of Array.from(
+      fragment.querySelectorAll("[src], [srcset], [poster], [data], [srcdoc]")
+    )) {
       if (el.localName === "img") continue;
-      el.removeAttribute("src");
-      el.removeAttribute("srcset");
-      el.removeAttribute("poster");
+      for (const name of ["src", "srcset", "poster", "data", "srcdoc"]) el.removeAttribute(name);
     }
+    disarm(fragment);
     return fragment;
+  }
+  function disarm(fragment) {
+    for (const el of Array.from(fragment.querySelectorAll("script, meta, base"))) el.remove();
+    for (const el of Array.from(fragment.querySelectorAll("*"))) {
+      for (const attr of Array.from(el.attributes)) {
+        if (/^on/i.test(attr.name) || runsScript(attr.value)) el.removeAttribute(attr.name);
+      }
+    }
+  }
+  function runsScript(value) {
+    return /^javascript:/i.test(value.replace(/[\u0000- ]/g, ""));
   }
   function start(root, data2) {
     const builds = data2.builds.filter((b) => b.pages.length > 0);
@@ -926,7 +938,10 @@
         info.append(` · also through ${page.because.join(", ")}`);
       }
       row.append(info);
-      if (page.status === "changed") {
+      const blocks = page.status === "changed" && page.changes.length > 0;
+      if (page.status === "changed" && !blocks) {
+        row.append(h("span", { class: "r-quiet" }, ["No changes to the page's content"]));
+      } else if (blocks) {
         const n = marks.length;
         const at = state.at >= 0 && state.at < n && state.show === "changes";
         const text = at ? `${state.at + 1} of ${n} on this page` : `${n} ${n === 1 ? "change" : "changes"} on this page`;
@@ -965,7 +980,7 @@
         );
       }
       row.append(h("span", { class: "r-show" }, ["Show"]), seg);
-      if (page.status === "changed") {
+      if (blocks) {
         row.append(
           button("↑", "r-ghost r-sq", () => step(-1), { "aria-label": "Previous change" }),
           button("↓", "r-ghost r-sq", () => step(1), { "aria-label": "Next change" })
@@ -977,7 +992,7 @@
       if (page.page_changed.length > 0) {
         controls.append(
           h("div", { class: "r-legend" }, [
-            `Also changed: the page's ${andList(page.page_changed)}, which this render doesn't show.`
+            blocks ? `Also changed: the page's ${andList(page.page_changed)}, which this render doesn't show.` : `The page's ${andList(page.page_changed)} changed, which this render doesn't show.`
           ])
         );
       }

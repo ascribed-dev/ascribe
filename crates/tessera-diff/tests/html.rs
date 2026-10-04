@@ -290,7 +290,8 @@ fn without_data(html: &str) -> String {
 }
 
 /// No `http` URL in a `src`, no stylesheet linked, no `url()` to the
-/// network, and a content security policy that allows only `data:` images.
+/// network, and a content security policy that allows only `data:` images
+/// and the report's own script.
 pub fn assert_no_requests(html: &str) {
     let lower = html.to_ascii_lowercase();
     for (i, _) in lower.match_indices("src=") {
@@ -311,6 +312,11 @@ pub fn assert_no_requests(html: &str) {
         );
     }
     assert!(html.contains(
-        "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'\">"
+        "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'sha256-"
     ));
+    // Only the report's own script runs: no inline handler or
+    // `javascript:` URL in a page's HTML.
+    let policy = &html[html.find("Content-Security-Policy").unwrap()..];
+    let policy = &policy[..policy.find('>').unwrap()];
+    assert!(!policy.contains("script-src 'unsafe-inline'"), "{policy}");
 }

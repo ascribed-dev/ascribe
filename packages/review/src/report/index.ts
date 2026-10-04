@@ -194,13 +194,37 @@ export function pageFragment(data: ReportData, key: string): DocumentFragment {
     img.replaceWith(placeholder);
   }
   // Media and frames would load from the network; none is shown.
-  for (const el of Array.from(fragment.querySelectorAll("[src], [srcset], [poster]"))) {
+  for (const el of Array.from(
+    fragment.querySelectorAll("[src], [srcset], [poster], [data], [srcdoc]"),
+  )) {
     if (el.localName === "img") continue;
-    el.removeAttribute("src");
-    el.removeAttribute("srcset");
-    el.removeAttribute("poster");
+    for (const name of ["src", "srcset", "poster", "data", "srcdoc"]) el.removeAttribute(name);
   }
+  disarm(fragment);
   return fragment;
+}
+
+/**
+ * Takes out of a page's HTML what could run script or take the reader
+ * elsewhere: scripts, `<meta>` and `<base>`, event handler attributes, and
+ * `javascript:` URLs. The report's content security policy blocks them too;
+ * this keeps the report from depending on it alone, since the pages come
+ * from the change under review.
+ */
+export function disarm(fragment: DocumentFragment): void {
+  for (const el of Array.from(fragment.querySelectorAll("script, meta, base"))) el.remove();
+  for (const el of Array.from(fragment.querySelectorAll("*"))) {
+    for (const attr of Array.from(el.attributes)) {
+      if (/^on/i.test(attr.name) || runsScript(attr.value)) el.removeAttribute(attr.name);
+    }
+  }
+}
+
+/** Whether a URL runs script: `javascript:`, however it's spaced or cased. */
+function runsScript(value: string): boolean {
+  // URL parsing drops ASCII whitespace and control characters first.
+  // eslint-disable-next-line no-control-regex
+  return /^javascript:/i.test(value.replace(/[\u0000- ]/g, ""));
 }
 
 /** Reads the report's data and draws the report in `root`. */
@@ -367,7 +391,12 @@ export function start(root: HTMLElement, data: ReportData): void {
       info.append(` · also through ${page.because.join(", ")}`);
     }
     row.append(info);
-    if (page.status === "changed") {
+    // A page whose blocks are all as they were changed only in what the
+    // render doesn't show, like its frontmatter.
+    const blocks = page.status === "changed" && page.changes.length > 0;
+    if (page.status === "changed" && !blocks) {
+      row.append(h("span", { class: "r-quiet" }, ["No changes to the page's content"]));
+    } else if (blocks) {
       const n = marks.length;
       const at = state.at >= 0 && state.at < n && state.show === "changes";
       const text = at
@@ -408,7 +437,7 @@ export function start(root: HTMLElement, data: ReportData): void {
       );
     }
     row.append(h("span", { class: "r-show" }, ["Show"]), seg);
-    if (page.status === "changed") {
+    if (blocks) {
       row.append(
         button("↑", "r-ghost r-sq", () => step(-1), { "aria-label": "Previous change" }),
         button("↓", "r-ghost r-sq", () => step(1), { "aria-label": "Next change" }),
@@ -420,7 +449,9 @@ export function start(root: HTMLElement, data: ReportData): void {
     if (page.page_changed.length > 0) {
       controls.append(
         h("div", { class: "r-legend" }, [
-          `Also changed: the page's ${andList(page.page_changed)}, which this render doesn't show.`,
+          blocks
+            ? `Also changed: the page's ${andList(page.page_changed)}, which this render doesn't show.`
+            : `The page's ${andList(page.page_changed)} changed, which this render doesn't show.`,
         ]),
       );
     }

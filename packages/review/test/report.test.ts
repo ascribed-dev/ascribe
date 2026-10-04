@@ -66,6 +66,33 @@ beforeEach(() => {
 });
 
 describe("the report", () => {
+  it("takes out of a page what could run script", () => {
+    const report = data();
+    report.pages.p1 = {
+      html: [
+        `<details open ontoggle="document.title='ran'"><summary onclick="x()">s</summary>x</details>`,
+        `<a href=" JaVa\tScript:document.title='ran'">link</a>`,
+        `<a href="https://example.com/">fine</a>`,
+        `<form action="javascript:x()"><button formaction="javascript:x()">b</button></form>`,
+        `<svg><a xlink:href="javascript:x()"><text>t</text></a></svg>`,
+        `<script>document.title='ran'</script>`,
+        `<meta http-equiv="refresh" content="0;url=https://example.com/">`,
+        `<base href="https://example.com/">`,
+        `<iframe srcdoc="<script>x()</script>"></iframe>`,
+      ].join(""),
+      images: {},
+    };
+    const holder = document.createElement("div");
+    holder.append(pageFragment(report, "p1"));
+    const html = holder.innerHTML;
+    expect(html).not.toMatch(/\son\w+=/i);
+    expect(html).not.toMatch(/javascript/i);
+    expect(html).not.toMatch(/<(script|meta|base)\b/);
+    expect(html).not.toMatch(/srcdoc/);
+    expect(holder.querySelector("a[href='https://example.com/']")?.textContent).toBe("fine");
+    expect(holder.querySelector("details")?.hasAttribute("open")).toBe(true);
+  });
+
   it("inlines the images it holds and loads no others", () => {
     const fragment = pageFragment(data(), "p1");
     const imgs = Array.from(fragment.querySelectorAll("img"));
@@ -94,6 +121,34 @@ describe("the report", () => {
     const marked = root.querySelector('[data-ascribe-change="changed"]');
     expect(marked?.textContent).toContain("Agent 2.4.");
     expect(root.querySelector(".r-pos")?.textContent).toBe("1 change on this page");
+  });
+
+  it("says a page changed only in its frontmatter has no content changes", () => {
+    const report = data();
+    report.builds = [
+      {
+        build: "site",
+        pages: [
+          page("guide.md", {
+            changes: [],
+            counts: { changed: 0, added: 0, removed: 0, moved: 0 },
+            page_changed: ["frontmatter"],
+            because: [],
+            own_file_changed: true,
+          }),
+        ],
+      },
+    ];
+    report.limit = { pages: 300, omitted: 0 };
+    const root = document.createElement("div");
+    document.body.append(root);
+    start(root, report);
+    expect(root.querySelector(".r-quiet")?.textContent).toBe("No changes to the page's content");
+    expect(root.querySelector(".r-pos")).toBeNull();
+    expect(root.querySelector('[aria-label="Next change"]')).toBeNull();
+    expect(root.querySelector(".r-controls .r-legend")?.textContent).toBe(
+      "The page's frontmatter changed, which this render doesn't show.",
+    );
   });
 
   it("switches what the page shows, and steps to the change", () => {
