@@ -786,7 +786,8 @@
     }
   }
   function runsScript(value) {
-    return /^javascript:/i.test(value.replace(/[\u0000- ]/g, ""));
+    const kept = Array.from(value).filter((ch) => ch.charCodeAt(0) > 32).join("");
+    return /^javascript:/i.test(kept);
   }
   function start(root, data2) {
     const builds = data2.builds.filter((b) => b.pages.length > 0);

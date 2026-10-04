@@ -223,8 +223,10 @@ export function disarm(fragment: DocumentFragment): void {
 /** Whether a URL runs script: `javascript:`, however it's spaced or cased. */
 function runsScript(value: string): boolean {
   // URL parsing drops ASCII whitespace and control characters first.
-  // eslint-disable-next-line no-control-regex
-  return /^javascript:/i.test(value.replace(/[\u0000- ]/g, ""));
+  const kept = Array.from(value)
+    .filter((ch) => ch.charCodeAt(0) > 0x20)
+    .join("");
+  return /^javascript:/i.test(kept);
 }
 
 /** Reads the report's data and draws the report in `root`. */
