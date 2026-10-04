@@ -383,7 +383,18 @@ class ReviewOverlay implements Overlay {
     const view = this.doc.defaultView;
     if (view) on(view, "resize", () => this.layout());
     if (view && "ResizeObserver" in view) {
-      const observer = new view.ResizeObserver(() => this.layout());
+      // Placed in the next frame: placing can pad the page, which resizes
+      // what's observed, and doing that inside the observer's callback is a
+      // "ResizeObserver loop" error on the page (a dev server reports it).
+      let queued = false;
+      const observer = new view.ResizeObserver(() => {
+        if (queued) return;
+        queued = true;
+        requestFrame(this.doc, () => {
+          queued = false;
+          this.layout();
+        });
+      });
       observer.observe(this.root);
       observer.observe(this.container());
       this.cleanups.push(() => observer.disconnect());
