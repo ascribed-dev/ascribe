@@ -829,13 +829,18 @@ describe("the Page | Site switch", () => {
 
   it("frames only the dev server's origin", async () => {
     const preview = await open({ frameOrigin: SITE });
+    await preview.page.evaluate(() => {
+      const refused: string[] = [];
+      (window as unknown as { refused: string[] }).refused = refused;
+      document.addEventListener("securitypolicyviolation", (event) =>
+        refused.push(`${event.effectiveDirective} ${event.blockedURI}`),
+      );
+    });
     await preview.send({ type: "surface", surface: "site", url: "https://elsewhere.test/" });
-    // Chromium's error page in the frame: the policy refused it.
+    // The webview's policy refuses the frame.
     await expect
-      .poll(() =>
-        preview.page.frameLocator('iframe[title="Site preview"]').locator("body").textContent(),
-      )
-      .toContain("ERR_BLOCKED_BY_CSP");
+      .poll(() => preview.page.evaluate(() => (window as unknown as { refused: string[] }).refused))
+      .toContainEqual(expect.stringMatching(/^frame-src https:\/\/elsewhere\.test/));
     await preview.page.close();
   });
 
