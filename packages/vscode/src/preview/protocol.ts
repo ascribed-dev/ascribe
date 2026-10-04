@@ -253,7 +253,14 @@ export type ToWebview =
   /** The threads changed outside the preview (in the source editor): read them again. */
   | { type: "threadsChanged" }
   /** Go to a thread on the page. */
-  | { type: "goToThread"; threadId: string };
+  | { type: "goToThread"; threadId: string }
+  /**
+   * Which view the panel shows: the page (Ascribe's render), or the site (the
+   * dev server's page in a frame, at `url`), or why the site can't show.
+   */
+  | { type: "surface"; surface: "page" }
+  | { type: "surface"; surface: "site"; url: string }
+  | { type: "surface"; surface: "site"; problem: string };
 
 /** Webview to extension. */
 export type FromWebview =
@@ -292,7 +299,11 @@ export type FromWebview =
   /** Read the threads from GitHub again. */
   | { type: "refreshThreads" }
   /** The overlay drew the threads (for tests): how many on blocks, detached, and unsent. */
-  | { type: "threadsDrawn"; report: ThreadsReport };
+  | { type: "threadsDrawn"; report: ThreadsReport }
+  /** The author chose Page or Site, or Try again on the site's problem. */
+  | { type: "surface"; surface: "page" | "site" }
+  /** The site's frame loaded an address (for tests). */
+  | { type: "siteShown"; url: string };
 
 /** What the overlay drew, for tests. */
 export interface ThreadsReport {

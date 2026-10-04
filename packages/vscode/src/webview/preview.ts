@@ -3,6 +3,10 @@
 // with each asset reference pointed at a webview URL, and reports what the
 // author does: picks a build, clicks a link, scrolls, double-clicks a block.
 //
+// The **Page | Site** switch shows the site preview instead: the dev server's
+// page for the same file, in a frame on the dev server's own origin, which
+// runs its own scripts there (its toolbar app has the review controls).
+//
 // The page's blocks carry source anchors (site-render contract §7), so the
 // preview scrolls with the editor by block, both ways (`blocks.ts`), and, with
 // review on, marks what changed against the base (`review.ts`) and shows the
@@ -53,6 +57,10 @@ const page = role("page");
 const title = role("title");
 const availability = role("availability");
 const content = role("content");
+const surfaceGroup = role("surface");
+const site = role("site");
+const siteProblem = role("site-problem");
+const siteFrame = role<HTMLIFrameElement>("site-frame");
 const threads = new Threads(content, post, () => review.redraw());
 const review = new Review(role("review"), content, post, threads);
 
@@ -66,6 +74,50 @@ function post(message: FromWebview): void {
 }
 
 buildSelect.addEventListener("change", () => post({ type: "build", name: buildSelect.value }));
+
+for (const button of surfaceGroup.querySelectorAll<HTMLButtonElement>("button[data-surface]")) {
+  button.addEventListener("click", () => {
+    const surface = button.dataset["surface"] === "site" ? "site" : "page";
+    showSurface(surface);
+    post({ type: "surface", surface });
+  });
+}
+
+siteFrame.addEventListener("load", () => {
+  if (siteFrame.src) post({ type: "siteShown", url: siteFrame.src });
+});
+
+/** Shows the page or the site, and marks the switch. */
+function showSurface(surface: "page" | "site"): void {
+  document.body.classList.toggle("site-mode", surface === "site");
+  site.hidden = surface !== "site";
+  for (const button of surfaceGroup.querySelectorAll<HTMLButtonElement>("button[data-surface]")) {
+    button.setAttribute("aria-pressed", String(button.dataset["surface"] === surface));
+  }
+}
+
+/** The site: its page in the frame, or why it can't show, with Try again. */
+function showSite(message: Extract<ToWebview, { type: "surface" }>): void {
+  showSurface(message.surface);
+  if (message.surface === "page") return;
+  if ("problem" in message) {
+    siteFrame.hidden = true;
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "Try again";
+    retry.addEventListener("click", () => post({ type: "surface", surface: "site" }));
+    siteProblem.replaceChildren(message.problem, " ", retry);
+    siteProblem.hidden = false;
+    return;
+  }
+  siteProblem.hidden = true;
+  siteFrame.hidden = false;
+  // Only a new page navigates the frame, so a link followed in it stays.
+  if (siteFrame.dataset["url"] !== message.url) {
+    siteFrame.dataset["url"] = message.url;
+    siteFrame.src = message.url;
+  }
+}
 
 document.addEventListener("click", (event) => {
   if (event.defaultPrevented || event.button !== 0) return;
@@ -313,6 +365,7 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
   else if (message.type === "reveal") reveal(message.id);
   else if (message.type === "revealLine") revealLine(message.line, message.ifHidden);
   else if (message.type === "nextPage") review.nextPage(message.page, message.first);
+  else if (message.type === "surface") showSite(message);
   else threads.receive(message);
 });
 

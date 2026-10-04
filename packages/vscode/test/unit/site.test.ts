@@ -121,6 +121,6 @@ describe("the page's address", () => {
   });
 
   it("says how to start a dev server when there's none", () => {
-    expect(noDevServerMessage("handbook")).toContain("Start its dev server (`astro dev`)");
+    expect(noDevServerMessage("handbook")).toContain("Start its dev server (astro dev)");
   });
 });

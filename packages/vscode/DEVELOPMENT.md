@@ -92,6 +92,19 @@ the preview than on the site. Link clicks are handled by the
 extension, which opens only `http:`, `https:`, and `mailto:` URLs outside VS
 Code.
 
+**The site preview** (`src/preview/site.ts`). `astro dev` with
+`@ascribed/astro` writes `<project>/.ascribe/dev.json` (`url`, `build`, `pid`)
+when it starts and removes it when it stops. **Open Site Preview** and the
+panel's **Page | Site** switch read it, check the URL answers (any HTTP
+response; a crashed server's stale file is ignored), ask `ascribe/preview` for
+the page in the dev server's build, and use its `route` on the server's origin.
+The address goes through `vscode.env.asExternalUri`, so a remote workspace's
+port is forwarded. The switch frames that address in the webview; the policy
+then adds `frame-src <dev server origin>`, and nothing else, so the shell is
+reloaded when the origin changes. In VS Code for the Web, **Site** opens the
+browser instead. The integration suite `site` drives both against a fake dev
+server.
+
 `pnpm --filter ascribe-vscode build` bundles the element library, from the
 `@ascribed/elements` package's source and stylesheet, into `dist/webview/`.
 

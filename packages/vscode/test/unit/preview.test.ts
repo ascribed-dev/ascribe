@@ -63,6 +63,13 @@ describe("the webview's content security policy", () => {
     );
   });
 
+  it("may frame the site preview's dev server, and only it, once it's shown", () => {
+    expect(contentSecurityPolicy(cspSource, "http://localhost:4321")).toBe(
+      `${policy}; frame-src http://localhost:4321`,
+    );
+    expect(policy).not.toContain("frame-src");
+  });
+
   it("is in the shell, which loads only files, with no inline script or style", () => {
     const html = shellHtml({
       cspSource,

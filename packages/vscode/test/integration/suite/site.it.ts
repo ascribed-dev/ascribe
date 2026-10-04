@@ -17,11 +17,15 @@ describe("the site preview, against a fake dev server", () => {
   let preview: PreviewApi;
   let server: Server;
   let origin: string;
-  const requests: string[] = [];
+  /** What the fake dev server was asked for, and whether as a frame's page. */
+  const requests: { url: string; frame: boolean }[] = [];
 
   before(async () => {
     server = createServer((request, response) => {
-      requests.push(request.url ?? "");
+      requests.push({
+        url: request.url ?? "",
+        frame: request.headers["sec-fetch-dest"] === "iframe",
+      });
       response.writeHead(200, { "content-type": "text/html" });
       response.end(`<!doctype html><title>Site</title><h1>${request.url ?? ""}</h1>`);
     });
@@ -57,7 +61,7 @@ describe("the site preview, against a fake dev server", () => {
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
     rmSync(devFile(), { force: true });
     await vscode.commands.executeCommand("ascribe.openSitePreview");
-    assert.match(preview.site.messages().at(-1) ?? "", /Start its dev server \(`astro dev`\)/);
+    assert.match(preview.site.messages().at(-1) ?? "", /Start its dev server \(astro dev\)/);
     assert.deepEqual(preview.site.opened(), []);
   });
 
@@ -112,5 +116,53 @@ describe("the site preview, against a fake dev server", () => {
       () => preview.site.opened().length > before && preview.site.opened().at(-1),
     );
     assert.equal(new URL(opened).pathname, route);
+  });
+
+  describe("in the preview panel", () => {
+    const quickstart = uriOf("docs", "quickstart.md");
+
+    it("says to start a dev server, and shows the site once there is one", async () => {
+      const route = await routeOf(install);
+      rmSync(devFile(), { force: true });
+      await preview.site.selectSurface("site");
+      const problem = await waitFor("the site's problem", () => {
+        const last = preview.site.shown().at(-1);
+        return last && "problem" in last ? last.problem : undefined;
+      });
+      assert.match(problem, /Start its dev server/);
+      writeDevFile(`${origin}/`);
+      await preview.site.selectSurface("site");
+      const framed = await waitFor("the frame to load the page", () =>
+        preview.site.framed().find((url) => new URL(url).pathname === route),
+      );
+      assert.equal(new URL(framed).origin, origin);
+      // The webview framed it: the dev server got the frame's request.
+      assert.ok(
+        requests.some((r) => r.frame && r.url.startsWith(route)),
+        `a frame request for ${route}: ${JSON.stringify(requests)}`,
+      );
+      assert.match(preview.shell() ?? "", new RegExp(`frame-src ${origin}`));
+    });
+
+    it("follows the active file", async () => {
+      assert.equal(preview.site.surface(), "site");
+      await vscode.window.showTextDocument(
+        await vscode.workspace.openTextDocument(quickstart),
+        vscode.ViewColumn.One,
+      );
+      const render = await preview.whenDrawn(
+        "the quickstart's render",
+        (r) => r.result.page?.path === "quickstart.md",
+      );
+      const route = render.result.page?.route ?? "";
+      await waitFor("the frame to load the quickstart", () =>
+        preview.site.framed().some((url) => new URL(url).pathname === route),
+      );
+    });
+
+    it("goes back to the page", async () => {
+      await preview.site.selectSurface("page");
+      assert.equal(preview.site.surface(), "page");
+    });
   });
 });

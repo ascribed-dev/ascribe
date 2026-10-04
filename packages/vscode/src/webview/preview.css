@@ -360,3 +360,99 @@ main pre code {
 .ascribe-marks .ascribe-label[role="link"] {
   cursor: pointer;
 }
+
+/* The Page | Site switch, at the end of the toolbar. */
+.surface {
+  display: inline-flex;
+  margin-left: auto;
+  border: 1px solid var(--vscode-button-border, var(--vscode-panel-border, currentColor));
+  border-radius: 2px;
+}
+
+.surface button {
+  padding: 0.125rem 0.625rem;
+  color: var(--vscode-foreground, inherit);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.surface button + button {
+  border-left: 1px solid var(--vscode-button-border, var(--vscode-panel-border, currentColor));
+}
+
+.surface button:hover {
+  background: var(
+    --vscode-toolbar-hoverBackground,
+    color-mix(in srgb, currentColor 10%, transparent)
+  );
+}
+
+.surface button[aria-pressed="true"] {
+  color: var(--vscode-button-foreground, ButtonText);
+  background: var(--vscode-button-background, ButtonFace);
+}
+
+.surface button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, Highlight);
+  outline-offset: -1px;
+}
+
+/* The site preview fills the panel below the toolbar. What belongs to the
+   page preview (the build, the review header, the problems, the page) hides:
+   the dev server shows its own build, and its toolbar app has the review. */
+body.site-mode {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+body.site-mode .chrome {
+  margin: 0;
+}
+
+body.site-mode .toolbar > label,
+body.site-mode [data-role="build-description"],
+body.site-mode [data-role="review"],
+body.site-mode .problems,
+body.site-mode main {
+  display: none;
+}
+
+.site {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.site[hidden] {
+  display: none;
+}
+
+.site iframe {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.site-problem {
+  margin: 1rem 1.5rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid currentColor;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.site-problem button {
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  color: var(--vscode-button-foreground, ButtonText);
+  background: var(--vscode-button-background, ButtonFace);
+  border: 1px solid var(--vscode-button-border, transparent);
+  font: inherit;
+  cursor: pointer;
+}

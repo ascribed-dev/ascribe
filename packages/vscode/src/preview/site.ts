@@ -100,5 +100,5 @@ export function sectionAt(sections: readonly PreviewSection[], line: number): st
 
 /** What Open Site Preview says when there's no dev server for the project. */
 export function noDevServerMessage(project: string): string {
-  return `Ascribe: there's no site preview for ${project}. Start its dev server (\`astro dev\`) with @ascribed/astro, then try again.`;
+  return `Ascribe: there's no site preview for ${project}. Start its dev server (astro dev) with @ascribed/astro, then try again.`;
 }

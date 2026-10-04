@@ -8,6 +8,12 @@ In VS Code, the page preview marks the same changes as you work: **Ascribe: Star
 
 When the branch has an open pull request, the preview also shows its review threads beside the blocks they're on, and the reviewer can reply, resolve, comment on any block, and submit the review from there, with the same threads on their lines in the source editor. Everything is stored on GitHub, in the pull request: there's nothing else to set up. [Comments in the preview](editor.md#comments-in-the-preview) describes it.
 
+## In the site preview
+
+The page preview is the page alone. On an Astro site built with `@ascribed/astro`, `astro dev` shows the same marks and threads on the real page, in the site's layout, from an **Ascribe review** app in Astro's dev toolbar: start review there, step through the changes, comment, and submit, with the GitHub CLI's sign-in. [Review in the site preview](astro.md#review-in-the-site-preview) describes it.
+
+The three views link to each other at the same place. From a block or a thread in either preview, **Open source** opens the file at its line. From a file, **Ascribe: Open Page Preview** and **Ascribe: Open Site Preview** open it in each preview, and the preview panel's **Page | Site** switch shows either one beside the editor. [Site preview](editor.md#site-preview) describes the editor's side.
+
 ## The report
 
 `ascribe diff --format html` writes one HTML file showing every changed page rendered, with what changed marked: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. **Show: Changes / As it will be / As it was** switches between the marks and the two versions of the page. The [command reference](cli.md#the-html-report) describes it in full.

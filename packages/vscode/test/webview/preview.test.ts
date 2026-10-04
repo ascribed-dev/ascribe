@@ -48,7 +48,10 @@ interface Preview {
   ): Promise<Extract<FromWebview, { type: T }>>;
 }
 
-async function open(): Promise<Preview> {
+/** The dev server the site preview frames, in the tests that show it. */
+const SITE = "https://site.test";
+
+async function open(options: { frameOrigin?: string } = {}): Promise<Preview> {
   const page = await context.newPage();
   page.setDefaultTimeout(10_000);
   const posted: FromWebview[] = [];
@@ -74,6 +77,7 @@ async function open(): Promise<Preview> {
           marksStyle: `${ORIGIN}/dist/marks.css`,
           previewScript: `${ORIGIN}/dist/preview.js`,
           previewStyle: `${ORIGIN}/dist/preview.css`,
+          ...options,
         }),
       });
     } else if (pathname.startsWith("/dist/")) {
@@ -88,6 +92,15 @@ async function open(): Promise<Preview> {
       await route.fulfill({ status: 404, body: "" });
     }
   });
+  await page.route(`${SITE}/**`, (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: `<!doctype html><title>Site</title><h1>${new URL(route.request().url()).pathname}</h1>`,
+    }),
+  );
+  await page.route("https://elsewhere.test/**", (route) =>
+    route.fulfill({ contentType: "text/html", body: "<h1>elsewhere</h1>" }),
+  );
   await page.goto(`${ORIGIN}/`);
   const preview: Preview = {
     page,
@@ -762,6 +775,87 @@ describe("review threads in the preview webview", () => {
     );
     await preview.page.getByRole("button", { name: "Pull" }).click();
     expect(preview.posted.find((m) => m.type === "git")).toEqual({ type: "git", command: "pull" });
+    await preview.page.close();
+  });
+});
+
+describe("the Page | Site switch", () => {
+  const frame = (preview: Preview) => preview.page.locator('iframe[title="Site preview"]');
+
+  it("asks for the site, then shows the dev server's page in a frame", async () => {
+    const preview = await open({ frameOrigin: SITE });
+    await preview.send(render(1, "<p>Hello</p>"));
+    await preview.next("rendered");
+    const group = preview.page.getByRole("group", { name: "Preview" });
+    await expect(
+      group.getByRole("button", { name: "Page" }).getAttribute("aria-pressed"),
+    ).resolves.toBe("true");
+    const from = preview.posted.length;
+    await group.getByRole("button", { name: "Site" }).click();
+    await expect(preview.next("surface", from)).resolves.toEqual({
+      type: "surface",
+      surface: "site",
+    });
+    // The page preview hides at once; the frame waits for its address.
+    await expect(preview.page.getByText("Hello").isVisible()).resolves.toBe(false);
+    await expect(preview.page.getByLabel("Build").isVisible()).resolves.toBe(false);
+    await preview.send({ type: "surface", surface: "site", url: `${SITE}/docs/install` });
+    const shown = await preview.next("siteShown", from);
+    expect(shown).toEqual({ type: "siteShown", url: `${SITE}/docs/install` });
+    await expect(
+      preview.page.frameLocator('iframe[title="Site preview"]').locator("h1").textContent(),
+    ).resolves.toBe("/docs/install");
+    await expect(frame(preview).boundingBox()).resolves.toMatchObject({ width: 1280 });
+
+    // Back to the page, as it was.
+    await group.getByRole("button", { name: "Page" }).click();
+    await expect(preview.page.getByText("Hello").isVisible()).resolves.toBe(true);
+    await expect(frame(preview).isVisible()).resolves.toBe(false);
+    await preview.page.close();
+  });
+
+  it("doesn't reload the frame for the same page, so a link followed in it stays", async () => {
+    const preview = await open({ frameOrigin: SITE });
+    await preview.send({ type: "surface", surface: "site", url: `${SITE}/a` });
+    await preview.next("siteShown");
+    const count = () => preview.posted.filter((m) => m.type === "siteShown").length;
+    await preview.send({ type: "surface", surface: "site", url: `${SITE}/a` });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(count()).toBe(1);
+    await preview.send({ type: "surface", surface: "site", url: `${SITE}/b` });
+    await expect.poll(count).toBe(2);
+    await preview.page.close();
+  });
+
+  it("frames only the dev server's origin", async () => {
+    const preview = await open({ frameOrigin: SITE });
+    await preview.send({ type: "surface", surface: "site", url: "https://elsewhere.test/" });
+    // Chromium's error page in the frame: the policy refused it.
+    await expect
+      .poll(() =>
+        preview.page.frameLocator('iframe[title="Site preview"]').locator("body").textContent(),
+      )
+      .toContain("ERR_BLOCKED_BY_CSP");
+    await preview.page.close();
+  });
+
+  it("says why the site can't show, and tries again", async () => {
+    const preview = await open();
+    await preview.send({
+      type: "surface",
+      surface: "site",
+      problem: "There's no site preview for quill. Start its dev server.",
+    });
+    await expect(
+      preview.page.getByText("There's no site preview for quill.").isVisible(),
+    ).resolves.toBe(true);
+    await expect(frame(preview).isVisible()).resolves.toBe(false);
+    const from = preview.posted.length;
+    await preview.page.getByRole("button", { name: "Try again" }).click();
+    await expect(preview.next("surface", from)).resolves.toEqual({
+      type: "surface",
+      surface: "site",
+    });
     await preview.page.close();
   });
 });
