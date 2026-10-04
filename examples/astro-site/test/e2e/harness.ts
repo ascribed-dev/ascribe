@@ -50,9 +50,13 @@ export async function servePreview(
   return { origin: `http://127.0.0.1:${server.port}`, stop: () => server.stop() };
 }
 
-/** Starts the dev server in its own process, returning its origin and a function that stops it. */
+/**
+ * Starts the dev server in its own process, with `env` added to its
+ * environment, returning its origin and a function that stops it.
+ */
 export async function serveDev(
   root: string = siteDir,
+  env: Record<string, string> = {},
 ): Promise<{ origin: string; stop(): Promise<void> }> {
   const port = await freePort();
   const script = fileURLToPath(new URL("dev-server.mjs", import.meta.url));
@@ -64,6 +68,7 @@ export async function serveDev(
         Object.entries(process.env).filter(([name]) => !name.startsWith("VITEST")),
       ),
       NODE_ENV: "development",
+      ...env,
     },
   });
   const stop = (): Promise<void> =>

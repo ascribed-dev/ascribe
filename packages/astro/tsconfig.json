@@ -1,6 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    // Review's parts from the workspace package's source, so checking needn't
+    // build it first. The build takes them from its declarations.
+    "paths": {
+      "@ascribed/review/github": ["../review/src/github/index.ts"],
+      "@ascribed/review/marks": ["../review/src/marks/index.ts"],
+      "@ascribed/review/overlay": ["../review/src/overlay/index.ts"],
+      "@ascribed/review/place": ["../review/src/place/index.ts"]
+    },
     "types": ["node"],
     "noEmit": true
   },

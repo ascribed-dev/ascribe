@@ -24,7 +24,12 @@ import { watchDev } from "./dev.js";
 import { copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
 import rehypeAscribeAttributes from "./rehype.js";
-import { anchorsFor, runBuild } from "./run.js";
+import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
+import { runDiff } from "./review/diff.js";
+import { APP_ID } from "./review/protocol.js";
+import { readRoutes } from "./review/routes.js";
+import { channelProblem, ReviewServer, type ToolbarChannel } from "./review/server.js";
+import { anchorsFor, reviewFor, runBuild } from "./run.js";
 import { satteriAscribeAttributes } from "./satteri.js";
 
 export { default as rehypeAscribeAttributes } from "./rehype.js";
@@ -47,10 +52,21 @@ export interface AscribeOptions {
   /**
    * Mark each block of the site output with the source lines it came from
    * (source anchors), for review: `"dev"` in `astro dev` only, `true` always.
-   * Default: `false`.
+   * Default: `false`, though `review` has them in `astro dev`.
    */
   anchors?: boolean | "dev";
+  /**
+   * Review in the site preview: an **Ascribe review** app in `astro dev`'s
+   * toolbar, which marks the page's changes and shows the pull request's
+   * comments, with source anchors in `astro dev`. Default `true`; `false`
+   * removes the app. `astro build` never has it.
+   */
+  review?: boolean;
 }
+
+/** The toolbar app's icon: a speech bubble over a page. */
+const ICON =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v6"/><path d="M14 3v4h4"/><path d="M6 3v15"/><path d="M11 14h10v6h-6l-3 2v-2h-1z"/></svg>';
 
 /** Runs `ascribe build`, checks the site's routing, adds the markdown plugin, and serves published files. */
 export default function ascribe(options: AscribeOptions): AstroIntegration {
@@ -64,10 +80,14 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       }
     | undefined;
   let rebuild: (() => Promise<void>) | undefined;
+  let binary: string | undefined;
+  let reviewing = false;
+  let devHttps = false;
+  let review: ReviewServer | undefined;
   return {
     name: "@ascribed/astro",
     hooks: {
-      "astro:config:setup": async ({ config, command, logger, updateConfig }) => {
+      "astro:config:setup": async ({ config, command, logger, updateConfig, addDevToolbarApp }) => {
         const root = fileURLToPath(config.root);
         const project = readProject(path.resolve(root, options.project ?? "."));
         // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build.
@@ -108,16 +128,29 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           site: config.site,
         };
 
+        reviewing = reviewFor(options.review, command);
+        if (reviewing) {
+          addDevToolbarApp({
+            id: APP_ID,
+            name: "Ascribe review",
+            icon: ICON,
+            entrypoint: new URL("./toolbar/app.js", import.meta.url),
+          });
+        }
+
         if (command !== "preview") {
-          const binary = findBinary({ binary: options.binary, root });
+          const found = findBinary({ binary: options.binary, root });
+          binary = found;
           rebuild = async () => {
-            logger.info(`running ${path.basename(binary)} build for "${options.build}"`);
+            logger.info(`running ${path.basename(found)} build for "${options.build}"`);
             const result = await runBuild({
-              binary,
+              binary: found,
               configPath: project.configPath,
               build: options.build,
               cwd: project.dir,
-              anchors: anchorsFor(options.anchors, command),
+              anchors: anchorsFor(options.anchors, command, reviewing),
+              // While review is on, the JSON output says which page is at each route.
+              outputs: review?.active ? ["site", "json"] : ["site"],
             });
             if (result.diagnostics !== "") logger.warn(result.diagnostics);
             if (result.summary !== "") logger.info(result.summary);
@@ -155,20 +188,64 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           },
         });
       },
-      "astro:server:setup": ({ server, refreshContent, logger }) => {
+      "astro:server:setup": ({ server, refreshContent, logger, toolbar }) => {
         if (devProject && rebuild && devConfig) {
           if (!refreshContent)
             throw new Error("@ascribed/astro: this Astro version does not support refreshContent.");
-          watchDev({
+          const project = devProject;
+          devHttps = Boolean(server.config.server.https);
+          const builds = watchDev({
             server,
             refreshContent: () => refreshContent({}),
             logger,
-            project: devProject,
+            project,
             astro: devConfig,
             build: options.build,
             rebuild,
+            onBuilt: () => review?.rebuilt(),
           });
+          if (reviewing && binary !== undefined) {
+            const found = binary;
+            const run = { binary: found, configPath: project.configPath, cwd: project.dir };
+            const jsonRoot = path.join(path.dirname(siteRoot), "json");
+            review = new ReviewServer({
+              channel: toolbar as ToolbarChannel,
+              logger,
+              build: options.build,
+              contentRoot: project.contentRoot,
+              channelProblem: channelProblem(server.config),
+              diff: (base) => runDiff({ ...run, build: options.build, base }),
+              connect: async () => (await import("./review/github.js")).connect(project.dir),
+              writeRoutes: () =>
+                builds.inTurn(async () => {
+                  await runBuild({ ...run, build: options.build, outputs: ["json"] });
+                }),
+              readRoutes: () => readRoutes(jsonRoot),
+            });
+          }
         }
+      },
+      "astro:server:start": ({ address, logger }) => {
+        if (!devProject || !devConfig) return;
+        const dir = devProject.dir;
+        try {
+          writeDevFile(dir, {
+            url: siteUrl(address, { https: devHttps, base: devConfig.base }),
+            build: options.build,
+            pid: process.pid,
+          });
+          // Vite exits on a signal before `astro:server:done` runs.
+          process.once("exit", () => removeDevFile(dir, process.pid));
+        } catch (error) {
+          logger.warn(
+            `couldn't write .ascribe/dev.json, which the editor's Open Site Preview reads: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      },
+      "astro:server:done": () => {
+        review?.dispose();
+        review = undefined;
+        if (devProject) removeDevFile(devProject.dir, process.pid);
       },
       "astro:build:done": async ({ dir, logger }) => {
         if (await copyPublishedFiles(siteRoot, dir)) logger.info("copied _ascribe/files/");

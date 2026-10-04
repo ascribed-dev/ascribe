@@ -13,6 +13,17 @@ export {
   type ReviewSession,
   type SessionOptions,
 } from "./session.js";
+export {
+  answerRequest,
+  baseRevision,
+  OVERLAY_METHODS,
+  pagesShowing,
+  pullRequestBase,
+  type Answer,
+  type ChangedPageRef,
+  type OverlayMethod,
+  type RequestContext,
+} from "./requests.js";
 export { parseRemote, readCheckout, type CheckoutInfo, type RepositoryRef } from "./repository.js";
 export {
   ghTransport,

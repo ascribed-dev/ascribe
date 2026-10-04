@@ -1,8 +1,8 @@
 // What review says about a pull request's threads, apart from VS Code so it
 // can be tested by itself, and shared with the webview: the header's notices,
-// which pages show a thread, and whether the source editor shows threads.
+// and whether the source editor shows threads.
 
-import type { ChangedPage, ThreadsView } from "./protocol.js";
+import type { ThreadsView } from "./protocol.js";
 
 /** "1 commit", "3 commits". */
 function commits(count: number): string {
@@ -66,21 +66,6 @@ export function threadsNotice(view: ThreadsView): ThreadsNotice | undefined {
 export function againstText(view: ThreadsView | null): string {
   const pr = view?.pullRequest;
   return pr ? `#${pr.number} against ` : "Against ";
-}
-
-/**
- * The changed pages that show a file (a content path): the file's own page,
- * and the pages that changed through it (an include). `[]` when none does.
- */
-export function pagesShowing(
-  file: string,
-  pages: readonly ChangedPage[],
-): { path: string; title: string | null }[] {
-  return pages
-    .filter((page) => page.status !== "removed")
-    .filter((page) => page.path === file || page.because.includes(file))
-    .sort((a, b) => Number(b.path === file) - Number(a.path === file))
-    .map((page) => ({ path: page.path, title: page.title }));
 }
 
 /** The `ascribe.review.sourceComments` setting. */
@@ -166,21 +151,4 @@ function closingRun(line: string, from: number, run: number): number {
     at = line.indexOf(ticks, end);
   }
   return -1;
-}
-
-/**
- * The git revision to compare with for a pull request's base: the remote
- * branch, from the remote whose URL is the pull request's repository, when
- * there is one; else the branch's name.
- */
-export function pullRequestBase(
-  remotes: readonly { name: string; repository: string | undefined }[],
-  repository: string,
-  baseRefName: string,
-): string {
-  const remote =
-    remotes.find((r) => r.repository === repository && r.name === "upstream") ??
-    remotes.find((r) => r.repository === repository && r.name === "origin") ??
-    remotes.find((r) => r.repository === repository);
-  return remote ? `${remote.name}/${baseRefName}` : baseRefName;
 }

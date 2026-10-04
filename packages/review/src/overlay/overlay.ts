@@ -53,6 +53,12 @@ export interface OverlayOptions {
   columnAt?: number;
   /** Called after the overlay redraws: for a host showing the thread count. */
   onUpdate?: () => void;
+  /**
+   * Whether to draw the bar of unsent comments below the page. Default true.
+   * A host that shows the count itself (`unsentCount`) turns it off and opens
+   * the submit dialog with `submitReview`.
+   */
+  unsentBar?: boolean;
 }
 
 /** The overlay on one page. */
@@ -67,6 +73,10 @@ export interface Overlay {
   showAllComments(): void;
   /** How many threads the pull request has on its pages, once read. */
   threadCount(): number | undefined;
+  /** How many comments are unsent, once read. */
+  unsentCount(): number | undefined;
+  /** Opens the submit dialog, when there's something to submit. */
+  submitReview(): void;
   /** Removes the overlay and everything it put on the page. */
   dispose(): void;
 }
@@ -113,6 +123,7 @@ class ReviewOverlay implements Overlay {
   private readonly doc: Document;
   private readonly columnAt: number;
   private readonly onUpdate: (() => void) | undefined;
+  private readonly unsentBar: boolean;
 
   private readonly beforeHost: HTMLElement;
   private readonly afterHost: HTMLElement;
@@ -169,6 +180,7 @@ class ReviewOverlay implements Overlay {
     this.doc = this.root.ownerDocument;
     this.columnAt = options.columnAt ?? 600;
     this.onUpdate = options.onUpdate;
+    this.unsentBar = options.unsentBar ?? true;
 
     this.beforeHost = this.uiHost("div");
     this.afterHost = this.uiHost("div");
@@ -287,6 +299,14 @@ class ReviewOverlay implements Overlay {
 
   threadCount(): number | undefined {
     return this.all?.length;
+  }
+
+  unsentCount(): number | undefined {
+    return this.data?.pending.count;
+  }
+
+  submitReview(): void {
+    if ((this.data?.pending.count ?? 0) > 0) this.openDialog("submit");
   }
 
   dispose(): void {
@@ -609,7 +629,7 @@ class ReviewOverlay implements Overlay {
 
   private drawUnsentBar(): HTMLElement[] {
     const count = this.data?.pending.count ?? 0;
-    if (count === 0) return [];
+    if (count === 0 || !this.unsentBar) return [];
     const bar = this.el("div", "unsent-bar");
     bar.setAttribute("role", "region");
     bar.setAttribute("aria-label", "Unsent comments");

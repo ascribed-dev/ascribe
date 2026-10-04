@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { anchorsFor, runBuild } from "../src/run.js";
+import { anchorsFor, reviewFor, runBuild } from "../src/run.js";
 
 // A stand-in for the compiler: a shell script, so these run where /bin/sh does.
 function script(body: string): string {
@@ -41,6 +41,20 @@ describe.skipIf(process.platform === "win32")("runBuild", () => {
     );
   });
 
+  it("writes the outputs asked for", async () => {
+    const binary = script('echo "args: $*"');
+    const result = await runBuild({
+      binary,
+      configPath: "/p/ascribe.toml",
+      build: "site",
+      cwd: "/",
+      outputs: ["site", "json"],
+    });
+    expect(result.diagnostics).toBe(
+      "args: build --emit site,json --build site --config /p/ascribe.toml --color never",
+    );
+  });
+
   it("rejects with the compiler's report when the build fails", async () => {
     const binary = script(
       'echo "[ASC036] Error: link-target-missing"; echo "error: the build failed" >&2; exit 1',
@@ -66,5 +80,22 @@ describe("anchorsFor", () => {
     expect(anchorsFor("dev", "dev")).toBe(true);
     expect(anchorsFor("dev", "build")).toBe(false);
     expect(anchorsFor(true, "build")).toBe(true);
+  });
+
+  it("is on in dev for review, and never in a build for it", () => {
+    expect(anchorsFor(undefined, "dev", true)).toBe(true);
+    expect(anchorsFor(false, "dev", true)).toBe(true);
+    expect(anchorsFor(undefined, "build", true)).toBe(false);
+  });
+});
+
+describe("reviewFor", () => {
+  it("is on in dev unless turned off, and never in a build", () => {
+    expect(reviewFor(undefined, "dev")).toBe(true);
+    expect(reviewFor(true, "dev")).toBe(true);
+    expect(reviewFor(false, "dev")).toBe(false);
+    expect(reviewFor(undefined, "build")).toBe(false);
+    expect(reviewFor(true, "build")).toBe(false);
+    expect(reviewFor(true, "preview")).toBe(false);
   });
 });

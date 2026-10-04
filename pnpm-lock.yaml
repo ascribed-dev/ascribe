@@ -227,6 +227,9 @@ importers:
       '@ascribed/elements':
         specifier: workspace:*
         version: link:../elements
+      '@ascribed/review':
+        specifier: workspace:*
+        version: link:../review
       property-information:
         specifier: ^7.2.0
         version: 7.2.0
@@ -246,6 +249,9 @@ importers:
       hast-util-from-html:
         specifier: ^2.0.3
         version: 2.0.3
+      jsdom:
+        specifier: ^30.1.1
+        version: 30.1.1
       rehype-raw:
         specifier: ^7.0.0
         version: 7.0.0

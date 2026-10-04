@@ -483,6 +483,31 @@ describe("the overlay", () => {
     expect(all(".unsent-bar")).toHaveLength(0);
   });
 
+  it("leaves the bar to a host that shows the count itself", async () => {
+    host.blocks = [
+      {
+        anchor: anchor("guide.md:3-3"),
+        threads: [thread("A", 3, { comments: [comment("Mine", { pending: true })] })],
+      },
+    ];
+    host.unsent = 1;
+    overlay = createOverlay({ root, host, columnAt: 0, unsentBar: false });
+    await settle();
+    expect(all(".unsent-bar")).toHaveLength(0);
+    expect(overlay.unsentCount()).toBe(1);
+    overlay.submitReview();
+    await settle();
+    expect(one(".dialog").getAttribute("aria-label")).toBe("Submit review");
+  });
+
+  it("opens no submit dialog with nothing unsent", async () => {
+    const shown = await open();
+    expect(shown.unsentCount()).toBe(0);
+    shown.submitReview();
+    await settle();
+    expect(all(".dialog")).toHaveLength(0);
+  });
+
   it("confirms Discard with the count and outcome-named buttons", async () => {
     host.blocks = [
       {
