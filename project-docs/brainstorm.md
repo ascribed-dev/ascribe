@@ -8,6 +8,8 @@ Three groups:
 - [Agents](#agents): publishing docs that agents can read (the Web Documentation Delivery Spec), and helping agents that write docs (diagnostics, the CLI, an MCP server, GitHub Copilot, and Claude Code).
 - [Review](#review): seeing what a pull request changes as readers will see it, and commenting on it there.
 
+Ascribe's own docs, and the drift checks built on them (generated reference, coverage, and snippets from section 1), are planned in [docs/](docs/README.md).
+
 ## What the ideas are judged against
 
 - **Markdown stays the source of truth.** SPEC principle 1: source readability wins. A feature that writes source must write the source a person would.
