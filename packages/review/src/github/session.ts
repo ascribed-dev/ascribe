@@ -4,7 +4,7 @@ import { readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { parse } from "smol-toml";
 import { formatSource, parseSource, type Anchor } from "../place/anchor.js";
-import { lineMap } from "../place/lines.js";
+import { lineMap, parseHunks, type Hunk } from "../place/lines.js";
 import {
   locateThreads,
   placeOnPage,
@@ -27,6 +27,7 @@ import {
   SUBMIT_REVIEW,
   UNRESOLVE,
   UPDATE_REVIEW,
+  VIEWER,
 } from "./queries.js";
 import {
   markedThreads,
@@ -88,11 +89,30 @@ export interface PendingReview {
 /** How a review ends: as a comment, an approval, or a request for changes. */
 export type ReviewEvent = "COMMENT" | "APPROVE" | "REQUEST_CHANGES";
 
+/** How a comment on a block would go, worked out before it's made. */
+export type CommentTarget =
+  /** As a review thread on the block's lines. */
+  | { kind: "thread" }
+  /**
+   * In the pending review's body, since GitHub can't anchor it: the file
+   * isn't in the pull request (`"file"`), or the lines are away from its
+   * changes (`"lines"`).
+   */
+  | { kind: "summary"; reason: "file" | "lines" }
+  /** Not until the block's lines are pushed (or fetched): `message` says which. */
+  | { kind: "push-first"; message: string };
+
 /** One pull request's review, for a host and the overlay behind it. */
 export interface ReviewSession {
   pullRequest: PullRequestInfo;
   /** The page's threads. Cached until `refresh()` or a change made through the session. */
   threads(page: PageRef): Promise<PlacedThreads>;
+  /** Every thread on the pull request's files in the content root, located in the working tree. */
+  allThreads(): Promise<LocatedThread[]>;
+  /** The signed-in viewer's login. */
+  viewer(): Promise<string>;
+  /** How a comment on a block would go: as a thread, in the review's summary, or not yet. */
+  commentTarget(anchor: Anchor): Promise<CommentTarget>;
   /** Comments on a block, in the pending review. */
   comment(anchor: Anchor, body: string, page: PageRef): Promise<Thread>;
   /** Replies to a thread: sent at once (`"now"`), or held in the pending review. */
@@ -245,6 +265,11 @@ export interface SessionOptions {
   pullRequest: PullRequestInfo;
   transport: GitHubTransport;
   mutationInterval: number;
+  /**
+   * How long to wait before reading again when GitHub fails a read with its
+   * generic error, in milliseconds. Default 2000.
+   */
+  retryDelay?: number;
 }
 
 interface State {
@@ -253,6 +278,10 @@ interface State {
   located: LocatedThread[];
   pendingReview: RawReview | undefined;
 }
+
+// GitHub's generic failure, which it gives for a moment after some changes
+// (deleting a pending review): worth one more try.
+const TRANSIENT = /something went wrong/i;
 
 // GitHub's errors when a line can't take a review comment.
 const CANT_ANCHOR =
@@ -270,14 +299,58 @@ export function createSession(options: SessionOptions): ReviewSession {
   let files: Promise<Set<string>> | undefined;
   // The pending review this session made or wrote to, until a read shows it.
   let known: { id: string; body: string } | undefined;
+  let viewer: Promise<string> | undefined;
   let lastMutation = 0;
   let queue: Promise<unknown> = Promise.resolve();
+  // The pending review just discarded. For a moment after, GitHub can still
+  // list it and its comments; reads leave them out until one doesn't.
+  let discarded: string | undefined;
+  const retryDelay = options.retryDelay ?? 2000;
+
+  /** A read, tried once more after a wait when GitHub fails it with its generic error. */
+  const read = async <T>(run: () => Promise<T>): Promise<T> => {
+    try {
+      return await run();
+    } catch (error) {
+      if (!(
+        error instanceof ReviewError &&
+        error.code === "refused" &&
+        TRANSIENT.test(error.message)
+      )) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      return run();
+    }
+  };
 
   const load = (): Promise<State> => {
     state ??= (async () => {
-      const raw = await readReviewThreads(transport, key);
-      const conversation = await readConversation(transport, key);
-      const reviews = await readReviews(transport, key);
+      let raw = await read(() => readReviewThreads(transport, key));
+      const conversation = await read(() => readConversation(transport, key));
+      let reviews = await read(() => readReviews(transport, key));
+      if (discarded !== undefined) {
+        const gone = discarded;
+        const stale =
+          reviews.some((review) => review.id === gone) ||
+          raw.some((thread) => thread.comments.nodes.some((c) => c?.state === "PENDING"));
+        if (stale) {
+          // The viewer has one pending review at most, so every pending
+          // comment was in the one discarded.
+          reviews = reviews.filter((review) => review.id !== gone);
+          raw = raw
+            .map((thread) => ({
+              ...thread,
+              comments: {
+                ...thread.comments,
+                nodes: thread.comments.nodes.filter((c) => c !== null && c.state !== "PENDING"),
+              },
+            }))
+            .filter((thread) => thread.comments.nodes.length > 0);
+        } else {
+          discarded = undefined;
+        }
+      }
       const pendingReview = reviews.find(
         (review) => review.state === "PENDING" && review.viewerDidAuthor,
       );
@@ -330,6 +403,8 @@ export function createSession(options: SessionOptions): ReviewSession {
       { pullRequestId: pullRequest.id, commit: pullRequest.headOid, body: PLACEHOLDER },
     );
     changed();
+    // A new pending review: the discarded one is gone from GitHub by now.
+    discarded = undefined;
     known = { id: data.addPullRequestReview.pullRequestReview.id, body: PLACEHOLDER };
     return known;
   };
@@ -349,6 +424,65 @@ export function createSession(options: SessionOptions): ReviewSession {
       : new ReviewError("not-found", "That thread isn't in the pull request.");
   };
 
+  // A block's lines at the head commit: every one of them has to be there, unchanged.
+  const atHead = async (anchor: Anchor) => {
+    const range = parseSource(anchor.source);
+    if (range === undefined) {
+      throw new ReviewError("not-found", `${anchor.source} isn't a block's source.`);
+    }
+    const repositoryPath = `${contentPrefix}${range.path}`;
+    const map = await lineMap(root, pullRequest.headOid, repositoryPath, "to-commit");
+    const lines: number[] = [];
+    for (let line = range.first; line <= range.last; line++) {
+      const mapped = map.map(line);
+      if (mapped !== undefined && !mapped.replaced) lines.push(mapped.line);
+    }
+    const first = lines[0];
+    const last = lines.at(-1);
+    if (
+      first === undefined ||
+      last === undefined ||
+      lines.length !== range.last - range.first + 1
+    ) {
+      throw new ReviewError(
+        "push-first",
+        pullRequest.local === "missing"
+          ? "The pull request's latest commit isn't in this checkout. Fetch it, then comment."
+          : "This block has changes that aren't in the pull request. Push them, then comment.",
+      );
+    }
+    return { range, repositoryPath, first, last };
+  };
+
+  const changedFiles = (): Promise<Set<string>> => {
+    files ??= readFiles(transport, key);
+    files.catch(() => {
+      files = undefined;
+    });
+    return files;
+  };
+
+  // The lines of each file GitHub shows in the pull request's diff, and so
+  // takes comments on: its changes and three lines around them.
+  const shown = new Map<string, Promise<Hunk[] | undefined>>();
+  const shownLines = (repositoryPath: string): Promise<Hunk[] | undefined> => {
+    let hunks = shown.get(repositoryPath);
+    if (hunks === undefined) {
+      hunks = gitMaybe(root, [
+        "diff",
+        "--no-color",
+        "--no-ext-diff",
+        "--no-renames",
+        "--unified=3",
+        `${pullRequest.baseOid}...${pullRequest.headOid}`,
+        "--",
+        `:(literal)${repositoryPath}`,
+      ]).then((diff) => (diff === undefined ? undefined : parseHunks(diff)));
+      shown.set(repositoryPath, hunks);
+    }
+    return hunks;
+  };
+
   return {
     pullRequest,
 
@@ -356,38 +490,45 @@ export function createSession(options: SessionOptions): ReviewSession {
       return placeOnPage(page, (await load()).located);
     },
 
-    async comment(anchor, body, page) {
-      const range = parseSource(anchor.source);
-      if (range === undefined) {
-        throw new ReviewError("not-found", `${anchor.source} isn't a block's source.`);
-      }
-      const repositoryPath = `${contentPrefix}${range.path}`;
-      const map = await lineMap(root, pullRequest.headOid, repositoryPath, "to-commit");
-      // Every line of the block has to be at the head commit, unchanged.
-      const lines: number[] = [];
-      for (let line = range.first; line <= range.last; line++) {
-        const mapped = map.map(line);
-        if (mapped !== undefined && !mapped.replaced) lines.push(mapped.line);
-      }
-      const first = lines[0];
-      const last = lines.at(-1);
-      if (
-        first === undefined ||
-        last === undefined ||
-        lines.length !== range.last - range.first + 1
-      ) {
-        throw new ReviewError(
-          "push-first",
-          pullRequest.local === "missing"
-            ? "The pull request's latest commit isn't in this checkout. Fetch it, then comment."
-            : "This block has changes that aren't in the pull request. Push them, then comment.",
-        );
-      }
-      files ??= readFiles(transport, key);
-      files.catch(() => {
-        files = undefined;
+    async allThreads() {
+      return (await load()).located;
+    },
+
+    async viewer() {
+      viewer ??= transport
+        .graphql<{ viewer: { login: string } }>(VIEWER, {})
+        .then((data) => data.viewer.login);
+      viewer.catch(() => {
+        viewer = undefined;
       });
-      if ((await files).has(repositoryPath)) {
+      return viewer;
+    },
+
+    async commentTarget(anchor) {
+      let lines: Awaited<ReturnType<typeof atHead>>;
+      try {
+        lines = await atHead(anchor);
+      } catch (error) {
+        if (error instanceof ReviewError && error.code === "push-first") {
+          return { kind: "push-first", message: error.message };
+        }
+        throw error;
+      }
+      if (!(await changedFiles()).has(lines.repositoryPath)) {
+        return { kind: "summary", reason: "file" };
+      }
+      const hunks = await shownLines(lines.repositoryPath);
+      // Without the base commit there's no telling: try, and hold it if GitHub refuses.
+      if (hunks === undefined) return { kind: "thread" };
+      const inOne = hunks.some(
+        (hunk) => lines.first >= hunk.newStart && lines.last < hunk.newStart + hunk.newCount,
+      );
+      return inOne ? { kind: "thread" } : { kind: "summary", reason: "lines" };
+    },
+
+    async comment(anchor, body, page) {
+      const { range, repositoryPath, first, last } = await atHead(anchor);
+      if ((await changedFiles()).has(repositoryPath)) {
         const review = await ensureReview();
         try {
           const data = await mutate<{ addPullRequestReviewThread: { thread: RawThread | null } }>(
@@ -541,11 +682,13 @@ export function createSession(options: SessionOptions): ReviewSession {
       await mutate(DELETE_REVIEW, { reviewId: pendingReview.id });
       changed();
       known = undefined;
+      discarded = pendingReview.id;
     },
 
     async refresh() {
       state = undefined;
       files = undefined;
+      shown.clear();
     },
   };
 }

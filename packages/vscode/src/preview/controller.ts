@@ -11,11 +11,13 @@ import type {
   PreviewResult,
   RenderReport,
   ReviewView,
+  ThreadsReport,
   ToWebview,
   WebviewAsset,
 } from "./protocol.js";
 import { canonicalReference, isExternal, splitFragment } from "./refs.js";
 import { ReviewController, type ReviewApi } from "./review.js";
+import { SourceComments, type SourceThreadRecord } from "./sourceComments.js";
 import { baseCommit, baseName, causes, fromContentPath, parseSource } from "./reviewText.js";
 import { BuildChoices, previewProblems } from "./routing.js";
 
@@ -75,6 +77,10 @@ export interface PreviewApi {
   selectBuild(name: string): void;
   /** Review. */
   review: ReviewApi;
+  /** What the overlay drew, each time it drew the threads. */
+  threadsDrawn(): readonly ThreadsReport[];
+  /** The review threads the source editor shows. */
+  sourceThreads(): SourceThreadRecord[];
 }
 
 /**
@@ -114,27 +120,44 @@ export class PreviewController implements vscode.Disposable {
   private waiters: (() => void)[] = [];
   /** The page to go to the first change of once it's drawn: one opened from review's next-page offer. */
   private firstChangeOf: string | undefined;
+  /** The thread to go to once its page is drawn: one opened from another page's list. */
+  private threadToGo: { file: string; threadId: string } | undefined;
+  private threadsLog: ThreadsReport[] = [];
   private readonly review: ReviewController;
+  private readonly sourceComments: SourceComments;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly projects: ProjectRegistry,
   ) {
-    this.review = new ReviewController(projects, {
-      previewedDocument: () => (this.panel ? this.document : undefined),
-      previewActive: () => this.panel?.active ?? false,
-      previewBuild: (folder) => this.builds.get(folder),
-      refresh: () => {
-        if (this.panel) this.schedule(0);
+    this.review = new ReviewController(
+      projects,
+      {
+        previewedDocument: () => (this.panel ? this.document : undefined),
+        previewActive: () => this.panel?.active ?? false,
+        previewBuild: (folder) => this.builds.get(folder),
+        refresh: () => {
+          if (this.panel) this.schedule(0);
+        },
+        showPage: (uri) => this.showPage(uri),
       },
-      showPage: (uri) => this.showPage(uri),
-    });
+      context.workspaceState,
+    );
+    this.sourceComments = new SourceComments(projects, this.review.threads);
   }
 
   /** Registers the commands, the listeners, and the panel serializer. */
   register(): void {
     this.review.register();
+    this.sourceComments.register();
     this.disposables.push(
+      this.sourceComments,
+      this.review.threads.onDidChange(({ server, origin }) => {
+        if (!this.panel || this.server() !== server) return;
+        // The overlay reads the threads again after its own actions.
+        if (origin === "source") this.post({ type: "threadsChanged" });
+        else if (origin === "refresh") this.schedule(0);
+      }),
       vscode.commands.registerCommand("ascribe.openPreview", () => this.open()),
       vscode.commands.registerCommand("ascribe.selectPreviewBuild", () => this.pickBuild()),
       vscode.window.registerWebviewPanelSerializer(VIEW_TYPE, {
@@ -188,6 +211,8 @@ export class PreviewController implements vscode.Disposable {
       receive: (message) => this.receive(message),
       selectBuild: (name) => this.chooseBuild(name),
       review: this.review.api,
+      threadsDrawn: () => this.threadsLog,
+      sourceThreads: () => this.sourceComments.records(),
     };
   }
 
@@ -426,7 +451,13 @@ export class PreviewController implements vscode.Disposable {
         wasHtml: result.review.wasHtml,
         causes: causes(result.review.changes, result),
         goToFirst,
+        threads: null,
       };
+      if (server) {
+        const goTo = this.threadToGo?.file === document.uri.fsPath ? this.threadToGo : undefined;
+        if (goTo) this.threadToGo = undefined;
+        review.threads = this.review.threads.view(server, goTo?.threadId ?? null);
+      }
     }
     const message: Extract<ToWebview, { type: "render" }> = {
       type: "render",
@@ -577,7 +608,93 @@ export class PreviewController implements vscode.Disposable {
           await this.showPage(vscode.Uri.file(fromContentPath(contentRoot, message.path)));
         return;
       }
+      case "threads":
+        await this.threadsRequest(message);
+        return;
+      case "openThread": {
+        const contentRoot = this.latest?.result.contentRoot;
+        if (!contentRoot) return;
+        const uri = vscode.Uri.file(fromContentPath(contentRoot, message.path));
+        if (this.document && uri.fsPath === this.document.uri.fsPath) {
+          this.post({ type: "goToThread", threadId: message.threadId });
+          return;
+        }
+        this.threadToGo = { file: uri.fsPath, threadId: message.threadId };
+        await this.showPage(uri, false);
+        return;
+      }
+      case "notify":
+        vscode.window.setStatusBarMessage(`$(comment-discussion) ${message.message}`, 8000);
+        return;
+      case "signIn":
+      case "useGh":
+      case "refreshThreads": {
+        const server = this.server();
+        if (!server || !this.review.baseOf(server)) return;
+        const threads = this.review.threads;
+        if (message.type === "signIn") await threads.signIn(server);
+        else if (message.type === "useGh") await threads.useGh(server);
+        else await threads.refresh(server);
+        return;
+      }
+      case "git": {
+        const server = this.server();
+        await vscode.commands.executeCommand(`git.${message.command}`).then(
+          () => undefined,
+          (error: unknown) =>
+            void vscode.window.showErrorMessage(
+              `Ascribe: couldn't ${message.command}. ${error instanceof Error ? error.message : String(error)}`,
+            ),
+        );
+        if (server && this.review.baseOf(server)) await this.review.threads.refresh(server);
+        return;
+      }
+      case "threadsDrawn":
+        this.threadsLog.push(message.report);
+        if (this.threadsLog.length > 200) this.threadsLog.splice(0, this.threadsLog.length - 200);
+        this.wake();
+        return;
     }
+  }
+
+  /** Answers one of the overlay's requests, for the page the preview shows. */
+  private async threadsRequest(message: Extract<FromWebview, { type: "threads" }>): Promise<void> {
+    const server = this.server();
+    const shown = this.latest?.message;
+    const page =
+      shown?.path === null || shown === undefined
+        ? undefined
+        : { build: shown.build, path: shown.path };
+    let reply: ToWebview;
+    try {
+      if (!server) throw new Error("There's no project for this page.");
+      const result = await this.review.threads.handle(
+        server,
+        page,
+        message.method,
+        message.params,
+        "preview",
+      );
+      reply = { type: "threadsResult", id: message.id, result };
+    } catch (error) {
+      const code =
+        typeof error === "object" && error !== null && "code" in error
+          ? String((error as { code: unknown }).code)
+          : undefined;
+      reply = {
+        type: "threadsResult",
+        id: message.id,
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          ...(code === undefined ? {} : { code }),
+        },
+      };
+    }
+    this.post(reply);
+  }
+
+  private post(message: ToWebview): void {
+    if (this.panel && this.ready) void this.panel.webview.postMessage(message);
   }
 
   /** Chooses a build in the project of the last render, whose builds the picker lists. */
@@ -675,9 +792,9 @@ export class PreviewController implements vscode.Disposable {
     });
   }
 
-  /** Opens a changed page and its preview, and goes to its first change once it's drawn. */
-  private async showPage(uri: vscode.Uri): Promise<void> {
-    this.firstChangeOf = uri.fsPath;
+  /** Opens a changed page and its preview, and (with `firstChange`) goes to its first change once it's drawn. */
+  private async showPage(uri: vscode.Uri, firstChange = true): Promise<void> {
+    if (firstChange) this.firstChangeOf = uri.fsPath;
     const viewColumn = this.panel ? this.editorColumn() : undefined;
     await vscode.window.showTextDocument(uri, {
       ...(viewColumn === undefined ? {} : { viewColumn }),

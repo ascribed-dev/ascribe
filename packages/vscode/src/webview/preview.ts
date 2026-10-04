@@ -5,17 +5,22 @@
 //
 // The page's blocks carry source anchors (site-render contract §7), so the
 // preview scrolls with the editor by block, both ways (`blocks.ts`), and, with
-// review on, marks what changed against the base (`review.ts`).
+// review on, marks what changed against the base (`review.ts`) and shows the
+// pull request's threads beside the blocks (`threads.ts`).
 //
-// The page's HTML is untrusted text from the author's own files: it is parsed
-// into an inert `<template>`, its asset references are rewritten there (so no
+// The page's HTML is untrusted text: the author's own files, or, in review,
+// the change under review. It is parsed into an inert `<template>`, disarmed
+// there (scripts, event handlers, and `javascript:` URLs taken out, as the
+// review report does), its asset references are rewritten there (so no
 // request is made for a reference before it is rewritten), and only then moved
 // into the document. Nothing here evaluates it: the content security policy
 // (`html.ts`) doesn't allow inline scripts, and none is created.
 
+import { disarm } from "@ascribed/review/marks";
 import { blockAt, linesInPage, type Lines } from "../preview/blocks.js";
 import { canonicalReference, isExternal, splitFragment } from "../preview/refs.js";
 import { Review } from "./review.js";
+import { Threads } from "./threads.js";
 import type {
   AvailabilityTarget,
   FromWebview,
@@ -48,7 +53,8 @@ const page = role("page");
 const title = role("title");
 const availability = role("availability");
 const content = role("content");
-const review = new Review(role("review"), content, post);
+const threads = new Threads(content, post, () => review.redraw());
+const review = new Review(role("review"), content, post, threads);
 
 const violations: string[] = [];
 document.addEventListener("securitypolicyviolation", (event) => {
@@ -277,6 +283,7 @@ function render(message: Extract<ToWebview, { type: "render" }>): void {
     page.hidden = true;
     content.replaceChildren();
     review.draw(null, null);
+    threads.draw(null, []);
     readBlocks();
     post({ type: "rendered", seq: message.seq, report: report() });
     return;
@@ -284,6 +291,7 @@ function render(message: Extract<ToWebview, { type: "render" }>): void {
   const scroll = { x: window.scrollX, y: window.scrollY };
   const template = document.createElement("template");
   template.innerHTML = message.html;
+  disarm(template.content);
   rewriteAssets(template.content, message.assets);
   title.textContent = message.title ?? "";
   title.hidden = message.title === null;
@@ -291,6 +299,7 @@ function render(message: Extract<ToWebview, { type: "render" }>): void {
   content.replaceChildren(template.content);
   page.hidden = false;
   review.draw(message.review ?? null, message.path, (root) => rewriteAssets(root, message.assets));
+  threads.draw(message.review?.threads ?? null, message.review?.page?.changes ?? []);
   readBlocks();
   // Replacing the content moves the document; put the reader back where they were.
   quietScroll(() => window.scrollTo(scroll.x, scroll.y));
@@ -304,6 +313,7 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
   else if (message.type === "reveal") reveal(message.id);
   else if (message.type === "revealLine") revealLine(message.line, message.ifHidden);
   else if (message.type === "nextPage") review.nextPage(message.page, message.first);
+  else threads.receive(message);
 });
 
 post({ type: "ready" });

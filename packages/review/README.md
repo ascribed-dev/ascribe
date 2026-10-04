@@ -7,7 +7,7 @@ Each entry point is separate, so a host bundles only what it uses.
 | Entry point | Runs in | What it's for |
 |---|---|---|
 | `@ascribed/review/marks` | the browser | Marking the changed blocks of a rendered page, from `ascribe diff --format json`'s changes |
-| `@ascribed/review/overlay` | the browser | The review overlay: changed blocks and review threads on a rendered page |
+| `@ascribed/review/overlay` | the browser | The review overlay: a pull request's review threads beside a rendered page's blocks |
 | `@ascribed/review/github` | Node | Reading and writing a pull request's review threads on GitHub |
 | `@ascribed/review/place` | Node | Placing review threads on the blocks of a page |
 
@@ -35,6 +35,22 @@ The colors are the `--ascribe-review-*` custom properties at the top of `marks.c
 ## The static report
 
 `src/report/` is the script of `ascribe diff --format html`'s report, which draws the list of changed pages and each page with its marks. It isn't an entry point: `pnpm --filter @ascribed/review embed` bundles it with the marks and `@ascribed/elements` into `crates/tessera-diff/src/html/`, where the binary embeds it, along with one stylesheet made of the element library's, `marks.css`, and `src/report/report.css`. It also writes the script's SHA-256 beside it, which the report's content security policy names as the one script allowed to run. Run it after changing any of them; `test/embedded.test.ts` fails until you do.
+
+## `@ascribed/review/overlay`
+
+```ts
+import { createOverlay } from "@ascribed/review/overlay";
+
+const overlay = createOverlay({ root: article, host });
+```
+
+Draws a pull request's threads beside the blocks of `root`, a rendered page with source anchors: in a column beside the page when its container is at least `columnAt` pixels wide (default 600), else as a count on each block that opens its threads. Threads with no block on the page are listed above it, and a bar below it counts unsent comments, with the submit dialog. A reviewer can reply (at once, or with the review), resolve and reopen, comment on any block, and submit or discard the review, all from the keyboard. It draws in shadow roots, so its styles and the page's stay apart; theme it with the `--ascribe-review-*` custom properties `marks.css` declares.
+
+The host (`OverlayHost`) supplies the data and does the work: `load()` for the page's threads (`ReviewSession.threads`), its pending review, and the viewer; `commentTarget`, `comment`, `reply`, `resolve`, `submit`, `discard`, and `allThreads`, as `ReviewSession` has them; and `openSource`, `openThread` (a thread on another page), and optionally `openLink` and `notify`. `onDidChange` tells the overlay to read the threads again. The overlay never talks to GitHub itself, so a host can keep the token out of the page.
+
+`overlay.refresh()` reads the threads again, `layout()` places them again after the page changed size, `goToThread(id)` goes to one, `showAllComments()` opens the list of every thread, and `dispose()` takes everything away.
+
+Comment bodies are other people's Markdown: `renderMarkdown(document, text)` builds a safe subset (paragraphs, emphasis, code, links that open apart from the page, lists, block quotes) as DOM nodes. Raw HTML stays text, links other than web and email ones are dropped, and an image is a link to it, so nothing loads without a click.
 
 ## `@ascribed/review/github`
 

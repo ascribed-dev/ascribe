@@ -172,7 +172,35 @@ export interface ReviewView {
   causes: { label: string; path: string }[];
   /** Go to the page's first change once it's drawn (after "Next changed page"). */
   goToFirst: boolean;
+  /** The pull request's review threads, or `null` when the checkout has no pull request on GitHub. */
+  threads: ThreadsView | null;
 }
+
+/** How the local `HEAD` relates to the pull request's head commit (`@ascribed/review/github`). */
+export type LocalState = "same" | "behind" | "ahead" | "diverged" | "missing";
+
+/** What the preview shows about the pull request's threads. */
+export interface ThreadsView {
+  /**
+   * `on`: the overlay shows the threads. `signed-out`: there's no GitHub
+   * sign-in, so only the changes show. `error`: the threads couldn't be read.
+   */
+  state: "on" | "signed-out" | "error";
+  /** `null` until the pull request is found (signed out, or an error before). */
+  pullRequest: { number: number; url: string; baseRefName: string } | null;
+  /** How the checkout relates to the pull request's head, with commit counts. */
+  local: { state: LocalState; behind: number; ahead: number } | null;
+  /** Signed out: whether `gh` is signed in, so it can be used instead. */
+  gh: boolean;
+  /** For `error`: what went wrong, as a sentence. */
+  message: string | null;
+  /** A thread to go to once the overlay has read the threads: one opened from another page. */
+  goTo: string | null;
+}
+
+/** The overlay's requests to its host, over the webview's messages (`OverlayHost`). */
+export type ThreadsMethod =
+  "load" | "commentTarget" | "comment" | "reply" | "allThreads" | "resolve" | "submit" | "discard";
 
 /**
  * A problem as the preview shows it: one from the server, or one of the
@@ -214,7 +242,18 @@ export type ToWebview =
    * Scroll to the block that stands for a line of the previewed file (from
    * 0), to the top; with `ifHidden`, only when no part of it is in view.
    */
-  | { type: "revealLine"; line: number; ifHidden: boolean };
+  | { type: "revealLine"; line: number; ifHidden: boolean }
+  /** The answer to a `threads` request: its result, or a failure to show. */
+  | {
+      type: "threadsResult";
+      id: number;
+      result?: unknown;
+      error?: { message: string; code?: string };
+    }
+  /** The threads changed outside the preview (in the source editor): read them again. */
+  | { type: "threadsChanged" }
+  /** Go to a thread on the page. */
+  | { type: "goToThread"; threadId: string };
 
 /** Webview to extension. */
 export type FromWebview =
@@ -237,7 +276,31 @@ export type FromWebview =
   /** The reader stepped past the last change: which changed page is next? */
   | { type: "atEnd" }
   /** Open a changed page, and go to its first change. */
-  | { type: "openPage"; path: string };
+  | { type: "openPage"; path: string }
+  /** A request of the overlay's (`ThreadsMethod`); answered with `threadsResult`. */
+  | { type: "threads"; id: number; method: ThreadsMethod; params: Record<string, unknown> }
+  /** Open the page a thread is on (a content path), and go to the thread. */
+  | { type: "openThread"; threadId: string; path: string }
+  /** Something the overlay told the reviewer: "Reply sent to GitHub." */
+  | { type: "notify"; message: string }
+  /** Sign in to GitHub in VS Code, to see the comments. */
+  | { type: "signIn" }
+  /** Read the comments with the GitHub CLI's sign-in. */
+  | { type: "useGh" }
+  /** Bring the checkout and the pull request together with VS Code's git. */
+  | { type: "git"; command: "pull" | "push" | "fetch" }
+  /** Read the threads from GitHub again. */
+  | { type: "refreshThreads" }
+  /** The overlay drew the threads (for tests): how many on blocks, detached, and unsent. */
+  | { type: "threadsDrawn"; report: ThreadsReport };
+
+/** What the overlay drew, for tests. */
+export interface ThreadsReport {
+  /** The thread ids beside each block, by its anchor's source. */
+  blocks: Record<string, string[]>;
+  detached: string[];
+  unsent: number;
+}
 
 /** What the webview found in the page it just rendered, for tests and diagnostics. */
 export interface RenderReport {

@@ -75,6 +75,32 @@
         "title": "Changed Pages",
         "category": "Ascribe",
         "icon": "$(list-unordered)"
+      },
+      {
+        "command": "ascribe.refreshComments",
+        "title": "Refresh Comments",
+        "category": "Ascribe",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ascribe.review.replyNow",
+        "title": "Reply Now",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.review.addToReview",
+        "title": "Add to Review",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.review.resolve",
+        "title": "Resolve",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.review.reopen",
+        "title": "Reopen",
+        "category": "Ascribe"
       }
     ],
     "configuration": {
@@ -130,6 +156,22 @@
           "default": 5,
           "minimum": 1,
           "markdownDescription": "How many crashes of the language server, since it was last restarted by hand, make the extension stop restarting it and explain why."
+        },
+        "ascribe.review.sourceComments": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Show review threads on source lines unless the GitHub Pull Requests extension is active, which shows them already.",
+            "Always show review threads on source lines.",
+            "Show review threads in the page preview only."
+          ],
+          "default": "auto",
+          "scope": "window",
+          "markdownDescription": "Whether the source editor shows the pull request's review threads on the lines they're on, while review is on."
         }
       }
     },
@@ -284,6 +326,26 @@
         {
           "command": "ascribe.changedPages",
           "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.refreshComments",
+          "when": "ascribe.active && ascribe.reviewOn"
+        },
+        {
+          "command": "ascribe.review.replyNow",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.addToReview",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.resolve",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.reopen",
+          "when": "false"
         }
       ],
       "editor/title": [
@@ -301,6 +363,35 @@
           "command": "ascribe.changedPages",
           "when": "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
           "group": "navigation"
+        },
+        {
+          "command": "ascribe.refreshComments",
+          "when": "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
+          "group": "navigation"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "ascribe.review.addToReview",
+          "when": "commentController == ascribe.review && (commentThreadIsEmpty || commentThread =~ /\\bcanReply\\b/)",
+          "group": "inline@1"
+        },
+        {
+          "command": "ascribe.review.replyNow",
+          "when": "commentController == ascribe.review && !commentThreadIsEmpty && commentThread =~ /\\bcanReply\\b/",
+          "group": "inline@2"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "ascribe.review.resolve",
+          "when": "commentController == ascribe.review && commentThread =~ /\\bcanResolve\\b/",
+          "group": "inline"
+        },
+        {
+          "command": "ascribe.review.reopen",
+          "when": "commentController == ascribe.review && commentThread =~ /\\bcanUnresolve\\b/",
+          "group": "inline"
         }
       ]
     }

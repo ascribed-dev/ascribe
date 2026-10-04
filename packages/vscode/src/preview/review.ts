@@ -11,6 +11,7 @@ import {
   pageDetail,
   sameBase,
 } from "./reviewText.js";
+import { ThreadsController, type ThreadsApi } from "./threads.js";
 
 /** The language server's review requests (`crates/tessera-lsp/README.md`). */
 export const SET_BASE_REQUEST = "ascribe/review/setBase";
@@ -42,6 +43,8 @@ export interface ReviewApi {
   changedPages(folder: string): Promise<ChangedPage[]>;
   /** The status bar item's text, and whether it's shown. */
   status(): { text: string; visible: boolean };
+  /** The pull request's threads. */
+  threads: ThreadsApi;
 }
 
 /**
@@ -55,13 +58,23 @@ export class ReviewController implements vscode.Disposable {
   private readonly bases = new Map<string, BaseInfo>();
   private readonly item: vscode.StatusBarItem;
   private disposables: vscode.Disposable[] = [];
+  /** The pull request's threads, for the projects with review on. */
+  readonly threads: ThreadsController;
 
   constructor(
     private readonly projects: ProjectRegistry,
     private readonly host: ReviewHost,
+    /** The workspace's state. */
+    state: vscode.Memento,
   ) {
     this.item = vscode.window.createStatusBarItem("ascribe.review", vscode.StatusBarAlignment.Left);
     this.item.name = "Ascribe Review";
+    this.threads = new ThreadsController(
+      {
+        changedPages: async (server) => (await this.changes(server))?.pages ?? [],
+      },
+      state,
+    );
   }
 
   register(): void {
@@ -70,6 +83,9 @@ export class ReviewController implements vscode.Disposable {
       vscode.commands.registerCommand("ascribe.startReview", () => this.startCommand()),
       vscode.commands.registerCommand("ascribe.stopReview", () => this.stopCommand()),
       vscode.commands.registerCommand("ascribe.changedPages", () => this.changedPagesCommand()),
+      vscode.commands.registerCommand("ascribe.refreshComments", () => this.refreshCommand()),
+      this.threads,
+      this.threads.onDidChange(() => this.update()),
       vscode.window.onDidChangeActiveTextEditor(() => this.update()),
       vscode.window.onDidChangeWindowState((state) => {
         if (state.focused && this.host.previewActive()) void this.recheck();
@@ -85,7 +101,8 @@ export class ReviewController implements vscode.Disposable {
       start: async (folder, base) => {
         const server = this.projects.serverAt(folder);
         if (!server) throw new Error(`no project in ${folder}`);
-        return this.start(server, base);
+        const threads = await this.threads.connect(server, { interactive: false });
+        return this.start(server, base ?? (threads.state === "on" ? threads.base : undefined));
       },
       stop: async (folder) => {
         const server = this.projects.serverAt(folder);
@@ -96,6 +113,7 @@ export class ReviewController implements vscode.Disposable {
         return server ? ((await this.changes(server))?.pages ?? []) : [];
       },
       status: () => ({ text: this.item.text, visible: this.visible }),
+      threads: this.threads.api,
     };
   }
 
@@ -179,8 +197,11 @@ export class ReviewController implements vscode.Disposable {
       return;
     }
     if (base) {
-      this.item.text = `$(git-compare) Review: ${baseName(base)}`;
-      this.item.tooltip = `Reviewing ${this.projects.name(server.project)} against ${baseName(base)}, from ${baseCommit(base)}, where this branch left it. Click for the changed pages.`;
+      const connection = this.threads.connection(server);
+      const pr = connection?.state === "on" ? connection.session.pullRequest : undefined;
+      const against = pr ? `#${pr.number} against ${baseName(base)}` : baseName(base);
+      this.item.text = `$(git-compare) Review: ${against}`;
+      this.item.tooltip = `Reviewing ${pr ? `pull request #${pr.number} of ` : ""}${this.projects.name(server.project)} against ${baseName(base)}, from ${baseCommit(base)}, where this branch left it. Click for the changed pages.`;
       this.item.command = "ascribe.changedPages";
     } else {
       this.item.text = "$(git-compare) Review: off";
@@ -238,8 +259,24 @@ export class ReviewController implements vscode.Disposable {
   private async startCommand(): Promise<void> {
     const server = this.runningTarget();
     if (!server) return;
+    // The pull request decides the default base, and its threads show once
+    // review is on. Signing in to GitHub is asked for here, never sooner.
+    const threads = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Window, title: "Ascribe: looking for the pull request" },
+      () => this.threads.connect(server, { interactive: true }),
+    );
+    const pr = threads.state === "on" ? threads.session.pullRequest : undefined;
     const choice = await vscode.window.showQuickPick(
       [
+        ...(pr && threads.state === "on"
+          ? [
+              {
+                label: `The base of pull request #${pr.number}`,
+                detail: `${threads.base}, from where this branch left it`,
+                base: threads.base as string | undefined,
+              },
+            ]
+          : []),
         {
           label: "The default branch",
           detail: "origin/HEAD, origin/main, or main, from where this branch left it",
@@ -252,7 +289,11 @@ export class ReviewController implements vscode.Disposable {
         placeHolder: `Review ${this.projects.name(server.project)}'s changes against…`,
       },
     );
-    if (!choice) return;
+    if (!choice) {
+      // Not started after all: no threads without review.
+      if (!this.baseOf(server)) this.threads.disconnect(server);
+      return;
+    }
     let base = choice.base;
     if (base === "") {
       base = await vscode.window.showInputBox({
@@ -261,7 +302,10 @@ export class ReviewController implements vscode.Disposable {
         placeHolder: "main",
         validateInput: (value) => (value.trim() === "" ? "Type a branch, tag, or commit." : null),
       });
-      if (base === undefined) return;
+      if (base === undefined) {
+        if (!this.baseOf(server)) this.threads.disconnect(server);
+        return;
+      }
       base = base.trim();
     }
     const result = await vscode.window.withProgress(
@@ -269,6 +313,7 @@ export class ReviewController implements vscode.Disposable {
       () => this.start(server, base),
     );
     if (!result.base) {
+      if (!this.baseOf(server)) this.threads.disconnect(server);
       void vscode.window.showErrorMessage(`Ascribe: ${result.problem ?? "review couldn't start."}`);
       return;
     }
@@ -287,6 +332,25 @@ export class ReviewController implements vscode.Disposable {
       return;
     }
     await this.stop(server);
+  }
+
+  private async refreshCommand(): Promise<void> {
+    const server = this.runningTarget();
+    if (!server) return;
+    if (!this.baseOf(server)) {
+      void vscode.window.showInformationMessage("Ascribe: review is off for this project.");
+      return;
+    }
+    const connection = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Window, title: "Ascribe: reading the review comments" },
+      () => this.threads.refresh(server),
+    );
+    this.host.refresh();
+    if (connection.state === "none") {
+      void vscode.window.showInformationMessage(
+        "Ascribe: there's no open pull request on GitHub for this branch, so there are no comments to show.",
+      );
+    }
   }
 
   private async changedPagesCommand(): Promise<void> {
@@ -348,6 +412,7 @@ export class ReviewController implements vscode.Disposable {
 
   private async stop(server: ProjectServer): Promise<void> {
     this.bases.delete(comparable(server.project.folder));
+    this.threads.disconnect(server);
     this.update();
     this.host.refresh();
     if (server.state === "running") {

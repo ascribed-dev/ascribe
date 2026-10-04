@@ -99,6 +99,26 @@
   );
   --ascribe-review-focus: var(--vscode-textLink-foreground, #1f6feb);
   --ascribe-review-mono: var(--vscode-editor-font-family, ui-monospace, monospace);
+
+  /* Review's threads beside the page (the overlay), in the theme's widget,
+     input, and button colors. */
+  --ascribe-review-text: var(--vscode-editor-foreground, CanvasText);
+  --ascribe-review-border: var(--vscode-widget-border, var(--vscode-panel-border, #d3d8e0));
+  --ascribe-review-thread: var(
+    --vscode-editorWidget-background,
+    color-mix(in srgb, currentColor 4%, var(--vscode-editor-background, Canvas))
+  );
+  --ascribe-review-input: var(--vscode-input-background, Field);
+  --ascribe-review-accent-text: var(--vscode-editor-background, Canvas);
+  --ascribe-review-font: var(--vscode-font-family, system-ui, sans-serif);
+  --ascribe-review-blend: multiply;
+}
+
+/* A thread's block is highlighted by blending a tint into it: lighten on a
+   dark theme, darken on a light one. */
+body.vscode-dark,
+body.vscode-high-contrast:not(.vscode-high-contrast-light) {
+  --ascribe-review-blend: screen;
 }
 
 body {

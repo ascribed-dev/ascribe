@@ -30,9 +30,9 @@ export function withoutPlaceholder(body: string): string {
   return body.split(PLACEHOLDER).join("").trim();
 }
 
-/** The marker for a block. */
+/** The marker for a block. Without a build (or with `""`), the comment is on every build's page. */
 export function marker(source: string, build: string | undefined): string {
-  return `<!-- ascribe:anchor ${source}${build === undefined ? "" : ` build=${build}`} -->`;
+  return `<!-- ascribe:anchor ${source}${build === undefined || build === "" ? "" : ` build=${build}`} -->`;
 }
 
 /**

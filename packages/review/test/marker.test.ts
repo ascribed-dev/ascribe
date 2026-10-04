@@ -8,6 +8,11 @@ describe("hidden anchor markers", () => {
     );
   });
 
+  test("leave the build out of a comment that's on every build's page", () => {
+    expect(marker("a.md:1-1", undefined)).toBe("<!-- ascribe:anchor a.md:1-1 -->");
+    expect(marker("a.md:1-1", "")).toBe("<!-- ascribe:anchor a.md:1-1 -->");
+  });
+
   test("round-trip sections, with the quote and link taken off", () => {
     const one = formatSection({
       source: "guides/install.md:12-14",

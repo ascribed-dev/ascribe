@@ -17,6 +17,11 @@
 //               commit and a change in the working tree, review in the
 //               preview, against the real `ascribe lsp`. Needs ASCRIBE_BIN
 //               and `git`.
+//   threads     a copy of examples/quill made into a git repository with a
+//               `feature` branch pushed to github.com/acme/quill, review
+//               threads in the preview and the source editor from a fake
+//               GitHub, against the real `ascribe lsp`. Needs ASCRIBE_BIN and
+//               `git`.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -40,6 +45,27 @@ interface Suite {
 
 const stubServer = path.join(packageRoot, "test/stub-server/ascribe");
 const realServer = process.env["ASCRIBE_BIN"];
+
+/** Runs `git` in a workspace, as a fixed author, with no signing. */
+function gitIn(workspace: string): (...args: string[]) => void {
+  return (...args) => {
+    execFileSync(
+      "git",
+      [
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.com",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "core.autocrlf=false",
+        ...args,
+      ],
+      { cwd: workspace },
+    );
+  };
+}
 
 // These suites check a server that's running from the start, with no file open.
 const startAll = { "ascribe.startServers": "all" };
@@ -108,6 +134,29 @@ const suites: Suite[] = [
     },
   },
   {
+    name: "threads",
+    fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: (workspace) => {
+      const git = gitIn(workspace);
+      git("init", "-q", "-b", "main");
+      git("add", "-A");
+      git("commit", "-q", "-m", "The Quill example");
+      git("checkout", "-q", "-b", "feature");
+      const at = path.join(workspace, "docs", "install-agent.md");
+      const text = readFileSync(at, "utf8");
+      if (!text.includes("syncs changes to")) throw new Error("install-agent.md has changed");
+      writeFileSync(at, text.replace("syncs changes to", "syncs every change to"));
+      git("commit", "-q", "-am", "Reword the agent's introduction");
+      // Pushed to GitHub: the branch's remote, and the base's remote branch.
+      git("remote", "add", "origin", "https://github.com/acme/quill.git");
+      git("config", "branch.feature.remote", "origin");
+      git("config", "branch.feature.merge", "refs/heads/feature");
+      git("update-ref", "refs/remotes/origin/main", "main");
+      git("update-ref", "refs/remotes/origin/feature", "feature");
+      return { "ascribe.path": realServer, ...startAll };
+    },
+  },
+  {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The default `ascribe.startServers`: the suite checks what starts when.
@@ -124,7 +173,7 @@ const suites: Suite[] = [
 ];
 
 /** The suites that run the real language server. */
-const needsServer = new Set(["quill", "preview", "review", "monorepo"]);
+const needsServer = new Set(["quill", "preview", "review", "threads", "monorepo"]);
 
 async function main(): Promise<void> {
   // A process an extension host started has this set, and VS Code would then

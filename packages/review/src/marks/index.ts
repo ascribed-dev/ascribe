@@ -709,3 +709,28 @@ export function showSources(root: HTMLElement): () => void {
     tip.remove();
   };
 }
+
+/**
+ * Takes out of a page's HTML what could run script or take the reader
+ * elsewhere: scripts, `<meta>` and `<base>`, event handler attributes, and
+ * `javascript:` URLs. A page under review comes from the change being
+ * reviewed, so a host disarms it before showing it, whatever its content
+ * security policy also blocks.
+ */
+export function disarm(fragment: DocumentFragment): void {
+  for (const el of Array.from(fragment.querySelectorAll("script, meta, base"))) el.remove();
+  for (const el of Array.from(fragment.querySelectorAll("*"))) {
+    for (const attr of Array.from(el.attributes)) {
+      if (/^on/i.test(attr.name) || runsScript(attr.value)) el.removeAttribute(attr.name);
+    }
+  }
+}
+
+/** Whether a URL runs script: `javascript:`, however it's spaced or cased. */
+function runsScript(value: string): boolean {
+  // URL parsing drops ASCII whitespace and control characters first.
+  const kept = Array.from(value)
+    .filter((ch) => ch.charCodeAt(0) > 0x20)
+    .join("");
+  return /^javascript:/i.test(kept);
+}

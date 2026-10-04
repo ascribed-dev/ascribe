@@ -677,6 +677,18 @@
       tip.remove();
     };
   }
+  function disarm(fragment) {
+    for (const el of Array.from(fragment.querySelectorAll("script, meta, base"))) el.remove();
+    for (const el of Array.from(fragment.querySelectorAll("*"))) {
+      for (const attr of Array.from(el.attributes)) {
+        if (/^on/i.test(attr.name) || runsScript(attr.value)) el.removeAttribute(attr.name);
+      }
+    }
+  }
+  function runsScript(value) {
+    const kept = Array.from(value).filter((ch) => ch.charCodeAt(0) > 32).join("");
+    return /^javascript:/i.test(kept);
+  }
 
   // src/report/index.ts
   function h(tag, attributes = {}, children = []) {
@@ -776,18 +788,6 @@
     }
     disarm(fragment);
     return fragment;
-  }
-  function disarm(fragment) {
-    for (const el of Array.from(fragment.querySelectorAll("script, meta, base"))) el.remove();
-    for (const el of Array.from(fragment.querySelectorAll("*"))) {
-      for (const attr of Array.from(el.attributes)) {
-        if (/^on/i.test(attr.name) || runsScript(attr.value)) el.removeAttribute(attr.name);
-      }
-    }
-  }
-  function runsScript(value) {
-    const kept = Array.from(value).filter((ch) => ch.charCodeAt(0) > 32).join("");
-    return /^javascript:/i.test(kept);
   }
   function start(root, data2) {
     const builds = data2.builds.filter((b) => b.pages.length > 0);

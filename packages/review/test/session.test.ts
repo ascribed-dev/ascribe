@@ -591,6 +591,66 @@ describe("posting", () => {
     ]);
   });
 
+  test("after discard, reads leave out the review GitHub still lists, until it stops", async () => {
+    const pendingComment = comment({ state: "PENDING", login: "me", body: "Mine" });
+    const kept = thread({ id: "T_kept", path: INSTALL, line: 5 });
+    const mixed = thread({ id: "T_mixed", path: INSTALL, line: 6 });
+    mixed.comments.nodes.push(comment({ state: "PENDING", login: "me", body: "My reply" }));
+    const mine = thread({ id: "T_mine", path: INSTALL, line: 7, comments: [pendingComment] });
+    let threads = [kept, mixed, mine];
+    let reviews = [review({ id: "PRR_mine", state: "PENDING", mine: true })];
+    const fake = new FakeGitHub()
+      .on("ReviewThreads", (v) => paged("reviewThreads", threads)(v))
+      .on("Conversation", paged("comments", []))
+      .on("Reviews", (v) => paged("reviews", reviews)(v))
+      .on("DeleteReview", () => ({ deletePullRequestReview: { clientMutationId: null } }));
+    const s = session(fake);
+    expect((await s.pending()).count).toBe(2);
+    await s.discard();
+    // GitHub still lists the review and its comments.
+    expect(await s.pending()).toMatchObject({ id: undefined, count: 0 });
+    const ids = (await s.allThreads()).map((t) => [t.id, t.comments.length]);
+    expect(ids).toEqual([
+      ["T_kept", 1],
+      ["T_mixed", 1],
+    ]);
+    // Caught up: a later pending review shows again.
+    threads = [kept];
+    reviews = [];
+    await s.refresh();
+    await s.allThreads();
+    threads = [kept, mine];
+    reviews = [review({ id: "PRR_new", state: "PENDING", mine: true })];
+    await s.refresh();
+    expect((await s.pending()).count).toBe(1);
+  });
+
+  test("a read GitHub fails with its generic error is tried once more", async () => {
+    let failures = 1;
+    const fake = github().on("ReviewThreads", (v) => {
+      if (failures-- > 0) {
+        throw new ReviewError(
+          "refused",
+          "GitHub refused the request: Something went wrong while executing your query.",
+        );
+      }
+      return paged("reviewThreads", [])(v);
+    });
+    const s = createSession({
+      root: repo.root,
+      contentPrefix: PREFIX,
+      pullRequest: pullRequest(),
+      transport: fake,
+      mutationInterval: 0,
+      retryDelay: 0,
+    });
+    expect(await s.allThreads()).toEqual([]);
+    expect(fake.operations().filter((o) => o === "ReviewThreads")).toHaveLength(2);
+    failures = 2;
+    await s.refresh();
+    await expect(s.allThreads()).rejects.toMatchObject({ code: "refused" });
+  });
+
   test("discard does nothing without a pending review", async () => {
     const fake = github();
     await session(fake).discard();
@@ -726,5 +786,47 @@ describe("pages that use one fragment twice", () => {
       "guides/install.md:25",
       "guides/install.md:28",
     ]);
+  });
+});
+
+describe("before commenting", () => {
+  test("says where a comment on a block would go", async () => {
+    const s = session(github());
+    // Head lines 7-12 are around the pull request's change (lines 9-14 here).
+    expect(await s.commentTarget({ source: "guides/install.md:9-10", via: [] })).toEqual({
+      kind: "thread",
+    });
+    expect(await s.commentTarget({ source: "guides/install.md:20-20", via: [] })).toEqual({
+      kind: "summary",
+      reason: "lines",
+    });
+    expect(await s.commentTarget({ source: "guides/other.md:1-1", via: [] })).toEqual({
+      kind: "summary",
+      reason: "file",
+    });
+    const pushFirst = await s.commentTarget({ source: "guides/install.md:2-3", via: [] });
+    expect(pushFirst.kind).toBe("push-first");
+  });
+
+  test("reads the viewer once", async () => {
+    const fake = github().on("Viewer", () => ({ viewer: { login: "octocat" } }));
+    const s = session(fake);
+    expect(await s.viewer()).toBe("octocat");
+    expect(await s.viewer()).toBe("octocat");
+    expect(fake.operations().filter((op) => op === "Viewer")).toHaveLength(1);
+  });
+
+  test("lists every thread on the content root's files", async () => {
+    const s = session(
+      github({
+        threads: [
+          thread({ path: INSTALL, line: 5 }),
+          thread({ path: "README.md", line: 1 }),
+          thread({ path: FRAGMENT, line: 2 }),
+        ],
+      }),
+    );
+    const all = await s.allThreads();
+    expect(all.map((t) => t.path)).toEqual(["guides/install.md", "_fragments/prereqs.md"]);
   });
 });
