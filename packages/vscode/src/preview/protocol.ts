@@ -159,21 +159,18 @@ export interface ChangesResult {
   problem: string | null;
 }
 
-/** What the preview shows about review: the offer to start it, or the page's changes. */
-export type ReviewView =
-  | { state: "off" }
-  | {
-      state: "on";
-      /** The base's name: "main". */
-      base: string;
-      /** `null` when the page didn't change. */
-      page: PageChanges | null;
-      wasHtml: string | null;
-      /** The files the page changed through, when its own file didn't change. */
-      causes: { label: string; path: string }[];
-      /** Go to the page's first change once it's drawn (after "Next changed page"). */
-      goToFirst: boolean;
-    };
+/** What the preview shows about review, while it's on: the page's changes. */
+export interface ReviewView {
+  /** The base's name: "main". */
+  base: string;
+  /** `null` when the page didn't change. */
+  page: PageChanges | null;
+  wasHtml: string | null;
+  /** The files the page changed through, when its own file didn't change. */
+  causes: { label: string; path: string }[];
+  /** Go to the page's first change once it's drawn (after "Next changed page"). */
+  goToFirst: boolean;
+}
 
 /**
  * A problem as the preview shows it: one from the server, or one of the
@@ -231,8 +228,6 @@ export type FromWebview =
   /** The reader double-clicked a block that stands for `line`: show it in the editor. */
   | { type: "openLine"; line: number }
   | { type: "images"; seq: number; images: ImageReport[] }
-  /** Review: start it, or open a file it names. */
-  | { type: "startReview" }
   /** Open the block whose anchor is `source` in the editor, at its lines. */
   | { type: "openSource"; source: string }
   /** Open a file of the project: a cause of the page's change. */

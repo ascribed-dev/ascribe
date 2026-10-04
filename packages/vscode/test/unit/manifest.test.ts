@@ -50,8 +50,11 @@ describe("package.json", () => {
     for (const entry of hidden) expect(entry.when).toMatch(/^ascribe\.active\b/);
   });
 
-  it("shows Changed Pages on the preview's title bar while review is on", () => {
+  it("shows Start Review on the preview's title bar while review is off, then Changed Pages", () => {
     const title = manifest.contributes.menus["editor/title"];
+    expect(title.find((entry) => entry.command === "ascribe.startReview")?.when).toBe(
+      "activeWebviewPanelId == 'ascribe.preview' && !ascribe.reviewOn",
+    );
     expect(title.find((entry) => entry.command === "ascribe.changedPages")?.when).toBe(
       "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
     );

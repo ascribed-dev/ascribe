@@ -350,14 +350,10 @@ const WAS = `<p data-ascribe-source="page.md:1-1">First, unchanged.</p>
 <p data-ascribe-source="page.md:3-3">Run the installer.</p>
 <p data-ascribe-source="page.md:5-5">A paragraph that went away.</p>`;
 
-function reviewed(
-  seq: number,
-  review: Partial<Extract<ReviewView, { state: "on" }>> = {},
-): ToWebview {
+function reviewed(seq: number, review: Partial<ReviewView> = {}): ToWebview {
   return render(seq, REVIEWED, {
     path: "page.md",
     review: {
-      state: "on",
       base: "main",
       page: {
         path: "page.md",
@@ -487,22 +483,21 @@ describe("review in the preview webview", () => {
     await preview.page.close();
   });
 
-  it("offers to start review while it's off, and leaves no marks when it's turned off", async () => {
+  it("shows no header and leaves no marks when review is turned off", async () => {
     const preview = await open();
     await preview.send(reviewed(1));
     await preview.next("rendered");
     const from = preview.posted.length;
     await preview.send(
-      render(2, REVIEWED, { path: "page.md", review: { state: "off" } } as Partial<ToWebview>),
+      render(2, REVIEWED, { path: "page.md", review: null } as Partial<ToWebview>),
     );
     const drawn = await preview.next("rendered", from);
     if (drawn.type !== "rendered") throw new Error();
     expect(drawn.report.marks).toEqual({});
-    expect(drawn.report.reviewHeader).toBe("Review is off for this project.Start Review");
+    expect(drawn.report.reviewHeader).toBeNull();
     await expect(preview.page.locator("[data-ascribe-change]").count()).resolves.toBe(0);
     await expect(preview.page.locator("[data-ascribe-ui]").count()).resolves.toBe(0);
-    await preview.page.getByRole("button", { name: "Start Review" }).click();
-    await expect(preview.next("startReview", from)).resolves.toEqual({ type: "startReview" });
+    await expect(preview.page.locator("[data-role=review]").isHidden()).resolves.toBe(true);
     // No page: no header at all.
     await preview.send(render(3, null, { review: null } as Partial<ToWebview>));
     const empty = await preview.next("rendered", from + 1);

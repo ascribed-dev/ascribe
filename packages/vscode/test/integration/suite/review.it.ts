@@ -34,9 +34,9 @@ describe("review, with the real language server on a quill repository", () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
-  it("offers to start review while it's off", async () => {
-    const render = await drawn("the offer", (r) => r.report?.reviewHeader !== undefined);
-    assert.equal(render.report?.reviewHeader, "Review is off for this project.Start Review");
+  it("shows no review header while it's off", async () => {
+    const render = await drawn("the page", (r) => r.report?.reviewHeader !== undefined);
+    assert.equal(render.report?.reviewHeader, null);
     assert.deepEqual(render.report?.marks, {});
     assert.equal(preview.review.status().text, "$(git-compare) Review: off");
   });
@@ -86,10 +86,7 @@ describe("review, with the real language server on a quill repository", () => {
 
   it("removes the marks when review stops", async () => {
     await preview.review.stop(workspace());
-    const render = await drawn(
-      "no marks",
-      (r) => r.report?.reviewHeader === "Review is off for this project.Start Review",
-    );
+    const render = await drawn("no marks", (r) => r.report?.reviewHeader === null);
     assert.deepEqual(render.report?.marks, {});
     assert.equal(render.result.review, null);
     assert.equal(preview.review.base(workspace()), undefined);

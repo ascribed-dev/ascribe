@@ -68,7 +68,7 @@ export class Review {
     this.view = view;
     this.path = path;
     this.mark(prepare);
-    if (view?.state === "on" && view.goToFirst && this.marks.length > 0) this.step(1);
+    if (view?.goToFirst && this.marks.length > 0) this.step(1);
     this.drawBar();
   }
 
@@ -92,7 +92,7 @@ export class Review {
 
   private mark(prepare?: (root: ParentNode) => void): void {
     const view = this.view;
-    if (view?.state !== "on") {
+    if (!view) {
       this.marks = [];
       this.stopSources?.();
       this.stopSources = undefined;
@@ -163,11 +163,6 @@ export class Review {
     this.bar.hidden = view === null;
     if (view === null) {
       this.bar.replaceChildren();
-      return;
-    }
-    if (view.state === "off") {
-      const start = button("Start Review", "primary", () => this.post({ type: "startReview" }));
-      this.bar.replaceChildren(row([span("grow", "Review is off for this project."), start]));
       return;
     }
     const info = span("grow", "Against ");

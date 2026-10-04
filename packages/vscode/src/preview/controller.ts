@@ -413,21 +413,16 @@ export class PreviewController implements vscode.Disposable {
     const assets = this.assetUris(result);
     const base = server && this.review.baseOf(server);
     let review: ReviewView | null = null;
-    if (result.page && document) {
-      if (base && result.review) {
-        const goToFirst = this.firstChangeOf === document.uri.fsPath;
-        if (goToFirst) this.firstChangeOf = undefined;
-        review = {
-          state: "on",
-          base: baseName(result.review.base),
-          page: result.review.changes,
-          wasHtml: result.review.wasHtml,
-          causes: causes(result.review.changes, result),
-          goToFirst,
-        };
-      } else if (!base) {
-        review = { state: "off" };
-      }
+    if (result.page && document && base && result.review) {
+      const goToFirst = this.firstChangeOf === document.uri.fsPath;
+      if (goToFirst) this.firstChangeOf = undefined;
+      review = {
+        base: baseName(result.review.base),
+        page: result.review.changes,
+        wasHtml: result.review.wasHtml,
+        causes: causes(result.review.changes, result),
+        goToFirst,
+      };
     }
     const message: Extract<ToWebview, { type: "render" }> = {
       type: "render",
@@ -556,9 +551,6 @@ export class PreviewController implements vscode.Disposable {
         return;
       case "openLine":
         await this.openLine(message.line);
-        return;
-      case "startReview":
-        await vscode.commands.executeCommand("ascribe.startReview");
         return;
       case "openSource":
         await this.openSource(message.source);

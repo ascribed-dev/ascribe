@@ -293,6 +293,11 @@
           "group": "navigation"
         },
         {
+          "command": "ascribe.startReview",
+          "when": "activeWebviewPanelId == 'ascribe.preview' && !ascribe.reviewOn",
+          "group": "navigation"
+        },
+        {
           "command": "ascribe.changedPages",
           "when": "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
           "group": "navigation"
