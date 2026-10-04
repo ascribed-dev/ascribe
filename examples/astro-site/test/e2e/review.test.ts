@@ -103,7 +103,14 @@ describe("review in the site preview", () => {
     } finally {
       await server.stop();
     }
-    expect(existsSync(path.join(root, ".ascribe", "dev.json"))).toBe(false);
+    if (process.platform === "win32") {
+      // Windows has no SIGTERM: stopping the server ends it at once, before
+      // any exit handler runs, as a crash would. Its dev.json may stay, and
+      // its address no longer answers, which is what the editor checks.
+      await expect(fetch(server.origin)).rejects.toThrow();
+    } else {
+      expect(existsSync(path.join(root, ".ascribe", "dev.json"))).toBe(false);
+    }
   });
 
   it("marks nothing until review is turned on", async () => {
