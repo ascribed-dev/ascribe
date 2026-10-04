@@ -463,11 +463,11 @@ class ReviewApp {
       .map(anchorOf);
   }
 
-  /** Where the page's removed blocks were, for threads on removed text. */
+  /** Where the page's removed, moved, and changed blocks were, for threads on their old text. */
   private removed(): { source: string; via: string[] }[] {
     if (this.stage.kind !== "on") return [];
     return (this.stage.view.page?.changes ?? [])
-      .filter((c: Change) => (c.kind === "removed" || c.kind === "moved") && c.was)
+      .filter((c: Change) => c.kind !== "added" && c.was)
       .map((c) => ({ source: c.was?.source ?? "", via: c.was?.via ?? [] }));
   }
 

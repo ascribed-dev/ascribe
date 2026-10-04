@@ -642,14 +642,17 @@ describe("review threads in the preview webview", () => {
       detached: ["T2"],
       unsent: 0,
     });
-    // The overlay asked for the page's blocks and its removed one.
+    // The overlay asked for the page's blocks, and where its changed and removed ones were.
     const load = requests.find((r) => r.method === "load");
     expect(load?.params["anchors"]).toEqual([
       { source: "page.md:1-1", via: [] },
       { source: "page.md:3-3", via: [] },
       { source: "_f/frag.md:1-1", via: ["page.md:5"] },
     ]);
-    expect(load?.params["removed"]).toEqual([{ source: "page.md:5-5", via: [] }]);
+    expect(load?.params["removed"]).toEqual([
+      { source: "page.md:3-3", via: [] },
+      { source: "page.md:5-5", via: [] },
+    ]);
     // The card, beside the page; the comment's raw HTML is text.
     await expect(
       preview.page.getByText("Say which installer.", { exact: false }).first().isVisible(),

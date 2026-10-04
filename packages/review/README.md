@@ -172,9 +172,9 @@ The threads on one page. `page` is a `PageRef`:
 | `build` | The build the page is rendered for. Conversation comments marked for another build are left out. |
 | `path` | The page's content path. |
 | `anchors` | Every anchored block on the page, in order. |
-| `removed` | The `was` of each removed or moved change on the page, from `ascribe diff`. |
+| `removed` | The `was` of each removed, moved, or changed block on the page, from `ascribe diff`: where threads on the base's text go. |
 
-A thread goes on the smallest block that holds all its lines (failing that, its last line), and on every block with that source: a fragment included twice gives the thread twice. A thread on the left side goes on a removed block the same way. The result has `blocks` and `removed`, each a list of `{ anchor, threads }` in the page's order, and `detached`: the threads on any of the page's files (its own, and the fragments it shows) that aren't on a block, with reason `"no-block"` when the page has no block for their lines.
+A thread goes on the smallest block that holds all its lines (failing that, its last line), and on every block with that source: a fragment included twice gives the thread twice. A thread on the left side goes on a removed, moved, or changed block's old lines the same way. The result has `blocks` and `removed`, each a list of `{ anchor, threads }` in the page's order, and `detached`: the threads on any of the page's files (its own, and the fragments it shows) that aren't on a block, with reason `"no-block"` when the page has no block for their lines.
 
 ### Lines
 
