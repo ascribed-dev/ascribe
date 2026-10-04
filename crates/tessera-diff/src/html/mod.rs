@@ -324,14 +324,7 @@ fn render(
     path: &RelPath,
     store: &mut Store,
 ) -> Option<(Rendered, Option<String>)> {
-    let project = version.project;
-    let model = project.model();
-    let build = model.build(build_name)?;
-    let router = AstroRouter::from_consumer(&model.consumer);
-    let page = project.resolver(build, &router).page(path)?;
-    let emitter = SiteEmitter::new(model).with_anchors(true);
-    let cx = EmitContext::new(project, Path::new(""), build);
-    let emitted = emit_page(&emitter, &cx, &page).ok()?;
+    let (emitted, title) = emit(version.project, build_name, path)?;
     let html = render_site_html(without_frontmatter(&emitted.text));
     let mut images = BTreeMap::new();
     for placed in &emitted.assets {
@@ -356,7 +349,36 @@ fn render(
         }
         images.insert(reference, image);
     }
-    Some((Rendered { html, images }, page.title.clone()))
+    Some((Rendered { html, images }, title))
+}
+
+/// The page at `path` of the build `build_name` of `project`, rendered as the
+/// page preview renders it, with source anchors, and its title: the HTML
+/// [`render_site_html`] makes of the site output, without the frontmatter
+/// and without a layout. `None` when the build doesn't publish the page.
+pub fn page_html(
+    project: &Project,
+    build_name: &str,
+    path: &RelPath,
+) -> Option<(String, Option<String>)> {
+    let (emitted, title) = emit(project, build_name, path)?;
+    Some((render_site_html(without_frontmatter(&emitted.text)), title))
+}
+
+/// The site output of one page, with anchors, and its title.
+fn emit(
+    project: &Project,
+    build_name: &str,
+    path: &RelPath,
+) -> Option<(tessera_emit::EmittedPage, Option<String>)> {
+    let model = project.model();
+    let build = model.build(build_name)?;
+    let router = AstroRouter::from_consumer(&model.consumer);
+    let page = project.resolver(build, &router).page(path)?;
+    let emitter = SiteEmitter::new(model).with_anchors(true);
+    let cx = EmitContext::new(project, Path::new(""), build);
+    let emitted = emit_page(&emitter, &cx, &page).ok()?;
+    Some((emitted, page.title.clone()))
 }
 
 /// The site output's markdown after its frontmatter (`---`, YAML, `---`).

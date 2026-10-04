@@ -20,6 +20,7 @@ mod nav;
 mod position;
 mod preview;
 mod refactor;
+mod review;
 mod server;
 mod tokens;
 mod uri;
@@ -32,7 +33,11 @@ use lsp_server::Connection;
 pub use position::Encoding;
 pub use preview::{
     METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage, PreviewParams,
-    PreviewProblem, PreviewResult, PreviewSection,
+    PreviewProblem, PreviewResult, PreviewReview, PreviewSection,
+};
+pub use review::{
+    CHANGES_METHOD as REVIEW_CHANGES_METHOD, ChangesParams, ChangesResult,
+    SET_BASE_METHOD as REVIEW_SET_BASE_METHOD, SetBaseParams, SetBaseResult,
 };
 pub use server::{Exit, ServeError, serve};
 pub use tokens::{MODIFIERS as TOKEN_MODIFIERS, TYPES as TOKEN_TYPES, legend as token_legend};

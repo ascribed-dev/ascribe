@@ -111,7 +111,8 @@ the request.
 ```jsonc
 {
   "textDocument": { "uri": "file:///…/docs/install.md" },
-  "build": "cloud"        // optional: a build name; the default is `[editor] build`
+  "build": "cloud",       // optional: a build name; the default is `[editor] build`
+  "review": true          // optional: include what changed against the review base
 }
 ```
 
@@ -133,6 +134,7 @@ and `problems` says why. Field names are camelCase.
 | `page.assets` | Each asset the page uses: `{ reference, path, kind, servable }`. `reference` is what the HTML writes, before any `#fragment`: an image's `src` is relative to the page (`./_fragments/a.png`), a link target's `href` is the site URL. `path` is the absolute source file, **resolved from the file the reference is written in** (asset contract §7), so a fragment's image is the one beside the fragment. `servable` is `true` when the file is in the content root or in a directory of `assetRoots`; a file directly in the project root, in `node_modules` or `.git`, or in the output directory isn't served, and `problems` says so. References are percent-encoded as URLs are; compare them after normalizing (`packages/vscode/src/preview/refs.ts` does). |
 | `page.links` | Each link to a page: `{ href, path, id }`, `href` as the HTML writes it, `path` the target file, `id` the heading it names. |
 | `page.sections` | The headings written in the previewed file itself, in order: `{ id, line }`, `line` from 0. The HTML's anchors locate every block, headings included. |
+| `review` | With `review: true` and a base set (below): `{ base, changes, wasHtml }`. `base` is what the base resolved to. `changes` is the page as `ascribe diff --format json` reports it (`status`, `own_file_changed`, `because`, `page_changed`, `counts`, `changes`; its keys are snake_case), or `null` when the page didn't change. `wasHtml` is the page as it was at the base, rendered as `page.html` is, with anchors, for showing removed blocks and changed blocks as they were; `null` for a new page or no change. `null` without a base or a page. |
 
 Every problem is in `problems`, not in a JSON-RPC error: a malformed request
 (parameters that don't parse) is the only error, `InvalidParams`. The request runs on the server's main loop, so it must not grow with the
@@ -140,6 +142,44 @@ project: it emits one page, indexes only the files a position is asked for
 (`EmitContext` builds line indexes lazily), and finds pages that share a route
 once per set of pages (a cache keyed by the model revision and a hash of the
 page paths), not per request. See the table under Performance.
+
+## Review: `ascribe/review/setBase` and `ascribe/review/changes`
+
+Two custom requests compare the project with a git revision, its **base**,
+as `ascribe diff` does (`tessera-diff`), so the preview can mark what changed.
+Nothing runs `git` until a base is set: a server without `git` on the path
+works as before, and `setBase` says why it can't.
+
+**`ascribe/review/setBase`** resolves a revision as `ascribe diff` does,
+from the merge base of it and `HEAD`, reads the project as it is there through
+`tessera_diff::Revision` (one `git cat-file --batch`), and keeps it beside the
+live snapshot. The base is read once and not watched; setting it again reads
+it again. The request runs `git` on the main loop, without the server's lock.
+
+```jsonc
+{ "base": "main" }  // a branch, tag, or commit
+{}                  // the default branch: the first of origin/HEAD, origin/main, origin/master, main, master
+{ "base": null }    // stop comparing, and free the base
+```
+
+The result is `{ base, problem }`. `base` is `{ requested, commit, merge_base }`
+(as in `ascribe diff`'s report), or `null` once dropped or when it couldn't be
+set. `problem` says why it couldn't: no project, not a git repository, an
+unknown revision, no default branch, a shallow clone, `git` missing. A base
+that fails leaves the one set before.
+
+**`ascribe/review/changes`** (`{ "build": "cloud" }`, optional, the editor's
+build by default) lists the build's changed pages against the base, computed
+from the current snapshot, so unsaved edits count. The result is
+`{ build, base, contentRoot, pages, problem }`: `pages` are `ascribe diff`'s
+pages without their `changes`, each with its `title`, in path order;
+`problem` is set when review is off. It compares every page of the build, so
+it's for listing on demand, not per keystroke: the preview's `review: true`
+compares only its page (`tessera_diff::compare_page_in`).
+
+A base costs about as much memory as the project: on the synthetic
+3,000-page project, the project's source index is 67 MB and the base adds
+another 67 MB, all freed when it's dropped. Reading it takes about a second.
 
 ## Capabilities
 

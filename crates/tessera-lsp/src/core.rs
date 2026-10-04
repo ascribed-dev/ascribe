@@ -137,6 +137,8 @@ pub(crate) struct Core {
     pub can_watch: bool,
     /// What `ascribe/preview` keeps between requests (`preview.rs`).
     pub(crate) preview_routes: crate::preview::RouteCache,
+    /// The review base, while review is on (`review.rs`).
+    pub(crate) review: Option<Arc<crate::review::ReviewBase>>,
     epoch: u64,
     published: HashMap<PathBuf, Published>,
     next_id: i32,
@@ -155,6 +157,7 @@ impl Core {
             shutdown: false,
             can_watch: false,
             preview_routes: Default::default(),
+            review: None,
             epoch: 0,
             published: HashMap::new(),
             next_id: 0,
