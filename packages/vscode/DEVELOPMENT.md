@@ -40,8 +40,8 @@ The server logs to the development window's **Ascribe** output channels (**Ascri
 as the published site shows it, and follows the editor: edits appear within
 about a tenth of a second (the debounce is 100 ms; measured end to end, median
 113 ms, maximum 167 ms over 12 edits in the integration suite), including
-unsaved ones; the scroll position stays; the panel scrolls to the section the
-cursor is in; a click on a link to a page or a file opens it in the editor.
+unsaved ones; the scroll position stays; the panel scrolls with the editor by
+block, both ways; a click on a link to a page or a file opens it in the editor.
 Its **Build** picker lists the content model's builds and starts at the
 editor's (`[editor] build`).
 
@@ -54,6 +54,18 @@ webview draws that HTML with `@ascribed/elements`, bundled into
 script and stylesheet, and gives the page a title and page-level availability
 from the frontmatter. Assets aren't copied: the server names each
 asset's source file, and the webview shows it from there.
+
+**Scrolling by block.** The preview's HTML has source anchors (site-render
+contract §7): each block's element carries `data-ascribe-source` and, for a
+block from a fragment, `data-ascribe-via`. `src/preview/blocks.ts` maps them to
+lines of the previewed file (a fragment's block to its `@include` line) and a
+line to its block, and the webview scrolls by them. The extension sends the
+editor's top visible line (`revealLine`) and the cursor's line (`revealLine`
+with `ifHidden`, so moving within what the preview shows scrolls nothing); the
+webview sends the line of the block at its top when the reader scrolls
+(`scrolled`) and of a block they double-click (`openLine`). Each side ignores
+the scrolling its own reveal causes for a moment, so the two never chase each
+other.
 
 **What the webview may read** (`localResourceRoots`): the extension's
 `dist/webview/`, the project's content root, and the directory of each asset

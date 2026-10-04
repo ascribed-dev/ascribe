@@ -2,6 +2,20 @@
 
 Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, `@ascribed/astro`, `@ascribed/elements`), and the VS Code extension share one version. Versions follow [semantic versioning](https://semver.org/); while the major version is 0, a minor version may change behavior.
 
+## Unreleased
+
+### The compiler
+
+- `ascribe build --emit site --anchors` marks each block of the site output with the source file and lines it came from (`data-ascribe-source`, and `data-ascribe-via` for a block from a fragment), for review. The site output's manifest records `"anchors": true`. Without the flag, the output is unchanged. See the [site-render contract](docs/contracts/site-render.md#7-source-anchors).
+
+### Astro
+
+- The integration's `anchors` option turns source anchors on: `"dev"` in `astro dev` only, `true` always. The Markdown plugins apply them.
+
+### The editor
+
+- The preview scrolls with the editor by block instead of by heading, both ways: scrolling the editor scrolls the preview to the block at its top, moving the cursor shows its block, scrolling the preview scrolls the editor, and double-clicking a block puts the cursor on its source line. A block from a fragment follows its `@include` line.
+
 ## 0.1.1 (2026-10-02)
 
 ### The language

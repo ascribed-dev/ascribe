@@ -161,19 +161,52 @@ describe("the preview, with the real language server on examples/quill", () => {
     assert.match(render.result.problems[0]?.message ?? "", /is a fragment.*install-agent\.md/);
   });
 
-  it("scrolls to the section the cursor is in", async () => {
+  it("scrolls with the editor by block, both ways", async () => {
     const editor = await vscode.window.showTextDocument(
       await vscode.workspace.openTextDocument(install),
     );
-    await drawnFor(
+    const render = await drawnFor(
       (r) => r.result.page?.path === "install-agent.md" && r.seq === preview.renders().at(-1)?.seq,
     );
-    const line = editor.document
-      .getText()
-      .split("\n")
-      .findIndex((text) => text.startsWith("## Streaming sync"));
-    editor.selection = new vscode.Selection(line + 3, 0, line + 3, 0);
-    await waitFor("a scroll to streaming-sync", () => preview.reveals().includes("streaming-sync"));
+    assert.ok((render.report?.anchored ?? 0) > 20, "the page's blocks carry anchors");
+    const lines = editor.document.getText().split("\n");
+    const lineOf = (start: string) => lines.findIndex((text) => text.startsWith(start));
+
+    // The editor scrolls: the preview shows the block at its top.
+    const paragraph = lineOf("Streaming sync pushes changes");
+    editor.revealRange(
+      new vscode.Range(paragraph, 0, paragraph, 0),
+      vscode.TextEditorRevealType.AtTop,
+    );
+    await waitFor("a scroll to the streaming sync paragraph", () =>
+      preview
+        .lineReveals()
+        .some((r) => r.source === `install-agent.md:${paragraph + 1}-${paragraph + 1}`),
+    );
+
+    // The editor shows an include: the preview shows the first block it brought in.
+    const include = lineOf("@include: _fragments/prerequisites.md");
+    editor.selection = new vscode.Selection(include, 0, include, 0);
+    editor.revealRange(new vscode.Range(include, 0, include, 0), vscode.TextEditorRevealType.AtTop);
+    await waitFor("a scroll to the fragment's first block", () =>
+      preview.lineReveals().some((r) => r.source === "_fragments/prerequisites.md:1-1"),
+    );
+
+    // A double-click on a block in the preview puts the cursor on its line.
+    const steps = lineOf("@steps");
+    await preview.receive({ type: "openLine", line: steps });
+    assert.equal(vscode.window.activeTextEditor?.selection.active.line, steps);
+
+    // The preview scrolls: the editor follows.
+    const troubleshooting = lineOf("## Troubleshooting");
+    await preview.receive({ type: "scrolled", line: troubleshooting });
+    await waitFor("the editor at the troubleshooting heading", () =>
+      vscode.window.visibleTextEditors.some(
+        (e) =>
+          e.document.uri.fsPath === install.fsPath &&
+          e.visibleRanges.some((r) => r.start.line === troubleshooting),
+      ),
+    );
   });
 
   it("shows an image from a directory beside the content root, and serves only that directory", async () => {

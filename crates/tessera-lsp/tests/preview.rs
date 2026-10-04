@@ -67,12 +67,28 @@ fn renders_the_quill_page_as_the_site_does() {
     // Tabs, a note, steps, badges: the element contract's markup.
     assert!(html.contains("<ascribe-tabs"), "{html}");
     assert!(html.contains("<ascribe-note"), "{html}");
-    assert!(html.contains("<ascribe-steps>"), "{html}");
+    assert!(html.contains("<ascribe-steps "), "{html}");
     assert!(html.contains("<ascribe-availability"), "{html}");
     // Heading ids come from Ascribe, through the marker.
-    assert!(html.contains("<h2 id=\"prerequisites\">"), "{html}");
-    assert!(html.contains("<h2 id=\"streaming-sync\">"), "{html}");
+    assert!(html.contains(" id=\"prerequisites\">"), "{html}");
+    assert!(html.contains(" id=\"streaming-sync\">"), "{html}");
     assert!(!html.contains("ascribe-attributes"), "{html}");
+    // Every block says where it came from; a fragment's, through its include.
+    assert!(
+        html.contains("<h2 data-ascribe-source=\"install-agent.md:13-13\" id=\"prerequisites\">"),
+        "{html}"
+    );
+    assert!(
+        html.contains(
+            "<p data-ascribe-source=\"_fragments/prerequisites.md:1-1\" data-ascribe-via=\"install-agent.md:16\">"
+        ),
+        "{html}"
+    );
+    assert!(
+        html.contains("<ascribe-steps data-ascribe-source=\"install-agent.md:21-55\">"),
+        "{html}"
+    );
+    assert!(!html.contains("ascribe-anchor"), "{html}");
     // The frontmatter is the site output's: `available` is a list of targets.
     let frontmatter = &result["page"]["frontmatter"];
     assert_eq!(frontmatter["title"], "Install the Quill agent");
