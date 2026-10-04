@@ -2,7 +2,14 @@
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { ChangedPage } from "../../src/preview/protocol.js";
-import { causes, nextChangedPage, pageDetail, parseSource } from "../../src/preview/reviewText.js";
+import {
+  baseCommit,
+  causes,
+  nextChangedPage,
+  pageDetail,
+  parseSource,
+  sameBase,
+} from "../../src/preview/reviewText.js";
 
 function page(over: Partial<ChangedPage> = {}): ChangedPage {
   return {
@@ -108,5 +115,20 @@ describe("parseSource", () => {
     expect(parseSource("guides/install.md:0-1")).toBeUndefined();
     expect(parseSource("guides/install.md:5-4")).toBeUndefined();
     expect(parseSource("%E0%A4%A:1-1")).toBeUndefined();
+  });
+});
+
+describe("the base's commit", () => {
+  const base = { requested: "main", commit: "c".repeat(40), merge_base: "1a2b3c4d5e" };
+
+  it("is where the branch left the base, shortened", () => {
+    expect(baseCommit(base)).toBe("1a2b3c4");
+    expect(baseCommit({ ...base, merge_base: null })).toBe("ccccccc");
+  });
+
+  it("tells a base that moved from one that didn't", () => {
+    expect(sameBase(base, { ...base })).toBe(true);
+    expect(sameBase(base, { ...base, merge_base: "9f8e7d6" })).toBe(false);
+    expect(sameBase(base, { ...base, commit: "d".repeat(40) })).toBe(false);
   });
 });

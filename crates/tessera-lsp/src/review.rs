@@ -8,20 +8,27 @@
 //! - `ascribe/preview` with `review: true` adds the page's changes and the
 //!   page as it was (`preview.rs`).
 //!
-//! The base is read once, when it's set, and not watched: setting it again
-//! reads it again. Nothing here runs `git` until a base is set, so a server
-//! without `git` on the path works as before, and `setBase` says why it
-//! can't.
+//! The base is read when it's set, and not watched. Setting it again
+//! resolves the revision again, which is cheap, and reads the project there
+//! only when the commit compared with moved (a pull, rebase, or fetch since):
+//! the editor does that when the preview regains focus. Nothing here runs
+//! `git` until a base is set, so a server without `git` on the path works as
+//! before, and `setBase` says why it can't.
+//!
+//! The base never changes once read, so it keeps what's computed from it: the
+//! pages as they were, by build and path, and the last list of changed pages,
+//! with the snapshot it was computed from.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, PoisonError};
 
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value as Json;
 use tessera_core::RelPath;
-use tessera_diff::{BaseInfo, DiffError, PageDiff, Repository, Revision, Side};
+use tessera_diff::{Base, BaseInfo, DiffError, PageDiff, Repository, Revision, Side};
 use tessera_model::ContentModel;
-use tessera_resolve::{AstroRouter, Project, Snapshot};
+use tessera_resolve::{AstroRouter, Project, Snapshot, Version};
 
 use crate::core::Core;
 use crate::uri::normalize;
@@ -73,7 +80,7 @@ pub struct ChangesParams {
 }
 
 /// The answer to `ascribe/review/changes`.
-#[derive(Debug, Default, Serialize, PartialEq)]
+#[derive(Clone, Debug, Default, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ChangesResult {
     /// The build the pages are of.
@@ -98,6 +105,23 @@ pub(crate) struct ReviewBase {
     pub project: Option<Project>,
     /// The content model's text there.
     pub model_text: String,
+    /// The pages as they were, rendered, by build and path; `None` for a page
+    /// the build didn't have.
+    pages: Mutex<HashMap<(String, RelPath), Option<String>>>,
+    /// The last answer to `ascribe/review/changes`, and what it was computed
+    /// from.
+    changes: Mutex<Option<(ChangesKey, ChangesResult)>>,
+}
+
+/// What a list of changed pages depends on besides the base: the loaded
+/// project (its epoch), the snapshot's version and model revision, and the
+/// build.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ChangesKey {
+    epoch: u64,
+    version: Version,
+    model_revision: u64,
+    build: String,
 }
 
 impl ReviewBase {
@@ -108,26 +132,56 @@ impl ReviewBase {
             model_text: &self.model_text,
         })
     }
+
+    /// The page at `path` of `build` as it was, rendered with anchors; `None`
+    /// when the build didn't have it.
+    pub fn page_html(&self, build: &str, path: &RelPath) -> Option<String> {
+        let key = (build.to_owned(), path.clone());
+        let mut pages = self.pages.lock().unwrap_or_else(PoisonError::into_inner);
+        pages
+            .entry(key)
+            .or_insert_with(|| {
+                tessera_diff::html::page_html(self.project.as_ref()?, build, path)
+                    .map(|(html, _)| html)
+            })
+            .clone()
+    }
 }
 
-/// Reads the base `requested` (the default branch when `None`) for the
-/// project whose `ascribe.toml` is in `root`.
-pub(crate) fn load_base(root: &Path, requested: Option<&str>) -> Result<ReviewBase, String> {
+/// Resolves the base `requested` (the default branch when `None`) for the
+/// project whose `ascribe.toml` is in `root`: the commit to compare with,
+/// without reading the project there.
+pub(crate) fn resolve_base(
+    root: &Path,
+    requested: Option<&str>,
+) -> Result<(Repository, Base), String> {
     let repo = Repository::discover(root).map_err(|e| explain(&e))?;
     let base = repo.base(requested, false).map_err(|e| explain(&e))?;
-    let revision = Revision::read(&repo, base.compared()).map_err(|e| explain(&e))?;
+    Ok((repo, base))
+}
+
+/// What a resolved base is, in answers.
+pub(crate) fn info_of(base: &Base) -> BaseInfo {
+    BaseInfo {
+        requested: base.requested.clone(),
+        commit: base.commit.clone(),
+        merge_base: base.merge_base.clone(),
+    }
+}
+
+/// Reads the project at a resolved base.
+pub(crate) fn read_base(repo: &Repository, base: &Base) -> Result<ReviewBase, String> {
+    let revision = Revision::read(repo, base.compared()).map_err(|e| explain(&e))?;
     let (project, model_text) = match revision {
         Some(revision) => (Some(revision.project()), revision.model_text),
         None => (None, String::new()),
     };
     Ok(ReviewBase {
-        info: BaseInfo {
-            requested: base.requested.clone(),
-            commit: base.commit.clone(),
-            merge_base: base.merge_base.clone(),
-        },
+        info: info_of(base),
         project,
         model_text,
+        pages: Mutex::default(),
+        changes: Mutex::default(),
     })
 }
 
@@ -160,6 +214,7 @@ fn explain(error: &DiffError) -> String {
 /// What the changes request needs from the server's state, taken under the
 /// lock so the comparison happens without it.
 pub(crate) struct ChangesTarget {
+    epoch: u64,
     snapshot: Snapshot,
     model: Arc<ContentModel>,
     model_text: String,
@@ -177,6 +232,7 @@ impl Core {
     pub(crate) fn changes_target(&self) -> Option<ChangesTarget> {
         let loaded = self.loaded.as_ref()?;
         Some(ChangesTarget {
+            epoch: loaded.epoch,
             snapshot: loaded.inc.snapshot(),
             model: loaded.model.clone(),
             model_text: loaded.model_text.clone(),
@@ -218,6 +274,21 @@ pub(crate) fn changes(target: Option<&ChangesTarget>, build_name: Option<&str>) 
         return result;
     };
     result.base = Some(review.info.clone());
+    let key = ChangesKey {
+        epoch: target.epoch,
+        version: target.snapshot.version(),
+        model_revision: target.snapshot.model_revision(),
+        build: build.name.clone(),
+    };
+    let mut last = review
+        .changes
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner);
+    if let Some((computed, answer)) = &*last
+        && *computed == key
+    {
+        return answer.clone();
+    }
     let now = Side {
         project: target.snapshot.project(),
         model_text: &target.model_text,
@@ -245,6 +316,7 @@ pub(crate) fn changes(target: Option<&ChangesTarget>, build_name: Option<&str>) 
         });
         result.pages.push(summary(diff, title));
     }
+    *last = Some((key, result.clone()));
     result
 }
 

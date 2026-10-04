@@ -623,7 +623,7 @@ fn preview_request(shared: &Shared, request: &Request) -> Result<serde_json::Val
 }
 
 fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
-    use crate::review::{SetBaseParams, SetBaseResult, load_base};
+    use crate::review::{SetBaseParams, SetBaseResult, info_of, read_base, resolve_base};
     let params: SetBaseParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
     let result = match params.base {
@@ -644,8 +644,14 @@ fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Va
                 ),
             };
         };
-        // git runs without the lock.
-        match load_base(&root, requested) {
+        // git runs without the lock. The same base again (the preview
+        // checking whether it moved) keeps the one read, and what it holds.
+        let current = shared.lock().review.clone();
+        let read = resolve_base(&root, requested).and_then(|(repo, base)| match current {
+            Some(current) if current.info == info_of(&base) => Ok(current),
+            _ => read_base(&repo, &base).map(std::sync::Arc::new),
+        });
+        match read {
             Ok(base) => {
                 let info = base.info.clone();
                 let mut core = shared.lock();
@@ -658,7 +664,7 @@ fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Va
                         ),
                     };
                 }
-                core.review = Some(std::sync::Arc::new(base));
+                core.review = Some(base);
                 SetBaseResult {
                     base: Some(info),
                     problem: None,

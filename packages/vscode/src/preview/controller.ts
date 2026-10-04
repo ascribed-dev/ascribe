@@ -16,7 +16,7 @@ import type {
 } from "./protocol.js";
 import { canonicalReference, isExternal, splitFragment } from "./refs.js";
 import { ReviewController, type ReviewApi } from "./review.js";
-import { baseName, causes, fromContentPath, parseSource } from "./reviewText.js";
+import { baseCommit, baseName, causes, fromContentPath, parseSource } from "./reviewText.js";
 import { BuildChoices, previewProblems } from "./routing.js";
 
 /** The custom request the language server answers (`crates/tessera-lsp/README.md`). */
@@ -232,7 +232,10 @@ export class PreviewController implements vscode.Disposable {
     this.panelDisposables.push(
       panel.webview.onDidReceiveMessage((message: FromWebview) => void this.receive(message)),
       panel.onDidDispose(() => this.detach()),
-      panel.onDidChangeViewState(() => this.review.update()),
+      panel.onDidChangeViewState(() => {
+        this.review.update();
+        if (panel.active) void this.review.recheck();
+      }),
     );
     void vscode.commands.executeCommand("setContext", "ascribe.previewOpen", true);
   }
@@ -418,6 +421,7 @@ export class PreviewController implements vscode.Disposable {
       if (goToFirst) this.firstChangeOf = undefined;
       review = {
         base: baseName(result.review.base),
+        commit: baseCommit(result.review.base),
         page: result.review.changes,
         wasHtml: result.review.wasHtml,
         causes: causes(result.review.changes, result),

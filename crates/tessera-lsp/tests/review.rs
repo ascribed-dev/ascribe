@@ -267,6 +267,38 @@ fn a_new_page_is_added_and_has_no_page_as_it_was() {
     assert_eq!(listed["pages"][0]["title"], "New");
 }
 
+#[test]
+fn setting_the_base_again_follows_it_when_it_moved_and_keeps_it_when_not() {
+    let f = repository();
+    let page = f.path("docs/install.md");
+    f.write("docs/install.md", &PAGE.replace("new settings", "new key"));
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let first = set_base(&mut client, json!({ "base": "main" }));
+    let listed = changes(&mut client);
+    assert_eq!(listed["pages"].as_array().unwrap().len(), 1, "{listed}");
+    // Asked again with nothing changed, the answer is the same.
+    assert_eq!(changes(&mut client), listed);
+    let was = preview(&mut client, &page)["review"]["wasHtml"].clone();
+    assert!(was.as_str().unwrap().contains("new settings."), "{was}");
+
+    // Nothing moved: the same base.
+    assert_eq!(set_base(&mut client, json!({ "base": "main" })), first);
+    assert_eq!(changes(&mut client), listed);
+
+    // The change is committed, so the point the branch left main moved.
+    git(&f.root(), &["commit", "-q", "-am", "Second"]);
+    let moved = set_base(&mut client, json!({ "base": "main" }));
+    let head = git(&f.root(), &["rev-parse", "HEAD"]);
+    assert_eq!(moved["base"]["merge_base"], head.as_str());
+    assert_ne!(moved, first);
+    assert_eq!(changes(&mut client)["pages"], json!([]));
+    assert_eq!(
+        preview(&mut client, &page)["review"]["changes"],
+        Value::Null
+    );
+}
+
 fn git_finds_a_repository(dir: &Path) -> bool {
     Command::new("git")
         .current_dir(dir)

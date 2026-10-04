@@ -3,7 +3,14 @@ import type { ProjectServer } from "../client.js";
 import { comparable } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
 import type { BaseInfo, ChangedPage, ChangesResult, SetBaseResult } from "./protocol.js";
-import { baseName, fromContentPath, nextChangedPage, pageDetail } from "./reviewText.js";
+import {
+  baseCommit,
+  baseName,
+  fromContentPath,
+  nextChangedPage,
+  pageDetail,
+  sameBase,
+} from "./reviewText.js";
 
 /** The language server's review requests (`crates/tessera-lsp/README.md`). */
 export const SET_BASE_REQUEST = "ascribe/review/setBase";
@@ -64,6 +71,9 @@ export class ReviewController implements vscode.Disposable {
       vscode.commands.registerCommand("ascribe.stopReview", () => this.stopCommand()),
       vscode.commands.registerCommand("ascribe.changedPages", () => this.changedPagesCommand()),
       vscode.window.onDidChangeActiveTextEditor(() => this.update()),
+      vscode.window.onDidChangeWindowState((state) => {
+        if (state.focused && this.host.previewActive()) void this.recheck();
+      }),
       this.projects.onDidChangeProjects(() => this.update()),
     );
     this.update();
@@ -115,6 +125,35 @@ export class ReviewController implements vscode.Disposable {
     return false;
   }
 
+  /**
+   * Resolves the base of the previewed page's project again, and follows it
+   * when it moved: a pull, rebase, or fetch since it was set changes where
+   * the branch left it. Cheap when it didn't move; the server keeps the base
+   * it read. Called when the preview regains focus.
+   */
+  async recheck(): Promise<void> {
+    const document = this.host.previewedDocument();
+    const server = document && this.projects.serverFor(document.uri);
+    const base = server && this.baseOf(server);
+    if (!server || !base || server.state !== "running" || this.rechecking.has(server)) return;
+    this.rechecking.add(server);
+    try {
+      const result = await this.setBase(server, base.requested);
+      // Stopped, or started again, meanwhile.
+      if (this.baseOf(server) !== base || !result.base || sameBase(result.base, base)) return;
+      this.bases.set(comparable(server.project.folder), result.base);
+      this.update();
+      this.host.refresh();
+      void vscode.window.showInformationMessage(
+        `Ascribe: this branch now leaves ${baseName(result.base)} at ${baseCommit(result.base)}, so review compares with that.`,
+      );
+    } finally {
+      this.rechecking.delete(server);
+    }
+  }
+
+  private readonly rechecking = new Set<ProjectServer>();
+
   /** The changed page after `current` (a content path) in the project, for the preview's header. */
   async next(
     server: ProjectServer,
@@ -141,7 +180,7 @@ export class ReviewController implements vscode.Disposable {
     }
     if (base) {
       this.item.text = `$(git-compare) Review: ${baseName(base)}`;
-      this.item.tooltip = `Reviewing ${this.projects.name(server.project)} against ${baseName(base)}. Click for the changed pages.`;
+      this.item.tooltip = `Reviewing ${this.projects.name(server.project)} against ${baseName(base)}, from ${baseCommit(base)}, where this branch left it. Click for the changed pages.`;
       this.item.command = "ascribe.changedPages";
     } else {
       this.item.text = "$(git-compare) Review: off";

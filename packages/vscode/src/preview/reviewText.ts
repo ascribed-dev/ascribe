@@ -14,6 +14,16 @@ export function baseName(base: BaseInfo): string {
   return base.requested;
 }
 
+/** The commit compared with, shortened: where the branch left the base. */
+export function baseCommit(base: BaseInfo): string {
+  return (base.merge_base ?? base.commit).slice(0, 7);
+}
+
+/** Whether two answers name the same base at the same commits. */
+export function sameBase(a: BaseInfo, b: BaseInfo): boolean {
+  return a.requested === b.requested && a.commit === b.commit && a.merge_base === b.merge_base;
+}
+
 /** A changed page's detail in the list: its counts, and what it changed through. */
 export function pageDetail(page: Omit<PageChanges, "changes">): string {
   let text: string;

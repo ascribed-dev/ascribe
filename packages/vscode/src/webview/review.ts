@@ -168,6 +168,7 @@ export class Review {
     const info = span("grow", "Against ");
     const base = document.createElement("b");
     base.textContent = view.base;
+    base.title = `Compared with ${view.commit}, where this branch left ${view.base}`;
     info.append(base);
     if (view.page?.status === "added") info.append(" · a new page");
     if (view.causes.length > 0) {

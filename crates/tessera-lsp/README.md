@@ -153,8 +153,11 @@ works as before, and `setBase` says why it can't.
 **`ascribe/review/setBase`** resolves a revision as `ascribe diff` does,
 from the merge base of it and `HEAD`, reads the project as it is there through
 `tessera_diff::Revision` (one `git cat-file --batch`), and keeps it beside the
-live snapshot. The base is read once and not watched; setting it again reads
-it again. The request runs `git` on the main loop, without the server's lock.
+live snapshot. The base isn't watched. Setting it again resolves the revision
+again (two quick `git` calls) and reads the project there only when the commit
+compared with moved, after a pull, rebase, or fetch; otherwise it keeps the
+base it has. The editor does that when the preview regains focus. The request
+runs `git` on the main loop, without the server's lock.
 
 ```jsonc
 { "base": "main" }  // a branch, tag, or commit
@@ -175,7 +178,9 @@ from the current snapshot, so unsaved edits count. The result is
 pages without their `changes`, each with its `title`, in path order;
 `problem` is set when review is off. It compares every page of the build, so
 it's for listing on demand, not per keystroke: the preview's `review: true`
-compares only its page (`tessera_diff::compare_page_in`).
+compares only its page (`tessera_diff::compare_page_in`). The base keeps the
+last list with the snapshot it came from, so asking again before the next
+edit is free, and the pages as they were, rendered once each.
 
 A base costs about as much memory as the project: on the synthetic
 3,000-page project, the project's source index is 67 MB and the base adds

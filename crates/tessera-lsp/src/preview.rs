@@ -564,8 +564,7 @@ fn review_of(target: &Target, base: &ReviewBase, build: &str, path: &RelPath) ->
     let was_html = changes
         .as_ref()
         .filter(|c| c.status != PageStatus::Added)
-        .and_then(|_| tessera_diff::html::page_html(base.project.as_ref()?, build, path))
-        .map(|(html, _)| html);
+        .and_then(|_| base.page_html(build, path));
     PreviewReview {
         base: base.info.clone(),
         changes,

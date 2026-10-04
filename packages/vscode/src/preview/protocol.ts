@@ -163,6 +163,8 @@ export interface ChangesResult {
 export interface ReviewView {
   /** The base's name: "main". */
   base: string;
+  /** The commit compared with, shortened: "1a2b3c4". */
+  commit: string;
   /** `null` when the page didn't change. */
   page: PageChanges | null;
   wasHtml: string | null;

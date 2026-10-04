@@ -355,6 +355,7 @@ function reviewed(seq: number, review: Partial<ReviewView> = {}): ToWebview {
     path: "page.md",
     review: {
       base: "main",
+      commit: "1a2b3c4",
       page: {
         path: "page.md",
         route: "/page/",
@@ -401,6 +402,9 @@ describe("review in the preview webview", () => {
     expect(drawn.report.marks).toEqual({ changed: 1, removed: 1, added: 1 });
     expect(drawn.report.reviewHeader).toContain("Against main");
     expect(drawn.report.reviewHeader).toContain("3 changes on this page");
+    await expect(preview.page.locator("[data-role=review] b").getAttribute("title")).resolves.toBe(
+      "Compared with 1a2b3c4, where this branch left main",
+    );
     // The changed words, and the removed block as the old page rendered it.
     await expect(preview.page.locator("ins.ascribe-ins").textContent()).resolves.toBe("new ");
     await expect(preview.page.locator(".ascribe-removed-body").textContent()).resolves.toBe(
