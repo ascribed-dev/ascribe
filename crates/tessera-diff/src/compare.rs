@@ -1,5 +1,6 @@
 //! Comparing two versions of a project, build by build and page by page.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Serialize;
@@ -7,7 +8,7 @@ use tessera_core::RelPath;
 use tessera_resolve::{AstroRouter, Project, ResolvedPage};
 
 use crate::align::{self, Found};
-use crate::tree::{Anchor, Node, PageTree, TreeBuilder};
+use crate::tree::{Anchor, Node, PageTree, TreeBuilder, lf};
 use crate::words::diff_words;
 
 /// The name `because` gives the content model.
@@ -49,6 +50,10 @@ pub struct PageDiff {
     /// heading from, and `ascribe.toml` (last) when the content model is a
     /// cause.
     pub because: Vec<String>,
+    /// What changed about the page itself besides its blocks, in this
+    /// order: `title`, `frontmatter`, `availability` (the page-level one),
+    /// and `route`. Empty for an added or removed page.
+    pub page_changed: Vec<&'static str>,
     /// How many changes of each kind.
     pub counts: Counts,
     /// The block-level changes, in the page's order, a removed block where
@@ -156,13 +161,13 @@ impl ChangedFiles {
             };
         };
         let mut files = BTreeSet::new();
-        let old: BTreeMap<&RelPath, &str> = base
+        let old: BTreeMap<&RelPath, Cow<'_, str>> = base
             .project
             .files()
-            .map(|f| (&f.path, &*f.source))
+            .map(|f| (&f.path, lf(&f.source)))
             .collect();
         for file in now.project.files() {
-            if old.get(&file.path) != Some(&&*file.source) {
+            if old.get(&file.path) != Some(&lf(&file.source)) {
                 files.insert(file.path.clone());
             }
         }
@@ -245,6 +250,7 @@ fn compare_page(
             status,
             own_file_changed,
             because,
+            page_changed: Vec::new(),
             counts: Counts::default(),
             changes: Vec::new(),
         }
@@ -261,6 +267,18 @@ fn compare_page(
         return None;
     }
     let found = align::compare(&was_tree.nodes, &now_tree.nodes);
+    let page_changed: Vec<&'static str> = [
+        ("title", was_tree.title != now_tree.title),
+        ("frontmatter", was_tree.frontmatter != now_tree.frontmatter),
+        (
+            "availability",
+            was_tree.availability != now_tree.availability,
+        ),
+        ("route", was_tree.route != now_tree.route),
+    ]
+    .into_iter()
+    .filter_map(|(name, differs)| differs.then_some(name))
+    .collect();
 
     // The files the changes come from, and whether the model shapes them.
     let mut used: BTreeSet<RelPath> = BTreeSet::new();
@@ -319,6 +337,7 @@ fn compare_page(
         status: PageStatus::Changed,
         own_file_changed,
         because,
+        page_changed,
         counts,
         changes,
     })

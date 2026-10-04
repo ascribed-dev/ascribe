@@ -179,7 +179,7 @@ fn describe(page: &PageDiff) -> String {
         PageStatus::Removed => "removed".to_owned(),
         PageStatus::Changed => {
             let c = page.counts;
-            let parts: Vec<String> = [
+            let mut parts: Vec<String> = [
                 (c.changed, "changed"),
                 (c.added, "added"),
                 (c.removed, "removed"),
@@ -189,11 +189,10 @@ fn describe(page: &PageDiff) -> String {
             .filter(|(n, _)| *n > 0)
             .map(|(n, kind)| format!("{n} {kind}"))
             .collect();
-            if parts.is_empty() {
-                "title or frontmatter changed".to_owned()
-            } else {
-                parts.join(", ")
+            if !page.page_changed.is_empty() {
+                parts.push(format!("{} changed", and_list(&page.page_changed)));
             }
+            parts.join(", ")
         }
     };
     if !page.because.is_empty() {
@@ -205,6 +204,16 @@ fn describe(page: &PageDiff) -> String {
         text.push_str(&format!(" ({lead} {})", page.because.join(", ")));
     }
     text
+}
+
+/// `a`, `a and b`, `a, b, and c`.
+fn and_list(items: &[&str]) -> String {
+    match items {
+        [] => String::new(),
+        [one] => (*one).to_owned(),
+        [a, b] => format!("{a} and {b}"),
+        [rest @ .., last] => format!("{}, and {last}", rest.join(", ")),
+    }
 }
 
 fn failure_message(failure: Failure) -> String {

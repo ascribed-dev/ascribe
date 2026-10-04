@@ -350,6 +350,94 @@ fn a_title_change_changes_the_page_with_no_block_changes() {
     let page = page(&a, &b);
     assert_eq!(page.status, PageStatus::Changed);
     assert!(page.changes.is_empty());
+    assert_eq!(page.page_changed, ["title"]);
+}
+
+#[test]
+fn other_frontmatter_and_availability_are_named_apart_from_the_title() {
+    let model = "spec = \"0.1\"\n[dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\n[builds.site]\n";
+    let a = version(model, &[("install.md", PAGE)]);
+    let b = version(
+        model,
+        &[(
+            "install.md",
+            &PAGE.replace(
+                "title: Install",
+                "title: Install\nsidebar: 2\navailable: cloud",
+            ),
+        )],
+    );
+    let page = page(&a, &b);
+    assert!(page.changes.is_empty());
+    assert_eq!(page.page_changed, ["frontmatter", "availability"]);
+}
+
+#[test]
+fn a_page_with_block_changes_only_has_no_page_level_changes() {
+    let a = version(MODEL, &[("install.md", PAGE)]);
+    let b = version(
+        MODEL,
+        &[("install.md", &PAGE.replace("more words", "fewer words"))],
+    );
+    assert!(page(&a, &b).page_changed.is_empty());
+}
+
+#[test]
+fn crlf_line_endings_are_no_change() {
+    let page_text =
+        "# Install\n\nRun this:\n\n```sh\nquill install\nquill start\n```\n\n<div>\nraw\n</div>\n";
+    let a = version(MODEL, &[("install.md", page_text)]);
+    let b = version(MODEL, &[("install.md", &page_text.replace('\n', "\r\n"))]);
+    let builds = diff(&a, &b);
+    assert!(builds[0].pages.is_empty(), "{:#?}", builds[0].pages);
+}
+
+#[test]
+fn a_linked_page_that_changed_isnt_a_cause_unless_the_link_shows_it() {
+    let before = [
+        ("index.md", "# Home\n\nSee [the guide](guide.md).\n"),
+        ("guide.md", "# Guide\n\nGuide text.\n"),
+    ];
+    let a = version(MODEL, &before);
+    // The guide's body changed, and so did the paragraph linking to it, but
+    // the link shows nothing of the guide, so the guide isn't a cause.
+    let b = version(
+        MODEL,
+        &[
+            ("index.md", "# Home\n\nDo see [the guide](guide.md).\n"),
+            ("guide.md", "# Guide\n\nOther guide text.\n"),
+        ],
+    );
+    let builds = diff(&a, &b);
+    let home = builds[0]
+        .pages
+        .iter()
+        .find(|p| p.path == "index.md")
+        .unwrap();
+    assert!(home.because.is_empty(), "{:?}", home.because);
+
+    // A link that takes its text from the guide's title does show it.
+    let a = version(
+        MODEL,
+        &[
+            ("index.md", "# Home\n\nSee [](guide.md).\n"),
+            ("guide.md", "---\ntitle: Guide\n---\n\n# Guide\n"),
+        ],
+    );
+    let b = version(
+        MODEL,
+        &[
+            ("index.md", "# Home\n\nSee [](guide.md).\n"),
+            ("guide.md", "---\ntitle: Handbook\n---\n\n# Guide\n"),
+        ],
+    );
+    let builds = diff(&a, &b);
+    let home = builds[0]
+        .pages
+        .iter()
+        .find(|p| p.path == "index.md")
+        .unwrap();
+    assert_eq!(home.because, ["guide.md"]);
 }
 
 #[test]
@@ -437,6 +525,7 @@ fn the_json_has_the_documented_shape() {
     let page = &json[0]["pages"][0];
     assert_eq!(page["status"], "changed");
     assert_eq!(page["own_file_changed"], true);
+    assert_eq!(page["page_changed"], serde_json::json!([]));
     assert_eq!(page["counts"]["changed"], 1);
     let change = &page["changes"][0];
     assert_eq!(change["kind"], "changed");

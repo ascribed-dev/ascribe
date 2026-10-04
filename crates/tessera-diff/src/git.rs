@@ -14,6 +14,17 @@ use tessera_core::RelPath;
 
 use crate::DiffError;
 
+/// The revisions tried, in order, when no base is given: the remote's default
+/// branch, then `main` and `master` on the remote (a CI checkout has no
+/// `origin/HEAD` and no local branches), then locally.
+pub const DEFAULT_BASES: [&str; 5] = [
+    "origin/HEAD",
+    "origin/main",
+    "origin/master",
+    "main",
+    "master",
+];
+
 /// A git repository, as seen from a directory inside it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Repository {
@@ -85,15 +96,16 @@ impl Repository {
     }
 
     /// The base to compare against. `requested` is a revision; without one,
-    /// the repository's default branch: `origin/HEAD`, then `main`, then
-    /// `master`. Unless `exact`, the comparison starts from the merge base of
+    /// the repository's default branch, the first of [`DEFAULT_BASES`] that
+    /// exists. Unless `exact`, the comparison starts from the merge base of
     /// the revision and `HEAD`, as a pull request shows it.
     ///
     /// # Errors
     ///
     /// [`DiffError::UnknownRevision`] when the revision doesn't name a commit,
     /// [`DiffError::NoDefaultBranch`] when none of the defaults exists, and
-    /// [`DiffError::Git`] when there is no merge base.
+    /// [`DiffError::ShallowHistory`] or [`DiffError::NoCommonHistory`] when
+    /// there is no merge base.
     pub fn base(&self, requested: Option<&str>, exact: bool) -> Result<Base, DiffError> {
         let (requested, commit) = match requested {
             Some(rev) => {
@@ -102,7 +114,7 @@ impl Repository {
                     .ok_or_else(|| DiffError::UnknownRevision(rev.to_owned()))?;
                 (rev.to_owned(), commit)
             }
-            None => ["origin/HEAD", "main", "master"]
+            None => DEFAULT_BASES
                 .iter()
                 .find_map(|rev| self.commit_of(rev).map(|c| ((*rev).to_owned(), c)))
                 .ok_or(DiffError::NoDefaultBranch)?,
@@ -110,14 +122,33 @@ impl Repository {
         let merge_base = if exact {
             None
         } else {
-            let out = self.run(&["merge-base", &commit, "HEAD"])?;
-            Some(String::from_utf8_lossy(&out).trim().to_owned())
+            Some(self.merge_base(&requested, &commit)?)
         };
         Ok(Base {
             requested,
             commit,
             merge_base,
         })
+    }
+
+    /// The merge base of `commit` and `HEAD`. `git merge-base` fails without
+    /// a word when there is none: when the clone is too shallow to reach it,
+    /// or when the two share no history.
+    fn merge_base(&self, requested: &str, commit: &str) -> Result<String, DiffError> {
+        match self.run(&["merge-base", commit, "HEAD"]) {
+            Ok(out) => Ok(String::from_utf8_lossy(&out).trim().to_owned()),
+            Err(DiffError::Git { message, .. }) if message.is_empty() => {
+                let shallow = self
+                    .run(&["rev-parse", "--is-shallow-repository"])
+                    .is_ok_and(|out| String::from_utf8_lossy(&out).trim() == "true");
+                Err(if shallow {
+                    DiffError::ShallowHistory(requested.to_owned())
+                } else {
+                    DiffError::NoCommonHistory(requested.to_owned())
+                })
+            }
+            Err(e) => Err(e),
+        }
     }
 
     /// The commit a revision names, or `None`.

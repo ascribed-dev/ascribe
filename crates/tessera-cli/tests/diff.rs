@@ -269,3 +269,20 @@ fn a_base_model_with_errors_exits_with_2() {
     );
     assert!(stderr(&out).contains("has errors, so nothing can be compared"));
 }
+
+#[test]
+fn a_title_change_is_named() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/docs/install.md",
+        &PAGE.replace("title: Install", "title: Set up"),
+    );
+    let out = ascribe(&site(&dir), &["diff", "--build", "site"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out).contains("  install.md: title changed\n"),
+        "{}",
+        stdout(&out)
+    );
+}

@@ -168,7 +168,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 
 Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, phrase, or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
 
-- `--base <REV>`: the revision to compare with, anything git accepts (a branch, a tag, a commit). By default, the repository's default branch: `origin/HEAD`, then `main`, then `master`. The comparison starts from the **merge base** of that revision and `HEAD`, as a pull request shows its changes, so commits made on the base branch since you branched aren't listed.
+- `--base <REV>`: the revision to compare with, anything git accepts (a branch, a tag, a commit). By default, the repository's default branch, the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists. The comparison starts from the **merge base** of that revision and `HEAD`, as a pull request shows its changes, so commits made on the base branch since you branched aren't listed. A shallow clone (what `actions/checkout` makes by default) may not have the merge base: fetch more history (`fetch-depth: 0`) or use `--base-exact`.
 - `--base-exact` compares with the revision itself instead of the merge base.
 - `--build <NAME>` compares only that build. Repeat it for several. By default, every build in `ascribe.toml`.
 - `--format json` writes one JSON document instead of text (see [Diff JSON](#diff-json)).
@@ -180,10 +180,11 @@ The text output lists each build's changed pages with counts, and where a change
 
 ```text
 compared with main (3f9c2ab), from its merge base with HEAD (8d01e4c)
-site: 3 pages changed
+site: 4 pages changed
   getting-started.md: 1 changed, 1 added (through _fragments/prereqs.md)
   guides/rollouts.md: 5 changed, 3 added, 1 removed, 1 moved
   guides/schedules.md: added
+  reference/limits.md: title changed
 cloud: no changes
 ```
 
@@ -193,7 +194,7 @@ cloud: no changes
 |---|---|
 | `0` | Compared, whether or not anything changed |
 | `1` | With `--exit-code`: something changed |
-| `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error. |
+| `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, no merge base (a shallow clone, or unrelated histories), `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error. |
 
 ### Diff JSON
 
@@ -215,9 +216,10 @@ Each page:
 | `route` | string | Its route; for a removed page, the route it had |
 | `status` | string | `"added"` (the build publishes it now and didn't), `"removed"`, or `"changed"` |
 | `own_file_changed` | boolean | Whether the page's own file changed, or exists on one side only |
-| `because` | array of strings | The other changed files its change comes from, relative to the content root: fragments it includes, and pages its links take a title or heading from. `ascribe.toml` comes last when a change to the content model (a phrase's value, a label, a build's settings) is a cause. |
+| `because` | array of strings | The other changed files its change comes from, relative to the content root: fragments it includes, and pages its links take their text or a heading id from (a link to a page that changed otherwise isn't a cause). `ascribe.toml` comes last when a change to the content model (a phrase's value, a label, a build's settings) is a cause. |
+| `page_changed` | array of strings | What changed about the page as a whole, besides its blocks: `"title"`, `"frontmatter"` (fields other than `title` and `available`), `"availability"` (the page-level availability, as shown), and `"route"`, in that order. Empty for an added or removed page. |
 | `counts` | object | `changed`, `added`, `removed`, and `moved`: how many changes of each kind |
-| `changes` | array | The block changes, in the page's order, each removed block where it was. Empty for an added or removed page, and for a page whose only change is its title or frontmatter. |
+| `changes` | array | The block changes, in the page's order, each removed block where it was. Empty for an added or removed page, and for a page whose only changes are in `page_changed`. |
 
 Each change:
 
@@ -249,6 +251,7 @@ A block is a heading, paragraph, code block, table, list, list item, block quote
           "status": "changed",
           "own_file_changed": false,
           "because": ["_fragments/prereqs.md"],
+          "page_changed": [],
           "counts": { "changed": 1, "added": 0, "removed": 0, "moved": 0 },
           "changes": [
             {

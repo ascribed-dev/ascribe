@@ -21,6 +21,6 @@ The binary links no git library and no HTTP client: `git` is run as a process wi
 
 ## Tests
 
-- `tests/git.rs`: reading a project at a revision in a temporary repository: at the root and in a subfolder, a content root above the project folder, a nested project, unusual paths, a rename, no project at the base, base discovery, and the errors.
-- `tests/compare.rs`: the comparison on projects in memory: each change kind, nesting, moves, the limits, and pages changed only through a fragment, a phrase, or a build's settings.
+- `tests/git.rs`: reading a project at a revision in a temporary repository: at the root and in a subfolder, a content root above the project folder, a nested project, unusual paths, a rename, no project at the base, base discovery (`origin/main` without `origin/HEAD` included), and the errors, a shallow clone and unrelated histories among them.
+- `tests/compare.rs`: the comparison on projects in memory: each change kind, nesting, moves, the limits, and pages changed only through a fragment, a phrase, or a build's settings, page-level changes, CRLF line endings, and which linked pages count as a cause.
 - The benchmark is `ascribe diff` in `tests/corpora/benches/perf.rs`.

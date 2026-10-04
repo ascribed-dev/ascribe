@@ -91,6 +91,12 @@ impl Node {
 pub(crate) struct PageTree {
     /// The page's route.
     pub route: String,
+    /// Its title, phrases substituted.
+    pub title: Option<String>,
+    /// Its frontmatter, serialized, without `title` and `available`.
+    pub frontmatter: Option<String>,
+    /// Its page-level availability, as shown.
+    pub availability: Option<String>,
     /// Its blocks.
     pub nodes: Vec<Node>,
     /// A fingerprint of the whole page: its title, frontmatter, page-level
@@ -116,22 +122,30 @@ impl<'p> TreeBuilder<'p> {
 
     pub fn page(&mut self, page: &ResolvedPage) -> PageTree {
         let nodes: Vec<Node> = page.blocks.iter().map(|b| self.block(b)).collect();
+        // YAML values don't implement `Hash`; their serialization is stable.
+        // `title` and `available` are left out: they're compared as shown,
+        // as the title and the availability.
+        let frontmatter = page.frontmatter.as_ref().and_then(|f| {
+            let mut f = f.clone();
+            if let Some(map) = f.as_mapping_mut() {
+                map.remove("title");
+                map.remove("available");
+            }
+            serde_yaml_ng::to_string(&f).ok()
+        });
+        let availability = page.availability.as_deref().map(|a| self.availability(a));
         let mut hasher = DefaultHasher::new();
         page.title.hash(&mut hasher);
-        // YAML values don't implement `Hash`; their serialization is stable.
-        page.frontmatter
-            .as_ref()
-            .and_then(|f| serde_yaml_ng::to_string(f).ok())
-            .hash(&mut hasher);
-        page.availability
-            .as_deref()
-            .map(|a| self.availability(a))
-            .hash(&mut hasher);
+        frontmatter.hash(&mut hasher);
+        availability.hash(&mut hasher);
         for node in &nodes {
             node.hash.hash(&mut hasher);
         }
         PageTree {
             route: page.route.clone(),
+            title: page.title.clone(),
+            frontmatter,
+            availability,
             nodes,
             hash: hasher.finish(),
         }
@@ -141,7 +155,16 @@ impl<'p> TreeBuilder<'p> {
         let anchor = self.anchor(block.file, block.span, &block.via);
         let mut files = self.files_of(block.file, &block.via);
         for link in &block.links {
-            if let LinkTarget::Page { page, .. } = &link.target {
+            // A linked page shapes this block only through what the link
+            // takes from it: its title as the link's text, or a heading's id.
+            if let LinkTarget::Page {
+                page,
+                id,
+                text_filled,
+                ..
+            } = &link.target
+                && (*text_filled || id.is_some())
+            {
                 files.push(page.clone());
             }
         }
@@ -172,12 +195,12 @@ impl<'p> TreeBuilder<'p> {
                 }
                 BlockKind::CodeBlock(c) => {
                     kind = "code".into();
-                    own.push_str(&format!("code\u{1}{}\u{1}{}", c.info, c.literal));
+                    own.push_str(&format!("code\u{1}{}\u{1}{}", c.info, lf(&c.literal)));
                     text = collapse(&c.literal);
                 }
                 BlockKind::HtmlBlock(h) => {
                     kind = "html".into();
-                    own.push_str(&format!("html\u{1}{}", h.literal.trim_end()));
+                    own.push_str(&format!("html\u{1}{}", lf(h.literal.trim_end())));
                     text = collapse(&h.literal);
                 }
                 BlockKind::ThematicBreak => {
@@ -542,6 +565,17 @@ pub(crate) fn plain(list: &[Inline]) -> String {
     let mut out = String::new();
     push(list, &mut out);
     collapse(&out)
+}
+
+/// Text with every `\r\n` as `\n`: a working copy checked out with CRLF line
+/// endings (Git for Windows' default) reads the same as the LF blob it came
+/// from.
+pub(crate) fn lf(text: &str) -> std::borrow::Cow<'_, str> {
+    if text.contains("\r\n") {
+        std::borrow::Cow::Owned(text.replace("\r\n", "\n"))
+    } else {
+        std::borrow::Cow::Borrowed(text)
+    }
 }
 
 /// Runs of whitespace as one space, and none at either end.

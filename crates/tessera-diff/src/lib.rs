@@ -72,9 +72,19 @@ pub enum DiffError {
     UnknownRevision(String),
     /// No base was given and there's no default branch to use.
     #[error(
-        "no base to compare with: none of origin/HEAD, main, and master exists; pass --base <REV>"
+        "no base to compare with: none of origin/HEAD, origin/main, origin/master, main, and master exists; pass --base <REV>"
     )]
     NoDefaultBranch,
+    /// The clone is too shallow to reach the merge base.
+    #[error(
+        "this clone doesn't have enough history to find where the branch left `{0}`: fetch more of it (in GitHub Actions, `fetch-depth: 0` on actions/checkout), or pass --base-exact to compare with `{0}` itself"
+    )]
+    ShallowHistory(String),
+    /// The base and `HEAD` have no commit in common.
+    #[error(
+        "`{0}` and HEAD share no history, so there's no merge base to compare with; pass --base-exact to compare with `{0}` itself"
+    )]
+    NoCommonHistory(String),
     /// The content root is above the repository's root.
     #[error("the content root `{0}` is outside the git repository")]
     OutsideRepository(String),

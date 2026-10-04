@@ -299,3 +299,81 @@ fn no_default_branch() {
         Err(DiffError::NoDefaultBranch)
     ));
 }
+
+#[test]
+fn origin_main_is_a_default_base() {
+    let repo = Repo::new();
+    repo.git(&["checkout", "-q", "-b", "trunk"]);
+    repo.write("ascribe.toml", MODEL);
+    let first = repo.commit("first");
+    // A remote branch with no origin/HEAD, as a CI checkout often has.
+    repo.git(&["update-ref", "refs/remotes/origin/main", &first]);
+    let found = Repository::discover(&repo.root()).unwrap();
+    let base = found.base(None, false).unwrap();
+    assert_eq!(base.requested, "origin/main");
+    assert_eq!(base.commit, first);
+}
+
+#[test]
+fn a_shallow_clone_without_the_merge_base() {
+    let upstream = Repo::new();
+    upstream.write("ascribe.toml", MODEL);
+    upstream.commit("first");
+    upstream.git(&["checkout", "-q", "-b", "feature"]);
+    upstream.write("docs/index.md", "# Feature\n");
+    upstream.commit("on the branch");
+    upstream.git(&["checkout", "-q", "main"]);
+    upstream.write("docs/later.md", "# Later\n");
+    upstream.commit("on main");
+
+    // What actions/checkout does by default: one commit of the branch, then
+    // one of the base.
+    let clone = Repo {
+        dir: tempfile::tempdir().unwrap(),
+    };
+    // A file:// URL, since a plain path clones without --depth; on Windows,
+    // file:///C:/...
+    let path = upstream.root().display().to_string().replace('\\', "/");
+    let url = if path.starts_with('/') {
+        format!("file://{path}")
+    } else {
+        format!("file:///{path}")
+    };
+    clone.git(&[
+        "clone", "-q", "--depth", "1", "--branch", "feature", &url, ".",
+    ]);
+    clone.git(&[
+        "fetch",
+        "-q",
+        "--depth",
+        "1",
+        "origin",
+        "main:refs/remotes/origin/main",
+    ]);
+    let found = Repository::discover(&clone.root()).unwrap();
+    let err = found.base(Some("origin/main"), false).unwrap_err();
+    assert!(
+        matches!(&err, DiffError::ShallowHistory(rev) if rev == "origin/main"),
+        "{err:?}"
+    );
+    assert!(err.to_string().contains("fetch-depth: 0"), "{err}");
+    // Comparing with the base itself needs no history.
+    assert!(found.base(Some("origin/main"), true).is_ok());
+}
+
+#[test]
+fn a_base_with_no_history_in_common() {
+    let repo = Repo::new();
+    repo.write("ascribe.toml", MODEL);
+    repo.commit("first");
+    repo.git(&["checkout", "-q", "--orphan", "other"]);
+    repo.write("docs/index.md", "# Other\n");
+    repo.commit("unrelated");
+    let found = Repository::discover(&repo.root()).unwrap();
+    let err = found.base(Some("main"), false).unwrap_err();
+    assert!(
+        matches!(&err, DiffError::NoCommonHistory(rev) if rev == "main"),
+        "{err:?}"
+    );
+    assert!(found.base(Some("main"), true).is_ok());
+}

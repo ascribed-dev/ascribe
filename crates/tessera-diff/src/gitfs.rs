@@ -140,14 +140,17 @@ impl GitFs {
             .map(|p| (p.as_str().to_lowercase(), p.clone()))
             .collect();
         fs.sources = fs.discover();
-        let objects: Vec<&str> = fs
+        // Each path with its object, so a blob can only land on its own path.
+        let wanted: Vec<(RelPath, &str)> = fs
             .sources
             .paths
             .iter()
-            .filter_map(|p| fs.entry(p).map(|e| e.object.as_str()))
+            .filter_map(|p| fs.entry(p).map(|e| (p.clone(), e.object.as_str())))
             .collect();
+        let objects: Vec<&str> = wanted.iter().map(|(_, o)| *o).collect();
         let blobs = repo.read_blobs(&objects)?;
-        fs.contents = fs.sources.paths.iter().cloned().zip(blobs).collect();
+        let contents = wanted.into_iter().map(|(p, _)| p).zip(blobs).collect();
+        fs.contents = contents;
         Ok(fs)
     }
 
