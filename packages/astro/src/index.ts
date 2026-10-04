@@ -226,6 +226,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         }
       },
       "astro:server:start": ({ address, logger }) => {
+        review?.listening(address.address);
         if (!devProject || !devConfig) return;
         const dir = devProject.dir;
         try {

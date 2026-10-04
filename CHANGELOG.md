@@ -16,7 +16,7 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 ### Astro
 
 - The integration's `anchors` option turns source anchors on: `"dev"` in `astro dev` only, `true` always. The Markdown plugins apply them.
-- Review in the site preview: in `astro dev`, an **Ascribe review** app in Astro's dev toolbar marks a change's blocks on the real page and shows the pull request's review threads beside them, with commenting, replying, resolving, and submitting, through the GitHub CLI run by the dev server. A route that isn't an Ascribe page lists the changed pages, and a page whose layout drops the source anchors lists its changes and threads. The `review` option (on by default) turns it off; `astro build` output has no anchors, overlay, or review code. `astro dev` writes its address to `.ascribe/dev.json` for the editor. See [Review in the site preview](docs/astro.md#review-in-the-site-preview).
+- Review in the site preview: in `astro dev`, an **Ascribe review** app in Astro's dev toolbar marks a change's blocks on the real page and shows the pull request's review threads beside them, with commenting, replying, resolving, and submitting, through the GitHub CLI run by the dev server; comments stay off when the dev server listens on the network. A route that isn't an Ascribe page lists the changed pages, and a page whose layout drops the source anchors lists its changes and threads. The `review` option (on by default) turns it off; `astro build` output has no anchors, overlay, or review code. `astro dev` writes its address to `.ascribe/dev.json` for the editor. See [Review in the site preview](docs/astro.md#review-in-the-site-preview).
 
 ### Review
 

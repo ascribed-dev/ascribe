@@ -19,7 +19,12 @@ export function devFilePath(projectFolder: string): string {
   return path.join(projectFolder, ".ascribe", "dev.json");
 }
 
-/** The dev server a `dev.json` names, or `undefined` when it isn't one. */
+/** Whether a URL's host is this machine: `localhost`, `127.x.x.x` or `[::1]`. */
+function isLoopback(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "[::1]" || /^127(\.\d{1,3}){3}$/.test(hostname);
+}
+
+/** The dev server a `dev.json` names, or `undefined` when it isn't one or isn't on this machine. */
 export function parseDevFile(text: string): DevServer | undefined {
   let value: unknown;
   try {
@@ -33,6 +38,8 @@ export function parseDevFile(text: string): DevServer | undefined {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return undefined;
+    // A committed dev.json could name any site; a dev server is on this machine.
+    if (!isLoopback(parsed.hostname)) return undefined;
   } catch {
     return undefined;
   }

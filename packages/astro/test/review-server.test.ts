@@ -253,13 +253,28 @@ describe("ReviewServer", () => {
 
   it("keeps GitHub off when other pages could use the channel", async () => {
     const { channel, connect } = serve({
-      channelProblem: "`server.cors` lets any origin read its pages",
+      channelProblem:
+        "other web pages could talk to this dev server: `server.cors` lets any origin read its pages",
     });
     await channel.request("start");
     expect(connect).not.toHaveBeenCalled();
     const view = (await channel.request("page", { route: "/docs/guide", path: "guide.md" }))
       .result as PageView;
     expect(view.threads.state).toBe("unprotected");
+    expect(view.page?.changes).toHaveLength(1);
+  });
+
+  it("keeps GitHub off when the server listens on the network", async () => {
+    const { server, channel, connect } = serve();
+    server.listening("127.0.0.1");
+    server.listening("::1");
+    server.listening("::");
+    await channel.request("start");
+    expect(connect).not.toHaveBeenCalled();
+    const view = (await channel.request("page", { route: "/docs/guide", path: "guide.md" }))
+      .result as PageView;
+    expect(view.threads).toMatchObject({ state: "unprotected" });
+    expect(JSON.stringify(view.threads)).toContain("listening on the network");
     expect(view.page?.changes).toHaveLength(1);
   });
 
@@ -316,5 +331,14 @@ describe("channelProblem", () => {
     expect(channelProblem({ server: {}, legacy: { skipWebSocketTokenCheck: true } })).toContain(
       "skipWebSocketTokenCheck",
     );
+  });
+
+  it("names a server that listens on the network", () => {
+    for (const host of [undefined, false, "localhost", "127.0.0.1", "::1", "[::1]"]) {
+      expect(channelProblem({ server: { host } }), String(host)).toBeUndefined();
+    }
+    for (const host of [true, "0.0.0.0", "::", "192.168.0.41", "example.local"]) {
+      expect(channelProblem({ server: { host } }), String(host)).toContain("--host");
+    }
   });
 });

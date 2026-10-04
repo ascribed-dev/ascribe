@@ -48,7 +48,7 @@ export interface ReviewServerOptions {
   build: string;
   /** The content root, absolute. */
   contentRoot: string;
-  /** Why other web pages could use the channel, if they could: then GitHub stays off. */
+  /** Why someone else could use the channel, if they could: then GitHub stays off. */
   channelProblem: string | undefined;
   /** Compares the build with `base` (the default branch when `undefined`). */
   diff(base: string | undefined): Promise<DiffResult>;
@@ -76,6 +76,7 @@ const OVERLAY: ReadonlySet<string> = new Set<OverlayMethod>([
 
 export class ReviewServer {
   private on = false;
+  private problem: string | undefined;
   private connection: Connection | undefined;
   private connecting: Promise<Connection> | undefined;
   private diffed: { result: DiffResult } | { error: string } | undefined;
@@ -89,9 +90,21 @@ export class ReviewServer {
   lastDiffMs: number | undefined;
 
   constructor(private readonly options: ReviewServerOptions) {
+    this.problem = options.channelProblem;
     options.channel.on(REQUEST_EVENT, (data, client) => {
       void this.receive(data, client);
     });
+  }
+
+  /**
+   * The address the dev server listens on, once it does: one other machines
+   * can reach turns comments off, as `server.host` does.
+   */
+  listening(address: string): void {
+    if (this.problem !== undefined || isLoopback(address)) return;
+    this.problem = NETWORK_PROBLEM;
+    this.connection = undefined;
+    this.connecting = undefined;
   }
 
   /** Whether review is on: then the dev server's builds write JSON output too. */
@@ -228,10 +241,10 @@ export class ReviewServer {
   /** The pull request's review, opened once while review is on. */
   private connected(): Promise<Connection> {
     if (this.connection) return Promise.resolve(this.connection);
-    if (this.options.channelProblem !== undefined) {
+    if (this.problem !== undefined) {
       this.connection = {
         state: "unprotected",
-        message: `Showing changes only. Comments are off because other web pages could talk to this dev server: ${this.options.channelProblem}.`,
+        message: `Showing changes only. Comments are off because ${this.problem}.`,
       };
       return Promise.resolve(this.connection);
     }
@@ -240,6 +253,8 @@ export class ReviewServer {
       .catch((error: unknown): Connection => ({ state: "error", message: messageOf(error) }))
       .then((connection) => {
         this.connecting = undefined;
+        // The server turned out to listen on the network meanwhile.
+        if (this.problem !== undefined) return this.connected();
         if (this.on) this.connection = connection;
         return connection;
       });
@@ -329,24 +344,39 @@ function threadsState(connection: Connection): ThreadsState {
 }
 
 /**
- * Why other web pages could use the dev server's toolbar channel, or
- * `undefined` when they can't. Vite takes a browser's connection only with
- * the token in its client script, which the page's own origin can read and,
- * by default, only localhost origins can fetch. These settings undo that.
+ * Why someone other than the developer could use the dev server's toolbar
+ * channel, or `undefined` when they can't. Vite takes a browser's connection
+ * only with the token in its client script, which the page's own origin can
+ * read and, by default, only localhost origins can fetch. These settings undo
+ * that, and a server listening on the network gives its pages, token and all,
+ * to anyone who can reach it.
  */
 export function channelProblem(config: {
-  server: { cors?: unknown; allowedHosts?: unknown };
+  server: { cors?: unknown; allowedHosts?: unknown; host?: unknown };
   legacy?: { skipWebSocketTokenCheck?: unknown } | undefined;
 }): string | undefined {
+  const pages = "other web pages could talk to this dev server";
   if (config.legacy?.skipWebSocketTokenCheck === true) {
-    return "`legacy.skipWebSocketTokenCheck` is on";
+    return `${pages}: \`legacy.skipWebSocketTokenCheck\` is on`;
   }
-  if (config.server.allowedHosts === true) return "`server.allowedHosts` is `true`";
+  if (config.server.allowedHosts === true) return `${pages}: \`server.allowedHosts\` is \`true\``;
   const cors = config.server.cors;
   const origin =
     typeof cors === "object" && cors !== null ? (cors as { origin?: unknown }).origin : undefined;
   if (cors === true || origin === true || origin === "*") {
-    return "`server.cors` lets any origin read its pages";
+    return `${pages}: \`server.cors\` lets any origin read its pages`;
   }
+  if (!isLoopback(config.server.host)) return NETWORK_PROBLEM;
   return undefined;
+}
+
+const NETWORK_PROBLEM =
+  "the dev server is listening on the network (`--host`), so anyone who can reach it could comment as you";
+
+/** Whether Vite's `server.host`, or the address the server listens on, keeps the server on this machine: unset, `false`, or a loopback name. */
+export function isLoopback(host: unknown): boolean {
+  if (host === undefined || host === false) return true;
+  if (typeof host !== "string") return false;
+  const name = host.toLowerCase().replace(/^\[(.*)\]$/, "$1");
+  return name === "localhost" || name === "::1" || /^127(\.\d{1,3}){3}$/.test(name);
 }

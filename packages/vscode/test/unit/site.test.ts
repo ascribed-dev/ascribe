@@ -63,6 +63,22 @@ describe("dev.json", () => {
     expect(parseDevFile('{ "url": "not a url", "build": "site" }')).toBeUndefined();
     expect(parseDevFile('{ "url": "file:///etc/passwd", "build": "site" }')).toBeUndefined();
   });
+
+  it("names only a server on this machine", () => {
+    for (const url of ["http://localhost:4321/", "http://127.0.0.1:4321/", "https://[::1]:4321/"]) {
+      expect(parseDevFile(JSON.stringify({ url, build: "site" })), url).toEqual({
+        url,
+        build: "site",
+      });
+    }
+    for (const url of [
+      "https://example.com/",
+      "http://192.168.0.41:4321/",
+      "http://localhost.example.com/",
+    ]) {
+      expect(parseDevFile(JSON.stringify({ url, build: "site" })), url).toBeUndefined();
+    }
+  });
 });
 
 describe("findDevServer", () => {

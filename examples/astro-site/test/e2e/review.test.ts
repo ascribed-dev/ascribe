@@ -170,6 +170,24 @@ describe("review in the site preview", () => {
     }
   });
 
+  it("keeps comments off when the dev server listens on the network", async () => {
+    const root = await gitSite("review-host");
+    await edit(path.join(root, GUIDE), addParagraph);
+    const server = await serveDev(root, { E2E_HOST: "0.0.0.0" });
+    try {
+      const page = await startReview(server.origin, `${BASE}/guides/my-setup`);
+      await expect
+        .poll(() => page.locator('[data-ascribe-change="added"]').count(), { timeout: 30_000 })
+        .toBe(1);
+      await expect
+        .poll(async () => panel(page).textContent(), { timeout: 30_000 })
+        .toContain("listening on the network");
+      await page.close();
+    } finally {
+      await server.stop();
+    }
+  });
+
   it("lists the changes when a layout drops the anchors", async () => {
     const root = await gitSite("review-no-anchors");
     await edit(path.join(root, GUIDE), addParagraph);
