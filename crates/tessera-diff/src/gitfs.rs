@@ -154,6 +154,15 @@ impl GitFs {
         Ok(fs)
     }
 
+    /// The blob of the file at a content path, when there's one and it
+    /// isn't a symbolic link: images and other files a page uses, which
+    /// aren't read when the project is.
+    pub fn object(&self, content_path: &RelPath) -> Option<&str> {
+        self.entry(content_path)
+            .filter(|e| !e.symlink)
+            .map(|e| e.object.as_str())
+    }
+
     fn entry(&self, content_path: &RelPath) -> Option<&crate::git::TreeEntry> {
         let path = self.content_dir.join(content_path.as_str()).ok()?;
         self.tree.files.get(&path)

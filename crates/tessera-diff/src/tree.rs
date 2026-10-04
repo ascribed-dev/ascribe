@@ -18,7 +18,9 @@ use tessera_resolve::{
     Availability, IncludeSite, LinkTarget, Project, RefKind, ResolvedBlock, ResolvedKind,
     ResolvedPage, Scope,
 };
-use tessera_syntax::{Alignment, BlockKind, DirectiveLine, Inline, InlineKind, PrimaryValue};
+use tessera_syntax::{
+    Alignment, BlockKind, Bound, DirectiveLine, Inline, InlineKind, PrimaryValue,
+};
 
 /// Where a block's text is written: the README's anchor grammar, the same
 /// string the rendered page carries in `data-ascribe-source` and
@@ -121,7 +123,7 @@ impl<'p> TreeBuilder<'p> {
     }
 
     pub fn page(&mut self, page: &ResolvedPage) -> PageTree {
-        let nodes: Vec<Node> = page.blocks.iter().map(|b| self.block(b)).collect();
+        let nodes = self.blocks(&page.blocks);
         // YAML values don't implement `Hash`; their serialization is stable.
         // `title` and `available` are left out: they're compared as shown,
         // as the title and the availability.
@@ -149,6 +151,51 @@ impl<'p> TreeBuilder<'p> {
             nodes,
             hash: hasher.finish(),
         }
+    }
+
+    /// Sibling blocks as nodes. A line-form directive that the page renders
+    /// as an element around the block after it (`@note`, `@steps`,
+    /// `@details`, a widget) is one node holding that block, anchored from
+    /// the directive through the block, as the element is.
+    fn blocks(&mut self, blocks: &[ResolvedBlock]) -> Vec<Node> {
+        let mut out = Vec::new();
+        let mut pending: Vec<&ResolvedBlock> = Vec::new();
+        for block in blocks {
+            if following(block).is_some() {
+                pending.push(block);
+                continue;
+            }
+            let mut nodes = vec![self.block(block)];
+            while let Some(directive) = pending.pop() {
+                let mut node = self.block(directive);
+                if !self.wraps(directive) {
+                    nodes.insert(0, node);
+                    continue;
+                }
+                if block.file == directive.file && block.via == directive.via {
+                    node.anchor = self.anchor(
+                        directive.file,
+                        directive.span.cover(block.span),
+                        &directive.via,
+                    );
+                }
+                node.children = std::mem::take(&mut nodes);
+                node.hash = fingerprint(&node.own, &node.children);
+                nodes = vec![node];
+            }
+            out.extend(nodes);
+        }
+        // Directives with no block after them (an error the checks report).
+        out.extend(pending.into_iter().map(|d| self.block(d)));
+        out
+    }
+
+    /// Whether a line-form directive renders as an element around its block.
+    fn wraps(&self, directive: &ResolvedBlock) -> bool {
+        following(directive).is_some_and(|line| {
+            matches!(line.name.as_str(), "note" | "steps" | "details")
+                || self.model.widget(&line.name).is_some()
+        })
     }
 
     fn block(&mut self, block: &ResolvedBlock) -> Node {
@@ -257,7 +304,7 @@ impl<'p> TreeBuilder<'p> {
             ResolvedKind::BlockQuote { children: blocks } => {
                 kind = "quote".into();
                 own.push_str(&kind);
-                children = blocks.iter().map(|b| self.block(b)).collect();
+                children = self.blocks(blocks);
             }
             ResolvedKind::List {
                 ordered,
@@ -270,7 +317,7 @@ impl<'p> TreeBuilder<'p> {
                 children = items
                     .iter()
                     .map(|item| {
-                        let blocks = item.children.iter().map(|b| self.block(b)).collect();
+                        let blocks = self.blocks(&item.children);
                         self.wrapper(block, item.span, "item".into(), String::new(), blocks)
                     })
                     .collect();
@@ -288,7 +335,7 @@ impl<'p> TreeBuilder<'p> {
                     .as_ref()
                     .map(|t| plain(&t.inlines))
                     .unwrap_or_default();
-                children = blocks.iter().map(|b| self.block(b)).collect();
+                children = self.blocks(blocks);
             }
             ResolvedKind::Group { name, arms, .. } => {
                 kind = format!("group:{name}");
@@ -302,7 +349,7 @@ impl<'p> TreeBuilder<'p> {
                         if let Some(label) = dimensional_label(self.model, &arm.opener) {
                             head.push_str(&format!("\u{1}{label}"));
                         }
-                        let blocks = arm.children.iter().map(|b| self.block(b)).collect();
+                        let blocks = self.blocks(&arm.children);
                         self.wrapper(block, arm.span, "arm".into(), head, blocks)
                     })
                     .collect();
@@ -516,6 +563,17 @@ impl<'p> TreeBuilder<'p> {
             },
             _ => written.to_owned(),
         }
+    }
+}
+
+/// The directive line of a line-form directive that binds the next block.
+fn following(block: &ResolvedBlock) -> Option<&DirectiveLine> {
+    match &block.kind {
+        ResolvedKind::Leaf(leaf) => match &leaf.kind {
+            BlockKind::Directive(line) if line.binding == Some(Bound::FollowingBlock) => Some(line),
+            _ => None,
+        },
+        _ => None,
     }
 }
 

@@ -286,3 +286,89 @@ fn a_title_change_is_named() {
         stdout(&out)
     );
 }
+
+/// The data a `--format html` report's script reads, with the commits it
+/// names replaced, so it can be compared from run to run.
+fn report_data(html: &str, commits: &[&str]) -> serde_json::Value {
+    let open = "<script type=\"application/json\" id=\"ascribe-review-data\">";
+    let start = html.find(open).expect("the data") + open.len();
+    let end = start + html[start..].find("</script>").expect("its end");
+    let mut text = html[start..end].to_owned();
+    for commit in commits {
+        text = text.replace(commit, "<commit>");
+    }
+    serde_json::from_str(&text).expect("JSON")
+}
+
+fn head(dir: &Path) -> String {
+    let out = Command::new("git")
+        .current_dir(dir)
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .expect("run git");
+    String::from_utf8_lossy(&out.stdout).trim().to_owned()
+}
+
+#[test]
+fn html_report_shows_every_page_a_fragment_reaches() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/docs/guide.md",
+        "# Guide\n\n@include: _fragments/prereqs.md\n",
+    );
+    write(dir.path(), "site/docs/logo.png", "\u{89}PNG");
+    commit(dir.path(), "second");
+    let base = head(dir.path());
+    write(
+        dir.path(),
+        "site/docs/_fragments/prereqs.md",
+        "You need agent 2.4 or later.\n\n![Logo](../logo.png)\n",
+    );
+    let out = ascribe(
+        &site(&dir),
+        &["diff", "--format", "html", "--build", "site"],
+    );
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let html = stdout(&out);
+    assert!(html.starts_with("<!doctype html>\n"), "{html}");
+    assert!(html.contains("<title>Review: 2 changed pages</title>"));
+    let data = report_data(&html, &[&base]);
+    insta::assert_snapshot!(
+        "html_report_fragment",
+        serde_json::to_string_pretty(&data).expect("JSON")
+    );
+}
+
+#[test]
+fn html_report_loads_nothing_from_the_network() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/docs/about.md",
+        "# About\n\nAbout us.\n\n![Remote](https://example.com/a.png)\n",
+    );
+    let out = ascribe(&site(&dir), &["diff", "--format", "html"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let html = stdout(&out);
+    // Outside the data its script reads (pages, whose images the script
+    // replaces with what the file holds), nothing names a URL to load.
+    let open = "<script type=\"application/json\" id=\"ascribe-review-data\">";
+    let start = html.find(open).expect("the data");
+    let end = start + html[start..].find("</script>").expect("its end");
+    let rest = format!("{}{}", &html[..start], &html[end..]).to_ascii_lowercase();
+    for (i, _) in rest.match_indices("src=") {
+        let value = rest[i + 4..].trim_start_matches(['"', '\'']);
+        assert!(!value.starts_with("http") && !value.starts_with("//"));
+    }
+    assert!(!rest.contains("<link"));
+    for (i, _) in rest.match_indices("url(") {
+        let value = rest[i + 4..].trim_start_matches(['"', '\'', ' ']);
+        assert!(value.starts_with("data:") || value.starts_with('#'));
+    }
+    assert!(
+        rest.contains("content-security-policy\" content=\"default-src 'none'; img-src data:;")
+    );
+    let data = report_data(&html, &[]);
+    assert!(data["images"].as_object().expect("images").is_empty());
+}

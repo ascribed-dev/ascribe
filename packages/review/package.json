@@ -14,6 +14,7 @@
   "sideEffects": false,
   "files": [
     "dist",
+    "src/marks/marks.css",
     "README.md"
   ],
   "exports": {
@@ -21,6 +22,7 @@
       "types": "./dist/marks/index.d.ts",
       "default": "./dist/marks/index.js"
     },
+    "./marks.css": "./src/marks/marks.css",
     "./overlay": {
       "types": "./dist/overlay/index.d.ts",
       "default": "./dist/overlay/index.js"
@@ -40,10 +42,14 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run",
+    "embed": "node embed.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0"
+    "@ascribed/elements": "workspace:*",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.1.1"
   },
   "publishConfig": {
     "access": "public"

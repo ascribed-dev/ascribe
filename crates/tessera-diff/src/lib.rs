@@ -11,6 +11,8 @@
 //! - [`GitFs`] and [`Revision`]: a project as it is at a revision, through
 //!   the same [`tessera_resolve::FileSystem`] the disk and the editor use.
 //! - [`compare_builds`]: the comparison, as a [`BuildDiff`] per build.
+//! - [`html`]: the report as one self-contained HTML file, every changed
+//!   page rendered with its changes marked.
 //!
 //! The binary links no git library: everything goes through the `git`
 //! executable, so nothing else in Ascribe depends on `git` being present.
@@ -37,6 +39,7 @@ mod align;
 mod compare;
 pub mod git;
 mod gitfs;
+pub mod html;
 mod tree;
 mod words;
 
