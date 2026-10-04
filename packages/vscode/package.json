@@ -49,10 +49,21 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.openPagePreview",
+        "title": "Open Page Preview",
+        "category": "Ascribe"
+      },
+      {
         "command": "ascribe.openPreview",
-        "title": "Open Preview to the Side",
+        "title": "Open Page Preview to the Side",
         "category": "Ascribe",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "ascribe.openSitePreview",
+        "title": "Open Site Preview",
+        "category": "Ascribe",
+        "icon": "$(globe)"
       },
       {
         "command": "ascribe.selectPreviewBuild",
@@ -308,7 +319,15 @@
           "when": "ascribe.active"
         },
         {
+          "command": "ascribe.openPagePreview",
+          "when": "ascribe.active"
+        },
+        {
           "command": "ascribe.openPreview",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.openSitePreview",
           "when": "ascribe.active"
         },
         {
@@ -352,6 +371,11 @@
         {
           "command": "ascribe.openPreview",
           "when": "ascribe.active && resourceLangId == markdown",
+          "group": "navigation"
+        },
+        {
+          "command": "ascribe.openSitePreview",
+          "when": "ascribe.active && ascribe.devServer && resourceLangId == markdown",
           "group": "navigation"
         },
         {

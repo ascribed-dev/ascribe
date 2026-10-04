@@ -1,4 +1,5 @@
-// Running `ascribe build --emit site` for the configured build.
+// Running `ascribe build` for the configured build: its site output, and
+// its JSON output while review is on.
 import { execFile } from "node:child_process";
 
 /** What a successful build printed. */
@@ -12,14 +13,24 @@ export interface BuildResult {
 /**
  * Whether an Astro command builds with source anchors, given the integration's
  * `anchors` option: `"dev"` means in `astro dev` only, so `astro build` has
- * them only when it is `true`.
+ * them only when it is `true`. Review in the site preview (`review`) needs
+ * them in `astro dev`.
  */
-export function anchorsFor(anchors: boolean | "dev" | undefined, command: string): boolean {
-  return anchors === true || (anchors === "dev" && command === "dev");
+export function anchorsFor(
+  anchors: boolean | "dev" | undefined,
+  command: string,
+  review = false,
+): boolean {
+  return anchors === true || (command === "dev" && (anchors === "dev" || review));
+}
+
+/** Whether an Astro command has review in the site preview, given the `review` option. */
+export function reviewFor(review: boolean | undefined, command: string): boolean {
+  return command === "dev" && review !== false;
 }
 
 /**
- * Builds one build's site output. Rejects, with the compiler's report as the
+ * Builds one build's outputs, the site output by default. Rejects, with the compiler's report as the
  * message, if the build has errors: the Astro build fails with them.
  */
 export function runBuild(options: {
@@ -29,11 +40,13 @@ export function runBuild(options: {
   cwd: string;
   /** Write source anchors (`--anchors`). */
   anchors?: boolean;
+  /** The outputs to write. Default: `["site"]`. */
+  outputs?: readonly ("site" | "json")[];
 }): Promise<BuildResult> {
   const args = [
     "build",
     "--emit",
-    "site",
+    (options.outputs ?? ["site"]).join(","),
     "--build",
     options.build,
     "--config",

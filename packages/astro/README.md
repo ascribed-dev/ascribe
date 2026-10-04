@@ -39,7 +39,7 @@ import Elements from "@ascribed/astro/Elements.astro";
 <head><Elements /></head>
 ```
 
-The [Astro guide](https://github.com/ascribed-dev/ascribe/blob/main/docs/astro.md) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, and what `astro dev` does.
+The [Astro guide](https://github.com/ascribed-dev/ascribe/blob/main/docs/astro.md) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, what `astro dev` does, and [review in the site preview](https://github.com/ascribed-dev/ascribe/blob/main/docs/astro.md#review-in-the-site-preview).
 
 ## Options
 
@@ -48,7 +48,8 @@ The [Astro guide](https://github.com/ascribed-dev/ascribe/blob/main/docs/astro.m
 | `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
 | `binary` | The `ascribe` binary, relative to the Astro root. By default, `ASCRIBE_BIN`, then the binary `@ascribed/cli` installed. |
-| `anchors` | Source anchors (`ascribe build --anchors`), for review: `"dev"` in `astro dev` only, `true` always. By default, `false`. |
+| `anchors` | Source anchors (`ascribe build --anchors`), for review: `"dev"` in `astro dev` only, `true` always. By default, `false`, though `review` turns them on in `astro dev`. |
+| `review` | The **Ascribe review** app in `astro dev`'s toolbar: a pull request's changes and comments on the real page. `false` leaves it out. By default, `true`. Never in `astro build`. |
 
 ## Development
 
@@ -60,6 +61,8 @@ The [Astro guide](https://github.com/ascribed-dev/ascribe/blob/main/docs/astro.m
 | `src/attributes.ts` | The attribute-marker and source-anchor rules, on a hast tree |
 | `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's Markdown processors |
 | `src/project.ts`, `src/binary.ts`, `src/run.ts`, `src/files.ts`, `src/dev.ts` | `ascribe.toml`, the binary, running it, serving files, dev rebuilds |
+| `src/review/` | Review in the site preview, on the dev server's side: `ascribe diff`, the pull request (through `@ascribed/review/github` and `gh`), the routes, `.ascribe/dev.json`, and the toolbar channel's requests (`server.ts`, `protocol.ts`) |
+| `src/toolbar/` | The **Ascribe review** toolbar app, in the page: the panel, and the `@ascribed/review` overlay on the page's blocks |
 
 The site imports `schema` from the generated file by path, so the output directory and the build name appear there as well as in `ascribe.toml` and the integration's options. That's deliberate: Vite compiles the TypeScript file where it is, so the site keeps the schema's exact inferred types, which a virtual module re-exporting it would hide.
 

@@ -53,8 +53,8 @@ export const npmPackages: readonly NpmPackage[] = [
   })),
   { name: "@ascribed/cli", dir: "packages/cli" },
   { name: "@ascribed/elements", dir: "packages/elements" },
-  { name: "@ascribed/astro", dir: "packages/astro" },
   { name: "@ascribed/review", dir: "packages/review" },
+  { name: "@ascribed/astro", dir: "packages/astro" },
 ];
 
 export const extension = { id: "Ascribe.ascribe-vscode", dir: "packages/vscode" };

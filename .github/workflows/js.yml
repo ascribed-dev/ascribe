@@ -135,6 +135,8 @@ jobs:
           "$RUNNER_TEMP/ascribe-install/node_modules/.bin/ascribe" --version
           echo "ASCRIBE_BIN=$(node -p "require.resolve('@ascribed/cli-${{ matrix.target }}/bin/${{ matrix.exe }}', { paths: [process.env.RUNNER_TEMP + '/ascribe-install'] })")" >> "$GITHUB_ENV"
       - run: pnpm --filter @ascribed/elements build
+      # The site preview's toolbar app runs review's built package.
+      - run: pnpm --filter @ascribed/review build
       - run: pnpm --filter @ascribed/astro build
       - run: pnpm --filter @ascribed/astro test
       - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install --with-deps chromium

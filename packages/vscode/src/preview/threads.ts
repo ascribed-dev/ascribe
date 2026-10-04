@@ -8,10 +8,11 @@ import { execFile } from "node:child_process";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
+  answerRequest,
+  baseRevision,
   contentPrefixOf,
   ghTransport,
   openReview,
-  parseRemote,
   readCheckout,
   ReviewError,
   tokenTransport,
@@ -22,8 +23,6 @@ import type { PageRef } from "@ascribed/review/place";
 import type { ProjectServer } from "../client.js";
 import { comparable } from "../projects.js";
 import type { ChangedPage, LocalState, ThreadsMethod, ThreadsView } from "./protocol.js";
-import { answerThreads } from "./threadsRequests.js";
-import { pullRequestBase } from "./threadsText.js";
 
 /** The scope posting review comments needs: `repo` (`public_repo` covers public repositories only). */
 export const GITHUB_SCOPES = ["repo"];
@@ -211,7 +210,7 @@ export class ThreadsController implements vscode.Disposable {
     const session = this.session(server);
     if (!session) throw new ReviewError("not-found", "Review comments aren't on for this project.");
     const id = key(server);
-    const answer = await answerThreads(
+    const answer = await answerRequest(
       {
         session,
         page,
@@ -355,32 +354,6 @@ async function aheadBehind(root: string, head: string): Promise<{ ahead: number;
   const out = await run("git", ["rev-list", "--left-right", "--count", `HEAD...${head}`], root);
   const [ahead, behind] = (out ?? "").trim().split(/\s+/).map(Number);
   return { ahead: ahead || 0, behind: behind || 0 };
-}
-
-/** The git revision for the pull request's base, from the remote that is its repository. */
-async function baseRevision(root: string, pr: ReviewSession["pullRequest"]): Promise<string> {
-  const out = (await run("git", ["remote", "-v"], root)) ?? "";
-  const remotes = out
-    .split("\n")
-    .map((line) => /^(\S+)\s+(\S+)\s+\(fetch\)$/.exec(line))
-    .filter((match) => match !== null)
-    .map((match) => {
-      const repository = parseRemote(match[2] ?? "");
-      return {
-        name: match[1] ?? "",
-        repository: repository && repoKey(repository),
-      };
-    });
-  const revision = pullRequestBase(remotes, repoKey(pr.repository), pr.baseRefName);
-  if (revision !== pr.baseRefName) {
-    const exists = await run("git", ["rev-parse", "--verify", "--quiet", revision], root);
-    if (exists !== undefined) return revision;
-  }
-  return pr.baseRefName;
-}
-
-function repoKey(repository: { host: string; owner: string; name: string }): string {
-  return `${repository.host}/${repository.owner}/${repository.name}`.toLowerCase();
 }
 
 /** A failure as a sentence. */

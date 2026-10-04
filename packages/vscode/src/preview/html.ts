@@ -19,18 +19,23 @@
  *   attribute in a page's raw HTML is ignored.
  * - `img-src`, `font-src`: the same origin, so the project's images show and
  *   remote images don't.
- * - `connect-src`, `frame-src`, `form-action` and the rest fall to
- *   `default-src`, so the page can't reach the network.
+ * - `frame-src`: the site preview's dev server, once it's shown, and nothing
+ *   before. The frame is that server's own page, from its own origin, so the
+ *   preview's policy doesn't apply inside it.
+ * - `connect-src`, `form-action` and the rest fall to `default-src`, so the
+ *   page can't reach the network.
  */
 // Stricter than the site, which passes raw HTML through.
-export function contentSecurityPolicy(cspSource: string): string {
-  return [
+export function contentSecurityPolicy(cspSource: string, frameOrigin?: string): string {
+  const directives = [
     "default-src 'none'",
     `script-src ${cspSource}`,
     `style-src ${cspSource}`,
     `img-src ${cspSource}`,
     `font-src ${cspSource}`,
-  ].join("; ");
+  ];
+  if (frameOrigin !== undefined) directives.push(`frame-src ${frameOrigin}`);
+  return directives.join("; ");
 }
 
 /** The URLs the shell loads, as the webview reaches them. */
@@ -42,6 +47,8 @@ export interface ShellResources {
   marksStyle: string;
   previewScript: string;
   previewStyle: string;
+  /** The site preview's origin, which the shell may frame (`http://localhost:4321`). */
+  frameOrigin?: string;
 }
 
 const escapeAttribute = (text: string): string =>
@@ -49,7 +56,7 @@ const escapeAttribute = (text: string): string =>
 
 /** The webview's document. Everything it shows arrives later in messages. */
 export function shellHtml(resources: ShellResources): string {
-  const csp = escapeAttribute(contentSecurityPolicy(resources.cspSource));
+  const csp = escapeAttribute(contentSecurityPolicy(resources.cspSource, resources.frameOrigin));
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -69,6 +76,10 @@ export function shellHtml(resources: ShellResources): string {
       <div class="toolbar">
         <label>Build <select data-role="build" disabled></select></label>
         <span data-role="build-description"></span>
+        <div class="surface" role="group" aria-label="Preview" data-role="surface">
+          <button type="button" data-surface="page" aria-pressed="true">Page</button>
+          <button type="button" data-surface="site" aria-pressed="false">Site</button>
+        </div>
       </div>
       <div class="review" data-role="review" hidden></div>
     </header>
@@ -78,6 +89,16 @@ export function shellHtml(resources: ShellResources): string {
       <div data-role="availability"></div>
       <article data-role="content"></article>
     </main>
+    <!-- The site preview: the dev server's page for the same file. -->
+    <section class="site" data-role="site" hidden>
+      <p class="site-problem" data-role="site-problem" hidden></p>
+      <iframe
+        data-role="site-frame"
+        title="Site preview"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
+        hidden
+      ></iframe>
+    </section>
     <script src="${escapeAttribute(resources.elementsScript)}"></script>
     <script src="${escapeAttribute(resources.previewScript)}"></script>
   </body>

@@ -81,13 +81,19 @@ Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon a
 
 ### Preview
 
-**Ascribe: Open Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, and opens a page or file you click in the editor. It scrolls with the editor by block, both ways: scrolling the editor brings the block at its top to the top of the preview, moving the cursor into a block the preview doesn't show brings it into view, scrolling the preview scrolls the editor to the block at its top, and double-clicking a block puts the cursor on its first line. A block from a fragment follows the line of its `@include`. Turn off `ascribe.preview.scrollPreviewWithEditor` or `ascribe.preview.scrollEditorWithPreview` to stop one direction. Its **Build** picker shows the page as any build publishes it, starting with the editor's build. In a workspace with several projects, each project keeps its own choice of build.
+**Ascribe: Open Page Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, and opens a page or file you click in the editor. It scrolls with the editor by block, both ways: scrolling the editor brings the block at its top to the top of the preview, moving the cursor into a block the preview doesn't show brings it into view, scrolling the preview scrolls the editor to the block at its top, and double-clicking a block puts the cursor on its first line. A block from a fragment follows the line of its `@include`. Turn off `ascribe.preview.scrollPreviewWithEditor` or `ascribe.preview.scrollEditorWithPreview` to stop one direction. Its **Build** picker shows the page as any build publishes it, starting with the editor's build. In a workspace with several projects, each project keeps its own choice of build.
 
 A fragment isn't a page, so the preview names the pages that include it instead. A page a build doesn't publish says which build drops it, and why.
 
 A file with no `ascribe.toml` above it has nothing to preview: "This file isn't part of an Ascribe project (no ascribe.toml above it)." A file in a project's folder but outside its content root isn't a page either, and the preview names both: "handbook/README.md is in the project handbook, but outside its content root (handbook/pages), so there is no page to preview."
 
 The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts and loads nothing remote, so raw HTML that needs either looks different in the preview than on the site.
+
+### Site preview
+
+The page preview is the page alone. The **site preview** is the same page in the real site, with its layout, navigation, and styles, from the site's dev server. With [`@ascribed/astro`](astro.md), `astro dev` writes where it's running to `.ascribe/dev.json` in the project, and removes the file when it stops.
+
+**Ascribe: Open Site Preview** opens the active page on the dev server in your browser, at the heading the editor shows. It's also the globe button in a Markdown editor's title bar while a dev server is running. With no dev server, or one that stopped without removing `dev.json`, it says to start one. It only opens an address on your machine (`localhost`, `127.0.0.1`, or `[::1]`), so a `dev.json` committed to a repository can't send it elsewhere. In a remote workspace, VS Code forwards the dev server's port first. The page preview's **Page | Site** switch, at the end of its toolbar, shows the site preview in the panel instead: the dev server's page for the same file, following the active file as **Page** does. Links you follow inside it stay until you open another file. With no dev server, it says to start one, with **Try again**. In VS Code for the Web, where the panel can't show the dev server, **Site** opens the browser instead. [Review in the site preview](astro.md#review-in-the-site-preview) has the toolbar app that marks changes and shows comments there; each block's and thread's **Open source** brings you back to the file, at the line.
 
 ### Review in the preview
 
@@ -174,7 +180,9 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 |---|---|
 | **Ascribe: Restart Language Server** | Stops and starts every project's server that has started, including one that stopped after crashing, and forgets earlier crashes. A server that hasn't started stays off until it's needed; when none has, the command says so. It also picks up `ascribe.toml` files added or deleted. |
 | **Ascribe: Show Server Output** | Opens the log of the active file's project. When no file of a project is active and the workspace has several projects, it asks which, showing whether each one's server is running. |
-| **Ascribe: Open Preview to the Side** | Opens the preview of the active page, starting its project's server if it hasn't started. |
+| **Ascribe: Open Page Preview** | Opens the page preview of the active page in place of the editor, starting its project's server if it hasn't started. |
+| **Ascribe: Open Page Preview to the Side** | Opens the page preview of the active page beside the editor, starting its project's server if it hasn't started. |
+| **Ascribe: Open Site Preview** | Opens the active page on its project's dev server, in the browser. See [Site preview](#site-preview). |
 | **Ascribe: Select Preview Build** | Picks the build the preview shows, for the previewed page's project. |
 | **Ascribe: Start Review** | Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](#review-in-the-preview). |
 | **Ascribe: Stop Review** | Turns review off for the active page's project, and frees its base. |

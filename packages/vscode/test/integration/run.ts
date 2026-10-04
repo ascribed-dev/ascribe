@@ -22,6 +22,9 @@
 //               threads in the preview and the source editor from a fake
 //               GitHub, against the real `ascribe lsp`. Needs ASCRIBE_BIN and
 //               `git`.
+//   site        a copy of examples/quill, Open Site Preview and the preview
+//               panel's Site view, against a fake dev server, with the real
+//               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -157,6 +160,11 @@ const suites: Suite[] = [
     },
   },
   {
+    name: "site",
+    fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The default `ascribe.startServers`: the suite checks what starts when.
@@ -173,7 +181,7 @@ const suites: Suite[] = [
 ];
 
 /** The suites that run the real language server. */
-const needsServer = new Set(["quill", "preview", "review", "threads", "monorepo"]);
+const needsServer = new Set(["quill", "preview", "review", "threads", "site", "monorepo"]);
 
 async function main(): Promise<void> {
   // A process an extension host started has this set, and VS Code would then

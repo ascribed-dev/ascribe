@@ -29,6 +29,12 @@ export function outsideAssets(project: ProjectInfo, build: string): string[] {
   return [...assets].sort();
 }
 
+/** What `watchDev` gives back. */
+export interface DevBuilds {
+  /** Runs `task` in turn with the compiler runs, never during one. */
+  inTurn(task: () => Promise<void>): Promise<void>;
+}
+
 /** Watch source files, serialize compiler runs, and refresh Astro after successful output. */
 export function watchDev(options: {
   server: ServerOptions["server"];
@@ -38,7 +44,9 @@ export function watchDev(options: {
   astro: { base: string; trailingSlash: string; site: string | undefined };
   build: string;
   rebuild: () => Promise<void>;
-}): void {
+  /** Called after each successful rebuild, before Astro reloads the page. */
+  onBuilt?: () => void;
+}): DevBuilds {
   const { server, refreshContent, logger, rebuild } = options;
   let project = options.project;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -67,6 +75,7 @@ export function watchDev(options: {
       }
     }
     if (!failed) {
+      options.onBuilt?.();
       try {
         const reloaded = readProject(project.dir);
         if (reloaded.siteRoot(options.build) !== previousSiteRoot) {
@@ -143,4 +152,11 @@ export function watchDev(options: {
       } else next();
     });
   });
+  return {
+    inTurn: (task) => {
+      const run = pending.then(task);
+      pending = run.catch(() => undefined);
+      return run;
+    },
+  };
 }

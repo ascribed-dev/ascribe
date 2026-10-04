@@ -20,6 +20,7 @@ import { ReviewController, type ReviewApi } from "./review.js";
 import { SourceComments, type SourceThreadRecord } from "./sourceComments.js";
 import { baseCommit, baseName, causes, fromContentPath, parseSource } from "./reviewText.js";
 import { BuildChoices, previewProblems } from "./routing.js";
+import { findDevServer, noDevServerMessage, pageUrl, sectionAt } from "./site.js";
 
 /** The custom request the language server answers (`crates/tessera-lsp/README.md`). */
 export const PREVIEW_REQUEST = "ascribe/preview";
@@ -81,6 +82,26 @@ export interface PreviewApi {
   threadsDrawn(): readonly ThreadsReport[];
   /** The review threads the source editor shows. */
   sourceThreads(): SourceThreadRecord[];
+  /** The site preview. */
+  site: SiteApi;
+}
+
+/** The site preview, for tests. */
+export interface SiteApi {
+  /** From now on, records the addresses it would open in the browser instead of opening them. */
+  captureExternal(): void;
+  /** The addresses opened in the browser, in order. */
+  opened(): readonly string[];
+  /** The messages it showed, in order. */
+  messages(): readonly string[];
+  /** Which view the preview panel shows. */
+  surface(): "page" | "site";
+  /** Chooses Page or Site, as the panel's switch does. */
+  selectSurface(surface: "page" | "site"): Promise<void>;
+  /** What the panel's Site view showed: an address, or a problem. */
+  shown(): readonly ({ url: string } | { problem: string })[];
+  /** The addresses the panel's frame loaded, in order. */
+  framed(): readonly string[];
 }
 
 /**
@@ -123,6 +144,19 @@ export class PreviewController implements vscode.Disposable {
   /** The thread to go to once its page is drawn: one opened from another page's list. */
   private threadToGo: { file: string; threadId: string } | undefined;
   private threadsLog: ThreadsReport[] = [];
+  private captureExternal = false;
+  private externalLog: string[] = [];
+  private siteMessages: string[] = [];
+  /** Which view the panel shows. */
+  private surface: "page" | "site" = "page";
+  /** The origin the panel may frame: the site preview's, once it's shown. */
+  private frameOrigin: string | undefined;
+  /** What the Site view shows, sent again when the webview reloads. */
+  private siteMessage: Extract<ToWebview, { type: "surface" }> | undefined;
+  /** The document the Site view last showed. */
+  private siteShownFor: string | undefined;
+  private siteLog: ({ url: string } | { problem: string })[] = [];
+  private framedLog: string[] = [];
   private readonly review: ReviewController;
   private readonly sourceComments: SourceComments;
 
@@ -159,7 +193,12 @@ export class PreviewController implements vscode.Disposable {
         else if (origin === "refresh") this.schedule(0);
       }),
       vscode.commands.registerCommand("ascribe.openPreview", () => this.open()),
+      vscode.commands.registerCommand("ascribe.openPagePreview", () =>
+        this.open(vscode.ViewColumn.Active),
+      ),
+      vscode.commands.registerCommand("ascribe.openSitePreview", () => this.openSite()),
       vscode.commands.registerCommand("ascribe.selectPreviewBuild", () => this.pickBuild()),
+      ...this.watchDevFiles(),
       vscode.window.registerWebviewPanelSerializer(VIEW_TYPE, {
         deserializeWebviewPanel: async (panel) => {
           this.attach(panel);
@@ -196,6 +235,36 @@ export class PreviewController implements vscode.Disposable {
     );
   }
 
+  /**
+   * Keeps `ascribe.devServer` (which shows Open Site Preview in a page's title
+   * bar) true while some project has a `dev.json`. Whether its server answers
+   * is checked when the command runs.
+   */
+  private watchDevFiles(): vscode.Disposable[] {
+    const pattern = "**/.ascribe/dev.json";
+    const known = new Set<string>();
+    const update = (): void =>
+      void vscode.commands.executeCommand("setContext", "ascribe.devServer", known.size > 0);
+    const add = (uri: vscode.Uri): void => {
+      known.add(uri.fsPath);
+      update();
+    };
+    const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+    void vscode.workspace.findFiles(pattern, "**/node_modules/**", 50).then((uris) => {
+      for (const uri of uris) known.add(uri.fsPath);
+      update();
+    });
+    return [
+      watcher,
+      watcher.onDidCreate(add),
+      watcher.onDidChange(add),
+      watcher.onDidDelete((uri) => {
+        known.delete(uri.fsPath);
+        update();
+      }),
+    ];
+  }
+
   /** The test surface. */
   get api(): PreviewApi {
     return {
@@ -213,13 +282,25 @@ export class PreviewController implements vscode.Disposable {
       review: this.review.api,
       threadsDrawn: () => this.threadsLog,
       sourceThreads: () => this.sourceComments.records(),
+      site: {
+        captureExternal: () => {
+          this.captureExternal = true;
+        },
+        opened: () => this.externalLog,
+        messages: () => this.siteMessages,
+        surface: () => this.surface,
+        selectSurface: (surface) => this.selectSurface(surface),
+        shown: () => this.siteLog,
+        framed: () => this.framedLog,
+      },
     };
   }
 
-  /** Opens the preview beside the editor, for the active Ascribe document. */
-  async open(): Promise<void> {
+  /** Opens the preview, beside the editor or in its place, for the active Ascribe document. */
+  async open(column = vscode.ViewColumn.Beside): Promise<void> {
+    const beside = column === vscode.ViewColumn.Beside;
     if (this.panel) {
-      this.panel.reveal(undefined, true);
+      this.panel.reveal(beside ? undefined : column, beside);
       this.followActiveEditor();
       this.schedule(0);
       return;
@@ -231,7 +312,7 @@ export class PreviewController implements vscode.Disposable {
     const panel = vscode.window.createWebviewPanel(
       VIEW_TYPE,
       panelTitle(this.document),
-      { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
+      { viewColumn: column, preserveFocus: beside },
       {
         ...this.webviewOptions(first?.contentRoot ?? undefined, first?.assetRoots ?? []),
         retainContextWhenHidden: true,
@@ -249,6 +330,10 @@ export class PreviewController implements vscode.Disposable {
     this.panel = panel;
     this.ready = false;
     this.latest = undefined;
+    // A new panel shows the page first.
+    this.surface = "page";
+    this.siteMessage = undefined;
+    this.siteShownFor = undefined;
     panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, "media", "preview.svg");
     panel.webview.options = this.webviewOptions(contentRoot, assetRoots);
     this.contentRoot = contentRoot;
@@ -313,6 +398,7 @@ export class PreviewController implements vscode.Disposable {
       marksStyle: file("marks.css"),
       previewScript: file("preview.js"),
       previewStyle: file("preview.css"),
+      ...(this.frameOrigin === undefined ? {} : { frameOrigin: this.frameOrigin }),
     });
   }
 
@@ -345,11 +431,14 @@ export class PreviewController implements vscode.Disposable {
    * Asks the server of the project that owns a document for its page, in the
    * build chosen in that project, starting the server if it hasn't started.
    */
-  private async query(document: vscode.TextDocument): Promise<PreviewResult | undefined> {
+  private async query(
+    document: vscode.TextDocument,
+    buildOverride?: string,
+  ): Promise<PreviewResult | undefined> {
     const server = await this.projects.ensureStartedFor(document.uri);
     if (!server) return undefined;
     const params: PreviewParams = { textDocument: { uri: document.uri.toString() } };
-    const build = this.builds.get(server.project.folder);
+    const build = buildOverride ?? this.builds.get(server.project.folder);
     if (build !== undefined) params.build = build;
     if (this.review.baseOf(server)) params.review = true;
     try {
@@ -483,6 +572,10 @@ export class PreviewController implements vscode.Disposable {
     });
     if (this.log.length > 200) this.log.splice(0, this.log.length - 200);
     if (this.ready) void panel.webview.postMessage(message);
+    // The Site view follows the active file as the page does.
+    if (this.surface === "site" && this.siteShownFor !== document?.uri.toString()) {
+      void this.showSite();
+    }
   }
 
   /** The content root changed (a new `ascribe.toml`, another project): the webview may read the new one. */
@@ -546,6 +639,7 @@ export class PreviewController implements vscode.Disposable {
         this.ready = true;
         if (this.latest) void this.panel?.webview.postMessage(this.latest.message);
         else this.schedule(0);
+        if (this.surface === "site" && this.siteMessage) this.post(this.siteMessage);
         if (this.contentRoot && this.watchers.length === 0) this.watchDisk();
         return;
       }
@@ -649,6 +743,13 @@ export class PreviewController implements vscode.Disposable {
         if (server && this.review.baseOf(server)) await this.review.threads.refresh(server);
         return;
       }
+      case "surface":
+        await this.selectSurface(message.surface);
+        return;
+      case "siteShown":
+        this.framedLog.push(message.url);
+        this.wake();
+        return;
       case "threadsDrawn":
         this.threadsLog.push(message.report);
         if (this.threadsLog.length > 200) this.threadsLog.splice(0, this.threadsLog.length - 200);
@@ -851,6 +952,140 @@ export class PreviewController implements vscode.Disposable {
         viewColumn === undefined ? undefined : { viewColumn },
       );
     }
+  }
+
+  /**
+   * Opens the page of the active Ascribe document (or of the preview, when
+   * it's active) in the browser, from the project's dev server, at the heading
+   * the editor shows.
+   */
+  private async openSite(): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    const document =
+      editor && isPreviewable(editor.document)
+        ? editor.document
+        : this.panel?.active
+          ? this.document
+          : undefined;
+    if (!document) {
+      this.tell("Ascribe: open a page first, then open its site preview.");
+      return;
+    }
+    const server = await this.projects.ensureStartedFor(document.uri);
+    if (!server) {
+      this.tell("Ascribe: this file isn't part of an Ascribe project (no ascribe.toml above it).");
+      return;
+    }
+    const found = await findDevServer(server.project.folder);
+    if (found.state === "none") {
+      this.tell(noDevServerMessage(this.projects.name(server.project)));
+      return;
+    }
+    const page = (await this.query(document, found.server.build))?.page;
+    if (!page) {
+      this.tell(
+        `Ascribe: ${vscode.workspace.asRelativePath(document.uri)} isn't a page of the ${found.server.build} build, which the dev server shows.`,
+      );
+      return;
+    }
+    const shown = vscode.window.visibleTextEditors.find((e) => e.document === document);
+    const top = shown?.visibleRanges[0]?.start.line;
+    const section = top === undefined ? undefined : sectionAt(page.sections, top);
+    await this.openExternal(pageUrl(found.server, page.route, section));
+  }
+
+  /** Shows the page or the site in the panel. */
+  private async selectSurface(surface: "page" | "site"): Promise<void> {
+    this.surface = surface;
+    this.siteShownFor = undefined;
+    if (surface === "page") {
+      this.siteMessage = { type: "surface", surface: "page" };
+      this.post(this.siteMessage);
+      return;
+    }
+    await this.showSite();
+  }
+
+  /**
+   * Shows the previewed page's site preview in the panel: a frame on the
+   * project's dev server, at the page's route. In VS Code for the Web, where
+   * the dev server's forwarded address can't be framed, it opens the browser
+   * instead and goes back to the page.
+   */
+  private async showSite(): Promise<void> {
+    const document = this.document;
+    this.siteShownFor = document?.uri.toString();
+    const problem = (text: string): void => {
+      this.siteLog.push({ problem: text });
+      this.siteMessage = { type: "surface", surface: "site", problem: text };
+      this.post(this.siteMessage);
+      this.wake();
+    };
+    const server = this.server();
+    if (!document || !server) {
+      problem("Open an Ascribe page to see it on the site.");
+      return;
+    }
+    if (vscode.env.uiKind === vscode.UIKind.Web) {
+      await this.openSite();
+      this.surface = "page";
+      this.siteMessage = { type: "surface", surface: "page" };
+      this.post(this.siteMessage);
+      this.tell(
+        "Ascribe: the preview panel can't show the site here, so it opened in the browser.",
+      );
+      return;
+    }
+    const found = await findDevServer(server.project.folder);
+    if (this.surface !== "site" || document !== this.document) return;
+    if (found.state === "none") {
+      problem(noDevServerMessage(this.projects.name(server.project)).replace(/^Ascribe: t/, "T"));
+      return;
+    }
+    const latest = this.latest?.result;
+    const page =
+      latest?.page &&
+      latest.build === found.server.build &&
+      this.latest?.folder === server.project.folder
+        ? latest.page
+        : (await this.query(document, found.server.build))?.page;
+    if (this.surface !== "site" || document !== this.document) return;
+    if (!page) {
+      problem(
+        `${vscode.workspace.asRelativePath(document.uri)} isn't a page of the ${found.server.build} build, which the dev server shows.`,
+      );
+      return;
+    }
+    const shown = vscode.window.visibleTextEditors.find((e) => e.document === document);
+    const top = shown?.visibleRanges[0]?.start.line;
+    const section = top === undefined ? undefined : sectionAt(page.sections, top);
+    const url = pageUrl(found.server, page.route, section);
+    const external = (await vscode.env.asExternalUri(vscode.Uri.parse(url, true))).toString(true);
+    if (this.surface !== "site" || document !== this.document || !this.panel) return;
+    this.siteLog.push({ url: external });
+    this.siteMessage = { type: "surface", surface: "site", url: external };
+    const origin = new URL(external).origin;
+    if (origin !== this.frameOrigin) {
+      // The shell's policy names the one origin it may frame: a new one reloads it.
+      this.frameOrigin = origin;
+      this.setShell();
+      return;
+    }
+    this.post(this.siteMessage);
+    this.wake();
+  }
+
+  /** Opens an address of the dev server in the browser, forwarded first in a remote workspace. */
+  private async openExternal(url: string): Promise<void> {
+    this.externalLog.push(url);
+    if (this.captureExternal) return;
+    const external = await vscode.env.asExternalUri(vscode.Uri.parse(url, true));
+    await vscode.env.openExternal(external);
+  }
+
+  private tell(message: string): void {
+    this.siteMessages.push(message);
+    void vscode.window.showInformationMessage(message);
   }
 
   private editorColumn(): vscode.ViewColumn | undefined {
