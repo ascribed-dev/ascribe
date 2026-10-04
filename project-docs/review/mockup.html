@@ -2238,13 +2238,21 @@
             card.appendChild(
               h("div", { class: "reply" }, [
                 input,
+                // GitHub adds every reply to the review while it has unsent
+                // comments, so a reply can't go at once until it's submitted.
                 btn(
                   "ghost",
                   "Reply now",
                   function () {
                     send(true);
                   },
-                  { title: "Send this reply to GitHub right away" },
+                  pendingCount()
+                    ? {
+                        disabled: true,
+                        title:
+                          "You have unsent comments, so GitHub adds replies to your review. Submit or discard it to reply at once.",
+                      }
+                    : { title: "Send this reply to GitHub right away" },
                 ),
                 btn(
                   "ghost",

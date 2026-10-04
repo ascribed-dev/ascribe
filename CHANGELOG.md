@@ -17,6 +17,10 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 - The integration's `anchors` option turns source anchors on: `"dev"` in `astro dev` only, `true` always. The Markdown plugins apply them.
 
+### Review
+
+- A new package, `@ascribed/review`. Its Node part finds the open pull request for a checkout's branch, reads its review threads, places each on the rendered block it's on (following local edits, fragments shown on several pages, removed text, and outdated threads, and returning threads it can't place as detached), and posts comments and replies into the reviewer's pending review, which nobody else sees until it's submitted. It talks to GitHub through the GitHub CLI or a token its host supplies, and stores no token. See [`packages/review`](packages/review/README.md).
+
 ### The editor
 
 - The preview scrolls with the editor by block instead of by heading, both ways: scrolling the editor scrolls the preview to the block at its top, moving the cursor shows its block, scrolling the preview scrolls the editor, and double-clicking a block puts the cursor on its source line. A block from a fragment follows its `@include` line. `ascribe.preview.scrollPreviewWithEditor` and `ascribe.preview.scrollEditorWithPreview` turn each direction off.

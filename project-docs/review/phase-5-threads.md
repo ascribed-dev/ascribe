@@ -40,26 +40,26 @@ From the repository's remote and current branch: the open pull request whose hea
 
 A thread sits on a path and a line, on one side of the pull request's diff, at the pull request's head commit. A rendered block has an anchor: a file and a line range in the working tree. Placing is finding the block for the thread:
 
-1. **Path:** the thread's path is repository-relative; anchors are content paths. Convert with the project's prefix (phase 2's `repository.project_prefix`). A thread on a file outside the project is not placed and not shown.
-2. **Line:** if the working tree's file equals the head commit's, the line is the line. Otherwise shift it through the line changes between the two (`git diff --unified=0 <head> -- <path>`, parsed). A line that no longer exists gives a **detached** thread.
+1. **Path:** the thread's path is repository-relative; anchors are content paths, relative to the content root. Convert with the content root's path in the repository: the project's prefix (phase 2's `repository.project_prefix`) followed by `ascribe.toml`'s `content-root`. A thread on a file outside the content root is not placed and not shown.
+2. **Line:** if the working tree's file equals the head commit's, the line is the line. Otherwise shift it through the line changes between the two (`git diff --unified=0 <head> -- <path>`, parsed). A line the working tree replaced maps onto the replacing lines (at the same offset, clamped to them), and the thread is marked outdated with the text it was on. A line that was only deleted gives a **detached** thread.
 3. **Side:** a thread on the right side belongs to the block whose anchor contains the line. A thread on the left side (on removed text) belongs to the removed block from the diff whose `was` contains it.
 4. **Includes:** a thread on a fragment's line belongs to that block on every page that includes the fragment. Placement is by anchor, so this needs nothing extra; test it.
-5. **Outdated** threads (GitHub's `isOutdated`) are placed by `originalLine` at their original commit if that can be shifted to the working tree, and otherwise detached. They're marked outdated either way.
+5. **Outdated** threads (GitHub's `isOutdated`) are placed by `originalLine` at their original commit, shifted to the working tree as in rule 2, and detached only when their line was deleted. They're marked outdated either way.
 
 The result for a page: threads by anchor, plus the page's detached threads, plus threads marked by hidden marker (below).
 
 ### Posting
 
-- **A comment on a block** becomes a review thread on the block's file, at the block's last line (and `startLine` at its first, for a multi-line block), on the right side. Lines are shifted back from the working tree to the head commit; if the block's lines don't exist at the head commit (local edits not pushed), posting is refused with a message saying to push first.
-- **When GitHub can't anchor it:** the file isn't in the pull request (a page that changed only through a phrase or the model). The comment goes on the pull request's conversation instead, quoting the block's text, linking the page, and ending with a hidden marker:
+- **A comment on a block** becomes a review thread on the block's file, at the block's last line (and `startLine` at its first, for a multi-line block), on the right side. Lines are shifted back from the working tree to the head commit; if any of the block's lines isn't at the head commit unchanged (local edits not pushed), posting is refused with a message saying to push first.
+- **When GitHub can't anchor it:** the file isn't in the pull request (a page that changed only through a phrase or the model), or the line is in it but away from the diff's changes (GitHub's GraphQL API then returns no thread and no error). The comment is held in the pending review's summary instead, quoting the block's text, linking its lines, and ending with a hidden marker, and reaches the pull request's conversation when the review is submitted:
 
   ```html
   <!-- ascribe:anchor guides/install.md:12-14 build=site -->
   ```
 
-  Reading threads also reads conversation comments with this marker and places them like threads. They can't be resolved on GitHub; show them as plain comments.
+  Reading threads also reads conversation comments and review summaries with this marker and places them like threads. GitHub can't edit the summary of a pending review created without one, so the session creates its pending review with a hidden placeholder summary; a pending review the reviewer started on GitHub has none, and holding a comment in it is refused with a message saying to submit or discard it first. They can't be resolved on GitHub; show them as plain comments.
 - **Pending review:** new threads and replies go into the viewer's pending review (created on the first one). `pending()` returns what's in it; `submit(event, body)` submits it as a comment, an approval, or a request for changes; `discard()` deletes it.
-- **Replies** to an existing thread go either way, as the caller asks: sent at once, or held in the pending review. Check how the API treats a reply while a pending review exists (it may attach every reply to it); if sending at once isn't possible then, return an error the UI can explain.
+- **Replies** to an existing thread go either way, as the caller asks: sent at once, or held in the pending review. While a pending review exists, GitHub adds every reply to it, even one sent without the review's id; the session then deletes the reply again and returns `reply-held`, which the UI explains.
 - **"Pending" is the API's word.** Keep it in this package's names. User-facing text says "unsent" (README decision 7).
 - **Resolve and unresolve** act at once.
 - **Limits:** one mutation at a time, with a delay that keeps under the secondary rate limit, and a clear error when GitHub refuses.
