@@ -2,6 +2,8 @@
 
 Reviewing [Ascribe](https://github.com/ascribed-dev/ascribe) pages as readers see them: what a change does to each rendered page, and a pull request's review threads beside the blocks they're about.
 
+This README is for building a host. To review a pull request with Ascribe, read [Review](https://github.com/ascribed-dev/ascribe/blob/main/docs/review.md).
+
 Each entry point is separate, so a host bundles only what it uses.
 
 | Entry point | Runs in | What it's for |

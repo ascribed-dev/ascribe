@@ -14,7 +14,7 @@ The extension activates in a workspace that contains an `ascribe.toml`. A worksp
 - **Formatting** into canonical form, on request or on save.
 - **Highlighting** of directives, phrases, and title lines.
 - **A live page preview** that renders the page as the published site does, as you type, for any build, and a **site preview** that opens it on the site's dev server.
-- **Review**: the preview marks what changed against a git revision, and lists the pages a change touches.
+- **Review**: the preview marks what changed against a git revision, lists the pages a change touches, and shows the pull request's review comments beside the blocks they're about, where you can reply, resolve, comment, and submit your review. [Reviewing a pull request](https://github.com/ascribed-dev/ascribe/blob/main/docs/review.md) walks through it.
 
 ## The `ascribe` binary
 
@@ -29,21 +29,23 @@ The extension includes `ascribe` for your platform, so it works immediately. Whe
 | `ascribe.formatOnSave` | Format Ascribe constructs when saving. |
 | `ascribe.preview.scrollPreviewWithEditor` | Scroll the preview with the editor. Default on. |
 | `ascribe.preview.scrollEditorWithPreview` | Scroll the editor with the preview. Default on. |
+| `ascribe.review.sourceComments` | Show the pull request's review threads in the source editor: `on`, `off`, or `auto` (default), which leaves them to the GitHub Pull Requests extension when it's active. |
 | `ascribe.maxCrashes` | How many crashes of the language server make the extension stop restarting it. Default 5. |
 | `ascribe.trace.server` | Log the conversation with the language server: `off`, `messages`, or `verbose`. |
 
 ## Commands
 
 - **Ascribe: Open Page Preview** and **Ascribe: Open Page Preview to the Side**, also the preview button in a Markdown editor's title bar.
-- **Ascribe: Open Site Preview**: the page on the site's dev server (`astro dev` with `@ascribed/astro`), in the browser.
+- **Ascribe: Open Site Preview**: the page on the site's dev server (`astro dev` with `@ascribed/astro`), in the browser. The page preview's **Page | Site** switch shows it in the preview panel.
 - **Ascribe: Select Preview Build**
-- **Ascribe: Start Review**, **Ascribe: Stop Review**, and **Ascribe: Changed Pages**
+- **Ascribe: Start Review**, **Ascribe: Stop Review**, **Ascribe: Changed Pages**, and **Ascribe: Refresh Comments**
 - **Ascribe: Restart Language Server**
 - **Ascribe: Show Server Output**
 
 ## Learn more
 
 - [Editing with Ascribe](https://github.com/ascribed-dev/ascribe/blob/main/docs/editor.md): everything the extension does.
+- [Review](https://github.com/ascribed-dev/ascribe/blob/main/docs/review.md): reviewing a pull request in the preview.
 - [Getting started](https://github.com/ascribed-dev/ascribe/blob/main/docs/getting-started.md) with Ascribe.
 - [Diagnostics](https://github.com/ascribed-dev/ascribe/blob/main/docs/diagnostics.md): every problem Ascribe reports, and its fix.
 
