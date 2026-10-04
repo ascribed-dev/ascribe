@@ -113,7 +113,13 @@ switch (op) {
     process.stdout.write(JSON.stringify({ errors: [{ message: "the fake doesn't know " + op }] }));
     process.exit(1);
 }
-fs.writeFileSync(file, JSON.stringify(state));
+// Only a change is written, and atomically: review runs several gh at once,
+// and one must never read another's half-written file.
+if (["AddReview", "UpdateReview", "AddThread", "SubmitReview"].includes(op)) {
+  const temp = file + "." + process.pid;
+  fs.writeFileSync(temp, JSON.stringify(state));
+  fs.renameSync(temp, file);
+}
 process.stdout.write(JSON.stringify({ data }));
 `;
 
