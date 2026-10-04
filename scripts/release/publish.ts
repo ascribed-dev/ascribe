@@ -7,10 +7,10 @@
 // dry run on one machine, like pack.ts's).
 //
 // npm: publishes every tarball in dependency order (the platform packages,
-// then @ascribed/cli, @ascribed/elements, and @ascribed/astro), with
-// provenance when it runs in GitHub Actions. In Actions it authenticates with
-// npm trusted publishing, so there's no token. Run elsewhere, it needs
-// NODE_AUTH_TOKEN.
+// then @ascribed/cli, @ascribed/elements, @ascribed/astro, and
+// @ascribed/review), with provenance when it runs in GitHub Actions. In
+// Actions it authenticates with npm trusted publishing, so there's no token.
+// Run elsewhere, it needs NODE_AUTH_TOKEN.
 //
 // marketplace: publishes every extension package, authenticating with Microsoft
 // Entra (`vsce publish --azure-credential`). Sign in first, as the workflow
