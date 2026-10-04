@@ -14,6 +14,7 @@ The extension activates in a workspace that contains an `ascribe.toml`. A worksp
 - **Formatting** into canonical form, on request or on save.
 - **Highlighting** of directives, phrases, and title lines.
 - **A live preview** that renders the page as the published site does, as you type, for any build.
+- **Review**: the preview marks what changed against a git revision, and lists the pages a change touches.
 
 ## The `ascribe` binary
 
@@ -35,6 +36,7 @@ The extension includes `ascribe` for your platform, so it works immediately. Whe
 
 - **Ascribe: Open Preview to the Side**, also the preview button in a Markdown editor's title bar.
 - **Ascribe: Select Preview Build**
+- **Ascribe: Start Review**, **Ascribe: Stop Review**, and **Ascribe: Changed Pages**
 - **Ascribe: Restart Language Server**
 - **Ascribe: Show Server Output**
 

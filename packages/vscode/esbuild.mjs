@@ -35,13 +35,16 @@ await bundle({
 });
 
 // The preview's webview runs in a browser: the element library (`@ascribed/elements`,
-// script and stylesheet) and the preview's own script and stylesheet, each one file
+// script and stylesheet), review's marks (`@ascribed/review/marks`, bundled into
+// the preview's script, and its stylesheet), and the preview's own script and
+// stylesheet, each one file
 // the webview loads from the extension's `dist/webview/`. Classic scripts, so the
 // content security policy needs no nonce. The element library is bundled from
 // the workspace package's own source and stylesheet (the same files its `dist/`
 // and `style.css` export are built from), so bundling doesn't wait for, or race,
 // the package's build.
 const elements = fileURLToPath(new URL("../elements/", import.meta.url));
+const review = fileURLToPath(new URL("../review/", import.meta.url));
 const webview = {
   // The package marks only its `dist/index.js` as having side effects; bundling
   // its source, registering the elements is the whole point of the import.
@@ -49,6 +52,8 @@ const webview = {
   alias: {
     "@ascribed/elements/style.css": `${elements}css/style.css`,
     "@ascribed/elements": `${elements}src/index.ts`,
+    "@ascribed/review/marks.css": `${review}src/marks/marks.css`,
+    "@ascribed/review/marks": `${review}src/marks/index.ts`,
   },
   bundle: true,
   platform: "browser",
@@ -68,7 +73,11 @@ await bundle({
 });
 await bundle({
   ...webview,
-  entryPoints: { elements: "src/webview/elements.css", preview: "src/webview/preview.css" },
+  entryPoints: {
+    elements: "src/webview/elements.css",
+    marks: "src/webview/marks.css",
+    preview: "src/webview/preview.css",
+  },
 });
 
 if (process.argv.includes("--tests")) {
@@ -81,6 +90,7 @@ if (process.argv.includes("--tests")) {
       "suite/monorepo.it": "test/integration/suite/monorepo.it.ts",
       "suite/preview.it": "test/integration/suite/preview.it.ts",
       "suite/quill.it": "test/integration/suite/quill.it.ts",
+      "suite/review.it": "test/integration/suite/review.it.ts",
       "suite/stub.it": "test/integration/suite/stub.it.ts",
     },
     outdir: "out/integration",

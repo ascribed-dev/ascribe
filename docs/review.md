@@ -2,6 +2,10 @@
 
 Seeing what a change does to your pages as readers will see them, not as a diff of Markdown files. `ascribe diff` compares the working tree with a git revision page by page: a change to a fragment shows on every page that includes it, and reformatting shows on none. This guide is about putting that in front of reviewers.
 
+## In the editor
+
+In VS Code, the page preview marks the same changes as you work: **Ascribe: Start Review**, pick the base, and the preview shows what changed on the page you're editing, unsaved edits included, with next and previous change, the page as it will be and as it was, and the next changed page after the last change. **Ascribe: Changed Pages** lists every page the change touches. It's the report, live, on a checkout of the branch. [Review in the preview](editor.md#review-in-the-preview) describes it.
+
 ## The report
 
 `ascribe diff --format html` writes one HTML file showing every changed page rendered, with what changed marked: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. **Show: Changes / As it will be / As it was** switches between the marks and the two versions of the page. The [command reference](cli.md#the-html-report) describes it in full.

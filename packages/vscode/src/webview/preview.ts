@@ -4,7 +4,8 @@
 // author does: picks a build, clicks a link, scrolls, double-clicks a block.
 //
 // The page's blocks carry source anchors (site-render contract §7), so the
-// preview scrolls with the editor by block, both ways (`blocks.ts`).
+// preview scrolls with the editor by block, both ways (`blocks.ts`), and, with
+// review on, marks what changed against the base (`review.ts`).
 //
 // The page's HTML is untrusted text from the author's own files: it is parsed
 // into an inert `<template>`, its asset references are rewritten there (so no
@@ -14,6 +15,7 @@
 
 import { blockAt, linesInPage, type Lines } from "../preview/blocks.js";
 import { canonicalReference, isExternal, splitFragment } from "../preview/refs.js";
+import { Review } from "./review.js";
 import type {
   AvailabilityTarget,
   FromWebview,
@@ -46,6 +48,7 @@ const page = role("page");
 const title = role("title");
 const availability = role("availability");
 const content = role("content");
+const review = new Review(role("review"), content, post);
 
 const violations: string[] = [];
 document.addEventListener("securitypolicyviolation", (event) => {
@@ -242,6 +245,8 @@ function report(): RenderReport {
     elements,
     elementsDefined: customElements.get("ascribe-tabs") !== undefined,
     violations: [...violations],
+    marks: review.counts(),
+    reviewHeader: review.headerText(),
   };
 }
 
@@ -271,6 +276,7 @@ function render(message: Extract<ToWebview, { type: "render" }>): void {
   if (message.html === null) {
     page.hidden = true;
     content.replaceChildren();
+    review.draw(null, null);
     readBlocks();
     post({ type: "rendered", seq: message.seq, report: report() });
     return;
@@ -284,6 +290,7 @@ function render(message: Extract<ToWebview, { type: "render" }>): void {
   showAvailability(message.available);
   content.replaceChildren(template.content);
   page.hidden = false;
+  review.draw(message.review ?? null, message.path, (root) => rewriteAssets(root, message.assets));
   readBlocks();
   // Replacing the content moves the document; put the reader back where they were.
   quietScroll(() => window.scrollTo(scroll.x, scroll.y));
@@ -296,6 +303,7 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
   if (message.type === "render") render(message);
   else if (message.type === "reveal") reveal(message.id);
   else if (message.type === "revealLine") revealLine(message.line, message.ifHidden);
+  else if (message.type === "nextPage") review.nextPage(message.page, message.first);
 });
 
 post({ type: "ready" });

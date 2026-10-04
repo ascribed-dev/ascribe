@@ -47,6 +47,7 @@ use serde::Serialize;
 
 pub use compare::{
     BuildDiff, Change, ChangeKind, Counts, PageDiff, PageStatus, Side, Words, compare_builds,
+    compare_page_in,
 };
 pub use git::{Base, Repository};
 pub use gitfs::{GitFs, Revision};

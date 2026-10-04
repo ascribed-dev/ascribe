@@ -68,6 +68,7 @@ describe("the webview's content security policy", () => {
       cspSource,
       elementsScript: `${cspSource}/e.js`,
       elementsStyle: `${cspSource}/e.css`,
+      marksStyle: `${cspSource}/m.css`,
       previewScript: `${cspSource}/p.js`,
       previewStyle: `${cspSource}/p.css`,
     });

@@ -1,11 +1,14 @@
-// The types of the `ascribe/preview` request (`crates/tessera-lsp/src/preview.rs`)
-// and of the messages between the extension and the preview's webview.
+// The types of the `ascribe/preview` request (`crates/tessera-lsp/src/preview.rs`),
+// the review requests (`crates/tessera-lsp/src/review.rs`), and of the
+// messages between the extension and the preview's webview.
 
 /** The parameters of `ascribe/preview`. */
 export interface PreviewParams {
   textDocument: { uri: string };
   /** A build name; without one the server uses the editor's build. */
   build?: string;
+  /** Include what changed on the page against the review base. */
+  review?: boolean;
 }
 
 export interface PreviewBuild {
@@ -78,6 +81,97 @@ export interface PreviewResult {
   documentVersion: number | null;
   page: PreviewPage | null;
   problems: PreviewProblem[];
+  /** With `review: true` and a base set: what changed on the page. */
+  review?: PreviewReview | null;
+}
+
+/** A review base, as `ascribe diff` reports it. */
+export interface BaseInfo {
+  /** The revision asked for, or the default branch used. */
+  requested: string;
+  commit: string;
+  /** The merge base of `commit` and `HEAD`, which is compared with. */
+  merge_base: string | null;
+}
+
+/** How many blocks changed, by kind. */
+export interface Counts {
+  changed: number;
+  added: number;
+  removed: number;
+  moved: number;
+}
+
+/** Where a block is written: the anchor grammar's `source` and `via`. */
+export interface Anchor {
+  source: string;
+  via: string[];
+}
+
+/** One block's change, as `ascribe diff --format json` writes it (`@ascribed/review/marks` draws it). */
+export interface Change {
+  kind: "changed" | "added" | "removed" | "moved";
+  now?: Anchor;
+  was?: Anchor;
+  words?: { now: [number, number][]; was: [number, number][]; now_text: string; was_text: string };
+  after?: Anchor;
+  parent?: Anchor;
+  text?: string;
+}
+
+/** A changed page, as `ascribe diff --format json` reports it (its keys are snake_case). */
+export interface PageChanges {
+  path: string;
+  route: string;
+  status: "added" | "removed" | "changed";
+  own_file_changed: boolean;
+  /** The other changed files the page's change comes from, content paths; `ascribe.toml` last. */
+  because: string[];
+  page_changed: string[];
+  counts: Counts;
+  changes: Change[];
+}
+
+/** What changed on the previewed page against the review base. */
+export interface PreviewReview {
+  base: BaseInfo;
+  /** `null` when the page didn't change. */
+  changes: PageChanges | null;
+  /** The page as it was, rendered with anchors; `null` for a new page or no change. */
+  wasHtml: string | null;
+}
+
+/** The answer to `ascribe/review/setBase`. */
+export interface SetBaseResult {
+  base: BaseInfo | null;
+  problem: string | null;
+}
+
+/** A changed page in the list: `PageChanges` without its `changes`, and its title. */
+export type ChangedPage = Omit<PageChanges, "changes"> & { title: string | null };
+
+/** The answer to `ascribe/review/changes`. */
+export interface ChangesResult {
+  build: string;
+  base: BaseInfo | null;
+  contentRoot: string | null;
+  pages: ChangedPage[];
+  problem: string | null;
+}
+
+/** What the preview shows about review, while it's on: the page's changes. */
+export interface ReviewView {
+  /** The base's name: "main". */
+  base: string;
+  /** The commit compared with, shortened: "1a2b3c4". */
+  commit: string;
+  /** `null` when the page didn't change. */
+  page: PageChanges | null;
+  wasHtml: string | null;
+  /** The files the page changed through, when its own file didn't change. */
+  causes: { label: string; path: string }[];
+  /** Go to the page's first change once it's drawn (after "Next changed page"). */
+  goToFirst: boolean;
 }
 
 /**
@@ -110,8 +204,12 @@ export type ToWebview =
       html: string | null;
       assets: WebviewAsset[];
       problems: ShownProblem[];
+      /** `null` when there's no page, or no project. */
+      review: ReviewView | null;
     }
   | { type: "reveal"; id: string }
+  /** The changed page after the previewed one, past whose last change the reader stepped. */
+  | { type: "nextPage"; page: { path: string; title: string } | null; first: boolean }
   /**
    * Scroll to the block that stands for a line of the previewed file (from
    * 0), to the top; with `ifHidden`, only when no part of it is in view.
@@ -131,7 +229,15 @@ export type FromWebview =
   | { type: "scrolled"; line: number }
   /** The reader double-clicked a block that stands for `line`: show it in the editor. */
   | { type: "openLine"; line: number }
-  | { type: "images"; seq: number; images: ImageReport[] };
+  | { type: "images"; seq: number; images: ImageReport[] }
+  /** Open the block whose anchor is `source` in the editor, at its lines. */
+  | { type: "openSource"; source: string }
+  /** Open a file of the project: a cause of the page's change. */
+  | { type: "openFile"; path: string }
+  /** The reader stepped past the last change: which changed page is next? */
+  | { type: "atEnd" }
+  /** Open a changed page, and go to its first change. */
+  | { type: "openPage"; path: string };
 
 /** What the webview found in the page it just rendered, for tests and diagnostics. */
 export interface RenderReport {
@@ -143,6 +249,10 @@ export interface RenderReport {
   elementsDefined: boolean;
   /** Content security policy violations seen so far. */
   violations: string[];
+  /** Review's marks on the page, by kind (`added`, `changed`, `removed`, `moved`). */
+  marks: Record<string, number>;
+  /** The review header's text, or `null` when it isn't shown. */
+  reviewHeader: string | null;
 }
 
 export interface ImageReport {

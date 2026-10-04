@@ -28,12 +28,14 @@ use lsp_types::{TextDocumentIdentifier, Uri};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
 use tessera_core::{AssetUse, LineIndex, RelPath, WideEncoding};
+use tessera_diff::{BaseInfo, PageDiff, PageStatus, Side};
 use tessera_emit::assets::encode_path;
 use tessera_emit::{EmitContext, SiteEmitter, emit_page, render_site_html};
 use tessera_model::{AvailabilityMode, Build, ContentModel, VariantMode};
 use tessera_resolve::{AstroRouter, DropReason, FileKind, LinkTarget, ResolvedBlock, Snapshot};
 
 use crate::core::Core;
+use crate::review::ReviewBase;
 use crate::uri::{normalize, relative_to, uri_to_path};
 
 /// The request's method name.
@@ -49,6 +51,10 @@ pub struct PreviewParams {
     /// build`).
     #[serde(default)]
     pub build: Option<String>,
+    /// Whether to include what changed on the page against the review base
+    /// (`ascribe/review/setBase`).
+    #[serde(default)]
+    pub review: bool,
 }
 
 /// The answer to `ascribe/preview`. It always says which builds exist and
@@ -81,6 +87,25 @@ pub struct PreviewResult {
     /// Problems with showing the page: why there is none, or what in it
     /// can't be shown.
     pub problems: Vec<PreviewProblem>,
+    /// With `review: true`, what changed on the page against the review
+    /// base; `null` when there's no base or no page, or review wasn't asked
+    /// for.
+    pub review: Option<PreviewReview>,
+}
+
+/// What changed on the previewed page against the review base.
+#[derive(Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewReview {
+    /// The base compared with.
+    pub base: BaseInfo,
+    /// The page's changes, as `ascribe diff --format json` reports a page
+    /// (its keys are snake_case); `null` when the page didn't change.
+    pub changes: Option<PageDiff>,
+    /// The page as it was at the base, rendered as `html` is, with source
+    /// anchors, for showing removed blocks and changed blocks as they were;
+    /// `null` when the page didn't change or is new.
+    pub was_html: Option<String>,
 }
 
 /// A build of the content model, for a picker.
@@ -258,6 +283,10 @@ pub(crate) struct Target {
     content_path: Option<RelPath>,
     /// Why there is no project, when there isn't one.
     unavailable: Option<String>,
+    /// The content model's text, for comparing with the review base.
+    model_text: String,
+    /// The review base, while review is on.
+    review: Option<Arc<ReviewBase>>,
 }
 
 impl Core {
@@ -295,12 +324,14 @@ impl Core {
                 "ascribe.toml currently has errors; this is the last version of the project that loaded."
                     .to_owned()
             }),
+            model_text: loaded.model_text.clone(),
+            review: self.review.clone(),
         })
     }
 }
 
 /// Answers `ascribe/preview` for a target.
-pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResult {
+pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -> PreviewResult {
     let model = &*target.model;
     let editor = model.editor_default_build();
     let mut result = PreviewResult {
@@ -320,6 +351,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         document_version: target.document_version,
         page: None,
         problems: Vec::new(),
+        review: None,
     };
     if let Some(note) = &target.unavailable {
         result.problems.push(PreviewProblem::warning(note.clone()));
@@ -505,6 +537,9 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         }
     });
 
+    if review && let Some(base) = &target.review {
+        result.review = Some(review_of(target, base, &build.name, path));
+    }
     result.page = Some(PreviewPage {
         path: path.to_string(),
         route: page.route.clone(),
@@ -516,6 +551,25 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         sections,
     });
     result
+}
+
+/// What changed on the page at `path` against `base`, as `ascribe diff`
+/// reports it, computed from the snapshot so unsaved edits count.
+fn review_of(target: &Target, base: &ReviewBase, build: &str, path: &RelPath) -> PreviewReview {
+    let now = Side {
+        project: target.snapshot.project(),
+        model_text: &target.model_text,
+    };
+    let changes = tessera_diff::compare_page_in(base.side(), now, build, path);
+    let was_html = changes
+        .as_ref()
+        .filter(|c| c.status != PageStatus::Added)
+        .and_then(|_| base.page_html(build, path));
+    PreviewReview {
+        base: base.info.clone(),
+        changes,
+        was_html,
+    }
 }
 
 /// Whether the preview may read an asset's file, and if so which directory it

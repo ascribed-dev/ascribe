@@ -62,6 +62,43 @@
     var(--ascribe-state-removed-color) 15%,
     transparent
   );
+
+  /* Review's marks, in the theme's git decoration colors. The tints are
+     opaque, over the editor background, so the flash on a block fades into
+     them cleanly. */
+  --ascribe-review-added: var(--vscode-gitDecoration-addedResourceForeground, #1a7f37);
+  --ascribe-review-changed: var(--vscode-gitDecoration-modifiedResourceForeground, #8a5a00);
+  --ascribe-review-removed: var(--vscode-gitDecoration-deletedResourceForeground, #c4222d);
+  --ascribe-review-moved: var(--vscode-charts-purple, #7a3fd0);
+  --ascribe-review-added-background: color-mix(
+    in srgb,
+    var(--ascribe-review-added) 15%,
+    var(--vscode-editor-background, Canvas)
+  );
+  --ascribe-review-changed-background: color-mix(
+    in srgb,
+    var(--ascribe-review-changed) 15%,
+    var(--vscode-editor-background, Canvas)
+  );
+  --ascribe-review-removed-background: color-mix(
+    in srgb,
+    var(--ascribe-review-removed) 15%,
+    var(--vscode-editor-background, Canvas)
+  );
+  --ascribe-review-moved-background: color-mix(
+    in srgb,
+    var(--ascribe-review-moved) 15%,
+    var(--vscode-editor-background, Canvas)
+  );
+  --ascribe-review-muted: var(--vscode-descriptionForeground, #5b6475);
+  --ascribe-review-surface: var(--vscode-editor-background, Canvas);
+  --ascribe-review-flash: color-mix(
+    in srgb,
+    var(--vscode-editor-findMatchHighlightBackground, #fff6bf) 50%,
+    var(--vscode-editor-background, Canvas)
+  );
+  --ascribe-review-focus: var(--vscode-textLink-foreground, #1f6feb);
+  --ascribe-review-mono: var(--vscode-editor-font-family, ui-monospace, monospace);
 }
 
 body {
@@ -73,16 +110,20 @@ body {
   line-height: 1.6;
 }
 
-.toolbar {
+/* The toolbar and, with review, its header stay at the top as the page scrolls. */
+.chrome {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
+  margin: 0 -1.5rem 1rem;
+  background: var(--vscode-editor-background, Canvas);
+}
+
+.toolbar {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin: 0 -1.5rem 1rem;
   padding: 0.5rem 1.5rem;
-  background: var(--vscode-editor-background, Canvas);
   border-bottom: 1px solid
     var(--vscode-panel-border, color-mix(in srgb, currentColor 25%, transparent));
 }
@@ -173,4 +214,129 @@ main pre code {
   color: inherit;
   background: none;
   font-family: inherit;
+}
+
+/* Review's header: the base, the page's changes, what to show, and next and
+   previous change. */
+.review {
+  font-size: 0.9em;
+}
+
+.review-row,
+.review .notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+  padding: 0.375rem 1.5rem;
+  border-bottom: 1px solid
+    var(--vscode-panel-border, color-mix(in srgb, currentColor 25%, transparent));
+}
+
+.review .grow {
+  flex: 1;
+  min-width: 10rem;
+  color: var(--vscode-descriptionForeground, inherit);
+}
+
+.review b {
+  color: var(--vscode-editor-foreground, inherit);
+  font-weight: 600;
+}
+
+.review .legend {
+  flex-basis: 100%;
+  color: var(--vscode-descriptionForeground, inherit);
+}
+
+.review .notice {
+  background: var(--ascribe-review-changed-background);
+}
+
+.review .spacer {
+  flex: 1;
+}
+
+.review button {
+  padding: 0.125rem 0.5rem;
+  color: var(--vscode-foreground, inherit);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.review button:hover:not(:disabled) {
+  background: var(
+    --vscode-toolbar-hoverBackground,
+    color-mix(in srgb, currentColor 10%, transparent)
+  );
+}
+
+.review button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, Highlight);
+  outline-offset: -1px;
+}
+
+.review button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.review button.primary {
+  color: var(--vscode-button-foreground, ButtonText);
+  background: var(--vscode-button-background, ButtonFace);
+  border-color: var(--vscode-button-border, transparent);
+}
+
+.review button.primary:hover {
+  background: var(--vscode-button-hoverBackground, ButtonFace);
+}
+
+.review button.link {
+  padding: 0;
+  color: var(--vscode-textLink-foreground, LinkText);
+}
+
+.review button.link:hover {
+  color: var(--vscode-textLink-activeForeground, LinkText);
+  background: transparent;
+  text-decoration: underline;
+}
+
+.review .position {
+  white-space: nowrap;
+}
+
+.review button.square {
+  min-width: 1.75rem;
+}
+
+.review .segmented {
+  display: inline-flex;
+  border: 1px solid var(--vscode-widget-border, color-mix(in srgb, currentColor 30%, transparent));
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.review .segmented button {
+  border: 0;
+  border-radius: 0;
+  color: var(--vscode-descriptionForeground, inherit);
+}
+
+.review .segmented button + button {
+  border-inline-start: 1px solid
+    var(--vscode-widget-border, color-mix(in srgb, currentColor 30%, transparent));
+}
+
+.review .segmented button[aria-pressed="true"] {
+  color: var(--vscode-button-foreground, ButtonText);
+  background: var(--vscode-button-background, ButtonFace);
+}
+
+/* A mark's label opens the block's source. */
+.ascribe-marks .ascribe-label[role="link"] {
+  cursor: pointer;
 }

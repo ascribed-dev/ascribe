@@ -10,7 +10,10 @@ interface Manifest {
   activationEvents: string[];
   contributes: {
     commands: { command: string }[];
-    menus: { commandPalette: { command: string; when: string }[] };
+    menus: {
+      commandPalette: { command: string; when: string }[];
+      "editor/title": { command: string; when: string }[];
+    };
     configuration: {
       properties: Record<string, { default: unknown; enum?: string[]; scope?: string }>;
     };
@@ -47,12 +50,25 @@ describe("package.json", () => {
     for (const entry of hidden) expect(entry.when).toMatch(/^ascribe\.active\b/);
   });
 
+  it("shows Start Review on the preview's title bar while review is off, then Changed Pages", () => {
+    const title = manifest.contributes.menus["editor/title"];
+    expect(title.find((entry) => entry.command === "ascribe.startReview")?.when).toBe(
+      "activeWebviewPanelId == 'ascribe.preview' && !ascribe.reviewOn",
+    );
+    expect(title.find((entry) => entry.command === "ascribe.changedPages")?.when).toBe(
+      "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
+    );
+  });
+
   it("declares the commands and settings the extension reads", () => {
     expect(manifest.contributes.commands.map((command) => command.command)).toEqual([
       "ascribe.restartServer",
       "ascribe.showOutput",
       "ascribe.openPreview",
       "ascribe.selectPreviewBuild",
+      "ascribe.startReview",
+      "ascribe.stopReview",
+      "ascribe.changedPages",
     ]);
     const properties = manifest.contributes.configuration.properties;
     expect(Object.keys(properties).sort()).toEqual([

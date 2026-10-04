@@ -189,46 +189,96 @@ impl ChangedFiles {
 /// that isn't a build of `now` is skipped.
 pub fn compare_builds(base: Option<Side<'_>>, now: Side<'_>, builds: &[&str]) -> Vec<BuildDiff> {
     let changed = ChangedFiles::between(base, now);
-    let now_router = AstroRouter::from_consumer(&now.project.model().consumer);
-    let base_router = base.map(|b| AstroRouter::from_consumer(&b.project.model().consumer));
+    let routers = Routers::new(base, now);
     let mut out = Vec::new();
     for name in builds {
-        let Some(now_build) = now.project.model().build(name) else {
+        let Some(sides) = routers.build(name) else {
             continue;
         };
-        let now_resolver = now.project.resolver(now_build, &now_router);
-        let base_resolver = match (base, &base_router) {
-            (Some(b), Some(router)) => b
-                .project
-                .model()
-                .build(name)
-                .map(|build| (b, b.project.resolver(build, router))),
-            _ => None,
-        };
         let mut paths: BTreeSet<&RelPath> = now.project.pages().map(|p| &p.path).collect();
-        if let Some((b, _)) = &base_resolver {
+        if let Some((b, _)) = &sides.base {
             paths.extend(b.project.pages().map(|p| &p.path));
         }
-        let mut pages = Vec::new();
-        for path in paths {
-            let now_page = now_resolver.page(path);
-            let base_page = base_resolver.as_ref().and_then(|(_, r)| r.page(path));
-            let diff = compare_page(
-                path,
-                base_page
-                    .as_ref()
-                    .zip(base_resolver.as_ref().map(|(b, _)| *b)),
-                now_page.as_ref().map(|p| (p, now)),
-                &changed,
-            );
-            pages.extend(diff);
-        }
+        let pages = paths
+            .into_iter()
+            .filter_map(|path| sides.compare(path, &changed))
+            .collect();
         out.push(BuildDiff {
             build: (*name).to_owned(),
             pages,
         });
     }
     out
+}
+
+/// What changed on the page at `path` in the build `build` between `base`
+/// and `now`, as [`compare_builds`] reports it; `None` when nothing did, the
+/// page is in neither version, or `now` has no such build.
+pub fn compare_page_in(
+    base: Option<Side<'_>>,
+    now: Side<'_>,
+    build: &str,
+    path: &RelPath,
+) -> Option<PageDiff> {
+    let changed = ChangedFiles::between(base, now);
+    Routers::new(base, now)
+        .build(build)?
+        .compare(path, &changed)
+}
+
+/// Each version's router.
+struct Routers<'a> {
+    base: Option<(Side<'a>, AstroRouter)>,
+    now: (Side<'a>, AstroRouter),
+}
+
+/// One build's resolvers, in each version that has it.
+struct BuildSides<'a> {
+    base: Option<(Side<'a>, tessera_resolve::BuildResolver<'a>)>,
+    now: (Side<'a>, tessera_resolve::BuildResolver<'a>),
+}
+
+impl<'a> Routers<'a> {
+    fn new(base: Option<Side<'a>>, now: Side<'a>) -> Routers<'a> {
+        let router = |side: Side<'a>| {
+            (
+                side,
+                AstroRouter::from_consumer(&side.project.model().consumer),
+            )
+        };
+        Routers {
+            base: base.map(router),
+            now: router(now),
+        }
+    }
+
+    fn build(&self, name: &str) -> Option<BuildSides<'_>> {
+        let (now, now_router) = &self.now;
+        let now_build = now.project.model().build(name)?;
+        let base = self.base.as_ref().and_then(|(b, router)| {
+            b.project
+                .model()
+                .build(name)
+                .map(|build| (*b, b.project.resolver(build, router)))
+        });
+        Some(BuildSides {
+            base,
+            now: (*now, now.project.resolver(now_build, now_router)),
+        })
+    }
+}
+
+impl BuildSides<'_> {
+    fn compare(&self, path: &RelPath, changed: &ChangedFiles) -> Option<PageDiff> {
+        let now_page = self.now.1.page(path);
+        let base_page = self.base.as_ref().and_then(|(_, r)| r.page(path));
+        compare_page(
+            path,
+            base_page.as_ref().zip(self.base.as_ref().map(|(b, _)| *b)),
+            now_page.as_ref().map(|p| (p, self.now.0)),
+            changed,
+        )
+    }
 }
 
 fn compare_page(

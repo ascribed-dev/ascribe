@@ -403,6 +403,8 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             WillRenameFiles::METHOD => will_rename_request(shared, &request),
             ExecuteCommand::METHOD => execute_command(shared, &request),
             crate::preview::METHOD => preview_request(shared, &request),
+            crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
+            crate::review::CHANGES_METHOD => changes_request(shared, &request),
             method => Err(Response::new_err(
                 request.id.clone(),
                 ErrorCode::MethodNotFound as i32,
@@ -608,10 +610,87 @@ fn preview_request(shared: &Shared, request: &Request) -> Result<serde_json::Val
         .map_err(|e| invalid(&request.id, e.to_string()))?;
     let target = shared.lock().preview_target(&params.text_document.uri);
     let result = match target {
-        Ok(target) => crate::preview::preview(&target, params.build.as_deref()),
+        Ok(target) => crate::preview::preview(&target, params.build.as_deref(), params.review),
         Err(result) => *result,
     };
     serde_json::to_value(result).map_err(|e| {
+        Response::new_err(
+            request.id.clone(),
+            ErrorCode::InternalError as i32,
+            e.to_string(),
+        )
+    })
+}
+
+fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    use crate::review::{SetBaseParams, SetBaseResult, info_of, read_base, resolve_base};
+    let params: SetBaseParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let result = match params.base {
+        // Dropping the base frees it.
+        Some(None) => {
+            shared.lock().review = None;
+            SetBaseResult::default()
+        }
+        Some(Some(rev)) => set_base(shared, Some(&rev)),
+        None => set_base(shared, None),
+    };
+    fn set_base(shared: &Shared, requested: Option<&str>) -> SetBaseResult {
+        let Some(root) = shared.lock().project_root() else {
+            return SetBaseResult {
+                base: None,
+                problem: Some(
+                    "There is no project loaded, so there is nothing to review.".to_owned(),
+                ),
+            };
+        };
+        // git runs without the lock. The same base again (the preview
+        // checking whether it moved) keeps the one read, and what it holds.
+        let current = shared.lock().review.clone();
+        let read = resolve_base(&root, requested).and_then(|(repo, base)| match current {
+            Some(current) if current.info == info_of(&base) => Ok(current),
+            _ => read_base(&repo, &base).map(std::sync::Arc::new),
+        });
+        match read {
+            Ok(base) => {
+                let info = base.info.clone();
+                let mut core = shared.lock();
+                if core.project_root().as_deref() != Some(root.as_path()) {
+                    return SetBaseResult {
+                        base: None,
+                        problem: Some(
+                            "The project changed while its base was read; start the review again."
+                                .to_owned(),
+                        ),
+                    };
+                }
+                core.review = Some(base);
+                SetBaseResult {
+                    base: Some(info),
+                    problem: None,
+                }
+            }
+            Err(problem) => SetBaseResult {
+                base: None,
+                problem: Some(problem),
+            },
+        }
+    }
+    to_json(request, result)
+}
+
+fn changes_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: crate::review::ChangesParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let target = shared.lock().changes_target();
+    to_json(
+        request,
+        crate::review::changes(target.as_ref(), params.build.as_deref()),
+    )
+}
+
+fn to_json(request: &Request, value: impl serde::Serialize) -> Result<serde_json::Value, Response> {
+    serde_json::to_value(value).map_err(|e| {
         Response::new_err(
             request.id.clone(),
             ErrorCode::InternalError as i32,

@@ -338,6 +338,9 @@ importers:
       '@ascribed/elements':
         specifier: workspace:*
         version: link:../elements
+      '@ascribed/review':
+        specifier: workspace:*
+        version: link:../review
       '@types/mocha':
         specifier: ^10.0.10
         version: 10.0.10
