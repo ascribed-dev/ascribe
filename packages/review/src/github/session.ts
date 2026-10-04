@@ -4,7 +4,7 @@ import { readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { parse } from "smol-toml";
 import { formatSource, parseSource, type Anchor } from "../place/anchor.js";
-import { lineMap } from "../place/lines.js";
+import { lineMap, parseHunks, type Hunk } from "../place/lines.js";
 import {
   locateThreads,
   placeOnPage,
@@ -27,6 +27,7 @@ import {
   SUBMIT_REVIEW,
   UNRESOLVE,
   UPDATE_REVIEW,
+  VIEWER,
 } from "./queries.js";
 import {
   markedThreads,
@@ -88,11 +89,30 @@ export interface PendingReview {
 /** How a review ends: as a comment, an approval, or a request for changes. */
 export type ReviewEvent = "COMMENT" | "APPROVE" | "REQUEST_CHANGES";
 
+/** How a comment on a block would go, worked out before it's made. */
+export type CommentTarget =
+  /** As a review thread on the block's lines. */
+  | { kind: "thread" }
+  /**
+   * In the pending review's body, since GitHub can't anchor it: the file
+   * isn't in the pull request (`"file"`), or the lines are away from its
+   * changes (`"lines"`).
+   */
+  | { kind: "summary"; reason: "file" | "lines" }
+  /** Not until the block's lines are pushed (or fetched): `message` says which. */
+  | { kind: "push-first"; message: string };
+
 /** One pull request's review, for a host and the overlay behind it. */
 export interface ReviewSession {
   pullRequest: PullRequestInfo;
   /** The page's threads. Cached until `refresh()` or a change made through the session. */
   threads(page: PageRef): Promise<PlacedThreads>;
+  /** Every thread on the pull request's files in the content root, located in the working tree. */
+  allThreads(): Promise<LocatedThread[]>;
+  /** The signed-in viewer's login. */
+  viewer(): Promise<string>;
+  /** How a comment on a block would go: as a thread, in the review's summary, or not yet. */
+  commentTarget(anchor: Anchor): Promise<CommentTarget>;
   /** Comments on a block, in the pending review. */
   comment(anchor: Anchor, body: string, page: PageRef): Promise<Thread>;
   /** Replies to a thread: sent at once (`"now"`), or held in the pending review. */
@@ -270,6 +290,7 @@ export function createSession(options: SessionOptions): ReviewSession {
   let files: Promise<Set<string>> | undefined;
   // The pending review this session made or wrote to, until a read shows it.
   let known: { id: string; body: string } | undefined;
+  let viewer: Promise<string> | undefined;
   let lastMutation = 0;
   let queue: Promise<unknown> = Promise.resolve();
 
@@ -349,6 +370,65 @@ export function createSession(options: SessionOptions): ReviewSession {
       : new ReviewError("not-found", "That thread isn't in the pull request.");
   };
 
+  // A block's lines at the head commit: every one of them has to be there, unchanged.
+  const atHead = async (anchor: Anchor) => {
+    const range = parseSource(anchor.source);
+    if (range === undefined) {
+      throw new ReviewError("not-found", `${anchor.source} isn't a block's source.`);
+    }
+    const repositoryPath = `${contentPrefix}${range.path}`;
+    const map = await lineMap(root, pullRequest.headOid, repositoryPath, "to-commit");
+    const lines: number[] = [];
+    for (let line = range.first; line <= range.last; line++) {
+      const mapped = map.map(line);
+      if (mapped !== undefined && !mapped.replaced) lines.push(mapped.line);
+    }
+    const first = lines[0];
+    const last = lines.at(-1);
+    if (
+      first === undefined ||
+      last === undefined ||
+      lines.length !== range.last - range.first + 1
+    ) {
+      throw new ReviewError(
+        "push-first",
+        pullRequest.local === "missing"
+          ? "The pull request's latest commit isn't in this checkout. Fetch it, then comment."
+          : "This block has changes that aren't in the pull request. Push them, then comment.",
+      );
+    }
+    return { range, repositoryPath, first, last };
+  };
+
+  const changedFiles = (): Promise<Set<string>> => {
+    files ??= readFiles(transport, key);
+    files.catch(() => {
+      files = undefined;
+    });
+    return files;
+  };
+
+  // The lines of each file GitHub shows in the pull request's diff, and so
+  // takes comments on: its changes and three lines around them.
+  const shown = new Map<string, Promise<Hunk[] | undefined>>();
+  const shownLines = (repositoryPath: string): Promise<Hunk[] | undefined> => {
+    let hunks = shown.get(repositoryPath);
+    if (hunks === undefined) {
+      hunks = gitMaybe(root, [
+        "diff",
+        "--no-color",
+        "--no-ext-diff",
+        "--no-renames",
+        "--unified=3",
+        `${pullRequest.baseOid}...${pullRequest.headOid}`,
+        "--",
+        `:(literal)${repositoryPath}`,
+      ]).then((diff) => (diff === undefined ? undefined : parseHunks(diff)));
+      shown.set(repositoryPath, hunks);
+    }
+    return hunks;
+  };
+
   return {
     pullRequest,
 
@@ -356,38 +436,45 @@ export function createSession(options: SessionOptions): ReviewSession {
       return placeOnPage(page, (await load()).located);
     },
 
-    async comment(anchor, body, page) {
-      const range = parseSource(anchor.source);
-      if (range === undefined) {
-        throw new ReviewError("not-found", `${anchor.source} isn't a block's source.`);
-      }
-      const repositoryPath = `${contentPrefix}${range.path}`;
-      const map = await lineMap(root, pullRequest.headOid, repositoryPath, "to-commit");
-      // Every line of the block has to be at the head commit, unchanged.
-      const lines: number[] = [];
-      for (let line = range.first; line <= range.last; line++) {
-        const mapped = map.map(line);
-        if (mapped !== undefined && !mapped.replaced) lines.push(mapped.line);
-      }
-      const first = lines[0];
-      const last = lines.at(-1);
-      if (
-        first === undefined ||
-        last === undefined ||
-        lines.length !== range.last - range.first + 1
-      ) {
-        throw new ReviewError(
-          "push-first",
-          pullRequest.local === "missing"
-            ? "The pull request's latest commit isn't in this checkout. Fetch it, then comment."
-            : "This block has changes that aren't in the pull request. Push them, then comment.",
-        );
-      }
-      files ??= readFiles(transport, key);
-      files.catch(() => {
-        files = undefined;
+    async allThreads() {
+      return (await load()).located;
+    },
+
+    async viewer() {
+      viewer ??= transport
+        .graphql<{ viewer: { login: string } }>(VIEWER, {})
+        .then((data) => data.viewer.login);
+      viewer.catch(() => {
+        viewer = undefined;
       });
-      if ((await files).has(repositoryPath)) {
+      return viewer;
+    },
+
+    async commentTarget(anchor) {
+      let lines: Awaited<ReturnType<typeof atHead>>;
+      try {
+        lines = await atHead(anchor);
+      } catch (error) {
+        if (error instanceof ReviewError && error.code === "push-first") {
+          return { kind: "push-first", message: error.message };
+        }
+        throw error;
+      }
+      if (!(await changedFiles()).has(lines.repositoryPath)) {
+        return { kind: "summary", reason: "file" };
+      }
+      const hunks = await shownLines(lines.repositoryPath);
+      // Without the base commit there's no telling: try, and hold it if GitHub refuses.
+      if (hunks === undefined) return { kind: "thread" };
+      const inOne = hunks.some(
+        (hunk) => lines.first >= hunk.newStart && lines.last < hunk.newStart + hunk.newCount,
+      );
+      return inOne ? { kind: "thread" } : { kind: "summary", reason: "lines" };
+    },
+
+    async comment(anchor, body, page) {
+      const { range, repositoryPath, first, last } = await atHead(anchor);
+      if ((await changedFiles()).has(repositoryPath)) {
         const review = await ensureReview();
         try {
           const data = await mutate<{ addPullRequestReviewThread: { thread: RawThread | null } }>(
@@ -546,6 +633,7 @@ export function createSession(options: SessionOptions): ReviewSession {
     async refresh() {
       state = undefined;
       files = undefined;
+      shown.clear();
     },
   };
 }

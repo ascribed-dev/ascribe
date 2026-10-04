@@ -4,6 +4,7 @@ export {
   createSession,
   findPullRequest,
   openReview,
+  type CommentTarget,
   type LocalState,
   type OpenReviewOptions,
   type PendingReview,

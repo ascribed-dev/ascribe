@@ -182,3 +182,8 @@ export const DELETE_REVIEW = `
 mutation DeleteReview($reviewId: ID!) {
   deletePullRequestReview(input: { pullRequestReviewId: $reviewId }) { clientMutationId }
 }`;
+
+export const VIEWER = `
+query Viewer {
+  viewer { login }
+}`;

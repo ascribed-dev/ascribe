@@ -728,3 +728,45 @@ describe("pages that use one fragment twice", () => {
     ]);
   });
 });
+
+describe("before commenting", () => {
+  test("says where a comment on a block would go", async () => {
+    const s = session(github());
+    // Head lines 7-12 are around the pull request's change (lines 9-14 here).
+    expect(await s.commentTarget({ source: "guides/install.md:9-10", via: [] })).toEqual({
+      kind: "thread",
+    });
+    expect(await s.commentTarget({ source: "guides/install.md:20-20", via: [] })).toEqual({
+      kind: "summary",
+      reason: "lines",
+    });
+    expect(await s.commentTarget({ source: "guides/other.md:1-1", via: [] })).toEqual({
+      kind: "summary",
+      reason: "file",
+    });
+    const pushFirst = await s.commentTarget({ source: "guides/install.md:2-3", via: [] });
+    expect(pushFirst.kind).toBe("push-first");
+  });
+
+  test("reads the viewer once", async () => {
+    const fake = github().on("Viewer", () => ({ viewer: { login: "octocat" } }));
+    const s = session(fake);
+    expect(await s.viewer()).toBe("octocat");
+    expect(await s.viewer()).toBe("octocat");
+    expect(fake.operations().filter((op) => op === "Viewer")).toHaveLength(1);
+  });
+
+  test("lists every thread on the content root's files", async () => {
+    const s = session(
+      github({
+        threads: [
+          thread({ path: INSTALL, line: 5 }),
+          thread({ path: "README.md", line: 1 }),
+          thread({ path: FRAGMENT, line: 2 }),
+        ],
+      }),
+    );
+    const all = await s.allThreads();
+    expect(all.map((t) => t.path)).toEqual(["guides/install.md", "_fragments/prereqs.md"]);
+  });
+});
