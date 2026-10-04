@@ -8,6 +8,7 @@ import type { ChangedPage, ThreadsView } from "../../src/preview/protocol.js";
 import { answerThreads, type RequestContext } from "../../src/preview/threadsRequests.js";
 import {
   againstText,
+  imagesAsLinks,
   pagesShowing,
   pullRequestBase,
   showSourceComments,
@@ -112,6 +113,31 @@ describe("showSourceComments", () => {
     expect(showSourceComments(undefined, true)).toBe(false);
     expect(showSourceComments("on", true)).toBe(true);
     expect(showSourceComments("off", false)).toBe(false);
+  });
+});
+
+describe("imagesAsLinks", () => {
+  it("makes each image a link, as the overlay shows it", () => {
+    expect(
+      imagesAsLinks("See ![the chart](https://x.test/c.png) and ![](https://x.test/d.png)."),
+    ).toBe("See [Image: the chart](https://x.test/c.png) and [Image](https://x.test/d.png).");
+    expect(imagesAsLinks("![ref][1]\n\n[1]: https://x.test/e.png")).toBe(
+      "[Image: ref][1]\n\n[1]: https://x.test/e.png",
+    );
+  });
+
+  it("leaves code, escaped images, and links alone", () => {
+    const body = "`![a](b)` and \\![c](d) and [e](f)\n```\n![g](h)\n```\n``x`![i](j)`` ![k](l)";
+    expect(imagesAsLinks(body)).toBe(
+      "`![a](b)` and \\![c](d) and [e](f)\n```\n![g](h)\n```\n``x`![i](j)`` [Image: k](l)",
+    );
+  });
+
+  it("reads a long body of unclosed code spans in one pass", () => {
+    const body = "``a`".repeat(16_000);
+    const start = performance.now();
+    expect(imagesAsLinks(body)).toBe(body);
+    expect(performance.now() - start).toBeLessThan(1000);
   });
 });
 

@@ -94,6 +94,33 @@ describe("renderMarkdown", () => {
   it("honors backslash escapes", () => {
     expect(html("\\*not emphasis\\*")).toBe("<p>*not emphasis*</p>");
   });
+
+  it("finds the bracket that closes a link inside others", () => {
+    expect(html("[[a](https://x.test/) b")).toBe(
+      '<p>[<a href="https://x.test/" target="_blank" rel="noopener noreferrer">a</a> b</p>',
+    );
+  });
+
+  it("renders a long body of unclosed markers in linear time", () => {
+    // GitHub allows about 65,000 characters in a comment.
+    for (const unit of [
+      "[",
+      "*a ",
+      "_a ",
+      "~~a ",
+      "`` `",
+      "[a](<",
+      "http://[ ",
+      "http://[",
+      "**",
+    ]) {
+      const body = unit.repeat(Math.ceil(65_000 / unit.length));
+      const start = performance.now();
+      const text = html(body);
+      expect(performance.now() - start, unit).toBeLessThan(2000);
+      expect(text.length).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe("safeUrl", () => {

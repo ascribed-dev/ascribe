@@ -64,12 +64,17 @@ export class ReviewController implements vscode.Disposable {
   constructor(
     private readonly projects: ProjectRegistry,
     private readonly host: ReviewHost,
+    /** The workspace's state. */
+    state: vscode.Memento,
   ) {
     this.item = vscode.window.createStatusBarItem("ascribe.review", vscode.StatusBarAlignment.Left);
     this.item.name = "Ascribe Review";
-    this.threads = new ThreadsController({
-      changedPages: async (server) => (await this.changes(server))?.pages ?? [],
-    });
+    this.threads = new ThreadsController(
+      {
+        changedPages: async (server) => (await this.changes(server))?.pages ?? [],
+      },
+      state,
+    );
   }
 
   register(): void {

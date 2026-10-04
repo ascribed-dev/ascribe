@@ -170,8 +170,32 @@ function leading(line: string): number {
 
 const ESCAPABLE = /[\\`*_{}[\]()#+\-.!~<>|"']/;
 
+/**
+ * What one line's searches for closing markers found, so each search runs
+ * once: a body is anyone's text, and an unclosed marker repeated must not
+ * make a line take quadratic time.
+ */
+interface Scan {
+  /** For each `[`, the index of the `]` that closes it, or -1. Made on the first `[`. */
+  brackets?: Int32Array;
+  /** By closing marker: the first index from which a search for it found none. */
+  none: Map<string, number>;
+}
+
+/** Whether a search for `marker` from `from` already found nothing. */
+function knownMissing(scan: Scan, marker: string, from: number): boolean {
+  const none = scan.none.get(marker);
+  return none !== undefined && from >= none;
+}
+
+function markMissing(scan: Scan, marker: string, from: number): void {
+  const none = scan.none.get(marker);
+  if (none === undefined || from < none) scan.none.set(marker, from);
+}
+
 /** Renders one line's inline Markdown into `parent`. */
 function renderInline(doc: Document, parent: Node, text: string, depth: number): void {
+  const scan: Scan = { none: new Map() };
   let plain = "";
   const flush = (): void => {
     if (plain) parent.appendChild(doc.createTextNode(plain));
@@ -188,7 +212,9 @@ function renderInline(doc: Document, parent: Node, text: string, depth: number):
     }
     if (ch === "`") {
       const ticks = /^`+/.exec(rest)?.[0] ?? "`";
-      const end = text.indexOf(ticks, i + ticks.length);
+      const from = i + ticks.length;
+      const end = knownMissing(scan, ticks, from) ? -1 : text.indexOf(ticks, from);
+      if (end < 0) markMissing(scan, ticks, from);
       if (end > 0) {
         flush();
         const code = doc.createElement("code");
@@ -204,7 +230,7 @@ function renderInline(doc: Document, parent: Node, text: string, depth: number):
       continue;
     }
     if (ch === "!" && text[i + 1] === "[") {
-      const link = parseLink(text, i + 1);
+      const link = parseLink(text, i + 1, scan);
       if (link) {
         flush();
         const url = safeUrl(link.url);
@@ -216,7 +242,7 @@ function renderInline(doc: Document, parent: Node, text: string, depth: number):
       }
     }
     if (ch === "[") {
-      const link = parseLink(text, i);
+      const link = parseLink(text, i, scan);
       if (link) {
         flush();
         const url = safeUrl(link.url);
@@ -242,7 +268,10 @@ function renderInline(doc: Document, parent: Node, text: string, depth: number):
       }
     }
     if ((ch === "h" || ch === "H") && /^https?:\/\//i.test(rest) && !/\w/.test(text[i - 1] ?? "")) {
-      const match = /^https?:\/\/[^\s<]+/i.exec(rest)?.[0] ?? "";
+      // Longer than any address a browser keeps: text, and a bound on the
+      // search, so a line of failed addresses can't take quadratic time.
+      const found = /^https?:\/\/[^\s<]{1,2048}/i.exec(rest)?.[0] ?? "";
+      const match = /[^\s<]/.test(rest[found.length] ?? " ") ? "" : found;
       // Trailing punctuation ends the sentence, not the address.
       const bare = match.replace(/[.,:;!?'")\]]+$/, "");
       const url = safeUrl(bare);
@@ -254,7 +283,7 @@ function renderInline(doc: Document, parent: Node, text: string, depth: number):
       }
     }
     if ((ch === "*" || ch === "_" || ch === "~") && depth < 4) {
-      const span = parseEmphasis(text, i);
+      const span = parseEmphasis(text, i, scan);
       if (span) {
         flush();
         const el = doc.createElement(span.tag);
@@ -283,24 +312,13 @@ function anchor(doc: Document, url: string, text: string): HTMLAnchorElement {
 function parseLink(
   text: string,
   start: number,
+  scan: Scan,
 ): { label: string; url: string; end: number } | undefined {
-  let depth = 0;
-  let close = -1;
-  for (let i = start; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === "\\") {
-      i++;
-      continue;
-    }
-    if (ch === "[") depth++;
-    else if (ch === "]" && --depth === 0) {
-      close = i;
-      break;
-    }
-  }
+  scan.brackets ??= matchBrackets(text);
+  const close = scan.brackets[start] ?? -1;
   if (close < 0 || text[close + 1] !== "(") return undefined;
   const target =
-    /^\(\s*(<[^>]*>|[^\s()]*(?:\([^\s()]*\)[^\s()]*)*)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/.exec(
+    /^\(\s*(<[^<>]*>|[^\s()]*(?:\([^\s()]*\)[^\s()]*)*)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/.exec(
       text.slice(close + 1),
     );
   if (!target) return undefined;
@@ -308,13 +326,31 @@ function parseLink(
   return { label: text.slice(start + 1, close), url, end: close + 1 + target[0].length };
 }
 
+/** For each `[` in `text`, the index of the `]` that closes it (escapes skipped), or -1. */
+function matchBrackets(text: string): Int32Array {
+  const close = new Int32Array(text.length).fill(-1);
+  const open: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "\\") i++;
+    else if (ch === "[") open.push(i);
+    else if (ch === "]") {
+      const at = open.pop();
+      if (at !== undefined) close[at] = i;
+    }
+  }
+  return close;
+}
+
 /** Emphasis, strong emphasis, or strikethrough starting at `start`. */
 function parseEmphasis(
   text: string,
   start: number,
+  scan: Scan,
 ): { tag: "em" | "strong" | "del"; inner: string; end: number } | undefined {
   const ch = text[start] ?? "";
-  const run = (/^([*_~])\1*/.exec(text.slice(start))?.[0] ?? "").length;
+  // Only the first three characters of a run decide its size.
+  const run = (/^([*_~])\1*/.exec(text.slice(start, start + 3))?.[0] ?? "").length;
   const size = ch === "~" ? (run >= 2 ? 2 : 0) : Math.min(run, 2);
   if (size === 0) return undefined;
   const marker = ch.repeat(size);
@@ -322,10 +358,16 @@ function parseEmphasis(
   // An opening marker has text right after it; `_` inside a word isn't one.
   if (/\s/.test(text[open] ?? " ")) return undefined;
   if (ch === "_" && /\w/.test(text[start - 1] ?? "")) return undefined;
+  // Whether a marker closes depends only on what's beside it, so a search
+  // that found no closer from one place finds none from any later one.
+  if (knownMissing(scan, marker, open + 1)) return undefined;
   let from = open + 1;
   while (from <= text.length) {
     const close = text.indexOf(marker, from);
-    if (close < 0) return undefined;
+    if (close < 0) {
+      markMissing(scan, marker, open + 1);
+      return undefined;
+    }
     const closesHere =
       !/\s/.test(text[close - 1] ?? " ") &&
       text[close + size] !== ch &&
@@ -336,5 +378,6 @@ function parseEmphasis(
     }
     from = close + 1;
   }
+  markMissing(scan, marker, open + 1);
   return undefined;
 }

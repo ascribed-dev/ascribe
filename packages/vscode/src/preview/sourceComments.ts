@@ -15,7 +15,7 @@ import { comparable, within } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
 import { fromContentPath } from "./reviewText.js";
 import { messageOf, type ThreadsController } from "./threads.js";
-import { showSourceComments } from "./threadsText.js";
+import { imagesAsLinks, showSourceComments } from "./threadsText.js";
 
 /** The GitHub Pull Requests extension, which shows review threads on source lines itself. */
 export const PULL_REQUESTS_EXTENSION = "GitHub.vscode-pull-request-github";
@@ -307,9 +307,13 @@ export class SourceComments implements vscode.Disposable {
   }
 }
 
-/** A comment's body: Markdown from other people, so no commands, no HTML, no theme icons. */
+/**
+ * A comment's body: Markdown from other people, so no commands, no HTML, no
+ * theme icons, and images as links (as in the preview), so nothing loads
+ * until the reader asks.
+ */
 function untrusted(body: string): vscode.MarkdownString {
-  const markdown = new vscode.MarkdownString(body, false);
+  const markdown = new vscode.MarkdownString(imagesAsLinks(body), false);
   markdown.isTrusted = false;
   markdown.supportHtml = false;
   return markdown;

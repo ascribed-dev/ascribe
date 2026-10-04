@@ -74,8 +74,6 @@ export interface ThreadsApi {
 export class ThreadsController implements vscode.Disposable {
   private readonly connections = new Map<string, Connection>();
   private readonly connecting = new Map<string, Promise<Connection>>();
-  /** Projects whose reviewer chose the GitHub CLI's sign-in. */
-  private readonly viaGh = new Set<string>();
   /** The last page the preview showed of each project: comments are made on it. */
   private readonly pages = new Map<string, PageRef>();
   private readonly changed = new vscode.EventEmitter<{
@@ -87,7 +85,11 @@ export class ThreadsController implements vscode.Disposable {
   /** Fires when a project's threads changed: connected, refreshed, or acted on. */
   readonly onDidChange = this.changed.event;
 
-  constructor(private readonly host: ThreadsHost) {}
+  constructor(
+    private readonly host: ThreadsHost,
+    /** The workspace's state, which remembers the projects whose reviewer chose the GitHub CLI. */
+    private readonly state: vscode.Memento,
+  ) {}
 
   get api(): ThreadsApi {
     return {
@@ -149,13 +151,13 @@ export class ThreadsController implements vscode.Disposable {
 
   /** Signs in to GitHub in VS Code, then reads the threads. */
   async signIn(server: ProjectServer): Promise<Connection> {
-    this.viaGh.delete(key(server));
+    await this.chooseGh(server, false);
     return this.connect(server, { interactive: true });
   }
 
   /** Reads the threads with the GitHub CLI's sign-in. */
   async useGh(server: ProjectServer): Promise<Connection> {
-    this.viaGh.add(key(server));
+    await this.chooseGh(server, true);
     return this.connect(server, { interactive: false });
   }
 
@@ -238,7 +240,7 @@ export class ThreadsController implements vscode.Disposable {
     if (host === undefined) return { state: "none" };
     let transport = this.transport;
     let via: "vscode" | "gh" | "test" = "test";
-    if (!transport && this.viaGh.has(key(server))) {
+    if (!transport && this.choseGh(server)) {
       transport = (h) => ghTransport({ host: h });
       via = "gh";
     }
@@ -253,7 +255,7 @@ export class ThreadsController implements vscode.Disposable {
       session = await openReview({ projectDir, transport });
     } catch (error) {
       if (error instanceof ReviewError && error.code === "not-signed-in") {
-        if (via === "gh") this.viaGh.delete(key(server));
+        if (via === "gh") await this.chooseGh(server, false);
         return { state: "signed-out", host, gh: via !== "gh" && (await ghSignedIn(host)) };
       }
       throw error;
@@ -274,10 +276,27 @@ export class ThreadsController implements vscode.Disposable {
     };
   }
 
+  /**
+   * Whether the project's reviewer chose the GitHub CLI's sign-in: remembered
+   * across windows, so Start Review doesn't ask for VS Code's sign-in first.
+   */
+  private choseGh(server: ProjectServer): boolean {
+    return this.state.get<string[]>(VIA_GH, []).includes(key(server));
+  }
+
+  private async chooseGh(server: ProjectServer, gh: boolean): Promise<void> {
+    const id = key(server);
+    const others = this.state.get<string[]>(VIA_GH, []).filter((folder) => folder !== id);
+    await this.state.update(VIA_GH, gh ? [...others, id] : others);
+  }
+
   dispose(): void {
     this.changed.dispose();
   }
 }
+
+/** The workspace state key for the projects whose reviewer chose the GitHub CLI's sign-in. */
+const VIA_GH = "ascribe.review.viaGh";
 
 function key(server: ProjectServer): string {
   return comparable(server.project.folder);

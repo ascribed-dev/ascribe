@@ -97,6 +97,78 @@ export function showSourceComments(setting: unknown, pullRequestsActive: boolean
 }
 
 /**
+ * A comment's Markdown with each image made a link to it, as the overlay
+ * shows them, so the editor loads nothing until the reader asks. Code keeps
+ * its text.
+ */
+export function imagesAsLinks(body: string): string {
+  let fence: string | undefined;
+  return body
+    .split("\n")
+    .map((line) => {
+      const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+      if (fence !== undefined) {
+        if (marker?.startsWith(fence)) fence = undefined;
+        return line;
+      }
+      if (marker !== undefined) {
+        fence = marker;
+        return line;
+      }
+      return inlineImagesAsLinks(line);
+    })
+    .join("\n");
+}
+
+/** One line's images made links, its code spans kept: in one pass, as a comment is anyone's text. */
+function inlineImagesAsLinks(line: string): string {
+  let out = "";
+  /** By backtick run length: the first index from which no run of that length closes a span. */
+  const none = new Map<number, number>();
+  let i = 0;
+  while (i < line.length) {
+    const ch = line[i];
+    if (ch === "\\") {
+      out += line.slice(i, i + 2);
+      i += 2;
+    } else if (ch === "`") {
+      let run = 1;
+      while (line[i + run] === "`") run++;
+      const close = (none.get(run) ?? Infinity) <= i + run ? -1 : closingRun(line, i + run, run);
+      if (close < 0) {
+        if (!none.has(run)) none.set(run, i + run);
+        out += line.slice(i, i + run);
+        i += run;
+      } else {
+        out += line.slice(i, close + run);
+        i = close + run;
+      }
+    } else if (ch === "!" && line[i + 1] === "[") {
+      const empty = line[i + 2] === "]";
+      out += empty ? "[Image]" : "[Image: ";
+      i += empty ? 3 : 2;
+    } else {
+      out += ch;
+      i++;
+    }
+  }
+  return out;
+}
+
+/** Where a run of exactly `run` backticks starts at or after `from`, or -1. */
+function closingRun(line: string, from: number, run: number): number {
+  const ticks = "`".repeat(run);
+  let at = line.indexOf(ticks, from);
+  while (at >= 0) {
+    let end = at + run;
+    if (line[end] !== "`") return at;
+    while (line[end] === "`") end++;
+    at = line.indexOf(ticks, end);
+  }
+  return -1;
+}
+
+/**
  * The git revision to compare with for a pull request's base: the remote
  * branch, from the remote whose URL is the pull request's repository, when
  * there is one; else the branch's name.

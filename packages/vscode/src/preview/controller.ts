@@ -130,15 +130,19 @@ export class PreviewController implements vscode.Disposable {
     private readonly context: vscode.ExtensionContext,
     private readonly projects: ProjectRegistry,
   ) {
-    this.review = new ReviewController(projects, {
-      previewedDocument: () => (this.panel ? this.document : undefined),
-      previewActive: () => this.panel?.active ?? false,
-      previewBuild: (folder) => this.builds.get(folder),
-      refresh: () => {
-        if (this.panel) this.schedule(0);
+    this.review = new ReviewController(
+      projects,
+      {
+        previewedDocument: () => (this.panel ? this.document : undefined),
+        previewActive: () => this.panel?.active ?? false,
+        previewBuild: (folder) => this.builds.get(folder),
+        refresh: () => {
+          if (this.panel) this.schedule(0);
+        },
+        showPage: (uri) => this.showPage(uri),
       },
-      showPage: (uri) => this.showPage(uri),
-    });
+      context.workspaceState,
+    );
     this.sourceComments = new SourceComments(projects, this.review.threads);
   }
 
