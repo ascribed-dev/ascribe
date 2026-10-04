@@ -1,6 +1,6 @@
 # Changelog
 
-Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, `@ascribed/astro`, `@ascribed/elements`), and the VS Code extension share one version. Versions follow [semantic versioning](https://semver.org/); while the major version is 0, a minor version may change behavior.
+Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, `@ascribed/astro`, `@ascribed/elements`, `@ascribed/review`), and the VS Code extension share one version. Versions follow [semantic versioning](https://semver.org/); while the major version is 0, a minor version may change behavior.
 
 ## Unreleased
 
@@ -15,6 +15,10 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 ### Astro
 
 - The integration's `anchors` option turns source anchors on: `"dev"` in `astro dev` only, `true` always. The Markdown plugins apply them.
+
+### Review
+
+- A new package, `@ascribed/review`. Its Node part finds the open pull request for a checkout's branch, reads its review threads, places each on the rendered block it's on (following local edits, fragments shown on several pages, removed text, and outdated threads, and returning threads it can't place as detached), and posts comments and replies into the reviewer's pending review, which nobody else sees until it's submitted. It talks to GitHub through the GitHub CLI or a token its host supplies, and stores no token. See [`packages/review`](packages/review/README.md).
 
 ### The editor
 
