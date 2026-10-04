@@ -104,6 +104,8 @@ try {
     "@ascribed/elements",
     "--filter",
     "@ascribed/astro",
+    "--filter",
+    "@ascribed/review",
     "run",
     "build",
   ]);

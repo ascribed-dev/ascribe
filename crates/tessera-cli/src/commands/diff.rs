@@ -12,6 +12,7 @@ use std::sync::Arc;
 use clap::{Args as ClapArgs, ValueEnum};
 use tessera_check::{Diagnostic, LoadError};
 use tessera_core::FileId;
+use tessera_diff::html::{AssetFiles, DiskAssets, GitAssets, Version, write_html};
 use tessera_diff::{
     BuildDiff, DiffError, PageDiff, PageStatus, Report, Repository, Revision, Side, compare_builds,
 };
@@ -56,6 +57,9 @@ pub enum Format {
     Text,
     /// One JSON document (its schema is in docs/cli.md), for tools.
     Json,
+    /// One self-contained HTML file showing every changed page rendered,
+    /// with its changes marked, for reviewers.
+    Html,
 }
 
 /// Runs the command. Exit codes: 0 whether or not anything changed (1 when
@@ -123,6 +127,22 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         Format::Json => serde_json::to_writer_pretty(&mut *out, &report)
             .map_err(io::Error::from)
             .and_then(|()| writeln!(out)),
+        Format::Html => {
+            let now_files = DiskAssets::new(project.root(), &now_project);
+            let base_files = before.as_ref().map(|r| GitAssets::new(&repo, &r.fs));
+            let base = before_project
+                .as_ref()
+                .zip(base_files.as_ref())
+                .map(|(project, files)| Version {
+                    project,
+                    files: files as &dyn AssetFiles,
+                });
+            let now = Version {
+                project: &now_project,
+                files: &now_files,
+            };
+            out.write_all(write_html(&report, base, now).as_bytes())
+        }
     };
     if let Err(e) = written
         && e.kind() != io::ErrorKind::BrokenPipe

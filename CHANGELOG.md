@@ -1,12 +1,13 @@
 # Changelog
 
-Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, `@ascribed/astro`, `@ascribed/elements`), and the VS Code extension share one version. Versions follow [semantic versioning](https://semver.org/); while the major version is 0, a minor version may change behavior.
+Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, `@ascribed/astro`, `@ascribed/elements`, `@ascribed/review`), and the VS Code extension share one version. Versions follow [semantic versioning](https://semver.org/); while the major version is 0, a minor version may change behavior.
 
 ## Unreleased
 
 ### The command
 
 - `ascribe diff` shows what changed between a git revision and the working tree, as readers will see it: the changed pages of each build, and the blocks on them that were added, removed, changed, or moved, with the words that changed. It compares resolved pages, so a page that changed only through a fragment, a phrase, or a build's settings is listed with the cause, and reformatting is no change. By default it compares with the merge base of the default branch, as a pull request does. `--format json` writes the changes with each block's source lines for tools. See [`ascribe diff`](docs/cli.md#ascribe-diff).
+- `ascribe diff --format html` writes the changes as one self-contained HTML file: every changed page rendered with its changes marked, a removed block shown where it was, and the page as it will be and as it was a click away. It makes no network requests, so CI can upload it for reviewers to open from the pull request. See [the HTML report](docs/cli.md#the-html-report) and [Report in CI](docs/review.md#report-in-ci).
 
 ### The compiler
 

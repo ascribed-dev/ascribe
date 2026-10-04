@@ -1,0 +1,303 @@
+/*
+ * @ascribed/review/marks.css: how changed blocks look on a rendered page.
+ *
+ * `markChanges` (@ascribed/review/marks) puts the marks on the page and
+ * `setShow` picks what it shows, with `data-ascribe-show` on the page's root:
+ * `changes`, `will` (the page as it will be), or `was` (as it was). Every
+ * mark has a label as well as a bar of its own shape, so no change is told by
+ * color alone. Theme it with the --ascribe-review-* custom properties.
+ */
+
+:root {
+  --ascribe-review-added: #1a7f37;
+  --ascribe-review-added-background: #dcf7e3;
+  --ascribe-review-changed: #8a5a00;
+  --ascribe-review-changed-background: #fff1c2;
+  --ascribe-review-removed: #c4222d;
+  --ascribe-review-removed-background: #ffe4e2;
+  --ascribe-review-moved: #7a3fd0;
+  --ascribe-review-moved-background: #f0e6ff;
+  --ascribe-review-muted: #5b6475;
+  --ascribe-review-surface: #ffffff;
+  --ascribe-review-flash: #fff6bf;
+  --ascribe-review-focus: #1f6feb;
+  --ascribe-review-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ascribe-review-added: #4fc572;
+    --ascribe-review-added-background: #133520;
+    --ascribe-review-changed: #dcb13a;
+    --ascribe-review-changed-background: #3a2f0d;
+    --ascribe-review-removed: #ff8279;
+    --ascribe-review-removed-background: #401918;
+    --ascribe-review-moved: #c59bff;
+    --ascribe-review-moved-background: #2d2440;
+    --ascribe-review-muted: #929bab;
+    --ascribe-review-surface: #1e2026;
+    --ascribe-review-flash: #3b3514;
+    --ascribe-review-focus: #5aa2ff;
+  }
+}
+
+.ascribe-marks {
+  position: relative;
+}
+
+/* The bar: a left border whose color and style differ by kind. */
+.ascribe-marks [data-ascribe-change] {
+  position: relative;
+  border-inline-start: 3px solid transparent;
+  padding-inline-start: 9px;
+  margin-inline-start: -12px;
+  border-radius: 0 3px 3px 0;
+}
+
+.ascribe-marks li[data-ascribe-change] {
+  margin-inline-start: 0;
+  padding-inline-start: 6px;
+}
+
+[data-ascribe-show="changes"] [data-ascribe-change="added"] {
+  border-inline-start-color: var(--ascribe-review-added);
+  background: var(--ascribe-review-added-background);
+}
+
+[data-ascribe-show="changes"] [data-ascribe-change="changed"] {
+  border-inline-start-color: var(--ascribe-review-changed);
+  border-inline-start-style: dashed;
+}
+
+[data-ascribe-show="changes"] [data-ascribe-change="moved"] {
+  border-inline-start-color: var(--ascribe-review-moved);
+  border-inline-start-style: double;
+  background: var(--ascribe-review-moved-background);
+}
+
+[data-ascribe-show="changes"] [data-ascribe-change="removed"] {
+  border-inline-start-color: var(--ascribe-review-removed);
+  border-inline-start-style: dotted;
+  background: var(--ascribe-review-removed-background);
+}
+
+/* The labels: Added, Changed, Removed, Moved. */
+.ascribe-label {
+  display: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-inline-end: 6px;
+  font-style: normal;
+}
+
+[data-ascribe-show="changes"] .ascribe-label {
+  display: inline-block;
+}
+
+[data-ascribe-show="changes"] .ascribe-label-before {
+  display: block;
+  margin-block: 8px -4px;
+}
+
+.ascribe-label[data-ascribe-label="added"] {
+  color: var(--ascribe-review-added);
+}
+
+.ascribe-label[data-ascribe-label="changed"] {
+  color: var(--ascribe-review-changed);
+}
+
+.ascribe-label[data-ascribe-label="removed"] {
+  color: var(--ascribe-review-removed);
+}
+
+.ascribe-label[data-ascribe-label="moved"] {
+  color: var(--ascribe-review-moved);
+}
+
+/* Words inside a changed block. */
+.ascribe-ins {
+  text-decoration: none;
+}
+
+.ascribe-del {
+  display: none;
+  text-decoration: none;
+}
+
+[data-ascribe-show="changes"] .ascribe-ins {
+  background: var(--ascribe-review-added-background);
+  box-shadow: inset 0 -2px 0 var(--ascribe-review-added);
+}
+
+[data-ascribe-show="changes"] .ascribe-del {
+  display: inline;
+  background: var(--ascribe-review-removed-background);
+  text-decoration: line-through;
+  color: var(--ascribe-review-muted);
+}
+
+/* A removed block: collapsed to one line, struck through, with Show. */
+.ascribe-removed {
+  display: none;
+  list-style: none;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin-block: 8px;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed-body {
+  flex: 1;
+  min-width: 0;
+  max-height: 1.6em;
+  overflow: hidden;
+  text-decoration: line-through;
+  color: var(--ascribe-review-muted);
+}
+
+[data-ascribe-show="changes"] .ascribe-removed-body > * {
+  margin-block: 0;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed:not(.ascribe-open) .ascribe-removed-body,
+[data-ascribe-show="changes"] .ascribe-removed:not(.ascribe-open) .ascribe-removed-body > * {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed.ascribe-open .ascribe-removed-body {
+  max-height: none;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed.ascribe-open .ascribe-removed-body > * {
+  margin-block: 0.5em;
+}
+
+.ascribe-toggle,
+.ascribe-move-link {
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--ascribe-review-focus);
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+[data-ascribe-show="was"] .ascribe-removed {
+  display: block;
+}
+
+[data-ascribe-show="was"] .ascribe-removed > .ascribe-label,
+[data-ascribe-show="was"] .ascribe-toggle {
+  display: none;
+}
+
+/* A move: the block where it is now, and a stub where it was. */
+.ascribe-move-note {
+  display: none;
+  font-size: 12px;
+  color: var(--ascribe-review-moved);
+}
+
+[data-ascribe-show="changes"] .ascribe-move-note {
+  display: inline;
+}
+
+[data-ascribe-show="changes"] .ascribe-move-after {
+  display: block;
+  margin-block: -4px 8px;
+}
+
+.ascribe-moved-from {
+  display: none;
+  list-style: none;
+}
+
+[data-ascribe-show="changes"] .ascribe-moved-from {
+  display: block;
+  border-inline-start: 3px double var(--ascribe-review-moved);
+  padding-inline-start: 9px;
+  margin: 6px 0 6px -12px;
+}
+
+[data-ascribe-show="was"] .ascribe-moved-from {
+  display: block;
+}
+
+[data-ascribe-show="was"] .ascribe-moved-from > .ascribe-move-note {
+  display: none;
+}
+
+/* What only the page as it was shows: a changed block before, a moved block
+   at its old place. */
+[data-ascribe-was-only] {
+  display: none;
+}
+
+[data-ascribe-show="was"] [data-ascribe-was-only] {
+  display: block;
+}
+
+[data-ascribe-show="was"] li[data-ascribe-was-only] {
+  display: list-item;
+}
+
+[data-ascribe-show="was"] [data-ascribe-change="added"],
+[data-ascribe-show="was"] [data-ascribe-change="moved"],
+[data-ascribe-show="was"] [data-ascribe-change="moved"] + .ascribe-move-after,
+[data-ascribe-show="was"] [data-ascribe-has-was],
+[data-ascribe-show="was"] .ascribe-label-before,
+[data-ascribe-show="was"] .ascribe-ins {
+  display: none;
+}
+
+[data-ascribe-show="was"] .ascribe-del {
+  display: inline;
+}
+
+/* A block's source, on hover and focus. */
+.ascribe-where {
+  position: absolute;
+  inset-inline-end: 0;
+  transform: translateY(-100%);
+  font-family: var(--ascribe-review-mono);
+  font-size: 10.5px;
+  color: var(--ascribe-review-muted);
+  background: var(--ascribe-review-surface);
+  padding: 0 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.ascribe-flash {
+  animation: ascribe-flash 1.4s ease-out;
+}
+
+.ascribe-marks [tabindex="-1"]:focus {
+  outline: none;
+}
+
+@keyframes ascribe-flash {
+  from {
+    background: var(--ascribe-review-flash);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ascribe-flash {
+    animation: none;
+    outline: 2px solid var(--ascribe-review-focus);
+  }
+}

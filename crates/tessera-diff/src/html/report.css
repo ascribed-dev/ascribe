@@ -1,0 +1,1015 @@
+/* The stylesheet of `ascribe diff --format html`, generated from packages/review and
+   packages/elements by `pnpm --filter @ascribed/review embed`. Don't edit it. */
+
+/*
+ * @ascribed/elements: styles for the Ascribe site output (CONTRACT.md).
+ *
+ * Everything here works without the script; only <ascribe-tabs> adds
+ * behavior. Theme it by setting the --ascribe-* custom properties (listed in
+ * README.md) on :root or any ancestor.
+ */
+
+:root {
+  /* Type */
+  --ascribe-font-family: inherit;
+  --ascribe-font-size-small: 0.875em;
+  --ascribe-font-weight-strong: 600;
+
+  /* Spacing, borders */
+  --ascribe-space: 1rem;
+  --ascribe-space-small: 0.5rem;
+  --ascribe-border-width: 1px;
+  --ascribe-border-color: #d0d7de;
+  --ascribe-radius: 0.375rem;
+
+  /* Surfaces and text */
+  --ascribe-text-color: inherit;
+  --ascribe-muted-color: #57606a;
+  --ascribe-surface-color: transparent;
+
+  /* Note types: an accent color and a tinted background each. */
+  --ascribe-note-color: #0969da;
+  --ascribe-note-background: #ddf4ff;
+  --ascribe-tip-color: #1a7f37;
+  --ascribe-tip-background: #dafbe1;
+  --ascribe-important-color: #8250df;
+  --ascribe-important-background: #fbefff;
+  --ascribe-warning-color: #9a6700;
+  --ascribe-warning-background: #fff8c5;
+  --ascribe-caution-color: #cf222e;
+  --ascribe-caution-background: #ffebe9;
+
+  /* Steps */
+  --ascribe-steps-color: #0969da;
+  --ascribe-steps-marker-size: 1.75rem;
+  --ascribe-steps-marker-text-color: #ffffff;
+
+  /* Tabs */
+  --ascribe-tab-color: #57606a;
+  --ascribe-tab-active-color: #0969da;
+  --ascribe-tab-focus-color: #0969da;
+  --ascribe-tab-hover-background: #f6f8fa;
+
+  /* Availability lifecycle states: an accent color and a background each. */
+  --ascribe-state-color: #57606a;
+  --ascribe-state-background: #eaeef2;
+  --ascribe-state-ga-color: #1a7f37;
+  --ascribe-state-ga-background: #dafbe1;
+  --ascribe-state-preview-color: #8250df;
+  --ascribe-state-preview-background: #fbefff;
+  --ascribe-state-beta-color: #0969da;
+  --ascribe-state-beta-background: #ddf4ff;
+  --ascribe-state-deprecated-color: #9a6700;
+  --ascribe-state-deprecated-background: #fff8c5;
+  --ascribe-state-removed-color: #cf222e;
+  --ascribe-state-removed-background: #ffebe9;
+}
+
+/* <ascribe-note> ---------------------------------------------------------- */
+
+ascribe-note {
+  --_color: var(--ascribe-note-color);
+  --_background: var(--ascribe-note-background);
+  display: block;
+  margin-block: var(--ascribe-space);
+  padding: var(--ascribe-space-small) var(--ascribe-space);
+  border-inline-start: 0.25rem solid var(--_color);
+  border-radius: var(--ascribe-radius);
+  background: var(--_background);
+  color: var(--ascribe-text-color);
+  font-family: var(--ascribe-font-family);
+}
+
+ascribe-note[type="tip"] {
+  --_color: var(--ascribe-tip-color);
+  --_background: var(--ascribe-tip-background);
+}
+
+ascribe-note[type="important"] {
+  --_color: var(--ascribe-important-color);
+  --_background: var(--ascribe-important-background);
+}
+
+ascribe-note[type="warning"] {
+  --_color: var(--ascribe-warning-color);
+  --_background: var(--ascribe-warning-background);
+}
+
+ascribe-note[type="caution"] {
+  --_color: var(--ascribe-caution-color);
+  --_background: var(--ascribe-caution-background);
+}
+
+/* The heading line: `label: heading`, or `label` alone with no heading. */
+ascribe-note::before {
+  content: attr(label);
+  display: block;
+  margin-bottom: var(--ascribe-space-small);
+  color: var(--_color);
+  font-weight: var(--ascribe-font-weight-strong);
+}
+
+ascribe-note[heading]::before {
+  content: attr(label) ": " attr(heading);
+}
+
+ascribe-note > :first-child {
+  margin-top: 0;
+}
+
+ascribe-note > :last-child {
+  margin-bottom: 0;
+}
+
+/* <ascribe-steps> --------------------------------------------------------- */
+
+ascribe-steps {
+  display: block;
+  margin-block: var(--ascribe-space);
+}
+
+ascribe-steps > ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+ascribe-steps > ol > li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 var(--ascribe-space) calc(var(--ascribe-steps-marker-size) + var(--ascribe-space));
+  min-height: var(--ascribe-steps-marker-size);
+}
+
+ascribe-steps > ol > li::before {
+  /* `list-item` follows the list's own numbering, including `start`. */
+  content: counter(list-item);
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  width: var(--ascribe-steps-marker-size);
+  height: var(--ascribe-steps-marker-size);
+  border-radius: 50%;
+  background: var(--ascribe-steps-color);
+  color: var(--ascribe-steps-marker-text-color);
+  font-size: var(--ascribe-font-size-small);
+  font-weight: var(--ascribe-font-weight-strong);
+  line-height: var(--ascribe-steps-marker-size);
+  text-align: center;
+}
+
+ascribe-steps > ol > li::after {
+  content: "";
+  position: absolute;
+  inset-block: calc(var(--ascribe-steps-marker-size) + 0.25rem) 0.25rem;
+  inset-inline-start: calc(var(--ascribe-steps-marker-size) / 2);
+  border-inline-start: var(--ascribe-border-width) solid var(--ascribe-border-color);
+}
+
+ascribe-steps > ol > li:last-child::after {
+  display: none;
+}
+
+/* <ascribe-tabs> ---------------------------------------------------------- */
+
+ascribe-tabs {
+  display: block;
+  margin-block: var(--ascribe-space);
+  font-family: var(--ascribe-font-family);
+}
+
+ascribe-tab {
+  display: block;
+}
+
+ascribe-tab[hidden] {
+  display: none;
+}
+
+/* Without the script: every tab shows, introduced by its label. */
+ascribe-tab::before {
+  content: attr(label);
+  display: block;
+  margin-top: var(--ascribe-space);
+  color: var(--ascribe-muted-color);
+  font-weight: var(--ascribe-font-weight-strong);
+}
+
+/* With the script: the tab list carries the labels. */
+ascribe-tab[role="tabpanel"]::before {
+  display: none;
+}
+
+ascribe-tab[role="tabpanel"] {
+  padding-top: var(--ascribe-space-small);
+}
+
+ascribe-tabs > [role="tablist"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ascribe-space-small);
+  border-bottom: var(--ascribe-border-width) solid var(--ascribe-border-color);
+}
+
+ascribe-tabs > [role="tablist"] > [role="tab"] {
+  margin: 0 0 calc(var(--ascribe-border-width) * -1);
+  padding: var(--ascribe-space-small) var(--ascribe-space);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--ascribe-radius) var(--ascribe-radius) 0 0;
+  background: transparent;
+  color: var(--ascribe-tab-color);
+  font: inherit;
+  cursor: pointer;
+}
+
+ascribe-tabs > [role="tablist"] > [role="tab"]:hover {
+  background: var(--ascribe-tab-hover-background);
+}
+
+ascribe-tabs > [role="tablist"] > [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--ascribe-tab-active-color);
+  color: var(--ascribe-tab-active-color);
+  font-weight: var(--ascribe-font-weight-strong);
+}
+
+ascribe-tabs > [role="tablist"] > [role="tab"]:focus-visible {
+  outline: 2px solid var(--ascribe-tab-focus-color);
+  outline-offset: -2px;
+}
+
+/* <ascribe-availability> -------------------------------------------------- */
+
+/* The `; ` between targets is for readers without CSS; as badges it would
+   read as a stray mark, so it's transparent here and only spaces them. */
+ascribe-availability {
+  display: block;
+  margin-block: var(--ascribe-space-small);
+  color: transparent;
+  font-family: var(--ascribe-font-family);
+  font-size: var(--ascribe-font-size-small);
+}
+
+/* The lead-in is generated content, so a site can restyle or translate it. */
+ascribe-availability::before {
+  content: "Available: ";
+  color: var(--ascribe-muted-color);
+}
+
+ascribe-availability-target {
+  --_color: var(--ascribe-state-color);
+  --_background: var(--ascribe-state-background);
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--_background);
+  color: var(--_color);
+}
+
+/* Match the last state as a whole token: `$="ga"` alone would also match `pre-ga`. */
+ascribe-availability-target[states="ga"],
+ascribe-availability-target[states$=" ga"] {
+  --_color: var(--ascribe-state-ga-color);
+  --_background: var(--ascribe-state-ga-background);
+}
+
+ascribe-availability-target[states="preview"],
+ascribe-availability-target[states$=" preview"] {
+  --_color: var(--ascribe-state-preview-color);
+  --_background: var(--ascribe-state-preview-background);
+}
+
+ascribe-availability-target[states="beta"],
+ascribe-availability-target[states$=" beta"] {
+  --_color: var(--ascribe-state-beta-color);
+  --_background: var(--ascribe-state-beta-background);
+}
+
+ascribe-availability-target[states="deprecated"],
+ascribe-availability-target[states$=" deprecated"] {
+  --_color: var(--ascribe-state-deprecated-color);
+  --_background: var(--ascribe-state-deprecated-background);
+}
+
+ascribe-availability-target[states="removed"],
+ascribe-availability-target[states$=" removed"] {
+  --_color: var(--ascribe-state-removed-color);
+  --_background: var(--ascribe-state-removed-background);
+}
+
+/* <ascribe-group> --------------------------------------------------------- */
+
+ascribe-group {
+  display: block;
+}
+
+/*
+ * @ascribed/review/marks.css: how changed blocks look on a rendered page.
+ *
+ * `markChanges` (@ascribed/review/marks) puts the marks on the page and
+ * `setShow` picks what it shows, with `data-ascribe-show` on the page's root:
+ * `changes`, `will` (the page as it will be), or `was` (as it was). Every
+ * mark has a label as well as a bar of its own shape, so no change is told by
+ * color alone. Theme it with the --ascribe-review-* custom properties.
+ */
+
+:root {
+  --ascribe-review-added: #1a7f37;
+  --ascribe-review-added-background: #dcf7e3;
+  --ascribe-review-changed: #8a5a00;
+  --ascribe-review-changed-background: #fff1c2;
+  --ascribe-review-removed: #c4222d;
+  --ascribe-review-removed-background: #ffe4e2;
+  --ascribe-review-moved: #7a3fd0;
+  --ascribe-review-moved-background: #f0e6ff;
+  --ascribe-review-muted: #5b6475;
+  --ascribe-review-surface: #ffffff;
+  --ascribe-review-flash: #fff6bf;
+  --ascribe-review-focus: #1f6feb;
+  --ascribe-review-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ascribe-review-added: #4fc572;
+    --ascribe-review-added-background: #133520;
+    --ascribe-review-changed: #dcb13a;
+    --ascribe-review-changed-background: #3a2f0d;
+    --ascribe-review-removed: #ff8279;
+    --ascribe-review-removed-background: #401918;
+    --ascribe-review-moved: #c59bff;
+    --ascribe-review-moved-background: #2d2440;
+    --ascribe-review-muted: #929bab;
+    --ascribe-review-surface: #1e2026;
+    --ascribe-review-flash: #3b3514;
+    --ascribe-review-focus: #5aa2ff;
+  }
+}
+
+.ascribe-marks {
+  position: relative;
+}
+
+/* The bar: a left border whose color and style differ by kind. */
+.ascribe-marks [data-ascribe-change] {
+  position: relative;
+  border-inline-start: 3px solid transparent;
+  padding-inline-start: 9px;
+  margin-inline-start: -12px;
+  border-radius: 0 3px 3px 0;
+}
+
+.ascribe-marks li[data-ascribe-change] {
+  margin-inline-start: 0;
+  padding-inline-start: 6px;
+}
+
+[data-ascribe-show="changes"] [data-ascribe-change="added"] {
+  border-inline-start-color: var(--ascribe-review-added);
+  background: var(--ascribe-review-added-background);
+}
+
+[data-ascribe-show="changes"] [data-ascribe-change="changed"] {
+  border-inline-start-color: var(--ascribe-review-changed);
+  border-inline-start-style: dashed;
+}
+
+[data-ascribe-show="changes"] [data-ascribe-change="moved"] {
+  border-inline-start-color: var(--ascribe-review-moved);
+  border-inline-start-style: double;
+  background: var(--ascribe-review-moved-background);
+}
+
+[data-ascribe-show="changes"] [data-ascribe-change="removed"] {
+  border-inline-start-color: var(--ascribe-review-removed);
+  border-inline-start-style: dotted;
+  background: var(--ascribe-review-removed-background);
+}
+
+/* The labels: Added, Changed, Removed, Moved. */
+.ascribe-label {
+  display: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-inline-end: 6px;
+  font-style: normal;
+}
+
+[data-ascribe-show="changes"] .ascribe-label {
+  display: inline-block;
+}
+
+[data-ascribe-show="changes"] .ascribe-label-before {
+  display: block;
+  margin-block: 8px -4px;
+}
+
+.ascribe-label[data-ascribe-label="added"] {
+  color: var(--ascribe-review-added);
+}
+
+.ascribe-label[data-ascribe-label="changed"] {
+  color: var(--ascribe-review-changed);
+}
+
+.ascribe-label[data-ascribe-label="removed"] {
+  color: var(--ascribe-review-removed);
+}
+
+.ascribe-label[data-ascribe-label="moved"] {
+  color: var(--ascribe-review-moved);
+}
+
+/* Words inside a changed block. */
+.ascribe-ins {
+  text-decoration: none;
+}
+
+.ascribe-del {
+  display: none;
+  text-decoration: none;
+}
+
+[data-ascribe-show="changes"] .ascribe-ins {
+  background: var(--ascribe-review-added-background);
+  box-shadow: inset 0 -2px 0 var(--ascribe-review-added);
+}
+
+[data-ascribe-show="changes"] .ascribe-del {
+  display: inline;
+  background: var(--ascribe-review-removed-background);
+  text-decoration: line-through;
+  color: var(--ascribe-review-muted);
+}
+
+/* A removed block: collapsed to one line, struck through, with Show. */
+.ascribe-removed {
+  display: none;
+  list-style: none;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin-block: 8px;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed-body {
+  flex: 1;
+  min-width: 0;
+  max-height: 1.6em;
+  overflow: hidden;
+  text-decoration: line-through;
+  color: var(--ascribe-review-muted);
+}
+
+[data-ascribe-show="changes"] .ascribe-removed-body > * {
+  margin-block: 0;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed:not(.ascribe-open) .ascribe-removed-body,
+[data-ascribe-show="changes"] .ascribe-removed:not(.ascribe-open) .ascribe-removed-body > * {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed.ascribe-open .ascribe-removed-body {
+  max-height: none;
+}
+
+[data-ascribe-show="changes"] .ascribe-removed.ascribe-open .ascribe-removed-body > * {
+  margin-block: 0.5em;
+}
+
+.ascribe-toggle,
+.ascribe-move-link {
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--ascribe-review-focus);
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+[data-ascribe-show="was"] .ascribe-removed {
+  display: block;
+}
+
+[data-ascribe-show="was"] .ascribe-removed > .ascribe-label,
+[data-ascribe-show="was"] .ascribe-toggle {
+  display: none;
+}
+
+/* A move: the block where it is now, and a stub where it was. */
+.ascribe-move-note {
+  display: none;
+  font-size: 12px;
+  color: var(--ascribe-review-moved);
+}
+
+[data-ascribe-show="changes"] .ascribe-move-note {
+  display: inline;
+}
+
+[data-ascribe-show="changes"] .ascribe-move-after {
+  display: block;
+  margin-block: -4px 8px;
+}
+
+.ascribe-moved-from {
+  display: none;
+  list-style: none;
+}
+
+[data-ascribe-show="changes"] .ascribe-moved-from {
+  display: block;
+  border-inline-start: 3px double var(--ascribe-review-moved);
+  padding-inline-start: 9px;
+  margin: 6px 0 6px -12px;
+}
+
+[data-ascribe-show="was"] .ascribe-moved-from {
+  display: block;
+}
+
+[data-ascribe-show="was"] .ascribe-moved-from > .ascribe-move-note {
+  display: none;
+}
+
+/* What only the page as it was shows: a changed block before, a moved block
+   at its old place. */
+[data-ascribe-was-only] {
+  display: none;
+}
+
+[data-ascribe-show="was"] [data-ascribe-was-only] {
+  display: block;
+}
+
+[data-ascribe-show="was"] li[data-ascribe-was-only] {
+  display: list-item;
+}
+
+[data-ascribe-show="was"] [data-ascribe-change="added"],
+[data-ascribe-show="was"] [data-ascribe-change="moved"],
+[data-ascribe-show="was"] [data-ascribe-change="moved"] + .ascribe-move-after,
+[data-ascribe-show="was"] [data-ascribe-has-was],
+[data-ascribe-show="was"] .ascribe-label-before,
+[data-ascribe-show="was"] .ascribe-ins {
+  display: none;
+}
+
+[data-ascribe-show="was"] .ascribe-del {
+  display: inline;
+}
+
+/* A block's source, on hover and focus. */
+.ascribe-where {
+  position: absolute;
+  inset-inline-end: 0;
+  transform: translateY(-100%);
+  font-family: var(--ascribe-review-mono);
+  font-size: 10.5px;
+  color: var(--ascribe-review-muted);
+  background: var(--ascribe-review-surface);
+  padding: 0 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.ascribe-flash {
+  animation: ascribe-flash 1.4s ease-out;
+}
+
+.ascribe-marks [tabindex="-1"]:focus {
+  outline: none;
+}
+
+@keyframes ascribe-flash {
+  from {
+    background: var(--ascribe-review-flash);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ascribe-flash {
+    animation: none;
+    outline: 2px solid var(--ascribe-review-focus);
+  }
+}
+
+/*
+ * The static report's own styles: its frame (the list of changed pages and
+ * the controls) and a plain style for the pages, which are Ascribe's bare
+ * render without the site's. The marks' styles are marks.css; the
+ * elements' are @ascribed/elements' style.css.
+ */
+
+:root {
+  --r-page: #ffffff;
+  --r-ink: #1d2330;
+  --r-muted: #5b6475;
+  --r-side: #f3f4f7;
+  --r-line: #d3d8e0;
+  --r-accent: #1f6feb;
+  --r-accent-ink: #ffffff;
+  --r-code: #f0f2f6;
+  --r-notice: #fff6bf;
+  --r-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --r-page: #1e2026;
+    --r-ink: #d9dde5;
+    --r-muted: #929bab;
+    --r-side: #23262d;
+    --r-line: #343a45;
+    --r-accent: #5aa2ff;
+    --r-accent-ink: #0b1220;
+    --r-code: #282c35;
+    --r-notice: #3b3514;
+
+    /* The element library's colors, for a dark page. */
+    --ascribe-border-color: #343a45;
+    --ascribe-muted-color: #929bab;
+    --ascribe-note-color: #5aa2ff;
+    --ascribe-note-background: #172a45;
+    --ascribe-tip-color: #4fc572;
+    --ascribe-tip-background: #133520;
+    --ascribe-important-color: #c59bff;
+    --ascribe-important-background: #2d2440;
+    --ascribe-warning-color: #dcb13a;
+    --ascribe-warning-background: #3a2f0d;
+    --ascribe-caution-color: #ff8279;
+    --ascribe-caution-background: #401918;
+    --ascribe-steps-color: #5aa2ff;
+    --ascribe-steps-marker-text-color: #0b1220;
+    --ascribe-tab-color: #929bab;
+    --ascribe-tab-active-color: #5aa2ff;
+    --ascribe-tab-focus-color: #5aa2ff;
+    --ascribe-tab-hover-background: #272b33;
+    --ascribe-state-color: #929bab;
+    --ascribe-state-background: #272b33;
+    --ascribe-state-ga-color: #4fc572;
+    --ascribe-state-ga-background: #133520;
+    --ascribe-state-preview-color: #c59bff;
+    --ascribe-state-preview-background: #2d2440;
+    --ascribe-state-beta-color: #5aa2ff;
+    --ascribe-state-beta-background: #172a45;
+    --ascribe-state-deprecated-color: #dcb13a;
+    --ascribe-state-deprecated-background: #3a2f0d;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--r-page);
+  color: var(--r-ink);
+  font: 14px/1.5 var(--r-ui);
+}
+
+.r {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.r-head {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--r-line);
+  background: var(--r-side);
+}
+
+.r-sub {
+  color: var(--r-muted);
+  font-size: 12.5px;
+}
+
+.r-head .r-notice {
+  margin-top: 8px;
+}
+
+.r-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.r-side {
+  width: 300px;
+  flex: none;
+  overflow: auto;
+  border-right: 1px solid var(--r-line);
+  background: var(--r-side);
+  padding: 12px;
+}
+
+.r-side h2,
+.r-side h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--r-muted);
+  margin: 16px 0 6px;
+}
+
+.r-build {
+  display: block;
+  font-size: 12px;
+  color: var(--r-muted);
+  margin-bottom: 4px;
+}
+
+.r-side select {
+  width: 100%;
+  font: inherit;
+  padding: 4px;
+  color: inherit;
+  background: var(--r-page);
+  border: 1px solid var(--r-line);
+  border-radius: 4px;
+}
+
+.r-pages,
+.r-omitted {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.r-pages a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 5px;
+  color: inherit;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+}
+
+.r-pages a:hover {
+  background: var(--r-page);
+}
+
+.r-pages a[aria-current="page"] {
+  background: var(--r-page);
+  border-left-color: var(--r-accent);
+}
+
+.r-pages a:focus-visible,
+.r button:focus-visible,
+.r select:focus-visible {
+  outline: 2px solid var(--r-accent);
+  outline-offset: 1px;
+}
+
+.r-page-title {
+  display: block;
+  font-weight: 600;
+}
+
+.r-page-path,
+.r-page-via {
+  display: block;
+  font-family: var(--r-mono);
+  font-size: 11.5px;
+  color: var(--r-muted);
+  overflow-wrap: anywhere;
+}
+
+.r-page-counts {
+  display: block;
+  font-size: 12px;
+}
+
+.r-omitted li {
+  font-family: var(--r-mono);
+  font-size: 11.5px;
+  color: var(--r-muted);
+  padding: 2px 8px;
+}
+
+.r-main {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 0 24px 48px;
+}
+
+.r-controls {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--r-page);
+  border-bottom: 1px solid var(--r-line);
+  padding: 8px 0;
+  margin-bottom: 12px;
+}
+
+.r-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.r-grow {
+  flex: 1;
+  min-width: 200px;
+  overflow-wrap: anywhere;
+}
+
+.r-show {
+  font-size: 12px;
+  color: var(--r-muted);
+}
+
+.r-quiet {
+  font-size: 13px;
+  color: var(--r-muted);
+}
+
+.r-seg {
+  display: inline-flex;
+  border: 1px solid var(--r-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.r-seg button,
+.r-ghost,
+.r-primary,
+.r-link {
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.r-seg button + button {
+  border-left: 1px solid var(--r-line);
+}
+
+.r-seg button[aria-pressed="true"] {
+  background: var(--r-accent);
+  color: var(--r-accent-ink);
+}
+
+.r-ghost {
+  border: 1px solid var(--r-line);
+  border-radius: 6px;
+}
+
+.r-sq {
+  min-width: 30px;
+  padding: 3px 0;
+}
+
+.r-link {
+  color: var(--r-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 3px 4px;
+}
+
+.r-primary {
+  background: var(--r-accent);
+  color: var(--r-accent-ink);
+  border-radius: 6px;
+}
+
+.r-legend {
+  font-size: 12.5px;
+  color: var(--r-muted);
+  margin-top: 6px;
+}
+
+.r-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  background: var(--r-notice);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 8px;
+}
+
+.r-banner,
+.r-empty {
+  color: var(--r-muted);
+  font-style: italic;
+}
+
+.r-image {
+  display: inline-block;
+  border: 1px dashed var(--r-line);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--r-muted);
+  font-size: 12.5px;
+}
+
+/* The page: Ascribe's bare render, in a readable measure. */
+.r-page-heading {
+  font-size: 1.9em;
+  margin: 8px 0 12px;
+}
+
+.r-page {
+  position: relative;
+  max-width: 46rem;
+  padding-left: 12px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.r-page img {
+  max-width: 100%;
+  height: auto;
+}
+
+.r-page a {
+  color: var(--r-accent);
+}
+
+.r-page code {
+  font-family: var(--r-mono);
+  font-size: 0.875em;
+  background: var(--r-code);
+  border-radius: 3px;
+  padding: 0.1em 0.3em;
+}
+
+.r-page pre {
+  background: var(--r-code);
+  border-radius: 6px;
+  padding: 10px 12px;
+  overflow: auto;
+}
+
+.r-page pre code {
+  background: none;
+  padding: 0;
+}
+
+.r-page table {
+  border-collapse: collapse;
+}
+
+.r-page th,
+.r-page td {
+  border: 1px solid var(--r-line);
+  padding: 4px 8px;
+}
+
+.r-page blockquote {
+  margin-inline: 0;
+  padding-inline-start: 12px;
+  border-inline-start: 3px solid var(--r-line);
+  color: var(--r-muted);
+}
+
+@media (max-width: 760px) {
+  .r-body {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .r-side {
+    width: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--r-line);
+    overflow: visible;
+  }
+
+  .r-main {
+    overflow: visible;
+    padding: 0 12px 32px;
+  }
+}

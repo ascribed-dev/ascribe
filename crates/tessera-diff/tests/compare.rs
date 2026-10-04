@@ -213,6 +213,38 @@ fn a_block_moved_into_a_container_is_a_move() {
 }
 
 #[test]
+fn a_line_form_note_is_one_block_with_its_paragraph() {
+    let without = "# Install\n\nFirst paragraph about installing.\n";
+    let with = "# Install\n\nFirst paragraph about installing.\n\n@note\nKeep the key safe.\n";
+    let a = version(MODEL, &[("install.md", with)]);
+    let b = version(MODEL, &[("install.md", without)]);
+    // The page renders one element from the directive through the
+    // paragraph, so its removal is one change with that element's anchor.
+    let removed = page(&a, &b);
+    let change = only_change(&removed);
+    assert_eq!(change.kind, ChangeKind::Removed);
+    assert_eq!(change.was.as_ref().unwrap().source, "install.md:5-6");
+    assert_eq!(change.text.as_deref(), Some("Keep the key safe."));
+    assert_eq!(removed.counts.removed, 1);
+    let added = page(&b, &a);
+    assert_eq!(
+        kinds(&added),
+        vec![(ChangeKind::Added, None, Some("install.md:5-6".into()))]
+    );
+    // A change to the paragraph is the paragraph's.
+    let c = version(MODEL, &[("install.md", &with.replace("safe", "secret"))]);
+    let changed = page(&a, &c);
+    assert_eq!(
+        kinds(&changed),
+        vec![(
+            ChangeKind::Changed,
+            Some("install.md:6-6".into()),
+            Some("install.md:6-6".into())
+        )]
+    );
+}
+
+#[test]
 fn a_change_inside_a_list_item_marks_the_paragraph_not_the_list() {
     let steps = |second: &str| {
         format!("# Install\n\n@steps\n1. Download the package.\n2. {second}\n3. Start the agent.\n")

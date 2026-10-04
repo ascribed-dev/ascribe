@@ -3,7 +3,8 @@
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
 - [Directive reference](directives.md): the language: directives, attributes, titles, phrases, links, and images.
 - [`ascribe.toml` reference](content-model.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
-- [Command reference](cli.md): `ascribe check`, `build`, `fmt`, and `lsp`, their options, outputs, and exit codes.
+- [Command reference](cli.md): `ascribe check`, `build`, `diff`, `fmt`, and `lsp`, their options, outputs, and exit codes.
+- [Review](review.md): seeing what a pull request changes as readers will see it, and a review report in CI.
 - [Diagnostics](diagnostics.md): every problem Ascribe reports, with its code and fix.
 - [Editing](editor.md): the VS Code extension, workspaces with several projects, and other editors.
 - [Astro](astro.md): publishing a site with `@ascribed/astro`.

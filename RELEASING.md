@@ -1,11 +1,11 @@
 # Releasing Ascribe
 
-A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), seven npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person starts it, approves each publishing step, and publishes the GitHub release at the end. Nothing is published without that person.
+A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), eight npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person starts it, approves each publishing step, and publishes the GitHub release at the end. Nothing is published without that person.
 
 | What | Where | Published by |
 |---|---|---|
 | `@ascribed/cli-darwin-arm64`, `-linux-arm64`, `-linux-x64`, `-win32-x64` | npm | the `npm` job |
-| `@ascribed/cli`, `@ascribed/elements`, `@ascribed/astro` | npm | the `npm` job |
+| `@ascribed/cli`, `@ascribed/elements`, `@ascribed/astro`, `@ascribed/review` | npm | the `npm` job |
 | `Ascribe.ascribe-vscode`, for each of the four platforms | VS Code Marketplace | the `marketplace` job |
 | `ascribe-<version>-<platform>.tar.gz` (`.zip` for Windows), the `.vsix` files, `SHA256SUMS` | GitHub release | the `github` job drafts it; you publish it |
 
@@ -70,13 +70,13 @@ Settings → Environments → **New environment** → `release`:
 
 ### 3. npm: trusted publishing
 
-The `npm` job publishes without a token. npm trades the job's GitHub OIDC token for a short-lived publish token, and signs a provenance statement. Each of the seven packages has to trust this repository's workflow. Do it once per package, with your own npm login (`npm login`, with two-factor authentication). A token that bypasses two-factor authentication can't change this setting.
+The `npm` job publishes without a token. npm trades the job's GitHub OIDC token for a short-lived publish token, and signs a provenance statement. Each of the eight packages has to trust this repository's workflow. Do it once per package, with your own npm login (`npm login`, with two-factor authentication). A token that bypasses two-factor authentication can't change this setting.
 
 ```sh
 npm trust github @ascribed/cli --file release.yml --repo ascribed-dev/ascribe --env release --allow-publish --dry-run
 ```
 
-Drop `--dry-run`, and repeat for `@ascribed/cli-darwin-arm64`, `@ascribed/cli-linux-arm64`, `@ascribed/cli-linux-x64`, `@ascribed/cli-win32-x64`, `@ascribed/elements`, and `@ascribed/astro`. The same form is on each package's npm page: Settings → Trusted Publisher.
+Drop `--dry-run`, and repeat for `@ascribed/cli-darwin-arm64`, `@ascribed/cli-linux-arm64`, `@ascribed/cli-linux-x64`, `@ascribed/cli-win32-x64`, `@ascribed/elements`, `@ascribed/astro`, and `@ascribed/review`. The same form is on each package's npm page: Settings → Trusted Publisher.
 
 - Every field is case-sensitive and exact, and npm doesn't validate it when you save. A mistake appears only when you publish.
 - The workflow file is `release.yml`, without its path. Renaming the workflow breaks publishing until each package is changed: a trusted publisher can be revoked and recreated, but not edited.
@@ -143,7 +143,7 @@ git push origin main
 
 Actions → **Release** → Run workflow, from `main`, with **publish** unchecked. It builds the binary on each platform, packs everything, installs the npm packages and each extension package on its platform and checks them against `examples/quill`, and runs the publish steps with `--dry-run`.
 
-**Check:** every job passes, and the Rust and JavaScript workflows are green on the same commit. A failing job on any platform stops the release: don't tag until it's fixed. Download the `release` artifact and look it over: `npm/` has seven tarballs, `vsix/` four packages, `github/` four archives.
+**Check:** every job passes, and the Rust and JavaScript workflows are green on the same commit. A failing job on any platform stops the release: don't tag until it's fixed. Download the `release` artifact and look it over: `npm/` has eight tarballs, `vsix/` four packages, `github/` four archives.
 
 ### 6. Tag
 
@@ -194,7 +194,7 @@ npm deprecate @ascribed/cli@0.2.0 "Broken; use 0.2.1"          # for each packag
 npm dist-tag add @ascribed/cli@0.1.0 latest                     # point `latest` back
 ```
 
-Unpublishing (`npm unpublish @ascribed/cli@0.2.0`) is allowed only within 72 hours and when nothing depends on the version; prefer deprecating. Keep the seven packages at one version: move the tags of all of them together.
+Unpublishing (`npm unpublish @ascribed/cli@0.2.0`) is allowed only within 72 hours and when nothing depends on the version; prefer deprecating. Keep the eight packages at one version: move the tags of all of them together.
 
 **A published extension version is bad:** the Marketplace has no rollback to an earlier version. Publish a fixed patch version. Unpublishing (`vsce unpublish`, or from the publisher's management page) removes the whole extension and its install count, so reserve it for emergencies.
 
