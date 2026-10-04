@@ -588,6 +588,28 @@ describe("the overlay", () => {
     expect(clicked).toHaveBeenCalled();
   });
 
+  it("goes to a thread on the page it's re-reading, once it has read it", async () => {
+    const o = await open();
+    // The page changed under the overlay: the thread is on the new one.
+    host.blocks = [{ anchor: anchor("guide.md:15-15"), threads: [thread("S", 15)] }];
+    host.changed();
+    expect(o.goToThread("S")).toBe(true);
+    await settle();
+    expect(root.querySelector("details")?.open).toBe(true);
+  });
+
+  it("opens a thread's own line, inside its block", async () => {
+    host.blocks = [
+      {
+        anchor: anchor("guide.md:3-5"),
+        threads: [thread("A", 4, { lines: { first: 4, last: 4 } })],
+      },
+    ];
+    await open();
+    one("button", "Open source").click();
+    expect(host.calls).toContain("openSource guide.md:4-4");
+  });
+
   it("at narrow widths, shows count markers that open a panel", async () => {
     host.blocks = [{ anchor: anchor("guide.md:3-3"), threads: [thread("A", 3), thread("B", 3)] }];
     await open(false);
