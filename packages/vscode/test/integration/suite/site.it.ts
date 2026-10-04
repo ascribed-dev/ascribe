@@ -85,7 +85,7 @@ describe("the site preview, against a fake dev server", () => {
       await vscode.workspace.openTextDocument(install),
       vscode.ViewColumn.One,
     );
-    // The editor's top line in the "Streaming sync" section.
+    // The editor scrolled to the "Streaming sync" section.
     const line = editor.document
       .getText()
       .split("\n")
@@ -95,13 +95,21 @@ describe("the site preview, against a fake dev server", () => {
       new vscode.Range(line + 1, 0, line + 1, 0),
       vscode.TextEditorRevealType.AtTop,
     );
-    await waitFor("the editor to scroll", () => (editor.visibleRanges[0]?.start.line ?? 0) > 0);
+    // How far it scrolls depends on the window's height: expect the section
+    // of whatever line ends up at the top, past the first heading.
+    const top = await waitFor("the editor to scroll", () => {
+      const first = editor.visibleRanges[0]?.start.line ?? 0;
+      return first > 20 && first;
+    });
+    const sections = preview.renders().at(-1)?.result.page?.sections ?? [];
+    const expected = sections.filter((s) => s.line <= top).at(-1)?.id;
+    assert.ok(expected, `a heading above line ${top}`);
     await vscode.commands.executeCommand("ascribe.openSitePreview");
     const opened = await waitFor("the site preview to open", () => preview.site.opened().at(-1));
     const url = new URL(opened);
     assert.equal(url.origin, origin);
     assert.equal(url.pathname, route);
-    assert.equal(url.hash, "#streaming-sync");
+    assert.equal(url.hash, `#${expected}`);
   });
 
   it("opens the previewed page when the page preview is active", async () => {
