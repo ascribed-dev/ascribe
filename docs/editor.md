@@ -89,6 +89,18 @@ A file with no `ascribe.toml` above it has nothing to preview: "This file isn't 
 
 The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts and loads nothing remote, so raw HTML that needs either looks different in the preview than on the site.
 
+### Review in the preview
+
+The preview can mark what changed against a git revision, the **base**, as [`ascribe diff`](cli.md#ascribe-diff) reports it: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](review.md#in-the-editor) has more.
+
+**Ascribe: Start Review** turns it on for the active page's project. It asks for the base: the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit you type. Either way it compares with the point where your branch left it, as a pull request does. The status bar shows **Review: off**, or the base, while an Ascribe page or the preview is active; click it to start review, or to list the changed pages once it's on. The preview offers **Start Review** as well. Review stays on for the project until **Ascribe: Stop Review**, or until the window closes.
+
+With review on, the preview's header shows the base, how many changes the page has (click it for the breakdown), **Changes / As it will be / As it was**, and next and previous change, with your place: "3 of 10 on this page". Past the last change, it offers the next changed page. A page that changed only through something it uses, such as a fragment, says so and links to the file. Clicking a mark's label opens the block's source with its lines selected. The marks follow your edits as you type, saved or not.
+
+**Ascribe: Changed Pages**, also the list button in the preview's title bar, lists the pages the change touches in the preview's build, each with its counts and, when its own file didn't change, what it changed through. Choosing one opens it and its preview.
+
+Review runs `git`, only once you start it. A project that isn't in a git repository, a revision that doesn't exist, or `git` missing from the path stops it from starting, with a message that says which; the preview works as before. Starting review reads the project as it was at the base, which takes about as much memory again as the project; stopping review frees it.
+
 ## Workspaces with several projects
 
 Every `ascribe.toml` in the workspace is a project, with its own language server. A repository that keeps its code and its documentation together can hold several, such as `site/ascribe.toml` and `handbook/ascribe.toml`, and you can work on all of them in one window. Folders named `node_modules` aren't searched.
@@ -119,7 +131,7 @@ npx ascribe check --config handbook
 
 ### Commands and output
 
-Commands act on the project that owns the active file: the preview, its **Build** picker, and **Show Server Output**. **Restart Language Server** restarts every project's server that has started. [Commands](#commands) has the details.
+Commands act on the project that owns the active file: the preview, its **Build** picker, review, and **Show Server Output**. **Restart Language Server** restarts every project's server that has started. [Commands](#commands) has the details.
 
 Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is just `Ascribe`.
 
@@ -147,6 +159,9 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 | **Ascribe: Show Server Output** | Opens the log of the active file's project. When no file of a project is active and the workspace has several projects, it asks which, showing whether each one's server is running. |
 | **Ascribe: Open Preview to the Side** | Opens the preview of the active page, starting its project's server if it hasn't started. |
 | **Ascribe: Select Preview Build** | Picks the build the preview shows, for the previewed page's project. |
+| **Ascribe: Start Review** | Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](#review-in-the-preview). |
+| **Ascribe: Stop Review** | Turns review off for the active page's project, and frees its base. |
+| **Ascribe: Changed Pages** | Lists the pages the change touches in the preview's build; choosing one opens it and its preview. |
 
 ## Other editors
 

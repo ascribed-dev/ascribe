@@ -23,6 +23,8 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ### The editor
 
+- Review in the preview: **Ascribe: Start Review** compares the active page's project with a git revision (the default branch, or one you type, from where your branch left it), and the preview marks what changed on the page, as `ascribe diff` reports it, following your edits as you type. Its header shows the base, the page's change count and breakdown, **Changes / As it will be / As it was**, and next and previous change, and offers the next changed page after the last change. **Ascribe: Changed Pages** lists the pages the change touches. A status bar item shows whether review is on. See [Review in the preview](docs/editor.md#review-in-the-preview).
+- The language server answers `ascribe/review/setBase` and `ascribe/review/changes`, and `ascribe/preview` with `review: true` adds the page's changes. See [`crates/tessera-lsp/README.md`](crates/tessera-lsp/README.md).
 - The preview scrolls with the editor by block instead of by heading, both ways: scrolling the editor scrolls the preview to the block at its top, moving the cursor shows its block, scrolling the preview scrolls the editor, and double-clicking a block puts the cursor on its source line. A block from a fragment follows its `@include` line. `ascribe.preview.scrollPreviewWithEditor` and `ascribe.preview.scrollEditorWithPreview` turn each direction off.
 
 ## 0.1.1 (2026-10-02)
