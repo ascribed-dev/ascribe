@@ -26,12 +26,14 @@
 //! Alongside the pages the emitter writes `_ascribe/schema.ts`, the Zod
 //! schema of every content type ([`crate::zod`]).
 
+mod anchor;
 mod blocks;
 mod element;
 mod frontmatter;
 mod inline;
 mod profile;
 
+pub(crate) use anchor::ANCHOR_START;
 pub use profile::{ASTRO_VERSION, AstroProfile};
 
 use tessera_core::{AssetPlacement, AssetUse, ConsumerProfile, RelPath};
@@ -54,14 +56,30 @@ pub const FILES_DIR: &str = "_ascribe/files";
 #[derive(Clone, Debug)]
 pub struct SiteEmitter {
     profile: AstroProfile,
+    anchors: bool,
 }
 
 impl SiteEmitter {
-    /// An emitter for the content model's consumer profile.
+    /// An emitter for the content model's consumer profile, without source
+    /// anchors.
     pub fn new(model: &ContentModel) -> SiteEmitter {
         SiteEmitter {
             profile: AstroProfile::from_consumer(&model.consumer),
+            anchors: false,
         }
+    }
+
+    /// The emitter with source anchors on or off (site-render contract §7):
+    /// with them on, every block says which source lines it came from. Off,
+    /// the output is exactly what it is without this call.
+    pub fn with_anchors(mut self, anchors: bool) -> SiteEmitter {
+        self.anchors = anchors;
+        self
+    }
+
+    /// Whether the emitter writes source anchors.
+    pub fn anchors(&self) -> bool {
+        self.anchors
     }
 
     /// The consumer profile the emitter writes for.
@@ -108,6 +126,7 @@ impl Emitter for SiteEmitter {
         let renderer = blocks::Renderer {
             page: cx,
             model: cx.emit.model,
+            anchors: self.anchors,
         };
         let mut out = frontmatter::render(cx, page)?;
         let body = renderer.blocks(&page.blocks).join("\n\n");

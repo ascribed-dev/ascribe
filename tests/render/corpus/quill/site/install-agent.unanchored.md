@@ -1,0 +1,124 @@
+The Quill agent watches your docs repository and syncs changes to Quill. This page covers installing the agent with a package manager, configuring it, and connecting it to Quill Cloud or a self-managed server. If you only want to try Quill, see [Try Quill in the browser](/quickstart/#try-in-browser).
+
+<ascribe-note type="tip" label="Tip" heading="Try it without installing">
+
+You can run Quill in the browser at play.quill.dev with no local setup.
+
+</ascribe-note>
+
+## Prerequisites <ascribe-attributes id="prerequisites"></ascribe-attributes>
+
+Before you install the agent, make sure you have:
+
+- Node.js 20 or later.
+- A docs repository that Quill can read.
+
+![Checklist of prerequisites](./_fragments/prerequisites.png)
+
+## Install the agent <ascribe-attributes id="install-agent"></ascribe-attributes>
+
+<ascribe-steps>
+
+1. Install the agent package:
+
+   <ascribe-tabs sync="pm">
+
+   <ascribe-tab value="npm" label="npm">
+
+   ```shell
+   npm install -g @quill/agent
+   ```
+
+   </ascribe-tab>
+
+   <ascribe-tab value="pnpm" label="pnpm">
+
+   ```shell
+   pnpm add -g @quill/agent
+   ```
+
+   </ascribe-tab>
+
+   <ascribe-tab value="yarn" label="Yarn">
+
+   ```shell
+   yarn global add @quill/agent
+   ```
+
+   </ascribe-tab>
+
+   </ascribe-tabs>
+
+2. Verify the install:
+
+   ```shell
+   quill --version
+   ```
+
+   The command prints the installed version, 3.4.1.
+
+   <ascribe-note type="note" label="Note">
+
+   The agent needs write access to your repository's `.quill/` directory.
+
+   </ascribe-note>
+
+3. Create `quill.yaml` at the root of your repository:
+
+   ```yaml
+   agent:
+     version: 3.4.1
+     watch: docs/
+   ```
+
+</ascribe-steps>
+
+## Connect to Quill <ascribe-attributes id="connect"></ascribe-attributes>
+
+<ascribe-tabs sync="deployment">
+
+<ascribe-tab value="cloud" label="Quill Cloud">
+
+Sign in to Quill Cloud and copy an API key from **Settings → Keys**, then add it to `quill.yaml`:
+
+```yaml
+cloud:
+  api_key: ${QUILL_KEY}
+```
+
+</ascribe-tab>
+
+<ascribe-tab value="self-managed" label="self-managed">
+
+Point the agent at your server. Self-managed servers must run Quill Server 3.3 or later.
+
+```yaml
+server:
+  url: https://quill.internal.example.com
+```
+
+</ascribe-tab>
+
+</ascribe-tabs>
+
+## Streaming sync <ascribe-attributes id="streaming-sync"></ascribe-attributes>
+
+<ascribe-availability scope="section">
+<ascribe-availability-target target="cloud" dimension="deployment" states="ga">Quill Cloud (GA)</ascribe-availability-target>; <ascribe-availability-target target="self-managed" dimension="deployment" states="preview" versions="3.4">self-managed (preview, 3.4+)</ascribe-availability-target>
+</ascribe-availability>
+
+Streaming sync pushes changes as you save, instead of on each commit.
+
+Quill Cloud's streaming sync is enabled by default for new Quill Cloud-hosted workspaces.
+
+For event formats, see the [streaming API reference](https://api.quill.dev/v3/streaming).
+
+## Troubleshooting <ascribe-attributes id="troubleshooting"></ascribe-attributes>
+
+<ascribe-note type="warning" label="Warning">
+
+If the agent exits immediately, check the log at `~/.quill/agent.log`.
+
+A common cause is an expired API key. Generate a new key, then restart the agent. See [Rotate keys](/keys/#rotate-keys).
+
+</ascribe-note>

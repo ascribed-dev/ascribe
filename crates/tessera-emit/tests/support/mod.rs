@@ -7,6 +7,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use html5ever::tendril::TendrilSink;
+use html5ever::{ParseOpts, QualName, local_name, ns, parse_fragment};
+use markup5ever_rcdom::{Handle, NodeData, RcDom};
 use tessera_core::FileId;
 use tessera_emit::{Contents, EmitContext, Emitter, emit};
 use tessera_resolve::{AstroRouter, DiskFs, Layout, Project};
@@ -113,4 +116,78 @@ pub fn memory_project_with_files(
         fs = fs.with_file(path, text);
     }
     Project::load(Arc::new(model), layout, &fs)
+}
+
+/// Parses an HTML fragment in a `<body>` context and writes it as a
+/// normalized tree, one node per line, as `tests/render/README.md` says:
+/// element names, attributes as a sorted set, text exactly, comments exactly;
+/// whitespace-only text is dropped except inside `<pre>`. With `drop_anchors`,
+/// `data-ascribe-source` and `data-ascribe-via` are left out.
+pub fn html_tree(html: &str, drop_anchors: bool) -> Vec<String> {
+    let dom = parse_fragment(
+        RcDom::default(),
+        ParseOpts::default(),
+        QualName::new(None, ns!(html), local_name!("body")),
+        Vec::new(),
+        false,
+    )
+    .one(html);
+    let mut lines = Vec::new();
+    // The fragment's nodes are the children of the one root element.
+    for root in dom.document.children.borrow().iter() {
+        for child in root.children.borrow().iter() {
+            walk(child, 0, false, drop_anchors, &mut lines);
+        }
+    }
+    lines
+}
+
+fn walk(node: &Handle, depth: usize, in_pre: bool, drop_anchors: bool, out: &mut Vec<String>) {
+    let pad = "  ".repeat(depth);
+    match &node.data {
+        NodeData::Element { name, attrs, .. } => {
+            let mut attributes: Vec<String> = attrs
+                .borrow()
+                .iter()
+                .filter(|a| {
+                    !(drop_anchors
+                        && matches!(&*a.name.local, "data-ascribe-source" | "data-ascribe-via"))
+                })
+                .map(|a| format!("{}={:?}", a.name.local, a.value.to_string()))
+                .collect();
+            attributes.sort();
+            let tag = name.local.to_string();
+            out.push(format!("{pad}<{tag} {}>", attributes.join(" ")));
+            let pre = in_pre || tag == "pre";
+            for child in node.children.borrow().iter() {
+                walk(child, depth + 1, pre, drop_anchors, out);
+            }
+        }
+        NodeData::Text { contents } => {
+            let text = contents.borrow().to_string();
+            if in_pre || !text.trim().is_empty() {
+                out.push(format!("{pad}{text:?}"));
+            }
+        }
+        NodeData::Comment { contents } => out.push(format!("{pad}<!--{contents}-->")),
+        _ => {}
+    }
+}
+
+/// The first difference between two trees from [`html_tree`]: its index and
+/// the two nodes there.
+pub fn first_difference(want: &[String], got: &[String]) -> Option<(usize, String, String)> {
+    if want == got {
+        return None;
+    }
+    let at = want
+        .iter()
+        .zip(got)
+        .position(|(w, g)| w != g)
+        .unwrap_or(want.len().min(got.len()));
+    Some((
+        at,
+        want.get(at).cloned().unwrap_or_default(),
+        got.get(at).cloned().unwrap_or_default(),
+    ))
 }

@@ -15,8 +15,8 @@ use std::sync::Arc;
 use clap::{Args as ClapArgs, ValueEnum};
 use tessera_check::{LoadError, Project};
 use tessera_emit::{
-    EmitContext, EmitError, Emitter, JsonEmitter, OutputDir, PlainEmitter, SiteEmitter, StoreError,
-    emit,
+    EmitContext, EmitError, Emitter, JsonEmitter, OutputDir, OutputOptions, PlainEmitter,
+    SiteEmitter, StoreError, emit,
 };
 use tessera_model::Build;
 use tessera_resolve::AstroRouter;
@@ -49,6 +49,11 @@ pub struct Args {
     /// How to show the checks' results: the same formats as `ascribe check`.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
+
+    /// Mark each block of the site output with the source file and lines it
+    /// came from, for review.
+    #[arg(long)]
+    pub anchors: bool,
 }
 
 /// An output.
@@ -105,7 +110,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         return exit::PROBLEMS;
     }
 
-    match write_outputs(&project, &builds, &args.emit, err) {
+    match write_outputs(&project, &builds, &args.emit, args.anchors, err) {
         Ok(()) => exit::OK,
         Err(message) => fail(err, &message),
     }
@@ -116,6 +121,7 @@ fn write_outputs(
     project: &Project,
     builds: &[&Build],
     emit_names: &[Emit],
+    anchors: bool,
     err: &mut dyn Write,
 ) -> Result<(), String> {
     let model = project.model();
@@ -134,7 +140,7 @@ fn write_outputs(
 
     let plain = PlainEmitter;
     let json = JsonEmitter;
-    let site = SiteEmitter::new(model);
+    let site = SiteEmitter::new(model).with_anchors(anchors);
     let mut emitters: Vec<&dyn Emitter> = Vec::new();
     for e in emit_names {
         let emitter: &dyn Emitter = match e {
@@ -169,8 +175,11 @@ fn write_outputs(
                 .iter()
                 .filter(|f| f.kind == tessera_emit::FileKind::Asset)
                 .count();
+            let options = OutputOptions {
+                anchors: anchors && emitter.name() == site.name(),
+            };
             let replaced = output
-                .replace(&build.name, emitter.name(), &emission.files)
+                .replace_with(&build.name, emitter.name(), &emission.files, options)
                 .map_err(store_message)?;
             let _ = writeln!(
                 err,

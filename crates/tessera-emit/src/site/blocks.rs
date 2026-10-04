@@ -7,6 +7,9 @@
 //! text, and chunks are separated by blank lines, so every element is
 //! separated from the blocks around it (contract §0) and the markdown an
 //! element wraps is parsed as markdown (SPEC §9.4).
+//!
+//! With anchors on, each chunk also says where its block came from
+//! ([`super::anchor`]).
 
 use tessera_core::availability::{Detail, Entry, parse_availability};
 use tessera_core::{Attributes, DefaultValue};
@@ -16,15 +19,77 @@ use tessera_syntax::{
     Alignment, BlockKind, Bound, DirectiveLine, Inline, Link, PrimaryValue, Table,
 };
 
+use super::anchor::{Anchor, html_tag};
 use super::element::{Attrs, close, empty, marker, open, wrap};
 use super::inline::{Mode, render, value_text};
 use crate::emitter::PageContext;
 use crate::labels::{availability_target_text, plain_text};
-use crate::plain::{Prev, escape_closing_hash, fenced, list, quote};
+use crate::plain::{Prev, escape_closing_hash, fenced, list, quote, starts_nested};
 
 pub(crate) struct Renderer<'a> {
     pub(crate) page: &'a PageContext<'a>,
     pub(crate) model: &'a ContentModel,
+    /// Whether to write source anchors.
+    pub(crate) anchors: bool,
+}
+
+/// One block of site markdown, and its anchor comment.
+struct Chunk {
+    text: String,
+    /// The anchor comment, written on the line before the text.
+    anchor: Option<String>,
+    /// What the block is, as far as a list's looseness goes.
+    kind: ChunkKind,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ChunkKind {
+    /// A paragraph, which has no element of its own in a tight list.
+    Paragraph,
+    /// A block whose blank lines are inside it (a code block, a raw HTML
+    /// block, a list), so they don't make a list loose.
+    Closed,
+    /// Anything else. A blank line in it is a blank line between blocks: an
+    /// element wrapping markdown.
+    Other,
+}
+
+impl Chunk {
+    fn new(text: String, kind: ChunkKind) -> Chunk {
+        Chunk {
+            text,
+            anchor: None,
+            kind,
+        }
+    }
+
+    /// The chunk with its anchor comment, if it has one.
+    fn full(self) -> String {
+        match self.anchor {
+            Some(anchor) => format!("{anchor}\n{}", self.text),
+            None => self.text,
+        }
+    }
+}
+
+fn texts(chunks: Vec<Chunk>) -> Vec<String> {
+    chunks.into_iter().map(Chunk::full).collect()
+}
+
+/// Whether a list the emitter writes renders as a loose list: its items are
+/// separated by blank lines, an item's blocks are, or an item holds an element
+/// that wraps markdown, which has blank lines inside it.
+fn renders_loose(tight: bool, bodies: &[Vec<Chunk>]) -> bool {
+    (!tight && bodies.len() > 1)
+        || bodies.iter().any(|chunks| {
+            chunks
+                .iter()
+                .skip(1)
+                .any(|c| !tight || !starts_nested(&c.text))
+                || chunks
+                    .iter()
+                    .any(|c| c.kind == ChunkKind::Other && c.text.contains("\n\n"))
+        })
 }
 
 impl Renderer<'_> {
@@ -51,6 +116,10 @@ impl Renderer<'_> {
     /// A list of sibling blocks as chunks: one string per block (a directive
     /// that wraps the next block is written with it).
     pub(crate) fn blocks(&self, blocks: &[ResolvedBlock]) -> Vec<String> {
+        texts(self.chunks(blocks))
+    }
+
+    fn chunks(&self, blocks: &[ResolvedBlock]) -> Vec<Chunk> {
         let mut out = Vec::new();
         let mut pending: Vec<&ResolvedBlock> = Vec::new();
         let mut prev = Prev::None;
@@ -62,7 +131,7 @@ impl Renderer<'_> {
             let mut chunks = self.block(block, prev);
             let wrapped = !pending.is_empty();
             while let Some(directive) = pending.pop() {
-                chunks = self.apply(directive, chunks);
+                chunks = self.apply(directive, Some(block), chunks);
             }
             // A list holding an element is loose whatever
             // the source said, since the element needs a blank line.
@@ -84,17 +153,45 @@ impl Renderer<'_> {
         // Directives with no block after them (an error the checks report).
         let mut chunks = Vec::new();
         while let Some(directive) = pending.pop() {
-            chunks = self.apply(directive, chunks);
+            chunks = self.apply(directive, None, chunks);
         }
         out.extend(chunks);
         out
     }
 
-    fn block(&self, block: &ResolvedBlock, prev: Prev) -> Vec<String> {
+    /// The block's anchor, when anchors are on.
+    fn anchor(&self, block: &ResolvedBlock) -> Option<Anchor> {
+        if !self.anchors {
+            return None;
+        }
+        Anchor::of(self.page.emit, block)
+    }
+
+    /// A chunk for a block the markdown pipeline renders as a `tag` element,
+    /// with its anchor comment.
+    fn anchored(&self, block: &ResolvedBlock, tag: &str, text: String, kind: ChunkKind) -> Chunk {
+        Chunk {
+            anchor: self.anchor(block).map(|a| a.comment(tag, &[])),
+            text,
+            kind,
+        }
+    }
+
+    /// An element the emitter writes, with the anchor's attributes on its tag.
+    fn element(&self, anchor: Option<Anchor>, text: String) -> Chunk {
+        let text = match anchor {
+            Some(anchor) => anchor.on_element(text),
+            None => text,
+        };
+        Chunk::new(text, ChunkKind::Other)
+    }
+
+    fn block(&self, block: &ResolvedBlock, prev: Prev) -> Vec<Chunk> {
         match &block.kind {
             ResolvedKind::Leaf(b) => self.leaf(block, &b.kind),
             ResolvedKind::BlockQuote { children } => {
-                vec![quote(&self.blocks(children).join("\n\n"))]
+                let text = quote(&self.blocks(children).join("\n\n"));
+                vec![self.anchored(block, "blockquote", text, ChunkKind::Other)]
             }
             ResolvedKind::List {
                 ordered,
@@ -102,33 +199,89 @@ impl Renderer<'_> {
                 tight,
                 items,
             } => {
-                let bodies: Vec<Vec<String>> =
-                    items.iter().map(|i| self.blocks(&i.children)).collect();
-                vec![list(*ordered, *start, *tight, &bodies, prev)]
+                let bodies: Vec<Vec<Chunk>> =
+                    items.iter().map(|i| self.chunks(&i.children)).collect();
+                // A paragraph in a tight list has no `<p>` to carry its anchor:
+                // the item's says where it is.
+                let loose = renders_loose(*tight, &bodies);
+                let bodies: Vec<Vec<String>> = bodies
+                    .into_iter()
+                    .map(|chunks| {
+                        chunks
+                            .into_iter()
+                            .map(|c| {
+                                if !loose && c.kind == ChunkKind::Paragraph {
+                                    c.text
+                                } else {
+                                    c.full()
+                                }
+                            })
+                            .collect()
+                    })
+                    .collect();
+                let text = list(*ordered, *start, *tight, &bodies, prev);
+                let tag = if *ordered { "ol" } else { "ul" };
+                let anchor = self.anchor(block).map(|anchor| {
+                    let cx = self.page.emit;
+                    let items: Option<Vec<(u32, u32)>> = items
+                        .iter()
+                        .map(|i| super::anchor::lines(cx, block.file, i.span))
+                        .collect();
+                    anchor.comment(tag, &items.unwrap_or_default())
+                });
+                vec![Chunk {
+                    text,
+                    anchor,
+                    kind: ChunkKind::Closed,
+                }]
             }
             ResolvedKind::Container {
                 opener, children, ..
             } => self.container(block, opener, children),
-            ResolvedKind::Group { name, arms, .. } => vec![self.group(name, arms)],
+            ResolvedKind::Group { name, arms, .. } => {
+                let text = self.group(block, name, arms);
+                vec![self.element(self.anchor(block), text)]
+            }
         }
     }
 
-    fn leaf(&self, block: &ResolvedBlock, kind: &BlockKind) -> Vec<String> {
+    fn leaf(&self, block: &ResolvedBlock, kind: &BlockKind) -> Vec<Chunk> {
         match kind {
-            BlockKind::Heading(h) => vec![self.heading(block, h)],
-            BlockKind::Paragraph(p) => vec![self.inlines(block, &p.inlines, Mode::default())],
-            BlockKind::CodeBlock(c) => vec![fenced(c)],
-            // Raw HTML passes through (SPEC §9.5, "HTML passthrough").
+            BlockKind::Heading(h) => {
+                let tag = format!("h{}", h.level.clamp(1, 6));
+                let text = self.heading(block, h);
+                vec![self.anchored(block, &tag, text, ChunkKind::Other)]
+            }
+            BlockKind::Paragraph(p) => {
+                let text = self.inlines(block, &p.inlines, Mode::default());
+                vec![self.anchored(block, "p", text, ChunkKind::Paragraph)]
+            }
+            BlockKind::CodeBlock(c) => {
+                vec![self.anchored(block, "pre", fenced(c), ChunkKind::Closed)]
+            }
+            // Raw HTML passes through (SPEC §9.5, "HTML passthrough"). Its
+            // anchor names the element it starts with; one that starts with
+            // anything else has none.
             BlockKind::HtmlBlock(h) => {
                 let text = h.literal.trim_end_matches(['\n', '\r']);
                 if text.trim().is_empty() {
                     Vec::new()
                 } else {
-                    vec![text.to_owned()]
+                    match html_tag(text) {
+                        Some(tag) => {
+                            vec![self.anchored(block, &tag, text.to_owned(), ChunkKind::Closed)]
+                        }
+                        None => vec![Chunk::new(text.to_owned(), ChunkKind::Closed)],
+                    }
                 }
             }
-            BlockKind::ThematicBreak => vec!["---".to_owned()],
-            BlockKind::Table(t) => vec![self.table(block, t)],
+            BlockKind::ThematicBreak => {
+                vec![self.anchored(block, "hr", "---".to_owned(), ChunkKind::Other)]
+            }
+            BlockKind::Table(t) => {
+                let text = self.table(block, t);
+                vec![self.anchored(block, "table", text, ChunkKind::Other)]
+            }
             BlockKind::Directive(line) => self.directive(block, line),
             BlockKind::BlockQuote(_)
             | BlockKind::List(_)
@@ -200,49 +353,89 @@ impl Renderer<'_> {
     }
 
     /// A directive line that stands alone (it wraps no following block).
-    fn directive(&self, block: &ResolvedBlock, line: &DirectiveLine) -> Vec<String> {
+    fn directive(&self, block: &ResolvedBlock, line: &DirectiveLine) -> Vec<Chunk> {
+        let anchor = self.anchor(block);
         match line.name.as_str() {
             "id" | "include" | "steps" | "details" => Vec::new(),
-            "available" => self.availability(block).into_iter().collect(),
+            "available" => self
+                .availability(block)
+                .map(|text| self.element(anchor, text))
+                .into_iter()
+                .collect(),
             "note" => match &line.primary {
                 Some(PrimaryValue::Text(text)) => {
                     let content = self.inlines(block, &text.inlines, Mode::default());
-                    vec![self.note(line, &[content])]
+                    let content = self.anchored(block, "p", content, ChunkKind::Paragraph);
+                    vec![self.element(anchor, self.note(line, &[content.full()]))]
                 }
                 _ => Vec::new(),
             },
             name if self.model.widget(name).is_some() => {
                 let inner = match &line.primary {
                     Some(PrimaryValue::Text(text)) => {
-                        vec![self.inlines(block, &text.inlines, Mode::default())]
+                        let content = self.inlines(block, &text.inlines, Mode::default());
+                        vec![
+                            self.anchored(block, "p", content, ChunkKind::Paragraph)
+                                .full(),
+                        ]
                     }
                     _ => Vec::new(),
                 };
-                vec![self.widget(line, &inner)]
+                if inner.is_empty() {
+                    // An empty element on a line of its own is a paragraph
+                    // to CommonMark, which gets the anchor too.
+                    let text = self.element(anchor, self.widget(line, &inner)).text;
+                    vec![self.anchored(block, "p", text, ChunkKind::Paragraph)]
+                } else {
+                    vec![self.element(anchor, self.widget(line, &inner))]
+                }
             }
             _ => Vec::new(),
         }
     }
 
-    /// A following-block directive applied to the block it binds.
-    fn apply(&self, directive: &ResolvedBlock, bound: Vec<String>) -> Vec<String> {
+    /// A following-block directive applied to the block it binds. An element
+    /// that wraps the block is anchored from the directive through the block.
+    fn apply(
+        &self,
+        directive: &ResolvedBlock,
+        block: Option<&ResolvedBlock>,
+        bound: Vec<Chunk>,
+    ) -> Vec<Chunk> {
         let ResolvedKind::Leaf(b) = &directive.kind else {
             return bound;
         };
         let BlockKind::Directive(line) = &b.kind else {
             return bound;
         };
+        let spanning = || {
+            if self.anchors {
+                Anchor::spanning(self.page.emit, directive, block)
+            } else {
+                None
+            }
+        };
         match line.name.as_str() {
-            "note" => vec![self.note(line, &bound)],
-            "steps" => vec![wrap("ascribe-steps", &Attrs::new(), &bound)],
-            "details" => vec![self.details(directive, line, &bound)],
+            "note" => vec![self.element(spanning(), self.note(line, &texts(bound)))],
+            "steps" => vec![self.element(
+                spanning(),
+                wrap("ascribe-steps", &Attrs::new(), &texts(bound)),
+            )],
+            "details" => {
+                vec![self.element(spanning(), self.details(directive, line, &texts(bound)))]
+            }
             "available" => {
-                let mut out: Vec<String> = self.availability(directive).into_iter().collect();
+                let anchor = self.anchor(directive);
+                let mut out: Vec<Chunk> = self
+                    .availability(directive)
+                    .map(|text| self.element(anchor, text))
+                    .into_iter()
+                    .collect();
                 out.extend(bound);
                 out
             }
             name if self.model.widget(name).is_some() => {
-                vec![self.widget(line, &bound)]
+                vec![self.element(spanning(), self.widget(line, &texts(bound)))]
             }
             _ => bound,
         }
@@ -253,15 +446,17 @@ impl Renderer<'_> {
         block: &ResolvedBlock,
         opener: &DirectiveLine,
         children: &[ResolvedBlock],
-    ) -> Vec<String> {
-        let inner = self.blocks(children);
+    ) -> Vec<Chunk> {
+        let anchor = self.anchor(block);
         match opener.name.as_str() {
-            "note" => vec![self.note(opener, &inner)],
-            "details" => vec![self.details(block, opener, &inner)],
-            name if self.model.widget(name).is_some() => {
-                vec![self.widget(opener, &inner)]
+            "note" => vec![self.element(anchor, self.note(opener, &self.blocks(children)))],
+            "details" => {
+                vec![self.element(anchor, self.details(block, opener, &self.blocks(children)))]
             }
-            _ => inner,
+            name if self.model.widget(name).is_some() => {
+                vec![self.element(anchor, self.widget(opener, &self.blocks(children)))]
+            }
+            _ => self.chunks(children),
         }
     }
 
@@ -377,15 +572,34 @@ impl Renderer<'_> {
         attrs
     }
 
+    /// An arm's anchor: its span, in the group's file.
+    fn arm_anchor(&self, group: &ResolvedBlock, arm: &ResolvedArm) -> Option<Anchor> {
+        if !self.anchors {
+            return None;
+        }
+        Anchor::of_span(self.page.emit, group.file, arm.span, &group.via)
+    }
+
+    /// An arm's element, anchored.
+    fn arm_element(&self, group: &ResolvedBlock, arm: &ResolvedArm, text: String) -> String {
+        match self.arm_anchor(group, arm) {
+            Some(anchor) => anchor.on_element(text),
+            None => text,
+        }
+    }
+
     /// A surviving group (SPEC §9.4): `<ascribe-tabs>` for `@variant`, and a
     /// `<ascribe-group>` of one element per arm for a widget.
-    fn group(&self, name: &str, arms: &[ResolvedArm]) -> String {
+    fn group(&self, block: &ResolvedBlock, name: &str, arms: &[ResolvedArm]) -> String {
         if name == "variant" {
-            return self.tabs(arms);
+            return self.tabs(block, arms);
         }
         let elements: Vec<String> = arms
             .iter()
-            .map(|arm| self.widget(&arm.opener, &self.blocks(&arm.children)))
+            .map(|arm| {
+                let text = self.widget(&arm.opener, &self.blocks(&arm.children));
+                self.arm_element(block, arm, text)
+            })
             .collect();
         wrap(
             "ascribe-group",
@@ -395,7 +609,7 @@ impl Renderer<'_> {
     }
 
     /// `<ascribe-tabs>` and its `<ascribe-tab>`s (contract §3).
-    fn tabs(&self, arms: &[ResolvedArm]) -> String {
+    fn tabs(&self, block: &ResolvedBlock, arms: &[ResolvedArm]) -> String {
         let values: Vec<Vec<(String, Vec<String>)>> = arms
             .iter()
             .map(|arm| arm_values(self.model, &arm.opener))
@@ -424,7 +638,8 @@ impl Renderer<'_> {
                 let attrs = Attrs::new()
                     .with_opt("value", value)
                     .with_opt("label", label);
-                wrap("ascribe-tab", &attrs, &self.blocks(&arm.children))
+                let text = wrap("ascribe-tab", &attrs, &self.blocks(&arm.children));
+                self.arm_element(block, arm, text)
             })
             .collect();
         let attrs = Attrs::new().with_opt("sync", sync);

@@ -64,3 +64,23 @@ description = "Custom elements and <details> wrapping markdown pass through, and
 name = "image-ends-heading"
 covers = ["image-ends-heading", "image-inline", "heading"]
 description = "A marker directly after an image applies to the image, even when the image ends the heading; the emitter's heading marker follows a space."
+
+[[fixture]]
+name = "anchors-blocks"
+covers = ["anchor-markdown-blocks", "anchor-list-items", "anchor-tight-list", "anchor-raw-html"]
+description = "Every block the markdown pipeline renders carries its anchor: headings, paragraphs, code, lists and their items, a table, a quote, an image, a break, and raw HTML. A tight list's text has no paragraph to carry one."
+
+[[fixture]]
+name = "anchors-elements"
+covers = ["anchor-elements"]
+description = "Every element the emitter writes carries its anchor on its own tag: notes, steps, details, availability, widgets, a widget group, and tabs."
+
+[[fixture]]
+name = "anchors-nesting"
+covers = ["anchor-nesting", "anchor-list-items"]
+description = "A paragraph in a list item in steps in a variant arm, and a list in a quote in another arm, each with its own anchor."
+
+[[fixture]]
+name = "anchors-fragment"
+covers = ["anchor-via"]
+description = "Blocks from a fragment, and from a fragment it includes, carry the includes they came through."

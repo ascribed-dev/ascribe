@@ -24,6 +24,16 @@
 //! so a tag ends at its first `>`, and the text of a heading or code span
 //! can't be mistaken for a tag. Any other marker, and any text that only
 //! looks like one, stays as raw HTML.
+//!
+//! # How anchors are applied
+//!
+//! A source anchor (contract §7) is an HTML block holding only an
+//! `<!--ascribe-anchor …-->` comment, which comrak writes as it is, followed by
+//! a line ending. It's removed with that line ending, and its attributes go on
+//! the next tag when that tag, after only whitespace, opens the element the
+//! anchor names: an element comrak writes, or the first tag of a raw HTML
+//! block. A list's anchor also gives each of its items an anchor, found by
+//! counting nested lists. comrak escapes `<` in text, so the next `<` is a tag.
 
 use comrak::{Options, markdown_to_html};
 
@@ -34,7 +44,7 @@ const MARKER: &str = "ascribe-attributes";
 /// tables, strikethrough, bare links, and task lists as Astro's defaults have
 /// them, and the attribute markers applied.
 pub fn render_site_html(markdown: &str) -> String {
-    apply_markers(&markdown_to_html(markdown, &options()))
+    apply_anchors(&apply_markers(&markdown_to_html(markdown, &options())))
 }
 
 /// Renders one line of inline markdown as HTML, with no paragraph around it:
@@ -196,6 +206,182 @@ fn encode(value: &str) -> String {
             '"' => out.push_str("&quot;"),
             _ => out.push(ch),
         }
+    }
+    out
+}
+
+/// The start of an anchor comment.
+const ANCHOR: &str = "<!--ascribe-anchor";
+
+/// An anchor comment found in rendered HTML.
+struct FoundAnchor {
+    start: usize,
+    /// Where the comment and the line ending after it end.
+    end: usize,
+    tag: String,
+    source: String,
+    via: Option<String>,
+    items: Vec<String>,
+}
+
+/// Applies every source anchor in rendered HTML, and removes them all.
+fn apply_anchors(html: &str) -> String {
+    let mut edits: Vec<Edit> = Vec::new();
+    for anchor in anchors(html) {
+        edits.push(Edit {
+            start: anchor.start,
+            end: anchor.end,
+            text: String::new(),
+        });
+        edits.extend(anchor_edits(html, &anchor));
+    }
+    edits.sort_by_key(|e| e.start);
+    let mut out = String::with_capacity(html.len() + edits.len() * 48);
+    let mut at = 0;
+    for edit in edits {
+        if edit.start < at {
+            continue;
+        }
+        out.push_str(&html[at..edit.start]);
+        out.push_str(&edit.text);
+        at = edit.end;
+    }
+    out.push_str(&html[at..]);
+    out
+}
+
+/// Every well-formed anchor comment: `<!--ascribe-anchor`, ` name="value"`
+/// attributes with `tag` and `source` among them, and `-->`.
+fn anchors(html: &str) -> Vec<FoundAnchor> {
+    let mut found = Vec::new();
+    let mut from = 0;
+    while let Some(at) = html[from..].find(ANCHOR) {
+        let start = from + at;
+        from = start + ANCHOR.len();
+        let Some((attributes, len)) = parse_anchor(&html[from..]) else {
+            continue;
+        };
+        let mut end = from + len;
+        if html[end..].starts_with("\r\n") {
+            end += 2;
+        } else if html[end..].starts_with('\n') {
+            end += 1;
+        }
+        let get = |name: &str| {
+            attributes
+                .iter()
+                .find(|(n, _)| n == name)
+                .map(|(_, v)| v.clone())
+        };
+        if let (Some(tag), Some(source)) = (get("tag"), get("source")) {
+            found.push(FoundAnchor {
+                start,
+                end,
+                tag: tag.to_ascii_lowercase(),
+                source,
+                via: get("via").filter(|v| !v.is_empty()),
+                items: get("items")
+                    .map(|v| v.split_whitespace().map(str::to_owned).collect())
+                    .unwrap_or_default(),
+            });
+        }
+        from = end;
+    }
+    found
+}
+
+/// Reads ` name="value"`s and the `-->` after them, as [`parse_open_tag`]
+/// reads a marker's.
+fn parse_anchor(text: &str) -> Option<(Vec<(String, String)>, usize)> {
+    let mut attributes = Vec::new();
+    let mut rest = text;
+    loop {
+        if let Some(after) = rest.strip_prefix("-->") {
+            return Some((attributes, text.len() - after.len()));
+        }
+        let after = rest.strip_prefix(' ')?;
+        let name_len = attribute_name_len(after)?;
+        let name = &after[..name_len];
+        let after = after[name_len..].strip_prefix("=\"")?;
+        let value_end = after.find(['"', '\n', '\r'])?;
+        if !after[value_end..].starts_with('"') {
+            return None;
+        }
+        attributes.push((name.to_owned(), decode(&after[..value_end])));
+        rest = &after[value_end + 1..];
+    }
+}
+
+/// Where an anchor's attributes go: after the name of the tag that follows
+/// it, if that tag opens the element it names, and on each item of a list.
+fn anchor_edits(html: &str, anchor: &FoundAnchor) -> Vec<Edit> {
+    let rest = &html[anchor.end..];
+    let skipped = rest.len() - rest.trim_start().len();
+    let open = anchor.end + skipped;
+    let Some(name_end) = opens(html, open, &anchor.tag) else {
+        return Vec::new();
+    };
+    let mut edits = vec![Edit {
+        start: name_end,
+        end: name_end,
+        text: anchor_attributes(&anchor.source, anchor.via.as_deref()),
+    }];
+    if (anchor.tag == "ul" || anchor.tag == "ol") && !anchor.items.is_empty() {
+        let items = list_items(html, name_end);
+        let path = anchor.source.rsplit_once(':').map_or("", |(p, _)| p);
+        if items.len() == anchor.items.len() {
+            for (at, lines) in items.into_iter().zip(&anchor.items) {
+                edits.push(Edit {
+                    start: at,
+                    end: at,
+                    text: anchor_attributes(&format!("{path}:{lines}"), anchor.via.as_deref()),
+                });
+            }
+        }
+    }
+    edits
+}
+
+/// When the HTML at `at` opens a `tag` element, where its name ends.
+fn opens(html: &str, at: usize, tag: &str) -> Option<usize> {
+    let rest = html.get(at..)?.strip_prefix('<')?;
+    let name = rest.get(..tag.len())?;
+    if !name.eq_ignore_ascii_case(tag) {
+        return None;
+    }
+    match rest[tag.len()..].chars().next() {
+        Some(' ' | '\t' | '\n' | '\r' | '>' | '/') => Some(at + 1 + tag.len()),
+        _ => None,
+    }
+}
+
+/// Where the name of each `<li>` of the list whose open tag's name ends at
+/// `from` ends: the items at its own level, not those of lists inside it.
+fn list_items(html: &str, from: usize) -> Vec<usize> {
+    let mut items = Vec::new();
+    let mut depth = 0usize;
+    let mut at = from;
+    while let Some(found) = html[at..].find('<') {
+        let tag = at + found;
+        at = tag + 1;
+        if html[at..].starts_with("/ul>") || html[at..].starts_with("/ol>") {
+            if depth == 0 {
+                break;
+            }
+            depth -= 1;
+        } else if opens(html, tag, "ul").is_some() || opens(html, tag, "ol").is_some() {
+            depth += 1;
+        } else if depth == 0 && opens(html, tag, "li").is_some() {
+            items.push(tag + 3);
+        }
+    }
+    items
+}
+
+fn anchor_attributes(source: &str, via: Option<&str>) -> String {
+    let mut out = format!(" data-ascribe-source=\"{}\"", encode(source));
+    if let Some(via) = via {
+        out.push_str(&format!(" data-ascribe-via=\"{}\"", encode(via)));
     }
     out
 }
