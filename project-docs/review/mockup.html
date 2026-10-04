@@ -2123,7 +2123,9 @@
             t.resolved ? h("span", { class: "badge resolved", text: "Resolved" }) : null,
             t.detached ? h("span", { class: "badge det", text: "Detached" }) : null,
             t.outdated ? h("span", { class: "badge out", text: "Outdated" }) : null,
-            t.conversation ? h("span", { class: "badge conv", text: "On the conversation" }) : null,
+            t.conversation
+              ? h("span", { class: "badge conv", text: "In the review summary" })
+              : null,
             pend ? h("span", { class: "badge pending", text: "Unsent" }) : null,
           ]);
           // Actions always sit on their own row, so the header never pushes one of them onto a line by itself.
@@ -2296,7 +2298,10 @@
             c.conversation
               ? h("div", {
                   class: "hint",
-                  text: "This page's file isn't in the pull request, so GitHub can't put a comment on its lines. Your comment will go on the pull request's conversation and still show here.",
+                  text:
+                    c.conversation === "file"
+                      ? "This page's file isn't in the pull request, so GitHub can't put a comment on its lines. Your comment will go in your review's summary and still show here."
+                      : "GitHub only takes comments on the lines a pull request changes and the few around them. Your comment will go in your review's summary and still show here.",
                 })
               : null,
             refused
@@ -2327,7 +2332,7 @@
             l1: b.l1,
             l2: b.l2,
             view: "preview",
-            conversation: !FILES[b.file].inPR,
+            conversation: !FILES[b.file].inPR ? "file" : b.change ? false : "line",
             unpushed: b.unpushed,
           };
           if (!state.wide) state.panel = key(b);
@@ -2393,6 +2398,7 @@
                       l1: n,
                       l2: n,
                       view: "source",
+                      conversation: f.marks[n] ? false : "line",
                       unpushed: state.file === R && n === 41,
                     };
                     render();
@@ -3013,7 +3019,7 @@
                     text:
                       (t.comments[0] === c
                         ? t.conversation
-                          ? " (on the conversation): "
+                          ? " (in the summary): "
                           : ": "
                         : " (reply): ") + c.body,
                   }),

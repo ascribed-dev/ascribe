@@ -84,6 +84,15 @@ interface ReviewSession {
 
 Comment bodies are Markdown from other people. This package returns them as text; rendering them safely is the overlay's job (phase 6).
 
+### Checked against GitHub
+
+These were confirmed on a real pull request (October 2026), not taken from documentation. Keep the tests' responses in step with them.
+
+- A comment on a line outside a diff's hunks: GraphQL returns `thread: null` and no error.
+- Editing the summary of a pending review created without one fails; created with one, it works and the review stays pending.
+- A reply sent while the viewer has a pending review comes back `PENDING`, in that review.
+- After a later commit, GitHub moves a thread's `line` itself when the text is unchanged, and sets `isOutdated` with `line: null` when it changed.
+
 ## Tasks
 
 1. The package setup, if phase 3 hasn't done it.

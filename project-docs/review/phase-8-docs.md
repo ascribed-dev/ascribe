@@ -23,7 +23,7 @@ Part of [Review](README.md). Requires phases 1 to 7. Docs, and fixes for what th
 1. **What you get,** in a paragraph, with one screenshot of the site preview under review.
 2. **Review a pull request:** check out the branch, start review, read the changed pages, comment, submit. The page preview first (it needs nothing else), then the site preview.
 3. **What you need for each part:** a table. The diff: `git`. Comments in VS Code: a GitHub sign-in. Comments on the site preview: `gh`, signed in. The report in CI: nothing for the reader.
-4. **How comments map to the pull request:** a comment on a block is a review comment on its file and line; a fragment's thread shows on every page that includes it; comments GitHub can't anchor go on the conversation; new comments stay unsent, visible only to you, until you submit; a reply can go at once; resolving acts at once.
+4. **How comments map to the pull request:** a comment on a block is a review comment on its file and line; a fragment's thread shows on every page that includes it; GitHub anchors comments only on changed lines and the few around them, so a comment on any other block goes in your review's summary and still shows on the block; new comments stay unsent, visible only to you, until you submit; a reply can go at once unless you have unsent comments; resolving acts at once.
 5. **The report in CI.**
 6. **When something's missing:** no pull request found, not signed in, anchors not arriving on the site, a thread that's detached, local commits not pushed.
 7. **Privacy and security:** what runs where, that no token is stored or reaches a page, and that review mode is the only time Ascribe contacts GitHub.
