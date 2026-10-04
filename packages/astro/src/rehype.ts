@@ -1,5 +1,5 @@
-// The attribute marker as a rehype plugin, for Astro's `unified()` markdown
-// processor (`@astrojs/markdown-remark`).
+// The attribute marker and source anchors as a rehype plugin, for Astro's
+// `unified()` markdown processor (`@astrojs/markdown-remark`).
 //
 // Astro builds that processor as: remark-parse, remark-gfm, remark-smartypants,
 // the user's remark plugins, remark-collect-images, remark-rehype (raw HTML
@@ -12,14 +12,26 @@
 // Astro's processors can share `findEdits`.
 
 import type { Root } from "hast";
-import { findEdits, toProperty, type HastNode } from "./attributes.js";
+import { findAnchors, findEdits, toProperty, type HastNode } from "./attributes.js";
 
-/** Applies the site output's attribute markers (`ascribe-attributes`). */
+/** Applies the site output's attribute markers (`ascribe-attributes`) and source anchors. */
 export default function rehypeAscribeAttributes(): (tree: Root) => void {
   return (tree) => {
     const edits = findEdits(tree as HastNode);
-    if (edits.length === 0) return;
+    const anchors = findAnchors(tree as HastNode);
+    if (edits.length === 0 && anchors.length === 0) return;
     const removed = new Set<HastNode>();
+    for (const anchor of anchors) {
+      for (const { node, attributes } of anchor.targets) {
+        const properties = (node.properties ??= {});
+        for (const attribute of attributes) {
+          const [name, value] = toProperty(attribute);
+          properties[name] = value;
+        }
+      }
+      if (anchor.replace) anchor.replace.node.value = anchor.replace.value;
+      for (const node of anchor.remove) removed.add(node);
+    }
     for (const edit of edits) {
       const properties = (edit.target.properties ??= {});
       for (const attribute of edit.attributes) {

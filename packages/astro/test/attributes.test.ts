@@ -1,6 +1,6 @@
 // Cases beyond tests/render/ for the marker rules, on hand-built trees.
 import { describe, expect, it } from "vitest";
-import { findEdits, toProperty, type HastNode } from "../src/attributes.js";
+import { findAnchors, findEdits, toProperty, type HastNode } from "../src/attributes.js";
 import rehypeAscribeAttributes from "../src/rehype.js";
 
 const raw = (value: string): HastNode => ({ type: "raw", value });
@@ -101,5 +101,90 @@ describe("toProperty", () => {
     expect(toProperty(["class", "a  b"])).toEqual(["className", ["a", "b"]]);
     expect(toProperty(["data-caption", "hi"])).toEqual(["dataCaption", "hi"]);
     expect(toProperty(["caption", "hi"])).toEqual(["caption", "hi"]);
+  });
+});
+
+describe("findAnchors", () => {
+  const anchor = (attributes: string): HastNode => raw(`<!--ascribe-anchor${attributes}-->`);
+
+  it("applies an anchor to the element it names, and removes it with the line ending after it", () => {
+    const paragraph = element("p", [text("Hi")]);
+    const comment = anchor(' tag="p" source="a.md:1-2" via="b.md:3"');
+    const newline = text("\n");
+    const edits = findAnchors({ type: "root", children: [comment, newline, paragraph] });
+    expect(edits).toEqual([
+      {
+        remove: [comment, newline],
+        targets: [
+          {
+            node: paragraph,
+            attributes: [
+              ["data-ascribe-source", "a.md:1-2"],
+              ["data-ascribe-via", "b.md:3"],
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("applies to nothing when the next node isn't the element it names", () => {
+    for (const next of [element("ul"), text("tight text"), element("strong")]) {
+      const comment = anchor(' tag="p" source="a.md:1-1"');
+      const edits = findAnchors({ type: "root", children: [comment, next] });
+      expect(edits).toEqual([{ remove: [comment], targets: [] }]);
+    }
+  });
+
+  it("gives a list's items their lines only when they match", () => {
+    const list = element("ul", [text("\n"), element("li"), text("\n"), element("li")]);
+    const [edit] = findAnchors({
+      type: "root",
+      children: [anchor(' tag="ul" source="a%20b.md:3-6" items="3-4 5-6"'), list],
+    });
+    expect(edit?.targets.map((t) => t.attributes)).toEqual([
+      [["data-ascribe-source", "a%20b.md:3-6"]],
+      [["data-ascribe-source", "a%20b.md:3-4"]],
+      [["data-ascribe-source", "a%20b.md:5-6"]],
+    ]);
+    const [short] = findAnchors({
+      type: "root",
+      children: [anchor(' tag="ul" source="a.md:3-6" items="3-4"'), list],
+    });
+    expect(short?.targets).toHaveLength(1);
+  });
+
+  it("writes the anchor into raw HTML's first tag", () => {
+    const html = raw('<DIV class="x">\nhi\n</DIV>');
+    const [edit] = findAnchors({
+      type: "root",
+      children: [anchor(' tag="div" source="a.md:1-3" via="x&quot;y.md:2"'), html],
+    });
+    expect(edit?.replace).toEqual({
+      node: html,
+      value:
+        '<DIV data-ascribe-source="a.md:1-3" data-ascribe-via="x&quot;y.md:2" class="x">\nhi\n</DIV>',
+    });
+  });
+
+  it("ignores near-anchors", () => {
+    for (const value of [
+      '<!--ascribe-anchor tag="p"-->',
+      '<!--ascribe-anchor source="a.md:1-1"-->',
+      "<!--ascribe-anchor tag='p' source='a.md:1-1'-->",
+      '<!-- ascribe-anchor tag="p" source="a.md:1-1"-->',
+      '<!--ascribe-anchor tag="p" source="a.md:1-1" -->',
+    ]) {
+      expect(findAnchors({ type: "root", children: [raw(value), element("p")] })).toEqual([]);
+    }
+  });
+
+  it("is applied by the rehype plugin", () => {
+    const tree = {
+      type: "root",
+      children: [anchor(' tag="h2" source="a.md:1-1"'), text("\n"), element("h2", [text("T")])],
+    };
+    rehypeAscribeAttributes()(tree as never);
+    expect(tree.children).toEqual([element("h2", [text("T")], { dataAscribeSource: "a.md:1-1" })]);
   });
 });

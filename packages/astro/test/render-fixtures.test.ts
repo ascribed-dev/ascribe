@@ -24,6 +24,30 @@ const fixtures = readdirSync(root, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 
+// Pages written with and without source anchors (contract §7.5): each anchor
+// fixture's, and examples/quill's in the corpus.
+const pairs: { name: string; anchored: string; unanchored: string }[] = [
+  ...fixtures
+    .filter((name) => existsSync(`${root}${name}/unanchored.md`))
+    .map((name) => ({
+      name,
+      anchored: readFileSync(`${root}${name}/input.md`, "utf8"),
+      unanchored: readFileSync(`${root}${name}/unanchored.md`, "utf8"),
+    })),
+  ...readdirSync(`${root}corpus/quill`).flatMap((build) =>
+    readdirSync(`${root}corpus/quill/${build}`)
+      .filter((file) => file.endsWith(".md") && !file.endsWith(".unanchored.md"))
+      .map((file) => ({
+        name: `quill/${build}/${file}`,
+        anchored: readFileSync(`${root}corpus/quill/${build}/${file}`, "utf8"),
+        unanchored: readFileSync(
+          `${root}corpus/quill/${build}/${file.replace(/\.md$/, ".unanchored.md")}`,
+          "utf8",
+        ),
+      })),
+  ),
+];
+
 // Astro's `unified()` processor, up to the user's rehype plugins and `rehype-raw`.
 async function withUnified(markdown: string): Promise<string> {
   const file = await unified()
@@ -67,6 +91,39 @@ describe("tests/render fixtures", () => {
       }
     });
   }
+
+  for (const [processor, render] of [
+    ["unified", withUnified],
+    ["satteri", withSatteri],
+  ] as const) {
+    describe(`${processor}: with anchors, the same page`, () => {
+      it("finds the pages", () => {
+        expect(pairs.length).toBeGreaterThanOrEqual(13);
+      });
+      for (const { name, anchored, unanchored } of pairs) {
+        it(name, async () => {
+          const withAnchors = await render(anchored);
+          const without = await render(unanchored);
+          expect(withAnchors).not.toContain("ascribe-anchor");
+          expect(withAnchors).toContain("data-ascribe-source");
+          expect(firstDifference(without, withAnchors, { dropAnchors: true }), withAnchors).toBe(
+            undefined,
+          );
+        });
+      }
+    });
+  }
+
+  // Without the plugin, an anchored page is the same page plus invisible
+  // comments, and the attributes on the elements Ascribe writes.
+  it("degrades quietly without the plugin", () => {
+    for (const { name, anchored, unanchored } of pairs) {
+      const { html } = markdownToHtml(anchored, { features: { gfm: true } });
+      const withoutComments = html.replace(/<!--ascribe-anchor [^>]*-->\n?/g, "");
+      const plain = markdownToHtml(unanchored, { features: { gfm: true } }).html;
+      expect(firstDifference(plain, withoutComments, { dropAnchors: true }), name).toBeUndefined();
+    }
+  });
 
   // Without the plugin the fixtures must fail: the comparison can tell.
   it("fails when the plugin isn't applied", async () => {

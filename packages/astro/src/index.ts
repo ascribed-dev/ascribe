@@ -24,7 +24,7 @@ import { watchDev } from "./dev.js";
 import { copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
 import rehypeAscribeAttributes from "./rehype.js";
-import { runBuild } from "./run.js";
+import { anchorsFor, runBuild } from "./run.js";
 import { satteriAscribeAttributes } from "./satteri.js";
 
 export { default as rehypeAscribeAttributes } from "./rehype.js";
@@ -44,6 +44,12 @@ export interface AscribeOptions {
    * the platform binary installed with `@ascribed/cli`.
    */
   binary?: string;
+  /**
+   * Mark each block of the site output with the source lines it came from
+   * (source anchors), for review: `"dev"` in `astro dev` only, `true` always.
+   * Default: `false`.
+   */
+  anchors?: boolean | "dev";
 }
 
 /** Runs `ascribe build`, checks the site's routing, adds the markdown plugin, and serves published files. */
@@ -111,6 +117,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               configPath: project.configPath,
               build: options.build,
               cwd: project.dir,
+              anchors: anchorsFor(options.anchors, command),
             });
             if (result.diagnostics !== "") logger.warn(result.diagnostics);
             if (result.summary !== "") logger.info(result.summary);

@@ -48,6 +48,7 @@ The [Astro guide](https://github.com/ascribed-dev/ascribe/blob/main/docs/astro.m
 | `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
 | `binary` | The `ascribe` binary, relative to the Astro root. By default, `ASCRIBE_BIN`, then the binary `@ascribed/cli` installed. |
+| `anchors` | Source anchors (`ascribe build --anchors`), for review: `"dev"` in `astro dev` only, `true` always. By default, `false`. |
 
 ## Development
 
@@ -56,7 +57,7 @@ The [Astro guide](https://github.com/ascribed-dev/ascribe/blob/main/docs/astro.m
 | `src/index.ts` | The integration |
 | `src/content.ts` | `ascribeCollection`, for `content.config.ts` |
 | `src/Elements.astro` | Loads `@ascribed/elements` (stylesheet and script) |
-| `src/attributes.ts` | The attribute-marker rules, on a hast tree |
+| `src/attributes.ts` | The attribute-marker and source-anchor rules, on a hast tree |
 | `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's Markdown processors |
 | `src/project.ts`, `src/binary.ts`, `src/run.ts`, `src/files.ts`, `src/dev.ts` | `ascribe.toml`, the binary, running it, serving files, dev rebuilds |
 
