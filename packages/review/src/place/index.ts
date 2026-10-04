@@ -1,2 +1,22 @@
-// @ascribed/review/place: placing review threads on a page's blocks, in Node.
-export {};
+// Placing review threads on rendered blocks: source anchors, moving lines
+// between a commit and the working tree, and matching threads to a page.
+export {
+  anchorKey,
+  decodePath,
+  encodePath,
+  formatSource,
+  parseSource,
+  type Anchor,
+  type SourceRange,
+} from "./anchor.js";
+export { lineMap, linesAt, parseHunks, shiftLine, type Hunk, type LineMap } from "./lines.js";
+export {
+  locateThreads,
+  placeOnPage,
+  type DetachReason,
+  type LocateContext,
+  type LocatedThread,
+  type PageRef,
+  type PlacedThreads,
+} from "./place.js";
+export type { Author, Side, Thread, ThreadComment } from "../shared/types.js";
