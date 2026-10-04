@@ -212,16 +212,21 @@ describe("the preview, with the real language server on examples/quill", () => {
     await preview.receive({ type: "openLine", line: steps });
     assert.equal(vscode.window.activeTextEditor?.selection.active.line, steps);
 
-    // The preview scrolls: the editor follows.
+    // The preview scrolls: the editor follows, with the heading at its top
+    // (just below sticky scroll's lines, which VS Code counts as visible).
     const troubleshooting = lineOf("## Troubleshooting");
     await preview.receive({ type: "scrolled", line: troubleshooting });
+    const tops = () =>
+      vscode.window.visibleTextEditors
+        .filter((e) => e.document.uri.fsPath === install.fsPath)
+        .map((e) => e.visibleRanges[0]?.start.line);
     await waitFor("the editor at the troubleshooting heading", () =>
-      vscode.window.visibleTextEditors.some(
-        (e) =>
-          e.document.uri.fsPath === install.fsPath &&
-          e.visibleRanges.some((r) => r.start.line === troubleshooting),
+      tops().some(
+        (line) => line !== undefined && line <= troubleshooting && troubleshooting <= line + 5,
       ),
-    );
+    ).catch((error: unknown) => {
+      throw new Error(`${String(error)}; editor tops ${JSON.stringify(tops())}`);
+    });
   });
 
   it("shows an image from a directory beside the content root, and serves only that directory", async () => {
