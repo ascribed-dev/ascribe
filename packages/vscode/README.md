@@ -13,7 +13,7 @@ The extension activates in a workspace that contains an `ascribe.toml`. A worksp
 - **Refactoring**: renaming or moving a file updates the links and includes that point to it; renaming a heading's `@id` or a phrase updates its uses.
 - **Formatting** into canonical form, on request or on save.
 - **Highlighting** of directives, phrases, and title lines.
-- **A live preview** that renders the page as the published site does, as you type, for any build.
+- **A live page preview** that renders the page as the published site does, as you type, for any build, and a **site preview** that opens it on the site's dev server.
 - **Review**: the preview marks what changed against a git revision, and lists the pages a change touches.
 
 ## The `ascribe` binary
@@ -34,7 +34,8 @@ The extension includes `ascribe` for your platform, so it works immediately. Whe
 
 ## Commands
 
-- **Ascribe: Open Preview to the Side**, also the preview button in a Markdown editor's title bar.
+- **Ascribe: Open Page Preview** and **Ascribe: Open Page Preview to the Side**, also the preview button in a Markdown editor's title bar.
+- **Ascribe: Open Site Preview**: the page on the site's dev server (`astro dev` with `@ascribed/astro`), in the browser.
 - **Ascribe: Select Preview Build**
 - **Ascribe: Start Review**, **Ascribe: Stop Review**, and **Ascribe: Changed Pages**
 - **Ascribe: Restart Language Server**

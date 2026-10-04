@@ -68,11 +68,30 @@ describe("package.json", () => {
     );
   });
 
+  it("names the previews as the README does, keeping the preview command's id", () => {
+    const titles = new Map(
+      (manifest.contributes.commands as { command: string; title: string }[]).map((c) => [
+        c.command,
+        c.title,
+      ]),
+    );
+    expect(titles.get("ascribe.openPagePreview")).toBe("Open Page Preview");
+    expect(titles.get("ascribe.openPreview")).toBe("Open Page Preview to the Side");
+    expect(titles.get("ascribe.openSitePreview")).toBe("Open Site Preview");
+    // Open Site Preview is on a page's title bar only while a dev server has written dev.json.
+    const title = manifest.contributes.menus["editor/title"];
+    expect(title.find((entry) => entry.command === "ascribe.openSitePreview")?.when).toBe(
+      "ascribe.active && ascribe.devServer && resourceLangId == markdown",
+    );
+  });
+
   it("declares the commands and settings the extension reads", () => {
     expect(manifest.contributes.commands.map((command) => command.command)).toEqual([
       "ascribe.restartServer",
       "ascribe.showOutput",
+      "ascribe.openPagePreview",
       "ascribe.openPreview",
+      "ascribe.openSitePreview",
       "ascribe.selectPreviewBuild",
       "ascribe.startReview",
       "ascribe.stopReview",

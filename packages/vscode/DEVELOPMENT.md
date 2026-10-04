@@ -36,7 +36,7 @@ The server logs to the development window's **Ascribe** output channels (**Ascri
 
 ## The preview
 
-**Ascribe: Open Preview to the Side** opens a panel that shows the active page
+**Ascribe: Open Page Preview to the Side** opens a panel that shows the active page
 as the published site shows it, and follows the editor: edits appear within
 about a tenth of a second (the debounce is 100 ms; measured end to end, median
 113 ms, maximum 167 ms over 12 edits in the integration suite), including

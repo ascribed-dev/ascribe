@@ -102,6 +102,7 @@ if (process.argv.includes("--tests")) {
       "suite/preview.it": "test/integration/suite/preview.it.ts",
       "suite/quill.it": "test/integration/suite/quill.it.ts",
       "suite/review.it": "test/integration/suite/review.it.ts",
+      "suite/site.it": "test/integration/suite/site.it.ts",
       "suite/stub.it": "test/integration/suite/stub.it.ts",
       "suite/threads.it": "test/integration/suite/threads.it.ts",
     },
