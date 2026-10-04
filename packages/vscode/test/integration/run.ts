@@ -71,7 +71,15 @@ const suites: Suite[] = [
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The default `ascribe.startServers`: the suite checks what starts when.
-    prepare: () => ({ "ascribe.path": realServer }),
+    prepare: (workspace) => {
+      // The folders the suite turns into projects. On Linux, VS Code's file
+      // watcher can miss a directory made while it runs, and then never
+      // reports the files in it; folders that exist when it starts are watched.
+      for (const folder of ["guides", "idle"]) {
+        mkdirSync(path.join(workspace, folder, "docs"), { recursive: true });
+      }
+      return { "ascribe.path": realServer };
+    },
   },
 ];
 
