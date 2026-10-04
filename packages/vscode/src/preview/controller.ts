@@ -534,7 +534,9 @@ export class PreviewController implements vscode.Disposable {
       const goToFirst = this.firstChangeOf === document.uri.fsPath;
       if (goToFirst) this.firstChangeOf = undefined;
       review = {
-        base: baseName(result.review.base),
+        base: server
+          ? this.review.baseNameOf(server, result.review.base)
+          : baseName(result.review.base),
         commit: baseCommit(result.review.base),
         page: result.review.changes,
         wasHtml: result.review.wasHtml,

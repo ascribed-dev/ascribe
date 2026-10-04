@@ -11,6 +11,7 @@ import {
   sourceLocation,
 } from "../src/toolbar/page.js";
 import {
+  againstText,
   buttonLabel,
   nextChangedPage,
   pageDetail,
@@ -111,6 +112,21 @@ describe("what the app says", () => {
     expect(position(0, -1)).toBe("No changes on this page");
     expect(position(1, -1)).toBe("1 change on this page");
     expect(position(10, 2)).toBe("3 of 10 on this page");
+  });
+
+  it("names the pull request's base as GitHub does", () => {
+    const view = (requested: string, threads: ThreadsState) =>
+      ({ base: { requested }, threads }) as unknown as Parameters<typeof againstText>[0];
+    const on = {
+      state: "on",
+      pullRequest: { number: 128, url: "https://github.com/a/b/pull/128", baseRefName: "main" },
+    } as unknown as ThreadsState;
+    const off = { state: "none", message: "" } as unknown as ThreadsState;
+    expect(againstText(view("origin/main", on))).toEqual({ pullRequest: "#128", base: "main" });
+    expect(againstText(view("origin/main", off))).toEqual({
+      pullRequest: null,
+      base: "origin/main",
+    });
   });
 
   it("puts the unsent count on the button", () => {

@@ -9,9 +9,14 @@ import type { BaseInfo, ChangedPage, PageChanges } from "./protocol.js";
 /** The content model's file, which `because` names last when it's a cause. */
 const MODEL_FILE = "ascribe.toml";
 
-/** The base as the header and the status bar name it: the revision asked for. */
-export function baseName(base: BaseInfo): string {
-  return base.requested;
+/**
+ * The base as the header and the status bar name it: the revision asked for,
+ * or, when that's the pull request's base on a remote (`origin/main`), the
+ * branch's name (`main`), as GitHub names it.
+ */
+export function baseName(base: BaseInfo, pullRequestBase?: string): string {
+  const name = pullRequestBase;
+  return name !== undefined && base.requested.endsWith(`/${name}`) ? name : base.requested;
 }
 
 /** The commit compared with, shortened: where the branch left the base. */

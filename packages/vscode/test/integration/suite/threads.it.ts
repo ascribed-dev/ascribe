@@ -53,11 +53,11 @@ describe("review threads, with a fake GitHub", () => {
     const started = await preview.review.start(workspace());
     assert.equal(started.problem, null);
     assert.equal(started.base?.requested, "origin/main");
-    assert.equal(preview.review.status().text, "$(git-compare) Review: #7 against origin/main");
+    assert.equal(preview.review.status().text, "$(git-compare) Review: #7 against main");
     const render = await drawn("the header", (r) =>
       (r.report?.reviewHeader ?? "").startsWith("#7 against"),
     );
-    assert.match(render.report?.reviewHeader ?? "", /^#7 against origin\/main/);
+    assert.match(render.report?.reviewHeader ?? "", /^#7 against main/);
   });
 
   it("shows a thread made on GitHub beside its block", async () => {

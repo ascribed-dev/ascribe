@@ -258,7 +258,7 @@ describe("review in the site preview", () => {
         const page = await startReview(server.origin, `${BASE}/guides/my-setup`);
         await expect
           .poll(async () => panel(page).textContent(), { timeout: 30_000 })
-          .toContain("#7 against origin/main");
+          .toContain("#7 against main");
         // The thread, beside the intro paragraph.
         const card = page.locator("[data-ascribe-overlay] .thread", {
           hasText: "Say what Loom is first.",
