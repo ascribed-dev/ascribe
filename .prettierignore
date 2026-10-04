@@ -5,10 +5,8 @@
 # (SPEC §10), and the project docs are hand-wrapped.
 **/*.md
 
-# Rust, test fixtures, and examples have their own formats and tools, and the
-# project docs' sketches (the review mockup) are hand-written like the docs.
+# Rust, test fixtures, and examples have their own formats and tools.
 target/
-project-docs/
 crates/
 tests/
 examples/
