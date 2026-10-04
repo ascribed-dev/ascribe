@@ -1,0 +1,370 @@
+// A pull request's review threads, for the preview's overlay and the source
+// editor: one `ReviewSession` per project while review is on, made with VS
+// Code's GitHub sign-in (or the GitHub CLI's), and every request the overlay
+// makes, answered here. GitHub stays in the extension host: the webview never
+// sees a token and makes no requests.
+
+import { execFile } from "node:child_process";
+import * as path from "node:path";
+import * as vscode from "vscode";
+import {
+  contentPrefixOf,
+  ghTransport,
+  openReview,
+  parseRemote,
+  readCheckout,
+  ReviewError,
+  tokenTransport,
+  type GitHubTransport,
+  type ReviewSession,
+} from "@ascribed/review/github";
+import type { PageRef } from "@ascribed/review/place";
+import type { ProjectServer } from "../client.js";
+import { comparable } from "../projects.js";
+import type { ChangedPage, LocalState, ThreadsMethod, ThreadsView } from "./protocol.js";
+import { answerThreads } from "./threadsRequests.js";
+import { pullRequestBase } from "./threadsText.js";
+
+/** The scope posting review comments needs: `repo` (`public_repo` covers public repositories only). */
+export const GITHUB_SCOPES = ["repo"];
+
+/** A project's connection to its pull request. */
+export type Connection =
+  /** No GitHub remote, a detached `HEAD`, or no open pull request for the branch: nothing to show. */
+  | { state: "none" }
+  /** No GitHub sign-in: the changes show without threads. */
+  | { state: "signed-out"; host: string; gh: boolean }
+  | { state: "error"; message: string }
+  | {
+      state: "on";
+      session: ReviewSession;
+      via: "vscode" | "gh" | "test";
+      local: { state: LocalState; behind: number; ahead: number };
+      /** The content root, absolute: where the threads' content paths are. */
+      contentRoot: string;
+      /** The git revision for the pull request's base: `origin/main`. */
+      base: string;
+    };
+
+/** What the threads need from review. */
+export interface ThreadsHost {
+  /** The project's changed pages, for which pages show a thread. */
+  changedPages(server: ProjectServer): Promise<ChangedPage[]>;
+}
+
+/** Where a change to the threads came from: the preview's overlay, the source editor, or a refresh. */
+export type ChangeOrigin = "preview" | "source" | "refresh";
+
+/** What the extension returns for tests. */
+export interface ThreadsApi {
+  /** The connection of the project in `folder`. */
+  connection(folder: string): Connection | undefined;
+  /**
+   * Makes sessions with `transport` instead of signing in: a fake GitHub.
+   * `undefined` goes back to signing in.
+   */
+  useTransport(transport: ((host: string) => GitHubTransport) | undefined): void;
+}
+
+/**
+ * The review threads of each project with review on. A session is made when
+ * review starts (asking for a GitHub sign-in only then, and only when the
+ * reviewer started it), read again on Refresh, and dropped when review stops.
+ */
+export class ThreadsController implements vscode.Disposable {
+  private readonly connections = new Map<string, Connection>();
+  private readonly connecting = new Map<string, Promise<Connection>>();
+  /** Projects whose reviewer chose the GitHub CLI's sign-in. */
+  private readonly viaGh = new Set<string>();
+  /** The last page the preview showed of each project: comments are made on it. */
+  private readonly pages = new Map<string, PageRef>();
+  private readonly changed = new vscode.EventEmitter<{
+    server: ProjectServer;
+    origin: ChangeOrigin;
+  }>();
+  private transport: ((host: string) => GitHubTransport) | undefined;
+
+  /** Fires when a project's threads changed: connected, refreshed, or acted on. */
+  readonly onDidChange = this.changed.event;
+
+  constructor(private readonly host: ThreadsHost) {}
+
+  get api(): ThreadsApi {
+    return {
+      connection: (folder) => this.connections.get(comparable(folder)),
+      useTransport: (transport) => {
+        this.transport = transport;
+      },
+    };
+  }
+
+  /** The project's connection, while review is on. */
+  connection(server: ProjectServer): Connection | undefined {
+    return this.connections.get(key(server));
+  }
+
+  /** The project's session, when it's connected. */
+  session(server: ProjectServer): ReviewSession | undefined {
+    const connection = this.connection(server);
+    return connection?.state === "on" ? connection.session : undefined;
+  }
+
+  /**
+   * Finds the project's pull request and reads its threads. With
+   * `interactive`, asks for a GitHub sign-in when there's none; without, uses
+   * one only if VS Code has it already.
+   */
+  connect(server: ProjectServer, options: { interactive: boolean }): Promise<Connection> {
+    const id = key(server);
+    const running = this.connecting.get(id);
+    if (running) return running;
+    const next = this.open(server, options.interactive)
+      .catch((error: unknown): Connection => ({ state: "error", message: messageOf(error) }))
+      .then((connection) => {
+        if (this.connecting.get(id) === next) {
+          this.connections.set(id, connection);
+          this.changed.fire({ server, origin: "refresh" });
+        }
+        return connection;
+      })
+      .finally(() => {
+        if (this.connecting.get(id) === next) this.connecting.delete(id);
+      });
+    this.connecting.set(id, next);
+    return next;
+  }
+
+  /** Drops the project's session: review stopped. */
+  disconnect(server: ProjectServer): void {
+    const id = key(server);
+    this.connecting.delete(id);
+    this.pages.delete(id);
+    if (this.connections.delete(id)) this.changed.fire({ server, origin: "refresh" });
+  }
+
+  /** Reads the pull request and its threads from GitHub again, without asking to sign in. */
+  async refresh(server: ProjectServer): Promise<Connection> {
+    return this.connect(server, { interactive: false });
+  }
+
+  /** Signs in to GitHub in VS Code, then reads the threads. */
+  async signIn(server: ProjectServer): Promise<Connection> {
+    this.viaGh.delete(key(server));
+    return this.connect(server, { interactive: true });
+  }
+
+  /** Reads the threads with the GitHub CLI's sign-in. */
+  async useGh(server: ProjectServer): Promise<Connection> {
+    this.viaGh.add(key(server));
+    return this.connect(server, { interactive: false });
+  }
+
+  /** What the preview shows about the project's threads; `null` when there's no pull request. */
+  view(server: ProjectServer, goTo: string | null): ThreadsView | null {
+    const connection = this.connection(server);
+    if (!connection || connection.state === "none") return null;
+    if (connection.state === "signed-out") {
+      return {
+        state: "signed-out",
+        pullRequest: null,
+        local: null,
+        gh: connection.gh,
+        message: null,
+        goTo: null,
+      };
+    }
+    if (connection.state === "error") {
+      return {
+        state: "error",
+        pullRequest: null,
+        local: null,
+        gh: false,
+        message: connection.message,
+        goTo: null,
+      };
+    }
+    const pr = connection.session.pullRequest;
+    return {
+      state: "on",
+      pullRequest: { number: pr.number, url: pr.url, baseRefName: pr.baseRefName },
+      local: connection.local,
+      gh: false,
+      message: null,
+      goTo,
+    };
+  }
+
+  /**
+   * Answers one of the overlay's requests (or the source editor's) for the
+   * page the preview shows (`page`: its build and content path). Rejects with
+   * a `ReviewError`, whose message is a sentence to show.
+   */
+  async handle(
+    server: ProjectServer,
+    page: { build: string; path: string } | undefined,
+    method: ThreadsMethod,
+    params: Record<string, unknown>,
+    origin: ChangeOrigin,
+  ): Promise<unknown> {
+    const session = this.session(server);
+    if (!session) throw new ReviewError("not-found", "Review comments aren't on for this project.");
+    const id = key(server);
+    const answer = await answerThreads(
+      {
+        session,
+        page,
+        // A comment from the source editor is on the file, in every build.
+        lastPage: origin === "preview" ? this.pages.get(id) : undefined,
+        changedPages: () => this.host.changedPages(server),
+      },
+      method,
+      params,
+    );
+    if (answer.page) this.pages.set(id, answer.page);
+    if (answer.changed) this.changed.fire({ server, origin });
+    return answer.result;
+  }
+
+  private async open(server: ProjectServer, interactive: boolean): Promise<Connection> {
+    const projectDir = server.project.folder;
+    let checkout;
+    try {
+      checkout = await readCheckout(projectDir);
+    } catch {
+      // Not a git repository, or one with no commits: nothing to review on GitHub.
+      return { state: "none" };
+    }
+    const host = checkout.bases[0]?.host;
+    if (host === undefined) return { state: "none" };
+    let transport = this.transport;
+    let via: "vscode" | "gh" | "test" = "test";
+    if (!transport && this.viaGh.has(key(server))) {
+      transport = (h) => ghTransport({ host: h });
+      via = "gh";
+    }
+    if (!transport) {
+      const signedIn = await githubSession(host, interactive);
+      if (!signedIn) return { state: "signed-out", host, gh: await ghSignedIn(host) };
+      transport = (h) => tokenTransport(() => githubToken(h), { host: h });
+      via = "vscode";
+    }
+    let session: ReviewSession | undefined;
+    try {
+      session = await openReview({ projectDir, transport });
+    } catch (error) {
+      if (error instanceof ReviewError && error.code === "not-signed-in") {
+        if (via === "gh") this.viaGh.delete(key(server));
+        return { state: "signed-out", host, gh: via !== "gh" && (await ghSignedIn(host)) };
+      }
+      throw error;
+    }
+    if (!session) return { state: "none" };
+    const pr = session.pullRequest;
+    const counts = await aheadBehind(checkout.root, pr.headOid);
+    return {
+      state: "on",
+      session,
+      via,
+      local: { state: pr.local, ...counts },
+      contentRoot: path.join(
+        checkout.root,
+        ...contentPrefixOf(checkout.root, projectDir).split("/"),
+      ),
+      base: await baseRevision(checkout.root, pr),
+    };
+  }
+
+  dispose(): void {
+    this.changed.dispose();
+  }
+}
+
+function key(server: ProjectServer): string {
+  return comparable(server.project.folder);
+}
+
+/** VS Code's authentication provider for a host. */
+function provider(host: string): string {
+  return host === "github.com" ? "github" : "github-enterprise";
+}
+
+/** Whether there's a GitHub sign-in for the host; with `interactive`, asks for one. */
+async function githubSession(host: string, interactive: boolean): Promise<boolean> {
+  try {
+    const session = await vscode.authentication.getSession(
+      provider(host),
+      GITHUB_SCOPES,
+      interactive ? { createIfNone: true } : { silent: true },
+    );
+    return session !== undefined;
+  } catch {
+    // Declined, or no provider for the host (GitHub Enterprise isn't set up).
+    return false;
+  }
+}
+
+/** The host's token, read for each request so VS Code can refresh it. */
+async function githubToken(host: string): Promise<string | undefined> {
+  const session = await vscode.authentication
+    .getSession(provider(host), GITHUB_SCOPES, { silent: true })
+    .then(
+      (s) => s,
+      () => undefined,
+    );
+  return session?.accessToken;
+}
+
+/** Runs a command with a fixed argument list; resolves with its output, or `undefined` if it failed. */
+function run(command: string, args: string[], cwd?: string): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    execFile(
+      command,
+      args,
+      { cwd, timeout: 15_000, windowsHide: true, encoding: "utf8" },
+      (error, stdout) => resolve(error ? undefined : stdout),
+    );
+  });
+}
+
+/** Whether `gh` is installed and signed in to the host. */
+async function ghSignedIn(host: string): Promise<boolean> {
+  return (await run("gh", ["auth", "status", "--hostname", host])) !== undefined;
+}
+
+/** How many commits `HEAD` is ahead of and behind the pull request's head. */
+async function aheadBehind(root: string, head: string): Promise<{ ahead: number; behind: number }> {
+  const out = await run("git", ["rev-list", "--left-right", "--count", `HEAD...${head}`], root);
+  const [ahead, behind] = (out ?? "").trim().split(/\s+/).map(Number);
+  return { ahead: ahead || 0, behind: behind || 0 };
+}
+
+/** The git revision for the pull request's base, from the remote that is its repository. */
+async function baseRevision(root: string, pr: ReviewSession["pullRequest"]): Promise<string> {
+  const out = (await run("git", ["remote", "-v"], root)) ?? "";
+  const remotes = out
+    .split("\n")
+    .map((line) => /^(\S+)\s+(\S+)\s+\(fetch\)$/.exec(line))
+    .filter((match) => match !== null)
+    .map((match) => {
+      const repository = parseRemote(match[2] ?? "");
+      return {
+        name: match[1] ?? "",
+        repository: repository && repoKey(repository),
+      };
+    });
+  const revision = pullRequestBase(remotes, repoKey(pr.repository), pr.baseRefName);
+  if (revision !== pr.baseRefName) {
+    const exists = await run("git", ["rev-parse", "--verify", "--quiet", revision], root);
+    if (exists !== undefined) return revision;
+  }
+  return pr.baseRefName;
+}
+
+function repoKey(repository: { host: string; owner: string; name: string }): string {
+  return `${repository.host}/${repository.owner}/${repository.name}`.toLowerCase();
+}
+
+/** A failure as a sentence. */
+export function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

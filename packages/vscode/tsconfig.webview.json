@@ -1,8 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    // Review's marks from the workspace package's source, as the webview bundle has them.
-    "paths": { "@ascribed/review/marks": ["../review/src/marks/index.ts"] },
+    // Review's marks and overlay from the workspace package's source, as the webview bundle has them.
+    "paths": {
+      "@ascribed/review/marks": ["../review/src/marks/index.ts"],
+      "@ascribed/review/overlay": ["../review/src/overlay/index.ts"]
+    },
     "noEmit": true,
     "lib": ["ES2023", "DOM"],
     "types": ["node"]
@@ -13,6 +16,7 @@
     "src/preview/protocol.ts",
     "src/preview/counts.ts",
     "src/preview/html.ts",
+    "src/preview/threadsText.ts",
     "test/webview",
     "test/parity",
     "vitest.config.ts",

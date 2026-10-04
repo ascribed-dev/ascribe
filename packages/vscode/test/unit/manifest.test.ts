@@ -47,15 +47,23 @@ describe("package.json", () => {
     expect(hidden.map((entry) => entry.command).sort()).toEqual(
       manifest.contributes.commands.map((command) => command.command).sort(),
     );
-    for (const entry of hidden) expect(entry.when).toMatch(/^ascribe\.active\b/);
+    for (const entry of hidden) {
+      // A review thread's buttons in the source editor act on that thread, so
+      // the palette never shows them.
+      if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
+      else expect(entry.when).toMatch(/^ascribe\.active\b/);
+    }
   });
 
-  it("shows Start Review on the preview's title bar while review is off, then Changed Pages", () => {
+  it("shows Start Review on the preview's title bar while review is off, then Changed Pages and Refresh Comments", () => {
     const title = manifest.contributes.menus["editor/title"];
     expect(title.find((entry) => entry.command === "ascribe.startReview")?.when).toBe(
       "activeWebviewPanelId == 'ascribe.preview' && !ascribe.reviewOn",
     );
     expect(title.find((entry) => entry.command === "ascribe.changedPages")?.when).toBe(
+      "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
+    );
+    expect(title.find((entry) => entry.command === "ascribe.refreshComments")?.when).toBe(
       "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
     );
   });
@@ -69,6 +77,11 @@ describe("package.json", () => {
       "ascribe.startReview",
       "ascribe.stopReview",
       "ascribe.changedPages",
+      "ascribe.refreshComments",
+      "ascribe.review.replyNow",
+      "ascribe.review.addToReview",
+      "ascribe.review.resolve",
+      "ascribe.review.reopen",
     ]);
     const properties = manifest.contributes.configuration.properties;
     expect(Object.keys(properties).sort()).toEqual([
@@ -77,12 +90,15 @@ describe("package.json", () => {
       "ascribe.path",
       "ascribe.preview.scrollEditorWithPreview",
       "ascribe.preview.scrollPreviewWithEditor",
+      "ascribe.review.sourceComments",
       "ascribe.startServers",
       "ascribe.trace.server",
     ]);
     expect(properties["ascribe.formatOnSave"]?.default).toBe(false);
     expect(properties["ascribe.trace.server"]?.default).toBe("off");
     expect(properties["ascribe.startServers"]?.default).toBe("onDemand");
+    expect(properties["ascribe.review.sourceComments"]?.default).toBe("auto");
+    expect(properties["ascribe.review.sourceComments"]?.enum).toEqual(["auto", "on", "off"]);
   });
 
   it("lets startServers be on demand or all, per window", () => {

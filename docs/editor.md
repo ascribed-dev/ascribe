@@ -93,11 +93,27 @@ The preview shows images and files from the content root, and from directories e
 
 The preview can mark what changed against a git revision, the **base**, as [`ascribe diff`](cli.md#ascribe-diff) reports it: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](review.md#in-the-editor) has more.
 
-**Ascribe: Start Review** turns it on for the active page's project. It asks for the base: the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit you type. Either way it compares with the point where your branch left it, as a pull request does. The status bar shows **Review: off**, or the base, while an Ascribe page or the preview is active; click it to start review, or to list the changed pages once it's on. While review is off, the preview has no review header and looks as it always does; its title bar has a **Start Review** button, which becomes **Changed Pages** once review is on. Review stays on for the project until **Ascribe: Stop Review**, or until the window closes. The tooltips on the base, in the header and the status bar, give the commit compared with. When that point moves (you pull, rebase, or fetch a newer base branch), review follows it the next time the preview regains focus, and says so.
+**Ascribe: Start Review** turns it on for the active page's project. It asks for the base: the base of your branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit you type. Either way it compares with the point where your branch left it, as a pull request does. The status bar shows **Review: off**, or the base, while an Ascribe page or the preview is active; click it to start review, or to list the changed pages once it's on. While review is off, the preview has no review header and looks as it always does; its title bar has a **Start Review** button, which becomes **Changed Pages** once review is on. Review stays on for the project until **Ascribe: Stop Review**, or until the window closes. The tooltips on the base, in the header and the status bar, give the commit compared with. When that point moves (you pull, rebase, or fetch a newer base branch), review follows it the next time the preview regains focus, and says so.
 
 With review on, the preview's header shows the base, how many changes the page has (click it for the breakdown), **Changes / As it will be / As it was**, and next and previous change, with your place: "3 of 10 on this page". Past the last change, it offers the next changed page. A page that changed only through something it uses, such as a fragment, says so and links to the file. Clicking a mark's label opens the block's source with its lines selected. The marks follow your edits as you type, saved or not.
 
 **Ascribe: Changed Pages**, also the list button in the preview's title bar, lists the pages the change touches in the preview's build, each with its counts and, when its own file didn't change, what it changed through. Choosing one opens it and its preview.
+
+### Comments in the preview
+
+When your branch has an open pull request on GitHub, review shows its review threads beside the blocks they're on, and lets you review the change there. **Start Review** looks for the pull request first, and then offers its base as the first choice. The header names the pull request ("#128 against main"); the number opens it on GitHub, and **Comments (N)** lists every comment on the pull request's pages.
+
+- **Reading.** Each thread sits in a column beside its block, highlighted with a line to the block when you point at or focus either. A narrow preview shows a count on each block instead, which opens its threads. Resolved threads are collapsed. A thread whose text changed since the comment is labeled **Outdated**, with the original text a click away. Threads whose lines are gone from the page are listed at the top as **Detached**, with the text they were on. Opening a thread inside a tab that isn't showing, or a closed `details`, shows it first.
+- **Commenting.** Point at or focus any block and choose **Comment**. A comment goes into your pending review, and nobody sees it until you submit. GitHub takes comments only on lines near the pull request's changes; a comment elsewhere goes in the review's summary instead, and the box says so before you write.
+- **Replying.** **Add to review** holds a reply with your other comments. **Reply now** sends it at once, except while you have unsent comments: GitHub then adds every reply to your review, so it's disabled and says why.
+- **Resolving.** **Resolve** and **Reopen** act on GitHub at once; they aren't held with your review.
+- **Submitting.** While you have unsent comments, a bar at the bottom counts them, with **Submit review…**: it lists them, and submits them as a comment, an approval, or a request for changes, with an optional summary. **Discard…** in the same dialog deletes them, after asking.
+
+The same threads show on their lines in the source editor, where you can reply, resolve, and comment on any line into the same review. The GitHub Pull Requests extension shows them there already, so by default Ascribe leaves the source editor to it when it's active; `ascribe.review.sourceComments` decides.
+
+Comments need GitHub. Review asks to sign in to GitHub in VS Code when you start it, never sooner; the permission it asks for (`repo`) is the one posting review comments needs. If you decline, review shows the changes only, and the header offers **Sign in to see comments**, and **Use GitHub CLI** when `gh` is signed in. The preview itself never holds the sign-in or makes a request: everything goes through the extension.
+
+The comments are read when review starts, on **Ascribe: Refresh Comments** (the refresh button in the preview's title bar), and after your own actions. When your checkout isn't the pull request's latest commit, the header says so: behind, with **Pull**, since some comments may be on lines you don't have; ahead, with **Push**, since you can comment only on lines that are on GitHub.
 
 Review runs `git`, only once you start it. A project that isn't in a git repository, a revision that doesn't exist, or `git` missing from the path stops it from starting, with a message that says which; the preview works as before. Starting review reads the project as it was at the base, which takes about as much memory again as the project; stopping review frees it.
 
@@ -148,6 +164,7 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 | `ascribe.formatOnSave` | `false` | Format Ascribe constructs when saving. |
 | `ascribe.preview.scrollPreviewWithEditor` | `true` | Scroll the preview with the editor and to the block the cursor moves to. |
 | `ascribe.preview.scrollEditorWithPreview` | `true` | Scroll the editor when the preview is scrolled. |
+| `ascribe.review.sourceComments` | `auto` | Whether the source editor shows the pull request's review threads: `on`, `off`, or `auto`, which shows them unless the GitHub Pull Requests extension is active. See [Comments in the preview](#comments-in-the-preview). |
 | `ascribe.maxCrashes` | `5` | After this many crashes of a project's language server, since it was last restarted by hand, the extension stops restarting it and explains why. |
 | `ascribe.trace.server` | `off` | `messages` or `verbose` logs the conversation with the server, for reporting a problem. |
 
@@ -162,6 +179,7 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 | **Ascribe: Start Review** | Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](#review-in-the-preview). |
 | **Ascribe: Stop Review** | Turns review off for the active page's project, and frees its base. |
 | **Ascribe: Changed Pages** | Lists the pages the change touches in the preview's build; choosing one opens it and its preview. |
+| **Ascribe: Refresh Comments** | Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](#comments-in-the-preview). |
 
 ## Other editors
 

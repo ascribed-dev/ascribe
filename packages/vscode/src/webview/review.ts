@@ -7,6 +7,7 @@
 import {
   clearMarks,
   describeSource,
+  disarm,
   goTo,
   markChanges,
   setShow,
@@ -16,6 +17,8 @@ import {
 } from "@ascribed/review/marks";
 import { countsText as breakdown } from "../preview/counts.js";
 import type { FromWebview, ReviewView } from "../preview/protocol.js";
+import { againstText, threadsNotice } from "../preview/threadsText.js";
+import type { Threads } from "./threads.js";
 
 /** "10 changes on this page", or "3 of 10 on this page" while stepping through them. */
 export function position(total: number, at: number): string {
@@ -47,6 +50,7 @@ export class Review {
     private readonly bar: HTMLElement,
     private readonly content: HTMLElement,
     private readonly post: (message: FromWebview) => void,
+    private readonly threads?: Threads,
   ) {
     content.addEventListener("click", (event) => this.clickLabel(event));
     content.addEventListener("keydown", (event) => {
@@ -70,6 +74,11 @@ export class Review {
     this.mark(prepare);
     if (view?.goToFirst && this.marks.length > 0) this.step(1);
     this.drawBar();
+  }
+
+  /** Draws the header again: the thread count changed. */
+  redraw(): void {
+    if (this.view) this.drawBar();
   }
 
   /** The marks on the page, by kind. */
@@ -105,6 +114,7 @@ export class Review {
     if (view.wasHtml !== null) {
       const template = document.createElement("template");
       template.innerHTML = view.wasHtml;
+      disarm(template.content);
       prepare?.(template.content);
       was = template.content;
     }
@@ -156,6 +166,8 @@ export class Review {
   private setShow(show: Show): void {
     this.show = show;
     setShow(this.content, show);
+    // Removed or new blocks showed or hid: the threads beside them move.
+    this.threads?.layout();
   }
 
   private drawBar(): void {
@@ -165,7 +177,17 @@ export class Review {
       this.bar.replaceChildren();
       return;
     }
-    const info = span("grow", "Against ");
+    const threads = view.threads;
+    const pr = threads?.pullRequest;
+    const info = span("grow", "");
+    if (pr) {
+      const url = pr.url;
+      const number = button(`#${pr.number}`, "link", () => this.post({ type: "open", href: url }));
+      number.title = `Open pull request #${pr.number} on GitHub`;
+      info.append(number, againstText(threads).slice(`#${pr.number}`.length));
+    } else {
+      info.append(againstText(null));
+    }
     const base = document.createElement("b");
     base.textContent = view.base;
     base.title = `Compared with ${view.commit}, where this branch left ${view.base}`;
@@ -209,9 +231,37 @@ export class Review {
     const next = button("↓", "square", () => this.step(1));
     next.setAttribute("aria-label", "Next change");
     next.title = "Next change";
-    const header = row([info, count, shows, previous, next]);
+    const cells = [info, count, shows, previous, next];
+    if (this.threads?.active) {
+      const n = this.threads.count();
+      const all = button(n === undefined ? "Comments" : `Comments (${n})`, "", () =>
+        this.threads?.showAll(),
+      );
+      all.title = "Every comment on the pull request's pages";
+      all.setAttribute("aria-haspopup", "dialog");
+      cells.splice(1, 0, all);
+    }
+    const header = row(cells);
     if (this.open && counts) header.append(span("legend", breakdown(counts) || "No changes"));
     const parts = [header];
+    const notice = threads ? threadsNotice(threads) : undefined;
+    if (notice) {
+      const box = document.createElement("div");
+      box.className = "notice";
+      box.append(span("", notice.text), span("spacer", ""));
+      notice.actions.forEach((action, i) => {
+        box.append(
+          button(action.label, i === 0 ? "primary" : "", () => {
+            const m = action.message;
+            if (m === "pull" || m === "push" || m === "fetch")
+              this.post({ type: "git", command: m });
+            else if (m === "refresh") this.post({ type: "refreshThreads" });
+            else this.post({ type: m });
+          }),
+        );
+      });
+      parts.push(box);
+    }
     if (this.atEnd) {
       const notice = document.createElement("div");
       notice.className = "notice";

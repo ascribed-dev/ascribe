@@ -50,6 +50,7 @@ interface Preview {
 
 async function open(): Promise<Preview> {
   const page = await context.newPage();
+  page.setDefaultTimeout(10_000);
   const posted: FromWebview[] = [];
   await page.exposeFunction("__post", (message: FromWebview) => posted.push(message));
   // The API VS Code gives a webview script.
@@ -201,7 +202,7 @@ describe("the preview webview", () => {
     await preview.page.close();
   });
 
-  it("refuses scripts and inline styles in a page's raw HTML, and says so", async () => {
+  it("takes scripts out of a page's raw HTML, refuses inline styles, and says so", async () => {
     const preview = await open();
     await preview.send(
       render(
@@ -213,6 +214,10 @@ describe("the preview webview", () => {
       ),
     );
     await preview.next("rendered");
+    // The page is disarmed before it's shown, as the review report does it.
+    await expect(preview.page.locator("main script").count()).resolves.toBe(0);
+    await expect(preview.page.locator("main img").getAttribute("onerror")).resolves.toBeNull();
+    await expect(preview.page.locator("main a").getAttribute("href")).resolves.toBeNull();
     // Let a failed image's error handler run, if it were going to.
     await preview.page.waitForTimeout(200);
     await expect(preview.page.evaluate(() => (window as { pwned?: number }).pwned)).resolves.toBe(
@@ -388,6 +393,7 @@ function reviewed(seq: number, review: Partial<ReviewView> = {}): ToWebview {
       wasHtml: WAS,
       causes: [],
       goToFirst: false,
+      threads: null,
       ...review,
     },
   } as Partial<ToWebview>);
@@ -507,6 +513,255 @@ describe("review in the preview webview", () => {
     const empty = await preview.next("rendered", from + 1);
     if (empty.type !== "rendered") throw new Error();
     expect(empty.report.reviewHeader).toBeNull();
+    await preview.page.close();
+  });
+});
+
+/** A located review thread, as the extension sends it in a `load` answer. */
+function thread(id: string, over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id,
+    kind: "review",
+    repositoryPath: "docs/page.md",
+    path: "page.md",
+    subject: "line",
+    side: "RIGHT",
+    line: 3,
+    startLine: null,
+    originalLine: 3,
+    originalStartLine: null,
+    commit: "abc1234",
+    originalCommit: "abc1234",
+    resolved: false,
+    outdated: false,
+    canResolve: true,
+    canUnresolve: false,
+    canReply: true,
+    diffHunk: undefined,
+    marker: undefined,
+    quote: undefined,
+    lines: { first: 3, last: 3 },
+    detached: undefined,
+    comments: [
+      {
+        id: `${id}-c1`,
+        author: { login: "ana", avatarUrl: "https://avatars.example.com/ana" },
+        body: "Say which installer. <img src=x onerror=alert(1)>",
+        createdAt: "2026-10-04T10:00:00Z",
+        url: "https://github.com/acme/quill/pull/128#c1",
+        pending: false,
+      },
+    ],
+    ...over,
+  };
+}
+
+const THREADS_ON = {
+  state: "on",
+  pullRequest: { number: 128, url: "https://github.com/acme/quill/pull/128", baseRefName: "main" },
+  local: { state: "same", behind: 0, ahead: 0 },
+  gh: false,
+  message: null,
+  goTo: null,
+} as const;
+
+/**
+ * Answers the overlay's requests as the extension would, from `answer`, until
+ * the page closes. Returns the requests seen.
+ */
+function serveThreads(
+  preview: Preview,
+  answer: (method: string, params: Record<string, unknown>) => unknown,
+): Extract<FromWebview, { type: "threads" }>[] {
+  const seen: Extract<FromWebview, { type: "threads" }>[] = [];
+  let at = 0;
+  const timer = setInterval(() => {
+    if (preview.page.isClosed()) {
+      clearInterval(timer);
+      return;
+    }
+    for (; at < preview.posted.length; at++) {
+      const message = preview.posted[at];
+      if (message?.type !== "threads") continue;
+      seen.push(message);
+      void preview.send({
+        type: "threadsResult",
+        id: message.id,
+        result: answer(message.method, message.params),
+      });
+    }
+  }, 10);
+  return seen;
+}
+
+function pending(count: number, threads: unknown[] = []): Record<string, unknown> {
+  return { id: count > 0 ? "R1" : undefined, threads, replies: [], conversation: [], count };
+}
+
+describe("review threads in the preview webview", () => {
+  it("shows the pull request's threads beside their blocks, with no request and no policy violation", async () => {
+    const preview = await open();
+    const outside: string[] = [];
+    preview.page.on("request", (request) => {
+      if (!request.url().startsWith(ORIGIN)) outside.push(request.url());
+    });
+    const requests = serveThreads(preview, (method) => {
+      if (method === "load") {
+        return {
+          pullRequest: { number: 128, url: THREADS_ON.pullRequest.url },
+          threads: {
+            blocks: [{ anchor: { source: "page.md:3-3", via: [] }, threads: [thread("T1")] }],
+            removed: [],
+            detached: [thread("T2", { lines: undefined, detached: "line-gone", line: null })],
+          },
+          pending: pending(0),
+          viewer: "kyle",
+        };
+      }
+      if (method === "allThreads") return [];
+      return null;
+    });
+    await preview.send(reviewed(1, { threads: THREADS_ON }));
+    const drawn = await preview.next("threadsDrawn");
+    if (drawn.type !== "threadsDrawn") throw new Error();
+    expect(drawn.report).toEqual({
+      blocks: { "page.md:3-3": ["T1"] },
+      detached: ["T2"],
+      unsent: 0,
+    });
+    // The overlay asked for the page's blocks and its removed one.
+    const load = requests.find((r) => r.method === "load");
+    expect(load?.params["anchors"]).toEqual([
+      { source: "page.md:1-1", via: [] },
+      { source: "page.md:3-3", via: [] },
+      { source: "_f/frag.md:1-1", via: ["page.md:5"] },
+    ]);
+    expect(load?.params["removed"]).toEqual([{ source: "page.md:5-5", via: [] }]);
+    // The card, beside the page; the comment's raw HTML is text.
+    await expect(
+      preview.page.getByText("Say which installer.", { exact: false }).first().isVisible(),
+    ).resolves.toBe(true);
+    await expect(preview.page.locator("[data-ascribe-overlay] >> img").count()).resolves.toBe(0);
+    await expect(preview.page.locator("[data-role=review]").textContent()).resolves.toMatch(
+      /^#128 against main/,
+    );
+    // Avatars aren't fetched: nothing left the webview's origin.
+    expect(outside).toEqual([]);
+    const seen = preview.posted.length;
+    await preview.send(reviewed(2, { threads: THREADS_ON }));
+    const second = await preview.next("rendered", seen);
+    if (second.type !== "rendered") throw new Error();
+    expect(second.report.violations).toEqual([]);
+    await preview.page.close();
+  });
+
+  it("comments on a block, then submits the review", async () => {
+    const preview = await open();
+    let unsent: unknown[] = [];
+    const requests = serveThreads(preview, (method, params) => {
+      if (method === "load") {
+        return {
+          pullRequest: { number: 128, url: THREADS_ON.pullRequest.url },
+          threads: {
+            blocks: unsent.length
+              ? [{ anchor: { source: "page.md:1-1", via: [] }, threads: unsent }]
+              : [],
+            removed: [],
+            detached: [],
+          },
+          pending: pending(unsent.length, unsent),
+          viewer: "kyle",
+        };
+      }
+      if (method === "allThreads") return [];
+      if (method === "commentTarget") return { kind: "thread" };
+      if (method === "comment") {
+        const made = thread("T9", {
+          lines: { first: 1, last: 1 },
+          line: 1,
+          comments: [
+            {
+              id: "T9-c1",
+              author: { login: "kyle", avatarUrl: undefined },
+              body: String(params["body"]),
+              createdAt: "2026-10-04T10:00:00Z",
+              url: "",
+              pending: true,
+            },
+          ],
+        });
+        unsent = [made];
+        return made;
+      }
+      if (method === "submit") {
+        unsent = [];
+        return null;
+      }
+      return null;
+    });
+    await preview.send(reviewed(1, { threads: THREADS_ON }));
+    await preview.next("threadsDrawn");
+    await preview.page.getByText("First, unchanged.").hover();
+    await preview.page.getByRole("button", { name: "Comment on this block" }).click();
+    await preview.page.getByRole("textbox", { name: "Comment" }).fill("Is this still true?");
+    await preview.page.getByRole("button", { name: "Add to review" }).click();
+    await expect
+      .poll(() => requests.find((r) => r.method === "comment")?.params)
+      .toEqual({ anchor: { source: "page.md:1-1", via: [] }, body: "Is this still true?" });
+    // The unsent bar, then the dialog.
+    await preview.page.getByRole("button", { name: "Submit review…" }).click();
+    await preview.page.getByRole("radio", { name: "Approve" }).check();
+    await preview.page.getByRole("button", { name: "Submit review", exact: true }).click();
+    await expect
+      .poll(() => requests.find((r) => r.method === "submit")?.params)
+      .toEqual({ event: "APPROVE" });
+    await expect.poll(() => preview.posted.some((m) => m.type === "notify")).toBe(true);
+    await preview.page.close();
+  });
+
+  it("says comments need GitHub when signed out, and offers both ways in", async () => {
+    const preview = await open();
+    await preview.send(
+      reviewed(1, {
+        threads: { ...THREADS_ON, state: "signed-out", pullRequest: null, local: null, gh: true },
+      }),
+    );
+    const drawn = await preview.next("rendered");
+    if (drawn.type !== "rendered") throw new Error();
+    expect(drawn.report.reviewHeader).toContain("Showing changes only. Comments need GitHub.");
+    expect(drawn.report.marks).toEqual({ changed: 1, removed: 1, added: 1 });
+    await expect(preview.page.locator("[data-ascribe-overlay]").count()).resolves.toBe(0);
+    await preview.page.getByRole("button", { name: "Sign in to see comments" }).click();
+    await preview.page.getByRole("button", { name: "Use GitHub CLI" }).click();
+    expect(preview.posted.filter((m) => m.type === "signIn" || m.type === "useGh")).toEqual([
+      { type: "signIn" },
+      { type: "useGh" },
+    ]);
+    await preview.page.close();
+  });
+
+  it("says when the checkout is behind the pull request, and offers to pull", async () => {
+    const preview = await open();
+    serveThreads(preview, (method) =>
+      method === "load"
+        ? {
+            pullRequest: { number: 128, url: THREADS_ON.pullRequest.url },
+            threads: { blocks: [], removed: [], detached: [] },
+            pending: pending(0),
+            viewer: "kyle",
+          }
+        : [],
+    );
+    await preview.send(
+      reviewed(1, { threads: { ...THREADS_ON, local: { state: "behind", behind: 2, ahead: 0 } } }),
+    );
+    const drawn = await preview.next("rendered");
+    if (drawn.type !== "rendered") throw new Error();
+    expect(drawn.report.reviewHeader).toContain(
+      "Your checkout is 2 commits behind #128, so some comments may be on lines you don't have.",
+    );
+    await preview.page.getByRole("button", { name: "Pull" }).click();
+    expect(preview.posted.find((m) => m.type === "git")).toEqual({ type: "git", command: "pull" });
     await preview.page.close();
   });
 });

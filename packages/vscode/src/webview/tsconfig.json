@@ -1,0 +1,14 @@
+{
+  // The webview's files, for tools that find a file's nearest tsconfig.json
+  // (the linter's type information): the same options as tsconfig.webview.json,
+  // which `pnpm typecheck` uses.
+  "extends": "../../tsconfig.webview.json",
+  "include": [
+    "./**/*.ts",
+    "../preview/refs.ts",
+    "../preview/protocol.ts",
+    "../preview/counts.ts",
+    "../preview/blocks.ts",
+    "../preview/threadsText.ts"
+  ]
+}
