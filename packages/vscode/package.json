@@ -98,6 +98,16 @@
           "default": false,
           "markdownDescription": "Format Ascribe files into canonical form when saving."
         },
+        "ascribe.preview.scrollPreviewWithEditor": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Scroll the preview to the block at the top of the editor, and to the block the cursor moves to when it's out of view."
+        },
+        "ascribe.preview.scrollEditorWithPreview": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Scroll the editor to the line of the block at the top of the preview when the preview is scrolled."
+        },
         "ascribe.maxCrashes": {
           "type": "integer",
           "default": 5,

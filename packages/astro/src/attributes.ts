@@ -1,13 +1,14 @@
-// The site output's attribute marker (`<ascribe-attributes>`), found and
-// applied on a hast tree.
+// The site output's attribute marker (`<ascribe-attributes>`) and source
+// anchors (`<!--ascribe-anchor …-->`), found and applied on a hast tree.
 //
 // Both markdown processors Astro 7.3 can run hand a user plugin the same tree
 // at the same point: after markdown became hast, before Astro's own image and
 // heading-id passes. A marker is then two adjacent `raw` nodes (an open tag and
 // a close tag), and the elements it applies to are `<h1>`–`<h6>` and `<img>`.
-// So the rules live here once, as a pure function from a tree to a list of
-// edits, and each processor's adapter applies the edits with its own means
-// (`rehype.ts` mutates the tree, `satteri.ts` queues commands).
+// An anchor comment is a `raw` node beside the block it names. So the rules
+// live here once, as pure functions from a tree to a list of edits, and each
+// processor's adapter applies the edits with its own means (`rehype.ts`
+// mutates the tree, `satteri.ts` queues commands).
 
 import { find, html } from "property-information";
 
@@ -139,4 +140,111 @@ export function toProperty([name, value]: Attribute): [string, string | string[]
   if (info.spaceSeparated) return [info.property, value.split(/\s+/).filter((s) => s !== "")];
   if (info.commaSeparated) return [info.property, value.split(/\s*,\s*/)];
   return [info.property, value];
+}
+
+/** What applying one source anchor (site-render contract §7) changes. */
+export interface AnchorEdit {
+  /** The anchor comment, and the whitespace-only text directly after it, which are removed. */
+  remove: HastNode[];
+  /** Elements that get attributes: the block, and a list's items. Empty when the anchor applies to nothing. */
+  targets: { node: HastNode; attributes: Attribute[] }[];
+  /** Raw HTML whose first tag gets the anchor's attributes: the node and its new text. */
+  replace?: { node: HastNode; value: string };
+}
+
+const ANCHOR = /^<!--ascribe-anchor((?: [a-z][a-z0-9-]*="[^"\r\n]*")+)-->\s*$/;
+
+/** Finds every source anchor comment in `root`, and what it applies to. */
+export function findAnchors(root: HastNode): AnchorEdit[] {
+  const edits: AnchorEdit[] = [];
+  visitParents(root, (parent) => {
+    const children = parent.children ?? [];
+    for (let i = 0; i < children.length; i++) {
+      const node = children[i];
+      if (node?.type !== "raw" || node.value === undefined) continue;
+      const anchor = parseAnchor(node.value);
+      if (anchor === undefined) continue;
+      const edit: AnchorEdit = { remove: [node], targets: [] };
+      let next = i + 1;
+      const after = children[next];
+      if (after?.type === "text" && after.value?.trim() === "") {
+        edit.remove.push(after);
+        next++;
+      }
+      const target = children[next];
+      if (target?.type === "element" && target.tagName?.toLowerCase() === anchor.tag) {
+        edit.targets.push({
+          node: target,
+          attributes: anchorAttributes(anchor.source, anchor.via),
+        });
+        if ((anchor.tag === "ul" || anchor.tag === "ol") && anchor.items.length > 0) {
+          const items = (target.children ?? []).filter(
+            (child) => child.type === "element" && child.tagName === "li",
+          );
+          const path = anchor.source.slice(0, anchor.source.lastIndexOf(":"));
+          if (items.length === anchor.items.length) {
+            items.forEach((item, n) =>
+              edit.targets.push({
+                node: item,
+                attributes: anchorAttributes(`${path}:${anchor.items[n]}`, anchor.via),
+              }),
+            );
+          }
+        }
+      } else if (target?.type === "raw" && target.value !== undefined) {
+        const value = intoFirstTag(target.value, anchor);
+        if (value !== undefined) edit.replace = { node: target, value };
+      }
+      edits.push(edit);
+    }
+  });
+  return edits;
+}
+
+interface Anchor {
+  tag: string;
+  source: string;
+  via: string | undefined;
+  items: string[];
+}
+
+function parseAnchor(text: string): Anchor | undefined {
+  const match = ANCHOR.exec(text);
+  if (match === null) return undefined;
+  const attributes = new Map<string, string>();
+  for (const [, name, value] of (match[1] ?? "").matchAll(ATTRIBUTE)) {
+    if (name !== undefined && value !== undefined) attributes.set(name, decode(value));
+  }
+  const tag = attributes.get("tag");
+  const source = attributes.get("source");
+  if (tag === undefined || source === undefined) return undefined;
+  const via = attributes.get("via");
+  return {
+    tag: tag.toLowerCase(),
+    source,
+    via: via === "" ? undefined : via,
+    items: (attributes.get("items") ?? "").split(/\s+/).filter((s) => s !== ""),
+  };
+}
+
+function anchorAttributes(source: string, via: string | undefined): Attribute[] {
+  const attributes: Attribute[] = [["data-ascribe-source", source]];
+  if (via !== undefined) attributes.push(["data-ascribe-via", via]);
+  return attributes;
+}
+
+/** Raw HTML with the anchor's attributes after the name of its first tag, when that tag opens the element the anchor names. */
+function intoFirstTag(html: string, anchor: Anchor): string | undefined {
+  const open = /^<([A-Za-z][A-Za-z0-9-]*)(?=[\s>/])/.exec(html);
+  if (open?.[1] === undefined || open[1].toLowerCase() !== anchor.tag) return undefined;
+  const written = anchorAttributes(anchor.source, anchor.via)
+    .map(([name, value]) => ` ${name}="${encode(value)}"`)
+    .join("");
+  return html.slice(0, open[0].length) + written + html.slice(open[0].length);
+}
+
+function encode(value: string): string {
+  return value.replace(/[&<>"]/g, (ch) =>
+    ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : "&quot;",
+  );
 }

@@ -101,6 +101,8 @@ Phases 1, 2, 3, and 5 all read or write source anchors. This is the format; phas
 
 To parse one, split at the last `:`; the path can't contain an unencoded `:`.
 
+**Finding a block by its anchor.** Not every block renders as an element of its own: a paragraph in a tight list item has no `<p>`, so the item carries the anchor (site-render contract §7.2), while phase 2 reports the paragraph's own lines. So a consumer looking for a block's element (phase 3's marks, phase 5's overlay) uses the element with exactly its anchor, and when there is none, the smallest anchored element with the same file and `via` whose lines contain it.
+
 ### The package setup
 
 `packages/review` is used by phases 3, 5, 6, and 7. Whichever of phases 3 and 5 starts first creates it, as its first commit, "Add @ascribed/review to the workspace and the release"; the other builds on that commit. The setup is:

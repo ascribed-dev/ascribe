@@ -56,8 +56,10 @@ export interface PreviewApi {
   localResourceRoots(): string[];
   /** Every render sent so far. */
   renders(): readonly RenderRecord[];
-  /** The ids of the sections the preview was told to scroll to, in order. */
+  /** The ids of the headings the preview was told to scroll to (a link to one), in order. */
   reveals(): readonly string[];
+  /** The blocks the preview scrolled to for the editor: the line asked for and the block's anchor. */
+  lineReveals(): readonly { line: number; source: string }[];
   /** Waits until a render that has been drawn satisfies `predicate`. */
   whenDrawn(
     description: string,
@@ -99,9 +101,11 @@ export class PreviewController implements vscode.Disposable {
         folder: string | undefined;
       }
     | undefined;
-  private revealed: string | undefined;
   private log: RenderRecord[] = [];
   private revealLog: string[] = [];
+  private lineRevealLog: { line: number; source: string }[] = [];
+  /** Until when the editor's scrolling is the preview's doing, not the author's. */
+  private editorQuietUntil = 0;
   private waiters: (() => void)[] = [];
 
   constructor(
@@ -134,6 +138,10 @@ export class PreviewController implements vscode.Disposable {
         if (this.panel && event.textEditor.document === this.document)
           this.followCursor(event.textEditor);
       }),
+      vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
+        if (this.panel && event.textEditor.document === this.document)
+          this.followScroll(event.textEditor);
+      }),
       // The previewed project's server started or restarted: it has the
       // project's current state now. Other projects' servers don't matter.
       this.projects.onDidStart((server) => {
@@ -155,6 +163,7 @@ export class PreviewController implements vscode.Disposable {
       localResourceRoots: () => [...this.roots],
       renders: () => this.log,
       reveals: () => this.revealLog,
+      lineReveals: () => this.lineRevealLog,
       whenDrawn: (description, predicate, timeout = 30_000) =>
         this.waitForDrawn(description, predicate, timeout),
       receive: (message) => this.receive(message),
@@ -194,7 +203,6 @@ export class PreviewController implements vscode.Disposable {
   ): void {
     this.panel = panel;
     this.ready = false;
-    this.revealed = undefined;
     this.latest = undefined;
     panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, "media", "preview.svg");
     panel.webview.options = this.webviewOptions(contentRoot, assetRoots);
@@ -265,7 +273,6 @@ export class PreviewController implements vscode.Disposable {
       return false;
     }
     this.document = editor.document;
-    this.revealed = undefined;
     if (this.panel) this.panel.title = panelTitle(this.document);
     return true;
   }
@@ -378,6 +385,7 @@ export class PreviewController implements vscode.Disposable {
     const message: Extract<ToWebview, { type: "render" }> = {
       type: "render",
       seq: ++this.seq,
+      path: result.page?.path ?? null,
       build: result.build,
       builds: result.builds,
       title: result.page?.title ?? null,
@@ -491,6 +499,16 @@ export class PreviewController implements vscode.Disposable {
         this.wake();
         return;
       }
+      case "revealedLine":
+        this.lineRevealLog.push({ line: message.line, source: message.source });
+        this.wake();
+        return;
+      case "scrolled":
+        this.scrollEditor(message.line);
+        return;
+      case "openLine":
+        await this.openLine(message.line);
+        return;
     }
   }
 
@@ -525,19 +543,46 @@ export class PreviewController implements vscode.Disposable {
     if (picked) this.chooseBuild(picked.label);
   }
 
-  /** Scrolls the preview to the section the cursor is in, when it moved into another. */
+  /** Shows the block the cursor is in, when no part of it is in the preview's view. */
   private followCursor(editor: vscode.TextEditor): void {
-    const sections = this.latest?.result.page?.sections;
-    if (!this.panel || !this.ready || !sections || sections.length === 0) return;
-    const line = editor.selection.active.line;
-    let current: string | undefined;
-    for (const section of sections) {
-      if (section.line <= line) current = section.id;
-      else break;
-    }
-    if (current === undefined || current === this.revealed) return;
-    this.revealed = current;
-    this.reveal(current);
+    if (!scrollSetting(editor.document, "scrollPreviewWithEditor")) return;
+    this.revealLine(editor.selection.active.line, true);
+  }
+
+  /** Scrolls the preview to the block at the top of the editor. */
+  private followScroll(editor: vscode.TextEditor): void {
+    if (Date.now() < this.editorQuietUntil) return;
+    if (!scrollSetting(editor.document, "scrollPreviewWithEditor")) return;
+    const top = editor.visibleRanges[0];
+    if (top) this.revealLine(top.start.line, false);
+  }
+
+  private revealLine(line: number, ifHidden: boolean): void {
+    if (!this.panel || !this.ready || !this.latest?.result.page) return;
+    const message: ToWebview = { type: "revealLine", line, ifHidden };
+    void this.panel.webview.postMessage(message);
+  }
+
+  /** The author scrolled the preview: scrolls the editor to the line of the block at its top. */
+  private scrollEditor(line: number): void {
+    const editor = vscode.window.visibleTextEditors.find((e) => e.document === this.document);
+    if (!editor || !scrollSetting(editor.document, "scrollEditorWithPreview")) return;
+    this.editorQuietUntil = Date.now() + 300;
+    editor.revealRange(new vscode.Range(line, 0, line, 0), vscode.TextEditorRevealType.AtTop);
+  }
+
+  /** The author double-clicked a block: shows its line in the editor, with the cursor on it. */
+  private async openLine(line: number): Promise<void> {
+    if (!this.document) return;
+    const viewColumn = this.editorColumn();
+    const editor = await vscode.window.showTextDocument(this.document, {
+      ...(viewColumn === undefined ? {} : { viewColumn }),
+      selection: new vscode.Range(line, 0, line, 0),
+    });
+    editor.revealRange(
+      new vscode.Range(line, 0, line, 0),
+      vscode.TextEditorRevealType.InCenterIfOutsideViewport,
+    );
   }
 
   private reveal(id: string): void {
@@ -646,3 +691,11 @@ function panelTitle(document: vscode.TextDocument | undefined): string {
 }
 
 export { isExternal };
+
+/** Whether the preview and the editor scroll together, in a direction, for a document. */
+function scrollSetting(
+  document: vscode.TextDocument,
+  name: "scrollPreviewWithEditor" | "scrollEditorWithPreview",
+): boolean {
+  return vscode.workspace.getConfiguration("ascribe.preview", document.uri).get(name, true);
+}

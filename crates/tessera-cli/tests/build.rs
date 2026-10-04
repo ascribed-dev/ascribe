@@ -212,6 +212,31 @@ fn the_site_output_is_built_under_every_build() {
 }
 
 #[test]
+fn anchors_mark_the_site_output_and_the_manifest_says_so() {
+    let dir = quill();
+    let built = dir.path().join(".ascribe/build/site");
+    let out = tessera(dir.path(), &["build", "--build", "site", "--anchors"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    let page = read(&built.join("site/quickstart.md"));
+    assert!(
+        page.contains(
+            "<!--ascribe-anchor tag=\"h2\" source=\"quickstart.md:6-6\"-->\n## Try in the browser"
+        ),
+        "{page}"
+    );
+    assert!(read(&built.join("site.manifest.json")).contains("\"anchors\": true"));
+    // Only the site output has anchors.
+    assert!(!read(&built.join("plain/quickstart.md")).contains("ascribe-anchor"));
+    assert!(!read(&built.join("plain.manifest.json")).contains("anchors"));
+
+    // Without the flag, the output and the manifest are as they always were.
+    let out = tessera(dir.path(), &["build", "--build", "site"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    assert!(!read(&built.join("site/quickstart.md")).contains("ascribe-anchor"));
+    assert!(!read(&built.join("site.manifest.json")).contains("anchors"));
+}
+
+#[test]
 fn a_generated_file_isnt_counted_as_an_asset() {
     let dir = project(MODEL, &[("index.md", &page("Hi.\n"))]);
     let out = tessera(dir.path(), &["build", "--build", "site", "--emit", "site"]);

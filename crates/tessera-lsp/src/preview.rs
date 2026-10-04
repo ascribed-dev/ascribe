@@ -8,6 +8,10 @@
 //! the Astro plugin applies. Nothing is written to disk, and there's no
 //! renderer of the preview's own.
 //!
+//! The preview is never published, so it always has source anchors
+//! (site-render contract §7): every block's element says which source lines
+//! it came from, and the client scrolls the preview with the editor by block.
+//!
 //! The site output refers to assets by paths relative to the page, which a
 //! webview can't load. So the answer lists every asset
 //! the page uses, each with the reference exactly as the HTML writes it and
@@ -106,15 +110,16 @@ pub struct PreviewPage {
     /// The frontmatter the site output writes, as JSON: `available` is the
     /// list of targets a layout passes to `<ascribe-availability>`.
     pub frontmatter: Json,
-    /// The page's content as HTML: the site markdown after
-    /// [`render_site_html`], without its frontmatter and without a layout.
+    /// The page's content as HTML: the site markdown, with source anchors,
+    /// after [`render_site_html`], without its frontmatter and without a
+    /// layout.
     pub html: String,
     /// Every asset the page uses.
     pub assets: Vec<PreviewAsset>,
     /// The page links in the content, so a click opens the file.
     pub links: Vec<PreviewLink>,
-    /// The headings written in the previewed file itself, in order, for
-    /// following the cursor.
+    /// The headings written in the previewed file itself, in order. The
+    /// HTML's source anchors locate every block, headings included.
     pub sections: Vec<PreviewSection>,
 }
 
@@ -388,7 +393,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>) -> PreviewResul
         )));
         return result;
     };
-    let emitter = SiteEmitter::new(model);
+    let emitter = SiteEmitter::new(model).with_anchors(true);
     let cx = EmitContext::new(snapshot.project(), &target.root, build);
     let emitted = match emit_page(&emitter, &cx, &page) {
         Ok(emitted) => emitted,

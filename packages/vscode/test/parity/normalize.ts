@@ -14,7 +14,10 @@
 //   with inline colors); the language and the text are compared;
 // - typographic punctuation: Astro's `smartypants` turns quotes and dashes
 //   into curly ones, which never happens inside a marker; both sides are
-//   compared with straight ones.
+//   compared with straight ones;
+// - source anchors (`data-ascribe-source`, `data-ascribe-via`): the preview
+//   always has them, so it can scroll with the editor, and the site has them
+//   only with the plugin's `anchors` option, which the example leaves off.
 import type { Page } from "playwright-core";
 
 // What the comparison leaves out.
@@ -57,6 +60,7 @@ export async function treeOf(page: Page, selector: string): Promise<Tree | undef
       const attrs: Record<string, string> = {};
       for (const name of element.getAttributeNames().sort()) {
         if (tag === "img" && IMAGE_ADDED_BY_ASTRO.has(name)) continue;
+        if (name === "data-ascribe-source" || name === "data-ascribe-via") continue;
         attrs[name] = element.getAttribute(name) ?? "";
       }
       const children: unknown[] = [];

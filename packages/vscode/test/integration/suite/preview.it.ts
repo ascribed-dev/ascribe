@@ -161,19 +161,72 @@ describe("the preview, with the real language server on examples/quill", () => {
     assert.match(render.result.problems[0]?.message ?? "", /is a fragment.*install-agent\.md/);
   });
 
-  it("scrolls to the section the cursor is in", async () => {
+  it("scrolls with the editor by block, both ways", async () => {
     const editor = await vscode.window.showTextDocument(
       await vscode.workspace.openTextDocument(install),
     );
-    await drawnFor(
+    const render = await drawnFor(
       (r) => r.result.page?.path === "install-agent.md" && r.seq === preview.renders().at(-1)?.seq,
     );
-    const line = editor.document
-      .getText()
-      .split("\n")
-      .findIndex((text) => text.startsWith("## Streaming sync"));
-    editor.selection = new vscode.Selection(line + 3, 0, line + 3, 0);
-    await waitFor("a scroll to streaming-sync", () => preview.reveals().includes("streaming-sync"));
+    assert.ok((render.report?.anchored ?? 0) > 20, "the page's blocks carry anchors");
+    const lines = editor.document.getText().split("\n");
+    const lineOf = (start: string) => lines.findIndex((text) => text.startsWith(start));
+
+    // The editor scrolls: the preview shows the block at its top. The line
+    // VS Code reports at the top can sit a little above the one revealed (sticky
+    // scroll keeps the heading in view), so the block is the one for that line:
+    // in the streaming sync section, from its heading to the paragraph.
+    const heading = lineOf("## Streaming sync");
+    const paragraph = lineOf("Streaming sync pushes changes");
+    editor.revealRange(
+      new vscode.Range(paragraph, 0, paragraph, 0),
+      vscode.TextEditorRevealType.AtTop,
+    );
+    const top = () => editor.visibleRanges[0]?.start.line;
+    const scrolled = await waitFor("a scroll to the streaming sync section", () => {
+      const line = top();
+      return line !== undefined && line >= heading && line <= paragraph
+        ? preview.lineReveals().find((r) => r.line === line)
+        : undefined;
+    }).catch((error: unknown) => {
+      throw new Error(
+        `${String(error)}; editor top ${top()}, reveals ${JSON.stringify(preview.lineReveals())}`,
+      );
+    });
+    const [, first, last] = /^install-agent\.md:(\d+)-(\d+)$/.exec(scrolled.source) ?? [];
+    assert.ok(
+      Number(first) >= heading + 1 && Number(last) <= paragraph + 1,
+      `the block at the top is in the streaming sync section: ${scrolled.source}`,
+    );
+
+    // The editor shows an include: the preview shows the first block it brought in.
+    const include = lineOf("@include: _fragments/prerequisites.md");
+    editor.selection = new vscode.Selection(include, 0, include, 0);
+    editor.revealRange(new vscode.Range(include, 0, include, 0), vscode.TextEditorRevealType.AtTop);
+    await waitFor("a scroll to the fragment's first block", () =>
+      preview.lineReveals().some((r) => r.source === "_fragments/prerequisites.md:1-1"),
+    );
+
+    // A double-click on a block in the preview puts the cursor on its line.
+    const steps = lineOf("@steps");
+    await preview.receive({ type: "openLine", line: steps });
+    assert.equal(vscode.window.activeTextEditor?.selection.active.line, steps);
+
+    // The preview scrolls: the editor follows, with the heading at its top
+    // (just below sticky scroll's lines, which VS Code counts as visible).
+    const troubleshooting = lineOf("## Troubleshooting");
+    await preview.receive({ type: "scrolled", line: troubleshooting });
+    const tops = () =>
+      vscode.window.visibleTextEditors
+        .filter((e) => e.document.uri.fsPath === install.fsPath)
+        .map((e) => e.visibleRanges[0]?.start.line);
+    await waitFor("the editor at the troubleshooting heading", () =>
+      tops().some(
+        (line) => line !== undefined && line <= troubleshooting && troubleshooting <= line + 5,
+      ),
+    ).catch((error: unknown) => {
+      throw new Error(`${String(error)}; editor tops ${JSON.stringify(tops())}`);
+    });
   });
 
   it("shows an image from a directory beside the content root, and serves only that directory", async () => {

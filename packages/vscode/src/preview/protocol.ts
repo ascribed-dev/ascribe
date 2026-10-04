@@ -31,6 +31,7 @@ export interface PreviewLink {
   id: string | null;
 }
 
+/** A heading written in the previewed file. The HTML's source anchors locate every block. */
 export interface PreviewSection {
   id: string;
   /** From 0. */
@@ -100,6 +101,8 @@ export type ToWebview =
       type: "render";
       /** Counts renders; the webview echoes it. */
       seq: number;
+      /** The page's content path, which the HTML's source anchors name; `null` with no page. */
+      path: string | null;
       build: string;
       builds: PreviewBuild[];
       title: string | null;
@@ -108,7 +111,12 @@ export type ToWebview =
       assets: WebviewAsset[];
       problems: ShownProblem[];
     }
-  | { type: "reveal"; id: string };
+  | { type: "reveal"; id: string }
+  /**
+   * Scroll to the block that stands for a line of the previewed file (from
+   * 0), to the top; with `ifHidden`, only when no part of it is in view.
+   */
+  | { type: "revealLine"; line: number; ifHidden: boolean };
 
 /** Webview to extension. */
 export type FromWebview =
@@ -117,11 +125,19 @@ export type FromWebview =
   | { type: "open"; href: string }
   | { type: "showOutput" }
   | { type: "rendered"; seq: number; report: RenderReport }
+  /** The preview scrolled to the block for `line`, whose anchor is `source`. */
+  | { type: "revealedLine"; line: number; source: string }
+  /** The reader scrolled the preview: the block at the top stands for `line`. */
+  | { type: "scrolled"; line: number }
+  /** The reader double-clicked a block that stands for `line`: show it in the editor. */
+  | { type: "openLine"; line: number }
   | { type: "images"; seq: number; images: ImageReport[] };
 
 /** What the webview found in the page it just rendered, for tests and diagnostics. */
 export interface RenderReport {
   headings: string[];
+  /** How many elements carry a source anchor that names the previewed file. */
+  anchored: number;
   elements: Record<string, number>;
   /** Whether the element library's custom elements are defined. */
   elementsDefined: boolean;

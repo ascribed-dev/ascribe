@@ -139,6 +139,7 @@ Checks the project, then writes each build's outputs. The checks run first, exac
 - `--build <NAME>` builds only that build. Repeat it for several. By default, every build in `ascribe.toml`.
 - `--emit <OUTPUTS>`: any of `site`, `plain`, and `json`, separated by commas. All three by default.
 - `--format text|json`: how the checks' results are shown, as for `ascribe check`.
+- `--anchors` marks each block of the site output with the source file and lines it came from, for review: an `<!--ascribe-anchor …-->` comment before each Markdown block, and `data-ascribe-source` (with `data-ascribe-via` for a block from a fragment) on each element Ascribe writes. The Astro integration turns them into attributes on every block's element ([site-render contract](contracts/site-render.md#7-source-anchors)). The site output's manifest records `"anchors": true`. Without it, the output has no anchors. The other outputs are the same either way.
 
 Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error.
 

@@ -1,7 +1,10 @@
 // The preview's script, run in the webview. It draws what the extension
 // sends: the page's HTML (already rendered by the same renderer as the site),
 // with each asset reference pointed at a webview URL, and reports what the
-// author does: picks a build, clicks a link.
+// author does: picks a build, clicks a link, scrolls, double-clicks a block.
+//
+// The page's blocks carry source anchors (site-render contract §7), so the
+// preview scrolls with the editor by block, both ways (`blocks.ts`).
 //
 // The page's HTML is untrusted text from the author's own files: it is parsed
 // into an inert `<template>`, its asset references are rewritten there (so no
@@ -9,6 +12,7 @@
 // into the document. Nothing here evaluates it: the content security policy
 // (`html.ts`) doesn't allow inline scripts, and none is created.
 
+import { blockAt, linesInPage, type Lines } from "../preview/blocks.js";
 import { canonicalReference, isExternal, splitFragment } from "../preview/refs.js";
 import type {
   AvailabilityTarget,
@@ -146,8 +150,86 @@ function rewriteAssets(root: ParentNode, assets: WebviewAsset[]): void {
 
 function reveal(id: string): void {
   const heading = content.querySelector(`[id="${CSS.escape(id)}"]`);
-  heading?.scrollIntoView({ block: "start" });
+  quietScroll(() => heading?.scrollIntoView({ block: "start" }));
 }
+
+/** The page's anchored blocks, in document order, and the lines each stands for. */
+let blocks: { element: HTMLElement; lines: Lines | undefined }[] = [];
+let pagePath: string | null = null;
+/** The block last scrolled to for the editor, so moving within it scrolls nothing. */
+let revealedBlock: HTMLElement | undefined;
+/** Until when scroll events are the preview's own (a reveal, a re-render), not the reader's. */
+let quietUntil = 0;
+
+function quietScroll(scroll: () => void): void {
+  quietUntil = Date.now() + 250;
+  scroll();
+}
+
+function readBlocks(): void {
+  blocks = [...content.querySelectorAll<HTMLElement>("[data-ascribe-source]")].map((element) => ({
+    element,
+    lines:
+      pagePath === null
+        ? undefined
+        : linesInPage(
+            element.dataset["ascribeSource"] ?? "",
+            element.dataset["ascribeVia"],
+            pagePath,
+          ),
+  }));
+  revealedBlock = undefined;
+}
+
+function revealLine(line: number, ifHidden: boolean): void {
+  const index = blockAt(
+    blocks.map((b) => b.lines),
+    line,
+  );
+  const block = index === undefined ? undefined : blocks[index];
+  if (block === undefined || block.element === revealedBlock) return;
+  const rect = block.element.getBoundingClientRect();
+  if (ifHidden && rect.bottom > 0 && rect.top < window.innerHeight) return;
+  revealedBlock = block.element;
+  quietScroll(() => block.element.scrollIntoView({ block: "start" }));
+  post({ type: "revealedLine", line, source: block.element.dataset["ascribeSource"] ?? "" });
+}
+
+/** The block at the top of the view: the innermost one across the top edge, else the first below it. */
+function topBlock(): { element: HTMLElement; lines: Lines } | undefined {
+  let across: { element: HTMLElement; lines: Lines } | undefined;
+  for (const { element, lines } of blocks) {
+    if (lines === undefined) continue;
+    const rect = element.getBoundingClientRect();
+    if (rect.top <= 1 && rect.bottom > 1) across = { element, lines };
+    else if (rect.top > 1) return across ?? { element, lines };
+  }
+  return across;
+}
+
+let scrollQueued = false;
+window.addEventListener("scroll", () => {
+  if (Date.now() < quietUntil || scrollQueued) return;
+  scrollQueued = true;
+  requestAnimationFrame(() => {
+    scrollQueued = false;
+    const block = topBlock();
+    if (block === undefined) return;
+    revealedBlock = block.element;
+    post({ type: "scrolled", line: block.lines.first });
+  });
+});
+
+content.addEventListener("dblclick", (event) => {
+  const target = event.target instanceof Element ? event.target : null;
+  for (let node = target; node !== null && content.contains(node); node = node.parentElement) {
+    const block = blocks.find((b) => b.element === node);
+    if (block?.lines !== undefined) {
+      post({ type: "openLine", line: block.lines.first });
+      return;
+    }
+  }
+});
 
 function report(): RenderReport {
   const elements: Record<string, number> = {};
@@ -156,6 +238,7 @@ function report(): RenderReport {
   }
   return {
     headings: [...content.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((h) => h.id),
+    anchored: blocks.filter((b) => b.lines !== undefined).length,
     elements,
     elementsDefined: customElements.get("ascribe-tabs") !== undefined,
     violations: [...violations],
@@ -184,9 +267,11 @@ function imagesSettled(seq: number): void {
 function render(message: Extract<ToWebview, { type: "render" }>): void {
   showBuilds(message.builds, message.build);
   showProblems(message.problems);
+  pagePath = message.path;
   if (message.html === null) {
     page.hidden = true;
     content.replaceChildren();
+    readBlocks();
     post({ type: "rendered", seq: message.seq, report: report() });
     return;
   }
@@ -199,8 +284,9 @@ function render(message: Extract<ToWebview, { type: "render" }>): void {
   showAvailability(message.available);
   content.replaceChildren(template.content);
   page.hidden = false;
+  readBlocks();
   // Replacing the content moves the document; put the reader back where they were.
-  window.scrollTo(scroll.x, scroll.y);
+  quietScroll(() => window.scrollTo(scroll.x, scroll.y));
   post({ type: "rendered", seq: message.seq, report: report() });
   imagesSettled(message.seq);
 }
@@ -209,6 +295,7 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
   const message = event.data;
   if (message.type === "render") render(message);
   else if (message.type === "reveal") reveal(message.id);
+  else if (message.type === "revealLine") revealLine(message.line, message.ifHidden);
 });
 
 post({ type: "ready" });

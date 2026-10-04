@@ -1,7 +1,8 @@
 // Compares HTML as parsed trees, as tests/render/README.md says: parse both as
 // a fragment in a <body> context, drop whitespace-only text outside <pre>, and
 // compare node by node (element names, attributes as unordered sets, text and
-// comments exactly).
+// comments exactly). With `dropAnchors`, the source anchors' attributes
+// (`data-ascribe-source`, `data-ascribe-via`) of `actual` are left out.
 import type { Nodes, Root } from "hast";
 import { fromHtml } from "hast-util-from-html";
 
@@ -9,15 +10,25 @@ import { fromHtml } from "hast-util-from-html";
 type Shape = string | { tag: string; attributes: [string, string][]; children: Shape[] };
 
 /** The path to the first difference between two HTML fragments, or `undefined` when they're equal. */
-export function firstDifference(expected: string, actual: string): string | undefined {
+export function firstDifference(
+  expected: string,
+  actual: string,
+  { dropAnchors = false }: { dropAnchors?: boolean } = {},
+): string | undefined {
   return compare(
     shapes(fromHtml(expected, { fragment: true })),
-    shapes(fromHtml(actual, { fragment: true })),
+    shapes(fromHtml(actual, { fragment: true }), false, dropAnchors),
     "body",
   );
 }
 
-function shapes(parent: Root | Extract<Nodes, { children: unknown[] }>, inPre = false): Shape[] {
+const ANCHOR_PROPERTIES = new Set(["dataAscribeSource", "dataAscribeVia"]);
+
+function shapes(
+  parent: Root | Extract<Nodes, { children: unknown[] }>,
+  inPre = false,
+  dropAnchors = false,
+): Shape[] {
   const out: Shape[] = [];
   for (const node of parent.children) {
     if (node.type === "text") {
@@ -27,6 +38,7 @@ function shapes(parent: Root | Extract<Nodes, { children: unknown[] }>, inPre = 
       out.push(`comment:${node.value}`);
     } else if (node.type === "element") {
       const attributes = Object.entries(node.properties)
+        .filter(([name]) => !(dropAnchors && ANCHOR_PROPERTIES.has(name)))
         .map(
           ([name, value]) =>
             [name, Array.isArray(value) ? value.join(" ") : String(value)] as [string, string],
@@ -35,7 +47,7 @@ function shapes(parent: Root | Extract<Nodes, { children: unknown[] }>, inPre = 
       out.push({
         tag: node.tagName,
         attributes,
-        children: shapes(node, inPre || node.tagName === "pre"),
+        children: shapes(node, inPre || node.tagName === "pre", dropAnchors),
       });
     }
   }

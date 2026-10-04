@@ -55,4 +55,4 @@ pub use json::{JSON_SCHEMA_VERSION, JsonEmitter};
 pub use plain::PlainEmitter;
 pub use render::render_site_html;
 pub use site::{AstroProfile, SiteEmitter};
-pub use store::{Contents, EmittedFile, FileKind, OutputDir, Replaced, StoreError};
+pub use store::{Contents, EmittedFile, FileKind, OutputDir, OutputOptions, Replaced, StoreError};

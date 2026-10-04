@@ -99,8 +99,12 @@ resolves the page for the build (`Project::resolve_page`), writes the site
 markdown with `SiteEmitter` (`tessera_emit::emit_page`), and renders it with
 `tessera_emit::render_site_html`, which implements the site-render contract
 that the Astro plugin implements; both pass the fixtures in `tests/render/`,
-so heading ids and image attributes are the site's. No capability is
-advertised: a client that wants it sends the request.
+so heading ids and image attributes are the site's. The preview is never
+published, so it always has source anchors (site-render contract §7): every
+block's element carries `data-ascribe-source`, and `data-ascribe-via` when it
+came through includes, which the client uses to scroll the preview with the
+editor by block. No capability is advertised: a client that wants it sends
+the request.
 
 **Params**
 
@@ -125,10 +129,10 @@ and `problems` says why. Field names are camelCase.
 | `page.path`, `page.route` | The page's content path and its route on the site. |
 | `page.title` | The page's title, phrases substituted. |
 | `page.frontmatter` | What the site output writes as frontmatter, as JSON. `available` is the list of targets a layout hands to `<ascribe-availability>`. |
-| `page.html` | The page's content as HTML, without frontmatter and without a layout. |
+| `page.html` | The page's content as HTML, with source anchors, without frontmatter and without a layout. |
 | `page.assets` | Each asset the page uses: `{ reference, path, kind, servable }`. `reference` is what the HTML writes, before any `#fragment`: an image's `src` is relative to the page (`./_fragments/a.png`), a link target's `href` is the site URL. `path` is the absolute source file, **resolved from the file the reference is written in** (asset contract §7), so a fragment's image is the one beside the fragment. `servable` is `true` when the file is in the content root or in a directory of `assetRoots`; a file directly in the project root, in `node_modules` or `.git`, or in the output directory isn't served, and `problems` says so. References are percent-encoded as URLs are; compare them after normalizing (`packages/vscode/src/preview/refs.ts` does). |
 | `page.links` | Each link to a page: `{ href, path, id }`, `href` as the HTML writes it, `path` the target file, `id` the heading it names. |
-| `page.sections` | The headings written in the previewed file itself, in order: `{ id, line }`, `line` from 0, for following the cursor. |
+| `page.sections` | The headings written in the previewed file itself, in order: `{ id, line }`, `line` from 0. The HTML's anchors locate every block, headings included. |
 
 Every problem is in `problems`, not in a JSON-RPC error: a malformed request
 (parameters that don't parse) is the only error, `InvalidParams`. The request runs on the server's main loop, so it must not grow with the

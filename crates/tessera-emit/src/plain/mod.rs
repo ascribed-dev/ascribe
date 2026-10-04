@@ -531,9 +531,15 @@ pub(crate) fn list(
 }
 
 /// Whether a chunk starts a list or a code fence, which can sit directly under
-/// a paragraph without a blank line.
-fn starts_nested(chunk: &str) -> bool {
-    let first = chunk.lines().next().unwrap_or("");
+/// a paragraph without a blank line. A site output chunk's source anchor, on
+/// the line before, can too (an HTML comment can interrupt a paragraph), so
+/// the line after it decides.
+pub(crate) fn starts_nested(chunk: &str) -> bool {
+    let mut lines = chunk.lines();
+    let mut first = lines.next().unwrap_or("");
+    if first.starts_with(crate::site::ANCHOR_START) {
+        first = lines.next().unwrap_or("");
+    }
     let digits = first.chars().take_while(char::is_ascii_digit).count();
     first.starts_with("```")
         || first.starts_with("~~~")

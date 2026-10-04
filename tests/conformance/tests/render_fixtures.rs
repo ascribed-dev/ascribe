@@ -1,5 +1,6 @@
 //! Checks the site-render fixtures in `tests/render/`: every fixture is listed
-//! in `fixtures.toml` with a description, and has its input and expected HTML.
+//! in `fixtures.toml` with a description, and has its input and expected HTML,
+//! and a fixture written from a source has its page without anchors.
 //!
 //! The fixtures themselves run against the two implementations:
 //! `tessera-emit`'s `render_site_html` and `@ascribed/astro`'s markdown
@@ -47,6 +48,14 @@ fn every_fixture_is_listed_and_complete() {
                 f.name
             );
         }
+        // A fixture written from a source has the page without anchors too.
+        if dir.join(&f.name).join("source").is_dir() {
+            assert!(
+                dir.join(&f.name).join("unanchored.md").is_file(),
+                "{}/unanchored.md is missing",
+                f.name
+            );
+        }
         assert!(!f.covers.is_empty(), "{} covers no construct", f.name);
     }
 
@@ -55,6 +64,8 @@ fn every_fixture_is_listed_and_complete() {
         .map(|e| e.unwrap())
         .filter(|e| e.path().is_dir())
         .map(|e| e.file_name().to_string_lossy().into_owned())
+        // Pages the source-anchor tests compare, not fixtures.
+        .filter(|name| name != "corpus")
         .collect();
     assert_eq!(
         dirs, names,

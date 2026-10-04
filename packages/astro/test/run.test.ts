@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runBuild } from "../src/run.js";
+import { anchorsFor, runBuild } from "../src/run.js";
 
 // A stand-in for the compiler: a shell script, so these run where /bin/sh does.
 function script(body: string): string {
@@ -27,6 +27,20 @@ describe.skipIf(process.platform === "win32")("runBuild", () => {
     expect(result.summary).toBe("built site/site: 1 page");
   });
 
+  it("passes --anchors when asked", async () => {
+    const binary = script('echo "args: $*"');
+    const result = await runBuild({
+      binary,
+      configPath: "/p/ascribe.toml",
+      build: "site",
+      cwd: "/",
+      anchors: true,
+    });
+    expect(result.diagnostics).toBe(
+      "args: build --emit site --build site --config /p/ascribe.toml --color never --anchors",
+    );
+  });
+
   it("rejects with the compiler's report when the build fails", async () => {
     const binary = script(
       'echo "[ASC036] Error: link-target-missing"; echo "error: the build failed" >&2; exit 1',
@@ -42,5 +56,15 @@ describe.skipIf(process.platform === "win32")("runBuild", () => {
     );
     expect(String(failure)).toContain("link-target-missing");
     expect(String(failure)).toContain("the build failed");
+  });
+});
+
+describe("anchorsFor", () => {
+  it('is off by default, on in dev for "dev", and on everywhere for true', () => {
+    expect(anchorsFor(undefined, "dev")).toBe(false);
+    expect(anchorsFor(false, "dev")).toBe(false);
+    expect(anchorsFor("dev", "dev")).toBe(true);
+    expect(anchorsFor("dev", "build")).toBe(false);
+    expect(anchorsFor(true, "build")).toBe(true);
   });
 });

@@ -10,6 +10,15 @@ export interface BuildResult {
 }
 
 /**
+ * Whether an Astro command builds with source anchors, given the integration's
+ * `anchors` option: `"dev"` means in `astro dev` only, so `astro build` has
+ * them only when it is `true`.
+ */
+export function anchorsFor(anchors: boolean | "dev" | undefined, command: string): boolean {
+  return anchors === true || (anchors === "dev" && command === "dev");
+}
+
+/**
  * Builds one build's site output. Rejects, with the compiler's report as the
  * message, if the build has errors: the Astro build fails with them.
  */
@@ -18,6 +27,8 @@ export function runBuild(options: {
   configPath: string;
   build: string;
   cwd: string;
+  /** Write source anchors (`--anchors`). */
+  anchors?: boolean;
 }): Promise<BuildResult> {
   const args = [
     "build",
@@ -30,6 +41,7 @@ export function runBuild(options: {
     "--color",
     "never",
   ];
+  if (options.anchors === true) args.push("--anchors");
   return new Promise((resolve, reject) => {
     execFile(
       options.binary,

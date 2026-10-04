@@ -59,6 +59,8 @@ describe("package.json", () => {
       "ascribe.formatOnSave",
       "ascribe.maxCrashes",
       "ascribe.path",
+      "ascribe.preview.scrollEditorWithPreview",
+      "ascribe.preview.scrollPreviewWithEditor",
       "ascribe.startServers",
       "ascribe.trace.server",
     ]);

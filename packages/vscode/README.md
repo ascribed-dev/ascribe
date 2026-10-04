@@ -26,6 +26,8 @@ The extension includes `ascribe` for your platform, so it works immediately. Whe
 | `ascribe.path` | The `ascribe` binary to run, for every project. When empty, each project's own, then the included one. |
 | `ascribe.startServers` | When each project's language server starts: `onDemand` (default), the first time one of its files is opened, or `all`, when the workspace opens. |
 | `ascribe.formatOnSave` | Format Ascribe constructs when saving. |
+| `ascribe.preview.scrollPreviewWithEditor` | Scroll the preview with the editor. Default on. |
+| `ascribe.preview.scrollEditorWithPreview` | Scroll the editor with the preview. Default on. |
 | `ascribe.maxCrashes` | How many crashes of the language server make the extension stop restarting it. Default 5. |
 | `ascribe.trace.server` | Log the conversation with the language server: `off`, `messages`, or `verbose`. |
 

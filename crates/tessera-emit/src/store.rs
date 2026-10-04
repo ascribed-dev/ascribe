@@ -123,12 +123,21 @@ pub struct Replaced {
     pub removed: usize,
 }
 
+/// What the manifest records about an output besides its files.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct OutputOptions {
+    /// The site output has source anchors (site-render contract §7).
+    pub anchors: bool,
+}
+
 #[derive(Serialize, Deserialize)]
 struct Manifest {
     format: String,
     version: u32,
     build: String,
     emitter: String,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    anchors: bool,
     files: Vec<ManifestFile>,
 }
 
@@ -215,6 +224,21 @@ impl OutputDir {
         emitter: &str,
         files: &[EmittedFile],
     ) -> Result<Replaced, StoreError> {
+        self.replace_with(build, emitter, files, OutputOptions::default())
+    }
+
+    /// [`OutputDir::replace`], with the manifest recording `options`.
+    ///
+    /// # Errors
+    ///
+    /// As [`OutputDir::replace`].
+    pub fn replace_with(
+        &self,
+        build: &str,
+        emitter: &str,
+        files: &[EmittedFile],
+        options: OutputOptions,
+    ) -> Result<Replaced, StoreError> {
         for name in [build, emitter] {
             if name.is_empty() || name.starts_with('.') || name.contains(['/', '\\']) {
                 return Err(StoreError::Conflicts(vec![format!(
@@ -223,7 +247,7 @@ impl OutputDir {
             }
         }
         let staging = self.root.join(STAGING_DIR).join(build).join(emitter);
-        let result = self.replace_staged(build, emitter, files, &staging);
+        let result = self.replace_staged(build, emitter, files, &staging, options);
         // Step 9: clean up, whatever happened. A failure to clean up doesn't
         // change what the build did.
         let _ = fs::remove_dir_all(&staging);
@@ -238,6 +262,7 @@ impl OutputDir {
         emitter: &str,
         files: &[EmittedFile],
         staging: &Path,
+        options: OutputOptions,
     ) -> Result<Replaced, StoreError> {
         let manifest_path = self.manifest_path(build, emitter);
         let emitter_root = self.emitter_root(build, emitter);
@@ -368,7 +393,7 @@ impl OutputDir {
             .map(|f| (f.path.clone(), f.clone()))
             .collect();
         union.extend(new_entries.iter().map(|f| (f.path.clone(), f.clone())));
-        self.write_manifest(build, emitter, union.into_values().collect())?;
+        self.write_manifest(build, emitter, union.into_values().collect(), options)?;
 
         // Step 6: move the new files into place.
         for blocker in &blockers {
@@ -414,7 +439,7 @@ impl OutputDir {
         }
 
         // Step 8: the final manifest lists only this build's files.
-        self.write_manifest(build, emitter, new_entries)?;
+        self.write_manifest(build, emitter, new_entries, options)?;
         Ok(replaced)
     }
 
@@ -425,6 +450,7 @@ impl OutputDir {
         build: &str,
         emitter: &str,
         mut files: Vec<ManifestFile>,
+        options: OutputOptions,
     ) -> Result<(), StoreError> {
         files.sort_by(|a, b| a.path.cmp(&b.path));
         let manifest = Manifest {
@@ -432,6 +458,7 @@ impl OutputDir {
             version: MANIFEST_VERSION,
             build: build.to_owned(),
             emitter: emitter.to_owned(),
+            anchors: options.anchors,
             files,
         };
         let mut text = serde_json::to_string_pretty(&manifest).map_err(|e| StoreError::Io {
