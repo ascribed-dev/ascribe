@@ -265,6 +265,11 @@ export interface SessionOptions {
   pullRequest: PullRequestInfo;
   transport: GitHubTransport;
   mutationInterval: number;
+  /**
+   * How long to wait before reading again when GitHub fails a read with its
+   * generic error, in milliseconds. Default 2000.
+   */
+  retryDelay?: number;
 }
 
 interface State {
@@ -273,6 +278,10 @@ interface State {
   located: LocatedThread[];
   pendingReview: RawReview | undefined;
 }
+
+// GitHub's generic failure, which it gives for a moment after some changes
+// (deleting a pending review): worth one more try.
+const TRANSIENT = /something went wrong/i;
 
 // GitHub's errors when a line can't take a review comment.
 const CANT_ANCHOR =
@@ -293,12 +302,55 @@ export function createSession(options: SessionOptions): ReviewSession {
   let viewer: Promise<string> | undefined;
   let lastMutation = 0;
   let queue: Promise<unknown> = Promise.resolve();
+  // The pending review just discarded. For a moment after, GitHub can still
+  // list it and its comments; reads leave them out until one doesn't.
+  let discarded: string | undefined;
+  const retryDelay = options.retryDelay ?? 2000;
+
+  /** A read, tried once more after a wait when GitHub fails it with its generic error. */
+  const read = async <T>(run: () => Promise<T>): Promise<T> => {
+    try {
+      return await run();
+    } catch (error) {
+      if (!(
+        error instanceof ReviewError &&
+        error.code === "refused" &&
+        TRANSIENT.test(error.message)
+      )) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      return run();
+    }
+  };
 
   const load = (): Promise<State> => {
     state ??= (async () => {
-      const raw = await readReviewThreads(transport, key);
-      const conversation = await readConversation(transport, key);
-      const reviews = await readReviews(transport, key);
+      let raw = await read(() => readReviewThreads(transport, key));
+      const conversation = await read(() => readConversation(transport, key));
+      let reviews = await read(() => readReviews(transport, key));
+      if (discarded !== undefined) {
+        const gone = discarded;
+        const stale =
+          reviews.some((review) => review.id === gone) ||
+          raw.some((thread) => thread.comments.nodes.some((c) => c?.state === "PENDING"));
+        if (stale) {
+          // The viewer has one pending review at most, so every pending
+          // comment was in the one discarded.
+          reviews = reviews.filter((review) => review.id !== gone);
+          raw = raw
+            .map((thread) => ({
+              ...thread,
+              comments: {
+                ...thread.comments,
+                nodes: thread.comments.nodes.filter((c) => c !== null && c.state !== "PENDING"),
+              },
+            }))
+            .filter((thread) => thread.comments.nodes.length > 0);
+        } else {
+          discarded = undefined;
+        }
+      }
       const pendingReview = reviews.find(
         (review) => review.state === "PENDING" && review.viewerDidAuthor,
       );
@@ -351,6 +403,8 @@ export function createSession(options: SessionOptions): ReviewSession {
       { pullRequestId: pullRequest.id, commit: pullRequest.headOid, body: PLACEHOLDER },
     );
     changed();
+    // A new pending review: the discarded one is gone from GitHub by now.
+    discarded = undefined;
     known = { id: data.addPullRequestReview.pullRequestReview.id, body: PLACEHOLDER };
     return known;
   };
@@ -628,6 +682,7 @@ export function createSession(options: SessionOptions): ReviewSession {
       await mutate(DELETE_REVIEW, { reviewId: pendingReview.id });
       changed();
       known = undefined;
+      discarded = pendingReview.id;
     },
 
     async refresh() {
