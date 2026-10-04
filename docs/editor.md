@@ -81,7 +81,7 @@ Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon a
 
 ### Preview
 
-**Ascribe: Open Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, and opens a page or file you click in the editor. It scrolls with the editor by block, both ways: scrolling the editor brings the block at its top to the top of the preview, moving the cursor into a block the preview doesn't show brings it into view, scrolling the preview scrolls the editor to the block at its top, and double-clicking a block puts the cursor on its first line. A block from a fragment follows the line of its `@include`. Its **Build** picker shows the page as any build publishes it, starting with the editor's build. In a workspace with several projects, each project keeps its own choice of build.
+**Ascribe: Open Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, and opens a page or file you click in the editor. It scrolls with the editor by block, both ways: scrolling the editor brings the block at its top to the top of the preview, moving the cursor into a block the preview doesn't show brings it into view, scrolling the preview scrolls the editor to the block at its top, and double-clicking a block puts the cursor on its first line. A block from a fragment follows the line of its `@include`. Turn off `ascribe.preview.scrollPreviewWithEditor` or `ascribe.preview.scrollEditorWithPreview` to stop one direction. Its **Build** picker shows the page as any build publishes it, starting with the editor's build. In a workspace with several projects, each project keeps its own choice of build.
 
 A fragment isn't a page, so the preview names the pages that include it instead. A page a build doesn't publish says which build drops it, and why.
 
@@ -134,6 +134,8 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 | `ascribe.path` | empty | The `ascribe` binary to run, for every project. When empty, each project's own, then the included one. Changing it restarts the servers that have started. |
 | `ascribe.startServers` | `onDemand` | When each project's language server starts: `onDemand`, the first time one of its files is opened, or `all`, when the workspace opens. See [When servers start](#when-servers-start). |
 | `ascribe.formatOnSave` | `false` | Format Ascribe constructs when saving. |
+| `ascribe.preview.scrollPreviewWithEditor` | `true` | Scroll the preview with the editor and to the block the cursor moves to. |
+| `ascribe.preview.scrollEditorWithPreview` | `true` | Scroll the editor when the preview is scrolled. |
 | `ascribe.maxCrashes` | `5` | After this many crashes of a project's language server, since it was last restarted by hand, the extension stops restarting it and explains why. |
 | `ascribe.trace.server` | `off` | `messages` or `verbose` logs the conversation with the server, for reporting a problem. |
 

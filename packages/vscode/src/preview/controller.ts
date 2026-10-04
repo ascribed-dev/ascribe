@@ -545,12 +545,14 @@ export class PreviewController implements vscode.Disposable {
 
   /** Shows the block the cursor is in, when no part of it is in the preview's view. */
   private followCursor(editor: vscode.TextEditor): void {
+    if (!scrollSetting(editor.document, "scrollPreviewWithEditor")) return;
     this.revealLine(editor.selection.active.line, true);
   }
 
   /** Scrolls the preview to the block at the top of the editor. */
   private followScroll(editor: vscode.TextEditor): void {
     if (Date.now() < this.editorQuietUntil) return;
+    if (!scrollSetting(editor.document, "scrollPreviewWithEditor")) return;
     const top = editor.visibleRanges[0];
     if (top) this.revealLine(top.start.line, false);
   }
@@ -564,7 +566,7 @@ export class PreviewController implements vscode.Disposable {
   /** The author scrolled the preview: scrolls the editor to the line of the block at its top. */
   private scrollEditor(line: number): void {
     const editor = vscode.window.visibleTextEditors.find((e) => e.document === this.document);
-    if (!editor) return;
+    if (!editor || !scrollSetting(editor.document, "scrollEditorWithPreview")) return;
     this.editorQuietUntil = Date.now() + 300;
     editor.revealRange(new vscode.Range(line, 0, line, 0), vscode.TextEditorRevealType.AtTop);
   }
@@ -689,3 +691,11 @@ function panelTitle(document: vscode.TextDocument | undefined): string {
 }
 
 export { isExternal };
+
+/** Whether the preview and the editor scroll together, in a direction, for a document. */
+function scrollSetting(
+  document: vscode.TextDocument,
+  name: "scrollPreviewWithEditor" | "scrollEditorWithPreview",
+): boolean {
+  return vscode.workspace.getConfiguration("ascribe.preview", document.uri).get(name, true);
+}
