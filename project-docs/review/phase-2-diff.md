@@ -56,15 +56,15 @@ Set a size limit: above a number of blocks or words (choose one, test it), a pai
 ```jsonc
 {
   "schema_version": 1,
-  "base": { "requested": "origin/main", "commit": "…", "mergeBase": "…" },
-  "repository": { "root": "/…", "projectPrefix": "docs/" },
+  "base": { "requested": "origin/main", "commit": "…", "merge_base": "…" },
+  "repository": { "root": "/…", "project_prefix": "docs/" },
   "builds": [{
     "build": "site",
     "pages": [{
       "path": "guides/install.md",
       "route": "/guides/install/",
       "status": "changed",               // added | removed | changed
-      "ownFileChanged": false,
+      "own_file_changed": false,
       "because": ["_fragments/prereqs.md"],  // changed files this page's change comes from
       "changes": [{
         "kind": "changed",               // added | removed | changed | moved

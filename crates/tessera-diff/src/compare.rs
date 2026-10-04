@@ -33,7 +33,7 @@ pub struct BuildDiff {
 
 /// What changed on one page of a build.
 #[derive(Clone, Debug, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub struct PageDiff {
     /// The page's content path.
     pub path: String,
@@ -58,7 +58,7 @@ pub struct PageDiff {
 
 /// Whether a page is new, gone, or different.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub enum PageStatus {
     /// The build publishes it now, and didn't before.
     Added,
@@ -112,7 +112,7 @@ pub struct Change {
 
 /// The kinds of block change.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub enum ChangeKind {
     /// The block's content changed.
     Changed,
@@ -128,11 +128,11 @@ pub enum ChangeKind {
 /// `[start, end)` in characters (Unicode scalar values) of each side's
 /// `text`, which is the block's text with whitespace collapsed.
 #[derive(Clone, Debug, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub struct Words {
-    /// Ranges in `nowText`: words added or replacing others.
+    /// Ranges in `now_text`: words added or replacing others.
     pub now: Vec<[usize; 2]>,
-    /// Ranges in `wasText`: words removed or replaced.
+    /// Ranges in `was_text`: words removed or replaced.
     pub was: Vec<[usize; 2]>,
     /// The block's text now.
     pub now_text: String,

@@ -203,8 +203,8 @@ cloud: no changes
 |---|---|---|
 | `schema_version` | number | `1` |
 | `ascribe_version` | string | The version of `ascribe` that wrote the report |
-| `base` | object | `requested`: the revision asked for, or the default branch used. `commit`: the commit it names. `mergeBase`: the merge base with `HEAD` that was compared with, or `null` with `--base-exact`. |
-| `repository` | object | `root`: the repository's top-level directory. `projectPrefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
+| `base` | object | `requested`: the revision asked for, or the default branch used. `commit`: the commit it names. `merge_base`: the merge base with `HEAD` that was compared with, or `null` with `--base-exact`. |
+| `repository` | object | `root`: the repository's top-level directory. `project_prefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
 | `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order |
 
 Each page:
@@ -214,7 +214,7 @@ Each page:
 | `path` | string | The page's path, relative to the content root |
 | `route` | string | Its route; for a removed page, the route it had |
 | `status` | string | `"added"` (the build publishes it now and didn't), `"removed"`, or `"changed"` |
-| `ownFileChanged` | boolean | Whether the page's own file changed, or exists on one side only |
+| `own_file_changed` | boolean | Whether the page's own file changed, or exists on one side only |
 | `because` | array of strings | The other changed files its change comes from, relative to the content root: fragments it includes, and pages its links take a title or heading from. `ascribe.toml` comes last when a change to the content model (a phrase's value, a label, a build's settings) is a cause. |
 | `counts` | object | `changed`, `added`, `removed`, and `moved`: how many changes of each kind |
 | `changes` | array | The block changes, in the page's order, each removed block where it was. Empty for an added or removed page, and for a page whose only change is its title or frontmatter. |
@@ -226,7 +226,7 @@ Each change:
 | `kind` | string | `"changed"`, `"added"`, `"removed"`, or `"moved"` |
 | `now` | object | Where the block is written now (absent for a removed block): `source` and `via`, below |
 | `was` | object | Where it was written at the base (absent for an added block) |
-| `words` | object | For changed prose: `now` and `was`, the ranges of words that differ, as `[start, end]` character offsets (Unicode characters, end exclusive) into `nowText` and `wasText`, the block's text with whitespace collapsed. Absent when the text is the same (only a link's target changed, say) or the block is too long to compare word by word. |
+| `words` | object | For changed prose: `now` and `was`, the ranges of words that differ, as `[start, end]` character offsets (Unicode characters, end exclusive) into `now_text` and `was_text`, the block's text with whitespace collapsed. Absent when the text is the same (only a link's target changed, say) or the block is too long to compare word by word. |
 | `after` | object | For a removed block, and for a moved block's old place: the block it came after, as it is now. Absent when it was first in its container. |
 | `parent` | object | For a removed block, and for a moved block's old place: the block it was inside, as it is now. Absent at the top of the page. |
 | `text` | string | For a removed block: its text, whitespace collapsed |
@@ -237,8 +237,8 @@ A block is a heading, paragraph, code block, table, list, list item, block quote
 {
   "schema_version": 1,
   "ascribe_version": "0.1.1",
-  "base": { "requested": "main", "commit": "3f9c2ab…", "mergeBase": "8d01e4c…" },
-  "repository": { "root": "/home/me/lantern", "projectPrefix": "docs/" },
+  "base": { "requested": "main", "commit": "3f9c2ab…", "merge_base": "8d01e4c…" },
+  "repository": { "root": "/home/me/lantern", "project_prefix": "docs/" },
   "builds": [
     {
       "build": "site",
@@ -247,7 +247,7 @@ A block is a heading, paragraph, code block, table, list, list item, block quote
           "path": "getting-started.md",
           "route": "/getting-started/",
           "status": "changed",
-          "ownFileChanged": false,
+          "own_file_changed": false,
           "because": ["_fragments/prereqs.md"],
           "counts": { "changed": 1, "added": 0, "removed": 0, "moved": 0 },
           "changes": [
@@ -258,8 +258,8 @@ A block is a heading, paragraph, code block, table, list, list item, block quote
               "words": {
                 "now": [[14, 17]],
                 "was": [[14, 17]],
-                "nowText": "Lantern agent 2.4 or later",
-                "wasText": "Lantern agent 2.2 or later"
+                "now_text": "Lantern agent 2.4 or later",
+                "was_text": "Lantern agent 2.2 or later"
               }
             }
           ]

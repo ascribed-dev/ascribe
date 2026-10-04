@@ -124,7 +124,7 @@ pub struct Report {
 
 /// The base of a comparison, in the report.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub struct BaseInfo {
     /// The revision asked for, or the default branch used.
     pub requested: String,
@@ -137,7 +137,7 @@ pub struct BaseInfo {
 
 /// The repository, in the report.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub struct RepositoryInfo {
     /// The repository's top-level directory, as git prints it.
     pub root: String,

@@ -146,8 +146,8 @@ fn json_output() {
     let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
     assert_eq!(json["schema_version"], 1);
     assert_eq!(json["base"]["requested"], "main");
-    assert_eq!(json["base"]["commit"], json["base"]["mergeBase"]);
-    assert_eq!(json["repository"]["projectPrefix"], "site/");
+    assert_eq!(json["base"]["commit"], json["base"]["merge_base"]);
+    assert_eq!(json["repository"]["project_prefix"], "site/");
     let pages = json["builds"][0]["pages"].as_array().expect("pages");
     assert_eq!(pages.len(), 2);
     assert_eq!(pages[0]["path"], "install.md");

@@ -436,7 +436,7 @@ fn the_json_has_the_documented_shape() {
     let json = serde_json::to_value(diff(&a, &b)).unwrap();
     let page = &json[0]["pages"][0];
     assert_eq!(page["status"], "changed");
-    assert_eq!(page["ownFileChanged"], true);
+    assert_eq!(page["own_file_changed"], true);
     assert_eq!(page["counts"]["changed"], 1);
     let change = &page["changes"][0];
     assert_eq!(change["kind"], "changed");

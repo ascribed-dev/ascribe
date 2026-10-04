@@ -40,7 +40,7 @@ From the repository's remote and current branch: the open pull request whose hea
 
 A thread sits on a path and a line, on one side of the pull request's diff, at the pull request's head commit. A rendered block has an anchor: a file and a line range in the working tree. Placing is finding the block for the thread:
 
-1. **Path:** the thread's path is repository-relative; anchors are content paths. Convert with the project's prefix (phase 2's `repository.projectPrefix`). A thread on a file outside the project is not placed and not shown.
+1. **Path:** the thread's path is repository-relative; anchors are content paths. Convert with the project's prefix (phase 2's `repository.project_prefix`). A thread on a file outside the project is not placed and not shown.
 2. **Line:** if the working tree's file equals the head commit's, the line is the line. Otherwise shift it through the line changes between the two (`git diff --unified=0 <head> -- <path>`, parsed). A line that no longer exists gives a **detached** thread.
 3. **Side:** a thread on the right side belongs to the block whose anchor contains the line. A thread on the left side (on removed text) belongs to the removed block from the diff whose `was` contains it.
 4. **Includes:** a thread on a fragment's line belongs to that block on every page that includes the fragment. Placement is by anchor, so this needs nothing extra; test it.
