@@ -172,16 +172,31 @@ describe("the preview, with the real language server on examples/quill", () => {
     const lines = editor.document.getText().split("\n");
     const lineOf = (start: string) => lines.findIndex((text) => text.startsWith(start));
 
-    // The editor scrolls: the preview shows the block at its top.
+    // The editor scrolls: the preview shows the block at its top. The line
+    // VS Code reports at the top can sit a little above the one revealed (sticky
+    // scroll keeps the heading in view), so the block is the one for that line:
+    // in the streaming sync section, from its heading to the paragraph.
+    const heading = lineOf("## Streaming sync");
     const paragraph = lineOf("Streaming sync pushes changes");
     editor.revealRange(
       new vscode.Range(paragraph, 0, paragraph, 0),
       vscode.TextEditorRevealType.AtTop,
     );
-    await waitFor("a scroll to the streaming sync paragraph", () =>
-      preview
-        .lineReveals()
-        .some((r) => r.source === `install-agent.md:${paragraph + 1}-${paragraph + 1}`),
+    const top = () => editor.visibleRanges[0]?.start.line;
+    const scrolled = await waitFor("a scroll to the streaming sync section", () => {
+      const line = top();
+      return line !== undefined && line >= heading && line <= paragraph
+        ? preview.lineReveals().find((r) => r.line === line)
+        : undefined;
+    }).catch((error: unknown) => {
+      throw new Error(
+        `${String(error)}; editor top ${top()}, reveals ${JSON.stringify(preview.lineReveals())}`,
+      );
+    });
+    const [, first, last] = /^install-agent\.md:(\d+)-(\d+)$/.exec(scrolled.source) ?? [];
+    assert.ok(
+      Number(first) >= heading + 1 && Number(last) <= paragraph + 1,
+      `the block at the top is in the streaming sync section: ${scrolled.source}`,
     );
 
     // The editor shows an include: the preview shows the first block it brought in.
