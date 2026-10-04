@@ -58,6 +58,23 @@
         "command": "ascribe.selectPreviewBuild",
         "title": "Select Preview Build",
         "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.startReview",
+        "title": "Start Review",
+        "category": "Ascribe",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "ascribe.stopReview",
+        "title": "Stop Review",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.changedPages",
+        "title": "Changed Pages",
+        "category": "Ascribe",
+        "icon": "$(list-unordered)"
       }
     ],
     "configuration": {
@@ -255,12 +272,29 @@
         {
           "command": "ascribe.selectPreviewBuild",
           "when": "ascribe.active && ascribe.previewOpen"
+        },
+        {
+          "command": "ascribe.startReview",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.stopReview",
+          "when": "ascribe.active && ascribe.reviewOn"
+        },
+        {
+          "command": "ascribe.changedPages",
+          "when": "ascribe.active"
         }
       ],
       "editor/title": [
         {
           "command": "ascribe.openPreview",
           "when": "ascribe.active && resourceLangId == markdown",
+          "group": "navigation"
+        },
+        {
+          "command": "ascribe.changedPages",
+          "when": "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
           "group": "navigation"
         }
       ]
@@ -281,6 +315,7 @@
   },
   "devDependencies": {
     "@ascribed/elements": "workspace:*",
+    "@ascribed/review": "workspace:*",
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.0.0",
     "@types/vscode": "~1.138.0",

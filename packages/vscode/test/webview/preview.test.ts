@@ -9,7 +9,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from "playwrig
 import { existsSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { shellHtml } from "../../src/preview/html.js";
-import type { FromWebview, ToWebview } from "../../src/preview/protocol.js";
+import type { FromWebview, ReviewView, ToWebview } from "../../src/preview/protocol.js";
 
 const dist = fileURLToPath(new URL("../../dist/webview/", import.meta.url));
 const ORIGIN = "https://preview.test";
@@ -70,6 +70,7 @@ async function open(): Promise<Preview> {
           cspSource: ORIGIN,
           elementsScript: `${ORIGIN}/dist/elements.js`,
           elementsStyle: `${ORIGIN}/dist/elements.css`,
+          marksStyle: `${ORIGIN}/dist/marks.css`,
           previewScript: `${ORIGIN}/dist/preview.js`,
           previewStyle: `${ORIGIN}/dist/preview.css`,
         }),
@@ -338,6 +339,175 @@ describe("the preview webview", () => {
     await expect(
       preview.page.locator("ascribe-availability-target[versions='3.4']").count(),
     ).resolves.toBe(1);
+    await preview.page.close();
+  });
+});
+
+const REVIEWED = `<p data-ascribe-source="page.md:1-1">First, unchanged.</p>
+<p data-ascribe-source="page.md:3-3">Run the new installer.</p>
+<p data-ascribe-source="_f/frag.md:1-1" data-ascribe-via="page.md:5">From a fragment.</p>`;
+const WAS = `<p data-ascribe-source="page.md:1-1">First, unchanged.</p>
+<p data-ascribe-source="page.md:3-3">Run the installer.</p>
+<p data-ascribe-source="page.md:5-5">A paragraph that went away.</p>`;
+
+function reviewed(
+  seq: number,
+  review: Partial<Extract<ReviewView, { state: "on" }>> = {},
+): ToWebview {
+  return render(seq, REVIEWED, {
+    path: "page.md",
+    review: {
+      state: "on",
+      base: "main",
+      page: {
+        path: "page.md",
+        route: "/page/",
+        status: "changed",
+        own_file_changed: true,
+        because: [],
+        page_changed: [],
+        counts: { changed: 1, added: 1, removed: 1, moved: 0 },
+        changes: [
+          {
+            kind: "changed",
+            now: { source: "page.md:3-3", via: [] },
+            was: { source: "page.md:3-3", via: [] },
+            words: {
+              now: [[8, 12]],
+              was: [],
+              now_text: "Run the new installer.",
+              was_text: "Run the installer.",
+            },
+          },
+          {
+            kind: "removed",
+            was: { source: "page.md:5-5", via: [] },
+            after: { source: "page.md:3-3", via: [] },
+            text: "A paragraph that went away.",
+          },
+          { kind: "added", now: { source: "_f/frag.md:1-1", via: ["page.md:5"] } },
+        ],
+      },
+      wasHtml: WAS,
+      causes: [],
+      goToFirst: false,
+      ...review,
+    },
+  } as Partial<ToWebview>);
+}
+
+describe("review in the preview webview", () => {
+  it("marks the page's changes and says how many there are", async () => {
+    const preview = await open();
+    await preview.send(reviewed(1));
+    const drawn = await preview.next("rendered");
+    if (drawn.type !== "rendered") throw new Error();
+    expect(drawn.report.marks).toEqual({ changed: 1, removed: 1, added: 1 });
+    expect(drawn.report.reviewHeader).toContain("Against main");
+    expect(drawn.report.reviewHeader).toContain("3 changes on this page");
+    // The changed words, and the removed block as the old page rendered it.
+    await expect(preview.page.locator("ins.ascribe-ins").textContent()).resolves.toBe("new ");
+    await expect(preview.page.locator(".ascribe-removed-body").textContent()).resolves.toBe(
+      "A paragraph that went away.",
+    );
+    await preview.page.close();
+  });
+
+  it("steps through the changes, then offers the next changed page", async () => {
+    const preview = await open();
+    await preview.send(reviewed(1));
+    await preview.next("rendered");
+    const next = preview.page.getByRole("button", { name: "Next change" });
+    await next.click();
+    await expect(preview.page.locator(".review .position").textContent()).resolves.toBe(
+      "1 of 3 on this page",
+    );
+    await next.click();
+    await next.click();
+    await expect(preview.page.locator(".review .position").textContent()).resolves.toBe(
+      "3 of 3 on this page",
+    );
+    const from = preview.posted.length;
+    await next.click();
+    await preview.next("atEnd", from);
+    await expect(preview.page.locator(".review .notice").textContent()).resolves.toContain(
+      "That was the last change on this page.",
+    );
+    await preview.send({
+      type: "nextPage",
+      page: { path: "other.md", title: "Other page" },
+      first: false,
+    });
+    await preview.page.getByRole("button", { name: "Next changed page: Other page" }).click();
+    await expect(preview.next("openPage", from)).resolves.toEqual({
+      type: "openPage",
+      path: "other.md",
+    });
+    await preview.page.close();
+  });
+
+  it("shows the page as it will be and as it was", async () => {
+    const preview = await open();
+    await preview.send(reviewed(1));
+    await preview.next("rendered");
+    const content = preview.page.locator("[data-role=content]");
+    await preview.page.getByRole("button", { name: "As it was" }).click();
+    await expect(content.getAttribute("data-ascribe-show")).resolves.toBe("was");
+    await expect(preview.page.getByText("A paragraph that went away.").isVisible()).resolves.toBe(
+      true,
+    );
+    await expect(preview.page.getByText("From a fragment.").isVisible()).resolves.toBe(false);
+    await preview.page.getByRole("button", { name: "As it will be" }).click();
+    await expect(preview.page.getByText("From a fragment.").isVisible()).resolves.toBe(true);
+    await expect(preview.page.getByText("A paragraph that went away.").isVisible()).resolves.toBe(
+      false,
+    );
+    await preview.page.close();
+  });
+
+  it("opens a mark's source, and the file a page changed through", async () => {
+    const preview = await open();
+    await preview.send(
+      reviewed(1, { causes: [{ label: "_f/frag.md", path: "/project/docs/_f/frag.md" }] }),
+    );
+    await preview.next("rendered");
+    await preview.page.locator("[data-ascribe-change=added] .ascribe-label").click();
+    await expect(preview.next("openSource")).resolves.toEqual({
+      type: "openSource",
+      source: "_f/frag.md:1-1",
+    });
+    await expect(preview.page.locator(".review .grow").textContent()).resolves.toBe(
+      "Against main · changed only through _f/frag.md",
+    );
+    await preview.page.getByRole("button", { name: "_f/frag.md" }).click();
+    await expect(preview.next("openFile")).resolves.toEqual({
+      type: "openFile",
+      path: "/project/docs/_f/frag.md",
+    });
+    await preview.page.close();
+  });
+
+  it("offers to start review while it's off, and leaves no marks when it's turned off", async () => {
+    const preview = await open();
+    await preview.send(reviewed(1));
+    await preview.next("rendered");
+    const from = preview.posted.length;
+    await preview.send(
+      render(2, REVIEWED, { path: "page.md", review: { state: "off" } } as Partial<ToWebview>),
+    );
+    const drawn = await preview.next("rendered", from);
+    if (drawn.type !== "rendered") throw new Error();
+    expect(drawn.report.marks).toEqual({});
+    expect(drawn.report.reviewHeader).toBe("Review is off for this project.Start Review");
+    await expect(preview.page.locator("[data-ascribe-change]").count()).resolves.toBe(0);
+    await expect(preview.page.locator("[data-ascribe-ui]").count()).resolves.toBe(0);
+    await preview.page.getByRole("button", { name: "Start Review" }).click();
+    await expect(preview.next("startReview", from)).resolves.toEqual({ type: "startReview" });
+    // No page: no header at all.
+    await preview.send(render(3, null, { review: null } as Partial<ToWebview>));
+    const empty = await preview.next("rendered", from + 1);
+    if (empty.type !== "rendered") throw new Error();
+    expect(empty.report.reviewHeader).toBeNull();
     await preview.page.close();
   });
 });

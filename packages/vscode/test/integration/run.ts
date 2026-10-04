@@ -13,10 +13,15 @@
 //               `ascribe`; skipped without it.
 //   preview     a copy of examples/quill, the preview panel, against
 //               the real `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//   review      a copy of examples/quill made into a git repository with one
+//               commit and a change in the working tree, review in the
+//               preview, against the real `ascribe lsp`. Needs ASCRIBE_BIN
+//               and `git`.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { runTests } from "@vscode/test-electron";
@@ -68,6 +73,41 @@ const suites: Suite[] = [
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
   },
   {
+    name: "review",
+    fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: (workspace) => {
+      const git = (...args: string[]): void => {
+        execFileSync(
+          "git",
+          [
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.com",
+            "-c",
+            "commit.gpgsign=false",
+            "-c",
+            "core.autocrlf=false",
+            ...args,
+          ],
+          { cwd: workspace },
+        );
+      };
+      git("init", "-q", "-b", "main");
+      git("add", "-A");
+      git("commit", "-q", "-m", "The Quill example");
+      const edit = (file: string, from: string, to: string): void => {
+        const at = path.join(workspace, "docs", file);
+        const text = readFileSync(at, "utf8");
+        if (!text.includes(from)) throw new Error(`${file} has no ${from}`);
+        writeFileSync(at, text.replace(from, to));
+      };
+      edit("install-agent.md", "syncs changes to", "syncs every change to");
+      edit("_fragments/prerequisites.md", "- Node.js 20 or later.", "- Node.js 22 or later.");
+      return { "ascribe.path": realServer, ...startAll };
+    },
+  },
+  {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The default `ascribe.startServers`: the suite checks what starts when.
@@ -84,7 +124,7 @@ const suites: Suite[] = [
 ];
 
 /** The suites that run the real language server. */
-const needsServer = new Set(["quill", "preview", "monorepo"]);
+const needsServer = new Set(["quill", "preview", "review", "monorepo"]);
 
 async function main(): Promise<void> {
   // A process an extension host started has this set, and VS Code would then

@@ -10,10 +10,13 @@ import type {
   PreviewParams,
   PreviewResult,
   RenderReport,
+  ReviewView,
   ToWebview,
   WebviewAsset,
 } from "./protocol.js";
 import { canonicalReference, isExternal, splitFragment } from "./refs.js";
+import { ReviewController, type ReviewApi } from "./review.js";
+import { baseName, causes, fromContentPath, parseSource } from "./reviewText.js";
 import { BuildChoices, previewProblems } from "./routing.js";
 
 /** The custom request the language server answers (`crates/tessera-lsp/README.md`). */
@@ -70,6 +73,8 @@ export interface PreviewApi {
   receive(message: FromWebview): Promise<void>;
   /** Selects a build as the picker does. */
   selectBuild(name: string): void;
+  /** Review. */
+  review: ReviewApi;
 }
 
 /**
@@ -107,14 +112,28 @@ export class PreviewController implements vscode.Disposable {
   /** Until when the editor's scrolling is the preview's doing, not the author's. */
   private editorQuietUntil = 0;
   private waiters: (() => void)[] = [];
+  /** The page to go to the first change of once it's drawn: one opened from review's next-page offer. */
+  private firstChangeOf: string | undefined;
+  private readonly review: ReviewController;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly projects: ProjectRegistry,
-  ) {}
+  ) {
+    this.review = new ReviewController(projects, {
+      previewedDocument: () => (this.panel ? this.document : undefined),
+      previewActive: () => this.panel?.active ?? false,
+      previewBuild: (folder) => this.builds.get(folder),
+      refresh: () => {
+        if (this.panel) this.schedule(0);
+      },
+      showPage: (uri) => this.showPage(uri),
+    });
+  }
 
   /** Registers the commands, the listeners, and the panel serializer. */
   register(): void {
+    this.review.register();
     this.disposables.push(
       vscode.commands.registerCommand("ascribe.openPreview", () => this.open()),
       vscode.commands.registerCommand("ascribe.selectPreviewBuild", () => this.pickBuild()),
@@ -168,6 +187,7 @@ export class PreviewController implements vscode.Disposable {
         this.waitForDrawn(description, predicate, timeout),
       receive: (message) => this.receive(message),
       selectBuild: (name) => this.chooseBuild(name),
+      review: this.review.api,
     };
   }
 
@@ -212,6 +232,7 @@ export class PreviewController implements vscode.Disposable {
     this.panelDisposables.push(
       panel.webview.onDidReceiveMessage((message: FromWebview) => void this.receive(message)),
       panel.onDidDispose(() => this.detach()),
+      panel.onDidChangeViewState(() => this.review.update()),
     );
     void vscode.commands.executeCommand("setContext", "ascribe.previewOpen", true);
   }
@@ -227,6 +248,7 @@ export class PreviewController implements vscode.Disposable {
     this.ready = false;
     this.latest = undefined;
     void vscode.commands.executeCommand("setContext", "ascribe.previewOpen", false);
+    this.review.update();
   }
 
   /**
@@ -260,6 +282,7 @@ export class PreviewController implements vscode.Disposable {
       cspSource: webview.cspSource,
       elementsScript: file("elements.js"),
       elementsStyle: file("elements.css"),
+      marksStyle: file("marks.css"),
       previewScript: file("preview.js"),
       previewStyle: file("preview.css"),
     });
@@ -300,6 +323,7 @@ export class PreviewController implements vscode.Disposable {
     const params: PreviewParams = { textDocument: { uri: document.uri.toString() } };
     const build = this.builds.get(server.project.folder);
     if (build !== undefined) params.build = build;
+    if (this.review.baseOf(server)) params.review = true;
     try {
       return (await server.request(PREVIEW_REQUEST, params)) as PreviewResult;
     } catch {
@@ -344,6 +368,11 @@ export class PreviewController implements vscode.Disposable {
         }
         await new Promise((resolve) => setTimeout(resolve, 25));
       }
+      // Review is on, and the server has no base: it restarted. Set it again.
+      const server = this.projects.serverFor(document.uri);
+      if (result?.page && !result.review && server && this.review.baseOf(server)) {
+        if (await this.review.restore(server)) result = await this.query(document);
+      }
     }
     if (!this.panel || panel !== this.panel) return;
     const server = document && this.projects.serverFor(document.uri);
@@ -382,6 +411,24 @@ export class PreviewController implements vscode.Disposable {
     };
     this.followRoots(result.contentRoot ?? undefined, result.assetRoots);
     const assets = this.assetUris(result);
+    const base = server && this.review.baseOf(server);
+    let review: ReviewView | null = null;
+    if (result.page && document) {
+      if (base && result.review) {
+        const goToFirst = this.firstChangeOf === document.uri.fsPath;
+        if (goToFirst) this.firstChangeOf = undefined;
+        review = {
+          state: "on",
+          base: baseName(result.review.base),
+          page: result.review.changes,
+          wasHtml: result.review.wasHtml,
+          causes: causes(result.review.changes, result),
+          goToFirst,
+        };
+      } else if (!base) {
+        review = { state: "off" };
+      }
+    }
     const message: Extract<ToWebview, { type: "render" }> = {
       type: "render",
       seq: ++this.seq,
@@ -393,6 +440,7 @@ export class PreviewController implements vscode.Disposable {
       html: result.page?.html ?? null,
       assets,
       problems,
+      review,
     };
     this.latest = { message, result, folder };
     this.log.push({
@@ -509,6 +557,30 @@ export class PreviewController implements vscode.Disposable {
       case "openLine":
         await this.openLine(message.line);
         return;
+      case "startReview":
+        await vscode.commands.executeCommand("ascribe.startReview");
+        return;
+      case "openSource":
+        await this.openSource(message.source);
+        return;
+      case "openFile":
+        await this.showFile(vscode.Uri.file(message.path));
+        return;
+      case "atEnd": {
+        const server = this.server();
+        const page = this.latest?.result.page;
+        if (!server || !page) return;
+        const next = await this.review.next(server, page.path);
+        const reply: ToWebview = { type: "nextPage", ...next };
+        void this.panel?.webview.postMessage(reply);
+        return;
+      }
+      case "openPage": {
+        const contentRoot = this.latest?.result.contentRoot;
+        if (contentRoot)
+          await this.showPage(vscode.Uri.file(fromContentPath(contentRoot, message.path)));
+        return;
+      }
     }
   }
 
@@ -583,6 +655,39 @@ export class PreviewController implements vscode.Disposable {
       new vscode.Range(line, 0, line, 0),
       vscode.TextEditorRevealType.InCenterIfOutsideViewport,
     );
+  }
+
+  /** A click on a mark's label: shows the block's source in the editor, its lines selected. */
+  private async openSource(source: string): Promise<void> {
+    const parsed = parseSource(source);
+    const contentRoot = this.latest?.result.contentRoot;
+    if (!parsed || !contentRoot) return;
+    const uri = vscode.Uri.file(fromContentPath(contentRoot, parsed.path));
+    const editor = await this.showFile(uri);
+    const last = Math.min(parsed.last, editor.document.lineCount - 1);
+    const range = new vscode.Range(parsed.first, 0, last, editor.document.lineAt(last).text.length);
+    editor.selection = new vscode.Selection(range.start, range.end);
+    editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+  }
+
+  /** Opens a file in the editor column beside the preview. */
+  private async showFile(uri: vscode.Uri): Promise<vscode.TextEditor> {
+    const viewColumn = this.editorColumn();
+    return vscode.window.showTextDocument(uri, {
+      ...(viewColumn === undefined ? {} : { viewColumn }),
+      preview: false,
+    });
+  }
+
+  /** Opens a changed page and its preview, and goes to its first change once it's drawn. */
+  private async showPage(uri: vscode.Uri): Promise<void> {
+    this.firstChangeOf = uri.fsPath;
+    const viewColumn = this.panel ? this.editorColumn() : undefined;
+    await vscode.window.showTextDocument(uri, {
+      ...(viewColumn === undefined ? {} : { viewColumn }),
+      preview: false,
+    });
+    await this.open();
   }
 
   private reveal(id: string): void {
@@ -668,6 +773,7 @@ export class PreviewController implements vscode.Disposable {
 
   dispose(): void {
     this.panel?.dispose();
+    this.review.dispose();
     for (const d of this.disposables) d.dispose();
     this.disposables = [];
   }
