@@ -1,6 +1,6 @@
 # Phase 2: `ascribe diff`
 
-Part of [Review](README.md). Requires phase 1 only for the anchor format it reuses. Rust only.
+Part of [Review](README.md). Needs no other phase, and can run at the same time as phase 1: the two share only the README's [anchor grammar](README.md#the-anchor-grammar). Rust only.
 
 ## Goal
 
@@ -77,7 +77,7 @@ Set a size limit: above a number of blocks or words (choose one, test it), a pai
 }
 ```
 
-`source` uses phase 1's anchor grammar, so a consumer finds the block in a rendered page by matching `data-ascribe-source`. A removed block has only `was`; it also says which surviving block it came after (`after`), so a marker can be placed.
+`source` and `via` use the README's [anchor grammar](README.md#the-anchor-grammar), so a consumer finds the block in a rendered page by matching `data-ascribe-source`. A removed block has only `was`; it also says which surviving block it came after (`after`), so a marker can be placed.
 
 `because` also names `ascribe.toml` when a model change (a phrase's value, a dimension label) is the cause.
 

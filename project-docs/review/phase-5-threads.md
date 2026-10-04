@@ -1,6 +1,6 @@
 # Phase 5: Review threads
 
-Part of [Review](README.md). Requires phase 2 (for the anchor grammar and the diff's JSON). TypeScript only: `packages/review`. No UI.
+Part of [Review](README.md). Requires phase 2 (for the diff's JSON), and can run at the same time as phase 3. TypeScript only: `packages/review`. No UI.
 
 ## Goal
 
@@ -8,7 +8,7 @@ The Node part of `@ascribed/review`: find the pull request for the checkout, rea
 
 ## Context
 
-- `packages/review` from phase 3 (the marks). Decide the package's shape here: one published package, `@ascribed/review`, with separate entry points for Node (`./github`, `./place`) and the browser (`./overlay`, `./marks`), so a host bundles only what it uses.
+- `packages/review`: this phase fills its Node entry points, `./github` and `./place`. If the package doesn't exist yet, do the README's [package setup](README.md#the-package-setup) first, as its own commit. Leave `src/marks/` to phase 3.
 - `scripts/release/` (`version.ts`, `manifests.ts`, `pack.ts`, `publish.ts`) and `RELEASING.md`: every published package is versioned in lock step. Adding a package means adding it there.
 - GitHub's GraphQL API: `pullRequest.reviewThreads` (each with `path`, `line`, `startLine`, `originalLine`, `diffSide`, `isResolved`, `isOutdated`, `subjectType`, and its comments), `addPullRequestReviewThread`, `addPullRequestReviewThreadReply`, `resolveReviewThread`, `unresolveReviewThread`, `submitPullRequestReview`, and the viewer's pending review. Check all of them against the current schema.
 - [`mockup.html`](mockup.html): this phase has no UI, but the mockup shows every case the session has to support. Use its **Try** buttons as a checklist for placement and posting: a thread on a fragment shown on two pages; a thread inside a tab that isn't showing, and inside closed details; a thread on removed text; a detached thread with the text it was on; an outdated thread with its original text; a comment GitHub can't anchor, sent to the conversation; a block that can't be commented on until its lines are pushed; **Reply now** and **Add to review**; the unsent count; and resolve acting at once.
@@ -86,11 +86,11 @@ Comment bodies are Markdown from other people. This package returns them as text
 
 ## Tasks
 
-1. The package's entry points and build, and its place in the release scripts (`scripts/release/`), with the scripts' own tests updated.
+1. The package setup, if phase 3 hasn't done it.
 2. Both transports, tested against a fake `gh` executable (a script on the path that replays recorded answers) and a fake `fetch`.
 3. Finding the pull request, placing, and posting, tested against recorded GraphQL responses and a temporary git repository. Cover: a right-side and a left-side thread, a multi-line thread, a thread on a fragment, an outdated thread, a line shifted by local edits, a removed line (detached), a file outside the project, the hidden-marker path, pagination past 100 threads, and each failure (`gh` missing, not signed in, no pull request, rate limited).
 4. A manual check against a real pull request in a scratch repository: read threads, post two comments into a pending review, submit, resolve one. Say in the pull request what you ran and saw. Do not post to this repository's pull requests.
-5. `packages/review/README.md` (the API), `RELEASING.md` if the package list is named there, and `CHANGELOG.md`.
+5. `packages/review/README.md` (the API of `./github` and `./place`) and `CHANGELOG.md`.
 
 ## Out of scope
 
@@ -112,7 +112,7 @@ pnpm test
 
 ## Commits
 
-1. "Add @ascribed/review to the workspace and the release"
+1. "Add @ascribed/review to the workspace and the release" (only if phase 3 hasn't)
 2. "Read a pull request's review threads"
 3. "Place review threads on rendered blocks"
 4. "Post comments through a pending review"

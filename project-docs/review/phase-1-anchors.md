@@ -1,6 +1,6 @@
 # Phase 1: Source anchors
 
-Part of [Review](README.md). Rust (`tessera-emit`, `tessera-lsp`, `tessera-cli`) and TypeScript (`packages/astro`, `packages/vscode`).
+Part of [Review](README.md). Needs no other phase, and can run at the same time as phase 2. Rust (`tessera-emit`, `tessera-lsp`, `tessera-cli`) and TypeScript (`packages/astro`, `packages/vscode`).
 
 ## Goal
 
@@ -30,7 +30,7 @@ In the HTML, on the block's own element:
 <pre data-ascribe-source="_fragments/prereqs.md:3-9" data-ascribe-via="guides/install.md:20">…</pre>
 ```
 
-Paths are percent-encoded so a path with a space or a colon is unambiguous. Write the exact grammar into the contract.
+The format is the README's [anchor grammar](README.md#the-anchor-grammar), which phase 2 uses too. Copy it into the contract as written; if it can't be met, stop and report, because changing it changes phase 2's output.
 
 ### Which blocks get one
 

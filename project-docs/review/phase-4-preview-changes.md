@@ -1,6 +1,6 @@
 # Phase 4: Changes in the page preview
 
-Part of [Review](README.md). Requires phases 1 to 3. Server and extension.
+Part of [Review](README.md). Requires phases 1 to 3. Runs by itself, though phase 5 may still be in progress. Server and extension.
 
 ## Goal
 

@@ -1,6 +1,6 @@
 # Phase 3: The static report
 
-Part of [Review](README.md). Requires phases 1 and 2. Rust, a little browser JavaScript and CSS, and docs.
+Part of [Review](README.md). Requires phases 1 and 2, and can run at the same time as phase 5. Rust, a little browser JavaScript and CSS, and docs.
 
 ## Goal
 
@@ -33,7 +33,7 @@ It's read-only: no comments. It's also where the change marks' look and behavior
 
 ### The marks as a shared piece
 
-Put the marks' CSS and the script that applies a phase 2 `changes` list to anchored HTML in one place the report inlines and `@ascribed/review` (phase 6) will import: `packages/review/src/marks/`. Create the package in this phase with just that, private until phase 5 decides its published shape. The Rust side embeds the built files with `include_str!`; add a check, like the existing ones for generated files, that the embedded copies are current.
+Put the marks' CSS and the script that applies a phase 2 `changes` list to anchored HTML in `packages/review/src/marks/` (the package's `./marks` entry point), which the report inlines and the overlay (phase 6) imports. If `packages/review` doesn't exist yet, do the README's [package setup](README.md#the-package-setup) first, as its own commit. The Rust side embeds the built files with `include_str!`; add a check, like the existing ones for generated files, that the embedded copies are current.
 
 ### Limits
 
@@ -45,7 +45,7 @@ Above a number of changed pages (choose one; a few hundred), the report includes
 
 ## Tasks
 
-1. `packages/review` with the marks' CSS and script, and unit tests (vitest, jsdom) applying each change kind to anchored HTML.
+1. The package setup, if phase 5 hasn't done it. Then the marks' CSS and script in `packages/review`, and unit tests (vitest, jsdom) applying each change kind to anchored HTML.
 2. `--format html` in `ascribe diff`: rendering both sides, inlining, the sidebar, and the limits. Snapshot tests on a small fixture repository, and a test that the file makes no external requests (no `http` URL in a `src`, `href` to a stylesheet, or `url()`).
 3. The CI recipe, in the docs and in this repository's workflow.
 4. `docs/cli.md`, `docs/review.md`, `CHANGELOG.md`.
@@ -70,6 +70,7 @@ pnpm lint && pnpm format:check && pnpm typecheck
 
 ## Commits
 
-1. "Mark changed blocks in rendered pages"
-2. "Write the diff as a static HTML report"
-3. "Upload the review report in CI"
+1. "Add @ascribed/review to the workspace and the release" (only if phase 5 hasn't)
+2. "Mark changed blocks in rendered pages"
+3. "Write the diff as a static HTML report"
+4. "Upload the review report in CI"

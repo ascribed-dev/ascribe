@@ -62,18 +62,55 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 
 ## Phases
 
-Do them in order. Each phase leaves the repository green and can be its own pull request.
+Each phase leaves the repository green and can be its own pull request. A phase can start once the phases it needs are merged.
 
-| Phase | Result |
-|---|---|
-| [1: Source anchors](phase-1-anchors.md) | In review mode, every rendered block says which source lines it came from, in the page preview and in Astro. The preview scrolls with the editor by block. |
-| [2: `ascribe diff`](phase-2-diff.md) | Changed pages and blocks between a base revision and the working tree, per build, as JSON. |
-| [3: The static report](phase-3-report.md) | `ascribe diff --format html`: one file showing every changed page rendered, with changes marked. A CI recipe uploads it. |
-| [4: Changes in the page preview](phase-4-preview-changes.md) | The page preview marks what changed against a base, and lists the changed pages. |
-| [5: Review threads](phase-5-threads.md) | `@ascribed/review` reads a pull request's threads, places them on blocks, and posts comments into a pending review. |
-| [6: The overlay, in the page preview](phase-6-overlay.md) | Threads beside blocks in the page preview: read, reply, resolve, comment, submit. Threads in the source editor too. |
-| [7: The site preview](phase-7-site-preview.md) | The overlay in Astro's dev toolbar, and switching between the site preview, the page preview, and the source. |
-| [8: Docs and a full pass](phase-8-docs.md) | The review guide, and the whole flow tried by hand on a real pull request. |
+| Phase | Result | Needs phases |
+|---|---|---|
+| [1: Source anchors](phase-1-anchors.md) | In review mode, every rendered block says which source lines it came from, in the page preview and in Astro. The preview scrolls with the editor by block. | Nothing |
+| [2: `ascribe diff`](phase-2-diff.md) | Changed pages and blocks between a base revision and the working tree, per build, as JSON. | Nothing |
+| [3: The static report](phase-3-report.md) | `ascribe diff --format html`: one file showing every changed page rendered, with changes marked. A CI recipe uploads it. | 1, 2 |
+| [4: Changes in the page preview](phase-4-preview-changes.md) | The page preview marks what changed against a base, and lists the changed pages. | 1, 2, 3 |
+| [5: Review threads](phase-5-threads.md) | `@ascribed/review` reads a pull request's threads, places them on blocks, and posts comments into a pending review. | 2 |
+| [6: The overlay, in the page preview](phase-6-overlay.md) | Threads beside blocks in the page preview: read, reply, resolve, comment, submit. Threads in the source editor too. | 4, 5 |
+| [7: The site preview](phase-7-site-preview.md) | The overlay in Astro's dev toolbar, and switching between the site preview, the page preview, and the source. | 6 |
+| [8: Docs and a full pass](phase-8-docs.md) | The review guide, and the whole flow tried by hand on a real pull request. | 1 to 7 |
+
+### What can run at the same time
+
+Two pairs, and no others:
+
+- **Phases 1 and 2.** They share only the [anchor grammar](#the-anchor-grammar), which is fixed below so neither waits for the other.
+- **Phases 3 and 5**, once 1 and 2 are merged. They share only the [package setup](#the-package-setup), which whichever starts first does.
+
+Phases 4, 6, 7, and 8 run one at a time, in order. Phases 6 and 7 are not split: both rework the extension's preview code, and running them together costs more in conflicts than it saves.
+
+When two phases run at once:
+
+- Each works on its own branch (or worktree), never the same checkout.
+- Merge one, then rebase the other onto it before its final checks. Expect small conflicts in the files both touch: `CHANGELOG.md`, `docs/cli.md`, `docs/review.md`, `Cargo.toml` and `Cargo.lock`, and `pnpm-lock.yaml`. Resolve them by keeping both sides' additions.
+- Each phase is still reviewed by itself before it's merged.
+
+### The anchor grammar
+
+Phases 1, 2, 3, and 5 all read or write source anchors. This is the format; phase 1 copies it into the site-render contract.
+
+- **A block's source** is `<path>:<first>-<last>`. `<path>` is the content path of the file the block's text is written in, with `/` between segments on every platform, and each segment percent-encoded except for ASCII letters, digits, `-`, `.`, `_`, and `~`. `<first>` and `<last>` are line numbers counted from 1, in decimal, with `<last>` never less than `<first>`. A one-line block still writes both: `guides/install.md:12-12`.
+- **An include** is `<path>:<line>`: the file holding the `@include` and its line.
+- **In HTML,** `data-ascribe-source` holds the block's source. When the block came through includes, `data-ascribe-via` holds them, outermost first, separated by single spaces. A block written in the page itself has no `data-ascribe-via`.
+- **In JSON** (phase 2's output), `source` is the same string and `via` is an array of include strings, empty when there are none.
+
+To parse one, split at the last `:`; the path can't contain an unencoded `:`.
+
+### The package setup
+
+`packages/review` is used by phases 3, 5, 6, and 7. Whichever of phases 3 and 5 starts first creates it, as its first commit, "Add @ascribed/review to the workspace and the release"; the other builds on that commit. The setup is:
+
+- one published package, `@ascribed/review`, with separate entry points so a host bundles only what it uses: `./marks` and `./overlay` for the browser, `./github` and `./place` for Node;
+- its build, lint, typecheck, and vitest configuration, matching `packages/astro`;
+- its place in the release scripts (`scripts/release/`, with their tests) and in `RELEASING.md` if packages are listed there, since every published package is versioned in lock step;
+- a `README.md` that says what each entry point is for.
+
+It adds no behavior: each entry point starts empty.
 
 Phases 1 to 4 need no GitHub access and are useful without the rest.
 
