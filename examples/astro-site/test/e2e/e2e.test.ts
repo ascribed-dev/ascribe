@@ -82,9 +82,12 @@ describe("the built site", () => {
   it("loads the fragment's image, processed by Astro, with the marker's attributes", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
     const image = page.getByRole("img", { name: "Checklist of requirements" });
-    await expect(
-      image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
-    ).resolves.toBe(true);
+    // The image loads lazily: wait for it rather than reading it once.
+    await expect
+      .poll(() =>
+        image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
+      )
+      .toBe(true);
     const attributes = await image.evaluate((element: HTMLImageElement) => ({
       src: element.getAttribute("src"),
       width: element.getAttribute("width"),
@@ -103,9 +106,12 @@ describe("the built site", () => {
   it("processes an image beside its page the same way", async () => {
     const page = await open(`${BASE}/reference/options`);
     const image = page.getByRole("img", { name: "The weave diagram" });
-    await expect(
-      image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
-    ).resolves.toBe(true);
+    // The image loads lazily: wait for it rather than reading it once.
+    await expect
+      .poll(() =>
+        image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
+      )
+      .toBe(true);
     expect(await image.getAttribute("src")).toMatch(
       new RegExp(`^${BASE}/_astro/weave\\.[\\w-]+\\.webp$`),
     );
