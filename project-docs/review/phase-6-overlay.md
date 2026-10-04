@@ -49,6 +49,7 @@ interface OverlayHost {
 
 - When review is on (phase 4) and the checkout has a pull request, the extension makes a `ReviewSession` with `tokenTransport`, asking VS Code's GitHub sign-in for a session only when the user turns review on (never at startup). If the user declines, the changes still show, without threads, with a **Sign in to see comments** button. If `gh` is signed in and VS Code isn't, offer `ghTransport`.
 - **Start Review** now defaults the base to the pull request's base when there is one.
+- When review is off and the checkout's branch has an open pull request, offer it once per session, quietly (a notification: "This branch has pull request #128. Start Review?"). Finding that out mustn't ask GitHub before the user has turned review on at least once in the workspace, and never asks for a sign-in.
 - The webview hosts the overlay; `OverlayHost` is implemented over the webview's message protocol. All GitHub access stays in the extension host: the webview never sees a token and makes no network requests (keep the content security policy as strict as it is).
 - If local `HEAD` isn't the pull request's head commit, the header says so (behind: **Pull** to see the latest; ahead: comments can be made only on pushed lines).
 - Threads refresh when review starts, on **Refresh** (an editor title action beside phase 4's **Changed Pages**), and after the user's own actions. No polling.

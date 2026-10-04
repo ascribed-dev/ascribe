@@ -246,6 +246,8 @@ External link checking (opt-in, for CI); a PDF or print output; image checks (un
 
 # Agents
 
+Sections 8 to 13 are planned in [agents/](agents/README.md), in eleven phases, checked against a [research report](../reports/Agent%20first%20interfaces%20for%20docs%20tools.md), with one idea added on 2026-10-04: a **Prompt agent** action on problems, review comments, and changed pages, which builds a prompt for the user's own agent. Section 7 isn't in that plan.
+
 Agents meet documentation in two ways: they **read** published docs while they code, and they **write** docs in a repository. Ascribe can help with both, and it's unusually well placed for the first, because it already builds a resolved, plain-Markdown version of every page.
 
 ## 7. Docs that agents can read: the Web Documentation Delivery Spec

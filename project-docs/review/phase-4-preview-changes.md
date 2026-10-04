@@ -28,6 +28,7 @@ In VS Code, turn on review for a project and the page preview marks what changed
 ### Extension
 
 - **Ascribe: Start Review** asks for the base, offering the default branch's merge base first, then a revision the user types. It applies to the active file's project (never starting a server just for this: if the project's server isn't running, the command says to open a page first). **Ascribe: Stop Review** turns it off. The state is per project and lasts for the session.
+- While review is off, the preview has no review header and looks exactly as it does without this feature. **Start Review** is reached from the status bar item, the command palette, and an editor title action on the preview.
 - The preview shows a header while review is on: the base, the page's change count, the show toggle from phase 3 (**changes / as it will be / as it was**), and next and previous change with the position ("3 of 10 on this page"). Past the last change it offers the next changed page instead of wrapping. These are drawn in the preview because they act on the rendered page, and the site preview needs the same controls where there is no editor around it.
 - Actions that don't act on the rendered page are native editor title actions on the preview panel (`menus["editor/title"]`, scoped to the preview with a `when` clause), as VS Code's guidelines prefer: **Changed Pages** here, and **Refresh** when phase 6 adds comments.
 - The webview applies the marks with phase 3's script. Clicking a mark's source goes to the line in the editor.

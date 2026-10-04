@@ -2701,6 +2701,9 @@
             s = sc(),
             out = [];
           if (s === "start") {
+            // With review off, the page preview has no review header: it looks as it does without the feature.
+            // Start Review is a title action, a status bar item, and a command. Only the site's toolbar panel, which the reviewer opens on purpose, says so in place.
+            if (state.surface !== "site") return out;
             out.push(
               h("div", { class: "rhead" }, [
                 h("span", { class: "grow", text: "Review is off for this project." }),
@@ -3133,6 +3136,17 @@
               h("span", { class: "sp" }),
               // Editor title actions: what doesn't act on the rendered page lives here, not in the preview's own header.
               h("div", { class: "act" }, [
+                reviewOn()
+                  ? null
+                  : btn(
+                      "ghost",
+                      "Start Review",
+                      function () {
+                        state.qp = "base";
+                        render();
+                      },
+                      { "aria-label": "Ascribe: Start Review", title: "Ascribe: Start Review" },
+                    ),
                 reviewOn()
                   ? btn(
                       "ghost sq",
