@@ -8,6 +8,7 @@ members = [
     "crates/tessera-check",
     "crates/tessera-resolve",
     "crates/tessera-emit",
+    "crates/tessera-diff",
     "crates/tessera-fmt",
     "crates/tessera-lsp",
     "crates/tessera-cli",
@@ -33,6 +34,7 @@ tessera-model = { path = "crates/tessera-model" }
 tessera-check = { path = "crates/tessera-check" }
 tessera-resolve = { path = "crates/tessera-resolve" }
 tessera-emit = { path = "crates/tessera-emit" }
+tessera-diff = { path = "crates/tessera-diff" }
 tessera-fmt = { path = "crates/tessera-fmt" }
 tessera-lsp = { path = "crates/tessera-lsp" }
 # The synthetic project the benchmarks share. A dev-dependency only.

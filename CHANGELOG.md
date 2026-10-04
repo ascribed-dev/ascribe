@@ -4,6 +4,10 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
+### The command
+
+- `ascribe diff` shows what changed between a git revision and the working tree, as readers will see it: the changed pages of each build, and the blocks on them that were added, removed, changed, or moved, with the words that changed. It compares resolved pages, so a page that changed only through a fragment, a phrase, or a build's settings is listed with the cause, and reformatting is no change. By default it compares with the merge base of the default branch, as a pull request does. `--format json` writes the changes with each block's source lines for tools. See [`ascribe diff`](docs/cli.md#ascribe-diff).
+
 ### The compiler
 
 - `ascribe build --emit site --anchors` marks each block of the site output with the source file and lines it came from (`data-ascribe-source`, and `data-ascribe-via` for a block from a fragment), for review. The site output's manifest records `"anchors": true`. Without the flag, the output is unchanged. See the [site-render contract](docs/contracts/site-render.md#7-source-anchors).

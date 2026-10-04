@@ -5,6 +5,7 @@ The `ascribe` command checks, builds, and formats an Ascribe project, and runs t
 ```text
 ascribe check [--build <NAME>]... [--format text|json] [--deny-warnings]
 ascribe build [--build <NAME>]... [--emit site,plain,json] [--format text|json]
+ascribe diff  [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json] [--exit-code]
 ascribe fmt   [--check] [PATHS]...
 ascribe lsp
 ascribe --version
@@ -163,6 +164,117 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 | `0` | Built |
 | `1` | The checks found errors; nothing was written |
 | `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
+
+## `ascribe diff`
+
+Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, phrase, or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
+
+- `--base <REV>`: the revision to compare with, anything git accepts (a branch, a tag, a commit). By default, the repository's default branch, the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists. The comparison starts from the **merge base** of that revision and `HEAD`, as a pull request shows its changes, so commits made on the base branch since you branched aren't listed. A shallow clone (what `actions/checkout` makes by default) may not have the merge base: fetch more history (`fetch-depth: 0`) or use `--base-exact`.
+- `--base-exact` compares with the revision itself instead of the merge base.
+- `--build <NAME>` compares only that build. Repeat it for several. By default, every build in `ascribe.toml`.
+- `--format json` writes one JSON document instead of text (see [Diff JSON](#diff-json)).
+- `--exit-code` exits with `1` when anything changed, as `git diff --exit-code` does.
+
+The other side is the working tree: the files on disk, committed or not, as `ascribe build` would read them now. Unsaved editor changes aren't included. The base is read from git, `ascribe.toml` included, so a change to the content model is compared too; if the project didn't exist at the base, every page is added. `ascribe diff` needs `git` on the path, and nothing else: no network and no GitHub account.
+
+The text output lists each build's changed pages with counts, and where a change comes from when it isn't only the page's own file:
+
+```text
+compared with main (3f9c2ab), from its merge base with HEAD (8d01e4c)
+site: 4 pages changed
+  getting-started.md: 1 changed, 1 added (through _fragments/prereqs.md)
+  guides/rollouts.md: 5 changed, 3 added, 1 removed, 1 moved
+  guides/schedules.md: added
+  reference/limits.md: title changed
+cloud: no changes
+```
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Compared, whether or not anything changed |
+| `1` | With `--exit-code`: something changed |
+| `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, no merge base (a shallow clone, or unrelated histories), `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error. |
+
+### Diff JSON
+
+`--format json` writes one JSON document to standard output. It follows the [JSON output](#json-output)'s rules: `schema_version` changes only when a field is removed or changes meaning, so **ignore fields you don't know**.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `schema_version` | number | `1` |
+| `ascribe_version` | string | The version of `ascribe` that wrote the report |
+| `base` | object | `requested`: the revision asked for, or the default branch used. `commit`: the commit it names. `merge_base`: the merge base with `HEAD` that was compared with, or `null` with `--base-exact`. |
+| `repository` | object | `root`: the repository's top-level directory. `project_prefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
+| `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order |
+
+Each page:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `path` | string | The page's path, relative to the content root |
+| `route` | string | Its route; for a removed page, the route it had |
+| `status` | string | `"added"` (the build publishes it now and didn't), `"removed"`, or `"changed"` |
+| `own_file_changed` | boolean | Whether the page's own file changed, or exists on one side only |
+| `because` | array of strings | The other changed files its change comes from, relative to the content root: fragments it includes, and pages its links take their text or a heading id from (a link to a page that changed otherwise isn't a cause). `ascribe.toml` comes last when a change to the content model (a phrase's value, a label, a build's settings) is a cause. |
+| `page_changed` | array of strings | What changed about the page as a whole, besides its blocks: `"title"`, `"frontmatter"` (fields other than `title` and `available`), `"availability"` (the page-level availability, as shown), and `"route"`, in that order. Empty for an added or removed page. |
+| `counts` | object | `changed`, `added`, `removed`, and `moved`: how many changes of each kind |
+| `changes` | array | The block changes, in the page's order, each removed block where it was. Empty for an added or removed page, and for a page whose only changes are in `page_changed`. |
+
+Each change:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | string | `"changed"`, `"added"`, `"removed"`, or `"moved"` |
+| `now` | object | Where the block is written now (absent for a removed block): `source` and `via`, below |
+| `was` | object | Where it was written at the base (absent for an added block) |
+| `words` | object | For changed prose: `now` and `was`, the ranges of words that differ, as `[start, end]` character offsets (Unicode characters, end exclusive) into `now_text` and `was_text`, the block's text with whitespace collapsed. Absent when the text is the same (only a link's target changed, say) or the block is too long to compare word by word. |
+| `after` | object | For a removed block, and for a moved block's old place: the block it came after, as it is now. Absent when it was first in its container. |
+| `parent` | object | For a removed block, and for a moved block's old place: the block it was inside, as it is now. Absent at the top of the page. |
+| `text` | string | For a removed block: its text, whitespace collapsed |
+
+A block is a heading, paragraph, code block, table, list, list item, block quote, directive, container, group, or a group's arm; changes inside a list, a container, or an arm are listed on the blocks inside it, so a one-word change in a step marks that step's paragraph. A block's `source` is `<path>:<first>-<last>`: the file its text is written in, relative to the content root with each path segment percent-encoded (except ASCII letters, digits, `-`, `.`, `_`, and `~`), and its first and last lines, from 1. `via` lists the includes it came through, outermost first, each `<path>:<line>`; it's empty for a block written in the page itself. These are the same strings the site output's source anchors carry, so a tool can find a block in a rendered page.
+
+```json
+{
+  "schema_version": 1,
+  "ascribe_version": "0.1.1",
+  "base": { "requested": "main", "commit": "3f9c2ab…", "merge_base": "8d01e4c…" },
+  "repository": { "root": "/home/me/lantern", "project_prefix": "docs/" },
+  "builds": [
+    {
+      "build": "site",
+      "pages": [
+        {
+          "path": "getting-started.md",
+          "route": "/getting-started/",
+          "status": "changed",
+          "own_file_changed": false,
+          "because": ["_fragments/prereqs.md"],
+          "page_changed": [],
+          "counts": { "changed": 1, "added": 0, "removed": 0, "moved": 0 },
+          "changes": [
+            {
+              "kind": "changed",
+              "now": { "source": "_fragments/prereqs.md:3-3", "via": ["getting-started.md:12"] },
+              "was": { "source": "_fragments/prereqs.md:3-3", "via": ["getting-started.md:12"] },
+              "words": {
+                "now": [[14, 17]],
+                "was": [[14, 17]],
+                "now_text": "Lantern agent 2.4 or later",
+                "was_text": "Lantern agent 2.2 or later"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+How blocks are matched: blocks are compared by their content without positions, so moving a block down the file or rewrapping it is no change. Blocks that didn't stay are paired, in order, with a block of the same kind whose words overlap by at least half, as **changed**; a block that matches nothing is **added** or **removed**, and a removed block identical to an added one elsewhere on the page is **moved**. A block over about 2,500 words gets no word ranges, and a list or container with over 1,000 blocks in it that changed is marked changed as a whole.
 
 ## `ascribe fmt`
 

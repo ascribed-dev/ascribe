@@ -1203,6 +1203,7 @@ dependencies = [
  "tempfile",
  "tessera-check",
  "tessera-core",
+ "tessera-diff",
  "tessera-emit",
  "tessera-fmt",
  "tessera-lsp",
@@ -1265,6 +1266,23 @@ dependencies = [
  "tessera-syntax",
  "tessera-synthetic",
  "toml",
+]
+
+[[package]]
+name = "tessera-diff"
+version = "0.1.1"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "similar",
+ "tempfile",
+ "tessera-core",
+ "tessera-emit",
+ "tessera-model",
+ "tessera-resolve",
+ "tessera-syntax",
+ "thiserror",
 ]
 
 [[package]]
