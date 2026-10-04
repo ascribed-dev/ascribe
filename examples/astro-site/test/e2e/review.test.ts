@@ -68,9 +68,17 @@ async function startReview(origin: string, route: string): Promise<Page> {
   const response = await page.goto(`${origin}${route}`);
   expect(response?.status(), route).toBe(200);
   await appButton(page).click();
+  // The panel has drawn, and review has started. (On macOS a delayed watcher
+  // event can reload the page once more, so a panel seen empty isn't done.)
   await expect
-    .poll(async () => panel(page).textContent(), { timeout: 60_000 })
-    .not.toContain("Starting review");
+    .poll(
+      async () => {
+        const text = (await panel(page).textContent().catch(() => null)) ?? "";
+        return text !== "" && !text.includes("Starting review");
+      },
+      { timeout: 60_000 },
+    )
+    .toBe(true);
   return page;
 }
 
@@ -201,8 +209,10 @@ describe("review in the site preview", () => {
     const server = await serveDev(root);
     try {
       const page = await startReview(server.origin, `${BASE}/guides/my-setup`);
+      await expect
+        .poll(async () => panel(page).textContent(), { timeout: 30_000 })
+        .toContain("This page has 1 change, but its blocks carry no source anchors.");
       const text = await panel(page).textContent();
-      expect(text).toContain("This page has 1 change, but its blocks carry no source anchors.");
       expect(text).toContain("dropping the data-ascribe-source attributes");
       expect(text).toContain("added Guides/My Setup.md:");
       await page.close();
