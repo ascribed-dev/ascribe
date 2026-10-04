@@ -142,8 +142,23 @@ describe("review in the site preview", () => {
       const text = await panel(page).textContent();
       expect(text).toContain("Nothing to review here");
       const link = panel(page).getByRole("link", { name: `${BASE}/guides/my-setup` });
-      await link.click();
-      await page.waitForURL(`${server.origin}${BASE}/guides/my-setup`);
+      // On macOS the watcher can report the edits made before the server
+      // started, and the rebuild's full reload cancels a navigation that's
+      // under way: click again until the page goes.
+      const target = `${BASE}/guides/my-setup`;
+      await expect
+        .poll(
+          async () => {
+            if (new URL(page.url()).pathname !== target) {
+              await link.click({ timeout: 5_000 }).catch(() => undefined);
+              await page.waitForURL(`**${target}`, { timeout: 5_000 }).catch(() => undefined);
+            }
+            return new URL(page.url()).pathname;
+          },
+          { timeout: 30_000 },
+        )
+        .toBe(target);
+      await page.waitForLoadState("load");
       // Review stays on, and the panel as it was.
       await expect
         .poll(() => page.locator('[data-ascribe-change="added"]').count(), { timeout: 30_000 })
