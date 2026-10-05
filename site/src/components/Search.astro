@@ -1,0 +1,78 @@
+---
+// Search: Pagefind's index of the built site (`pagefind --site dist`, after
+// `astro build`), so it needs no service. Its UI loads when the dialog first
+// opens. `astro dev` has no index; the dialog says so.
+const base = import.meta.env.BASE_URL;
+---
+
+<button class="search-button" type="button" aria-haspopup="dialog">
+  <svg viewBox="0 0 24 24" aria-hidden="true"
+    ><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"
+    ></circle><path d="m20 20-4-4" stroke="currentColor" stroke-width="2"></path></svg
+  >
+  <span>Search</span>
+  <kbd>/</kbd>
+</button>
+<dialog class="search-dialog" aria-label="Search the docs" data-base={base}>
+  <form method="dialog" class="search-close">
+    <button type="submit" aria-label="Close search">Close</button>
+  </form>
+  <div id="search"></div>
+</dialog>
+
+<script>
+  interface PagefindUIOptions {
+    element: string;
+    showSubResults?: boolean;
+    showImages?: boolean;
+    autofocus?: boolean;
+  }
+  type PagefindUIClass = new (options: PagefindUIOptions) => unknown;
+
+  const dialog = document.querySelector<HTMLDialogElement>(".search-dialog");
+  const button = document.querySelector<HTMLButtonElement>(".search-button");
+  let loading: Promise<void> | undefined;
+
+  function load(base: string): Promise<void> {
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = `${base}pagefind/pagefind-ui.css`;
+    document.head.append(css);
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `${base}pagefind/pagefind-ui.js`;
+      script.addEventListener("load", () => resolve());
+      script.addEventListener("error", () => reject(new Error("no index")));
+      document.head.append(script);
+    }).then(() => {
+      const PagefindUI = (window as unknown as { PagefindUI: PagefindUIClass }).PagefindUI;
+      new PagefindUI({ element: "#search", showSubResults: true, showImages: false, autofocus: true });
+    });
+  }
+
+  function open(): void {
+    if (!dialog) return;
+    dialog.showModal();
+    loading ??= load(dialog.dataset.base ?? "/").catch(() => {
+      const target = document.getElementById("search");
+      if (target) {
+        target.textContent =
+          "Search works on the built site: run `npm run build`, then `npm run preview`.";
+      }
+    });
+    dialog.querySelector<HTMLInputElement>("input")?.focus();
+  }
+
+  button?.addEventListener("click", open);
+  dialog?.addEventListener("click", (event) => {
+    // A click on the backdrop closes the dialog.
+    if (event.target === dialog) dialog.close();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "/" || dialog?.open) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("input, textarea, select, [contenteditable]")) return;
+    event.preventDefault();
+    open();
+  });
+</script>

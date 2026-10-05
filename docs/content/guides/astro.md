@@ -13,9 +13,15 @@ These steps add Ascribe to an Astro project. [`examples/astro-site`]({repo}/tree
 
 ### 1. Install
 
+@variant {pm=npm}:
 ```sh
 npm install @ascribed/astro
 ```
+@variant {pm=pnpm}:
+```sh
+pnpm add @ascribed/astro
+```
+@end
 
 It brings `@ascribed/cli`, the `ascribe` command for your platform, and `@ascribed/elements`. Astro's image processing also needs `sharp` (`npm install sharp`) if your project doesn't have it.
 
@@ -35,7 +41,7 @@ base-path = "/docs/"
 trailing-slash = "never"
 ```
 
-The source pages go in `docs/`. The [`ascribe.toml` reference](../reference/content-model.md) has everything else it can declare.
+The source pages go in `docs/`. If your Ascribe project lives elsewhere, such as in a folder beside the site's, set the integration's `project` option to its directory (step 3). The [`ascribe.toml` reference](../reference/content-model.md) has everything else it can declare.
 
 ### 3. Add the integration
 
@@ -66,7 +72,7 @@ import { schema } from "../.ascribe/build/site/site/_ascribe/schema.ts";
 export const collections = { docs: defineCollection(ascribeCollection({ schema })) };
 ```
 
-The schema's path is `<output-dir>/<build>/site/_ascribe/schema.ts`. Importing it by path keeps its exact types, so `entry.data` is typed from your content types. If you change `[project] output-dir` or the build, change this line too.
+The schema's path is `<output-dir>/<build>/site/_ascribe/schema.ts`, in the directory holding `ascribe.toml`. Importing it by path keeps its exact types, so `entry.data` is typed from your content types. If you change `[project] output-dir`, the build, or the integration's `project`, change this line too.
 
 ### 5. Add a route
 

@@ -1,0 +1,66 @@
+name: Site
+
+# The docs site in site/, built with this pull request's Ascribe (its binary
+# and its packages, by `npm run build:checkout`), then tested in Chromium: a
+# change to Ascribe and the docs that use it are built together. Production
+# builds from npm instead; see site/README.md.
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "site/**"
+      - "packages/**"
+      - "crates/**"
+      - "Cargo.lock"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/site.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "site/**"
+      - "packages/**"
+      - "crates/**"
+      - "Cargo.lock"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: build and test site/
+    runs-on: ubuntu-latest
+    env:
+      ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: site/.nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo build -p tessera-cli --locked
+      - run: npm ci
+        working-directory: site
+      - run: npx playwright-core install --with-deps chromium
+        working-directory: site
+      - run: npm run build:checkout
+        working-directory: site
+      - run: npm run typecheck
+        working-directory: site
+      - run: npm test
+        working-directory: site

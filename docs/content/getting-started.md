@@ -11,14 +11,21 @@ You need [Node.js](https://nodejs.org) {node} or later. Ascribe runs on macOS on
 
 In your project's directory:
 
+@variant {pm=npm}:
 ```sh
 npm install --save-dev @ascribed/cli
 npx ascribe --version
 ```
+@variant {pm=pnpm}:
+```sh
+pnpm add --save-dev @ascribed/cli
+pnpm exec ascribe --version
+```
+@end
 
-`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version for everyone who works on the project, and for CI. If `npx ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled.
+`@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version for everyone who works on the project, and for CI. If `ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled.
 
-To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
+@note {type=tip}: To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
 
 ## Install the editor
 
@@ -145,24 +152,29 @@ rewrites directives and attribute blocks into their canonical spelling, and chan
 
 ## Publish it with Astro
 
-In an [Astro](https://astro.build) project, with `ascribe.toml` beside `astro.config.mjs`:
+In an [Astro](https://astro.build) project (`npm create astro@latest` makes one), with `ascribe.toml` beside `astro.config.mjs`:
 
-```sh
-npm install @ascribed/astro
-```
+@steps
+1. Install the integration:
 
-```js
-// astro.config.mjs
-import { defineConfig } from "astro/config";
-import ascribe from "@ascribed/astro";
+   ```sh
+   npm install @ascribed/astro
+   ```
 
-export default defineConfig({
-  site: "https://docs.example.com",
-  integrations: [ascribe({ build: "site" })],
-});
-```
+2. Add it to `astro.config.mjs`:
 
-Then define the content collection, a route, and a layout that loads the elements. [Astro](guides/astro.md) walks through each file.
+   ```js
+   // astro.config.mjs
+   import { defineConfig } from "astro/config";
+   import ascribe from "@ascribed/astro";
+
+   export default defineConfig({
+     site: "https://docs.example.com",
+     integrations: [ascribe({ build: "site" })],
+   });
+   ```
+
+3. Define the content collection, a route, and a layout that loads the elements. [Astro](guides/astro.md) walks through each file.
 
 ## Check it in CI
 

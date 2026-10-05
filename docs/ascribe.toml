@@ -31,6 +31,12 @@ label = "Ascribe"
 values = ["ascribe"]
 labels = { ascribe = "Ascribe" }
 
+# Commands that differ by package manager. The site shows them as tabs, and a
+# reader's choice holds on every page.
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm"]
+
 [lifecycle.unreleased]
 available = true
 label = "in main, not yet released"
@@ -99,6 +105,15 @@ link = "guides/editor.md#preview"
 term = "site preview"
 definition = "The active page on the project's own dev server, in the browser or the preview panel."
 link = "guides/editor.md#site-preview"
+
+# How the site in site/ routes. `site`, `base-path`, and `trailing-slash` must
+# agree with site/astro.config.mjs; @ascribed/astro checks that they do.
+[consumer]
+profile = "astro"
+# A placeholder until the site's Netlify address exists.
+site = "https://ascribe-docs.example.com"
+base-path = "/"
+trailing-slash = "always"
 
 [builds.site]
 variants = "switch"

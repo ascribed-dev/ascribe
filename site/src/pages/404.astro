@@ -1,0 +1,18 @@
+---
+import Base from "../layouts/Base.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+
+<Base title="Page not found">
+  <main id="content" class="page">
+    <article>
+      <h1>Page not found</h1>
+      <p>
+        There's no page at this address. It may have moved: try the navigation, search, or the <a
+          href={base}>start page</a
+        >.
+      </p>
+    </article>
+  </main>
+</Base>
