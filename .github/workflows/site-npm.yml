@@ -5,8 +5,8 @@ name: Site from npm
 # canary with `npm run follow-next`), no workspace install and no
 # ASCRIBE_BIN. It runs after each canary and when `main` changes the docs or
 # the site, and reports; it doesn't run on pull requests, since a pull request
-# may use a feature no canary has yet. The Site workflow builds pull requests
-# with their own Ascribe.
+# may use a feature no canary has yet. CI's site job (site.yml) builds pull
+# requests with their own Ascribe.
 
 on:
   workflow_run:

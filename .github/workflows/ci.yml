@@ -1,0 +1,163 @@
+name: CI
+
+# Every check on a pull request and on `main`, started from here so that one
+# job, `all checks`, says whether they passed. It's the only check branch
+# protection requires: a check that's skipped because nothing it covers
+# changed can't be required by name without blocking the merge.
+#
+# What runs depends on what changed and where:
+#
+# - A change to plans and reports alone (project-docs/, reports/,
+#   research_notes/) runs the formatter and nothing else.
+# - A pull request runs Linux and Windows. `main` runs Linux and macOS. The
+#   rest of the platforms (the Astro end-to-end on arm64, macOS, and Windows)
+#   run every night and by hand, here, and the canary's smoke test installs
+#   the packed binaries on all four every night too.
+# - The docs and the site run when the docs, the site, or Ascribe changed.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "43 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push replaces an older run of the same kind; the nightly run and a
+# push to `main` don't cancel each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: what changed
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.find.outputs.code }}
+      site: ${{ steps.find.outputs.site }}
+      rust-os: ${{ steps.find.outputs.rust-os }}
+      vscode-os: ${{ steps.find.outputs.vscode-os }}
+      astro-targets: ${{ steps.find.outputs.astro-targets }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, to compare with the base.
+          fetch-depth: 0
+      - id: find
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # The files this run is about, or `all` when there's no base to compare with.
+          files=all
+          if [ "$EVENT" = pull_request ]; then
+            files=$(git diff --name-only "origin/$GITHUB_BASE_REF...HEAD")
+          elif [ "$EVENT" = push ] && git cat-file -e "$BEFORE^{commit}" 2> /dev/null; then
+            files=$(git diff --name-only "$BEFORE" "$GITHUB_SHA")
+          fi
+
+          # Plans and reports are prose nothing builds or tests; only the formatter reads them.
+          code=true
+          if [ "$files" != all ] && [ -n "$files" ] &&
+            ! printf '%s\n' "$files" | grep -qvE '^(project-docs|reports|research_notes)/'; then
+            code=false
+          fi
+
+          site=false
+          if [ "$files" = all ] ||
+            printf '%s\n' "$files" | grep -qE '^(docs|site|packages|crates)/|^(Cargo\.lock|pnpm-lock\.yaml)$|^\.github/workflows/(ci|site)\.yml$'; then
+            site=true
+          fi
+
+          linux_x64='{"os":"ubuntu-24.04","target":"linux-x64","env_target":"LINUX_X64","exe":"ascribe"}'
+          linux_arm64='{"os":"ubuntu-24.04-arm","target":"linux-arm64","env_target":"LINUX_ARM64","exe":"ascribe"}'
+          darwin_arm64='{"os":"macos-latest","target":"darwin-arm64","env_target":"DARWIN_ARM64","exe":"ascribe"}'
+          win32_x64='{"os":"windows-latest","target":"win32-x64","env_target":"WIN32_X64","exe":"ascribe.exe"}'
+          case "$EVENT" in
+            pull_request)
+              rust_os='["ubuntu-latest","windows-latest"]'
+              vscode_os='["windows-latest"]'
+              astro="[$linux_x64]"
+              ;;
+            push)
+              rust_os='["ubuntu-latest","macos-latest"]'
+              vscode_os='["macos-latest"]'
+              astro="[$linux_x64]"
+              ;;
+            *)
+              rust_os='["ubuntu-latest","macos-latest","windows-latest"]'
+              vscode_os='["windows-latest","macos-latest"]'
+              astro="[$linux_x64,$linux_arm64,$darwin_arm64,$win32_x64]"
+              ;;
+          esac
+
+          {
+            echo "code=$code"
+            echo "site=$site"
+            echo "rust-os=$rust_os"
+            echo "vscode-os=$vscode_os"
+            echo "astro-targets=$astro"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  # Plans and reports alone: the formatter is the only check that reads them.
+  prose:
+    name: format
+    needs: changes
+    if: needs.changes.outputs.code == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+
+  rust:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    uses: ./.github/workflows/rust.yml
+    with:
+      os: ${{ needs.changes.outputs.rust-os }}
+
+  js:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    uses: ./.github/workflows/js.yml
+    with:
+      vscode-os: ${{ needs.changes.outputs.vscode-os }}
+      astro-targets: ${{ needs.changes.outputs.astro-targets }}
+
+  site:
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && needs.changes.outputs.site == 'true'
+    uses: ./.github/workflows/site.yml
+    # The pull request's preview is deployed with Netlify's secrets.
+    secrets: inherit
+
+  review:
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
+    uses: ./.github/workflows/review.yml
+
+  # The one check branch protection requires. It passes when every job above
+  # passed or was skipped, and fails when one failed or was cancelled.
+  gate:
+    name: all checks
+    needs: [changes, prose, rust, js, site, review]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          if echo "$RESULTS" | jq -e 'any(.[]; .result == "failure" or .result == "cancelled")' > /dev/null; then
+            echo "::error::A check failed or was cancelled."
+            exit 1
+          fi
