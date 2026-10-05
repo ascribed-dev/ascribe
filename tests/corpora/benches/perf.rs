@@ -355,7 +355,9 @@ fn main() {
         .with_snippets()
         .write_to(&snippets)
         .expect("writes");
-    println!("synthetic project with snippets: the same, and a snippet on every page from 100 code files");
+    println!(
+        "synthetic project with snippets: the same, and a snippet on every page from 100 code files"
+    );
     phases("  library, in-process", &snippets);
     time_cli(
         "  ascribe check",
