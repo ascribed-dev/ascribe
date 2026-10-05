@@ -9,7 +9,7 @@ npx ascribe build
 npx ascribe fmt --check
 ```
 
-The [command reference](https://github.com/ascribed-dev/ascribe/blob/main/docs/cli.md) covers every command, option, output, and exit code, and [Getting started](https://github.com/ascribed-dev/ascribe/blob/main/docs/getting-started.md) sets up a project.
+The [command reference](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/reference/cli.md) covers every command, option, output, and exit code, and [Getting started](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/getting-started.md) sets up a project.
 
 ## Platforms
 

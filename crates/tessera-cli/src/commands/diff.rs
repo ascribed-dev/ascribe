@@ -56,7 +56,7 @@ pub struct Args {
 pub enum Format {
     /// The changed pages of each build, with counts, for people.
     Text,
-    /// One JSON document (its schema is in docs/cli.md), for tools.
+    /// One JSON document (its schema is in docs/content/reference/cli.md), for tools.
     Json,
     /// One self-contained HTML file showing every changed page rendered,
     /// with its changes marked, for reviewers.
