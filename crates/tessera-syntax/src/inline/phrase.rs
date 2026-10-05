@@ -49,6 +49,19 @@ pub(super) fn scan(text: &str, base: usize, escapes: bool) -> Vec<Found> {
     found
 }
 
+/// The phrase candidates in code that opts in to phrases (SPEC §5.1), with
+/// spans from the start of `code`. A backslash doesn't escape in code, so
+/// `\{key}` holds a candidate.
+pub(crate) fn code_candidates(code: &str) -> Vec<Phrase> {
+    scan(code, 0, false)
+        .into_iter()
+        .filter_map(|f| match f {
+            Found::Candidate(phrase) => Some(phrase),
+            Found::Escaped(_) => None,
+        })
+        .collect()
+}
+
 /// A phrase whose text is `text[start..end]` and whose brace is at `brace`.
 fn phrase(text: &str, base: usize, start: usize, brace: usize, end: usize) -> Phrase {
     Phrase {

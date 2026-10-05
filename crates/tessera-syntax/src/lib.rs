@@ -76,3 +76,11 @@ pub use tree::*;
 pub fn parse(source: &str, options: &ParseOptions) -> ParsedDocument {
     convert::convert(source, options)
 }
+
+/// The phrase candidates in code from outside a source file, such as a
+/// snippet's (SPEC §4.8), as a fence that opts in with `phrases=true` has
+/// them (SPEC §5.1): spans count from the start of `code`, and a backslash
+/// doesn't escape.
+pub fn code_phrases(code: &str) -> Vec<Phrase> {
+    inline::code_candidates(code)
+}

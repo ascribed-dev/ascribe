@@ -25,6 +25,8 @@ mod definition;
 mod image;
 mod phrase;
 
+pub(crate) use phrase::code_candidates;
+
 use tessera_core::{FileId, Issue};
 
 use crate::tree::*;

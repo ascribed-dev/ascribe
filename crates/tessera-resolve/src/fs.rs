@@ -91,6 +91,11 @@ pub trait FileSystem {
     /// path may start with `..` when the content root is above the project
     /// root; the boundary check has already decided the path may be read.
     fn probe(&self, project_path: &RelPath) -> Probe;
+
+    /// The bytes of a file at a path relative to the project root: a code
+    /// file a snippet reads through a source (SPEC §4.8). The path may start
+    /// with `..`; the source has already decided it may be read.
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>>;
 }
 
 /// A project on disk.
@@ -101,7 +106,12 @@ pub struct DiskFs {
     /// Directory listings, kept for the life of the value when it was made
     /// with [`DiskFs::with_listing_cache`]; `None` lists every time.
     listings: Option<Arc<Mutex<Listings>>>,
+    /// The files [`FileSystem::read_file`] read, kept as the listings are.
+    files: Option<Arc<Mutex<Files>>>,
 }
+
+/// Each file's bytes, or why it couldn't be read.
+type Files = HashMap<PathBuf, Result<Arc<[u8]>, (io::ErrorKind, String)>>;
 
 /// Each directory's entry names, or `None` for one that can't be listed.
 type Listings = HashMap<PathBuf, Option<Arc<[String]>>>;
@@ -115,6 +125,7 @@ impl DiskFs {
             project_root: project_root.into(),
             content_root: layout.content_root.clone(),
             listings: None,
+            files: None,
         }
     }
 
@@ -122,10 +133,13 @@ impl DiskFs {
     /// once and remembered, for a one-shot command (`ascribe check`,
     /// `ascribe build`) that reads a disk that doesn't change while it runs.
     /// A probe lists every directory on its path, so without this a large
-    /// project lists the same directories tens of thousands of times.
+    /// project lists the same directories tens of thousands of times. Code
+    /// files snippets read are remembered too, so the file-level checks and
+    /// the source index read each once.
     pub fn with_listing_cache(project_root: impl Into<PathBuf>, layout: &Layout) -> DiskFs {
         DiskFs {
             listings: Some(Arc::default()),
+            files: Some(Arc::default()),
             ..DiskFs::new(project_root, layout)
         }
     }
@@ -221,6 +235,27 @@ impl FileSystem for DiskFs {
             }
         } else {
             Probe::File
+        }
+    }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        let path = project_path
+            .segments()
+            .fold(self.project_root.clone(), |p, s| p.join(s));
+        let Some(files) = &self.files else {
+            return fs::read(&path);
+        };
+        let mut files = files
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let read = files.entry(path).or_insert_with_key(|path| {
+            fs::read(path)
+                .map(Arc::from)
+                .map_err(|e| (e.kind(), e.to_string()))
+        });
+        match read {
+            Ok(bytes) => Ok(bytes.to_vec()),
+            Err((kind, message)) => Err(io::Error::new(*kind, message.clone())),
         }
     }
 }
@@ -410,6 +445,13 @@ impl FileSystem for MemoryFs {
             .ok()
             .and_then(|p| self.files.get(&p))
             .cloned()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no such file"))
+    }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        self.files
+            .get(project_path)
+            .map(|text| text.as_bytes().to_vec())
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no such file"))
     }
 
