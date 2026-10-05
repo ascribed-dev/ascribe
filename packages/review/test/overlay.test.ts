@@ -397,8 +397,10 @@ describe("the overlay", () => {
     ];
     await open();
     const hint = (on: Element | null | undefined): string | undefined =>
-      on?.querySelector("[data-ascribe-overlay]")?.shadowRoot?.querySelector(".hint-count")
-        ?.textContent ?? undefined;
+      on
+        ?.querySelector("[data-ascribe-overlay]")
+        ?.shadowRoot?.querySelector(".hint-count")
+        ?.textContent?.trim() ?? undefined;
     const tabs = root.querySelectorAll('[role="tab"]');
     expect(hint(tabs[0])).toBeUndefined();
     expect(hint(tabs[1])).toBe("2 comments");

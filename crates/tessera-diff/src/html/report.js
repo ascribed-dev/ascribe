@@ -610,7 +610,7 @@
     }
     const doc = root.ownerDocument;
     const hint = (kind, text) => {
-      const el = ui(doc, "span", "ascribe-hint", text);
+      const el = ui(doc, "span", "ascribe-hint", ` ${text}`);
       el.setAttribute("data-ascribe-hint", kind);
       return el;
     };

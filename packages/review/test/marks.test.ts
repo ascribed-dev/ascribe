@@ -350,10 +350,12 @@ describe("hints on what hides changes", () => {
     ]);
     const buttons = root.querySelectorAll('[role="tab"]');
     const hint = (el: Element | null | undefined): string | undefined =>
-      el?.querySelector(".ascribe-hint")?.textContent ?? undefined;
+      el?.querySelector(".ascribe-hint")?.textContent?.trim() ?? undefined;
     expect(hint(buttons[0])).toBeUndefined();
     expect(hint(buttons[1])).toBe("1 change");
     expect(hint(buttons[2])).toBe("new");
+    // The label reads with a space before its hint, for screen readers.
+    expect(buttons[1]?.textContent).toBe("pnpm 1 change");
     expect(buttons[2]?.querySelector(".ascribe-hint")?.getAttribute("data-ascribe-hint")).toBe(
       "added",
     );
@@ -374,12 +376,12 @@ describe("hints on what hides changes", () => {
     const group = root.querySelector("ascribe-tabs") as HTMLElement;
     group.insertAdjacentHTML("afterbegin", list);
     await Promise.resolve();
-    expect(root.querySelectorAll('[role="tab"]')[2]?.textContent).toBe("yarnnew");
+    expect(root.querySelectorAll('[role="tab"]')[2]?.textContent).toBe("yarn new");
     // Made again, as when the tabs are put back in the page.
     group.querySelector('[role="tablist"]')?.remove();
     group.insertAdjacentHTML("afterbegin", list);
     await Promise.resolve();
-    expect(root.querySelectorAll('[role="tab"]')[2]?.textContent).toBe("yarnnew");
+    expect(root.querySelectorAll('[role="tab"]')[2]?.textContent).toBe("yarn new");
     clearMarks(root);
     group.querySelector('[role="tablist"]')?.remove();
     group.insertAdjacentHTML("afterbegin", list);

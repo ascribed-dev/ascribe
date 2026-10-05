@@ -157,7 +157,7 @@
 /* On a tab's label and a <details>' summary: what's changed inside. */
 .ascribe-hint {
   display: none;
-  margin-inline-start: 6px;
+  margin-inline-start: 2px;
   font-size: 11px;
   font-weight: 600;
   font-style: normal;

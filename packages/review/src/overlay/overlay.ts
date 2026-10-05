@@ -665,9 +665,11 @@ class ReviewOverlay implements Overlay {
         if (on) counts.set(on, (counts.get(on) ?? 0) + count);
       }
     }
+    // Each count starts with a space, as the marks' hints do, so the label
+    // reads "Linux 1 change 1 comment".
     for (const [on, count] of counts) {
       const host = this.uiHost("span");
-      this.shadow(host).append(this.el("span", "hint-count", plural(count, "comment")));
+      this.shadow(host).append(this.el("span", "hint-count", ` ${plural(count, "comment")}`));
       on.append(host);
       this.hints.push(host);
     }

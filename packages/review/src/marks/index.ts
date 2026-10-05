@@ -625,7 +625,9 @@ function hintHidden(root: HTMLElement, marks: readonly Mark[]): void {
   }
   const doc = root.ownerDocument;
   const hint = (kind: "added" | "changed", text: string): HTMLElement => {
-    const el = ui(doc, "span", "ascribe-hint", text);
+    // A space before it, not only a margin, so the label reads "Linux 1
+    // change" to a screen reader, not "Linux1 change".
+    const el = ui(doc, "span", "ascribe-hint", ` ${text}`);
     el.setAttribute("data-ascribe-hint", kind);
     return el;
   };

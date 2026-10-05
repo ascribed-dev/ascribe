@@ -187,7 +187,7 @@ svg.connector path {
   white-space: nowrap;
 }
 .hint-count {
-  margin-inline-start: 6px;
+  margin-inline-start: 2px;
   font-size: 11px;
   font-weight: 600;
   color: var(--accent);
