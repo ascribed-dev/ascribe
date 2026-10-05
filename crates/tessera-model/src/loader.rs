@@ -537,7 +537,12 @@ impl<'s> Loader<'s> {
     /// as much of it as exists.
     fn resolve(&self, rel: &str) -> PathBuf {
         let base = self.project_dir.map(Path::to_path_buf).unwrap_or_default();
-        let joined = normalize(&base.join(rel));
+        let mut joined = normalize(&base.join(rel));
+        // `docs` and `..` cancel out to nothing, which is the current
+        // directory.
+        if joined.as_os_str().is_empty() {
+            joined = PathBuf::from(".");
+        }
         if self.project_dir.is_none() {
             return joined;
         }

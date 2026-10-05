@@ -11,6 +11,8 @@
 //! - [`GitFs`] and [`Revision`]: a project as it is at a revision, through
 //!   the same [`tessera_resolve::FileSystem`] the disk and the editor use.
 //! - [`compare_builds`]: the comparison, as a [`BuildDiff`] per build.
+//! - [`drift`]: the pages whose examples changed, and whether the words
+//!   around them did.
 //! - [`html`]: the report as one self-contained HTML file, every changed
 //!   page rendered with its changes marked.
 //!
@@ -37,6 +39,7 @@
 
 mod align;
 mod compare;
+mod drift;
 pub mod git;
 mod gitfs;
 pub mod html;
@@ -49,7 +52,10 @@ pub use compare::{
     BuildDiff, Change, ChangeKind, Counts, PageDiff, PageStatus, Side, Words, compare_builds,
     compare_page_in,
 };
-pub use git::{Base, Repository};
+pub use drift::{
+    BrokenExample, ChangedExample, DRIFT_SCHEMA_VERSION, DriftPage, DriftReport, drift,
+};
+pub use git::{Base, FileChange, Repository};
 pub use gitfs::{GitFs, Revision};
 pub use tree::{Anchor, encode_path};
 
@@ -165,21 +171,35 @@ pub struct RepositoryInfo {
     pub project_prefix: String,
 }
 
+impl BaseInfo {
+    /// What the report says of `base`.
+    pub fn of(base: &Base) -> BaseInfo {
+        BaseInfo {
+            requested: base.requested.clone(),
+            commit: base.commit.clone(),
+            merge_base: base.merge_base.clone(),
+        }
+    }
+}
+
+impl RepositoryInfo {
+    /// What the report says of `repo`.
+    pub fn of(repo: &Repository) -> RepositoryInfo {
+        RepositoryInfo {
+            root: repo.root.clone(),
+            project_prefix: repo.prefix.clone(),
+        }
+    }
+}
+
 impl Report {
     /// A report of `builds`, compared with `base` in `repo`.
     pub fn new(repo: &Repository, base: &Base, builds: Vec<BuildDiff>) -> Report {
         Report {
             schema_version: SCHEMA_VERSION,
             ascribe_version: env!("CARGO_PKG_VERSION"),
-            base: BaseInfo {
-                requested: base.requested.clone(),
-                commit: base.commit.clone(),
-                merge_base: base.merge_base.clone(),
-            },
-            repository: RepositoryInfo {
-                root: repo.root.clone(),
-                project_prefix: repo.prefix.clone(),
-            },
+            base: BaseInfo::of(base),
+            repository: RepositoryInfo::of(repo),
             working_tree_errors: 0,
             builds,
         }

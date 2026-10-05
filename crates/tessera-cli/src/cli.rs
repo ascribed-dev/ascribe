@@ -90,6 +90,10 @@ pub enum Command {
     /// by page, as readers will see it.
     #[command(after_help = docs_page!("reference/cli/#ascribe-diff"))]
     Diff(commands::diff::Args),
+    /// List the pages whose code examples changed between a git revision and
+    /// the working tree, and whether the words around them changed too.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-drift"))]
+    Drift(commands::drift::Args),
     /// Rewrite Ascribe constructs into canonical form.
     #[command(after_help = docs_page!("reference/cli/#ascribe-fmt"))]
     Fmt(commands::fmt::Args),
@@ -104,6 +108,7 @@ impl Command {
             Command::Build(args) => commands::build::run(global, args),
             Command::Check(args) => commands::check::run(global, args),
             Command::Diff(args) => commands::diff::run(global, args),
+            Command::Drift(args) => commands::drift::run(global, args),
             Command::Fmt(args) => commands::fmt::run(global, args),
             Command::Lsp(args) => commands::lsp::run(global, args),
         }

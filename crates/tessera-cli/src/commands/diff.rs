@@ -288,7 +288,7 @@ fn and_list(items: &[&str]) -> String {
     }
 }
 
-fn failure_message(failure: Failure) -> String {
+pub(crate) fn failure_message(failure: Failure) -> String {
     match failure {
         Failure::Config(message) => message,
         Failure::Load(LoadError::Model { diagnostics, .. }) => model_errors(
@@ -299,7 +299,7 @@ fn failure_message(failure: Failure) -> String {
     }
 }
 
-fn fail_diff(err: &mut dyn Write, e: DiffError) -> u8 {
+pub(crate) fn fail_diff(err: &mut dyn Write, e: DiffError) -> u8 {
     let message = match &e {
         DiffError::BaseModel { issues, .. } => model_errors(
             &e.to_string(),
@@ -319,7 +319,7 @@ fn model_errors(lead: &str, messages: impl Iterator<Item = String>) -> String {
     text
 }
 
-fn fail(err: &mut dyn Write, message: &str) -> u8 {
+pub(crate) fn fail(err: &mut dyn Write, message: &str) -> u8 {
     let _ = writeln!(err, "error: {message}");
     exit::FAILURE
 }
