@@ -1269,6 +1269,7 @@ dependencies = [
  "tessera-lsp",
  "tessera-model",
  "tessera-resolve",
+ "tessera-sources",
 ]
 
 [[package]]
@@ -1422,6 +1423,19 @@ dependencies = [
  "tessera-model",
  "tessera-syntax",
  "tessera-synthetic",
+]
+
+[[package]]
+name = "tessera-sources"
+version = "0.1.1"
+dependencies = [
+ "serde",
+ "tempfile",
+ "tessera-check",
+ "tessera-core",
+ "tessera-model",
+ "tessera-resolve",
+ "thiserror",
 ]
 
 [[package]]

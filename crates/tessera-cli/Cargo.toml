@@ -25,6 +25,7 @@ tessera-fmt.workspace = true
 tessera-lsp.workspace = true
 tessera-model.workspace = true
 tessera-resolve.workspace = true
+tessera-sources.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

@@ -1,0 +1,24 @@
+[package]
+name = "tessera-sources"
+description = "Sources in another repository: copying the files a project's snippets use, and moving their pins."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+tessera-core.workspace = true
+tessera-model.workspace = true
+tessera-resolve.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+# The tests check what `ascribe check` says of the copies they make.
+tessera-check.workspace = true
+
+[lints]
+workspace = true

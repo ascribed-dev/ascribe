@@ -376,10 +376,12 @@ pub fn resolve_snippet(
     let path = folder
         .join(&address.path)
         .map_err(|_| SnippetError::Missing { actual: None })?;
-    // A file the source doesn't make readable isn't read at all.
+    // A file the source doesn't make readable isn't read at all. A source in
+    // another repository has only the copies of files it does, so there's no
+    // telling whether the file exists.
     if !source.reads(&address.path) {
         return Err(match fs.probe(&path) {
-            Probe::Missing => SnippetError::Missing { actual: None },
+            Probe::Missing if source.git.is_none() => SnippetError::Missing { actual: None },
             _ => SnippetError::NotIncluded,
         });
     }

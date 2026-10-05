@@ -100,6 +100,9 @@ pub enum Command {
     /// Run the language server, speaking LSP over standard input and output.
     #[command(after_help = docs_page!("reference/cli/#ascribe-lsp"))]
     Lsp(commands::lsp::Args),
+    /// Copy code from sources in other repositories, and move their pins.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-sources"))]
+    Sources(commands::sources::Args),
 }
 
 impl Command {
@@ -111,6 +114,7 @@ impl Command {
             Command::Drift(args) => commands::drift::run(global, args),
             Command::Fmt(args) => commands::fmt::run(global, args),
             Command::Lsp(args) => commands::lsp::run(global, args),
+            Command::Sources(args) => commands::sources::run(global, args),
         }
     }
 }
