@@ -31,6 +31,8 @@ export interface PackageManifest {
   publisher?: string;
   repository?: { url?: string };
   ascribe?: { minServerVersion?: string };
+  /** The commit a canary was built from; npm shows it as the version's `gitHead`. */
+  gitHead?: string;
 }
 
 /** The supported platforms. */
@@ -61,6 +63,9 @@ export const extension = { id: "Ascribe.ascribe-vscode", dir: "packages/vscode" 
 
 /** `x.y.z` or `x.y.z-pre.n`: what the scripts accept as a version. */
 export const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+
+/** A nightly canary's version: `x.y.z-next.n`. */
+export const CANARY = /^\d+\.\d+\.\d+-next\.\d+$/;
 
 export function readJson(path: string): PackageManifest {
   return JSON.parse(readFileSync(join(root, path), "utf8")) as PackageManifest;
@@ -114,16 +119,69 @@ export function checkVersion(tag?: string): { version: string; problems: string[
   if (tag !== undefined && tag !== `v${version}`) {
     problems.push(`the tag is ${tag}, but the version is ${version}; tag the release v${version}`);
   }
-  if (changelogSection(version) === undefined) {
+  // A canary ships what's unreleased, so the unreleased section stands in for its own.
+  if (CANARY.test(version)) {
+    if (unreleasedSection(readChangelog()) === undefined) {
+      problems.push(`CHANGELOG.md has no "## Unreleased" section, which a canary needs`);
+    }
+  } else if (changelogSection(version) === undefined) {
     problems.push(`CHANGELOG.md has no "## ${version}" section`);
   }
   return { version, problems };
 }
 
+function readChangelog(): string {
+  return readFileSync(join(root, "CHANGELOG.md"), "utf8");
+}
+
+/**
+ * The changelog's unreleased section: `## Unreleased`, or `## x.y.z
+ * (unreleased)` when it names the version it will be released as. Returns the
+ * version it names, if any, or undefined when there's no such section.
+ */
+export function unreleasedSection(changelog: string): { version: string | undefined } | undefined {
+  for (const line of changelog.split("\n")) {
+    const match = /^## (?:Unreleased|(\d+\.\d+\.\d+) \(unreleased\))\s*$/i.exec(line);
+    if (match) return { version: match[1] };
+  }
+  return undefined;
+}
+
+/**
+ * A canary's version: the version after `released` (the workspace's version,
+ * the latest release), then `-next.<run>`. The next version is the one the
+ * changelog's unreleased section names, or else a patch bump.
+ */
+export function canaryVersion(released: string, changelog: string, run: number): string {
+  const parts = /^(\d+)\.(\d+)\.(\d+)$/.exec(released);
+  if (!parts) throw new Error(`${released} isn't a released version (x.y.z)`);
+  if (!Number.isSafeInteger(run) || run < 1) throw new Error(`${run} isn't a run number`);
+  const unreleased = unreleasedSection(changelog);
+  if (unreleased === undefined) throw new Error(`CHANGELOG.md has no "## Unreleased" section`);
+  const [, major, minor, patch] = parts.map(Number);
+  const next = unreleased.version ?? `${major}.${minor}.${Number(patch) + 1}`;
+  return `${next}-next.${run}`;
+}
+
+/**
+ * Cargo.lock with the workspace's crates (the packages without a `source`)
+ * moved from one version to another, as `cargo update --workspace` would,
+ * without needing Cargo or the registry. Line endings are kept, so it works on
+ * a Windows checkout too.
+ */
+export function relockWorkspace(lock: string, from: string, to: string): string {
+  const version = new RegExp(`^version = "${from.replaceAll(".", "\\.")}"(?=\r?$)`, "m");
+  return lock
+    .split(/(?=^\[\[package\]\]\r?$)/m)
+    .map((entry) =>
+      /^source = /m.test(entry) ? entry : entry.replace(version, `version = "${to}"`),
+    )
+    .join("");
+}
+
 /** The changelog's section for a version, without its heading, or undefined. */
 export function changelogSection(version: string): string | undefined {
-  const text = readFileSync(join(root, "CHANGELOG.md"), "utf8");
-  const lines = text.split("\n");
+  const lines = readChangelog().split("\n");
   const start = lines.findIndex((line) => line.startsWith(`## ${version}`));
   if (start === -1) return undefined;
   const end = lines.findIndex((line, i) => i > start && line.startsWith("## "));

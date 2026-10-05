@@ -15,7 +15,7 @@ use crate::{commands, exit};
 
 /// Ascribe: check, build, format, and serve documentation written as code.
 #[derive(Debug, Parser)]
-#[command(name = "ascribe", version, arg_required_else_help = true)]
+#[command(name = "ascribe", version = env!("ASCRIBE_VERSION"), arg_required_else_help = true)]
 pub struct Cli {
     #[command(flatten)]
     pub global: Global,
