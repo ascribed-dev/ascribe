@@ -47,12 +47,14 @@ export interface ReviewApi {
   threads: ThreadsApi;
   /** The offers to start review made so far, as shown. */
   offers(): string[];
-  /** Offers review of the project in `folder` if its branch has a pull request, as opening one of its pages does; forgets earlier offers first. */
-  offer(folder: string): Promise<void>;
+  /** Forgets the offers made, and the branches reviewed, this session. */
+  forgetOffers(): void;
 }
 
 /** The workspace state key for whether review was ever turned on in the workspace. */
 const STARTED_ONCE = "ascribe.review.startedOnce";
+/** The workspace state key for whether the reviewer turned the offer off. */
+const NO_OFFER = "ascribe.review.noOffer";
 
 /**
  * Review: comparing a project with a git revision, its base, so the preview
@@ -100,6 +102,8 @@ export class ReviewController implements vscode.Disposable {
         if (state.focused && this.host.previewActive()) void this.recheck();
       }),
       this.projects.onDidChangeProjects(() => this.update()),
+      // A page's server starts after the page opens: offer review once it's up.
+      this.projects.onDidStart(() => this.update()),
     );
     this.update();
   }
@@ -124,12 +128,7 @@ export class ReviewController implements vscode.Disposable {
       status: () => ({ text: this.item.text, visible: this.visible }),
       threads: this.threads.api,
       offers: () => [...this.offerLog],
-      offer: async (folder) => {
-        const server = this.projects.serverAt(folder);
-        if (!server) throw new Error(`no project in ${folder}`);
-        this.offered.delete(comparable(folder));
-        await this.offer(server);
-      },
+      forgetOffers: () => this.offered.clear(),
     };
   }
 
@@ -232,29 +231,45 @@ export class ReviewController implements vscode.Disposable {
   }
 
   private visible = false;
-  /** The projects offered review this session, or reviewed: offered once at most. */
+  /** The branches offered review this session, or reviewed, by checkout: offered once at most. */
   private readonly offered = new Set<string>();
+  /** The projects whose branch is being looked at. */
+  private readonly looking = new Set<string>();
   private readonly offerLog: string[] = [];
 
   /**
    * Offers to start review when the project's branch has an open pull
-   * request, once a session, and only in a workspace where review was turned
-   * on before: until then, GitHub isn't asked. Never asks for a sign-in.
+   * request: once a session for each branch of a checkout, and only in a
+   * workspace where review was turned on before. Until then, GitHub isn't
+   * asked. Never asks for a sign-in.
    */
   private async offer(server: ProjectServer): Promise<void> {
+    if (!this.state.get<boolean>(STARTED_ONCE, false) || this.state.get<boolean>(NO_OFFER, false)) {
+      return;
+    }
     const id = comparable(server.project.folder);
-    if (this.offered.has(id) || !this.state.get<boolean>(STARTED_ONCE, false)) return;
-    if (server.state !== "running" || this.baseOf(server)) return;
-    this.offered.add(id);
-    const number = await this.threads.quietPullRequest(server);
-    // Started meanwhile, or no pull request.
-    if (number === undefined || this.baseOf(server)) return;
-    const message = `Ascribe: this branch has pull request #${number}. Start Review?`;
-    this.offerLog.push(message);
-    void vscode.window.showInformationMessage(message, "Start Review").then((start) => {
-      if (start && !this.baseOf(server)) return this.startCommand(server);
-      return undefined;
-    });
+    if (server.state !== "running" || this.baseOf(server) || this.looking.has(id)) return;
+    this.looking.add(id);
+    try {
+      const branch = await this.threads.branchKey(server);
+      if (branch === undefined || this.offered.has(branch)) return;
+      this.offered.add(branch);
+      const number = await this.threads.quietPullRequest(server);
+      // Started meanwhile, or no pull request.
+      if (number === undefined || this.baseOf(server)) return;
+      const message = `Ascribe: this branch has pull request #${number}. Start Review?`;
+      this.offerLog.push(message);
+      void vscode.window
+        .showInformationMessage(message, "Start Review", "Don't Offer Again")
+        .then((choice) => {
+          if (choice === "Don't Offer Again") return this.state.update(NO_OFFER, true);
+          // The notification can wait in the notification center: check again.
+          if (choice && !this.baseOf(server)) return this.startCommand(this.running(server));
+          return undefined;
+        });
+    } finally {
+      this.looking.delete(id);
+    }
   }
 
   /** The base's name for a project: the pull request's base branch by its name, when it's that. */
@@ -299,6 +314,11 @@ export class ReviewController implements vscode.Disposable {
       );
       return undefined;
     }
+    return this.running(server);
+  }
+
+  /** The server, when it's running; says why not when it isn't. */
+  private running(server: ProjectServer): ProjectServer | undefined {
     if (server.state !== "running") {
       void vscode.window.showInformationMessage(
         `Ascribe: the language server for ${this.projects.name(server.project)} isn't running. Open one of its pages first, then start the review.`,
@@ -454,10 +474,12 @@ export class ReviewController implements vscode.Disposable {
   private async start(server: ProjectServer, base: string | undefined): Promise<SetBaseResult> {
     const result = await this.setBase(server, base);
     if (result.base) {
-      // Reviewed: from now on, a branch with a pull request is offered review.
-      this.offered.add(comparable(server.project.folder));
-      if (!this.state.get<boolean>(STARTED_ONCE, false)) void this.state.update(STARTED_ONCE, true);
       this.bases.set(comparable(server.project.folder), result.base);
+      // Reviewed: from now on, a branch with a pull request is offered
+      // review, but not this one again this session.
+      const branch = await this.threads.branchKey(server);
+      if (branch !== undefined) this.offered.add(branch);
+      if (!this.state.get<boolean>(STARTED_ONCE, false)) void this.state.update(STARTED_ONCE, true);
       this.update();
       this.host.refresh();
     }

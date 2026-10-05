@@ -162,6 +162,18 @@ export class ThreadsController implements vscode.Disposable {
     return this.connect(server, { interactive: false });
   }
 
+  /** The project's checkout and branch, as one key; `undefined` when it isn't on a branch. */
+  async branchKey(server: ProjectServer): Promise<string | undefined> {
+    try {
+      const checkout = await readCheckout(server.project.folder);
+      return checkout.branch === undefined
+        ? undefined
+        : `${comparable(checkout.root)}\0${checkout.branch}`;
+    } catch {
+      return undefined;
+    }
+  }
+
   /**
    * The number of the open pull request for the project's branch, found
    * without asking anyone: with a GitHub sign-in VS Code already has, or the

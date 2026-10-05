@@ -30,7 +30,7 @@ Review looks for the branch's pull request and asks what to compare with. Choose
 
 The first time, VS Code asks you to sign in to GitHub. Allow it to see comments. If you decline, review still marks the changes, and the preview offers **Sign in to see comments**, or **Use GitHub CLI** if you're signed in with `gh`.
 
-Once you've used review in a workspace, opening a page of a branch with an open pull request offers it: "This branch has pull request #128. Start Review?" It's offered once a session, and only when VS Code (or `gh`, if you chose it) is already signed in to GitHub.
+Once you've used review in a workspace, opening a page of a branch with an open pull request offers it: "This branch has pull request #128. Start Review?" It's offered once a session for each branch, and only when VS Code (or `gh`, if you chose it) is already signed in to GitHub. **Don't Offer Again** turns it off for the workspace.
 
 ### 3. Read the changed pages
 

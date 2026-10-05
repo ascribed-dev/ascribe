@@ -662,7 +662,7 @@ describe("the overlay", () => {
     expect(sheet.querySelectorAll(".thread")).toHaveLength(2);
     // The sheet's title names the block; its cards don't again.
     expect(sheet.querySelector(".head b")?.textContent).toBe("guide.md:3");
-    expect(sheet.querySelector(".thread .th")?.textContent).not.toContain("guide.md:3");
+    expect(sheet.querySelector(".thread .th")).toBeNull();
     one(".sheet button", "Comment").click();
     await settle();
     expect(one(".sheet .composer")).toBeTruthy();

@@ -612,7 +612,13 @@ export function createSession(options: SessionOptions): ReviewSession {
           // and no error: it can't anchor the comment there.
           const thread = data.addPullRequestReviewThread.thread;
           if (thread !== null) {
-            await readRestOfComments(transport, thread);
+            try {
+              await readRestOfComments(transport, thread);
+            } catch (error) {
+              // The thread is on GitHub: read it with the rest next time.
+              changed();
+              throw error;
+            }
             // The pending review the cache read is the one the thread is in.
             const cached = before && (await before).pendingReview?.id === review.id;
             await patch(cached ? before : undefined, thread.id, (raw) =>

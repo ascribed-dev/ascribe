@@ -747,7 +747,7 @@ class ReviewOverlay implements Overlay {
     }
     if (thread.kind === "conversation") head.append(this.badge("summary", "In the review summary"));
     if (hasUnsent(thread)) head.append(this.badge("unsent", "Unsent"));
-    card.append(head);
+    if (head.childElementCount > 0) card.append(head);
 
     // Actions sit on their own row, so the header never pushes one onto a line by itself.
     const acts = this.el("div", "acts");
