@@ -13,7 +13,7 @@ The [command reference](https://github.com/ascribed-dev/ascribe/blob/main/docs/c
 
 ## Platforms
 
-The package is a small launcher, plus one optional dependency per platform that holds the native binary: macOS on Apple silicon, Linux (arm64 and x64, glibc 2.39 or later), and Windows (x64). Your package manager installs only your platform's. There's no install script. Intel Macs aren't supported.
+The package is a small launcher, plus one optional dependency per platform that holds the native binary: macOS on Apple silicon, Linux (arm64 and x64, glibc 2.28 or later), and Windows (x64). Your package manager installs only your platform's. There's no install script. Intel Macs aren't supported.
 
 If `ascribe` reports that it can't find its native package, your package manager left out optional dependencies (for example, `npm install --omit=optional`): reinstall with them. The error names the package and platform it looked for.
 

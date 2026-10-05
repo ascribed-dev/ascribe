@@ -28,7 +28,7 @@ Engineers who document their own code in the same repository. Research (`reports
 - The release scripts already accept a prerelease version (`x.y.z-pre.n`) and publish one under the `next` tag (`scripts/release/manifests.ts`, `publish.ts`).
 - This repository's own workflows build the binary with `cargo`, while the recipes in the docs install it from npm. We don't run what we tell users to run.
 - `ascribe check`, `build`, and `fmt` need only the working tree. `ascribe diff` needs `git` history and says so clearly in a shallow clone.
-- Site hosts differ. Netlify builds on Ubuntu 24.04 with what's reported to be a full, blobless clone; Vercel and Cloudflare Pages clone shallowly. The Linux binaries' glibc floor is untested ([#65](https://github.com/ascribed-dev/ascribe/issues/65)). These are as read in October 2026; confirm before relying on one.
+- Site hosts differ. Netlify builds on Ubuntu 24.04 with what's reported to be a full, blobless clone; Vercel and Cloudflare Pages clone shallowly. The Linux binaries need glibc 2.28 or later, which every one of those images has, and the release workflow tests that floor ([#65](https://github.com/ascribed-dev/ascribe/issues/65)). These are as read in October 2026; confirm before relying on one.
 - The plans for review, the editor UI, and agents tell each phase to update `docs/<name>.md` with the code. That habit is the main thing keeping the docs current.
 - Brainstorm [section 1](../brainstorm.md#1-code-snippets-from-tested-code-bluehawk-built-in) describes snippets from tested code. It isn't built.
 

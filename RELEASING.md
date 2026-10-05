@@ -243,6 +243,6 @@ jobs:
 ## Known limitations
 
 - **Intel Macs:** not supported. There's no `darwin-x64` npm package or extension package, so npm installs no binary there (`ascribe` says the platform isn't supported) and the Marketplace doesn't offer the extension.
-- **Linux:** the binaries are built on Ubuntu 24.04 and need glibc 2.39 or later. Alpine and other musl systems aren't supported; npm won't install the Linux packages there.
+- **Linux:** the binaries link against glibc 2.28 (built with `cargo zigbuild --target <triple>.2.28`), so they run on glibc 2.28 or later: Debian 10, Ubuntu 18.10, RHEL 8, Amazon Linux 2023, and newer. That's Node.js 24's floor too. The `smoke` job runs each Linux binary in AlmaLinux 8 (glibc 2.28) and fails if it asks for more. To move the floor, change `GLIBC` in both `build` and `smoke`, the smoke image, and the requirement in `docs/getting-started.md` and `packages/cli/README.md`. Alpine and other musl systems aren't supported; npm won't install the Linux packages there.
 - **macOS and Windows downloads:** the binaries in the GitHub release aren't signed with a Developer ID or Authenticode certificate. A binary downloaded with a browser is quarantined on macOS (`xattr -d com.apple.quarantine ascribe` clears it) and may trigger SmartScreen on Windows. Binaries installed from npm or inside the extension aren't affected.
 - **Actions:** the workflow uses `macos-26`, `ubuntu-24.04`, `ubuntu-24.04-arm`, and `windows-2025` runners. If GitHub retires one, update both `build` and `smoke`.
