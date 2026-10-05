@@ -44,6 +44,7 @@ import {
   anchorsArrived,
   contentRoot,
   pageFile,
+  pageScheme,
   sourceLocation,
 } from "./page.js";
 import { PANEL_CSS } from "./style.js";
@@ -52,9 +53,11 @@ import {
   buttonLabel,
   countsText,
   nextChangedPage,
+  nextPageText,
   pageDetail,
   position,
   THREAD_HASH,
+  threadLocation,
   threadsNotice,
   unsentText,
 } from "./text.js";
@@ -64,6 +67,9 @@ type AppEvents = Parameters<NonNullable<Parameters<typeof defineToolbarApp>[0]["
 
 /** The width of the page's container from which threads show in a column beside it. */
 const COLUMN_AT = 720;
+/** The room between the panel and the window's edges, or the column of threads. */
+const PANEL_MARGIN = 10;
+const PANEL_WIDTH = 960;
 /** How long a request may take before the app gives up on the dev server. */
 const TIMEOUT_MS = 120_000;
 /** This tab's memory: whether the panel is open, and a page to step into. */
@@ -155,6 +161,9 @@ class ReviewApp {
   private padding: { scroll: string; body: string } | undefined;
   private message: string | undefined;
   private messageTimer: ReturnType<typeof setTimeout> | undefined;
+  /** The scheme the site set for review's colors itself, if it did. */
+  private readonly siteScheme: string | null;
+  private restyleTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     canvas: ShadowRoot,
@@ -174,6 +183,25 @@ class ReviewApp {
     this.live.setAttribute("role", "status");
     this.live.setAttribute("aria-live", "polite");
     canvas.append(style, this.panel, this.live);
+    this.siteScheme = doc.documentElement.getAttribute("data-ascribe-scheme");
+    const win = doc.defaultView;
+    win
+      ?.matchMedia?.("(prefers-color-scheme: dark)")
+      .addEventListener("change", () => this.render());
+    win?.addEventListener("resize", () => this.placePanel());
+    // A theme switch on the page (a class or `data-theme` on the root, say) changes its colors.
+    const restyle = () => {
+      this.applyScheme();
+      // Again once a transition between the themes is over.
+      clearTimeout(this.restyleTimer);
+      this.restyleTimer = setTimeout(() => this.applyScheme(), 400);
+    };
+    const observer = new MutationObserver((records) => {
+      if (records.some((r) => r.attributeName !== "data-ascribe-scheme")) restyle();
+    });
+    for (const target of [doc.documentElement, doc.body]) {
+      observer.observe(target, { attributes: true });
+    }
     this.panel.addEventListener("keydown", (event) => event.stopPropagation());
     server.on<{ from: string | null }>(CHANGED_EVENT, (event) => {
       if (event.from !== this.channel.tab) void this.changedElsewhere();
@@ -331,13 +359,21 @@ class ReviewApp {
     });
   }
 
-  /** The threads of a page whose anchors didn't arrive: every one is on no block. */
+  /**
+   * The threads of a page whose anchors didn't arrive. The changes' anchors
+   * stand in for the page's, so threads on the files it includes are read too.
+   */
   private async listThreads(view: PageView): Promise<void> {
+    const anchors = (view.page?.changes ?? []).flatMap((change) =>
+      change.now
+        ? [change.now, ...change.now.via.map((at) => ({ source: lineSource(at), via: [] }))]
+        : [],
+    );
     try {
       this.listed = await this.channel.request<OverlayData>("load", {
         path: view.path,
-        anchors: [],
-        removed: [],
+        anchors,
+        removed: this.removed(),
       });
     } catch (error) {
       this.notify(messageOf(error));
@@ -543,6 +579,7 @@ class ReviewApp {
   // --- The panel ---
 
   private render(): void {
+    this.applyScheme();
     this.panel.hidden = !this.open;
     this.pad();
     if (!this.open) return;
@@ -557,7 +594,48 @@ class ReviewApp {
     if (this.message !== undefined) parts.push(this.notice(this.message));
     this.panel.replaceChildren(...parts);
     this.refocus(focus);
+    this.placePanel();
     this.pad();
+  }
+
+  /**
+   * Review's colors follow the page's, not the reader's system: a light-only
+   * site stays light. The marks and the overlay read `data-ascribe-scheme`
+   * on the page's root; a site that sets it itself keeps its own.
+   */
+  private applyScheme(): void {
+    const site = this.siteScheme;
+    const prefersDark =
+      this.doc.defaultView?.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+    const scheme =
+      site === "light" || site === "dark"
+        ? site
+        : pageScheme(this.root ?? this.doc.body, prefersDark);
+    if (this.panel.dataset["scheme"] !== scheme) this.panel.dataset["scheme"] = scheme;
+    if (site !== null) return;
+    const html = this.doc.documentElement;
+    if (!this.root) html.removeAttribute("data-ascribe-scheme");
+    else if (html.getAttribute("data-ascribe-scheme") !== scheme)
+      html.setAttribute("data-ascribe-scheme", scheme);
+  }
+
+  /** Keeps the panel clear of the column of threads, over the page beside it. */
+  private placePanel(): void {
+    const style = this.panel.style;
+    const start = this.overlay?.columnStart();
+    const viewport = this.doc.documentElement.clientWidth;
+    const width = Math.min(PANEL_WIDTH, viewport - 2 * PANEL_MARGIN);
+    if (start === undefined || (viewport + width) / 2 <= start - PANEL_MARGIN) {
+      style.removeProperty("left");
+      style.removeProperty("width");
+      style.removeProperty("transform");
+      return;
+    }
+    const room = Math.max(0, start - 2 * PANEL_MARGIN);
+    const fits = Math.min(PANEL_WIDTH, room);
+    style.left = `${PANEL_MARGIN + (room - fits) / 2}px`;
+    style.width = `${fits}px`;
+    style.transform = "none";
   }
 
   private content(): HTMLElement[] {
@@ -735,14 +813,10 @@ class ReviewApp {
     else {
       const target = next.page;
       notice.append(
-        this.button(
-          `${next.first ? "First" : "Next"} changed page: ${target.route}`,
-          "primary",
-          () => {
-            remember(FIRST_KEY, "1");
-            this.doc.location.assign(target.route);
-          },
-        ),
+        this.button(nextPageText(next), "primary", () => {
+          remember(FIRST_KEY, "1");
+          this.doc.location.assign(target.route);
+        }),
       );
     }
     return notice;
@@ -752,7 +826,7 @@ class ReviewApp {
   private notArrived(view: PageView): HTMLElement {
     const body = this.el("div", "body");
     const changes = view.page?.changes ?? [];
-    const threads = this.listed?.threads.detached ?? [];
+    const threads = listedThreads(this.listed);
     const what = [
       view.threads.state === "on" ? plural(threads.length, "comment") : undefined,
       plural(changes.length, "change"),
@@ -800,16 +874,19 @@ class ReviewApp {
     const card = this.el("div", "thread");
     const where = this.el("div", "where");
     const lines = thread.lines;
-    const label =
-      lines === undefined
-        ? thread.path
-        : `${thread.path}:${lines.first === lines.last ? lines.first : `${lines.first}-${lines.last}`}`;
-    if (lines !== undefined) {
+    const { label, removed } = threadLocation(thread);
+    // A thread on removed text is on the base's lines, which the working tree doesn't have.
+    if (lines !== undefined && !removed) {
       const source = `${thread.path.split("/").map(encodeURIComponent).join("/")}:${lines.first}-${lines.last}`;
-      where.append(this.button(label, "link", () => this.openSource(source)));
+      const link = this.button(label, "link", () => this.openSource(source));
+      link.title = `Open ${thread.path}, line ${lines.first}`;
+      where.append(link);
     } else {
-      where.append(label);
+      const name = this.el("span", "", label);
+      name.title = thread.path;
+      where.append(name);
     }
+    if (removed) where.append(" · On removed text");
     if (thread.resolved) where.append(" · Resolved");
     if (thread.outdated) where.append(" · Outdated");
     card.append(where);
@@ -923,6 +1000,27 @@ function labelButton(doc: Document, text: string): void {
   const tip = button?.querySelector(".item-tooltip");
   if (tip) tip.textContent = text;
   button?.setAttribute("aria-label", text);
+}
+
+/**
+ * Every thread read for a page whose anchors didn't arrive, once each: on
+ * the changes' blocks, on removed text, or on no block.
+ */
+function listedThreads(data: OverlayData | undefined): LocatedThread[] {
+  if (!data) return [];
+  const { blocks, removed, detached } = data.threads;
+  const seen = new Set<string>();
+  return [...blocks, ...removed]
+    .flatMap((entry) => entry.threads)
+    .concat(detached)
+    .filter((thread) => !seen.has(thread.id) && seen.add(thread.id));
+}
+
+/** An include's place (`<path>:<line>`) as a block's source (`<path>:<line>-<line>`). */
+function lineSource(at: string): string {
+  const colon = at.lastIndexOf(":");
+  const line = at.slice(colon + 1);
+  return colon > 0 && /^\d+$/.test(line) ? `${at}-${line}` : at;
 }
 
 function plural(count: number, noun: string): string {

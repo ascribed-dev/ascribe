@@ -75,6 +75,11 @@ export interface Overlay {
   threadCount(): number | undefined;
   /** How many comments are unsent, once read. */
   unsentCount(): number | undefined;
+  /**
+   * Where the column of threads starts, in the viewport's pixels from its
+   * left, while it shows: for a host that keeps its own controls clear of it.
+   */
+  columnStart(): number | undefined;
   /** Opens the submit dialog, when there's something to submit. */
   submitReview(): void;
   /** Removes the overlay and everything it put on the page. */
@@ -307,6 +312,11 @@ class ReviewOverlay implements Overlay {
 
   unsentCount(): number | undefined {
     return this.data?.pending.count;
+  }
+
+  columnStart(): number | undefined {
+    if (this.disposed || !this.wide || this.data === undefined) return undefined;
+    return this.root.getBoundingClientRect().right + COLUMN_GAP;
   }
 
   submitReview(): void {
