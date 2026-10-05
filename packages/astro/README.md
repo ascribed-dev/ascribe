@@ -39,7 +39,7 @@ import Elements from "@ascribed/astro/Elements.astro";
 <head><Elements /></head>
 ```
 
-The [Astro guide](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/guides/astro.md) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, what `astro dev` does, and [review in the site preview](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/guides/astro.md#review-in-the-site-preview). [Review](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/guides/review.md) walks through reviewing a pull request on your site.
+The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/guides/astro/#review-in-the-site-preview). [Review](https://ascribed-dev.com/guides/review/) walks through reviewing a pull request on your site.
 
 ## Options
 

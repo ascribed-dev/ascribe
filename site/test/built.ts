@@ -12,6 +12,18 @@ export const distDir = path.join(siteDir, "dist");
 /** ../docs/ascribe.toml's site output for the `site` build: the published pages. */
 export const outputDir = path.join(siteDir, "..", "docs", ".ascribe", "build", "site", "site");
 
+/**
+ * `[consumer] site` in ../docs/ascribe.toml: the address the site was built
+ * for, which its absolute links start with. A preview's build changes it.
+ */
+export async function siteAddress(): Promise<string> {
+  const config = await readFile(path.join(siteDir, "..", "docs", "ascribe.toml"), "utf8");
+  const table = /^\[consumer\]$([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(config)?.[1] ?? "";
+  const site = /^site\s*=\s*"([^"]+)"/m.exec(table)?.[1];
+  if (site === undefined) throw new Error("docs/ascribe.toml's [consumer] has no site");
+  return new URL(site).origin;
+}
+
 /** Fails with what to run when the site hasn't been built. */
 export function requireBuild(): void {
   for (const dir of [distDir, outputDir]) {

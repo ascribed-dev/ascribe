@@ -1,0 +1,18 @@
+# How Netlify builds the docs site in production. The Netlify site's base
+# directory is `site/`, so Netlify reads this file, and every path and command
+# here is relative to `site/`.
+#
+# Production builds from npm alone, as a user's host does: the lockfile's
+# packages, then the newest canary of Ascribe's (`follow-next`), then the
+# site's build. No Rust, nothing from the workspace, no secret, and no `git`
+# history. Pull requests' previews aren't built here: Netlify's deploy previews
+# are off, and the Site workflow builds each with its own Ascribe and deploys
+# it. See README.md.
+[build]
+  # Netlify runs `npm install` before this; `npm ci` makes the install the
+  # lockfile's exactly.
+  command = "npm ci && npm run follow-next && npm run build"
+  publish = "dist"
+  # A push to `main` builds only when the docs or the site changed. A build
+  # hook's build (the canary's) is never skipped.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs"

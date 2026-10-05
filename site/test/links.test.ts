@@ -3,12 +3,15 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { beforeAll, expect, test } from "vitest";
-import { distDir, fileFor, filesUnder, requireBuild } from "./built.ts";
-
-beforeAll(requireBuild);
+import { distDir, fileFor, filesUnder, requireBuild, siteAddress } from "./built.ts";
 
 /** The site's address, which absolute links to the site start with. */
-const SITE = "https://ascribe-docs.example.com";
+let SITE: string;
+
+beforeAll(async () => {
+  requireBuild();
+  SITE = await siteAddress();
+});
 
 /** An attribute's values on the page's tags (not in its text, where `<` is escaped). */
 function attributeValues(html: string, name: string): string[] {

@@ -2,8 +2,15 @@ name: Site
 
 # The docs site in site/, built with this pull request's Ascribe (its binary
 # and its packages, by `npm run build:checkout`), then tested in Chromium: a
-# change to Ascribe and the docs that use it are built together. Production
-# builds from npm instead; see site/README.md.
+# change to Ascribe and the docs that use it are built together. A pull
+# request from a branch of this repository then deploys it to Netlify as its
+# preview, a draft at `https://pr-<number>--<the Netlify site's name>.netlify.app`,
+# linked from the run's summary. Production is Netlify's own build, from npm; see site/README.md.
+#
+# The preview needs two repository secrets: NETLIFY_AUTH_TOKEN, a Netlify
+# personal access token, and NETLIFY_SITE_ID, the site's project ID. A pull
+# request from a fork has neither, so it gets the build and its tests, and no
+# preview.
 
 on:
   pull_request:
@@ -58,9 +65,84 @@ jobs:
         working-directory: site
       - run: npx playwright-core install --with-deps chromium
         working-directory: site
+      # The preview is built for its own address, so its links are right: as
+      # `site` in [consumer] and in astro.config.mjs, which have to agree.
+      - id: preview
+        name: Use the preview's address
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          # The Netlify site's name: drafts are served from its netlify.app
+          # subdomain, not from the site's own domain.
+          NETLIFY_SITE_NAME: ascribe-docs
+        run: |
+          site=$(sed -n 's|^site = "\(https://[^"/]*\)"$|\1|p' docs/ascribe.toml)
+          if [ "$(printf '%s\n' "$site" | grep -c .)" != 1 ]; then
+            echo "::error::Expected one \`site = \"https://...\"\` line in docs/ascribe.toml, found: $site"
+            exit 1
+          fi
+          address="https://pr-$PR--$NETLIFY_SITE_NAME.netlify.app"
+          sed -i "s|\"$site\"|\"$address\"|" docs/ascribe.toml site/astro.config.mjs
+          grep -q "\"$address\"" docs/ascribe.toml
+          grep -q "\"$address\"" site/astro.config.mjs
+          echo "Building for $address"
+          echo "address=$address" >> "$GITHUB_OUTPUT"
+          echo "alias=pr-$PR" >> "$GITHUB_OUTPUT"
       - run: npm run build:checkout
         working-directory: site
       - run: npm run typecheck
         working-directory: site
       - run: npm test
         working-directory: site
+      - id: secrets
+        name: Look for Netlify's secrets
+        if: steps.preview.outputs.address != ''
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -n "$NETLIFY_AUTH_TOKEN" ] && [ -n "$NETLIFY_SITE_ID" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID secret, so no preview is deployed."
+          fi
+      # A draft deploy: production stays as it is. `--no-build` deploys dist/
+      # as built above, instead of running netlify.toml's production build.
+      - name: Deploy the preview
+        if: steps.secrets.outputs.present == 'true'
+        working-directory: site
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          ALIAS: ${{ steps.preview.outputs.alias }}
+          ADDRESS: ${{ steps.preview.outputs.address }}
+          MESSAGE: "#${{ github.event.pull_request.number }} at ${{ github.event.pull_request.head.sha }}"
+        run: |
+          npx --yes netlify-cli@27.11.0 deploy --no-build --dir dist \
+            --alias "$ALIAS" --message "$MESSAGE" --json > "$RUNNER_TEMP/deploy.json"
+          deployed=$(jq -r .deploy_url "$RUNNER_TEMP/deploy.json")
+          if [ "$deployed" != "$ADDRESS" ]; then
+            echo "::error::Netlify deployed the preview at $deployed, but it was built for $ADDRESS, so its links are wrong."
+            exit 1
+          fi
+      - name: Link the preview from the summary
+        if: always() && github.event_name == 'pull_request'
+        env:
+          ADDRESS: ${{ steps.preview.outputs.address }}
+          PRESENT: ${{ steps.secrets.outputs.present }}
+          FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          {
+            echo "### Preview"
+            echo
+            if [ "$FORK" = true ]; then
+              echo "No preview: a pull request from a fork has no Netlify secrets. The site was built and tested with this pull request's Ascribe."
+            elif [ "$OUTCOME" != success ]; then
+              echo "No preview: the build, its tests, or the deploy failed."
+            elif [ "$PRESENT" != true ]; then
+              echo "No preview: the repository has no NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID secret."
+            else
+              echo "[$ADDRESS]($ADDRESS): the docs site, built with this pull request's Ascribe."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

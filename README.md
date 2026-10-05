@@ -33,7 +33,7 @@ npm install --save-dev @ascribed/cli
 npx ascribe check
 ```
 
-Read [Getting started](docs/content/getting-started.md), then the rest of the [documentation](docs/content/index.md).
+Read [Getting started](https://ascribed-dev.com/getting-started/), then the rest of the [documentation](https://ascribed-dev.com/).
 
 | Package | What it is |
 |---|---|

@@ -31,6 +31,46 @@ fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// The address help links to is the docs site's, `[consumer] site` in
+/// `docs/ascribe.toml`, and each page it links to is a page of the docs.
+#[test]
+fn help_links_to_the_docs_site() {
+    let model = tessera_model::load(repo().join("docs/ascribe.toml")).unwrap();
+    assert_eq!(
+        model
+            .consumer
+            .site
+            .as_deref()
+            .map(|s| s.trim_end_matches('/')),
+        Some(crate::cli::DOCS_SITE),
+        "the docs site's address in crates/tessera-cli/src/cli.rs isn't [consumer] site in docs/ascribe.toml"
+    );
+
+    let page = std::fs::read_to_string(repo().join("docs/content/reference/cli.md")).unwrap();
+    let mut cli = Cli::command();
+    let mut helps = vec![cli.render_long_help().to_string()];
+    // Rendering builds the command, which adds clap's own `help` subcommand.
+    for command in cli.get_subcommands_mut().filter(|c| c.get_name() != "help") {
+        helps.push(command.render_long_help().to_string());
+    }
+    for help in helps {
+        let link = help
+            .lines()
+            .find_map(|line| line.strip_prefix("Documentation: "))
+            .expect("each command's help ends with a link to its documentation");
+        let path = link.strip_prefix(crate::cli::DOCS_SITE).unwrap();
+        let (route, anchor) = path.split_once('#').unwrap_or((path, ""));
+        assert_eq!(route, "/reference/cli/", "{link}");
+        if !anchor.is_empty() {
+            let command = anchor.strip_prefix("ascribe-").unwrap();
+            assert!(
+                page.contains(&format!("\n## `ascribe {command}`\n")),
+                "{link}: reference/cli.md has no `ascribe {command}` heading"
+            );
+        }
+    }
+}
+
 #[test]
 fn the_command_reference_is_current() {
     let fragments = render();
