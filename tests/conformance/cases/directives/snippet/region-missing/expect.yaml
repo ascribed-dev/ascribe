@@ -1,0 +1,11 @@
+description: >-
+  The region must be marked in the file. A file whose extension has no
+  comment syntax has no tags, so it has no regions, even where its text
+  looks like a tag.
+spec: ["4.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-region-missing, file: index.md, line: 5}
+  - {slug: snippet-region-missing, file: index.md, line: 7}
+  - {slug: snippet-region-missing, file: index.md, line: 9}

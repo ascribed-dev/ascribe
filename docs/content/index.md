@@ -9,6 +9,8 @@ description: Guides and references for writing documentation with Ascribe, and t
 - [Command reference](reference/cli.md): `ascribe check`, `build`, `diff`, `fmt`, and `lsp`, their options, outputs, and exit codes.
 - @available: next
   [Review](guides/review.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
+- @available: next
+  [Drift](guides/drift.md): keeping pages from falling behind the code they describe, with code examples taken from tested files.
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - [Editing](guides/editor.md): the VS Code extension, workspaces with several projects, and other editors.
 - [Astro](guides/astro.md): publishing a site with `@ascribed/astro`.

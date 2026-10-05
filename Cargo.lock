@@ -1357,6 +1357,7 @@ dependencies = [
  "proptest",
  "serde_json",
  "serde_yaml_ng",
+ "tempfile",
  "tessera-core",
  "tessera-model",
  "tessera-syntax",

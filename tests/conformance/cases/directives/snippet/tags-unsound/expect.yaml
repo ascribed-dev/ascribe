@@ -1,0 +1,13 @@
+description: >-
+  Every start tag has an end and every end a start, a region name is used
+  once and is well formed, and no reserved tag appears. Any of these makes
+  every snippet of the file an error, even one whose own region is sound.
+spec: ["4.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-tags, file: index.md, line: 5}
+  - {slug: snippet-tags, file: index.md, line: 7}
+  - {slug: snippet-tags, file: index.md, line: 9}
+  - {slug: snippet-tags, file: index.md, line: 11}
+  - {slug: snippet-tags, file: index.md, line: 13}

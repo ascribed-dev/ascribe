@@ -49,6 +49,14 @@ impl FileSystem for Held<'_> {
     fn probe(&self, project_path: &RelPath) -> Probe {
         self.0.file_system().probe(project_path)
     }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        self.0.file_system().read_file(project_path)
+    }
+
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        self.0.file_system().real_path(project_path)
+    }
 }
 
 /// The source index a [`PageChecker`](super::PageChecker) reads: built from a

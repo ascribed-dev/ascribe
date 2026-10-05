@@ -10,7 +10,7 @@
 //! | `attrs` | Attribute keys and types, `@variant` dimensions, required attributes |
 //! | `avail` | `@available` specs and the `available` frontmatter key |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
-//! | `refs` | `@include` targets, link destinations, image sources and alt text |
+//! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 
 mod attrs;
 mod avail;
@@ -287,6 +287,7 @@ impl Ctx<'_> {
             ("available", Some(PrimaryValue::Line(p))) => {
                 self.check_availability_text(&p.text, p.span.start(), p.span, true);
             }
+            ("snippet", Some(PrimaryValue::Identifier(_))) => self.check_snippet(d),
             _ => {}
         }
     }

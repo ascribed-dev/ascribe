@@ -59,6 +59,14 @@ impl FileSystem for BufferFs {
         }
     }
 
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        self.disk.read_file(project_path)
+    }
+
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        self.disk.real_path(project_path)
+    }
+
     fn probe(&self, project_path: &RelPath) -> Probe {
         let mut probes = self.probes.lock().unwrap_or_else(PoisonError::into_inner);
         if let Some(answer) = probes.get(project_path) {
@@ -119,6 +127,14 @@ impl FileSystem for LayerFs {
 
     fn read(&self, path: &RelPath) -> io::Result<String> {
         self.disk.read(path)
+    }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        self.disk.read_file(project_path)
+    }
+
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        self.disk.real_path(project_path)
     }
 
     /// Exact names win; among names that differ only in case, files added here

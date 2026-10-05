@@ -40,6 +40,7 @@ pub mod types;
 use std::path::Path;
 
 pub use model::*;
+pub use names::suggest;
 pub use pattern::{Pattern, PatternError};
 pub use tessera_core::Issue;
 pub use types::{

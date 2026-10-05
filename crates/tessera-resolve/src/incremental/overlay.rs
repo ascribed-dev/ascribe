@@ -57,6 +57,14 @@ impl FileSystem for Overlay {
         self.base.read(path)
     }
 
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        self.base.read_file(project_path)
+    }
+
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        self.base.real_path(project_path)
+    }
+
     /// Exact names win; among names that differ only in case, files added
     /// here come before the base's, first in path order (as
     /// [`MemoryFs`](crate::MemoryFs) does).

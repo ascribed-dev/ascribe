@@ -8,7 +8,8 @@
 //!
 //! - **the command**: wall time of `ascribe check` (and, for the synthetic
 //!   project, `ascribe build` and `ascribe diff`), process start to exit,
-//!   output to /dev/null;
+//!   output to /dev/null, on the project as it is and with a snippet on every
+//!   page;
 //! - **the library phases** the command is made of, in-process: loading the
 //!   project, the file-level checks, and the page-level checks of every build;
 //!   and, for a build, resolving and emitting plain markdown.
@@ -230,6 +231,61 @@ fn diff(bin: &Path, dir: &Path) {
     println!();
 }
 
+/// `ascribe diff` on the synthetic project with snippets, in a git
+/// repository: with nothing changed, and with one code file changed in the
+/// region ten pages show. Skipped when `git` isn't there.
+fn diff_snippets(bin: &Path, dir: &Path) {
+    let root = dir.join("synthetic-snippets-git");
+    std::fs::create_dir_all(&root).expect("creates");
+    let project = Synthetic::standard().with_snippets();
+    project.write_to(&root).expect("writes");
+    let git = |args: &[&str]| {
+        Command::new("git")
+            .current_dir(&root)
+            .args([
+                "-c",
+                "user.name=bench",
+                "-c",
+                "user.email=bench@example.com",
+            ])
+            .args(["-c", "commit.gpgsign=false"])
+            .args(args)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|s| s.success())
+    };
+    if !(git(&["init", "-q", "-b", "main"])
+        && git(&["add", "-A"])
+        && git(&["commit", "-q", "-m", "base"]))
+    {
+        println!("ascribe diff with snippets: skipped (git isn't available)");
+        println!();
+        return;
+    }
+    println!("synthetic project with snippets in git");
+    let args = ["diff", "--base", "main", "--format", "json"];
+    time_cli(
+        "  ascribe diff (nothing changed)",
+        "diff/synthetic-3000-snippets-unchanged",
+        bin,
+        &root,
+        &args,
+        3,
+    );
+    let code = root.join("code").join("m34.py");
+    std::fs::write(&code, project.code_text(34, "return value * 2")).expect("writes");
+    time_cli(
+        "  ascribe diff (a region ten pages show changed)",
+        "diff/synthetic-3000-snippet",
+        bin,
+        &root,
+        &args,
+        3,
+    );
+    println!();
+}
+
 fn machine() {
     let cpu = std::fs::read_to_string("/proc/cpuinfo")
         .ok()
@@ -291,7 +347,38 @@ fn main() {
     );
     println!();
 
+    // The same project with a snippet on every page, read from 100 code
+    // files: what reading and extracting them adds.
+    let snippets = dir.path().join("synthetic-snippets");
+    std::fs::create_dir_all(&snippets).expect("creates");
+    Synthetic::standard()
+        .with_snippets()
+        .write_to(&snippets)
+        .expect("writes");
+    println!(
+        "synthetic project with snippets: the same, and a snippet on every page from 100 code files"
+    );
+    phases("  library, in-process", &snippets);
+    time_cli(
+        "  ascribe check",
+        "check/synthetic-3000-snippets",
+        &bin,
+        &snippets,
+        &["check"],
+        5,
+    );
+    time_cli(
+        "  ascribe build (first: writes every output)",
+        "build/synthetic-3000-snippets-first",
+        &bin,
+        &snippets,
+        &["build", "--emit", "plain,json"],
+        1,
+    );
+    println!();
+
     diff(&bin, dir.path());
+    diff_snippets(&bin, dir.path());
 
     // The same command on a project with a diagnostic on every page: the text
     // report is the default, and FINDINGS.md P1 is about what it costs.

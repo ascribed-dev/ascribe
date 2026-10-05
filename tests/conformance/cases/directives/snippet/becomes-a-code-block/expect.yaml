@@ -1,0 +1,26 @@
+description: >-
+  A `@snippet` becomes a fenced code block holding its file's code: the whole
+  file, or one region of it, with tag lines and removed lines left out and
+  the rest dedented. The language comes from the extension unless `lang`
+  gives one, and phrases are substituted only with `phrases=true`.
+spec: ["4.8", "5.1"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "Whole file:"
+          - code: "import os\n\ndef main():\n\n    print(\"hello {product}\")\n"
+            info: py
+            fenced: true
+          - paragraph: "A region, dedented, with tag lines and removed lines left out:"
+          - code: "def main():\n\n    print(\"hello {product}\")\n"
+            info: py
+          - paragraph: "With phrases, a title, and another language:"
+          - code: "def main():\n\n    print(\"hello Quill\")\n"
+            info: python title="Run it" phrases=true
+          - paragraph: "A file with no extension has no language:"
+          - code: "curl -fsSL https://example.com/install | sh\n"
+            info: ""

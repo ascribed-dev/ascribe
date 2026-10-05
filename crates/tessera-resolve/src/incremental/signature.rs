@@ -109,7 +109,7 @@ pub enum ModelImpact {
     /// re-indexed; every file is re-checked and every page re-resolved.
     Resolution,
     /// The index reads something that changed: the phrases, the fragment
-    /// patterns, or the slugger. Every file is re-indexed (its parse is
+    /// patterns, the slugger, or the sources. Every file is re-indexed (its parse is
     /// reused); every file is re-checked and every page re-resolved.
     Index,
     /// The directive keyword set (built-ins and widgets) or the note types
@@ -147,6 +147,7 @@ impl Fingerprints {
             widgets,
             consumer,
             builds,
+            sources,
             editor_build,
             warnings,
         } = model;
@@ -155,10 +156,12 @@ impl Fingerprints {
         let note_names: Vec<&str> = notes.iter().map(|n| n.name.as_str()).collect();
         let parse = hash_of(&format!("{:?}", (model.directive_schemas(), note_names)));
         // `index` adds what indexing reads: phrases (heading text, destinations),
-        // fragment patterns (page or fragment), the slugger.
+        // fragment patterns (page or fragment), the slugger, and the sources
+        // snippets are read through (a snippet's code is part of the
+        // expansion).
         let index = hash_of(&format!(
             "{parse}{:?}",
-            (phrases, &fragments.patterns, &consumer.slugger)
+            (phrases, &fragments.patterns, &consumer.slugger, sources)
         ));
         let whole = hash_of(&format!(
             "{:?}",
@@ -171,7 +174,8 @@ impl Fingerprints {
                     widgets,
                     consumer,
                     builds,
-                    editor_build
+                    editor_build,
+                    sources
                 ),
             )
         ));

@@ -62,6 +62,9 @@
 | [ASC117](#asc117-model-editor-build-unknown) | `model-editor-build-unknown` | Error | File |
 | [ASC118](#asc118-model-editor-build-required) | `model-editor-build-required` | Error | File |
 | [ASC119](#asc119-model-attribute-reserved) | `model-attribute-reserved` | Error | File |
+| [ASC133](#asc133-model-source-path-missing) | `model-source-path-missing` | Error | File |
+| [ASC134](#asc134-model-source-outside-repository) | `model-source-outside-repository` | Error | File |
+| [ASC135](#asc135-model-source-remote) | `model-source-remote` | Error | File |
 
 ### The file
 
@@ -154,6 +157,32 @@ Error · file level · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 **Message:** output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source
 
 **Fix:** Keep the output directory and the content root apart: neither inside the other, and not the same. The default output directory, `.ascribe/build`, is outside the default content root, `docs`.
+
+### `[sources]`
+
+#### ASC133 `model-source-path-missing`
+
+Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+
+**Message:** the folder of source `{source}`, `{path}`, doesn't exist
+
+**Fix:** Fix `path`, which is relative to the folder ascribe.toml is in, or create the folder.
+
+#### ASC134 `model-source-outside-repository`
+
+Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+
+**Message:** the folder of source `{source}`, `{path}`, is outside the git repository the project is in
+
+**Fix:** Give the source a `path` inside the project's repository. A source in another repository isn't supported yet.
+
+#### ASC135 `model-source-remote`
+
+Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+
+**Message:** `{key}` is reserved for a source in another repository, which this version of Ascribe doesn't support; give the source a `path` in this repository instead
+
+**Fix:** Remove `git` and `branch`, and give the source the `path` of a folder in this repository.
 
 ### Content types, fields, and attributes
 

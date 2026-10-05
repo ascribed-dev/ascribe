@@ -161,6 +161,7 @@ fn check_fragments(prefix: &str, fragments: &[(String, String)]) {
 const RULE_GROUPS: &[(&str, &str)] = &[
     ("file", "The file"),
     ("project", "`[project]`"),
+    ("sources", "`[sources]`"),
     ("content-types", "Content types, fields, and attributes"),
     (
         "names",

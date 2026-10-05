@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
-use tessera_resolve::{DiskFs, FileSystem, Layout, SourceSet};
+use tessera_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
 
 use crate::Diagnostic;
 
@@ -104,6 +104,8 @@ pub struct Project {
     /// for [`SourceSet`].
     source_paths: HashMap<String, RelPath>,
     fs: Files,
+    /// The code files snippets have read, read as the checks ask for them.
+    code: Arc<CodeFiles>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -289,6 +291,7 @@ impl Project {
             model_warnings,
             source_paths,
             fs: Files(fs),
+            code: Arc::default(),
         }
     }
 
@@ -327,6 +330,18 @@ impl Project {
     /// the disk, or the file system given to [`Project::from_parts_with_fs`].
     pub fn file_system(&self) -> &dyn FileSystem {
         &*self.fs.0
+    }
+
+    /// The code files the checks have read for snippets (SPEC §4.8), so far.
+    /// A diagnostic's related location can be in one: its id is the code
+    /// file's, from [`tessera_resolve::snippet::CODE_FILE_IDS`] up.
+    pub fn code_files(&self) -> &CodeFiles {
+        &self.code
+    }
+
+    /// The code file with this id, if the checks have read it.
+    pub fn code_file(&self, id: FileId) -> Option<Arc<CodeFile>> {
+        self.code.by_id(id)
     }
 
     /// The content model.

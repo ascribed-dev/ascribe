@@ -1,0 +1,12 @@
+description: >-
+  An address is `<source>:<path>`, with an optional `#<region>`: it names a
+  source, its path has no `..` segments and doesn't start with `/`, and a
+  region name is letters, digits, `-`, `_`, and `.`.
+spec: ["4.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-address, file: index.md, line: 5, column: 11}
+  - {slug: snippet-address, file: index.md, line: 7, column: 11}
+  - {slug: snippet-address, file: index.md, line: 9, column: 11}
+  - {slug: snippet-address, file: index.md, line: 11, column: 11}

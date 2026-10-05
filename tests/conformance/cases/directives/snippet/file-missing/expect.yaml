@@ -1,0 +1,12 @@
+description: >-
+  The file must exist with exactly the name the address gives, and its
+  source's `include` and `ignore` patterns must take it in. The path is
+  percent-decoded.
+spec: ["4.8", "7.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-file-missing, file: index.md, line: 5}
+  - {slug: snippet-file-missing, file: index.md, line: 7}
+  - {slug: snippet-file-missing, file: index.md, line: 9}
+  - {slug: snippet-file-missing, file: index.md, line: 11}

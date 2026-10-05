@@ -122,8 +122,9 @@ impl Pass<'_> {
         // SPEC §3.8: directives that bind the following block stack:
         // they all describe the block the last of them touches. A line-form
         // directive that is its own text (`@note: text`) renders as a block,
-        // so it can be bound; one that stands alone (`@include`, `@id`) or an
-        // end line can't.
+        // so it can be bound, as can a `@snippet`, which becomes a code block
+        // (SPEC §4.8); one that stands alone (`@include`, `@id`) or an end
+        // line can't.
         let mut j = i + 1;
         while classes.get(j) == Some(&Class::Block) {
             j += 1;
@@ -133,7 +134,10 @@ impl Pass<'_> {
             target,
             Some(BlockKind::Directive(l))
                 if classes.get(j) == Some(&Class::Own)
-                    && matches!(l.primary, Some(PrimaryValue::Text(_)))
+                    && (matches!(l.primary, Some(PrimaryValue::Text(_)))
+                        || self.options.schema(&l.name).is_some_and(|s| {
+                            s.origin == Origin::Builtin(Builtin::Snippet)
+                        }))
         );
         match target {
             None => {

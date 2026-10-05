@@ -1,0 +1,8 @@
+description: >-
+  The file must be text: valid UTF-8 with no NUL character.
+spec: ["4.8", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-file-not-text, file: index.md, line: 5}
+  - {slug: snippet-file-not-text, file: index.md, line: 7}

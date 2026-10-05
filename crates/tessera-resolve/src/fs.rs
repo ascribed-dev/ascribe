@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use tessera_core::RelPath;
@@ -91,6 +91,18 @@ pub trait FileSystem {
     /// path may start with `..` when the content root is above the project
     /// root; the boundary check has already decided the path may be read.
     fn probe(&self, project_path: &RelPath) -> Probe;
+
+    /// The bytes of a file at a path relative to the project root: a code
+    /// file a snippet reads through a source (SPEC §4.8). The path may start
+    /// with `..`; the source has already decided it may be read.
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>>;
+
+    /// Where a file or folder is once every symbolic link on the way to it is
+    /// followed, as a path relative to the project root: the path itself when
+    /// none of its segments is a link. `None` when it isn't there, or a link
+    /// leads where no path from the project root reaches (another drive). A
+    /// snippet reads a file only when this is inside its source (SPEC §4.8).
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath>;
 }
 
 /// A project on disk.
@@ -101,7 +113,12 @@ pub struct DiskFs {
     /// Directory listings, kept for the life of the value when it was made
     /// with [`DiskFs::with_listing_cache`]; `None` lists every time.
     listings: Option<Arc<Mutex<Listings>>>,
+    /// The files [`FileSystem::read_file`] read, kept as the listings are.
+    files: Option<Arc<Mutex<Files>>>,
 }
+
+/// Each file's bytes, or why it couldn't be read.
+type Files = HashMap<PathBuf, Result<Arc<[u8]>, (io::ErrorKind, String)>>;
 
 /// Each directory's entry names, or `None` for one that can't be listed.
 type Listings = HashMap<PathBuf, Option<Arc<[String]>>>;
@@ -115,6 +132,7 @@ impl DiskFs {
             project_root: project_root.into(),
             content_root: layout.content_root.clone(),
             listings: None,
+            files: None,
         }
     }
 
@@ -122,10 +140,13 @@ impl DiskFs {
     /// once and remembered, for a one-shot command (`ascribe check`,
     /// `ascribe build`) that reads a disk that doesn't change while it runs.
     /// A probe lists every directory on its path, so without this a large
-    /// project lists the same directories tens of thousands of times.
+    /// project lists the same directories tens of thousands of times. Code
+    /// files snippets read are remembered too, so the file-level checks and
+    /// the source index read each once.
     pub fn with_listing_cache(project_root: impl Into<PathBuf>, layout: &Layout) -> DiskFs {
         DiskFs {
             listings: Some(Arc::default()),
+            files: Some(Arc::default()),
             ..DiskFs::new(project_root, layout)
         }
     }
@@ -223,6 +244,51 @@ impl FileSystem for DiskFs {
             Probe::File
         }
     }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        let path = project_path
+            .segments()
+            .fold(self.project_root.clone(), |p, s| p.join(s));
+        let Some(files) = &self.files else {
+            return fs::read(&path);
+        };
+        let mut files = files
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let read = files.entry(path).or_insert_with_key(|path| {
+            fs::read(path)
+                .map(Arc::from)
+                .map_err(|e| (e.kind(), e.to_string()))
+        });
+        match read {
+            Ok(bytes) => Ok(bytes.to_vec()),
+            Err((kind, message)) => Err(io::Error::new(*kind, message.clone())),
+        }
+    }
+
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        let root = self.project_root.canonicalize().ok()?;
+        let path = project_path
+            .segments()
+            .fold(self.project_root.clone(), |p, s| p.join(s));
+        relative_path(&root, &path.canonicalize().ok()?)
+    }
+}
+
+/// `to` as a path relative to the directory `from`, both canonical: `None`
+/// when they share no root (another drive) or a name on the way isn't UTF-8.
+fn relative_path(from: &Path, to: &Path) -> Option<RelPath> {
+    let from: Vec<Component<'_>> = from.components().collect();
+    let to: Vec<Component<'_>> = to.components().collect();
+    let common = from.iter().zip(&to).take_while(|(a, b)| a == b).count();
+    if common == 0 {
+        return None;
+    }
+    let mut segments: Vec<&str> = vec![".."; from.len() - common];
+    for component in &to[common..] {
+        segments.push(component.as_os_str().to_str()?);
+    }
+    RelPath::parse(&segments.join("/")).ok()
 }
 
 /// What a walk of the content root needs to know besides the tree.
@@ -411,6 +477,18 @@ impl FileSystem for MemoryFs {
             .and_then(|p| self.files.get(&p))
             .cloned()
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no such file"))
+    }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        self.files
+            .get(project_path)
+            .map(|text| text.as_bytes().to_vec())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no such file"))
+    }
+
+    /// There are no links in memory.
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        Some(project_path.clone())
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {

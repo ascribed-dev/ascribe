@@ -1,0 +1,12 @@
+description: >-
+  A `@snippet` is a block where a code block can be, so a following-block
+  directive directly above it binds it.
+spec: ["3.8", "4.8"]
+tags: [structure]
+
+outline:
+  - directive: note
+    binding: following-block
+  - directive: snippet
+    binding: self
+    primary: code:app.py#main

@@ -41,7 +41,11 @@ fn substitute_block(project: &Project, block: &mut ResolvedBlock) {
     {
         // A fence that opted in: candidates in source order, and the same
         // in the literal text (a backslash doesn't escape in code, §5.1).
-        subs.extend(listed(&phrases, model));
+        // A snippet's candidates are in its code file, not this block's
+        // source, so they're substituted but not listed.
+        if block.snippet.is_none() {
+            subs.extend(listed(&phrases, model));
+        }
         code.literal = substitute(&code.literal, &phrases, model);
         code.phrases = Some(Vec::new());
     }

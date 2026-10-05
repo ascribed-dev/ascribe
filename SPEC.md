@@ -294,7 +294,7 @@ A heading's **section** is the heading plus all content up to the next heading o
 
 **Following-block directives** bind the next block (paragraph, list, code block, blockquote, table, or container) within the same container. They belong directly above that block, touching it: what a directive annotates is what it touches. A blank line between them is allowed, but processors SHOULD warn, because it hides what the directive annotates, and canonical form removes it. Binding a heading is an error, and so is a following-block directive with no block after it in its container.
 
-Following-block directives **stack**: several in a row all bind the block the last of them touches. Any block except a heading can be bound, including a thematic break or a raw HTML block. A line-form directive whose content is its own text primary, such as a one-line `@note: …`, is a block too, so `@available` directly above it binds the note. A directive that renders nothing of its own, such as `@id`, `@include`, or an end line, isn't a block, so a following-block directive directly above one has nothing to bind.
+Following-block directives **stack**: several in a row all bind the block the last of them touches. Any block except a heading can be bound, including a thematic break or a raw HTML block. A line-form directive whose content is its own text primary, such as a one-line `@note: …`, is a block too, so `@available` directly above it binds the note. So is `@snippet`, which becomes a code block (§4.8). A directive that renders nothing of its own, such as `@id`, `@include`, or an end line, isn't a block, so a following-block directive directly above one has nothing to bind.
 
 Sections are found within one container: a heading-bound directive binds a heading in its own document, list item, blockquote, directive container, or arm, never one outside it. A container's first blocks have no heading above them, as at the start of a document.
 
@@ -332,6 +332,7 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@note` | line, container | text, optional | self (with primary), else following block; container with a trailing `:` | Callout |
 | `@steps` | line | none | following block | Mark an ordered list as a procedure |
 | `@details` | line, container | none | following block; container with a trailing `:` | Collapsible content |
+| `@snippet` | line | identifier (address) | self | Take a code example from a file |
 
 ### 4.1 `@id`
 
@@ -540,6 +541,65 @@ Content that readers can expand or collapse.
 - **Forms:** with no colon, binds the following block; with a trailing colon, a container. **Primary:** none.
 - **Title:** REQUIRED (§3.7). It's the text a reader sees while the content is collapsed.
 
+### 4.8 `@snippet`
+
+Takes a code example from a file outside the content, by name, and puts it in the page as a fenced code block. There's no copy to fall behind: the file is read whenever the page is checked or built, so changing the file changes every page that uses it.
+
+```
+@snippet: code:examples/quill/ascribe.toml#dimensions
+@snippet {lang=shell, title="Install"}: code:scripts/install.sh
+```
+
+- **Form:** line. **Binding:** self. **Primary:** REQUIRED address (an identifier primary).
+- **The address** is `<source>:<path>`, optionally followed by `#` and a region (ABNF rule `snippet-address`):
+  - `<source>` names a source declared in the content model (§7.3). There's no other way to name a file outside the content root, and no relative form: an address doesn't depend on where the page is, or on where the code is checked out.
+  - `<path>` is the file's path relative to the source's folder, with `/` between segments on every platform. It has no empty, `.`, or `..` segments, and doesn't start with `/`. It's percent-decoded as a link destination is (§5.2). The file MUST exist, with exactly this name (as for assets, §9.4), and its source's file patterns MUST include it (§7.3). A symbolic link on the way to the file is followed, and the file it leads to MUST be in the source's folder, at a path the source's patterns include, so a link can't lead a snippet out of its source.
+  - `#<region>` names a region of the file (below). Without one, the snippet is the whole file, with every tag line and removed line left out.
+- **The file** MUST be text: valid UTF-8, with no NUL character. Its line endings don't matter; the snippet's lines end in a line feed.
+- **What it becomes.** A `@snippet` is a block, allowed wherever a fenced code block is (in a list item, a container, or an arm), and a following-block directive directly above it binds it (§3.8). It becomes a fenced code block whose info string is the language, then `title="…"` when the directive has a title attribute, then `phrases=true` when it opts in to phrases. With no language, the info string is empty, or starts with `text` when a title or `phrases=true` follows, so its first word is always a language. With `phrases=true`, declared phrases in the snippet are substituted as they are in a fence that opts in (§5.1).
+- **Attributes:**
+
+  | Key | Type | Default | Meaning |
+  |---|---|---|---|
+  | `lang` | string | the file's extension | The code block's language |
+  | `title` | string | none | A title for the code block, written into its info string as `title="…"` |
+  | `phrases` | boolean | `false` | Whether phrases in the code are substituted (§5.1) |
+
+  The language defaults to the file's extension, lowercased, without the dot (`toml` for `ascribe.toml`). A file with no extension has no language unless `lang` gives one.
+
+#### Regions
+
+A region is marked in the file with tags in comments. The tags are Bluehawk's, so files already tagged for it can be used as they are.
+
+```toml
+# :snippet-start: dimensions
+[dimensions.platform]
+values = ["linux", "macos", "windows"]
+labels = { macos = "macOS" }  # :remove:
+# :snippet-end:
+```
+
+- **Tag lines.** A tag counts only in a line comment, in the comment syntax of the file's extension (the table below). A **tag line** is a line holding only optional whitespace, the comment marker, optional whitespace, the tag, and optional whitespace (then the closing `-->` for `<!--`).
+- **`:snippet-start: <name>`** opens a region and **`:snippet-end:`** closes the innermost open one; `:snippet-end: <name>` closes the open region with that name, so regions may overlap as well as nest. A region holds the lines between its start and end tag lines. A region name is letters, digits, `-`, `_`, and `.` (ABNF rule `region-name`), and MUST be unique in its file.
+- **`:remove-start:`** and **`:remove-end:`** leave out the lines between them, and a line that ends with the comment marker, optional whitespace, and **`:remove:`** (then `-->` for `<!--`) is left out itself. Removal blocks may nest, and apply to every snippet of the file.
+- **Tag lines never appear in a snippet**, nor do removed lines. The lines that remain are dedented by their common leading whitespace; lines holding only whitespace are emptied and don't count toward it.
+- Every start tag MUST have an end tag, and every end tag a start. An unclosed tag or an end with nothing to close makes every snippet of the file an error.
+- **Reserved tags.** Bluehawk's other tags are reserved for later revisions: `state`, `state-remove`, `state-uncomment`, `replace`, `uncomment`, and `emphasize`, each as `-start` and `-end` tag lines, and `:emphasize:` and `:uncomment:` at the end of a line, as `:remove:` is written. A file that uses one can't be used by a snippet, so its code is never shown with a tag left in.
+
+The comment syntax of each extension:
+
+| Marker | Extensions |
+|---|---|
+| `//` | `c`, `cc`, `cjs`, `cpp`, `cs`, `cts`, `cxx`, `dart`, `go`, `gradle`, `groovy`, `h`, `hpp`, `java`, `js`, `jsonc`, `jsx`, `kt`, `kts`, `mjs`, `mts`, `php`, `proto`, `rs`, `scala`, `swift`, `ts`, `tsx`, `zig` |
+| `#` | `bash`, `cfg`, `conf`, `ex`, `exs`, `fish`, `hcl`, `nix`, `pl`, `pm`, `ps1`, `py`, `r`, `rb`, `sh`, `tf`, `toml`, `yaml`, `yml`, `zsh` |
+| `--` | `elm`, `hs`, `lua`, `sql` |
+| `;` | `asm`, `clj`, `cljs`, `el`, `ini`, `lisp`, `scm` |
+| `<!--` … `-->` | `htm`, `html`, `md`, `mdx`, `svg`, `vue`, `xml` |
+
+Extensions are compared without regard to case. A file whose extension isn't in the table has no tags: it can be used whole, but not by region. The table grows with revisions of this specification.
+
+**No history, no network.** A snippet reads the file as it is in the working tree, through its source, so checking and building need neither version-control history nor a network.
+
 ---
 
 ## 5. Inline constructs
@@ -673,6 +733,7 @@ A content model declares the following.
 | Image attributes | Accepted image attribute keys and types | §5.3 |
 | Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |
 | Builds | Named builds and their modes | §9.3 |
+| Sources | Named sets of files outside the content that pages may take code from: each one's folder, and which of its files are readable | §4.8, §7.3 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
@@ -681,6 +742,23 @@ Dimension names, dimension values, lifecycle states, and feature keys are names 
 The site output writes image attributes onto `<img>` elements and project widgets' attributes onto custom elements (§9.4), so a content model MUST NOT declare an attribute key that HTML already gives a meaning there: `src`, `alt`, or `title` for images; `heading` or `primary` for widgets, which the site output uses for a widget's title and identifier primary; and, for both, HTML's global attributes (such as `id`, `class`, `style`, `title`, `hidden`, and `slot`), ARIA attributes (`aria-…`), and event-handler attributes such as `onclick`. Keys that merely begin with `on`, such as `online`, are allowed. Processors reject a content model that does when loading it.
 
 A page's content type is the one whose path patterns match it. A page matched by more than one type's patterns is an error; there's no precedence between types. A page no type matches gets the default type, and it's an error if there isn't one.
+
+### 7.3 Sources
+
+A **source** is a named set of files outside a project's content that its pages may refer to: the code a snippet comes from (§4.8). Pages name a file through a source, by address (`<source>:<path>`), never by a path that leaves the project's folder. A project with no source can read nothing outside its own folder and its content root (§9.4).
+
+```toml
+[sources.code]
+path = ".."                               # relative to the project's folder
+include = ["crates/**", "examples/**"]    # what's readable; everything else isn't
+ignore = ["**/target/**"]
+```
+
+- A project MAY declare several sources. A source's name follows the attribute key rule (ABNF rule `key`).
+- `path` is REQUIRED: the source's folder, relative to the project's folder (the directory containing `ascribe.toml`). It MUST exist and be a directory. When the project is in a version-control repository, it MUST be inside that same repository.
+- `include` lists glob patterns (the content model's pattern syntax, as for `files`) matched against a file's path relative to the source's folder. A file is readable when a pattern matches it and no pattern in `ignore` does. Without `include`, every file in the folder matches.
+- **`git` and `branch` are reserved** in a source's table, for a source in another repository. A content model that uses them is rejected until a revision of this specification defines them.
+- Which files a source makes readable decides nothing else: a source's files aren't source files (§2.1), assets (§9.4), or pages.
 
 ---
 
@@ -693,7 +771,7 @@ Validation happens at two levels.
 - **File level.** Each source file on its own: syntax, attributes, directive schemas, frontmatter, and whether referenced files exist.
 - **Page level.** Each page after includes are expanded, availability is resolved, and a build's modes are applied (§9.2), once per build. This covers checks that depend on the assembled page: id uniqueness, link targets that are ids, and anything a build removes. A build reports page-level problems only in content it publishes: content a build removes isn't checked for that build, which is what lets a link to a page the build drops sit in an arm the build removes. Content that no build publishes is still checked, as if one build kept everything, and its problems are reported as belonging to no build. A problem that appears in several builds is reported once, naming them. A fragment that no page includes has no page-level problems; its file-level ones are still reported.
 
-A page-level diagnostic is reported at the source location that causes it. A diagnostic about what a link or image names is reported at its destination as written, for an inline link or image, and at the link or image itself for a reference form. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment, as related information rather than as a second diagnostic.
+A page-level diagnostic is reported at the source location that causes it. A diagnostic about what a link or image names is reported at its destination as written, for an inline link or image, and at the link or image itself for a reference form. When the cause is inside a fragment, it's reported at the include site, and processors SHOULD also report it in the fragment, as related information rather than as a second diagnostic. A problem with a snippet (§4.8) is a file-level problem of the file the `@snippet` is written in, reported at the directive; when its cause is in the code file, such as a tag, processors SHOULD also report that place, as related information.
 
 When several places together cause a diagnostic, it's reported once, at the later one: the second of two duplicate ids or headings (at the `@id` line for an explicit id, at the heading for a slug), the second include of a fragment included twice, the include that closes a cycle, and the later of two declarations in the content model. A frontmatter problem with no line of its own, such as a missing field, is reported at the file's first line.
 
@@ -743,6 +821,12 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@available` | Spec exceeds its enclosing scope | Error |
 | `@steps` | Bound block isn't an ordered list | Error |
 | `@details` | Missing title | Error |
+| `@snippet` | Address that isn't `<source>:<path>`, optionally with `#<region>` | Error |
+| `@snippet` | Source the content model doesn't declare | Error |
+| `@snippet` | File doesn't exist, or its source doesn't include it | Error |
+| `@snippet` | File isn't text | Error |
+| `@snippet` | Region doesn't exist in the file | Error |
+| `@snippet` | The file's tags are unbalanced, name a region twice, or use a reserved tag | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |
@@ -818,7 +902,7 @@ Because the compiler and the authoring environment share one parser and validato
 
 Compilers MUST produce results equivalent to applying these steps in order:
 
-1. **Includes.** Replace each `@include` with its target content (§4.2), recursively. Included content keeps its source file, for resolving relative paths.
+1. **Includes and snippets.** Replace each `@include` with its target content (§4.2), recursively, and each `@snippet` with its code block (§4.8). Included content keeps its source file, for resolving relative paths.
 2. **Availability.** Resolve feature keys and inherited scopes (§4.4).
 3. **Build modes.** Apply the build's variant and availability modes (§9.3).
 4. **Phrases.** Substitute phrases (§5.1).
@@ -891,6 +975,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 | `@available`, `badge` | A `<ascribe-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
 | `@available`, `filter` | Unavailable content removed; the rest annotated as in `badge` | Unavailable content removed; the rest annotated as in `badge` |
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
+| `@snippet` | A fenced code block | A fenced code block |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |
 
 Labels for dimension values come from the content model's display labels.
@@ -1018,6 +1103,12 @@ text            = 1*( %x20-7E / UTF8-non-ascii )          ; first line only; con
                                         ; onto following lines like a paragraph (§3.4)
 
 phrase          = "{" key "}"
+
+snippet-address = key ":" snippet-path [ "#" region-name ]   ; §4.8
+snippet-path    = path-segment *( "/" path-segment )
+path-segment    = 1*( %x21-22 / %x24-2E / %x30-7E / UTF8-non-ascii )
+                                        ; no "/", "#", or whitespace; not "." or ".."
+region-name     = 1*( ALPHA / DIGIT / "-" / "_" / "." )
 
 availability    = entry *( OWS "," OWS entry ) / feature-key
 entry           = target [ RWS detail ]

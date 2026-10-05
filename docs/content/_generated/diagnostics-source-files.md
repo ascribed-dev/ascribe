@@ -68,6 +68,12 @@
 | [ASC124](#asc124-heading-empty-slug) | `heading-empty-slug` | Warning | File |
 | [ASC125](#asc125-include-heading-without-id) | `include-heading-without-id` | Warning | File |
 | [ASC126](#asc126-phrase-double-braces) | `phrase-double-braces` | Warning | File |
+| [ASC127](#asc127-snippet-address) | `snippet-address` | Error | File |
+| [ASC128](#asc128-snippet-source-unknown) | `snippet-source-unknown` | Error | File |
+| [ASC129](#asc129-snippet-file-missing) | `snippet-file-missing` | Error | File |
+| [ASC130](#asc130-snippet-file-not-text) | `snippet-file-not-text` | Error | File |
+| [ASC131](#asc131-snippet-region-missing) | `snippet-region-missing` | Error | File |
+| [ASC132](#asc132-snippet-tags) | `snippet-tags` | Error | File |
 
 ### Attributes
 
@@ -766,3 +772,65 @@ Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 **Message:** this file can't be read: \{reason}
 
 **Fix:** Check the file's permissions, and save it as UTF-8.
+
+### `@snippet`
+
+#### ASC127 `snippet-address`
+
+Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+
+**When:** Address that isn't `<source>:<path>`, optionally with `#<region>`.
+
+**Message:** `{address}` isn't a snippet address: \{detail}; write `<source>:<path>`, optionally with `#<region>`
+
+**Fix:** Write the address as `<source>:<path>`, with the path relative to the source's folder and no `..`, and add `#<region>` for a region. A file outside the project's folder can only be named through a source: declare one in `[sources.<name>]`.
+
+#### ASC128 `snippet-source-unknown`
+
+Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+
+**When:** Source the content model doesn't declare.
+
+**Message:** there's no source named `{source}`; the declared sources are: \{sources}
+
+**Fix:** Fix the source's name, or declare it in ascribe.toml: `[sources.<name>]` with a `path`.
+
+#### ASC129 `snippet-file-missing`
+
+Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+
+**When:** File doesn't exist, or its source doesn't include it.
+
+**Message:** `{path}` doesn't exist in source `{source}`
+
+**Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it.
+
+#### ASC130 `snippet-file-not-text`
+
+Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+
+**When:** File isn't text.
+
+**Message:** `{path}` isn't text (\{reason}), so it can't be a snippet
+
+**Fix:** Take the snippet from a text file: UTF-8, with no NUL characters.
+
+#### ASC131 `snippet-region-missing`
+
+Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+
+**When:** Region doesn't exist in the file.
+
+**Message:** `{path}` has no region `{region}`; its regions are: \{regions}
+
+**Fix:** Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose extension isn't in the comment table can only be used whole.
+
+#### ASC132 `snippet-tags`
+
+Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+
+**When:** The file's tags are unbalanced, name a region twice, or use a reserved tag.
+
+**Message:** `{path}` can't be used: `{tag}` on line \{line} is never closed
+
+**Fix:** Fix the tags in the code file: give every `-start` tag its `-end`, give each region its own name, and remove tags Ascribe reserves for later (`state`, `replace`, `uncomment`, `emphasize`).

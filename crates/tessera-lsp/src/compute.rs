@@ -256,12 +256,18 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
         let diagnostics = by_file.remove(&file.id).unwrap_or_default();
         let index = LineIndex::new(&file.text);
         let related = |r: &tessera_check::RelatedInfo| -> Option<Location> {
-            let entry = project.file(r.location.file)?;
-            let abs = normalize(&job.root.join(&entry.display_path));
+            // A related location is in a source, the content model, or a code
+            // file a snippet reads.
+            let (path, index) = match project.file(r.location.file) {
+                Some(entry) => (entry.display_path, LineIndex::new(entry.text)),
+                None => {
+                    let code = project.code_file(r.location.file)?;
+                    (code.path.to_string(), LineIndex::new(&code.text))
+                }
+            };
+            let abs = normalize(&job.root.join(&path));
             let uri = path_to_uri(&abs)?;
-            let range = job
-                .encoding
-                .range(&LineIndex::new(entry.text), r.location.span);
+            let range = job.encoding.range(&index, r.location.span);
             Some(Location { uri, range })
         };
         let lsp = diagnostics

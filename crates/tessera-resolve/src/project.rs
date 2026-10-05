@@ -13,6 +13,7 @@ use crate::index::{FileIndex, FileKind, Heading, Include, RefKind, Reference, in
 use crate::layout::Layout;
 use crate::references::{SourceSet, include_issue, reference_issue, resolve_reference};
 use crate::slug::{default_slugger, slugger_by_name};
+use crate::snippet::{CodeFiles, Snippet, resolve_snippet};
 
 /// What a link or image names, once the project's files are known.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -249,6 +250,10 @@ pub struct Project {
     pub(crate) files: BTreeMap<RelPath, Arc<FileIndex>>,
     by_id: HashMap<FileId, RelPath>,
     resolutions: BTreeMap<RelPath, Arc<Vec<Resolution>>>,
+    /// Each file's snippets, in the order of [`FileIndex::snippets`]: the code
+    /// block each becomes, or `None` when it can't (the file-level checks
+    /// report why).
+    snippets: BTreeMap<RelPath, Arc<Vec<Option<Arc<Snippet>>>>>,
     edges: ReverseEdges,
     unreadable: Vec<Unreadable>,
     nested: Vec<RelPath>,
@@ -267,6 +272,7 @@ impl Clone for Project {
             files: self.files.clone(),
             by_id: self.by_id.clone(),
             resolutions: self.resolutions.clone(),
+            snippets: self.snippets.clone(),
             edges: self.edges.clone(),
             unreadable: self.unreadable.clone(),
             nested: self.nested.clone(),
@@ -348,6 +354,7 @@ impl Project {
             files,
             by_id,
             resolutions: BTreeMap::new(),
+            snippets: BTreeMap::new(),
             edges: ReverseEdges::default(),
             unreadable,
             nested: folders.nested,
@@ -361,6 +368,19 @@ impl Project {
                 (
                     index.path.clone(),
                     Arc::new(project.resolve_file(index, fs)),
+                )
+            })
+            .collect();
+        // Each code file is read once, however many snippets use it.
+        let code = CodeFiles::new();
+        project.snippets = project
+            .files
+            .values()
+            .filter(|index| !index.snippets.is_empty())
+            .map(|index| {
+                (
+                    index.path.clone(),
+                    Arc::new(project.resolve_snippets(index, fs, &code)),
                 )
             })
             .collect();
@@ -465,6 +485,14 @@ impl Project {
         let file = self.files.get(path)?;
         let at = file.references.iter().position(|r| r.span == span)?;
         self.resolutions.get(path)?.get(at)
+    }
+
+    /// The code block a file's `@snippet` at `span` becomes, when its address
+    /// gives one (SPEC §4.8).
+    pub fn snippet_at(&self, path: &RelPath, span: Span) -> Option<&Arc<Snippet>> {
+        let file = self.files.get(path)?;
+        let at = file.snippets.iter().position(|s| s.span == span)?;
+        self.snippets.get(path)?.get(at)?.as_ref()
     }
 
     /// The files that include this one, and where.
@@ -644,6 +672,25 @@ impl Project {
             .collect()
     }
 
+    /// What each of a file's snippets becomes, read through `fs`.
+    pub(crate) fn resolve_snippets(
+        &self,
+        index: &FileIndex,
+        fs: &dyn FileSystem,
+        code: &CodeFiles,
+    ) -> Vec<Option<Arc<Snippet>>> {
+        index
+            .snippets
+            .iter()
+            .map(|snippet| {
+                let address = snippet.address.as_ref()?.as_ref().ok()?;
+                resolve_snippet(snippet, address, &self.model, fs, code)
+                    .ok()
+                    .map(Arc::new)
+            })
+            .collect()
+    }
+
     fn build_edges(&self) -> ReverseEdges {
         let mut edges = ReverseEdges::default();
         for index in self.files.values() {
@@ -684,10 +731,19 @@ impl Project {
             self.by_id.remove(&index.file);
         }
         self.resolutions.remove(path);
+        self.snippets.remove(path);
     }
 
     pub(crate) fn put_resolutions(&mut self, path: &RelPath, resolutions: Vec<Resolution>) {
         self.resolutions.insert(path.clone(), Arc::new(resolutions));
+    }
+
+    pub(crate) fn put_snippets(&mut self, path: &RelPath, snippets: Vec<Option<Arc<Snippet>>>) {
+        if snippets.is_empty() {
+            self.snippets.remove(path);
+        } else {
+            self.snippets.insert(path.clone(), Arc::new(snippets));
+        }
     }
 
     /// Adds what a file contributes to the edges, from its current index and

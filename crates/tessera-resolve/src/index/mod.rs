@@ -13,7 +13,8 @@
 //! - the **includes**, each with the path it names, resolved (SPEC §4.2);
 //! - the **references**: links and images, each resolved from this file,
 //!   and so each **asset reference** among them;
-//! - every **phrase candidate**, and every **`@available`** directive.
+//! - every **phrase candidate**, and every **`@available`** directive;
+//! - every **`@snippet`**, with its address read (SPEC §4.8).
 
 mod headings;
 mod refs;
@@ -28,6 +29,8 @@ use tessera_syntax::{
     Block, BlockKind, Bound, DirectiveLine, InlineKind, ParseOptions, ParsedDocument, Phrase,
     PrimaryValue, parse,
 };
+
+use crate::snippet::SnippetUse;
 
 pub use headings::{ExplicitId, Heading, plain_text as heading_text};
 pub use refs::{Local, RefKind, Reference, Target};
@@ -74,6 +77,8 @@ pub struct FileIndex {
     pub phrases: Vec<PhraseUse>,
     /// Every `@available` directive, in document order.
     pub availability: Vec<AvailabilityMarker>,
+    /// Every `@snippet` directive, in document order.
+    pub snippets: Vec<SnippetUse>,
 }
 
 impl FileIndex {
@@ -94,6 +99,11 @@ impl FileIndex {
     /// The include whose directive has this span.
     pub fn include_at(&self, span: Span) -> Option<&Include> {
         self.includes.iter().find(|i| i.span == span)
+    }
+
+    /// The `@snippet` whose directive has this span.
+    pub fn snippet_at(&self, span: Span) -> Option<&SnippetUse> {
+        self.snippets.iter().find(|s| s.span == span)
     }
 }
 
@@ -228,6 +238,7 @@ pub fn index_parsed(
     let mut references = Vec::new();
     let mut phrases = Vec::new();
     let mut availability = Vec::new();
+    let mut snippets = Vec::new();
 
     let mut visit = |block: &Block| {
         for inlines in walk::own_inlines(block) {
@@ -252,6 +263,9 @@ pub fn index_parsed(
             }
             BlockKind::Directive(line) if line.name == "available" => {
                 availability.push(availability_of(line, text));
+            }
+            BlockKind::Directive(line) if line.name == "snippet" => {
+                snippets.push(SnippetUse::of(line));
             }
             _ => {}
         }
@@ -286,6 +300,7 @@ pub fn index_parsed(
         references,
         phrases,
         availability,
+        snippets,
     }
 }
 
