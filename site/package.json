@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "license": "MPL-2.0",
+  "packageManager": "npm@11.19.0",
   "engines": {
     "node": ">=24"
   },
