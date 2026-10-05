@@ -19,7 +19,7 @@ The site is live. Netlify builds it from `main`, itself, from npm, as a user's h
 
 ### Production: Netlify's own build
 
-A Netlify site linked to this repository, with `site/` as its base directory. `site/netlify.toml` says how to build: `npm ci`, then the site's build, publishing its output. Nothing else: no Rust, no workspace install, no secret.
+A Netlify site linked to this repository, with `site/` as its base directory. `site/netlify.toml` says how to build: `npm ci`, the step from phase 4 that moves the Ascribe packages to the newest canary, then the site's build, publishing its output. Nothing else: no Rust, no workspace install, no secret.
 
 It builds when:
 

@@ -1,4 +1,4 @@
-# Phase 9: Our docs, kept current
+# Phase 11: Our docs, kept current
 
 Part of [Docs](README.md). Requires phases 5, 7, and 8. Docs, a workflow, and measurements.
 
@@ -47,7 +47,7 @@ After at least 15 pull requests have merged with the report on:
 - **The time to a working site,** again, if the guides changed.
 - **Issues filed from dogfooding,** in total.
 
-Write them into `measures.md`, with what they suggest: whether this repository should turn on `--exit-code`; which item under [Later](README.md#later-not-in-this-plan) the numbers argue for building next (the pull request comment, history, sources in another repository, a setup command); and anything that should be undone.
+Write them into `measures.md`, with what they suggest: whether this repository should turn on `--exit-code`; which item under [Later](README.md#later-not-in-this-plan) the numbers argue for building next (the pull request comment, history, a setup command), set beside phase 10's numbers from the sources fixture; and anything that should be undone.
 
 ### How we document Ascribe
 

@@ -22,7 +22,7 @@ Part of [Docs](README.md). Requires phases 6 and 7. Rust only.
 
 - Every region it takes a snippet from, and every whole file it takes as a snippet.
 - A page's coverage is its own. A fragment's snippets count for every page that includes it.
-- There's no field for naming more code. An explicit `covers` waits for phase 9's numbers from real pull requests; the back-test's estimate doesn't support it, and it would have authors tag code only so a page can point at it.
+- There's no field for naming more code. An explicit `covers` waits for phase 11's numbers from real pull requests; the back-test's estimate doesn't support it, and it would have authors tag code only so a page can point at it.
 
 ### `ascribe drift`
 
@@ -59,7 +59,7 @@ The first group is the one a snippet makes possible: the example updated itself,
 
 ### What it can't know
 
-A changed region isn't always a changed behavior. The report says what changed and how much, and leaves the judgment to a person. Don't add rules for "meaningful" changes here; phase 6 measured how noisy a file-level report is, and phase 9 measures this one on real pull requests. File-level coverage and an explicit `covers` stay out unless phase 9's numbers say otherwise.
+A changed region isn't always a changed behavior. The report says what changed and how much, and leaves the judgment to a person. Don't add rules for "meaningful" changes here; phase 6 measured how noisy a file-level report is, and phase 11 measures this one on real pull requests. File-level coverage and an explicit `covers` stay out unless phase 11's numbers say otherwise.
 
 ## Tasks
 
@@ -70,7 +70,7 @@ A changed region isn't always a changed behavior. The report says what changed a
 
 ## Out of scope
 
-An explicit `covers` field; history (`--history`), a way to mark a page as checked, and review dates; a pull request comment, the editor, review, and the agent hook; sources in another repository; using it on our own docs (phase 9).
+An explicit `covers` field; history (`--history`), a way to mark a page as checked, and review dates; a pull request comment, the editor, review, and the agent hook; sources in another repository (phase 9, which needs nothing added here: a moved pin changes copied files, and those are compared like any others); using it on our own docs (phase 11).
 
 ## Acceptance criteria
 

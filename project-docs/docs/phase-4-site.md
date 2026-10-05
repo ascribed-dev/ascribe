@@ -21,7 +21,9 @@ Part of [Docs](README.md). Requires phases 1 and 3. Can run at the same time as 
 
 `site/`, **outside the pnpm workspace**, with its own `package.json` and lockfile, using npm. It depends on `@ascribed/astro`, `@ascribed/cli`, and `@ascribed/elements` at `next`, from the registry, and on nothing in `packages/` by path. Its integration is `ascribe({ project: "../docs", build: "site" })`.
 
-So a plain `npm ci && npm run build` in `site/`, with no Rust and no workspace install, builds the site. That's the production build, and it's what a user's host runs.
+So a plain `npm ci && npm run build` in `site/`, with no Rust and no workspace install, builds the site, and it's what a user's host runs.
+
+**Following the canary.** A lockfile pins the Ascribe packages to the canary that was current when it was written, so `npm ci` alone would never pick up a newer one. A user wants that: they pin a release and move on purpose. Our site is meant to follow `main`, so its production build takes one more step after `npm ci`: it installs the three Ascribe packages at `next` again, without saving. Everything else stays locked. This is the one place our build differs from a user's, and `site/`'s README says so. Check the exact npm commands against npm's current behavior for dist-tags and lockfiles, and that the three packages always resolve to the same canary; if they can't be made to, stop and report.
 
 `docs/ascribe.toml` gains `[consumer]`: `profile = "astro"`, `site` (the Netlify address, which the owner supplies in phase 5; a placeholder until then), `base-path = "/"`, and `trailing-slash`.
 

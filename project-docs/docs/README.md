@@ -5,7 +5,7 @@ Ascribe's own documentation, written with Ascribe, and treated as Ascribe's firs
 It has two halves:
 
 - **The docs.** `docs/` becomes an Ascribe project and gets a site, which Netlify builds from the npm packages, as a user's host would.
-- **Drift.** Features that tell a team when its docs have fallen behind its code, built here because this repository has the problem: generated reference that can't go stale, code examples taken from tested files, and a report of pages whose covered code changed without them.
+- **Drift.** Features that tell a team when its docs have fallen behind its code: generated reference that can't go stale, code examples taken from tested files, a report of pages whose examples changed, and, for docs kept apart from the code, sources in other repositories that are pinned and updated by a pull request.
 
 This plan isn't tied to a release. Other work may ship before or between its phases; each phase says what it needs, and nothing here assumes a version number.
 
@@ -13,12 +13,12 @@ This plan isn't tied to a release. Other work may ship before or between its pha
 
 - **User docs** are for people who write documentation with Ascribe. The developer docs (contracts, READMEs, contributing) stay as they are for now; see [Later](#later-not-in-this-plan).
 - **Drift** is a page saying something the code no longer does. The three checks are named for what they catch: **stale generated content**, **stale examples**, and **uncovered changes** (code a page covers changed, and the page didn't). After the [back-test](back-test.md), the third is built only for code a page shows.
-- **A source** is a named set of files outside a project's content that its pages refer to: code a snippet comes from, and code a page covers.
+- **A source** is a named set of files outside a project's content that its pages refer to: code a snippet comes from. It's a folder in the same repository, or another repository at a **pin**, the commit recorded in `ascribe.lock`. The files a project uses from another repository are **copies**, kept in the docs repository.
 - **The canary** is a build of the npm packages from `main`, published nightly under the `next` tag.
 
 ## Who it's for
 
-Engineers who document their own code in the same repository. Research (`reports/`) says they feel drift most, and keeping docs beside the code doesn't prevent it. Teams with a separate docs repository come later; the one thing this plan does for them is choose formats that won't have to change.
+Two layouts. Engineers who document their own code in the same repository: research (`reports/`) says they feel drift most, and keeping docs beside the code doesn't prevent it. And teams whose docs are in a repository of their own, often with several code repositories behind them: for them, sources in other repositories (phases 9 and 10) are what make examples and drift work at all.
 
 ## What exists today
 
@@ -42,13 +42,16 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 4. **Netlify builds production; Actions builds previews.** Production is Netlify's own build: `npm install` of the canary packages, then the site's build. A pull request's preview is built in GitHub Actions with that pull request's binary and packages, and handed to Netlify, because a pull request that adds a feature and documents it has no canary yet. Two build paths, on purpose.
 5. **A nightly canary.** The npm packages are published from `main` every night under the `next` tag, unattended, and on demand. Releases stay manual and approved, and keep `latest`.
 6. **One site, following `main`.** No versioned copies. What isn't in the latest release is marked on the page with Ascribe's own availability, so a reader on the released version isn't misled.
-7. **`build` and `check` need only the working tree.** No `git` history and no network, so they run on any host. `diff` and `drift` read history and belong in CI, where the clone's depth is ours to set; they refuse a shallow clone with a message that says what to do.
+7. **`build` and `check` need only the working tree.** No `git` history and no network, so they run on any host, and the same commit builds the same output anywhere. `diff` and `drift` read history and belong in CI, where the clone's depth is ours to set; they refuse a shallow clone with a message that says what to do.
 8. **Generated content is a fragment.** What's generated from code is written as Ascribe source into `_generated/` fragments by a test that fails when they're stale, and pages include them.
-9. **Sources are named.** `ascribe.toml` declares each source (`[sources.code]`), and pages address code as `<source>:<path>#<region>`, never by a relative path out of the project. A source is a folder in the repository today. The same address can mean another repository at a pinned commit later, with no change to any page.
+9. **Sources are named.** `ascribe.toml` declares each source (`[sources.code]`), and pages address code as `<source>:<path>#<region>`, never by a relative path out of the project. A source is a folder in the repository or another repository at a pinned commit, and a project can have several. Which kind it is changes no page.
 10. **Snippets before coverage.** A snippet can't raise a false alarm; a coverage report can. Coverage is built only if a back-test on this repository's history shows it's worth reading.
 11. **Drift is reported in the job summary, and nothing else.** No comment, no failing check, no notification. A team can opt into failing (`--exit-code`); this repository doesn't until the numbers support it.
 12. **Drift checks need only `git`,** and keep no state outside the repository.
 13. **What dogfooding finds is filed, not worked around.** A gap or a bug in Ascribe becomes an issue, listed in the pull request. Work around it in the docs only when the page would otherwise be wrong, with a comment naming the issue.
+14. **Code from another repository is pinned and copied in.** `ascribe.lock` records each source's commit, and the files a project's snippets use are copied into the docs repository and committed. Builds read the copies. Only `ascribe sources fetch` and `ascribe sources update` use the network, through `git` and with `git`'s own credentials; nothing else in the binary can.
+15. **Updates arrive as a pull request, on a schedule.** A job moves each pin to the latest commit and opens one pull request, updated in place, whose description says which pages' examples changed. Sources aren't pulled at build time: a build that fetches needs credentials on the host and can differ from one run to the next. The pull request is the drift report, and it's reviewed like any change.
+16. **The binary doesn't talk to GitHub.** It runs `git`. The pull request is opened by a workflow, with `gh`, as in the review plan.
 
 ## The pieces
 
@@ -61,6 +64,8 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 | Publishing | Netlify, `site/netlify.toml`, `.github/workflows/` | Netlify builds production; Actions builds previews and the review report |
 | Snippets | `SPEC.md`, the compiler crates | `@snippet`: code examples taken from tested files, from named sources |
 | Coverage | `tessera-diff`, `tessera-cli` (`ascribe drift`) | The report says which pages' examples changed while their words didn't |
+| Sources in other repositories | `tessera-model`, `tessera-cli` (`ascribe sources`), `ascribe.lock` | Pins each source to a commit, copies in the files snippets use, and moves a pin on request |
+| The update pull request | A workflow recipe; `scripts/sources-fixture/` | On a schedule, moves the pins and opens a pull request that says what changed |
 
 ## Phases
 
@@ -76,9 +81,11 @@ Each phase leaves the repository green and can be its own pull request. A phase 
 | [6: The back-test](phase-6-back-test.md) | A script and a write-up: over past pull requests, how often would a coverage report have been right? | Nothing |
 | [7: Snippets](phase-7-snippets.md) | Named sources, and `@snippet`: a code example taken from a tested file. | 1 |
 | [8: Coverage](phase-8-coverage.md) | `ascribe drift` reports pages whose examples changed while their words didn't. Snippets only, after the [back-test](back-test.md). | 6, 7 |
-| [9: Our docs, kept current](phase-9-adopt.md) | Our docs take their examples from tested files; CI shows the report; the measures are recorded. | 5, 7, 8 |
+| [9: Sources in another repository](phase-9-remote-sources.md) | A source can be another repository, pinned in `ascribe.lock`, with the files snippets use copied in; `ascribe sources update` moves a pin and says what it changes. | 7, 8 |
+| [10: The update pull request](phase-10-update-pull-request.md) | On a schedule, a workflow moves the pins and opens one pull request whose description is the drift report; run on a fixture pair. | 9 |
+| [11: Our docs, kept current](phase-11-adopt.md) | Our docs take their examples from tested files; CI shows the report; the measures are recorded. | 5, 7, 8 |
 
-Phases 1 to 5 are the docs as a user would run them. Phase 6 is a day's measurement. Phases 7 to 9 are the drift features and their use.
+Phases 1 to 5 are the docs as a user would run them. Phase 6 is a day's measurement. Phases 7 and 8 are examples and drift in one repository; phases 9 and 10 carry them across repositories; phase 11 uses them on our docs and measures them.
 
 ### What can run at the same time
 
@@ -86,7 +93,9 @@ Phases 1 to 5 are the docs as a user would run them. Phase 6 is a day's measurem
 - **Phases 2 and 4**, once their needs are merged. Phase 2 is tests and fragments; phase 4 is `site/`.
 - **Phase 7** with any of 2 to 5, once 1 is merged. It's the compiler and touches no page.
 
-Phases 5, 8, and 9 run one at a time.
+- **Phases 9 and 10** with phase 11, once 8 is merged. Phase 11 is our docs; 9 and 10 are the binary and a fixture.
+
+Phases 5 and 8 run one at a time, and so do 9 and 10, in order.
 
 ### Other plans' docs
 
@@ -96,12 +105,12 @@ Phase 1 moves every page, so it conflicts with any open pull request that edits 
 
 ### The measures
 
-"Customer #1" is checked by numbers, recorded in phase 5 and again in phase 9, in `project-docs/docs/measures.md`:
+"Customer #1" is checked by numbers, recorded in phase 5 and again in phases 10 and 11, in `project-docs/docs/measures.md`:
 
 - **Minutes from an empty repository to a deployed site,** timed by one person following our own getting-started and Astro guides, with nothing from this repository on the machine.
 - **The host's build time,** split into installing, `ascribe build`, and Astro.
 - **Issues filed from dogfooding,** per phase.
-- **The share of coverage reports that were right** (phase 6, then phase 9 on real pull requests).
+- **The share of coverage reports that were right** (phase 6, then phase 11 on real pull requests).
 - **Days from a code change to the docs fix,** for drift the back-test finds.
 
 ## Rules for every phase
@@ -132,11 +141,11 @@ Phase 1 moves every page, so it conflicts with any open pull request that edits 
 ## Later, not in this plan
 
 - **The developer docs as a second project** (`dev-docs/`: contracts, architecture, the server's requests, contributing), with the READMEs shortened. Until then the contracts stay in the user docs and the READMEs stay as they are.
-- **Sources in another repository.** A source that names a repository, pinned to a commit in a lock file; a command that moves the pin and copies in the files snippets use, so builds still need no network; drift between the old pin and the new. Decision 9 keeps pages' addresses ready for it. Build and test it on a pair of fixture repositories in the org.
+- **More for sources in other repositories:** following tags or releases instead of a branch; copying only the regions used, for private code behind public docs; telling the code repository's own pull requests which docs pages they affect; hosts other than GitHub for the update pull request.
 - **Drift at review time.** The [back-test](back-test.md) found that drift here is mostly a sentence or a sibling page nobody reread after a change, which no coverage map catches. That argues for help at review time, such as review's changed-pages list and the agents plan's prompts to reread a page against a diff, over more coverage.
-- **Drift where code is changed:** a pull request comment, a lens on covered files in the editor, a line in the agents plan's stop hook, a second group in review's changed-pages list. All wait on phase 9's numbers.
+- **Drift where code is changed:** a pull request comment, a lens on covered files in the editor, a line in the agents plan's stop hook, a second group in review's changed-pages list. All wait on phase 11's numbers.
 - **Drift across history** (`ascribe drift --history`: pages whose covered code has changed since the page did), a way to say "I checked, it's still right" (recording the code commit that was checked, not a date), and review dates.
-- **A GitHub Action** that runs check, the review report, and drift, and deepens the clone itself.
+- **A GitHub Action** that runs check, the review report, and drift, deepens the clone itself, and wraps the update pull request's recipe.
 - **Snippets in the editor:** go to a snippet's source, problems shown in the code file, "used by" on the code, a preview that follows the code as it's edited.
 - **A site that follows the latest release,** with `main` on its own address, once people outside the project read it.
 - **A second host.** A build on Vercel or Cloudflare Pages, to catch what Netlify's image hides (after [#65](https://github.com/ascribed-dev/ascribe/issues/65)).

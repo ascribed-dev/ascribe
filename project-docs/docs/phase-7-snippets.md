@@ -32,7 +32,7 @@ ignore = ["**/target/**"]
 
 - A project can declare several. Names follow the content model's rules for keys.
 - `path` must be inside the same `git` repository as the project when there is one. A `path` that doesn't exist is an error in the content model.
-- **`git`, `branch`, and `commit` are reserved keys** in a source's table: using one is an error that says sources in another repository aren't supported yet. Reserving them now keeps the table's meaning open (decision 9).
+- **`git` and `branch` are reserved keys** in a source's table, for a source in another repository ([phase 9](phase-9-remote-sources.md)). Until that phase, using one is an error that says so.
 - Without a source, nothing outside the project's folder can be read, and the error says how to declare one.
 
 ### The address
