@@ -27,13 +27,15 @@ pub struct Cli {
 /// Options every subcommand accepts, before or after its name.
 #[derive(Debug, clap::Args)]
 pub struct Global {
-    /// The content model, `ascribe.toml`. By default, the nearest one in the
-    /// current directory or a parent. Not for `lsp`, whose project comes from
-    /// the editor.
+    /// The content model, `ascribe.toml`, or a directory that holds one.
+    ///
+    /// By default, the nearest `ascribe.toml` in the current directory or a
+    /// parent, so the commands work from anywhere inside a project. Not for
+    /// `lsp`, whose project comes from the editor.
     #[arg(long, global = true, value_name = "PATH")]
     pub config: Option<PathBuf>,
 
-    /// When to color output.
+    /// When to color text output.
     #[arg(long, global = true, value_enum, default_value_t = Color::Auto, value_name = "WHEN")]
     pub color: Color,
 }

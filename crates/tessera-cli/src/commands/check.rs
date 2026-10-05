@@ -16,19 +16,20 @@ use crate::report::{Counts, FileTable, json, text};
 /// Arguments of `ascribe check`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
+    /// Check only this build.
+    ///
+    /// Repeat it for several. By default, every build in `ascribe.toml`. An
+    /// unknown build name is a usage error, and the message lists the builds.
+    #[arg(long, value_name = "NAME")]
+    pub build: Vec<String>,
+
     /// How to show the results.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
 
-    /// Fail (exit code 1) on warnings too.
+    /// Make warnings fail the command too (exit code 1), for CI.
     #[arg(long)]
     pub deny_warnings: bool,
-
-    /// Check only this build (repeat for several). By default every build of
-    /// the content model is checked, and each problem is reported once,
-    /// naming the builds it appears in.
-    #[arg(long, value_name = "NAME")]
-    pub build: Vec<String>,
 }
 
 /// The output format.
@@ -36,7 +37,7 @@ pub struct Args {
 pub enum Format {
     /// Diagnostics with source snippets, for people.
     Text,
-    /// One JSON document (its schema is in docs/content/reference/cli.md), for tools.
+    /// One JSON document, for tools.
     Json,
 }
 

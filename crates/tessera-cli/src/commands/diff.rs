@@ -26,19 +26,28 @@ use crate::report::Counts;
 /// Arguments of `ascribe diff`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
-    /// The git revision to compare with. The comparison starts from the merge
-    /// base of this revision and HEAD, as a pull request shows it. By
-    /// default, the repository's default branch: origin/HEAD, then main, then
-    /// master.
+    /// The revision to compare with, anything git accepts (a branch, a tag, a
+    /// commit).
+    ///
+    /// By default, the repository's default branch, the first of
+    /// `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master`
+    /// that exists.
+    ///
+    /// The comparison starts from the merge base of that revision and `HEAD`,
+    /// as a pull request shows its changes, so commits made on the base
+    /// branch since you branched aren't listed. A shallow clone (what
+    /// `actions/checkout` makes by default) may not have the merge base: fetch
+    /// more history (`fetch-depth: 0`) or use `--base-exact`.
     #[arg(long, value_name = "REV")]
     pub base: Option<String>,
 
-    /// Compare with the base revision itself, not its merge base with HEAD.
+    /// Compare with the revision itself instead of the merge base.
     #[arg(long)]
     pub base_exact: bool,
 
-    /// Compare only this build (repeat for several). By default, every build
-    /// in ascribe.toml.
+    /// Compare only this build.
+    ///
+    /// Repeat it for several. By default, every build in `ascribe.toml`.
     #[arg(long, value_name = "NAME")]
     pub build: Vec<String>,
 
@@ -56,9 +65,9 @@ pub struct Args {
 pub enum Format {
     /// The changed pages of each build, with counts, for people.
     Text,
-    /// One JSON document (its schema is in docs/content/reference/cli.md), for tools.
+    /// One JSON document, for tools.
     Json,
-    /// One self-contained HTML file showing every changed page rendered,
+    /// One self-contained HTML file that shows every changed page rendered,
     /// with its changes marked, for reviewers.
     Html,
 }

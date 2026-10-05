@@ -1,6 +1,11 @@
-//! `docs/content/reference/diagnostics.md` is generated from the diagnostics registry. This test
-//! renders it and fails when the file is out of date; run it with
-//! `ASCRIBE_BLESS=1` to rewrite the file.
+//! The diagnostics reference, `docs/content/reference/diagnostics.md`, includes
+//! fragments generated from the diagnostics registry, in
+//! `docs/content/_generated/diagnostics-*.md`. This test renders them and
+//! fails when one is out of date; run it with `ASCRIBE_BLESS=1` to rewrite
+//! them.
+//!
+//! It also checks the docs' phrases whose values come from another file, such
+//! as the version, against that file.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -13,6 +18,8 @@ use tessera_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
 fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
+
+const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs";
 
 #[test]
 fn every_diagnostic_says_how_to_fix_it() {
@@ -30,17 +37,122 @@ fn every_diagnostic_says_how_to_fix_it() {
 fn the_diagnostics_reference_is_current() {
     let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
     let spec = std::fs::read_to_string(repo().join("SPEC.md")).unwrap();
-    let rendered = render(&registry, &spec_anchors(&spec));
-    let path = repo().join("docs/content/reference/diagnostics.md");
-    if std::env::var_os("ASCRIBE_BLESS").is_some() {
-        std::fs::write(&path, &rendered).unwrap();
-        return;
+    let fragments = render(&registry, &spec_anchors(&spec));
+    check_fragments("diagnostics-", &fragments);
+    let page =
+        std::fs::read_to_string(repo().join("docs/content/reference/diagnostics.md")).unwrap();
+    for (name, _) in &fragments {
+        assert!(
+            page.contains(&format!("@include: ../_generated/{name}\n")),
+            "docs/content/reference/diagnostics.md doesn't include _generated/{name}"
+        );
     }
-    let current = std::fs::read_to_string(&path).unwrap_or_default();
+}
+
+/// Each phrase in `docs/ascribe.toml` whose value is also in another file
+/// has the value that file has.
+#[test]
+fn the_docs_phrases_match_their_sources() {
+    let docs: toml::Table = read("docs/ascribe.toml").parse().unwrap();
+    let phrase = |key: &str| docs["phrases"][key].as_str().unwrap().to_owned();
+    let mut wrong = Vec::new();
+    let mut compare = |key: &str, file: &str, value: &str| {
+        if phrase(key) != value {
+            wrong.push(format!(
+                "the phrase `{key}` is \"{}\" in docs/ascribe.toml, but \"{value}\" in {file}",
+                phrase(key)
+            ));
+        }
+    };
+
+    // The version: the workspace's, and every package's.
+    let cargo: toml::Table = read("Cargo.toml").parse().unwrap();
+    let version = cargo["workspace"]["package"]["version"].as_str().unwrap();
+    compare("version", "Cargo.toml", version);
+    let mut packages: Vec<String> = std::fs::read_dir(repo().join("packages"))
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .filter(|name| {
+            repo()
+                .join("packages")
+                .join(name)
+                .join("package.json")
+                .is_file()
+        })
+        .collect();
+    packages.sort();
+    for name in packages {
+        let file = format!("packages/{name}/package.json");
+        let manifest = package(&file);
+        compare("version", &file, manifest["version"].as_str().unwrap());
+    }
+
+    // The least Node.js and VS Code versions, as their ranges' lower bounds.
+    let cli = package("packages/cli/package.json");
+    let node = cli["engines"]["node"].as_str().unwrap();
+    compare("node", "packages/cli/package.json", &lower_bound(node));
+    let vscode = package("packages/vscode/package.json");
+    let editor = vscode["engines"]["vscode"].as_str().unwrap();
+    compare(
+        "vscode",
+        "packages/vscode/package.json",
+        &lower_bound(editor),
+    );
+
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
+
+fn read(path: &str) -> String {
+    std::fs::read_to_string(repo().join(path)).unwrap()
+}
+
+fn package(path: &str) -> serde_json::Value {
+    serde_json::from_str(&read(path)).unwrap()
+}
+
+/// A version range's lower bound as the docs write it: `>=24` is `24`, and
+/// `^1.138.0` is `1.138`.
+fn lower_bound(range: &str) -> String {
+    let version = range.trim_start_matches(['^', '~', '>', '=']).trim();
+    version.strip_suffix(".0").unwrap_or(version).to_owned()
+}
+
+/// Compares each fragment with its file in `docs/content/_generated/`, or,
+/// with `ASCRIBE_BLESS`, writes it. A file there whose name starts with
+/// `prefix` and that isn't one of `fragments` is left over from something
+/// that no longer exists: it fails the test, and blessing removes it.
+fn check_fragments(prefix: &str, fragments: &[(String, String)]) {
+    let dir = repo().join("docs/content/_generated");
+    let bless = std::env::var_os("ASCRIBE_BLESS").is_some();
+    if bless {
+        std::fs::create_dir_all(&dir).unwrap();
+    }
+    let mut stale = Vec::new();
+    for entry in std::fs::read_dir(&dir).unwrap() {
+        let name = entry.unwrap().file_name().to_string_lossy().into_owned();
+        if name.starts_with(prefix) && !fragments.iter().any(|(n, _)| *n == name) {
+            if bless {
+                std::fs::remove_file(dir.join(&name)).unwrap();
+            } else {
+                stale.push(name);
+            }
+        }
+    }
+    for (name, text) in fragments {
+        let path = dir.join(name);
+        if bless {
+            std::fs::write(&path, text).unwrap();
+            continue;
+        }
+        let current = std::fs::read_to_string(&path).unwrap_or_default();
+        if current != *text {
+            stale.push(name.clone());
+        }
+    }
     assert!(
-        current == rendered,
-        "docs/content/reference/diagnostics.md is out of date: run \
-         `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`"
+        stale.is_empty(),
+        "out of date in docs/content/_generated/: {}. Run `{BLESS}`",
+        stale.join(", ")
     );
 }
 
@@ -59,54 +171,27 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("consumer", "The consumer, builds, and the editor"),
 ];
 
-fn render(registry: &DiagnosticsRegistry, anchors: &BTreeMap<String, String>) -> String {
+/// What each fragment starts with: what generates it, and how.
+const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by \
+     tests/conformance/tests/docs.rs. Edit the registry, then run \
+     `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`. -->\n";
+
+/// The fragments, by file name: the source-file diagnostics, the content
+/// model's, and the retired ones (empty when there are none). Each group
+/// opens with its own index: a link to an id inside a fragment works only
+/// from the same fragment (SPEC §4.2, and issue #90 in this repository).
+fn render(
+    registry: &DiagnosticsRegistry,
+    anchors: &BTreeMap<String, String>,
+) -> Vec<(String, String)> {
     let active: Vec<&Entry> = registry
         .entries
         .iter()
         .filter(|e| e.retired.is_none())
         .collect();
-    let mut out = String::new();
-    out.push_str(
-        "---\n\
-         title: Diagnostics\n\
-         description: Every problem Ascribe reports, with its code and fix.\n\
-         ---\n\n\
-         <!-- Generated from tests/conformance/diagnostics.toml by \
-         tests/conformance/tests/docs.rs. Edit the registry, then run \
-         `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`. -->\n\n\
-         Every problem Ascribe reports, with its code, its name, and how to fix it. \
-         `ascribe check`, `ascribe build`, and the editor report the same diagnostics, \
-         with the same codes.\n\n\
-         - An **error** makes `ascribe check` fail, and stops `ascribe build` from writing \
-         anything. A **warning** doesn't, unless you pass `--deny-warnings`.\n\
-         - A **file-level** diagnostic is about one file on its own. A **page-level** \
-         diagnostic is about a page after its includes are expanded and a build's modes \
-         are applied, so it can depend on the build; the message names the builds it \
-         appears in.\n\
-         - A diagnostic about `ascribe.toml` (a name that starts with `model-`) stops \
-         everything else when it's an error: every other check depends on the content \
-         model.\n\
-         - In the messages below, `{name}` stands for a value filled in from your source.\n\n\
-         In the editor, many diagnostics offer a quick fix. See [Editing](../guides/editor.md).\n\n",
-    );
-
-    // The index.
-    out.push_str("| Code | Name | Severity | Level |\n|---|---|---|---|\n");
-    for entry in &active {
-        let _ = writeln!(
-            out,
-            "| [{code}](#{anchor}) | `{slug}` | {severity} | {level} |",
-            code = entry.code,
-            anchor = heading_anchor(entry),
-            slug = entry.slug,
-            severity = severity(entry.severity),
-            level = level(entry.level),
-        );
-    }
 
     // Source-file diagnostics, grouped by the construct their SPEC row names,
     // in the order each construct first appears.
-    out.push_str("\n## Source files\n");
     let mut constructs: Vec<(&str, Vec<(&Entry, &str)>)> = Vec::new();
     for entry in active.iter().filter(|e| !is_model(e)) {
         let row = entry.row.as_deref().unwrap_or_default();
@@ -116,42 +201,67 @@ fn render(registry: &DiagnosticsRegistry, anchors: &BTreeMap<String, String>) ->
             None => constructs.push((construct, vec![(entry, condition)])),
         }
     }
+    let mut source_files = index(active.iter().copied().filter(|e| !is_model(e)));
     for (construct, entries) in constructs {
-        let _ = write!(out, "\n### {construct}\n");
+        let _ = write!(source_files, "\n### {construct}\n");
         for (entry, condition) in entries {
-            write_entry(&mut out, entry, Some(condition), anchors);
+            write_entry(&mut source_files, entry, Some(condition), anchors);
         }
     }
 
-    out.push_str("\n## The content model\n");
+    let mut content_model = index(active.iter().copied().filter(|e| is_model(e)));
     for (group, title) in RULE_GROUPS {
-        let _ = write!(out, "\n### {title}\n");
+        let _ = write!(content_model, "\n### {title}\n");
         for entry in active
             .iter()
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
-            write_entry(&mut out, entry, None, anchors);
+            write_entry(&mut content_model, entry, None, anchors);
         }
     }
 
-    let retired: Vec<&Entry> = registry
+    let mut retired = HEADER.to_owned();
+    let gone: Vec<&Entry> = registry
         .entries
         .iter()
         .filter(|e| e.retired.is_some())
         .collect();
-    if !retired.is_empty() {
-        out.push_str(
+    if !gone.is_empty() {
+        retired.push_str(
             "\n## Retired\n\nNo longer reported. Their codes and names aren't reused.\n\n",
         );
-        for entry in retired {
+        for entry in gone {
             let _ = writeln!(
-                out,
+                retired,
                 "- {} `{}`: {}",
                 entry.code,
                 entry.slug,
                 entry.retired.as_deref().unwrap_or_default()
             );
         }
+    }
+
+    vec![
+        ("diagnostics-source-files.md".to_owned(), source_files),
+        ("diagnostics-content-model.md".to_owned(), content_model),
+        ("diagnostics-retired.md".to_owned(), retired),
+    ]
+}
+
+/// A fragment's header and its index: a table of its diagnostics, in code
+/// order, each linked to its entry.
+fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
+    let mut out = format!("{HEADER}\n| Code | Name | Severity | Level |\n|---|---|---|---|\n");
+    for entry in entries {
+        let _ = writeln!(
+            out,
+            "| [{code}](#{anchor}) | `{slug}` | {severity} | {level} |",
+            code = entry.code,
+            anchor = heading_anchor(entry),
+            slug = entry.slug,
+            severity = severity(entry.severity),
+            level = level(entry.level),
+        );
     }
     out
 }
@@ -203,7 +313,7 @@ fn write_entry(
     let _ = writeln!(
         out,
         "**Fix:** {}",
-        escape_braces(entry.fix.as_deref().unwrap_or_default())
+        escape_braces(&rebase_links(entry.fix.as_deref().unwrap_or_default()))
     );
 }
 
@@ -243,6 +353,24 @@ fn sentence(condition: &str) -> String {
 /// braces (`{{`, `}}`) are single braces.
 fn message(template: &str) -> String {
     template.replace("{{", "{").replace("}}", "}")
+}
+
+/// Text whose relative links, written from `reference/` as the registry's
+/// are, resolve from `_generated/` instead, where the fragment is.
+fn rebase_links(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(at) = rest.find("](") {
+        let (before, target) = rest.split_at(at + 2);
+        out.push_str(before);
+        let dest = target.split(')').next().unwrap_or_default();
+        if !(dest.starts_with('#') || dest.starts_with('{') || dest.contains("://")) {
+            out.push_str("../reference/");
+        }
+        rest = target;
+    }
+    out.push_str(rest);
+    out
 }
 
 /// Text with a backslash before each `{` and `<` outside code spans, so a

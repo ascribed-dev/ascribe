@@ -31,8 +31,9 @@ use crate::report::{Counts, FileTable, json, text};
 /// Arguments of `ascribe build`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
-    /// Build only this build (repeat for several). By default, every build
-    /// in ascribe.toml.
+    /// Build only this build.
+    ///
+    /// Repeat it for several. By default, every build in `ascribe.toml`.
     #[arg(long, value_name = "NAME")]
     pub build: Vec<String>,
 
@@ -46,12 +47,18 @@ pub struct Args {
     )]
     pub emit: Vec<Emit>,
 
-    /// How to show the checks' results: the same formats as `ascribe check`.
+    /// How to show the checks' results, as for `ascribe check`.
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
 
     /// Mark each block of the site output with the source file and lines it
     /// came from, for review.
+    ///
+    /// Each Markdown block gets an `<!--ascribe-anchor …-->` comment before
+    /// it, and each element Ascribe writes gets `data-ascribe-source` (with
+    /// `data-ascribe-via` for a block from a fragment). The site output's
+    /// manifest records `"anchors": true`. Without it, the output has no
+    /// anchors. The other outputs are the same either way.
     #[arg(long)]
     pub anchors: bool,
 }
@@ -59,12 +66,12 @@ pub struct Args {
 /// An output.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Emit {
-    /// Plain markdown: fully resolved CommonMark with no HTML.
+    /// Markdown plus web components, for an Astro site.
+    Site,
+    /// Fully resolved CommonMark with no HTML.
     Plain,
     /// The resolved tree as JSON.
     Json,
-    /// Markdown plus web components, for an Astro site.
-    Site,
 }
 
 /// Runs the command. Exit codes: 0 on success, 1 when the checks found errors

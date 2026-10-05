@@ -29,13 +29,21 @@ use crate::exit;
 /// Arguments of `ascribe fmt`.
 #[derive(Debug, Default, ClapArgs)]
 pub struct Args {
-    /// Files and directories to format. By default, the content root.
-    pub paths: Vec<PathBuf>,
-
-    /// Report the files that would change, and change nothing. Exits with 1
-    /// if any would.
+    /// Change nothing, and list each file that would change.
+    ///
+    /// Exits with 1 if any would. Use it in CI.
     #[arg(long)]
     pub check: bool,
+
+    /// Files and directories to format: the `.md` files among them.
+    ///
+    /// By default, every `.md` file under the content root.
+    ///
+    /// Directories whose names start with `.`, `node_modules`, and
+    /// directories inside the searched ones that hold an `ascribe.toml` other
+    /// than the project's own (another project, formatted under its own
+    /// model) are skipped.
+    pub paths: Vec<PathBuf>,
 }
 
 /// Runs the command.
