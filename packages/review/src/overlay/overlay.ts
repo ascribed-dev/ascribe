@@ -160,6 +160,8 @@ class ReviewOverlay implements Overlay {
   private drawnHidden = "";
   private linkTimer: ReturnType<typeof setTimeout> | undefined;
   private pendingGoTo: string | undefined;
+  /** The read whose threads are drawn. */
+  private loaded = 0;
   /** The block the Comment button is on. */
   private toolsOn: HTMLElement | undefined;
   /** What had focus before a dialog or the panel opened, to give it back. */
@@ -241,6 +243,7 @@ class ReviewOverlay implements Overlay {
     }
     if (seq !== this.loadSeq || this.disposed) return;
     this.data = data;
+    this.loaded = seq;
     if (all !== undefined) this.all = all;
     this.render();
     const goal = this.pendingGoTo;
@@ -262,7 +265,8 @@ class ReviewOverlay implements Overlay {
   }
 
   goToThread(threadId: string): boolean {
-    if (this.data === undefined) {
+    // Until the threads being read arrive: the page may have just changed.
+    if (this.data === undefined || this.loaded !== this.loadSeq) {
       this.pendingGoTo = threadId;
       return true;
     }
@@ -773,7 +777,9 @@ class ReviewOverlay implements Overlay {
       );
     }
     if (entry && !entry.removed) {
-      acts.append(this.button("link", "Open source", () => this.host.openSource(entry.anchor)));
+      acts.append(
+        this.button("link", "Open source", () => this.host.openSource(threadSource(thread, entry))),
+      );
     }
     if (thread.kind === "review" && thread.detached === undefined) {
       const can = thread.resolved ? thread.canUnresolve : thread.canResolve;
@@ -809,6 +815,7 @@ class ReviewOverlay implements Overlay {
 
     if (
       thread.quote !== undefined &&
+      thread.quote.trim() !== "" &&
       (thread.detached !== undefined || this.original.has(thread.id))
     ) {
       const orig = this.el("div", "orig");
@@ -1836,4 +1843,15 @@ function adoptStyles(shadow: ShadowRoot, doc: Document): void {
   style.setAttribute("data-overlay", "");
   style.textContent = OVERLAY_CSS;
   shadow.append(style);
+}
+
+/** Where a thread's Open source goes: its own lines when it has them, else its block's. */
+function threadSource(thread: LocatedThread, entry: { anchor: Anchor }): Anchor {
+  if (thread.lines === undefined || (thread.kind === "review" && thread.side === "LEFT")) {
+    return entry.anchor;
+  }
+  return {
+    source: formatSource({ path: thread.path, first: thread.lines.first, last: thread.lines.last }),
+    via: entry.anchor.via,
+  };
 }

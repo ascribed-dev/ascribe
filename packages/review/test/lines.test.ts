@@ -1,6 +1,22 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { lineMap, linesAt, parseHunks, shiftLine } from "../src/place/lines.js";
+import { lineHunks, lineMap, linesAt, parseHunks, shiftLine } from "../src/place/lines.js";
 import { numbered, tempRepo, type TempRepo } from "./helpers/repo.js";
+
+describe("hunks between two texts", () => {
+  test("match git diff --unified=0's numbering", () => {
+    expect(lineHunks("a\nb\nc", "a\nb\nc")).toEqual([]);
+    // An insertion after line 1, a replacement of line 3, a deletion of line 5.
+    expect(lineHunks("a\nb\nc\nd\ne\nf", "a\nX\nb\nC\nd\nf")).toEqual([
+      { oldStart: 1, oldCount: 0, newStart: 2, newCount: 1 },
+      { oldStart: 3, oldCount: 1, newStart: 4, newCount: 1 },
+      { oldStart: 5, oldCount: 1, newStart: 5, newCount: 0 },
+    ]);
+    const hunks = lineHunks("a\nb\nc\nd\ne\nf", "a\nX\nb\nC\nd\nf");
+    expect(shiftLine(hunks, 2)).toEqual({ line: 3, replaced: false });
+    expect(shiftLine(hunks, 5)).toBeUndefined();
+    expect(shiftLine(hunks, 6)).toEqual({ line: 6, replaced: false });
+  });
+});
 
 describe("shifting a line through hunks", () => {
   const hunks = parseHunks(

@@ -1,6 +1,6 @@
 // A review session: one pull request's threads, placed on pages, and the
 // viewer's pending review that new comments go into.
-import { readFileSync, realpathSync } from "node:fs";
+import { readFileSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { parse } from "smol-toml";
 import { formatSource, parseSource, type Anchor } from "../place/anchor.js";
@@ -275,7 +275,10 @@ export interface SessionOptions {
 interface State {
   raw: RawThread[];
   reviews: RawReview[];
-  located: LocatedThread[];
+  threads: Thread[];
+  /** The threads located in the working tree, as its files were at `stamp`. */
+  located: Promise<LocatedThread[]>;
+  stamp: string;
   pendingReview: RawReview | undefined;
 }
 
@@ -286,6 +289,24 @@ const TRANSIENT = /something went wrong/i;
 // GitHub's errors when a line can't take a review comment.
 const CANT_ANCHOR =
   /could not be resolved|must be part of the diff|is not part of the diff|line.*outside/i;
+
+/**
+ * When each file the threads are on last changed in the working tree, as one
+ * string: a different one means the threads need locating again.
+ */
+function worktreeStamp(root: string, threads: readonly Thread[]): string {
+  const files = [...new Set(threads.map((thread) => thread.repositoryPath))].sort();
+  return files
+    .map((file) => {
+      try {
+        const stat = statSync(path.join(root, ...file.split("/")));
+        return `${file}\0${stat.mtimeMs}\0${stat.size}`;
+      } catch {
+        return `${file}\0-`;
+      }
+    })
+    .join("\n");
+}
 
 /** A session for a pull request already found. */
 export function createSession(options: SessionOptions): ReviewSession {
@@ -326,9 +347,11 @@ export function createSession(options: SessionOptions): ReviewSession {
 
   const load = (): Promise<State> => {
     state ??= (async () => {
-      let raw = await read(() => readReviewThreads(transport, key));
-      const conversation = await read(() => readConversation(transport, key));
-      let reviews = await read(() => readReviews(transport, key));
+      let [raw, conversation, reviews] = await Promise.all([
+        read(() => readReviewThreads(transport, key)),
+        read(() => readConversation(transport, key)),
+        read(() => readReviews(transport, key)),
+      ]);
       if (discarded !== undefined) {
         const gone = discarded;
         const stale =
@@ -361,17 +384,30 @@ export function createSession(options: SessionOptions): ReviewSession {
       for (const review of reviews) {
         threads.push(...markedThreads(review, contentPrefix, review.state === "PENDING"));
       }
-      const located = await locateThreads(threads, {
-        root,
-        contentPrefix,
-        headOid: pullRequest.headOid,
-      });
-      return { raw, reviews, located, pendingReview };
+      const stamp = worktreeStamp(root, threads);
+      const first = locate(threads);
+      await first;
+      return { raw, reviews, threads, located: first, stamp, pendingReview };
     })();
     state.catch(() => {
       state = undefined;
     });
     return state;
+  };
+
+  const locate = (threads: readonly Thread[]): Promise<LocatedThread[]> =>
+    locateThreads(threads, { root, contentPrefix, headOid: pullRequest.headOid });
+
+  // The threads located in the working tree: again once one of their files
+  // changed (saved), so they follow edits without reading GitHub again.
+  const located = async (): Promise<LocatedThread[]> => {
+    const current = await load();
+    const stamp = worktreeStamp(root, current.threads);
+    if (stamp !== current.stamp) {
+      current.stamp = stamp;
+      current.located = locate(current.threads);
+    }
+    return current.located;
   };
 
   // One change at a time, spaced out to stay under the secondary rate limit.
@@ -410,7 +446,7 @@ export function createSession(options: SessionOptions): ReviewSession {
   };
 
   const findThread = async (threadId: string): Promise<LocatedThread | undefined> =>
-    (await load()).located.find((thread) => thread.id === threadId);
+    (await located()).find((thread) => thread.id === threadId);
 
   const requireReviewThread = async (threadId: string): Promise<void> => {
     const state = await load();
@@ -487,11 +523,11 @@ export function createSession(options: SessionOptions): ReviewSession {
     pullRequest,
 
     async threads(page) {
-      return placeOnPage(page, (await load()).located);
+      return placeOnPage(page, await located());
     },
 
     async allThreads() {
-      return (await load()).located;
+      return located();
     },
 
     async viewer() {

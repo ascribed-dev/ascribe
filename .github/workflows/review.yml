@@ -2,7 +2,7 @@ name: Review
 
 # The review report for examples/quill: on each pull request, every page the
 # change reaches, rendered with its changes marked, as one HTML file a
-# reviewer opens from the run's summary. docs/review.md ("Report in CI")
+# reviewer opens from the run's summary. docs/review.md ("The report in CI")
 # describes the same job for any project.
 
 on:

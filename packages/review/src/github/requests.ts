@@ -2,8 +2,9 @@
 // a host that keeps GitHub to itself and passes the overlay's requests on as
 // messages: the page preview's extension, or the site preview's dev server.
 // The parameters arrive as untyped messages, so each is checked here.
-import type { Anchor } from "../place/anchor.js";
-import type { PageRef } from "../place/place.js";
+import { anchorKey, parseSource, type Anchor } from "../place/anchor.js";
+import { lineHunks, shiftLine, type Hunk } from "../place/lines.js";
+import type { PageRef, PlacedThreads } from "../place/place.js";
 import { ReviewError } from "../shared/errors.js";
 import { gitMaybe } from "../shared/git.js";
 import { parseRemote } from "./repository.js";
@@ -41,6 +42,13 @@ export interface RequestContext {
   lastPage: PageRef | undefined;
   /** The changed pages, for which pages show a thread. */
   changedPages(): Promise<readonly ChangedPageRef[]>;
+  /**
+   * For a host whose pages are rendered from an editor's unsaved text: a
+   * file's text on disk (`saved`) and in the editor (`current`), by content
+   * path, or `undefined` when they're the same. The session counts lines on
+   * disk, so the page's blocks are moved to their lines there, and back.
+   */
+  unsaved?(path: string): Promise<{ saved: string; current: string } | undefined>;
 }
 
 /** An answer: the result, the page read (for `load`), and whether the request changed the threads. */
@@ -61,17 +69,35 @@ export async function answerRequest(
     case "load": {
       const page = context.page;
       if (!page) throw new ReviewError("not-found", "There's no page to review here.");
+      const shown = anchors(params["anchors"]);
+      const edits = await unsavedEdits(context, shown);
+      // The page's blocks at their lines on disk, and the way back.
+      const back = new Map<string, Anchor>();
+      for (const block of shown) {
+        const saved = toSaved(edits, block, false);
+        if (saved !== undefined && !back.has(anchorKey(saved))) back.set(anchorKey(saved), block);
+      }
       const ref: PageRef = {
         build: page.build,
         path: page.path,
-        anchors: anchors(params["anchors"]),
+        anchors: edits.size === 0 ? shown : [...back.keys()].map((key) => fromKey(key)),
         removed: anchors(params["removed"]),
       };
-      const [threads, pending, viewer] = await Promise.all([
+      const [placed, pending, viewer] = await Promise.all([
         session.threads(ref),
         session.pending(),
         session.viewer(),
       ]);
+      const threads: PlacedThreads =
+        edits.size === 0
+          ? placed
+          : {
+              ...placed,
+              blocks: placed.blocks.map((block) => ({
+                ...block,
+                anchor: back.get(anchorKey(block.anchor)) ?? block.anchor,
+              })),
+            };
       const pr = session.pullRequest;
       return {
         result: { pullRequest: { number: pr.number, url: pr.url }, threads, pending, viewer },
@@ -79,8 +105,13 @@ export async function answerRequest(
         changed: false,
       };
     }
-    case "commentTarget":
-      return { result: await session.commentTarget(anchor(params["anchor"])), changed: false };
+    case "commentTarget": {
+      const shown = anchor(params["anchor"]);
+      const saved = toSaved(await unsavedEdits(context, [shown]), shown, true);
+      if (saved === undefined)
+        return { result: { kind: "push-first", message: UNSAVED }, changed: false };
+      return { result: await session.commentTarget(saved), changed: false };
+    }
     case "allThreads": {
       const [threads, pages] = await Promise.all([
         session.allThreads(),
@@ -92,7 +123,9 @@ export async function answerRequest(
       };
     }
     case "comment": {
-      const target = anchor(params["anchor"]);
+      const shown = anchor(params["anchor"]);
+      const target = toSaved(await unsavedEdits(context, [shown]), shown, true);
+      if (target === undefined) throw new ReviewError("push-first", UNSAVED);
       const page = context.lastPage ?? {
         build: context.page?.build ?? "",
         path: context.page?.path ?? "",
@@ -121,6 +154,92 @@ export async function answerRequest(
       await session.discard();
       return { result: null, changed: true };
   }
+}
+
+const UNSAVED = "This block has changes that aren't saved. Save the file, then comment.";
+
+/** The line changes from each shown file's text in the editor to its text on disk, where they differ. */
+async function unsavedEdits(
+  context: RequestContext,
+  shown: readonly Anchor[],
+): Promise<Map<string, Hunk[]>> {
+  const edits = new Map<string, Hunk[]>();
+  if (!context.unsaved) return edits;
+  const files = new Set<string>();
+  for (const block of shown) {
+    const range = parseSource(block.source);
+    if (range) files.add(range.path);
+    for (const include of block.via) {
+      const at = parseInclude(include);
+      if (at) files.add(at.path);
+    }
+  }
+  for (const file of files) {
+    const text = await context.unsaved(file);
+    if (text === undefined) continue;
+    const hunks = lineHunks(text.current, text.saved);
+    if (hunks.length > 0) edits.set(file, hunks);
+  }
+  return edits;
+}
+
+/**
+ * A block's anchor with its lines on disk. `strict` (for commenting) wants
+ * every line of the block saved as it is; otherwise an edited block takes
+ * the lines its text has on disk. `undefined` when nothing of it is saved.
+ */
+function toSaved(
+  edits: ReadonlyMap<string, Hunk[]>,
+  block: Anchor,
+  strict: boolean,
+): Anchor | undefined {
+  if (edits.size === 0) return block;
+  const range = parseSource(block.source);
+  if (range === undefined) return block;
+  const hunks = edits.get(range.path);
+  let source = block.source;
+  if (hunks !== undefined) {
+    const lines: number[] = [];
+    for (let line = range.first; line <= range.last; line++) {
+      const moved = shiftLine(hunks, line);
+      if (moved === undefined || moved.replaced) {
+        if (strict) return undefined;
+        if (moved === undefined) continue;
+      }
+      lines.push(moved.line);
+    }
+    if (lines.length === 0) return undefined;
+    const colon = block.source.lastIndexOf(":");
+    source = `${block.source.slice(0, colon)}:${Math.min(...lines)}-${Math.max(...lines)}`;
+  }
+  const via: string[] = [];
+  for (const include of block.via) {
+    const at = parseInclude(include);
+    const includeHunks = at && edits.get(at.path);
+    if (!at || !includeHunks) {
+      via.push(include);
+      continue;
+    }
+    const moved = shiftLine(includeHunks, at.line);
+    if (moved === undefined || (strict && moved.replaced)) return undefined;
+    via.push(`${include.slice(0, include.lastIndexOf(":"))}:${moved.line}`);
+  }
+  return { source, via };
+}
+
+/** An include, `<path>:<line>`, parsed, with its path decoded. */
+function parseInclude(include: string): { path: string; line: number } | undefined {
+  const colon = include.lastIndexOf(":");
+  const line = Number(include.slice(colon + 1));
+  if (colon <= 0 || !Number.isInteger(line) || line < 1) return undefined;
+  const range = parseSource(`${include.slice(0, colon)}:1-1`);
+  return range && { path: range.path, line };
+}
+
+/** The anchor `anchorKey` wrote. */
+function fromKey(key: string): Anchor {
+  const [source = "", ...via] = key.split(" ");
+  return { source, via };
 }
 
 /**

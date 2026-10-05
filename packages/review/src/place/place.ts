@@ -15,8 +15,8 @@ export interface PageRef {
   /** Every anchored block on the page, in the page's order. */
   anchors: Anchor[];
   /**
-   * Where the diff's removed blocks on this page were (each removed or moved
-   * change's `was`), for threads on removed text.
+   * Where the diff's removed, moved, and changed blocks on this page were
+   * (each such change's `was`), for threads on the text they had.
    */
   removed?: Anchor[] | undefined;
 }

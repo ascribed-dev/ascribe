@@ -40,7 +40,12 @@ export function buttonLabel(unsent: number): string {
 /** The base's name and the pull request, as the panel's first words: "#128 against main". */
 export function againstText(view: PageView): { pullRequest: string | null; base: string | null } {
   const pullRequest = view.threads.state === "on" ? `#${view.threads.pullRequest.number}` : null;
-  return { pullRequest, base: view.base?.requested ?? null };
+  const requested = view.base?.requested ?? null;
+  // The pull request's base by its name ("main"), not the remote branch compared with ("origin/main").
+  const name = view.threads.state === "on" ? view.threads.pullRequest.baseRefName : undefined;
+  const base =
+    requested !== null && name !== undefined && requested.endsWith(`/${name}`) ? name : requested;
+  return { pullRequest, base };
 }
 
 /** A sentence about the threads: why there are none, or how the checkout differs. */

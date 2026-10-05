@@ -5,6 +5,7 @@
 // sees a token and makes no requests.
 
 import { execFile } from "node:child_process";
+import { readFile, realpath } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
@@ -207,8 +208,11 @@ export class ThreadsController implements vscode.Disposable {
     params: Record<string, unknown>,
     origin: ChangeOrigin,
   ): Promise<unknown> {
+    const connection = this.connection(server);
     const session = this.session(server);
-    if (!session) throw new ReviewError("not-found", "Review comments aren't on for this project.");
+    if (!session || connection?.state !== "on") {
+      throw new ReviewError("not-found", "Review comments aren't on for this project.");
+    }
     const id = key(server);
     const answer = await answerRequest(
       {
@@ -217,6 +221,7 @@ export class ThreadsController implements vscode.Disposable {
         // A comment from the source editor is on the file, in every build.
         lastPage: origin === "preview" ? this.pages.get(id) : undefined,
         changedPages: () => this.host.changedPages(server),
+        unsaved: (file) => unsavedText(path.join(connection.contentRoot, ...file.split("/"))),
       },
       method,
       params,
@@ -354,6 +359,36 @@ async function aheadBehind(root: string, head: string): Promise<{ ahead: number;
   const out = await run("git", ["rev-list", "--left-right", "--count", `HEAD...${head}`], root);
   const [ahead, behind] = (out ?? "").trim().split(/\s+/).map(Number);
   return { ahead: ahead || 0, behind: behind || 0 };
+}
+
+/**
+ * A file's text on disk and in its editor, when the editor has unsaved
+ * changes: the preview renders the editor's text, and GitHub's lines are
+ * the file's on disk.
+ */
+async function unsavedText(file: string): Promise<{ saved: string; current: string } | undefined> {
+  // The file's path comes from git, a real path; the editor's is the path the
+  // workspace was opened with, which may go through a link (macOS's /var).
+  const real = comparable(await realPath(file));
+  let document: vscode.TextDocument | undefined;
+  for (const doc of vscode.workspace.textDocuments) {
+    if (doc.uri.scheme !== "file" || !doc.isDirty) continue;
+    if (comparable(await realPath(doc.uri.fsPath)) === real) {
+      document = doc;
+      break;
+    }
+  }
+  if (!document) return undefined;
+  try {
+    return { saved: await readFile(file, "utf8"), current: document.getText() };
+  } catch {
+    return undefined;
+  }
+}
+
+/** `file` with its links resolved, or as it is when it can't be. */
+function realPath(file: string): Promise<string> {
+  return realpath(file).catch(() => file);
 }
 
 /** A failure as a sentence. */

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { ChangedPage } from "../../src/preview/protocol.js";
 import {
   baseCommit,
+  baseName,
   causes,
   nextChangedPage,
   pageDetail,
@@ -124,6 +125,12 @@ describe("the base's commit", () => {
   it("is where the branch left the base, shortened", () => {
     expect(baseCommit(base)).toBe("1a2b3c4");
     expect(baseCommit({ ...base, merge_base: null })).toBe("ccccccc");
+  });
+
+  it("is named as GitHub names the pull request's base", () => {
+    expect(baseName({ ...base, requested: "origin/main" }, "main")).toBe("main");
+    expect(baseName({ ...base, requested: "origin/main" })).toBe("origin/main");
+    expect(baseName({ ...base, requested: "v1.2" }, "main")).toBe("v1.2");
   });
 
   it("tells a base that moved from one that didn't", () => {

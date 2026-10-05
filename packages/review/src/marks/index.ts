@@ -487,6 +487,8 @@ export function markChanges(
         element.setAttribute("data-ascribe-change", change.kind);
         addLabel(element, change.kind);
         if (change.kind === "changed") {
+          // Where it was, for threads on its old text.
+          if (change.was) element.setAttribute("data-ascribe-was-source", change.was.source);
           const before = was && change.was ? findBlock(was, change.was) : null;
           if (change.words) markWords(element, change.words);
           if (before) {
@@ -536,6 +538,7 @@ export function markChanges(
           const holder = ui(doc, holderFor(container), "ascribe-moved-from");
           holder.id = `${id}-from`;
           holder.setAttribute("data-ascribe-change", "moved-from");
+          if (change.was) holder.setAttribute("data-ascribe-was-source", change.was.source);
           const note = ui(doc, "span", "ascribe-move-note");
           note.append(doc.createTextNode(`A ${blockWord(element)} moved from here `));
           const link = ui(doc, "a", "ascribe-move-link");
@@ -615,6 +618,7 @@ export function clearMarks(root: HTMLElement): void {
   for (const el of Array.from(root.querySelectorAll("[data-ascribe-change]"))) {
     el.removeAttribute("data-ascribe-change");
     el.removeAttribute("data-ascribe-has-was");
+    el.removeAttribute("data-ascribe-was-source");
     if (el.hasAttribute("data-ascribe-move")) {
       if (el.id === el.getAttribute("data-ascribe-move")) el.removeAttribute("id");
       el.removeAttribute("data-ascribe-move");

@@ -163,7 +163,7 @@ export class ReviewController implements vscode.Disposable {
       this.update();
       this.host.refresh();
       void vscode.window.showInformationMessage(
-        `Ascribe: this branch now leaves ${baseName(result.base)} at ${baseCommit(result.base)}, so review compares with that.`,
+        `Ascribe: this branch now leaves ${this.baseNameOf(server, result.base)} at ${baseCommit(result.base)}, so review compares with that.`,
       );
     } finally {
       this.rechecking.delete(server);
@@ -199,9 +199,11 @@ export class ReviewController implements vscode.Disposable {
     if (base) {
       const connection = this.threads.connection(server);
       const pr = connection?.state === "on" ? connection.session.pullRequest : undefined;
-      const against = pr ? `#${pr.number} against ${baseName(base)}` : baseName(base);
+      const against = pr
+        ? `#${pr.number} against ${baseName(base, pr.baseRefName)}`
+        : baseName(base);
       this.item.text = `$(git-compare) Review: ${against}`;
-      this.item.tooltip = `Reviewing ${pr ? `pull request #${pr.number} of ` : ""}${this.projects.name(server.project)} against ${baseName(base)}, from ${baseCommit(base)}, where this branch left it. Click for the changed pages.`;
+      this.item.tooltip = `Reviewing ${pr ? `pull request #${pr.number} of ` : ""}${this.projects.name(server.project)} against ${baseName(base, pr?.baseRefName)}, from ${baseCommit(base)}, where this branch left it. Click for the changed pages.`;
       this.item.command = "ascribe.changedPages";
     } else {
       this.item.text = "$(git-compare) Review: off";
@@ -213,6 +215,15 @@ export class ReviewController implements vscode.Disposable {
   }
 
   private visible = false;
+
+  /** The base's name for a project: the pull request's base branch by its name, when it's that. */
+  baseNameOf(server: ProjectServer, base: BaseInfo): string {
+    const connection = this.threads.connection(server);
+    return baseName(
+      base,
+      connection?.state === "on" ? connection.session.pullRequest.baseRefName : undefined,
+    );
+  }
 
   /** Whether an Ascribe page or the preview is active: where the status bar item shows. */
   private isAscribeContext(): boolean {
@@ -321,7 +332,7 @@ export class ReviewController implements vscode.Disposable {
     const count = changes?.pages.length ?? 0;
     const pages = count === 1 ? "1 page changed" : `${count} pages changed`;
     void vscode.window.showInformationMessage(
-      `Ascribe: review started against ${baseName(result.base)}. ${count === 0 ? "No page changed" : pages}.`,
+      `Ascribe: review started against ${this.baseNameOf(server, result.base)}. ${count === 0 ? "No page changed" : pages}.`,
     );
   }
 
@@ -380,7 +391,7 @@ export class ReviewController implements vscode.Disposable {
       { label: "Ascribe: Stop Review", stop: true },
     );
     const picked = await vscode.window.showQuickPick(items, {
-      title: `Changed pages against ${baseName(base)} (build: ${result.build})`,
+      title: `Changed pages against ${this.baseNameOf(server, base)} (build: ${result.build})`,
       placeHolder: "Open a changed page and its preview",
       matchOnDescription: true,
     });

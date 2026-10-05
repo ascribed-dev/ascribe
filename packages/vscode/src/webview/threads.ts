@@ -171,11 +171,11 @@ export class Threads {
     return anchors;
   }
 
-  /** Where the page's removed blocks were, for threads on removed text. */
+  /** Where the page's removed, moved, and changed blocks were, for threads on their old text. */
   private removed(): Anchor[] {
     const removed: Anchor[] = [];
     for (const change of this.changes) {
-      if ((change.kind === "removed" || change.kind === "moved") && change.was) {
+      if (change.kind !== "added" && change.was) {
         removed.push({ source: change.was.source, via: change.was.via });
       }
     }

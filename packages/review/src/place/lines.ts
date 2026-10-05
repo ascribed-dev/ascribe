@@ -112,3 +112,77 @@ export async function linesAt(
   if (last > lines.length) return undefined;
   return lines.slice(first - 1, last).join("\n");
 }
+
+/**
+ * The hunks that turn `before` into `after`, line by line, as
+ * `git diff --unified=0` would report them: for text in hand, such as a file
+ * and an editor's unsaved copy of it. Lines common to both ends are skipped
+ * first; a middle too large to compare line by line is one hunk.
+ */
+export function lineHunks(before: string, after: string): Hunk[] {
+  const a = before.split(/\r?\n/);
+  const b = after.split(/\r?\n/);
+  let start = 0;
+  while (start < a.length && start < b.length && a[start] === b[start]) start++;
+  let endA = a.length;
+  let endB = b.length;
+  while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) {
+    endA--;
+    endB--;
+  }
+  const n = endA - start;
+  const m = endB - start;
+  if (n === 0 && m === 0) return [];
+  if (n * m > 4_000_000 || n === 0 || m === 0) return [hunk(start, n, start, m)];
+  // The longest common subsequence of the middles, by dynamic programming:
+  // `lcs(i, j)` is its length for the lines from `start + i` and `start + j` on.
+  const width = m + 1;
+  const table = new Uint32Array((n + 1) * width);
+  const lcs = (i: number, j: number): number => table[i * width + j] ?? 0;
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      table[i * width + j] =
+        a[start + i] === b[start + j]
+          ? lcs(i + 1, j + 1) + 1
+          : Math.max(lcs(i + 1, j), lcs(i, j + 1));
+    }
+  }
+  const hunks: Hunk[] = [];
+  let i = 0;
+  let j = 0;
+  let fromA = 0;
+  let fromB = 0;
+  const flush = (): void => {
+    if (i > fromA || j > fromB)
+      hunks.push(hunk(start + fromA, i - fromA, start + fromB, j - fromB));
+  };
+  while (i < n || j < m) {
+    if (i < n && j < m && a[start + i] === b[start + j]) {
+      flush();
+      i++;
+      j++;
+      fromA = i;
+      fromB = j;
+    } else if (j >= m || (i < n && lcs(i + 1, j) >= lcs(i, j + 1))) {
+      i++;
+    } else {
+      j++;
+    }
+  }
+  flush();
+  return hunks;
+}
+
+/**
+ * A hunk of `count` lines after `at` lines (counted from 0) on each side,
+ * numbered as `git diff --unified=0` does: an empty side names the line
+ * before it.
+ */
+function hunk(atA: number, countA: number, atB: number, countB: number): Hunk {
+  return {
+    oldStart: countA === 0 ? atA : atA + 1,
+    oldCount: countA,
+    newStart: countB === 0 ? atB : atB + 1,
+    newCount: countB,
+  };
+}

@@ -10,6 +10,7 @@ export {
   type SourceRange,
 } from "./anchor.js";
 export {
+  lineHunks,
   lineMap,
   linesAt,
   parseHunks,

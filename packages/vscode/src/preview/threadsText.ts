@@ -28,7 +28,8 @@ export function threadsNotice(view: ThreadsView): ThreadsNotice | undefined {
   }
   if (view.state === "error") {
     return {
-      text: `Couldn't read the comments. ${view.message ?? ""}`.trim(),
+      // The first line: what `gh` or GitHub said, without any trace after it.
+      text: `Couldn't read the comments. ${view.message?.split("\n")[0] ?? ""}`.trim(),
       actions: [{ label: "Try again", message: "refresh" }],
     };
   }

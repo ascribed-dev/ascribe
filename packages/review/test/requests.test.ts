@@ -162,6 +162,58 @@ describe("answerRequest", () => {
     ]);
   });
 
+  it("moves blocks from the editor's unsaved lines to the file's, and back", async () => {
+    const { session, calls } = fakeSession();
+    // Two lines added at the top of a.md in the editor, and the third line
+    // (the second block's) reworded.
+    const saved = "Title\n\nFirst.\n\nSecond.\n";
+    const current = "New.\n\nTitle\n\nFirst!\n\nSecond.\n";
+    const placed = {
+      blocks: [{ anchor: { source: "a.md:5-5", via: [] }, threads: [{ id: "T1" }] }],
+      removed: [],
+      detached: [],
+    };
+    (session as unknown as { threads: unknown }).threads = async (page: PageRef) => {
+      calls.push(["threads", page]);
+      return placed;
+    };
+    const ctx: RequestContext = {
+      ...context(session),
+      unsaved: async (file) => (file === "a.md" ? { saved, current } : undefined),
+    };
+    const shown = [
+      { source: "a.md:1-1", via: [] },
+      { source: "a.md:3-3", via: [] },
+      { source: "a.md:5-5", via: [] },
+      { source: "a.md:7-7", via: [] },
+      { source: "b.md:2-2", via: ["a.md:7"] },
+    ];
+    const answer = await answerRequest(ctx, "load", { anchors: shown, removed: [] });
+    // The new paragraph has no lines on disk; the rest move up by two.
+    expect((calls[0]?.[1] as PageRef | undefined)?.anchors).toEqual([
+      { source: "a.md:1-1", via: [] },
+      { source: "a.md:3-3", via: [] },
+      { source: "a.md:5-5", via: [] },
+      { source: "b.md:2-2", via: ["a.md:5"] },
+    ]);
+    // The thread on disk's line 5 is on the block the editor has at line 7.
+    expect((answer.result as { threads: typeof placed }).threads.blocks[0]?.anchor).toEqual({
+      source: "a.md:7-7",
+      via: [],
+    });
+    // A block with unsaved changes can't be commented on; a saved one can, at its lines on disk.
+    await expect(
+      answerRequest(ctx, "commentTarget", { anchor: { source: "a.md:5-5", via: [] } }),
+    ).resolves.toMatchObject({
+      result: { kind: "push-first", message: expect.stringContaining("Save the file") },
+    });
+    await expect(
+      answerRequest(ctx, "comment", { anchor: { source: "a.md:1-1", via: [] }, body: "x" }),
+    ).rejects.toThrow("Save the file");
+    await answerRequest(ctx, "comment", { anchor: { source: "a.md:7-7", via: [] }, body: "Why?" });
+    expect(calls.at(-1)?.slice(0, 2)).toEqual(["comment", { source: "a.md:5-5", via: [] }]);
+  });
+
   it("refuses a request it can't read, before reaching the session", async () => {
     const { session, calls } = fakeSession();
     await expect(answerRequest(context(session), "submit", { event: "MERGE" })).rejects.toThrow(
