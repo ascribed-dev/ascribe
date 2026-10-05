@@ -85,3 +85,91 @@ export function relativeTime(iso: string, now: number): string {
   if (days < 30) return `${days} days ago`;
   return new Date(then).toISOString().slice(0, 10);
 }
+
+/** Elements whose text starts on a line of its own. */
+const BLOCK_TAGS = new Set([
+  "ADDRESS",
+  "ARTICLE",
+  "ASIDE",
+  "BLOCKQUOTE",
+  "DD",
+  "DETAILS",
+  "DIV",
+  "DL",
+  "DT",
+  "FIGCAPTION",
+  "FIGURE",
+  "FOOTER",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "H6",
+  "HEADER",
+  "HR",
+  "LI",
+  "OL",
+  "P",
+  "PRE",
+  "SECTION",
+  "SUMMARY",
+  "TABLE",
+  "TR",
+  "UL",
+]);
+
+/**
+ * A block's text as a reader sees it, for quoting: links as their text, a
+ * line for each paragraph, list item, or row, and code as written. The
+ * overlay's own elements are left out; so is anything `aria-hidden`.
+ */
+export function blockText(block: Element): string {
+  // Each line, and whether it's code, which keeps its spaces.
+  const lines: { text: string; pre: boolean }[] = [];
+  let line = "";
+  let linePre = false;
+  const breakLine = (): void => {
+    if (line.trim() !== "") lines.push({ text: line, pre: linePre });
+    line = "";
+    linePre = false;
+  };
+  const walk = (node: Node, pre: boolean): void => {
+    if (node.nodeType === 3) {
+      const text = node.nodeValue ?? "";
+      if (!pre) {
+        line += text.replace(/\s+/g, " ");
+        return;
+      }
+      const [first = "", ...rest] = text.split("\n");
+      line += first;
+      linePre = true;
+      for (const next of rest) {
+        lines.push({ text: line, pre: true });
+        line = next;
+      }
+      return;
+    }
+    if (!(node instanceof Element)) return;
+    const tag = node.tagName.toUpperCase();
+    if (
+      node.hasAttribute("data-ascribe-overlay") ||
+      node.getAttribute("aria-hidden") === "true" ||
+      ["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT"].includes(tag)
+    ) {
+      return;
+    }
+    if (tag === "BR") {
+      breakLine();
+      return;
+    }
+    const block = BLOCK_TAGS.has(tag);
+    if (block) breakLine();
+    if ((tag === "TD" || tag === "TH") && line.trim() !== "") line += " | ";
+    for (const child of Array.from(node.childNodes)) walk(child, pre || tag === "PRE");
+    if (block) breakLine();
+  };
+  walk(block, false);
+  breakLine();
+  return lines.map(({ text, pre }) => (pre ? text.trimEnd() : text.trim())).join("\n");
+}

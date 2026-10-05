@@ -67,6 +67,51 @@ describe("shifting a line through hunks", () => {
   });
 });
 
+describe("telling a deleted line from a reworded one in the same hunk", () => {
+  const before = [
+    "# Options",
+    "",
+    "`retries` sets how many times a failed request is tried again.",
+    "",
+    "`timeout` sets how long, in seconds, to wait for an answer.",
+    "",
+    "End.",
+  ];
+  const after = [
+    "# Options",
+    "",
+    "`timeout` sets how many seconds to wait for an answer before giving up.",
+    "",
+    "End.",
+  ];
+  const sides = { old: before, new: after };
+
+  test("a deleted line is gone, and its reworded neighbour maps onto its rewording", () => {
+    const hunks = lineHunks(before.join("\n"), after.join("\n"));
+    expect(shiftLine(hunks, 3, sides)).toBeUndefined();
+    expect(shiftLine(hunks, 5, sides)).toEqual({ line: 3, replaced: true });
+    expect(shiftLine(hunks, 7, sides)).toEqual({ line: 5, replaced: false });
+  });
+
+  test("the same in a hunk that spans both lines, as git reports it", () => {
+    const hunks = parseHunks("@@ -3,3 +3 @@");
+    expect(shiftLine(hunks, 3, sides)).toBeUndefined();
+    expect(shiftLine(hunks, 4, sides)).toBeUndefined();
+    expect(shiftLine(hunks, 5, sides)).toEqual({ line: 3, replaced: true });
+    // Without the text, lines pair by position.
+    expect(shiftLine(hunks, 3)).toEqual({ line: 3, replaced: true });
+  });
+
+  test("one line replaced by one keeps its place however much it changed", () => {
+    const hunks = parseHunks("@@ -2 +2 @@");
+    const one = {
+      old: ["a", "Completely different.", "c"],
+      new: ["a", "Nothing alike here.", "c"],
+    };
+    expect(shiftLine(hunks, 2, one)).toEqual({ line: 2, replaced: true });
+  });
+});
+
 describe("line maps between a commit and the working tree", () => {
   let repo: TempRepo;
   afterEach(() => repo.remove());
@@ -100,6 +145,21 @@ describe("line maps between a commit and the working tree", () => {
     expect(same.map(1)).toEqual({ line: 1, replaced: false });
 
     expect(await linesAt(repo.root, head, "docs/a b.md", 19, 20)).toBe("line 19\nline 20");
+  });
+
+  test("leave a line deleted beside a reworded one off the rewording", async () => {
+    repo = tempRepo();
+    repo.write(
+      "Options.md",
+      "# Options\n\nretries sets how many times a request is tried again.\n\ntimeout sets how long to wait, in seconds.\n",
+    );
+    const head = repo.commit("head");
+    repo.write("Options.md", "# Options\n\ntimeout sets how many seconds to wait.\n");
+    const forward = await lineMap(repo.root, head, "Options.md", "to-worktree");
+    expect(forward.map(3)).toBeUndefined();
+    expect(forward.map(5)).toEqual({ line: 3, replaced: true });
+    const back = await lineMap(repo.root, head, "Options.md", "to-commit");
+    expect(back.map(3)).toEqual({ line: 5, replaced: true });
   });
 
   test("map nothing for a missing commit or a file missing on either side", async () => {

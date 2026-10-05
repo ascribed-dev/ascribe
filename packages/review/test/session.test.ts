@@ -433,6 +433,19 @@ describe("posting", () => {
     });
   });
 
+  test("a held comment quotes the block's text as the page shows it, when the page sends it", async () => {
+    const fake = postingFake();
+    await session(fake).comment(
+      { source: "_fragments/prereqs.md:1-3", via: ["guides/install.md:25"] },
+      "Should this mention Windows?",
+      installPage,
+      "Shown p1\nShown p2",
+    );
+    const update = fake.mutations().find((c) => c.operation === "UpdateReview");
+    const body = String(update?.variables["body"]);
+    expect(body.startsWith("> Shown p1\n> Shown p2\n\nShould this mention Windows?")).toBe(true);
+  });
+
   test("falls back to the conversation when GitHub can't anchor the line", async () => {
     const fake = postingFake().on("AddThread", () => {
       throw new ReviewError("refused", "GitHub refused the request: Line could not be resolved");
@@ -608,7 +621,14 @@ describe("posting", () => {
     await s.submit("APPROVE", "Looks good.");
     await s.discard();
     expect(fake.mutations().map((c) => [c.operation, c.variables])).toEqual([
-      ["SubmitReview", { reviewId: "PRR_mine", event: "APPROVE", body: `${held}\n\nLooks good.` }],
+      [
+        "SubmitReview",
+        {
+          reviewId: "PRR_mine",
+          event: "APPROVE",
+          body: `Looks good.\n\n<!-- ascribe:summary -->\n\n${held}`,
+        },
+      ],
       ["DeleteReview", { reviewId: "PRR_mine" }],
     ]);
   });

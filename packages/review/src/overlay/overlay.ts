@@ -22,6 +22,7 @@ import { renderMarkdown } from "./markdown.js";
 import { OVERLAY_CSS } from "./style.js";
 import {
   authorName,
+  blockText,
   hasUnsent,
   initials,
   linesLabel,
@@ -428,6 +429,16 @@ class ReviewOverlay implements Overlay {
     }
     const block = target.closest<HTMLElement>("[data-ascribe-source]");
     return block && this.root.contains(block) ? block : undefined;
+  }
+
+  /** The block's text as the page shows it, for a comment to quote. */
+  private shownText(anchor: Anchor): string | undefined {
+    const key = anchorKey(anchor);
+    for (const el of Array.from(this.root.querySelectorAll<HTMLElement>("[data-ascribe-source]"))) {
+      const at = this.anchorOf(el);
+      if (at && anchorKey(at) === key) return blockText(el) || undefined;
+    }
+    return undefined;
   }
 
   private removedElement(anchor: Anchor): HTMLElement | null {
@@ -1425,7 +1436,11 @@ class ReviewOverlay implements Overlay {
     composer.error = undefined;
     this.render();
     try {
-      const thread = await this.host.comment(composer.anchor, body);
+      const thread = await this.host.comment(
+        composer.anchor,
+        body,
+        this.shownText(composer.anchor),
+      );
       this.composer = undefined;
       this.drafts.delete(key);
       this.announce(

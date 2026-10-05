@@ -3,7 +3,12 @@
 //
 //   <!-- ascribe:anchor guides/install.md:12-14 build=site -->
 //
-// Several can share one body (a review's), one after another.
+// Several can share one body (a review's), one after another. A review's
+// summary goes before them, ended by another marker:
+//
+//   Looks good, a few notes below.
+//
+//   <!-- ascribe:summary -->
 
 /** One anchored comment, as written in a body. */
 export interface MarkedSection {
@@ -24,6 +29,9 @@ const MARKER = /<!-- ascribe:anchor (\S+)(?: build=(\S+))? -->/g;
  * this, which reading and submitting remove.
  */
 export const PLACEHOLDER = "<!-- ascribe:review -->";
+
+/** Ends a review's summary when anchored comments follow it. */
+export const SUMMARY_END = "<!-- ascribe:summary -->";
 
 /** `body` without the placeholder summary. */
 export function withoutPlaceholder(body: string): string {
@@ -66,11 +74,21 @@ export function formatSection(options: {
 }
 
 /**
- * Splits a body into its marked sections, and the text after the last marker
- * (`rest`), which isn't anchored.
+ * Splits a body into its summary, its marked sections, and the text after
+ * the last marker (`rest`), which isn't anchored either.
  */
-export function parseSections(text: string): { sections: MarkedSection[]; rest: string } {
-  const body = withoutPlaceholder(text);
+export function parseSections(text: string): {
+  summary: string;
+  sections: MarkedSection[];
+  rest: string;
+} {
+  let body = withoutPlaceholder(text);
+  let summary = "";
+  const end = body.indexOf(SUMMARY_END);
+  if (end >= 0) {
+    summary = body.slice(0, end).trim();
+    body = body.slice(end + SUMMARY_END.length).trim();
+  }
   const sections: MarkedSection[] = [];
   let start = 0;
   for (const match of body.matchAll(MARKER)) {
@@ -79,7 +97,7 @@ export function parseSections(text: string): { sections: MarkedSection[]; rest: 
     start = match.index + match[0].length;
     sections.push({ source, build: match[2], ...unwrap(text) });
   }
-  return { sections, rest: body.slice(start).trim() };
+  return { summary, sections, rest: body.slice(start).trim() };
 }
 
 function unwrap(text: string): { body: string; quote: string | undefined } {
@@ -101,7 +119,14 @@ function unwrap(text: string): { body: string; quote: string | undefined } {
   return { body: rest, quote };
 }
 
-/** Joins sections, and the text after them, into one body. */
-export function joinSections(sections: readonly string[], rest: string | undefined): string {
-  return [...sections, rest ?? ""].filter((part) => part.trim() !== "").join("\n\n");
+/**
+ * Joins a summary and sections into one body: the summary first, so it
+ * doesn't read as a remark on the last section.
+ */
+export function joinSections(sections: readonly string[], summary: string | undefined): string {
+  const held = sections.filter((part) => part.trim() !== "");
+  const lead = summary?.trim() ?? "";
+  if (lead === "") return held.join("\n\n");
+  if (held.length === 0) return lead;
+  return [lead, SUMMARY_END, ...held].join("\n\n");
 }

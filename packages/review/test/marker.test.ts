@@ -33,8 +33,12 @@ describe("hidden anchor markers", () => {
     });
     const body = joinSections([one, two], "Overall looks good.");
     expect(body).toContain("> Install the CLI.\n>\n> Then run it.");
+    expect(body.startsWith("Overall looks good.\n\n<!-- ascribe:summary -->\n\n> Install")).toBe(
+      true,
+    );
     const parsed = parseSections(body);
-    expect(parsed.rest).toBe("Overall looks good.");
+    expect(parsed.summary).toBe("Overall looks good.");
+    expect(parsed.rest).toBe("");
     expect(parsed.sections).toEqual([
       {
         source: "guides/install.md:12-14",
@@ -47,6 +51,24 @@ describe("hidden anchor markers", () => {
   });
 
   test("a body without markers has no sections", () => {
-    expect(parseSections("Just a comment.")).toEqual({ sections: [], rest: "Just a comment." });
+    expect(parseSections("Just a comment.")).toEqual({
+      summary: "",
+      sections: [],
+      rest: "Just a comment.",
+    });
+    expect(joinSections([], "Just a comment.")).toBe("Just a comment.");
+  });
+
+  test("read a summary written after the sections, as earlier reviews did", () => {
+    const section = formatSection({
+      source: "a.md:1-1",
+      build: undefined,
+      body: "Typo.",
+      quote: undefined,
+      link: undefined,
+    });
+    const parsed = parseSections(`${section}\n\nOverall looks good.`);
+    expect(parsed.sections).toHaveLength(1);
+    expect(parsed.rest).toBe("Overall looks good.");
   });
 });

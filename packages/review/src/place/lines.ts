@@ -1,6 +1,7 @@
 // Moving a line number between a commit and the working tree, through the
 // line changes `git diff --unified=0` reports.
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { git, gitMaybe } from "../shared/git.js";
 
@@ -33,13 +34,29 @@ export interface Shifted {
   replaced: boolean;
 }
 
+/** The text of both sides of a diff, line by line, for telling replaced lines from deleted ones. */
+export interface Sides {
+  old: readonly string[];
+  new: readonly string[];
+}
+
 /**
  * Where line `line` of the old side is on the new side. A line the diff
- * replaced maps onto the lines that replaced it, at the same offset clamped to
- * them, with `replaced` set; a line it only deleted maps to `undefined`. Hunks
- * come from a diff with no context lines.
+ * replaced maps onto the line that replaced it, with `replaced` set; a line it
+ * only deleted maps to `undefined`. Hunks come from a diff with no context
+ * lines.
+ *
+ * A hunk can delete some lines and reword others, so with `sides` each old
+ * line of a hunk is paired with the new line most like it, in order, and an
+ * old line like none of them was deleted. Without `sides`, or for a hunk too
+ * large to compare, old lines pair with new ones by position, clamped to the
+ * last.
  */
-export function shiftLine(hunks: readonly Hunk[], line: number): Shifted | undefined {
+export function shiftLine(
+  hunks: readonly Hunk[],
+  line: number,
+  sides?: Sides,
+): Shifted | undefined {
   let delta = 0;
   for (const hunk of hunks) {
     if (hunk.oldCount === 0) {
@@ -50,12 +67,97 @@ export function shiftLine(hunks: readonly Hunk[], line: number): Shifted | undef
     const end = hunk.oldStart + hunk.oldCount;
     if (line >= hunk.oldStart && line < end) {
       if (hunk.newCount === 0) return undefined;
-      const offset = Math.min(line - hunk.oldStart, hunk.newCount - 1);
-      return { line: hunk.newStart + offset, replaced: true };
+      const pairs = sides && pairLines(hunk, sides);
+      const offset =
+        pairs === undefined
+          ? Math.min(line - hunk.oldStart, hunk.newCount - 1)
+          : pairs[line - hunk.oldStart];
+      return offset === undefined ? undefined : { line: hunk.newStart + offset, replaced: true };
     }
     if (line >= end) delta += hunk.newCount - hunk.oldCount;
   }
   return { line: line + delta, replaced: false };
+}
+
+/** How alike two lines must be, by their words, for one to be the other reworded. */
+const ALIKE = 0.3;
+
+const pairings = new WeakMap<Hunk, (number | undefined)[] | undefined>();
+
+/**
+ * For each old line of a replacing hunk, the offset of the new line it became,
+ * or `undefined` if it was deleted: the pairing, in order, that makes the
+ * paired lines most alike. A hunk of one line for one line keeps its pair
+ * however much it changed, since nothing else could have replaced it.
+ * `undefined` when the hunk is too large to compare.
+ */
+function pairLines(hunk: Hunk, sides: Sides): (number | undefined)[] | undefined {
+  if (pairings.has(hunk)) return pairings.get(hunk);
+  const n = hunk.oldCount;
+  const m = hunk.newCount;
+  let pairs: (number | undefined)[] | undefined;
+  if (n === 1 && m === 1) pairs = [0];
+  else if (n * m <= 250_000) {
+    const oldWords = sides.old.slice(hunk.oldStart - 1, hunk.oldStart - 1 + n).map(words);
+    const newWords = sides.new.slice(hunk.newStart - 1, hunk.newStart - 1 + m).map(words);
+    // `best(i, j)`: the most likeness pairing old lines from `i` on with new lines from `j` on.
+    const width = m + 1;
+    const table = new Float64Array((n + 1) * width);
+    const best = (i: number, j: number): number => table[i * width + j] ?? 0;
+    const like = (i: number, j: number): number => {
+      const score = likeness(oldWords[i] ?? [], newWords[j] ?? []);
+      return score >= ALIKE ? score : 0;
+    };
+    for (let i = n - 1; i >= 0; i--) {
+      for (let j = m - 1; j >= 0; j--) {
+        const score = like(i, j);
+        table[i * width + j] = Math.max(
+          score > 0 ? best(i + 1, j + 1) + score : 0,
+          best(i + 1, j),
+          best(i, j + 1),
+        );
+      }
+    }
+    pairs = [];
+    let i = 0;
+    let j = 0;
+    while (i < n) {
+      const score = j < m ? like(i, j) : 0;
+      if (score > 0 && best(i, j) === best(i + 1, j + 1) + score) {
+        pairs.push(j);
+        i++;
+        j++;
+      } else if (j >= m || best(i, j) === best(i + 1, j)) {
+        pairs.push(undefined);
+        i++;
+      } else {
+        j++;
+      }
+    }
+  }
+  pairings.set(hunk, pairs);
+  return pairs;
+}
+
+/** A line's words, in lower case. */
+function words(line: string | undefined): string[] {
+  return (line ?? "").toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+}
+
+/** How many words two lines share, from 0 to 1: twice the shared count over the total. */
+function likeness(a: readonly string[], b: readonly string[]): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  const counts = new Map<string, number>();
+  for (const word of a) counts.set(word, (counts.get(word) ?? 0) + 1);
+  let shared = 0;
+  for (const word of b) {
+    const count = counts.get(word) ?? 0;
+    if (count > 0) {
+      shared++;
+      counts.set(word, count - 1);
+    }
+  }
+  return (2 * shared) / (a.length + b.length);
 }
 
 /** Maps line numbers of a file from one side to the other. */
@@ -95,7 +197,15 @@ export async function lineMap(
   ]);
   const hunks = parseHunks(diff);
   if (hunks.length === 0) return { map: (line) => ({ line, replaced: false }), identity: true };
-  return { map: (line) => shiftLine(hunks, line), identity: false };
+  let sides: Sides | undefined;
+  if (hunks.some((hunk) => hunk.oldCount > 0 && hunk.newCount > 0)) {
+    const atCommitText = (await gitMaybe(root, ["cat-file", "blob", `${commit}:${file}`])) ?? "";
+    const inWorktree = await readFile(path.join(root, ...file.split("/")), "utf8").catch(() => "");
+    const [from, to] =
+      direction === "to-worktree" ? [atCommitText, inWorktree] : [inWorktree, atCommitText];
+    sides = { old: from.split(/\r?\n/), new: to.split(/\r?\n/) };
+  }
+  return { map: (line) => shiftLine(hunks, line, sides), identity: false };
 }
 
 /** Lines `first`..`last` of the repository-relative `file` at `commit`, or `undefined`. */

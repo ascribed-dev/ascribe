@@ -10,6 +10,7 @@ import type {
 import type { Anchor } from "../src/place/anchor.js";
 import type { LocatedThread } from "../src/place/place.js";
 import type { ThreadComment } from "../src/shared/types.js";
+import { blockText } from "../src/overlay/text.js";
 
 const PAGE = `
 <p data-ascribe-source="guide.md:3-3">Run the installer.</p>
@@ -79,6 +80,7 @@ class FakeHost implements OverlayHost {
   unsent = 0;
   target: CommentTarget = { kind: "thread" };
   calls: string[] = [];
+  quotes: (string | undefined)[] = [];
   failReply: { message: string; code: string } | undefined;
   private listeners: (() => void)[] = [];
 
@@ -93,8 +95,9 @@ class FakeHost implements OverlayHost {
   async commentTarget(): Promise<CommentTarget> {
     return this.target;
   }
-  async comment(a: Anchor, body: string) {
+  async comment(a: Anchor, body: string, quote?: string) {
     this.calls.push(`comment ${a.source} ${body}`);
+    this.quotes.push(quote);
     const line = Number(a.source.split(":")[1]?.split("-")[0]);
     const made = thread(`N${++n}`, line, {
       comments: [comment(body, { pending: true, author: { login: "me", avatarUrl: undefined } })],
@@ -378,6 +381,7 @@ describe("the overlay", () => {
     one(".composer button", "Add to review").click();
     await settle();
     expect(host.calls).toContain("comment guide.md:3-3 Is this still true?");
+    expect(host.quotes).toEqual(["Run the installer."]);
     expect(all(".composer")).toHaveLength(0);
     const made = all(".thread").find((el) => el.textContent?.includes("Is this still true?"));
     expect(made?.querySelector(".badge.unsent")?.textContent).toBe("Unsent");
@@ -665,5 +669,21 @@ describe("the overlay", () => {
     await settle();
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(one('[role="status"]').textContent).toBe("Reply added to your review.");
+  });
+});
+
+describe("a block's text, for quoting", () => {
+  it("reads as the page shows it: links as text, a line per item, code as written", () => {
+    const el = document.createElement("div");
+    el.innerHTML = `<p>Welcome to Quill. Start with
+      <a href="Guides/My%20Setup.md">setting up Quill</a>.</p>
+      <ul><li>Linux</li><li>macOS</li></ul>
+      <pre><code>quill init
+  --force</code></pre>
+      <span data-ascribe-overlay><button>2</button></span>
+      <svg aria-hidden="true"><text>icon</text></svg>`;
+    expect(blockText(el)).toBe(
+      "Welcome to Quill. Start with setting up Quill.\nLinux\nmacOS\nquill init\n  --force",
+    );
   });
 });
