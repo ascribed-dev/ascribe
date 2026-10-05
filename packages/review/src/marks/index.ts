@@ -82,6 +82,8 @@ const LABEL_INSIDE = new Set([
   "summary",
   "td",
   "th",
+  // A tab's panel: before it would put the label among the tab list's panels.
+  "ascribe-tab",
 ]);
 
 /** A parsed anchor source: the path, decoded, and the lines. */
@@ -594,7 +596,89 @@ export function markChanges(
         ? -1
         : 1,
   );
+  hintHidden(root, marks);
   return marks;
+}
+
+/**
+ * Says on each tab's label, and on each `<details>`' summary, what's changed
+ * in what they can hide: "new" for a tab that's added, else how many
+ * changes. A tab that isn't selected, or a closed `<details>`, would
+ * otherwise hide its changes until stepped to.
+ */
+function hintHidden(root: HTMLElement, marks: readonly Mark[]): void {
+  const tabs = new Map<HTMLElement, { added: boolean; count: number }>();
+  const summaries = new Map<HTMLElement, number>();
+  for (const { change, element } of marks) {
+    for (let el: HTMLElement | null = element; el && el !== root; el = el.parentElement) {
+      if (el.localName === "ascribe-tab") {
+        const tab = tabs.get(el) ?? { added: false, count: 0 };
+        if (el === element && change.kind === "added") tab.added = true;
+        else tab.count++;
+        tabs.set(el, tab);
+      }
+      const summary = el !== element ? summaryOf(el) : null;
+      if (summary && !summary.contains(element)) {
+        summaries.set(summary, (summaries.get(summary) ?? 0) + 1);
+      }
+    }
+  }
+  const doc = root.ownerDocument;
+  const hint = (kind: "added" | "changed", text: string): HTMLElement => {
+    // A space before it, not only a margin, so the label reads "Linux 1
+    // change" to a screen reader, not "Linux1 change".
+    const el = ui(doc, "span", "ascribe-hint", ` ${text}`);
+    el.setAttribute("data-ascribe-hint", kind);
+    return el;
+  };
+  const watching: MutationObserver[] = [];
+  for (const [tab, { added, count }] of tabs) {
+    const el = added ? hint("added", "new") : hint("changed", plural(count, "change"));
+    const place = (): void => {
+      const button = tabButton(tab);
+      if (button && !button.contains(el)) button.append(el);
+    };
+    place();
+    // `@ascribed/elements` makes the tab list once the page has loaded, and
+    // again when the tabs are put back in the page.
+    const group = tab.parentElement;
+    const Observer = doc.defaultView?.MutationObserver;
+    if (group && Observer) {
+      const observer = new Observer(place);
+      observer.observe(group, { childList: true });
+      watching.push(observer);
+    }
+  }
+  if (watching.length > 0) tabWatchers.set(root, watching);
+  for (const [summary, count] of summaries)
+    summary.append(hint("changed", plural(count, "change")));
+}
+
+/** What waits for each marked page's tab lists, to stop when it's cleared. */
+const tabWatchers = new WeakMap<HTMLElement, MutationObserver[]>();
+
+function plural(count: number, word: string): string {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+/** A `<details>`' own `<summary>`, or null when `element` isn't one. */
+function summaryOf(element: Element): HTMLElement | null {
+  if (element.localName !== "details") return null;
+  return element.querySelector<HTMLElement>(":scope > summary");
+}
+
+/**
+ * The button that selects an `<ascribe-tab>`, in its group's tab list, or
+ * null before `@ascribed/elements` has made the list.
+ */
+export function tabButton(tab: Element): HTMLButtonElement | null {
+  const group = tab.parentElement;
+  if (tab.localName !== "ascribe-tab" || !group) return null;
+  const tabs = Array.from(group.children).filter((c) => c.localName === "ascribe-tab");
+  const buttons = group.querySelectorAll<HTMLButtonElement>(
+    ':scope > [role="tablist"] > [role="tab"]',
+  );
+  return buttons[tabs.indexOf(tab)] ?? null;
 }
 
 /** "paragraph", "heading", "list", or "block". */
@@ -611,6 +695,8 @@ function blockWord(element: Element): string {
 
 /** Removes every mark from the page in `root`. */
 export function clearMarks(root: HTMLElement): void {
+  for (const observer of tabWatchers.get(root) ?? []) observer.disconnect();
+  tabWatchers.delete(root);
   for (const el of Array.from(root.querySelectorAll("[data-ascribe-ui]"))) {
     if (el.localName === "ins") el.replaceWith(...Array.from(el.childNodes));
     else el.remove();
@@ -639,17 +725,7 @@ export function setShow(root: HTMLElement, show: Show): void {
 export function reveal(element: HTMLElement): void {
   for (let el: HTMLElement | null = element; el; el = el.parentElement) {
     if (el instanceof HTMLDetailsElement && !el.open) el.open = true;
-    const group: HTMLElement | null = el.parentElement;
-    if (el.localName === "ascribe-tab" && el.hidden && group) {
-      const tabs: Element[] = Array.from(group.children).filter(
-        (c) => c.localName === "ascribe-tab",
-      );
-      const index = tabs.indexOf(el);
-      const buttons = group.querySelectorAll<HTMLButtonElement>(
-        ':scope > [role="tablist"] > [role="tab"]',
-      );
-      buttons[index]?.click();
-    }
+    if (el.localName === "ascribe-tab" && el.hidden) tabButton(el)?.click();
   }
 }
 

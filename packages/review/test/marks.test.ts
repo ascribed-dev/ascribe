@@ -327,6 +327,69 @@ describe("markChanges", () => {
   });
 });
 
+describe("hints on what hides changes", () => {
+  const TABS = `
+<ascribe-tabs data-ascribe-source="guide.md:1-9">
+<div role="tablist"><button role="tab">npm</button><button role="tab">pnpm</button><button role="tab">yarn</button></div>
+<ascribe-tab label="npm" data-ascribe-source="guide.md:1-3"><p data-ascribe-source="guide.md:2-2">npm i</p></ascribe-tab>
+<ascribe-tab label="pnpm" hidden data-ascribe-source="guide.md:4-6"><p data-ascribe-source="guide.md:5-5">pnpm add</p></ascribe-tab>
+<ascribe-tab label="yarn" hidden data-ascribe-source="guide.md:7-9"><p data-ascribe-source="guide.md:8-8">yarn add</p></ascribe-tab>
+</ascribe-tabs>
+<details data-ascribe-source="guide.md:11-15"><summary>Why?</summary>
+<p data-ascribe-source="guide.md:12-12">One.</p>
+<p data-ascribe-source="guide.md:14-14">Two.</p>
+</details>`;
+
+  it("says on a tab's label and a summary what changed inside", () => {
+    const root = page(TABS);
+    markChanges(root, [
+      { kind: "changed", now: a("guide.md:5-5"), was: a("guide.md:5-5") },
+      { kind: "added", now: a("guide.md:7-9") },
+      { kind: "added", now: a("guide.md:12-12") },
+      { kind: "changed", now: a("guide.md:14-14"), was: a("guide.md:13-13") },
+    ]);
+    const buttons = root.querySelectorAll('[role="tab"]');
+    const hint = (el: Element | null | undefined): string | undefined =>
+      el?.querySelector(".ascribe-hint")?.textContent?.trim() ?? undefined;
+    expect(hint(buttons[0])).toBeUndefined();
+    expect(hint(buttons[1])).toBe("1 change");
+    expect(hint(buttons[2])).toBe("new");
+    // The label reads with a space before its hint, for screen readers.
+    expect(buttons[1]?.textContent).toBe("pnpm 1 change");
+    expect(buttons[2]?.querySelector(".ascribe-hint")?.getAttribute("data-ascribe-hint")).toBe(
+      "added",
+    );
+    expect(hint(root.querySelector("summary"))).toBe("2 changes");
+    // An added tab's label is in its panel, not among the group's panels.
+    expect(findBlock(root, a("guide.md:7-9"))?.firstElementChild?.textContent).toBe("Added");
+    // Not part of the blocks' text, and cleared with the marks.
+    expect(blockText(findBlock(root, a("guide.md:11-15")) as HTMLElement)).toBe("Why?\nOne.\nTwo.");
+    clearMarks(root);
+    expect(root.querySelector(".ascribe-hint")).toBeNull();
+  });
+
+  it("waits for a tab list made after the marks, and stops when they're cleared", async () => {
+    const list = /<div role="tablist">.*<\/div>/.exec(TABS)?.[0] ?? "";
+    const root = page(TABS.replace(list, ""));
+    markChanges(root, [{ kind: "added", now: a("guide.md:7-9") }]);
+    expect(root.querySelector(".ascribe-hint")).toBeNull();
+    const group = root.querySelector("ascribe-tabs") as HTMLElement;
+    group.insertAdjacentHTML("afterbegin", list);
+    await Promise.resolve();
+    expect(root.querySelectorAll('[role="tab"]')[2]?.textContent).toBe("yarn new");
+    // Made again, as when the tabs are put back in the page.
+    group.querySelector('[role="tablist"]')?.remove();
+    group.insertAdjacentHTML("afterbegin", list);
+    await Promise.resolve();
+    expect(root.querySelectorAll('[role="tab"]')[2]?.textContent).toBe("yarn new");
+    clearMarks(root);
+    group.querySelector('[role="tablist"]')?.remove();
+    group.insertAdjacentHTML("afterbegin", list);
+    await Promise.resolve();
+    expect(root.querySelector(".ascribe-hint")).toBeNull();
+  });
+});
+
 describe("a marked block's text, for quoting", () => {
   it("leaves out the marks' labels and removed words, and keeps inserted ones", () => {
     const root = page(NOW);

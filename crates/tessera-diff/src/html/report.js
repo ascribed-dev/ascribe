@@ -184,7 +184,9 @@
     "dd",
     "summary",
     "td",
-    "th"
+    "th",
+    // A tab's panel: before it would put the label among the tab list's panels.
+    "ascribe-tab"
   ]);
   function parseSource(source) {
     const colon = source.lastIndexOf(":");
@@ -586,7 +588,68 @@
     marks.sort(
       (a, b) => a.element === b.element ? 0 : a.element.compareDocumentPosition(b.element) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
     );
+    hintHidden(root, marks);
     return marks;
+  }
+  function hintHidden(root, marks) {
+    const tabs = /* @__PURE__ */ new Map();
+    const summaries = /* @__PURE__ */ new Map();
+    for (const { change, element } of marks) {
+      for (let el = element; el && el !== root; el = el.parentElement) {
+        if (el.localName === "ascribe-tab") {
+          const tab = tabs.get(el) ?? { added: false, count: 0 };
+          if (el === element && change.kind === "added") tab.added = true;
+          else tab.count++;
+          tabs.set(el, tab);
+        }
+        const summary = el !== element ? summaryOf(el) : null;
+        if (summary && !summary.contains(element)) {
+          summaries.set(summary, (summaries.get(summary) ?? 0) + 1);
+        }
+      }
+    }
+    const doc = root.ownerDocument;
+    const hint = (kind, text) => {
+      const el = ui(doc, "span", "ascribe-hint", ` ${text}`);
+      el.setAttribute("data-ascribe-hint", kind);
+      return el;
+    };
+    const watching = [];
+    for (const [tab, { added, count }] of tabs) {
+      const el = added ? hint("added", "new") : hint("changed", plural(count, "change"));
+      const place = () => {
+        const button2 = tabButton(tab);
+        if (button2 && !button2.contains(el)) button2.append(el);
+      };
+      place();
+      const group = tab.parentElement;
+      const Observer = doc.defaultView?.MutationObserver;
+      if (group && Observer) {
+        const observer = new Observer(place);
+        observer.observe(group, { childList: true });
+        watching.push(observer);
+      }
+    }
+    if (watching.length > 0) tabWatchers.set(root, watching);
+    for (const [summary, count] of summaries)
+      summary.append(hint("changed", plural(count, "change")));
+  }
+  var tabWatchers = /* @__PURE__ */ new WeakMap();
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+  function summaryOf(element) {
+    if (element.localName !== "details") return null;
+    return element.querySelector(":scope > summary");
+  }
+  function tabButton(tab) {
+    const group = tab.parentElement;
+    if (tab.localName !== "ascribe-tab" || !group) return null;
+    const tabs = Array.from(group.children).filter((c) => c.localName === "ascribe-tab");
+    const buttons = group.querySelectorAll(
+      ':scope > [role="tablist"] > [role="tab"]'
+    );
+    return buttons[tabs.indexOf(tab)] ?? null;
   }
   function blockWord(element) {
     const name = element.localName;
@@ -599,6 +662,8 @@
     return "block";
   }
   function clearMarks(root) {
+    for (const observer of tabWatchers.get(root) ?? []) observer.disconnect();
+    tabWatchers.delete(root);
     for (const el of Array.from(root.querySelectorAll("[data-ascribe-ui]"))) {
       if (el.localName === "ins") el.replaceWith(...Array.from(el.childNodes));
       else el.remove();
@@ -620,17 +685,7 @@
   function reveal(element) {
     for (let el = element; el; el = el.parentElement) {
       if (el instanceof HTMLDetailsElement && !el.open) el.open = true;
-      const group = el.parentElement;
-      if (el.localName === "ascribe-tab" && el.hidden && group) {
-        const tabs = Array.from(group.children).filter(
-          (c) => c.localName === "ascribe-tab"
-        );
-        const index = tabs.indexOf(el);
-        const buttons = group.querySelectorAll(
-          ':scope > [role="tablist"] > [role="tab"]'
-        );
-        buttons[index]?.click();
-      }
+      if (el.localName === "ascribe-tab" && el.hidden) tabButton(el)?.click();
     }
   }
   function goTo(element) {
@@ -1074,11 +1129,12 @@
         }
       } else {
         article.append(pageFragment(data2, page.now ?? ""));
+        main.append(article);
         const was = page.was === null ? null : pageFragment(data2, page.was);
         marks = markChanges(article, page.changes, { was });
         setShow(article, state.show);
       }
-      main.append(article);
+      if (article.parentNode !== main) main.append(article);
       stopSources = showSources(article);
       renderControls();
     };

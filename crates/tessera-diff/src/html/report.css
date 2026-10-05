@@ -460,6 +460,27 @@ ascribe-group {
   color: var(--ascribe-review-moved);
 }
 
+/* On a tab's label and a <details>' summary: what's changed inside. */
+.ascribe-hint {
+  display: none;
+  margin-inline-start: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  font-style: normal;
+}
+
+[data-ascribe-show="changes"] .ascribe-hint {
+  display: inline;
+}
+
+.ascribe-hint[data-ascribe-hint="added"] {
+  color: var(--ascribe-review-added);
+}
+
+.ascribe-hint[data-ascribe-hint="changed"] {
+  color: var(--ascribe-review-changed);
+}
+
 /* Words inside a changed block. */
 .ascribe-ins {
   text-decoration: none;

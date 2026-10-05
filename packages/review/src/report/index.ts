@@ -521,11 +521,14 @@ export function start(root: HTMLElement, data: ReportData): void {
       }
     } else {
       article.append(pageFragment(data, page.now ?? ""));
+      // In the document first, so its tabs have the labels the marks hint on.
+      main.append(article);
       const was = page.was === null ? null : pageFragment(data, page.was);
       marks = markChanges(article, page.changes, { was });
       setShow(article, state.show);
     }
-    main.append(article);
+    // Moving it again would rebuild its tabs, without the hints.
+    if (article.parentNode !== main) main.append(article);
     stopSources = showSources(article);
     renderControls();
   };

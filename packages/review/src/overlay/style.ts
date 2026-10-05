@@ -186,6 +186,13 @@ svg.connector path {
   color: var(--accent);
   white-space: nowrap;
 }
+.hint-count {
+  margin-inline-start: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .marker {
   border: 1px solid var(--accent);
   background: var(--surface);

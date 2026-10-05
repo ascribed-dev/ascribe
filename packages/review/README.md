@@ -28,7 +28,7 @@ setShow(page, "changes"); // or "will" (the page as it will be), or "was"
 showSources(page); // each block's source file and lines, on hover
 ```
 
-Each changed block gets a label (Added, Changed, Removed, Moved) and a bar in the margin whose color and style differ by kind. Inside a changed block, the words added are in `<ins>` and the words removed in `<del>`. A removed block is shown where it was, collapsed to one line with **Show**, copied from the page as it was (or from the change's text without it). A moved block links to a stub at its old place, and the stub back to it. `markChanges` returns the marks in page order, for stepping through them with `goTo`. `clearMarks` removes them all.
+Each changed block gets a label (Added, Changed, Removed, Moved) and a bar in the margin whose color and style differ by kind. Inside a changed block, the words added are in `<ins>` and the words removed in `<del>`. A removed block is shown where it was, collapsed to one line with **Show**, copied from the page as it was (or from the change's text without it). A moved block links to a stub at its old place, and the stub back to it. A tab's label and a `<details>`' summary say what's changed in what they can hide: "new" for an added tab, else how many changes. `markChanges` returns the marks in page order, for stepping through them with `goTo`. `clearMarks` removes them all.
 
 The blocks are found by their anchors: the element with exactly a change's anchor, or, when there's none (a paragraph in a tight list item has no element of its own), the smallest anchored element with the same file and includes whose lines contain it.
 
