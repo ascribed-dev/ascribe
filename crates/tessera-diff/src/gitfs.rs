@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, PoisonError};
 
 use tessera_core::{FileId, RelPath};
 use tessera_model::ContentModel;
@@ -22,7 +22,8 @@ pub const MODEL_FILE: &str = "ascribe.toml";
 ///
 /// Every source file is read when it's made, through one `git cat-file
 /// --batch`. Other files (images, downloads) are only listed: a probe needs
-/// to know they exist, not what they hold. A symbolic link is listed as a
+/// to know they exist, not what they hold. A code file a snippet reads is
+/// read when it's first asked for, and kept. A symbolic link is listed as a
 /// file but never followed, so a source file that's a link isn't a source.
 #[derive(Clone, Debug)]
 pub struct GitFs {
@@ -40,6 +41,10 @@ pub struct GitFs {
     /// Every file's path from the repository's root, lowercased, to its
     /// real spelling, for the case-mismatch probe.
     folded: HashMap<String, RelPath>,
+    /// The repository, for reading code files.
+    repo: Repository,
+    /// The code files read so far, by blob.
+    code: Arc<Mutex<HashMap<String, Vec<u8>>>>,
 }
 
 /// A project read at a revision: its content model, as text and loaded, and
@@ -64,8 +69,11 @@ impl Revision {
     /// content model doesn't load, and
     /// [`DiffError::Git`] when git fails.
     pub fn read(repo: &Repository, commit: &str) -> Result<Option<Revision>, DiffError> {
-        let tree = Arc::new(repo.tree(commit)?);
+        // The project's folder first, which holds the content model; then
+        // whatever else the model says the project reads. Not the whole
+        // repository, which can be much larger.
         let project_dir = repo.project_dir();
+        let mut tree = repo.tree_in(commit, std::slice::from_ref(&project_dir))?;
         let model_path = project_dir
             .join(MODEL_FILE)
             .map_err(|e| DiffError::Path(e.to_string()))?;
@@ -87,7 +95,14 @@ impl Revision {
             }
         })?;
         let layout = Layout::from_model(&model);
-        let fs = GitFs::read(repo, tree, &layout)?;
+        let more: Vec<RelPath> = listed(&project_dir, &layout, &model)
+            .into_iter()
+            .filter(|p| !p.starts_with(&project_dir))
+            .collect();
+        if !more.is_empty() {
+            tree.files.extend(repo.tree_in(commit, &more)?.files);
+        }
+        let fs = GitFs::read(repo, Arc::new(tree), &layout)?;
         Ok(Some(Revision {
             model_text,
             model: Arc::new(model),
@@ -132,6 +147,8 @@ impl GitFs {
             contents: BTreeMap::new(),
             sources: Sources::default(),
             folded: HashMap::new(),
+            repo: repo.clone(),
+            code: Arc::default(),
         };
         fs.folded = fs
             .tree
@@ -211,6 +228,37 @@ impl GitFs {
     }
 }
 
+/// The folders, from the repository's root, that a project at `project_dir`
+/// reads: its own, its content root's, and, for each source, the part of its
+/// folder its `include` patterns can reach (the patterns' segments before
+/// the first wildcard). One outside the repository is left out: nothing
+/// there can be read.
+fn listed(project_dir: &RelPath, layout: &Layout, model: &ContentModel) -> Vec<RelPath> {
+    let mut out = vec![project_dir.clone()];
+    out.extend(project_dir.join(layout.content_root.as_str()).ok());
+    for source in &model.sources {
+        let Ok(folder) = project_dir.join(&source.path) else {
+            continue;
+        };
+        if source.include.is_empty() {
+            out.push(folder);
+            continue;
+        }
+        for pattern in &source.include {
+            let fixed: Vec<&str> = pattern
+                .as_str()
+                .split('/')
+                .take_while(|s| !s.contains(['*', '?', '[', '{']))
+                .collect();
+            out.extend(folder.join(&fixed.join("/")).ok());
+        }
+    }
+    out.retain(RelPath::is_inside);
+    out.sort();
+    out.dedup();
+    out
+}
+
 /// `path` relative to `dir`, when it's `dir` or inside it.
 fn relative_to(path: &RelPath, dir: &RelPath) -> Option<RelPath> {
     if !path.starts_with(dir) {
@@ -262,5 +310,34 @@ impl FileSystem for GitFs {
             Ok(p) => Probe::CaseMismatch(p),
             Err(_) => Probe::Missing,
         }
+    }
+
+    fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>> {
+        let missing = || io::Error::new(io::ErrorKind::NotFound, "no such file");
+        let path = self
+            .project_dir
+            .join(project_path.as_str())
+            .map_err(|_| missing())?;
+        if !path.is_inside() {
+            return Err(missing());
+        }
+        let entry = self
+            .tree
+            .files
+            .get(&path)
+            .filter(|e| !e.symlink)
+            .ok_or_else(missing)?;
+        let mut code = self.code.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(bytes) = code.get(&entry.object) {
+            return Ok(bytes.clone());
+        }
+        let bytes = self
+            .repo
+            .read_blobs(&[entry.object.as_str()])
+            .map_err(|e| io::Error::other(e.to_string()))?
+            .pop()
+            .unwrap_or_default();
+        code.insert(entry.object.clone(), bytes.clone());
+        Ok(bytes)
     }
 }

@@ -251,7 +251,7 @@ Each page:
 | `route` | string | Its route; for a removed page, the route it had |
 | `status` | string | `"added"` (the build publishes it now and didn't), `"removed"`, or `"changed"` |
 | `own_file_changed` | boolean | Whether the page's own file changed, or exists on one side only |
-| `because` | array of strings | The other changed files its change comes from, relative to the content root: fragments it includes, and pages its links take their text or a heading id from (a link to a page that changed otherwise isn't a cause). `ascribe.toml` comes last when a change to the content model (a phrase's value, a label, a build's settings) is a cause. |
+| `because` | array of strings | The other changed files its change comes from, relative to the content root: fragments it includes, and pages its links take their text or a heading id from (a link to a page that changed otherwise isn't a cause). Then the [snippets](directives.md#snippet) whose code changed, by address (`code:service/client.py#connect`). `ascribe.toml` comes last when a change to the content model (a phrase's value, a label, a build's settings) is a cause. |
 | `page_changed` | array of strings | What changed about the page as a whole, besides its blocks: `"title"`, `"frontmatter"` (fields other than `title` and `available`), `"availability"` (the page-level availability, as shown), and `"route"`, in that order. Empty for an added or removed page. |
 | `counts` | object | `changed`, `added`, `removed`, and `moved`: how many changes of each kind |
 | `changes` | array | The block changes, in the page's order, each removed block where it was. Empty for an added or removed page, and for a page whose only changes are in `page_changed`. |

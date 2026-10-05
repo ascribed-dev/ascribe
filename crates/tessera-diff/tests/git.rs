@@ -132,8 +132,52 @@ fn a_project_in_a_subfolder() {
         Probe::CaseMismatch(rel("docs/img/Logo.png"))
     );
     assert_eq!(revision.fs.probe(&rel("docs/img/none.png")), Probe::Missing);
-    assert_eq!(revision.fs.probe(&rel("../README.md")), Probe::File);
+    // Only the project's folder is listed: nothing outside it can be read.
+    assert_eq!(revision.fs.probe(&rel("../README.md")), Probe::Missing);
     assert_eq!(revision.fs.probe(&rel("../../outside.md")), Probe::Missing);
+}
+
+#[test]
+fn a_snippet_reads_its_code_at_the_revision_through_its_source() {
+    let repo = Repo::new();
+    let model = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n\
+                 [sources.code]\npath = \"..\"\ninclude = [\"service/src/**/*.py\"]\n\
+                 [builds.site]\n";
+    repo.write("site/ascribe.toml", model);
+    repo.write(
+        "site/docs/index.md",
+        "# Home\n\n@snippet: code:service/src/app.py#main\n",
+    );
+    let code = |body: &str| format!("# :snippet-start: main\n{body}\n# :snippet-end:\n");
+    repo.write("service/src/app.py", &code("main()"));
+    repo.write("service/README.md", "# Service\n");
+    repo.write("other/big.txt", "unrelated\n");
+    let commit = repo.commit("first");
+    // The working tree moves on; the revision doesn't.
+    repo.write("service/src/app.py", &code("main(2)"));
+
+    let dir = repo.path("site");
+    let revision = read_at(&dir, &commit);
+    // The source's folder is listed as far as its `include` reaches, and
+    // nothing else outside the project.
+    assert_eq!(
+        revision.fs.probe(&rel("../service/src/app.py")),
+        Probe::File
+    );
+    assert_eq!(
+        revision.fs.probe(&rel("../service/README.md")),
+        Probe::Missing
+    );
+    assert_eq!(revision.fs.probe(&rel("../other/big.txt")), Probe::Missing);
+    let project = revision.project();
+    let page = project.expand(&rel("index.md")).expect("the page");
+    let mut code_found = Vec::new();
+    page.visit(&mut |block| {
+        if let Some(snippet) = &block.snippet {
+            code_found.push(snippet.code.clone());
+        }
+    });
+    assert_eq!(code_found, ["main()\n"]);
 }
 
 #[test]

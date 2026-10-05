@@ -303,6 +303,66 @@ fn a_page_changed_only_through_a_fragment_names_it() {
     assert_eq!(now.via, ["install.md:5"]);
 }
 
+/// A version whose `code/` folder is a source, with these code files (paths
+/// from the project root) beside its pages.
+fn with_code(pages: &[(&str, &str)], code: &[(&str, &str)]) -> Version {
+    let model = format!("{MODEL}[sources.code]\npath = \"code\"\n");
+    let loaded = tessera_model::load_str(&model, FileId::new(0)).expect("a valid model");
+    let layout = Layout::from_model(&loaded);
+    let mut fs = MemoryFs::new(&layout);
+    for (path, text) in pages {
+        fs = fs.with_source(path, text);
+    }
+    for (path, text) in code {
+        fs = fs.with_file(path, text);
+    }
+    Version {
+        model,
+        project: Project::load(Arc::new(loaded), layout, &fs),
+    }
+}
+
+#[test]
+fn a_page_changed_only_through_a_snippet_names_its_address() {
+    let page_text = "# Run\n\n@snippet: code:app.py#main\n\nThen go on.\n";
+    let code = |body: &str| {
+        format!("import os\n# :snippet-start: main\n{body}\n# :snippet-end:\nrest()\n")
+    };
+    let a = with_code(
+        &[("run.md", page_text)],
+        &[("code/app.py", &code("connect(host, port)\nmain(verbose)"))],
+    );
+    // A change outside the region changes nothing.
+    let same = with_code(
+        &[("run.md", page_text)],
+        &[(
+            "code/app.py",
+            &code("connect(host, port)\nmain(verbose)").replace("rest()", "other()"),
+        )],
+    );
+    assert!(diff(&a, &same)[0].pages.is_empty());
+    let b = with_code(
+        &[("run.md", page_text)],
+        &[("code/app.py", &code("connect(host, port)\nmain(quiet)"))],
+    );
+    let page = page(&a, &b);
+    assert!(!page.own_file_changed);
+    assert_eq!(page.because, ["code:app.py#main"]);
+    let change = only_change(&page);
+    assert_eq!(change.kind, ChangeKind::Changed);
+    assert_eq!(change.now.as_ref().unwrap().source, "run.md:3-3");
+}
+
+#[test]
+fn a_snippet_added_to_a_page_is_the_pages_own_change() {
+    let code = [("code/app.py", "main()\n")];
+    let a = with_code(&[("run.md", "# Run\n")], &code);
+    let b = with_code(&[("run.md", "# Run\n\n@snippet: code:app.py\n")], &code);
+    let page = page(&a, &b);
+    assert!(page.own_file_changed);
+    assert!(page.because.is_empty(), "{:?}", page.because);
+}
+
 #[test]
 fn a_page_changed_only_through_a_phrase_names_the_model() {
     let text = "# About\n\nWelcome to {product}.\n";

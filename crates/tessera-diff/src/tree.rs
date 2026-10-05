@@ -61,6 +61,9 @@ pub(crate) struct Node {
     /// written: a phrase, a glossary link, an availability label, or an
     /// arm's label.
     pub uses_model: bool,
+    /// For a code block a `@snippet` became, its address and a fingerprint
+    /// of its code.
+    pub snippet: Option<(String, u64)>,
 }
 
 impl Node {
@@ -215,7 +218,14 @@ impl<'p> TreeBuilder<'p> {
                 files.push(page.clone());
             }
         }
-        let mut uses_model = !block.substitutions.is_empty() || !block.glossary.is_empty();
+        // A snippet's substituted phrases aren't listed (they're in the code
+        // file), so one that opts in to phrases is taken to use the model.
+        let snippet_phrases = block
+            .snippet
+            .as_ref()
+            .is_some_and(|s| s.info.split_whitespace().any(|w| w == "phrases=true"));
+        let mut uses_model =
+            !block.substitutions.is_empty() || !block.glossary.is_empty() || snippet_phrases;
         let mut own = String::new();
         let mut text = String::new();
         let mut prose = false;
@@ -379,6 +389,11 @@ impl<'p> TreeBuilder<'p> {
             hash,
             files,
             uses_model,
+            snippet: block.snippet.as_ref().map(|s| {
+                let mut hasher = DefaultHasher::new();
+                lf(&s.code).hash(&mut hasher);
+                (s.address.clone(), hasher.finish())
+            }),
         }
     }
 
@@ -404,6 +419,7 @@ impl<'p> TreeBuilder<'p> {
             hash,
             files: self.files_of(parent.file, &parent.via),
             uses_model: false,
+            snippet: None,
         }
     }
 

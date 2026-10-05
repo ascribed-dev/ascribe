@@ -45,10 +45,11 @@ pub struct PageDiff {
     pub status: PageStatus,
     /// Whether the page's own file changed (or exists on one side only).
     pub own_file_changed: bool,
-    /// The other changed files the page's change can come from, in path
-    /// order: fragments it includes, pages its links take a title or a
-    /// heading from, and `ascribe.toml` (last) when the content model is a
-    /// cause.
+    /// The other changed files the page's change can come from: fragments it
+    /// includes and pages its links take a title or a heading from, in path
+    /// order; then the snippets whose code changed, by address
+    /// (`code:app.py#main`); and `ascribe.toml` (last) when the content model
+    /// is a cause.
     pub because: Vec<String>,
     /// What changed about the page itself besides its blocks, in this
     /// order: `title`, `frontmatter`, `availability` (the page-level one),
@@ -363,6 +364,9 @@ fn compare_page(
         .filter(|p| *p != path && changed.files.contains(*p))
         .map(ToString::to_string)
         .collect();
+    // A snippet whose code differs: named by its address, as a fragment is
+    // by its path.
+    because.extend(changed_snippets(&was_tree, &now_tree));
     if changed.model && (model_shaped || (because.is_empty() && !own_file_changed)) {
         because.push(MODEL_FILE.to_owned());
     }
@@ -391,6 +395,29 @@ fn compare_page(
         counts,
         changes,
     })
+}
+
+/// The addresses of the snippets on both versions of a page whose code
+/// differs between them, in order. A snippet only one version has was added
+/// or removed in the page itself, which the page's own file says.
+fn changed_snippets(was: &PageTree, now: &PageTree) -> Vec<String> {
+    let snippets = |tree: &PageTree| {
+        let mut out: BTreeMap<String, BTreeSet<u64>> = BTreeMap::new();
+        for node in &tree.nodes {
+            node.visit(&mut |n| {
+                if let Some((address, hash)) = &n.snippet {
+                    out.entry(address.clone()).or_default().insert(*hash);
+                }
+            });
+        }
+        out
+    };
+    let was = snippets(was);
+    snippets(now)
+        .into_iter()
+        .filter(|(address, hashes)| was.get(address).is_some_and(|w| w != hashes))
+        .map(|(address, _)| address)
+        .collect()
 }
 
 fn to_change(found: Found<'_>) -> Change {

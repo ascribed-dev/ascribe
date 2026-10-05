@@ -175,7 +175,23 @@ impl Repository {
     ///
     /// [`DiffError::Git`] when the tree can't be listed.
     pub fn tree(&self, commit: &str) -> Result<Tree, DiffError> {
-        let out = self.run(&["ls-tree", "-r", "-z", "--full-tree", commit])?;
+        self.tree_in(commit, &[])
+    }
+
+    /// The files of a commit's tree in these folders (or these files), by
+    /// path from the repository's root; every file when `paths` is empty or
+    /// holds the root.
+    ///
+    /// # Errors
+    ///
+    /// [`DiffError::Git`] when the tree can't be listed.
+    pub fn tree_in(&self, commit: &str, paths: &[RelPath]) -> Result<Tree, DiffError> {
+        let mut args = vec!["ls-tree", "-r", "-z", "--full-tree", commit];
+        if !paths.iter().any(RelPath::is_root) && !paths.is_empty() {
+            args.push("--");
+            args.extend(paths.iter().map(RelPath::as_str));
+        }
+        let out = self.run(&args)?;
         let mut files = BTreeMap::new();
         for entry in out.split(|b| *b == 0) {
             // `<mode> SP <type> SP <object> TAB <path>`
