@@ -131,16 +131,22 @@ jobs:
       - run: node scripts/release/publish.ts npm --tag next-pending
       - run: node scripts/release/publish.ts tag next
 
-  # Tells the docs site to rebuild with the new canary. Skipped until the site's
-  # build hook is stored as the SITE_BUILD_HOOK secret.
+  # Tells Netlify to rebuild the docs site, which installs the canary `next`
+  # now names (site/netlify.toml). The site's build hook is the SITE_BUILD_HOOK
+  # secret; without it, this says so and passes. A night that published
+  # nothing rebuilds nothing.
   site:
     name: rebuild the docs site
-    needs: npm
+    needs: [version, npm]
     runs-on: ubuntu-latest
     env:
       SITE_BUILD_HOOK: ${{ secrets.SITE_BUILD_HOOK }}
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
       - if: env.SITE_BUILD_HOOK == ''
         run: echo "::notice::No SITE_BUILD_HOOK secret; the site isn't told to rebuild."
+      # The title names the canary in the site's list of deploys.
       - if: env.SITE_BUILD_HOOK != ''
-        run: curl --fail --silent --show-error --request POST --data '{}' "$SITE_BUILD_HOOK"
+        run: >
+          curl --fail --silent --show-error --request POST --data '{}'
+          "$SITE_BUILD_HOOK?trigger_title=canary+$VERSION"
