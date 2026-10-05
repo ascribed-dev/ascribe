@@ -5,29 +5,19 @@ description: "The ascribe check, build, diff, fmt, and lsp commands: their optio
 
 The `ascribe` command checks, builds, and formats an Ascribe project, and runs the language server the editor uses.
 
-```text
-ascribe check [--build <NAME>]... [--format text|json] [--deny-warnings]
-ascribe build [--build <NAME>]... [--emit site,plain,json] [--format text|json]
-ascribe diff  [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html] [--exit-code]
-ascribe fmt   [--check] [PATHS]...
-ascribe lsp
-ascribe --version
-```
+@include: ../_generated/cli-synopsis.md
 
 Install it in a project with `npm install --save-dev @ascribed/cli` (see [Getting started](../getting-started.md#install-the-command)) and run it with `npx ascribe`, or from a script in `package.json`.
 
 ## Options every command accepts
 
-- `--config <PATH>`: the content model, `ascribe.toml`. A directory means the `ascribe.toml` in it. By default, the nearest `ascribe.toml` in the current directory or a parent, so the commands work from anywhere inside a project.
-- `--color <auto|always|never>`: color for text output. `auto` colors a terminal unless `NO_COLOR` is set.
+@include: ../_generated/cli-global-options.md
 
 ## `ascribe check`
 
 Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. The editor and `ascribe build` run the same checks, so they report the same diagnostics.
 
-- `--build <NAME>` checks only that build. Repeat it for several. An unknown build name is exit code 2, and the message lists the builds.
-- `--format json` writes one JSON document instead of text (see [JSON output](#json-output)).
-- `--deny-warnings` makes warnings fail the command too, for CI.
+@include: ../_generated/cli-check-options.md
 
 How diagnostics are reported:
 
@@ -139,11 +129,10 @@ A position is `{line, column, offset}`: `line` and `column` start at 1, `column`
 
 Checks the project, then writes each build's outputs. The checks run first, exactly as `ascribe check` runs them, and print what it prints. **If any check finds an error, nothing is written, for any build.**
 
-- `--build <NAME>` builds only that build. Repeat it for several. By default, every build in `ascribe.toml`.
-- `--emit <OUTPUTS>`: any of `site`, `plain`, and `json`, separated by commas. All three by default.
-- `--format text|json`: how the checks' results are shown, as for `ascribe check`.
-- @available: next
-  `--anchors` marks each block of the site output with the source file and lines it came from, for review: an `<!--ascribe-anchor …-->` comment before each Markdown block, and `data-ascribe-source` (with `data-ascribe-via` for a block from a fragment) on each element Ascribe writes. The Astro integration turns them into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)). The site output's manifest records `"anchors": true`. Without it, the output has no anchors. The other outputs are the same either way.
+@include: ../_generated/cli-build-options.md
+
+@available: next
+The Astro integration turns the source anchors that `--anchors` writes into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)).
 
 Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error.
 
@@ -175,12 +164,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 
 Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, phrase, or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
 
-- `--base <REV>`: the revision to compare with, anything git accepts (a branch, a tag, a commit). By default, the repository's default branch, the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists. The comparison starts from the **merge base** of that revision and `HEAD`, as a pull request shows its changes, so commits made on the base branch since you branched aren't listed. A shallow clone (what `actions/checkout` makes by default) may not have the merge base: fetch more history (`fetch-depth: 0`) or use `--base-exact`.
-- `--base-exact` compares with the revision itself instead of the merge base.
-- `--build <NAME>` compares only that build. Repeat it for several. By default, every build in `ascribe.toml`.
-- `--format json` writes one JSON document instead of text (see [Diff JSON](#diff-json)).
-- `--format html` writes one self-contained HTML file that shows every changed page rendered, with its changes marked (see [The HTML report](#the-html-report)).
-- `--exit-code` exits with `1` when anything changed, as `git diff --exit-code` does.
+@include: ../_generated/cli-diff-options.md
 
 The other side is the working tree: the files on disk, committed or not, as `ascribe build` would read them now. Unsaved editor changes aren't included. The base is read from git, `ascribe.toml` included, so a change to the content model is compared too; if the project didn't exist at the base, every page is added. `ascribe diff` needs `git` on the path, and nothing else: no network and no GitHub account.
 
@@ -315,9 +299,9 @@ How blocks are matched: blocks are compared by their content without positions, 
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](directives.md#canonical-form).
 
-- With no paths, it formats every `.md` file under the content root. Given files or directories, it formats the `.md` files among them. Directories whose names start with `.`, `node_modules`, and directories inside the searched ones that hold an `ascribe.toml` other than the project's own (another project, formatted under its own model) are skipped.
-- It lists each file it changed.
-- `--check` changes nothing, and lists each file that would change. Use it in CI.
+It lists each file it changed.
+
+@include: ../_generated/cli-fmt-options.md
 
 | Code | Meaning |
 |---|---|

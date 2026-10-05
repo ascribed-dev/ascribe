@@ -423,7 +423,7 @@ labels = { macos = "macOS" }  # :remove:
 - A tag counts only in a line comment: `//` (C, Go, Java, JavaScript, Rust, TypeScript, and others), `#` (Python, Ruby, shell, TOML, YAML, and others), `--` (Lua, SQL, Haskell, Elm), `;` (INI, Lisp), or `<!-- -->` (HTML, XML, Markdown). A file whose extension isn't in the [table in the spec]({repo}/blob/main/SPEC.md#48-snippet) can be used whole, but not by region.
 - Bluehawk's other tags (`state`, `replace`, `uncomment`, and `emphasize`) are reserved. A file that uses one can't be used by a snippet yet, so its code is never shown with a tag left in.
 
-Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See the [diagnostics reference](diagnostics.md#snippet).
+Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See [Source files](diagnostics.md#source-files) in the diagnostics reference.
 
 ## Project widgets
 

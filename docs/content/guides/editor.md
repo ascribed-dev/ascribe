@@ -174,33 +174,13 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 
 <!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (issue #82 in this repository). -->
 
-| Setting | Default | What it does |
-|---|---|---|
-| `ascribe.path` | empty | The `ascribe` binary to run, for every project. When empty, each project's own, then the included one. Changing it restarts the servers that have started. |
-| `ascribe.startServers` | `onDemand` | When each project's language server starts: `onDemand`, the first time one of its files is opened, or `all`, when the workspace opens. See [When servers start](#when-servers-start). |
-| `ascribe.formatOnSave` | `false` | Format Ascribe constructs when saving. |
-| `ascribe.preview.scrollPreviewWithEditor` | `true` | Scroll the preview with the editor and to the block the cursor moves to. |
-| `ascribe.preview.scrollEditorWithPreview` | `true` | Scroll the editor when the preview is scrolled. |
-| `ascribe.review.sourceComments` | `auto` | Whether the source editor shows the pull request's review threads: `on`, `off`, or `auto`, which shows them unless the GitHub Pull Requests extension is active. See [Comments in the preview](#comments-in-the-preview). |
-| `ascribe.maxCrashes` | `5` | After this many crashes of a project's language server, since it was last restarted by hand, the extension stops restarting it and explains why. |
-| `ascribe.trace.server` | `off` | `messages` or `verbose` logs the conversation with the server, for reporting a problem. |
+@include: ../_generated/editor-settings.md
 
 ## Commands
 
 <!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (issue #82 in this repository). -->
 
-| Command | What it does |
-|---|---|
-| **Ascribe: Restart Language Server** | Stops and starts every project's server that has started, including one that stopped after crashing, and forgets earlier crashes. A server that hasn't started stays off until it's needed; when none has, the command says so. It also picks up `ascribe.toml` files added or deleted. |
-| **Ascribe: Show Server Output** | Opens the log of the active file's project. When no file of a project is active and the workspace has several projects, it asks which, showing whether each one's server is running. |
-| **Ascribe: Open Page Preview** | Opens the page preview of the active page in place of the editor, starting its project's server if it hasn't started. |
-| **Ascribe: Open Page Preview to the Side** | Opens the page preview of the active page beside the editor, starting its project's server if it hasn't started. |
-| **Ascribe: Open Site Preview** | Opens the active page on its project's dev server, in the browser. See [Site preview](#site-preview). |
-| **Ascribe: Select Preview Build** | Picks the build the preview shows, for the previewed page's project. |
-| **Ascribe: Start Review** | Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](#review-in-the-preview). |
-| **Ascribe: Stop Review** | Turns review off for the active page's project, and frees its base. |
-| **Ascribe: Changed Pages** | Lists the pages the change touches in the preview's build; choosing one opens it and its preview. |
-| **Ascribe: Refresh Comments** | Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](#comments-in-the-preview). |
+@include: ../_generated/editor-commands.md
 
 ## Other editors
 

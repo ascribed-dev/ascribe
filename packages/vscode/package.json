@@ -121,7 +121,7 @@
           "type": "string",
           "default": "",
           "scope": "machine-overridable",
-          "markdownDescription": "Path to the `ascribe` binary. When empty, the extension uses the project's `node_modules/.bin/ascribe`, then the binary bundled with the extension."
+          "markdownDescription": "The `ascribe` binary to run, for every project. When empty, each project's own `node_modules/.bin/ascribe`, then the binary included in the extension. Changing it restarts the servers that have started."
         },
         "ascribe.startServers": {
           "type": "string",
@@ -137,20 +137,10 @@
           "scope": "window",
           "markdownDescription": "When to start the language server of each `ascribe.toml` project in the workspace. A project whose server hasn't started shows no problems in the Problems panel."
         },
-        "ascribe.trace.server": {
-          "type": "string",
-          "enum": [
-            "off",
-            "messages",
-            "verbose"
-          ],
-          "default": "off",
-          "description": "Traces the communication between VS Code and the language server."
-        },
         "ascribe.formatOnSave": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Format Ascribe files into canonical form when saving."
+          "markdownDescription": "Format Ascribe constructs into canonical form when saving."
         },
         "ascribe.preview.scrollPreviewWithEditor": {
           "type": "boolean",
@@ -161,12 +151,6 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Scroll the editor to the line of the block at the top of the preview when the preview is scrolled."
-        },
-        "ascribe.maxCrashes": {
-          "type": "integer",
-          "default": 5,
-          "minimum": 1,
-          "markdownDescription": "How many crashes of the language server, since it was last restarted by hand, make the extension stop restarting it and explain why."
         },
         "ascribe.review.sourceComments": {
           "type": "string",
@@ -183,6 +167,27 @@
           "default": "auto",
           "scope": "window",
           "markdownDescription": "Whether the source editor shows the pull request's review threads on the lines they're on, while review is on."
+        },
+        "ascribe.maxCrashes": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "markdownDescription": "How many crashes of a project's language server, since it was last restarted by hand, make the extension stop restarting it and explain why."
+        },
+        "ascribe.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "enumDescriptions": [
+            "Log nothing.",
+            "Log each message's name and timing.",
+            "Log each message with its content."
+          ],
+          "default": "off",
+          "markdownDescription": "Log the conversation with the language server to its output channel, for reporting a problem."
         }
       }
     },
