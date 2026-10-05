@@ -179,7 +179,7 @@ const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by 
 /// The fragments, by file name: the source-file diagnostics, the content
 /// model's, and the retired ones (empty when there are none). Each group
 /// opens with its own index: a link to an id inside a fragment works only
-/// from the same fragment (SPEC §4.2).
+/// from the same fragment (SPEC §4.2, and issue #90 in this repository).
 fn render(
     registry: &DiagnosticsRegistry,
     anchors: &BTreeMap<String, String>,
