@@ -390,6 +390,26 @@ describe("the overlay", () => {
     expect(root.querySelector("details")?.open).toBe(true);
   });
 
+  it("counts the comments a tab or a details holds on its label and summary", async () => {
+    host.blocks = [
+      { anchor: anchor("guide.md:11-11"), threads: [thread("T", 11), thread("T2", 11)] },
+      { anchor: anchor("guide.md:15-15"), threads: [thread("S", 15)] },
+    ];
+    await open();
+    const hint = (on: Element | null | undefined): string | undefined =>
+      on?.querySelector("[data-ascribe-overlay]")?.shadowRoot?.querySelector(".hint-count")
+        ?.textContent ?? undefined;
+    const tabs = root.querySelectorAll('[role="tab"]');
+    expect(hint(tabs[0])).toBeUndefined();
+    expect(hint(tabs[1])).toBe("2 comments");
+    expect(hint(root.querySelector("summary"))).toBe("1 comment");
+    // The summary's own text is still what the card quotes.
+    expect(card("S").querySelector(".inside")?.textContent).toContain("Inside “Why?”");
+    overlay?.dispose();
+    overlay = undefined;
+    expect(root.querySelector("[data-ascribe-overlay]")).toBeNull();
+  });
+
   it("puts threads on removed text on the removed block", async () => {
     host.removed = [
       { anchor: anchor("guide.md:18-18"), threads: [thread("X", 18, { side: "LEFT" })] },

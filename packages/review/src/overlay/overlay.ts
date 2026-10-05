@@ -10,12 +10,13 @@
 //   dialogs (submit, all comments);
 // - below the page, a bar while there are unsent comments;
 // - in the page, on the block under the pointer or focus, a Comment button,
-//   and at narrow widths a count marker on each block with threads. These are
+//   at narrow widths a count marker on each block with threads, and on a
+//   tab's label and a `<details>`' summary how many comments they hold. These are
 //   elements with `data-ascribe-ui`, as the marks' are, each holding a shadow
 //   root, so they sit in the page's reading and tab order.
 //
 // Comment bodies are rendered by `markdown.ts`, as DOM nodes.
-import { findBlock, goTo, reveal } from "../marks/index.js";
+import { findBlock, goTo, reveal, tabButton } from "../marks/index.js";
 import { anchorKey, formatSource, type Anchor } from "../place/anchor.js";
 import type { LocatedThread } from "../place/place.js";
 import { renderMarkdown } from "./markdown.js";
@@ -176,6 +177,8 @@ class ReviewOverlay implements Overlay {
   private focusable: HTMLElement[] = [];
   private padded: { element: HTMLElement; before: string }[] = [];
   private markers: { host: HTMLElement; block: HTMLElement }[] = [];
+  /** The comment counts on tabs' labels and `<details>`' summaries. */
+  private hints: HTMLElement[] = [];
   private containerPosition: string | undefined;
   /** The padding below the page for the column to end in, in pixels. */
   private room = 0;
@@ -527,7 +530,7 @@ class ReviewOverlay implements Overlay {
       if (node.localName === "details" && !(node as HTMLDetailsElement).open) {
         const summary = node.querySelector(":scope > summary");
         if (summary?.contains(element)) continue;
-        return `Inside “${(summary?.textContent ?? "").trim()}”, which is closed.`;
+        return `Inside “${summary ? blockText(summary) : ""}”, which is closed.`;
       }
     }
     return undefined;
@@ -610,6 +613,7 @@ class ReviewOverlay implements Overlay {
       el.tabIndex = 0;
       this.focusable.push(el);
     }
+    this.drawHints();
     if (this.wide) return;
     for (const entry of this.entries) {
       const count = entry.threads.length;
@@ -636,7 +640,42 @@ class ReviewOverlay implements Overlay {
     }
   }
 
+  /**
+   * On each tab's label and each `<details>`' summary, how many comments are
+   * on the blocks they can hide, which an unselected tab or a closed
+   * `<details>` would otherwise keep out of sight.
+   */
+  private drawHints(): void {
+    const counts = new Map<HTMLElement, number>();
+    for (const entry of this.entries) {
+      const element = entry.element;
+      const count = entry.threads.length;
+      if (count === 0 || !element || this.hiddenByShow(element)) continue;
+      for (
+        let node = element.parentElement;
+        node !== null && node !== this.root;
+        node = node.parentElement
+      ) {
+        let on: HTMLElement | null = null;
+        if (node.localName === "ascribe-tab") on = tabButton(node);
+        if (node.localName === "details") {
+          const summary = node.querySelector<HTMLElement>(":scope > summary");
+          if (summary && !summary.contains(element)) on = summary;
+        }
+        if (on) counts.set(on, (counts.get(on) ?? 0) + count);
+      }
+    }
+    for (const [on, count] of counts) {
+      const host = this.uiHost("span");
+      this.shadow(host).append(this.el("span", "hint-count", plural(count, "comment")));
+      on.append(host);
+      this.hints.push(host);
+    }
+  }
+
   private undecorate(): void {
+    for (const host of this.hints) host.remove();
+    this.hints = [];
     for (const el of this.focusable) el.removeAttribute("tabindex");
     this.focusable = [];
     for (const { element, before } of this.padded) element.style.paddingInlineEnd = before;
