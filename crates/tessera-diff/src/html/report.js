@@ -721,6 +721,12 @@
     const pages = paths.size === 1 ? "1 changed page" : `${paths.size} changed pages`;
     return builds.length > 1 ? `${pages} in ${builds.length} builds` : pages;
   }
+  function errorsNotice(errors) {
+    if (!errors) return null;
+    const one = errors === 1;
+    const count = one ? "1 error" : `${errors} errors`;
+    return `The working tree has ${count}, so a page here may not render as it will once ${one ? "it's" : "they're"} fixed. \`ascribe check\` lists ${one ? "it" : "them"}.`;
+  }
   function pageSummary(page) {
     if (page.status === "added") return "New page";
     if (page.status === "removed") return "Removed";
@@ -868,6 +874,11 @@
         "Each page as Ascribe renders it, without the site's layout, navigation, or styles."
       ])
     );
+    const errors = errorsNotice(data2.working_tree_errors);
+    if (errors !== null) {
+      const words = errors.split("`").map((part, i) => i % 2 === 1 ? h("code", {}, [part]) : part);
+      head.append(h("div", { class: "r-notice", role: "note" }, words));
+    }
     if (data2.limit.omitted > 0) {
       head.append(
         h("div", { class: "r-notice" }, [

@@ -91,6 +91,15 @@ export class ProjectServer implements vscode.Disposable {
     return client.sendRequest(method, params);
   }
 
+  /** How many errors the server reports for the project, as the Problems panel lists them. */
+  errorCount(): number {
+    let count = 0;
+    this.client?.diagnostics?.forEach((_uri, diagnostics) => {
+      for (const d of diagnostics) if (d.severity === vscode.DiagnosticSeverity.Error) count++;
+    });
+    return count;
+  }
+
   /** Settles when the current start or restart has finished, successfully or not. */
   whenSettled(): Promise<void> {
     return this.starting;

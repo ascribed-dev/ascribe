@@ -190,11 +190,17 @@ site: 4 pages changed
 cloud: no changes
 ```
 
+Pages with errors are compared as they are, since comparing work in progress is useful, but a broken page can render oddly and read as part of the change. So when `ascribe check` would find errors for the builds compared, `ascribe diff` says so on standard error, and the [HTML report](#the-html-report) and review in the editor's preview and the site preview show a notice:
+
+```text
+warning: the working tree has 3 errors; `ascribe check` lists them
+```
+
 ### Exit codes
 
 | Code | Meaning |
 |---|---|
-| `0` | Compared, whether or not anything changed |
+| `0` | Compared, whether or not anything changed, and whether or not the working tree has errors |
 | `1` | With `--exit-code`: something changed |
 | `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, no merge base (a shallow clone, or unrelated histories), `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error. |
 
@@ -227,6 +233,7 @@ A report renders at most 300 changed pages; the rest are listed by name, and the
 | `ascribe_version` | string | The version of `ascribe` that wrote the report |
 | `base` | object | `requested`: the revision asked for, or the default branch used. `commit`: the commit it names. `merge_base`: the merge base with `HEAD` that was compared with, or `null` with `--base-exact`. |
 | `repository` | object | `root`: the repository's top-level directory. `project_prefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
+| `working_tree_errors` | number | How many errors `ascribe check` finds in the working tree for the builds compared (with the same `--build` options). The comparison runs either way. |
 | `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order |
 
 Each page:
@@ -262,6 +269,7 @@ A block is a heading, paragraph, code block, table, list, list item, block quote
   "ascribe_version": "0.1.1",
   "base": { "requested": "main", "commit": "3f9c2ab…", "merge_base": "8d01e4c…" },
   "repository": { "root": "/home/me/lantern", "project_prefix": "docs/" },
+  "working_tree_errors": 0,
   "builds": [
     {
       "build": "site",

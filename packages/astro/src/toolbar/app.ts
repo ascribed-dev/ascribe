@@ -51,6 +51,7 @@ import {
   againstText,
   buttonLabel,
   countsText,
+  errorsNotice,
   nextChangedPage,
   pageDetail,
   position,
@@ -615,6 +616,8 @@ class ReviewApp {
     const parts = [body];
     if (view.problem !== null)
       parts.push(this.notice(`Couldn't compare the pages: ${view.problem}`));
+    const errors = errorsNotice(view.errors);
+    if (errors !== undefined) parts.push(this.notice(errors));
     return parts;
   }
 
@@ -625,6 +628,8 @@ class ReviewApp {
     }
     if (view.problem !== null)
       parts.push(this.notice(`Couldn't compare the pages: ${view.problem}`));
+    const errors = errorsNotice(view.errors);
+    if (errors !== undefined) parts.push(this.notice(errors));
     const threads = threadsNotice(view.threads);
     if (threads !== undefined) parts.push(this.notice(threads));
     if (this.atEnd) parts.push(this.endNotice(view));

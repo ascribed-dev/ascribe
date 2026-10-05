@@ -13,6 +13,7 @@ import {
 import {
   againstText,
   buttonLabel,
+  errorsNotice,
   nextChangedPage,
   pageDetail,
   position,
@@ -127,6 +128,14 @@ describe("what the app says", () => {
       pullRequest: null,
       base: "origin/main",
     });
+  });
+
+  it("says when the working tree has errors", () => {
+    expect(errorsNotice(0)).toBeUndefined();
+    expect(errorsNotice(1)).toBe(
+      "The working tree has 1 error, so a page may not show as it will once it's fixed. `ascribe check` lists it.",
+    );
+    expect(errorsNotice(4)).toContain("has 4 errors");
   });
 
   it("puts the unsent count on the button", () => {

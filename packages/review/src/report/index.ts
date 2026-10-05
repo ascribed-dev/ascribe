@@ -21,6 +21,8 @@ import {
 export interface ReportData {
   ascribe_version: string;
   base: { requested: string; commit: string; merge_base: string | null };
+  /** How many errors `ascribe check` finds in the working tree; absent from older reports. */
+  working_tree_errors?: number;
   builds: BuildData[];
   /** Each rendered page, once however many builds render it alike. */
   pages: Record<string, RenderedPage>;
@@ -120,6 +122,20 @@ export function changedPages(builds: BuildData[]): string {
   if (paths.size === 0) return "no changed pages";
   const pages = paths.size === 1 ? "1 changed page" : `${paths.size} changed pages`;
   return builds.length > 1 ? `${pages} in ${builds.length} builds` : pages;
+}
+
+/**
+ * The notice about the working tree's errors, or `null` with none: a page
+ * with an error may render oddly, which shouldn't read as the change.
+ */
+export function errorsNotice(errors: number | undefined): string | null {
+  if (!errors) return null;
+  const one = errors === 1;
+  const count = one ? "1 error" : `${errors} errors`;
+  return (
+    `The working tree has ${count}, so a page here may not render as it will once ` +
+    `${one ? "it's" : "they're"} fixed. \`ascribe check\` lists ${one ? "it" : "them"}.`
+  );
 }
 
 /** What a page in the list says changed. */
@@ -290,6 +306,12 @@ export function start(root: HTMLElement, data: ReportData): void {
       "Each page as Ascribe renders it, without the site's layout, navigation, or styles.",
     ]),
   );
+  const errors = errorsNotice(data.working_tree_errors);
+  if (errors !== null) {
+    // The command, in backticks, shows as code.
+    const words = errors.split("`").map((part, i) => (i % 2 === 1 ? h("code", {}, [part]) : part));
+    head.append(h("div", { class: "r-notice", role: "note" }, words));
+  }
   if (data.limit.omitted > 0) {
     head.append(
       h("div", { class: "r-notice" }, [

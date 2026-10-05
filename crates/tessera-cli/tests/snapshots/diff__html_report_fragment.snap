@@ -175,5 +175,6 @@ expression: "serde_json::to_string_pretty(&data).expect(\"JSON\")"
       "html": "<h1 data-ascribe-source=\"install.md:5-5\" id=\"install\">Install</h1>\n<p data-ascribe-source=\"install.md:7-7\">Intro for Quill.</p>\n<p data-ascribe-source=\"_fragments/prereqs.md:1-1\" data-ascribe-via=\"install.md:9\">You need agent 2.2 or later.</p>\n<p data-ascribe-source=\"install.md:11-11\">The end.</p>\n",
       "images": {}
     }
-  }
+  },
+  "working_tree_errors": 2
 }

@@ -56,6 +56,7 @@ fn report(before: &Project, after: &Project) -> Report {
             root: "/repo".into(),
             project_prefix: String::new(),
         },
+        working_tree_errors: 0,
         builds,
     }
 }

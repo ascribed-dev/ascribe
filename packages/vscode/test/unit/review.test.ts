@@ -1,6 +1,7 @@
 // What review says and where it points (`src/preview/reviewText.ts`).
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
+import { errorsText } from "../../src/preview/counts.js";
 import type { ChangedPage } from "../../src/preview/protocol.js";
 import {
   baseCommit,
@@ -137,5 +138,15 @@ describe("the base's commit", () => {
     expect(sameBase(base, { ...base })).toBe(true);
     expect(sameBase(base, { ...base, merge_base: "9f8e7d6" })).toBe(false);
     expect(sameBase(base, { ...base, commit: "d".repeat(40) })).toBe(false);
+  });
+});
+
+describe("the project's errors", () => {
+  it("are mentioned only when there are some", () => {
+    expect(errorsText(0)).toBeUndefined();
+    expect(errorsText(1)).toBe(
+      "This project has 1 error, so a page may not show as it will once it's fixed.",
+    );
+    expect(errorsText(2)).toContain("has 2 errors");
   });
 });

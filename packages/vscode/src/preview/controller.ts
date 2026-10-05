@@ -228,6 +228,13 @@ export class PreviewController implements vscode.Disposable {
       this.projects.onDidStart((server) => {
         if (this.panel && this.server() === server) this.schedule(0);
       }),
+      // Review says how many errors the project has: keep the count current.
+      vscode.languages.onDidChangeDiagnostics(() => {
+        const review = this.latest?.message.review;
+        const server = this.server();
+        if (this.panel && review && server && server.errorCount() !== review.errors)
+          this.schedule(DEBOUNCE_MS);
+      }),
       // A project appeared or went away: the file may have another owner.
       this.projects.onDidChangeProjects(() => {
         if (this.panel) this.schedule(0);
@@ -543,6 +550,7 @@ export class PreviewController implements vscode.Disposable {
         causes: causes(result.review.changes, result),
         goToFirst,
         threads: null,
+        errors: server?.errorCount() ?? 0,
       };
       if (server) {
         const goTo = this.threadToGo?.file === document.uri.fsPath ? this.threadToGo : undefined;
@@ -653,6 +661,9 @@ export class PreviewController implements vscode.Disposable {
         return;
       case "showOutput":
         this.server()?.showOutput();
+        return;
+      case "showProblems":
+        void vscode.commands.executeCommand("workbench.actions.view.problems");
         return;
       case "rendered": {
         const record = this.log.find((r) => r.seq === message.seq);

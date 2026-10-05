@@ -407,6 +407,7 @@ function reviewed(seq: number, review: Partial<ReviewView> = {}): ToWebview {
       causes: [],
       goToFirst: false,
       threads: null,
+      errors: 0,
       ...review,
     },
   } as Partial<ToWebview>);
@@ -503,6 +504,22 @@ describe("review in the preview webview", () => {
       type: "openFile",
       path: "/project/docs/_f/frag.md",
     });
+    await preview.page.close();
+  });
+
+  it("says when the project has errors, and opens the Problems panel", async () => {
+    const preview = await open();
+    await preview.send(reviewed(1));
+    await preview.next("rendered");
+    await expect(preview.page.locator(".review .notice").count()).resolves.toBe(0);
+    const from = preview.posted.length;
+    await preview.send(reviewed(2, { errors: 3 }));
+    await preview.next("rendered", from);
+    await expect(preview.page.locator(".review .notice").first().textContent()).resolves.toContain(
+      "This project has 3 errors, so a page may not show as it will once they're fixed.",
+    );
+    await preview.page.getByRole("button", { name: "Show problems" }).click();
+    await expect(preview.next("showProblems")).resolves.toEqual({ type: "showProblems" });
     await preview.page.close();
   });
 

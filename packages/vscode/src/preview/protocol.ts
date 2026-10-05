@@ -174,6 +174,8 @@ export interface ReviewView {
   goToFirst: boolean;
   /** The pull request's review threads, or `null` when the checkout has no pull request on GitHub. */
   threads: ThreadsView | null;
+  /** How many errors the project has (the Problems panel's): a page may not show as it will. */
+  errors: number;
 }
 
 /** How the local `HEAD` relates to the pull request's head commit (`@ascribed/review/github`). */
@@ -268,6 +270,8 @@ export type FromWebview =
   | { type: "build"; name: string }
   | { type: "open"; href: string }
   | { type: "showOutput" }
+  /** Show the Problems panel: the project's errors. */
+  | { type: "showProblems" }
   | { type: "rendered"; seq: number; report: RenderReport }
   /** The preview scrolled to the block for `line`, whose anchor is `source`. */
   | { type: "revealedLine"; line: number; source: string }
