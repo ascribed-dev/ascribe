@@ -180,6 +180,10 @@ Install the extension from the Marketplace, open a copy of `examples/quill`, and
 
 Review the draft, then publish it.
 
+### 10. Check the docs site
+
+The [docs site](#the-docs-site) follows `main`, not the release, so a release doesn't change it by itself. In the pull request after the release, set `version` in `docs/ascribe.toml`'s `[phrases]` to the release, and change `[features.next]` to name it, as the comment above `[dimensions.release]` says. Once that's merged and Netlify has built it, open <https://ascribe-docs.netlify.app>: **Check:** getting-started installs the new version, and a page the release shipped reads "since" the release, not "in main, not yet released".
+
 ## When something goes wrong
 
 **Before any publishing job ran:** nothing is public. Fix the problem on `main`, then move the tag to the fixed commit and run again:
@@ -253,7 +257,7 @@ The [canary workflow](.github/workflows/canary.yml) publishes the npm packages (
 - **Its commit** is each package's `gitHead` (`npm view @ascribed/cli@next gitHead`), and `ascribe --version` prints it: `ascribe 0.1.2-next.42 (3f9c2a1b7d4e)`.
 - **It runs only when something ships.** It compares `main` with the last canary's commit, in `crates/`, `packages/`, `scripts/release/`, `Cargo.toml`, `Cargo.lock`, and `pnpm-lock.yaml`. When nothing there has changed, it publishes nothing, and the run passes.
 - **It builds, packs, and smoke-tests as a release does,** with the same jobs (`release-build.yml`). If any of them fails, nothing is published and `next` stays where it was.
-- **It publishes from the `canary` environment,** with provenance. Every package goes under the holding tag `next-pending` first, and `next` moves to the new canary on each package only once all of them are on npm, so `next` never mixes two nights. Then it tells the docs site to rebuild when the `SITE_BUILD_HOOK` secret is set.
+- **It publishes from the `canary` environment,** with provenance. Every package goes under the holding tag `next-pending` first, and `next` moves to the new canary on each package only once all of them are on npm, so `next` never mixes two nights. Then it calls the [docs site](#the-docs-site)'s build hook, so the site rebuilds with the new canary.
 
 To publish one by hand (after a fix, or when a night's wait matters): Actions → **Canary** → Run workflow, from `main`. **force** publishes even when nothing has changed.
 
@@ -275,6 +279,22 @@ npm dist-tag add @ascribed/cli@0.1.2-next.41 next                         # for 
 ```
 
 **A publish that failed partway:** `next` hasn't moved, and the packages that were published are under `next-pending`. Re-run the failed job: a re-run keeps the run number, so the version is the same, packages already published are skipped, and then `next` moves. If you don't, the next night's canary replaces it.
+
+## The docs site
+
+The user docs are published at <https://ascribe-docs.netlify.app>, the address in `[consumer]` in `docs/ascribe.toml`. Netlify builds it from `main`, as a user's host would: `site/netlify.toml` installs the site's packages, moves Ascribe's to the canary `next` names (`npm run follow-next`), and builds. No Rust, no workspace, and no secret, so the site follows `main` through the canary, a night behind it at most. It rebuilds when `main` changes `docs/` or `site/`, and when the canary calls its build hook. A pull request gets a preview from the **Site** workflow instead, built with its own Ascribe. [site/README.md](site/README.md) has the details.
+
+**A build that fails** leaves the last good deploy up, and Netlify emails the owner. The usual cause is a page documenting a feature merged that day, which the canary doesn't have until the night's run; the canary's build hook then rebuilds it. When waiting a night matters, run the canary by hand. Netlify's deploy log (Deploys, in the site's dashboard) shows the error; `cd site && npm ci && npm run follow-next && npm run build` reproduces it.
+
+### Setting it up
+
+Once, in Netlify (the site `ascribe-docs`, linked to this repository) and GitHub:
+
+1. **Build settings.** Project configuration → Developer settings → Continuous deployment → Build settings → Configure: **Base directory** `site`, and leave the build command and publish directory empty (`site/netlify.toml` sets them). **Production branch** `main`. **Check:** a deploy's log says it read `site/netlify.toml` and ran `npm ci && npm run follow-next && npm run build`.
+2. **No deploy previews or branch deploys.** Same page, Branches and deploy contexts → Configure: deploy previews off, branch deploys off. **Check:** a new pull request gets no Netlify checks, only the **Site** workflow's preview.
+3. **Failure notifications.** Project configuration → Notifications → Emails: add **Deploy failed** to the owner's address.
+4. **The build hook.** Continuous deployment → Build hooks → Add build hook, named `canary`, on `main`. In GitHub, Settings → Secrets and variables → Actions → New repository secret: `SITE_BUILD_HOOK`, the hook's URL. **Check:** run the canary by hand with **force**; its **rebuild the docs site** job passes, and a deploy titled `canary <version>` appears in Netlify.
+5. **The preview's secrets.** In Netlify, user settings → Applications → Personal access tokens → New access token (give it an expiration, and put a reminder where you'll see it). In GitHub, two repository secrets: `NETLIFY_AUTH_TOKEN`, the token, and `NETLIFY_SITE_ID`, the Project ID from Project configuration → General → Project details. **Check:** a pull request that changes `docs/` gets a **Preview** link in the **Site** workflow's summary, at `https://pr-<number>--ascribe-docs.netlify.app`.
 
 ## Known limitations
 
