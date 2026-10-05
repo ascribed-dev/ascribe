@@ -12,6 +12,7 @@ import {
   answerRequest,
   baseRevision,
   contentPrefixOf,
+  findPullRequest,
   ghTransport,
   openReview,
   readCheckout,
@@ -159,6 +160,42 @@ export class ThreadsController implements vscode.Disposable {
   async useGh(server: ProjectServer): Promise<Connection> {
     await this.chooseGh(server, true);
     return this.connect(server, { interactive: false });
+  }
+
+  /** The project's checkout and branch, as one key; `undefined` when it isn't on a branch. */
+  async branchKey(server: ProjectServer): Promise<string | undefined> {
+    try {
+      const checkout = await readCheckout(server.project.folder);
+      return checkout.branch === undefined
+        ? undefined
+        : `${comparable(checkout.root)}\0${checkout.branch}`;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * The number of the open pull request for the project's branch, found
+   * without asking anyone: with a GitHub sign-in VS Code already has, or the
+   * GitHub CLI when the reviewer chose it. `undefined` when there's none, or
+   * no sign-in to look with.
+   */
+  async quietPullRequest(server: ProjectServer): Promise<number | undefined> {
+    try {
+      const checkout = await readCheckout(server.project.folder);
+      const host = checkout.bases[0]?.host;
+      if (host === undefined || checkout.headRef === undefined) return undefined;
+      let transport = this.transport;
+      if (!transport && this.choseGh(server)) transport = (h) => ghTransport({ host: h });
+      if (!transport && (await githubSession(host, false))) {
+        transport = (h) => tokenTransport(() => githubToken(h), { host: h });
+      }
+      if (!transport) return undefined;
+      return (await findPullRequest(checkout, transport))?.number;
+    } catch {
+      // Not a git repository, or GitHub couldn't be asked: nothing to offer.
+      return undefined;
+    }
   }
 
   /** What the preview shows about the project's threads; `null` when there's no pull request. */

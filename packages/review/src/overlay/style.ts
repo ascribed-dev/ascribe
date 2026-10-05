@@ -104,6 +104,9 @@ input:focus-visible,
   font-size: inherit;
   text-align: inherit;
 }
+a.link {
+  text-decoration: none;
+}
 .link:hover {
   text-decoration: underline;
 }

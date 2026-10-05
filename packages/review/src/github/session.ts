@@ -430,6 +430,36 @@ export function createSession(options: SessionOptions): ReviewSession {
     state = undefined;
   };
 
+  // After a change to one review thread, the cached threads take GitHub's
+  // answer instead of reading every comment again. When a read started
+  // since `before`, or the thread isn't in it, the next call reads again.
+  const patch = async (
+    before: Promise<State> | undefined,
+    threadId: string,
+    update: (raw: RawThread | undefined) => RawThread | undefined,
+  ): Promise<void> => {
+    if (before === undefined || state !== before) return changed();
+    const current = await before;
+    const index = current.raw.findIndex((thread) => thread.id === threadId);
+    const raw = update(current.raw[index]);
+    if (raw === undefined || state !== before) return changed();
+    const thread = toThread(raw);
+    if (index === -1) {
+      current.raw.push(raw);
+      current.threads.push(thread);
+    } else {
+      current.raw[index] = raw;
+      const at = current.threads.findIndex((t) => t.id === threadId);
+      if (at === -1) return changed();
+      current.threads[at] = thread;
+    }
+    current.stamp = worktreeStamp(root, current.threads);
+    current.located = locate(current.threads);
+    current.located.catch(() => {
+      if (state === before) state = undefined;
+    });
+  };
+
   const ensureReview = async (): Promise<{ id: string; body: string }> => {
     const pendingReview = (await load()).pendingReview;
     if (pendingReview !== undefined) return pendingReview;
@@ -566,6 +596,7 @@ export function createSession(options: SessionOptions): ReviewSession {
       const { range, repositoryPath, first, last } = await atHead(anchor);
       if ((await changedFiles()).has(repositoryPath)) {
         const review = await ensureReview();
+        const before = state;
         try {
           const data = await mutate<{ addPullRequestReviewThread: { thread: RawThread | null } }>(
             ADD_THREAD,
@@ -577,14 +608,25 @@ export function createSession(options: SessionOptions): ReviewSession {
               startLine: first === last ? null : first,
             },
           );
-          changed();
           // GitHub answers a line away from the diff's changes with no thread
           // and no error: it can't anchor the comment there.
           const thread = data.addPullRequestReviewThread.thread;
           if (thread !== null) {
-            await readRestOfComments(transport, thread);
+            try {
+              await readRestOfComments(transport, thread);
+            } catch (error) {
+              // The thread is on GitHub: read it with the rest next time.
+              changed();
+              throw error;
+            }
+            // The pending review the cache read is the one the thread is in.
+            const cached = before && (await before).pendingReview?.id === review.id;
+            await patch(cached ? before : undefined, thread.id, (raw) =>
+              raw === undefined ? thread : undefined,
+            );
             return toThread(thread);
           }
+          changed();
         } catch (error) {
           if (!(
             error instanceof ReviewError &&
@@ -647,28 +689,54 @@ export function createSession(options: SessionOptions): ReviewSession {
     async reply(threadId, body, when) {
       await requireReviewThread(threadId);
       const reviewId = when === "withReview" ? (await ensureReview()).id : undefined;
+      const before = state;
       const data = await mutate<{
         addPullRequestReviewThreadReply: { comment: Parameters<typeof toComment>[0] | null };
       }>(ADD_REPLY, { threadId, body, reviewId: reviewId ?? null });
-      changed();
       const raw = data.addPullRequestReviewThreadReply.comment;
-      if (raw === null) throw new ReviewError("refused", "GitHub didn't add the reply.");
+      if (raw === null) {
+        changed();
+        throw new ReviewError("refused", "GitHub didn't add the reply.");
+      }
       if (when === "now" && raw.state === "PENDING") {
         // GitHub put the reply in the viewer's pending review instead of
         // sending it. Take it back out, so nothing changes without asking.
+        changed();
         await mutate(DELETE_COMMENT, { id: raw.id });
         throw new ReviewError(
           "reply-held",
           "GitHub adds replies to your unsent review while you have one. Add the reply to the review, or submit or discard the review first.",
         );
       }
+      // A pending reply counts only once the cache has the review it's in.
+      const cached =
+        raw.state !== "PENDING" || (before && (await before).pendingReview?.id === reviewId);
+      await patch(cached ? before : undefined, threadId, (thread) =>
+        thread === undefined
+          ? undefined
+          : { ...thread, comments: { ...thread.comments, nodes: [...thread.comments.nodes, raw] } },
+      );
       return toComment(raw);
     },
 
     async resolve(threadId, resolved) {
       await requireReviewThread(threadId);
-      await mutate(resolved ? RESOLVE : UNRESOLVE, { threadId });
-      changed();
+      const before = state;
+      const data = await mutate<Record<string, { thread: Partial<RawThread> | null } | undefined>>(
+        resolved ? RESOLVE : UNRESOLVE,
+        { threadId },
+      );
+      const answer = data[resolved ? "resolveReviewThread" : "unresolveReviewThread"]?.thread;
+      await patch(answer ? before : undefined, threadId, (thread) =>
+        thread === undefined || answer == null
+          ? undefined
+          : {
+              ...thread,
+              isResolved: answer.isResolved ?? resolved,
+              viewerCanResolve: answer.viewerCanResolve ?? !resolved,
+              viewerCanUnresolve: answer.viewerCanUnresolve ?? resolved,
+            },
+      );
     },
 
     async pending() {

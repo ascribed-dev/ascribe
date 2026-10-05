@@ -110,7 +110,9 @@ class FakeHost implements OverlayHost {
     if (this.failReply) throw this.failReply;
     const made = comment(body, { pending: when === "withReview" });
     if (when === "withReview") this.unsent++;
-    for (const b of this.blocks) b.threads.find((t) => t.id === threadId)?.comments.push(made);
+    for (const t of [...this.blocks.flatMap((b) => b.threads), ...this.detached]) {
+      if (t.id === threadId) t.comments.push(made);
+    }
     return made;
   }
   async allThreads(): Promise<ThreadSummary[]> {
@@ -125,9 +127,8 @@ class FakeHost implements OverlayHost {
   }
   async resolve(threadId: string, resolved: boolean) {
     this.calls.push(`resolve ${threadId} ${resolved}`);
-    for (const b of this.blocks) {
-      const found = b.threads.find((t) => t.id === threadId);
-      if (found) found.resolved = resolved;
+    for (const t of [...this.blocks.flatMap((b) => b.threads), ...this.detached]) {
+      if (t.id === threadId) t.resolved = resolved;
     }
   }
   async submit(event: string, body?: string) {
@@ -286,9 +287,41 @@ describe("the overlay", () => {
     expect(d.querySelector(".orig")?.textContent).toContain(
       "which is no longer on the page: Schedules run in local time.",
     );
-    // A detached thread has no reply box or Resolve.
-    expect(d.querySelector(".reply")).toBeNull();
-    expect(d.textContent).not.toContain("Resolve");
+    // It can still be answered here, and opened on GitHub.
+    const github = d.querySelector<HTMLAnchorElement>("a.link");
+    expect(github?.textContent).toBe("View on GitHub");
+    expect(github?.getAttribute("href")).toBe("https://github.com/acme/docs/pull/7");
+    github?.click();
+    expect(host.calls).toContain("openLink https://github.com/acme/docs/pull/7");
+    type(d.querySelector("textarea") as HTMLElement, "Still needed?");
+    d.querySelector<HTMLButtonElement>('[data-focus="reply-now:D"]')?.click();
+    await settle();
+    expect(host.calls).toContain("reply D now Still needed?");
+    expect(card("D").textContent).toContain("Still needed?");
+    one(".detached button", "Resolve").click();
+    await settle();
+    expect(host.calls).toContain("resolve D true");
+  });
+
+  it("offers Add to review and Reply now only once there's text", async () => {
+    host.blocks = [{ anchor: anchor("guide.md:3-3"), threads: [thread("A", 3)] }];
+    await open();
+    const button = (key: string) =>
+      card("A").querySelector<HTMLButtonElement>(`[data-focus="${key}"]`);
+    expect(button("reply-add:A")?.disabled).toBe(true);
+    expect(button("reply-now:A")?.disabled).toBe(true);
+    type(card("A").querySelector("textarea") as HTMLElement, "  ");
+    expect(button("reply-add:A")?.disabled).toBe(true);
+    type(card("A").querySelector("textarea") as HTMLElement, "Yes.");
+    expect(button("reply-add:A")?.disabled).toBe(false);
+    expect(button("reply-now:A")?.disabled).toBe(false);
+    const block = root.querySelector<HTMLElement>('[data-ascribe-source="guide.md:5-6"]');
+    block?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    await settle();
+    const add = () => one(".composer button", "Add to review") as HTMLButtonElement;
+    expect(add().disabled).toBe(true);
+    type(one(".composer textarea"), "Why both?");
+    expect(add().disabled).toBe(false);
   });
 
   it("labels an outdated thread beside its block, with a way to see the original text", async () => {
@@ -542,7 +575,7 @@ describe("the overlay", () => {
         threads: [thread("A", 3), thread("R", 3, { resolved: true })],
       },
     ];
-    host.detached = [thread("D", 20, { lines: undefined, detached: "line-gone" })];
+    host.detached = [thread("D", 20, { lines: undefined, detached: "line-gone", outdated: true })];
     host.others = [
       {
         thread: thread("E", 4, { path: "other.md", lines: { first: 4, last: 4 } }),
@@ -559,6 +592,8 @@ describe("the overlay", () => {
     expect(entries()[0]).toContain("guide.md:3 · Guide");
     one(".segmented button", "Detached").click();
     expect(entries()[0]).toContain("no block, was guide.md");
+    // As on its card, where it's Detached, not Outdated.
+    expect(entries()[0]).not.toContain("outdated");
     one(".segmented button", "Unsent").click();
     expect(entries()).toEqual(["None."]);
     one(".segmented button", "Open").click();
@@ -625,6 +660,9 @@ describe("the overlay", () => {
     const sheet = one(".sheet");
     expect(sheet.getAttribute("role")).toBe("dialog");
     expect(sheet.querySelectorAll(".thread")).toHaveLength(2);
+    // The sheet's title names the block; its cards don't again.
+    expect(sheet.querySelector(".head b")?.textContent).toBe("guide.md:3");
+    expect(sheet.querySelector(".thread .th")).toBeNull();
     one(".sheet button", "Comment").click();
     await settle();
     expect(one(".sheet .composer")).toBeTruthy();
