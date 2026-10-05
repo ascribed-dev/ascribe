@@ -1,3 +1,4 @@
+import { stat } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
@@ -9,6 +10,7 @@ import {
   owningProject,
   projectName,
   samePath,
+  within,
   type Project,
   type WorkspaceFolder,
 } from "./projects.js";
@@ -19,7 +21,7 @@ export type StartServers = "onDemand" | "all";
 /** The most projects found in one workspace. */
 const MAX_PROJECTS = 50;
 
-/** How long opened files that no project owns are gathered before looking for projects again. */
+/** How long opened files with an unknown `ascribe.toml` are gathered before looking for projects again. */
 const LOOK_AGAIN_DELAY_MS = 300;
 
 /**
@@ -33,8 +35,10 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private readonly nestedAtStart = new Map<ProjectServer, string>();
   private warnedOfCap = false;
   private refreshing: Promise<void> = Promise.resolve();
-  /** Files no project owned, already looked for since the last refresh. */
-  private readonly lookedFor = new Set<string>();
+  /** `ascribe.toml` files found beside opened files, for the next refresh to pick up. */
+  private unknownConfigs = new Set<string>();
+  /** Those a refresh didn't pick up (under `node_modules`, or past the cap), so they aren't asked for again. */
+  private readonly passedOver = new Set<string>();
   private lookAgainTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly projectsChanged = new vscode.EventEmitter<void>();
   private readonly started = new vscode.EventEmitter<ProjectServer>();
@@ -177,8 +181,8 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   }
 
   private async refreshNow(): Promise<void> {
-    // The files open now are covered by this search.
-    this.lookedFor.clear();
+    const asked = this.unknownConfigs;
+    this.unknownConfigs = new Set();
     // One more than the cap, to know there were more.
     const found = await vscode.workspace.findFiles(
       "**/ascribe.toml",
@@ -213,6 +217,10 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     }
     this.byConfig.clear();
     for (const [config, server] of next) this.byConfig.set(config, server);
+
+    for (const config of asked) {
+      if (!this.knows(config)) this.passedOver.add(config);
+    }
 
     // After the servers exist, so the first project's output can say so.
     if (all.length > MAX_PROJECTS && !this.warnedOfCap) {
@@ -256,23 +264,28 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
 
   /**
    * Starts the server of the project a Markdown or `ascribe.toml` file belongs
-   * to. When no known project owns a file in the workspace, projects are
-   * looked for again (once per file between refreshes): the file watcher can
-   * miss a new `ascribe.toml`, on Linux in a folder made while it runs.
+   * to. When the nearest `ascribe.toml` above the file isn't a known project,
+   * projects are looked for again: the file watcher can miss a new one, on
+   * Linux in a folder made while it runs.
    */
   private async startFor(document: vscode.TextDocument, lookAgain = true): Promise<void> {
     if (document.uri.scheme !== "file") return;
     if (document.languageId !== "markdown" && !/[\\/]ascribe\.toml$/.test(document.uri.fsPath)) {
       return;
     }
-    if (this.serverFor(document.uri)) {
-      await this.ensureStartedFor(document.uri);
-      return;
+    if (lookAgain) {
+      const config = await nearestConfig(document.uri);
+      if (config && !this.knows(config) && !this.passedOver.has(comparable(config))) {
+        this.unknownConfigs.add(comparable(config));
+        this.lookAgainSoon();
+      }
     }
-    const file = comparable(document.uri.fsPath);
-    if (this.lookedFor.has(file)) return;
-    this.lookedFor.add(file);
-    if (lookAgain && vscode.workspace.getWorkspaceFolder(document.uri)) this.lookAgainSoon();
+    await this.ensureStartedFor(document.uri);
+  }
+
+  /** Whether a project has this `ascribe.toml`. */
+  private knows(config: string): boolean {
+    return this.servers.some((server) => samePath(server.project.config, config));
   }
 
   /** Looks for projects again shortly: files opened together share one search. */
@@ -282,6 +295,27 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
       this.lookAgainTimer = undefined;
       void this.refresh();
     }, LOOK_AGAIN_DELAY_MS);
+  }
+}
+
+/**
+ * The nearest `ascribe.toml` above a file, up to its workspace folder; none
+ * for a file outside every workspace folder. A few `stat` calls.
+ */
+async function nearestConfig(uri: vscode.Uri): Promise<string | undefined> {
+  const root = vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath;
+  if (!root) return undefined;
+  let folder = path.dirname(uri.fsPath);
+  for (;;) {
+    const config = path.join(folder, "ascribe.toml");
+    try {
+      if ((await stat(config)).isFile()) return config;
+    } catch {
+      // None here.
+    }
+    const parent = path.dirname(folder);
+    if (samePath(folder, root) || parent === folder || !within(parent, root)) return undefined;
+    folder = parent;
   }
 }
 

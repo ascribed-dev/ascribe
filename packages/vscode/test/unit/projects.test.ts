@@ -210,17 +210,30 @@ describe("ownedElsewhere", () => {
 });
 
 describe("throughFolder", () => {
+  // Host paths, so the cases hold on Windows too.
+  const p = (file: string) => path.resolve(file);
+
   it("writes a real path through the links the folder was opened with", () => {
-    expect(throughFolder("/private/var/w/docs", "/var/w", "/private/var/w")).toBe("/var/w/docs");
-    expect(throughFolder("/private/var/w", "/var/w", "/private/var/w")).toBe("/var/w");
+    expect(throughFolder(p("/private/var/w/docs"), p("/var/w"), p("/private/var/w"))).toBe(
+      p("/var/w/docs"),
+    );
+    expect(throughFolder(p("/private/var/w"), p("/var/w"), p("/private/var/w"))).toBe(p("/var/w"));
   });
 
   it("reaches a path outside the folder from it", () => {
-    expect(throughFolder("/private/var/content", "/var/w", "/private/var/w")).toBe("/var/content");
+    expect(throughFolder(p("/private/var/content"), p("/var/w"), p("/private/var/w"))).toBe(
+      p("/var/content"),
+    );
   });
 
   it("leaves a path alone when the folder has no links", () => {
-    expect(throughFolder("/repo/docs", "/repo", "/repo")).toBe("/repo/docs");
+    expect(throughFolder(p("/repo/docs"), p("/repo"), p("/repo"))).toBe(p("/repo/docs"));
+  });
+
+  it.runIf(process.platform === "win32")("keeps the folder's drive letter as opened", () => {
+    expect(throughFolder("C:\\ws\\proj\\docs", "c:\\ws\\proj", "C:\\ws\\proj")).toBe(
+      "c:\\ws\\proj\\docs",
+    );
   });
 
   it.skipIf(process.platform === "win32")("matches an editor opened through a symlink", () => {

@@ -275,13 +275,9 @@ export class ThreadsController implements vscode.Disposable {
       session,
       via,
       local: { state: pr.local, ...counts },
-      // git's root is a real path; the editors' URIs keep the links the
-      // workspace was opened through, and the source editor's threads and
-      // commenting ranges are matched against them.
-      contentRoot: throughFolder(
+      contentRoot: await openedContentRoot(
         path.join(checkout.root, ...contentPrefixOf(checkout.root, projectDir).split("/")),
         projectDir,
-        await realPath(projectDir),
       ),
       base: await baseRevision(checkout.root, pr),
     };
@@ -391,6 +387,19 @@ async function unsavedText(file: string): Promise<{ saved: string; current: stri
   } catch {
     return undefined;
   }
+}
+
+/**
+ * The content root through the links the workspace was opened with: git's
+ * root is a real path, and the source editor's threads and commenting ranges
+ * are matched against the editors' URIs. git's path when the rewritten one
+ * isn't the same folder.
+ */
+async function openedContentRoot(fromGit: string, projectDir: string): Promise<string> {
+  const opened = throughFolder(fromGit, projectDir, await realPath(projectDir));
+  if (opened === fromGit) return fromGit;
+  const [a, b] = await Promise.all([realPath(opened), realPath(fromGit)]);
+  return comparable(a) === comparable(b) ? opened : fromGit;
 }
 
 /** `file` with its links resolved, or as it is when it can't be. */
