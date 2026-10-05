@@ -88,6 +88,10 @@ jobs:
       contents: read
       # npm trusted publishing and provenance both use the job's OIDC token.
       id-token: write
+    env:
+      # Set only for the first publish of a package that doesn't exist yet, which
+      # can't have a trusted publisher; RELEASING.md says how, and to delete it after.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # No registry-url, as in release.yml: it would stop npm's OIDC exchange.
@@ -95,6 +99,10 @@ jobs:
         with:
           node-version-file: .nvmrc
       - run: npm install --global npm@^11.5.1
+      # npm still tries trusted publishing first, and uses the token where that fails.
+      - name: Use the one-time token
+        if: env.NPM_TOKEN != ''
+        run: echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$HOME/.npmrc"
       - name: Stamp the canary's version
         env:
           VERSION: ${{ needs.version.outputs.version }}
