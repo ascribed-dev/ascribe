@@ -85,6 +85,17 @@ pub struct Commits {
     pub newest: Vec<CommitLine>,
 }
 
+/// Where a new pin is from the old one.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum History {
+    /// After it, by these commits.
+    After(Commits),
+    /// Not after it: moved back, or to another line of history.
+    Back,
+    /// The repository couldn't say.
+    Unknown,
+}
+
 /// A commit, by its hash and the first line of its message.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
 pub struct CommitLine {
@@ -262,13 +273,36 @@ impl Remote {
             .collect())
     }
 
-    /// The commits after `from` up to `to`: how many, and the newest. `None`
-    /// when the cache can't tell, as when `from` is gone from the
+    /// Where `to` is from `from`: the commits after `from` up to `to` (how
+    /// many, and the newest), or that `to` isn't after `from` at all.
+    /// `Unknown` when the cache can't tell, as when `from` is gone from the
     /// repository.
-    pub(crate) fn commits(&self, from: &str, to: &str) -> Option<Commits> {
-        if !self.has_commit(from) {
-            self.fetch(from, true).ok()?;
+    ///
+    /// Pins are fetched without their history, so the cache may hold each
+    /// commit with nothing between them, and counting there counts only
+    /// what it holds. The history is fetched first, with commits and trees
+    /// and no files.
+    pub(crate) fn history(&self, from: &str, to: &str) -> History {
+        if !self.has_commit(from) && self.fetch(from, true).is_err() {
+            return History::Unknown;
         }
+        if self.is_shallow() && self.unshallow(to).is_err() {
+            return History::Unknown;
+        }
+        let after = self
+            .command(&["merge-base", "--is-ancestor", from, to])
+            .stderr(Stdio::null())
+            .status();
+        match after.map(|s| s.code()) {
+            Ok(Some(0)) => {}
+            Ok(Some(1)) => return History::Back,
+            _ => return History::Unknown,
+        }
+        self.commits(from, to)
+            .map_or(History::Unknown, History::After)
+    }
+
+    fn commits(&self, from: &str, to: &str) -> Option<Commits> {
         let range = format!("{from}..{to}");
         let count = self.run(&["rev-list", "--count", &range]).ok()?;
         let count = String::from_utf8_lossy(&count).trim().parse().ok()?;
@@ -285,6 +319,26 @@ impl Remote {
             })
             .collect();
         Some(Commits { count, newest })
+    }
+
+    fn is_shallow(&self) -> bool {
+        self.run(&["rev-parse", "--is-shallow-repository"])
+            .is_ok_and(|out| out.trim_ascii() == b"true")
+    }
+
+    /// Fetches the whole history of `rev`, without files.
+    fn unshallow(&self, rev: &str) -> Result<(), SourcesError> {
+        self.run(&[
+            "fetch",
+            "--quiet",
+            "--no-tags",
+            "--no-recurse-submodules",
+            "--filter=blob:none",
+            "--unshallow",
+            "origin",
+            rev,
+        ])
+        .map(drop)
     }
 
     fn has_object(&self, object: &str) -> bool {

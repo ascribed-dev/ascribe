@@ -97,6 +97,41 @@ fn with_nothing_to_move_no_file_changes() {
     );
 }
 
+/// Pins are fetched without their history, so the cache can hold both ends
+/// of a move with nothing between them: the commits are still counted from
+/// the whole history, and a move back isn't counted at all.
+#[test]
+fn commits_are_counted_from_the_history_not_the_shallow_cache() {
+    let code = Code::new();
+    code.write("src/auth.rs", V1);
+    let first = code.commit("first");
+    for n in 2..=5 {
+        code.write("src/other.rs", format!("{n}\n"));
+        code.commit(&format!("commit {n}"));
+    }
+    code.git_tag("v1", &first);
+    let docs = Docs::new(&source("api", &code));
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
+    );
+    // The first pin, the head, fetched alone.
+    update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+
+    let back = update(&docs.workspace(), &[], Some("v1"), &docs.options()).unwrap();
+    let api = &back.sources[0];
+    assert!(api.moved && api.back, "{api:?}");
+    assert_eq!(api.commits, None);
+
+    let forward = update(&docs.workspace(), &[], None, &docs.options()).unwrap();
+    let api = &forward.sources[0];
+    assert!(api.moved && !api.back, "{api:?}");
+    let commits = api.commits.as_ref().unwrap();
+    assert_eq!(commits.count, 4);
+    assert_eq!(commits.newest[0].subject, "commit 5");
+    assert_eq!(commits.newest.len(), 4);
+}
+
 #[test]
 fn to_moves_the_pin_to_a_revision_back_or_forward() {
     let code = Code::new();

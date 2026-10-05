@@ -31,7 +31,7 @@ pub use copies::SIZE_LIMIT;
 pub use remote::{CommitLine, Commits, NEWEST};
 
 use copies::{Folder, not_text};
-use remote::{Cache, Remote};
+use remote::{Cache, History, Remote};
 
 /// Why a command couldn't do its work.
 #[derive(Debug, thiserror::Error)]
@@ -552,8 +552,11 @@ pub struct SourceUpdate {
     pub to: String,
     /// Whether the pin moved.
     pub moved: bool,
-    /// The commits after the old pin up to the new one, when it moved from
-    /// one and the repository could say.
+    /// Whether the new pin isn't after the old one: it moved back, or to
+    /// another line of history. No commits are counted then.
+    pub back: bool,
+    /// The commits after the old pin up to the new one, when it moved
+    /// forward from one and the repository could say.
     pub commits: Option<Commits>,
     /// The copies that changed.
     pub files: Vec<FileUpdate>,
@@ -681,9 +684,13 @@ fn update_one(
         }
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));
-    let commits = match previous {
-        Some(p) if moved => remote.get()?.commits(&p.commit, &commit),
-        _ => None,
+    let (commits, back) = match previous {
+        Some(p) if moved => match remote.get()?.history(&p.commit, &commit) {
+            History::After(commits) => (Some(commits), false),
+            History::Back => (None, true),
+            History::Unknown => (None, false),
+        },
+        _ => (None, false),
     };
     let had_files = previous.is_some_and(|p| !p.files.is_empty());
     let pin = synced.locked(source, &git.url, &commit);
@@ -695,6 +702,7 @@ fn update_one(
             from: previous.map(|p| p.commit.clone()),
             to: commit,
             moved,
+            back,
             commits,
             files,
             first_copy: !had_files && !synced.files.is_empty(),

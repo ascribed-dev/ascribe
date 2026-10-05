@@ -451,6 +451,7 @@ fn write_update_text(
             )?;
         } else {
             let commits = match &source.commits {
+                _ if source.back => ", moved back".to_owned(),
                 Some(c) if c.count == 1 => ", 1 commit".to_owned(),
                 Some(c) => format!(", {} commits", c.count),
                 None => String::new(),
@@ -514,6 +515,7 @@ fn write_update_summary(
             continue;
         }
         let commits = match &source.commits {
+            _ if source.back => ": moved back".to_owned(),
             Some(c) if c.count == 1 => ": 1 commit".to_owned(),
             Some(c) => format!(": {} commits", c.count),
             None => String::new(),
