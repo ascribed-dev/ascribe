@@ -2156,7 +2156,12 @@
                   showInPreview(t.file, t.line);
                 })
               : null,
-            !t.conversation && !t.detached
+            t.detached
+              ? btn("linkbtn", "View on GitHub", function () {
+                  toast("Opens the thread in the pull request on GitHub.");
+                })
+              : null,
+            !t.conversation
               ? btn(
                   "linkbtn",
                   t.resolved ? "Reopen" : "Resolve",
@@ -2217,7 +2222,7 @@
               ]),
             );
           });
-          if (!t.detached) {
+          if (!(t.detached && t.conversation)) {
             var input = h("input", {
               type: "text",
               id: "reply-" + view + "-" + t.id,
@@ -2937,7 +2942,7 @@
                       class: "w",
                       text:
                         where +
-                        (t.outdated ? " · outdated" : "") +
+                        (t.outdated && !t.detached ? " · outdated" : "") +
                         " · " +
                         (pgs.length > 1 ? "on " + pgs.length + " pages" : PAGES[pgs[0]].title),
                     }),

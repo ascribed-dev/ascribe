@@ -127,8 +127,9 @@ describe("answerRequest", () => {
     const answer = await answerRequest(context(session, page), "comment", {
       anchor,
       body: "Why?",
+      quote: "Shown text",
     });
-    expect(calls).toEqual([["comment", anchor, "Why?", page]]);
+    expect(calls).toEqual([["comment", anchor, "Why?", page, "Shown text"]]);
     expect(answer.changed).toBe(true);
   });
 

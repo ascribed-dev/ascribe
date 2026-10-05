@@ -144,7 +144,7 @@ export class Threads {
         return data;
       },
       commentTarget: (anchor) => this.request("commentTarget", { anchor }),
-      comment: (anchor, body) => this.request("comment", { anchor, body }),
+      comment: (anchor, body, quote) => this.request("comment", { anchor, body, quote }),
       reply: (threadId, body, when) => this.request("reply", { threadId, body, when }),
       allThreads: () => this.request("allThreads"),
       resolve: (threadId, resolved) => this.request("resolve", { threadId, resolved }),

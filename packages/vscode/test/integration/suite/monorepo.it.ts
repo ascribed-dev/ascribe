@@ -389,5 +389,30 @@ describe("with several projects, one nested in another", () => {
         rmSync(idle, { recursive: true, force: true });
       }
     });
+
+    // Last: the deletion of its ascribe.toml isn't reported either, so the
+    // project stays known until projects are looked for again.
+    it("finds a project the file watcher didn't report when one of its files is opened", async () => {
+      // The workspace's settings exclude unwatched/ from the file watcher.
+      const unwatched = path.join(workspace(), "unwatched");
+      const page = vscode.Uri.file(path.join(unwatched, "docs", "index.md"));
+      mkdirSync(path.dirname(page.fsPath), { recursive: true });
+      writeFileSync(page.fsPath, "---\ntitle: Unwatched\n---\n\nSee [](missing.md).\n");
+      copyFileSync(uriOf("docs", "ascribe.toml").fsPath, path.join(unwatched, "ascribe.toml"));
+      try {
+        // Time for a watcher event, if there were going to be one.
+        await new Promise((resolve) => setTimeout(resolve, 2_000));
+        assert.ok(!known(unwatched), "the watcher reported the project, so this proves nothing");
+
+        await open(page);
+        await diagnosticsOf(page, () => codes(page).join() === "ASC036");
+        await api.whenSettled();
+        assert.ok(known(unwatched));
+        assert.equal(api.state(unwatched), "running");
+      } finally {
+        await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+        rmSync(unwatched, { recursive: true, force: true });
+      }
+    });
   });
 });

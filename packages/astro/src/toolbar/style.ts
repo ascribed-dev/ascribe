@@ -1,7 +1,7 @@
 // The toolbar app's panel, in the app's own shadow root: the page's styles
 // don't reach it, and its don't reach the page.
 export const PANEL_CSS = `
-:host {
+.panel {
   --ink: #1d2330;
   --muted: #5b6475;
   --win: #ffffff;
@@ -13,8 +13,9 @@ export const PANEL_CSS = `
   --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
+/* Light or dark as the page is (data-scheme), else as the reader's system is. */
 @media (prefers-color-scheme: dark) {
-  :host {
+  .panel:not([data-scheme="light"]) {
     --ink: #d9dde5;
     --muted: #929bab;
     --win: #1e2026;
@@ -24,6 +25,16 @@ export const PANEL_CSS = `
     --accent-ink: #0b1220;
     --notice: #3a2f0d;
   }
+}
+.panel[data-scheme="dark"] {
+  --ink: #d9dde5;
+  --muted: #929bab;
+  --win: #1e2026;
+  --side: #23262d;
+  --line: #343a45;
+  --accent: #5aa2ff;
+  --accent-ink: #0b1220;
+  --notice: #3a2f0d;
 }
 .panel {
   position: fixed;

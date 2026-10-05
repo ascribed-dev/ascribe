@@ -723,7 +723,11 @@ describe("review threads in the preview webview", () => {
     await preview.page.getByRole("button", { name: "Add to review" }).click();
     await expect
       .poll(() => requests.find((r) => r.method === "comment")?.params)
-      .toEqual({ anchor: { source: "page.md:1-1", via: [] }, body: "Is this still true?" });
+      .toEqual({
+        anchor: { source: "page.md:1-1", via: [] },
+        body: "Is this still true?",
+        quote: "First, unchanged.",
+      });
     // The unsent bar, then the dialog.
     await preview.page.getByRole("button", { name: "Submit review…" }).click();
     await preview.page.getByRole("radio", { name: "Approve" }).check();

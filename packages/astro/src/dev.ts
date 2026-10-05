@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { AstroIntegration } from "astro";
 import { consumerMismatches, readProject, type ProjectInfo } from "./project.js";
@@ -29,6 +29,53 @@ export function outsideAssets(project: ProjectInfo, build: string): string[] {
   return [...assets].sort();
 }
 
+/**
+ * Each watched file's size and modification time, as last seen. A watcher
+ * can report an edit late, after a build already read it: macOS delivers
+ * edits made just before the dev server started some seconds after it
+ * started. An event that changes neither is no edit, and rebuilding for it
+ * would reload the page under the reader.
+ */
+export class SeenFiles {
+  private readonly stamps = new Map<string, string>();
+
+  /** Records the files under `paths` (files or folders) as they are now. */
+  prime(paths: readonly string[]): void {
+    for (const at of paths) {
+      let entries: string[];
+      try {
+        entries = statSync(at).isDirectory()
+          ? readdirSync(at, { recursive: true, encoding: "utf8" }).map((f) => path.join(at, f))
+          : [at];
+      } catch {
+        continue;
+      }
+      for (const file of entries) {
+        const stamp = stampOf(file);
+        if (stamp !== undefined && !this.stamps.has(file)) this.stamps.set(file, stamp);
+      }
+    }
+  }
+
+  /** Whether `file` differs from when it was last seen (or wasn't seen), and records it. */
+  changed(file: string): boolean {
+    const stamp = stampOf(file);
+    const before = this.stamps.get(file);
+    if (stamp === undefined) this.stamps.delete(file);
+    else this.stamps.set(file, stamp);
+    return stamp === undefined || stamp !== before;
+  }
+}
+
+function stampOf(file: string): string | undefined {
+  try {
+    const stat = statSync(file);
+    return stat.isFile() ? `${stat.size}:${stat.mtimeMs}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** What `watchDev` gives back. */
 export interface DevBuilds {
   /** Runs `task` in turn with the compiler runs, never during one. */
@@ -46,6 +93,8 @@ export function watchDev(options: {
   rebuild: () => Promise<void>;
   /** Called after each successful rebuild, before Astro reloads the page. */
   onBuilt?: () => void;
+  /** The sources as the first build read them. */
+  seen?: SeenFiles;
 }): DevBuilds {
   const { server, refreshContent, logger, rebuild } = options;
   let project = options.project;
@@ -55,9 +104,11 @@ export function watchDev(options: {
   let running = false;
   let failed = false;
   let assets = new Set<string>();
+  const seen = options.seen ?? new SeenFiles();
   const watchAssets = () => {
     assets = new Set(outsideAssets(project, options.build));
     if (assets.size > 0) server.watcher.add([...assets]);
+    seen.prime([...assets]);
   };
 
   const drain = async () => {
@@ -112,26 +163,22 @@ export function watchDev(options: {
     }, 50);
   };
   const onChange = (event: string, file: string) => {
+    if (!["add", "change", "unlink"].includes(event)) return;
     const absolute = path.resolve(file);
-    if (
-      (absolute === project.configPath || assets.has(absolute)) &&
-      ["add", "change", "unlink"].includes(event)
-    ) {
-      dirty = true;
-      schedule();
-      return;
-    }
-    if (
-      !["add", "change", "unlink"].includes(event) ||
-      !absolute.startsWith(project.contentRoot + path.sep) ||
-      absolute.startsWith(project.outputRoot + path.sep)
-    )
-      return;
+    const source =
+      absolute === project.configPath ||
+      assets.has(absolute) ||
+      (absolute.startsWith(project.contentRoot + path.sep) &&
+        !absolute.startsWith(project.outputRoot + path.sep));
+    if (!source) return;
+    // A late report of an edit the last build already had.
+    if (event !== "unlink" && !seen.changed(absolute)) return;
     dirty = true;
     schedule();
   };
   server.watcher.add(project.contentRoot);
   server.watcher.add(project.configPath);
+  seen.prime([project.contentRoot, project.configPath]);
   watchAssets();
   server.watcher.on("all", onChange);
   server.httpServer?.once("close", () => {
