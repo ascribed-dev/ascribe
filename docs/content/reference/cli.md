@@ -398,7 +398,7 @@ The VS Code extension runs it for you, one server for each project in the worksp
 ## `ascribe sources`
 @available: next
 
-Copies code from [sources in other repositories](content-model.md#a-source-in-another-repository) into the project, and moves their pins. `check` and `build` read only the copies, so these are the only commands that reach another repository, and only `fetch` and `update` do. They run `git`, with `git`'s own credentials: whatever lets `git fetch <url>` work in your shell lets them fetch. They never prompt, so a missing credential fails at once.
+Copies code from [sources in other repositories](content-model.md#a-source-in-another-repository) into the project, and moves their pins. `check` and `build` read only the copies, so `ascribe sources fetch` and `ascribe sources update` are the only commands that reach another repository. They run `git`, with `git`'s own credentials: whatever lets `git fetch <url>` work in your shell lets them fetch. They never prompt, so a missing credential fails at once.
 
 Fetched repositories are kept in a cache outside the project, one per URL, so a second run fetches only what's new: `ascribe` in your cache folder (`$XDG_CACHE_HOME`, `~/.cache`, `~/Library/Caches`, or `%LOCALAPPDATA%`), or `ASCRIBE_CACHE_DIR`. Nothing needs the cache but these commands; deleting it costs only a slower next run.
 
@@ -417,6 +417,33 @@ It lists each copy it wrote or removed. The first time a source's files are copi
 | `0` | The copies match the lock |
 | `1` | A file a snippet names couldn't be copied: it isn't in the repository at the pin, it's over 1 MB, or it isn't text. The reason goes to standard error, and `ascribe check` reports the snippet. |
 | `2` | It couldn't run: no `ascribe.toml`, a content model with errors, an `ascribe.lock` it can't read, a name that isn't a source in another repository, or `git` failing (no network, no access), with the source named and `git`'s own message |
+
+### `ascribe sources update`
+
+Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20), the copies that changed, and the pages whose examples changed, grouped as [`ascribe drift`](#ascribe-drift) groups them. With nothing to move, it changes no file and says so.
+
+@include: ../_generated/cli-sources-update-options.md
+
+```text
+api: 9f2c41d → a3a8411, the head of main, 3 commits
+  a3a8411 Take a user when logging in
+  5be20c1 Document the client
+  0d9e7f3 Rename the examples folder
+  changed src/auth.rs
+
+Examples that changed. The page shows the new code; check the words around it:
+  guides/auth.md
+    api:src/auth.rs#login (+1 −1)
+```
+
+The pages are found as `ascribe drift` finds them, comparing the working tree, with the new copies, against `HEAD`, so run it in a clean checkout. A snippet whose region is gone at the new commit is listed among the examples that no longer resolve, and the update still completes: `ascribe check` then fails on it, which is the signal to fix the page. When the project isn't in a git repository, or has no commit yet, the pages aren't listed, and it says why.
+
+`--format summary` writes Markdown for a pull request's description: each source that moved, with its commits and copies, then the pages, each linked to its route on `[consumer] site`. It writes nothing when nothing moved. `--format json` writes one document: `schema_version` (`1`), `ascribe_version`, `changed`, `sources`, `pages` (as in the [drift JSON](#drift-json), or null), and `pages_unavailable` (why there are no pages, or null). Each source has `name`, `git`, `followed` (the branch, `HEAD`, or `--to`'s revision), `from` and `to` (the pins, `from` null for a first pin), `moved`, `commits` (`count` and `newest`, each with `commit` and `subject`, or null), `files` (each with `path` and `change`: `added`, `changed`, or `removed`), `failed` (each with `path` and `reason`), and `first_copy`.
+
+| Code | Meaning |
+|---|---|
+| `0` | It ran, whether or not a pin moved. A file a snippet names that couldn't be copied is reported on standard error. |
+| `2` | It couldn't: no network, no access, an unknown revision, `--to` with more than one source, or the reasons `fetch` gives. The source is named, with `git`'s own message. |
 
 ### `ascribe sources status`
 

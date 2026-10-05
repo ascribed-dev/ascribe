@@ -92,6 +92,11 @@ impl Code {
         self
     }
 
+    /// Tags a commit.
+    pub fn git_tag(&self, name: &str, commit: &str) {
+        git(self.root(), &["tag", name, commit]);
+    }
+
     /// Commits everything, and returns the commit.
     pub fn commit(&self, message: &str) -> String {
         git(self.root(), &["add", "-A"]);

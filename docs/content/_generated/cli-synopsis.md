@@ -8,6 +8,7 @@ ascribe drift          [--base <REV>] [--build <NAME>]... [--format text|json|su
 ascribe fmt            [--check] [PATHS]...
 ascribe lsp
 ascribe sources fetch  [NAME]...
+ascribe sources update [NAME]... [--to <REV>] [--format text|json|summary]
 ascribe sources status [--format text|json]
 ascribe --version
 ```
