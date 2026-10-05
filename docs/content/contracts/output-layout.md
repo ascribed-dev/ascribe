@@ -67,7 +67,7 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
 }
 ```
 
-<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (https://github.com/ascribed-dev/ascribe/issues/82). -->
+<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (issue #82 in this repository). -->
 
 | Field | Meaning |
 |---|---|
