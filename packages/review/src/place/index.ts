@@ -18,6 +18,7 @@ export {
   type Hunk,
   type LineMap,
   type Shifted,
+  type Sides,
 } from "./lines.js";
 export {
   locateThreads,

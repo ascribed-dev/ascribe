@@ -477,7 +477,7 @@ class ReviewApp {
     return {
       load: () => ask<OverlayData>("load", { anchors: this.anchors(), removed: this.removed() }),
       commentTarget: (anchor) => ask("commentTarget", { anchor }),
-      comment: (anchor, body) => ask("comment", { anchor, body }),
+      comment: (anchor, body, quote) => ask("comment", { anchor, body, quote }),
       reply: (threadId, body, when) => ask("reply", { threadId, body, when }),
       allThreads: () => ask("allThreads"),
       resolve: (threadId, resolved) => ask("resolve", { threadId, resolved }),

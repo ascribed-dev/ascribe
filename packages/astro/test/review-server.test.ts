@@ -226,12 +226,17 @@ describe("ReviewServer", () => {
       "threads",
       { build: "site", path: "guide.md", anchors, removed: [] },
     ]);
-    await channel.request("comment", { path: "guide.md", anchor: anchors[0], body: "Why?" }, "t2");
+    await channel.request(
+      "comment",
+      { path: "guide.md", anchor: anchors[0], body: "Why?", quote: "Shown text" },
+      "t2",
+    );
     expect(calls.find((c) => c[0] === "comment")).toEqual([
       "comment",
       anchors[0],
       "Why?",
       { build: "site", path: "guide.md", anchors, removed: [] },
+      "Shown text",
     ]);
     expect(channel.broadcasts).toContainEqual({ event: CHANGED_EVENT, payload: { from: "t2" } });
   });

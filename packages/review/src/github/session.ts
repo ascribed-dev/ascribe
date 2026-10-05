@@ -114,7 +114,12 @@ export interface ReviewSession {
   /** How a comment on a block would go: as a thread, in the review's summary, or not yet. */
   commentTarget(anchor: Anchor): Promise<CommentTarget>;
   /** Comments on a block, in the pending review. */
-  comment(anchor: Anchor, body: string, page: PageRef): Promise<Thread>;
+  /**
+   * Comments on a block. `quote` is the block's text as the page shows it,
+   * which a comment held in the review's summary quotes; without it, the
+   * comment quotes the block's source.
+   */
+  comment(anchor: Anchor, body: string, page: PageRef, quote?: string): Promise<Thread>;
   /** Replies to a thread: sent at once (`"now"`), or held in the pending review. */
   reply(threadId: string, body: string, when: "now" | "withReview"): Promise<ThreadComment>;
   /** Resolves or reopens a thread, at once. */
@@ -285,6 +290,9 @@ interface State {
 // GitHub's generic failure, which it gives for a moment after some changes
 // (deleting a pending review): worth one more try.
 const TRANSIENT = /something went wrong/i;
+
+/** The most of a block's shown text a held comment quotes: a review's body can't be longer than 65,536 characters. */
+const QUOTE_LIMIT = 2000;
 
 // GitHub's errors when a line can't take a review comment.
 const CANT_ANCHOR =
@@ -592,7 +600,7 @@ export function createSession(options: SessionOptions): ReviewSession {
       return inOne ? { kind: "thread" } : { kind: "summary", reason: "lines" };
     },
 
-    async comment(anchor, body, page) {
+    async comment(anchor, body, page, shown) {
       const { range, repositoryPath, first, last } = await atHead(anchor);
       if ((await changedFiles()).has(repositoryPath)) {
         const review = await ensureReview();
@@ -640,17 +648,23 @@ export function createSession(options: SessionOptions): ReviewSession {
       // GitHub can't anchor it: hold it in the pending review's body, which
       // goes on the conversation when the review is submitted.
       const review = await ensureReview();
-      const text = readFileSync(path.join(root, ...repositoryPath.split("/")), "utf8");
-      const quote = text
-        .split(/\r?\n/)
-        .slice(range.first - 1, range.last)
-        .join("\n");
+      const text = shown?.trim();
+      const quote =
+        text === undefined || text === ""
+          ? readFileSync(path.join(root, ...repositoryPath.split("/")), "utf8")
+              .split(/\r?\n/)
+              .slice(range.first - 1, range.last)
+              .join("\n")
+          : text.length > QUOTE_LIMIT
+            ? `${text.slice(0, QUOTE_LIMIT).trimEnd()}…`
+            : text;
       const source = formatSource(range);
       const section = formatSection({
         source,
         build: page.build,
         body,
         quote,
+        shown: text !== undefined && text !== "",
         link: {
           label: `${range.path}, line${range.first === range.last ? ` ${range.first}` : `s ${range.first}–${range.last}`}`,
           url: blobUrl(pullRequest, repositoryPath, first, last),

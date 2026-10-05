@@ -3,7 +3,7 @@
 // messages: the page preview's extension, or the site preview's dev server.
 // The parameters arrive as untyped messages, so each is checked here.
 import { anchorKey, parseSource, type Anchor } from "../place/anchor.js";
-import { lineHunks, shiftLine, type Hunk } from "../place/lines.js";
+import { lineHunks, shiftLine, type Hunk, type Sides } from "../place/lines.js";
 import type { PageRef, PlacedThreads } from "../place/place.js";
 import { ReviewError } from "../shared/errors.js";
 import { gitMaybe } from "../shared/git.js";
@@ -131,7 +131,11 @@ export async function answerRequest(
         path: context.page?.path ?? "",
         anchors: [target],
       };
-      return { result: await session.comment(target, text(params["body"]), page), changed: true };
+      const quote = typeof params["quote"] === "string" ? params["quote"] : undefined;
+      return {
+        result: await session.comment(target, text(params["body"]), page, quote),
+        changed: true,
+      };
     }
     case "reply":
       return {
@@ -156,14 +160,20 @@ export async function answerRequest(
   }
 }
 
+/** A file's unsaved edits: the line changes from the editor's text to the text on disk. */
+interface Edit {
+  hunks: Hunk[];
+  sides: Sides;
+}
+
 const UNSAVED = "This block has changes that aren't saved. Save the file, then comment.";
 
 /** The line changes from each shown file's text in the editor to its text on disk, where they differ. */
 async function unsavedEdits(
   context: RequestContext,
   shown: readonly Anchor[],
-): Promise<Map<string, Hunk[]>> {
-  const edits = new Map<string, Hunk[]>();
+): Promise<Map<string, Edit>> {
+  const edits = new Map<string, Edit>();
   if (!context.unsaved) return edits;
   const files = new Set<string>();
   for (const block of shown) {
@@ -178,7 +188,12 @@ async function unsavedEdits(
     const text = await context.unsaved(file);
     if (text === undefined) continue;
     const hunks = lineHunks(text.current, text.saved);
-    if (hunks.length > 0) edits.set(file, hunks);
+    if (hunks.length > 0) {
+      edits.set(file, {
+        hunks,
+        sides: { old: text.current.split(/\r?\n/), new: text.saved.split(/\r?\n/) },
+      });
+    }
   }
   return edits;
 }
@@ -189,19 +204,19 @@ async function unsavedEdits(
  * the lines its text has on disk. `undefined` when nothing of it is saved.
  */
 function toSaved(
-  edits: ReadonlyMap<string, Hunk[]>,
+  edits: ReadonlyMap<string, Edit>,
   block: Anchor,
   strict: boolean,
 ): Anchor | undefined {
   if (edits.size === 0) return block;
   const range = parseSource(block.source);
   if (range === undefined) return block;
-  const hunks = edits.get(range.path);
+  const edit = edits.get(range.path);
   let source = block.source;
-  if (hunks !== undefined) {
+  if (edit !== undefined) {
     const lines: number[] = [];
     for (let line = range.first; line <= range.last; line++) {
-      const moved = shiftLine(hunks, line);
+      const moved = shiftLine(edit.hunks, line, edit.sides);
       if (moved === undefined || moved.replaced) {
         if (strict) return undefined;
         if (moved === undefined) continue;
@@ -215,12 +230,12 @@ function toSaved(
   const via: string[] = [];
   for (const include of block.via) {
     const at = parseInclude(include);
-    const includeHunks = at && edits.get(at.path);
-    if (!at || !includeHunks) {
+    const includeEdit = at && edits.get(at.path);
+    if (!at || !includeEdit) {
       via.push(include);
       continue;
     }
-    const moved = shiftLine(includeHunks, at.line);
+    const moved = shiftLine(includeEdit.hunks, at.line, includeEdit.sides);
     if (moved === undefined || (strict && moved.replaced)) return undefined;
     via.push(`${include.slice(0, include.lastIndexOf(":"))}:${moved.line}`);
   }

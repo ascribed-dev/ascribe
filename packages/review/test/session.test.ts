@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
 import { createSession, findPullRequest, openReview } from "../src/github/session.js";
 import type { PullRequestInfo, ReviewSession } from "../src/github/session.js";
 import { readCheckout } from "../src/github/repository.js";
+import { parseSections } from "../src/github/marker.js";
 import { ReviewError } from "../src/shared/errors.js";
 import type { PageRef } from "../src/place/place.js";
 import { comment, FakeGitHub, paged, review, thread } from "./helpers/github.js";
@@ -433,6 +434,25 @@ describe("posting", () => {
     });
   });
 
+  test("a held comment quotes the block's text as the page shows it, when the page sends it", async () => {
+    const fake = postingFake();
+    await session(fake).comment(
+      { source: "_fragments/prereqs.md:1-3", via: ["guides/install.md:25"] },
+      "Should this mention Windows?",
+      installPage,
+      "Shown p1, see #5\nShown p2",
+    );
+    const update = fake.mutations().find((c) => c.operation === "UpdateReview");
+    const body = String(update?.variables["body"]);
+    expect(
+      body.startsWith("> Shown p1\\, see \\#\u20605\\\n> Shown p2\n\nShould this mention Windows?"),
+    ).toBe(true);
+    expect(body).toContain(
+      "<!-- ascribe:anchor _fragments/prereqs.md:1-3 build=site quote=text -->",
+    );
+    expect(parseSections(body).sections[0]?.quote).toBe("Shown p1, see #5\nShown p2");
+  });
+
   test("falls back to the conversation when GitHub can't anchor the line", async () => {
     const fake = postingFake().on("AddThread", () => {
       throw new ReviewError("refused", "GitHub refused the request: Line could not be resolved");
@@ -608,7 +628,14 @@ describe("posting", () => {
     await s.submit("APPROVE", "Looks good.");
     await s.discard();
     expect(fake.mutations().map((c) => [c.operation, c.variables])).toEqual([
-      ["SubmitReview", { reviewId: "PRR_mine", event: "APPROVE", body: `${held}\n\nLooks good.` }],
+      [
+        "SubmitReview",
+        {
+          reviewId: "PRR_mine",
+          event: "APPROVE",
+          body: `Looks good.\n\n<!-- ascribe:summary -->\n\n${held}`,
+        },
+      ],
       ["DeleteReview", { reviewId: "PRR_mine" }],
     ]);
   });
