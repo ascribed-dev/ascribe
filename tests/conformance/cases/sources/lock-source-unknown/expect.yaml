@@ -1,0 +1,11 @@
+description: >-
+  Each pin in the lock names a source the content model declares with
+  `git`, in the same repository: not a source it doesn't declare, not one
+  with a `path`, and not one whose `git` has changed since it was pinned.
+spec: ["7.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: lock-source-unknown, file: ascribe.lock, line: 13}
+  - {slug: lock-source-unknown, file: ascribe.lock, line: 21}
+  - {slug: lock-source-unknown, file: ascribe.lock, line: 26}

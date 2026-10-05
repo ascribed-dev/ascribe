@@ -1,0 +1,7 @@
+description: >-
+  A copy that no snippet uses any more is a warning.
+spec: ["7.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: source-copy-unused, file: ascribe.lock, line: 18}

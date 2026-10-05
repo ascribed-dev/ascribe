@@ -113,9 +113,29 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[sources.code]\npath = \"/code\" #!\n",
         ),
         case(
-            "model-missing-key",
-            None,
+            "model-source-remote",
+            Some("neither"),
             "spec = \"0.1\"\n[sources.code] #!\ninclude = [\"*.py\"]\n",
+        ),
+        case(
+            "model-source-remote",
+            Some("branch"),
+            "spec = \"0.1\"\n[sources.code]\npath = \"code\"\nbranch = \"main\" #!\n",
+        ),
+        case(
+            "model-source-remote",
+            Some("url"),
+            "spec = \"0.1\"\n[sources.code]\ngit = \"--upload-pack=touch x\" #!\n",
+        ),
+        case(
+            "model-source-remote",
+            Some("branch-name"),
+            "spec = \"0.1\"\n[sources.code]\ngit = \"https://example.com/x.git\"\nbranch = \"a..b\" #!\n",
+        ),
+        case(
+            "model-source-remote",
+            Some("inside-content"),
+            "spec = \"0.1\"\n[project]\ncontent-root = \".\"\n[sources.code] #!\ngit = \"https://example.com/x.git\"\n",
         ),
         // 21.3 Content types, fragments, and fields
         case(

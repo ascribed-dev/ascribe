@@ -21,7 +21,7 @@ include = ["service/**", "examples/**"]
 ignore = ["**/node_modules/**"]
 ```
 
-The folder must be in the same git repository as the project. See [`[sources.<name>]`](../reference/content-model.md#18-sourcesname) for every key.
+The folder must be in the same git repository as the project. When the code is in another repository, see [Docs kept apart from the code](#docs-kept-apart-from-the-code). See [`[sources.<name>]`](../reference/content-model.md#18-sourcesname) for every key.
 
 ### 2. Mark a region in the code
 
@@ -59,6 +59,34 @@ Leave out `#connect` to show the whole file. The [directive reference](../refere
 - **Check.** `ascribe check` and the editor report a snippet whose file, source, or region doesn't exist, and a file whose tags don't balance, at the `@snippet` line. Renaming a region or moving a file breaks the build instead of the example.
 - **Build.** Every output has the code as it is now. In the JSON output, the code block names its address and the lines of the file it came from.
 - **Diff and review.** [`ascribe diff`](../reference/cli.md#ascribe-diff) and review list every page whose snippet's code changed, with its address as what the change comes from: `install.md: 1 changed (through code:service/client.py#connect)`. The base revision's code is read from git, the same way the pages are.
+
+## Docs kept apart from the code
+
+When the docs have a repository of their own, a source can name the code's repository instead of a folder. Pages address it the same way, so moving the code from one repository to the other changes `ascribe.toml` and no page:
+
+```toml
+[sources.api]
+git = "https://github.com/acme/api.git"
+branch = "main"                           # the branch `update` follows
+include = ["src/**", "examples/**"]
+```
+
+Ascribe doesn't read the other repository whenever it checks. It copies the files your snippets use, whole, into `sources/api/` beside `ascribe.toml`, and pins the commit they came from in `ascribe.lock`. You commit both with the docs:
+
+1. Write the `@snippet`, then run `ascribe sources fetch`. It pins the source to the head of its branch the first time, and copies the file.
+2. Commit `ascribe.lock` and `sources/`.
+3. When the code moves on, run `ascribe sources update`. It moves the pin, copies the files again, and lists the pages whose examples changed, the way `ascribe drift` does, so the pull request that moves the pin says which pages to read. The pages are found by comparing with the docs' last commit, so in a new repository, commit once first.
+
+Everything else reads the copies: `ascribe check`, `ascribe build`, the editor, and `ascribe diff` and `ascribe drift`, which read the copies at the base from the docs repository's own history. None of them run `git` against the code's repository or use the network, and `ascribe check` fails on a copy edited by hand, since the change belongs in the code. `ascribe sources status` shows each pin and copy.
+
+- **What's published.** The copies are committed with the docs, so everyone who can read the docs repository can read them. When the code is private and the docs are public, that's a decision to make knowingly; `fetch` and `update` say so the first time they copy a source's files.
+- **Access.** `ascribe sources fetch` and `update` run `git`, with whatever credentials let `git fetch` work in that shell. A CI job that only checks or builds needs no access to the code's repository, and neither does the host that builds your site. A job that runs `update` needs read access, for a private repository a token from a GitHub App or a read-only deploy key, given to `git` as any other job would, for example:
+
+  ```sh
+  git config --global url."https://x-access-token:${CODE_TOKEN}@github.com/".insteadOf "https://github.com/"
+  ```
+
+See [a source in another repository](../reference/content-model.md#a-source-in-another-repository) and [`ascribe sources`](../reference/cli.md#ascribe-sources).
 
 ## When an example changes
 

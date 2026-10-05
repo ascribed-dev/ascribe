@@ -7,13 +7,17 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use tessera_core::{FileId, LineIndex, RelPath};
-use tessera_model::ContentModel;
+use tessera_model::{ContentModel, LOCK_FILE};
 use tessera_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
 
 use crate::Diagnostic;
 
 /// The content model's file name, at the project root.
 pub const MODEL_FILE: &str = "ascribe.toml";
+
+/// The id of `ascribe.lock` (SPEC §7.4), for locations in it: past any
+/// source file's, and before the code files'.
+pub const LOCK_FILE_ID: FileId = FileId::new(0x7FFF_FFFF);
 
 /// One source file: a Markdown file under the content root.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -106,6 +110,8 @@ pub struct Project {
     fs: Files,
     /// The code files snippets have read, read as the checks ask for them.
     code: Arc<CodeFiles>,
+    /// The text of `ascribe.lock`, when there is one.
+    lock_text: Option<String>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -281,7 +287,14 @@ impl Project {
         };
         // A caller that doesn't bring a file system is a one-shot command (or a
         // test): the disk doesn't change while it runs, so listings are kept.
-        let fs = fs.unwrap_or_else(|| Arc::new(DiskFs::with_listing_cache(&root, &layout)));
+        let fs: Arc<dyn FileSystem + Send + Sync> =
+            fs.unwrap_or_else(|| Arc::new(DiskFs::with_listing_cache(&root, &layout)));
+        // The lock is read like any other file beside the content model, so
+        // a project in memory can have one.
+        let lock_text = RelPath::parse(LOCK_FILE)
+            .ok()
+            .and_then(|path| fs.read_file(&path).ok())
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
         Project {
             root,
             layout,
@@ -292,6 +305,7 @@ impl Project {
             source_paths,
             fs: Files(fs),
             code: Arc::default(),
+            lock_text,
         }
     }
 
@@ -364,6 +378,11 @@ impl Project {
         self.sources.iter().find(|s| &s.path == path)
     }
 
+    /// The text of `ascribe.lock`, when the project has one.
+    pub fn lock_text(&self) -> Option<&str> {
+        self.lock_text.as_deref()
+    }
+
     /// What a file id names.
     pub fn file(&self, id: FileId) -> Option<FileEntry<'_>> {
         if id == FileId::new(0) {
@@ -371,6 +390,14 @@ impl Project {
                 id,
                 display_path: MODEL_FILE.to_owned(),
                 text: &self.model_text,
+                content_path: None,
+            });
+        }
+        if id == LOCK_FILE_ID {
+            return self.lock_text.as_deref().map(|text| FileEntry {
+                id,
+                display_path: LOCK_FILE.to_owned(),
+                text,
                 content_path: None,
             });
         }

@@ -1,0 +1,15 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[sources.api]
+git = "https://github.com/acme/api.git"
+branch = "main"
+include = ["src/**", "examples/**"]
+
+[sources.cli]
+git = "git@github.com:acme/cli.git"
+
+[sources.code]
+path = "code"

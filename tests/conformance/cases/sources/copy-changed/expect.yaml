@@ -1,0 +1,11 @@
+description: >-
+  A copy is the file at the pinned commit: a copy whose bytes don't have the
+  hash the lock records was changed here, and a file the lock lists that
+  isn't there is missing, as is the snippet that uses it.
+spec: ["7.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: source-copy-changed, file: ascribe.lock, line: 10}
+  - {slug: source-copy-changed, file: ascribe.lock, line: 18}
+  - {slug: snippet-file-missing, file: index.md, line: 7}
