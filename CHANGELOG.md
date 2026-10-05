@@ -34,6 +34,7 @@ This release adds **review**: reading a pull request as readers will see it, pag
 ### Installing
 
 - The Linux binaries run on glibc 2.28 or later, instead of 2.39, so `@ascribed/cli` installs and runs in the build images of Vercel, AWS Amplify, and Cloudflare Pages as well as Netlify's. The release workflow runs each one on glibc 2.28, so the floor can't rise unnoticed.
+- A canary of the npm packages, built from `main`, is published every night under the `next` tag: `npm install @ascribed/cli@next @ascribed/astro@next`. It comes with no promise of stability, and its `ascribe --version` names the commit it was built from. Releases still publish under `latest`.
 
 ### `@ascribed/review`
 

@@ -1,6 +1,8 @@
 # Releasing Ascribe
 
-A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), eight npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person starts it, approves each publishing step, and publishes the GitHub release at the end. Nothing is published without that person.
+A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), eight npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person starts it, approves each publishing step, and publishes the GitHub release at the end. Nothing in a release is published without that person.
+
+The [nightly canary](#the-nightly-canary) is the one exception: the npm packages, built from `main` and published under the `next` tag every night, unattended. It never moves `latest`.
 
 | What | Where | Published by |
 |---|---|---|
@@ -27,7 +29,7 @@ Without `publish`, it's a dry run: everything up to `smoke` runs, and the publis
 | Thing | Where it lives | How it's reached |
 |---|---|---|
 | Source and CI | GitHub organization `ascribed-dev`, repository `ascribe` (organization id 335742967, repository id 1393013016) | The `release` environment requires a reviewer and allows only `v*` tags. |
-| npm packages | npm organization `ascribed` | Trusted publishing: each package trusts the `release` environment of this repository's `release.yml`. There is no token. |
+| npm packages | npm organization `ascribed` | Trusted publishing: each package trusts the `release` environment of this repository's `release.yml`, and the `canary` environment of its `canary.yml`. There is no token. |
 | VS Code extension | Marketplace publisher `Ascribe`, created by a personal Microsoft account (the owner) | The managed identity below is a Contributor member. |
 | The managed identity `ascribe-vscode-publisher` | Resource group `ascribe-release`, region East US, in the Azure tenant and subscription that account's free Azure sign-up created | A federated credential trusts the workflow (below). |
 | An Azure DevOps organization | Connected to that tenant | It exists only to give the identity an Azure DevOps profile. It has no projects or pipelines. |
@@ -239,6 +241,36 @@ jobs:
 ```
 
 **The GitHub release is bad:** while it's a draft, `gh release delete v0.2.0` removes it. After publishing, edit it, or mark it a pre-release while a fix is prepared.
+
+## The nightly canary
+
+The [canary workflow](.github/workflows/canary.yml) publishes the npm packages (the four platform packages, `@ascribed/cli`, `@ascribed/elements`, `@ascribed/review`, and `@ascribed/astro`) from `main` every night at 04:17 UTC, under the `next` tag, with nobody approving it. It's for sites that follow `main`, ours first: `npm install @ascribed/cli@next @ascribed/astro@next`. The VS Code extension has no canary.
+
+- **The version** is `<next>-next.<n>`: the version after the latest release, and the workflow's run number. The next version is the one the changelog's unreleased section names (`## 0.2.0 (unreleased)`), or a patch bump of the workspace's version under `## Unreleased`. `node scripts/release/version.ts --canary <n>` stamps it in the working tree; it's never committed. A canary sorts before the release it leads to, so `npm install` of a range never picks one.
+- **Its commit** is each package's `gitHead` (`npm view @ascribed/cli@next gitHead`), and `ascribe --version` prints it: `ascribe 0.1.2-next.42 (3f9c2a1b7d4e)`.
+- **It runs only when something ships.** It compares `main` with the last canary's commit, in `crates/`, `packages/`, `scripts/release/`, `Cargo.toml`, `Cargo.lock`, and `pnpm-lock.yaml`. When nothing there has changed, it publishes nothing, and the run passes.
+- **It builds, packs, and smoke-tests as a release does,** with the same jobs (`release-build.yml`). If any of them fails, nothing is published and `next` stays where it was.
+- **It publishes from the `canary` environment,** with provenance, then tells the docs site to rebuild when the `SITE_BUILD_HOOK` secret is set.
+
+To publish one by hand (after a fix, or when a night's wait matters): Actions → **Canary** → Run workflow, from `main`. **force** publishes even when nothing has changed.
+
+### Setting it up
+
+Do these once, after the release setup above.
+
+1. **The `canary` environment.** Settings → Environments → **New environment** → `canary`. No required reviewers. **Deployment branches and tags:** Selected branches and tags → add the branch rule `main`. **Check:** the environment has no reviewers and allows only `main`.
+2. **A second trusted publisher on each npm package.** A package can trust up to ten workflows. On each package's npm page, Settings → Trusted Publisher → add a GitHub Actions publisher: organization or user `ascribed-dev`, repository `ascribe`, workflow filename `canary.yml`, environment `canary`. Do it for all eight packages. Leave the `release.yml` one as it is. The workflow filename must be `canary.yml`, not `release-build.yml`: npm checks the workflow that was started, not a reusable one it calls. **Check:** each package's Trusted Publisher settings list both `release.yml` (environment `release`) and `canary.yml` (environment `canary`). The real check is a canary: the `npm` job succeeds, and `npm view @ascribed/cli dist-tags` shows `next` on it and `latest` unchanged.
+
+### A bad canary
+
+A canary can't be replaced: npm never reuses a version. Fix `main`, then run the workflow by hand; the new canary takes `next`. Meanwhile, deprecate the bad one, and point `next` back at the last good one:
+
+```sh
+npm deprecate @ascribed/cli@0.1.2-next.42 "Broken; use 0.1.2-next.43"   # for each package
+npm dist-tag add @ascribed/cli@0.1.2-next.41 next                         # for each package
+```
+
+**A publish that failed partway:** re-run the failed job. A re-run keeps the run number, so the version is the same, and packages already published are skipped.
 
 ## Known limitations
 
