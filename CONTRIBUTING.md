@@ -30,9 +30,11 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions.
 
+A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter.
+
 ## Documenting a change
 
-The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds a line to the unreleased section of [CHANGELOG.md](CHANGELOG.md). What no release has yet is marked `@available: next` on its page or section. Every page must pass the checks the **Docs** workflow runs:
+The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds a line to the unreleased section of [CHANGELOG.md](CHANGELOG.md). What no release has yet is marked `@available: next` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):
 
 ```sh
 cargo build -p tessera-cli
@@ -72,7 +74,7 @@ npm test                 # navigation, links, and the site in Chromium
 
 For `astro dev`, which rebuilds as you edit pages, run `ASCRIBE_BIN=../target/debug/ascribe npm run dev` after `build:checkout`; without `ASCRIBE_BIN`, it runs the binary from npm. `npm ci` puts back the packages from npm. [site/README.md](site/README.md) has the rest.
 
-The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, or Ascribe gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/`, or a file its pages take examples from, gets a review report of its pages from the **Review** workflow.
+The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, Ascribe, or a file the docs take examples from gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/`, or a file its pages take examples from, gets a review report of its pages from the **Review** workflow.
 
 ## Generated docs
 

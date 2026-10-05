@@ -213,6 +213,11 @@ fn write_text(out: &mut dyn Write, report: &DriftReport) -> io::Result<()> {
     if report.pages.is_empty() {
         return writeln!(out, "\nNo examples changed.");
     }
+    write_text_groups(out, report)
+}
+
+/// The groups of pages, for people, each after a blank line.
+pub(crate) fn write_text_groups(out: &mut dyn Write, report: &DriftReport) -> io::Result<()> {
     for (i, group) in groups(report).iter().enumerate() {
         if group.pages.is_empty() {
             continue;
@@ -239,6 +244,16 @@ fn write_summary(out: &mut dyn Write, report: &DriftReport, site: Option<&str>) 
         "{}.",
         upper_first(&compared(report, |s| format!("`{s}`")))
     )?;
+    write_summary_groups(out, report, site)
+}
+
+/// The groups of pages as Markdown, each after a blank line, each page linked
+/// to its route on `site`.
+pub(crate) fn write_summary_groups(
+    out: &mut dyn Write,
+    report: &DriftReport,
+    site: Option<&str>,
+) -> io::Result<()> {
     for (i, group) in groups(report).iter().enumerate() {
         if group.pages.is_empty() {
             continue;
@@ -272,7 +287,7 @@ fn upper_first(text: &str) -> String {
 }
 
 /// A path as Markdown text: the characters that would start markup, escaped.
-fn escape(text: &str) -> String {
+pub(crate) fn escape(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     for c in text.chars() {
         if matches!(c, '\\' | '[' | ']' | '*' | '_' | '`' | '<' | '>') {

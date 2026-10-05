@@ -376,10 +376,12 @@ pub fn resolve_snippet(
     let path = folder
         .join(&address.path)
         .map_err(|_| SnippetError::Missing { actual: None })?;
-    // A file the source doesn't make readable isn't read at all.
+    // A file the source doesn't make readable isn't read at all. A source in
+    // another repository has only the copies of files it does, so there's no
+    // telling whether the file exists.
     if !source.reads(&address.path) {
         return Err(match fs.probe(&path) {
-            Probe::Missing => SnippetError::Missing { actual: None },
+            Probe::Missing if source.git.is_none() => SnippetError::Missing { actual: None },
             _ => SnippetError::NotIncluded,
         });
     }
@@ -482,8 +484,14 @@ pub fn snippet_issues(
             let issue = Issue::new(diagnostics::SNIPPET_FILE_MISSING, at)
                 .with_arg("path", address.path.clone())
                 .with_arg("source", address.source.clone());
+            let remote = model
+                .source(&address.source)
+                .is_some_and(|s| s.git.is_some());
             vec![match actual {
                 Some(actual) => issue.with_variant("case").with_arg("actual", actual),
+                // A source in another repository is read through its copies
+                // (SPEC §7.4), which are made by a command of their own.
+                None if remote => issue.with_variant("no-copy"),
                 None => issue,
             }]
         }

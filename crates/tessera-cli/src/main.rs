@@ -4,6 +4,8 @@
 //! `commands/` (`check`, `build`, `diff`, `fmt`, `lsp`), so a new subcommand is its
 //! own module and a line in `cli.rs`.
 
+// `docs_page!`, for the help of subcommands defined in their own modules.
+#[macro_use]
 mod cli;
 mod commands;
 mod context;

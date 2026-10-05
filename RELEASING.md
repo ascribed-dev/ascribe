@@ -147,7 +147,7 @@ git push origin main
 
 Actions → **Release** → Run workflow, from `main`, with **publish** unchecked. It builds the binary on each platform, packs everything, installs the npm packages and each extension package on its platform and checks them against `examples/quill`, and runs the publish steps with `--dry-run`.
 
-**Check:** every job passes, and the Rust and JavaScript workflows are green on the same commit. A failing job on any platform stops the release: don't tag until it's fixed. Download the `release` artifact and look it over: `npm/` has eight tarballs, `vsix/` four packages, `github/` four archives.
+**Check:** every job passes, and the **CI** workflow is green on the same commit. CI on `main` runs Linux and macOS; every platform runs in its nightly run, so check that the latest one passed, or start one from `main` (Actions → CI → Run workflow). A failing job on any platform stops the release: don't tag until it's fixed. Download the `release` artifact and look it over: `npm/` has eight tarballs, `vsix/` four packages, `github/` four archives.
 
 ### 6. Tag
 

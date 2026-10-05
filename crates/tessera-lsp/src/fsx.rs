@@ -67,6 +67,10 @@ impl FileSystem for BufferFs {
         self.disk.real_path(project_path)
     }
 
+    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
+        self.disk.files_in(project_dir)
+    }
+
     fn probe(&self, project_path: &RelPath) -> Probe {
         let mut probes = self.probes.lock().unwrap_or_else(PoisonError::into_inner);
         if let Some(answer) = probes.get(project_path) {
@@ -135,6 +139,10 @@ impl FileSystem for LayerFs {
 
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
         self.disk.real_path(project_path)
+    }
+
+    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
+        self.disk.files_in(project_dir)
     }
 
     /// Exact names win; among names that differ only in case, files added here

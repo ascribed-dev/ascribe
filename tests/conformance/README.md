@@ -51,6 +51,7 @@ The cases were written from SPEC.md, not from any implementation. They're groupe
 | `widgets/` | Project widgets (§6) |
 | `phrases/`, `links/`, `images/`, `headings/`, `glossary/` | Inline constructs, source ids and page ids (§5) |
 | `frontmatter/`, `model/` | Frontmatter, content types, fragments, name roles (§2, §7.2) |
+| `sources/` | Sources in another repository: their copies and `ascribe.lock` (§7.4) |
 | `format/` | Canonical form (§8.3): each rule, what the formatter leaves alone, and constructs with errors |
 | `builds/selection/`, `builds/filter/`, `builds/assets/`, `builds/pages/` | Resolution and build modes, availability filtering, assets, which files are pages (§9.2–§9.4) |
 | `projects/quill/` | The whole Quill project of `examples/quill`, with no diagnostics under any build |

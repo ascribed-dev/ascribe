@@ -52,6 +52,12 @@ fn help_links_to_the_docs_site() {
     // Rendering builds the command, which adds clap's own `help` subcommand.
     for command in cli.get_subcommands_mut().filter(|c| c.get_name() != "help") {
         helps.push(command.render_long_help().to_string());
+        for sub in command
+            .get_subcommands_mut()
+            .filter(|c| c.get_name() != "help")
+        {
+            helps.push(sub.render_long_help().to_string());
+        }
     }
     for help in helps {
         let link = help
@@ -62,9 +68,12 @@ fn help_links_to_the_docs_site() {
         let (route, anchor) = path.split_once('#').unwrap_or((path, ""));
         assert_eq!(route, "/reference/cli/", "{link}");
         if !anchor.is_empty() {
-            let command = anchor.strip_prefix("ascribe-").unwrap();
+            // `ascribe-sources-fetch` is the heading `ascribe sources fetch`,
+            // a level below `ascribe sources`.
+            let command = anchor.strip_prefix("ascribe-").unwrap().replace('-', " ");
             assert!(
-                page.contains(&format!("\n## `ascribe {command}`\n")),
+                page.contains(&format!("\n## `ascribe {command}`\n"))
+                    || page.contains(&format!("\n### `ascribe {command}`\n")),
                 "{link}: reference/cli.md has no `ascribe {command}` heading"
             );
         }
@@ -124,26 +133,46 @@ fn check_fragments(prefix: &str, fragments: &[(String, String)]) {
 }
 
 /// The fragments, by file name: the synopsis, the options every command
-/// accepts, and one for each command that has options of its own.
+/// accepts, and one for each command that has options of its own. A command
+/// with subcommands (`sources`) is listed as each of them (`sources fetch`).
 fn render() -> Vec<(String, String)> {
     let cli = Cli::command();
-    let commands: Vec<&Command> = cli.get_subcommands().collect();
+    let commands = leaves(&cli);
     let mut fragments = vec![("cli-synopsis.md".to_owned(), synopsis(&commands))];
 
     let global: Vec<&Arg> = cli.get_arguments().filter(|a| documented(a)).collect();
     fragments.push(("cli-global-options.md".to_owned(), options("", &global)));
 
-    for command in commands {
+    for (name, command) in commands {
         let args: Vec<&Arg> = command
             .get_arguments()
             .filter(|a| documented(a) && !a.is_global_set())
             .collect();
         if !args.is_empty() {
-            let name = command.get_name();
-            fragments.push((format!("cli-{name}-options.md"), options(name, &args)));
+            let file = name.replace(' ', "-");
+            fragments.push((format!("cli-{file}-options.md"), options(&name, &args)));
         }
     }
     fragments
+}
+
+/// Each command that runs, by its name after `ascribe`: the top-level
+/// commands, and the subcommands of one that has them in its place.
+fn leaves(cli: &Command) -> Vec<(String, &Command)> {
+    let mut out = Vec::new();
+    for command in cli.get_subcommands() {
+        let subcommands: Vec<&Command> = command
+            .get_subcommands()
+            .filter(|c| c.get_name() != "help")
+            .collect();
+        if subcommands.is_empty() {
+            out.push((command.get_name().to_owned(), command));
+        }
+        for sub in subcommands {
+            out.push((format!("{} {}", command.get_name(), sub.get_name()), sub));
+        }
+    }
+    out
 }
 
 /// Whether an argument is documented: every one but `--help` and `--version`,
@@ -153,20 +182,20 @@ fn documented(arg: &Arg) -> bool {
 }
 
 /// The synopsis: a line for each command, with its options in order.
-fn synopsis(commands: &[&Command]) -> String {
+fn synopsis(commands: &[(String, &Command)]) -> String {
     let width = commands
         .iter()
-        .map(|c| c.get_name().len())
+        .map(|(name, _)| name.len())
         .max()
         .unwrap_or(0);
     let mut out = format!("{HEADER}\n```text\n");
-    for command in commands {
+    for (name, command) in commands {
         let usage: Vec<String> = command
             .get_arguments()
             .filter(|a| documented(a) && !a.is_global_set())
             .map(usage)
             .collect();
-        let line = format!("ascribe {:width$} {}", command.get_name(), usage.join(" "));
+        let line = format!("ascribe {name:width$} {}", usage.join(" "));
         let _ = writeln!(out, "{}", line.trim_end());
     }
     out.push_str("ascribe --version\n```\n");

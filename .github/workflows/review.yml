@@ -6,7 +6,9 @@
 # the canary of `main`, over the release the job installs, since this
 # repository's projects follow `main`. It reports on docs when the pull request
 # changes docs or a file its pages take examples from, and the `quill` job
-# reports on examples/quill every time.
+# reports on examples/quill every time. It runs on its own, not from ci.yml:
+# a report isn't a check, and with Ascribe from npm it can't pass before a
+# canary has what a pull request's docs use, so it doesn't hold up a merge.
 # The region's end tag is indented so a formatter doesn't put a blank line
 # before it, which the page would show (issue #107).
 # :snippet-start: job

@@ -158,10 +158,19 @@ impl Fingerprints {
         // `index` adds what indexing reads: phrases (heading text, destinations),
         // fragment patterns (page or fragment), the slugger, and the sources
         // snippets are read through (a snippet's code is part of the
-        // expansion).
+        // expansion). Where each is declared changes nothing a file reads.
+        let read_through: Vec<_> = sources
+            .iter()
+            .map(|s| (&s.name, &s.path, &s.include, &s.ignore, &s.git))
+            .collect();
         let index = hash_of(&format!(
             "{parse}{:?}",
-            (phrases, &fragments.patterns, &consumer.slugger, sources)
+            (
+                phrases,
+                &fragments.patterns,
+                &consumer.slugger,
+                &read_through
+            )
         ));
         let whole = hash_of(&format!(
             "{:?}",
@@ -175,7 +184,7 @@ impl Fingerprints {
                     consumer,
                     builds,
                     editor_build,
-                    sources
+                    &read_through
                 ),
             )
         ));

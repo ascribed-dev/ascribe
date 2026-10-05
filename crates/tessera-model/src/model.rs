@@ -74,14 +74,33 @@ pub struct Project {
 pub struct Source {
     /// The source's name, as addresses write it.
     pub name: String,
-    /// Its folder, relative to the project root, as written.
+    /// Its folder, relative to the project root: the `path` written, or, for
+    /// a source in another repository, the folder of its copies,
+    /// `sources/<name>` ([`Source::copies_folder`]).
     pub path: String,
     /// The files it makes readable, matched against a file's path relative
     /// to the folder. Empty means every file.
     pub include: Vec<Pattern>,
     /// Files it doesn't make readable, though `include` matches them.
     pub ignore: Vec<Pattern>,
+    /// The repository, for a source in another repository (SPEC §7.4).
+    pub git: Option<Remote>,
+    /// The `[sources.<name>]` key in `ascribe.toml`.
+    pub span: Span,
 }
+
+/// Another repository a source is in (SPEC §7.4).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Remote {
+    /// Its URL, as `git` takes it.
+    pub url: String,
+    /// The branch an update follows; `None` for the repository's default.
+    pub branch: Option<String>,
+}
+
+/// The folder, in the project's folder, that holds the copies of every
+/// source in another repository, each in a folder of its own.
+pub const COPIES_FOLDER: &str = "sources";
 
 impl Source {
     /// Whether the file at `path`, relative to the source's folder, is
@@ -89,6 +108,12 @@ impl Source {
     pub fn reads(&self, path: &str) -> bool {
         (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
             && !self.ignore.iter().any(|p| p.matches(path))
+    }
+
+    /// The folder of a source's copies, relative to the project root, when
+    /// the source is in another repository: `sources/<name>`.
+    pub fn copies_folder(name: &str) -> String {
+        format!("{COPIES_FOLDER}/{name}")
     }
 }
 

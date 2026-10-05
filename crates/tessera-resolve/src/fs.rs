@@ -103,6 +103,15 @@ pub trait FileSystem {
     /// leads where no path from the project root reaches (another drive). A
     /// snippet reads a file only when this is inside its source (SPEC §4.8).
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath>;
+
+    /// Every file in a folder and the folders in it, as paths relative to
+    /// the project root, in path order: the copies of a source in another
+    /// repository (SPEC §7.4). A symbolic link is listed, not followed.
+    /// Empty when the folder isn't there; a file system that can't list
+    /// lists nothing.
+    fn files_in(&self, _project_dir: &RelPath) -> Vec<RelPath> {
+        Vec::new()
+    }
 }
 
 /// A project on disk.
@@ -272,6 +281,38 @@ impl FileSystem for DiskFs {
             .segments()
             .fold(self.project_root.clone(), |p, s| p.join(s));
         relative_path(&root, &path.canonicalize().ok()?)
+    }
+
+    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
+        let dir = project_dir
+            .segments()
+            .fold(self.project_root.clone(), |p, s| p.join(s));
+        let mut out = Vec::new();
+        list_files(&dir, project_dir, &mut out);
+        out.sort();
+        out
+    }
+}
+
+/// The files under `dir` (at `rel` from the project root), without following
+/// a symbolic link: a link is listed as a file.
+fn list_files(dir: &Path, rel: &RelPath, out: &mut Vec<RelPath>) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let Ok(kind) = entry.file_type() else {
+            continue;
+        };
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let Ok(child) = rel.join(&name) else {
+            continue;
+        };
+        if kind.is_dir() {
+            list_files(&entry.path(), &child, out);
+        } else {
+            out.push(child);
+        }
     }
 }
 
@@ -504,6 +545,14 @@ impl FileSystem for MemoryFs {
             Some(actual) => Probe::CaseMismatch(actual.clone()),
             None => Probe::Missing,
         }
+    }
+
+    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
+        self.files
+            .keys()
+            .filter(|p| p.starts_with(project_dir) && *p != project_dir)
+            .cloned()
+            .collect()
     }
 }
 

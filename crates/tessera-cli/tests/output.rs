@@ -600,3 +600,74 @@ fn getting_started() {
         &stdout(&run(&example, &["check"], 1)),
     );
 }
+
+fn file_url(dir: &Path) -> String {
+    let text = dir.display().to_string().replace('\\', "/");
+    if text.starts_with('/') {
+        format!("file://{text}")
+    } else {
+        format!("file:///{text}")
+    }
+}
+
+/// `ascribe sources update`, after three commits to the code repository: the
+/// command reference's text output.
+#[test]
+fn sources_update() {
+    let api = repository();
+    write(
+        api.path(),
+        "src/auth.rs",
+        "// :snippet-start: login\nfn login() {}\n// :snippet-end:\n",
+    );
+    write(api.path(), "examples/login.sh", "lantern login\n");
+    commit(api.path(), "Add login");
+
+    let docs = repository();
+    let cache = tempfile::tempdir().unwrap();
+    let model = format!(
+        "spec = \"0.1\"\n\n[sources.api]\ngit = \"{}\"\nbranch = \"main\"\ninclude = [\"src/**\", \"examples/**\"]\n",
+        file_url(api.path())
+    );
+    write(docs.path(), "ascribe.toml", &model);
+    write(
+        docs.path(),
+        "docs/guides/auth.md",
+        "---\ntitle: Sign in\n---\n\nLog in with:\n\n@snippet: api:src/auth.rs#login\n",
+    );
+    let sources = |args: &[&str]| {
+        let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+            .current_dir(docs.path())
+            .args(args)
+            .env("NO_COLOR", "1")
+            .env("ASCRIBE_CACHE_DIR", cache.path())
+            .output()
+            .expect("run ascribe");
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "ascribe {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        out
+    };
+    sources(&["sources", "fetch"]);
+    commit(docs.path(), "Document signing in");
+
+    write(api.path(), "examples/sh/login.sh", "lantern login\n");
+    fs::remove_file(api.path().join("examples").join("login.sh")).unwrap();
+    commit(api.path(), "Rename the examples folder");
+    write(api.path(), "README.md", "# API\n");
+    commit(api.path(), "Document the client");
+    write(
+        api.path(),
+        "src/auth.rs",
+        "// :snippet-start: login\nfn login(user: &str) {}\n// :snippet-end:\n",
+    );
+    commit(api.path(), "Take a user when logging in");
+
+    expect(
+        "sources-update.txt",
+        &stdout(&sources(&["sources", "update"])),
+    );
+}

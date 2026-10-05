@@ -59,15 +59,15 @@ Every fenced code block in `docs/content/`, by where its code comes from:
 
 | Kind | Before | After |
 |---|---|---|
-| Taken from a tested file with `@snippet` | 0 | 40 |
+| Taken from a tested file with `@snippet` | 0 | 41 |
 | Generated (a `_generated/` fragment) | 1 | 1 |
-| A hand-kept copy of a file in the repository, or of a command's output | 40 | 0 |
-| Illustrative: a few lines showing syntax, with no real file behind them | 77 | 77 |
-| **All** | **118** | **118** |
+| A hand-kept copy of a file in the repository, or of a command's output | 41 | 0 |
+| Illustrative: a few lines showing syntax, with no real file behind them | 80 | 80 |
+| **All** | **122** | **122** |
 
-The 40 snippets come from `examples/content-models/full.toml` (24, the `ascribe.toml` reference and its contract), `examples/astro-site` (5, the Astro guide), `examples/getting-started` (2, new: the getting started guide's project, checked by a test), the Drift and Review workflows (2, the guides' CI jobs, now the jobs this repository runs), and command output written by `crates/tessera-cli/tests/output.rs` (7: `check`, `diff`, and `drift`, as text and JSON). Converting them found one copy that was wrong: the `ascribe check` JSON example's byte offsets (55 and 70; the command prints 121 and 136).
+The 41 snippets come from `examples/content-models/full.toml` (24, the `ascribe.toml` reference and its contract), `examples/astro-site` (5, the Astro guide), `examples/getting-started` (2, new: the getting started guide's project, checked by a test), the Drift and Review workflows (2, the guides' CI jobs, now the jobs this repository runs), and command output written by `crates/tessera-cli/tests/output.rs` (8: `check`, `diff`, and `drift`, as text and JSON, and `sources update`). Converting them found one copy that was wrong: the `ascribe check` JSON example's byte offsets (55 and 70; the command prints 121 and 136).
 
-What stayed illustrative: syntax in the directive reference and the contracts, examples in the content model reference that show a key's default or SPEC's own examples, the steps' shell commands, the getting started guide's `astro.config.mjs` and CI job (a user's project, not one this repository runs), and the Python in the drift guide that demonstrates tags (a snippet leaves tags out, so it can't show them).
+What stayed illustrative: syntax in the directive reference and the contracts, examples in the content model reference that show a key's default or SPEC's own examples, the steps' shell commands, the getting started guide's `astro.config.mjs` and CI job (a user's project, not one this repository runs), and the Python in the drift guide that demonstrates tags, the remote source's `[sources.api]` (a repository that doesn't exist) (a snippet leaves tags out, so it can't show them).
 
 The measures phase 11 takes on real pull requests (how often the report was right, whether `covers` would have helped, whether anyone acted on it, and the build time with snippets) wait for 15 merged pull requests with the Drift workflow on.
 

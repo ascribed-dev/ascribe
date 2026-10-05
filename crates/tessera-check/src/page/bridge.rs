@@ -57,6 +57,10 @@ impl FileSystem for Held<'_> {
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
         self.0.file_system().real_path(project_path)
     }
+
+    fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
+        self.0.file_system().files_in(project_dir)
+    }
 }
 
 /// The source index a [`PageChecker`](super::PageChecker) reads: built from a

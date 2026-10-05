@@ -174,15 +174,15 @@ Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 **Message:** the folder of source `{source}`, `{path}`, is outside the git repository the project is in
 
-**Fix:** Give the source a `path` inside the project's repository. A source in another repository isn't supported yet.
+**Fix:** Give the source a `path` inside the project's repository, or, for code in another repository, give it `git` instead.
 
 #### ASC135 `model-source-remote`
 
-Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
-**Message:** `{key}` is reserved for a source in another repository, which this version of Ascribe doesn't support; give the source a `path` in this repository instead
+**Message:** source `{source}` has both `path` and `git`: a source is a folder in this repository or another repository, not both
 
-**Fix:** Remove `git` and `branch`, and give the source the `path` of a folder in this repository.
+**Fix:** Give each source either `path`, a folder in this repository, or `git`, the URL of another repository, with `branch` only beside `git`. A source with `git` keeps its copies in `sources/<name>/`, which must be outside the content root.
 
 ### Content types, fields, and attributes
 
