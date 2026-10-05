@@ -15,6 +15,10 @@
 //! no diagnostics of any severity, so checking it measures the work and not the
 //! reporting; the `tessera-corpora` tests check that.
 //!
+//! [`Synthetic::with_snippets`] adds a source, `code/`, of [`CODE_FILES`]
+//! tagged Python files beside the content, and a `@snippet` of one of their
+//! regions to every page, for measuring what snippets cost.
+//!
 //! ```
 //! use tessera_synthetic::Synthetic;
 //!
@@ -35,6 +39,10 @@ pub const FRAGMENTS: usize = 100;
 pub const IMAGES: usize = 60;
 /// The number of pages of the standard performance project.
 pub const STANDARD_PAGES: usize = 3000;
+/// Code files, with snippets, whatever the number of pages.
+pub const CODE_FILES: usize = 100;
+/// Regions in each code file.
+pub const REGIONS: usize = 3;
 
 /// The project's `ascribe.toml`: one phrase, one dimension, and a site build
 /// that uses variant switching and availability badges.
@@ -85,6 +93,8 @@ pub struct File {
 pub struct Synthetic {
     /// The number of pages.
     pub pages: usize,
+    /// Whether every page has a snippet, from a source of code files.
+    pub snippets: bool,
 }
 
 impl Synthetic {
@@ -92,7 +102,49 @@ impl Synthetic {
     pub fn new(pages: usize) -> Synthetic {
         Synthetic {
             pages: pages.max(1),
+            snippets: false,
         }
+    }
+
+    /// The same project with a source of code files, and a snippet on every
+    /// page.
+    pub fn with_snippets(self) -> Synthetic {
+        Synthetic {
+            snippets: true,
+            ..self
+        }
+    }
+
+    /// The project's `ascribe.toml`: [`MODEL`], with the source when the
+    /// pages have snippets.
+    pub fn model(&self) -> String {
+        if self.snippets {
+            format!("{MODEL}\n[sources.code]\npath = \"code\"\ninclude = [\"**/*.py\"]\n")
+        } else {
+            MODEL.to_owned()
+        }
+    }
+
+    /// Code file `i`'s path relative to the project root.
+    pub fn code_path(&self, i: usize) -> String {
+        format!("code/m{i}.py")
+    }
+
+    /// Code file `i`'s text: [`REGIONS`] tagged regions, `r0`, `r1`, …, each
+    /// a function with a line left out, and `body` as the first one's last
+    /// line.
+    pub fn code_text(&self, i: usize, body: &str) -> String {
+        let mut t = format!("import os\n\n\nclass Module{i}:\n");
+        for r in 0..REGIONS {
+            let last = if r == 0 { body } else { "return value" };
+            let _ = write!(
+                t,
+                "    # :snippet-start: r{r}\n    def step{r}(self, value):\n        \
+                 log(value)  # :remove:\n        value = value + {r}\n        {last}\n    \
+                 # :snippet-end:\n\n"
+            );
+        }
+        t
     }
 
     /// The standard 3,000-page project.
@@ -125,6 +177,14 @@ impl Synthetic {
             "## Setup\n\nSteps for page {i}.\n\n## Usage\n\nMore.\n\n"
         );
         let _ = write!(t, "@include: /_f/f{}.md\n\n", i % FRAGMENTS);
+        if self.snippets {
+            let _ = write!(
+                t,
+                "@snippet: code:m{}.py#r{}\n\n",
+                i % CODE_FILES,
+                i % REGIONS
+            );
+        }
         for k in 1..=3 {
             let target = (i * 7 + k * 131) % self.pages;
             if k == 1 {
@@ -170,12 +230,16 @@ impl Synthetic {
     }
 
     /// Every file of the project from its root: `ascribe.toml`, the sources
-    /// and the images, under [`CONTENT_ROOT`].
+    /// and the images, under [`CONTENT_ROOT`], and any code files.
     pub fn files(&self) -> impl Iterator<Item = File> + '_ {
         let model = File {
             path: "ascribe.toml".into(),
-            text: MODEL.into(),
+            text: self.model(),
         };
+        let code = (0..if self.snippets { CODE_FILES } else { 0 }).map(|i| File {
+            path: self.code_path(i),
+            text: self.code_text(i, "return value"),
+        });
         let sources = self.sources().map(|(path, text)| File {
             path: format!("{CONTENT_ROOT}/{path}"),
             text,
@@ -184,7 +248,10 @@ impl Synthetic {
             path: format!("{CONTENT_ROOT}/{}", self.image_path(i)),
             text: String::new(),
         });
-        std::iter::once(model).chain(sources).chain(images)
+        std::iter::once(model)
+            .chain(sources)
+            .chain(images)
+            .chain(code)
     }
 
     /// Writes the project under `root` (which must exist).
@@ -240,6 +307,16 @@ mod tests {
             1 + STANDARD_PAGES + FRAGMENTS + IMAGES
         );
         assert_eq!(project.includers_per_fragment(), 30);
+        let snippets = project.with_snippets();
+        assert_eq!(
+            snippets.files().count(),
+            1 + STANDARD_PAGES + FRAGMENTS + IMAGES + CODE_FILES
+        );
+        assert!(
+            snippets
+                .page_text(1234, DEFAULT_TAIL)
+                .contains("@snippet: code:m34.py#r1")
+        );
     }
 }
 

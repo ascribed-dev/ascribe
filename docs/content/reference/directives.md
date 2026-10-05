@@ -17,7 +17,7 @@ This page describes the language as you write it. The [Ascribe specification]({r
 - [Titles](#titles)
 - [Binding: what a directive applies to](#binding-what-a-directive-applies-to)
 - [Lists and block quotes](#lists-and-block-quotes)
-- [Built-in directives](#built-in-directives): [`@id`](#id), [`@include`](#include), [`@variant`](#variant), [`@available`](#available), [`@note`](#note), [`@steps`](#steps), [`@details`](#details)
+- [Built-in directives](#built-in-directives): [`@id`](#id), [`@include`](#include), [`@variant`](#variant), [`@available`](#available), [`@note`](#note), [`@steps`](#steps), [`@details`](#details), [`@snippet`](#snippet)
 - [Project widgets](#project-widgets)
 - [Phrases](#phrases)
 - [Links](#links)
@@ -199,6 +199,7 @@ Directives follow CommonMark's container rules, like headings and code fences:
 | [`@note`](#note) | line, container | text, optional | A callout |
 | [`@steps`](#steps) | line | none | Mark an ordered list as a procedure |
 | [`@details`](#details) | line, container | none | Collapsible content |
+| [`@snippet`](#snippet) | line | an address | A code example from a file |
 
 ### `@id`
 
@@ -387,6 +388,42 @@ Content readers can expand or collapse. The title is required: it's what readers
 ```
 
 Without a colon, `@details` applies to the next block; with one, it's a container.
+
+### `@snippet`
+@available: next
+
+([SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet))
+
+Takes a code example from a file outside the content, and puts it in the page as a fenced code block. There's no copy: Ascribe reads the file whenever it checks, builds, or diffs, so changing the file changes every page that uses it.
+
+```markdown
+@snippet: code:examples/quill/ascribe.toml#dimensions
+@snippet {lang=shell, title="Install"}: code:scripts/install.sh
+```
+
+- **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a source declared in `ascribe.toml` ([`[sources.<name>]`](content-model.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder, with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
+- The file must exist with exactly that name, the source's `include` and `ignore` must take it in, and it must be text.
+- Without `#<region>`, the snippet is the whole file.
+- **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([Phrases](#phrases)).
+- It's a block, allowed wherever a code block is: in a list item, a note, or a variant's arm. A `@note`, `@details`, or widget directly above it applies to it.
+
+Mark a region in the code with tags in comments. They're [Bluehawk](https://github.com/mongodb-university/Bluehawk)'s, so files already tagged for it work as they are:
+
+```toml
+# :snippet-start: dimensions
+[dimensions.platform]
+values = ["linux", "macos", "windows"]
+labels = { macos = "macOS" }  # :remove:
+# :snippet-end:
+```
+
+- `:snippet-start: <name>` opens a region, and `:snippet-end:` closes the innermost open one. `:snippet-end: <name>` closes the region with that name, so regions can overlap as well as nest. A region name is letters, digits, `-`, `_`, and `.`, and is used once in a file.
+- `:remove-start:` and `:remove-end:` leave out the lines between them, and a line that ends with `:remove:` in a comment is left out itself.
+- Tag lines and removed lines never appear in a snippet. What's left is dedented by its common indentation.
+- A tag counts only in a line comment: `//` (C, Go, Java, JavaScript, Rust, TypeScript, and others), `#` (Python, Ruby, shell, TOML, YAML, and others), `--` (Lua, SQL, Haskell, Elm), `;` (INI, Lisp), or `<!-- -->` (HTML, XML, Markdown). A file whose extension isn't in the [table in the spec]({repo}/blob/main/SPEC.md#48-snippet) can be used whole, but not by region.
+- Bluehawk's other tags (`state`, `replace`, `uncomment`, and `emphasize`) are reserved. A file that uses one can't be used by a snippet yet, so its code is never shown with a tag left in.
+
+Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See the [diagnostics reference](diagnostics.md#snippet).
 
 ## Project widgets
 

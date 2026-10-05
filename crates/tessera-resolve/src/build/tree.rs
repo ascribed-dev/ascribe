@@ -27,6 +27,7 @@ use tessera_syntax::{Block, Bound, DirectiveLine, EndLine};
 use crate::expand::{IncludeSite, PageProblem};
 use crate::index::RefKind;
 use crate::project::PageAsset;
+use crate::snippet::Snippet;
 
 /// A page resolved for one build.
 #[derive(Clone, Debug)]
@@ -116,6 +117,8 @@ pub struct ResolvedBlock {
     pub heading: Option<HeadingIds>,
     /// For a surviving `@available` directive, what it declares.
     pub annotation: Option<Annotation>,
+    /// For a code block a `@snippet` became, the snippet (SPEC §4.8).
+    pub snippet: Option<Arc<Snippet>>,
     /// The phrases substituted in this block's own inline content, in source
     /// order, as replacements over the source text. Their spans are in
     /// [`ResolvedBlock::file`].

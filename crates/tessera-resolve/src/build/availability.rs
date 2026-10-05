@@ -543,6 +543,7 @@ impl Annotator<'_> {
             availability: scope,
             heading: None,
             annotation: self.annotation(block),
+            snippet: block.snippet.clone(),
             substitutions: Vec::new(),
             links: Vec::new(),
             glossary: Vec::new(),

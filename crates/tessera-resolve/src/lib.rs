@@ -17,13 +17,18 @@
 //! - the problems that follow from the source ([`Project::problems`]), by
 //!   registry slug, for the checks to report.
 //!
-//! # Includes
+//! # Includes and snippets
 //!
 //! [`Project::expand`] replaces each `@include` by its target, recursively, into
 //! an [`ExpandedPage`] whose every block keeps the file and span it was written
 //! in, so relative references resolve from the right file (SPEC §4.2).
 //! [`Project::assets`] lists the assets a page uses, with where each reference
 //! is written and the includes it came through.
+//!
+//! Each `@snippet` becomes a code block in the expansion: the code its
+//! address names, read through a source when the project is loaded (SPEC
+//! §4.8). The [`snippet`] module holds the rules, shared with the file-level
+//! checks.
 //!
 //! Nothing above depends on a build. What does is [`build`]:
 //!
@@ -77,6 +82,7 @@ mod layout;
 mod project;
 pub mod references;
 pub mod slug;
+pub mod snippet;
 
 pub use astro::AstroRouter;
 pub use build::{
@@ -103,4 +109,8 @@ pub use project::{
 pub use references::{
     IncludeTarget, SourceSet, destination_phrases, destination_span, include_issue, include_target,
     reference_issue, reference_target, resolve_reference,
+};
+pub use snippet::{
+    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, parse_address,
+    resolve_snippet, snippet_issues,
 };

@@ -10,14 +10,19 @@
 //! there ([`ExpandedBlock::file`], [`ExpandedBlock::span`]), and the chain of
 //! includes it came through ([`ExpandedBlock::via`]). Relative references in
 //! a block resolve from that file, not from the page (SPEC §4.2).
+//!
+//! A `@snippet` that resolves becomes a fenced code block holding its code
+//! (SPEC §4.8); one that doesn't stays as its directive, and its problem is
+//! a file-level one.
 
 use std::sync::Arc;
 
 use tessera_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
-use tessera_syntax::{Block, BlockKind, DirectiveLine, EndLine};
+use tessera_syntax::{Block, BlockKind, CodeBlock, DirectiveLine, EndLine};
 
 use crate::index::{FileIndex, Heading, Include, walk};
 use crate::project::Project;
+use crate::snippet::Snippet;
 
 /// An `@include` directive an expanded block came through.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -69,6 +74,9 @@ pub struct ExpandedBlock {
     pub via: Arc<[IncludeSite]>,
     /// What the block is.
     pub kind: ExpandedKind,
+    /// For a code block a `@snippet` became, the snippet (SPEC §4.8): the
+    /// block's span is the directive's, and its code is the snippet's.
+    pub snippet: Option<Arc<Snippet>>,
 }
 
 /// The kinds of expanded block. A block that holds other blocks holds their
@@ -253,6 +261,9 @@ impl<'p> Expander<'p> {
                 BlockKind::Directive(line) if line.name == "include" => {
                     self.include(file, block, line, via, &mut out);
                 }
+                BlockKind::Directive(line) if line.name == "snippet" => {
+                    out.push(self.snippet(file, block, line, via));
+                }
                 _ => out.push(self.block(file, block, via)),
             }
         }
@@ -308,6 +319,52 @@ impl<'p> Expander<'p> {
             span: block.span,
             via: via.clone(),
             kind,
+            snippet: None,
+        }
+    }
+
+    /// A `@snippet` as the code block it becomes, or, when it doesn't
+    /// resolve, as its directive.
+    fn snippet(
+        &self,
+        file: &FileIndex,
+        block: &Block,
+        line: &DirectiveLine,
+        via: &Arc<[IncludeSite]>,
+    ) -> ExpandedBlock {
+        let Some(snippet) = self.project.snippet_at(&file.path, line.span) else {
+            return Self::leaf(file, block, via);
+        };
+        let phrases = file
+            .snippet_at(line.span)
+            .is_some_and(|u| u.phrases)
+            .then(|| tessera_syntax::code_phrases(&snippet.code));
+        let code = Block {
+            span: block.span,
+            kind: BlockKind::CodeBlock(CodeBlock {
+                fenced: true,
+                info: snippet.info.clone(),
+                info_span: None,
+                literal: snippet.code.clone(),
+                phrases,
+            }),
+        };
+        ExpandedBlock {
+            file: file.file,
+            span: block.span,
+            via: via.clone(),
+            kind: ExpandedKind::Leaf(code),
+            snippet: Some(snippet.clone()),
+        }
+    }
+
+    fn leaf(file: &FileIndex, block: &Block, via: &Arc<[IncludeSite]>) -> ExpandedBlock {
+        ExpandedBlock {
+            file: file.file,
+            span: block.span,
+            via: via.clone(),
+            kind: ExpandedKind::Leaf(block.clone()),
+            snippet: None,
         }
     }
 
@@ -327,6 +384,7 @@ impl<'p> Expander<'p> {
                 span: block.span,
                 via: via.clone(),
                 kind: ExpandedKind::Leaf(block.clone()),
+                snippet: None,
             });
         };
         let Some(include) = file.include_at(line.span) else {

@@ -173,6 +173,19 @@ struct BlockJson {
     glossary: Vec<GlossaryJson>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     substitutions: Vec<SubstitutionJson>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    snippet: Option<SnippetJson>,
+}
+
+/// Where a code block that a `@snippet` became takes its code from.
+#[derive(Serialize)]
+struct SnippetJson {
+    /// The address, as written.
+    address: String,
+    /// The code file, from the project root.
+    path: String,
+    /// The lines of the code file it covers, first and last.
+    lines: Option<[u32; 2]>,
 }
 
 #[derive(Serialize)]
@@ -494,6 +507,11 @@ impl Writer<'_, '_> {
             links: block.links.iter().map(|l| self.link(l)).collect(),
             glossary: block.glossary.iter().map(glossary).collect(),
             substitutions: block.substitutions.iter().map(substitution).collect(),
+            snippet: block.snippet.as_deref().map(|s| SnippetJson {
+                address: s.address.clone(),
+                path: s.path.to_string(),
+                lines: s.lines.map(|(first, last)| [first, last]),
+            }),
         }
     }
 

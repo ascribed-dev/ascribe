@@ -243,7 +243,7 @@ impl Renderer<'_> {
     /// A directive line that stands alone (it wraps no following block).
     fn directive(&self, block: &ResolvedBlock, line: &DirectiveLine) -> Vec<String> {
         match line.name.as_str() {
-            "id" | "include" | "steps" | "details" => Vec::new(),
+            "id" | "include" | "snippet" | "steps" | "details" => Vec::new(),
             "available" => self.annotation(block).into_iter().collect(),
             "note" => match &line.primary {
                 Some(PrimaryValue::Text(text)) => {

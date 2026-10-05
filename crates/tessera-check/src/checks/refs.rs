@@ -1,5 +1,5 @@
-//! What a file refers to: `@include` targets, link destinations, and image
-//! sources (SPEC §4.2, §5.2, §5.3).
+//! What a file refers to: `@include` targets, `@snippet` addresses, link
+//! destinations, and image sources (SPEC §4.2, §4.8, §5.2, §5.3).
 //!
 //! Every rule about what a reference names, and whether it's there, lives in
 //! `tessera_resolve::references`: the same code the source index runs, so
@@ -11,10 +11,10 @@
 
 use tessera_core::{Issue, Location, Span, diagnostics};
 use tessera_resolve::{
-    RefKind, destination_phrases, destination_span, include_issue, include_target, reference_issue,
-    reference_target, resolve_reference,
+    RefKind, SnippetUse, destination_phrases, destination_span, include_issue, include_target,
+    reference_issue, reference_target, resolve_reference, snippet_issues,
 };
-use tessera_syntax::{Image, Inline, Link, LinkForm, Phrase};
+use tessera_syntax::{DirectiveLine, Image, Inline, Link, LinkForm, Phrase};
 
 use super::Ctx;
 use super::attrs::{Owner, required_missing};
@@ -28,6 +28,22 @@ impl Ctx<'_> {
         if let Some(issue) =
             include_issue(&include.written, include.target.as_ref(), self.project, at)
         {
+            self.report(issue);
+        }
+    }
+
+    /// A `@snippet`'s address names a file of a source, and a region of it
+    /// whose tags are sound (SPEC §4.8).
+    pub(super) fn check_snippet(&mut self, line: &DirectiveLine) {
+        let snippet = SnippetUse::of(line);
+        let project = self.project;
+        for issue in snippet_issues(
+            &snippet,
+            self.model,
+            project.file_system(),
+            project.code_files(),
+            self.id,
+        ) {
             self.report(issue);
         }
     }

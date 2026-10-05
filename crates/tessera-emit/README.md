@@ -102,8 +102,9 @@ Every block has a `type`, and:
 | `links` | The block's own links and images, resolved: `span`, `kind`, `destination`, `target` |
 | `glossary` | Glossary terms linked in its prose: `term`, `text`, `url` |
 | `substitutions` | Phrases replaced in its text: `span` (over the source), `key`, `value` |
+| `snippet` | For a `code` block a `@snippet` became: `address` (as written), `path` (the code file, from the project root), and `lines` (the first and last lines of the file it covers). Its `source` is the `@snippet` line |
 
-`links`, `glossary`, and `substitutions` are absent when empty.
+`links`, `glossary`, and `substitutions` are absent when empty, and `snippet` is absent on every other block.
 
 | `type` | Fields |
 |---|---|

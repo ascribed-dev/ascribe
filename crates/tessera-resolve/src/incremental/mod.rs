@@ -24,7 +24,7 @@
 //! | **A source file that can't be read** ([`Change::Unreadable`]) | The same as deleting it: it leaves the index. It is listed in [`Project::unreadable`] (and [`Affected::unreadable`]) until a later change to its path, as a file that can't be read at load is. |
 //! | **A non-source file created or deleted** ([`Change::AssetCreated`]) | The references to it (the resolution of each changes between an asset and a missing file), and so the pages that contain them. |
 //! | **A nested project's `ascribe.toml` created or deleted** | Nothing: it changes which files are sources (a nested project's files aren't), so the batch is refused ([`ApplyError::NestedProjectChanged`]) and the caller loads the project again. A file created, changed, or deleted inside a nested project's folder is a non-source file. |
-//! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, or slugger re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
+//! | **The content model** | See [`ModelImpact`]: a new directive keyword or note type reparses every file, including ones no one has open; changed phrases, fragment patterns, slugger, or sources re-index every file (parses are reused); anything else re-checks every file and re-resolves every page. |
 //!
 //! "What others see of a file" is [`structure_signature`]'s hash: the kind
 //! (page or fragment), frontmatter as written, headings, and every directive
@@ -962,6 +962,9 @@ impl IncrementalProject {
                 continue;
             };
             let resolutions = project.resolve_file(&index, &self.fs);
+            let snippets =
+                project.resolve_snippets(&index, &self.fs, &crate::snippet::CodeFiles::new());
+            project.put_snippets(path, snippets);
             self.stats.resolutions += 1;
             if old_resolutions
                 .get(path)
