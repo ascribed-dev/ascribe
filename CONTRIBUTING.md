@@ -30,6 +30,33 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions.
 
+## Documenting a change
+
+The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds a line to the unreleased section of [CHANGELOG.md](CHANGELOG.md). What no release has yet is marked `@available: next` on its page or section. Every page must pass the checks the **Docs** workflow runs:
+
+```sh
+cargo build -p tessera-cli
+./target/debug/ascribe check --deny-warnings --config docs
+./target/debug/ascribe fmt --check --config docs
+```
+
+A page's code examples aren't copies: each is taken with [`@snippet`](docs/content/reference/directives.md#snippet) from a file that's built, tested, or run, so it changes when the file does. `[sources.code]` in `docs/ascribe.toml` lists the folders a page may take one from: `examples/`, the workflows in `.github/workflows/`, and the command output in `crates/tessera-cli/tests/output/`. To show part of a file, mark it with tags in its comments, and give the page its address:
+
+```toml
+# :snippet-start: project
+[project]
+content-root = "docs"
+# :snippet-end:
+```
+
+```markdown
+@snippet: code:examples/content-models/full.toml#project
+```
+
+A line ending in `# :remove:`, or the lines between `# :remove-start:` and `# :remove-end:`, are left out of the example; `.github/workflows/drift.yml` uses them for what this repository adds to the job its guide gives users. The command output in `crates/tessera-cli/tests/output/` is written by `crates/tessera-cli/tests/output.rs`, which fails when a command's output changes; run it with `ASCRIBE_BLESS=1 cargo test -p tessera-cli --test output` to rewrite the files, and read the diff. An example with no file behind it, a few lines showing syntax, stays in the page as a code block.
+
+On a pull request, the **Drift** workflow's summary lists the pages whose examples the change touched: first those whose words around the example didn't change, which are the ones to reread, then those that changed along with it. It never fails and never comments. When it lists a page, read the sentences around the example against the new code, and fix the page in the same pull request if they no longer hold. An empty summary means no example changed.
+
 ## The docs site
 
 The user docs in `docs/` are an Ascribe project, and `site/` publishes them with Astro. `site/` isn't in the pnpm workspace: it installs Ascribe from npm with its own lockfile, as a user's site does. To see a change to the docs, or to Ascribe and its docs together, build the site with this checkout's Ascribe:
@@ -45,7 +72,7 @@ npm test                 # navigation, links, and the site in Chromium
 
 For `astro dev`, which rebuilds as you edit pages, run `ASCRIBE_BIN=../target/debug/ascribe npm run dev` after `build:checkout`; without `ASCRIBE_BIN`, it runs the binary from npm. `npm ci` puts back the packages from npm. [site/README.md](site/README.md) has the rest.
 
-The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, or Ascribe gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/` gets a review report of its pages from the **Review** workflow.
+The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, or Ascribe gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/`, or a file its pages take examples from, gets a review report of its pages from the **Review** workflow.
 
 ## Generated docs
 

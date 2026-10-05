@@ -1,0 +1,44 @@
+# The drift report: on each pull request, the pages of docs/ whose code
+# examples changed, written to the run's summary. It's the job
+# docs/content/guides/drift.md ("The report in CI") gives users, and the page
+# takes it from this file: the lines marked `:remove:` are what this
+# repository adds. It installs `next`, the canary of `main`, over the release
+# the job installs, since these docs follow `main`. It never fails on what it
+# reports, and never comments: the summary is the report.
+# The region's end tag is indented so a formatter doesn't put a blank line
+# before it, which the page would show (issue #107).
+# :snippet-start: job
+name: Drift
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+# :remove-start:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# :remove-end:
+
+jobs:
+  drift:
+    name: drift report # :remove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, so `ascribe drift` finds where the branch left
+          # its base. The default, one commit, isn't enough.
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - run: npm install --global @ascribed/cli
+      - run: npm install --global @ascribed/cli@next # :remove:
+      - name: Report changed examples
+        run: >
+          ascribe drift --config docs --base "origin/$GITHUB_BASE_REF"
+          --format summary >> "$GITHUB_STEP_SUMMARY"
+      # :snippet-end:

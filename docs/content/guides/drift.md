@@ -64,17 +64,7 @@ Leave out `#connect` to show the whole file. The [directive reference](../refere
 
 A snippet keeps the code on the page current, but not the sentence around it. When a pull request changes a region and not the page that shows it, the page now explains code that may work differently. `ascribe drift` lists those pages:
 
-```text
-compared with origin/main (3f9c2ab), from its merge base with HEAD (8d01e4c)
-
-Examples that changed. The page shows the new code; check the words around it:
-  install.md
-    code:service/client.py#connect (+2 −1)
-
-Examples that changed along with the page:
-  guides/retries.md
-    code:service/client.py#retry (+6 −0)
-```
+@snippet {lang=text}: code:crates/tessera-cli/tests/output/drift-guide.txt
 
 A page covers the code it shows: the regions and whole files it takes snippets from, its fragments' included. Nothing else needs to be declared, and nothing else is reported. A region whose lines only moved, or whose file changed somewhere else, isn't a change. A page that changed in the same pull request, or through a fragment it includes, is in the second group: someone touched it, so it's listed but not flagged. An example that no longer resolves, because its region was renamed or its file moved and the page wasn't updated, is listed first, with why; `ascribe check` fails on it too.
 
@@ -84,36 +74,13 @@ The report says what changed and how much. Whether the words still hold is for w
 
 This GitHub Actions job writes the report to the run's summary on each pull request. It never fails the check: a changed example is something to read, not an error. Change `--config docs` to your project's folder (the one with `ascribe.toml`), or drop it when that's the repository's root, and install `ascribe` however your other jobs do.
 
-```yaml phrases=true
-name: Drift
-
-on:
-  pull_request:
-
-permissions:
-  contents: read
-
-jobs:
-  drift:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          # The whole history, so `ascribe drift` finds where the branch left
-          # its base. The default, one commit, isn't enough.
-          fetch-depth: 0
-      - uses: actions/setup-node@v7
-        with:
-          node-version: {node}
-      - run: npm install --global @ascribed/cli
-      - name: Report changed examples
-        run: >
-          ascribe drift --config docs --base "origin/$GITHUB_BASE_REF"
-          --format summary >> "$GITHUB_STEP_SUMMARY"
-```
+@snippet {lang=yaml}: code:.github/workflows/drift.yml#job
 
 - **History.** Like `ascribe diff`, `ascribe drift` compares with the merge base of the pull request's base branch and its head, so the checkout needs `fetch-depth: 0`. With less, it stops and says to fetch more.
 - **The summary.** `--format summary` writes the groups as Markdown, each page linked to its route on `[consumer] site`, and nothing when no example changed, so the summary stays empty on most pull requests.
+- **When it runs.** Run it on every pull request, not only on those that change your docs' folder: an example changes when its code does, so a filter on the docs' paths skips exactly the changes the report is for.
 - **Failing the check.** To fail the job when an example broke, or changed while its page didn't, add `--exit-code`. Start without it, and see how often the report is right for your docs first.
+
+This repository runs this job on these docs, in [`.github/workflows/drift.yml`]({repo}/blob/main/.github/workflows/drift.yml): the job above is taken from that file. It also installs `@ascribed/cli@next`, the nightly build of `main`, since these docs follow `main`.
 
 See [`ascribe drift`](../reference/cli.md#ascribe-drift) for its options and JSON.

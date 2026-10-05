@@ -24,6 +24,8 @@ Ascribe's own docs, and the drift checks built on them (generated reference, cov
 
 ## 1. Code snippets from tested code (Bluehawk, built in)
 
+**Built.** `@snippet` takes a code example from a tagged region or a whole file, through a source named in `ascribe.toml` (`code:examples/quill/ascribe.toml#dimensions`) rather than a relative path, and `ascribe drift` lists the pages whose examples changed; see the [drift guide](../docs/content/guides/drift.md). Bluehawk's `snippet` and `remove` tags work as they are; `replace`, `uncomment`, `state`, and `emphasize` are reserved, and the editor features below (go to definition, "Used by", a preview that follows the code) aren't built. Ascribe's own docs take their examples this way. What follows is the idea as it was written.
+
 ### What Bluehawk does today
 
 [Bluehawk](https://github.com/mongodb-university/Bluehawk) (MongoDB) extracts code examples from real, tested source files. Authors annotate the code with tags in comments:
@@ -227,6 +229,8 @@ In order of how naturally each builds on what exists.
 ### Navigation and site structure
 
 Ascribe doesn't define sidebars, ordering, or tables of contents; the site generator does. If that's a gap rather than a choice, a checkable navigation file would catch missing pages, orphans, and inconsistent order across builds, would give generated pages (OpenAPI) a place to go, and would give `llms.txt` (section 7) its sections.
+
+Ascribe's own site found it a gap. With no order or grouping in the content model, `site/src/nav.ts` lists every page by hand, and a test fails when a published page is missing from it. For the content model to give a site its navigation, it would need an order and a group for each page (in `ascribe.toml`, or in each page's frontmatter), `ascribe check` reporting a published page in no group and a group naming a file that isn't a page, the groups in the outputs (the JSON output, and a module the site imports for its sidebar and previous and next links), and a navigation label for a page whose title is too long. [site/README.md](../site/README.md#navigation) has the details.
 
 ### Redirects
 
