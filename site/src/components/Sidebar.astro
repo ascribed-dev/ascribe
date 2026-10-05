@@ -1,0 +1,47 @@
+---
+// The site's navigation, from src/nav.ts, with each page's title from the
+// collection. A page named in nav.ts that the collection doesn't have fails
+// the build.
+import { getEntry } from "astro:content";
+import { entryId, nav } from "../nav.ts";
+
+interface Props {
+  current?: string | undefined;
+}
+
+const { current } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const groups = await Promise.all(
+  nav.map(async (group) => ({
+    label: group.label,
+    pages: await Promise.all(
+      group.pages.map(async (file) => {
+        const id = entryId(file);
+        const entry = await getEntry("docs", id);
+        if (!entry) throw new Error(`src/nav.ts names ${file}, which isn't a page of the site`);
+        return { id, title: entry.data.title, href: id === "index" ? base : `${base}${id}/` };
+      }),
+    ),
+  })),
+);
+---
+
+<nav id="sidebar" class="sidebar" aria-label="Docs">
+  {
+    groups.map((group) => (
+      <section>
+        <h2>{group.label}</h2>
+        <ul>
+          {group.pages.map((page) => (
+            <li>
+              <a href={page.href} aria-current={page.id === current ? "page" : undefined}>
+                {page.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</nav>

@@ -1,0 +1,4 @@
+node_modules/
+# Astro's output, with Pagefind's index in dist/pagefind/, and its cache.
+dist/
+.astro/

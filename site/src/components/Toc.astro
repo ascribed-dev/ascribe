@@ -1,0 +1,24 @@
+---
+// The page's table of contents, from the headings Astro's markdown pipeline
+// found: sections and their subsections.
+interface Props {
+  headings: { depth: number; slug: string; text: string }[];
+}
+
+const headings = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+  headings.length > 1 && (
+    <nav class="toc" aria-label="On this page">
+      <h2>On this page</h2>
+      <ul>
+        {headings.map((heading) => (
+          <li data-depth={heading.depth}>
+            <a href={`#${heading.slug}`}>{heading.text}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}

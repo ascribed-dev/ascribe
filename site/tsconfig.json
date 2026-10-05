@@ -1,0 +1,13 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      // The collection's generated schema is in ../docs, outside this folder,
+      // where `astro/zod` doesn't resolve (issue #93).
+      "astro/zod": ["./node_modules/astro/dist/zod.d.ts"]
+    }
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
+}

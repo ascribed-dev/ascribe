@@ -13,6 +13,9 @@ examples/
 
 # Generated and third-party files.
 pnpm-lock.yaml
+package-lock.json
+**/.astro/
+**/.ascribe/
 **/dist/
 **/out/
 **/coverage/
