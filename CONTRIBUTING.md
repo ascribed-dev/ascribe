@@ -30,6 +30,8 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions.
 
+A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter.
+
 ## The docs site
 
 The user docs in `docs/` are an Ascribe project, and `site/` publishes them with Astro. `site/` isn't in the pnpm workspace: it installs Ascribe from npm with its own lockfile, as a user's site does. To see a change to the docs, or to Ascribe and its docs together, build the site with this checkout's Ascribe:

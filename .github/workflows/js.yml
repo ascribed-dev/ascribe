@@ -1,17 +1,20 @@
 name: JavaScript
 
+# Started by ci.yml, which chooses the platforms.
 on:
-  pull_request:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      vscode-os:
+        description: The runners for the multi-project suite, besides Ubuntu, as a JSON list
+        type: string
+        required: true
+      astro-targets:
+        description: The Astro end-to-end's targets, as a JSON list of matrix entries
+        type: string
+        required: true
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   check:
@@ -69,7 +72,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
+        os: ${{ fromJSON(inputs.vscode-os) }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -101,11 +104,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { os: ubuntu-24.04, target: linux-x64, env_target: LINUX_X64, exe: ascribe }
-          - { os: ubuntu-24.04-arm, target: linux-arm64, env_target: LINUX_ARM64, exe: ascribe }
-          - { os: macos-latest, target: darwin-arm64, env_target: DARWIN_ARM64, exe: ascribe }
-          - { os: windows-latest, target: win32-x64, env_target: WIN32_X64, exe: ascribe.exe }
+        # Each entry has os, target, env_target, and exe; ci.yml lists them.
+        include: ${{ fromJSON(inputs.astro-targets) }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:

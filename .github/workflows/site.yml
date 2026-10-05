@@ -1,6 +1,8 @@
 name: Site
 
-# The docs site in site/, built with this pull request's Ascribe (its binary
+# The user docs in docs/, checked and format-checked by this pull request's
+# own `ascribe`, so a change to Ascribe and the docs that describe it are
+# checked together. Then the docs site in site/, built with this pull request's Ascribe (its binary
 # and its packages, by `npm run build:checkout`), then tested in Chromium: a
 # change to Ascribe and the docs that use it are built together. A pull
 # request from a branch of this repository then deploys it to Netlify as its
@@ -12,41 +14,19 @@ name: Site
 # request from a fork has neither, so it gets the build and its tests, and no
 # preview.
 
+# Started by ci.yml, when the docs, the site, or Ascribe changed.
 on:
-  pull_request:
-    paths:
-      - "docs/**"
-      - "site/**"
-      - "packages/**"
-      - "crates/**"
-      - "Cargo.lock"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/site.yml"
-  push:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - "site/**"
-      - "packages/**"
-      - "crates/**"
-      - "Cargo.lock"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/site.yml"
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-    name: build and test site/
+    name: check docs/, build and test site/
     runs-on: ubuntu-latest
     env:
       ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
@@ -61,6 +41,8 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo build -p tessera-cli --locked
+      - run: target/debug/ascribe check --deny-warnings --config docs
+      - run: target/debug/ascribe fmt --check --config docs
       - run: npm ci
         working-directory: site
       - run: npx playwright-core install --with-deps chromium

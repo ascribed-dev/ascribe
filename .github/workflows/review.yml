@@ -8,15 +8,12 @@ name: Review
 # this repository's projects follow `main`. Two projects: examples/quill on
 # every pull request, and docs when the pull request changes it.
 
+# Started by ci.yml, on pull requests.
 on:
-  pull_request:
+  workflow_call:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   report:
