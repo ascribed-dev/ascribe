@@ -1,4 +1,7 @@
-# `ascribe.toml` reference
+---
+title: ascribe.toml reference
+description: "The content model: content types, dimensions, availability, phrases, widgets, and builds."
+---
 
 `ascribe.toml` is a project's content model: its schema (SPEC §7). It sits at the project root and declares the content types and their frontmatter, the dimensions content varies along, phrases, the glossary, project widgets, how the site output fits Astro, and the builds. The editor, `ascribe check`, and `ascribe build` all read it, so they can't disagree about what's valid.
 
@@ -241,23 +244,7 @@ A field is **required** unless its type ends in `?` or it has a default. The sam
 
 Grammar (ABNF, with the rules of SPEC Appendix A):
 
-```abnf
-field-type      = field-base [ "?" ]
-field-base      = scalar / enum / list-type / "object"    ; "object" in table form only
-scalar          = "string" / "number" / "boolean" / "date"
-list-type       = "list" "(" OWS ( scalar / enum / "object" ) OWS ")"
-                                        ; "list(object)" in table form only
-
-attribute-type  = attribute-base [ "?" ]
-attribute-base  = "string" / "number" / "boolean" / enum / set-type
-set-type        = "set" "(" OWS ( "string" / enum ) OWS ")"
-
-enum            = "enum" [ "(" OWS enum-value *( OWS "," OWS enum-value ) OWS ")" ]
-                                        ; bare "enum" in table form only, with "values"
-enum-value      = 1*( ALPHA / DIGIT / "-" / "_" / "." )
-```
-
-Spaces are allowed only where `OWS` appears. The canonical spelling has no spaces except one after each comma: `enum(a, b)`.
+@include: ../_fragments/field-type-grammar.md
 
 ### 5.2 Table form
 

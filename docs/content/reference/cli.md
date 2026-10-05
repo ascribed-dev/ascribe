@@ -1,4 +1,7 @@
-# Command reference
+---
+title: Command reference
+description: "The ascribe check, build, diff, fmt, and lsp commands: their options, outputs, and exit codes."
+---
 
 The `ascribe` command checks, builds, and formats an Ascribe project, and runs the language server the editor uses.
 
@@ -139,7 +142,8 @@ Checks the project, then writes each build's outputs. The checks run first, exac
 - `--build <NAME>` builds only that build. Repeat it for several. By default, every build in `ascribe.toml`.
 - `--emit <OUTPUTS>`: any of `site`, `plain`, and `json`, separated by commas. All three by default.
 - `--format text|json`: how the checks' results are shown, as for `ascribe check`.
-- `--anchors` marks each block of the site output with the source file and lines it came from, for review: an `<!--ascribe-anchor …-->` comment before each Markdown block, and `data-ascribe-source` (with `data-ascribe-via` for a block from a fragment) on each element Ascribe writes. The Astro integration turns them into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)). The site output's manifest records `"anchors": true`. Without it, the output has no anchors. The other outputs are the same either way.
+- @available: next
+  `--anchors` marks each block of the site output with the source file and lines it came from, for review: an `<!--ascribe-anchor …-->` comment before each Markdown block, and `data-ascribe-source` (with `data-ascribe-via` for a block from a fragment) on each element Ascribe writes. The Astro integration turns them into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)). The site output's manifest records `"anchors": true`. Without it, the output has no anchors. The other outputs are the same either way.
 
 Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error.
 
@@ -158,6 +162,7 @@ Without `[consumer] site` in `ascribe.toml`, plain-Markdown links are root-relat
 A rebuild replaces its previous output. It removes only files its own manifest listed, and never overwrites a file it didn't write: a file in the way is an error. Two builds can't write to one output directory at once.
 
 ### Exit codes
+@id: build-exit-codes
 
 | Code | Meaning |
 |---|---|
@@ -166,6 +171,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 | `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
 
 ## `ascribe diff`
+@available: next
 
 Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, phrase, or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
 
@@ -197,6 +203,7 @@ warning: the working tree has 3 errors; `ascribe check` lists them
 ```
 
 ### Exit codes
+@id: diff-exit-codes
 
 | Code | Meaning |
 |---|---|

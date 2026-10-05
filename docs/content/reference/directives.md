@@ -1,4 +1,7 @@
-# Directive reference
+---
+title: Directive reference
+description: "The language: directives, attributes, titles, phrases, links, and images."
+---
 
 Ascribe source is CommonMark with a few additions: **directives**, lines that start with `@` and annotate the content around them; **title lines**, which give a directive a title; and **phrases**, reusable strings written `{key}`. Everything else is ordinary Markdown, and an Ascribe page read by a plain Markdown renderer still reads sensibly.
 
