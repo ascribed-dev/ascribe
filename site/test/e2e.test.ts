@@ -1,5 +1,5 @@
-// The built site in Chromium: variants, availability, links between pages,
-// search, the edit link, the 404 page, and the narrow layout.
+// The built site in Chromium: variants, availability, code titles, links
+// between pages, search, the edit link, the 404 page, and the narrow layout.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
 import { launchChromium, requireBuild, serve } from "./built.ts";
@@ -58,6 +58,13 @@ test("notes and steps render as elements", async () => {
   const page = await open("/getting-started/");
   expect(await page.locator('ascribe-note[type="tip"]').isVisible()).toBe(true);
   expect(await page.locator("ascribe-steps ol > li").count()).toBe(3);
+  await page.close();
+});
+
+test("a code example taken from a file shows its title", async () => {
+  const page = await open("/guides/astro/");
+  const figure = page.locator("figure.code-title", { hasText: "export default defineConfig" });
+  await expect.poll(() => figure.locator("figcaption").textContent()).toBe("astro.config.mjs");
   await page.close();
 });
 

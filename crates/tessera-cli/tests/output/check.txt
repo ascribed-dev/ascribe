@@ -1,0 +1,10 @@
+[ASC041] Warning: this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
+   ╭─[ docs/keys.md:7:15 ]
+   │
+ 7 │ See [Install](/install-agent/).
+   │               ───────┬───────
+   │                      ╰───────── link-route
+   │
+   │ Help: Link to the page's file instead of its route
+───╯
+checked 4 files: 0 errors, 1 warning

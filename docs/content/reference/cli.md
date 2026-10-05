@@ -39,18 +39,7 @@ Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md
 
 Each diagnostic shows its code, message, and source, and the output ends with a summary:
 
-```text
-[ASC041] Warning: this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
-   ╭─[ docs/keys.md:7:15 ]
-   │
- 7 │ See [Install](/install-agent/).
-   │               ───────┬───────
-   │                      ╰───────── link-route
-   │
-   │ Help: Link to the page's file instead of its route
-───╯
-checked 4 files: 0 errors, 1 warning
-```
+@snippet {lang=text}: code:crates/tessera-cli/tests/output/check.txt
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
 
@@ -84,46 +73,7 @@ Each diagnostic:
 
 A position is `{line, column, offset}`: `line` and `column` start at 1, `column` counts Unicode characters (not bytes or UTF-16 units), and `offset` is the byte offset from the start of the file. A range's `end` is just past its last character; an edit that inserts text has equal positions.
 
-```json
-{
-  "schema_version": 1,
-  "ascribe_version": "0.1.0",
-  "error": null,
-  "files_checked": 4,
-  "diagnostics": [
-    {
-      "code": "ASC041",
-      "slug": "link-route",
-      "severity": "warning",
-      "message": "this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`",
-      "file": "docs/keys.md",
-      "range": {
-        "start": { "line": 7, "column": 15, "offset": 55 },
-        "end": { "line": 7, "column": 30, "offset": 70 }
-      },
-      "related": [],
-      "fixes": [
-        {
-          "title": "Link to the page's file instead of its route",
-          "file": "docs/keys.md",
-          "edits": [
-            {
-              "range": {
-                "start": { "line": 7, "column": 15, "offset": 55 },
-                "end": { "line": 7, "column": 30, "offset": 70 }
-              },
-              "new_text": "/install-agent.md"
-            }
-          ]
-        }
-      ],
-      "builds": [],
-      "unpublished": false
-    }
-  ],
-  "summary": { "errors": 0, "warnings": 1 }
-}
-```
+@snippet {phrases=true}: code:crates/tessera-cli/tests/output/check.json
 
 ## `ascribe build`
 
@@ -170,15 +120,7 @@ The other side is the working tree: the files on disk, committed or not, as `asc
 
 The text output lists each build's changed pages with counts, and where a change comes from when it isn't only the page's own file:
 
-```text
-compared with main (3f9c2ab), from its merge base with HEAD (8d01e4c)
-site: 4 pages changed
-  getting-started.md: 1 changed, 1 added (through _fragments/prereqs.md)
-  guides/rollouts.md: 5 changed, 3 added, 1 removed, 1 moved
-  guides/schedules.md: added
-  reference/limits.md: title changed
-cloud: no changes
-```
+@snippet {lang=text}: code:crates/tessera-cli/tests/output/diff.txt
 
 Pages with errors are compared as they are, since comparing work in progress is useful, but a broken page can render oddly and read as part of the change. So when `ascribe check` would find errors for the builds compared, `ascribe diff` says so on standard error, and the [HTML report](#the-html-report) and review in the editor's preview and the site preview show a notice:
 
@@ -254,44 +196,7 @@ Each change:
 
 A block is a heading, paragraph, code block, table, list, list item, block quote, directive, container, group, or a group's arm; changes inside a list, a container, or an arm are listed on the blocks inside it, so a one-word change in a step marks that step's paragraph. A line-form directive that renders as an element around the block after it (`@note`, `@steps`, `@details`, a widget) is one block with that block inside it, from the directive's line through the block's last, like the element. A block's `source` is `<path>:<first>-<last>`: the file its text is written in, relative to the content root with each path segment percent-encoded (except ASCII letters, digits, `-`, `.`, `_`, and `~`), and its first and last lines, from 1. `via` lists the includes it came through, outermost first, each `<path>:<line>`; it's empty for a block written in the page itself. These are the same strings the site output's source anchors carry, so a tool can find a block in a rendered page.
 
-```json
-{
-  "schema_version": 1,
-  "ascribe_version": "0.1.1",
-  "base": { "requested": "main", "commit": "3f9c2ab…", "merge_base": "8d01e4c…" },
-  "repository": { "root": "/home/me/lantern", "project_prefix": "docs/" },
-  "working_tree_errors": 0,
-  "builds": [
-    {
-      "build": "site",
-      "pages": [
-        {
-          "path": "getting-started.md",
-          "route": "/getting-started/",
-          "status": "changed",
-          "own_file_changed": false,
-          "because": ["_fragments/prereqs.md"],
-          "page_changed": [],
-          "counts": { "changed": 1, "added": 0, "removed": 0, "moved": 0 },
-          "changes": [
-            {
-              "kind": "changed",
-              "now": { "source": "_fragments/prereqs.md:3-3", "via": ["getting-started.md:12"] },
-              "was": { "source": "_fragments/prereqs.md:3-3", "via": ["getting-started.md:12"] },
-              "words": {
-                "now": [[14, 17]],
-                "was": [[14, 17]],
-                "now_text": "Lantern agent 2.4 or later",
-                "was_text": "Lantern agent 2.2 or later"
-              }
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
+@snippet {phrases=true}: code:crates/tessera-cli/tests/output/diff.json
 
 How blocks are matched: blocks are compared by their content without positions, so moving a block down the file or rewrapping it is no change. Blocks that didn't stay are paired, in order, with a block of the same kind whose words overlap by at least half, as **changed**; a block that matches nothing is **added** or **removed**, and a removed block identical to an added one elsewhere on the page is **moved**. A block over about 2,500 words gets no word ranges, and a list or container with over 1,000 blocks in it that changed is marked changed as a whole.
 
@@ -306,21 +211,7 @@ The base is found as `ascribe diff` finds it, and the other side is the working 
 
 The pages come in up to three groups:
 
-```text
-compared with main (3f9c2ab), from its merge base with HEAD (8d01e4c)
-
-Examples that no longer resolve. `ascribe check` reports them too:
-  guides/install.md
-    code:service/client.py#connect: the file has no region `connect`
-
-Examples that changed. The page shows the new code; check the words around it:
-  reference/content-model.md
-    code:examples/quill/ascribe.toml#dimensions (+4 −1)
-
-Examples that changed along with the page:
-  guides/review.md
-    code:examples/quill/ascribe.toml#builds (+2 −2)
-```
+@snippet {lang=text}: code:crates/tessera-cli/tests/output/drift.txt
 
 An example **no longer resolves** when it did at the base and doesn't now: its region was renamed, its file moved, or its source is gone. `ascribe check` fails on it too, but the report names the page so the pull request that broke it says so. A `@snippet` the change adds broken isn't listed; that's `check`'s alone. Of the changed examples, the first group is the one to read: the example updated itself, and nobody changed the sentence that explains it. The second is listed so a reviewer can see the change reached the page. Each example says how many lines were added and removed. With nothing to report, it says `No examples changed.`
 

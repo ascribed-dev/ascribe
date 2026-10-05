@@ -1,0 +1,12 @@
+spec = "0.1"
+
+[dimensions.pm]
+label = "Package manager"
+values = ["npm", "pnpm", "yarn"]
+
+[phrases]
+product = "Quill"
+version = "3.4.1"
+
+[consumer]
+site = "https://docs.example.com"

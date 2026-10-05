@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "base": {
+    "requested": "main",
+    "commit": "375192d7ee62fbe72258e0adab3747503f45d106",
+    "merge_base": "e49444a7968397b56129c1eb801ca02b0e96ed61"
+  },
+  "repository": {
+    "root": "/home/me/lantern",
+    "project_prefix": "docs/"
+  },
+  "working_tree_errors": 0,
+  "builds": [
+    {
+      "build": "site",
+      "pages": [
+        {
+          "path": "getting-started.md",
+          "route": "/getting-started/",
+          "status": "changed",
+          "own_file_changed": false,
+          "because": [
+            "_fragments/prereqs.md"
+          ],
+          "page_changed": [],
+          "counts": {
+            "changed": 1,
+            "added": 0,
+            "removed": 0,
+            "moved": 0
+          },
+          "changes": [
+            {
+              "kind": "changed",
+              "now": {
+                "source": "_fragments/prereqs.md:3-3",
+                "via": [
+                  "getting-started.md:11"
+                ]
+              },
+              "was": {
+                "source": "_fragments/prereqs.md:3-3",
+                "via": [
+                  "getting-started.md:11"
+                ]
+              },
+              "words": {
+                "now": [
+                  [
+                    14,
+                    17
+                  ]
+                ],
+                "was": [
+                  [
+                    14,
+                    17
+                  ]
+                ],
+                "now_text": "Lantern agent 2.4 or later",
+                "was_text": "Lantern agent 2.2 or later"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

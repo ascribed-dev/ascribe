@@ -1,0 +1,9 @@
+compared with origin/main (81941c2), from its merge base with HEAD (38b7f2f)
+
+Examples that changed. The page shows the new code; check the words around it:
+  install.md
+    code:service/client.py#connect (+2 −1)
+
+Examples that changed along with the page:
+  guides/retries.md
+    code:service/client.py#retry (+6 −1)

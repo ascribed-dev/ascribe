@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "error": null,
+  "files_checked": 4,
+  "diagnostics": [
+    {
+      "code": "ASC041",
+      "slug": "link-route",
+      "severity": "warning",
+      "message": "this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`",
+      "file": "docs/keys.md",
+      "range": {
+        "start": {
+          "line": 7,
+          "column": 15,
+          "offset": 121
+        },
+        "end": {
+          "line": 7,
+          "column": 30,
+          "offset": 136
+        }
+      },
+      "related": [],
+      "fixes": [
+        {
+          "title": "Link to the page's file instead of its route",
+          "file": "docs/keys.md",
+          "edits": [
+            {
+              "range": {
+                "start": {
+                  "line": 7,
+                  "column": 15,
+                  "offset": 121
+                },
+                "end": {
+                  "line": 7,
+                  "column": 30,
+                  "offset": 136
+                }
+              },
+              "new_text": "/install-agent.md"
+            }
+          ]
+        }
+      ],
+      "builds": [],
+      "unpublished": false
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 1
+  }
+}

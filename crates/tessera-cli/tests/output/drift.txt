@@ -1,0 +1,13 @@
+compared with main (94c2212), from its merge base with HEAD (8a43d4b)
+
+Examples that no longer resolve. `ascribe check` reports them too:
+  guides/install.md
+    code:service/client.py#connect: the file has no region `connect`
+
+Examples that changed. The page shows the new code; check the words around it:
+  reference/content-model.md
+    code:examples/quill/ascribe.toml#dimensions (+4 −1)
+
+Examples that changed along with the page:
+  guides/review.md
+    code:examples/quill/ascribe.toml#builds (+1 −0)

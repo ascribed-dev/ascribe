@@ -13,6 +13,8 @@
   # lockfile's exactly.
   command = "npm ci && npm run follow-next && npm run build"
   publish = "dist"
-  # A push to `main` builds only when the docs or the site changed. A build
-  # hook's build (the canary's) is never skipped.
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs"
+  # A push to `main` builds only when the site, the docs, or a file the docs
+  # take code examples from changed: the folders `[sources.code] include` in
+  # ../docs/ascribe.toml names. A build hook's build (the canary's) is never
+  # skipped.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../docs ../examples ../.github/workflows ../crates/tessera-cli/tests/output"

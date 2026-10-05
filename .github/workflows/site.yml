@@ -21,7 +21,8 @@ on:
       - "crates/**"
       - "Cargo.lock"
       - "pnpm-lock.yaml"
-      - ".github/workflows/site.yml"
+      - "examples/**"
+      - ".github/workflows/**"
   push:
     branches: [main]
     paths:
@@ -31,7 +32,8 @@ on:
       - "crates/**"
       - "Cargo.lock"
       - "pnpm-lock.yaml"
-      - ".github/workflows/site.yml"
+      - "examples/**"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 permissions:

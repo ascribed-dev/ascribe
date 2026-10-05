@@ -1,10 +1,19 @@
 # The content model for the Astro end-to-end example: a small project that
 # covers the integrations most likely to break.
+# :snippet-start: site
 spec = "0.1"
 
 [project]
 content-root = "content"
 output-dir = ".ascribe/build"
+
+# Must agree with `astro.config.mjs`: `@ascribed/astro` checks that it does.
+[consumer]
+profile = "astro"
+site = "https://docs.example.com"
+base-path = "/docs/"
+trailing-slash = "never"
+# :snippet-end:
 
 [types.page]
 default = true
@@ -31,13 +40,6 @@ product = "Loom"
 # `![alt](src){width=300}`.
 [images.attributes]
 width = "number?"
-
-# Must agree with `astro.config.mjs`: `@ascribed/astro` checks that it does.
-[consumer]
-profile = "astro"
-site = "https://docs.example.com"
-base-path = "/docs/"
-trailing-slash = "never"
 
 # The site: the deployment group reduces to its cloud arm, and the package
 # manager group stays a switcher.
