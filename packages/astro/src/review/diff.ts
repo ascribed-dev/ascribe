@@ -6,6 +6,8 @@ import type { DiffBase, DiffPage } from "./protocol.js";
 export interface DiffResult {
   base: DiffBase;
   pages: DiffPage[];
+  /** How many errors `ascribe check` finds in the working tree for the build. */
+  errors: number;
 }
 
 /**
@@ -56,11 +58,13 @@ export function runDiff(options: {
 export function parseDiff(json: string, build: string): DiffResult {
   const report = JSON.parse(json) as {
     base?: DiffBase;
+    working_tree_errors?: number;
     builds?: { build: string; pages: DiffPage[] }[];
   };
   if (report.base === undefined || !Array.isArray(report.builds)) {
     throw new Error("not a diff report");
   }
   const pages = report.builds.find((b) => b.build === build)?.pages ?? [];
-  return { base: report.base, pages };
+  const errors = typeof report.working_tree_errors === "number" ? report.working_tree_errors : 0;
+  return { base: report.base, pages, errors };
 }

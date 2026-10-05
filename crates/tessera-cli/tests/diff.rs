@@ -372,3 +372,48 @@ fn html_report_loads_nothing_from_the_network() {
     let data = report_data(&html, &[]);
     assert!(data["images"].as_object().expect("images").is_empty());
 }
+
+#[test]
+fn errors_in_the_working_tree_are_counted_not_fatal() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/docs/about.md",
+        "---\ntitle: About\n---\n\n# About\n\nAbout us.\n\n@end\n",
+    );
+    let out = ascribe(&site(&dir), &["diff", "--build", "site"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out).contains("site: 1 page changed\n"),
+        "{}",
+        stdout(&out)
+    );
+    assert_eq!(
+        stderr(&out),
+        "warning: the working tree has 1 error; `ascribe check --build site` lists it\n"
+    );
+    let out = ascribe(&site(&dir), &["diff", "--format", "json"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("`ascribe check` lists it"),
+        "{}",
+        stderr(&out)
+    );
+    let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
+    assert_eq!(json["working_tree_errors"], 1);
+}
+
+#[test]
+fn a_clean_working_tree_says_nothing_on_standard_error() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/docs/about.md",
+        "---\ntitle: About\n---\n\n# About\n\nAbout them.\n",
+    );
+    let out = ascribe(&site(&dir), &["diff", "--format", "json"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert_eq!(stderr(&out), "");
+    let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
+    assert_eq!(json["working_tree_errors"], 0);
+}

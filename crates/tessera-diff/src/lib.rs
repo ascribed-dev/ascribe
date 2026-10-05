@@ -132,6 +132,11 @@ pub struct Report {
     pub base: BaseInfo,
     /// Where the project is.
     pub repository: RepositoryInfo,
+    /// How many errors `ascribe check` finds in the working tree, for the
+    /// builds compared. The comparison runs regardless, but a page with an
+    /// error may not render as it will once it's fixed, so a reviewer should
+    /// know. Zero until the caller sets it: this crate doesn't check.
+    pub working_tree_errors: usize,
     /// What changed, per build, in the order asked for.
     pub builds: Vec<BuildDiff>,
 }
@@ -175,6 +180,7 @@ impl Report {
                 root: repo.root.clone(),
                 project_prefix: repo.prefix.clone(),
             },
+            working_tree_errors: 0,
             builds,
         }
     }

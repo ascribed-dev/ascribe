@@ -97,6 +97,8 @@ export interface PageView {
   base: DiffBase | null;
   /** Why the changes couldn't be read, when they couldn't. */
   problem: string | null;
+  /** How many errors `ascribe check` finds in the working tree for the build. */
+  errors: number;
   threads: ThreadsState;
   /** The build's changed pages, in path order. */
   changedPages: ChangedPage[];
