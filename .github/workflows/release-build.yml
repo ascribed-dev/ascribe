@@ -1,0 +1,216 @@
+name: Release build
+
+# The build, pack, and smoke-test jobs a release and the nightly canary share.
+# The caller checks or stamps the version first. Publishes nothing: it leaves
+# the packed release as the `release` artifact for the caller's publish jobs.
+#
+# With `canary` (the canary workflow's run number), the jobs that read the
+# version stamp the canary's version in their own checkout first, since a
+# canary's version is never committed, and the binary names its commit in
+# `ascribe --version`.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: The version being built, checked against the binary and packages
+        type: string
+        required: true
+      canary:
+        description: The canary's run number, for a canary; empty for a release
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # The glibc version the Linux binaries link against, and that the smoke job
+  # runs them on. Changing it changes what Linux systems Ascribe runs on: change
+  # the smoke job's image, and the requirement in docs/getting-started.md,
+  # packages/cli/README.md, and RELEASING.md, with it.
+  GLIBC: "2.28"
+
+jobs:
+  # Each binary is built natively on its own platform, where it's also run.
+  # Linux builds link against glibc 2.28 (through cargo-zigbuild and Zig's libc
+  # stubs), not the runner's, so the binary runs on any glibc 2.28 or later: the
+  # same floor as Node.js 24, and below every common site host's build image.
+  # The smoke job runs it on glibc 2.28 so the floor can't rise unnoticed.
+  build:
+    name: build (${{ matrix.target }})
+    strategy:
+      matrix:
+        include:
+          - { target: darwin-arm64, os: macos-26, exe: ascribe }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, exe: ascribe, zig: true }
+          - { target: linux-x64, os: ubuntu-24.04, exe: ascribe, zig: true }
+          - { target: win32-x64, os: windows-2025, exe: ascribe.exe }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      # On Windows, the C runtime is linked in, so the binary doesn't need the
+      # Visual C++ redistributable.
+      RUSTFLAGS: ${{ matrix.target == 'win32-x64' && '-C target-feature=+crt-static' || '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: inputs.canary
+        with:
+          node-version-file: .nvmrc
+      - name: Stamp the canary's version
+        if: inputs.canary
+        env:
+          CANARY: ${{ inputs.canary }}
+          VERSION: ${{ inputs.version }}
+        run: test "$(node scripts/release/version.ts --canary "$CANARY")" = "$VERSION"
+      - run: rustup toolchain install
+      # A canary's `ascribe --version` names the commit it was built from.
+      - if: inputs.canary
+        run: echo "ASCRIBE_COMMIT=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+      # Zig comes from PyPI (the ziglang package), in a virtual environment so
+      # cargo-zigbuild finds it through `python3 -m ziglang`.
+      - name: Install Zig and cargo-zigbuild
+        if: matrix.zig
+        run: |
+          python3 -m venv "$RUNNER_TEMP/zig"
+          "$RUNNER_TEMP/zig/bin/pip" install --disable-pip-version-check --require-hashes -r scripts/release/zig-requirements.txt
+          echo "$RUNNER_TEMP/zig/bin" >> "$GITHUB_PATH"
+          cargo install --locked cargo-zigbuild@0.23.4
+      # No build cache: a release is built from scratch.
+      - if: "!matrix.zig"
+        run: cargo build -p tessera-cli --release --locked
+      # Zig's linker would strip the symbol table along with the debug info, so
+      # the build keeps both and `strip` drops only the debug info: a panic's
+      # backtrace keeps its function names, as on the other platforms. The binary
+      # is copied to where the other platforms' is, for the steps below.
+      - if: matrix.zig
+        env:
+          CARGO_PROFILE_RELEASE_STRIP: "false"
+          RUSTFLAGS: -C link-arg=-Wl,--build-id
+        run: |
+          triple=$(rustc -vV | sed -n 's/^host: //p')
+          cargo zigbuild -p tessera-cli --release --locked --target "$triple.$GLIBC"
+          mkdir -p target/release
+          cp "target/$triple/release/ascribe" target/release/ascribe
+          strip --strip-debug target/release/ascribe
+      - name: Check the binary
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          test "$(target/release/${{ matrix.exe }} --version)" = "ascribe $VERSION${ASCRIBE_COMMIT:+ ($ASCRIBE_COMMIT)}"
+          target/release/${{ matrix.exe }} check --config examples/quill --deny-warnings
+      # A tarball keeps the executable bit, which an artifact doesn't.
+      - run: tar -czf binary-${{ matrix.target }}.tar.gz -C target/release ${{ matrix.exe }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: binary-${{ matrix.target }}
+          path: binary-${{ matrix.target }}.tar.gz
+          if-no-files-found: error
+
+  pack:
+    name: pack
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Stamp the canary's version
+        if: inputs.canary
+        env:
+          CANARY: ${{ inputs.canary }}
+          VERSION: ${{ inputs.version }}
+        run: test "$(node scripts/release/version.ts --canary "$CANARY")" = "$VERSION"
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: binary-*
+          path: artifacts
+      - name: Unpack the binaries
+        run: |
+          for archive in artifacts/*/binary-*.tar.gz; do
+            target=$(basename "$archive" .tar.gz)
+            target=${target#binary-}
+            mkdir -p "binaries/$target"
+            tar -xzf "$archive" -C "binaries/$target"
+          done
+      - run: node scripts/release/pack.ts --binaries binaries
+      - name: Check the publish steps without publishing
+        run: |
+          node scripts/release/publish.ts npm --dry-run
+          node scripts/release/publish.ts marketplace --dry-run
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release
+          path: dist/release
+          if-no-files-found: error
+
+  # Each platform installs its packages as a user would, and checks them.
+  smoke:
+    name: smoke test (${{ matrix.target }})
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: darwin-arm64, os: macos-26, vscode: darwin-arm64 }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, vscode: linux-arm64 }
+          - { target: linux-x64, os: ubuntu-24.04, vscode: linux-x64 }
+          - { target: win32-x64, os: windows-2025, vscode: win32-x64-archive }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release
+          path: dist/release
+      - name: Install @ascribed/cli from its tarballs and check examples/quill
+        run: |
+          mkdir -p "$RUNNER_TEMP/npm"
+          cd "$RUNNER_TEMP/npm"
+          npm init -y > /dev/null
+          npm install --offline --ignore-scripts --no-audit --no-fund \
+            "$GITHUB_WORKSPACE"/dist/release/npm/ascribed-cli-${{ matrix.target }}-*.tgz \
+            "$GITHUB_WORKSPACE"/dist/release/npm/ascribed-cli-[0-9]*.tgz
+          ./node_modules/.bin/ascribe --version
+          ./node_modules/.bin/ascribe check --config "$GITHUB_WORKSPACE/examples/quill" --deny-warnings
+      # AlmaLinux 8 has glibc 2.28, the floor the build links against (GLIBC). A binary
+      # that asks for a newer glibc fails here with "version `GLIBC_2.xx' not found".
+      - name: Run the packed binary on glibc 2.28 and check examples/quill
+        if: runner.os == 'Linux'
+        env:
+          IMAGE: almalinux:8@sha256:8b469a3a78515e8a18ea8fc727e6a3679e1d0c5ba6f58d5b30be3d0d9b86cffe
+        run: |
+          mkdir -p "$RUNNER_TEMP/glibc"
+          tar -xzf dist/release/npm/ascribed-cli-${{ matrix.target }}-*.tgz -C "$RUNNER_TEMP/glibc"
+          docker run --rm -v "$RUNNER_TEMP/glibc/package/bin:/ascribe:ro" -v "$GITHUB_WORKSPACE/examples:/examples:ro" \
+            -e GLIBC "$IMAGE" sh -euc '
+              ldd --version | head -n 1
+              test "$(getconf GNU_LIBC_VERSION)" = "glibc $GLIBC"
+              /ascribe/ascribe --version
+              /ascribe/ascribe check --config /examples/quill --deny-warnings
+            '
+      # VS Code needs a display and a few libraries on Linux.
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libnss3 libgtk-3-0t64 libxss1 libasound2t64 libgbm1
+      - name: Install the extension package in VS Code and check examples/quill
+        env:
+          RUN: ${{ runner.os == 'Linux' && 'xvfb-run -a' || '' }}
+        run: $RUN node scripts/release/smoke-vsix.ts dist/release/vsix/ascribe-vscode-${{ matrix.target }}-*.vsix --vscode-platform ${{ matrix.vscode }}
