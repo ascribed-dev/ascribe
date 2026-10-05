@@ -31,8 +31,9 @@ use crate::report::{Counts, FileTable, json, text};
 /// Arguments of `ascribe build`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
-    /// Build only this build. Repeat it for several. By default, every build
-    /// in `ascribe.toml`.
+    /// Build only this build.
+    ///
+    /// Repeat it for several. By default, every build in `ascribe.toml`.
     #[arg(long, value_name = "NAME")]
     pub build: Vec<String>,
 

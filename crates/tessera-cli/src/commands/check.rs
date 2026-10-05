@@ -16,9 +16,10 @@ use crate::report::{Counts, FileTable, json, text};
 /// Arguments of `ascribe check`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
-    /// Check only this build. Repeat it for several. By default, every build
-    /// in `ascribe.toml`. An unknown build name is a usage error, and the
-    /// message lists the builds.
+    /// Check only this build.
+    ///
+    /// Repeat it for several. By default, every build in `ascribe.toml`. An
+    /// unknown build name is a usage error, and the message lists the builds.
     #[arg(long, value_name = "NAME")]
     pub build: Vec<String>,
 

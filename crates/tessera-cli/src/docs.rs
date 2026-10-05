@@ -181,12 +181,10 @@ fn options(command: &str, args: &[&Arg]) -> String {
             .or_else(|| arg.get_help())
             .map(ToString::to_string)
             .unwrap_or_default();
-        let mut paragraphs = help.split("\n\n").map(|p| escape(&sentence(p)));
-        let _ = write!(
-            out,
-            "`{written}`: {}",
-            paragraphs.next().unwrap_or_default()
-        );
+        // The help's first paragraph is what `-h` shows; the reference reads
+        // them all as one.
+        let help: Vec<String> = help.split("\n\n").map(sentence).collect();
+        let _ = write!(out, "`{written}`: {}", escape(&help.join(" ")));
 
         let defaults: Vec<&str> = arg
             .get_default_values()
@@ -221,9 +219,6 @@ fn options(command: &str, args: &[&Arg]) -> String {
                 .map(ToString::to_string)
                 .unwrap_or_default();
             let _ = writeln!(out, "  - `{name}`{default}: {}", escape(&sentence(&help)));
-        }
-        for paragraph in paragraphs {
-            let _ = write!(out, "\n  {paragraph}\n");
         }
     }
     out

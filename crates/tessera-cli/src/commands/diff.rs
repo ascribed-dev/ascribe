@@ -27,7 +27,9 @@ use crate::report::Counts;
 #[derive(Debug, ClapArgs)]
 pub struct Args {
     /// The revision to compare with, anything git accepts (a branch, a tag, a
-    /// commit). By default, the repository's default branch, the first of
+    /// commit).
+    ///
+    /// By default, the repository's default branch, the first of
     /// `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master`
     /// that exists.
     ///
@@ -43,8 +45,9 @@ pub struct Args {
     #[arg(long)]
     pub base_exact: bool,
 
-    /// Compare only this build. Repeat it for several. By default, every
-    /// build in `ascribe.toml`.
+    /// Compare only this build.
+    ///
+    /// Repeat it for several. By default, every build in `ascribe.toml`.
     #[arg(long, value_name = "NAME")]
     pub build: Vec<String>,
 

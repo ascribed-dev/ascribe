@@ -21,6 +21,7 @@ This release adds **review**: reading a pull request as readers will see it, pag
 - **Ascribe: Open Preview to the Side** is now **Ascribe: Open Page Preview to the Side** (the command id is unchanged), and the new **Ascribe: Open Page Preview** opens the preview in place of the editor.
 - The preview scrolls with the editor by block instead of by heading, both ways: scrolling the editor scrolls the preview to the block at its top, moving the cursor shows its block, scrolling the preview scrolls the editor, and double-clicking a block puts the cursor on its source line. A block from a fragment follows its `@include` line. `ascribe.preview.scrollPreviewWithEditor` and `ascribe.preview.scrollEditorWithPreview` turn each direction off.
 - The preview takes scripts, event handlers, and `javascript:` URLs out of a page's HTML before showing it, as the review report does.
+- The Settings editor describes each setting in the words of the [editor guide](docs/content/guides/editor.md#settings), whose settings table is generated from it, and `ascribe.trace.server` describes its choices.
 
 ### Astro
 
