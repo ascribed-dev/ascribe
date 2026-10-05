@@ -265,6 +265,7 @@ impl<'s> Loader<'s> {
                 "consumer",
                 "builds",
                 "editor",
+                "sources",
             ],
         );
 
@@ -294,6 +295,7 @@ impl<'s> Loader<'s> {
         let editor_build = self.editor(root.get("editor"), root.get("builds"), &builds);
         self.version_scheme(root.get("versions"));
         self.project_paths(&project, root.get("project"));
+        let sources = self.sources(root.get("sources"));
 
         Some(ContentModel {
             spec: spec?,
@@ -311,6 +313,7 @@ impl<'s> Loader<'s> {
             widgets,
             consumer,
             builds,
+            sources,
             editor_build,
             warnings: Vec::new(),
         })
@@ -435,6 +438,97 @@ impl<'s> Loader<'s> {
                         .with_arg("path", content.as_str()),
                 );
             }
+        }
+    }
+
+    // ---- sources ------------------------------------------------------------
+
+    /// `[sources.<name>]` (SPEC §7.3).
+    fn sources(&mut self, v: Option<&V<'_>>) -> Vec<Source> {
+        let mut out = Vec::new();
+        let Some(v) = v else { return out };
+        let Some(t) = self.as_table("sources", v) else {
+            return out;
+        };
+        for (name, name_span, item) in entries(t) {
+            self.name_ok(name, name_span, "source", NameRule::Key);
+            let path = format!("sources.{name}");
+            let Some(st) = self.as_table(&path, item) else {
+                continue;
+            };
+            // Reserved for a source in another repository.
+            for (key, key_span, _) in entries(st) {
+                if matches!(key, "git" | "branch") {
+                    self.push(
+                        self.issue(diagnostics::MODEL_SOURCE_REMOTE, key_span)
+                            .with_arg("key", format!("{path}.{key}")),
+                    );
+                }
+            }
+            let allowed = ["path", "include", "ignore", "git", "branch"];
+            self.check_keys(&path, st, &allowed);
+            let include = st
+                .get("include")
+                .map(|p| self.patterns(&format!("{path}.include"), p))
+                .unwrap_or_default();
+            let ignore = st
+                .get("ignore")
+                .map(|p| self.patterns(&format!("{path}.ignore"), p))
+                .unwrap_or_default();
+            let Some(folder) = self.require(&path, st, sp(item), "path") else {
+                continue;
+            };
+            let Some(folder_text) = self.string(&format!("{path}.path"), folder, true) else {
+                continue;
+            };
+            if is_absolute(&folder_text) {
+                self.push(
+                    self.issue(diagnostics::MODEL_PATH_ABSOLUTE, sp(folder))
+                        .with_arg("key", format!("{path}.path")),
+                );
+                continue;
+            }
+            self.source_folder(name, &folder_text, sp(folder));
+            out.push(Source {
+                name: name.to_owned(),
+                path: folder_text,
+                include,
+                ignore,
+            });
+        }
+        out
+    }
+
+    /// A source's folder exists, is a directory, and is in the project's git
+    /// repository, when it's in one. Only when the project directory is known.
+    fn source_folder(&mut self, name: &str, folder: &str, span: Span) {
+        let Some(dir) = self.project_dir else { return };
+        let full = dir.join(folder);
+        if !full.exists() {
+            self.push(
+                self.issue(diagnostics::MODEL_SOURCE_PATH_MISSING, span)
+                    .with_arg("source", name)
+                    .with_arg("path", folder),
+            );
+            return;
+        }
+        if !full.is_dir() {
+            self.push(
+                self.issue(diagnostics::MODEL_SOURCE_PATH_MISSING, span)
+                    .with_variant("not-directory")
+                    .with_arg("source", name)
+                    .with_arg("path", folder),
+            );
+            return;
+        }
+        if let Some(repository) = repository_root(dir)
+            && !self.resolve(folder).starts_with(&repository)
+        {
+            self.push(
+                self.issue(diagnostics::MODEL_SOURCE_OUTSIDE_REPOSITORY, span)
+                    .with_arg("source", name)
+                    .with_arg("path", folder),
+            );
         }
     }
 
@@ -1017,6 +1111,16 @@ struct RawFeature {
     name: String,
     text: String,
     value_span: Span,
+}
+
+/// The root of the git repository `dir` is in, canonical: the nearest
+/// directory, from `dir` up, that holds a `.git` (a directory, or a file for
+/// a worktree or a submodule). Only the file system is read, not history.
+fn repository_root(dir: &Path) -> Option<PathBuf> {
+    let dir = dir.canonicalize().ok()?;
+    dir.ancestors()
+        .find(|d| d.join(".git").exists())
+        .map(Path::to_path_buf)
 }
 
 fn is_absolute(s: &str) -> bool {

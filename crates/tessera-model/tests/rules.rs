@@ -39,7 +39,7 @@ fn line_of(text: &str, offset: usize) -> usize {
 
 fn cases() -> Vec<Case> {
     vec![
-        // 20.1 File and structure
+        // 21.1 File and structure
         case("model-toml-syntax", None, "spec = \"0.1\"\nx = = 1 #!\n"),
         case(
             "model-unknown-key",
@@ -80,7 +80,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[notes.tip]\nlabel = \"\" #!\n",
         ),
-        // 20.2 Project
+        // 21.2 Project
         case(
             "model-path-absolute",
             None,
@@ -101,7 +101,23 @@ fn cases() -> Vec<Case> {
             Some("same"),
             "spec = \"0.1\"\n[project]\ncontent-root = \"x\"\noutput-dir = \"./x\" #!\n",
         ),
-        // 20.3 Content types, fragments, and fields
+        // 21.8 Sources
+        case(
+            "model-source-remote",
+            None,
+            "spec = \"0.1\"\n[sources.code]\npath = \"code\"\ngit = \"https://example.com/x.git\" #!\n",
+        ),
+        case(
+            "model-path-absolute",
+            None,
+            "spec = \"0.1\"\n[sources.code]\npath = \"/code\" #!\n",
+        ),
+        case(
+            "model-missing-key",
+            None,
+            "spec = \"0.1\"\n[sources.code] #!\ninclude = [\"*.py\"]\n",
+        ),
+        // 21.3 Content types, fragments, and fields
         case(
             "model-type-multiple-defaults",
             None,
@@ -242,7 +258,7 @@ fn cases() -> Vec<Case> {
             Some("widget"),
             "spec = \"0.1\"\n[widgets.quill-lab]\nforms = [\"line\"]\nbinding = \"self\"\n[widgets.quill-lab.attributes]\nheading = \"string?\" #!\n",
         ),
-        // 20.4 Dimensions, names, lifecycle, notes, and features
+        // 21.4 Dimensions, names, lifecycle, notes, and features
         case(
             "model-name-multiple-roles",
             None,
@@ -338,7 +354,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[features.x]\nname = \"X\"\navailable = \"y\" #!\n[features.y]\nname = \"Y\"\navailable = \"y\"\n",
         ),
-        // 20.5 Versions, phrases, glossary, and images
+        // 21.5 Versions, phrases, glossary, and images
         case(
             "model-phrase-value-type",
             None,
@@ -354,7 +370,7 @@ fn cases() -> Vec<Case> {
             Some("fragment"),
             "spec = \"0.1\"\n[glossary.terms.a]\nterm = \"A\"\ndefinition = \"x\"\nlink = \"/_shared/a.md\" #!\n",
         ),
-        // 20.6 Widgets
+        // 21.6 Widgets
         case(
             "model-widget-reserved-name",
             None,
@@ -400,7 +416,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[widgets.quill-lab]\nforms = [\"line\"]\nbinding = \"self\"\nplain-content = \"drop\" #!\n",
         ),
-        // 20.7 Consumer, builds, and editor
+        // 21.7 Consumer, builds, and editor
         case(
             "model-consumer-unsupported",
             None,
@@ -546,7 +562,15 @@ fn every_registered_rule_is_covered() {
         }
     }
     let mut covered: BTreeSet<String> = cases().iter().map(|c| c.slug.to_owned()).collect();
-    covered.extend(["model-content-root-missing", "model-glossary-link"].map(String::from));
+    covered.extend(
+        [
+            "model-content-root-missing",
+            "model-glossary-link",
+            "model-source-path-missing",
+            "model-source-outside-repository",
+        ]
+        .map(String::from),
+    );
     let missing: Vec<_> = registered.difference(&covered).collect();
     assert!(missing.is_empty(), "no fixture for: {missing:?}");
 }

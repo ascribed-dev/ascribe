@@ -5,7 +5,7 @@ description: "The content model: content types, dimensions, availability, phrase
 
 `ascribe.toml` is a project's content model: its schema (SPEC §7). It sits at the project root and declares the content types and their frontmatter, the dimensions content varies along, phrases, the glossary, project widgets, how the site output fits Astro, and the builds. The editor, `ascribe check`, and `ascribe build` all read it, so they can't disagree about what's valid.
 
-A file containing only `spec = "0.1"` is valid; every section has a default ([§18](#18-defaults-what-an-absent-section-means)). Example files:
+A file containing only `spec = "0.1"` is valid; every section has a default ([§19](#19-defaults-what-an-absent-section-means)). Example files:
 
 - [`examples/content-models/minimal.toml`]({repo}/blob/main/examples/content-models/minimal.toml): the smallest valid model.
 - [`examples/quill/ascribe.toml`]({repo}/blob/main/examples/quill/ascribe.toml): a small, complete project.
@@ -32,8 +32,9 @@ Every problem the loader reports is in the [diagnostics reference](diagnostics.m
 15. [`[consumer]`](#15-consumer)
 16. [`[builds.<name>]`](#16-buildsname)
 17. [`[editor]`](#17-editor)
-18. [Defaults: what an absent section means](#18-defaults-what-an-absent-section-means)
-19. [Validation](#19-validation)
+18. [`[sources.<name>]`](#18-sourcesname)
+19. [Defaults: what an absent section means](#19-defaults-what-an-absent-section-means)
+20. [Validation](#20-validation)
 
 ---
 
@@ -64,7 +65,7 @@ Several kinds of name appear in the file. Each has a grammar from SPEC Appendix 
 | Name | Grammar | Rule | Used for |
 |---|---|---|---|
 | name-word | SPEC A `name-word` | A letter, then letters, digits, `_`, or `-` | Dimension values, lifecycle states, feature keys, frontmatter field names |
-| key | SPEC A `key` | A lowercase letter, then lowercase letters, digits, or `-` | Dimension names, phrase keys, note types, attribute keys, content type names, glossary term ids |
+| key | SPEC A `key` | A lowercase letter, then lowercase letters, digits, or `-` | Dimension names, phrase keys, note types, attribute keys, content type names, glossary term ids, source names |
 | widget name | SPEC A `widget-name` | Lowercase words of letters and digits joined by single hyphens, with at least one hyphen; starting with a letter | Widget names |
 | build name | This reference | A letter, then letters, digits, `_`, `-`, or `.` | Build names |
 
@@ -77,7 +78,7 @@ Names are case-sensitive and spelled exactly as declared ([SPEC §4.4]({repo}/bl
 ### 1.3 Paths and patterns
 
 - Paths use `/` as the separator on every platform.
-- Filesystem paths in `[project]` are relative to the project root. They must not be absolute, and they may use `..`.
+- Filesystem paths in `[project]` and `[sources]` are relative to the project root. They must not be absolute, and they may use `..`.
 - A glossary term's `link` (§12) is written like a link destination in a document ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)), relative to the content root.
 - **Patterns** (globs) are matched against a source file's path relative to the content root, including its extension, with `/` separators. They are case-sensitive. The syntax:
 
@@ -89,7 +90,7 @@ Names are case-sensitive and spelled exactly as declared ([SPEC §4.4]({repo}/bl
   | `{a,b}` | Either alternative. Alternatives don't nest |
   | `\` | Escapes the next character |
 
-  Every other character matches itself. A pattern must not start with `/` and must not contain a `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets.
+  Every other character matches itself. A pattern must not start with `/` and must not contain a `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets. The exception is a source's `include` and `ignore` (§18), which are matched against any file's path relative to the source's folder.
 
 ### 1.4 How this reference describes keys
 
@@ -596,7 +597,33 @@ build = "site"
 
 ---
 
-## 18. Defaults: what an absent section means
+## 18. `[sources.<name>]`
+@available: next
+
+A source is a folder outside the project's content that its pages may take code examples from, with [`@snippet`](directives.md#snippet) ([SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)). It's the only way a page can read a file outside the project's folder.
+
+```toml
+[sources.code]
+path = ".."                               # relative to the folder ascribe.toml is in
+include = ["crates/**", "examples/**"]    # what's readable; everything else isn't
+ignore = ["**/target/**"]
+```
+
+A page names a file through its source as `<source>:<path>`, with the path relative to the source's folder: `@snippet: code:examples/quill/ascribe.toml#dimensions`.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `path` | string (path) | **required** | The source's folder, relative to the project root. It must exist, be a directory, and be inside the git repository the project is in, when the project is in one. |
+| `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to `path` (§1.3). |
+| `ignore` | array of patterns | none | Files left out even when `include` matches them. |
+
+`<name>` follows the rules for keys (§1.2). A project can declare several sources.
+
+**Rules.** `path` is relative (`model-path-absolute`); its folder must exist and be a directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). `git` and `branch` are reserved for a source in another repository, and are errors for now (`model-source-remote`).
+
+---
+
+## 19. Defaults: what an absent section means
 
 A file containing only `spec = "0.1"` is valid. It means:
 
@@ -617,9 +644,10 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[consumer]` | `profile = "astro"` with its defaults. |
 | `[builds]` | One implicit build, `site`, with `variants = "switch"` and `availability = "badge"`. If `[builds]` declares any build, there's no implicit one. |
 | `[editor]` | `build` as in §17. |
+| `[sources]` | No sources. A page can't read anything outside the project's folder. |
 
 ---
 
-## 19. Validation
+## 20. Validation
 
 A content model with errors is reported, and nothing else is checked, since every other check depends on it. Its warnings are reported with the rest of the diagnostics. Every rule the loader enforces is listed in the [diagnostics reference](diagnostics.md#the-content-model), with its code and how to fix it.

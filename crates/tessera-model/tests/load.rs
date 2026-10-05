@@ -55,7 +55,8 @@ fn minimal_gets_every_default() {
             "available",
             "note",
             "steps",
-            "details"
+            "details",
+            "snippet"
         ]
     );
 }
@@ -136,7 +137,7 @@ fn widgets_become_directive_schemas() {
     let m = example("full.toml");
     assert!(!m.widgets.is_empty());
     let schemas = m.directive_schemas();
-    assert_eq!(schemas.len(), 7 + m.widgets.len());
+    assert_eq!(schemas.len(), 8 + m.widgets.len());
     for w in &m.widgets {
         let s = m.widget_schema(&w.schema.name).unwrap();
         assert!(matches!(s.origin, tessera_core::Origin::Widget));
@@ -325,6 +326,42 @@ fn scratch(name: &str) -> PathBuf {
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir
+}
+
+#[test]
+fn a_source_folder_must_exist_be_a_directory_and_be_in_the_repository() {
+    let outer = scratch("sources");
+    let dir = outer.join("repo");
+    std::fs::create_dir_all(dir.join(".git")).unwrap();
+    std::fs::create_dir_all(dir.join("docs")).unwrap();
+    let model = |path: &str| {
+        format!(
+            "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[sources.code]\npath = \"{path}\"\n"
+        )
+    };
+    let slug = |path: &str| {
+        let issues = load_str_in(&model(path), FileId::new(0), &dir).unwrap_err();
+        (issues[0].slug.as_str().to_owned(), issues[0].variant)
+    };
+    assert_eq!(slug("code"), ("model-source-path-missing".into(), None));
+    // Loading text alone skips the rule.
+    assert!(load_str(&model("code"), FileId::new(0)).is_ok());
+    std::fs::write(dir.join("code"), "").unwrap();
+    assert_eq!(
+        slug("code"),
+        ("model-source-path-missing".into(), Some("not-directory"))
+    );
+    std::fs::remove_file(dir.join("code")).unwrap();
+    std::fs::create_dir(dir.join("code")).unwrap();
+    let loaded = load_str_in(&model("code"), FileId::new(0), &dir).unwrap();
+    assert_eq!(loaded.source("code").map(|s| s.path.as_str()), Some("code"));
+    // A folder next to the repository, not in it.
+    std::fs::create_dir(outer.join("elsewhere")).unwrap();
+    assert_eq!(
+        slug("../elsewhere"),
+        ("model-source-outside-repository".into(), None)
+    );
+    let _ = std::fs::remove_dir_all(&outer);
 }
 
 #[test]

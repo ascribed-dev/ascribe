@@ -5,7 +5,7 @@ description: The normative contract for the content model file, with the rules a
 
 This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `tessera-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../reference/content-model.md).
 
-SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is listed in [Decisions](#21-decisions).
+SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is listed in [Decisions](#22-decisions).
 
 Example files, each valid under this reference:
 
@@ -33,9 +33,10 @@ Example files, each valid under this reference:
 16. [`[consumer]`](#16-consumer)
 17. [`[builds.<name>]`](#17-buildsname)
 18. [`[editor]`](#18-editor)
-19. [Defaults: what an absent section means](#19-defaults-what-an-absent-section-means)
-20. [Validation rules](#20-validation-rules)
-21. [Decisions](#21-decisions)
+19. [`[sources.<name>]`](#19-sourcesname)
+20. [Defaults: what an absent section means](#20-defaults-what-an-absent-section-means)
+21. [Validation rules](#21-validation-rules)
+22. [Decisions](#22-decisions)
 
 ---
 
@@ -66,7 +67,7 @@ Several kinds of name appear in the file. Each has a grammar from SPEC Appendix 
 | Name | Grammar | Rule | Used for |
 |---|---|---|---|
 | name-word | SPEC A `name-word` | A letter, then letters, digits, `_`, or `-` | Dimension values, lifecycle states, feature keys, frontmatter field names |
-| key | SPEC A `key` | A lowercase letter, then lowercase letters, digits, or `-` | Dimension names, phrase keys, note types, attribute keys, content type names, glossary term ids |
+| key | SPEC A `key` | A lowercase letter, then lowercase letters, digits, or `-` | Dimension names, phrase keys, note types, attribute keys, content type names, glossary term ids, source names |
 | widget name | SPEC A `widget-name` | Lowercase words of letters and digits joined by single hyphens, with at least one hyphen; starting with a letter | Widget names |
 | build name | This reference | A letter, then letters, digits, `_`, `-`, or `.` | Build names |
 
@@ -79,7 +80,7 @@ Names are case-sensitive and spelled exactly as declared (SPEC §4.4).
 ### 1.3 Paths and patterns
 
 - Paths use `/` as the separator on every platform.
-- Filesystem paths in `[project]` are relative to the project root. They MUST NOT be absolute, and they MAY use `..`.
+- Filesystem paths in `[project]` and `[sources]` are relative to the project root. They MUST NOT be absolute, and they MAY use `..`.
 - A glossary term's `link` (§13) is written like a link destination in a document (SPEC §5.2), relative to the content root.
 - **Patterns** (globs) are matched against a source file's path relative to the content root, including its extension, with `/` separators. They are case-sensitive. The syntax:
 
@@ -91,7 +92,7 @@ Names are case-sensitive and spelled exactly as declared (SPEC §4.4).
   | `{a,b}` | Either alternative. Alternatives don't nest |
   | `\` | Escapes the next character |
 
-  Every other character matches itself. A pattern MUST NOT start with `/` and MUST NOT contain a `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets.
+  Every other character matches itself. A pattern MUST NOT start with `/` and MUST NOT contain a `..` segment. Patterns only ever apply to Markdown source files (`*.md`); other files under the content root are assets. The exception is a source's `include` and `ignore` (§19), which are matched against any file's path relative to the source's folder.
 
 ### 1.4 How this reference describes keys
 
@@ -125,8 +126,9 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Image attributes (§5.3) | `[images.attributes]` | [§14](#14-images) |
 | Consumer profile (§9.5) | `[consumer]` | [§16](#16-consumer) |
 | Builds (§9.3) | `[builds.<name>]` | [§17](#17-buildsname) |
-| Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§20](#20-validation-rules) |
+| Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§21](#21-validation-rules) |
 | The editor's default build | `[editor]` | [§18](#18-editor) |
+| Sources: the folders outside the content a snippet may read (§4.8, §7.3) | `[sources.<name>]` | [§19](#19-sourcesname) |
 
 ---
 
@@ -140,7 +142,7 @@ spec = "0.1"
 |---|---|---|---|
 | `spec` | string | **required** | The version of the Ascribe specification this project targets (SPEC §11). It MUST be quoted: `spec = 0.1` is a TOML float and is an error. A processor accepts only the spec versions it implements, compared as exact strings; this reference defines `"0.1"`. |
 
-The only other top-level keys are the tables in §4–§18. Anything else is an unknown key.
+The only other top-level keys are the tables in §4–§19. Anything else is an unknown key.
 
 ---
 
@@ -159,7 +161,7 @@ output-dir = ".ascribe/build"
 | `content-root` | string (path) | `"docs"` | The content root (SPEC §2.2): the directory holding every source file. Paths in links and includes that begin with `/` are relative to it. It MUST exist and be a directory. |
 | `output-dir` | string (path) | `".ascribe/build"` | Where `ascribe build` writes output. Each build and emitter writes under `<output-dir>/<build>/<emitter>/` (see the [output-layout contract](output-layout.md)). It need not exist. |
 
-**Rules** (§20): both paths are relative (`model-path-absolute`). The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and they MUST NOT be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
+**Rules** (§21): both paths are relative (`model-path-absolute`). The output directory MUST NOT be inside the content root, the content root MUST NOT be inside the output directory, and they MUST NOT be the same directory (`model-output-overlaps-content`); otherwise a build would read its own output as source, or delete source as stale output. Paths are compared after normalizing `.` and `..` segments and, when both exist, after resolving symbolic links.
 
 The defaults: `".ascribe/build"` keeps generated output out of the way of both the source and a consumer's own `dist/`.
 
@@ -311,7 +313,7 @@ labels = { cloud = "Quill Cloud", self-managed = "Self-managed" }
 | `label` | string | the dimension's name | The display label for the dimension itself, used where a dimension name appears as an availability target or names a tab group. |
 | `versionless` | array of strings | `[]` | Values that are versionless (SPEC §4.4): availability for them takes a single state and no versions. Every entry MUST be a declared value. Values not listed are versioned. |
 
-**Rules.** A value MUST belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. Dimension names and values also take part in the one-role rule (§20).
+**Rules.** A value MUST belong to only one dimension (`model-dimension-value-shared`); otherwise a bare target in an availability spec would be ambiguous. Dimension names and values also take part in the one-role rule (§21).
 
 ---
 
@@ -534,7 +536,7 @@ height = "number?"
 | `"block"` | Following block. If the primary is a text primary and it's given, the primary is the content and nothing else is bound | `@steps`; with `primary = "text?"`, `@note` |
 | `"heading-or-block"` | At the top of a section, the section; anywhere else, the following block | `@available` |
 
-**Rules** (§20):
+**Rules** (§21):
 
 - A widget with container form MUST NOT have a required primary, since a container opener's primary is empty (SPEC §3.5). A container-only widget's primary MUST be `"none"` (`model-widget-container-primary`).
 - A groupable widget MUST be container-only, since group arms are containers (SPEC §3.6) (`model-widget-groupable-form`).
@@ -625,7 +627,33 @@ build = "site"
 
 ---
 
-## 19. Defaults: what an absent section means
+## 19. `[sources.<name>]`
+@available: next
+
+A source is a folder outside the project's content that its pages may take code examples from (SPEC §4.8, §7.3). It's the only way a page can read a file outside the project's folder.
+
+```toml
+[sources.code]
+path = ".."
+include = ["crates/**", "examples/**"]
+ignore = ["**/target/**"]
+```
+
+`<name>` is the source's name (§1.2), which a snippet's address starts with: `code:examples/quill/ascribe.toml#dimensions`.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `path` | string (path) | **required** | The source's folder, relative to the project root. It MUST exist and be a directory, and, when the project is in a git repository, it MUST be inside that repository. |
+| `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to `path` (§1.3). |
+| `ignore` | array of patterns | none | Files left out even when `include` matches them. |
+
+`git` and `branch` are reserved for a source in another repository; using either is an error.
+
+**Rules** (§21.8): `path` is relative (`model-path-absolute`), and names an existing directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). `git` and `branch` are rejected (`model-source-remote`).
+
+---
+
+## 20. Defaults: what an absent section means
 
 A file containing only `spec = "0.1"` is valid. It means:
 
@@ -646,19 +674,20 @@ A file containing only `spec = "0.1"` is valid. It means:
 | `[consumer]` | `profile = "astro"` with its defaults. |
 | `[builds]` | One implicit build, `site`, with `variants = "switch"` and `availability = "badge"`. If `[builds]` declares any build, there's no implicit one. |
 | `[editor]` | `build` as in §18. |
+| `[sources]` | No sources. Nothing outside the project's folder can be read. |
 
 ---
 
-## 20. Validation rules
+## 21. Validation rules
 
 A loader MUST enforce every rule below when it loads `ascribe.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
 
 - **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`tests/conformance/diagnostics.toml`]({repo}/blob/main/tests/conformance/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
 - **Messages** are templates. `{name}` is a placeholder. Where a rule has several messages, each covers one case of it.
 - Rules about documents, such as a page matching no content type or an unknown frontmatter key, aren't loader rules.
-- **Filesystem rules** (`model-content-root-missing`, `model-glossary-link`) need the project directory. A loader given only the file's text, such as an unsaved editor buffer or a unit test, skips them; `ascribe check` and the language server always run them.
+- **Filesystem rules** (`model-content-root-missing`, `model-glossary-link`, `model-source-path-missing`, `model-source-outside-repository`) need the project directory. A loader given only the file's text, such as an unsaved editor buffer or a unit test, skips them; `ascribe check` and the language server always run them.
 
-### 20.1 File and structure
+### 21.1 File and structure
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -671,15 +700,15 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-invalid-name` | Every name follows its grammar (§1.2). | `` `{name}` isn't a valid {role} name: {rule} ``, for example `` `Deployment` isn't a valid dimension name: use a lowercase letter, then lowercase letters, digits, or hyphens `` |
 | `model-empty-text` | Every `label`, `name`, `term`, `definition`, and `description` is non-empty. | `` `{key}` can't be empty `` |
 
-### 20.2 Project
+### 21.2 Project
 
 | Slug | Rule | Message |
 |---|---|---|
-| `model-path-absolute` | `content-root` and `output-dir` are relative paths. | `` `{key}` must be a path relative to ascribe.toml, not an absolute path `` |
+| `model-path-absolute` | `content-root`, `output-dir`, and each source's `path` are relative paths. | `` `{key}` must be a path relative to ascribe.toml, not an absolute path `` |
 | `model-content-root-missing` | The content root exists and is a directory. | `` content root `{path}` doesn't exist ``<br>`` content root `{path}` isn't a directory `` |
 | `model-output-overlaps-content` | The output directory isn't inside the content root, the content root isn't inside the output directory, and they differ (derived from the spec). | `` output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source ``<br>`` content root `{content}` is inside output directory `{output}`; builds could delete source files as stale output ``<br>`` output directory and content root are both `{path}` `` |
 
-### 20.3 Content types, fragments, and fields
+### 21.3 Content types, fragments, and fields
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -696,7 +725,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-pattern-syntax` | Every pattern parses under §1.3, doesn't start with `/`, and has no `..` segment. | `` "{pattern}" isn't a valid pattern: {detail} ``<br>`` pattern "{pattern}" is already relative to the content root; remove the leading / ``<br>`` pattern "{pattern}" can't contain .. `` |
 | `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `heading` or `primary` on widgets; and on both, HTML's global attributes (such as `id`, `class`, `style`, and `title`), any key starting with `aria-`, and HTML's event-handler attributes (such as `onclick`, `onload`, and `onerror`). The lists are explicit, in `tessera_core::reserved`, so keys that merely begin with `on`, such as `online` or `only-if`, are allowed. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
-### 20.4 Dimensions, names, lifecycle, notes, and features
+### 21.4 Dimensions, names, lifecycle, notes, and features
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -716,7 +745,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-availability-history-order` | A history in a feature's spec is in chronological order under the version scheme. | `` feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier} `` |
 | `model-feature-nested` | A feature's `available` isn't itself a feature key. | `` feature `{key}`: available must be an availability spec, not another feature (`{other}`) `` |
 
-### 20.5 Versions, phrases, glossary, and images
+### 21.5 Versions, phrases, glossary, and images
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -724,9 +753,9 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-glossary-duplicate-term` | No two terms or aliases are the same text, ignoring case when either is case-insensitive. | `` "{text}" is declared by both glossary terms `{a}` and `{b}` `` |
 | `model-glossary-link` | A term's `link` file exists under the content root and isn't a fragment. | `` glossary term `{id}` links to {path}, which doesn't exist ``<br>`` glossary term `{id}` links to {path}, which is a fragment; link to a page that includes it `` |
 
-`[versions] scheme` is covered by `model-invalid-value`. Image attribute types are covered by the rules in §20.3.
+`[versions] scheme` is covered by `model-invalid-value`. Image attribute types are covered by the rules in §21.3.
 
-### 20.6 Widgets
+### 21.6 Widgets
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -737,9 +766,9 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-widget-groupable-form` | A groupable widget is container-only. | `` widget `{name}` is groupable, so it must be container-only: forms = ["container"] `` |
 | `model-widget-plain-content` | `plain-content` is set only on widgets that wrap content: container form, or binding `block` or `heading-or-block`. | `` widget `{name}` doesn't wrap content, so plain-content has no effect; remove it `` |
 
-`primary`, `title`, and `binding` values are covered by `model-invalid-value`; attribute types by §20.3.
+`primary`, `title`, and `binding` values are covered by `model-invalid-value`; attribute types by §21.3.
 
-### 20.7 Consumer, builds, and editor
+### 21.7 Consumer, builds, and editor
 
 | Slug | Rule | Message |
 |---|---|---|
@@ -757,9 +786,18 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-editor-build-unknown` | `editor.build` names a declared build. | `` editor.build is `{build}`, which isn't a declared build; builds: {builds} `` |
 | `model-editor-build-required` | When there are several builds and none is named `site`, `editor.build` is set. | `` there are several builds and none is named site; set [editor] build to the one the editor should check `` |
 
+### 21.8 Sources
+@available: next
+
+| Slug | Rule | Message |
+|---|---|---|
+| `model-source-path-missing` | A source's `path` exists and is a directory. | `` the folder of source `{source}`, `{path}`, doesn't exist ``<br>`` the folder of source `{source}`, `{path}`, isn't a directory `` |
+| `model-source-outside-repository` | A source's folder is inside the git repository the project is in, when it's in one. | `` the folder of source `{source}`, `{path}`, is outside the git repository the project is in `` |
+| `model-source-remote` | No source uses `git` or `branch`, which are reserved. | `` `{key}` is reserved for a source in another repository, which this version of Ascribe doesn't support; give the source a `path` in this repository instead `` |
+
 ---
 
-## 21. Decisions
+## 22. Decisions
 
 Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recommended below, except item 12, which was settled when the site-render and asset contracts were written. Items 1, 2, 3, 4, and 6 are now also stated in SPEC.md (§2.1, §5.2, §7.2, §8.2). Each item keeps the alternatives that were considered.
 

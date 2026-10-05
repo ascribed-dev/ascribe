@@ -49,6 +49,8 @@ pub struct ContentModel {
     pub consumer: Consumer,
     /// `[builds.<name>]`, or the implicit `site` build.
     pub builds: Vec<Build>,
+    /// `[sources.<name>]`, in declaration order.
+    pub sources: Vec<Source>,
     /// The build the editor checks by default (`[editor] build`).
     pub editor_build: String,
     /// Warnings found while loading (`model-name-case`,
@@ -64,6 +66,30 @@ pub struct Project {
     pub content_root: String,
     /// The output directory, relative to the project root, as written.
     pub output_dir: String,
+}
+
+/// A source (SPEC §7.3): a named set of files outside the content that
+/// pages may take code from, by address (`<source>:<path>`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Source {
+    /// The source's name, as addresses write it.
+    pub name: String,
+    /// Its folder, relative to the project root, as written.
+    pub path: String,
+    /// The files it makes readable, matched against a file's path relative
+    /// to the folder. Empty means every file.
+    pub include: Vec<Pattern>,
+    /// Files it doesn't make readable, though `include` matches them.
+    pub ignore: Vec<Pattern>,
+}
+
+impl Source {
+    /// Whether the file at `path`, relative to the source's folder, is
+    /// readable: `include` matches it (or is empty) and `ignore` doesn't.
+    pub fn reads(&self, path: &str) -> bool {
+        (self.include.is_empty() || self.include.iter().any(|p| p.matches(path)))
+            && !self.ignore.iter().any(|p| p.matches(path))
+    }
 }
 
 /// A page content type.
@@ -431,6 +457,11 @@ impl ContentModel {
             .into_iter()
             .map(|s| s.name)
             .collect()
+    }
+
+    /// A source by name.
+    pub fn source(&self, name: &str) -> Option<&Source> {
+        self.sources.iter().find(|s| s.name == name)
     }
 
     /// A build by name.
