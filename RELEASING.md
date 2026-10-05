@@ -182,7 +182,7 @@ Review the draft, then publish it.
 
 ### 10. Check the docs site
 
-The [docs site](#the-docs-site) follows `main`, not the release, so a release doesn't change it by itself. In the pull request after the release, set `version` in `docs/ascribe.toml`'s `[phrases]` to the release, and change `[features.next]` to name it, as the comment above `[dimensions.release]` says. Once that's merged and Netlify has built it, open <https://ascribe-docs.netlify.app>: **Check:** getting-started installs the new version, and a page the release shipped reads "since" the release, not "in main, not yet released".
+The [docs site](#the-docs-site) follows `main`, not the release, so a release doesn't change it by itself. In the pull request after the release, set `version` in `docs/ascribe.toml`'s `[phrases]` to the release, and change `[features.next]` to name it, as the comment above `[dimensions.release]` says. Once that's merged and Netlify has built it, open <https://ascribed-dev.com>: **Check:** getting-started installs the new version, and a page the release shipped reads "since" the release, not "in main, not yet released".
 
 ## When something goes wrong
 
@@ -282,7 +282,7 @@ npm dist-tag add @ascribed/cli@0.1.2-next.41 next                         # for 
 
 ## The docs site
 
-The user docs are published at <https://ascribe-docs.netlify.app>, the address in `[consumer]` in `docs/ascribe.toml`. Netlify builds it from `main`, as a user's host would: `site/netlify.toml` installs the site's packages, moves Ascribe's to the canary `next` names (`npm run follow-next`), and builds. No Rust, no workspace, and no secret, so the site follows `main` through the canary, a night behind it at most. It rebuilds when `main` changes `docs/` or `site/`, and when the canary calls its build hook. A pull request gets a preview from the **Site** workflow instead, built with its own Ascribe. [site/README.md](site/README.md) has the details.
+The user docs are published at <https://ascribed-dev.com>, the address in `[consumer]` in `docs/ascribe.toml`. Netlify builds it from `main`, as a user's host would: `site/netlify.toml` installs the site's packages, moves Ascribe's to the canary `next` names (`npm run follow-next`), and builds. No Rust, no workspace, and no secret, so the site follows `main` through the canary, a night behind it at most. It rebuilds when `main` changes `docs/` or `site/`, and when the canary calls its build hook. A pull request gets a preview from the **Site** workflow instead, built with its own Ascribe. [site/README.md](site/README.md) has the details.
 
 **A build that fails** leaves the last good deploy up, and Netlify emails the owner. The usual cause is a page documenting a feature merged that day, which the canary doesn't have until the night's run; the canary's build hook then rebuilds it. When waiting a night matters, run the canary by hand. Netlify's deploy log (Deploys, in the site's dashboard) shows the error; `cd site && npm ci && npm run follow-next && npm run build` reproduces it.
 

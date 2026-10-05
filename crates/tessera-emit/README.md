@@ -12,7 +12,7 @@ Emitters for Ascribe's outputs. An emitter renders the **resolved tree** (`tesse
 
 - `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page`, and the defaults `place_asset` (the mirrored path and a relative reference, asset contract §3), `generated` (files under `_ascribe/`), and `warnings`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once.
 - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, and `markdown_destination`, which write a reference so CommonMark reads it back as written (asset contract §4).
-- `OutputDir` (`store.rs`): the [output-layout contract](https://ascribe-docs.netlify.app/contracts/output-layout/): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
+- `OutputDir` (`store.rs`): the [output-layout contract](https://ascribed-dev.com/contracts/output-layout/): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
 - `labels.rs`: text the outputs share (the availability line and each target's text, an arm's label).
 - `site/`, `render/`, `zod/`: the site output (below).
 
@@ -160,7 +160,7 @@ The full documents for Quill are the snapshots in `tests/snapshots/`.
 
 ## Output ownership
 
-See the [output-layout contract](https://ascribe-docs.netlify.app/contracts/output-layout/). In short: each build's emitter writes to `<output-dir>/<build>/<emitter>/`, beside `<emitter>.manifest.json`, which lists every file Ascribe wrote. A build stages its files, checks that no file it doesn't own is in the way, records ownership, moves the files into place, removes the previous manifest's files it no longer produces, and writes the final manifest. It never deletes a file the manifest never listed.
+See the [output-layout contract](https://ascribed-dev.com/contracts/output-layout/). In short: each build's emitter writes to `<output-dir>/<build>/<emitter>/`, beside `<emitter>.manifest.json`, which lists every file Ascribe wrote. A build stages its files, checks that no file it doesn't own is in the way, records ownership, moves the files into place, removes the previous manifest's files it no longer produces, and writes the final manifest. It never deletes a file the manifest never listed.
 
 ## Tests
 

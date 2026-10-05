@@ -2,7 +2,7 @@
 
 Write [Ascribe](https://github.com/ascribed-dev/ascribe) documentation with the checks, completion, navigation, and preview a programming language gets. Ascribe is Markdown with directives for the structure documentation needs: callouts, procedures, alternatives by platform or product, availability, and reusable content.
 
-The extension activates in a workspace that contains an `ascribe.toml`. A workspace can hold several projects, each with its own language server: see [workspaces with several projects](https://ascribe-docs.netlify.app/guides/editor/#workspaces-with-several-projects).
+The extension activates in a workspace that contains an `ascribe.toml`. A workspace can hold several projects, each with its own language server: see [workspaces with several projects](https://ascribed-dev.com/guides/editor/#workspaces-with-several-projects).
 
 ## Features
 
@@ -14,7 +14,7 @@ The extension activates in a workspace that contains an `ascribe.toml`. A worksp
 - **Formatting** into canonical form, on request or on save.
 - **Highlighting** of directives, phrases, and title lines.
 - **A live page preview** that renders the page as the published site does, as you type, for any build, and a **site preview** that opens it on the site's dev server.
-- **Review**: the preview marks what changed against a git revision, lists the pages a change touches, and shows the pull request's review comments beside the blocks they're about, where you can reply, resolve, comment, and submit your review. [Reviewing a pull request](https://ascribe-docs.netlify.app/guides/review/) walks through it.
+- **Review**: the preview marks what changed against a git revision, lists the pages a change touches, and shows the pull request's review comments beside the blocks they're about, where you can reply, resolve, comment, and submit your review. [Reviewing a pull request](https://ascribed-dev.com/guides/review/) walks through it.
 
 ## The `ascribe` binary
 
@@ -44,9 +44,9 @@ The extension includes `ascribe` for your platform, so it works immediately. Whe
 
 ## Learn more
 
-- [Editing with Ascribe](https://ascribe-docs.netlify.app/guides/editor/): everything the extension does.
-- [Review](https://ascribe-docs.netlify.app/guides/review/): reviewing a pull request in the preview.
-- [Getting started](https://ascribe-docs.netlify.app/getting-started/) with Ascribe.
-- [Diagnostics](https://ascribe-docs.netlify.app/reference/diagnostics/): every problem Ascribe reports, and its fix.
+- [Editing with Ascribe](https://ascribed-dev.com/guides/editor/): everything the extension does.
+- [Review](https://ascribed-dev.com/guides/review/): reviewing a pull request in the preview.
+- [Getting started](https://ascribed-dev.com/getting-started/) with Ascribe.
+- [Diagnostics](https://ascribed-dev.com/reference/diagnostics/): every problem Ascribe reports, and its fix.
 
 Other Markdown formatters that reflow paragraphs don't know that Ascribe's directive and title lines start new blocks; exclude Ascribe files from them.

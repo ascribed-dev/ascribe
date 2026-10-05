@@ -9,7 +9,7 @@ npx ascribe build
 npx ascribe fmt --check
 ```
 
-The [command reference](https://ascribe-docs.netlify.app/reference/cli/) covers every command, option, output, and exit code, and [Getting started](https://ascribe-docs.netlify.app/getting-started/) sets up a project.
+The [command reference](https://ascribed-dev.com/reference/cli/) covers every command, option, output, and exit code, and [Getting started](https://ascribed-dev.com/getting-started/) sets up a project.
 
 ## Platforms
 

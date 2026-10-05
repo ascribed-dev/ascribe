@@ -1,6 +1,6 @@
 # tessera-diff
 
-What changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. `ascribe diff` is its command line; how to use it, and the JSON it writes, are in the [command reference](https://ascribe-docs.netlify.app/reference/cli/#ascribe-diff). This README is about the code.
+What changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. `ascribe diff` is its command line; how to use it, and the JSON it writes, are in the [command reference](https://ascribed-dev.com/reference/cli/#ascribe-diff). This README is about the code.
 
 | Module | Role |
 |---|---|

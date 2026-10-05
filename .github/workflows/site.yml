@@ -4,8 +4,8 @@ name: Site
 # and its packages, by `npm run build:checkout`), then tested in Chromium: a
 # change to Ascribe and the docs that use it are built together. A pull
 # request from a branch of this repository then deploys it to Netlify as its
-# preview, at `https://pr-<number>--<the site's host>`, linked from the run's
-# summary. Production is Netlify's own build, from npm; see site/README.md.
+# preview, a draft at `https://pr-<number>--<the Netlify site's name>.netlify.app`,
+# linked from the run's summary. Production is Netlify's own build, from npm; see site/README.md.
 #
 # The preview needs two repository secrets: NETLIFY_AUTH_TOKEN, a Netlify
 # personal access token, and NETLIFY_SITE_ID, the site's project ID. A pull
@@ -72,13 +72,16 @@ jobs:
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           PR: ${{ github.event.pull_request.number }}
+          # The Netlify site's name: drafts are served from its netlify.app
+          # subdomain, not from the site's own domain.
+          NETLIFY_SITE_NAME: ascribe-docs
         run: |
           site=$(sed -n 's|^site = "\(https://[^"/]*\)"$|\1|p' docs/ascribe.toml)
           if [ "$(printf '%s\n' "$site" | grep -c .)" != 1 ]; then
             echo "::error::Expected one \`site = \"https://...\"\` line in docs/ascribe.toml, found: $site"
             exit 1
           fi
-          address="https://pr-$PR--${site#https://}"
+          address="https://pr-$PR--$NETLIFY_SITE_NAME.netlify.app"
           sed -i "s|\"$site\"|\"$address\"|" docs/ascribe.toml site/astro.config.mjs
           grep -q "\"$address\"" docs/ascribe.toml
           grep -q "\"$address\"" site/astro.config.mjs

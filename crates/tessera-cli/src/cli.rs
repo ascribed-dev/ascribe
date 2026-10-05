@@ -18,7 +18,7 @@ use crate::{commands, exit};
 /// site's pages from here, through [`docs_page!`].
 macro_rules! docs_site {
     () => {
-        "https://ascribe-docs.netlify.app"
+        "https://ascribed-dev.com"
     };
 }
 

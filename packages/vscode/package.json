@@ -11,7 +11,7 @@
     "url": "git+https://github.com/ascribed-dev/ascribe.git",
     "directory": "packages/vscode"
   },
-  "homepage": "https://ascribe-docs.netlify.app/guides/editor/",
+  "homepage": "https://ascribed-dev.com/guides/editor/",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "publisher": "Ascribe",
   "engines": {

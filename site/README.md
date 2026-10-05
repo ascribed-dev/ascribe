@@ -1,6 +1,6 @@
 # site/
 
-Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`, no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribe-docs.netlify.app/getting-started/) and [Astro](https://ascribe-docs.netlify.app/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
+Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`, no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribed-dev.com/getting-started/) and [Astro](https://ascribed-dev.com/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
 astro.config.mjs            ascribe({ project: "../docs", build: "site" }); routing as in ../docs/ascribe.toml's [consumer]
@@ -20,10 +20,10 @@ test/                       navigation, links and anchors, redirects, and the bu
 
 ## Publishing
 
-The site is at <https://ascribe-docs.netlify.app>, the address in `[consumer]`.
+The site is at <https://ascribed-dev.com>, the address in `[consumer]`.
 
 - **Production** is Netlify's own build of `main`, with `site/` as its base directory and `netlify.toml` saying how: the three commands below. It runs when `main` changes `docs/` or `site/`, and when the canary workflow calls the site's build hook after publishing a canary. A build that fails, such as one of a page documenting a feature the canary doesn't have yet, leaves the last good deploy up; the next canary's build hook rebuilds it.
-- **A pull request's preview** is built by the **Site** workflow with the pull request's own Ascribe, and deployed with Netlify's CLI as a draft at `https://pr-<number>--ascribe-docs.netlify.app`, which the run's summary links. It's built with that address as `site`, in `astro.config.mjs` and `[consumer]` alike. Netlify's own deploy previews are off. Pull requests from forks get the build and its tests, and no preview.
+- **A pull request's preview** is built by the **Site** workflow with the pull request's own Ascribe, and deployed with Netlify's CLI as a draft at `https://pr-<number>--ascribe-docs.netlify.app` (the Netlify site's name, `ascribe-docs`, is in the workflow), which the run's summary links. It's built with that address as `site`, in `astro.config.mjs` and `[consumer]` alike. Netlify's own deploy previews are off. Pull requests from forks get the build and its tests, and no preview.
 
 ## Building
 

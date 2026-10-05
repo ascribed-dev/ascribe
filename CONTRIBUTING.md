@@ -45,7 +45,7 @@ npm test                 # navigation, links, and the site in Chromium
 
 For `astro dev`, which rebuilds as you edit pages, run `ASCRIBE_BIN=../target/debug/ascribe npm run dev` after `build:checkout`; without `ASCRIBE_BIN`, it runs the binary from npm. `npm ci` puts back the packages from npm. [site/README.md](site/README.md) has the rest.
 
-The site is published at <https://ascribe-docs.netlify.app>. A pull request that changes `docs/`, `site/`, or Ascribe gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/` gets a review report of its pages from the **Review** workflow.
+The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, or Ascribe gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/` gets a review report of its pages from the **Review** workflow.
 
 ## Generated docs
 
