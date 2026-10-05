@@ -122,8 +122,20 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         model_text: now_model,
     };
     let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-    let mut report = Report::new(&repo, &base, compare_builds(before_side, now_side, &names));
-    report.working_tree_errors = working_tree_errors(&project, &args.build);
+    // Counting the errors is a full check of the working tree: it runs beside
+    // the comparison, so the two take about as long as the slower one.
+    let (diffs, errors) = std::thread::scope(|scope| {
+        let errors = scope.spawn(|| working_tree_errors(&project, &args.build));
+        let diffs = compare_builds(before_side, now_side, &names);
+        (
+            diffs,
+            errors
+                .join()
+                .unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
+        )
+    });
+    let mut report = Report::new(&repo, &base, diffs);
+    report.working_tree_errors = errors;
     if report.working_tree_errors > 0 {
         let _ = writeln!(
             err,
