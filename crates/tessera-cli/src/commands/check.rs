@@ -36,7 +36,7 @@ pub struct Args {
 pub enum Format {
     /// Diagnostics with source snippets, for people.
     Text,
-    /// One JSON document (its schema is in docs/cli.md), for tools.
+    /// One JSON document (its schema is in docs/content/reference/cli.md), for tools.
     Json,
 }
 

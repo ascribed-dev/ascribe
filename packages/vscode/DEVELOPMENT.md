@@ -1,6 +1,6 @@
 # Developing the VS Code extension
 
-How the extension is built and tested. The user guide is the [README](README.md) and [docs/editor.md](../../docs/editor.md).
+How the extension is built and tested. The user guide is the [README](README.md) and [docs/content/guides/editor.md](../../docs/content/guides/editor.md).
 
 ## Running it locally
 
@@ -32,7 +32,7 @@ The server logs to the development window's **Ascribe** output channels (**Ascri
 
 ## Projects
 
-`src/registry.ts` finds every `ascribe.toml` in the workspace (outside `node_modules`, at most 50) and keeps a `ProjectServer` (`src/client.ts`) for each: one `ascribe lsp`, with the project's folder as its workspace folder, its own binary, output channel, and crash count. A server starts the first time a file of its project is opened or previewed, or at discovery with `ascribe.startServers: "all"`. `src/projects.ts` decides which project owns a file (the nearest `ascribe.toml` above it), and each client is kept to its own project's files (`src/scope.ts`), so a parent project's server never sees a nested project's open documents. The server leaves a nested project's files out of its sources anyway; the middleware is a second guard. The user-facing behavior is in [docs/editor.md](../../docs/editor.md#workspaces-with-several-projects).
+`src/registry.ts` finds every `ascribe.toml` in the workspace (outside `node_modules`, at most 50) and keeps a `ProjectServer` (`src/client.ts`) for each: one `ascribe lsp`, with the project's folder as its workspace folder, its own binary, output channel, and crash count. A server starts the first time a file of its project is opened or previewed, or at discovery with `ascribe.startServers: "all"`. `src/projects.ts` decides which project owns a file (the nearest `ascribe.toml` above it), and each client is kept to its own project's files (`src/scope.ts`), so a parent project's server never sees a nested project's open documents. The server leaves a nested project's files out of its sources anyway; the middleware is a second guard. The user-facing behavior is in [docs/content/guides/editor.md](../../docs/content/guides/editor.md#workspaces-with-several-projects).
 
 ## The preview
 

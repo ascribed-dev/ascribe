@@ -25,7 +25,7 @@ cargo test --workspace --locked
 pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 ```
 
-- Behavior changes come with a conformance case in [tests/conformance](tests/conformance). Diagnostics are defined only in `tests/conformance/diagnostics.toml`; `docs/diagnostics.md` is generated from it, and a test fails when it's stale.
+- Behavior changes come with a conformance case in [tests/conformance](tests/conformance). Diagnostics are defined only in `tests/conformance/diagnostics.toml`; `docs/content/reference/diagnostics.md` is generated from it, and a test fails when it's stale.
 - Changes to `crates/comrak-tessera` follow [FORK.md](crates/comrak-tessera/FORK.md): mark each one `// TESSERA:` and update the table.
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions.

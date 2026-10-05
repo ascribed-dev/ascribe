@@ -27,7 +27,7 @@ env:
   CARGO_TERM_COLOR: always
   # The glibc version the Linux binaries link against, and that the smoke job
   # runs them on. Changing it changes what Linux systems Ascribe runs on: change
-  # the smoke job's image, and the requirement in docs/getting-started.md,
+  # the smoke job's image, and the requirement in docs/content/getting-started.md,
   # packages/cli/README.md, and RELEASING.md, with it.
   GLIBC: "2.28"
 

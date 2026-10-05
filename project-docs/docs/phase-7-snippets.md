@@ -43,7 +43,7 @@ Everywhere a page refers to code, it writes `<source>:<path>` with an optional `
 @snippet: code:examples/quill/ascribe.toml#dimensions
 ```
 
-`<path>` is relative to the source's `path`, with `/` on every platform, and must match the source's `include`. There's no relative-path form: an address never depends on where the page is, or on where the code is checked out. Phase 8's `covers` uses the same address.
+`<path>` is relative to the source's `path`, with `/` on every platform, and must match the source's `include`. There's no relative-path form: an address never depends on where the page is, or on where the code is checked out. A later `covers` field would use the same address.
 
 ### In a page
 
@@ -91,7 +91,7 @@ Reading files outside the content root adds work to every check. A snippet's fil
 
 ## Out of scope
 
-The editor beyond what the server already does for diagnostics (Later); running code; the reserved tags; highlighting lines; sources in another repository; `covers` (phase 8).
+The editor beyond what the server already does for diagnostics (Later); running code; the reserved tags; highlighting lines; sources in another repository; `covers` (deferred after phase 6).
 
 ## Acceptance criteria
 
