@@ -29,6 +29,11 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  # The glibc version the Linux binaries link against, and that the smoke job
+  # runs them on. Changing it changes what Linux systems Ascribe runs on: change
+  # the smoke job's image, and the requirement in docs/getting-started.md,
+  # packages/cli/README.md, and RELEASING.md, with it.
+  GLIBC: "2.28"
 
 jobs:
   version:
@@ -80,11 +85,6 @@ jobs:
       # On Windows, the C runtime is linked in, so the binary doesn't need the
       # Visual C++ redistributable.
       RUSTFLAGS: ${{ matrix.target == 'win32-x64' && '-C target-feature=+crt-static' || '' }}
-      # The glibc version the Linux binaries link against. Changing it changes
-      # what Linux systems Ascribe runs on: update GLIBC in the smoke job and the
-      # requirement in docs/getting-started.md, packages/cli/README.md, and
-      # RELEASING.md with it.
-      GLIBC: "2.28"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup toolchain install
@@ -94,19 +94,26 @@ jobs:
         if: matrix.zig
         run: |
           python3 -m venv "$RUNNER_TEMP/zig"
-          "$RUNNER_TEMP/zig/bin/pip" install --disable-pip-version-check ziglang==0.16.0
+          "$RUNNER_TEMP/zig/bin/pip" install --disable-pip-version-check --require-hashes -r scripts/release/zig-requirements.txt
           echo "$RUNNER_TEMP/zig/bin" >> "$GITHUB_PATH"
           cargo install --locked cargo-zigbuild@0.23.4
       # No build cache: a release is built from scratch.
       - if: "!matrix.zig"
         run: cargo build -p tessera-cli --release --locked
-      # The binary is copied to where the other platforms' is, for the steps below.
+      # Zig's linker would strip the symbol table along with the debug info, so
+      # the build keeps both and `strip` drops only the debug info: a panic's
+      # backtrace keeps its function names, as on the other platforms. The binary
+      # is copied to where the other platforms' is, for the steps below.
       - if: matrix.zig
+        env:
+          CARGO_PROFILE_RELEASE_STRIP: "false"
+          RUSTFLAGS: -C link-arg=-Wl,--build-id
         run: |
           triple=$(rustc -vV | sed -n 's/^host: //p')
           cargo zigbuild -p tessera-cli --release --locked --target "$triple.$GLIBC"
           mkdir -p target/release
           cp "target/$triple/release/ascribe" target/release/ascribe
+          strip --strip-debug target/release/ascribe
       - name: Check the binary
         env:
           VERSION: ${{ needs.version.outputs.version }}
@@ -194,12 +201,11 @@ jobs:
             "$GITHUB_WORKSPACE"/dist/release/npm/ascribed-cli-[0-9]*.tgz
           ./node_modules/.bin/ascribe --version
           ./node_modules/.bin/ascribe check --config "$GITHUB_WORKSPACE/examples/quill" --deny-warnings
-      # AlmaLinux 8 has glibc 2.28, the floor the build links against. A binary
+      # AlmaLinux 8 has glibc 2.28, the floor the build links against (GLIBC). A binary
       # that asks for a newer glibc fails here with "version `GLIBC_2.xx' not found".
       - name: Run the packed binary on glibc 2.28 and check examples/quill
         if: runner.os == 'Linux'
         env:
-          GLIBC: "2.28"
           IMAGE: almalinux:8@sha256:8b469a3a78515e8a18ea8fc727e6a3679e1d0c5ba6f58d5b30be3d0d9b86cffe
         run: |
           mkdir -p "$RUNNER_TEMP/glibc"
