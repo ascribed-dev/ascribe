@@ -11,7 +11,10 @@ export interface NavGroup {
 
 export const nav: NavGroup[] = [
   { label: "Start", pages: ["index.md", "getting-started.md"] },
-  { label: "Guides", pages: ["guides/astro.md", "guides/editor.md", "guides/review.md"] },
+  {
+    label: "Guides",
+    pages: ["guides/astro.md", "guides/editor.md", "guides/review.md", "guides/drift.md"],
+  },
   {
     label: "Reference",
     pages: [
