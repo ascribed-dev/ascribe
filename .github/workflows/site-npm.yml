@@ -1,12 +1,13 @@
 name: Site from npm
 
-# The docs site built the way production builds it: `docs/` and `site/` alone,
-# copied out of the checkout, with Ascribe from npm (`npm ci`, then the newest
-# canary with `npm run follow-next`), no workspace install and no
-# ASCRIBE_BIN. It runs after each canary and when `main` changes the docs or
-# the site, and reports; it doesn't run on pull requests, since a pull request
-# may use a feature no canary has yet. CI's site job (site.yml) builds pull
-# requests with their own Ascribe.
+# The docs site built the way production builds it: the repository's files
+# alone, as Netlify's clone has them, with no `git` history, Ascribe from npm
+# (`npm ci`, then the newest canary with `npm run follow-next`), no workspace
+# install, and no ASCRIBE_BIN. It runs after each canary and when `main`
+# changes the site, the docs, or a file the docs take code examples from, and
+# reports; it doesn't run on pull requests, since a pull request may use a
+# feature no canary has yet. CI's site job (site.yml) builds pull requests with
+# their own Ascribe.
 
 on:
   workflow_run:
@@ -18,7 +19,11 @@ on:
     paths:
       - "docs/**"
       - "site/**"
-      - ".github/workflows/site-npm.yml"
+      # Where the docs' code examples come from: `[sources.code] include` in
+      # docs/ascribe.toml.
+      - "examples/**"
+      - ".github/workflows/**"
+      - "crates/tessera-cli/tests/output/**"
   workflow_dispatch:
 
 permissions:
@@ -39,10 +44,13 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: site/.nvmrc
-      - name: Copy docs/ and site/ alone
+      # The pages take code examples from files outside docs/, so the whole
+      # tree is copied, as committed: nothing built or installed, and no
+      # `.git`, since `ascribe build` needs none.
+      - name: Copy the repository's files alone
         run: |
           mkdir "$RUNNER_TEMP/alone"
-          cp -R docs site "$RUNNER_TEMP/alone/"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/alone"
           echo "SITE_DIR=$RUNNER_TEMP/alone/site" >> "$GITHUB_ENV"
       - run: npm ci
         working-directory: ${{ env.SITE_DIR }}

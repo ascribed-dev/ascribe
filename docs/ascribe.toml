@@ -106,6 +106,22 @@ term = "site preview"
 definition = "The active page on the project's own dev server, in the browser or the preview panel."
 link = "guides/editor.md#site-preview"
 
+# Where the pages' code examples come from: files in this repository that are
+# built, tested, or run, taken with `@snippet`. Netlify builds from a clone of
+# the whole repository, so they're there in production too.
+# Code examples come from these files. The same folders are listed in three
+# other places, which need the same change when `include` changes: the paths
+# in .github/workflows/site-npm.yml, the site path pattern in
+# .github/workflows/ci.yml, and `ignore` in site/netlify.toml.
+[sources.code]
+path = ".."                               # relative to the folder ascribe.toml is in
+include = [                               # what's readable; everything else isn't
+  ".github/workflows/**",
+  "crates/tessera-cli/tests/output/**",
+  "examples/**",
+]
+ignore = ["**/node_modules/**"]
+
 # How the site in site/ routes. `site`, `base-path`, and `trailing-slash` must
 # agree with site/astro.config.mjs; @ascribed/astro checks that they do.
 [consumer]

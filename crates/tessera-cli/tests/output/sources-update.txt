@@ -1,0 +1,9 @@
+api: e06ca34 → 3f7a23a, the head of main, 3 commits
+  3f7a23a Take a user when logging in
+  77319c2 Document the client
+  13d55fc Rename the examples folder
+  changed src/auth.rs
+
+Examples that changed. The page shows the new code; check the words around it:
+  guides/auth.md
+    api:src/auth.rs#login (+1 −1)

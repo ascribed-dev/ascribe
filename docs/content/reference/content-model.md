@@ -120,11 +120,7 @@ The only other top-level keys are the tables in §3–§17. Anything else is an 
 
 Where the source lives and where builds write.
 
-```toml
-[project]
-content-root = "docs"
-output-dir = ".ascribe/build"
-```
+@snippet: code:examples/content-models/full.toml#project
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -188,13 +184,7 @@ Frontmatter is YAML. For type checking, processors parse it with the YAML 1.2 **
 
 ### 4.3 Fragments
 
-```toml
-[fragments]
-patterns = ["includes/**", "**/*.partial.md"]
-
-[fragments.frontmatter]
-owner = "string?"
-```
+@snippet: code:examples/content-models/full.toml#fragments
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -266,13 +256,7 @@ Nesting beyond one level of `fields` is allowed but discouraged; keep frontmatte
 
 A **dimension** is an axis content varies along ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), and whose values are availability targets ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)).
 
-```toml
-[dimensions.deployment]
-label = "Deployment"
-values = ["cloud", "self-managed"]
-versionless = ["cloud"]
-labels = { cloud = "Quill Cloud", self-managed = "Self-managed" }
-```
+@snippet: code:examples/content-models/full.toml#deployment
 
 `<name>` is the dimension's name (`key` rule, §1.2). It's written as an attribute key in `@variant`, as a key in `variant` frontmatter and build selections, and as a target in availability specs, where it stands for all its values.
 
@@ -291,10 +275,7 @@ labels = { cloud = "Quill Cloud", self-managed = "Self-managed" }
 
 How versions in availability specs are compared ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)).
 
-```toml
-[versions]
-scheme = "numeric"
-```
+@snippet: code:examples/content-models/full.toml#versions
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -320,14 +301,7 @@ Lifecycle states ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)). Five are
 
 A project adds states by declaring them, and may change the `available` flag or `label` of a built-in state. Built-in states can't be removed.
 
-```toml
-[lifecycle.sunset]
-available = false
-label = "sunset"
-
-[lifecycle.ga]
-label = "Generally available"
-```
+@snippet: code:examples/content-models/full.toml#lifecycle
 
 `<state>` is the state's name (`name-word`).
 
@@ -344,11 +318,7 @@ label = "Generally available"
 
 The features registry ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)): named availability specs, so a feature going generally available takes one edit.
 
-```toml
-[features.streaming-sync]
-name = "Streaming sync"
-available = "cloud, self-managed preview 3.4"
-```
+@snippet: code:examples/content-models/full.toml#features
 
 `<key>` is the feature key (`name-word`). Writing it as a whole `@available` primary, or as the whole `available` frontmatter value, stands for the spec.
 
@@ -365,13 +335,7 @@ available = "cloud, self-managed preview 3.4"
 
 Note types ([SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)), the values of `@note`'s `type` attribute. Five are built in: `note`, `tip`, `important`, `warning`, and `caution`. A project adds types by declaring them, and may relabel a built-in type. Built-in types can't be removed.
 
-```toml
-[notes.security]
-label = "Security"
-
-[notes.tip]
-label = "Pro tip"
-```
+@snippet: code:examples/content-models/full.toml#notes
 
 `<type>` is the note type (`key` rule).
 
@@ -387,13 +351,7 @@ Under `[notes]`, the inline form `security = { label = "Security" }` is equivale
 
 The phrases registry ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)).
 
-```toml
-[phrases]
-product = "Quill"
-cloud = "Quill Cloud"
-version = "3.4.1"
-api = "https://api.quill.dev/v3/"
-```
+@snippet: code:examples/content-models/full.toml#phrases
 
 Every key is a phrase key (`key` rule, the same rule as SPEC Appendix A's `phrase`), and every value must be a TOML string (`model-phrase-value-type`). `version = 3.4` is a float and an error; that's the kind of silent type change TOML exists to prevent ([SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)). Values are inserted as literal text ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)).
 
@@ -412,17 +370,7 @@ Only `string` and `list(string)` fields can accept phrases (`model-phrases-field
 
 The glossary ([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)): terms, their definitions, and how occurrences are matched. Authors don't mark terms in source; processors link them ([SPEC §9.2]({repo}/blob/main/SPEC.md#92-resolution) step 7).
 
-```toml
-[glossary]
-match = "first"
-case-sensitive = false
-
-[glossary.terms.api-key]
-term = "API key"
-aliases = ["API keys"]
-definition = "A secret token that authenticates the Quill agent to Quill Cloud."
-link = "/reference/glossary.md#api-key"
-```
+@snippet: code:examples/content-models/full.toml#glossary
 
 ### 12.1 Settings
 
@@ -452,12 +400,7 @@ link = "/reference/glossary.md#api-key"
 
 Image attributes ([SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)): which keys may appear in an attribute block after an image, and their types.
 
-```toml
-[images.attributes]
-width = "number?"
-height = "number?"
-loading = { type = "enum(lazy, eager)", default = "lazy" }
-```
+@snippet: code:examples/content-models/full.toml#images
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -471,17 +414,7 @@ Alt text and titles aren't attributes; they use CommonMark's syntax ([SPEC §5.3
 
 Project widgets (SPEC §6): directives a documentation set defines. Each declaration is a directive schema with the same parts a built-in directive's schema has (SPEC §3, §3).
 
-```toml
-[widgets.quill-labspace]
-description = "An embedded, runnable Quill lab."
-forms = ["line"]
-binding = "self"
-plain-fallback = "Try this in the Quill lab at labs.quill.dev."
-
-[widgets.quill-labspace.attributes]
-lab = "string"
-height = "number?"
-```
+@snippet: code:examples/content-models/full.toml#widgets
 
 `<name>` is the widget's name (SPEC A `widget-name`: lowercase, with at least one hyphen). Names starting with `ascribe-` are reserved for Ascribe's element library, and the names HTML reserves for itself (`annotation-xml`, `color-profile`, `font-face`, `font-face-src`, `font-face-uri`, `font-face-format`, `font-face-name`, `missing-glyph`) aren't allowed, because the site output emits a widget as a custom element with the widget's name ([SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)).
 
@@ -584,10 +517,7 @@ availability = { filter = "self-managed 3.3" }
 
 Settings for the authoring environment (SPEC §10).
 
-```toml
-[editor]
-build = "site"
-```
+@snippet: code:examples/content-models/full.toml#editor
 
 | Key | Type | Default | Description |
 |---|---|---|---|

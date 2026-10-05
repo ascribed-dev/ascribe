@@ -22,7 +22,7 @@ test/                       navigation, links and anchors, redirects, and the bu
 
 The site is at <https://ascribed-dev.com>, the address in `[consumer]`.
 
-- **Production** is Netlify's own build of `main`, with `site/` as its base directory and `netlify.toml` saying how: the three commands below. It runs when `main` changes `docs/` or `site/`, and when the canary workflow calls the site's build hook after publishing a canary. A build that fails, such as one of a page documenting a feature the canary doesn't have yet, leaves the last good deploy up; the next canary's build hook rebuilds it.
+- **Production** is Netlify's own build of `main`, with `site/` as its base directory and `netlify.toml` saying how: the three commands below. It runs when `main` changes `docs/`, `site/`, or a file the docs take code examples from (`[sources.code]` in `docs/ascribe.toml`), and when the canary workflow calls the site's build hook after publishing a canary. A build that fails, such as one of a page documenting a feature the canary doesn't have yet, leaves the last good deploy up; the next canary's build hook rebuilds it.
 - **A pull request's preview** is built by the **Site** workflow with the pull request's own Ascribe, and deployed with Netlify's CLI as a draft at `https://pr-<number>--ascribe-docs.netlify.app` (the Netlify site's name, `ascribe-docs`, is in the workflow), which the run's summary links. It's built with that address as `site`, in `astro.config.mjs` and `[consumer]` alike. Netlify's own deploy previews are off. Pull requests from forks get the build and its tests, and no preview.
 
 ## Building
@@ -35,7 +35,7 @@ npm run follow-next   # the Ascribe packages at `next`, without saving
 npm run build         # astro build, then Pagefind's index of dist/
 ```
 
-**This is the one place the site's build differs from a user's.** A user's lockfile pins the Ascribe they installed, and they move it on purpose. This site follows `main`, so after `npm ci` it installs the canary that `next` names now: `@ascribed/astro`, `@ascribed/cli`, and `@ascribed/elements`, all at the version `next` gives for `@ascribed/astro`, which pins the others to its own. The lockfile and everything else in it stay as they are. Plain `npm ci && npm run build` builds with the canary in the lockfile. The **Site from npm** workflow builds this way, in a copy of `docs/` and `site/` alone, after each canary and when `main` changes the docs or the site.
+**This is the one place the site's build differs from a user's.** A user's lockfile pins the Ascribe they installed, and they move it on purpose. This site follows `main`, so after `npm ci` it installs the canary that `next` names now: `@ascribed/astro`, `@ascribed/cli`, and `@ascribed/elements`, all at the version `next` gives for `@ascribed/astro`, which pins the others to its own. The lockfile and everything else in it stay as they are. Plain `npm ci && npm run build` builds with the canary in the lockfile. The **Site from npm** workflow builds this way, in a copy of the repository's committed files alone, after each canary and when `main` changes the site, the docs, or a file the docs take code examples from.
 
 With this checkout's Ascribe, for working on Ascribe and its docs together, and for a pull request's preview:
 

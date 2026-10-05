@@ -1,83 +1,127 @@
-name: Review
-
 # The review report: on each pull request, every page the change reaches,
 # rendered with its changes marked, as one HTML file a reviewer opens from the
-# run's summary. It's the job docs/content/guides/review.md ("The report in
-# CI") gives users, run as written, with Ascribe from npm. It installs `next`,
-# the canary of `main`, where the guide installs the latest release, since
-# this repository's projects follow `main`. Two projects: examples/quill on
-# every pull request, and docs when the pull request changes it.
+# run's summary. The `report` job is the one docs/content/guides/review.md
+# ("The report in CI") gives users, and the page takes it from this file: the
+# lines marked `:remove:` are what this repository adds. It installs `next`,
+# the canary of `main`, over the release the job installs, since this
+# repository's projects follow `main`. It reports on docs when the pull request
+# changes docs or a file its pages take examples from, and the `quill` job
+# reports on examples/quill every time. It runs on its own, not from ci.yml:
+# a report isn't a check, and with Ascribe from npm it can't pass before a
+# canary has what a pull request's docs use, so it doesn't hold up a merge.
+# The region's end tag is indented so a formatter doesn't put a blank line
+# before it, which the page would show (issue #107).
+# :snippet-start: job
+name: Review
 
-# Started by ci.yml, on pull requests.
 on:
-  workflow_call:
+  pull_request:
 
 permissions:
   contents: read
+# :remove-start:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# :remove-end:
 
 jobs:
   report:
-    name: review report (${{ matrix.project }})
+    name: review report (docs) # :remove:
+    needs: changed # :remove:
+    if: needs.changed.outputs.docs == 'true' # :remove:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - project: examples/quill
-            report: quill-review.html
-          - project: docs
-            report: docs-review.html
-            only-when-changed: true
-    env:
-      PROJECT: ${{ matrix.project }}
-      REPORT: ${{ matrix.report }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The whole history, so `ascribe diff` finds where the branch left
-          # its base.
+          # its base. The default, one commit, isn't enough.
           fetch-depth: 0
-      - id: changed
-        name: Look for changes to the project
-        env:
-          ONLY_WHEN_CHANGED: ${{ matrix.only-when-changed }}
-        run: |
-          if [ "$ONLY_WHEN_CHANGED" = true ] && git diff --quiet "origin/$GITHUB_BASE_REF...HEAD" -- "$PROJECT"; then
-            echo "::notice::The pull request doesn't change $PROJECT, so there's no report for it."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-      - if: steps.changed.outputs.changed == 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: .nvmrc
-      - if: steps.changed.outputs.changed == 'true'
-        run: npm install --global @ascribed/cli@next
+          node-version: 24
+      - run: npm install --global @ascribed/cli
+      - run: npm install --global @ascribed/cli@next # :remove:
       - name: Write the report
-        if: steps.changed.outputs.changed == 'true'
         run: >
-          ascribe diff --config "$PROJECT"
-          --base "origin/$GITHUB_BASE_REF" --format html > "$REPORT"
+          ascribe diff --config docs
+          --base "origin/$GITHUB_BASE_REF" --format html > review.html
       - id: upload
-        if: steps.changed.outputs.changed == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ matrix.report }}
-          path: ${{ matrix.report }}
+          name: review.html
+          path: review.html
           # One file, not zipped, so it opens in the browser.
           archive: false
-          if-no-files-found: error
+          if-no-files-found: error # :remove:
       - name: Link the report from the summary
-        if: steps.changed.outputs.changed == 'true'
         env:
           URL: ${{ steps.upload.outputs.artifact-url }}
         run: |
           {
-            echo "### Review report: $PROJECT"
+            echo "### Review report"
+            echo
+            ascribe --version | sed 's/^/    /' # :remove:
+            ascribe diff --config docs --base "origin/$GITHUB_BASE_REF" | sed 's/^/    /'
+            echo
+            echo "[Open the review report]($URL)"
+          } >> "$GITHUB_STEP_SUMMARY"
+      # :snippet-end:
+
+  # Whether the pull request changes docs/, or a file a page takes an example
+  # from: one that `[sources.code] include` in docs/ascribe.toml makes
+  # readable.
+  changed:
+    name: look for changes to docs
+    runs-on: ubuntu-latest
+    outputs:
+      docs: ${{ steps.changed.outputs.docs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: changed
+        run: |
+          if git diff --quiet "origin/$GITHUB_BASE_REF...HEAD" -- docs .github/workflows crates/tessera-cli/tests/output examples; then
+            echo "::notice::The pull request doesn't change docs, or the files its examples come from, so there's no report for it."
+            echo "docs=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # The same report, for examples/quill, on every pull request.
+  quill:
+    name: review report (examples/quill)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - run: npm install --global @ascribed/cli@next
+      - name: Write the report
+        run: >
+          ascribe diff --config examples/quill
+          --base "origin/$GITHUB_BASE_REF" --format html > quill-review.html
+      - id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: quill-review.html
+          path: quill-review.html
+          archive: false
+          if-no-files-found: error
+      - name: Link the report from the summary
+        env:
+          URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          {
+            echo "### Review report: examples/quill"
             echo
             ascribe --version | sed 's/^/    /'
-            ascribe diff --config "$PROJECT" --base "origin/$GITHUB_BASE_REF" | sed 's/^/    /'
+            ascribe diff --config examples/quill --base "origin/$GITHUB_BASE_REF" | sed 's/^/    /'
             echo
-            echo "[Open the review report]($URL): every changed page of $PROJECT, rendered with its changes marked."
+            echo "[Open the review report]($URL): every changed page of examples/quill, rendered with its changes marked."
           } >> "$GITHUB_STEP_SUMMARY"

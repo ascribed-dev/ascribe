@@ -1,0 +1,8 @@
+compared with main (375192d), from its merge base with HEAD (e49444a)
+site: 4 pages changed
+  getting-started.md: 1 changed, 1 added (through _fragments/prereqs.md)
+  guides/rollouts.md: 4 changed, 5 added, 2 removed, 1 moved
+  guides/schedules.md: added
+  reference/limits.md: title changed
+cloud: 1 page changed
+  getting-started.md: 1 changed, 1 added (through _fragments/prereqs.md)

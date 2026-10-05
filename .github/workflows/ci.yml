@@ -13,7 +13,10 @@ name: CI
 #   rest of the platforms (the Astro end-to-end on arm64, macOS, and Windows)
 #   run every night and by hand, here, and the canary's smoke test installs
 #   the packed binaries on all four every night too.
-# - The docs and the site run when the docs, the site, or Ascribe changed.
+# - The docs and the site run when the docs, the site, Ascribe, or a file the
+#   docs take code examples from (docs/ascribe.toml's [sources]) changed.
+# - The review and drift reports run on their own (review.yml, drift.yml):
+#   they report, and don't hold up a merge.
 on:
   pull_request:
   push:
@@ -68,7 +71,7 @@ jobs:
 
           site=false
           if [ "$files" = all ] ||
-            printf '%s\n' "$files" | grep -qE '^(docs|site|packages|crates)/|^(Cargo\.lock|pnpm-lock\.yaml)$|^\.github/workflows/(ci|site)\.yml$'; then
+            printf '%s\n' "$files" | grep -qE '^(docs|site|packages|crates|examples)/|^(Cargo\.lock|pnpm-lock\.yaml)$|^\.github/workflows/(ci|site|drift|review)\.yml$'; then
             site=true
           fi
 
@@ -140,16 +143,11 @@ jobs:
     # The pull request's preview is deployed with Netlify's secrets.
     secrets: inherit
 
-  review:
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
-    uses: ./.github/workflows/review.yml
-
   # The one check branch protection requires. It passes when every job above
   # passed or was skipped, and fails when one failed or was cancelled.
   gate:
     name: all checks
-    needs: [changes, prose, rust, js, site, review]
+    needs: [changes, prose, rust, js, site]
     if: always()
     runs-on: ubuntu-latest
     steps:

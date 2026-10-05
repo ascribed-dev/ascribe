@@ -47,20 +47,7 @@ spec = "0.1"
 
 With nothing else declared, pages live in `docs/`, output goes to `.ascribe/build/`, every page needs a `title`, and there's one build, `site`. A more useful start declares a dimension your content varies by, and a few phrases:
 
-```toml
-spec = "0.1"
-
-[dimensions.pm]
-label = "Package manager"
-values = ["npm", "pnpm", "yarn"]
-
-[phrases]
-product = "Quill"
-version = "3.4.1"
-
-[consumer]
-site = "https://docs.example.com"
-```
+@snippet: code:examples/getting-started/ascribe.toml
 
 The [`ascribe.toml` reference](reference/content-model.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
 
@@ -74,37 +61,7 @@ Add the output directory to `.gitignore`:
 
 Create `docs/install.md`:
 
-````markdown
----
-title: Install Quill
----
-
-@note {type=tip}: {product} {version} needs Node.js 22 or later.
-
-## Install the package
-
-@variant {pm=npm}:
-```sh
-npm install quill
-```
-@variant {pm=pnpm}:
-```sh
-pnpm add quill
-```
-@variant {pm=yarn}:
-```sh
-yarn add quill
-```
-@end
-
-## Set it up
-
-@steps
-1. Create `quill.yaml`.
-2. Run `quill init`.
-
-Next, [configure it](configure.md).
-````
+@snippet {lang=markdown}: code:examples/getting-started/docs/install.md
 
 - `@note` is a callout; `{type=tip}` is its attribute.
 - `@variant` marks alternatives by package manager. The site shows them as tabs, and a build can keep just one.
@@ -122,9 +79,7 @@ npx ascribe check
 
 The link to `configure.md` is reported, since that page doesn't exist yet:
 
-```text
-[ASC036] Error: `configure.md` doesn't exist
-```
+@snippet {lang=text}: code:crates/tessera-cli/tests/output/getting-started-check.txt
 
 Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with a `title`, and check again.
 

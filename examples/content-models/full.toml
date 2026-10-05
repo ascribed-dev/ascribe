@@ -1,9 +1,11 @@
 # Every section and key of ascribe.toml, used at least once.
 spec = "0.1"
 
+# :snippet-start: project
 [project]
 content-root = "docs"
 output-dir = ".ascribe/build"
+# :snippet-end:
 
 # `guide` is the default type; `reference` applies to reference/**.
 [types.guide]
@@ -32,56 +34,71 @@ files = ["reference/**", "api/**/*.md"]
 title = "string"
 api-version = "string?"
 
+# :snippet-start: fragments
 [fragments]
 patterns = ["includes/**", "**/*.partial.md"]
 
 [fragments.frontmatter]
 owner = "string?"
+# :snippet-end:
 
+# :snippet-start: deployment
 [dimensions.deployment]
 label = "Deployment"
 values = ["cloud", "self-managed"]
 versionless = ["cloud"]
 labels = { cloud = "Quill Cloud", self-managed = "Self-managed" }
+# :snippet-end:
 
 [dimensions.pm]
 label = "Package manager"
 values = ["npm", "pnpm", "yarn"]
 labels = { yarn = "Yarn" }
 
+# :snippet-start: versions
 [versions]
 scheme = "numeric"
+# :snippet-end:
 
 # A new state, and a built-in state relabeled.
+# :snippet-start: lifecycle
 [lifecycle.sunset]
 available = false
 label = "sunset"
 
 [lifecycle.beta]
 label = "Beta"
+# :snippet-end:
 
+# :snippet-start: features
 [features.streaming-sync]
 name = "Streaming sync"
 available = "cloud, self-managed preview 3.4"
+# :snippet-end:
 
 [features.sso]
 name = "Single sign-on"
 available = "cloud beta, self-managed (preview 3.3, ga 3.5, deprecated 4.0)"
 
 # A new note type, and a built-in type relabeled.
+# :snippet-start: notes
 [notes.security]
 label = "Security"
 
 [notes.tip]
 label = "Pro tip"
+# :snippet-end:
 
+# :snippet-start: phrases
 [phrases]
 product = "Quill"
 cloud = "Quill Cloud"
 version = "3.4.1"
 api = "https://api.quill.dev/v3/"
 support-email = "support@quill.dev"
+# :snippet-end:
 
+# :snippet-start: glossary
 [glossary]
 match = "first"
 case-sensitive = false
@@ -91,6 +108,7 @@ term = "API key"
 aliases = ["API keys"]
 definition = "A secret token that authenticates the Quill agent to Quill Cloud."
 link = "/reference/glossary.md#api-key"
+# :snippet-end:
 
 [glossary.terms.quill-server]
 term = "Quill Server"
@@ -98,13 +116,16 @@ definition = "The self-managed Quill server."
 case-sensitive = true
 
 # Declaration order is canonical attribute order.
+# :snippet-start: images
 [images.attributes]
 width = "number?"
 height = "number?"
 loading = { type = "enum(lazy, eager)", default = "lazy" }
 theme = "set(enum(light, dark))?"
+# :snippet-end:
 
 # `@quill-labspace {lab=first-sync}`: stands alone.
+# :snippet-start: widgets
 [widgets.quill-labspace]
 description = "An embedded, runnable Quill lab."
 forms = ["line"]
@@ -117,6 +138,7 @@ plain-fallback = "Try this in the Quill lab at labs.quill.dev."
 [widgets.quill-labspace.attributes]
 lab = "string"
 height = "number?"
+# :snippet-end:
 
 # `@quill-api-ref: listDocuments` under a heading: documents that section.
 [widgets.quill-api-ref]
@@ -178,5 +200,7 @@ availability = { filter = "cloud" }
 variants = { deployment = "self-managed", pm = ["npm", "pnpm"] }
 availability = { filter = "self-managed 3.5" }
 
+# :snippet-start: editor
 [editor]
 build = "site"
+# :snippet-end:
