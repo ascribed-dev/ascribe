@@ -33,18 +33,21 @@ Not measured yet. It needs one person following [getting-started](../../docs/con
 
 ### Phase 5: production, 2026-10-05
 
-`site/netlify.toml`'s build (`npm ci`, `npm run follow-next`, `npm run build`), with `@ascribed/*@0.1.2-next.2`, 14 pages, Node 24.21, in a copy of `docs/` and `site/` alone, with no `git` history.
+`site/netlify.toml`'s build (`npm ci`, `npm run follow-next`, `npm run build`), with `@ascribed/*@0.1.2-next.2`, 14 pages, and Node 24.21. Locally, it ran in a copy of `docs/` and `site/` alone, with no `git` history. On Netlify, it was the first production deploy, after the merge of #101 (Ubuntu 24.04 image `noble-new-builds`, npm 11.19, with Netlify's dependency cache from an earlier build).
 
 | Step | Locally (Linux x64, cloud session) | On Netlify |
 |---|---|---|
-| Installing: `npm ci` | 4.8 s | To record from the first production deploy's log |
-| Installing: `follow-next` (the newest canary) | 2.4 s | |
-| `ascribe build` | 0.3 s | |
-| Astro (including `ascribe build`) | 4.8 s | |
-| Pagefind | 0.4 s | |
-| **Total** | **about 12 s** | |
+| Netlify's own `npm install`, before the build command | | 1 s (from its cache: "up to date in 507ms") |
+| Installing: `npm ci` | 4.8 s | 4 s |
+| Installing: `follow-next` (the newest canary) | 2.4 s | 2 s |
+| `ascribe build` | 0.3 s | under 1 s |
+| Astro (including `ascribe build`) | 4.8 s | 2 s ("15 page(s) built in 1.92s") |
+| Pagefind | 0.4 s | 0.08 s |
+| **The build command** | **about 12 s** | **8.3 s** |
 
-The build passed with no `git` history, as decision 7 requires. On Netlify, `npm install` runs before the build command, so the site's packages install twice; it's in the installing time.
+On Netlify, the build command is 8.3 s of a 10.8 s Netlify Build, and the whole request takes 22.4 s: 8 s initializing (2.6 s of it fetching the cache), the build, and 2 s caching and cleaning up. The site was live 21 s after the build started.
+
+The build passed with no `git` history, as decision 7 requires. On Netlify, `npm install` runs before the build command, so the site's packages install twice; with Netlify's cache, the first install takes a second. npm 11.19 warns that `esbuild`'s install script isn't covered by `allowScripts`. The build doesn't need it, since `esbuild` takes its binary from a platform package.
 
 How often production's build fails between a merge and the next canary isn't known yet. If it's more than occasionally, it's a signal about the canary's schedule.
 
