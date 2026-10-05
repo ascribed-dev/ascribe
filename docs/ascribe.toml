@@ -110,8 +110,11 @@ link = "guides/editor.md#site-preview"
 # agree with site/astro.config.mjs; @ascribed/astro checks that they do.
 [consumer]
 profile = "astro"
-# A placeholder until the site's Netlify address exists.
-site = "https://ascribe-docs.example.com"
+# The site's address on Netlify. astro.config.mjs, the READMEs, the
+# extension's manifest, and the binary's help repeat it, and tests check each
+# against this line. A pull request's preview is built with its own address
+# here and in astro.config.mjs (.github/workflows/site.yml).
+site = "https://ascribe-docs.netlify.app"
 base-path = "/"
 trailing-slash = "always"
 

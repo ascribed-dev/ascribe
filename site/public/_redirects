@@ -1,0 +1,5 @@
+# Netlify's redirects for the docs site: a page that moved, from its old
+# address to its new one, one per line (`/old/ /new/ 301`). A page's address
+# is its file's path under docs/content/, so don't move a published page
+# without a reason, and add a line here when one moves. test/redirects.test.ts
+# checks that each target is a page of the built site.

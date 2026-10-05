@@ -4,6 +4,8 @@ Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`
 
 ```
 astro.config.mjs            ascribe({ project: "../docs", build: "site" }); routing as in ../docs/ascribe.toml's [consumer]
+netlify.toml                production's build on Netlify
+public/_redirects           pages that moved, from their old address to their new one
 src/content.config.ts       the collection, with the schema ascribe build generates in ../docs
 src/nav.ts                  the sidebar: every page, grouped and in order
 src/pages/[...slug].astro   a route per page: the base path plus its entry id
@@ -13,12 +15,19 @@ src/components/             search, the sidebar, the table of contents, the page
 src/styles/site.css         light and dark, following the system, and the element library's theme
 scripts/follow-next.mjs     production's extra step: the newest canary, without saving
 scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
-test/                       navigation, links and anchors, and the built site in Chromium
+test/                       navigation, links and anchors, redirects, and the built site in Chromium
 ```
+
+## Publishing
+
+The site is at <https://ascribe-docs.netlify.app>, the address in `[consumer]`.
+
+- **Production** is Netlify's own build of `main`, with `site/` as its base directory and `netlify.toml` saying how: the three commands below. It runs when `main` changes `docs/` or `site/`, and when the canary workflow calls the site's build hook after publishing a canary. A build that fails, such as one of a page documenting a feature the canary doesn't have yet, leaves the last good deploy up; the next canary's build hook rebuilds it.
+- **A pull request's preview** is built by the **Site** workflow with the pull request's own Ascribe, and deployed with Netlify's CLI as a draft at `https://pr-<number>--ascribe-docs.netlify.app`, which the run's summary links. It's built with that address as `site`, in `astro.config.mjs` and `[consumer]` alike. Netlify's own deploy previews are off. Pull requests from forks get the build and its tests, and no preview.
 
 ## Building
 
-Production, as a host builds it, from npm alone (no Rust, nothing from the workspace):
+Production, as a host builds it, from npm alone (no Rust, nothing from the workspace, no `git` history):
 
 ```sh
 npm ci
@@ -48,7 +57,12 @@ npm test              # after a build
 
 - `test/nav.test.ts`: every published page is in `src/nav.ts`, and it names nothing else.
 - `test/links.test.ts`: every link and anchor between the built pages lands.
+- `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
 - `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): variants switch and the choice holds on the next page; the availability badge on an unreleased page; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
+
+## Addresses
+
+A page's address is its file's path under `docs/content/`, so moving a page moves its address. Don't move a published page without a reason; when one moves, add a line to `public/_redirects`. Each diagnostic's address, `/reference/diagnostics/#asc036-link-target-missing`, stays the same, so tools can link to a diagnostic.
 
 ## Navigation
 
