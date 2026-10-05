@@ -66,11 +66,13 @@ pub enum Builtin {
     Steps,
     /// `@details` (§4.7).
     Details,
+    /// `@snippet` (§4.8).
+    Snippet,
 }
 
 impl Builtin {
     /// Every built-in directive, in SPEC §4 order.
-    pub const ALL: [Builtin; 7] = [
+    pub const ALL: [Builtin; 8] = [
         Builtin::Id,
         Builtin::Include,
         Builtin::Variant,
@@ -78,6 +80,7 @@ impl Builtin {
         Builtin::Note,
         Builtin::Steps,
         Builtin::Details,
+        Builtin::Snippet,
     ];
 
     /// The keyword, without `@`.
@@ -90,6 +93,7 @@ impl Builtin {
             Builtin::Note => "note",
             Builtin::Steps => "steps",
             Builtin::Details => "details",
+            Builtin::Snippet => "snippet",
         }
     }
 
@@ -173,6 +177,37 @@ impl Builtin {
                 binding: Some(Binding::Block),
                 title: TitleRule::Required,
                 description: Some("Collapsible content.".into()),
+                ..base
+            },
+            Builtin::Snippet => DirectiveSchema {
+                primary: Primary::Identifier { required: true },
+                binding: Some(Binding::SelfBound),
+                attributes: Attributes::Declared(vec![
+                    AttributeSchema {
+                        key: "lang".into(),
+                        ty: AttributeType::String,
+                        required: false,
+                        default: None,
+                        description: Some(
+                            "The code block's language; by default, the file's extension.".into(),
+                        ),
+                    },
+                    AttributeSchema {
+                        key: "title".into(),
+                        ty: AttributeType::String,
+                        required: false,
+                        default: None,
+                        description: Some("A title for the code block.".into()),
+                    },
+                    AttributeSchema {
+                        key: "phrases".into(),
+                        ty: AttributeType::Boolean,
+                        required: false,
+                        default: Some(DefaultValue::Boolean(false)),
+                        description: Some("Whether phrases in the code are substituted.".into()),
+                    },
+                ]),
+                description: Some("Take a code example from a file.".into()),
                 ..base
             },
         }
@@ -353,7 +388,7 @@ mod tests {
     /// SPEC §4's table, row by row: name, forms, primary, binding.
     #[test]
     fn builtins_match_the_spec_table() {
-        let table: [(&str, Forms, Primary, Option<Binding>); 7] = [
+        let table: [(&str, Forms, Primary, Option<Binding>); 8] = [
             (
                 "id",
                 Forms::LINE,
@@ -381,6 +416,12 @@ mod tests {
             ),
             ("steps", Forms::LINE, Primary::None, Some(Binding::Block)),
             ("details", Forms::BOTH, Primary::None, Some(Binding::Block)),
+            (
+                "snippet",
+                Forms::LINE,
+                Primary::Identifier { required: true },
+                Some(Binding::SelfBound),
+            ),
         ];
         let schemas = builtin_schemas();
         assert_eq!(schemas.len(), table.len());

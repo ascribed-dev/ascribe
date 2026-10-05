@@ -410,6 +410,34 @@ pub const INCLUDE_HEADING_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("include-h
 /// `ASC126`, warning, file level: SPEC §8.2, "Phrases | A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool".
 pub const PHRASE_DOUBLE_BRACES: DiagnosticSlug = DiagnosticSlug("phrase-double-braces");
 
+/// `ASC127`, error, file level: SPEC §8.2, "`@snippet` | Address that isn't `<source>:<path>`, optionally with `#<region>`".
+pub const SNIPPET_ADDRESS: DiagnosticSlug = DiagnosticSlug("snippet-address");
+
+/// `ASC128`, error, file level: SPEC §8.2, "`@snippet` | Source the content model doesn't declare".
+pub const SNIPPET_SOURCE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("snippet-source-unknown");
+
+/// `ASC129`, error, file level: SPEC §8.2, "`@snippet` | File doesn't exist, or its source doesn't include it".
+pub const SNIPPET_FILE_MISSING: DiagnosticSlug = DiagnosticSlug("snippet-file-missing");
+
+/// `ASC130`, error, file level: SPEC §8.2, "`@snippet` | File isn't text".
+pub const SNIPPET_FILE_NOT_TEXT: DiagnosticSlug = DiagnosticSlug("snippet-file-not-text");
+
+/// `ASC131`, error, file level: SPEC §8.2, "`@snippet` | Region doesn't exist in the file".
+pub const SNIPPET_REGION_MISSING: DiagnosticSlug = DiagnosticSlug("snippet-region-missing");
+
+/// `ASC132`, error, file level: SPEC §8.2, "`@snippet` | The file's tags are unbalanced, name a region twice, or use a reserved tag".
+pub const SNIPPET_TAGS: DiagnosticSlug = DiagnosticSlug("snippet-tags");
+
+/// `ASC133`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_SOURCE_PATH_MISSING: DiagnosticSlug = DiagnosticSlug("model-source-path-missing");
+
+/// `ASC134`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_SOURCE_OUTSIDE_REPOSITORY: DiagnosticSlug =
+    DiagnosticSlug("model-source-outside-repository");
+
+/// `ASC135`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_SOURCE_REMOTE: DiagnosticSlug = DiagnosticSlug("model-source-remote");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -538,4 +566,13 @@ pub const ALL: &[DiagnosticSlug] = &[
     HEADING_EMPTY_SLUG,
     INCLUDE_HEADING_WITHOUT_ID,
     PHRASE_DOUBLE_BRACES,
+    SNIPPET_ADDRESS,
+    SNIPPET_SOURCE_UNKNOWN,
+    SNIPPET_FILE_MISSING,
+    SNIPPET_FILE_NOT_TEXT,
+    SNIPPET_REGION_MISSING,
+    SNIPPET_TAGS,
+    MODEL_SOURCE_PATH_MISSING,
+    MODEL_SOURCE_OUTSIDE_REPOSITORY,
+    MODEL_SOURCE_REMOTE,
 ];

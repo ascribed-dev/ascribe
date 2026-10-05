@@ -49,6 +49,7 @@ fn the_diagnostics_reference_is_current() {
 const RULE_GROUPS: &[(&str, &str)] = &[
     ("file", "The file"),
     ("project", "`[project]`"),
+    ("sources", "`[sources]`"),
     ("content-types", "Content types, fields, and attributes"),
     (
         "names",

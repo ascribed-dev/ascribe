@@ -36,7 +36,7 @@
 #   row          The SPEC §8.2 row, as "<construct> | <condition>", copied
 #                exactly. Every row has exactly one entry.
 #   group        The group of docs/content/reference/diagnostics.md a loader rule is listed in:
-#                file, project, content-types, names, phrases, widgets, or
+#                file, project, sources, content-types, names, phrases, widgets, or
 #                consumer. Every loader rule has one.
 #   retired      Why the diagnostic is no longer reported. Its code and slug
 #                stay reserved.
@@ -1389,3 +1389,106 @@ spec = "5.1"
 row = "Phrases | A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool"
 message = "`{key}` is a declared phrase between two more braces, so its value appears between literal braces; remove the outer braces, or write `\\{{` to keep them"
 fix = "Remove the outer braces, or write `\\{` for a brace that's meant."
+
+[[diagnostic]]
+code = "ASC127"
+slug = "snippet-address"
+severity = "error"
+level = "file"
+spec = "4.8"
+row = "`@snippet` | Address that isn't `<source>:<path>`, optionally with `#<region>`"
+message = "`{address}` isn't a snippet address: {detail}; write `<source>:<path>`, optionally with `#<region>`"
+messages.no-source = "`{address}` doesn't name a source: a snippet's file is named through a source declared in ascribe.toml, as `<source>:<path>`; declare one with `[sources.<name>]` and the `path` of the folder the code is in"
+fix = "Write the address as `<source>:<path>`, with the path relative to the source's folder and no `..`, and add `#<region>` for a region. A file outside the project's folder can only be named through a source: declare one in `[sources.<name>]`."
+
+[[diagnostic]]
+code = "ASC128"
+slug = "snippet-source-unknown"
+severity = "error"
+level = "file"
+spec = "4.8"
+row = "`@snippet` | Source the content model doesn't declare"
+message = "there's no source named `{source}`; the declared sources are: {sources}"
+messages.suggestion = "there's no source named `{source}`; did you mean `{suggestion}`?"
+messages.none = "there's no source named `{source}`, and ascribe.toml declares none: add `[sources.{source}]` with the `path` of the folder the code is in"
+fix = "Fix the source's name, or declare it in ascribe.toml: `[sources.<name>]` with a `path`."
+
+[[diagnostic]]
+code = "ASC129"
+slug = "snippet-file-missing"
+severity = "error"
+level = "file"
+spec = "4.8"
+row = "`@snippet` | File doesn't exist, or its source doesn't include it"
+message = "`{path}` doesn't exist in source `{source}`"
+messages.case = "`{path}` doesn't exist in source `{source}`, but `{actual}` does: names must match exactly, including case"
+messages.not-included = "`{path}` is in source `{source}`'s folder, but the source's `include` and `ignore` patterns don't make it readable"
+fix = "Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`."
+
+[[diagnostic]]
+code = "ASC130"
+slug = "snippet-file-not-text"
+severity = "error"
+level = "file"
+spec = "4.8"
+row = "`@snippet` | File isn't text"
+message = "`{path}` isn't text ({reason}), so it can't be a snippet"
+fix = "Take the snippet from a text file: UTF-8, with no NUL characters."
+
+[[diagnostic]]
+code = "ASC131"
+slug = "snippet-region-missing"
+severity = "error"
+level = "file"
+spec = "4.8"
+row = "`@snippet` | Region doesn't exist in the file"
+message = "`{path}` has no region `{region}`; its regions are: {regions}"
+messages.suggestion = "`{path}` has no region `{region}`; did you mean `{suggestion}`? Its regions are: {regions}"
+messages.none = "`{path}` has no region `{region}`, and no regions at all: mark one with `:snippet-start: {region}` and `:snippet-end:` comments"
+messages.no-comments = "`{path}` can't have regions, because Ascribe doesn't know the comment syntax of its extension; use the whole file, without `#{region}`"
+fix = "Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose extension isn't in the comment table can only be used whole."
+
+[[diagnostic]]
+code = "ASC132"
+slug = "snippet-tags"
+severity = "error"
+level = "file"
+spec = "4.8"
+row = "`@snippet` | The file's tags are unbalanced, name a region twice, or use a reserved tag"
+message = "`{path}` can't be used: `{tag}` on line {line} is never closed"
+messages.unmatched = "`{path}` can't be used: `{tag}` on line {line} has nothing to close"
+messages.duplicate = "`{path}` can't be used: the region `{region}` starts twice, on lines {first} and {line}"
+messages.name = "`{path}` can't be used: `:snippet-start:` on line {line} needs a region name of letters, digits, `-`, `_`, and `.`"
+messages.reserved = "`{path}` can't be used: `{tag}` on line {line} is a tag Ascribe doesn't support yet"
+fix = "Fix the tags in the code file: give every `-start` tag its `-end`, give each region its own name, and remove tags Ascribe reserves for later (`state`, `replace`, `uncomment`, `emphasize`)."
+
+[[diagnostic]]
+code = "ASC133"
+slug = "model-source-path-missing"
+severity = "error"
+level = "file"
+spec = "7.3"
+group = "sources"
+message = "the folder of source `{source}`, `{path}`, doesn't exist"
+messages.not-directory = "the folder of source `{source}`, `{path}`, isn't a directory"
+fix = "Fix `path`, which is relative to the folder ascribe.toml is in, or create the folder."
+
+[[diagnostic]]
+code = "ASC134"
+slug = "model-source-outside-repository"
+severity = "error"
+level = "file"
+spec = "7.3"
+group = "sources"
+message = "the folder of source `{source}`, `{path}`, is outside the git repository the project is in"
+fix = "Give the source a `path` inside the project's repository. A source in another repository isn't supported yet."
+
+[[diagnostic]]
+code = "ASC135"
+slug = "model-source-remote"
+severity = "error"
+level = "file"
+spec = "7.3"
+group = "sources"
+message = "`{key}` is reserved for a source in another repository, which this version of Ascribe doesn't support; give the source a `path` in this repository instead"
+fix = "Remove `git` and `branch`, and give the source the `path` of a folder in this repository."

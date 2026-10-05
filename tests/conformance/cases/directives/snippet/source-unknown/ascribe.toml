@@ -1,0 +1,9 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[sources.code]
+path = "code"
+include = ["**/*.py", "**/*.rs", "**/*.txt", "**/*.bin"]
+ignore = ["private/**"]

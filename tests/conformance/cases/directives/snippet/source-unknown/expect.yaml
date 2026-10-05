@@ -1,0 +1,8 @@
+description: >-
+  An address names a source the content model declares.
+spec: ["4.8", "7.3", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-source-unknown, file: index.md, line: 5}
+  - {slug: snippet-source-unknown, file: index.md, line: 7}

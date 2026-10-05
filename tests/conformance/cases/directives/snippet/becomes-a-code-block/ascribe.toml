@@ -1,0 +1,12 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[sources.code]
+path = "code"
+include = ["**/*.py", "**/*.rs", "**/*.toml", "**/*.bin", "**/*.txt", "**/*.sh", "install"]
+ignore = ["private/**"]
+
+[phrases]
+product = "Quill"
