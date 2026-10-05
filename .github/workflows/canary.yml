@@ -8,7 +8,9 @@ name: Canary
 # committed; each package's `gitHead`, and `ascribe --version`, name its
 # commit. A night when nothing that ships has changed since the last canary
 # publishes nothing, and passes. A canary whose build or smoke test fails
-# publishes nothing, so `next` stays on the newest canary that passed.
+# publishes nothing, so `next` stays on the newest canary that passed. Every
+# package is published under `next-pending` first, and `next` moves only when
+# all of them are on npm.
 # RELEASING.md describes it, and how to deprecate a bad one.
 on:
   schedule:
@@ -52,6 +54,8 @@ jobs:
           FORCE: ${{ inputs.force }}
         run: |
           last=$(npm view @ascribed/cli@next gitHead 2>/dev/null || true)
+          # It comes from the registry: only a commit hash goes on to `git`.
+          [[ $last =~ ^[0-9a-f]{40}$ ]] || last=
           if [ "$FORCE" = true ]; then
             changed=true
           elif [ -z "$last" ] || ! git cat-file -e "$last^{commit}" 2> /dev/null; then
@@ -98,21 +102,34 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
-      - run: npm install --global npm@^11.5.1
-      # npm still tries trusted publishing first, and uses the token where that fails.
-      - name: Use the one-time token
-        if: env.NPM_TOKEN != ''
-        run: echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$HOME/.npmrc"
+      # Moving a dist-tag through trusted publishing needs npm 11.21.0 or later.
+      - run: npm install --global npm@^11.21.0
       - name: Stamp the canary's version
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: test "$(node scripts/release/version.ts --canary "$GITHUB_RUN_NUMBER")" = "$VERSION"
+      # The token is for one run. Once every package is on npm, its being set
+      # fails the canary, so it can't be forgotten.
+      - name: Use the one-time token, while a package isn't on npm yet
+        if: env.NPM_TOKEN != ''
+        run: |
+          missing=$(node scripts/release/publish.ts missing)
+          if [ -z "$missing" ]; then
+            echo "::error::Every package is on npm, so the NPM_TOKEN secret is no longer needed. Add each package's trusted publishers, then delete the secret from the canary environment and revoke the token (RELEASING.md)."
+            exit 1
+          fi
+          echo "Not on npm yet, so published with the token: $missing"
+          # npm still tries trusted publishing first, and uses the token where that fails.
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$HOME/.npmrc"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release
           path: dist/release
-      # A version with `-` is published under `next`, never `latest`.
-      - run: node scripts/release/publish.ts npm
+      # Everything goes under a holding tag first, and `next` moves only once every
+      # package is on npm, so `next` never names two canaries. A run that fails
+      # partway can be re-run: it skips what's published, and then moves `next`.
+      - run: node scripts/release/publish.ts npm --tag next-pending
+      - run: node scripts/release/publish.ts tag next
 
   # Tells the docs site to rebuild with the new canary. Skipped until the site's
   # build hook is stored as the SITE_BUILD_HOOK secret.
