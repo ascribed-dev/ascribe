@@ -133,9 +133,21 @@ describe("the page's color scheme", () => {
     expect(pageScheme(article, false)).toBe("dark");
   });
 
-  it("takes the canvas from the root's color-scheme when nothing has a background", () => {
+  it("takes light text for a dark page whose background isn't a color", () => {
+    page(`<article id="a"><p>x</p></article>`);
+    const article = document.getElementById("a") as HTMLElement;
+    document.body.style.backgroundImage = "linear-gradient(#111, #222)";
+    document.body.style.color = "rgb(238, 238, 238)";
+    expect(pageScheme(article, false)).toBe("dark");
+    document.body.style.color = "rgb(20, 20, 20)";
+    expect(pageScheme(article, true)).toBe("light");
+  });
+
+  it("takes the canvas from the root's color-scheme when no color says", () => {
     page(`<p id="p">x</p>`);
     const p = document.getElementById("p") as HTMLElement;
+    // A browser's default text follows color-scheme; jsdom's doesn't, so take no text color here.
+    p.style.color = "transparent";
     document.documentElement.style.colorScheme = "dark";
     expect(pageScheme(p, false)).toBe("dark");
     document.documentElement.style.colorScheme = "light dark";

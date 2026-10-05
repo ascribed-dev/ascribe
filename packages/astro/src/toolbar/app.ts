@@ -163,6 +163,7 @@ class ReviewApp {
   private messageTimer: ReturnType<typeof setTimeout> | undefined;
   /** The scheme the site set for review's colors itself, if it did. */
   private readonly siteScheme: string | null;
+  private restyleTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     canvas: ShadowRoot,
@@ -188,6 +189,19 @@ class ReviewApp {
       ?.matchMedia?.("(prefers-color-scheme: dark)")
       .addEventListener("change", () => this.render());
     win?.addEventListener("resize", () => this.placePanel());
+    // A theme switch on the page (a class or `data-theme` on the root, say) changes its colors.
+    const restyle = () => {
+      this.applyScheme();
+      // Again once a transition between the themes is over.
+      clearTimeout(this.restyleTimer);
+      this.restyleTimer = setTimeout(() => this.applyScheme(), 400);
+    };
+    const observer = new MutationObserver((records) => {
+      if (records.some((r) => r.attributeName !== "data-ascribe-scheme")) restyle();
+    });
+    for (const target of [doc.documentElement, doc.body]) {
+      observer.observe(target, { attributes: true });
+    }
     this.panel.addEventListener("keydown", (event) => event.stopPropagation());
     server.on<{ from: string | null }>(CHANGED_EVENT, (event) => {
       if (event.from !== this.channel.tab) void this.changedElsewhere();
@@ -597,11 +611,12 @@ class ReviewApp {
       site === "light" || site === "dark"
         ? site
         : pageScheme(this.root ?? this.doc.body, prefersDark);
-    this.panel.dataset["scheme"] = scheme;
+    if (this.panel.dataset["scheme"] !== scheme) this.panel.dataset["scheme"] = scheme;
     if (site !== null) return;
     const html = this.doc.documentElement;
-    if (this.root) html.setAttribute("data-ascribe-scheme", scheme);
-    else html.removeAttribute("data-ascribe-scheme");
+    if (!this.root) html.removeAttribute("data-ascribe-scheme");
+    else if (html.getAttribute("data-ascribe-scheme") !== scheme)
+      html.setAttribute("data-ascribe-scheme", scheme);
   }
 
   /** Keeps the panel clear of the column of threads, over the page beside it. */

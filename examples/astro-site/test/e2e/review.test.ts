@@ -63,8 +63,12 @@ function panel(page: Page): Locator {
 }
 
 /** Opens a page of the dev server and turns review on from the toolbar. */
-async function startReview(origin: string, route: string): Promise<Page> {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+async function startReview(
+  origin: string,
+  route: string,
+  colorScheme: "light" | "dark" = "light",
+): Promise<Page> {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, colorScheme });
   const response = await page.goto(`${origin}${route}`);
   expect(response?.status(), route).toBe(200);
   await appButton(page).click();
@@ -88,10 +92,24 @@ describe("review in the site preview", () => {
     await edit(path.join(root, GUIDE), addParagraph);
     const server = await serveDev(root);
     try {
-      const page = await startReview(server.origin, `${BASE}/guides/my-setup`);
+      // The system is dark, but the site is light only: review's colors follow the site.
+      const page = await startReview(server.origin, `${BASE}/guides/my-setup`, "dark");
       const added = page.locator('[data-ascribe-change="added"]');
       await expect.poll(() => added.count(), { timeout: 30_000 }).toBe(1);
       await expect(added.textContent()).resolves.toContain("A paragraph about weaving.");
+      await expect(page.locator("html").getAttribute("data-ascribe-scheme")).resolves.toBe("light");
+      await expect(panel(page).getAttribute("data-scheme")).resolves.toBe("light");
+      const background = await added.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(background).toBe("rgb(220, 247, 227)");
+      // A theme switch on the page, as a site's toggle makes: review follows it.
+      await page.evaluate(() => {
+        document.body.style.background = "#16181d";
+        document.body.style.color = "#d9dde5";
+      });
+      await expect
+        .poll(() => page.locator("html").getAttribute("data-ascribe-scheme"))
+        .toBe("dark");
+      await expect(panel(page).getAttribute("data-scheme")).resolves.toBe("dark");
       const text = await panel(page).textContent();
       expect(text).toContain("Against main");
       expect(text).toContain("1 change on this page");

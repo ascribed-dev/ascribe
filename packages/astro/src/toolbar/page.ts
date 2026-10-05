@@ -82,8 +82,8 @@ export function sourceLocation(source: string): { path: string; line: number } |
 
 /**
  * Whether the page looks light or dark, from its own colors: the first
- * background that isn't see-through, from `element` up, or else the
- * canvas, which the root's `color-scheme` picks (`prefersDark` says which
+ * background that isn't see-through, from `element` up, or else its text's
+ * color, or else the canvas, which the root's `color-scheme` picks (`prefersDark` says which
  * one "light dark" picks). Review's colors follow it, not the reader's
  * system, since a site may be light only.
  */
@@ -94,6 +94,9 @@ export function pageScheme(element: Element, prefersDark: boolean): "light" | "d
     const color = parseRgb(view.getComputedStyle(at).backgroundColor);
     if (color && color.alpha >= 0.5) return luminance(color) < 0.18 ? "dark" : "light";
   }
+  // No background color: it may be an image or a gradient. Light text means a dark page.
+  const text = parseRgb(view.getComputedStyle(element).color);
+  if (text && text.alpha >= 0.5) return luminance(text) > 0.4 ? "dark" : "light";
   const scheme = view
     .getComputedStyle(element.ownerDocument.documentElement)
     .colorScheme.split(/\s+/);
