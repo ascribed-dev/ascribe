@@ -76,7 +76,7 @@ Examples that changed along with the page:
     code:service/client.py#retry (+6 −0)
 ```
 
-A page covers the code it shows: the regions and whole files it takes snippets from, its fragments' included. Nothing else needs to be declared, and nothing else is reported. A region whose lines only moved, or whose file changed somewhere else, isn't a change. A page that changed in the same pull request, or through a fragment it includes, is in the second group: someone touched it, so it's listed but not flagged.
+A page covers the code it shows: the regions and whole files it takes snippets from, its fragments' included. Nothing else needs to be declared, and nothing else is reported. A region whose lines only moved, or whose file changed somewhere else, isn't a change. A page that changed in the same pull request, or through a fragment it includes, is in the second group: someone touched it, so it's listed but not flagged. An example that no longer resolves, because its region was renamed or its file moved and the page wasn't updated, is listed first, with why; `ascribe check` fails on it too.
 
 The report says what changed and how much. Whether the words still hold is for whoever reads it.
 
@@ -113,7 +113,7 @@ jobs:
 ```
 
 - **History.** Like `ascribe diff`, `ascribe drift` compares with the merge base of the pull request's base branch and its head, so the checkout needs `fetch-depth: 0`. With less, it stops and says to fetch more.
-- **The summary.** `--format summary` writes the two groups as Markdown, each page linked to its route on `[consumer] site`, and nothing when no example changed, so the summary stays empty on most pull requests.
-- **Failing the check.** To fail the job when a page's example changed and the page didn't, add `--exit-code`. Start without it, and see how often the report is right for your docs first.
+- **The summary.** `--format summary` writes the groups as Markdown, each page linked to its route on `[consumer] site`, and nothing when no example changed, so the summary stays empty on most pull requests.
+- **Failing the check.** To fail the job when an example broke, or changed while its page didn't, add `--exit-code`. Start without it, and see how often the report is right for your docs first.
 
 See [`ascribe drift`](../reference/cli.md#ascribe-drift) for its options and JSON.

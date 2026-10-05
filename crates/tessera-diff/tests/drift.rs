@@ -101,7 +101,7 @@ impl Repo {
             project: &project,
             model_text: &model_text,
         };
-        drift(&repo, &base, now, builds)
+        drift(&repo, &base, now, &fs, builds)
     }
 
     fn drift(&self) -> DriftReport {
@@ -116,11 +116,16 @@ fn summary(report: &DriftReport) -> Vec<String> {
 }
 
 fn line(page: &DriftPage) -> String {
-    let examples: Vec<String> = page
+    let mut examples: Vec<String> = page
         .examples
         .iter()
         .map(|e| format!("{} +{} -{}", e.address, e.added, e.removed))
         .collect();
+    examples.extend(
+        page.broken
+            .iter()
+            .map(|b| format!("{} broken: {}", b.address, b.reason)),
+    );
     let changed = if page.page_changed { " changed" } else { "" };
     format!("{}{changed}: {}", page.path, examples.join(", "))
 }
@@ -359,4 +364,52 @@ fn a_project_without_sources_has_nothing_to_report() {
     let report = repo.drift_in("site", &["site"]).unwrap();
     assert!(report.pages.is_empty());
     assert_eq!(report.repository.project_prefix, "site/");
+}
+
+#[test]
+fn a_renamed_region_is_a_broken_example() {
+    let repo = Repo::new(&[("run.md", RUN), ("other.md", "# Other\n")]);
+    repo.write(
+        "service/app.py",
+        &code("import os\n", MAIN, "run()\n").replace(": main", ": entry"),
+    );
+    repo.commit("rename the region");
+    let report = repo.drift();
+    assert_eq!(
+        summary(&report),
+        ["run.md: code:service/app.py#main broken: the file has no region `main`"]
+    );
+    let broken = &report.pages[0].broken[0];
+    assert_eq!(broken.problem, "snippet-region-missing");
+    assert_eq!(broken.source, "code");
+    assert_eq!(report.pages[0].builds, ["site", "cloud"]);
+    assert!(report.needs_reading());
+    assert_eq!(report.unchanged_pages().count(), 0);
+    assert_eq!(report.broken_pages().count(), 1);
+}
+
+#[test]
+fn a_renamed_file_the_page_still_names_is_a_broken_example() {
+    let fragment = "Connect first:\n\n@snippet: code:service/app.py#main\n";
+    let repo = Repo::new(&[
+        ("_fragments/connect.md", fragment),
+        ("run.md", "# Run\n\n@include: _fragments/connect.md\n"),
+    ]);
+    repo.git(&["mv", "service/app.py", "service/client.py"]);
+    repo.commit("rename the file");
+    assert_eq!(
+        summary(&repo.drift()),
+        ["run.md: code:service/app.py#main broken: the file isn't there"]
+    );
+}
+
+#[test]
+fn a_snippet_that_never_resolved_isnt_reported() {
+    let repo = Repo::new(&[("run.md", "# Run\n")]);
+    repo.write(
+        "site/docs/run.md",
+        "# Run\n\n@snippet: code:service/app.py#nope\n",
+    );
+    repo.commit("a broken snippet, new");
+    assert!(repo.drift().pages.is_empty());
 }

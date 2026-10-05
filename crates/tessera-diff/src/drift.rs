@@ -1,6 +1,7 @@
 //! Which pages' examples changed between a base revision and the working
 //! tree: the snippets whose code differs, and, for each page that shows one,
-//! whether the page itself changed too.
+//! whether the page itself changed too; and the snippets that resolved at the
+//! base and don't now.
 //!
 //! A page covers the code it shows and nothing else: every region it takes
 //! a snippet from, and every whole file it takes as one, its fragments'
@@ -14,9 +15,10 @@ use std::sync::Arc;
 
 use serde::Serialize;
 use similar::{Algorithm, DiffTag, capture_diff_slices};
-use tessera_core::RelPath;
+use tessera_core::{FileId, RelPath, Span};
 use tessera_resolve::snippet::tags::{self, comment_style};
-use tessera_resolve::{Address, AstroRouter, FileKind, Snippet};
+use tessera_resolve::snippet::{CodeFiles, SnippetError, resolve_snippet};
+use tessera_resolve::{Address, AstroRouter, FileKind, FileSystem, Snippet};
 
 use crate::compare::changed_apart_from_snippets;
 use crate::git::{Base, FileChange, Repository};
@@ -38,11 +40,11 @@ pub struct DriftReport {
     pub base: BaseInfo,
     /// Where the project is.
     pub repository: RepositoryInfo,
-    /// Every page with an example that changed, in path order.
+    /// Every page with an example that changed or broke, in path order.
     pub pages: Vec<DriftPage>,
 }
 
-/// A page with an example that changed.
+/// A page with an example that changed or broke.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub struct DriftPage {
@@ -58,8 +60,27 @@ pub struct DriftPage {
     /// content model), in any of those builds. When it didn't, the example
     /// changed and the words around it didn't.
     pub page_changed: bool,
-    /// The examples that changed, by address.
+    /// The examples that changed, by address. Empty when only `broken`
+    /// isn't.
     pub examples: Vec<ChangedExample>,
+    /// The examples that resolved at the base and don't now, by address.
+    pub broken: Vec<BrokenExample>,
+}
+
+/// A snippet that resolved at the base and doesn't in the working tree: its
+/// region, file, or source is gone.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct BrokenExample {
+    /// Its address, as the page writes it.
+    pub address: String,
+    /// The source the address names.
+    pub source: String,
+    /// The slug of the diagnostic `ascribe check` reports for it
+    /// (`snippet-region-missing`).
+    pub problem: &'static str,
+    /// Why it doesn't resolve, in a few words.
+    pub reason: String,
 }
 
 /// A snippet whose code changed.
@@ -81,15 +102,40 @@ pub struct ChangedExample {
 }
 
 impl DriftReport {
+    /// The pages with an example that no longer resolves.
+    pub fn broken_pages(&self) -> impl Iterator<Item = &DriftPage> {
+        self.pages.iter().filter(|p| !p.broken.is_empty())
+    }
+
     /// The pages whose examples changed while the page didn't.
     pub fn unchanged_pages(&self) -> impl Iterator<Item = &DriftPage> {
-        self.pages.iter().filter(|p| !p.page_changed)
+        self.pages
+            .iter()
+            .filter(|p| !p.page_changed && !p.examples.is_empty())
     }
 
     /// The pages whose examples changed along with the page.
     pub fn changed_pages(&self) -> impl Iterator<Item = &DriftPage> {
-        self.pages.iter().filter(|p| p.page_changed)
+        self.pages
+            .iter()
+            .filter(|p| p.page_changed && !p.examples.is_empty())
     }
+
+    /// Whether a page needs reading: an example of it broke, or changed
+    /// while the page didn't.
+    pub fn needs_reading(&self) -> bool {
+        self.broken_pages().next().is_some() || self.unchanged_pages().next().is_some()
+    }
+}
+
+/// A `@snippet` of the working tree that doesn't resolve.
+struct Unresolved {
+    /// The source file it's written in, and where.
+    path: RelPath,
+    file: FileId,
+    span: Span,
+    written: String,
+    broken: BrokenExample,
 }
 
 /// One snippet of the working tree, by its written address.
@@ -100,8 +146,9 @@ struct Used {
     files: BTreeSet<RelPath>,
 }
 
-/// The pages of `builds` (by name) whose examples changed between `base`
-/// and `now`, in `repo`. `now` is the working tree.
+/// The pages of `builds` (by name) whose examples changed, or stopped
+/// resolving, between `base` and `now`, in `repo`. `now` is the working
+/// tree, and `fs` its files, for saying why an example doesn't resolve.
 ///
 /// # Errors
 ///
@@ -111,6 +158,7 @@ pub fn drift(
     repo: &Repository,
     base: &Base,
     now: Side<'_>,
+    fs: &dyn FileSystem,
     builds: &[&str],
 ) -> Result<DriftReport, DiffError> {
     let mut report = DriftReport {
@@ -121,28 +169,66 @@ pub fn drift(
         pages: Vec::new(),
     };
     let used = snippets(now);
-    if used.is_empty() {
+    let unresolved = unresolved(now, fs);
+    if used.is_empty() && unresolved.is_empty() {
         return Ok(report);
     }
-    let examples = changed_examples(repo, base.compared(), &used)?;
-    if examples.is_empty() {
+    let examples = if used.is_empty() {
+        BTreeMap::new()
+    } else {
+        changed_examples(repo, base.compared(), &used)?
+    };
+    if examples.is_empty() && unresolved.is_empty() {
         return Ok(report);
     }
 
-    // The pages that show a changed example: its files, and the pages that
-    // include them. Which build shows which is for the resolver to say.
-    let mut candidates: BTreeSet<RelPath> = BTreeSet::new();
+    // The base: whether an example that doesn't resolve now did then, and
+    // whether each page changed apart from its examples.
+    let before = Revision::read(repo, base.compared())?;
+    let before_project = before.as_ref().map(Revision::project);
+    let before_side = before
+        .as_ref()
+        .zip(before_project.as_ref())
+        .map(|(revision, project)| Side {
+            project,
+            model_text: &revision.model_text,
+        });
+    // An example that never resolved is the page's own new mistake, which
+    // `ascribe check` reports; one that did has broken.
+    let broken: Vec<Unresolved> = unresolved
+        .into_iter()
+        .filter(|u| {
+            before_project.as_ref().is_some_and(|project| {
+                project.file(&u.path).is_some_and(|file| {
+                    file.snippets.iter().any(|s| {
+                        s.written == u.written && project.snippet_at(&u.path, s.span).is_some()
+                    })
+                })
+            })
+        })
+        .collect();
+    if examples.is_empty() && broken.is_empty() {
+        return Ok(report);
+    }
+
+    // The pages that show a changed or broken example: its files, and the
+    // pages that include them. Which build shows which is for the resolver
+    // to say.
+    let mut holders: BTreeSet<&RelPath> = BTreeSet::new();
     for address in examples.keys() {
-        for file in &used[address].files {
-            if now
-                .project
-                .file(file)
-                .is_some_and(|f| f.kind == FileKind::Page)
-            {
-                candidates.insert(file.clone());
-            }
-            candidates.extend(now.project.including_pages(file));
+        holders.extend(&used[address].files);
+    }
+    holders.extend(broken.iter().map(|u| &u.path));
+    let mut candidates: BTreeSet<RelPath> = BTreeSet::new();
+    for file in holders {
+        if now
+            .project
+            .file(file)
+            .is_some_and(|f| f.kind == FileKind::Page)
+        {
+            candidates.insert(file.clone());
         }
+        candidates.extend(now.project.including_pages(file));
     }
     let router = AstroRouter::from_consumer(&now.project.model().consumer);
     let mut found: BTreeMap<RelPath, DriftPage> = BTreeMap::new();
@@ -156,14 +242,21 @@ pub fn drift(
                 continue;
             };
             let mut shown: BTreeSet<&str> = BTreeSet::new();
+            let mut gone: BTreeSet<usize> = BTreeSet::new();
             page.visit(&mut |block| {
                 if let Some(snippet) = &block.snippet
                     && examples.contains_key(&snippet.address)
                 {
                     shown.insert(snippet.address.as_str());
                 }
+                if let Some(i) = broken
+                    .iter()
+                    .position(|u| u.file == block.file && u.span == block.span)
+                {
+                    gone.insert(i);
+                }
             });
-            if shown.is_empty() {
+            if shown.is_empty() && gone.is_empty() {
                 continue;
             }
             let entry = found.entry(path.clone()).or_insert_with(|| DriftPage {
@@ -172,11 +265,18 @@ pub fn drift(
                 builds: Vec::new(),
                 page_changed: false,
                 examples: Vec::new(),
+                broken: Vec::new(),
             });
             entry.builds.push((*name).to_owned());
             for address in shown {
                 if !entry.examples.iter().any(|e| e.address == address) {
                     entry.examples.push(examples[address].clone());
+                }
+            }
+            for i in gone {
+                let example = &broken[i].broken;
+                if !entry.broken.contains(example) {
+                    entry.broken.push(example.clone());
                 }
             }
         }
@@ -185,17 +285,6 @@ pub fn drift(
         return Ok(report);
     }
 
-    // Whether each page changed apart from its examples, in any build that
-    // shows it with one.
-    let before = Revision::read(repo, base.compared())?;
-    let before_project = before.as_ref().map(Revision::project);
-    let before_side = before
-        .as_ref()
-        .zip(before_project.as_ref())
-        .map(|(revision, project)| Side {
-            project,
-            model_text: &revision.model_text,
-        });
     for name in builds {
         let paths: Vec<&RelPath> = found
             .iter()
@@ -216,10 +305,82 @@ pub fn drift(
         .into_values()
         .map(|mut page| {
             page.examples.sort_by(|a, b| a.address.cmp(&b.address));
+            page.broken.sort_by(|a, b| a.address.cmp(&b.address));
             page
         })
         .collect();
     Ok(report)
+}
+
+/// Every `@snippet` of the working tree with a well-formed address that
+/// doesn't resolve, with why.
+fn unresolved(now: Side<'_>, fs: &dyn FileSystem) -> Vec<Unresolved> {
+    let code = CodeFiles::new();
+    let mut out = Vec::new();
+    for file in now.project.files() {
+        for snippet_use in &file.snippets {
+            let Some(Ok(address)) = &snippet_use.address else {
+                continue;
+            };
+            if now
+                .project
+                .snippet_at(&file.path, snippet_use.span)
+                .is_some()
+            {
+                continue;
+            }
+            let Err(error) = resolve_snippet(snippet_use, address, now.project.model(), fs, &code)
+            else {
+                continue;
+            };
+            let (problem, reason) = why(&error, address);
+            out.push(Unresolved {
+                path: file.path.clone(),
+                file: file.file,
+                span: snippet_use.span,
+                written: snippet_use.written.clone(),
+                broken: BrokenExample {
+                    address: snippet_use.written.clone(),
+                    source: address.source.clone(),
+                    problem,
+                    reason,
+                },
+            });
+        }
+    }
+    out
+}
+
+/// The diagnostic's slug for a snippet that doesn't resolve, and the reason
+/// in a few words.
+fn why(error: &SnippetError, address: &Address) -> (&'static str, String) {
+    match error {
+        SnippetError::UnknownSource => (
+            "snippet-source-unknown",
+            format!("ascribe.toml has no source `{}`", address.source),
+        ),
+        SnippetError::Missing { .. } => ("snippet-file-missing", "the file isn't there".to_owned()),
+        SnippetError::NotIncluded => (
+            "snippet-file-missing",
+            "the source doesn't include the file".to_owned(),
+        ),
+        SnippetError::Link => (
+            "snippet-file-missing",
+            "the file is a link out of the source".to_owned(),
+        ),
+        SnippetError::NotText(reason) => (
+            "snippet-file-not-text",
+            format!("the file isn't text: {reason}"),
+        ),
+        SnippetError::Tags(_) => ("snippet-tags", "the file's tags don't balance".to_owned()),
+        SnippetError::RegionMissing(_) => (
+            "snippet-region-missing",
+            format!(
+                "the file has no region `{}`",
+                address.region.as_deref().unwrap_or_default()
+            ),
+        ),
+    }
 }
 
 /// Every snippet the working tree's files take, by written address.

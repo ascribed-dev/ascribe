@@ -298,16 +298,20 @@ How blocks are matched: blocks are compared by their content without positions, 
 ## `ascribe drift`
 @available: next
 
-Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too. A page covers the code it shows, and nothing else: every region it takes a [snippet](directives.md#snippet) from, and every whole file it takes as one, including its fragments' snippets. It's for CI, where it says which pages a reviewer should reread; see [Drift](../guides/drift.md#when-an-example-changes).
+Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. A page covers the code it shows, and nothing else: every region it takes a [snippet](directives.md#snippet) from, and every whole file it takes as one, including its fragments' snippets. It's for CI, where it says which pages a reviewer should reread; see [Drift](../guides/drift.md#when-an-example-changes).
 
 @include: ../_generated/cli-drift-options.md
 
 The base is found as `ascribe diff` finds it, and the other side is the working tree. A snippet's region is taken from its file on both sides and compared as text, dedented, with trailing spaces trimmed, so an edit elsewhere in the file, a region that only moved, or a change of indent isn't a change. A renamed file is followed. A region the file didn't have at the base is a new example, not a changed one. Then, for each page with a changed example, it compares the page itself as `ascribe diff` does, apart from its snippets: the page changed when its own file did, or when anything else it uses did, such as a fragment it includes or a phrase in `ascribe.toml`.
 
-The pages come in two groups:
+The pages come in up to three groups:
 
 ```text
 compared with main (3f9c2ab), from its merge base with HEAD (8d01e4c)
+
+Examples that no longer resolve. `ascribe check` reports them too:
+  guides/install.md
+    code:service/client.py#connect: the file has no region `connect`
 
 Examples that changed. The page shows the new code; check the words around it:
   reference/content-model.md
@@ -318,7 +322,7 @@ Examples that changed along with the page:
     code:examples/quill/ascribe.toml#builds (+2 −2)
 ```
 
-The first group is the one to read: the example updated itself, and nobody changed the sentence that explains it. The second is listed so a reviewer can see the change reached the page. Each example says how many lines were added and removed. With nothing to report, it says `No examples changed.`
+An example **no longer resolves** when it did at the base and doesn't now: its region was renamed, its file moved, or its source is gone. `ascribe check` fails on it too, but the report names the page so the pull request that broke it says so. A `@snippet` the change adds broken isn't listed; that's `check`'s alone. Of the changed examples, the first group is the one to read: the example updated itself, and nobody changed the sentence that explains it. The second is listed so a reviewer can see the change reached the page. Each example says how many lines were added and removed. With nothing to report, it says `No examples changed.`
 
 A changed example isn't always a changed behavior. The report says what changed and how much, and leaves the judgment to you.
 
@@ -326,7 +330,7 @@ It reads little: one `git diff` listing of the change, and at the base only the 
 
 ### The summary
 
-`--format summary` writes Markdown for a CI job's summary: the same two groups, each page linked to its route on `[consumer] site` (plain text when there's no `site`), and nothing at all when no example changed, so it can be appended to `$GITHUB_STEP_SUMMARY` on every run.
+`--format summary` writes Markdown for a CI job's summary: the same groups, each page linked to its route on `[consumer] site` (plain text when there's no `site`), and nothing at all when no example changed, so it can be appended to `$GITHUB_STEP_SUMMARY` on every run.
 
 ### Exit codes
 @id: drift-exit-codes
@@ -334,7 +338,7 @@ It reads little: one `git diff` listing of the change, and at the base only the 
 | Code | Meaning |
 |---|---|
 | `0` | Compared, whatever it found |
-| `1` | With `--exit-code`: a page's example changed and the page didn't (the first group isn't empty) |
+| `1` | With `--exit-code`: an example no longer resolves, or a page's example changed and the page didn't |
 | `2` | It couldn't run: a usage error, an unknown build, not a git repository, an unknown revision, no merge base (a shallow clone, or unrelated histories), `git` not found, or a project that doesn't load at the base or in the working tree. The reason goes to standard error. |
 
 ### Drift JSON
@@ -347,7 +351,7 @@ It reads little: one `git diff` listing of the change, and at the base only the 
 | `ascribe_version` | string | The version of `ascribe` that wrote the report |
 | `base` | object | As in the [diff JSON](#diff-json): `requested`, `commit`, and `merge_base` |
 | `repository` | object | As in the diff JSON: `root` and `project_prefix` |
-| `pages` | array | Every page with an example that changed, in path order |
+| `pages` | array | Every page with an example that changed or no longer resolves, in path order |
 
 Each page:
 
@@ -356,8 +360,9 @@ Each page:
 | `path` | string | The page's path, relative to the content root |
 | `route` | string | Its route, in the first build that shows it |
 | `builds` | array of strings | The builds that show it with a changed example |
-| `page_changed` | boolean | Whether the page changed apart from its examples, in any of those builds. `false` puts it in the first group. |
+| `page_changed` | boolean | Whether the page changed apart from its examples, in any of those builds. With `false`, its changed examples are in the group to read. |
 | `examples` | array | The examples that changed, by address |
+| `broken` | array | The examples that resolved at the base and don't now, by address: `address`, `source`, `problem` (the slug `ascribe check` reports, such as `snippet-region-missing`), and `reason`, in a few words |
 
 Each example:
 

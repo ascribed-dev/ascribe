@@ -314,3 +314,46 @@ fn a_relative_config_whose_source_is_its_parent() {
         stdout(&out)
     );
 }
+
+#[test]
+fn an_example_that_no_longer_resolves() {
+    let dir = repo();
+    // The region is renamed, and the pages still name the old one.
+    write(
+        dir.path(),
+        "service/app.py",
+        &code("connect()\n").replace(": main", ": entry"),
+    );
+    commit(dir.path(), "rename the region");
+    let out = ascribe(&site(&dir), &["drift"]);
+    assert_eq!(code_of(&out), 0, "{}", stderr(&out));
+    assert!(
+        stdout(&out).ends_with(
+            "\n\nExamples that no longer resolve. `ascribe check` reports them too:\n  deploy.md\n    code:service/app.py#main: the file has no region `main`\n  run.md\n    code:service/app.py#main: the file has no region `main`\n"
+        ),
+        "{}",
+        stdout(&out)
+    );
+    let out = ascribe(&site(&dir), &["drift", "--exit-code"]);
+    assert_eq!(code_of(&out), 1, "{}", stderr(&out));
+    let out = ascribe(&site(&dir), &["drift", "--format", "summary"]);
+    assert!(
+        stdout(&out).contains(
+            "\n\nExamples that no longer resolve:\n\n- [deploy.md](https://docs.example.com/deploy/)\n  - `code:service/app.py#main`: the file has no region `main`\n"
+        ),
+        "{}",
+        stdout(&out)
+    );
+    let out = ascribe(&site(&dir), &["drift", "--format", "json"]);
+    let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
+    assert_eq!(
+        json["pages"][1]["broken"],
+        serde_json::json!([{
+            "address": "code:service/app.py#main",
+            "source": "code",
+            "problem": "snippet-region-missing",
+            "reason": "the file has no region `main`",
+        }])
+    );
+    assert_eq!(json["pages"][1]["examples"], serde_json::json!([]));
+}

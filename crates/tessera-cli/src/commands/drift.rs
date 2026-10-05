@@ -1,6 +1,6 @@
 //! `ascribe drift`: the pages whose examples changed between a base revision
 //! and the working tree, split by whether the words around them changed
-//! too.
+//! too, and the pages whose examples no longer resolve.
 //!
 //! The working tree is read from disk; the base's code files and, when an
 //! example changed, its pages are read from git (`tessera_diff::drift`).
@@ -43,7 +43,8 @@ pub struct Args {
     #[arg(long, value_enum, default_value_t = Format::Text, value_name = "FORMAT")]
     pub format: Format,
 
-    /// Exit with 1 when a page's examples changed and the page didn't.
+    /// Exit with 1 when a page's example no longer resolves, or changed while
+    /// the page didn't.
     #[arg(long)]
     pub exit_code: bool,
 }
@@ -51,7 +52,8 @@ pub struct Args {
 /// The output format.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {
-    /// The two groups of pages, with each example that changed, for people.
+    /// The groups of pages, with each example that broke or changed, for
+    /// people.
     Text,
     /// One JSON document, for tools.
     Json,
@@ -60,8 +62,8 @@ pub enum Format {
     Summary,
 }
 
-/// Runs the command. Exit codes: 0 whatever it finds (1 when a page's
-/// examples changed and the page didn't, with `--exit-code`), 2 when it
+/// Runs the command. Exit codes: 0 whatever it finds (1 with `--exit-code`
+/// when an example broke, or changed while its page didn't), 2 when it
 /// couldn't run: not a git repository, an unknown revision, a shallow clone,
 /// no `git`, or a project that doesn't load on either side.
 pub fn run(global: &Global, args: Args) -> ExitCode {
@@ -105,7 +107,7 @@ fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         model_text: now_model,
     };
     let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-    let report = match drift(&repo, &base, now, &names) {
+    let report = match drift(&repo, &base, now, project.file_system(), &names) {
         Ok(report) => report,
         Err(e) => return fail_drift(err, e),
     };
@@ -123,18 +125,59 @@ fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
     {
         return fail(err, &format!("can't write the report: {e}"));
     }
-    if args.exit_code && report.unchanged_pages().next().is_some() {
+    if args.exit_code && report.needs_reading() {
         exit::PROBLEMS
     } else {
         exit::OK
     }
 }
 
-/// The lead of the first group.
-const UNCHANGED: &str =
-    "Examples that changed. The page shows the new code; check the words around it:";
-/// The lead of the second group.
-const CHANGED: &str = "Examples that changed along with the page:";
+/// One group of the report.
+struct Group<'a> {
+    /// Its lead in the text output.
+    text: &'static str,
+    /// Its lead in the summary.
+    summary: &'static str,
+    pages: Vec<&'a DriftPage>,
+}
+
+/// The groups, in order: examples that broke, examples that changed while
+/// the page didn't, and examples that changed with the page.
+fn groups(report: &DriftReport) -> [Group<'_>; 3] {
+    [
+        Group {
+            text: "Examples that no longer resolve. `ascribe check` reports them too:",
+            summary: "Examples that no longer resolve:",
+            pages: report.broken_pages().collect(),
+        },
+        Group {
+            text: "Examples that changed. The page shows the new code; check the words around it:",
+            summary: "The page shows the new code; check the words around it:",
+            pages: report.unchanged_pages().collect(),
+        },
+        Group {
+            text: "Examples that changed along with the page:",
+            summary: "Changed along with the page:",
+            pages: report.changed_pages().collect(),
+        },
+    ]
+}
+
+/// A page's lines in a group: each broken example with why, or each
+/// changed example with how much, as `code` writes an address.
+fn lines(first: bool, page: &DriftPage, code: fn(&str) -> String) -> Vec<String> {
+    if first {
+        page.broken
+            .iter()
+            .map(|b| format!("{}: {}", code(&b.address), b.reason))
+            .collect()
+    } else {
+        page.examples
+            .iter()
+            .map(|e| format!("{} ({})", code(&e.address), amount(e.added, e.removed)))
+            .collect()
+    }
+}
 
 fn short(commit: &str) -> String {
     commit.chars().take(7).collect()
@@ -170,24 +213,15 @@ fn write_text(out: &mut dyn Write, report: &DriftReport) -> io::Result<()> {
     if report.pages.is_empty() {
         return writeln!(out, "\nNo examples changed.");
     }
-    let groups: [(&str, Vec<&DriftPage>); 2] = [
-        (UNCHANGED, report.unchanged_pages().collect()),
-        (CHANGED, report.changed_pages().collect()),
-    ];
-    for (lead, pages) in groups {
-        if pages.is_empty() {
+    for (i, group) in groups(report).iter().enumerate() {
+        if group.pages.is_empty() {
             continue;
         }
-        writeln!(out, "\n{lead}")?;
-        for page in pages {
+        writeln!(out, "\n{}", group.text)?;
+        for page in &group.pages {
             writeln!(out, "  {}", page.path)?;
-            for example in &page.examples {
-                writeln!(
-                    out,
-                    "    {} ({})",
-                    example.address,
-                    amount(example.added, example.removed)
-                )?;
+            for line in lines(i == 0, page, |s| s.to_owned()) {
+                writeln!(out, "    {line}")?;
             }
         }
     }
@@ -205,22 +239,12 @@ fn write_summary(out: &mut dyn Write, report: &DriftReport, site: Option<&str>) 
         "{}.",
         upper_first(&compared(report, |s| format!("`{s}`")))
     )?;
-    let groups: [(&str, Vec<&DriftPage>); 2] = [
-        (
-            "The page shows the new code; check the words around it:",
-            report.unchanged_pages().collect(),
-        ),
-        (
-            "Changed along with the page:",
-            report.changed_pages().collect(),
-        ),
-    ];
-    for (lead, pages) in groups {
-        if pages.is_empty() {
+    for (i, group) in groups(report).iter().enumerate() {
+        if group.pages.is_empty() {
             continue;
         }
-        writeln!(out, "\n{lead}\n")?;
-        for page in pages {
+        writeln!(out, "\n{}\n", group.summary)?;
+        for page in &group.pages {
             let name = escape(&page.path);
             match site {
                 Some(site) => writeln!(
@@ -231,13 +255,8 @@ fn write_summary(out: &mut dyn Write, report: &DriftReport, site: Option<&str>) 
                 )?,
                 None => writeln!(out, "- {name}")?,
             }
-            for example in &page.examples {
-                writeln!(
-                    out,
-                    "  - `{}` ({})",
-                    example.address,
-                    amount(example.added, example.removed)
-                )?;
+            for line in lines(i == 0, page, |s| format!("`{s}`")) {
+                writeln!(out, "  - {line}")?;
             }
         }
     }

@@ -52,7 +52,9 @@ pub use compare::{
     BuildDiff, Change, ChangeKind, Counts, PageDiff, PageStatus, Side, Words, compare_builds,
     compare_page_in,
 };
-pub use drift::{ChangedExample, DRIFT_SCHEMA_VERSION, DriftPage, DriftReport, drift};
+pub use drift::{
+    BrokenExample, ChangedExample, DRIFT_SCHEMA_VERSION, DriftPage, DriftReport, drift,
+};
 pub use git::{Base, FileChange, Repository};
 pub use gitfs::{GitFs, Revision};
 pub use tree::{Anchor, encode_path};
