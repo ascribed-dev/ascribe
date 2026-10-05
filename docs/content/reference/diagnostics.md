@@ -1,4 +1,7 @@
-# Diagnostics
+---
+title: Diagnostics
+description: Every problem Ascribe reports, with its code and fix.
+---
 
 <!-- Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs. Edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`. -->
 
@@ -9,7 +12,7 @@ Every problem Ascribe reports, with its code, its name, and how to fix it. `ascr
 - A diagnostic about `ascribe.toml` (a name that starts with `model-`) stops everything else when it's an error: every other check depends on the content model.
 - In the messages below, `{name}` stands for a value filled in from your source.
 
-In the editor, many diagnostics offer a quick fix. See [Editing](editor.md).
+In the editor, many diagnostics offer a quick fix. See [Editing](../guides/editor.md).
 
 | Code | Name | Severity | Level |
 |---|---|---|---|
@@ -146,27 +149,27 @@ In the editor, many diagnostics offer a quick fix. See [Editing](editor.md).
 
 #### ASC001 `attribute-unknown-key`
 
-Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
+Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Unknown key for the directive or image.
 
-**Message:** `@{name}` has no attribute `{key}`; its attributes are: {keys}
+**Message:** `@{name}` has no attribute `{key}`; its attributes are: \{keys}
 
 **Fix:** Fix the key's spelling, or remove it. To accept a new image attribute, declare it in `[images.attributes]`; for a project widget, in its `attributes`.
 
 #### ASC002 `attribute-type-mismatch`
 
-Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
+Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Value doesn't match the key's declared type.
 
-**Message:** `{key}` must be {expected}, but it's "{value}"
+**Message:** `{key}` must be \{expected}, but it's "\{value}"
 
 **Fix:** Give a value of the key's declared type: one of the enumeration's values, `true` or `false` for a boolean, or a plain number such as `600` for a number.
 
 #### ASC003 `attribute-bare-key`
 
-Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
+Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Bare key without a value.
 
@@ -176,7 +179,7 @@ Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
 
 #### ASC004 `attribute-unquoted-reserved`
 
-Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
+Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Unquoted value containing a reserved character.
 
@@ -186,17 +189,17 @@ Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
 
 #### ASC055 `attribute-syntax`
 
-Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
+Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value).
 
-**Message:** this attribute block isn't valid: {detail}
+**Message:** this attribute block isn't valid: \{detail}
 
 **Fix:** Fix the attribute block: close every quote and brace, give every `=` a value, and separate pairs with commas.
 
 #### ASC056 `attribute-duplicate-key`
 
-Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
+Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** The same key given more than once.
 
@@ -208,7 +211,7 @@ Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
 
 #### ASC005 `directive-unknown`
 
-Warning · file level · [SPEC §3.2](../SPEC.md#32-recognition)
+Warning · file level · [SPEC §3.2]({repo}/blob/main/SPEC.md#32-recognition)
 
 **When:** Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name.
 
@@ -218,7 +221,7 @@ Warning · file level · [SPEC §3.2](../SPEC.md#32-recognition)
 
 #### ASC006 `directive-primary`
 
-Error · file level · [SPEC §3.4](../SPEC.md#34-the-primary)
+Error · file level · [SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)
 
 **When:** Primary given to a directive that takes none, or a required primary missing.
 
@@ -228,7 +231,7 @@ Error · file level · [SPEC §3.4](../SPEC.md#34-the-primary)
 
 #### ASC120 `directive-extra-text`
 
-Error · file level · [SPEC §3.1](../SPEC.md#31-syntax)
+Error · file level · [SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax)
 
 **When:** Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary.
 
@@ -240,17 +243,17 @@ Error · file level · [SPEC §3.1](../SPEC.md#31-syntax)
 
 #### ASC007 `container-unclosed`
 
-Error · file level · [SPEC §3.5](../SPEC.md#35-forms)
+Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Container not closed before its enclosing block ends.
 
-**Message:** the `@{name}` container opened here isn't closed before {end}; add `@end` where it should end
+**Message:** the `@{name}` container opened here isn't closed before \{end}; add `@end` where it should end
 
 **Fix:** Add an `@end` line where the container's content ends, indented like its opener.
 
 #### ASC008 `container-colon-unexpected`
 
-Error · file level · [SPEC §3.5](../SPEC.md#35-forms)
+Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Trailing `:` on a directive with no container form.
 
@@ -260,7 +263,7 @@ Error · file level · [SPEC §3.5](../SPEC.md#35-forms)
 
 #### ASC009 `container-colon-missing`
 
-Error · file level · [SPEC §3.5](../SPEC.md#35-forms)
+Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Container-only directive without a trailing `:`.
 
@@ -270,17 +273,17 @@ Error · file level · [SPEC §3.5](../SPEC.md#35-forms)
 
 #### ASC010 `container-open-at-arm`
 
-Error · file level · [SPEC §3.6](../SPEC.md#36-groups)
+Error · file level · [SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)
 
 **When:** Container still open when the next arm of its group begins (reported at that arm's opener).
 
-**Message:** the `@{name}` container opened on line {line} is still open where this `@{group}` arm begins; close it with `@end` first
+**Message:** the `@{name}` container opened on line \{line} is still open where this `@{group}` arm begins; close it with `@end` first
 
 **Fix:** Close the inner container with `@end` before the next arm's opener.
 
 #### ASC011 `end-unmatched`
 
-Error · file level · [SPEC §3.5](../SPEC.md#35-forms)
+Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** End line with no open container.
 
@@ -290,7 +293,7 @@ Error · file level · [SPEC §3.5](../SPEC.md#35-forms)
 
 #### ASC012 `end-indent-mismatch`
 
-Error · file level · [SPEC §3.9](../SPEC.md#39-directives-inside-lists-and-blockquotes)
+Error · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
 **When:** End line indented differently from its opener.
 
@@ -300,11 +303,11 @@ Error · file level · [SPEC §3.9](../SPEC.md#39-directives-inside-lists-and-bl
 
 #### ASC013 `container-nesting-deep`
 
-Warning · file level · [SPEC §3.10](../SPEC.md#310-nesting)
+Warning · file level · [SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)
 
 **When:** Nesting deeper than two levels.
 
-**Message:** containers are nested {depth} levels deep here; more than two is hard to follow, so flatten them, for example with a following-block form
+**Message:** containers are nested \{depth} levels deep here; more than two is hard to follow, so flatten them, for example with a following-block form
 
 **Fix:** Flatten the structure: use a directive's following-block form instead of a container, or split the content into sections.
 
@@ -312,17 +315,17 @@ Warning · file level · [SPEC §3.10](../SPEC.md#310-nesting)
 
 #### ASC014 `binding-no-block`
 
-Error · file level · [SPEC §3.8](../SPEC.md#38-binding)
+Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Following-block directive with no following block in its container.
 
-**Message:** `@{name}` applies to the block after it, but nothing follows it in this {container}
+**Message:** `@{name}` applies to the block after it, but nothing follows it in this \{container}
 
 **Fix:** Put the block the directive applies to directly below it, in the same container, or remove the directive.
 
 #### ASC015 `binding-heading`
 
-Error · file level · [SPEC §3.8](../SPEC.md#38-binding)
+Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Following-block directive bound to a heading.
 
@@ -332,7 +335,7 @@ Error · file level · [SPEC §3.8](../SPEC.md#38-binding)
 
 #### ASC016 `binding-blank-line`
 
-Warning · file level · [SPEC §3.8](../SPEC.md#38-binding)
+Warning · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Blank line between a following-block directive and its block.
 
@@ -342,7 +345,7 @@ Warning · file level · [SPEC §3.8](../SPEC.md#38-binding)
 
 #### ASC017 `binding-not-section-top`
 
-Error · file level · [SPEC §3.8](../SPEC.md#38-binding)
+Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Heading-bound directive that isn't at the top of its section.
 
@@ -354,7 +357,7 @@ Error · file level · [SPEC §3.8](../SPEC.md#38-binding)
 
 #### ASC018 `title-not-accepted`
 
-Warning · file level · [SPEC §3.7](../SPEC.md#37-titles)
+Warning · file level · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
 **When:** Title given to a directive that doesn't accept one.
 
@@ -364,7 +367,7 @@ Warning · file level · [SPEC §3.7](../SPEC.md#37-titles)
 
 #### ASC019 `title-dot-space`
 
-Warning · file level · [SPEC §3.7](../SPEC.md#37-titles)
+Warning · file level · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
 **When:** A `. ` line (dot and space) directly above a directive that accepts a title.
 
@@ -376,7 +379,7 @@ Warning · file level · [SPEC §3.7](../SPEC.md#37-titles)
 
 #### ASC020 `id-duplicate`
 
-Error · page level · [SPEC §4.1](../SPEC.md#41-id)
+Error · page level · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 **When:** Duplicate id on a page, including ids from included content.
 
@@ -386,7 +389,7 @@ Error · page level · [SPEC §4.1](../SPEC.md#41-id)
 
 #### ASC058 `id-invalid`
 
-Error · file level · [SPEC §4.1](../SPEC.md#41-id)
+Error · file level · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 **When:** Id containing characters other than letters, digits, hyphens, underscores, and periods.
 
@@ -398,7 +401,7 @@ Error · file level · [SPEC §4.1](../SPEC.md#41-id)
 
 #### ASC021 `include-target-missing`
 
-Error · file level · [SPEC §4.2](../SPEC.md#42-include)
+Error · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target file doesn't exist.
 
@@ -408,7 +411,7 @@ Error · file level · [SPEC §4.2](../SPEC.md#42-include)
 
 #### ASC022 `include-id-missing`
 
-Error · page level · [SPEC §4.2](../SPEC.md#42-include)
+Error · page level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target id doesn't exist in the target file.
 
@@ -418,17 +421,17 @@ Error · page level · [SPEC §4.2](../SPEC.md#42-include)
 
 #### ASC023 `include-cycle`
 
-Error · page level · [SPEC §4.2](../SPEC.md#42-include)
+Error · page level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Include cycle.
 
-**Message:** including `{path}` here creates a cycle: {cycle}
+**Message:** including `{path}` here creates a cycle: \{cycle}
 
 **Fix:** Remove one of the includes in the cycle. A section can't include itself, directly or through other files.
 
 #### ASC125 `include-heading-without-id`
 
-Warning · file level · [SPEC §4.2](../SPEC.md#42-include)
+Warning · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** `{heading=false}` without an `#id`, which has no effect.
 
@@ -440,7 +443,7 @@ Warning · file level · [SPEC §4.2](../SPEC.md#42-include)
 
 #### ASC024 `variant-no-arm-survives`
 
-Warning · page level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Warning · page level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** No arm of a group survives a build's selection.
 
@@ -450,17 +453,17 @@ Warning · page level · [SPEC §9.3](../SPEC.md#93-build-modes)
 
 #### ASC025 `variant-unknown`
 
-Error · file level · [SPEC §4.3](../SPEC.md#43-variant)
+Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Unknown dimension or value.
 
-**Message:** `{dimension}` isn't a declared dimension; the dimensions are: {dimensions}
+**Message:** `{dimension}` isn't a declared dimension; the dimensions are: \{dimensions}
 
 **Fix:** Use a dimension and value declared in `[dimensions]`, or declare them there.
 
 #### ASC026 `variant-mixed-arms`
 
-Error · file level · [SPEC §4.3](../SPEC.md#43-variant)
+Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Group mixes labeled and dimensional arms.
 
@@ -470,7 +473,7 @@ Error · file level · [SPEC §4.3](../SPEC.md#43-variant)
 
 #### ASC027 `variant-arm-kind`
 
-Error · file level · [SPEC §4.3](../SPEC.md#43-variant)
+Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Arm has both a title and attributes, or neither.
 
@@ -480,7 +483,7 @@ Error · file level · [SPEC §4.3](../SPEC.md#43-variant)
 
 #### ASC028 `variant-no-shared-dimension`
 
-Error · file level · [SPEC §4.3](../SPEC.md#43-variant)
+Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Dimensional arms share no dimension key.
 
@@ -492,7 +495,7 @@ Error · file level · [SPEC §4.3](../SPEC.md#43-variant)
 
 #### ASC029 `available-unknown`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Unknown target or state.
 
@@ -502,17 +505,17 @@ Error · file level · [SPEC §4.4](../SPEC.md#44-available)
 
 #### ASC030 `available-history-order`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** History out of chronological order.
 
-**Message:** the history for `{target}` must be in chronological order, but {later} comes before {earlier}
+**Message:** the history for `{target}` must be in chronological order, but \{later} comes before \{earlier}
 
 **Fix:** List the target's states oldest first: `self-managed (preview 3.3, ga 3.5)`.
 
 #### ASC031 `available-versionless`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Versions given for a versionless target.
 
@@ -522,21 +525,21 @@ Error · file level · [SPEC §4.4](../SPEC.md#44-available)
 
 #### ASC032 `available-exceeds-scope`
 
-Error · page level · [SPEC §4.4](../SPEC.md#44-available)
+Error · page level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Spec exceeds its enclosing scope.
 
-**Message:** this availability includes `{target}`, which the enclosing {scope} doesn't
+**Message:** this availability includes `{target}`, which the enclosing \{scope} doesn't
 
 **Fix:** Narrow this availability to what the enclosing page or section allows, or widen the enclosing one.
 
 #### ASC057 `available-syntax`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Spec that doesn't parse, in a directive or in `available` frontmatter.
 
-**Message:** "{spec}" isn't a valid availability spec: {detail}
+**Message:** "\{spec}" isn't a valid availability spec: \{detail}
 
 **Fix:** Fix the availability spec. Its syntax is in the [directive reference](directives.md#availability-specs).
 
@@ -544,11 +547,11 @@ Error · file level · [SPEC §4.4](../SPEC.md#44-available)
 
 #### ASC033 `steps-not-ordered-list`
 
-Error · file level · [SPEC §4.6](../SPEC.md#46-steps)
+Error · file level · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
 **When:** Bound block isn't an ordered list.
 
-**Message:** `@steps` must be followed by an ordered list (`1.`, `2.`, …), but the next block is {found}
+**Message:** `@steps` must be followed by an ordered list (`1.`, `2.`, …), but the next block is \{found}
 
 **Fix:** Put an ordered list directly below `@steps`.
 
@@ -556,7 +559,7 @@ Error · file level · [SPEC §4.6](../SPEC.md#46-steps)
 
 #### ASC034 `details-title-missing`
 
-Error · file level · [SPEC §4.7](../SPEC.md#47-details)
+Error · file level · [SPEC §4.7]({repo}/blob/main/SPEC.md#47-details)
 
 **When:** Missing title.
 
@@ -568,11 +571,11 @@ Error · file level · [SPEC §4.7](../SPEC.md#47-details)
 
 #### ASC035 `widget-schema`
 
-Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
+Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **When:** Violates its declared schema.
 
-**Message:** `@{name}` doesn't match its declaration in ascribe.toml: {detail}
+**Message:** `@{name}` doesn't match its declaration in ascribe.toml: \{detail}
 
 **Fix:** Change the widget's use to match its declaration in `[widgets]`, or change the declaration.
 
@@ -580,7 +583,7 @@ Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
 
 #### ASC036 `link-target-missing`
 
-Error · file level · [SPEC §5.2](../SPEC.md#52-links)
+Error · file level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** Target file doesn't exist.
 
@@ -590,7 +593,7 @@ Error · file level · [SPEC §5.2](../SPEC.md#52-links)
 
 #### ASC037 `link-id-missing`
 
-Error · page level · [SPEC §5.2](../SPEC.md#52-links)
+Error · page level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** Target id doesn't exist in the target file.
 
@@ -600,7 +603,7 @@ Error · page level · [SPEC §5.2](../SPEC.md#52-links)
 
 #### ASC038 `link-to-fragment`
 
-Error · file level · [SPEC §4.2](../SPEC.md#42-include)
+Error · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target is a fragment.
 
@@ -610,7 +613,7 @@ Error · file level · [SPEC §4.2](../SPEC.md#42-include)
 
 #### ASC039 `link-id-in-fragment`
 
-Error · page level · [SPEC §4.2](../SPEC.md#42-include)
+Error · page level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target id exists only inside a fragment the target page includes.
 
@@ -620,7 +623,7 @@ Error · page level · [SPEC §4.2](../SPEC.md#42-include)
 
 #### ASC040 `link-id-removed`
 
-Error · page level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Error · page level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** Target id is removed by a build.
 
@@ -630,7 +633,7 @@ Error · page level · [SPEC §9.3](../SPEC.md#93-build-modes)
 
 #### ASC041 `link-route`
 
-Warning · file level · [SPEC §5.2](../SPEC.md#52-links)
+Warning · file level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** Destination is a route rather than a file path.
 
@@ -640,7 +643,7 @@ Warning · file level · [SPEC §5.2](../SPEC.md#52-links)
 
 #### ASC121 `link-page-dropped`
 
-Error · page level · [SPEC §5.2](../SPEC.md#52-links)
+Error · page level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** Target page isn't published by a build.
 
@@ -652,7 +655,7 @@ Error · page level · [SPEC §5.2](../SPEC.md#52-links)
 
 #### ASC042 `image-source-missing`
 
-Error · file level · [SPEC §5.3](../SPEC.md#53-images)
+Error · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 **When:** Local source doesn't exist.
 
@@ -662,7 +665,7 @@ Error · file level · [SPEC §5.3](../SPEC.md#53-images)
 
 #### ASC043 `image-alt-missing`
 
-Warning · file level · [SPEC §5.3](../SPEC.md#53-images)
+Warning · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 **When:** Missing alt text.
 
@@ -672,7 +675,7 @@ Warning · file level · [SPEC §5.3](../SPEC.md#53-images)
 
 #### ASC059 `image-attribute-missing`
 
-Error · file level · [SPEC §5.3](../SPEC.md#53-images)
+Error · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 **When:** Required image attribute missing.
 
@@ -684,7 +687,7 @@ Error · file level · [SPEC §5.3](../SPEC.md#53-images)
 
 #### ASC044 `phrase-undeclared`
 
-Warning · file level · [SPEC §5.1](../SPEC.md#51-phrases)
+Warning · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 **When:** `{key}` in prose whose key isn't declared.
 
@@ -694,7 +697,7 @@ Warning · file level · [SPEC §5.1](../SPEC.md#51-phrases)
 
 #### ASC126 `phrase-double-braces`
 
-Warning · file level · [SPEC §5.1](../SPEC.md#51-phrases)
+Warning · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 **When:** A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool.
 
@@ -706,7 +709,7 @@ Warning · file level · [SPEC §5.1](../SPEC.md#51-phrases)
 
 #### ASC045 `heading-phrase-without-id`
 
-Warning · file level · [SPEC §5.5](../SPEC.md#55-heading-ids)
+Warning · file level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 **When:** No `@id`, and the heading contains a phrase.
 
@@ -716,7 +719,7 @@ Warning · file level · [SPEC §5.5](../SPEC.md#55-heading-ids)
 
 #### ASC046 `heading-duplicate-without-id`
 
-Warning · page level · [SPEC §5.5](../SPEC.md#55-heading-ids)
+Warning · page level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 **When:** No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered.
 
@@ -726,7 +729,7 @@ Warning · page level · [SPEC §5.5](../SPEC.md#55-heading-ids)
 
 #### ASC124 `heading-empty-slug`
 
-Warning · file level · [SPEC §5.5](../SPEC.md#55-heading-ids)
+Warning · file level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 **When:** No `@id`, and the heading's slug is empty (its text is only punctuation or emoji).
 
@@ -738,7 +741,7 @@ Warning · file level · [SPEC §5.5](../SPEC.md#55-heading-ids)
 
 #### ASC047 `frontmatter-unknown-key`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page.
 
@@ -748,7 +751,7 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC048 `frontmatter-missing-field`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Required field missing.
 
@@ -758,17 +761,17 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC049 `frontmatter-type-mismatch`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Value doesn't match the field's declared type.
 
-**Message:** `{field}` must be {expected}, but it's {found}
+**Message:** `{field}` must be \{expected}, but it's \{found}
 
 **Fix:** Give a value of the field's type. Quote a string that YAML would read as something else: `version: "3.10"`.
 
 #### ASC050 `frontmatter-reserved-in-fragment`
 
-Error · file level · [SPEC §2.2](../SPEC.md#22-pages-and-fragments)
+Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **When:** Reserved key (`available`, `variant`) on a fragment.
 
@@ -778,21 +781,21 @@ Error · file level · [SPEC §2.2](../SPEC.md#22-pages-and-fragments)
 
 #### ASC051 `content-type-unresolved`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Page matches more than one content type, or matches none and there's no default type.
 
-**Message:** this page matches the content types {types}, but a page can match only one; make their `files` patterns exclusive
+**Message:** this page matches the content types \{types}, but a page can match only one; make their `files` patterns exclusive
 
 **Fix:** Make the content types' `files` patterns match each page once, or mark one type `default = true` for the pages no pattern matches.
 
 #### ASC122 `frontmatter-syntax`
 
-Error · file level · [SPEC §2.1](../SPEC.md#21-files)
+Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 **When:** Frontmatter that isn't valid YAML.
 
-**Message:** the frontmatter isn't valid YAML: {detail}
+**Message:** the frontmatter isn't valid YAML: \{detail}
 
 **Fix:** Fix the YAML between the `---` lines.
 
@@ -800,7 +803,7 @@ Error · file level · [SPEC §2.1](../SPEC.md#21-files)
 
 #### ASC052 `list-ended-by-directive`
 
-Warning · file level · [SPEC §3.9](../SPEC.md#39-directives-inside-lists-and-blockquotes)
+Warning · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
 **When:** Unindented directive line ends a list.
 
@@ -810,7 +813,7 @@ Warning · file level · [SPEC §3.9](../SPEC.md#39-directives-inside-lists-and-
 
 #### ASC053 `directive-indented-code`
 
-Warning · file level · [SPEC §3.9](../SPEC.md#39-directives-inside-lists-and-blockquotes)
+Warning · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
 **When:** Directive line over-indented into an indented code block.
 
@@ -820,7 +823,7 @@ Warning · file level · [SPEC §3.9](../SPEC.md#39-directives-inside-lists-and-
 
 #### ASC054 `steps-numbering-continued`
 
-Warning · file level · [SPEC §4.6](../SPEC.md#46-steps)
+Warning · file level · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
 **When:** An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list).
 
@@ -832,11 +835,11 @@ Warning · file level · [SPEC §4.6](../SPEC.md#46-steps)
 
 #### ASC123 `source-unreadable`
 
-Error · file level · [SPEC §2.1](../SPEC.md#21-files)
+Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 **When:** Source file that can't be read, or isn't valid UTF-8.
 
-**Message:** this file can't be read: {reason}
+**Message:** this file can't be read: \{reason}
 
 **Fix:** Check the file's permissions, and save it as UTF-8.
 
@@ -846,15 +849,15 @@ Error · file level · [SPEC §2.1](../SPEC.md#21-files)
 
 #### ASC060 `model-toml-syntax`
 
-Error · file level · [SPEC §7.1](../SPEC.md#71-role)
+Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
-**Message:** ascribe.toml isn't valid TOML: {detail}
+**Message:** ascribe.toml isn't valid TOML: \{detail}
 
 **Fix:** Fix the TOML syntax at the place the message names.
 
 #### ASC061 `model-unknown-key`
 
-Error · file level · [SPEC §7.1](../SPEC.md#71-role)
+Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **Message:** unknown key `{key}` in `[{table}]`
 
@@ -862,7 +865,7 @@ Error · file level · [SPEC §7.1](../SPEC.md#71-role)
 
 #### ASC062 `model-missing-key`
 
-Error · file level · [SPEC §7.1](../SPEC.md#71-role)
+Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **Message:** `[{table}]` is missing the required key `{key}`
 
@@ -870,39 +873,39 @@ Error · file level · [SPEC §7.1](../SPEC.md#71-role)
 
 #### ASC063 `model-wrong-type`
 
-Error · file level · [SPEC §7.1](../SPEC.md#71-role)
+Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
-**Message:** `{key}` must be {expected}, but it's {found}
+**Message:** `{key}` must be \{expected}, but it's \{found}
 
 **Fix:** Give the key a value of the expected type. Strings are always quoted in TOML.
 
 #### ASC064 `model-invalid-value`
 
-Error · file level · [SPEC §7.1](../SPEC.md#71-role)
+Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
-**Message:** `{key}` can't be "{value}"; use one of: {values}
+**Message:** `{key}` can't be "\{value}"; use one of: \{values}
 
 **Fix:** Use one of the values the message lists.
 
 #### ASC065 `model-spec-unsupported`
 
-Error · file level · [SPEC §11](../SPEC.md#11-versioning)
+Error · file level · [SPEC §11]({repo}/blob/main/SPEC.md#11-versioning)
 
-**Message:** ascribe.toml targets spec version "{spec}", but this processor implements {supported}
+**Message:** ascribe.toml targets spec version "\{spec}", but this processor implements \{supported}
 
 **Fix:** Set `spec = "0.1"`, the specification version this release implements, or update Ascribe.
 
 #### ASC066 `model-invalid-name`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** `{name}` isn't a valid {role} name: {rule}
+**Message:** `{name}` isn't a valid \{role} name: \{rule}
 
 **Fix:** Rename it following the rule the message gives.
 
 #### ASC067 `model-empty-text`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{key}` can't be empty
 
@@ -912,7 +915,7 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC068 `model-path-absolute`
 
-Error · file level · [SPEC §2.2](../SPEC.md#22-pages-and-fragments)
+Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **Message:** `{key}` must be a path relative to ascribe.toml, not an absolute path
 
@@ -920,7 +923,7 @@ Error · file level · [SPEC §2.2](../SPEC.md#22-pages-and-fragments)
 
 #### ASC069 `model-content-root-missing`
 
-Error · file level · [SPEC §2.2](../SPEC.md#22-pages-and-fragments)
+Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **Message:** content root `{path}` doesn't exist
 
@@ -928,7 +931,7 @@ Error · file level · [SPEC §2.2](../SPEC.md#22-pages-and-fragments)
 
 #### ASC070 `model-output-overlaps-content`
 
-Error · file level · [SPEC §9.4](../SPEC.md#94-outputs)
+Error · file level · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
 **Message:** output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source
 
@@ -938,7 +941,7 @@ Error · file level · [SPEC §9.4](../SPEC.md#94-outputs)
 
 #### ASC071 `model-type-multiple-defaults`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** only one content type can be the default, but `{a}` and `{b}` both set default = true
 
@@ -946,7 +949,7 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC072 `model-type-unreachable`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** content type `{type}` has no `files` and isn't the default, so no page can use it
 
@@ -954,7 +957,7 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC073 `model-type-title`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** content type `{type}` must declare title = "string": it's the page title, used for empty link text
 
@@ -962,7 +965,7 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC074 `model-field-reserved`
 
-Error · file level · [SPEC §2.1](../SPEC.md#21-files)
+Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 **Message:** `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`
 
@@ -970,15 +973,15 @@ Error · file level · [SPEC §2.1](../SPEC.md#21-files)
 
 #### ASC075 `model-type-syntax`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** "{type}" isn't a valid {kind} type: {detail}
+**Message:** "\{type}" isn't a valid \{kind} type: \{detail}
 
 **Fix:** Fix the type. The types are `string`, `number`, `boolean`, `date`, `enum(a, b)`, `list(T)`, and, for attributes, `set(T)`; a `?` at the end makes one optional.
 
 #### ASC076 `model-type-fields`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** field `{field}` is an object, so it needs `fields`
 
@@ -986,7 +989,7 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC077 `model-enum-values`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{field}` has an empty enumeration
 
@@ -994,41 +997,41 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC078 `model-set-token`
 
-Error · file level · [SPEC §3.3](../SPEC.md#33-attributes)
+Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
-**Message:** "{value}" can't be in a value set: members can't contain spaces or any of , | { } = "
+**Message:** "\{value}" can't be in a value set: members can't contain spaces or any of , | \{ } = "
 
 **Fix:** Remove spaces and the characters `,` `|` `{` `}` `=` `"` from the value, or make the attribute a single value instead of a set.
 
 #### ASC079 `model-default-type`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** default for `{field}` must be {type}, but it's {found}
+**Message:** default for `{field}` must be \{type}, but it's \{found}
 
 **Fix:** Give a default of the field's type.
 
 #### ASC080 `model-phrases-field-type`
 
-Error · file level · [SPEC §5.1](../SPEC.md#51-phrases)
+Error · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
-**Message:** phrases = true only works on string and list(string) fields, and `{field}` is "{type}"
+**Message:** phrases = true only works on string and list(string) fields, and `{field}` is "\{type}"
 
 **Fix:** Remove `phrases = true`, or make the field a `string` or `list(string)`.
 
 #### ASC081 `model-pattern-syntax`
 
-Error · file level · [SPEC §2.2](../SPEC.md#22-pages-and-fragments)
+Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
-**Message:** "{pattern}" isn't a valid pattern: {detail}
+**Message:** "\{pattern}" isn't a valid pattern: \{detail}
 
 **Fix:** Fix the pattern. Patterns are relative to the content root, with no leading `/` and no `..` segment.
 
 #### ASC119 `model-attribute-reserved`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** `{key}` can't be an image attribute: HTML already uses it on the <img> element
+**Message:** `{key}` can't be an image attribute: HTML already uses it on the \<img> element
 
 **Fix:** Rename the attribute.
 
@@ -1036,15 +1039,15 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC082 `model-name-multiple-roles`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** `{name}` is used as both {role-a} and {role-b}; a name can have only one role, so availability specs stay unambiguous
+**Message:** `{name}` is used as both \{role-a} and \{role-b}; a name can have only one role, so availability specs stay unambiguous
 
 **Fix:** Rename one of them, so that each name has one role.
 
 #### ASC083 `model-name-case`
 
-Warning · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Warning · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{a}` and `{b}` differ only in case; names are case-sensitive, so they're easy to confuse
 
@@ -1052,7 +1055,7 @@ Warning · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC084 `model-dimension-empty`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** dimension `{dimension}` has no values
 
@@ -1060,15 +1063,15 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC085 `model-dimension-value-duplicate`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** `{value}` appears twice in dimensions.{dimension}.values
+**Message:** `{value}` appears twice in dimensions.\{dimension}.values
 
 **Fix:** Remove the repeated value.
 
 #### ASC086 `model-dimension-value-shared`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{value}` is a value of both `{a}` and `{b}`; a value can belong to only one dimension
 
@@ -1076,23 +1079,23 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC087 `model-label-undeclared`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** dimensions.{dimension}.labels has a label for `{value}`, which isn't one of its values: {values}
+**Message:** dimensions.\{dimension}.labels has a label for `{value}`, which isn't one of its values: \{values}
 
 **Fix:** Correct the label's key, or add the value to the dimension's `values`.
 
 #### ASC088 `model-versionless-undeclared`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**Message:** dimensions.{dimension}.versionless lists `{value}`, which isn't one of its values: {values}
+**Message:** dimensions.\{dimension}.versionless lists `{value}`, which isn't one of its values: \{values}
 
 **Fix:** Correct the entry, or add the value to the dimension's `values`.
 
 #### ASC089 `model-lifecycle-available-required`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** new lifecycle state `{state}` must set available = true or available = false
 
@@ -1100,7 +1103,7 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC090 `model-lifecycle-ga-unavailable`
 
-Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `ga` must count as available: content with no lifecycle state is ga
 
@@ -1108,23 +1111,23 @@ Error · file level · [SPEC §7.2](../SPEC.md#72-declarations)
 
 #### ASC091 `model-note-label-required`
 
-Error · file level · [SPEC §4.5](../SPEC.md#45-note)
+Error · file level · [SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)
 
-**Message:** new note type `{type}` needs a label, such as label = "{Type}"
+**Message:** new note type `{type}` needs a label, such as label = "\{Type}"
 
 **Fix:** Give the note type a `label`.
 
 #### ASC092 `model-availability-syntax`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
-**Message:** feature `{key}`: "{spec}" isn't a valid availability spec: {detail}
+**Message:** feature `{key}`: "\{spec}" isn't a valid availability spec: \{detail}
 
 **Fix:** Fix the feature's `available` spec. Its syntax is in the [directive reference](directives.md#availability-specs).
 
 #### ASC093 `model-availability-unknown-name`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **Message:** feature `{key}`: `{name}` isn't a declared dimension value or dimension name
 
@@ -1132,7 +1135,7 @@ Error · file level · [SPEC §4.4](../SPEC.md#44-available)
 
 #### ASC094 `model-availability-versionless`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **Message:** feature `{key}`: `{target}` is versionless, so it takes a state but no version
 
@@ -1140,15 +1143,15 @@ Error · file level · [SPEC §4.4](../SPEC.md#44-available)
 
 #### ASC095 `model-availability-history-order`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
-**Message:** feature `{key}`: the history for `{target}` must be in chronological order, but {later} comes before {earlier}
+**Message:** feature `{key}`: the history for `{target}` must be in chronological order, but \{later} comes before \{earlier}
 
 **Fix:** List the target's states oldest first.
 
 #### ASC096 `model-feature-nested`
 
-Error · file level · [SPEC §4.4](../SPEC.md#44-available)
+Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **Message:** feature `{key}`: available must be an availability spec, not another feature (`{other}`)
 
@@ -1158,25 +1161,25 @@ Error · file level · [SPEC §4.4](../SPEC.md#44-available)
 
 #### ASC097 `model-phrase-value-type`
 
-Error · file level · [SPEC §5.1](../SPEC.md#51-phrases)
+Error · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
-**Message:** phrase `{key}` must be a quoted string, but it's {found}; write {key} = "{value}"
+**Message:** phrase `{key}` must be a quoted string, but it's \{found}; write \{key} = "\{value}"
 
 **Fix:** Quote the value.
 
 #### ASC098 `model-glossary-duplicate-term`
 
-Error · file level · [SPEC §5.4](../SPEC.md#54-glossary-terms)
+Error · file level · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
-**Message:** "{text}" is declared by both glossary terms `{a}` and `{b}`
+**Message:** "\{text}" is declared by both glossary terms `{a}` and `{b}`
 
 **Fix:** Remove the text from one of the terms, or make the terms distinct.
 
 #### ASC099 `model-glossary-link`
 
-Error · file level · [SPEC §5.4](../SPEC.md#54-glossary-terms)
+Error · file level · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
-**Message:** glossary term `{id}` links to {path}, which doesn't exist
+**Message:** glossary term `{id}` links to \{path}, which doesn't exist
 
 **Fix:** Fix the link, or link to a page that includes the fragment.
 
@@ -1184,7 +1187,7 @@ Error · file level · [SPEC §5.4](../SPEC.md#54-glossary-terms)
 
 #### ASC100 `model-widget-reserved-name`
 
-Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
+Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library
 
@@ -1192,7 +1195,7 @@ Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
 
 #### ASC101 `model-widget-forms`
 
-Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
+Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** forms must be ["line"], ["container"], or ["line", "container"]
 
@@ -1200,7 +1203,7 @@ Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
 
 #### ASC102 `model-widget-binding`
 
-Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
+Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget `{name}` has a line form, so it needs a binding: "self", "heading", "block", or "heading-or-block"
 
@@ -1208,15 +1211,15 @@ Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
 
 #### ASC103 `model-widget-container-primary`
 
-Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
+Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
-**Message:** widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use "{kind}?"
+**Message:** widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use "\{kind}?"
 
 **Fix:** Make the primary optional (`"text?"`), or remove the widget's container form. A container-only widget takes no primary.
 
 #### ASC104 `model-widget-groupable-form`
 
-Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
+Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget `{name}` is groupable, so it must be container-only: forms = ["container"]
 
@@ -1224,7 +1227,7 @@ Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
 
 #### ASC105 `model-widget-plain-content`
 
-Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
+Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget `{name}` doesn't wrap content, so plain-content has no effect; remove it
 
@@ -1234,15 +1237,15 @@ Error · file level · [SPEC §6](../SPEC.md#6-project-widgets)
 
 #### ASC106 `model-consumer-unsupported`
 
-Error · file level · [SPEC §9.5](../SPEC.md#95-consumer-profile)
+Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
-**Message:** the {profile} profile doesn't support {key} = {value}; use {values}
+**Message:** the \{profile} profile doesn't support \{key} = \{value}; use \{values}
 
 **Fix:** Use one of the values the message lists.
 
 #### ASC107 `model-consumer-site`
 
-Error · file level · [SPEC §9.5](../SPEC.md#95-consumer-profile)
+Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **Message:** site must be an origin such as "https://docs.example.com"; put any path in base-path
 
@@ -1250,7 +1253,7 @@ Error · file level · [SPEC §9.5](../SPEC.md#95-consumer-profile)
 
 #### ASC108 `model-consumer-base-path`
 
-Error · file level · [SPEC §9.5](../SPEC.md#95-consumer-profile)
+Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **Message:** base-path must start with "/", such as "/docs/"
 
@@ -1258,7 +1261,7 @@ Error · file level · [SPEC §9.5](../SPEC.md#95-consumer-profile)
 
 #### ASC109 `model-build-name-case`
 
-Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** builds `{a}` and `{b}` differ only in case, so they'd share an output directory on some file systems
 
@@ -1266,15 +1269,15 @@ Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
 
 #### ASC110 `model-build-variants`
 
-Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
-**Message:** variants must be "switch" or a selection such as { deployment = "cloud" }
+**Message:** variants must be "switch" or a selection such as \{ deployment = "cloud" }
 
 **Fix:** Set `variants` to `"switch"`, or to a selection that names at least one dimension.
 
 #### ASC111 `model-build-unknown-dimension`
 
-Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** build `{build}` selects dimension `{dimension}`, which isn't declared
 
@@ -1282,23 +1285,23 @@ Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
 
 #### ASC112 `model-build-unknown-value`
 
-Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
-**Message:** build `{build}`: `{value}` isn't a value of `{dimension}`; values: {values}
+**Message:** build `{build}`: `{value}` isn't a value of `{dimension}`; values: \{values}
 
 **Fix:** Use one of the values the message lists.
 
 #### ASC113 `model-build-availability`
 
-Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
-**Message:** availability must be "badge" or { filter = "<target> <version>" }
+**Message:** availability must be "badge" or \{ filter = "\<target> \<version>" }
 
 **Fix:** Set `availability` to `"badge"`, or to `{ filter = "<target> <version>" }`.
 
 #### ASC114 `model-build-filter-target`
 
-Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** build `{build}` filters for `{target}`, which isn't a declared dimension value
 
@@ -1306,31 +1309,31 @@ Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
 
 #### ASC115 `model-build-filter-version`
 
-Error · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
-**Message:** build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as "{target} 3.3"
+**Message:** build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as "\{target} 3.3"
 
 **Fix:** Give a versioned target a version (`"self-managed 3.3"`), and a versionless target none.
 
 #### ASC116 `model-build-filter-excluded`
 
-Warning · file level · [SPEC §9.3](../SPEC.md#93-build-modes)
+Warning · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
-**Message:** build `{build}` filters for `{target}`, but its selection keeps only {dimension} = {values}, so pages marked for `{target}` are dropped
+**Message:** build `{build}` filters for `{target}`, but its selection keeps only \{dimension} = \{values}, so pages marked for `{target}` are dropped
 
 **Fix:** Make the build's `variants` selection keep the target it filters for, or filter for a target it keeps.
 
 #### ASC117 `model-editor-build-unknown`
 
-Error · file level · [SPEC §10](../SPEC.md#10-authoring-environment)
+Error · file level · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
 
-**Message:** editor.build is `{build}`, which isn't a declared build; builds: {builds}
+**Message:** editor.build is `{build}`, which isn't a declared build; builds: \{builds}
 
 **Fix:** Set `[editor] build` to one of the builds the message lists.
 
 #### ASC118 `model-editor-build-required`
 
-Error · file level · [SPEC §10](../SPEC.md#10-authoring-environment)
+Error · file level · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
 
 **Message:** there are several builds and none is named site; set [editor] build to the one the editor should check
 
