@@ -15,7 +15,7 @@ import {
   type Mark,
   type Show,
 } from "@ascribed/review/marks";
-import { countsText as breakdown } from "../preview/counts.js";
+import { countsText as breakdown, errorsText } from "../preview/counts.js";
 import type { FromWebview, ReviewView } from "../preview/protocol.js";
 import { againstText, threadsNotice } from "../preview/threadsText.js";
 import type { Threads } from "./threads.js";
@@ -244,6 +244,17 @@ export class Review {
     const header = row(cells);
     if (this.open && counts) header.append(span("legend", breakdown(counts) || "No changes"));
     const parts = [header];
+    const errors = errorsText(view.errors);
+    if (errors) {
+      const box = document.createElement("div");
+      box.className = "notice";
+      box.append(
+        span("", errors),
+        span("spacer", ""),
+        button("Show problems", "", () => this.post({ type: "showProblems" })),
+      );
+      parts.push(box);
+    }
     const notice = threads ? threadsNotice(threads) : undefined;
     if (notice) {
       const box = document.createElement("div");

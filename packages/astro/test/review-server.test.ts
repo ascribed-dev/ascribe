@@ -59,6 +59,7 @@ function page(path: string, route: string, init: Partial<DiffPage> = {}): DiffPa
 const DIFF: DiffResult = {
   base: { requested: "origin/main", commit: "abc1234def", merge_base: "abc1234def" },
   pages: [page("guide.md", "/docs/guide"), page("gone.md", "/docs/gone", { status: "removed" })],
+  errors: 0,
 };
 
 /** A session that records what it's asked. */
@@ -305,6 +306,16 @@ describe("ReviewServer", () => {
       .result as PageView;
     expect(view.problem).toBe("unknown revision origin/main");
     expect(view.page).toBeNull();
+    expect(view.errors).toBe(0);
+  });
+
+  it("passes on the working tree's errors", async () => {
+    const { channel } = serve({ diff: async () => ({ ...DIFF, errors: 2 }) });
+    await channel.request("start");
+    const view = (await channel.request("page", { route: "/docs/guide", path: "guide.md" }))
+      .result as PageView;
+    expect(view.errors).toBe(2);
+    expect(view.page?.path).toBe("guide.md");
   });
 
   it("refreshes the session, or tries to connect again, and stops", async () => {

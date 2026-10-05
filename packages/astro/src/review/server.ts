@@ -308,6 +308,7 @@ export class ReviewServer {
       page,
       base: "result" in changes ? changes.result.base : null,
       problem: "error" in changes ? changes.error : null,
+      errors: "result" in changes ? changes.result.errors : 0,
       threads: threadsState(connection),
       changedPages: pages.map((p) => listed(p, routes.get(normalizeRoute(p.route))?.title ?? null)),
       contentRoot: this.options.contentRoot,

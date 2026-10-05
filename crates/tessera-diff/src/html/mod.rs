@@ -111,6 +111,7 @@ pub struct Version<'a> {
 struct Data<'a> {
     ascribe_version: &'static str,
     base: &'a BaseInfo,
+    working_tree_errors: usize,
     builds: Vec<BuildData<'a>>,
     pages: BTreeMap<String, Rendered>,
     images: BTreeMap<String, String>,
@@ -259,6 +260,7 @@ pub fn write_html_with(
     let data = Data {
         ascribe_version: report.ascribe_version,
         base: &report.base,
+        working_tree_errors: report.working_tree_errors,
         builds,
         pages: store.pages,
         images: store.images,

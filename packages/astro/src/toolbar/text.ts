@@ -28,6 +28,19 @@ export function pageDetail(page: Omit<DiffPage, "changes">): string {
   return page.page_changed.length > 0 ? `${page.page_changed.join(", ")} changed` : "changed";
 }
 
+/**
+ * The notice about the working tree's errors, or `undefined` with none: a
+ * page with an error may render oddly, which shouldn't read as the change.
+ */
+export function errorsNotice(errors: number): string | undefined {
+  if (errors <= 0) return undefined;
+  const one = errors === 1;
+  return (
+    `The working tree has ${one ? "1 error" : `${errors} errors`}, so a page may not show as ` +
+    `it will once ${one ? "it's" : "they're"} fixed. \`ascribe check\` lists ${one ? "it" : "them"}.`
+  );
+}
+
 /** "1 unsent comment", "2 unsent comments". */
 export function unsentText(count: number): string {
   return count === 1 ? "1 unsent comment" : `${count} unsent comments`;

@@ -25,8 +25,12 @@ describe("parseDiff", () => {
     expect(parseDiff(json, "site")).toEqual({
       base: { requested: "main", commit: "abc", merge_base: "def" },
       pages: [{ path: "a.md" }],
+      errors: 0,
     });
     expect(parseDiff(json, "other").pages).toEqual([]);
+    const broken = JSON.parse(json) as Record<string, unknown>;
+    broken["working_tree_errors"] = 3;
+    expect(parseDiff(JSON.stringify(broken), "site").errors).toBe(3);
     expect(() => parseDiff("{}", "site")).toThrow();
   });
 });

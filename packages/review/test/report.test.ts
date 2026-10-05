@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   changedPages,
+  errorsNotice,
   pageFragment,
   start,
   type BuildData,
@@ -121,6 +122,21 @@ describe("the report", () => {
     const marked = root.querySelector('[data-ascribe-change="changed"]');
     expect(marked?.textContent).toContain("Agent 2.4.");
     expect(root.querySelector(".r-pos")?.textContent).toBe("1 change on this page");
+  });
+
+  it("says when the working tree has errors", () => {
+    const root = document.createElement("div");
+    document.body.append(root);
+    start(root, { ...data(), working_tree_errors: 3, limit: { pages: 300, omitted: 0 } });
+    const notice = root.querySelector(".r-head .r-notice");
+    expect(notice?.textContent).toBe(
+      "The working tree has 3 errors, so a page here may not render as it will once they're fixed. ascribe check lists them.",
+    );
+    expect(notice?.querySelector("code")?.textContent).toBe("ascribe check");
+    expect(errorsNotice(1)).toContain("has 1 error, so");
+    expect(errorsNotice(0)).toBeNull();
+    // An older report has no count.
+    expect(errorsNotice(undefined)).toBeNull();
   });
 
   it("says a page changed only in its frontmatter has no content changes", () => {

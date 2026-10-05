@@ -18,9 +18,10 @@ use tessera_diff::{
 };
 
 use crate::cli::Global;
-use crate::commands::diagnose::select_builds;
+use crate::commands::diagnose::{diagnose, select_builds};
 use crate::context::{Failure, load_project};
 use crate::exit;
+use crate::report::Counts;
 
 /// Arguments of `ascribe diff`.
 #[derive(Debug, ClapArgs)]
@@ -65,7 +66,8 @@ pub enum Format {
 /// Runs the command. Exit codes: 0 whether or not anything changed (1 when
 /// it did, with `--exit-code`), 2 when it couldn't run: not a git
 /// repository, an unknown revision, no `git`, or a project that doesn't load
-/// on either side.
+/// on either side. Errors in the working tree's pages don't stop it, since
+/// work in progress is worth comparing, but it says how many there are.
 pub fn run(global: &Global, args: Args) -> ExitCode {
     let stdout = io::stdout();
     let mut out = io::BufWriter::new(stdout.lock());
@@ -120,7 +122,27 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         model_text: now_model,
     };
     let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-    let report = Report::new(&repo, &base, compare_builds(before_side, now_side, &names));
+    // Counting the errors is a full check of the working tree: it runs beside
+    // the comparison, so the two take about as long as the slower one.
+    let (diffs, errors) = std::thread::scope(|scope| {
+        let errors = scope.spawn(|| working_tree_errors(&project, &args.build));
+        let diffs = compare_builds(before_side, now_side, &names);
+        (
+            diffs,
+            errors
+                .join()
+                .unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
+        )
+    });
+    let mut report = Report::new(&repo, &base, diffs);
+    report.working_tree_errors = errors;
+    if report.working_tree_errors > 0 {
+        let _ = writeln!(
+            err,
+            "warning: {}",
+            errors_line(report.working_tree_errors, &args.build)
+        );
+    }
 
     let written = match args.format {
         Format::Text => write_text(out, &report),
@@ -154,6 +176,27 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     } else {
         exit::OK
     }
+}
+
+/// How many errors `ascribe check` finds for the builds compared, as it
+/// would with the same `--build` options.
+fn working_tree_errors(project: &tessera_check::Project, names: &[String]) -> usize {
+    diagnose(project, names).map_or(0, |(diagnostics, _)| Counts::of(&diagnostics).errors)
+}
+
+/// The warning about the working tree's errors, naming the `ascribe check`
+/// that lists them.
+fn errors_line(errors: usize, names: &[String]) -> String {
+    let (count, them) = if errors == 1 {
+        ("1 error".to_owned(), "it")
+    } else {
+        (format!("{errors} errors"), "them")
+    };
+    let mut check = "ascribe check".to_owned();
+    for name in names {
+        check.push_str(&format!(" --build {name}"));
+    }
+    format!("the working tree has {count}; `{check}` lists {them}")
 }
 
 fn write_text(out: &mut dyn Write, report: &Report) -> io::Result<()> {
