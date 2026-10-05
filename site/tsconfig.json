@@ -1,0 +1,28 @@
+{
+  // Astro's `astro/tsconfigs/strict`, written out: the repository's linter
+  // reads this file before site/ has its own node_modules.
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "jsx": "preserve",
+    "types": ["node"],
+    "paths": {
+      // The collection's generated schema is in ../docs, outside this folder,
+      // where `astro/zod` doesn't resolve (issue #93).
+      "astro/zod": ["./node_modules/astro/dist/zod.d.ts"]
+    }
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
+}
