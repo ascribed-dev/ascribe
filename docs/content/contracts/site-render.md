@@ -12,7 +12,7 @@ This contract defines the one syntax the site output uses for both, the **attrib
 | The Astro markdown plugin in `@ascribed/astro` | The published site |
 | `render_site_html()` in `tessera-emit` | The editor preview |
 
-The shared fixtures in [`tests/render/`](../../tests/render/) are what keep them equal: both must pass every fixture.
+The shared fixtures in [`tests/render/`]({repo}/tree/main/tests/render/) are what keep them equal: both must pass every fixture.
 
 Everything here applies to spec 0.1's only consumer profile, `astro`. It settles content-model.md §21, item 12, which is why `ascribe.toml` has no keys for heading ids or image attributes.
 
@@ -91,7 +91,7 @@ The site emitter writes the site output so that the rules above are all a consum
 - **An image with attributes has a marker directly after it**, holding the image's attributes in canonical order (SPEC §8.3): every attribute the content model declares that the image writes or that has a default, then any it writes that the model doesn't declare. An image with neither attributes nor defaults has no marker. A value set's members are joined with single spaces (`platform=cloud|on-prem` becomes `platform="cloud on-prem"`); other values are their text (a quoted string without its quotes and escapes).
 - **The emitter writes markers nowhere else.** Raw HTML an author writes passes through unchanged, as everywhere in the site output, so an author who writes an `ascribe-attributes` element gets its effect. Element names starting with `ascribe-` belong to Ascribe (content-model.md §15), so there's no reason to. Since the emitter's own heading marker is always last, an author's marker inside a heading never applies.
 
-The element contract ([`packages/elements/CONTRACT.md`](../../packages/elements/CONTRACT.md)) covers the custom elements, which are ordinary raw HTML to a renderer.
+The element contract ([`packages/elements/CONTRACT.md`]({repo}/blob/main/packages/elements/CONTRACT.md)) covers the custom elements, which are ordinary raw HTML to a renderer.
 
 ## 5. Everything else
 
@@ -99,7 +99,7 @@ Apart from markers, both implementations render CommonMark with raw HTML passed 
 
 ## 6. Constructs and fixtures
 
-Each construct below has at least one fixture in [`tests/render/`](../../tests/render/), listed in its `fixtures.toml`. [`tests/render/README.md`](../../tests/render/README.md) says how implementations run the fixtures and compare HTML.
+Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/main/tests/render/), listed in its `fixtures.toml`. [`tests/render/README.md`]({repo}/blob/main/tests/render/README.md) says how implementations run the fixtures and compare HTML.
 
 | Construct | Rule | What the fixtures check |
 |---|---|---|
@@ -201,7 +201,7 @@ With anchors on, each renderer's HTML equals its HTML with anchors off, once the
 
 ### 7.6 Fixtures
 
-The anchor fixtures in [`tests/render/`](../../tests/render/) are written by the site emitter from a source in each fixture's `source/`, with anchors (`input.md`) and without (`unanchored.md`). Both implementations render `input.md` to `expected.html`, and check §7.5 on each fixture and on the pages of `examples/quill` in `tests/render/corpus/`.
+The anchor fixtures in [`tests/render/`]({repo}/tree/main/tests/render/) are written by the site emitter from a source in each fixture's `source/`, with anchors (`input.md`) and without (`unanchored.md`). Both implementations render `input.md` to `expected.html`, and check §7.5 on each fixture and on the pages of `examples/quill` in `tests/render/corpus/`.
 
 | Construct | Rule | What the fixtures check |
 |---|---|---|

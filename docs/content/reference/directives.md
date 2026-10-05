@@ -2,7 +2,7 @@
 
 Ascribe source is CommonMark with a few additions: **directives**, lines that start with `@` and annotate the content around them; **title lines**, which give a directive a title; and **phrases**, reusable strings written `{key}`. Everything else is ordinary Markdown, and an Ascribe page read by a plain Markdown renderer still reads sensibly.
 
-This page describes the language as you write it. The [Ascribe specification](../SPEC.md) is the normative definition; each section links to its part of the spec.
+This page describes the language as you write it. The [Ascribe specification]({repo}/blob/main/SPEC.md) is the normative definition; each section links to its part of the spec.
 
 ## Contents
 
@@ -26,7 +26,7 @@ This page describes the language as you write it. The [Ascribe specification](..
 
 ## Files
 
-([SPEC §2](../SPEC.md#2-documents))
+([SPEC §2]({repo}/blob/main/SPEC.md#2-documents))
 
 A project's source files are the `.md` files under its **content root** (`docs/` unless `ascribe.toml` says otherwise). Files and directories whose names start with `.` are skipped, and so is a directory below the content root that holds an `ascribe.toml`, with everything in it, unless it's the project's own folder: that is another project, with sources of its own. Each file is a page or a fragment:
 
@@ -44,7 +44,7 @@ available: cloud, self-managed preview 3.3
 
 ## Directive lines
 
-([SPEC §3.1](../SPEC.md#31-syntax), [§3.2](../SPEC.md#32-recognition))
+([SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax), [§3.2]({repo}/blob/main/SPEC.md#32-recognition))
 
 A directive line has a name, optional attributes in braces, and an optional primary after a colon:
 
@@ -70,7 +70,7 @@ Spaces between the parts don't matter, and nothing else may be on the line: `@st
 
 ## Attributes
 
-([SPEC §3.3](../SPEC.md#33-attributes))
+([SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes))
 
 Attributes are `key=value` pairs in braces, separated by commas. They use the same syntax after a directive's name and after an image.
 
@@ -90,7 +90,7 @@ A value's type comes from the directive's schema, never from how it looks: `3.10
 
 ## Forms: line and container
 
-([SPEC §3.5](../SPEC.md#35-forms))
+([SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms))
 
 A directive is either a single line, or a **container** that holds blocks until `@end`. The line itself says which: **a colon with nothing after it opens a container**; any other directive line is a single line.
 
@@ -109,11 +109,11 @@ It holds several paragraphs.
 - A trailing colon on a directive with no container form is an error, and so is a container-only directive (such as `@variant`) without one.
 - A text primary that happens to end in a colon is still a primary: `@note: Important:` is a one-line note.
 
-Containers may nest. Ascribe warns when they're more than two levels deep ([SPEC §3.10](../SPEC.md#310-nesting)).
+Containers may nest. Ascribe warns when they're more than two levels deep ([SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)).
 
 ## Groups
 
-([SPEC §3.6](../SPEC.md#36-groups))
+([SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups))
 
 Some directives, `@variant` among them, form **groups**: a run of openers of the same directive is one group of alternatives. Each opener starts an **arm** and ends the previous one, and one `@end` closes the whole group.
 
@@ -130,7 +130,7 @@ A group can't be nested directly inside an arm of a group of the same directive.
 
 ## Titles
 
-([SPEC §3.7](../SPEC.md#37-titles))
+([SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles))
 
 A **title line** starts with `.` followed by a character that isn't a space or another `.`. It sits directly above a directive that takes a title (a note, `@details`, or a labeled `@variant` arm), with no blank line between.
 
@@ -148,7 +148,7 @@ The editor shows title lines distinctly, so a paragraph that accidentally became
 
 ## Binding: what a directive applies to
 
-([SPEC §3.8](../SPEC.md#38-binding))
+([SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding))
 
 A directive in line form applies to something, according to its **binding**:
 
@@ -173,7 +173,7 @@ The short version: **at the top of a section, a directive describes the section;
 
 ## Lists and block quotes
 
-([SPEC §3.9](../SPEC.md#39-directives-inside-lists-and-blockquotes))
+([SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes))
 
 Directives follow CommonMark's container rules, like headings and code fences:
 
@@ -185,7 +185,7 @@ Directives follow CommonMark's container rules, like headings and code fences:
 
 ## Built-in directives
 
-([SPEC §4](../SPEC.md#4-built-in-directives))
+([SPEC §4]({repo}/blob/main/SPEC.md#4-built-in-directives))
 
 | Directive | Forms | Primary | Purpose |
 |---|---|---|---|
@@ -199,7 +199,7 @@ Directives follow CommonMark's container rules, like headings and code fences:
 
 ### `@id`
 
-([SPEC §4.1](../SPEC.md#41-id))
+([SPEC §4.1]({repo}/blob/main/SPEC.md#41-id))
 
 Gives a heading an explicit, stable id, used for its anchor and by links and includes.
 
@@ -216,7 +216,7 @@ Without `@id`, a heading's id is its slug, computed from its text. Add `@id` to 
 
 ### `@include`
 
-([SPEC §4.2](../SPEC.md#42-include))
+([SPEC §4.2]({repo}/blob/main/SPEC.md#42-include))
 
 Includes another file, or one heading's section of it, in place.
 
@@ -236,7 +236,7 @@ Links target pages, not fragments: link to the page that includes a fragment.
 
 ### `@variant`
 
-([SPEC §4.3](../SPEC.md#43-variant))
+([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant))
 
 Marks alternatives: content that differs by a dimension declared in `ascribe.toml`, such as a package manager or a deployment.
 
@@ -291,7 +291,7 @@ A build that selects another deployment drops the page.
 
 ### `@available`
 
-([SPEC §4.4](../SPEC.md#44-available))
+([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available))
 
 Says where content applies and its lifecycle state. Unlike `@variant`, it doesn't select content: every reader sees it, marked with its availability.
 
@@ -332,7 +332,7 @@ Each build decides what happens to availability: `badge` keeps everything and ma
 
 ### `@note`
 
-([SPEC §4.5](../SPEC.md#45-note))
+([SPEC §4.5]({repo}/blob/main/SPEC.md#45-note))
 
 A callout. Its `type` is `note` (the default), `tip`, `important`, `warning`, `caution`, or a type the project declares in `[notes]`.
 
@@ -357,7 +357,7 @@ Several blocks,
 
 ### `@steps`
 
-([SPEC §4.6](../SPEC.md#46-steps))
+([SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps))
 
 Marks an ordered list as a procedure. It goes directly above the list.
 
@@ -372,7 +372,7 @@ Directives inside the list's items follow the [list rules](#lists-and-block-quot
 
 ### `@details`
 
-([SPEC §4.7](../SPEC.md#47-details))
+([SPEC §4.7]({repo}/blob/main/SPEC.md#47-details))
 
 Content readers can expand or collapse. The title is required: it's what readers see while the content is collapsed.
 
@@ -387,7 +387,7 @@ Without a colon, `@details` applies to the next block; with one, it's a containe
 
 ## Project widgets
 
-([SPEC §6](../SPEC.md#6-project-widgets))
+([SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets))
 
 A project widget is a directive a project declares in `ascribe.toml`, for needs the built-in directives don't cover. Its name contains a hyphen, so it's easy to tell from a built-in:
 
@@ -399,7 +399,7 @@ A declared widget works exactly like a built-in directive: its declaration sets 
 
 ## Phrases
 
-([SPEC §5.1](../SPEC.md#51-phrases))
+([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases))
 
 A phrase inserts a string declared in `ascribe.toml`'s `[phrases]`, such as a product name, a version, or a URL base:
 
@@ -416,7 +416,7 @@ See the [streaming API reference]({api}streaming).
 
 ## Links
 
-([SPEC §5.2](../SPEC.md#52-links))
+([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links))
 
 Links point at **files**, not URLs. Ascribe writes each output's URLs.
 
@@ -434,7 +434,7 @@ See [](keys.md#rotate-keys).
 
 ## Images
 
-([SPEC §5.3](../SPEC.md#53-images))
+([SPEC §5.3]({repo}/blob/main/SPEC.md#53-images))
 
 Images are CommonMark images. Attributes, such as a width, go in a block directly after the image, with no space between; `ascribe.toml`'s `[images.attributes]` declares which are accepted.
 
@@ -448,19 +448,19 @@ Images are CommonMark images. Attributes, such as a width, go in a block directl
 
 ## Heading ids
 
-([SPEC §5.5](../SPEC.md#55-heading-ids))
+([SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids))
 
 Every heading has an id: its `@id` if it has one, and otherwise a slug of its text, computed the way the site's slugger computes it (GitHub's, for Astro). Links and includes name headings by these ids. Ascribe warns about a heading whose id could change without the heading being edited (its text has a phrase, or duplicates another heading's) and about a heading whose slug is empty; add `@id` to fix each.
 
 ## Glossary terms
 
-([SPEC §5.4](../SPEC.md#54-glossary-terms))
+([SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms))
 
 When `ascribe.toml` declares a glossary, Ascribe links terms to their definitions in each built page. Authors don't mark terms in source. See [`[glossary]`](content-model.md#12-glossary).
 
 ## Escapes
 
-([SPEC §2.3](../SPEC.md#23-escapes))
+([SPEC §2.3]({repo}/blob/main/SPEC.md#23-escapes))
 
 Ascribe uses CommonMark's backslash escapes, so an escaped character renders as itself in any Markdown renderer:
 
@@ -474,7 +474,7 @@ They're rarely needed: a directive needs a known name at the start of a line, a 
 
 ## Canonical form
 
-([SPEC §8.3](../SPEC.md#83-canonical-form))
+([SPEC §8.3]({repo}/blob/main/SPEC.md#83-canonical-form))
 
 Ascribe accepts any spacing the syntax allows, and has one canonical spelling for each construct: one space between a name and `{`, no spaces inside braces or around `=` and `|`, attributes in the order their schema declares, values quoted only when needed, and no blank line between a directive and its block. `ascribe fmt` rewrites source into canonical form, changing only Ascribe constructs and never how a page renders; `ascribe fmt --check` reports files that would change.
 

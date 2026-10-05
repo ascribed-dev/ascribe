@@ -1,14 +1,14 @@
 # `ascribe.toml` format contract
 
-This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `tessera-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../content-model.md).
+This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `tessera-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../reference/content-model.md).
 
 SPEC.md is normative for the language. This document is normative for the file format. Where it settles something the spec leaves open, the item is listed in [Decisions](#21-decisions).
 
 Example files, each valid under this reference:
 
-- [`examples/content-models/minimal.toml`](../../examples/content-models/minimal.toml): the smallest valid model.
-- [`examples/content-models/quill.toml`](../../examples/content-models/quill.toml): the model SPEC Appendix B assumes.
-- [`examples/content-models/full.toml`](../../examples/content-models/full.toml): every section and key.
+- [`examples/content-models/minimal.toml`]({repo}/blob/main/examples/content-models/minimal.toml): the smallest valid model.
+- [`examples/content-models/quill.toml`]({repo}/blob/main/examples/content-models/quill.toml): the model SPEC Appendix B assumes.
+- [`examples/content-models/full.toml`]({repo}/blob/main/examples/content-models/full.toml): every section and key.
 
 ## Contents
 
@@ -54,7 +54,7 @@ Example files, each valid under this reference:
 
 - **Keys are kebab-case** (`content-root`, `trailing-slash`), matching Ascribe's attribute keys. TOML allows hyphens in bare keys, so they need no quotes.
 - **Unknown keys are errors**, everywhere, with a did-you-mean suggestion. A misspelled key is otherwise a silently ignored setting. The exceptions are the tables whose keys are names the project chooses (`[phrases]`, `[types]`, `[dimensions]`, and so on); their keys are validated as names instead.
-- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order (SPEC §8.3). It MUST also preserve the order of the `[dimensions]` tables, which is the canonical order of `@variant` attributes and decides which dimension a tab group syncs on (the [element contract](../../packages/elements/CONTRACT.md), §3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
+- **Declaration order is kept where it matters.** The loader MUST preserve the order in which attribute keys are declared (`[images.attributes]`, `[widgets.<name>.attributes]`), because canonical form writes attributes in declared order (SPEC §8.3). It MUST also preserve the order of the `[dimensions]` tables, which is the canonical order of `@variant` attributes and decides which dimension a tab group syncs on (the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md), §3). Loaders SHOULD also preserve order elsewhere, for stable output (for example, the order of dimension values in a tab switcher is the order of `values`). Nothing else in the model depends on order.
 
 ### 1.2 Names
 
@@ -553,7 +553,7 @@ height = "number?"
 - A groupable widget MUST be container-only, since group arms are containers (SPEC §3.6) (`model-widget-groupable-form`).
 - `binding` is required with line form and not allowed without it (`model-widget-binding`).
 
-The site output's element for a widget (tag name and attributes) is defined by the [element contract](../../packages/elements/CONTRACT.md), not here.
+The site output's element for a widget (tag name and attributes) is defined by the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md), not here.
 
 ---
 
@@ -666,7 +666,7 @@ A file containing only `spec = "0.1"` is valid. It means:
 
 A loader MUST enforce every rule below when it loads `ascribe.toml`, and report each violation at the span of the offending key or value. Every rule is an error unless marked **warning**. A model with errors doesn't load, and no document is checked against it; warnings don't stop loading.
 
-- **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`tests/conformance/diagnostics.toml`](../../tests/conformance/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
+- **Slugs** are stable identifiers, for tests and for the diagnostics registry, [`tests/conformance/diagnostics.toml`]({repo}/blob/main/tests/conformance/diagnostics.toml), which gives each one a code. Only `model-name-multiple-roles` corresponds to a row of SPEC §8.2 ("Content model"); the rest are loader rules this reference adds.
 - **Messages** are templates. `{name}` is a placeholder. Where a rule has several messages, each covers one case of it.
 - Rules about documents, such as a page matching no content type or an unknown frontmatter key, aren't loader rules.
 - **Filesystem rules** (`model-content-root-missing`, `model-glossary-link`) need the project directory. A loader given only the file's text, such as an unsaved editor buffer or a unit test, skips them; `ascribe check` and the language server always run them.
@@ -782,7 +782,7 @@ Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recomme
 4. **Reserved keys in fragments (SPEC §2.1, §4.3, §4.4).** `available` and `variant` are defined for pages. *Decision:* fragments can't use them in spec 0.1; use `@available` inside the fragment. *Considered:* fragment `available` applies to everything the fragment contributes, like a section spec.
 5. **Version scheme name (SPEC §4.4).** *Decision:* call the one scheme `numeric`: dotted numbers of any length, compared numerically with missing components as 0. The grammar has no pre-release syntax, so "semver" would overpromise. *Considered:* call it `semver` and cap versions at three components, which needs a new document diagnostic.
 6. **Name rules beyond the one-role rule (SPEC §4.3, §4.4, §7.2).** *Decision:* (a) a dimension value belongs to only one dimension, since `cloud` in a spec must mean one thing; (b) dimension names follow the `key` rule, since they're attribute keys; (c) warn on names that differ only in case. (a) and (b) are stated in SPEC §7.2.
-7. **Glossary (SPEC §5.4).** The spec gives no format or matching rules. *Decision:* terms with a required plain-text `definition` and an optional `link`; occurrences link to `link`; terms without it aren't linked in site or plain output. Whole-word matching, longest term wins, prose only (not headings, link text, or code), `first` per resolved page by default. No term element is needed: in the site output an occurrence is an ordinary link whose title is the definition (see the [element contract](../../packages/elements/CONTRACT.md)).
+7. **Glossary (SPEC §5.4).** The spec gives no format or matching rules. *Decision:* terms with a required plain-text `definition` and an optional `link`; occurrences link to `link`; terms without it aren't linked in site or plain output. Whole-word matching, longest term wins, prose only (not headings, link text, or code), `first` per resolved page by default. No term element is needed: in the site output an occurrence is an ordinary link whose title is the definition (see the [element contract]({repo}/blob/main/packages/elements/CONTRACT.md)).
 8. **Widget plain fallback (SPEC §6, §9.4).** *Decision:* a static CommonMark string with phrases substituted and no attribute interpolation (no behavior); a widget that wraps content keeps that content in plain output unless `plain-content = "drop"`, since silently losing content is worse than showing it. The spec's "or nothing" then applies to the widget itself, not its content.
 9. **Widget schema constraints (SPEC §3.5, §3.6, §6).** *Decision:* groupable widgets are container-only; widgets with container form have no required primary; names starting with `ascribe-` and HTML's reserved custom-element names are rejected.
 10. **Absolute links in plain output (SPEC §9.4).** Plain-markdown links are "absolute URLs", which needs the site's origin. *Decision:* optional `[consumer] site`; without it, links are root-relative and `ascribe build` warns.

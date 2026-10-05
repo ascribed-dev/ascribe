@@ -2,7 +2,7 @@
 
 Ascribe shows a pull request the way readers will see it: each page it changes, rendered, with the changed blocks marked, and the pull request's review comments beside the blocks they're about. You read the change as pages instead of as a diff of Markdown files, comment where you're reading, and your comments land in the pull request like any other review. A change to a fragment shows on every page that includes it, a change to a phrase on every page that uses it, and reformatting shows on none.
 
-![The site preview under review: a changed paragraph marked in the site's own layout, with a review thread beside it and the Ascribe review panel above Astro's toolbar](images/review-site-preview.png)
+![The site preview under review: a changed paragraph marked in the site's own layout, with a review thread beside it and the Ascribe review panel above Astro's toolbar](../images/review-site-preview.png)
 
 You can review in three places, and they show the same changes and the same comments:
 
@@ -92,7 +92,7 @@ Every comment is an ordinary GitHub review comment. Ascribe keeps none of its ow
 
 ## The report in CI
 
-`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same marks as the previews and **Show: Changes / As it will be / As it was**. It shows the changes only, not comments. The [command reference](cli.md#the-html-report) describes it in full.
+`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same marks as the previews and **Show: Changes / As it will be / As it was**. It shows the changes only, not comments. The [command reference](../reference/cli.md#the-html-report) describes it in full.
 
 ```sh
 ascribe diff --format html > review.html
@@ -153,7 +153,7 @@ jobs:
 - **Opening it.** `archive: false` uploads the file as it is instead of in a zip, so the summary's link opens it in the browser. The link needs read access to the repository, like the rest of the run.
 - **Large changes.** A report renders the first 300 changed pages and lists the rest by name, and leaves out images over 1 MB, so it stays small enough to open.
 
-This repository runs the same job on `examples/quill`, in [`.github/workflows/review.yml`](../.github/workflows/review.yml).
+This repository runs the same job on `examples/quill`, in [`.github/workflows/review.yml`]({repo}/blob/main/.github/workflows/review.yml).
 
 ## When something's missing
 

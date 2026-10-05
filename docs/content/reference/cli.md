@@ -11,7 +11,7 @@ ascribe lsp
 ascribe --version
 ```
 
-Install it in a project with `npm install --save-dev @ascribed/cli` (see [Getting started](getting-started.md#install-the-command)) and run it with `npx ascribe`, or from a script in `package.json`.
+Install it in a project with `npm install --save-dev @ascribed/cli` (see [Getting started](../getting-started.md#install-the-command)) and run it with `npx ascribe`, or from a script in `package.json`.
 
 ## Options every command accepts
 
@@ -139,7 +139,7 @@ Checks the project, then writes each build's outputs. The checks run first, exac
 - `--build <NAME>` builds only that build. Repeat it for several. By default, every build in `ascribe.toml`.
 - `--emit <OUTPUTS>`: any of `site`, `plain`, and `json`, separated by commas. All three by default.
 - `--format text|json`: how the checks' results are shown, as for `ascribe check`.
-- `--anchors` marks each block of the site output with the source file and lines it came from, for review: an `<!--ascribe-anchor …-->` comment before each Markdown block, and `data-ascribe-source` (with `data-ascribe-via` for a block from a fragment) on each element Ascribe writes. The Astro integration turns them into attributes on every block's element ([site-render contract](contracts/site-render.md#7-source-anchors)). The site output's manifest records `"anchors": true`. Without it, the output has no anchors. The other outputs are the same either way.
+- `--anchors` marks each block of the site output with the source file and lines it came from, for review: an `<!--ascribe-anchor …-->` comment before each Markdown block, and `data-ascribe-source` (with `data-ascribe-via` for a block from a fragment) on each element Ascribe writes. The Astro integration turns them into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)). The site output's manifest records `"anchors": true`. Without it, the output has no anchors. The other outputs are the same either way.
 
 Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error.
 
@@ -149,7 +149,7 @@ Each build writes each output to `<output-dir>/<build>/<output>/`, `.ascribe/bui
 
 | Output | What it is | For |
 |---|---|---|
-| `site` | Markdown with web components (`<ascribe-note>`, `<ascribe-tabs>`, and the rest), heading ids and image attributes as markers the Astro integration applies, and the generated Zod schema in `_ascribe/schema.ts` | An Astro site, through `@ascribed/astro` ([Astro](astro.md)) |
+| `site` | Markdown with web components (`<ascribe-note>`, `<ascribe-tabs>`, and the rest), heading ids and image attributes as markers the Astro integration applies, and the generated Zod schema in `_ascribe/schema.ts` | An Astro site, through `@ascribed/astro` ([Astro](../guides/astro.md)) |
 | `plain` | Fully resolved CommonMark with no HTML: notes as quotes, variants as labeled sections, availability as text, and links as absolute URLs | Search indexes, LLMs, and export |
 | `json` | The resolved tree of each page | Your own tools |
 
@@ -221,7 +221,7 @@ It lists the changed pages of each build, with counts, and marks a page that cha
 
 **Show: Changes / As it will be / As it was** switches between the marks, the page as it will be with none, and the page as it was at the base. The arrows step through the changes ("3 of 10 on this page"), and after the last one offer the next changed page. Hovering over a block shows the source file and line it came from (`guides/install.md:12`). The colors work in light and dark, and every mark has a label as well as a color.
 
-A report renders at most 300 changed pages; the rest are listed by name, and the report says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [The report in CI](review.md#the-report-in-ci) has a GitHub Actions job that uploads the report on every pull request.
+A report renders at most 300 changed pages; the rest are listed by name, and the report says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [The report in CI](../guides/review.md#the-report-in-ci) has a GitHub Actions job that uploads the report on every pull request.
 
 ### Diff JSON
 
@@ -322,4 +322,4 @@ Rewrites Ascribe constructs into canonical form: the spacing of directive lines 
 
 Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error, starting with the project it uses.
 
-The VS Code extension runs it for you, one server for each project in the workspace. See [Editing](editor.md). Any editor with an LSP client can run `ascribe lsp` too; for several projects, start one per project ([Other editors](editor.md#other-editors)).
+The VS Code extension runs it for you, one server for each project in the workspace. See [Editing](../guides/editor.md). Any editor with an LSP client can run `ascribe lsp` too; for several projects, start one per project ([Other editors](../guides/editor.md#other-editors)).

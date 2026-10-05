@@ -23,7 +23,7 @@ Install the **Ascribe** extension for VS Code from the Marketplace:
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-It checks your pages as you type, completes directives, phrases, and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](editor.md).
+It checks your pages as you type, completes directives, phrases, and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](guides/editor.md).
 
 ## Create `ascribe.toml`
 
@@ -50,7 +50,7 @@ version = "3.4.1"
 site = "https://docs.example.com"
 ```
 
-The [`ascribe.toml` reference](content-model.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
+The [`ascribe.toml` reference](reference/content-model.md) covers every section: content types and their frontmatter, availability, features, the glossary, project widgets, and builds.
 
 Add the output directory to `.gitignore`:
 
@@ -100,7 +100,7 @@ Next, [configure it](configure.md).
 - `@steps` marks the list as a procedure.
 - The link points at a **file**, `configure.md`. Ascribe writes the URL.
 
-The [directive reference](directives.md) describes every directive and inline construct.
+The [directive reference](reference/directives.md) describes every directive and inline construct.
 
 ## Check it
 
@@ -114,7 +114,7 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 [ASC036] Error: `configure.md` doesn't exist
 ```
 
-Every diagnostic has a code, and the [diagnostics reference](diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with a `title`, and check again.
+Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with a `title`, and check again.
 
 ## Build it
 
@@ -128,7 +128,7 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 - `plain/`: plain Markdown with everything resolved, for search indexes and LLMs;
 - `json/`: the resolved pages as JSON, for your own tools.
 
-See the [command reference](cli.md#ascribe-build).
+See the [command reference](reference/cli.md#ascribe-build).
 
 ## Format it
 
@@ -157,7 +157,7 @@ export default defineConfig({
 });
 ```
 
-Then define the content collection, a route, and a layout that loads the elements. [Astro](astro.md) walks through each file.
+Then define the content collection, a route, and a layout that loads the elements. [Astro](guides/astro.md) walks through each file.
 
 ## Check it in CI
 
@@ -182,9 +182,9 @@ jobs:
 
 ## Next
 
-- [Directive reference](directives.md): the language.
-- [`ascribe.toml` reference](content-model.md): the content model.
-- [Command reference](cli.md): `check`, `build`, `fmt`, and `lsp`.
-- [Diagnostics](diagnostics.md): every problem Ascribe reports, and its fix.
-- [Editing](editor.md): the VS Code extension.
-- [Astro](astro.md): publishing a site.
+- [Directive reference](reference/directives.md): the language.
+- [`ascribe.toml` reference](reference/content-model.md): the content model.
+- [Command reference](reference/cli.md): `check`, `build`, `fmt`, and `lsp`.
+- [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, and its fix.
+- [Editing](guides/editor.md): the VS Code extension.
+- [Astro](guides/astro.md): publishing a site.
