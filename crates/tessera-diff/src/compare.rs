@@ -227,6 +227,34 @@ pub fn compare_page_in(
         .compare(path, &changed)
 }
 
+/// Of the pages at `paths`, those that changed in the build `build` between
+/// `base` and `now` apart from their snippets' code: their own file changed
+/// (or is in one version only), or their resolved content differs through
+/// another file they use, such as a fragment, or through the content model.
+pub fn changed_apart_from_snippets(
+    base: Option<Side<'_>>,
+    now: Side<'_>,
+    build: &str,
+    paths: &[&RelPath],
+) -> BTreeSet<RelPath> {
+    let changed = ChangedFiles::between(base, now);
+    let routers = Routers::new(base, now);
+    let Some(sides) = routers.build(build) else {
+        return BTreeSet::new();
+    };
+    paths
+        .iter()
+        .filter(|path| {
+            sides
+                .compare_parts(path, &changed)
+                .is_some_and(|(diff, snippets)| {
+                    diff.own_file_changed || diff.because.len() > snippets
+                })
+        })
+        .map(|path| (*path).clone())
+        .collect()
+}
+
 /// Each version's router.
 struct Routers<'a> {
     base: Option<(Side<'a>, AstroRouter)>,
@@ -271,6 +299,12 @@ impl<'a> Routers<'a> {
 
 impl BuildSides<'_> {
     fn compare(&self, path: &RelPath, changed: &ChangedFiles) -> Option<PageDiff> {
+        self.compare_parts(path, changed).map(|(diff, _)| diff)
+    }
+
+    /// [`BuildSides::compare`], with how many of the page's `because` are
+    /// snippets.
+    fn compare_parts(&self, path: &RelPath, changed: &ChangedFiles) -> Option<(PageDiff, usize)> {
         let now_page = self.now.1.page(path);
         let base_page = self.base.as_ref().and_then(|(_, r)| r.page(path));
         compare_page(
@@ -282,12 +316,13 @@ impl BuildSides<'_> {
     }
 }
 
+/// What changed on a page, and how many of its `because` are snippets.
 fn compare_page(
     path: &RelPath,
     base: Option<(&ResolvedPage, Side<'_>)>,
     now: Option<(&ResolvedPage, Side<'_>)>,
     changed: &ChangedFiles,
-) -> Option<PageDiff> {
+) -> Option<(PageDiff, usize)> {
     let own_file_changed = changed.files.contains(path);
     let page_only = |status, route: &str| {
         let because = if !own_file_changed && changed.model {
@@ -308,8 +343,8 @@ fn compare_page(
     };
     let ((was_page, base), (now_page, now)) = match (base, now) {
         (None, None) => return None,
-        (None, Some((page, _))) => return Some(page_only(PageStatus::Added, &page.route)),
-        (Some((page, _)), None) => return Some(page_only(PageStatus::Removed, &page.route)),
+        (None, Some((page, _))) => return Some((page_only(PageStatus::Added, &page.route), 0)),
+        (Some((page, _)), None) => return Some((page_only(PageStatus::Removed, &page.route), 0)),
         (Some(b), Some(n)) => (b, n),
     };
     let was_tree: PageTree = TreeBuilder::new(base.project).page(was_page);
@@ -366,7 +401,9 @@ fn compare_page(
         .collect();
     // A snippet whose code differs: named by its address, as a fragment is
     // by its path.
-    because.extend(changed_snippets(&was_tree, &now_tree));
+    let snippets = changed_snippets(&was_tree, &now_tree);
+    let snippet_count = snippets.len();
+    because.extend(snippets);
     if changed.model && (model_shaped || (because.is_empty() && !own_file_changed)) {
         because.push(MODEL_FILE.to_owned());
     }
@@ -385,7 +422,7 @@ fn compare_page(
             change
         })
         .collect();
-    Some(PageDiff {
+    let diff = PageDiff {
         path: path.to_string(),
         route: now_tree.route,
         status: PageStatus::Changed,
@@ -394,7 +431,8 @@ fn compare_page(
         page_changed,
         counts,
         changes,
-    })
+    };
+    Some((diff, snippet_count))
 }
 
 /// The addresses of the snippets on both versions of a page whose code

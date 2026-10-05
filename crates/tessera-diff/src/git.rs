@@ -226,6 +226,55 @@ impl Repository {
         Ok(Tree { files })
     }
 
+    /// The tracked files that differ between `commit` and the working tree,
+    /// by their path now from the repository's root, through one `git diff
+    /// --name-status`, with renames followed. A file the working tree no
+    /// longer has isn't listed, and neither is one git doesn't track.
+    ///
+    /// # Errors
+    ///
+    /// [`DiffError::Git`] when the files can't be listed.
+    pub fn changed_files(&self, commit: &str) -> Result<BTreeMap<RelPath, FileChange>, DiffError> {
+        // `diff.relative` would make the paths relative to the project's
+        // folder, and drop the files outside it.
+        let out = self.run(&[
+            "-c",
+            "diff.relative=false",
+            "diff",
+            "--name-status",
+            "-z",
+            "-M",
+            "--no-color",
+            "--end-of-options",
+            commit,
+            "--",
+        ])?;
+        let path = |field: Option<&[u8]>| {
+            field
+                .and_then(|f| std::str::from_utf8(f).ok())
+                .and_then(|p| RelPath::parse(p).ok())
+        };
+        // `<status> NUL <path> NUL`, or for a rename or a copy (`R<score>`,
+        // `C<score>`) `<status> NUL <old> NUL <new> NUL`.
+        let mut fields = out.split(|b| *b == 0);
+        let mut files = BTreeMap::new();
+        while let Some(status) = fields.next() {
+            let Some(&kind) = status.first() else {
+                break;
+            };
+            let change = match kind {
+                b'R' | b'C' => path(fields.next()).map(FileChange::Renamed),
+                b'A' => Some(FileChange::Added),
+                b'D' => None,
+                _ => Some(FileChange::Modified),
+            };
+            if let (Some(now), Some(change)) = (path(fields.next()), change) {
+                files.insert(now, change);
+            }
+        }
+        Ok(files)
+    }
+
     /// The contents of several blobs, read through one `git cat-file --batch`.
     ///
     /// # Errors
@@ -353,4 +402,16 @@ pub struct TreeEntry {
     pub object: String,
     /// Whether it's a symbolic link (its contents are the link's target).
     pub symlink: bool,
+}
+
+/// How a file differs between a commit and the working tree.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FileChange {
+    /// The commit doesn't have it.
+    Added,
+    /// It's at the same path, with other contents.
+    Modified,
+    /// It was at this other path, from the repository's root, and its
+    /// contents may differ too. A copy is listed as one.
+    Renamed(RelPath),
 }
