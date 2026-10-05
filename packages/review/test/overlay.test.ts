@@ -686,4 +686,14 @@ describe("a block's text, for quoting", () => {
       "Welcome to Quill. Start with setting up Quill.\nLinux\nmacOS\nquill init\n  --force",
     );
   });
+
+  it("numbers ordered items, keeps empty cells, quotes images' alt text, and skips hidden text", () => {
+    const el = document.createElement("div");
+    el.innerHTML = `<h2>Install<span class="sr-only">Section titled “Install”</span></h2>
+      <ol start="3"><li>One</li><li>Two</li></ol>
+      <table><tr><td></td><td>x</td></tr></table>
+      <p hidden>Hidden</p><p style="display: none">None</p>
+      <p><img alt="A diagram"></p>`;
+    expect(blockText(el)).toBe("Install\n3. One\n4. Two\n| x\nA diagram");
+  });
 });

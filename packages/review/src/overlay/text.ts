@@ -119,10 +119,28 @@ const BLOCK_TAGS = new Set([
   "UL",
 ]);
 
+/** Classes that hide text from sight but not from screen readers. */
+const SCREEN_READER_ONLY = ["sr-only", "visually-hidden", "sl-sr-only"];
+
+/** Whether a reader can't see `el`. */
+function unseen(el: Element): boolean {
+  if (
+    el.hasAttribute("hidden") ||
+    el.getAttribute("aria-hidden") === "true" ||
+    SCREEN_READER_ONLY.some((name) => el.classList.contains(name))
+  ) {
+    return true;
+  }
+  const style = el.ownerDocument.defaultView?.getComputedStyle(el);
+  return style?.display === "none" || style?.visibility === "hidden";
+}
+
 /**
  * A block's text as a reader sees it, for quoting: links as their text, a
- * line for each paragraph, list item, or row, and code as written. The
- * overlay's own elements are left out; so is anything `aria-hidden`.
+ * line for each paragraph, list item, or row, numbered items with their
+ * numbers, images as their alt text, and code as written. What the marks and
+ * the overlay add is left out, but for the words a change inserted, and so
+ * is anything a reader can't see.
  */
 export function blockText(block: Element): string {
   // Each line, and whether it's code, which keeps its spaces.
@@ -154,8 +172,9 @@ export function blockText(block: Element): string {
     const tag = node.tagName.toUpperCase();
     if (
       node.hasAttribute("data-ascribe-overlay") ||
-      node.getAttribute("aria-hidden") === "true" ||
-      ["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT"].includes(tag)
+      (node.hasAttribute("data-ascribe-ui") && tag !== "INS") ||
+      ["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT"].includes(tag) ||
+      unseen(node)
     ) {
       return;
     }
@@ -163,9 +182,19 @@ export function blockText(block: Element): string {
       breakLine();
       return;
     }
+    if (tag === "IMG") {
+      line += node.getAttribute("alt") ?? "";
+      return;
+    }
     const block = BLOCK_TAGS.has(tag);
     if (block) breakLine();
-    if ((tag === "TD" || tag === "TH") && line.trim() !== "") line += " | ";
+    if ((tag === "TD" || tag === "TH") && node.previousElementSibling !== null) line += " | ";
+    if (tag === "LI" && node.parentElement?.tagName.toUpperCase() === "OL") {
+      const list = node.parentElement;
+      const start = Number(list.getAttribute("start") ?? "1");
+      const items = Array.from(list.children).filter((c) => c.tagName.toUpperCase() === "LI");
+      line += `${(Number.isFinite(start) ? start : 1) + items.indexOf(node)}. `;
+    }
     for (const child of Array.from(node.childNodes)) walk(child, pre || tag === "PRE");
     if (block) breakLine();
   };

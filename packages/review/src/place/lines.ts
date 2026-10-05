@@ -46,11 +46,12 @@ export interface Sides {
  * only deleted maps to `undefined`. Hunks come from a diff with no context
  * lines.
  *
- * A hunk can delete some lines and reword others, so with `sides` each old
- * line of a hunk is paired with the new line most like it, in order, and an
- * old line like none of them was deleted. Without `sides`, or for a hunk too
- * large to compare, old lines pair with new ones by position, clamped to the
- * last.
+ * Old lines pair with new ones by position, clamped to the last new line.
+ * But a hunk with fewer new lines than old can have deleted some lines and
+ * reworded others, so with `sides` each of its old lines pairs with the new
+ * line most like it, in order, and an old line like none of them was deleted.
+ * When none of them pairs (the text was rewritten), or the hunk is too large
+ * to compare, it's by position again.
  */
 export function shiftLine(
   hunks: readonly Hunk[],
@@ -82,30 +83,33 @@ export function shiftLine(
 /** How alike two lines must be, by their words, for one to be the other reworded. */
 const ALIKE = 0.3;
 
-const pairings = new WeakMap<Hunk, (number | undefined)[] | undefined>();
+const pairings = new WeakMap<Sides, WeakMap<Hunk, (number | undefined)[] | undefined>>();
 
 /**
- * For each old line of a replacing hunk, the offset of the new line it became,
- * or `undefined` if it was deleted: the pairing, in order, that makes the
- * paired lines most alike. A hunk of one line for one line keeps its pair
- * however much it changed, since nothing else could have replaced it.
- * `undefined` when the hunk is too large to compare.
+ * For each old line of a hunk with fewer new lines than old, the offset of
+ * the new line it became, or `undefined` if it was deleted: the pairing, in
+ * order, that makes the paired lines most alike. `undefined` when the hunk
+ * has as many new lines as old, is too large to compare, or no line pairs.
  */
 function pairLines(hunk: Hunk, sides: Sides): (number | undefined)[] | undefined {
-  if (pairings.has(hunk)) return pairings.get(hunk);
+  let cache = pairings.get(sides);
+  if (cache === undefined) {
+    cache = new WeakMap();
+    pairings.set(sides, cache);
+  }
+  if (cache.has(hunk)) return cache.get(hunk);
   const n = hunk.oldCount;
   const m = hunk.newCount;
   let pairs: (number | undefined)[] | undefined;
-  if (n === 1 && m === 1) pairs = [0];
-  else if (n * m <= 250_000) {
-    const oldWords = sides.old.slice(hunk.oldStart - 1, hunk.oldStart - 1 + n).map(words);
-    const newWords = sides.new.slice(hunk.newStart - 1, hunk.newStart - 1 + m).map(words);
+  if (m < n && n * m <= 250_000) {
+    const oldTokens = sides.old.slice(hunk.oldStart - 1, hunk.oldStart - 1 + n).map(tokens);
+    const newTokens = sides.new.slice(hunk.newStart - 1, hunk.newStart - 1 + m).map(tokens);
     // `best(i, j)`: the most likeness pairing old lines from `i` on with new lines from `j` on.
     const width = m + 1;
     const table = new Float64Array((n + 1) * width);
     const best = (i: number, j: number): number => table[i * width + j] ?? 0;
     const like = (i: number, j: number): number => {
-      const score = likeness(oldWords[i] ?? [], newWords[j] ?? []);
+      const score = likeness(oldTokens[i] ?? [], newTokens[j] ?? []);
       return score >= ALIKE ? score : 0;
     };
     for (let i = n - 1; i >= 0; i--) {
@@ -118,43 +122,63 @@ function pairLines(hunk: Hunk, sides: Sides): (number | undefined)[] | undefined
         );
       }
     }
-    pairs = [];
-    let i = 0;
-    let j = 0;
-    while (i < n) {
-      const score = j < m ? like(i, j) : 0;
-      if (score > 0 && best(i, j) === best(i + 1, j + 1) + score) {
-        pairs.push(j);
-        i++;
-        j++;
-      } else if (j >= m || best(i, j) === best(i + 1, j)) {
-        pairs.push(undefined);
-        i++;
-      } else {
-        j++;
+    if (best(0, 0) > 0) {
+      pairs = [];
+      let i = 0;
+      let j = 0;
+      while (i < n) {
+        const score = j < m ? like(i, j) : 0;
+        if (score > 0 && best(i, j) === best(i + 1, j + 1) + score) {
+          pairs.push(j);
+          i++;
+          j++;
+        } else if (j >= m || best(i, j) === best(i + 1, j)) {
+          pairs.push(undefined);
+          i++;
+        } else {
+          j++;
+        }
       }
     }
   }
-  pairings.set(hunk, pairs);
+  cache.set(hunk, pairs);
   return pairs;
 }
 
-/** A line's words, in lower case. */
-function words(line: string | undefined): string[] {
-  return (line ?? "").toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+/** Scripts written without spaces between words, compared by pairs of characters instead. */
+const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}]/u;
+
+/**
+ * What a line is compared by: its words, in lower case, with text in scripts
+ * written without spaces as pairs of characters; or, for a line with no
+ * letters or digits, such as `});` or `---`, its characters.
+ */
+function tokens(line: string | undefined): string[] {
+  const text = (line ?? "").toLowerCase();
+  const found: string[] = [];
+  for (const [word] of text.matchAll(/[\p{L}\p{M}\p{N}]+/gu)) {
+    if (!UNSPACED.test(word)) {
+      found.push(word);
+      continue;
+    }
+    const chars = Array.from(word);
+    if (chars.length === 1) found.push(word);
+    for (let i = 0; i + 1 < chars.length; i++) found.push(`${chars[i]}${chars[i + 1]}`);
+  }
+  return found.length > 0 ? found : Array.from(text.replace(/\s+/g, ""));
 }
 
-/** How many words two lines share, from 0 to 1: twice the shared count over the total. */
+/** How many tokens two lines share, from 0 to 1: twice the shared count over the total. */
 function likeness(a: readonly string[], b: readonly string[]): number {
   if (a.length === 0 || b.length === 0) return 0;
   const counts = new Map<string, number>();
-  for (const word of a) counts.set(word, (counts.get(word) ?? 0) + 1);
+  for (const token of a) counts.set(token, (counts.get(token) ?? 0) + 1);
   let shared = 0;
-  for (const word of b) {
-    const count = counts.get(word) ?? 0;
+  for (const token of b) {
+    const count = counts.get(token) ?? 0;
     if (count > 0) {
       shared++;
-      counts.set(word, count - 1);
+      counts.set(token, count - 1);
     }
   }
   return (2 * shared) / (a.length + b.length);

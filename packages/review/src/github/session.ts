@@ -291,6 +291,9 @@ interface State {
 // (deleting a pending review): worth one more try.
 const TRANSIENT = /something went wrong/i;
 
+/** The most of a block's shown text a held comment quotes: a review's body can't be longer than 65,536 characters. */
+const QUOTE_LIMIT = 2000;
+
 // GitHub's errors when a line can't take a review comment.
 const CANT_ANCHOR =
   /could not be resolved|must be part of the diff|is not part of the diff|line.*outside/i;
@@ -603,18 +606,23 @@ export function createSession(options: SessionOptions): ReviewSession {
       // GitHub can't anchor it: hold it in the pending review's body, which
       // goes on the conversation when the review is submitted.
       const review = await ensureReview();
+      const text = shown?.trim();
       const quote =
-        shown?.trim() ||
-        readFileSync(path.join(root, ...repositoryPath.split("/")), "utf8")
-          .split(/\r?\n/)
-          .slice(range.first - 1, range.last)
-          .join("\n");
+        text === undefined || text === ""
+          ? readFileSync(path.join(root, ...repositoryPath.split("/")), "utf8")
+              .split(/\r?\n/)
+              .slice(range.first - 1, range.last)
+              .join("\n")
+          : text.length > QUOTE_LIMIT
+            ? `${text.slice(0, QUOTE_LIMIT).trimEnd()}…`
+            : text;
       const source = formatSource(range);
       const section = formatSection({
         source,
         build: page.build,
         body,
         quote,
+        shown: text !== undefined && text !== "",
         link: {
           label: `${range.path}, line${range.first === range.last ? ` ${range.first}` : `s ${range.first}–${range.last}`}`,
           url: blobUrl(pullRequest, repositoryPath, first, last),
