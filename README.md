@@ -55,6 +55,7 @@ The compiler is a Rust workspace; the npm packages and the extension are a pnpm 
 | `packages/` | `cli`, `astro`, `elements`, and `vscode` |
 | `tests/` | The conformance suite and its diagnostics registry, the CommonMark suite, real-world corpora, and cross-implementation fixtures |
 | `examples/` | Example projects and content models |
+| `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them, installed from npm outside the workspace |
 | `scripts/release/` | Versioning, packing, and publishing a release |
 
 ```sh

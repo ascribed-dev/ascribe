@@ -1,0 +1,66 @@
+# site/
+
+Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`, no documentation theme. It's set up as a user's site is, following the [getting-started](../docs/content/getting-started.md) and [Astro](../docs/content/guides/astro.md) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
+
+```
+astro.config.mjs            ascribe({ project: "../docs", build: "site" }); routing as in ../docs/ascribe.toml's [consumer]
+src/content.config.ts       the collection, with the schema ascribe build generates in ../docs
+src/nav.ts                  the sidebar: every page, grouped and in order
+src/pages/[...slug].astro   a route per page: the base path plus its entry id
+src/pages/404.astro         the 404 page
+src/layouts/                the shell (header, sidebar) and a docs page (title, availability, edit link, contents)
+src/components/             search, the sidebar, the table of contents, the page's availability badge
+src/styles/site.css         light and dark, following the system, and the element library's theme
+scripts/follow-next.mjs     production's extra step: the newest canary, without saving
+scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
+test/                       navigation, links and anchors, and the built site in Chromium
+```
+
+## Building
+
+Production, as a host builds it, from npm alone (no Rust, nothing from the workspace):
+
+```sh
+npm ci
+npm run follow-next   # the Ascribe packages at `next`, without saving
+npm run build         # astro build, then Pagefind's index of dist/
+```
+
+**This is the one place the site's build differs from a user's.** A user's lockfile pins the Ascribe they installed, and they move it on purpose. This site follows `main`, so after `npm ci` it installs the canary that `next` names now: `@ascribed/astro`, `@ascribed/cli`, and `@ascribed/elements`, all at the version `next` gives for `@ascribed/astro`, which pins the others to its own. The lockfile and everything else in it stay as they are. Plain `npm ci && npm run build` builds with the canary in the lockfile. The **Site from npm** workflow builds this way, in a copy of `docs/` and `site/` alone, after each canary and when `main` changes the docs or the site.
+
+With this checkout's Ascribe, for working on Ascribe and its docs together, and for a pull request's preview:
+
+```sh
+cargo build -p tessera-cli          # or set ASCRIBE_BIN
+pnpm install                        # at the repository's root
+npm ci
+npm run build:checkout
+```
+
+`build:checkout` builds and packs the workspace's `cli`, `elements`, `review`, and `astro`, installs the packs without saving, and builds with `ASCRIBE_BIN`. `npm ci` puts the registry's packages back. The **Site** workflow runs it on pull requests that touch `docs/`, `site/`, or Ascribe.
+
+## Checking
+
+```sh
+npm run typecheck
+npm test              # after a build
+```
+
+- `test/nav.test.ts`: every published page is in `src/nav.ts`, and it names nothing else.
+- `test/links.test.ts`: every link and anchor between the built pages lands.
+- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): variants switch and the choice holds on the next page; the availability badge on an unreleased page; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
+
+## Navigation
+
+Ascribe's content model has no page order or grouping, so the site lists its pages in `src/nav.ts`, by source file, and the test keeps the list complete. A page added to `docs/content/` fails `npm test` until it's in the list.
+
+For the content model to give a site its navigation, it would need:
+
+- **an order and a group for each page**, either in `ascribe.toml` (a list of groups, each a label and its pages' files) or in each page's frontmatter (a group and a weight);
+- **checking**: `ascribe check` reporting a published page that's in no group, and a group naming a file that isn't a page, which is what the test does now;
+- **the result in the outputs**: the groups, in order, with each page's title and route, in the JSON output and as a module the site can import, so a layout renders the sidebar and previous and next links without its own list;
+- **a label for a page in the navigation**, where its title is too long (`ascribe.toml reference`).
+
+## Search
+
+[Pagefind](https://pagefind.app) indexes `dist/` after `astro build`, and the index is served with the site, so search needs no service. Only the page's `<article>` (`data-pagefind-body`) is indexed. `astro dev` has no index; build and `npm run preview` to search.

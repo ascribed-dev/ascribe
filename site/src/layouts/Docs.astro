@@ -1,0 +1,34 @@
+---
+// A docs page: its title, availability, description, content, edit link, and
+// table of contents.
+import type { CollectionEntry } from "astro:content";
+import Availability from "../components/Availability.astro";
+import Toc from "../components/Toc.astro";
+import { contentDir, repo, sourceFile } from "../site.ts";
+import Base from "./Base.astro";
+
+interface Props {
+  entry: CollectionEntry<"docs">;
+  headings: { depth: number; slug: string; text: string }[];
+}
+
+const { entry, headings } = Astro.props;
+const { title, description, available } = entry.data;
+if (!entry.filePath) throw new Error(`${entry.id} has no source file`);
+const edit = `${repo}/edit/main/${contentDir}/${sourceFile(entry.filePath)}`;
+---
+
+<Base title={title} description={description} current={entry.id}>
+  <main id="content" class="page">
+    <article data-pagefind-body>
+      <h1>{title}</h1>
+      <Availability available={available} />
+      {description && <p class="description">{description}</p>}
+      <slot />
+    </article>
+    <footer class="page-footer">
+      <a href={edit}>Edit this page on GitHub</a>
+    </footer>
+  </main>
+  <Toc headings={headings} />
+</Base>
