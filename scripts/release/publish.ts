@@ -104,7 +104,13 @@ function publishNpm(): void {
 /** Points a dist-tag at this version of every package, each of which must be on npm. */
 function tagNpm(tag: string): void {
   for (const { name } of expected) {
-    if (!isPublished(name)) fail(`${name}@${version} isn't on npm`);
+    // A version published a moment ago can take a while to show.
+    const deadline = Date.now() + (dryRun ? 0 : 180_000);
+    while (!isPublished(name)) {
+      if (Date.now() >= deadline) fail(`${name}@${version} isn't on npm`);
+      log(`waiting for ${name}@${version} to show on npm`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10_000);
+    }
     const args = ["dist-tag", "add", `${name}@${version}`, tag];
     log(`npm ${args.join(" ")}`);
     if (!dryRun) run("npm", args);
@@ -126,7 +132,9 @@ function listMissing(): void {
 
 /** Whether npm already has this version of a package. */
 function isPublished(name: string): boolean {
-  const result = spawnSync("npm", ["view", `${name}@${version}`, "version"], {
+  // `--prefer-online`: npm otherwise answers from its cache for some minutes,
+  // so a check made before a publish would hide the version just published.
+  const result = spawnSync("npm", ["view", `${name}@${version}`, "version", "--prefer-online"], {
     encoding: "utf8",
     shell: process.platform === "win32",
   });
