@@ -22,7 +22,7 @@ import {
 } from "@ascribed/review/github";
 import type { PageRef } from "@ascribed/review/place";
 import type { ProjectServer } from "../client.js";
-import { comparable } from "../projects.js";
+import { comparable, throughFolder } from "../projects.js";
 import type { ChangedPage, LocalState, ThreadsMethod, ThreadsView } from "./protocol.js";
 
 /** The scope posting review comments needs: `repo` (`public_repo` covers public repositories only). */
@@ -40,7 +40,10 @@ export type Connection =
       session: ReviewSession;
       via: "vscode" | "gh" | "test";
       local: { state: LocalState; behind: number; ahead: number };
-      /** The content root, absolute: where the threads' content paths are. */
+      /**
+       * The content root, absolute, through the links the workspace was
+       * opened with: where the threads' content paths are.
+       */
       contentRoot: string;
       /** The git revision for the pull request's base: `origin/main`. */
       base: string;
@@ -272,9 +275,13 @@ export class ThreadsController implements vscode.Disposable {
       session,
       via,
       local: { state: pr.local, ...counts },
-      contentRoot: path.join(
-        checkout.root,
-        ...contentPrefixOf(checkout.root, projectDir).split("/"),
+      // git's root is a real path; the editors' URIs keep the links the
+      // workspace was opened through, and the source editor's threads and
+      // commenting ranges are matched against them.
+      contentRoot: throughFolder(
+        path.join(checkout.root, ...contentPrefixOf(checkout.root, projectDir).split("/")),
+        projectDir,
+        await realPath(projectDir),
       ),
       base: await baseRevision(checkout.root, pr),
     };

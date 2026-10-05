@@ -67,6 +67,16 @@ export function samePath(a: string, b: string): boolean {
   return comparable(a) === comparable(b);
 }
 
+/**
+ * A path under a folder's real path (git gives real paths), written under the
+ * folder as it was opened instead: through the same links, so it matches the
+ * URIs of the editors VS Code opens in it (macOS's `/var` is a link to
+ * `/private/var`). A path outside the folder is reached from it with `..`.
+ */
+export function throughFolder(real: string, folder: string, realFolder: string): string {
+  return path.resolve(folder, path.relative(realFolder, real));
+}
+
 /** A folder as a glob pattern: forward slashes, and glob characters escaped. */
 export function globFolder(folder: string): string {
   return folder.replace(/\\/g, "/").replace(/[*?[{]/g, "[$&]");

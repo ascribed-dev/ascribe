@@ -29,7 +29,15 @@
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { runTests } from "@vscode/test-electron";
@@ -44,6 +52,10 @@ interface Suite {
   /** Prepares the workspace in a fresh directory and returns extra settings. */
   prepare(workspace: string): Record<string, unknown>;
   fixture: string;
+  /** More arguments for VS Code. */
+  launchArgs?: string[];
+  /** Print VS Code's file watcher logs when the suite fails. */
+  watcherLogs?: boolean;
 }
 
 const stubServer = path.join(packageRoot, "test/stub-server/ascribe");
@@ -167,6 +179,9 @@ const suites: Suite[] = [
   {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
+    // The file watcher's trace, to see why it missed a file if it does (#56).
+    launchArgs: ["--log=trace"],
+    watcherLogs: true,
     // The default `ascribe.startServers`: the suite checks what starts when.
     prepare: (workspace) => {
       // The folders the suite turns into projects. On Linux, VS Code's file
@@ -175,13 +190,40 @@ const suites: Suite[] = [
       for (const folder of ["guides", "idle"]) {
         mkdirSync(path.join(workspace, folder, "docs"), { recursive: true });
       }
-      return { "ascribe.path": realServer };
+      return {
+        "ascribe.path": realServer,
+        // A project the watcher never reports, found when one of its files opens.
+        "files.watcherExclude": { "**/unwatched/**": true },
+      };
     },
   },
 ];
 
 /** The suites that run the real language server. */
 const needsServer = new Set(["quill", "preview", "review", "threads", "site", "monorepo"]);
+
+/** The end of each file watcher log VS Code wrote, or the logs there are when there's none. */
+function printWatcherLogs(logs: string): void {
+  let files: string[];
+  try {
+    files = readdirSync(logs, { recursive: true, encoding: "utf8" }).map((f) => path.join(logs, f));
+  } catch {
+    console.error(`No VS Code logs in ${logs}.`);
+    return;
+  }
+  const watcher = files.filter(
+    (file) => /watcher/i.test(path.basename(file)) && file.endsWith(".log"),
+  );
+  if (watcher.length === 0) {
+    console.error(`No file watcher log. VS Code's logs:\n${files.join("\n")}`);
+    return;
+  }
+  for (const file of watcher) {
+    const lines = readFileSync(file, "utf8").split("\n");
+    console.error(`\n-- ${path.relative(logs, file)} (last 400 of ${lines.length} lines)`);
+    console.error(lines.slice(-400).join("\n"));
+  }
+}
 
 async function main(): Promise<void> {
   // A process an extension host started has this set, and VS Code would then
@@ -232,11 +274,13 @@ async function main(): Promise<void> {
           "--skip-release-notes",
           `--user-data-dir=${path.join(scratch, "user-data")}`,
           `--extensions-dir=${path.join(scratch, "extensions")}`,
+          ...(suite.launchArgs ?? []),
         ],
       });
       ran += 1;
     } catch (error) {
       console.error(`Suite ${suite.name} failed:`, error);
+      if (suite.watcherLogs) printWatcherLogs(path.join(scratch, "user-data", "logs"));
       failed = true;
     } finally {
       rmSync(scratch, { recursive: true, force: true });

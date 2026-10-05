@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   channelName,
@@ -7,6 +10,7 @@ import {
   owningProject,
   projectName,
   samePath,
+  throughFolder,
   within,
   type Project,
 } from "../../src/projects.js";
@@ -202,5 +206,35 @@ describe("ownedElsewhere", () => {
     const win = project("C:\\repo\\a");
     expect(ownedElsewhere(win, "c:\\Repo\\A\\x.md", [win])).toBe(false);
     expect(ownedElsewhere(win, "C:\\repo\\b\\x.md", [win, project("C:\\repo\\b")])).toBe(true);
+  });
+});
+
+describe("throughFolder", () => {
+  it("writes a real path through the links the folder was opened with", () => {
+    expect(throughFolder("/private/var/w/docs", "/var/w", "/private/var/w")).toBe("/var/w/docs");
+    expect(throughFolder("/private/var/w", "/var/w", "/private/var/w")).toBe("/var/w");
+  });
+
+  it("reaches a path outside the folder from it", () => {
+    expect(throughFolder("/private/var/content", "/var/w", "/private/var/w")).toBe("/var/content");
+  });
+
+  it("leaves a path alone when the folder has no links", () => {
+    expect(throughFolder("/repo/docs", "/repo", "/repo")).toBe("/repo/docs");
+  });
+
+  it.skipIf(process.platform === "win32")("matches an editor opened through a symlink", () => {
+    const scratch = realpathSync(mkdtempSync(path.join(tmpdir(), "through-")));
+    try {
+      const real = path.join(scratch, "real");
+      mkdirSync(path.join(real, "docs"), { recursive: true });
+      const link = path.join(scratch, "link");
+      symlinkSync(real, link);
+      const contentRoot = realpathSync(path.join(link, "docs"));
+      expect(contentRoot).toBe(path.join(real, "docs"));
+      expect(throughFolder(contentRoot, link, realpathSync(link))).toBe(path.join(link, "docs"));
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
   });
 });

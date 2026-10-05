@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
 import {
   channelName,
+  comparable,
   nestedProjects,
   ownedElsewhere,
   owningProject,
@@ -18,6 +19,9 @@ export type StartServers = "onDemand" | "all";
 /** The most projects found in one workspace. */
 const MAX_PROJECTS = 50;
 
+/** How long opened files that no project owns are gathered before looking for projects again. */
+const LOOK_AGAIN_DELAY_MS = 300;
+
 /**
  * Finds every `ascribe.toml` in the workspace and runs one language server
  * for each. Discovery starts nothing: a server starts the first time one of
@@ -29,6 +33,9 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private readonly nestedAtStart = new Map<ProjectServer, string>();
   private warnedOfCap = false;
   private refreshing: Promise<void> = Promise.resolve();
+  /** Files no project owned, already looked for since the last refresh. */
+  private readonly lookedFor = new Set<string>();
+  private lookAgainTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly projectsChanged = new vscode.EventEmitter<void>();
   private readonly started = new vscode.EventEmitter<ProjectServer>();
   private readonly disposables: vscode.Disposable[] = [];
@@ -159,6 +166,8 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   }
 
   async dispose(): Promise<void> {
+    clearTimeout(this.lookAgainTimer);
+    this.lookAgainTimer = undefined;
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
     await this.refreshing.catch(() => undefined);
     await Promise.all(this.servers.map((server) => server.dispose()));
@@ -168,6 +177,8 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   }
 
   private async refreshNow(): Promise<void> {
+    // The files open now are covered by this search.
+    this.lookedFor.clear();
     // One more than the cap, to know there were more.
     const found = await vscode.workspace.findFiles(
       "**/ascribe.toml",
@@ -238,16 +249,39 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
 
   /** Starts the servers of every document already open. */
   private async startForOpenDocuments(): Promise<void> {
-    await Promise.all(vscode.workspace.textDocuments.map((document) => this.startFor(document)));
+    await Promise.all(
+      vscode.workspace.textDocuments.map((document) => this.startFor(document, false)),
+    );
   }
 
-  /** Starts the server of the project a Markdown or `ascribe.toml` file belongs to. */
-  private async startFor(document: vscode.TextDocument): Promise<void> {
+  /**
+   * Starts the server of the project a Markdown or `ascribe.toml` file belongs
+   * to. When no known project owns a file in the workspace, projects are
+   * looked for again (once per file between refreshes): the file watcher can
+   * miss a new `ascribe.toml`, on Linux in a folder made while it runs.
+   */
+  private async startFor(document: vscode.TextDocument, lookAgain = true): Promise<void> {
     if (document.uri.scheme !== "file") return;
     if (document.languageId !== "markdown" && !/[\\/]ascribe\.toml$/.test(document.uri.fsPath)) {
       return;
     }
-    await this.ensureStartedFor(document.uri);
+    if (this.serverFor(document.uri)) {
+      await this.ensureStartedFor(document.uri);
+      return;
+    }
+    const file = comparable(document.uri.fsPath);
+    if (this.lookedFor.has(file)) return;
+    this.lookedFor.add(file);
+    if (lookAgain && vscode.workspace.getWorkspaceFolder(document.uri)) this.lookAgainSoon();
+  }
+
+  /** Looks for projects again shortly: files opened together share one search. */
+  private lookAgainSoon(): void {
+    if (this.lookAgainTimer) return;
+    this.lookAgainTimer = setTimeout(() => {
+      this.lookAgainTimer = undefined;
+      void this.refresh();
+    }, LOOK_AGAIN_DELAY_MS);
   }
 }
 
