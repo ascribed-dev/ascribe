@@ -35,12 +35,12 @@
 #                (`Issue::variant`); otherwise `message` is used.
 #   row          The SPEC §8.2 row, as "<construct> | <condition>", copied
 #                exactly. Every row has exactly one entry.
-#   group        The group of docs/diagnostics.md a loader rule is listed in:
+#   group        The group of docs/content/reference/diagnostics.md a loader rule is listed in:
 #                file, project, content-types, names, phrases, widgets, or
 #                consumer. Every loader rule has one.
 #   retired      Why the diagnostic is no longer reported. Its code and slug
 #                stay reserved.
-#   fix          How to fix the problem, for docs/diagnostics.md, which is
+#   fix          How to fix the problem, for docs/content/reference/diagnostics.md, which is
 #                generated from this file. Every entry that isn't retired has one.
 
 ###############################################################################

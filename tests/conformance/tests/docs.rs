@@ -1,4 +1,4 @@
-//! `docs/diagnostics.md` is generated from the diagnostics registry. This test
+//! `docs/content/reference/diagnostics.md` is generated from the diagnostics registry. This test
 //! renders it and fails when the file is out of date; run it with
 //! `ASCRIBE_BLESS=1` to rewrite the file.
 
@@ -31,7 +31,7 @@ fn the_diagnostics_reference_is_current() {
     let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
     let spec = std::fs::read_to_string(repo().join("SPEC.md")).unwrap();
     let rendered = render(&registry, &spec_anchors(&spec));
-    let path = repo().join("docs/diagnostics.md");
+    let path = repo().join("docs/content/reference/diagnostics.md");
     if std::env::var_os("ASCRIBE_BLESS").is_some() {
         std::fs::write(&path, &rendered).unwrap();
         return;
@@ -39,7 +39,7 @@ fn the_diagnostics_reference_is_current() {
     let current = std::fs::read_to_string(&path).unwrap_or_default();
     assert!(
         current == rendered,
-        "docs/diagnostics.md is out of date: run \
+        "docs/content/reference/diagnostics.md is out of date: run \
          `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`"
     );
 }
@@ -67,7 +67,10 @@ fn render(registry: &DiagnosticsRegistry, anchors: &BTreeMap<String, String>) ->
         .collect();
     let mut out = String::new();
     out.push_str(
-        "# Diagnostics\n\n\
+        "---\n\
+         title: Diagnostics\n\
+         description: Every problem Ascribe reports, with its code and fix.\n\
+         ---\n\n\
          <!-- Generated from tests/conformance/diagnostics.toml by \
          tests/conformance/tests/docs.rs. Edit the registry, then run \
          `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`. -->\n\n\
@@ -84,7 +87,7 @@ fn render(registry: &DiagnosticsRegistry, anchors: &BTreeMap<String, String>) ->
          everything else when it's an error: every other check depends on the content \
          model.\n\
          - In the messages below, `{name}` stands for a value filled in from your source.\n\n\
-         In the editor, many diagnostics offer a quick fix. See [Editing](editor.md).\n\n",
+         In the editor, many diagnostics offer a quick fix. See [Editing](../guides/editor.md).\n\n",
     );
 
     // The index.
@@ -171,7 +174,10 @@ fn write_entry(
     anchors: &BTreeMap<String, String>,
 ) {
     let section = match anchors.get(&entry.spec) {
-        Some(anchor) => format!("[SPEC §{}](../SPEC.md#{anchor})", entry.spec),
+        Some(anchor) => format!(
+            "[SPEC §{}]({{repo}}/blob/main/SPEC.md#{anchor})",
+            entry.spec
+        ),
         None => format!("SPEC §{}", entry.spec),
     };
     let _ = write!(
@@ -183,10 +189,22 @@ fn write_entry(
         level(entry.level).to_lowercase(),
     );
     if let Some(condition) = condition {
-        let _ = write!(out, "**When:** {}.\n\n", sentence(condition));
+        let _ = write!(
+            out,
+            "**When:** {}.\n\n",
+            escape_braces(&sentence(condition))
+        );
     }
-    let _ = write!(out, "**Message:** {}\n\n", message(&entry.message));
-    let _ = writeln!(out, "**Fix:** {}", entry.fix.as_deref().unwrap_or_default());
+    let _ = write!(
+        out,
+        "**Message:** {}\n\n",
+        escape_braces(&message(&entry.message))
+    );
+    let _ = writeln!(
+        out,
+        "**Fix:** {}",
+        escape_braces(entry.fix.as_deref().unwrap_or_default())
+    );
 }
 
 fn severity(severity: Severity) -> &'static str {
@@ -225,6 +243,36 @@ fn sentence(condition: &str) -> String {
 /// braces (`{{`, `}}`) are single braces.
 fn message(template: &str) -> String {
     template.replace("{{", "{").replace("}}", "}")
+}
+
+/// Text with a backslash before each `{` and `<` outside code spans, so a
+/// placeholder such as `{value}` or `<version>` reads as itself, and is never
+/// taken for one of the docs' phrases or for HTML.
+fn escape_braces(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut fence = 0;
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '`' {
+            let mut run = 1;
+            while chars.peek() == Some(&'`') {
+                chars.next();
+                run += 1;
+            }
+            fence = match fence {
+                0 => run,
+                open if open == run => 0,
+                open => open,
+            };
+            out.extend(std::iter::repeat_n('`', run));
+            continue;
+        }
+        if matches!(c, '{' | '<') && fence == 0 {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
 }
 
 /// The anchor of an entry's heading, as GitHub computes it.

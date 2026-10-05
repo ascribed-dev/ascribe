@@ -1,0 +1,33 @@
+name: Docs
+
+# The user docs in docs/, an Ascribe project, checked and format-checked by
+# this pull request's own `ascribe`, so a change to Ascribe and the docs that
+# describe it are checked together.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: check docs/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo build -p tessera-cli --locked
+      - run: target/debug/ascribe check --deny-warnings --config docs
+      - run: target/debug/ascribe fmt --check --config docs

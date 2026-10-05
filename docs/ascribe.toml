@@ -1,0 +1,108 @@
+# The content model for Ascribe's user docs. The pages are in content/.
+spec = "0.1"
+
+[project]
+content-root = "content"
+output-dir = ".ascribe/build"
+
+# Guides are the default; the references and the contracts are `reference`.
+[types.guide]
+default = true
+
+[types.guide.frontmatter]
+title = "string"
+description = "string"
+
+[types.reference]
+files = ["reference/**", "contracts/**"]
+
+[types.reference.frontmatter]
+title = "string"
+description = "string"
+since = "string?"
+
+# What isn't in the latest release is marked with availability. A feature in
+# `main` that no release has yet is `@available: next`. When a release ships
+# it, `next` below becomes `ascribe <version>`, and every page marked with it
+# reads "since <version>". Something that shipped in an earlier release than
+# the current one can say so directly: `@available: ascribe 0.1.1`.
+[dimensions.release]
+label = "Ascribe"
+values = ["ascribe"]
+labels = { ascribe = "Ascribe" }
+
+[lifecycle.unreleased]
+available = true
+label = "in main, not yet released"
+
+[features.next]
+name = "In main, not yet released"
+available = "ascribe unreleased"
+
+[phrases]
+# The latest release: the workspace version in Cargo.toml, and every
+# package.json under packages/.
+version = "0.1.1"
+# `engines.node` in packages/cli/package.json.
+node = "24"
+# `engines.vscode` in packages/vscode/package.json.
+vscode = "1.138"
+# The repository. Link to a file as `{repo}/blob/main/<path>`, and to a folder
+# as `{repo}/tree/main/<path>`.
+repo = "https://github.com/ascribed-dev/ascribe"
+
+[glossary]
+match = "first"
+
+[glossary.terms.build]
+term = "build"
+aliases = ["builds"]
+definition = "A named set of choices, in ascribe.toml, for which variants and which availability a page's output keeps."
+link = "reference/content-model.md#16-buildsname"
+
+[glossary.terms.variant]
+term = "variant"
+aliases = ["variants"]
+definition = "Alternative content for a value of a dimension, written with @variant."
+link = "reference/directives.md#variant"
+
+[glossary.terms.dimension]
+term = "dimension"
+aliases = ["dimensions"]
+definition = "An axis content varies along, such as a package manager or a deployment, declared in ascribe.toml."
+link = "reference/content-model.md#6-dimensionsname"
+
+[glossary.terms.fragment]
+term = "fragment"
+aliases = ["fragments"]
+definition = "A source file that exists only to be included in other files: any file with a path segment starting with _."
+link = "reference/directives.md#files"
+
+[glossary.terms.phrase]
+term = "phrase"
+aliases = ["phrases"]
+definition = "A reusable string declared in ascribe.toml and written {key} in a page."
+link = "reference/directives.md#phrases"
+
+[glossary.terms.content-model]
+term = "content model"
+aliases = ["content models"]
+definition = "A project's schema, ascribe.toml: its content types, dimensions, phrases, and builds."
+link = "reference/content-model.md"
+
+[glossary.terms.page-preview]
+term = "page preview"
+definition = "The editor's preview of the active page, rendered as the site shows it."
+link = "guides/editor.md#preview"
+
+[glossary.terms.site-preview]
+term = "site preview"
+definition = "The active page on the project's own dev server, in the browser or the preview panel."
+link = "guides/editor.md#site-preview"
+
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+[editor]
+build = "site"
