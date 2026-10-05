@@ -157,7 +157,7 @@ jobs:
 - **Opening it.** `archive: false` uploads the file as it is instead of in a zip, so the summary's link opens it in the browser. The link needs read access to the repository, like the rest of the run.
 - **Large changes.** A report renders the first 300 changed pages and lists the rest by name, and leaves out images over 1 MB, so it stays small enough to open.
 
-This repository runs the same job on `examples/quill`, in [`.github/workflows/review.yml`]({repo}/blob/main/.github/workflows/review.yml).
+This repository runs the same job on `examples/quill`, and on these docs when a pull request changes them, in [`.github/workflows/review.yml`]({repo}/blob/main/.github/workflows/review.yml). It installs `@ascribed/cli@next`, the nightly build of `main`, since these docs follow `main`.
 
 ## When something's missing
 
