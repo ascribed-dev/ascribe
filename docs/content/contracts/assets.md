@@ -1,4 +1,7 @@
-# Asset contract
+---
+title: Asset contract
+description: Where assets go in each output and how pages refer to them.
+---
 
 Every output is self-contained: it works without access to the source files (SPEC §9.4, "Assets"). So local files a page refers to are copied into the output, and references to them are rewritten to point at the copies. This contract says which references those are, how they resolve, where the copies go in each output, what they're called, and how references are rewritten.
 

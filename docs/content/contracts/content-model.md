@@ -1,4 +1,7 @@
-# `ascribe.toml` format contract
+---
+title: ascribe.toml format contract
+description: The normative contract for the content model file, with the rules a loader enforces and the decisions behind them.
+---
 
 This is the normative contract for `ascribe.toml`, the content model file (SPEC §7). It defines every table and key, the short syntax for field and attribute types, and every rule a loader enforces. The loader in `tessera-model` implements it. For a guide to writing one, see the [`ascribe.toml` reference](../reference/content-model.md).
 
@@ -270,23 +273,7 @@ A field is **required** unless its type ends in `?` or it has a default. The sam
 
 Grammar (ABNF, with the rules of SPEC Appendix A):
 
-```abnf
-field-type      = field-base [ "?" ]
-field-base      = scalar / enum / list-type / "object"    ; "object" in table form only
-scalar          = "string" / "number" / "boolean" / "date"
-list-type       = "list" "(" OWS ( scalar / enum / "object" ) OWS ")"
-                                        ; "list(object)" in table form only
-
-attribute-type  = attribute-base [ "?" ]
-attribute-base  = "string" / "number" / "boolean" / enum / set-type
-set-type        = "set" "(" OWS ( "string" / enum ) OWS ")"
-
-enum            = "enum" [ "(" OWS enum-value *( OWS "," OWS enum-value ) OWS ")" ]
-                                        ; bare "enum" in table form only, with "values"
-enum-value      = 1*( ALPHA / DIGIT / "-" / "_" / "." )
-```
-
-Spaces are allowed only where `OWS` appears. The canonical spelling has no spaces except one after each comma: `enum(a, b)`.
+@include: ../_fragments/field-type-grammar.md
 
 ### 6.2 Table form
 

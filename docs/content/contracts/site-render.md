@@ -1,4 +1,7 @@
-# Site-render contract
+---
+title: Site-render contract
+description: The markers the site output writes and how a consumer renders them.
+---
 
 The site output (SPEC §9.4) is CommonMark with raw HTML: custom elements for Ascribe's constructs, and ordinary markdown for everything else. A consumer renders most of it with its own markdown pipeline and needs nothing from Ascribe. Two things need more than CommonMark (SPEC §9.5):
 
@@ -123,6 +126,7 @@ Each construct below has at least one fixture in [`tests/render/`]({repo}/tree/m
 | `raw-html` | §5 | Custom elements wrapping markdown, `<details>`, and markers inside them |
 
 ## 7. Source anchors
+@available: next
 
 With anchors on (`ascribe build --emit site --anchors`, and always in the editor preview), every block of a rendered page carries the source file and lines it came from, so a reviewer's tools can point from the page back to the source. With anchors off, which is the default, the site output is byte for byte what it is without this section, and nothing here applies.
 
