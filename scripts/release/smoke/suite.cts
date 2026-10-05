@@ -11,7 +11,7 @@ interface AscribeApi {
     | {
         path: string;
         source: string;
-        version: { parts: number[] };
+        version: { parts: number[]; prerelease?: string | undefined };
         warning?: string;
       }
     | undefined;
@@ -46,7 +46,9 @@ exports.run = async function run(): Promise<void> {
     const fold = (p: string): string => (process.platform === "win32" ? p.toLowerCase() : p);
     assert.equal(fold(path.dirname(binary.path)), fold(dir));
   }
-  const version = binary.version.parts.join(".");
+  // The whole version, with a pre-release's tag: a canary is `0.1.2-next.7`.
+  const { parts, prerelease } = binary.version;
+  const version = parts.join(".") + (prerelease === undefined ? "" : `-${prerelease}`);
   assert.equal(version, extension.packageJSON.version, "the binary's version");
   assert.equal(binary.warning, undefined);
 
