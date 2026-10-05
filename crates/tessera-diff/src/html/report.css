@@ -312,6 +312,9 @@ ascribe-group {
  * `changes`, `will` (the page as it will be), or `was` (as it was). Every
  * mark has a label as well as a bar of its own shape, so no change is told by
  * color alone. Theme it with the --ascribe-review-* custom properties.
+ *
+ * The colors follow the reader's color scheme. A page whose own colors don't
+ * sets `data-ascribe-scheme="light"` or `"dark"` on its root element.
  */
 
 :root {
@@ -338,7 +341,7 @@ ascribe-group {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-ascribe-scheme="light"]) {
     --ascribe-review-added: #4fc572;
     --ascribe-review-added-background: #133520;
     --ascribe-review-changed: #dcb13a;
@@ -358,6 +361,27 @@ ascribe-group {
     --ascribe-review-accent-text: #0b1220;
     --ascribe-review-blend: screen;
   }
+}
+
+:root[data-ascribe-scheme="dark"] {
+  --ascribe-review-added: #4fc572;
+  --ascribe-review-added-background: #133520;
+  --ascribe-review-changed: #dcb13a;
+  --ascribe-review-changed-background: #3a2f0d;
+  --ascribe-review-removed: #ff8279;
+  --ascribe-review-removed-background: #401918;
+  --ascribe-review-moved: #c59bff;
+  --ascribe-review-moved-background: #2d2440;
+  --ascribe-review-muted: #929bab;
+  --ascribe-review-surface: #1e2026;
+  --ascribe-review-flash: #3b3514;
+  --ascribe-review-focus: #5aa2ff;
+  --ascribe-review-text: #d9dde5;
+  --ascribe-review-border: #343a45;
+  --ascribe-review-thread: #272b33;
+  --ascribe-review-input: #1e2026;
+  --ascribe-review-accent-text: #0b1220;
+  --ascribe-review-blend: screen;
 }
 
 .ascribe-marks {

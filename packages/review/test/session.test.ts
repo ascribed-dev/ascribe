@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
 import { createSession, findPullRequest, openReview } from "../src/github/session.js";
 import type { PullRequestInfo, ReviewSession } from "../src/github/session.js";
 import { readCheckout } from "../src/github/repository.js";
+import { parseSections } from "../src/github/marker.js";
 import { ReviewError } from "../src/shared/errors.js";
 import type { PageRef } from "../src/place/place.js";
 import { comment, FakeGitHub, paged, review, thread } from "./helpers/github.js";
@@ -433,6 +434,25 @@ describe("posting", () => {
     });
   });
 
+  test("a held comment quotes the block's text as the page shows it, when the page sends it", async () => {
+    const fake = postingFake();
+    await session(fake).comment(
+      { source: "_fragments/prereqs.md:1-3", via: ["guides/install.md:25"] },
+      "Should this mention Windows?",
+      installPage,
+      "Shown p1, see #5\nShown p2",
+    );
+    const update = fake.mutations().find((c) => c.operation === "UpdateReview");
+    const body = String(update?.variables["body"]);
+    expect(
+      body.startsWith("> Shown p1\\, see \\#\u20605\\\n> Shown p2\n\nShould this mention Windows?"),
+    ).toBe(true);
+    expect(body).toContain(
+      "<!-- ascribe:anchor _fragments/prereqs.md:1-3 build=site quote=text -->",
+    );
+    expect(parseSections(body).sections[0]?.quote).toBe("Shown p1, see #5\nShown p2");
+  });
+
   test("falls back to the conversation when GitHub can't anchor the line", async () => {
     const fake = postingFake().on("AddThread", () => {
       throw new ReviewError("refused", "GitHub refused the request: Line could not be resolved");
@@ -608,7 +628,14 @@ describe("posting", () => {
     await s.submit("APPROVE", "Looks good.");
     await s.discard();
     expect(fake.mutations().map((c) => [c.operation, c.variables])).toEqual([
-      ["SubmitReview", { reviewId: "PRR_mine", event: "APPROVE", body: `${held}\n\nLooks good.` }],
+      [
+        "SubmitReview",
+        {
+          reviewId: "PRR_mine",
+          event: "APPROVE",
+          body: `Looks good.\n\n<!-- ascribe:summary -->\n\n${held}`,
+        },
+      ],
       ["DeleteReview", { reviewId: "PRR_mine" }],
     ]);
   });
@@ -698,6 +725,45 @@ describe("posting", () => {
     for (let i = 1; i < times.length; i++) {
       expect((times[i] ?? 0) - (times[i - 1] ?? 0)).toBeGreaterThanOrEqual(55);
     }
+  });
+
+  test("a reply, a resolve, and a new thread update the cache without reading again", async () => {
+    const fake = postingFake([review({ id: "PRR_mine", state: "PENDING", mine: true })])
+      .on("ReviewThreads", paged("reviewThreads", [thread({ id: "T", path: INSTALL, line: 5 })]))
+      .on("AddReply", (v) => ({
+        addPullRequestReviewThreadReply: {
+          comment: comment({
+            id: v["reviewId"] === null ? "now" : "later",
+            body: String(v["body"]),
+            state: v["reviewId"] === null ? "SUBMITTED" : "PENDING",
+          }),
+        },
+      }))
+      .on("Resolve", () => ({
+        resolveReviewThread: {
+          thread: { id: "T", isResolved: true, viewerCanResolve: false, viewerCanUnresolve: true },
+        },
+      }));
+    const s = session(fake);
+    await s.allThreads();
+    const reads = () => fake.operations().filter((o) => o === "ReviewThreads").length;
+    expect(reads()).toBe(1);
+    await s.reply("T", "Now", "now");
+    await s.reply("T", "Later", "withReview");
+    await s.resolve("T", true);
+    await s.comment({ source: "guides/install.md:7-7", via: [] }, "New", installPage);
+    const threads = await s.allThreads();
+    expect(reads()).toBe(1);
+    const t = threads.find((x) => x.id === "T");
+    expect(t?.comments.map((c) => [c.id, c.pending])).toEqual([
+      [expect.any(String), false],
+      ["now", false],
+      ["later", true],
+    ]);
+    expect([t?.resolved, t?.canResolve, t?.canUnresolve]).toEqual([true, false, true]);
+    expect(threads.map((x) => x.id)).toContain("PRRT_new");
+    expect((await s.pending()).count).toBe(2);
+    expect(reads()).toBe(1);
   });
 
   test("a refusal reaches the caller and the next change still runs", async () => {

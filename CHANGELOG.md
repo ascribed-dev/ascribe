@@ -31,6 +31,10 @@ This release adds **review**: reading a pull request as readers will see it, pag
 
 - It answers `ascribe/review/setBase` and `ascribe/review/changes`, and `ascribe/preview` with `review: true` adds the page's changes, for editors other than VS Code. See [`crates/tessera-lsp/README.md`](crates/tessera-lsp/README.md).
 
+### Installing
+
+- The Linux binaries run on glibc 2.28 or later, instead of 2.39, so `@ascribed/cli` installs and runs in the build images of Vercel, AWS Amplify, and Cloudflare Pages as well as Netlify's. The release workflow runs each one on glibc 2.28, so the floor can't rise unnoticed.
+
 ### `@ascribed/review`
 
 - A new package, for hosts that show review. Its Node part finds the open pull request for a checkout's branch, reads its review threads, places each on the rendered block it's on (following local edits, fragments shown on several pages, removed text, and outdated threads, and returning those it can't place as detached), and posts comments and replies into the reviewer's pending review. It talks to GitHub through the GitHub CLI or a token its host supplies, and stores no token. Its browser part marks the changed blocks of a rendered page, and draws the overlay of threads beside them, with replying, resolving, commenting, and submitting through a host that keeps GitHub to itself; comment bodies render from a safe subset of Markdown, with no raw HTML, and no image loads without a click. See [`packages/review`](packages/review/README.md).

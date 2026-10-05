@@ -29,6 +29,11 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  # The glibc version the Linux binaries link against, and that the smoke job
+  # runs them on. Changing it changes what Linux systems Ascribe runs on: change
+  # the smoke job's image, and the requirement in docs/getting-started.md,
+  # packages/cli/README.md, and RELEASING.md, with it.
+  GLIBC: "2.28"
 
 jobs:
   version:
@@ -58,7 +63,10 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
   # Each binary is built natively on its own platform, where it's also run.
-  # Linux builds on Ubuntu 24.04, so the binary needs glibc 2.39 or later.
+  # Linux builds link against glibc 2.28 (through cargo-zigbuild and Zig's libc
+  # stubs), not the runner's, so the binary runs on any glibc 2.28 or later: the
+  # same floor as Node.js 24, and below every common site host's build image.
+  # The smoke job runs it on glibc 2.28 so the floor can't rise unnoticed.
   build:
     name: build (${{ matrix.target }})
     needs: version
@@ -66,8 +74,8 @@ jobs:
       matrix:
         include:
           - { target: darwin-arm64, os: macos-26, exe: ascribe }
-          - { target: linux-arm64, os: ubuntu-24.04-arm, exe: ascribe }
-          - { target: linux-x64, os: ubuntu-24.04, exe: ascribe }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, exe: ascribe, zig: true }
+          - { target: linux-x64, os: ubuntu-24.04, exe: ascribe, zig: true }
           - { target: win32-x64, os: windows-2025, exe: ascribe.exe }
     runs-on: ${{ matrix.os }}
     defaults:
@@ -80,8 +88,32 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup toolchain install
+      # Zig comes from PyPI (the ziglang package), in a virtual environment so
+      # cargo-zigbuild finds it through `python3 -m ziglang`.
+      - name: Install Zig and cargo-zigbuild
+        if: matrix.zig
+        run: |
+          python3 -m venv "$RUNNER_TEMP/zig"
+          "$RUNNER_TEMP/zig/bin/pip" install --disable-pip-version-check --require-hashes -r scripts/release/zig-requirements.txt
+          echo "$RUNNER_TEMP/zig/bin" >> "$GITHUB_PATH"
+          cargo install --locked cargo-zigbuild@0.23.4
       # No build cache: a release is built from scratch.
-      - run: cargo build -p tessera-cli --release --locked
+      - if: "!matrix.zig"
+        run: cargo build -p tessera-cli --release --locked
+      # Zig's linker would strip the symbol table along with the debug info, so
+      # the build keeps both and `strip` drops only the debug info: a panic's
+      # backtrace keeps its function names, as on the other platforms. The binary
+      # is copied to where the other platforms' is, for the steps below.
+      - if: matrix.zig
+        env:
+          CARGO_PROFILE_RELEASE_STRIP: "false"
+          RUSTFLAGS: -C link-arg=-Wl,--build-id
+        run: |
+          triple=$(rustc -vV | sed -n 's/^host: //p')
+          cargo zigbuild -p tessera-cli --release --locked --target "$triple.$GLIBC"
+          mkdir -p target/release
+          cp "target/$triple/release/ascribe" target/release/ascribe
+          strip --strip-debug target/release/ascribe
       - name: Check the binary
         env:
           VERSION: ${{ needs.version.outputs.version }}
@@ -169,6 +201,22 @@ jobs:
             "$GITHUB_WORKSPACE"/dist/release/npm/ascribed-cli-[0-9]*.tgz
           ./node_modules/.bin/ascribe --version
           ./node_modules/.bin/ascribe check --config "$GITHUB_WORKSPACE/examples/quill" --deny-warnings
+      # AlmaLinux 8 has glibc 2.28, the floor the build links against (GLIBC). A binary
+      # that asks for a newer glibc fails here with "version `GLIBC_2.xx' not found".
+      - name: Run the packed binary on glibc 2.28 and check examples/quill
+        if: runner.os == 'Linux'
+        env:
+          IMAGE: almalinux:8@sha256:8b469a3a78515e8a18ea8fc727e6a3679e1d0c5ba6f58d5b30be3d0d9b86cffe
+        run: |
+          mkdir -p "$RUNNER_TEMP/glibc"
+          tar -xzf dist/release/npm/ascribed-cli-${{ matrix.target }}-*.tgz -C "$RUNNER_TEMP/glibc"
+          docker run --rm -v "$RUNNER_TEMP/glibc/package/bin:/ascribe:ro" -v "$GITHUB_WORKSPACE/examples:/examples:ro" \
+            -e GLIBC "$IMAGE" sh -euc '
+              ldd --version | head -n 1
+              test "$(getconf GNU_LIBC_VERSION)" = "glibc $GLIBC"
+              /ascribe/ascribe --version
+              /ascribe/ascribe check --config /examples/quill --deny-warnings
+            '
       # VS Code needs a display and a few libraries on Linux.
       - if: runner.os == 'Linux'
         run: |

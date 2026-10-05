@@ -20,7 +20,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
 import { findBinary } from "./binary.js";
-import { watchDev } from "./dev.js";
+import { SeenFiles, watchDev } from "./dev.js";
 import { copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
 import rehypeAscribeAttributes from "./rehype.js";
@@ -80,6 +80,8 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       }
     | undefined;
   let rebuild: (() => Promise<void>) | undefined;
+  /** The dev server's sources as its first build read them. */
+  const seen = new SeenFiles();
   let binary: string | undefined;
   let reviewing = false;
   let devHttps = false;
@@ -155,6 +157,8 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
             if (result.diagnostics !== "") logger.warn(result.diagnostics);
             if (result.summary !== "") logger.info(result.summary);
           };
+          // The sources as the first build reads them: the watcher may report their edits late.
+          if (command === "dev") seen.prime([project.contentRoot, project.configPath]);
           await rebuild();
           if (command === "dev") devProject = project;
         }
@@ -196,6 +200,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           devHttps = Boolean(server.config.server.https);
           const builds = watchDev({
             server,
+            seen,
             refreshContent: () => refreshContent({}),
             logger,
             project,

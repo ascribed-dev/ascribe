@@ -156,12 +156,16 @@ mutation DeleteComment($id: ID!) {
 
 export const RESOLVE = `
 mutation Resolve($threadId: ID!) {
-  resolveReviewThread(input: { threadId: $threadId }) { thread { id isResolved } }
+  resolveReviewThread(input: { threadId: $threadId }) {
+    thread { id isResolved viewerCanResolve viewerCanUnresolve }
+  }
 }`;
 
 export const UNRESOLVE = `
 mutation Unresolve($threadId: ID!) {
-  unresolveReviewThread(input: { threadId: $threadId }) { thread { id isResolved } }
+  unresolveReviewThread(input: { threadId: $threadId }) {
+    thread { id isResolved viewerCanResolve viewerCanUnresolve }
+  }
 }`;
 
 export const UPDATE_REVIEW = `

@@ -1,0 +1,6 @@
+# Zig for cargo-zigbuild in release.yml's Linux builds, pinned by content: the
+# x64 and arm64 Linux wheels of ziglang 0.16.0. Bumping it: take the hashes
+# from https://pypi.org/pypi/ziglang/<version>/json, then do a dry run.
+ziglang==0.16.0 \
+    --hash=sha256:9fcda73f62b851dd72a54b710ad40a209896db14cfb13649e62191243556342b \
+    --hash=sha256:e27d409812b11e0fb89ed0200cf2e55b6464d43f9461553104e4a4f9a94a1fd5

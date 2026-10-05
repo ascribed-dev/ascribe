@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
 // What the toolbar app reads from the page and says about it, apart from
 // the toolbar.
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import type { LocatedThread } from "@ascribed/review/overlay";
 import type { DiffPage, ThreadsState } from "../src/review/protocol.js";
 import {
   anchorsArrived,
   anchoredBlocks,
   contentRoot,
   pageFile,
+  pageScheme,
   sourceLocation,
 } from "../src/toolbar/page.js";
 import {
@@ -15,8 +17,10 @@ import {
   buttonLabel,
   errorsNotice,
   nextChangedPage,
+  nextPageText,
   pageDetail,
   position,
+  threadLocation,
   threadsNotice,
 } from "../src/toolbar/text.js";
 
@@ -108,6 +112,51 @@ function changed(path: string, init: Partial<Omit<DiffPage, "changes">> = {}) {
   };
 }
 
+describe("the page's color scheme", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("style");
+    document.body.removeAttribute("style");
+  });
+
+  it("follows the page's background, not the reader's system", () => {
+    page(`<main id="m"><article id="a"><p>x</p></article></main>`);
+    const article = document.getElementById("a") as HTMLElement;
+    // A light-only site: no background, no color-scheme. Light even when the system is dark.
+    expect(pageScheme(article, true)).toBe("light");
+    document.body.style.backgroundColor = "rgb(20, 22, 28)";
+    expect(pageScheme(article, false)).toBe("dark");
+    // The nearest background that isn't see-through decides.
+    (document.getElementById("m") as HTMLElement).style.backgroundColor =
+      "rgba(255, 255, 255, 0.9)";
+    expect(pageScheme(article, true)).toBe("light");
+    (document.getElementById("m") as HTMLElement).style.backgroundColor =
+      "rgba(255, 255, 255, 0.1)";
+    expect(pageScheme(article, false)).toBe("dark");
+  });
+
+  it("takes light text for a dark page whose background isn't a color", () => {
+    page(`<article id="a"><p>x</p></article>`);
+    const article = document.getElementById("a") as HTMLElement;
+    document.body.style.backgroundImage = "linear-gradient(#111, #222)";
+    document.body.style.color = "rgb(238, 238, 238)";
+    expect(pageScheme(article, false)).toBe("dark");
+    document.body.style.color = "rgb(20, 20, 20)";
+    expect(pageScheme(article, true)).toBe("light");
+  });
+
+  it("takes the canvas from the root's color-scheme when no color says", () => {
+    page(`<p id="p">x</p>`);
+    const p = document.getElementById("p") as HTMLElement;
+    // A browser's default text follows color-scheme; jsdom's doesn't, so take no text color here.
+    p.style.color = "transparent";
+    document.documentElement.style.colorScheme = "dark";
+    expect(pageScheme(p, false)).toBe("dark");
+    document.documentElement.style.colorScheme = "light dark";
+    expect(pageScheme(p, false)).toBe("light");
+    expect(pageScheme(p, true)).toBe("dark");
+  });
+});
+
 describe("what the app says", () => {
   it("counts the changes and the place in them", () => {
     expect(position(0, -1)).toBe("No changes on this page");
@@ -161,6 +210,29 @@ describe("what the app says", () => {
     expect(nextChangedPage(pages, "a.md")).toEqual({ page: pages[2], first: false });
     expect(nextChangedPage(pages, "c.md")).toEqual({ page: pages[0], first: true });
     expect(nextChangedPage([changed("a.md")], "a.md")).toBeNull();
+  });
+
+  it("names the next changed page by its title, or its route without one", () => {
+    const page = { ...changed("install.md"), title: "Install Loom" };
+    expect(nextPageText({ page, first: false })).toBe("Next changed page: Install Loom");
+    expect(nextPageText({ page: { ...page, title: null }, first: true })).toBe(
+      "First changed page: /docs/install",
+    );
+  });
+
+  it("says where a listed thread is by its file's name, and marks removed text", () => {
+    const thread = (init: Partial<LocatedThread>) =>
+      ({ kind: "review", side: "RIGHT", path: "Reference/Options.md", ...init }) as LocatedThread;
+    expect(threadLocation(thread({ lines: { first: 16, last: 16 } }))).toEqual({
+      label: "Options.md:16",
+      removed: false,
+    });
+    expect(threadLocation(thread({ lines: { first: 3, last: 5 } })).label).toBe("Options.md:3-5");
+    expect(threadLocation(thread({ side: "LEFT", lines: { first: 9, last: 9 } }))).toEqual({
+      label: "Options.md",
+      removed: true,
+    });
+    expect(threadLocation(thread({ lines: undefined })).label).toBe("Options.md");
   });
 
   it("says why there are no comments, and how the checkout differs", () => {

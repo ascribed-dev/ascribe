@@ -55,6 +55,9 @@ export interface DiffPage {
   changes: Change[];
 }
 
+/** A changed page in the list: without its changes, and with its title when the build has it. */
+export type ChangedPage = Omit<DiffPage, "changes"> & { title: string | null };
+
 /** The base compared with, as `ascribe diff` reports it. */
 export interface DiffBase {
   requested: string;
@@ -98,7 +101,7 @@ export interface PageView {
   errors: number;
   threads: ThreadsState;
   /** The build's changed pages, in path order. */
-  changedPages: Omit<DiffPage, "changes">[];
+  changedPages: ChangedPage[];
   /** The content root, absolute, and the platform's path separator: for opening a source file. */
   contentRoot: string;
   separator: string;

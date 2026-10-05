@@ -41,7 +41,8 @@ export interface OverlayHost {
   load(): Promise<OverlayData>;
   /** How a comment on the block would go: as a thread, in the review's summary, or not yet. */
   commentTarget(anchor: Anchor): Promise<CommentTarget>;
-  comment(anchor: Anchor, body: string): Promise<Thread>;
+  /** Comments on a block. `quote` is the block's text as the page shows it. */
+  comment(anchor: Anchor, body: string, quote?: string): Promise<Thread>;
   reply(threadId: string, body: string, when: "now" | "withReview"): Promise<ThreadComment>;
   /** Every thread on the pull request's pages, with the pages each is on. */
   allThreads(): Promise<ThreadSummary[]>;

@@ -1,8 +1,8 @@
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { outsideAssets } from "../src/dev.js";
+import { outsideAssets, SeenFiles } from "../src/dev.js";
 import { readProject } from "../src/project.js";
 
 function project(): string {
@@ -46,5 +46,30 @@ describe("outsideAssets", () => {
     expect(outsideAssets(readProject(dir), "site")).toEqual([]);
     manifest(dir, "not a list");
     expect(outsideAssets(readProject(dir), "site")).toEqual([]);
+  });
+});
+
+describe("SeenFiles", () => {
+  it("tells an edit from a late report of one already seen", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "ascribe-seen-"));
+    const file = path.join(dir, "a.md");
+    writeFileSync(file, "one");
+    const seen = new SeenFiles();
+    seen.prime([dir]);
+    expect(seen.changed(file)).toBe(false);
+    writeFileSync(file, "two, longer");
+    expect(seen.changed(file)).toBe(true);
+    expect(seen.changed(file)).toBe(false);
+    // The same size, written later.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    writeFileSync(file, "three, more");
+    expect(seen.changed(file)).toBe(true);
+    // A new file, and a removed one.
+    const added = path.join(dir, "b.md");
+    writeFileSync(added, "b");
+    expect(seen.changed(added)).toBe(true);
+    rmSync(added);
+    expect(seen.changed(added)).toBe(true);
+    rmSync(dir, { recursive: true });
   });
 });

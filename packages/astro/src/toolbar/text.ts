@@ -1,5 +1,6 @@
 // What the toolbar app says, apart from the DOM so it can be tested by itself.
-import type { Counts, DiffPage, PageView, ThreadsState } from "../review/protocol.js";
+import type { LocatedThread } from "@ascribed/review/overlay";
+import type { ChangedPage, Counts, DiffPage, PageView, ThreadsState } from "../review/protocol.js";
 
 /** "10 changes on this page", or "3 of 10 on this page" while stepping through them. */
 export function position(total: number, at: number): string {
@@ -86,15 +87,34 @@ export function threadsNotice(threads: ThreadsState): string | undefined {
  * path order, or past the last, the first (`first`). Removed pages are
  * skipped. `null` when no other page changed.
  */
-export function nextChangedPage(
-  pages: readonly Omit<DiffPage, "changes">[],
+export function nextChangedPage<P extends Omit<DiffPage, "changes">>(
+  pages: readonly P[],
   current: string | null,
-): { page: Omit<DiffPage, "changes">; first: boolean } | null {
+): { page: P; first: boolean } | null {
   const open = pages.filter((p) => p.status !== "removed" && p.path !== current);
   const first = open[0];
   if (first === undefined) return null;
   const after = current === null ? undefined : open.find((p) => p.path > current);
   return after ? { page: after, first: false } : { page: first, first: true };
+}
+
+/** The button past the last change: "Next changed page: Install Loom", by title as the page preview says it. */
+export function nextPageText(next: { page: ChangedPage; first: boolean }): string {
+  return `${next.first ? "First" : "Next"} changed page: ${next.page.title ?? next.page.route}`;
+}
+
+/**
+ * Where a listed thread is, as the overlay's cards say it: its file's name
+ * and lines (`Options.md:16`), or for a thread on removed text, only the
+ * file's name, since its lines are the base's.
+ */
+export function threadLocation(thread: LocatedThread): { label: string; removed: boolean } {
+  const file = thread.path.slice(thread.path.lastIndexOf("/") + 1);
+  const removed = thread.kind === "review" && thread.side === "LEFT";
+  const lines = thread.lines;
+  if (removed || lines === undefined) return { label: file, removed };
+  const range = lines.first === lines.last ? `${lines.first}` : `${lines.first}-${lines.last}`;
+  return { label: `${file}:${range}`, removed };
 }
 
 /** The hash that tells a page to go to a thread once it's drawn. */

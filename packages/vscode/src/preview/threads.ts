@@ -12,6 +12,7 @@ import {
   answerRequest,
   baseRevision,
   contentPrefixOf,
+  findPullRequest,
   ghTransport,
   openReview,
   readCheckout,
@@ -22,7 +23,7 @@ import {
 } from "@ascribed/review/github";
 import type { PageRef } from "@ascribed/review/place";
 import type { ProjectServer } from "../client.js";
-import { comparable } from "../projects.js";
+import { comparable, throughFolder } from "../projects.js";
 import type { ChangedPage, LocalState, ThreadsMethod, ThreadsView } from "./protocol.js";
 
 /** The scope posting review comments needs: `repo` (`public_repo` covers public repositories only). */
@@ -40,7 +41,10 @@ export type Connection =
       session: ReviewSession;
       via: "vscode" | "gh" | "test";
       local: { state: LocalState; behind: number; ahead: number };
-      /** The content root, absolute: where the threads' content paths are. */
+      /**
+       * The content root, absolute, through the links the workspace was
+       * opened with: where the threads' content paths are.
+       */
       contentRoot: string;
       /** The git revision for the pull request's base: `origin/main`. */
       base: string;
@@ -161,6 +165,42 @@ export class ThreadsController implements vscode.Disposable {
     return this.connect(server, { interactive: false });
   }
 
+  /** The project's checkout and branch, as one key; `undefined` when it isn't on a branch. */
+  async branchKey(server: ProjectServer): Promise<string | undefined> {
+    try {
+      const checkout = await readCheckout(server.project.folder);
+      return checkout.branch === undefined
+        ? undefined
+        : `${comparable(checkout.root)}\0${checkout.branch}`;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * The number of the open pull request for the project's branch, found
+   * without asking anyone: with a GitHub sign-in VS Code already has, or the
+   * GitHub CLI when the reviewer chose it. `undefined` when there's none, or
+   * no sign-in to look with.
+   */
+  async quietPullRequest(server: ProjectServer): Promise<number | undefined> {
+    try {
+      const checkout = await readCheckout(server.project.folder);
+      const host = checkout.bases[0]?.host;
+      if (host === undefined || checkout.headRef === undefined) return undefined;
+      let transport = this.transport;
+      if (!transport && this.choseGh(server)) transport = (h) => ghTransport({ host: h });
+      if (!transport && (await githubSession(host, false))) {
+        transport = (h) => tokenTransport(() => githubToken(h), { host: h });
+      }
+      if (!transport) return undefined;
+      return (await findPullRequest(checkout, transport))?.number;
+    } catch {
+      // Not a git repository, or GitHub couldn't be asked: nothing to offer.
+      return undefined;
+    }
+  }
+
   /** What the preview shows about the project's threads; `null` when there's no pull request. */
   view(server: ProjectServer, goTo: string | null): ThreadsView | null {
     const connection = this.connection(server);
@@ -272,9 +312,9 @@ export class ThreadsController implements vscode.Disposable {
       session,
       via,
       local: { state: pr.local, ...counts },
-      contentRoot: path.join(
-        checkout.root,
-        ...contentPrefixOf(checkout.root, projectDir).split("/"),
+      contentRoot: await openedContentRoot(
+        path.join(checkout.root, ...contentPrefixOf(checkout.root, projectDir).split("/")),
+        projectDir,
       ),
       base: await baseRevision(checkout.root, pr),
     };
@@ -384,6 +424,19 @@ async function unsavedText(file: string): Promise<{ saved: string; current: stri
   } catch {
     return undefined;
   }
+}
+
+/**
+ * The content root through the links the workspace was opened with: git's
+ * root is a real path, and the source editor's threads and commenting ranges
+ * are matched against the editors' URIs. git's path when the rewritten one
+ * isn't the same folder.
+ */
+async function openedContentRoot(fromGit: string, projectDir: string): Promise<string> {
+  const opened = throughFolder(fromGit, projectDir, await realPath(projectDir));
+  if (opened === fromGit) return fromGit;
+  const [a, b] = await Promise.all([realPath(opened), realPath(fromGit)]);
+  return comparable(a) === comparable(b) ? opened : fromGit;
 }
 
 /** `file` with its links resolved, or as it is when it can't be. */

@@ -8,7 +8,7 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Browser, Locator, Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { fakeGitHub, type FakeGitHub } from "./fake-github.js";
+import { fakeGitHub, type FakeGitHub, type FakeThread } from "./fake-github.js";
 import { BASE, buildSite, copySite, launchChromium, serveDev, siteDir } from "./harness.js";
 
 let browser: Browser;
@@ -63,8 +63,12 @@ function panel(page: Page): Locator {
 }
 
 /** Opens a page of the dev server and turns review on from the toolbar. */
-async function startReview(origin: string, route: string): Promise<Page> {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+async function startReview(
+  origin: string,
+  route: string,
+  colorScheme: "light" | "dark" = "light",
+): Promise<Page> {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, colorScheme });
   const response = await page.goto(`${origin}${route}`);
   expect(response?.status(), route).toBe(200);
   await appButton(page).click();
@@ -88,10 +92,24 @@ describe("review in the site preview", () => {
     await edit(path.join(root, GUIDE), addParagraph);
     const server = await serveDev(root);
     try {
-      const page = await startReview(server.origin, `${BASE}/guides/my-setup`);
+      // The system is dark, but the site is light only: review's colors follow the site.
+      const page = await startReview(server.origin, `${BASE}/guides/my-setup`, "dark");
       const added = page.locator('[data-ascribe-change="added"]');
       await expect.poll(() => added.count(), { timeout: 30_000 }).toBe(1);
       await expect(added.textContent()).resolves.toContain("A paragraph about weaving.");
+      await expect(page.locator("html").getAttribute("data-ascribe-scheme")).resolves.toBe("light");
+      await expect(panel(page).getAttribute("data-scheme")).resolves.toBe("light");
+      const background = await added.evaluate((el) => getComputedStyle(el).backgroundColor);
+      expect(background).toBe("rgb(220, 247, 227)");
+      // A theme switch on the page, as a site's toggle makes: review follows it.
+      await page.evaluate(() => {
+        document.body.style.background = "#16181d";
+        document.body.style.color = "#d9dde5";
+      });
+      await expect
+        .poll(() => page.locator("html").getAttribute("data-ascribe-scheme"))
+        .toBe("dark");
+      await expect(panel(page).getAttribute("data-scheme")).resolves.toBe("dark");
       const text = await panel(page).textContent();
       expect(text).toContain("Against main");
       expect(text).toContain("1 change on this page");
@@ -225,19 +243,22 @@ describe("review in the site preview", () => {
     let github: FakeGitHub | undefined;
     afterAll(() => github?.remove());
 
-    it("shows a thread beside its block, and sends a comment made there on submit", async () => {
-      const root = await gitSite("review-threads");
+    /** A copy of the site on a branch with pull request #7: `change` edits it, and `threads` are on it. */
+    async function pullRequest(
+      name: string,
+      files: string[],
+      change: (root: string) => Promise<void>,
+      threads: (root: string) => Promise<FakeThread[]>,
+    ): Promise<{ root: string; github: FakeGitHub }> {
+      const root = await gitSite(name);
       git(root, "remote", "add", "origin", "https://github.com/acme/docs.git");
       git(root, "update-ref", "refs/remotes/origin/main", "main");
-      await edit(path.join(root, GUIDE), addParagraph);
-      git(root, "commit", "-qam", "A paragraph");
+      await change(root);
+      git(root, "commit", "-qam", "A change");
       git(root, "config", "branch.change.remote", "origin");
       git(root, "config", "branch.change.merge", "refs/heads/change");
       git(root, "update-ref", "refs/remotes/origin/change", "change");
-      const guide = "content/Guides/My Setup.md";
-      const lines = (await readFile(path.join(root, GUIDE), "utf8")).split("\n");
-      const intro = lines.findIndex((l) => l.startsWith("This guide sets up")) + 1;
-      const added = lines.findIndex((l) => l.startsWith("A paragraph about weaving")) + 1;
+      github?.remove();
       github = fakeGitHub({
         pullRequest: {
           id: "PR_1",
@@ -248,21 +269,39 @@ describe("review in the site preview", () => {
           headRefOid: git(root, "rev-parse", "change"),
           baseRefName: "main",
           baseRefOid: git(root, "rev-parse", "main"),
-          files: [guide],
+          files,
         },
-        threads: [
+        threads: await threads(root),
+        review: null,
+        submitted: [],
+      });
+      return { root, github };
+    }
+
+    /** The line of `file` (from the site's root) that starts with `start`. */
+    async function lineOf(root: string, file: string, start: string): Promise<number> {
+      const lines = (await readFile(path.join(root, file), "utf8")).split("\n");
+      return lines.findIndex((l) => l.startsWith(start)) + 1;
+    }
+
+    it("shows a thread beside its block, and sends a comment made there on submit", async () => {
+      const guide = "content/Guides/My Setup.md";
+      const { root, github } = await pullRequest(
+        "review-threads",
+        [guide],
+        (root) => edit(path.join(root, GUIDE), addParagraph),
+        async (root) => [
           {
             id: "PRRT_0",
             path: guide,
-            line: intro,
+            line: await lineOf(root, guide, "This guide sets up"),
             comments: [
               { id: "PRRC_0", body: "Say what Loom is first.", state: "SUBMITTED", login: "maya" },
             ],
           },
         ],
-        review: null,
-        submitted: [],
-      });
+      );
+      const added = await lineOf(root, guide, "A paragraph about weaving");
       const server = await serveDev(root, { PATH: github.path });
       try {
         const page = await startReview(server.origin, `${BASE}/guides/my-setup`);
@@ -274,40 +313,21 @@ describe("review in the site preview", () => {
           hasText: "Say what Loom is first.",
         });
         await expect.poll(() => card.count(), { timeout: 30_000 }).toBe(1);
-        // A comment on the new paragraph. On macOS a delayed watcher event can
-        // reload the page after review started, closing the comment form:
-        // open it again until the comment is in.
+        // At 1280 pixels the threads are in a column, and the panel stays clear of it.
+        const panelBox = await panel(page).boundingBox();
+        const cardBox = await card.boundingBox();
+        expect(panelBox && cardBox && panelBox.x + panelBox.width).toBeLessThanOrEqual(cardBox?.x ?? 0);
+        // A comment on the new paragraph.
         const block = page.locator('[data-ascribe-change="added"]');
-        const unsent = async () => (await panel(page).textContent().catch(() => null)) ?? "";
+        await block.hover();
+        await page.getByRole("button", { name: "Comment on this block" }).click();
+        await page.getByRole("textbox", { name: "Comment" }).fill("Is this still true?");
+        await page
+          .getByRole("group", { name: /^Comment on/ })
+          .getByRole("button", { name: "Add to review" })
+          .click();
         await expect
-          .poll(
-            async () => {
-              if ((await unsent()).includes("unsent comment")) return unsent();
-              try {
-                await block.hover({ timeout: 5_000 });
-                await page
-                  .getByRole("button", { name: "Comment on this block" })
-                  .click({ timeout: 5_000 });
-                await page
-                  .getByRole("textbox", { name: "Comment" })
-                  .fill("Is this still true?", { timeout: 5_000 });
-                await page
-                  .getByRole("group", { name: /^Comment on/ })
-                  .getByRole("button", { name: "Add to review" })
-                  .click({ timeout: 5_000 });
-                // Give the panel time to count it before trying again, so
-                // one comment isn't added twice.
-                await expect
-                  .poll(unsent, { timeout: 5_000 })
-                  .toContain("unsent comment")
-                  .catch(() => undefined);
-              } catch {
-                // The page reloaded under the form: try again.
-              }
-              return unsent();
-            },
-            { timeout: 60_000 },
-          )
+          .poll(async () => panel(page).textContent(), { timeout: 30_000 })
           .toContain("1 unsent comment");
         expect(github.state().submitted).toEqual([]);
         await panel(page).getByRole("button", { name: "Submit review…" }).click();
@@ -316,6 +336,52 @@ describe("review in the site preview", () => {
         const made = github.state().threads.find((t) => t.comments[0]?.body === "Is this still true?");
         expect(made).toMatchObject({ path: guide, line: added });
         expect(made?.comments[0]?.state).toBe("SUBMITTED");
+        await page.close();
+      } finally {
+        await server.stop();
+      }
+    });
+
+    it("lists the threads on a page's fragments when a layout drops the anchors", async () => {
+      const guide = "content/Guides/My Setup.md";
+      const fragment = "content/_fragments/requirements.md";
+      const { root, github } = await pullRequest(
+        "review-threads-no-anchors",
+        [fragment],
+        async (root) => {
+          await edit(path.join(root, fragment), (text) => text.replace("Node.js 20", "Node.js 22"));
+          await edit(path.join(root, "src", "layouts", "Docs.astro"), (text) =>
+            text.replace(
+              "</body>",
+              `<script is:inline>for (const el of document.querySelectorAll("[data-ascribe-source]")) el.removeAttribute("data-ascribe-source");</script></body>`,
+            ),
+          );
+        },
+        async (root) => [
+          {
+            id: "PRRT_0",
+            path: guide,
+            line: await lineOf(root, guide, "This guide sets up"),
+            comments: [{ id: "PRRC_0", body: "On the guide.", state: "SUBMITTED", login: "maya" }],
+          },
+          {
+            id: "PRRT_1",
+            path: fragment,
+            line: await lineOf(root, fragment, "- Node.js"),
+            comments: [{ id: "PRRC_1", body: "Why 22?", state: "SUBMITTED", login: "sam" }],
+          },
+        ],
+      );
+      const server = await serveDev(root, { PATH: github.path });
+      try {
+        const page = await startReview(server.origin, `${BASE}/guides/my-setup`);
+        await expect
+          .poll(async () => panel(page).textContent(), { timeout: 30_000 })
+          .toContain("This page has 2 comments and 1 change, but its blocks carry no source anchors.");
+        expect(await panel(page).textContent()).toContain("Why 22?");
+        // Each card names its file as the overlay's cards do.
+        const where = await panel(page).locator(".thread .where").allTextContents();
+        expect(where.sort()).toEqual(["My Setup.md:7", "requirements.md:3"]);
         await page.close();
       } finally {
         await server.stop();

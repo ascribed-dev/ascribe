@@ -9,6 +9,7 @@ import {
   setShow,
   type Change,
 } from "../src/marks/index.js";
+import { blockText } from "../src/overlay/text.js";
 
 /** A page rendered with anchors, in a root element. */
 function page(html: string): HTMLElement {
@@ -323,5 +324,17 @@ describe("markChanges", () => {
     expect(marks).toHaveLength(6);
     expect(root.querySelectorAll(".ascribe-removed")).toHaveLength(2);
     expect(root.querySelectorAll(".ascribe-label")).toHaveLength(6);
+  });
+});
+
+describe("a marked block's text, for quoting", () => {
+  it("leaves out the marks' labels and removed words, and keeps inserted ones", () => {
+    const root = page(NOW);
+    markChanges(root, CHANGES);
+    const block = (source: string) =>
+      root.querySelector(`[data-ascribe-source="${source}"]`) as Element;
+    expect(blockText(block("guide.md:3-3"))).toBe("Run the installer now.");
+    expect(blockText(block("guide.md:5-5"))).toBe("A brand new paragraph.");
+    expect(blockText(block("guide.md:7-8"))).toBe("Linux\nmacOS");
   });
 });

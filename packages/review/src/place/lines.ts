@@ -1,6 +1,7 @@
 // Moving a line number between a commit and the working tree, through the
 // line changes `git diff --unified=0` reports.
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { git, gitMaybe } from "../shared/git.js";
 
@@ -33,13 +34,30 @@ export interface Shifted {
   replaced: boolean;
 }
 
+/** The text of both sides of a diff, line by line, for telling replaced lines from deleted ones. */
+export interface Sides {
+  old: readonly string[];
+  new: readonly string[];
+}
+
 /**
  * Where line `line` of the old side is on the new side. A line the diff
- * replaced maps onto the lines that replaced it, at the same offset clamped to
- * them, with `replaced` set; a line it only deleted maps to `undefined`. Hunks
- * come from a diff with no context lines.
+ * replaced maps onto the line that replaced it, with `replaced` set; a line it
+ * only deleted maps to `undefined`. Hunks come from a diff with no context
+ * lines.
+ *
+ * Old lines pair with new ones by position, clamped to the last new line.
+ * But a hunk with fewer new lines than old can have deleted some lines and
+ * reworded others, so with `sides` each of its old lines pairs with the new
+ * line most like it, in order, and an old line like none of them was deleted.
+ * When none of them pairs (the text was rewritten), or the hunk is too large
+ * to compare, it's by position again.
  */
-export function shiftLine(hunks: readonly Hunk[], line: number): Shifted | undefined {
+export function shiftLine(
+  hunks: readonly Hunk[],
+  line: number,
+  sides?: Sides,
+): Shifted | undefined {
   let delta = 0;
   for (const hunk of hunks) {
     if (hunk.oldCount === 0) {
@@ -50,12 +68,120 @@ export function shiftLine(hunks: readonly Hunk[], line: number): Shifted | undef
     const end = hunk.oldStart + hunk.oldCount;
     if (line >= hunk.oldStart && line < end) {
       if (hunk.newCount === 0) return undefined;
-      const offset = Math.min(line - hunk.oldStart, hunk.newCount - 1);
-      return { line: hunk.newStart + offset, replaced: true };
+      const pairs = sides && pairLines(hunk, sides);
+      const offset =
+        pairs === undefined
+          ? Math.min(line - hunk.oldStart, hunk.newCount - 1)
+          : pairs[line - hunk.oldStart];
+      return offset === undefined ? undefined : { line: hunk.newStart + offset, replaced: true };
     }
     if (line >= end) delta += hunk.newCount - hunk.oldCount;
   }
   return { line: line + delta, replaced: false };
+}
+
+/** How alike two lines must be, by their words, for one to be the other reworded. */
+const ALIKE = 0.3;
+
+const pairings = new WeakMap<Sides, WeakMap<Hunk, (number | undefined)[] | undefined>>();
+
+/**
+ * For each old line of a hunk with fewer new lines than old, the offset of
+ * the new line it became, or `undefined` if it was deleted: the pairing, in
+ * order, that makes the paired lines most alike. `undefined` when the hunk
+ * has as many new lines as old, is too large to compare, or no line pairs.
+ */
+function pairLines(hunk: Hunk, sides: Sides): (number | undefined)[] | undefined {
+  let cache = pairings.get(sides);
+  if (cache === undefined) {
+    cache = new WeakMap();
+    pairings.set(sides, cache);
+  }
+  if (cache.has(hunk)) return cache.get(hunk);
+  const n = hunk.oldCount;
+  const m = hunk.newCount;
+  let pairs: (number | undefined)[] | undefined;
+  if (m < n && n * m <= 250_000) {
+    const oldTokens = sides.old.slice(hunk.oldStart - 1, hunk.oldStart - 1 + n).map(tokens);
+    const newTokens = sides.new.slice(hunk.newStart - 1, hunk.newStart - 1 + m).map(tokens);
+    // `best(i, j)`: the most likeness pairing old lines from `i` on with new lines from `j` on.
+    const width = m + 1;
+    const table = new Float64Array((n + 1) * width);
+    const best = (i: number, j: number): number => table[i * width + j] ?? 0;
+    const like = (i: number, j: number): number => {
+      const score = likeness(oldTokens[i] ?? [], newTokens[j] ?? []);
+      return score >= ALIKE ? score : 0;
+    };
+    for (let i = n - 1; i >= 0; i--) {
+      for (let j = m - 1; j >= 0; j--) {
+        const score = like(i, j);
+        table[i * width + j] = Math.max(
+          score > 0 ? best(i + 1, j + 1) + score : 0,
+          best(i + 1, j),
+          best(i, j + 1),
+        );
+      }
+    }
+    if (best(0, 0) > 0) {
+      pairs = [];
+      let i = 0;
+      let j = 0;
+      while (i < n) {
+        const score = j < m ? like(i, j) : 0;
+        if (score > 0 && best(i, j) === best(i + 1, j + 1) + score) {
+          pairs.push(j);
+          i++;
+          j++;
+        } else if (j >= m || best(i, j) === best(i + 1, j)) {
+          pairs.push(undefined);
+          i++;
+        } else {
+          j++;
+        }
+      }
+    }
+  }
+  cache.set(hunk, pairs);
+  return pairs;
+}
+
+/** Scripts written without spaces between words, compared by pairs of characters instead. */
+const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}]/u;
+
+/**
+ * What a line is compared by: its words, in lower case, with text in scripts
+ * written without spaces as pairs of characters; or, for a line with no
+ * letters or digits, such as `});` or `---`, its characters.
+ */
+function tokens(line: string | undefined): string[] {
+  const text = (line ?? "").toLowerCase();
+  const found: string[] = [];
+  for (const [word] of text.matchAll(/[\p{L}\p{M}\p{N}]+/gu)) {
+    if (!UNSPACED.test(word)) {
+      found.push(word);
+      continue;
+    }
+    const chars = Array.from(word);
+    if (chars.length === 1) found.push(word);
+    for (let i = 0; i + 1 < chars.length; i++) found.push(`${chars[i]}${chars[i + 1]}`);
+  }
+  return found.length > 0 ? found : Array.from(text.replace(/\s+/g, ""));
+}
+
+/** How many tokens two lines share, from 0 to 1: twice the shared count over the total. */
+function likeness(a: readonly string[], b: readonly string[]): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  const counts = new Map<string, number>();
+  for (const token of a) counts.set(token, (counts.get(token) ?? 0) + 1);
+  let shared = 0;
+  for (const token of b) {
+    const count = counts.get(token) ?? 0;
+    if (count > 0) {
+      shared++;
+      counts.set(token, count - 1);
+    }
+  }
+  return (2 * shared) / (a.length + b.length);
 }
 
 /** Maps line numbers of a file from one side to the other. */
@@ -95,7 +221,15 @@ export async function lineMap(
   ]);
   const hunks = parseHunks(diff);
   if (hunks.length === 0) return { map: (line) => ({ line, replaced: false }), identity: true };
-  return { map: (line) => shiftLine(hunks, line), identity: false };
+  let sides: Sides | undefined;
+  if (hunks.some((hunk) => hunk.oldCount > 0 && hunk.newCount > 0)) {
+    const atCommitText = (await gitMaybe(root, ["cat-file", "blob", `${commit}:${file}`])) ?? "";
+    const inWorktree = await readFile(path.join(root, ...file.split("/")), "utf8").catch(() => "");
+    const [from, to] =
+      direction === "to-worktree" ? [atCommitText, inWorktree] : [inWorktree, atCommitText];
+    sides = { old: from.split(/\r?\n/), new: to.split(/\r?\n/) };
+  }
+  return { map: (line) => shiftLine(hunks, line, sides), identity: false };
 }
 
 /** Lines `first`..`last` of the repository-relative `file` at `commit`, or `undefined`. */

@@ -49,6 +49,15 @@ describe("review threads, with a fake GitHub", () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
+  it("asks GitHub nothing, and offers nothing, before review was ever started here", () => {
+    // The page is open and its server running, with a pull request to find.
+    assert.deepEqual(
+      github.calls.map((c) => c.operation),
+      [],
+    );
+    assert.deepEqual(preview.review.offers(), []);
+  });
+
   it("starts review against the pull request's base, and names the pull request", async () => {
     const started = await preview.review.start(workspace());
     assert.equal(started.problem, null);
@@ -127,5 +136,21 @@ describe("review threads, with a fake GitHub", () => {
     await preview.review.stop(workspace());
     await waitFor("no threads in the source editor", () => preview.sourceThreads().length === 0);
     assert.equal(preview.review.status().text, "$(git-compare) Review: off");
+  });
+
+  it("offers review of the branch's pull request once, now that review was used here", async () => {
+    // Stopping offered nothing: the branch was reviewed this session.
+    assert.deepEqual(preview.review.offers(), []);
+    preview.review.forgetOffers();
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
+    await waitFor("the offer", () => preview.review.offers().length === 1);
+    assert.deepEqual(preview.review.offers(), [
+      "Ascribe: this branch has pull request #7. Start Review?",
+    ]);
+    // Once a session: showing the page again offers nothing more.
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
+    assert.equal(preview.review.offers().length, 1);
   });
 });

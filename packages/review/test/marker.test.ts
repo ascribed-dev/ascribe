@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { formatSection, joinSections, marker, parseSections } from "../src/github/marker.js";
+import {
+  escapeText,
+  formatSection,
+  joinSections,
+  marker,
+  parseSections,
+  unescapeText,
+} from "../src/github/marker.js";
 
 describe("hidden anchor markers", () => {
   test("write the marker the design names", () => {
@@ -33,8 +40,12 @@ describe("hidden anchor markers", () => {
     });
     const body = joinSections([one, two], "Overall looks good.");
     expect(body).toContain("> Install the CLI.\n>\n> Then run it.");
+    expect(body.startsWith("Overall looks good.\n\n<!-- ascribe:summary -->\n\n> Install")).toBe(
+      true,
+    );
     const parsed = parseSections(body);
-    expect(parsed.rest).toBe("Overall looks good.");
+    expect(parsed.summary).toBe("Overall looks good.");
+    expect(parsed.rest).toBe("");
     expect(parsed.sections).toEqual([
       {
         source: "guides/install.md:12-14",
@@ -47,6 +58,76 @@ describe("hidden anchor markers", () => {
   });
 
   test("a body without markers has no sections", () => {
-    expect(parseSections("Just a comment.")).toEqual({ sections: [], rest: "Just a comment." });
+    expect(parseSections("Just a comment.")).toEqual({
+      summary: "",
+      sections: [],
+      rest: "Just a comment.",
+    });
+    expect(joinSections([], "Just a comment.")).toBe("Just a comment.");
+  });
+
+  test("read a summary written after the sections, as earlier reviews did", () => {
+    const section = formatSection({
+      source: "a.md:1-1",
+      build: undefined,
+      body: "Typo.",
+      quote: undefined,
+      link: undefined,
+    });
+    const parsed = parseSections(`${section}\n\nOverall looks good.`);
+    expect(parsed.sections).toHaveLength(1);
+    expect(parsed.rest).toBe("Overall looks good.");
+  });
+
+  test("escape shown text so GitHub shows it as written, and read it back", () => {
+    const text =
+      "Wrap it in <details> or use Vec<T> and *args, see #5, ask @types.\n# install\n__init__ = 1\n1. step\n    indented \\\n&lt; & ===";
+    const escaped = escapeText(text);
+    expect(escaped).not.toMatch(/(^|[^\\])[<*_#]/m);
+    expect(escaped).not.toMatch(/@t|#5/);
+    expect(unescapeText(escaped)).toBe(text);
+    const body = joinSections(
+      [
+        formatSection({
+          source: "a.md:1-6",
+          build: undefined,
+          body: "Hm.",
+          quote: text,
+          shown: true,
+          link: undefined,
+        }),
+      ],
+      undefined,
+    );
+    expect(body).toContain("<!-- ascribe:anchor a.md:1-6 quote=text -->");
+    expect(parseSections(body).sections).toEqual([
+      { source: "a.md:1-6", build: undefined, body: "Hm.", quote: text },
+    ]);
+  });
+
+  test("a marker in a quote or a summary isn't read as one", () => {
+    const one = formatSection({
+      source: "a.md:1-1",
+      build: undefined,
+      body: "First.",
+      quote: undefined,
+      link: undefined,
+    });
+    const two = formatSection({
+      source: "b.md:1-1",
+      build: undefined,
+      body: "Second.",
+      quote: "Write <!-- ascribe:summary --> or <!-- ascribe:anchor x.md:1-1 -->.",
+      shown: true,
+      link: undefined,
+    });
+    const held = parseSections(joinSections([one, two], undefined));
+    expect(held.summary).toBe("");
+    expect(held.sections.map((s) => s.body)).toEqual(["First.", "Second."]);
+
+    const summary = "Do we need `<!-- ascribe:summary -->`? Rest.";
+    const typed = parseSections(joinSections([one], summary));
+    expect(typed.summary).toContain("Rest.");
+    expect(typed.sections.map((s) => s.body)).toEqual(["First."]);
   });
 });

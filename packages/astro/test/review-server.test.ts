@@ -111,7 +111,13 @@ function serve(init: Partial<ReviewServerOptions> = {}) {
     local: { state: "same", behind: 0, ahead: 0 },
   }));
   const writeRoutes = vi.fn(async () => undefined);
-  const readRoutes = vi.fn(async () => new Map([["/docs/plain", "plain.md"]]));
+  const readRoutes = vi.fn(
+    async () =>
+      new Map([
+        ["/docs/plain", { path: "plain.md", title: "Plain" }],
+        ["/docs/guide", { path: "guide.md", title: "The guide" }],
+      ]),
+  );
   const server = new ReviewServer({
     channel,
     logger: { info: () => undefined, warn: () => undefined },
@@ -168,7 +174,11 @@ describe("ReviewServer", () => {
       pullRequest: { number: 7, url: "https://github.com/acme/docs/pull/7", baseRefName: "main" },
       local: { state: "same", behind: 0, ahead: 0 },
     });
-    expect(view.changedPages.map((p) => p.path)).toEqual(["guide.md", "gone.md"]);
+    expect(view.changedPages.map((p) => [p.path, p.title])).toEqual([
+      ["guide.md", "The guide"],
+      // A removed page isn't in the build, so it has no title.
+      ["gone.md", null],
+    ]);
     expect(view.changedPages[0]).not.toHaveProperty("changes");
     expect(view.contentRoot).toBe("/p/content");
   });
@@ -179,7 +189,6 @@ describe("ReviewServer", () => {
     const fromBlocks = (await channel.request("page", { route: "/docs/other", path: "other.md" }))
       .result as PageView;
     expect(fromBlocks).toMatchObject({ kind: "page", path: "other.md", page: null });
-    expect(readRoutes).not.toHaveBeenCalled();
     // No anchors arrived: the route says which page it is.
     const fromRoutes = (await channel.request("page", { route: "/docs/plain", path: null }))
       .result as PageView;
@@ -191,6 +200,8 @@ describe("ReviewServer", () => {
     const gone = (await channel.request("page", { route: "/docs/gone", path: null }))
       .result as PageView;
     expect(gone.kind).toBe("not-page");
+    // The routes are read once, until the next rebuild.
+    expect(readRoutes).toHaveBeenCalledTimes(1);
   });
 
   it("compares again after a rebuild, once", async () => {
@@ -216,12 +227,17 @@ describe("ReviewServer", () => {
       "threads",
       { build: "site", path: "guide.md", anchors, removed: [] },
     ]);
-    await channel.request("comment", { path: "guide.md", anchor: anchors[0], body: "Why?" }, "t2");
+    await channel.request(
+      "comment",
+      { path: "guide.md", anchor: anchors[0], body: "Why?", quote: "Shown text" },
+      "t2",
+    );
     expect(calls.find((c) => c[0] === "comment")).toEqual([
       "comment",
       anchors[0],
       "Why?",
       { build: "site", path: "guide.md", anchors, removed: [] },
+      "Shown text",
     ]);
     expect(channel.broadcasts).toContainEqual({ event: CHANGED_EVENT, payload: { from: "t2" } });
   });

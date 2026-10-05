@@ -137,7 +137,7 @@ A project's server starts the first time you open one of its Markdown files or i
 
 To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
 
-An `ascribe.toml` you add or delete is picked up as you work. The extension serves at most 50 projects in a workspace: the first 50 by path. When there are more, the first project's output says so.
+An `ascribe.toml` you add or delete is picked up as you work. If the editor misses a new one, opening or switching to one of the new project's files picks it up. The extension serves at most 50 projects in a workspace: the first 50 by path. When there are more, the first project's output says so.
 
 Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
 

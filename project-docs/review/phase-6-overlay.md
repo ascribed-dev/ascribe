@@ -34,7 +34,7 @@ interface OverlayHost {
 ```
 
 - **Threads** show in a column beside the content at wide widths, and as markers that open a panel at narrow widths. Each thread is tied to its block (a line connects them on hover and focus). Resolved threads are collapsed; outdated threads are labeled.
-- **Detached threads** (no block on this page) are listed at the top, labelled **Detached**, with the text they were on (GitHub supplies the diff hunk). **Outdated** is a different state: the block is there but its text changed since the comment. An outdated thread stays beside its block, labelled, with a way to see the original text.
+- **Detached threads** (no block on this page) are listed at the top, labelled **Detached**, with the text they were on (GitHub supplies the diff hunk), a reply box, **Resolve**, and **View on GitHub**. **Outdated** is a different state: the block is there but its text changed since the comment. An outdated thread stays beside its block, labelled, with a way to see the original text.
 - **Replying:** each thread's reply box offers **Reply now** and **Add to review**. While there are unsent comments, **Reply now** is disabled and says why: GitHub adds every reply to the review until it's submitted or discarded (the session rejects a reply sent now with `reply-held`).
 - **All comments:** a panel listing every thread on the pull request's pages, with a filter (open, resolved, detached, unsent) and counts. Each entry names its page and block and jumps to it, opening another page if needed. It's the one place a keyboard or screen reader user can reach every thread without walking the page.
 - **Hidden content:** opening a thread whose block is inside an unselected tab or a closed `details` reveals it first.
@@ -49,10 +49,10 @@ interface OverlayHost {
 
 - When review is on (phase 4) and the checkout has a pull request, the extension makes a `ReviewSession` with `tokenTransport`, asking VS Code's GitHub sign-in for a session only when the user turns review on (never at startup). If the user declines, the changes still show, without threads, with a **Sign in to see comments** button. If `gh` is signed in and VS Code isn't, offer `ghTransport`.
 - **Start Review** now defaults the base to the pull request's base when there is one.
-- When review is off and the checkout's branch has an open pull request, offer it once per session, quietly (a notification: "This branch has pull request #128. Start Review?"). Finding that out mustn't ask GitHub before the user has turned review on at least once in the workspace, and never asks for a sign-in.
+- When review is off and the checkout's branch has an open pull request, offer it once per session for each branch, quietly (a notification: "This branch has pull request #128. Start Review?", with **Don't Offer Again** for the workspace). Finding that out mustn't ask GitHub before the user has turned review on at least once in the workspace, and never asks for a sign-in.
 - The webview hosts the overlay; `OverlayHost` is implemented over the webview's message protocol. All GitHub access stays in the extension host: the webview never sees a token and makes no network requests (keep the content security policy as strict as it is).
 - If local `HEAD` isn't the pull request's head commit, the header says so (behind: **Pull** to see the latest; ahead: comments can be made only on pushed lines).
-- Threads refresh when review starts, on **Refresh** (an editor title action beside phase 4's **Changed Pages**), and after the user's own actions. No polling.
+- Threads are read when review starts and on **Refresh** (an editor title action beside phase 4's **Changed Pages**). The user's own actions update them from GitHub's answer, without reading every thread again, so someone else's new comment shows on **Refresh**. No polling.
 
 ### In the source editor
 

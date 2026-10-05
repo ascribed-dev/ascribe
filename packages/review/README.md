@@ -88,11 +88,11 @@ Finds the open pull request whose head is the checkout's current branch and retu
 | Method | What it does |
 |---|---|
 | `threads(page)` | The page's threads, placed (see [`placeOnPage`](#placeonpagepage-threads)). Reads the pull request once and caches it until `refresh()` or a change made through the session. |
-| `comment(anchor, body, page)` | Comments on a block. The comment becomes a review thread on the block's file, at its lines at the pull request's head commit (moved back through any local edits), on the right side, in the viewer's pending review, which is created on the first comment. If any of the block's lines isn't at the head commit unchanged, it rejects with `push-first`. If the file isn't in the pull request, or GitHub can't anchor a comment to the lines (it can only anchor to lines near the pull request's changes), the comment is held in the pending review's body instead, quoting the block's text, linking its lines, and ending with a hidden marker (below); it reaches the pull request's conversation when the review is submitted. GitHub can't add a body to a pending review created without one, so the session creates its review with a placeholder body, `<!-- ascribe:review -->`, which is never shown or sent; if the pending review was started on GitHub with no body, a held comment rejects with `cant-hold`. Resolves with the new thread. |
+| `comment(anchor, body, page, quote?)` | Comments on a block. The comment becomes a review thread on the block's file, at its lines at the pull request's head commit (moved back through any local edits), on the right side, in the viewer's pending review, which is created on the first comment. If any of the block's lines isn't at the head commit unchanged, it rejects with `push-first`. If the file isn't in the pull request, or GitHub can't anchor a comment to the lines (it can only anchor to lines near the pull request's changes), the comment is held in the pending review's body instead, quoting the block's text (`quote`, the text the page shows, escaped so GitHub shows it as written and cut at 2,000 characters; without it, the block's source), linking its lines, and ending with a hidden marker (below); it reaches the pull request's conversation when the review is submitted. GitHub can't add a body to a pending review created without one, so the session creates its review with a placeholder body, `<!-- ascribe:review -->`, which is never shown or sent; if the pending review was started on GitHub with no body, a held comment rejects with `cant-hold`. Resolves with the new thread. |
 | `reply(threadId, body, when)` | Replies to a review thread: `"withReview"` holds the reply in the pending review; `"now"` sends it at once. While the viewer has a pending review, GitHub puts every reply into it, so a reply sent with `"now"` then is deleted again and the call rejects with `reply-held`: offer `"now"` only when `pending().count` is 0. |
 | `resolve(threadId, resolved)` | Resolves or reopens a thread, at once. |
 | `pending()` | What's in the viewer's pending review: its `id`, new `threads`, `replies` to existing threads, held `conversation` comments, and the `count` of all of them. |
-| `submit(event, body?)` | Submits the pending review as `"COMMENT"`, `"APPROVE"`, or `"REQUEST_CHANGES"`, with the held conversation comments ahead of `body` (and without the placeholder). |
+| `submit(event, body?)` | Submits the pending review as `"COMMENT"`, `"APPROVE"`, or `"REQUEST_CHANGES"`, with `body` first and the held conversation comments after it, the two separated by `<!-- ascribe:summary -->` (and without the placeholder). |
 | `discard()` | Deletes the pending review and everything in it. |
 | `refresh()` | Forgets what's cached. |
 
@@ -113,6 +113,8 @@ A comment held for the conversation ends with a marker naming its block and buil
 ```html
 <!-- ascribe:anchor guides/install.md:12-14 build=site -->
 ```
+
+When the comment quotes the text the page shows, rather than the block's source, the marker ends ` quote=text`. In a submitted review, the summary comes first and ends with `<!-- ascribe:summary -->`; a summary with no held comments after it has no marker.
 
 Reading a pull request also reads its conversation comments and review bodies, splits them at markers, and places each part like a thread.
 
