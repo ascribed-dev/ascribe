@@ -16,7 +16,9 @@ const PACKAGES = ["@ascribed/astro", "@ascribed/cli", "@ascribed/elements"];
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const shell = process.platform === "win32";
 
-const version = execFileSync(npm, ["view", "@ascribed/astro@next", "version"], {
+// `--prefer-online`: npm otherwise answers from its cache for some minutes, and
+// a build started just after a canary would get the one before it.
+const version = execFileSync(npm, ["view", "@ascribed/astro@next", "version", "--prefer-online"], {
   encoding: "utf8",
   shell,
 }).trim();
