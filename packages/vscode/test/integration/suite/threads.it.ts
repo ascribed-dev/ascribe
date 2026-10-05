@@ -128,4 +128,14 @@ describe("review threads, with a fake GitHub", () => {
     await waitFor("no threads in the source editor", () => preview.sourceThreads().length === 0);
     assert.equal(preview.review.status().text, "$(git-compare) Review: off");
   });
+
+  it("offers review of the branch's pull request once, now that review was used here", async () => {
+    await preview.review.offer(workspace());
+    const offers = preview.review.offers();
+    assert.equal(offers.at(-1), "Ascribe: this branch has pull request #7. Start Review?");
+    // Once a session: showing the page again offers nothing more.
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
+    assert.equal(preview.review.offers().length, offers.length);
+  });
 });

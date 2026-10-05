@@ -45,7 +45,14 @@ export interface ReviewApi {
   status(): { text: string; visible: boolean };
   /** The pull request's threads. */
   threads: ThreadsApi;
+  /** The offers to start review made so far, as shown. */
+  offers(): string[];
+  /** Offers review of the project in `folder` if its branch has a pull request, as opening one of its pages does; forgets earlier offers first. */
+  offer(folder: string): Promise<void>;
 }
+
+/** The workspace state key for whether review was ever turned on in the workspace. */
+const STARTED_ONCE = "ascribe.review.startedOnce";
 
 /**
  * Review: comparing a project with a git revision, its base, so the preview
@@ -65,7 +72,7 @@ export class ReviewController implements vscode.Disposable {
     private readonly projects: ProjectRegistry,
     private readonly host: ReviewHost,
     /** The workspace's state. */
-    state: vscode.Memento,
+    private readonly state: vscode.Memento,
   ) {
     this.item = vscode.window.createStatusBarItem("ascribe.review", vscode.StatusBarAlignment.Left);
     this.item.name = "Ascribe Review";
@@ -80,7 +87,9 @@ export class ReviewController implements vscode.Disposable {
   register(): void {
     this.disposables.push(
       this.item,
-      vscode.commands.registerCommand("ascribe.startReview", () => this.startCommand()),
+      vscode.commands.registerCommand("ascribe.startReview", () =>
+        this.startCommand(this.runningTarget()),
+      ),
       vscode.commands.registerCommand("ascribe.stopReview", () => this.stopCommand()),
       vscode.commands.registerCommand("ascribe.changedPages", () => this.changedPagesCommand()),
       vscode.commands.registerCommand("ascribe.refreshComments", () => this.refreshCommand()),
@@ -114,6 +123,13 @@ export class ReviewController implements vscode.Disposable {
       },
       status: () => ({ text: this.item.text, visible: this.visible }),
       threads: this.threads.api,
+      offers: () => [...this.offerLog],
+      offer: async (folder) => {
+        const server = this.projects.serverAt(folder);
+        if (!server) throw new Error(`no project in ${folder}`);
+        this.offered.delete(comparable(folder));
+        await this.offer(server);
+      },
     };
   }
 
@@ -209,12 +225,37 @@ export class ReviewController implements vscode.Disposable {
       this.item.text = "$(git-compare) Review: off";
       this.item.tooltip = `Review is off for ${this.projects.name(server.project)}. Click to start it.`;
       this.item.command = "ascribe.startReview";
+      void this.offer(server);
     }
     this.visible = true;
     this.item.show();
   }
 
   private visible = false;
+  /** The projects offered review this session, or reviewed: offered once at most. */
+  private readonly offered = new Set<string>();
+  private readonly offerLog: string[] = [];
+
+  /**
+   * Offers to start review when the project's branch has an open pull
+   * request, once a session, and only in a workspace where review was turned
+   * on before: until then, GitHub isn't asked. Never asks for a sign-in.
+   */
+  private async offer(server: ProjectServer): Promise<void> {
+    const id = comparable(server.project.folder);
+    if (this.offered.has(id) || !this.state.get<boolean>(STARTED_ONCE, false)) return;
+    if (server.state !== "running" || this.baseOf(server)) return;
+    this.offered.add(id);
+    const number = await this.threads.quietPullRequest(server);
+    // Started meanwhile, or no pull request.
+    if (number === undefined || this.baseOf(server)) return;
+    const message = `Ascribe: this branch has pull request #${number}. Start Review?`;
+    this.offerLog.push(message);
+    void vscode.window.showInformationMessage(message, "Start Review").then((start) => {
+      if (start && !this.baseOf(server)) return this.startCommand(server);
+      return undefined;
+    });
+  }
 
   /** The base's name for a project: the pull request's base branch by its name, when it's that. */
   baseNameOf(server: ProjectServer, base: BaseInfo): string {
@@ -267,8 +308,7 @@ export class ReviewController implements vscode.Disposable {
     return server;
   }
 
-  private async startCommand(): Promise<void> {
-    const server = this.runningTarget();
+  private async startCommand(server: ProjectServer | undefined): Promise<void> {
     if (!server) return;
     // The pull request decides the default base, and its threads show once
     // review is on. Signing in to GitHub is asked for here, never sooner.
@@ -373,7 +413,7 @@ export class ReviewController implements vscode.Disposable {
         `Ascribe: review is off for ${this.projects.name(server.project)}. Start it to see the changed pages.`,
         "Start Review",
       );
-      if (start) await this.startCommand();
+      if (start) await this.startCommand(server);
       return;
     }
     const result = await this.changes(server);
@@ -414,6 +454,9 @@ export class ReviewController implements vscode.Disposable {
   private async start(server: ProjectServer, base: string | undefined): Promise<SetBaseResult> {
     const result = await this.setBase(server, base);
     if (result.base) {
+      // Reviewed: from now on, a branch with a pull request is offered review.
+      this.offered.add(comparable(server.project.folder));
+      if (!this.state.get<boolean>(STARTED_ONCE, false)) void this.state.update(STARTED_ONCE, true);
       this.bases.set(comparable(server.project.folder), result.base);
       this.update();
       this.host.refresh();

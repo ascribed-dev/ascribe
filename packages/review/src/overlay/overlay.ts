@@ -734,7 +734,11 @@ class ReviewOverlay implements Overlay {
     );
 
     const head = this.el("div", "th");
-    head.append(this.el("span", "", whereLabel(thread)));
+    const where = whereLabel(thread);
+    // In the narrow panel, the sheet's title already names the block.
+    if (!(view === "panel" && entry && !entry.removed && where === sourceLabel(entry.anchor))) {
+      head.append(this.el("span", "", where));
+    }
     if (onRemovedText(thread)) head.append(this.badge("removed", "On removed text"));
     if (thread.resolved) head.append(this.badge("resolved", "Resolved"));
     if (thread.detached !== undefined) head.append(this.badge("detached", "Detached"));
@@ -781,7 +785,16 @@ class ReviewOverlay implements Overlay {
         this.button("link", "Open source", () => this.host.openSource(threadSource(thread, entry))),
       );
     }
-    if (thread.kind === "review" && thread.detached === undefined) {
+    // A detached thread has no block to go to: GitHub shows it in full.
+    const url = thread.comments.at(-1)?.url ?? thread.comments[0]?.url;
+    if (thread.detached !== undefined && url !== undefined && /^https?:\/\//i.test(url)) {
+      const github = this.el("a", "link", "View on GitHub");
+      github.setAttribute("href", url);
+      github.setAttribute("target", "_blank");
+      github.setAttribute("rel", "noopener noreferrer");
+      acts.append(github);
+    }
+    if (thread.kind === "review") {
       const can = thread.resolved ? thread.canUnresolve : thread.canResolve;
       if (can) {
         const resolve = this.button(
@@ -853,7 +866,7 @@ class ReviewOverlay implements Overlay {
       card.append(row);
     }
 
-    if (thread.kind === "review" && thread.detached === undefined && thread.canReply) {
+    if (thread.kind === "review" && thread.canReply) {
       card.append(this.drawReply(thread));
     }
     return card;
@@ -870,7 +883,6 @@ class ReviewOverlay implements Overlay {
     input.value = this.drafts.get(key) ?? "";
     const busy = this.busy.has(thread.id);
     input.disabled = busy;
-    input.addEventListener("input", () => this.drafts.set(key, input.value));
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
@@ -903,7 +915,6 @@ class ReviewOverlay implements Overlay {
     } else {
       now.title = "Send this reply to GitHub right away";
     }
-    now.disabled = busy;
     const add = this.button(
       "ghost",
       "Add to review",
@@ -911,7 +922,18 @@ class ReviewOverlay implements Overlay {
       `reply-add:${thread.id}`,
     );
     add.title = "Hold this reply until you submit the review";
-    add.disabled = busy;
+    // Nothing to send until there's a reply. "Reply now" stays focusable
+    // while it's held, so its reason can be read.
+    const enable = () => {
+      const empty = input.value.trim() === "";
+      now.disabled = busy || (empty && !held);
+      add.disabled = busy || empty;
+    };
+    enable();
+    input.addEventListener("input", () => {
+      this.drafts.set(key, input.value);
+      enable();
+    });
     box.prepend(input);
     box.append(now, add);
     const error = this.errors.get(key);
@@ -954,7 +976,6 @@ class ReviewOverlay implements Overlay {
     text.dataset["focus"] = key;
     text.value = this.drafts.get(key) ?? "";
     text.disabled = refused || composer.busy;
-    text.addEventListener("input", () => this.drafts.set(key, text.value));
     text.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
@@ -974,7 +995,14 @@ class ReviewOverlay implements Overlay {
       () => void this.addComment(),
       "composer-add",
     );
-    add.disabled = refused || composer.busy || target === undefined;
+    const enable = () => {
+      add.disabled = refused || composer.busy || target === undefined || text.value.trim() === "";
+    };
+    enable();
+    text.addEventListener("input", () => {
+      this.drafts.set(key, text.value);
+      enable();
+    });
     row.append(
       add,
       this.button("ghost", "Cancel", () => this.cancelComment(), "composer-cancel"),
@@ -1049,7 +1077,9 @@ class ReviewOverlay implements Overlay {
       const first = thread.comments[0];
       const page =
         pages.length > 1 ? `on ${pages.length} pages` : (pages[0]?.title ?? pages[0]?.path ?? "");
-      const where = [listLabel(thread), thread.outdated ? "outdated" : "", page]
+      // As on its card: a thread with no block is detached, not outdated.
+      const outdated = thread.outdated && thread.detached === undefined;
+      const where = [listLabel(thread), outdated ? "outdated" : "", page]
         .filter(Boolean)
         .join(" · ");
       const more = thread.comments.length > 1 ? ` (+${thread.comments.length - 1})` : "";
