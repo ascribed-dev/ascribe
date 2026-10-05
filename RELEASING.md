@@ -118,6 +118,8 @@ node scripts/release/version.ts 0.2.0
 
 This sets the version in `Cargo.toml` (and `Cargo.lock`), every published `package.json`, and the extension's `ascribe.minServerVersion`, which makes the extension warn about a project binary older than itself. Lower `minServerVersion` by hand if the release still works with older binaries.
 
+Set the `version` phrase in `docs/ascribe.toml` to the new version too; a test fails until it matches.
+
 In `CHANGELOG.md`, write the release's section as `## 0.2.0 (YYYY-MM-DD)`, with today's date. For 0.1.0, replace `(unreleased)` with the date.
 
 **Check:** `node scripts/release/version.ts --check` prints the version.

@@ -17,6 +17,7 @@ toml.workspace = true
 
 # The Ascribe crates the adapters need, as dev-dependencies.
 [dev-dependencies]
+serde_json.workspace = true
 tessera-check.workspace = true
 tessera-core.workspace = true
 tessera-fmt.workspace = true

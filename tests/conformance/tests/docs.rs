@@ -3,6 +3,9 @@
 //! `docs/content/_generated/diagnostics-*.md`. This test renders them and
 //! fails when one is out of date; run it with `ASCRIBE_BLESS=1` to rewrite
 //! them.
+//!
+//! It also checks the docs' phrases whose values come from another file, such
+//! as the version, against that file.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -44,6 +47,74 @@ fn the_diagnostics_reference_is_current() {
             "docs/content/reference/diagnostics.md doesn't include _generated/{name}"
         );
     }
+}
+
+/// Each phrase in `docs/ascribe.toml` whose value is also in another file
+/// has the value that file has.
+#[test]
+fn the_docs_phrases_match_their_sources() {
+    let docs: toml::Table = read("docs/ascribe.toml").parse().unwrap();
+    let phrase = |key: &str| docs["phrases"][key].as_str().unwrap().to_owned();
+    let mut wrong = Vec::new();
+    let mut compare = |key: &str, file: &str, value: &str| {
+        if phrase(key) != value {
+            wrong.push(format!(
+                "the phrase `{key}` is \"{}\" in docs/ascribe.toml, but \"{value}\" in {file}",
+                phrase(key)
+            ));
+        }
+    };
+
+    // The version: the workspace's, and every package's.
+    let cargo: toml::Table = read("Cargo.toml").parse().unwrap();
+    let version = cargo["workspace"]["package"]["version"].as_str().unwrap();
+    compare("version", "Cargo.toml", version);
+    let mut packages: Vec<String> = std::fs::read_dir(repo().join("packages"))
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .filter(|name| {
+            repo()
+                .join("packages")
+                .join(name)
+                .join("package.json")
+                .is_file()
+        })
+        .collect();
+    packages.sort();
+    for name in packages {
+        let file = format!("packages/{name}/package.json");
+        let manifest = package(&file);
+        compare("version", &file, manifest["version"].as_str().unwrap());
+    }
+
+    // The least Node.js and VS Code versions, as their ranges' lower bounds.
+    let cli = package("packages/cli/package.json");
+    let node = cli["engines"]["node"].as_str().unwrap();
+    compare("node", "packages/cli/package.json", &lower_bound(node));
+    let vscode = package("packages/vscode/package.json");
+    let editor = vscode["engines"]["vscode"].as_str().unwrap();
+    compare(
+        "vscode",
+        "packages/vscode/package.json",
+        &lower_bound(editor),
+    );
+
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+}
+
+fn read(path: &str) -> String {
+    std::fs::read_to_string(repo().join(path)).unwrap()
+}
+
+fn package(path: &str) -> serde_json::Value {
+    serde_json::from_str(&read(path)).unwrap()
+}
+
+/// A version range's lower bound as the docs write it: `>=24` is `24`, and
+/// `^1.138.0` is `1.138`.
+fn lower_bound(range: &str) -> String {
+    let version = range.trim_start_matches(['^', '~', '>', '=']).trim();
+    version.strip_suffix(".0").unwrap_or(version).to_owned()
 }
 
 /// Compares each fragment with its file in `docs/content/_generated/`, or,
