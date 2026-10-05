@@ -60,7 +60,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 | The site | `site/`, outside the pnpm workspace | An Astro site that installs Ascribe from npm, as a user's does |
 | Publishing | Netlify, `site/netlify.toml`, `.github/workflows/` | Netlify builds production; Actions builds previews and the review report |
 | Snippets | `SPEC.md`, the compiler crates | `@snippet`: code examples taken from tested files, from named sources |
-| Coverage | `tessera-diff`, `tessera-cli` (`ascribe drift`) | Pages say which code they cover; the report says which covered code changed without them |
+| Coverage | `tessera-diff`, `tessera-cli` (`ascribe drift`) | Pages say which regions of code they cover; the report says which covered regions changed without them |
 
 ## Phases
 
@@ -75,7 +75,7 @@ Each phase leaves the repository green and can be its own pull request. A phase 
 | [5: Publishing](phase-5-publish.md) | Netlify builds and serves the site from `main`; pull requests get a preview and the review report. | 2, 4 |
 | [6: The back-test](phase-6-back-test.md) | A script and a write-up: over past pull requests, how often would a coverage report have been right? | Nothing |
 | [7: Snippets](phase-7-snippets.md) | Named sources, and `@snippet`: a code example taken from a tested file. | 1 |
-| [8: Coverage](phase-8-coverage.md) | Pages say which code they cover, and `ascribe drift` reports covered code that changed without them. | 6, 7 |
+| [8: Coverage](phase-8-coverage.md) | Pages say which regions of code they cover, and `ascribe drift` reports covered regions that changed without them. Region-level only, after the [back-test](back-test.md). | 6, 7 |
 | [9: Our docs, kept current](phase-9-adopt.md) | Our docs take their examples from tested files and declare what they cover; CI shows the report; the measures are recorded. | 5, 7, and 8 if it was built |
 
 Phases 1 to 5 are the docs as a user would run them. Phase 6 is a day's measurement. Phases 7 to 9 are the drift features and their use.
