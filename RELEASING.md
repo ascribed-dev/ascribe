@@ -81,7 +81,7 @@ npm trust github @ascribed/cli --file release.yml --repo ascribed-dev/ascribe --
 Drop `--dry-run`, and repeat for `@ascribed/cli-darwin-arm64`, `@ascribed/cli-linux-arm64`, `@ascribed/cli-linux-x64`, `@ascribed/cli-win32-x64`, `@ascribed/elements`, `@ascribed/astro`, and `@ascribed/review`. The same form is on each package's npm page: Settings → Trusted Publisher.
 
 - Every field is case-sensitive and exact, and npm doesn't validate it when you save. A mistake appears only when you publish.
-- The workflow file is `release.yml`, without its path. Renaming the workflow breaks publishing until each package is changed: a trusted publisher can be revoked and recreated, but not edited.
+- The workflow file is `release.yml`, without its path. Renaming the workflow breaks publishing until each package is changed: a trusted publisher's organization, repository, and workflow can't be edited, so it has to be removed and added again. Its environment and what it's allowed to do can be edited in place.
 - Allow `npm publish` only. The release stages nothing and moves no dist-tags.
 - Once a release has published through it, set each package's Settings → Publishing access to **Require two-factor authentication and disallow tokens**. That stops any token from publishing, including a leaked one, and trusted publishing keeps working.
 - In the workflow, leave `registry-url` out of `setup-node`. It writes an empty `_authToken` line, which stops npm from starting the OIDC exchange.
