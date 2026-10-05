@@ -60,17 +60,19 @@ describe("routes", () => {
         schemaVersion: 1,
         path: "Guides/My Setup.md",
         route: "/docs/guides/my-setup",
+        title: 'My "setup"',
+        frontmatter: { title: 'My "setup"' },
       }),
     );
-    // A route past the part read first: read the whole file.
+    // A route past the part read first, and no title: read the whole file.
     writeFileSync(
       path.join(json, "index.json"),
       JSON.stringify({ padding: "x".repeat(5000), path: "index.md", route: "/docs/" }),
     );
     const routes = await readRoutes(json);
     expect([...routes.entries()].sort(([a], [b]) => a.localeCompare(b))).toEqual([
-      ["/docs", "index.md"],
-      ["/docs/guides/my-setup", "Guides/My Setup.md"],
+      ["/docs", { path: "index.md", title: null }],
+      ["/docs/guides/my-setup", { path: "Guides/My Setup.md", title: 'My "setup"' }],
     ]);
     expect((await readRoutes(path.join(temp(), "json"))).size).toBe(0);
   });

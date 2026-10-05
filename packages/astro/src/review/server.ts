@@ -18,6 +18,7 @@ import {
   CHANGED_EVENT,
   REQUEST_EVENT,
   RESULT_EVENT,
+  type ChangedPage,
   type DiffPage,
   type PageView,
   type Request,
@@ -25,7 +26,7 @@ import {
   type Status,
   type ThreadsState,
 } from "./protocol.js";
-import { normalizeRoute } from "./routes.js";
+import { normalizeRoute, type RoutedPage } from "./routes.js";
 
 /** A page's end of the channel: the server answers it alone. */
 export interface ChannelClient {
@@ -57,7 +58,7 @@ export interface ReviewServerOptions {
   /** Writes the build's JSON output, in turn with the dev server's builds: it has the routes. */
   writeRoutes(): Promise<void>;
   /** Every page of the build, by normalized route. */
-  readRoutes(): Promise<Map<string, string>>;
+  readRoutes(): Promise<Map<string, RoutedPage>>;
   /** How long to wait after a rebuild before comparing again. Default 150 ms. */
   debounceMs?: number;
 }
@@ -83,7 +84,7 @@ export class ReviewServer {
   private diffing: Promise<void> | undefined;
   private stale = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
-  private routes: Promise<Map<string, string>> | undefined;
+  private routes: Promise<Map<string, RoutedPage>> | undefined;
   /** The page each overlay last read, by content path: comments are made on it. */
   private readonly pages = new Map<string, PageRef>();
   /** How long the last comparison took, in milliseconds. */
@@ -290,15 +291,16 @@ export class ReviewServer {
     if (!this.on) throw new Error("Review is off.");
     const route = normalizeRoute(typeof params["route"] === "string" ? params["route"] : "/");
     const fromPage = typeof params["path"] === "string" ? params["path"] : null;
-    const [changes, connection] = await Promise.all([this.changes(), this.connected()]);
+    this.routes ??= this.options.readRoutes().catch(() => new Map<string, RoutedPage>());
+    const [changes, connection, routes] = await Promise.all([
+      this.changes(),
+      this.connected(),
+      this.routes,
+    ]);
     const pages = "result" in changes ? changes.result.pages : [];
     const shown = pages.filter((p) => p.status !== "removed");
     let page = shown.find((p) => normalizeRoute(p.route) === route) ?? null;
-    let pagePath = page?.path ?? fromPage;
-    if (pagePath === null) {
-      this.routes ??= this.options.readRoutes().catch(() => new Map<string, string>());
-      pagePath = (await this.routes).get(route) ?? null;
-    }
+    const pagePath = page?.path ?? fromPage ?? routes.get(route)?.path ?? null;
     if (page === null && pagePath !== null) page = shown.find((p) => p.path === pagePath) ?? null;
     return {
       kind: pagePath === null ? "not-page" : "page",
@@ -307,7 +309,7 @@ export class ReviewServer {
       base: "result" in changes ? changes.result.base : null,
       problem: "error" in changes ? changes.error : null,
       threads: threadsState(connection),
-      changedPages: pages.map(listed),
+      changedPages: pages.map((p) => listed(p, routes.get(normalizeRoute(p.route))?.title ?? null)),
       contentRoot: this.options.contentRoot,
       separator: path.sep,
     };
@@ -319,9 +321,10 @@ export class ReviewServer {
   }
 }
 
-/** A changed page as the list shows it: without its changes. */
-function listed(page: DiffPage): Omit<DiffPage, "changes"> {
+/** A changed page as the list shows it: without its changes, with its title. */
+function listed(page: DiffPage, title: string | null): ChangedPage {
   return {
+    title,
     path: page.path,
     route: page.route,
     status: page.status,
