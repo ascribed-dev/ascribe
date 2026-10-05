@@ -1,5 +1,5 @@
-//! Times `ascribe check`, `ascribe build`, and `ascribe diff` on the
-//! 3,000-page synthetic project and on the converted Elastic corpus.
+//! Times `ascribe check`, `ascribe build`, `ascribe diff`, and `ascribe
+//! drift` on the 3,000-page synthetic project and on the converted Elastic corpus.
 //!
 //! Run with `cargo bench -p tessera-corpora --bench perf` (build the CLI first
 //! with `cargo build --release -p tessera-cli`; the bench finds `ascribe` next
@@ -7,7 +7,8 @@
 //! prints:
 //!
 //! - **the command**: wall time of `ascribe check` (and, for the synthetic
-//!   project, `ascribe build` and `ascribe diff`), process start to exit,
+//!   project, `ascribe build`, `ascribe diff`, and `ascribe drift`), process
+//!   start to exit,
 //!   output to /dev/null, on the project as it is and with a snippet on every
 //!   page;
 //! - **the library phases** the command is made of, in-process: loading the
@@ -231,9 +232,9 @@ fn diff(bin: &Path, dir: &Path) {
     println!();
 }
 
-/// `ascribe diff` on the synthetic project with snippets, in a git
-/// repository: with nothing changed, and with one code file changed in the
-/// region ten pages show. Skipped when `git` isn't there.
+/// `ascribe diff` and `ascribe drift` on the synthetic project with
+/// snippets, in a git repository: with nothing changed, and with one code
+/// file changed in the region ten pages show. Skipped when `git` isn't there.
 fn diff_snippets(bin: &Path, dir: &Path) {
     let root = dir.join("synthetic-snippets-git");
     std::fs::create_dir_all(&root).expect("creates");
@@ -273,6 +274,15 @@ fn diff_snippets(bin: &Path, dir: &Path) {
         &args,
         3,
     );
+    let drift = ["drift", "--base", "main", "--format", "json"];
+    time_cli(
+        "  ascribe drift (nothing changed)",
+        "drift/synthetic-3000-snippets-unchanged",
+        bin,
+        &root,
+        &drift,
+        3,
+    );
     let code = root.join("code").join("m34.py");
     std::fs::write(&code, project.code_text(34, "return value * 2")).expect("writes");
     time_cli(
@@ -281,6 +291,14 @@ fn diff_snippets(bin: &Path, dir: &Path) {
         bin,
         &root,
         &args,
+        3,
+    );
+    time_cli(
+        "  ascribe drift (a region ten pages show changed)",
+        "drift/synthetic-3000-snippet",
+        bin,
+        &root,
+        &drift,
         3,
     );
     println!();

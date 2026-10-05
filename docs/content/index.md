@@ -6,11 +6,11 @@ description: Guides and references for writing documentation with Ascribe, and t
 - [Getting started](getting-started.md): install Ascribe, write a first page, check it, build it, and publish it with Astro.
 - [Directive reference](reference/directives.md): the language: directives, attributes, titles, phrases, links, and images.
 - [`ascribe.toml` reference](reference/content-model.md): the content model: content types, dimensions, availability, phrases, widgets, and builds.
-- [Command reference](reference/cli.md): `ascribe check`, `build`, `diff`, `fmt`, and `lsp`, their options, outputs, and exit codes.
+- [Command reference](reference/cli.md): `ascribe check`, `build`, `diff`, `drift`, `fmt`, and `lsp`, their options, outputs, and exit codes.
 - @available: next
   [Review](guides/review.md): reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
 - @available: next
-  [Drift](guides/drift.md): keeping pages from falling behind the code they describe, with code examples taken from tested files.
+  [Drift](guides/drift.md): keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, with its code and fix.
 - [Editing](guides/editor.md): the VS Code extension, workspaces with several projects, and other editors.
 - [Astro](guides/astro.md): publishing a site with `@ascribed/astro`.
