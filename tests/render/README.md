@@ -1,6 +1,6 @@
 # Site-render fixtures
 
-Shared fixtures for the [site-render contract](../../docs/content/contracts/site-render.md). Each pairs site markdown, as Ascribe's site emitter writes it, with the HTML it must render to. Two implementations run them, and both must pass every fixture:
+Shared fixtures for the [site-render contract](https://ascribe-docs.netlify.app/contracts/site-render/). Each pairs site markdown, as Ascribe's site emitter writes it, with the HTML it must render to. Two implementations run them, and both must pass every fixture:
 
 - `render_site_html()` in `tessera-emit`, used by the editor preview;
 - the markdown plugin in `@ascribed/astro`, used by the published site.

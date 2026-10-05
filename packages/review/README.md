@@ -2,7 +2,7 @@
 
 Reviewing [Ascribe](https://github.com/ascribed-dev/ascribe) pages as readers see them: what a change does to each rendered page, and a pull request's review threads beside the blocks they're about.
 
-This README is for building a host. To review a pull request with Ascribe, read [Review](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/guides/review.md).
+This README is for building a host. To review a pull request with Ascribe, read [Review](https://ascribe-docs.netlify.app/guides/review/).
 
 Each entry point is separate, so a host bundles only what it uses.
 
@@ -13,7 +13,7 @@ Each entry point is separate, so a host bundles only what it uses.
 | `@ascribed/review/github` | Node | Reading and writing a pull request's review threads on GitHub |
 | `@ascribed/review/place` | Node | Placing review threads on the blocks of a page |
 
-The rendered page is Ascribe's site output with source anchors (`ascribe build --emit site --anchors`, and always in the editor's page preview), which say where each block is written. The [site-render contract](https://github.com/ascribed-dev/ascribe/blob/main/docs/content/contracts/site-render.md#7-source-anchors) describes them.
+The rendered page is Ascribe's site output with source anchors (`ascribe build --emit site --anchors`, and always in the editor's page preview), which say where each block is written. The [site-render contract](https://ascribe-docs.netlify.app/contracts/site-render/#7-source-anchors) describes them.
 
 ## Marks
 

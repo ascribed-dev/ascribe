@@ -13,9 +13,35 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::{commands, exit};
 
+/// The docs site's address, with no trailing slash. It's `[consumer] site` in
+/// `docs/ascribe.toml`, and a test checks that they agree. Help links to the
+/// site's pages from here, through [`docs_page!`].
+macro_rules! docs_site {
+    () => {
+        "https://ascribe-docs.netlify.app"
+    };
+}
+
+/// A line for the end of a command's help, linking to its page on the docs
+/// site: `docs_page!("reference/cli/#ascribe-check")`.
+macro_rules! docs_page {
+    ($path:literal) => {
+        concat!("Documentation: ", docs_site!(), "/", $path)
+    };
+}
+
+/// [`docs_site!`], for the test that checks it.
+#[cfg(test)]
+pub(crate) const DOCS_SITE: &str = docs_site!();
+
 /// Ascribe: check, build, format, and serve documentation written as code.
 #[derive(Debug, Parser)]
-#[command(name = "ascribe", version = env!("ASCRIBE_VERSION"), arg_required_else_help = true)]
+#[command(
+    name = "ascribe",
+    version = env!("ASCRIBE_VERSION"),
+    arg_required_else_help = true,
+    after_help = docs_page!("reference/cli/"),
+)]
 pub struct Cli {
     #[command(flatten)]
     pub global: Global,
@@ -55,15 +81,20 @@ pub enum Color {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Build the documentation set's outputs.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-build"))]
     Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-check"))]
     Check(commands::check::Args),
     /// Show what changed between a git revision and the working tree, page
     /// by page, as readers will see it.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-diff"))]
     Diff(commands::diff::Args),
     /// Rewrite Ascribe constructs into canonical form.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-fmt"))]
     Fmt(commands::fmt::Args),
     /// Run the language server, speaking LSP over standard input and output.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-lsp"))]
     Lsp(commands::lsp::Args),
 }
 

@@ -1,6 +1,6 @@
 # tessera-cli
 
-The `ascribe` binary: `check`, `build`, `diff`, `fmt`, and `lsp`. How to use it (every option, the outputs, the JSON report's schema, and the exit codes) is in the [command reference](../../docs/content/reference/cli.md). This README is about the code.
+The `ascribe` binary: `check`, `build`, `diff`, `fmt`, and `lsp`. How to use it (every option, the outputs, the JSON report's schema, and the exit codes) is in the [command reference](https://ascribe-docs.netlify.app/reference/cli/). This README is about the code.
 
 | Module | Role |
 |---|---|

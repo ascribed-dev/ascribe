@@ -17,6 +17,7 @@ This release adds **review**: reading a pull request as readers will see it, pag
 - `ascribe diff --format html` writes the changes as one self-contained HTML file: every changed page rendered with its changes marked, a removed block shown where it was, and the page as it will be and as it was a click away. It makes no network requests and runs nothing from the pages, so CI can upload it for reviewers to open from the pull request. See [the HTML report](docs/content/reference/cli.md#the-html-report) and [the report in CI](docs/content/guides/review.md#the-report-in-ci).
 - `ascribe build --emit site --anchors` marks each block of the site output with the source file and lines it came from (`data-ascribe-source`, and `data-ascribe-via` for a block from a fragment). The site output's manifest records `"anchors": true`. Without the flag, the output is unchanged. See the [site-render contract](docs/content/contracts/site-render.md#7-source-anchors).
 - Each command's `--help` describes its options in the words of the [command reference](docs/content/reference/cli.md), whose option lists are generated from it. `-h` shows the first paragraph of each.
+- Each command's `--help` ends with a link to its section of the command reference on the docs site, <https://ascribe-docs.netlify.app>.
 
 ### The editor
 

@@ -1,6 +1,6 @@
 # site/
 
-Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`, no documentation theme. It's set up as a user's site is, following the [getting-started](../docs/content/getting-started.md) and [Astro](../docs/content/guides/astro.md) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
+Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`, no documentation theme. It's set up as a user's site is, following the [getting-started](https://ascribe-docs.netlify.app/getting-started/) and [Astro](https://ascribe-docs.netlify.app/guides/astro/) guides: its own folder and lockfile, outside the pnpm workspace, with Ascribe installed from npm.
 
 ```
 astro.config.mjs            ascribe({ project: "../docs", build: "site" }); routing as in ../docs/ascribe.toml's [consumer]
