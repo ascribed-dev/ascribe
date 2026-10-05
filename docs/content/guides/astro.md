@@ -130,6 +130,8 @@ npx astro build
 
 ## Options
 
+<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (https://github.com/ascribed-dev/ascribe/issues/82). -->
+
 | Option | Meaning |
 |---|---|
 | `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |

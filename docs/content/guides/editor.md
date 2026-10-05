@@ -169,6 +169,8 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 
 ## Settings
 
+<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (https://github.com/ascribed-dev/ascribe/issues/82). -->
+
 | Setting | Default | What it does |
 |---|---|---|
 | `ascribe.path` | empty | The `ascribe` binary to run, for every project. When empty, each project's own, then the included one. Changing it restarts the servers that have started. |
@@ -181,6 +183,8 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 | `ascribe.trace.server` | `off` | `messages` or `verbose` logs the conversation with the server, for reporting a problem. |
 
 ## Commands
+
+<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (https://github.com/ascribed-dev/ascribe/issues/82). -->
 
 | Command | What it does |
 |---|---|

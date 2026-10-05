@@ -67,6 +67,8 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
 }
 ```
 
+<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (https://github.com/ascribed-dev/ascribe/issues/82). -->
+
 | Field | Meaning |
 |---|---|
 | `format` | Always `"ascribe-manifest"`. A file at a manifest's path without it isn't a manifest, and isn't Ascribe's (§4). |
