@@ -384,8 +384,14 @@ describe("with several projects, one nested in another", () => {
         }
       } finally {
         await settings.update("startServers", undefined, vscode.ConfigurationTarget.Workspace);
-        // Its server is still running. On Windows this fails if the server
-        // runs in the project's folder, which a running process locks.
+        // Wait for the watcher to report the deletion, and for the project
+        // search it starts: a search that ran after the next test made its
+        // unwatched project would find that project before its file is opened.
+        rmSync(path.join(idle, "ascribe.toml"), { force: true });
+        await waitFor("the idle project to go", () => !known(idle));
+        await api.whenSettled();
+        // Its server stopped with it. On Windows this fails if the server runs
+        // in the project's folder, which a running process locks.
         rmSync(idle, { recursive: true, force: true });
       }
     });

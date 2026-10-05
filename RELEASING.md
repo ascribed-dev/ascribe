@@ -1,6 +1,8 @@
 # Releasing Ascribe
 
-A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), eight npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person starts it, approves each publishing step, and publishes the GitHub release at the end. Nothing is published without that person.
+A release publishes one version of everything: the `ascribe` binaries (on a GitHub release), eight npm packages, and four VS Code extension packages, one per platform. The [release workflow](.github/workflows/release.yml) builds, packs, tests, and publishes; a person starts it, approves each publishing step, and publishes the GitHub release at the end. Nothing in a release is published without that person.
+
+The [nightly canary](#the-nightly-canary) is the one exception: the npm packages, built from `main` and published under the `next` tag every night, unattended. It never moves `latest`.
 
 | What | Where | Published by |
 |---|---|---|
@@ -27,7 +29,7 @@ Without `publish`, it's a dry run: everything up to `smoke` runs, and the publis
 | Thing | Where it lives | How it's reached |
 |---|---|---|
 | Source and CI | GitHub organization `ascribed-dev`, repository `ascribe` (organization id 335742967, repository id 1393013016) | The `release` environment requires a reviewer and allows only `v*` tags. |
-| npm packages | npm organization `ascribed` | Trusted publishing: each package trusts the `release` environment of this repository's `release.yml`. There is no token. |
+| npm packages | npm organization `ascribed` | Trusted publishing: each package trusts the `release` environment of this repository's `release.yml`, and the `canary` environment of its `canary.yml`. There is no token. |
 | VS Code extension | Marketplace publisher `Ascribe`, created by a personal Microsoft account (the owner) | The managed identity below is a Contributor member. |
 | The managed identity `ascribe-vscode-publisher` | Resource group `ascribe-release`, region East US, in the Azure tenant and subscription that account's free Azure sign-up created | A federated credential trusts the workflow (below). |
 | An Azure DevOps organization | Connected to that tenant | It exists only to give the identity an Azure DevOps profile. It has no projects or pipelines. |
@@ -240,9 +242,41 @@ jobs:
 
 **The GitHub release is bad:** while it's a draft, `gh release delete v0.2.0` removes it. After publishing, edit it, or mark it a pre-release while a fix is prepared.
 
+## The nightly canary
+
+The [canary workflow](.github/workflows/canary.yml) publishes the npm packages (the four platform packages, `@ascribed/cli`, `@ascribed/elements`, `@ascribed/review`, and `@ascribed/astro`) from `main` every night at 04:17 UTC, under the `next` tag, with nobody approving it. It's for sites that follow `main`, ours first: `npm install @ascribed/cli@next @ascribed/astro@next`. The VS Code extension has no canary.
+
+- **The version** is `<next>-next.<n>`: the version after the latest release, and the workflow's run number. The next version is the one the changelog's unreleased section names (`## 0.2.0 (unreleased)`), or a patch bump of the workspace's version under `## Unreleased`. `node scripts/release/version.ts --canary <n>` stamps it in the working tree; it's never committed. A canary sorts before the release it leads to, so `npm install` of a range never picks one.
+- **Run numbers have to keep rising.** They restart if `canary.yml` is renamed or deleted and recreated, and then each canary's version may already be on npm, so it publishes nothing and passes. If that happens, name the unreleased section's version (`## 0.2.0 (unreleased)`), or wait for the next release, so the versions are new.
+- **Its commit** is each package's `gitHead` (`npm view @ascribed/cli@next gitHead`), and `ascribe --version` prints it: `ascribe 0.1.2-next.42 (3f9c2a1b7d4e)`.
+- **It runs only when something ships.** It compares `main` with the last canary's commit, in `crates/`, `packages/`, `scripts/release/`, `Cargo.toml`, `Cargo.lock`, and `pnpm-lock.yaml`. When nothing there has changed, it publishes nothing, and the run passes.
+- **It builds, packs, and smoke-tests as a release does,** with the same jobs (`release-build.yml`). If any of them fails, nothing is published and `next` stays where it was.
+- **It publishes from the `canary` environment,** with provenance. Every package goes under the holding tag `next-pending` first, and `next` moves to the new canary on each package only once all of them are on npm, so `next` never mixes two nights. Then it tells the docs site to rebuild when the `SITE_BUILD_HOOK` secret is set.
+
+To publish one by hand (after a fix, or when a night's wait matters): Actions → **Canary** → Run workflow, from `main`. **force** publishes even when nothing has changed.
+
+### Setting it up
+
+Do these once, after the release setup above.
+
+1. **The `canary` environment.** Settings → Environments → **New environment** → `canary`. No required reviewers. **Deployment branches and tags:** Selected branches and tags → add the branch rule `main`. **Check:** the environment has no reviewers and allows only `main`.
+2. **A second trusted publisher on each npm package.** A package can trust up to ten workflows. On each package's npm page, Settings → Trusted Publisher → add a GitHub Actions publisher: organization or user `ascribed-dev`, repository `ascribe`, workflow filename `canary.yml`, environment `canary`, with **Allow npm publish** and **Allow npm dist-tag** both ticked (the canary moves `next` itself). Do it for every package that exists. Leave the `release.yml` one as it is. The workflow filename must be `canary.yml`, not `release-build.yml`: npm checks the workflow that was started, not a reusable one it calls. **Check:** each package's Trusted Publisher settings list both `release.yml` (environment `release`) and `canary.yml` (environment `canary`). The real check is a canary: the `npm` job succeeds, and `npm view @ascribed/cli dist-tags` shows `next` on it and `latest` unchanged.
+3. **A package that doesn't exist yet** (such as a new one no release has published) can't have a trusted publisher, so its first canary needs a token. Make a granular access token as in [npm: trusted publishing](#3-npm-trusted-publishing), put it in the `canary` environment as the secret `NPM_TOKEN`, and run the canary by hand. npm still publishes the other packages through trusted publishing, and the new one with the token. Then add the new package's trusted publishers (`canary.yml` and `release.yml`), and delete the secret and the token. The canary fails while the secret is set and every package is on npm, so it can't be left behind. npm makes a package's first version its `latest` too, so until a release publishes the package, `latest` is that canary. **Check:** the new package is on npm under `next`, and the `canary` environment has no `NPM_TOKEN`.
+
+### A bad canary
+
+A canary can't be replaced: npm never reuses a version. Fix `main`, then run the workflow by hand; the new canary takes `next`. Meanwhile, deprecate the bad one, and point `next` back at the last good one:
+
+```sh
+npm deprecate @ascribed/cli@0.1.2-next.42 "Broken; use 0.1.2-next.43"   # for each package
+npm dist-tag add @ascribed/cli@0.1.2-next.41 next                         # for each package
+```
+
+**A publish that failed partway:** `next` hasn't moved, and the packages that were published are under `next-pending`. Re-run the failed job: a re-run keeps the run number, so the version is the same, packages already published are skipped, and then `next` moves. If you don't, the next night's canary replaces it.
+
 ## Known limitations
 
 - **Intel Macs:** not supported. There's no `darwin-x64` npm package or extension package, so npm installs no binary there (`ascribe` says the platform isn't supported) and the Marketplace doesn't offer the extension.
-- **Linux:** the binaries link against glibc 2.28 (built with `cargo zigbuild --target <triple>.2.28`), so they run on glibc 2.28 or later: Debian 10, Ubuntu 18.10, RHEL 8, Amazon Linux 2023, and newer. That's Node.js 24's floor too. The `smoke` job runs each Linux binary in AlmaLinux 8 (glibc 2.28) and fails if it asks for more. Zig comes from PyPI, pinned by hash in `scripts/release/zig-requirements.txt`. cargo-zigbuild runs Cargo with its unstable features turned on, so after bumping Rust, Zig, or cargo-zigbuild, do a dry run before releasing. To move the floor, change `GLIBC` at the top of `release.yml`, the smoke image, and the requirement in `docs/content/getting-started.md` and `packages/cli/README.md`. Alpine and other musl systems aren't supported; npm won't install the Linux packages there.
+- **Linux:** the binaries link against glibc 2.28 (built with `cargo zigbuild --target <triple>.2.28`), so they run on glibc 2.28 or later: Debian 10, Ubuntu 18.10, RHEL 8, Amazon Linux 2023, and newer. That's Node.js 24's floor too. The `smoke` job runs each Linux binary in AlmaLinux 8 (glibc 2.28) and fails if it asks for more. Zig comes from PyPI, pinned by hash in `scripts/release/zig-requirements.txt`. cargo-zigbuild runs Cargo with its unstable features turned on, so after bumping Rust, Zig, or cargo-zigbuild, do a dry run before releasing. To move the floor, change `GLIBC` at the top of `release-build.yml`, the smoke image, and the requirement in `docs/content/getting-started.md` and `packages/cli/README.md`. Alpine and other musl systems aren't supported; npm won't install the Linux packages there.
 - **macOS and Windows downloads:** the binaries in the GitHub release aren't signed with a Developer ID or Authenticode certificate. A binary downloaded with a browser is quarantined on macOS (`xattr -d com.apple.quarantine ascribe` clears it) and may trigger SmartScreen on Windows. Binaries installed from npm or inside the extension aren't affected.
 - **Actions:** the workflow uses `macos-26`, `ubuntu-24.04`, `ubuntu-24.04-arm`, and `windows-2025` runners. If GitHub retires one, update both `build` and `smoke`.

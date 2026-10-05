@@ -1,0 +1,146 @@
+name: Canary
+
+# Publishes the npm packages from `main` every night under the `next` tag, with
+# nobody approving it, and on demand: Actions → Canary → Run workflow, from
+# `main`. Releases (release.yml) are separate, approved, and keep `latest`.
+#
+# A canary is `<next>-next.<run number>`, stamped in the checkout and never
+# committed; each package's `gitHead`, and `ascribe --version`, name its
+# commit. A night when nothing that ships has changed since the last canary
+# publishes nothing, and passes. A canary whose build or smoke test fails
+# publishes nothing, so `next` stays on the newest canary that passed. Every
+# package is published under `next-pending` first, and `next` moves only when
+# all of them are on npm.
+# RELEASING.md describes it, and how to deprecate a bad one.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Publish even if nothing that ships has changed since the last canary
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canary
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: stamp the version
+    # By hand, it runs from `main` only; the `canary` environment enforces it too.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+      version: ${{ steps.stamp.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, to compare with the last canary's commit.
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      # The last canary's commit is its `gitHead` on npm. Without one (no canary
+      # yet, or a commit no longer on `main`), the canary is published.
+      - id: changes
+        name: Compare with the last canary
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          last=$(npm view @ascribed/cli@next gitHead 2>/dev/null || true)
+          # It comes from the registry: only a commit hash goes on to `git`.
+          [[ $last =~ ^[0-9a-f]{40}$ ]] || last=
+          if [ "$FORCE" = true ]; then
+            changed=true
+          elif [ -z "$last" ] || ! git cat-file -e "$last^{commit}" 2> /dev/null; then
+            echo "No earlier canary's commit to compare with (\`next\` has gitHead '$last')."
+            changed=true
+          elif git diff --quiet "$last" HEAD -- crates packages scripts/release Cargo.toml Cargo.lock pnpm-lock.yaml; then
+            echo "::notice::Nothing that ships has changed since the last canary ($last). Publishing nothing."
+            changed=false
+          else
+            git diff --stat "$last" HEAD -- crates packages scripts/release Cargo.toml Cargo.lock pnpm-lock.yaml
+            changed=true
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+      - id: stamp
+        if: steps.changes.outputs.changed == 'true'
+        run: echo "version=$(node scripts/release/version.ts --canary "$GITHUB_RUN_NUMBER")" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build
+    needs: version
+    if: needs.version.outputs.changed == 'true'
+    uses: ./.github/workflows/release-build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      canary: ${{ github.run_number }}
+
+  npm:
+    name: publish to npm under next
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    # Limited to `main`, with no reviewers: the canary is unattended.
+    environment: canary
+    permissions:
+      contents: read
+      # npm trusted publishing and provenance both use the job's OIDC token.
+      id-token: write
+    env:
+      # Set only for the first publish of a package that doesn't exist yet, which
+      # can't have a trusted publisher; RELEASING.md says how, and to delete it after.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # No registry-url, as in release.yml: it would stop npm's OIDC exchange.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      # Moving a dist-tag through trusted publishing needs npm 11.21.0 or later.
+      - run: npm install --global npm@^11.21.0
+      - name: Stamp the canary's version
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: test "$(node scripts/release/version.ts --canary "$GITHUB_RUN_NUMBER")" = "$VERSION"
+      # The token is for one run. Once every package is on npm, its being set
+      # fails the canary, so it can't be forgotten.
+      - name: Use the one-time token, while a package isn't on npm yet
+        if: env.NPM_TOKEN != ''
+        run: |
+          missing=$(node scripts/release/publish.ts missing)
+          if [ -z "$missing" ]; then
+            echo "::error::Every package is on npm, so the NPM_TOKEN secret is no longer needed. Add each package's trusted publishers, then delete the secret from the canary environment and revoke the token (RELEASING.md)."
+            exit 1
+          fi
+          echo "Not on npm yet, so published with the token: $missing"
+          # npm still tries trusted publishing first, and uses the token where that fails.
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$HOME/.npmrc"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release
+          path: dist/release
+      # Everything goes under a holding tag first, and `next` moves only once every
+      # package is on npm, so `next` never names two canaries. A run that fails
+      # partway can be re-run: it skips what's published, and then moves `next`.
+      - run: node scripts/release/publish.ts npm --tag next-pending
+      - run: node scripts/release/publish.ts tag next
+
+  # Tells the docs site to rebuild with the new canary. Skipped until the site's
+  # build hook is stored as the SITE_BUILD_HOOK secret.
+  site:
+    name: rebuild the docs site
+    needs: npm
+    runs-on: ubuntu-latest
+    env:
+      SITE_BUILD_HOOK: ${{ secrets.SITE_BUILD_HOOK }}
+    steps:
+      - if: env.SITE_BUILD_HOOK == ''
+        run: echo "::notice::No SITE_BUILD_HOOK secret; the site isn't told to rebuild."
+      - if: env.SITE_BUILD_HOOK != ''
+        run: curl --fail --silent --show-error --request POST --data '{}' "$SITE_BUILD_HOOK"

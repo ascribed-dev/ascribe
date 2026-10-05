@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "oxlint --type-aware",
     "typecheck": "tsc -p scripts/tsconfig.json && pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "test": "vitest run --dir scripts && pnpm -r test",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

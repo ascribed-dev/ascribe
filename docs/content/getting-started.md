@@ -18,6 +18,8 @@ npx ascribe --version
 
 `@ascribed/cli` installs the `ascribe` binary for your platform, and pins its version for everyone who works on the project, and for CI. If `npx ascribe` can't find the binary, your package manager left out optional dependencies; reinstall with them enabled.
 
+To try what's on `main` before it's released, install `@ascribed/cli@next` and `@ascribed/astro@next` instead: a build published every night, with no promise of stability.
+
 ## Install the editor
 
 Install the **Ascribe** extension for VS Code from the Marketplace:

@@ -34,7 +34,7 @@ jobs:
       - run: pnpm --filter @ascribed/cli build
       - run: pnpm --filter @ascribed/elements build
       - run: pnpm typecheck
-      - run: pnpm -r test
+      - run: pnpm test
 
   # The VS Code extension's integration tests run in a real VS Code, against a
   # stub server, and against the real `ascribe lsp` on a copy of examples/quill.

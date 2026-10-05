@@ -1,7 +1,9 @@
 // Publishes a packed release (scripts/release/pack.ts's output).
 //
-//   node scripts/release/publish.ts npm [--from <dir>] [--dry-run]
+//   node scripts/release/publish.ts npm [--from <dir>] [--dry-run] [--tag <tag>]
 //   node scripts/release/publish.ts marketplace [--from <dir>] [--dry-run]
+//   node scripts/release/publish.ts tag <tag> [--dry-run]
+//   node scripts/release/publish.ts missing
 //
 // Every target is required, unless --targets names the ones packed (a local
 // dry run on one machine, like pack.ts's).
@@ -15,6 +17,11 @@
 // marketplace: publishes every extension package, authenticating with Microsoft
 // Entra (`vsce publish --azure-credential`). Sign in first, as the workflow
 // does with azure/login; there is no token.
+//
+// --tag publishes under that dist-tag instead of `latest` (or `next` for a
+// pre-release). `tag` then points a dist-tag at this version of every package,
+// so a canary can publish everything under a holding tag and move `next` only
+// once all of it is on npm. `missing` lists the packages npm has never had.
 //
 // Both skip what's already published, so a release that failed partway can be
 // run again. With --dry-run, nothing is published: npm checks each tarball
@@ -41,6 +48,7 @@ const { values: options, positionals } = parseArgs({
     from: { type: "string", default: join(root, "dist", "release") },
     "dry-run": { type: "boolean", default: false },
     targets: { type: "string" },
+    tag: { type: "string" },
   },
 });
 const dryRun = options["dry-run"];
@@ -55,7 +63,9 @@ if (problems.length > 0) fail(problems.join("\n"));
 
 if (registry === "npm") publishNpm();
 else if (registry === "marketplace") publishMarketplace();
-else fail("usage: publish.ts npm|marketplace [--from <dir>] [--dry-run]");
+else if (registry === "tag" && positionals[1] !== undefined) tagNpm(positionals[1]);
+else if (registry === "missing") listMissing();
+else fail("usage: publish.ts npm|marketplace [--from <dir>] [--dry-run] | tag <tag> | missing");
 
 function publishNpm(): void {
   checkRepository();
@@ -74,7 +84,7 @@ function publishNpm(): void {
   if (missing.length > 0) fail(`no tarball for ${missing.join(", ")} in ${dir}`);
 
   // A pre-release goes to the `next` tag, so `npm install` keeps the last release.
-  const tag = version.includes("-") ? "next" : "latest";
+  const tag = options.tag ?? (version.includes("-") ? "next" : "latest");
   for (const { name } of expected) {
     const tarball = tarballs.get(name);
     if (tarball === undefined) fail(`no tarball for ${name} in ${dir}`);
@@ -88,6 +98,29 @@ function publishNpm(): void {
     else if (process.env.GITHUB_ACTIONS === "true") args.push("--provenance");
     log(`npm ${args.join(" ")}`);
     run("npm", args);
+  }
+}
+
+/** Points a dist-tag at this version of every package, each of which must be on npm. */
+function tagNpm(tag: string): void {
+  for (const { name } of expected) {
+    if (!isPublished(name)) fail(`${name}@${version} isn't on npm`);
+    const args = ["dist-tag", "add", `${name}@${version}`, tag];
+    log(`npm ${args.join(" ")}`);
+    if (!dryRun) run("npm", args);
+  }
+}
+
+/** Prints each package npm has no version of. */
+function listMissing(): void {
+  for (const { name } of expected) {
+    const result = spawnSync("npm", ["view", name, "name"], {
+      encoding: "utf8",
+      shell: process.platform === "win32",
+    });
+    if (result.status === 0) continue;
+    if (/E404|404 Not Found/.test(result.stderr)) log(name);
+    else fail(`couldn't ask npm about ${name}: ${result.stderr.trim()}`);
   }
 }
 
