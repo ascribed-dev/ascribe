@@ -12,7 +12,7 @@ This plan isn't tied to a release. Other work may ship before or between its pha
 ## Names
 
 - **User docs** are for people who write documentation with Ascribe. The developer docs (contracts, READMEs, contributing) stay as they are for now; see [Later](#later-not-in-this-plan).
-- **Drift** is a page saying something the code no longer does. The three checks are named for what they catch: **stale generated content**, **stale examples**, and **uncovered changes** (code a page covers changed, and the page didn't).
+- **Drift** is a page saying something the code no longer does. The three checks are named for what they catch: **stale generated content**, **stale examples**, and **uncovered changes** (code a page covers changed, and the page didn't). After the [back-test](back-test.md), the third is built only for code a page shows.
 - **A source** is a named set of files outside a project's content that its pages refer to: code a snippet comes from, and code a page covers.
 - **The canary** is a build of the npm packages from `main`, published nightly under the `next` tag.
 
@@ -60,7 +60,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 | The site | `site/`, outside the pnpm workspace | An Astro site that installs Ascribe from npm, as a user's does |
 | Publishing | Netlify, `site/netlify.toml`, `.github/workflows/` | Netlify builds production; Actions builds previews and the review report |
 | Snippets | `SPEC.md`, the compiler crates | `@snippet`: code examples taken from tested files, from named sources |
-| Coverage | `tessera-diff`, `tessera-cli` (`ascribe drift`) | Pages say which regions of code they cover; the report says which covered regions changed without them |
+| Coverage | `tessera-diff`, `tessera-cli` (`ascribe drift`) | The report says which pages' examples changed while their words didn't |
 
 ## Phases
 
@@ -75,8 +75,8 @@ Each phase leaves the repository green and can be its own pull request. A phase 
 | [5: Publishing](phase-5-publish.md) | Netlify builds and serves the site from `main`; pull requests get a preview and the review report. | 2, 4 |
 | [6: The back-test](phase-6-back-test.md) | A script and a write-up: over past pull requests, how often would a coverage report have been right? | Nothing |
 | [7: Snippets](phase-7-snippets.md) | Named sources, and `@snippet`: a code example taken from a tested file. | 1 |
-| [8: Coverage](phase-8-coverage.md) | Pages say which regions of code they cover, and `ascribe drift` reports covered regions that changed without them. Region-level only, after the [back-test](back-test.md). | 6, 7 |
-| [9: Our docs, kept current](phase-9-adopt.md) | Our docs take their examples from tested files and declare what they cover; CI shows the report; the measures are recorded. | 5, 7, and 8 if it was built |
+| [8: Coverage](phase-8-coverage.md) | `ascribe drift` reports pages whose examples changed while their words didn't. Snippets only, after the [back-test](back-test.md). | 6, 7 |
+| [9: Our docs, kept current](phase-9-adopt.md) | Our docs take their examples from tested files; CI shows the report; the measures are recorded. | 5, 7, 8 |
 
 Phases 1 to 5 are the docs as a user would run them. Phase 6 is a day's measurement. Phases 7 to 9 are the drift features and their use.
 
@@ -133,6 +133,7 @@ Phase 1 moves every page, so it conflicts with any open pull request that edits 
 
 - **The developer docs as a second project** (`dev-docs/`: contracts, architecture, the server's requests, contributing), with the READMEs shortened. Until then the contracts stay in the user docs and the READMEs stay as they are.
 - **Sources in another repository.** A source that names a repository, pinned to a commit in a lock file; a command that moves the pin and copies in the files snippets use, so builds still need no network; drift between the old pin and the new. Decision 9 keeps pages' addresses ready for it. Build and test it on a pair of fixture repositories in the org.
+- **Drift at review time.** The [back-test](back-test.md) found that drift here is mostly a sentence or a sibling page nobody reread after a change, which no coverage map catches. That argues for help at review time, such as review's changed-pages list and the agents plan's prompts to reread a page against a diff, over more coverage.
 - **Drift where code is changed:** a pull request comment, a lens on covered files in the editor, a line in the agents plan's stop hook, a second group in review's changed-pages list. All wait on phase 9's numbers.
 - **Drift across history** (`ascribe drift --history`: pages whose covered code has changed since the page did), a way to say "I checked, it's still right" (recording the code commit that was checked, not a date), and review dates.
 - **A GitHub Action** that runs check, the review report, and drift, and deepens the clone itself.

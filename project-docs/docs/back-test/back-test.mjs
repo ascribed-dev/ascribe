@@ -48,7 +48,8 @@ const prs = git(
   })
   .filter(Boolean);
 
-const exists = (sha, path) => git("ls-tree", "--name-only", sha, "--", path).trim() === path;
+const exists = (sha, path) =>
+  git("ls-tree", "--full-tree", "--name-only", sha, "--", path).trim() === path;
 
 console.log(["pr", "date", "page", "covered_files_changed", "examples"].join("\t"));
 for (const { sha, date, pr } of prs) {

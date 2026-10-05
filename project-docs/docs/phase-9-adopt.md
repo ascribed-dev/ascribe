@@ -1,16 +1,16 @@
 # Phase 9: Our docs, kept current
 
-Part of [Docs](README.md). Requires phases 5 and 7, and phase 8 if it was built. Docs, a workflow, and measurements.
+Part of [Docs](README.md). Requires phases 5, 7, and 8. Docs, a workflow, and measurements.
 
 ## Goal
 
-Our own docs use every drift check that exists: generated reference (phase 2), examples taken from tested files, and coverage. CI shows the drift report in its summary, by the recipe the docs give users. Then the measures are taken again, on real pull requests this time, and written down.
+Our own docs use every drift check that exists: generated reference (phase 2), examples taken from tested files, and the drift report on those examples. CI shows the drift report in its summary, by the recipe the docs give users. Then the measures are taken again, on real pull requests this time, and written down.
 
 ## Context
 
 - The pages in `docs/content/`, and the code each describes.
 - `examples/` (`quill`, `astro-site`, `monorepo`, `content-models`), the conformance fixtures, the CLI's test snapshots, and the repository's workflows: tested files that the docs' examples were copied from, or could come from.
-- Phase 6's map and write-up; phase 7's sources and `@snippet`; phase 8's `covers` and `ascribe drift`, as far as it was built.
+- Phase 6's map and write-up; phase 7's sources and `@snippet`; phase 8's `ascribe drift`, which reports changed examples only (no file-level coverage and no `covers`, after phase 6).
 - The README's [measures](README.md#the-measures) and `measures.md`.
 - [Decisions 1, 10, and 11](README.md#decisions).
 
@@ -30,9 +30,7 @@ Production builds on Netlify from the canary, so the snippets' files have to be 
 
 ### Coverage
 
-If phase 8 built `covers`: start from phase 6's map, now that it's been tested against history, and write it into the pages as addresses. Prefer a region to a file, and a file to a glob. Pages that describe no code get none.
-
-If phase 8 built the region-level report alone, there's nothing to write: snippets are the coverage.
+There's nothing to write: snippets are the coverage. Phase 6's map stays in `project-docs/docs/back-test/` for the measures below, not in the pages.
 
 ### In CI
 
@@ -43,6 +41,7 @@ A job on pull requests that runs `ascribe drift --format summary` and writes it 
 After at least 15 pull requests have merged with the report on:
 
 - **How often the report was right,** judged as in phase 6, per group. Compare with the back-test's number.
+- **Whether an explicit `covers` would have helped:** for drift found in these pull requests that no example showed, would a region a page named have caught it? This decides whether `covers` gets built.
 - **Whether anyone acted on it:** for each "right", did the page change in that pull request or a later one, and after how many days?
 - **The host's build time,** now with snippets.
 - **The time to a working site,** again, if the guides changed.
@@ -52,15 +51,14 @@ Write them into `measures.md`, with what they suggest: whether this repository s
 
 ### How we document Ascribe
 
-A section in `CONTRIBUTING.md`: where a change's docs go, generated fragments and `ASCRIBE_BLESS`, tagging a file for a snippet, `covers`, reading the drift summary, and running the site. If the agents plan's `ascribe agents sync` is merged, run it for `docs/` and commit what that plan says to commit.
+A section in `CONTRIBUTING.md`: where a change's docs go, generated fragments and `ASCRIBE_BLESS`, tagging a file for a snippet, reading the drift summary, and running the site. If the agents plan's `ascribe agents sync` is merged, run it for `docs/` and commit what that plan says to commit.
 
 ## Tasks
 
 1. The sources, and the examples, with the before and after counts.
-2. `covers`, if it exists.
-3. The CI job, and `guides/drift.md` finished with what running it taught.
-4. The measures, once enough pull requests have merged. This can be its own pull request.
-5. `CONTRIBUTING.md`; the brainstorm updated (section 1 marked as built; the navigation gap from phase 4 written into section 6).
+2. The CI job, and `guides/drift.md` finished with what running it taught.
+3. The measures, once enough pull requests have merged. This can be its own pull request.
+4. `CONTRIBUTING.md`; the brainstorm updated (section 1 marked as built; the navigation gap from phase 4 written into section 6).
 
 ## Out of scope
 
@@ -85,6 +83,5 @@ cd site && npm ci && npm run build
 ## Commits
 
 1. "Take the docs' examples from tested files"
-2. "Say which code each page covers"
-3. "Show the drift report in CI"
-4. "Record what keeping our docs current has shown"
+2. "Show the drift report in CI"
+3. "Record what keeping our docs current has shown"
