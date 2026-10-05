@@ -274,17 +274,40 @@ describe("review in the site preview", () => {
           hasText: "Say what Loom is first.",
         });
         await expect.poll(() => card.count(), { timeout: 30_000 }).toBe(1);
-        // A comment on the new paragraph.
+        // A comment on the new paragraph. On macOS a delayed watcher event can
+        // reload the page after review started, closing the comment form:
+        // open it again until the comment is in.
         const block = page.locator('[data-ascribe-change="added"]');
-        await block.hover();
-        await page.getByRole("button", { name: "Comment on this block" }).click();
-        await page.getByRole("textbox", { name: "Comment" }).fill("Is this still true?");
-        await page
-          .getByRole("group", { name: /^Comment on/ })
-          .getByRole("button", { name: "Add to review" })
-          .click();
+        const unsent = async () => (await panel(page).textContent().catch(() => null)) ?? "";
         await expect
-          .poll(async () => panel(page).textContent(), { timeout: 30_000 })
+          .poll(
+            async () => {
+              if ((await unsent()).includes("unsent comment")) return unsent();
+              try {
+                await block.hover({ timeout: 5_000 });
+                await page
+                  .getByRole("button", { name: "Comment on this block" })
+                  .click({ timeout: 5_000 });
+                await page
+                  .getByRole("textbox", { name: "Comment" })
+                  .fill("Is this still true?", { timeout: 5_000 });
+                await page
+                  .getByRole("group", { name: /^Comment on/ })
+                  .getByRole("button", { name: "Add to review" })
+                  .click({ timeout: 5_000 });
+                // Give the panel time to count it before trying again, so
+                // one comment isn't added twice.
+                await expect
+                  .poll(unsent, { timeout: 5_000 })
+                  .toContain("unsent comment")
+                  .catch(() => undefined);
+              } catch {
+                // The page reloaded under the form: try again.
+              }
+              return unsent();
+            },
+            { timeout: 60_000 },
+          )
           .toContain("1 unsent comment");
         expect(github.state().submitted).toEqual([]);
         await panel(page).getByRole("button", { name: "Submit review…" }).click();
