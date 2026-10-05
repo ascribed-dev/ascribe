@@ -1,4 +1,7 @@
-# Editing
+---
+title: Editing
+description: The VS Code extension, workspaces with several projects, and other editors.
+---
 
 The Ascribe extension for VS Code turns the editor into an Ascribe authoring environment. Its features come from the language server, `ascribe lsp`, which runs the same checks as `ascribe check`: what the editor reports is what CI reports.
 
@@ -10,7 +13,7 @@ Install **Ascribe** (`Ascribe.ascribe-vscode`) from the Visual Studio Marketplac
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-The extension activates in a workspace that has an `ascribe.toml` anywhere in it, and a workspace can hold several projects (see [Workspaces with several projects](#workspaces-with-several-projects)). It needs VS Code 1.138 or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
+The extension activates in a workspace that has an `ascribe.toml` anywhere in it, and a workspace can hold several projects (see [Workspaces with several projects](#workspaces-with-several-projects)). It needs VS Code {vscode} or later, and a trusted workspace, since it runs the project's `ascribe` binary. It's available for macOS on Apple silicon, Linux (x64 and arm64), and Windows (x64); Intel Macs aren't supported.
 
 ### Which `ascribe` it runs
 
@@ -90,12 +93,14 @@ A file with no `ascribe.toml` above it has nothing to preview: "This file isn't 
 The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts and loads nothing remote, so raw HTML that needs either looks different in the preview than on the site.
 
 ### Site preview
+@available: next
 
 The page preview is the page alone. The **site preview** is the same page in the real site, with its layout, navigation, and styles, from the site's dev server. With [`@ascribed/astro`](astro.md), `astro dev` writes where it's running to `.ascribe/dev.json` in the project, and removes the file when it stops.
 
 **Ascribe: Open Site Preview** opens the active page on the dev server in your browser, at the heading the editor shows. It's also the globe button in a Markdown editor's title bar while a dev server is running. With no dev server, or one that stopped without removing `dev.json`, it says to start one. It only opens an address on your machine (`localhost`, `127.0.0.1`, or `[::1]`), so a `dev.json` committed to a repository can't send it elsewhere. In a remote workspace, VS Code forwards the dev server's port first. The page preview's **Page | Site** switch, at the end of its toolbar, shows the site preview in the panel instead: the dev server's page for the same file, following the active file as **Page** does. Links you follow inside it stay until you open another file. With no dev server, it says to start one, with **Try again**. In VS Code for the Web, where the panel can't show the dev server, **Site** opens the browser instead. [Review in the site preview](astro.md#review-in-the-site-preview) has the toolbar app that marks changes and shows comments there; each block's and thread's **Open source** brings you back to the file, at the line.
 
 ### Review in the preview
+@available: next
 
 The preview can mark what changed against a git revision, the **base**, as [`ascribe diff`](../reference/cli.md#ascribe-diff) reports it: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](review.md) walks through reviewing a pull request, start to finish; this section and the next are the reference for the editor's part.
 
@@ -106,6 +111,7 @@ With review on, the preview's header shows the base, how many changes the page h
 **Ascribe: Changed Pages**, also the list button in the preview's title bar, lists the pages the change touches in the preview's build, each with its counts and, when its own file didn't change, what it changed through. Choosing one opens it and its preview.
 
 ### Comments in the preview
+@available: next
 
 When your branch has an open pull request on GitHub, review shows its review threads beside the blocks they're on, and lets you review the change there. **Start Review** looks for the pull request first, and then offers its base as the first choice. The header names the pull request ("#128 against main"); the number opens it on GitHub, and **Comments (N)** lists every comment on the pull request's pages.
 

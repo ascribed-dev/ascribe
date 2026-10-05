@@ -1,4 +1,7 @@
-# Astro
+---
+title: Astro
+description: Publishing a site with @ascribed/astro.
+---
 
 `@ascribed/astro` publishes an Ascribe project as an [Astro](https://astro.build) site. It runs `ascribe build --emit site` before Astro loads content, gives you a content collection of the built pages with a schema generated from `ascribe.toml`, applies heading ids and image attributes in Astro's own Markdown pipeline (so Astro's table of contents and image processing still work), loads the element library, and serves the files pages link to. In `astro dev`, it rebuilds as you edit.
 
@@ -147,9 +150,11 @@ npx astro build
 - After a successful rebuild, Astro reloads the collection and the page.
 - After a failed one, the diagnostics are in Astro's terminal, and pages answer with HTTP 503 until a save builds cleanly again, so you never see a stale page.
 - A change to `[project] output-dir` needs a restart of `astro dev`, and says so.
-- It writes where it's running (`url` and `build`) to `.ascribe/dev.json` in the project, for the editor's [Open Site Preview](editor.md#site-preview), and removes the file when it stops.
+- @available: next
+  It writes where it's running (`url` and `build`) to `.ascribe/dev.json` in the project, for the editor's [Open Site Preview](editor.md#site-preview), and removes the file when it stops.
 
 ## Review in the site preview
+@available: next
 
 In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pull request's changes and review comments on the real page, in your site's layout: the same marks and threads as the editor's [page preview](editor.md#review-in-the-preview), from the same [`@ascribed/review`]({repo}/blob/main/packages/review/README.md) overlay. Nothing runs until you open the app: opening it starts review, and after **Stop Review**, the panel offers **Start Review**. [Review](review.md) walks through reviewing a pull request with it; this section is the reference for the site's side.
 

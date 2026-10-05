@@ -1,8 +1,11 @@
-# Getting started
+---
+title: Getting started
+description: Install Ascribe, write a first page, check it, build it, and publish it with Astro.
+---
 
 Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project, writes a first page, and publishes it with Astro.
 
-You need [Node.js](https://nodejs.org) 24 or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc 2.28 or later, which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64).
+You need [Node.js](https://nodejs.org) {node} or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc 2.28 or later, which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64).
 
 ## Install the command
 
@@ -163,7 +166,7 @@ Then define the content collection, a route, and a layout that loads the element
 
 Run the same command the editor runs:
 
-```yaml
+```yaml phrases=true
 # .github/workflows/docs.yml
 name: Docs
 on: [pull_request]
@@ -174,7 +177,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: {node}
       - run: npm ci
       - run: npx ascribe check --deny-warnings
       - run: npx ascribe fmt --check

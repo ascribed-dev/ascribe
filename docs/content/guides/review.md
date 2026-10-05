@@ -1,4 +1,8 @@
-# Review
+---
+title: Review
+description: Reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
+available: next
+---
 
 Ascribe shows a pull request the way readers will see it: each page it changes, rendered, with the changed blocks marked, and the pull request's review comments beside the blocks they're about. You read the change as pages instead of as a diff of Markdown files, comment where you're reading, and your comments land in the pull request like any other review. A change to a fragment shows on every page that includes it, a change to a phrase on every page that uses it, and reformatting shows on none.
 
@@ -102,7 +106,7 @@ The file holds everything it shows, images included, and makes no network reques
 
 This GitHub Actions job writes the report on each pull request, uploads it, and links it from the run's summary, so a reviewer opens it from the pull request's checks. Change `--config docs` to your project's folder (the one with `ascribe.toml`), or drop it when that's the repository's root, and install `ascribe` however your other jobs do.
 
-```yaml
+```yaml phrases=true
 name: Review
 
 on:
@@ -122,7 +126,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: {node}
       - run: npm install --global @ascribed/cli
       - name: Write the report
         run: >
