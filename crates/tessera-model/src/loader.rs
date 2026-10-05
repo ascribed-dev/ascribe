@@ -295,7 +295,7 @@ impl<'s> Loader<'s> {
         let editor_build = self.editor(root.get("editor"), root.get("builds"), &builds);
         self.version_scheme(root.get("versions"));
         self.project_paths(&project, root.get("project"));
-        let sources = self.sources(root.get("sources"));
+        let sources = self.sources(root.get("sources"), &project.value.content_root);
 
         Some(ContentModel {
             spec: spec?,
@@ -443,8 +443,9 @@ impl<'s> Loader<'s> {
 
     // ---- sources ------------------------------------------------------------
 
-    /// `[sources.<name>]` (SPEC §7.3).
-    fn sources(&mut self, v: Option<&V<'_>>) -> Vec<Source> {
+    /// `[sources.<name>]` (SPEC §7.3, §7.4). `content_root` is the project's,
+    /// which a source's copies must stay out of.
+    fn sources(&mut self, v: Option<&V<'_>>, content_root: &str) -> Vec<Source> {
         let mut out = Vec::new();
         let Some(v) = v else { return out };
         let Some(t) = self.as_table("sources", v) else {
@@ -456,15 +457,6 @@ impl<'s> Loader<'s> {
             let Some(st) = self.as_table(&path, item) else {
                 continue;
             };
-            // Reserved for a source in another repository.
-            for (key, key_span, _) in entries(st) {
-                if matches!(key, "git" | "branch") {
-                    self.push(
-                        self.issue(diagnostics::MODEL_SOURCE_REMOTE, key_span)
-                            .with_arg("key", format!("{path}.{key}")),
-                    );
-                }
-            }
             let allowed = ["path", "include", "ignore", "git", "branch"];
             self.check_keys(&path, st, &allowed);
             let include = st
@@ -475,28 +467,98 @@ impl<'s> Loader<'s> {
                 .get("ignore")
                 .map(|p| self.patterns(&format!("{path}.ignore"), p))
                 .unwrap_or_default();
-            let Some(folder) = self.require(&path, st, sp(item), "path") else {
-                continue;
+            let (folder, git) = match (st.get("path"), st.get("git")) {
+                (Some(_), Some(git)) => {
+                    let issue = self.issue(diagnostics::MODEL_SOURCE_REMOTE, sp(git));
+                    self.push(issue.with_arg("source", name));
+                    continue;
+                }
+                (None, None) => {
+                    let issue = self.issue(diagnostics::MODEL_SOURCE_REMOTE, name_span);
+                    self.push(issue.with_variant("neither").with_arg("source", name));
+                    continue;
+                }
+                (Some(folder), None) => {
+                    if let Some(branch) = st.get("branch") {
+                        let issue = self.issue(diagnostics::MODEL_SOURCE_REMOTE, sp(branch));
+                        self.push(issue.with_variant("branch").with_arg("source", name));
+                        continue;
+                    }
+                    let Some(folder_text) = self.string(&format!("{path}.path"), folder, true)
+                    else {
+                        continue;
+                    };
+                    if is_absolute(&folder_text) {
+                        self.push(
+                            self.issue(diagnostics::MODEL_PATH_ABSOLUTE, sp(folder))
+                                .with_arg("key", format!("{path}.path")),
+                        );
+                        continue;
+                    }
+                    self.source_folder(name, &folder_text, sp(folder));
+                    (folder_text, None)
+                }
+                (None, Some(git)) => {
+                    let Some(remote) = self.remote(name, &path, st, git) else {
+                        continue;
+                    };
+                    let copies = Source::copies_folder(name);
+                    let content = self.resolve(content_root);
+                    if content == Path::new(".") || self.resolve(&copies).starts_with(&content) {
+                        self.push(
+                            self.issue(diagnostics::MODEL_SOURCE_REMOTE, name_span)
+                                .with_variant("inside-content")
+                                .with_arg("source", name)
+                                .with_arg("content", content_root),
+                        );
+                        continue;
+                    }
+                    (copies, Some(remote))
+                }
             };
-            let Some(folder_text) = self.string(&format!("{path}.path"), folder, true) else {
-                continue;
-            };
-            if is_absolute(&folder_text) {
-                self.push(
-                    self.issue(diagnostics::MODEL_PATH_ABSOLUTE, sp(folder))
-                        .with_arg("key", format!("{path}.path")),
-                );
-                continue;
-            }
-            self.source_folder(name, &folder_text, sp(folder));
             out.push(Source {
                 name: name.to_owned(),
-                path: folder_text,
+                path: folder,
                 include,
                 ignore,
+                git,
+                span: name_span,
             });
         }
         out
+    }
+
+    /// A source's `git` and `branch` (SPEC §7.4). Only what's written is
+    /// checked: whether the repository is there is for `git` to say, when
+    /// its files are copied.
+    fn remote(&mut self, name: &str, path: &str, st: &DeTable<'_>, git: &V<'_>) -> Option<Remote> {
+        let url = self.string(&format!("{path}.git"), git, true)?;
+        if !is_git_url(&url) {
+            self.push(
+                self.issue(diagnostics::MODEL_SOURCE_REMOTE, sp(git))
+                    .with_variant("url")
+                    .with_arg("source", name)
+                    .with_arg("url", url),
+            );
+            return None;
+        }
+        let branch = match st.get("branch") {
+            None => None,
+            Some(v) => {
+                let branch = self.string(&format!("{path}.branch"), v, true)?;
+                if !is_branch_name(&branch) {
+                    self.push(
+                        self.issue(diagnostics::MODEL_SOURCE_REMOTE, sp(v))
+                            .with_variant("branch-name")
+                            .with_arg("source", name)
+                            .with_arg("branch", branch),
+                    );
+                    return None;
+                }
+                Some(branch)
+            }
+        };
+        Some(Remote { url, branch })
     }
 
     /// A source's folder exists, is a directory, and is in the project's git
@@ -1126,6 +1188,47 @@ fn repository_root(dir: &Path) -> Option<PathBuf> {
     dir.ancestors()
         .find(|d| d.join(".git").exists())
         .map(Path::to_path_buf)
+}
+
+/// Whether `url` is a repository URL Ascribe gives `git` (SPEC §7.4): one
+/// of the schemes `git` fetches over, or the `user@host:path` form. Nothing
+/// that `git` would read as an option, or as another transport (`ext::`).
+pub(crate) fn is_git_url(url: &str) -> bool {
+    if url.starts_with('-') || url.chars().any(|c| c.is_control() || c.is_whitespace()) {
+        return false;
+    }
+    let schemes = ["https://", "http://", "ssh://", "git://", "file://"];
+    if let Some(rest) = schemes.iter().find_map(|s| url.strip_prefix(s)) {
+        return !rest.is_empty();
+    }
+    // `user@host:path`: a user, a host, and a path, with no `/` before the
+    // `:` (which would make it a local path).
+    let Some((login, path)) = url.split_once(':') else {
+        return false;
+    };
+    let Some((user, host)) = login.split_once('@') else {
+        return false;
+    };
+    !user.is_empty() && !host.is_empty() && !path.is_empty() && !login.contains('/')
+}
+
+/// Whether `branch` is a branch name `git` accepts: the rules of `git
+/// check-ref-format --branch` that matter here, without running `git`.
+pub(crate) fn is_branch_name(branch: &str) -> bool {
+    !branch.is_empty()
+        && !branch.starts_with('-')
+        && !branch.starts_with('/')
+        && !branch.ends_with('/')
+        && !branch.ends_with('.')
+        && !branch.ends_with(".lock")
+        && !branch.contains("..")
+        && !branch.contains("//")
+        && !branch.contains("@{")
+        && branch != "@"
+        && !branch
+            .chars()
+            .any(|c| c.is_control() || " ~^:?*[\\".contains(c))
+        && !branch.split('/').any(|s| s.starts_with('.'))
 }
 
 fn is_absolute(s: &str) -> bool {

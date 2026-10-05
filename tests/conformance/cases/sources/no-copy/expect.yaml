@@ -1,0 +1,8 @@
+description: >-
+  A snippet that names a file of a source in another repository that hasn't
+  been copied is a missing file, with a message that says how to copy it.
+spec: ["4.8", "7.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-file-missing, file: index.md, line: 9}

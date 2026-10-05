@@ -438,6 +438,21 @@ pub const MODEL_SOURCE_OUTSIDE_REPOSITORY: DiagnosticSlug =
 /// `ASC135`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_SOURCE_REMOTE: DiagnosticSlug = DiagnosticSlug("model-source-remote");
 
+/// `ASC136`, error, file level: SPEC §8.2, "Source copies | `ascribe.lock` isn't valid TOML, or doesn't have the shape §7.4 gives it".
+pub const LOCK_INVALID: DiagnosticSlug = DiagnosticSlug("lock-invalid");
+
+/// `ASC137`, error, file level: SPEC §8.2, "Source copies | `ascribe.lock` pins a source the content model doesn't declare with `git`, or pins it with another `git`".
+pub const LOCK_SOURCE_UNKNOWN: DiagnosticSlug = DiagnosticSlug("lock-source-unknown");
+
+/// `ASC138`, error, file level: SPEC §8.2, "Source copies | A file `ascribe.lock` lists is missing from the source's folder, or its hash differs".
+pub const SOURCE_COPY_CHANGED: DiagnosticSlug = DiagnosticSlug("source-copy-changed");
+
+/// `ASC139`, error, file level: SPEC §8.2, "Source copies | A file in a source's copies folder that `ascribe.lock` doesn't list".
+pub const SOURCE_COPY_UNLOCKED: DiagnosticSlug = DiagnosticSlug("source-copy-unlocked");
+
+/// `ASC140`, warning, file level: SPEC §8.2, "Source copies | A copy that no snippet uses".
+pub const SOURCE_COPY_UNUSED: DiagnosticSlug = DiagnosticSlug("source-copy-unused");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -575,4 +590,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     MODEL_SOURCE_PATH_MISSING,
     MODEL_SOURCE_OUTSIDE_REPOSITORY,
     MODEL_SOURCE_REMOTE,
+    LOCK_INVALID,
+    LOCK_SOURCE_UNKNOWN,
+    SOURCE_COPY_CHANGED,
+    SOURCE_COPY_UNLOCKED,
+    SOURCE_COPY_UNUSED,
 ];

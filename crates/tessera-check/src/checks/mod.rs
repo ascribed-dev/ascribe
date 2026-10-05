@@ -11,11 +11,13 @@
 //! | `avail` | `@available` specs and the `available` frontmatter key |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
+//! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
 
 mod attrs;
 mod avail;
 mod frontmatter;
 mod refs;
+mod sources;
 mod text;
 
 use tessera_core::{DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics};
@@ -25,6 +27,8 @@ use tessera_syntax::{
 };
 
 use crate::{Diagnostic, Project, SourceFile};
+
+pub(crate) use sources::check_sources;
 
 /// State shared by the checks of one file.
 struct Ctx<'a> {

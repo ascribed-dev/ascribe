@@ -365,6 +365,52 @@ fn a_source_folder_must_exist_be_a_directory_and_be_in_the_repository() {
 }
 
 #[test]
+fn a_source_in_another_repository_reads_its_copies() {
+    let dir = scratch("remote");
+    std::fs::create_dir_all(dir.join(".git")).unwrap();
+    std::fs::create_dir_all(dir.join("docs")).unwrap();
+    let text = "spec = \"0.1\"\n[sources.api]\ngit = \"https://github.com/acme/api.git\"\nbranch = \"release/2\"\ninclude = [\"src/**\"]\n[sources.cli]\ngit = \"git@github.com:acme/cli.git\"\n";
+    // The copies' folder needn't exist yet.
+    let model = load_str_in(text, FileId::new(0), &dir).unwrap();
+    let api = model.source("api").unwrap();
+    assert_eq!(api.path, "sources/api");
+    let remote = api.git.as_ref().unwrap();
+    assert_eq!(remote.url, "https://github.com/acme/api.git");
+    assert_eq!(remote.branch.as_deref(), Some("release/2"));
+    assert!(api.reads("src/auth.rs") && !api.reads("README.md"));
+    let cli = model.source("cli").unwrap();
+    assert_eq!(cli.git.as_ref().unwrap().branch, None);
+    let _ = std::fs::remove_dir_all(&dir);
+
+    let url = |url: &str| {
+        let text = format!("spec = \"0.1\"\n[sources.api]\ngit = \"{url}\"\n");
+        load_str(&text, FileId::new(0)).is_ok()
+    };
+    for good in [
+        "https://example.com/a.git",
+        "http://example.com/a",
+        "ssh://git@example.com:22/a.git",
+        "git://example.com/a.git",
+        "file:///srv/git/a.git",
+        "git@github.com:acme/a.git",
+    ] {
+        assert!(url(good), "{good}");
+    }
+    for bad in [
+        "-uhello",
+        "ext::sh -c touch% /tmp/x",
+        "/srv/git/a.git",
+        "../a.git",
+        "C:/repos/a",
+        "https://",
+        "example.com/a b",
+        "a/b@host:path",
+    ] {
+        assert!(!url(bad), "{bad}");
+    }
+}
+
+#[test]
 fn the_content_root_must_exist_and_be_a_directory() {
     let dir = scratch("root");
     let text = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n";

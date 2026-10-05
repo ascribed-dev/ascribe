@@ -1,0 +1,9 @@
+description: >-
+  A source in another repository is read through its copies, in
+  `sources/<name>/`, which `ascribe.lock` pins: each copy is listed with its
+  hash, each listed file is there, and each is used by a snippet. Two sources
+  in other repositories, all in order, report nothing.
+spec: ["7.3", "7.4"]
+tags: [check]
+
+diagnostics: []

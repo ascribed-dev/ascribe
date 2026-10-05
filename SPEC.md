@@ -598,7 +598,7 @@ The comment syntax of each extension:
 
 Extensions are compared without regard to case. A file whose extension isn't in the table has no tags: it can be used whole, but not by region. The table grows with revisions of this specification.
 
-**No history, no network.** A snippet reads the file as it is in the working tree, through its source, so checking and building need neither version-control history nor a network.
+**No history, no network.** A snippet reads the file as it is in the working tree, through its source, so checking and building need neither version-control history nor a network. A source in another repository is read through the copies in the project (§7.4).
 
 ---
 
@@ -733,7 +733,7 @@ A content model declares the following.
 | Image attributes | Accepted image attribute keys and types | §5.3 |
 | Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |
 | Builds | Named builds and their modes | §9.3 |
-| Sources | Named sets of files outside the content that pages may take code from: each one's folder, and which of its files are readable | §4.8, §7.3 |
+| Sources | Named sets of files outside the content that pages may take code from: each one's folder or repository, and which of its files are readable | §4.8, §7.3, §7.4 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
@@ -752,13 +752,42 @@ A **source** is a named set of files outside a project's content that its pages 
 path = ".."                               # relative to the project's folder
 include = ["crates/**", "examples/**"]    # what's readable; everything else isn't
 ignore = ["**/target/**"]
+
+[sources.api]
+git = "https://github.com/acme/api.git"   # another repository (§7.4)
+branch = "main"
+include = ["src/**", "examples/**"]
 ```
 
 - A project MAY declare several sources. A source's name follows the attribute key rule (ABNF rule `key`).
-- `path` is REQUIRED: the source's folder, relative to the project's folder (the directory containing `ascribe.toml`). It MUST exist and be a directory. When the project is in a version-control repository, it MUST be inside that same repository.
+- A source is a folder in the project's repository, given by `path`, or another repository, given by `git` (§7.4). It has exactly one of the two. Pages address both kinds the same way, so moving code from one kind of source to the other changes the content model and no page.
+- `path` is the source's folder, relative to the project's folder (the directory containing `ascribe.toml`). It MUST exist and be a directory. When the project is in a version-control repository, it MUST be inside that same repository.
 - `include` lists glob patterns (the content model's pattern syntax, as for `files`) matched against a file's path relative to the source's folder. A file is readable when a pattern matches it and no pattern in `ignore` does. Without `include`, every file in the folder matches.
-- **`git` and `branch` are reserved** in a source's table, for a source in another repository. A content model that uses them is rejected until a revision of this specification defines them.
 - Which files a source makes readable decides nothing else: a source's files aren't source files (§2.1), assets (§9.4), or pages.
+
+### 7.4 Sources in another repository
+
+A source with `git` is a repository other than the project's. Checking and building still read only the project's own files: the files its snippets use are **copied** into the project, and `ascribe.lock` records the commit they were copied from.
+
+- `git` is the repository's URL, as `git` accepts it: `https://`, `http://`, `ssh://`, `git://`, or `file://`, or the `user@host:path` form. `branch` is the branch an update follows; without it, the repository's default branch. `branch` without `git` is an error, as is a source with both `git` and `path`, or with neither.
+- **The copies** of a source named `<name>` are in the folder `sources/<name>/`, in the project's folder, each at the path it has in its repository. That folder is the source's folder: an address's path is relative to it, and `include` and `ignore` apply as for any source. It MUST NOT be inside the content root, where a copied `.md` file would be a page.
+- **The lock**, `ascribe.lock`, beside `ascribe.toml`, is a TOML file:
+
+  ```toml
+  version = 1
+
+  [[source]]
+  name = "api"
+  git = "https://github.com/acme/api.git"
+  commit = "9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e"
+
+  [source.files]
+  "src/auth.rs" = "sha256:5d41402abc4b2a76b9719d911017c592ae2fd2b1f6b3b0f0d5ce64b4c7d0e1a2"
+  ```
+
+  `version` is `1`. Each `[[source]]` pins one source: its name, its `git` as the content model gave it when it was pinned, its commit as 40 or 64 hexadecimal digits, and each copy's path with the SHA-256 of its bytes, as `sha256:` and 64 lowercase hexadecimal digits. No two entries name the same source.
+- Processors check the lock and the copies whenever they check the project, from the files alone: each entry names a source the content model declares with `git`, and the same `git`; each file the lock lists is in the source's folder with that hash; each file in the source's folder is listed; and each copy is used by a snippet. A snippet whose file has no copy is an error that says how to copy it.
+- **No history, no network.** Copying, and moving a pin to another commit, are a processor's commands of their own, and the only operations that reach another repository. Checking and building read the copies, so the same commit of the project checks and builds the same way on any machine.
 
 ---
 
@@ -827,6 +856,11 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | `@snippet` | File isn't text | Error |
 | `@snippet` | Region doesn't exist in the file | Error |
 | `@snippet` | The file's tags are unbalanced, name a region twice, or use a reserved tag | Error |
+| Source copies | `ascribe.lock` isn't valid TOML, or doesn't have the shape §7.4 gives it | Error |
+| Source copies | `ascribe.lock` pins a source the content model doesn't declare with `git`, or pins it with another `git` | Error |
+| Source copies | A file `ascribe.lock` lists is missing from the source's folder, or its hash differs | Error |
+| Source copies | A file in a source's copies folder that `ascribe.lock` doesn't list | Error |
+| Source copies | A copy that no snippet uses | Warning |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |

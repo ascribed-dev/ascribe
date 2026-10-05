@@ -482,8 +482,14 @@ pub fn snippet_issues(
             let issue = Issue::new(diagnostics::SNIPPET_FILE_MISSING, at)
                 .with_arg("path", address.path.clone())
                 .with_arg("source", address.source.clone());
+            let remote = model
+                .source(&address.source)
+                .is_some_and(|s| s.git.is_some());
             vec![match actual {
                 Some(actual) => issue.with_variant("case").with_arg("actual", actual),
+                // A source in another repository is read through its copies
+                // (SPEC §7.4), which are made by a command of their own.
+                None if remote => issue.with_variant("no-copy"),
                 None => issue,
             }]
         }

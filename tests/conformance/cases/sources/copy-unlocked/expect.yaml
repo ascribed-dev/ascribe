@@ -1,0 +1,10 @@
+description: >-
+  Every file in a source's copies is listed in the lock, so it's known which
+  commit it came from. One the lock doesn't list is reported at the source's
+  pin, or at its declaration when it has none.
+spec: ["7.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: source-copy-unlocked, file: ascribe.toml, line: 11}
+  - {slug: source-copy-unlocked, file: ascribe.lock, line: 5}

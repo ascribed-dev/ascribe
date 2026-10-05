@@ -600,26 +600,42 @@ build = "site"
 ## 18. `[sources.<name>]`
 @available: next
 
-A source is a folder outside the project's content that its pages may take code examples from, with [`@snippet`](directives.md#snippet) ([SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)). It's the only way a page can read a file outside the project's folder.
+A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with [`@snippet`](directives.md#snippet) ([SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)). It's the only way a page can read a file outside the project's folder.
 
 ```toml
 [sources.code]
 path = ".."                               # relative to the folder ascribe.toml is in
 include = ["crates/**", "examples/**"]    # what's readable; everything else isn't
 ignore = ["**/target/**"]
+
+[sources.api]
+git = "https://github.com/acme/api.git"   # another repository
+branch = "main"                           # what `ascribe sources update` follows
+include = ["src/**", "examples/**"]
 ```
 
-A page names a file through its source as `<source>:<path>`, with the path relative to the source's folder: `@snippet: code:examples/quill/ascribe.toml#dimensions`.
+A page names a file through its source as `<source>:<path>`, with the path relative to the source's folder: `@snippet: code:examples/quill/ascribe.toml#dimensions`. Both kinds of source are addressed the same way, so moving code to another repository, or back, changes `ascribe.toml` and no page.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `path` | string (path) | **required** | The source's folder, relative to the project root. It must exist, be a directory, and be inside the git repository the project is in, when the project is in one. |
-| `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to `path` (§1.3). |
+| `path` | string (path) | **required** without `git` | The source's folder, relative to the project root. It must exist, be a directory, and be inside the git repository the project is in, when the project is in one. |
+| `git` | string (URL) | **required** without `path` | Another repository, as `git` takes it: `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path`. |
+| `branch` | string | the repository's default branch | The branch `ascribe sources update` moves the pin to. |
+| `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to the source's folder (§1.3). |
 | `ignore` | array of patterns | none | Files left out even when `include` matches them. |
 
-`<name>` follows the rules for keys (§1.2). A project can declare several sources.
+`<name>` follows the rules for keys (§1.2). A project can declare several sources, of either kind.
 
-**Rules.** `path` is relative (`model-path-absolute`); its folder must exist and be a directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). `git` and `branch` are reserved for a source in another repository, and are errors for now (`model-source-remote`).
+**Rules.** `path` is relative (`model-path-absolute`); its folder must exist and be a directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). A source has `path` or `git`, never both, and `branch` only with `git` (`model-source-remote`).
+
+### A source in another repository
+
+`check` and `build` never fetch anything. A source with `git` is read from copies kept in the project:
+
+- `ascribe.lock`, beside `ascribe.toml`, pins each such source to a commit, and records the hash of each file copied from it.
+- The files the project's snippets use are copied, whole, into `sources/<name>/` beside `ascribe.toml`, at the paths they have in their repository. Only those files are copied, not the repository, and not everything `include` matches. `sources/` can't be inside the content root.
+
+Both are written by `ascribe sources fetch` and `ascribe sources update`, and committed with the rest of the docs. `check` reports a copy that was changed by hand, a copy the lock doesn't list, a copy no snippet uses any more, and a snippet whose file hasn't been copied yet. The copies are published to everyone who can read the docs repository: for a private code repository and public docs, that's a decision to make knowingly.
 
 ---
 

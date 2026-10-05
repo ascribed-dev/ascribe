@@ -1,0 +1,28 @@
+# Written by `ascribe sources fetch` and `ascribe sources update`. Don't edit it by hand.
+version = 1
+
+[[source]]
+name = "api"
+git = "https://github.com/acme/api.git"
+commit = "9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e"
+
+[source.files]
+"src/app.py" = "sha256:b98eb4f28d07a372d3e256d5ed401aeb86c3a6cf107dc36edb123276100e0f31"
+
+[[source]]
+name = "cli"
+git = "https://github.com/acme/old-cli.git"
+commit = "9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e"
+
+[source.files]
+"examples/login.sh" = "sha256:9236cca377ded79c95e7dcbbea2b4aa8c3ee28a4487e67f69c995d05cd045179"
+
+[[source]]
+name = "code"
+git = "https://github.com/acme/api.git"
+commit = "9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e"
+
+[[source]]
+name = "web"
+git = "https://github.com/acme/api.git"
+commit = "9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e"

@@ -630,26 +630,60 @@ build = "site"
 ## 19. `[sources.<name>]`
 @available: next
 
-A source is a folder outside the project's content that its pages may take code examples from (SPEC §4.8, §7.3). It's the only way a page can read a file outside the project's folder.
+A source is a folder outside the project's content, or another repository, that its pages may take code examples from (SPEC §4.8, §7.3, §7.4). It's the only way a page can read a file outside the project's folder.
 
 ```toml
 [sources.code]
 path = ".."
 include = ["crates/**", "examples/**"]
 ignore = ["**/target/**"]
+
+[sources.api]
+git = "https://github.com/acme/api.git"
+branch = "main"
+include = ["src/**"]
 ```
 
 `<name>` is the source's name (§1.2), which a snippet's address starts with: `code:examples/quill/ascribe.toml#dimensions`.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `path` | string (path) | **required** | The source's folder, relative to the project root. It MUST exist and be a directory, and, when the project is in a git repository, it MUST be inside that repository. |
-| `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to `path` (§1.3). |
+| `path` | string (path) | **required** without `git` | The source's folder, relative to the project root. It MUST exist and be a directory, and, when the project is in a git repository, it MUST be inside that repository. |
+| `git` | string (URL) | **required** without `path` | Another repository: `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path`. Its files are read from copies in `sources/<name>/`, beside `ascribe.toml`. |
+| `branch` | string | the repository's default branch | The branch `ascribe sources update` moves the pin to. Only with `git`. |
+| `include` | array of patterns | every file | The files a snippet may read, matched against their paths relative to the source's folder (§1.3). |
 | `ignore` | array of patterns | none | Files left out even when `include` matches them. |
 
-`git` and `branch` are reserved for a source in another repository; using either is an error.
+A source has `path` or `git`, never both.
 
-**Rules** (§21.8): `path` is relative (`model-path-absolute`), and names an existing directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). `git` and `branch` are rejected (`model-source-remote`).
+### 19.1 `ascribe.lock` and the copies
+
+A source with `git` is pinned to a commit in `ascribe.lock`, beside `ascribe.toml`, and the files its snippets use are copied into `sources/<name>/` at the paths they have in their repository. Both are written by `ascribe sources fetch` and `ascribe sources update`, and committed. `check` and `build` read only the copies.
+
+```toml
+# Written by `ascribe sources fetch` and `ascribe sources update`. Don't edit it by hand.
+version = 1
+
+[[source]]
+name = "api"
+git = "https://github.com/acme/api.git"
+commit = "9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e"
+
+[source.files]
+"src/auth.rs" = "sha256:5d41402abc4b2a76b9719d911017c592ae2fd2b1f6b3b0f0d5ce64b4c7d0e1a2"
+```
+
+| Key | Type | Description |
+|---|---|---|
+| `version` | integer | The lock's format: `1`. |
+| `source[].name` | string | The source's name. Each source is pinned once. |
+| `source[].git` | string | The source's `git` when it was pinned. |
+| `source[].commit` | string | The commit, in full: 40 or 64 hexadecimal digits. |
+| `source[].files` | table | Each copy's path, relative to the source's folder, and the SHA-256 of its bytes: `sha256:` and 64 lowercase hexadecimal digits. |
+
+`check` reads the lock and the copies with the source files, and reports what doesn't match: a lock it can't read (`lock-invalid`); a pin of a source `ascribe.toml` doesn't declare with `git`, or declares with another `git` (`lock-source-unknown`); a copy that's missing or doesn't have its hash (`source-copy-changed`); a file in `sources/<name>/` the lock doesn't list (`source-copy-unlocked`); and a copy no snippet uses (`source-copy-unused`, a warning). A snippet that names a file with no copy is `snippet-file-missing`. These are source-file diagnostics; see [the diagnostics reference](../reference/diagnostics.md).
+
+**Rules** (§21.8): `path` is relative (`model-path-absolute`), and names an existing directory (`model-source-path-missing`) inside the project's repository (`model-source-outside-repository`). A source has exactly one of `path` and `git`, `branch` only with `git`, a URL and a branch name `git` accepts, and copies outside the content root (`model-source-remote`).
 
 ---
 
@@ -793,7 +827,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 |---|---|---|
 | `model-source-path-missing` | A source's `path` exists and is a directory. | `` the folder of source `{source}`, `{path}`, doesn't exist ``<br>`` the folder of source `{source}`, `{path}`, isn't a directory `` |
 | `model-source-outside-repository` | A source's folder is inside the git repository the project is in, when it's in one. | `` the folder of source `{source}`, `{path}`, is outside the git repository the project is in `` |
-| `model-source-remote` | No source uses `git` or `branch`, which are reserved. | `` `{key}` is reserved for a source in another repository, which this version of Ascribe doesn't support; give the source a `path` in this repository instead `` |
+| `model-source-remote` | A source has `path` or `git`, not both; `branch` only with `git`; a URL `git` can be given; a branch name `git` accepts; and, with `git`, copies outside the content root. | `` source `{source}` has both `path` and `git`: a source is a folder in this repository or another repository, not both ``<br>`` source `{source}` needs `path`, a folder in this repository, or `git`, another repository's URL ``<br>`` source `{source}` has `branch` but no `git`: a branch is only for a source in another repository ``<br>`` `{url}` isn't a URL Ascribe can give `git`: use `https://`, `http://`, `ssh://`, `git://`, `file://`, or `user@host:path` ``<br>`` `{branch}` isn't a branch name `git` accepts ``<br>`` the copies of source `{source}` go in `sources/{source}/`, which is inside the content root `{content}`, where they'd be read as pages; give the content root a folder of its own `` |
 
 ---
 

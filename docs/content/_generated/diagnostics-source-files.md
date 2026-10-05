@@ -74,6 +74,11 @@
 | [ASC130](#asc130-snippet-file-not-text) | `snippet-file-not-text` | Error | File |
 | [ASC131](#asc131-snippet-region-missing) | `snippet-region-missing` | Error | File |
 | [ASC132](#asc132-snippet-tags) | `snippet-tags` | Error | File |
+| [ASC136](#asc136-lock-invalid) | `lock-invalid` | Error | File |
+| [ASC137](#asc137-lock-source-unknown) | `lock-source-unknown` | Error | File |
+| [ASC138](#asc138-source-copy-changed) | `source-copy-changed` | Error | File |
+| [ASC139](#asc139-source-copy-unlocked) | `source-copy-unlocked` | Error | File |
+| [ASC140](#asc140-source-copy-unused) | `source-copy-unused` | Warning | File |
 
 ### Attributes
 
@@ -803,7 +808,7 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **Message:** `{path}` doesn't exist in source `{source}`
 
-**Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it.
+**Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file.
 
 #### ASC130 `snippet-file-not-text`
 
@@ -834,3 +839,55 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 **Message:** `{path}` can't be used: `{tag}` on line \{line} is never closed
 
 **Fix:** Fix the tags in the code file: give every `-start` tag its `-end`, give each region its own name, and remove tags Ascribe reserves for later (`state`, `replace`, `uncomment`, `emphasize`).
+
+### Source copies
+
+#### ASC136 `lock-invalid`
+
+Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+
+**When:** `ascribe.lock` isn't valid TOML, or doesn't have the shape §7.4 gives it.
+
+**Message:** ascribe.lock can't be read: \{detail}
+
+**Fix:** ascribe.lock is written by `ascribe sources fetch` and `ascribe sources update`. Undo the change made to it by hand, or delete it and run `ascribe sources fetch`.
+
+#### ASC137 `lock-source-unknown`
+
+Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+
+**When:** `ascribe.lock` pins a source the content model doesn't declare with `git`, or pins it with another `git`.
+
+**Message:** ascribe.lock pins source `{source}`, which ascribe.toml doesn't declare; run `ascribe sources fetch` to remove it
+
+**Fix:** Run `ascribe sources fetch` to make the lock match ascribe.toml, or `ascribe sources update <name>` for a source whose `git` changed.
+
+#### ASC138 `source-copy-changed`
+
+Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+
+**When:** A file `ascribe.lock` lists is missing from the source's folder, or its hash differs.
+
+**Message:** `{path}` isn't the file ascribe.lock pins: it was changed here. Change the code in source `{source}`'s repository and run `ascribe sources update {source}`, or run `ascribe sources fetch` to undo the change
+
+**Fix:** A copy is the file as it is in its repository at the pinned commit. Change the code where it lives, then run `ascribe sources update <name>`; `ascribe sources fetch` puts back a copy that was changed or deleted here.
+
+#### ASC139 `source-copy-unlocked`
+
+Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+
+**When:** A file in a source's copies folder that `ascribe.lock` doesn't list.
+
+**Message:** `{path}` is in source `{source}`'s copies, but ascribe.lock doesn't list it, so there's no telling which commit it's from; run `ascribe sources fetch`
+
+**Fix:** Run `ascribe sources fetch`: it copies the files snippets use at the pinned commit and records them, and removes the rest.
+
+#### ASC140 `source-copy-unused`
+
+Warning · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+
+**When:** A copy that no snippet uses.
+
+**Message:** no snippet uses `{path}` any more; `ascribe sources fetch` removes it
+
+**Fix:** Run `ascribe sources fetch`, which removes the copies no snippet uses.

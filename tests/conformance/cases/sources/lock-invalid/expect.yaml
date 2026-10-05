@@ -1,0 +1,8 @@
+description: >-
+  A lock of a version this processor doesn't read is invalid, and the copies
+  aren't checked against it.
+spec: ["7.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: lock-invalid, file: ascribe.lock, line: 1}

@@ -11,6 +11,7 @@
 //! | [`model`] | [`ContentModel`], its parts, and the queries other crates ask |
 //! | [`types`] | Field types, and [`validate_frontmatter`] |
 //! | [`pattern`] | [`Pattern`]: the glob syntax of `files` and fragment patterns |
+//! | [`lock`] | [`Lock`]: `ascribe.lock`, the pins of sources in other repositories |
 //!
 //! The availability-spec parser is in `tessera_core::availability`; this
 //! crate checks specs against the model ([`ContentModel::check_availability`]).
@@ -30,6 +31,7 @@
 
 mod fields;
 mod loader;
+pub mod lock;
 pub mod model;
 mod names;
 pub mod pattern;
@@ -39,6 +41,7 @@ pub mod types;
 
 use std::path::Path;
 
+pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash};
 pub use model::*;
 pub use names::suggest;
 pub use pattern::{Pattern, PatternError};

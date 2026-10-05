@@ -19,6 +19,8 @@
 //! - **Checks that need the file system**: `@include` targets, link
 //!   destinations (files, fragments, routes), and image sources, all with the
 //!   boundary and exact-case rules for local files.
+//! - **Sources in other repositories**: `ascribe.lock`
+//!   against the content model, and each source's copies against the lock.
 //!
 //! Messages, codes, and severities come from the diagnostics registry
 //! (`tests/conformance/diagnostics.toml`), through [`Registry`].
@@ -37,9 +39,12 @@ pub mod registry;
 mod yaml;
 
 pub use checks::check_file;
+use checks::check_sources;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
 pub use page::{PageChecker, check_all_builds, check_builds, check_pages, check_project};
-pub use project::{FileEntry, LoadError, MODEL_FILE, Project, ReadFailure, SourceFile};
+pub use project::{
+    FileEntry, LOCK_FILE_ID, LoadError, MODEL_FILE, Project, ReadFailure, SourceFile,
+};
 pub use registry::{Entry, Level, Registry};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content
@@ -51,8 +56,13 @@ pub use registry::{Entry, Level, Registry};
 pub fn check_files(project: &Project) -> Vec<Diagnostic> {
     // The content model's warnings are part of the list.
     let mut out: Vec<Diagnostic> = project.model_warnings().to_vec();
+    let model = out.len();
     for file in project.sources() {
         out.extend(check_file(project, file));
     }
+    // The lock and the copies come next to the content model; whether a copy
+    // is used is known once every file's snippets have been read.
+    let sources = check_sources(project);
+    out.splice(model..model, sources);
     out
 }

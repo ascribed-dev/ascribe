@@ -1,0 +1,15 @@
+description: >-
+  A snippet from a source in another repository takes its code from the
+  copy, as a snippet from a folder in the project takes it from the folder.
+spec: ["4.8", "7.4"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - code: "print(\"hello\")\n"
+            info: py
+          - code: "#!/bin/sh\ncurl -X POST https://api.example.com/login\n"
+            info: sh
