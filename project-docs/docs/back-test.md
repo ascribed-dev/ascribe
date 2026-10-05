@@ -151,7 +151,7 @@ Both fixes add globs, so they add reports; neither would move the result above a
 
 ## Stale pages found
 
-To fix in their own pull requests:
+Filed as [#89](https://github.com/ascribed-dev/ascribe/issues/89), to fix in their own pull requests:
 
 - `docs/contracts/assets.md` §7: the preview doesn't serve every asset a build would (#33).
 - `docs/editor.md:124`: review can run `git` before you start it, to offer itself (#76).
