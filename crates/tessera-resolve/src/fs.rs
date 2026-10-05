@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use tessera_core::RelPath;
@@ -96,6 +96,13 @@ pub trait FileSystem {
     /// file a snippet reads through a source (SPEC §4.8). The path may start
     /// with `..`; the source has already decided it may be read.
     fn read_file(&self, project_path: &RelPath) -> io::Result<Vec<u8>>;
+
+    /// Where a file or folder is once every symbolic link on the way to it is
+    /// followed, as a path relative to the project root: the path itself when
+    /// none of its segments is a link. `None` when it isn't there, or a link
+    /// leads where no path from the project root reaches (another drive). A
+    /// snippet reads a file only when this is inside its source (SPEC §4.8).
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath>;
 }
 
 /// A project on disk.
@@ -258,6 +265,30 @@ impl FileSystem for DiskFs {
             Err((kind, message)) => Err(io::Error::new(*kind, message.clone())),
         }
     }
+
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        let root = self.project_root.canonicalize().ok()?;
+        let path = project_path
+            .segments()
+            .fold(self.project_root.clone(), |p, s| p.join(s));
+        relative_path(&root, &path.canonicalize().ok()?)
+    }
+}
+
+/// `to` as a path relative to the directory `from`, both canonical: `None`
+/// when they share no root (another drive) or a name on the way isn't UTF-8.
+fn relative_path(from: &Path, to: &Path) -> Option<RelPath> {
+    let from: Vec<Component<'_>> = from.components().collect();
+    let to: Vec<Component<'_>> = to.components().collect();
+    let common = from.iter().zip(&to).take_while(|(a, b)| a == b).count();
+    if common == 0 {
+        return None;
+    }
+    let mut segments: Vec<&str> = vec![".."; from.len() - common];
+    for component in &to[common..] {
+        segments.push(component.as_os_str().to_str()?);
+    }
+    RelPath::parse(&segments.join("/")).ok()
 }
 
 /// What a walk of the content root needs to know besides the tree.
@@ -453,6 +484,11 @@ impl FileSystem for MemoryFs {
             .get(project_path)
             .map(|text| text.as_bytes().to_vec())
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no such file"))
+    }
+
+    /// There are no links in memory.
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        Some(project_path.clone())
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {

@@ -348,6 +348,9 @@ pub enum SnippetError {
     },
     /// The file is there, but the source's patterns don't make it readable.
     NotIncluded,
+    /// The file is a link, or is in a linked folder, that leads out of the
+    /// source's folder or to a file its patterns don't make readable.
+    Link,
     /// The file isn't text.
     NotText(String),
     /// The file's tags have problems.
@@ -379,6 +382,19 @@ pub fn resolve_snippet(
             Probe::Missing => SnippetError::Missing { actual: None },
             _ => SnippetError::NotIncluded,
         });
+    }
+    // The file is read where its links lead, so that must be in the source
+    // too: a link can't step over the folder, the patterns, or the
+    // repository's edge.
+    if fs.probe(&path) == Probe::File {
+        let inside = fs
+            .real_path(&path)
+            .zip(fs.real_path(&folder))
+            .and_then(|(real, folder)| relative_to(&real, &folder))
+            .is_some_and(|rest| source.reads(&rest));
+        if !inside {
+            return Err(SnippetError::Link);
+        }
     }
     let file = code.read(fs, &path).map_err(|e| match e {
         ReadError::Missing => SnippetError::Missing { actual: None },
@@ -474,6 +490,12 @@ pub fn snippet_issues(
         SnippetError::NotIncluded => vec![
             Issue::new(diagnostics::SNIPPET_FILE_MISSING, at)
                 .with_variant("not-included")
+                .with_arg("path", address.path.clone())
+                .with_arg("source", address.source.clone()),
+        ],
+        SnippetError::Link => vec![
+            Issue::new(diagnostics::SNIPPET_FILE_MISSING, at)
+                .with_variant("link")
                 .with_arg("path", address.path.clone())
                 .with_arg("source", address.source.clone()),
         ],

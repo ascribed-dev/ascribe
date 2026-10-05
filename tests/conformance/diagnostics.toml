@@ -1423,7 +1423,8 @@ row = "`@snippet` | File doesn't exist, or its source doesn't include it"
 message = "`{path}` doesn't exist in source `{source}`"
 messages.case = "`{path}` doesn't exist in source `{source}`, but `{actual}` does: names must match exactly, including case"
 messages.not-included = "`{path}` is in source `{source}`'s folder, but the source's `include` and `ignore` patterns don't make it readable"
-fix = "Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`."
+messages.link = "`{path}` is a symbolic link, or is in a linked folder, that leads out of source `{source}`'s folder or to a file its patterns don't make readable; a snippet doesn't follow a link out of its source"
+fix = "Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it."
 
 [[diagnostic]]
 code = "ASC130"

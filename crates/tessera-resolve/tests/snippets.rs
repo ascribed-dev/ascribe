@@ -198,3 +198,51 @@ fn each_kind_of_unsound_tag_has_its_variant() {
         );
     }
 }
+
+/// A snippet is read where its links lead, and a link out of the source's
+/// folder, or to a file its patterns don't include, is refused.
+#[cfg(unix)]
+#[test]
+fn a_link_out_of_the_source_is_refused() {
+    use std::fs;
+    use std::os::unix::fs::symlink;
+    use tessera_resolve::DiskFs;
+
+    let dir = tempfile::tempdir().expect("a temp dir");
+    let root = dir.path();
+    fs::create_dir_all(root.join("project/docs")).expect("docs");
+    fs::create_dir_all(root.join("code/private")).expect("code");
+    fs::create_dir_all(root.join("elsewhere")).expect("elsewhere");
+    fs::write(root.join("code/app.py"), APP.1).expect("app");
+    fs::write(root.join("code/private/key.py"), APP.1).expect("key");
+    fs::write(root.join("secret.py"), APP.1).expect("secret");
+    fs::write(root.join("elsewhere/far.py"), APP.1).expect("far");
+    symlink("app.py", root.join("code/alias.py")).expect("alias");
+    symlink("../secret.py", root.join("code/out.py")).expect("out");
+    symlink("private/key.py", root.join("code/hidden.py")).expect("hidden");
+    symlink("../elsewhere", root.join("code/linked")).expect("linked");
+
+    let problem = |page: &str| {
+        fs::write(
+            root.join("project/docs/index.md"),
+            format!("---\ntitle: T\n---\n{page}"),
+        )
+        .expect("the page");
+        let model = Arc::new(load_str(MODEL, FileId::new(0)).expect("a model"));
+        let layout = Layout::from_model(&model);
+        let fs = DiskFs::new(root.join("project"), &layout);
+        let project = Project::load(model, layout, &fs);
+        let file = project.file(&index()).expect("the page");
+        let snippet = file.snippets.first().expect("a snippet");
+        snippet_issues(snippet, project.model(), &fs, &CodeFiles::new(), file.file)
+            .first()
+            .map(|i| (i.slug.as_str().to_owned(), i.variant))
+    };
+
+    assert_eq!(problem("@snippet: code:app.py#main\n"), None);
+    assert_eq!(problem("@snippet: code:alias.py#main\n"), None);
+    let link = is("snippet-file-missing", Some("link"));
+    assert_eq!(problem("@snippet: code:out.py#main\n"), link);
+    assert_eq!(problem("@snippet: code:hidden.py#main\n"), link);
+    assert_eq!(problem("@snippet: code:linked/far.py#main\n"), link);
+}

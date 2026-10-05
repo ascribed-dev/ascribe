@@ -402,7 +402,7 @@ Takes a code example from a file outside the content, and puts it in the page as
 ```
 
 - **The address** is `<source>:<path>`, optionally followed by `#<region>`. `<source>` is a source declared in `ascribe.toml` ([`[sources.<name>]`](content-model.md#18-sourcesname)), and `<path>` is the file's path relative to the source's folder, with `/` on every platform. There's no relative form: an address doesn't depend on where the page is.
-- The file must exist with exactly that name, the source's `include` and `ignore` must take it in, and it must be text.
+- The file must exist with exactly that name, the source's `include` and `ignore` must take it in, and it must be text. A symbolic link is followed, but only to a file in the source's folder that `include` and `ignore` take in.
 - Without `#<region>`, the snippet is the whole file.
 - **Attributes:** `lang` sets the code block's language, which is otherwise the file's extension (`toml` for `ascribe.toml`); `title` gives the code block a title; `phrases=true` substitutes phrases in the code, as in a fence that opts in ([Phrases](#phrases)).
 - It's a block, allowed wherever a code block is: in a list item, a note, or a variant's arm. A `@note`, `@details`, or widget directly above it applies to it.

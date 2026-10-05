@@ -92,6 +92,9 @@ A file with no `ascribe.toml` above it has nothing to preview: "This file isn't 
 
 The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts and loads nothing remote, so raw HTML that needs either looks different in the preview than on the site.
 
+@available: next
+A [`@snippet`](../reference/directives.md#snippet) is read again when its page changes, not when its code file does, so the preview and the page's problems don't follow edits to the code. To see them, change the page, or run **Ascribe: Restart Language Server**.
+
 ### Site preview
 @available: next
 

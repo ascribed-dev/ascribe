@@ -882,7 +882,7 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **Message:** `{path}` doesn't exist in source `{source}`
 
-**Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`.
+**Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it.
 
 #### ASC130 `snippet-file-not-text`
 

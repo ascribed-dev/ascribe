@@ -340,4 +340,21 @@ impl FileSystem for GitFs {
         code.insert(entry.object.clone(), bytes.clone());
         Ok(bytes)
     }
+
+    /// git records a link as a file holding its target, and never follows
+    /// it: a path with a link on the way isn't read at all.
+    fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        let path = self.project_dir.join(project_path.as_str()).ok()?;
+        if !path.is_inside() {
+            return None;
+        }
+        let segments: Vec<&str> = path.segments().collect();
+        let linked = (1..=segments.len()).any(|n| {
+            RelPath::parse(&segments[..n].join("/"))
+                .ok()
+                .and_then(|prefix| self.tree.files.get(&prefix))
+                .is_some_and(|e| e.symlink)
+        });
+        (!linked).then(|| project_path.clone())
+    }
 }
