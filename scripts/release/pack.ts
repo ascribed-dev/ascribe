@@ -52,8 +52,15 @@ const { values: options } = parseArgs({
     binaries: { type: "string" },
     targets: { type: "string" },
     out: { type: "string", default: join(root, "dist", "release") },
+    help: { type: "boolean", default: false },
   },
 });
+if (options.help) {
+  process.stdout.write(
+    "usage: node scripts/release/pack.ts --binaries <dir> [--targets a,b] [--out <dir>]\n",
+  );
+  process.exit(0);
+}
 const binaries = options.binaries;
 if (binaries === undefined) fail("--binaries <dir> is required");
 
