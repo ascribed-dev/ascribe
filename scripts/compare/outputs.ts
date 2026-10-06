@@ -117,13 +117,17 @@ function main(): void {
       console.error(`Checking out ${options.base} (${base.slice(0, 12)}) in ${at}`);
       git(root, "worktree", "add", "--detach", "--force", at, base);
       worktree = at;
-      binaries.before = binary(worktree, path.join(out, "bin", "before"));
+      binaries.before = binary(
+        worktree,
+        path.join(root, "target", "compare-base"),
+        path.join(out, "bin", "before"),
+      );
     } else if (options.before !== undefined) {
       binaries.before = path.resolve(options.before);
     }
     binaries.after =
       options.after === undefined
-        ? binary(root, path.join(out, "bin", "after"))
+        ? binary(root, path.join(root, "target"), path.join(out, "bin", "after"))
         : path.resolve(options.after);
 
     const copy = path.join(out, "copy");
@@ -181,18 +185,28 @@ function revision(name: string): string {
   return found.stdout.trim();
 }
 
-/** Builds `ascribe` in `checkout` and copies it to `to`, so the next build can't replace it. */
-function binary(checkout: string, to: string): string {
+/**
+ * Builds `ascribe` in `checkout` into `target` and copies it to `to`, so the
+ * next build can't replace it.
+ *
+ * The base and this checkout each need their own target directory. Cargo names
+ * a workspace crate's build by its path relative to the workspace, which is the
+ * same in both, and calls it fresh when it's newer than the sources. The
+ * worktree's files are written after this checkout's, so with one target
+ * directory the second build reuses the base's crates, and either fails or
+ * compares the base with itself. Both stay under this checkout's `target/`, so
+ * they're kept between runs and in CI's cache.
+ *
+ * A run of the version before this fix leaves the base's crates in `target/`,
+ * and they stay fresh for every later build here, this script's included,
+ * until `cargo clean -p <crate>` removes each crate that differs from the base.
+ */
+function binary(checkout: string, target: string, to: string): string {
   console.error(`Building ascribe in ${checkout}`);
-  // One target directory for both, so the dependencies are built once.
-  run(
-    "cargo",
-    ["build", "--locked", "-p", "tessera-cli", "--target-dir", path.join(root, "target")],
-    checkout,
-  );
+  run("cargo", ["build", "--locked", "-p", "tessera-cli", "--target-dir", target], checkout);
   mkdirSync(to, { recursive: true });
   const copy = path.join(to, exe);
-  cpSync(path.join(root, "target", "debug", exe), copy);
+  cpSync(path.join(target, "debug", exe), copy);
   return copy;
 }
 

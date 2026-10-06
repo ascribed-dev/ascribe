@@ -14,7 +14,8 @@
       "entry": ["scripts/**/*.{ts,cts}"],
       "project": ["scripts/**/*.{ts,cts,mjs}"],
       // VS Code provides `vscode` to the release smoke test's suite, which runs inside it.
-      "ignoreDependencies": ["vscode"],
+      // scripts/release/consumers.ts runs `publint` and `attw` by name.
+      "ignoreDependencies": ["vscode", "publint", "@arethetypeswrong/cli"],
     },
     // The published packages: each path their `exports` names is a contract,
     // so its exports count as used.
