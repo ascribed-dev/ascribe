@@ -1,0 +1,28 @@
+# The docs for the Lantern SDK, a made-up client library, kept in a
+# repository of their own. The code is in another repository, so the examples
+# come from sources there: pinned in ascribe.lock, with the files the pages use
+# copied into sources/. See README.md.
+spec = "0.1"
+
+[project]
+content-root = "content"
+output-dir = ".ascribe/build"
+
+[types.guide]
+default = true
+
+[types.guide.frontmatter]
+title = "string"
+description = "string"
+
+# Two sources in one repository, so one commit there can move both pins, as
+# commits in two repositories would.
+[sources.api]
+git = "https://github.com/ascribed-dev/sources-fixture-code.git"
+branch = "main"
+include = ["src/**"]
+
+[sources.examples]
+git = "https://github.com/ascribed-dev/sources-fixture-code.git"
+branch = "main"
+include = ["examples/**"]

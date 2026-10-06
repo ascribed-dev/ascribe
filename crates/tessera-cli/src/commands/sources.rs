@@ -415,6 +415,27 @@ fn movement(source: &SourceUpdate, code: fn(&str) -> String) -> String {
     }
 }
 
+/// The address a comparison of two commits is under, for a repository on
+/// github.com: `https://github.com/acme/api`. None for any other host, whose
+/// addresses the summary doesn't guess.
+fn compare_url(git: &str) -> Option<String> {
+    let path = git
+        .strip_prefix("https://github.com/")
+        .or_else(|| git.strip_prefix("ssh://git@github.com/"))
+        .or_else(|| git.strip_prefix("git@github.com:"))?;
+    let path = path.trim_end_matches('/');
+    let path = path.strip_suffix(".git").unwrap_or(path);
+    let mut parts = path.split('/');
+    let (owner, repo) = (parts.next()?, parts.next()?);
+    let plain = |s: &str| {
+        !s.is_empty()
+            && s.chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+    };
+    (parts.next().is_none() && plain(owner) && plain(repo))
+        .then(|| format!("https://github.com/{owner}/{repo}"))
+}
+
 /// What the pin moved to: `the head of main`, or `v2.0` for `--to`.
 fn target(source: &SourceUpdate, to: Option<&str>, code: fn(&str) -> String) -> String {
     match (to, source.followed.as_str()) {
@@ -521,11 +542,20 @@ fn write_update_summary(
             None => String::new(),
         };
         let code = |s: &str| format!("`{s}`");
+        let moved = match (&source.from, compare_url(&source.git)) {
+            (Some(from), Some(url)) if source.moved && !source.back => {
+                format!(
+                    "[{}]({url}/compare/{from}...{})",
+                    movement(source, code),
+                    source.to
+                )
+            }
+            _ => movement(source, code),
+        };
         writeln!(
             out,
-            "- **{}** {}, {}{commits}",
+            "- **{}** {moved}, {}{commits}",
             escape(&source.name),
-            movement(source, code),
             target(source, to, code)
         )?;
         if let Some(commits) = &source.commits {
@@ -565,5 +595,36 @@ fn write_update_summary(
         }
         Ok(_) => writeln!(out, "\nNo page's examples changed."),
         Err(reason) => writeln!(out, "\nThe pages aren't listed: {}.", escape(reason)),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::compare_url;
+
+    #[test]
+    fn compare_url_is_github_only() {
+        for git in [
+            "https://github.com/acme/api",
+            "https://github.com/acme/api.git",
+            "https://github.com/acme/api/",
+            "git@github.com:acme/api.git",
+            "ssh://git@github.com/acme/api.git",
+        ] {
+            assert_eq!(
+                compare_url(git).as_deref(),
+                Some("https://github.com/acme/api"),
+                "{git}"
+            );
+        }
+        for git in [
+            "https://gitlab.com/acme/api.git",
+            "https://github.com/acme",
+            "https://github.com/acme/api/tree/main",
+            "https://github.com/acme/a)pi",
+            "file:///tmp/api",
+        ] {
+            assert_eq!(compare_url(git), None, "{git}");
+        }
     }
 }
