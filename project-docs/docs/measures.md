@@ -71,6 +71,50 @@ What stayed illustrative: syntax in the directive reference and the contracts, e
 
 The measures phase 11 takes on real pull requests (how often the report was right, whether `covers` would have helped, whether anyone acted on it, and the build time with snippets) wait for 15 merged pull requests with the Drift workflow on.
 
+## The update pull request
+
+The update workflow (`examples/docs-repository/.github/workflows/update-sources.yml`) on the sources fixture, built and checked by `scripts/sources-fixture/setup.ts`.
+
+### Phase 10: the pass on this machine, 2026-10-06
+
+`setup.ts --local`: the workflow's own steps, run with bash against two local repositories, with a stand-in for `gh`. Each step is a scripted change in the code repository, followed by one run.
+
+| Change | Pull request | Run | Description |
+|---|---|---|---|
+| An example changed | Opened | 1 s | Right: `login.md` to reread |
+| A region renamed, before that was merged | Updated in place | 1 s | Right: `connect.md` broken, with `check`'s error; `login.md` to reread |
+| The code put back | Closed | under 1 s | |
+| A change no page shows | None | under 1 s | |
+| A file moved | Opened | 1 s | Right: `quickstart.md` broken, with `check`'s error |
+| Someone pushed to the branch, then an example changed | Left alone | under 1 s | |
+| That pull request merged, its branch kept | Opened | 1 s | Right: `login.md` to reread; `check` fails, since the merge left the quickstart broken on `main` |
+| Nothing new | Left alone: no push | under 1 s | |
+
+The run times here leave out the runner, the tokens, and installing Ascribe. CI runs this pass on each pull request (rust.yml).
+
+### Phase 10: the pass on GitHub, 2026-10-06
+
+`setup.ts ascribed-dev --pass`, run by Kyle: each scripted change pushed to `ascribed-dev/sources-fixture-code`, then the update workflow started by hand in `sources-fixture-docs`, with `@ascribed/cli@0.1.2-next.5` and the App's tokens. After each run, the script read the pull request, and where one was open, waited for its checks (`check.yml`).
+
+| Change | Pull request | Run | Description and checks |
+|---|---|---|---|
+| An example changed | Opened | 19 s | Right; checks passed |
+| A region renamed, before that was merged | Updated in place | 18 s | Right; checks failed on `connect.md` |
+| The code put back | Closed | 25 s | |
+| A change no page shows | None | 23 s | |
+| A file moved | Opened | 23 s | Right; checks failed on `quickstart.md` |
+| Someone pushed to the branch, then an example changed | Left alone | 16 s | |
+| That pull request merged, its branch kept | Opened | 32 s | Right; checks failed, as `main` had the broken quickstart |
+| Nothing new | Left alone: no push | 18 s | |
+
+**Every step was right.** A run takes 16 to 32 seconds, from the job's start to its end, including the tokens and installing Ascribe from npm. The checks on each pull request started without anyone approving them, since the App opened it.
+
+An earlier pass that day, with the workflow before review, had the first six steps right too (the first run took 70 s). The review then found that after a hand-fixed pull request was merged, the job never opened another, which that pass didn't cover; the seventh step is for it. Before either, the first run failed at `ascribe sources`: `@ascribed/cli@next` was a canary built before phase 9 merged.
+
+### Phase 10: two weeks on a schedule
+
+From 2026-10-06, the update workflow runs each weekday at 06:17 UTC, and the code repository makes a scripted change each Monday, Wednesday, and Friday at 05:00 UTC (`change.yml`, in `changes.ts`'s order). Record, after two weeks: how many pull requests were opened, updated, and closed; whether each description was right; and how long a run takes.
+
 ## Issues filed from dogfooding
 
 | Phase | Issues |
@@ -78,4 +122,5 @@ The measures phase 11 takes on real pull requests (how often the report was righ
 | 1 | #82, #83, #84, #85 |
 | 4 | #91, #92, #93, #94, #95, #96 |
 | 5 | None |
+| 10 | #113 |
 | 11 | #105, #106, #107, #108 |

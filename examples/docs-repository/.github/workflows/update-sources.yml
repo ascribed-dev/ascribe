@@ -1,0 +1,117 @@
+# The update pull request: on a schedule, moves each source in another
+# repository to the head of its branch and, when an example changed, opens one
+# pull request whose description says which pages to read. It's the recipe in
+# docs/content/guides/drift.md ("The update pull request"), which takes it from
+# this file: the lines marked `:remove:` are what the fixture adds
+# (scripts/sources-fixture/setup.ts copies this folder into
+# ascribed-dev/sources-fixture-docs).
+# :snippet-start: workflow
+name: Update sources
+
+on:
+  schedule:
+    - cron: "17 6 * * 1-5" # weekdays, 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run at a time, so two never push the branch at once.
+concurrency:
+  group: update-sources
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: ascribe/update-sources
+    steps:
+      # A token for this repository, from a GitHub App, to push the branch and
+      # open the pull request. With the default token, the pull request's own
+      # checks wait for someone to approve them.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: docs
+        with:
+          client-id: ${{ vars.SOURCES_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SOURCES_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      # A token that can only read the code's repositories.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: code
+        with:
+          client-id: ${{ vars.SOURCES_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SOURCES_APP_PRIVATE_KEY }}
+          repositories: sources-fixture-code # your code's repositories, comma-separated
+          permission-contents: read
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.docs.outputs.token }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - run: npm install --global @ascribed/cli
+      - run: npm install --global @ascribed/cli@next # :remove:
+      - name: Move the pins
+        env:
+          # The code token, for `git` in this step only.
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: url.https://x-access-token:${{ steps.code.outputs.token }}@github.com/.insteadOf
+          GIT_CONFIG_VALUE_0: https://github.com/
+        run: |
+          ascribe sources status --format json > "$RUNNER_TEMP/before.json"
+          ascribe sources update --format summary > "$RUNNER_TEMP/update.md"
+      - name: Open or update the pull request
+        env:
+          GH_TOKEN: ${{ steps.docs.outputs.token }}
+          BOT: ${{ steps.docs.outputs.app-slug }}[bot]
+        run: |
+          # The open pull request from this repository's own branch, not a fork's.
+          open=$(gh pr list --head "$BRANCH" --state open --json number,isCrossRepository \
+            --jq 'map(select(.isCrossRepository | not)) | .[0].number // empty')
+          if [ -n "$open" ] && git fetch --quiet --depth=2 origin "$BRANCH"; then
+            # Someone pushed to it, to fix a page: leave it alone.
+            if [ "$(git log -1 --format=%an FETCH_HEAD)" != "$BOT" ]; then
+              echo "$BRANCH has commits from someone else, so it's left as it is. Merge or close its pull request to get updates again." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            pushed=$(git log -1 --format='%T %P' FETCH_HEAD)
+          fi
+          # No example changed (a pin may have moved): nothing to read.
+          if [ -z "$(git status --porcelain -- sources)" ]; then
+            echo "No example changed." >> "$GITHUB_STEP_SUMMARY"
+            if [ -n "$open" ]; then
+              gh pr close "$open" --delete-branch --comment "The examples are back to what the default branch has, so there's nothing left to update."
+            fi
+            exit 0
+          fi
+          title=$(ascribe sources status --format json | jq --raw-output --slurpfile before "$RUNNER_TEMP/before.json" '
+            [.sources[] as $s | ($before[0].sources | map(select(.name == $s.name))[0].commit) as $old
+              | select($s.commit != $old) | "\($s.name) to \($s.commit[0:7])"]
+            | if length > 0 then "Update sources: " + join(", ") else "Update sources" end')
+          {
+            cat "$RUNNER_TEMP/update.md"
+            if ! ascribe check > "$RUNNER_TEMP/check.txt" 2>&1; then
+              printf '\n### `ascribe check` fails\n\nFix these pages on this branch before merging:\n\n```text\n'
+              head -n 200 "$RUNNER_TEMP/check.txt"
+              printf '```\n'
+            fi
+            printf '\n---\n\nMerging moves the pins and updates the copies of the code, so the pages show it as it is now. While this is open, each run updates it.\n'
+          } > "$RUNNER_TEMP/body.md"
+          git config user.name "$BOT"
+          git config user.email "$BOT@users.noreply.github.com"
+          git switch --quiet --create "$BRANCH"
+          git add ascribe.lock sources
+          git commit --quiet --message "$title"
+          # The pull request has this already: don't push it again.
+          if [ "$(git log -1 --format='%T %P')" = "${pushed:-}" ]; then
+            echo "The pull request is up to date." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git push --quiet --force origin "$BRANCH"
+          if [ -n "$open" ]; then
+            gh pr edit "$open" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi
+      # :snippet-end:

@@ -185,7 +185,7 @@ fn update_names_the_page_and_rewrites_the_lock_and_the_copy() {
     );
     assert!(
         summary.contains(&format!(
-            "`{}`, the head of `main`: 1 commit\n  - `{}` Take a user when logging in\n  - Copies: `src/auth.rs` changed.\n",
+            "`{}`, the head of `main`: 1 commit\n  - `{}` `Take a user when logging in`\n  - Copies: `src/auth.rs` changed.\n",
             &head[..7],
             &head[..7]
         )),
