@@ -12,7 +12,7 @@ The one naming question is settled, the measures are taken again, and the plan s
 
 - The [plan](README.md): the measures table, the decisions, and the open questions.
 - The [inventory](inventory.md): the numbers to take again, and how each was taken.
-- The crates are `tessera-*` and the product is Ascribe. The maintainer decided to rename them, and the JSON output's page format with them ([open question 2](README.md#open-questions); [decisions.md](../decisions.md#the-optimization-plan), decision 31). The name appears in crate names and paths, `use` lines, the fork (`comrak-tessera`, with `// TESSERA:` markers and a test that counts them), `Cargo.toml`, workflows, scripts, docs, and the plans.
+- The crates are `tessera-*` and the product is Ascribe. The maintainer decided to rename them, and the JSON output's page format with them ([open question 2](README.md#open-questions); [decisions.md](../decisions.md#the-optimization-plan), decision 32). The name appears in crate names and paths, `use` lines, the fork (`comrak-tessera`, with `// TESSERA:` markers and a test that counts them), `Cargo.toml`, workflows, scripts, docs, and the plans.
 - Nothing is published under the `tessera` name: every crate has `publish = false`. The npm packages are `@ascribed/*` and the binary is `ascribe`.
 - `ARCHITECTURE.md`, `AGENTS.md`, `project-docs/decisions.md`, and `checklists.md`, from phase 3.
 
@@ -20,13 +20,13 @@ The one naming question is settled, the measures are taken again, and the plan s
 
 ### Part A: the crate names
 
-The maintainer decided to rename ([decision 31](../decisions.md#the-optimization-plan)).
+The maintainer decided to rename ([decision 32](../decisions.md#the-optimization-plan)).
 
 - One pull request, nothing else in it, merged when no other Rust pull request is open.
 - Crate names, folder names, `use` paths, workspace dependency keys, the binary's package name, and every mention in workflows, scripts, READMEs, and docs.
 - The fork: rename the crate and the cargo feature or option names that we chose; keep the `// TESSERA:` markers only if the maintainer wants the patch to stay easy to compare with history, and update `FORK.md` and its counting test either way.
 - Finished plans under `project-docs/` keep the old name: they're history. Add one line to each plan's top note saying the crates were renamed.
-- The JSON output's page format, `format: "tessera-page"` (`crates/tessera-emit/src/json.rs`), is renamed too (to `"ascribe-page"`, unless the maintainer names another), with its documentation in `crates/tessera-emit/README.md`. Ascribe hasn't launched, so this contract can change ([decision 29](../decisions.md#process)). Any TypeScript that checks the value changes with it, and the pull request says whether the schema version rises. It's the one change in output: the comparison reports `same` for everything else.
+- The JSON output's page format, `format: "tessera-page"` (`crates/tessera-emit/src/json.rs`), is renamed too, to `"ascribe-page"`, with its documentation in `crates/tessera-emit/README.md`. Ascribe hasn't launched, so this contract can change ([decision 30](../decisions.md#process)). Any TypeScript that checks the value changes with it, and the pull request says whether the schema version rises. It's the one change in output: the comparison reports `same` for everything else.
 - Otherwise no behavior changes, and no output or diagnostic contains the crate name. Check first: if another output, a diagnostic, or a published file prints it, stop and report.
 
 ### Part B: the measures

@@ -43,11 +43,11 @@ Proposed, not settled. Once agreed, they bind every phase, as in the other plans
 1. **Measure first.** Nothing is cleaned up before phase 1's inventory exists. Every later phase names the number it means to move.
 2. **A clean-up changes no behavior.** A pull request in this plan produces the same outputs as before, and shows it with phase 2's comparison. A bug found along the way is fixed in its own pull request, or filed.
 3. **No rewrites.** A crate or package is reshaped in steps that each pass the comparison. If something seems to need replacing whole, stop and report.
-4. **Contracts don't move, and each has a check.** `SPEC.md`, the output contracts in `docs/content/contracts/`, the CLI's JSON, and published package APIs are fixed lines. What is free to change is everything behind them. A contract with no test behind it gets one in this plan. The one exception is the JSON output's page format, `"tessera-page"`, which phase 8A renames with the crates ([decisions.md](../decisions.md#the-optimization-plan), decision 31).
+4. **Contracts don't move, and each has a check.** `SPEC.md`, the output contracts in `docs/content/contracts/`, the CLI's JSON, and published package APIs are fixed lines. What is free to change is everything behind them. A contract with no test behind it gets one in this plan. The one exception is the JSON output's page format, `"tessera-page"`, which phase 8A renames with the crates ([decisions.md](../decisions.md#the-optimization-plan), decision 32).
 5. **Every finding ends in one of three places:** fixed, filed as an issue, or written down as accepted, with the reason. Nothing is left as "noted".
 6. **A rule is enforced where it can be.** A test, a lint, or a generated file beats a sentence in a guide. A written rule is for what can't be checked.
 7. **Each fact has one home.** Where a fact must appear twice, one copy is generated from the other, or a test compares them.
-8. **This runs ahead of the agents plan.** That plan starts once all of this one is done ([decisions.md](../decisions.md#the-optimization-plan), decision 30), so phase 5's work on [command paths](inventory.md#command-paths) is in place before it.
+8. **This runs ahead of the agents plan.** That plan starts once all of this one is done ([decisions.md](../decisions.md#the-optimization-plan), decision 31), so phase 5's work on [command paths](inventory.md#command-paths) is in place before it.
 9. **Speed has budgets.** Performance work targets a stated number on a named corpus. No change is made because code looks slow.
 
 ## Phases
@@ -140,11 +140,11 @@ Taken from the inventory, and again at the end. Each is a count a finding names;
 
 ## Open questions
 
-Answered by the maintainer on 6 October 2026, and recorded in [decisions.md](../decisions.md#the-optimization-plan) as decisions 30 to 33.
+Answered by the maintainer on 6 October 2026, and recorded in [decisions.md](../decisions.md#the-optimization-plan) as decisions 31 to 34.
 
 1. Does the agents plan wait for phase 5's command work ([decision 8](#proposed-decisions)), or do the two run side by side? **It waits for all of this plan**, not only phase 5.
-2. Is renaming the crates on the table, or is `tessera` staying? **The crates are renamed** in phase 8A, and so is the JSON output's page format, `"tessera-page"`: Ascribe hasn't launched, so that contract can still change. Nothing is published under the name, so no new npm package or crate is needed.
+2. Is renaming the crates on the table, or is `tessera` staying? **The crates are renamed** in phase 8A, and the JSON output's page format, `"tessera-page"`, becomes `"ascribe-page"`: Ascribe hasn't launched, so that contract can still change. Nothing is published under the name, so no new npm package or crate is needed.
 3. How much time is this worth: a fixed budget, or until the measures are met? **Until the measures are met.** A target that turns into a slog is accepted with the reason ([decision 5](#proposed-decisions)), so it doesn't hold up the close.
-4. Which of phase 6's three options for the canary wait do you prefer? **Option 1**, neutral while waiting, **with option 2 as a manual button**, as phase 6 recommends.
+4. Which of phase 6's three options for the canary wait do you prefer? **Option 1**, with option 2 as a manual button, as phase 6 recommends. Actions jobs can't end neutral, so while waiting the check passes with a warning annotation and a summary line saying it's waiting.
 
 Answered by phase 1: the parser fork is small to maintain (76 added lines) and stays. Its only work is the "one parser" test in phase 5.
