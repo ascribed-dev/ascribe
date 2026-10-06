@@ -2,6 +2,8 @@
 
 #![allow(clippy::expect_used, clippy::panic)]
 
+#[path = "../../../tests/support/links.rs"]
+mod links;
 mod support;
 
 use support::{path, project, slugs};
@@ -424,11 +426,9 @@ fn a_page_id_of_an_included_section_is_still_its_source_id_in_the_fragment() {
 /// source (a hidden file, one that isn't Markdown, another project's), makes
 /// it unreadable. No other file on disk reaches a page, by `@include` or as a
 /// page of its own. A link to a source file is read.
-#[cfg(unix)]
 #[test]
 fn a_link_to_a_file_that_isnt_a_source_is_not_read() {
     use std::fs;
-    use std::os::unix::fs::symlink;
     use tessera_resolve::{DiskFs, Layout};
 
     let dir = tempfile::tempdir().expect("a temp dir");
@@ -445,16 +445,18 @@ fn a_link_to_a_file_that_isnt_a_source_is_not_read() {
     fs::write(docs.join("notes.txt"), "Not Markdown.\n").expect("notes");
     fs::write(docs.join("nested/ascribe.toml"), "spec = \"0.1\"\n").expect("nested");
     fs::write(docs.join("nested/page.md"), "Another project's.\n").expect("theirs");
-    let links = [
+    links::dir("../../elsewhere", docs.join("linked"));
+    let files = [
         ("_alias.md", "inside/_near.md"),
         ("_out.md", "../../secret.md"),
-        ("linked", "../../elsewhere"),
         ("_hidden.md", ".hidden/key.md"),
         ("_notes.md", "notes.txt"),
         ("_nested.md", "nested/page.md"),
     ];
-    for (name, target) in links {
-        symlink(target, docs.join(name)).expect("a link");
+    for (name, target) in files {
+        if !links::file(target, docs.join(name)) {
+            return;
+        }
     }
     let includes = [
         "_alias.md",

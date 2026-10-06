@@ -5,6 +5,9 @@
 
 use std::sync::Arc;
 
+#[path = "../../../tests/support/links.rs"]
+mod links;
+
 use tessera_core::{FileId, RelPath};
 use tessera_model::load_str;
 use tessera_resolve::{CodeFiles, ExpandedKind, Layout, MemoryFs, Project, snippet_issues};
@@ -201,11 +204,9 @@ fn each_kind_of_unsound_tag_has_its_variant() {
 
 /// A snippet is read where its links lead, and a link out of the source's
 /// folder, or to a file its patterns don't include, is refused.
-#[cfg(unix)]
 #[test]
 fn a_link_out_of_the_source_is_refused() {
     use std::fs;
-    use std::os::unix::fs::symlink;
     use tessera_resolve::DiskFs;
 
     let dir = tempfile::tempdir().expect("a temp dir");
@@ -217,10 +218,16 @@ fn a_link_out_of_the_source_is_refused() {
     fs::write(root.join("code/private/key.py"), APP.1).expect("key");
     fs::write(root.join("secret.py"), APP.1).expect("secret");
     fs::write(root.join("elsewhere/far.py"), APP.1).expect("far");
-    symlink("app.py", root.join("code/alias.py")).expect("alias");
-    symlink("../secret.py", root.join("code/out.py")).expect("out");
-    symlink("private/key.py", root.join("code/hidden.py")).expect("hidden");
-    symlink("../elsewhere", root.join("code/linked")).expect("linked");
+    links::dir("../elsewhere", root.join("code/linked"));
+    for (target, link) in [
+        ("app.py", "code/alias.py"),
+        ("../secret.py", "code/out.py"),
+        ("private/key.py", "code/hidden.py"),
+    ] {
+        if !links::file(target, root.join(link)) {
+            return;
+        }
+    }
 
     let problem = |page: &str| {
         fs::write(
@@ -294,11 +301,9 @@ include = [\"docs/ascribe.toml\", \"examples/**\"]
 
 /// A link that leads above a source's folder is refused, however wide its
 /// patterns: `../above.py` isn't a path in the folder.
-#[cfg(unix)]
 #[test]
 fn a_link_above_a_source_at_the_parent_is_refused() {
     use std::fs;
-    use std::os::unix::fs::symlink;
     use tessera_resolve::DiskFs;
 
     let dir = tempfile::tempdir().expect("a temp dir");
@@ -306,7 +311,9 @@ fn a_link_above_a_source_at_the_parent_is_refused() {
     fs::create_dir_all(root.join("repo/docs/content")).expect("docs");
     fs::create_dir_all(root.join("repo/examples")).expect("examples");
     fs::write(root.join("above.py"), APP.1).expect("above");
-    symlink("../../above.py", root.join("repo/examples/up.py")).expect("up");
+    if !links::file("../../above.py", root.join("repo/examples/up.py")) {
+        return;
+    }
     fs::write(
         root.join("repo/docs/content/index.md"),
         "---\ntitle: T\n---\n@snippet: code:examples/up.py#main\n",
