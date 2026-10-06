@@ -13,7 +13,9 @@ interface Props {
 }
 
 const { entry, headings } = Astro.props;
-const { title, description, available } = entry.data;
+// `title` is plain text, for <title>; `formatted.title` is the title as HTML,
+// with its code spans as <code> (`inline = "code"` in ../docs/ascribe.toml).
+const { title, formatted, description, available } = entry.data;
 if (!entry.filePath) throw new Error(`${entry.id} has no source file`);
 const edit = `${repo}/edit/main/${contentDir}/${sourceFile(entry.filePath)}`;
 ---
@@ -21,7 +23,7 @@ const edit = `${repo}/edit/main/${contentDir}/${sourceFile(entry.filePath)}`;
 <Base title={title} description={description} current={entry.id}>
   <main id="content" class="page">
     <article data-pagefind-body>
-      <h1>{title}</h1>
+      <h1 set:html={formatted.title} />
       <Availability available={available} />
       {description && <p class="description">{description}</p>}
       <slot />
