@@ -125,7 +125,7 @@ Taken from the inventory, and again at the end. Each is a count a finding names;
 | Functions returning an error as a string | 10 | 0 |
 | Lines in library crates that print | 7 | 0 |
 | Commands timed with no baseline | 2 | 0 |
-| `diff` on 3,000 pages, nothing changed | 1.3 s | Within a fifth of `check`'s time, which is its floor: it counts the working tree's errors (phase 7A; [RESULTS.md](../../tests/corpora/RESULTS.md#where-diff-and-drift-spend-their-time)) |
+| `diff` on 3,000 pages, nothing changed | 1.3 s | At most 1.3 times `check`'s time (0.84 s against 0.67 s on the runner). `check`'s time is its floor: it counts the working tree's errors (phase 7A; [RESULTS.md](../../tests/corpora/RESULTS.md#where-diff-and-drift-spend-their-time)) |
 | Release binary, macOS arm64 | 10.5 MB | 7.0 MB, without a slower `check` (phase 7B; every platform in [RESULTS.md](../../tests/corpora/RESULTS.md#the-release-profile)) |
 | Peak memory on 3,000 pages | Unmeasured | Recorded in phase 2 (`tests/corpora/baselines/perf.json`, `memory/*`); stays within the baseline's margin |
 

@@ -87,22 +87,24 @@ hand with **record** set, on GitHub's `ubuntu-latest` runner (AMD EPYC 7763, 4
 logical cores). Every metric was recorded again there, so the file holds one
 machine's numbers. It was recorded again the same day, on the same CPU, once
 the release profile was in (see [The release profile](#the-release-profile)),
-which made each command 5 to 12 percent faster. Medians:
+which made each command 5 to 12 percent faster, and again once `diff` and
+`drift` were made faster (optimization phase 7A, [below](#where-diff-and-drift-spend-their-time)).
+Medians:
 
 | | time |
 |---|---|
-| `ascribe check` | 652 ms |
+| `ascribe check` | 667 ms |
 | `ascribe build --emit plain,json`, first; again | 1.8 s; 1.6 s |
-| `ascribe diff`, nothing changed | 1.28 s |
-| `ascribe diff`, one page; a fragment 100 pages include; a phrase every page uses | 1.30 s; 1.29 s; 1.32 s |
-| `ascribe diff` with snippets, nothing changed; a region ten pages show | 1.76 s; 1.76 s |
-| `ascribe drift` with snippets, nothing changed; a region ten pages show | 480 ms; 857 ms |
-| `ascribe check --format json`, converted Elastic sample | 3.1 s |
-| language server: page keystroke, fragment keystroke, completion | 1.6 ms, 9.1 ms, 3.3 ms |
+| `ascribe diff`, nothing changed | 843 ms |
+| `ascribe diff`, one page; a fragment 100 pages include; a phrase every page uses | 792 ms; 814 ms; 1.02 s |
+| `ascribe diff` with snippets, nothing changed; a region ten pages show | 1.07 s; 1.07 s |
+| `ascribe drift` with snippets, nothing changed; a region ten pages show | 485 ms; 535 ms |
+| `ascribe check --format json`, converted Elastic sample | 3.2 s |
+| language server: page keystroke, fragment keystroke, completion | 1.6 ms, 8.0 ms, 3.2 ms |
 
-`diff` takes the same time whatever changed, which is
-`project-docs/optimization/inventory.md` finding 4; phase 7 of that plan
-sets its target. Completion is the slowest context, a link by page title, at
+`diff` took the same time whatever changed (1.28 to 1.32 s), which was
+`project-docs/optimization/inventory.md` finding 4; now only a change that
+reaches every page, such as a phrase, costs more. Completion is the slowest context, a link by page title, at
 3,000 pages (`lsp/completion-3000`); the benchmark didn't record it before.
 
 ### Peak memory
@@ -243,8 +245,15 @@ The commands' wall time on the same container, median of five:
 `diff` now takes about as long as `check`, and can't take less: its report
 counts the errors `ascribe check` finds in the working tree
 (`working_tree_errors`), which is a full check. So the plan's target, a
-quarter of the time before, isn't met; half is. The other target, `diff`
-with snippets at most twice `diff` without, is (1.2 times).
+quarter of the time before, isn't met. On the runner (the baselines above,
+recorded before and after on the same CPU), with nothing changed `diff` went
+from 1.28 s to 843 ms, a third less, 1.26 times `check`'s 667 ms; with one
+page changed from 1.30 s to 792 ms; with snippets from 1.76 s to 1.07 s; and
+`drift` with a region changed from 857 ms to 535 ms. The optimization plan's
+measure is set to at most 1.3 times `check`. The other target, `diff` with
+snippets at most twice `diff` without, is met (1.3 times). Peak memory of
+`diff` with nothing changed went from 547 MB to 371 MB, since only the pages
+a change reaches are resolved.
 
 The reports are byte for byte the same before and after: `diff` as JSON,
 HTML, and text and `drift` as JSON, text, and summary, on each of the

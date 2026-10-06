@@ -4,7 +4,7 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
-- **A faster `ascribe diff` and `ascribe drift`.** `diff` compares only the pages a change can reach, and reads the two versions side by side: on 3,000 pages it takes about as long as `ascribe check`, half the time it did, and holds a third less memory. `drift` takes half the time when an example changed. The reports are the same.
+- **A faster `ascribe diff` and `ascribe drift`.** `diff` compares only the pages a change can reach, and reads the two versions side by side: on 3,000 pages it takes a third less time than it did, and a third less memory. `drift` takes a third less time when an example changed. The reports are the same.
 - **Smaller downloads.** The `ascribe` binary is built with link-time optimization: about a third smaller on macOS and Linux (7.0 MB on macOS arm64, from 10.5 MB) and 8 percent smaller on Windows, and a little faster.
 
 ## 0.2.0 (2026-10-06)
