@@ -12,7 +12,15 @@ cargo test --workspace --locked
 pnpm -r test
 ```
 
-The [README](README.md) describes the layout. [packages/vscode/DEVELOPMENT.md](packages/vscode/DEVELOPMENT.md) covers the extension.
+To build every JS package, as CI does before it type-checks and tests them:
+
+```sh
+pnpm build:all
+```
+
+It builds the `ascribe` binary (`cargo build -p tessera-cli`), stages it into `@ascribed/cli`'s package for your platform, then runs `pnpm -r build`, which builds the packages in dependency order. `pnpm -r build` alone stops at `examples/astro-site`, whose build runs the binary.
+
+[ARCHITECTURE.md](ARCHITECTURE.md) describes how the code is put together, and each crate and package has a README. [packages/vscode/DEVELOPMENT.md](packages/vscode/DEVELOPMENT.md) covers the extension.
 
 ## Before you open a pull request
 

@@ -7,6 +7,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "build:all": "node scripts/build-all.ts",
     "lint": "oxlint --type-aware",
     "typecheck": "tsc -p scripts/tsconfig.json && pnpm -r typecheck",
     "test": "vitest run --dir scripts && pnpm -r test",

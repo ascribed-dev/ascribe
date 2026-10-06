@@ -12,10 +12,12 @@
     "types": ["node"]
   },
   "include": [
+    "*.ts",
     "release/**/*.ts",
     "release/**/*.cts",
     "review-fixture/**/*.ts",
     "sources-fixture/**/*.ts",
-    "docs-site/**/*.ts"
+    "docs-site/**/*.ts",
+    "repo-docs/**/*.ts"
   ]
 }
