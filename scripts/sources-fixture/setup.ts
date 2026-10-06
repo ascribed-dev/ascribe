@@ -518,7 +518,7 @@ function checkRepository(name: string): void {
           `${name} doesn't exist on GitHub, or the GitHub CLI can't see it. Create it first (private, with no README), then run this again.`,
         );
       }
-      if (/empty/i.test(message) || options.force) return;
+      if (options.force || isEmpty(name)) return;
       fail(
         `${name} has files but no README from this script. Use an empty repository, or --force to overwrite it.`,
       );
@@ -530,6 +530,16 @@ function checkRepository(name: string): void {
     fail(
       `${name} isn't a sources fixture (its README isn't this script's). Use an empty repository, or --force to overwrite it.`,
     );
+  }
+}
+
+/** Whether a repository has no commits: GitHub answers 409, "Git Repository is empty", for its commits. */
+function isEmpty(name: string): boolean {
+  try {
+    gh("api", `repos/${name}/commits?per_page=1`, "--jq", "length");
+    return false;
+  } catch (error) {
+    return /empty|409/i.test(error instanceof Error ? error.message : String(error));
   }
 }
 
