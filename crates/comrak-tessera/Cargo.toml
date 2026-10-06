@@ -60,6 +60,11 @@ phoenix_heex = []
 attributes = []
 bon = ["dep:bon"]
 
+[package.metadata.cargo-machete]
+# The entity table build.rs generates uses `phf`; it's included from OUT_DIR,
+# where cargo-machete doesn't look.
+ignored = ["phf"]
+
 [lints.rust]
 # Upstream's `syntect` feature isn't vendored; its `cfg`s stay in the source
 # untouched and are always off.

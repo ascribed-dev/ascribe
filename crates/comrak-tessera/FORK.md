@@ -34,6 +34,7 @@ Not vendored: `src/main.rs` (the CLI), `benches/`, `examples/`, `fuzz/`, `vendor
 - Upstream's `cli` and `syntect` features, their dependencies, and the `comrak` binary are gone. `default = []`. The `bon`, `shortcodes`, `phoenix_heex`, `attributes`, and `arbitrary` features remain and still build and pass upstream's tests (`cargo test -p comrak-tessera --features bon,shortcodes,phoenix_heex,attributes,arbitrary`). The `syntect` `cfg`s left in the source are declared as expected `cfg` values so they don't warn.
 - **Doctests are off** (`[lib] doctest = false`). Upstream's doctests import the crate as `comrak`, which no longer resolves. Upstream's unit tests still run.
 - The crate doesn't use the workspace lints (upstream uses `unsafe` and `unwrap`). It allows `deprecated` and a few clippy lints that only upstream's code and tests trip under the workspace's `clippy -D warnings`, so that upstream code stays untouched.
+- cargo-machete is told `phf` is used: only the entity table `build.rs` generates uses it.
 - `rustfmt.toml` is upstream's, so `cargo fmt` formats vendored code as upstream does.
 
 ## Changed locations
