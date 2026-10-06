@@ -10,11 +10,11 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
+use tessera_check::select_builds;
 use tessera_core::FileId;
 use tessera_diff::{DiffError, DriftPage, DriftReport, Repository, Side, drift};
 
 use crate::cli::Global;
-use crate::commands::diagnose::select_builds;
 use crate::commands::diff::{fail, fail_diff, failure_message};
 use crate::context::load_project;
 use crate::exit;
@@ -83,7 +83,7 @@ fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
     };
     let builds = match select_builds(&project, &args.build) {
         Ok(builds) => builds,
-        Err(message) => return fail(err, &message),
+        Err(e) => return fail(err, &e.to_string()),
     };
     let found = Repository::discover(project.root()).and_then(|repo| {
         let base = repo.base(args.base.as_deref(), false)?;

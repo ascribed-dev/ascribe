@@ -5,10 +5,9 @@ use std::io::{self, Write};
 use std::process::ExitCode;
 
 use clap::{Args as ClapArgs, ValueEnum};
-use tessera_check::LoadError;
+use tessera_check::{LoadError, diagnose};
 
 use crate::cli::Global;
-use crate::commands::diagnose::diagnose;
 use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::{Counts, FileTable, json, text};
@@ -62,7 +61,7 @@ fn check(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
     let diagnostics = match diagnose(&project, &args.build) {
-        Ok((diagnostics, _)) => diagnostics,
+        Ok(found) => found.diagnostics,
         Err(message) => {
             let _ = writeln!(err, "error: {message}");
             return exit::FAILURE;

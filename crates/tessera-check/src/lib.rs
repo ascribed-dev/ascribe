@@ -31,6 +31,7 @@
 //! each distinct problem once, naming the builds it appears in
 //! ([`Diagnostic::builds`]).
 
+mod builds;
 mod checks;
 mod diagnostic;
 pub mod page;
@@ -38,6 +39,7 @@ mod project;
 pub mod registry;
 mod yaml;
 
+pub use builds::{Diagnosed, UnknownBuild, diagnose, select_builds};
 pub use checks::check_file;
 use checks::check_sources;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};

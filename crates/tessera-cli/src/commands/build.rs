@@ -8,22 +8,16 @@
 //! directory that replaces the previous output only on success.
 
 use std::io::{self, Write};
-use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
-use tessera_check::{LoadError, Project};
-use tessera_emit::{
-    EmitContext, EmitError, Emitter, JsonEmitter, OutputDir, OutputOptions, PlainEmitter,
-    SiteEmitter, StoreError, emit,
-};
+use tessera_check::{Diagnosed, LoadError, Project, diagnose};
+use tessera_emit::{Output, WriteEvent, WriteOptions};
 use tessera_model::Build;
-use tessera_resolve::AstroRouter;
 
 use crate::cli::Global;
 use crate::commands::check::Format;
-use crate::commands::diagnose::diagnose;
 use crate::context::{Failure, load_project, stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::{Counts, FileTable, json, text};
@@ -97,9 +91,12 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         Err(failure) => return report_failure(failure, args, color, out, err),
     };
     // The checks, for every build asked for, before anything is written.
-    let (diagnostics, builds) = match diagnose(&project, &args.build) {
+    let Diagnosed {
+        diagnostics,
+        builds,
+    } = match diagnose(&project, &args.build) {
         Ok(found) => found,
-        Err(message) => return fail(err, &message),
+        Err(e) => return fail(err, &e.to_string()),
     };
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
@@ -123,7 +120,8 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     }
 }
 
-/// Resolves each build and writes its outputs. Errors are ready to print.
+/// Resolves each build and writes its outputs, reporting each as it's
+/// written. Errors are ready to print.
 fn write_outputs(
     project: &Project,
     builds: &[&Build],
@@ -131,97 +129,49 @@ fn write_outputs(
     anchors: bool,
     err: &mut dyn Write,
 ) -> Result<(), String> {
-    let model = project.model();
-    let resolved_project = tessera_resolve::Project::load(
-        Arc::new(model.clone()),
+    let index = tessera_resolve::Project::load(
+        Arc::new(project.model().clone()),
         project.layout().clone(),
         project.file_system(),
     );
-    let root: &Path = project.root();
-    let output_dir = root.join(&model.project.output_dir);
-    let output = OutputDir::lock(&output_dir).map_err(store_message)?;
-    // Routes come from the `astro` profile's router, the only profile of spec
-    // 0.1, for every output, so a link in the plain output is the URL the site
-    // publishes.
-    let router = AstroRouter::from_consumer(&model.consumer);
-
-    let plain = PlainEmitter;
-    let json = JsonEmitter;
-    let site = SiteEmitter::new(model).with_anchors(anchors);
-    let mut emitters: Vec<&dyn Emitter> = Vec::new();
-    for e in emit_names {
-        let emitter: &dyn Emitter = match e {
-            Emit::Plain => &plain,
-            Emit::Json => &json,
-            Emit::Site => &site,
-        };
-        if !emitters.iter().any(|x| x.name() == emitter.name()) {
-            emitters.push(emitter);
-        }
-    }
-
-    let mut warned: Vec<String> = Vec::new();
-    for build in builds {
-        let resolved = resolved_project.resolve_build(build, &router);
-        let cx = EmitContext::new(&resolved_project, root, build);
-        for emitter in &emitters {
-            for warning in emitter.warnings(&cx) {
-                if !warned.contains(&warning) {
-                    let _ = writeln!(err, "warning: {warning}");
-                    warned.push(warning);
-                }
-            }
-            let emission = emit(*emitter, &cx, &resolved).map_err(emit_message)?;
-            let pages = emission
-                .files
-                .iter()
-                .filter(|f| f.kind == tessera_emit::FileKind::Page)
-                .count();
-            let assets = emission
-                .files
-                .iter()
-                .filter(|f| f.kind == tessera_emit::FileKind::Asset)
-                .count();
-            let options = OutputOptions {
-                anchors: anchors && emitter.name() == site.name(),
-            };
-            let replaced = output
-                .replace_with(&build.name, emitter.name(), &emission.files, options)
-                .map_err(store_message)?;
-            let _ = writeln!(
+    let options = WriteOptions {
+        outputs: emit_names
+            .iter()
+            .map(|e| match e {
+                Emit::Site => Output::Site,
+                Emit::Plain => Output::Plain,
+                Emit::Json => Output::Json,
+            })
+            .collect(),
+        anchors,
+    };
+    let mut report = |event: &WriteEvent| {
+        let _ = match event {
+            WriteEvent::Warning(warning) => writeln!(err, "warning: {warning}"),
+            WriteEvent::Written(w) => writeln!(
                 err,
                 "built {}/{}: {} page{}, {} asset{}{}",
-                build.name,
-                emitter.name(),
-                pages,
-                plural(pages),
-                assets,
-                plural(assets),
-                if replaced.removed > 0 {
-                    format!(
-                        ", removed {} stale file{}",
-                        replaced.removed,
-                        plural(replaced.removed)
-                    )
+                w.build,
+                w.output,
+                w.pages,
+                plural(w.pages),
+                w.assets,
+                plural(w.assets),
+                if w.removed > 0 {
+                    format!(", removed {} stale file{}", w.removed, plural(w.removed))
                 } else {
                     String::new()
                 }
-            );
-        }
-    }
-    Ok(())
+            ),
+        };
+    };
+    tessera_emit::write_outputs(&index, project.root(), builds, &options, &mut report)
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 fn plural(n: usize) -> &'static str {
     if n == 1 { "" } else { "s" }
-}
-
-fn store_message(e: StoreError) -> String {
-    e.to_string()
-}
-
-fn emit_message(e: EmitError) -> String {
-    e.to_string()
 }
 
 fn fail(err: &mut dyn Write, message: &str) -> u8 {

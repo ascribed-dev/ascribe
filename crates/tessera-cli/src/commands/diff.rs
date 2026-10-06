@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
-use tessera_check::{Diagnostic, LoadError};
+use tessera_check::{Diagnostic, LoadError, diagnose, select_builds};
 use tessera_core::FileId;
 use tessera_diff::html::{AssetFiles, DiskAssets, GitAssets, Version, write_html};
 use tessera_diff::{
@@ -18,7 +18,6 @@ use tessera_diff::{
 };
 
 use crate::cli::Global;
-use crate::commands::diagnose::{diagnose, select_builds};
 use crate::context::{Failure, load_project};
 use crate::exit;
 use crate::report::Counts;
@@ -94,7 +93,7 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     };
     let builds = match select_builds(&project, &args.build) {
         Ok(builds) => builds,
-        Err(message) => return fail(err, &message),
+        Err(e) => return fail(err, &e.to_string()),
     };
     let repo = match Repository::discover(project.root()) {
         Ok(repo) => repo,
@@ -190,7 +189,7 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
 /// How many errors `ascribe check` finds for the builds compared, as it
 /// would with the same `--build` options.
 fn working_tree_errors(project: &tessera_check::Project, names: &[String]) -> usize {
-    diagnose(project, names).map_or(0, |(diagnostics, _)| Counts::of(&diagnostics).errors)
+    diagnose(project, names).map_or(0, |found| Counts::of(&found.diagnostics).errors)
 }
 
 /// The warning about the working tree's errors, naming the `ascribe check`
