@@ -3,12 +3,12 @@
 //! finished report.
 
 use tessera_check::{diagnose, select_builds};
+use tessera_core::RelPath;
 use tessera_resolve::Project;
 
+use crate::drift::{BaseProject, drift_with, read_base};
 use crate::html::{AssetFiles, DiskAssets, GitAssets, Version, write_html};
-use crate::{
-    Base, DiffError, DriftReport, Report, Repository, Revision, Side, compare_builds, drift,
-};
+use crate::{Base, DiffError, DriftReport, Report, Repository, Side, compare_builds};
 
 /// What [`diff_project`] compares.
 #[derive(Clone, Copy, Debug, Default)]
@@ -31,7 +31,7 @@ pub struct ProjectDiff {
     pub report: Report,
     repo: Repository,
     /// The base revision and its source index, when the project exists there.
-    before: Option<(Revision, Project)>,
+    before: BaseProject,
     now: Project,
     root: std::path::PathBuf,
 }
@@ -89,23 +89,11 @@ pub fn diff_project(
     let builds = select_builds(project, options.builds)?;
     let repo = Repository::discover(project.root())?;
     let base = repo.base(options.base, options.base_exact)?;
-    let before = Revision::read(&repo, base.compared())?.map(|revision| {
-        let index = revision.project();
-        (revision, index)
-    });
-    let now = project.index();
-    let before_side = before.as_ref().map(|(revision, project)| Side {
-        project,
-        model_text: &revision.model_text,
-    });
-    let now_side = Side {
-        project: &now,
-        model_text: project.model_text(),
-    };
     let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-    // Counting the errors is a full check of the working tree: it runs beside
-    // the comparison, so the two take about as long as the slower one.
-    let (diffs, errors) = std::thread::scope(|scope| {
+    // Counting the errors is a full check of the working tree, the longest
+    // part: it runs beside everything else, as reading and indexing the base
+    // does beside indexing the working tree.
+    let (before, now, diffs, errors) = std::thread::scope(|scope| {
         let errors = scope.spawn(|| {
             diagnose(project, options.builds).map_or(0, |found| {
                 found
@@ -115,14 +103,20 @@ pub fn diff_project(
                     .count()
             })
         });
+        let before = scope.spawn(|| read_base(&repo, base.compared()));
+        let now = project.index();
+        let before = joined(before)?;
+        let before_side = before.as_ref().map(|(revision, project)| Side {
+            project,
+            model_text: &revision.model_text,
+        });
+        let now_side = Side {
+            project: &now,
+            model_text: project.model_text(),
+        };
         let diffs = compare_builds(before_side, now_side, &names);
-        (
-            diffs,
-            errors
-                .join()
-                .unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
-        )
-    });
+        Ok::<_, DiffError>((before, now, diffs, joined(errors)))
+    })?;
     let mut report = Report::new(&repo, &base, diffs);
     report.working_tree_errors = errors;
     Ok(ProjectDiff {
@@ -132,6 +126,13 @@ pub fn diff_project(
         now,
         root: project.root().to_owned(),
     })
+}
+
+/// What a scoped thread returned, or its panic, again.
+fn joined<T>(thread: std::thread::ScopedJoinHandle<'_, T>) -> T {
+    thread
+        .join()
+        .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
 }
 
 /// What [`drift_project`] compares.
@@ -163,11 +164,51 @@ pub fn drift_project(
     let builds = select_builds(project, options.builds)?;
     let repo = Repository::discover(project.root())?;
     let base: Base = repo.base(options.base, options.base_exact)?;
-    let now_project = project.index();
-    let now = Side {
-        project: &now_project,
-        model_text: project.model_text(),
-    };
     let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-    drift(&repo, &base, now, project.file_system(), &names)
+    // The base's pages are read only when an example changed, which takes
+    // the working tree's index to know. When `git diff` lists a file in a
+    // source's folder, one likely did: the base is read beside the index
+    // then, instead of after it. A listing that fails is listed again, and
+    // reported, only when it's needed, as `drift` does.
+    let changes = repo.changed_files(base.compared()).ok();
+    let likely = changes
+        .as_ref()
+        .is_some_and(|changes| in_sources(project, &repo, changes.keys()));
+    std::thread::scope(|scope| {
+        let early = likely.then(|| scope.spawn(|| read_base(&repo, base.compared())));
+        let now_project = project.index();
+        let now = Side {
+            project: &now_project,
+            model_text: project.model_text(),
+        };
+        drift_with(
+            &repo,
+            &base,
+            now,
+            project.file_system(),
+            &names,
+            changes,
+            || match early {
+                Some(thread) => joined(thread),
+                None => read_base(&repo, base.compared()),
+            },
+        )
+    })
+}
+
+/// Whether any of these files, by path from the repository's root, is in
+/// the folder of one of the project's sources (where code files are).
+fn in_sources<'a>(
+    project: &tessera_check::Project,
+    repo: &Repository,
+    mut files: impl Iterator<Item = &'a RelPath>,
+) -> bool {
+    let project_dir = repo.project_dir();
+    let folders: Vec<RelPath> = project
+        .model()
+        .sources
+        .iter()
+        .filter_map(|source| project_dir.join(&source.path).ok())
+        .collect();
+    files.any(|file| folders.iter().any(|folder| file.starts_with(folder)))
 }

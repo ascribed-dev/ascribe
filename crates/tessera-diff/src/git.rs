@@ -8,7 +8,7 @@
 use std::collections::BTreeMap;
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 
 use tessera_core::RelPath;
 
@@ -331,6 +331,16 @@ impl Repository {
         command
     }
 
+    /// A `git cat-file --batch` kept running, to read blobs one at a time as
+    /// they're asked for, through one process however many there are. The
+    /// process starts with the first read.
+    pub(crate) fn blob_reader(&self) -> BlobReader {
+        BlobReader {
+            repo: self.clone(),
+            git: None,
+        }
+    }
+
     /// Runs `git` and returns its standard output.
     fn run(&self, args: &[&str]) -> Result<Vec<u8>, DiffError> {
         let out = self
@@ -362,6 +372,82 @@ impl Repository {
 
 fn command_line(args: &[&str]) -> String {
     format!("git {}", args.join(" "))
+}
+
+/// See [`Repository::blob_reader`].
+pub(crate) struct BlobReader {
+    repo: Repository,
+    git: Option<Batch>,
+}
+
+/// A running `git cat-file --batch`.
+struct Batch {
+    child: Child,
+    /// Always there until the process is stopped.
+    stdin: Option<ChildStdin>,
+    stdout: BufReader<ChildStdout>,
+}
+
+impl BlobReader {
+    /// The contents of a blob.
+    ///
+    /// # Errors
+    ///
+    /// [`DiffError::Git`] when `git` can't run, the object is missing, or
+    /// its answer can't be read. The process is stopped then, and the next
+    /// read starts another.
+    pub(crate) fn read(&mut self, object: &str) -> Result<Vec<u8>, DiffError> {
+        let args = ["cat-file", "--batch"];
+        let failed = |e: io::Error| DiffError::Git {
+            command: command_line(&args),
+            message: e.to_string(),
+        };
+        if self.git.is_none() {
+            let mut child = self
+                .repo
+                .command(&args)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::null())
+                .spawn()
+                .map_err(|e| self.repo.spawn_error(&args, e))?;
+            let (Some(stdin), Some(stdout)) = (child.stdin.take(), child.stdout.take()) else {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(failed(io::Error::other("no standard input or output")));
+            };
+            self.git = Some(Batch {
+                child,
+                stdin: Some(stdin),
+                stdout: BufReader::new(stdout),
+            });
+        }
+        let Some(Batch {
+            stdin: Some(stdin),
+            stdout,
+            ..
+        }) = self.git.as_mut()
+        else {
+            return Err(failed(io::Error::other("not running")));
+        };
+        // One request at a time, and `git` flushes each answer: neither
+        // side can fill a pipe the other isn't reading.
+        let read = writeln!(stdin, "{object}")
+            .and_then(|()| stdin.flush())
+            .and_then(|()| read_batch_entry(stdout, object));
+        if read.is_err() {
+            self.git = None;
+        }
+        read.map_err(failed)
+    }
+}
+
+impl Drop for Batch {
+    fn drop(&mut self) {
+        // `git` exits when its input closes.
+        drop(self.stdin.take());
+        let _ = self.child.wait();
+    }
 }
 
 /// One answer of `git cat-file --batch`: `<object> blob <size>`, the

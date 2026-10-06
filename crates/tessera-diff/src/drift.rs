@@ -18,7 +18,7 @@ use similar::{Algorithm, DiffTag, capture_diff_slices};
 use tessera_core::{FileId, RelPath, Span};
 use tessera_resolve::snippet::tags::{self, comment_style};
 use tessera_resolve::snippet::{CodeFiles, SnippetError, resolve_snippet};
-use tessera_resolve::{Address, AstroRouter, FileKind, FileSystem, Snippet};
+use tessera_resolve::{Address, AstroRouter, FileKind, FileSystem, Project, Snippet};
 
 use crate::compare::changed_apart_from_snippets;
 use crate::git::{Base, FileChange, Repository};
@@ -161,6 +161,34 @@ pub fn drift(
     fs: &dyn FileSystem,
     builds: &[&str],
 ) -> Result<DriftReport, DiffError> {
+    drift_with(repo, base, now, fs, builds, None, || {
+        read_base(repo, base.compared())
+    })
+}
+
+/// The project at a revision, read and indexed; `None` when it has no
+/// `ascribe.toml` there.
+pub(crate) type BaseProject = Option<(Revision, Project)>;
+
+/// The project at `commit`, read and indexed.
+pub(crate) fn read_base(repo: &Repository, commit: &str) -> Result<BaseProject, DiffError> {
+    Ok(Revision::read(repo, commit)?.map(|revision| {
+        let project = revision.project();
+        (revision, project)
+    }))
+}
+
+/// [`drift`], with the `git diff` listing of the change when it's already
+/// known, and the base's project from `read_base` when it's needed.
+pub(crate) fn drift_with(
+    repo: &Repository,
+    base: &Base,
+    now: Side<'_>,
+    fs: &dyn FileSystem,
+    builds: &[&str],
+    changes: Option<BTreeMap<RelPath, FileChange>>,
+    read_base: impl FnOnce() -> Result<BaseProject, DiffError>,
+) -> Result<DriftReport, DiffError> {
     let mut report = DriftReport {
         schema_version: DRIFT_SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
@@ -176,7 +204,11 @@ pub fn drift(
     let examples = if used.is_empty() {
         BTreeMap::new()
     } else {
-        changed_examples(repo, base.compared(), &used)?
+        let changes = match changes {
+            Some(changes) => changes,
+            None => repo.changed_files(base.compared())?,
+        };
+        changed_examples(repo, base.compared(), &changes, &used)?
     };
     if examples.is_empty() && unresolved.is_empty() {
         return Ok(report);
@@ -184,21 +216,18 @@ pub fn drift(
 
     // The base: whether an example that doesn't resolve now did then, and
     // whether each page changed apart from its examples.
-    let before = Revision::read(repo, base.compared())?;
-    let before_project = before.as_ref().map(Revision::project);
-    let before_side = before
-        .as_ref()
-        .zip(before_project.as_ref())
-        .map(|(revision, project)| Side {
-            project,
-            model_text: &revision.model_text,
-        });
+    let before = read_base()?;
+    let before_project = before.as_ref().map(|(_, project)| project);
+    let before_side = before.as_ref().map(|(revision, project)| Side {
+        project,
+        model_text: &revision.model_text,
+    });
     // An example that never resolved is the page's own new mistake, which
     // `ascribe check` reports; one that did has broken.
     let broken: Vec<Unresolved> = unresolved
         .into_iter()
         .filter(|u| {
-            before_project.as_ref().is_some_and(|project| {
+            before_project.is_some_and(|project| {
                 project.file(&u.path).is_some_and(|file| {
                     file.snippets.iter().any(|s| {
                         s.written == u.written && project.snippet_at(&u.path, s.span).is_some()
@@ -408,14 +437,14 @@ fn snippets(now: Side<'_>) -> BTreeMap<String, Used> {
 }
 
 /// The snippets whose code differs between `commit` and the working tree,
-/// by written address. Only the files `git diff` lists are read at the
-/// commit, each once.
+/// by written address. Only the files `git diff` lists (`changes`) are read
+/// at the commit, each once.
 fn changed_examples(
     repo: &Repository,
     commit: &str,
+    changes: &BTreeMap<RelPath, FileChange>,
     used: &BTreeMap<String, Used>,
 ) -> Result<BTreeMap<String, ChangedExample>, DiffError> {
-    let changes = repo.changed_files(commit)?;
     let project_dir = repo.project_dir();
     // Each snippet's file now, and where it was at the commit, for those
     // whose file changed and isn't new.
