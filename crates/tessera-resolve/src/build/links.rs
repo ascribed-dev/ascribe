@@ -165,9 +165,9 @@ impl Links<'_, '_> {
             return (LinkTarget::Unresolved, None);
         }
         let project = self.resolver.project();
-        let Some(file) = project.file(target) else {
+        if project.file(target).is_none() {
             return (LinkTarget::Unresolved, None);
-        };
+        }
         let text_empty = reference.text_empty && reference.kind == RefKind::Link;
         match id {
             None => {
@@ -182,12 +182,18 @@ impl Links<'_, '_> {
                 (target, title)
             }
             Some(id) => {
-                // A missing id, or one only a fragment has, is reported by the
-                // source index (`link-id-missing`, `link-id-in-fragment`).
-                let Some(heading) = file.heading_by_id(id) else {
+                // The heading is the target's own or comes from a fragment it
+                // includes (SPEC §4.2). A missing id is reported by the source
+                // index (`link-id-missing`).
+                let Some((written_in, heading)) = project.page_heading(target, id) else {
                     return (LinkTarget::Unresolved, None);
                 };
-                let page_id = self.resolver.page_id_of(&page, file.file, heading.span);
+                let Some(written_in) = project.file(&written_in) else {
+                    return (LinkTarget::Unresolved, None);
+                };
+                let page_id = self
+                    .resolver
+                    .page_id_of(&page, written_in.file, heading.span);
                 let Some(page_id) = page_id else {
                     self.problem(
                         Issue::new(diagnostics::LINK_ID_REMOVED, here)

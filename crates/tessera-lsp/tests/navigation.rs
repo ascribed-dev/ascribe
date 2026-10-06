@@ -665,6 +665,37 @@ fn location(v: &Value) -> (String, u64, u64) {
 }
 
 #[test]
+fn a_link_to_a_heading_from_an_included_fragment_finds_it_in_the_fragment() {
+    // SPEC §4.2: a page's linkable ids include its fragments' (#90).
+    let f = quill();
+    f.write(
+        "docs/_fragments/limits.md",
+        "## Rate limits\n\nEach key makes 100 requests a minute.\n",
+    );
+    f.write(
+        "docs/limits.md",
+        "---\ntitle: Limits\ndescription: Limits.\n---\n\n@include: _fragments/limits.md\n",
+    );
+    let page = f.path("docs/quickstart.md");
+    let mut client = Client::start(&f.root());
+    client.open(&page, 1, "See [the limits](limits.md#rate-limits).\n");
+    let got = definition(&mut client, &page, json!({ "line": 0, "character": 20 })).unwrap();
+    assert_eq!(
+        location(&got),
+        (
+            uri(&f.path("docs/_fragments/limits.md"))
+                .as_str()
+                .to_owned(),
+            0,
+            0
+        )
+    );
+    let value = hover_text(&mut client, &page, json!({ "line": 0, "character": 20 }));
+    assert!(value.contains("**Rate limits**"), "{value}");
+    assert!(value.contains("100 requests a minute"), "{value}");
+}
+
+#[test]
 fn links_and_includes_go_to_their_targets() {
     let f = quill();
     let install = f.path("docs/install-agent.md");

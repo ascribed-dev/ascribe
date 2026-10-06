@@ -1,0 +1,15 @@
+description: >-
+  A link can name a heading from a fragment the target page includes: its
+  ids are the page's. A build that removes the heading makes the link an
+  error in that build only.
+spec: ["4.2", "5.2", "9.3", "8.2"]
+tags: [page-check, include]
+
+builds:
+  site:
+    diagnostics: []
+  sm-3.4:
+    diagnostics: []
+  sm-3.3:
+    diagnostics:
+      - {slug: link-id-removed, file: index.md, line: 7}

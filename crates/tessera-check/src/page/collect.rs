@@ -187,7 +187,7 @@ fn headings(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
     }
 }
 
-/// `link-id-missing` and `link-id-in-fragment`, which the source index finds
+/// `link-id-missing`, which the source index finds
 /// once for the file a link is written in, for the links this page publishes.
 /// A link in an arm the build removed isn't the build's problem.
 fn link_ids(index: &Project, page: &ResolvedPage, cache: &LinkProblems, out: &mut Vec<Found>) {
@@ -203,10 +203,7 @@ fn link_ids(index: &Project, page: &ResolvedPage, cache: &LinkProblems, out: &mu
                     index
                         .problems(path)
                         .into_iter()
-                        .filter(|i| {
-                            i.slug == diagnostics::LINK_ID_MISSING
-                                || i.slug == diagnostics::LINK_ID_IN_FRAGMENT
-                        })
+                        .filter(|i| i.slug == diagnostics::LINK_ID_MISSING)
                         .collect()
                 })
                 .unwrap_or_default()

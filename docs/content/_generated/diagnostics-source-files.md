@@ -1,85 +1,5 @@
 <!-- Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs. Edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`. -->
 
-| Code | Name | Severity | Level |
-|---|---|---|---|
-| [ASC001](#asc001-attribute-unknown-key) | `attribute-unknown-key` | Error | File |
-| [ASC002](#asc002-attribute-type-mismatch) | `attribute-type-mismatch` | Error | File |
-| [ASC003](#asc003-attribute-bare-key) | `attribute-bare-key` | Error | File |
-| [ASC004](#asc004-attribute-unquoted-reserved) | `attribute-unquoted-reserved` | Error | File |
-| [ASC005](#asc005-directive-unknown) | `directive-unknown` | Warning | File |
-| [ASC006](#asc006-directive-primary) | `directive-primary` | Error | File |
-| [ASC007](#asc007-container-unclosed) | `container-unclosed` | Error | File |
-| [ASC008](#asc008-container-colon-unexpected) | `container-colon-unexpected` | Error | File |
-| [ASC009](#asc009-container-colon-missing) | `container-colon-missing` | Error | File |
-| [ASC010](#asc010-container-open-at-arm) | `container-open-at-arm` | Error | File |
-| [ASC011](#asc011-end-unmatched) | `end-unmatched` | Error | File |
-| [ASC012](#asc012-end-indent-mismatch) | `end-indent-mismatch` | Error | File |
-| [ASC013](#asc013-container-nesting-deep) | `container-nesting-deep` | Warning | File |
-| [ASC014](#asc014-binding-no-block) | `binding-no-block` | Error | File |
-| [ASC015](#asc015-binding-heading) | `binding-heading` | Error | File |
-| [ASC016](#asc016-binding-blank-line) | `binding-blank-line` | Warning | File |
-| [ASC017](#asc017-binding-not-section-top) | `binding-not-section-top` | Error | File |
-| [ASC018](#asc018-title-not-accepted) | `title-not-accepted` | Warning | File |
-| [ASC019](#asc019-title-dot-space) | `title-dot-space` | Warning | File |
-| [ASC020](#asc020-id-duplicate) | `id-duplicate` | Error | Page |
-| [ASC021](#asc021-include-target-missing) | `include-target-missing` | Error | File |
-| [ASC022](#asc022-include-id-missing) | `include-id-missing` | Error | Page |
-| [ASC023](#asc023-include-cycle) | `include-cycle` | Error | Page |
-| [ASC024](#asc024-variant-no-arm-survives) | `variant-no-arm-survives` | Warning | Page |
-| [ASC025](#asc025-variant-unknown) | `variant-unknown` | Error | File |
-| [ASC026](#asc026-variant-mixed-arms) | `variant-mixed-arms` | Error | File |
-| [ASC027](#asc027-variant-arm-kind) | `variant-arm-kind` | Error | File |
-| [ASC028](#asc028-variant-no-shared-dimension) | `variant-no-shared-dimension` | Error | File |
-| [ASC029](#asc029-available-unknown) | `available-unknown` | Error | File |
-| [ASC030](#asc030-available-history-order) | `available-history-order` | Error | File |
-| [ASC031](#asc031-available-versionless) | `available-versionless` | Error | File |
-| [ASC032](#asc032-available-exceeds-scope) | `available-exceeds-scope` | Error | Page |
-| [ASC033](#asc033-steps-not-ordered-list) | `steps-not-ordered-list` | Error | File |
-| [ASC034](#asc034-details-title-missing) | `details-title-missing` | Error | File |
-| [ASC035](#asc035-widget-schema) | `widget-schema` | Error | File |
-| [ASC036](#asc036-link-target-missing) | `link-target-missing` | Error | File |
-| [ASC037](#asc037-link-id-missing) | `link-id-missing` | Error | Page |
-| [ASC038](#asc038-link-to-fragment) | `link-to-fragment` | Error | File |
-| [ASC039](#asc039-link-id-in-fragment) | `link-id-in-fragment` | Error | Page |
-| [ASC040](#asc040-link-id-removed) | `link-id-removed` | Error | Page |
-| [ASC041](#asc041-link-route) | `link-route` | Warning | File |
-| [ASC042](#asc042-image-source-missing) | `image-source-missing` | Error | File |
-| [ASC043](#asc043-image-alt-missing) | `image-alt-missing` | Warning | File |
-| [ASC044](#asc044-phrase-undeclared) | `phrase-undeclared` | Warning | File |
-| [ASC045](#asc045-heading-phrase-without-id) | `heading-phrase-without-id` | Warning | File |
-| [ASC046](#asc046-heading-duplicate-without-id) | `heading-duplicate-without-id` | Warning | Page |
-| [ASC047](#asc047-frontmatter-unknown-key) | `frontmatter-unknown-key` | Error | File |
-| [ASC048](#asc048-frontmatter-missing-field) | `frontmatter-missing-field` | Error | File |
-| [ASC049](#asc049-frontmatter-type-mismatch) | `frontmatter-type-mismatch` | Error | File |
-| [ASC050](#asc050-frontmatter-reserved-in-fragment) | `frontmatter-reserved-in-fragment` | Error | File |
-| [ASC051](#asc051-content-type-unresolved) | `content-type-unresolved` | Error | File |
-| [ASC052](#asc052-list-ended-by-directive) | `list-ended-by-directive` | Warning | File |
-| [ASC053](#asc053-directive-indented-code) | `directive-indented-code` | Warning | File |
-| [ASC054](#asc054-steps-numbering-continued) | `steps-numbering-continued` | Warning | File |
-| [ASC055](#asc055-attribute-syntax) | `attribute-syntax` | Error | File |
-| [ASC056](#asc056-attribute-duplicate-key) | `attribute-duplicate-key` | Error | File |
-| [ASC057](#asc057-available-syntax) | `available-syntax` | Error | File |
-| [ASC058](#asc058-id-invalid) | `id-invalid` | Error | File |
-| [ASC059](#asc059-image-attribute-missing) | `image-attribute-missing` | Error | File |
-| [ASC120](#asc120-directive-extra-text) | `directive-extra-text` | Error | File |
-| [ASC121](#asc121-link-page-dropped) | `link-page-dropped` | Error | Page |
-| [ASC122](#asc122-frontmatter-syntax) | `frontmatter-syntax` | Error | File |
-| [ASC123](#asc123-source-unreadable) | `source-unreadable` | Error | File |
-| [ASC124](#asc124-heading-empty-slug) | `heading-empty-slug` | Warning | File |
-| [ASC125](#asc125-include-heading-without-id) | `include-heading-without-id` | Warning | File |
-| [ASC126](#asc126-phrase-double-braces) | `phrase-double-braces` | Warning | File |
-| [ASC127](#asc127-snippet-address) | `snippet-address` | Error | File |
-| [ASC128](#asc128-snippet-source-unknown) | `snippet-source-unknown` | Error | File |
-| [ASC129](#asc129-snippet-file-missing) | `snippet-file-missing` | Error | File |
-| [ASC130](#asc130-snippet-file-not-text) | `snippet-file-not-text` | Error | File |
-| [ASC131](#asc131-snippet-region-missing) | `snippet-region-missing` | Error | File |
-| [ASC132](#asc132-snippet-tags) | `snippet-tags` | Error | File |
-| [ASC136](#asc136-lock-invalid) | `lock-invalid` | Error | File |
-| [ASC137](#asc137-lock-source-unknown) | `lock-source-unknown` | Error | File |
-| [ASC138](#asc138-source-copy-changed) | `source-copy-changed` | Error | File |
-| [ASC139](#asc139-source-copy-unlocked) | `source-copy-unlocked` | Error | File |
-| [ASC140](#asc140-source-copy-unused) | `source-copy-unused` | Warning | File |
-
 ### Attributes
 
 #### ASC001 `attribute-unknown-key`
@@ -545,16 +465,6 @@ Error · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 **Message:** `{path}` is a fragment, which isn't published on its own; link to a page that includes it
 
 **Fix:** Link to a page that includes the fragment.
-
-#### ASC039 `link-id-in-fragment`
-
-Error · page level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
-
-**When:** Target id exists only inside a fragment the target page includes.
-
-**Message:** `{id}` is a heading in the fragment `{fragment}`, not in `{path}` itself; link to a page, not to an id that exists only inside a fragment
-
-**Fix:** Link to the page without the `#id`, or to a heading the page itself contains.
 
 #### ASC040 `link-id-removed`
 

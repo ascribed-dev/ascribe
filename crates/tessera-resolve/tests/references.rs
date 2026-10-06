@@ -342,7 +342,7 @@ fn an_extensionless_file_that_exists_is_an_asset_not_a_route() {
 }
 
 #[test]
-fn links_to_pages_and_ids_are_checked_against_the_targets_own_source_ids() {
+fn links_to_pages_and_ids_are_checked_against_the_ids_on_the_target_page() {
     let p = project(&[
         (
             "docs/index.md",
@@ -367,13 +367,18 @@ fn links_to_pages_and_ids_are_checked_against_the_targets_own_source_ids() {
             // `other` was replaced by the `@id`.
             ("link-id-missing", "other"),
             ("link-id-missing", "nope"),
-            // An id that exists only in an included fragment.
-            ("link-id-in-fragment", "from-fragment"),
+            // An id from a fragment the page includes is the page's too.
         ]
     );
-    let in_fragment = &problems[2];
-    assert_eq!(in_fragment.arg("fragment"), Some("_f.md"));
-    assert_eq!(in_fragment.arg("path"), Some("keys.md"));
+    assert_eq!(
+        p.page_heading(&path("keys.md"), "from-fragment")
+            .map(|(file, h)| (file.to_string(), h.text.clone())),
+        Some(("_f.md".to_owned(), "From fragment".to_owned()))
+    );
+    assert_eq!(
+        p.title_for(&path("keys.md"), Some("from-fragment")),
+        Some("From fragment")
+    );
 }
 
 #[test]

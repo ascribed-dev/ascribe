@@ -37,6 +37,18 @@ pub(crate) fn resolution_location(
     resolution: &Resolution,
 ) -> Option<Location> {
     match resolution {
+        // A link's `#id` can name a heading from a fragment the target page
+        // includes (SPEC §4.2): that heading, in the fragment.
+        Resolution::Source {
+            target,
+            id: Some(id),
+            ..
+        } if ctx.snapshot.heading(target, id).is_none() => {
+            match ctx.snapshot.page_heading(target, id) {
+                Some((written_in, heading)) => lines.location(&written_in, Some(heading)),
+                None => source_location(ctx, lines, target, None),
+            }
+        }
         Resolution::Source { target, id, .. } => source_location(ctx, lines, target, id.as_deref()),
         Resolution::Asset { path, .. } => lines.location(path, None),
         _ => None,

@@ -177,10 +177,10 @@ const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by 
      tests/conformance/tests/docs.rs. Edit the registry, then run \
      `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`. -->\n";
 
-/// The fragments, by file name: the source-file diagnostics, the content
-/// model's, and the retired ones (empty when there are none). Each group
-/// opens with its own index: a link to an id inside a fragment works only
-/// from the same fragment (SPEC §4.2, and issue #90 in this repository).
+/// The fragments, by file name: an index of every diagnostic, the
+/// source-file diagnostics, the content model's, and the retired ones (empty
+/// when there are none). The index links to entries in the other fragments
+/// through the page that includes them all (SPEC §4.2).
 fn render(
     registry: &DiagnosticsRegistry,
     anchors: &BTreeMap<String, String>,
@@ -202,7 +202,8 @@ fn render(
             None => constructs.push((construct, vec![(entry, condition)])),
         }
     }
-    let mut source_files = index(active.iter().copied().filter(|e| !is_model(e)));
+    let all = index(active.iter().copied());
+    let mut source_files = HEADER.to_owned();
     for (construct, entries) in constructs {
         let _ = write!(source_files, "\n### {construct}\n");
         for (entry, condition) in entries {
@@ -210,7 +211,7 @@ fn render(
         }
     }
 
-    let mut content_model = index(active.iter().copied().filter(|e| is_model(e)));
+    let mut content_model = HEADER.to_owned();
     for (group, title) in RULE_GROUPS {
         let _ = write!(content_model, "\n### {title}\n");
         for entry in active
@@ -243,20 +244,21 @@ fn render(
     }
 
     vec![
+        ("diagnostics-index.md".to_owned(), all),
         ("diagnostics-source-files.md".to_owned(), source_files),
         ("diagnostics-content-model.md".to_owned(), content_model),
         ("diagnostics-retired.md".to_owned(), retired),
     ]
 }
 
-/// A fragment's header and its index: a table of its diagnostics, in code
-/// order, each linked to its entry.
+/// The index: a table of the diagnostics, in code order, each linked to its
+/// entry on the reference page.
 fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
     let mut out = format!("{HEADER}\n| Code | Name | Severity | Level |\n|---|---|---|---|\n");
     for entry in entries {
         let _ = writeln!(
             out,
-            "| [{code}](#{anchor}) | `{slug}` | {severity} | {level} |",
+            "| [{code}](../reference/diagnostics.md#{anchor}) | `{slug}` | {severity} | {level} |",
             code = entry.code,
             anchor = heading_anchor(entry),
             slug = entry.slug,

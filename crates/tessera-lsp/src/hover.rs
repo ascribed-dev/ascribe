@@ -132,7 +132,14 @@ fn describe_source(ctx: &Ctx, target: &RelPath, id: Option<&str>, fragment: bool
         return format!("**Not found:** `{target}`");
     };
     let mut shown = snapshot.layout().project_path(target).to_string();
-    let heading = id.and_then(|id| file.heading_by_id(id));
+    // A heading of the page itself, or one from a fragment it includes
+    // (SPEC §4.2), and the file it's written in.
+    let found = id.and_then(|id| snapshot.page_heading(target, id));
+    let heading = found.as_ref().map(|(_, h)| *h);
+    let written_in = found
+        .as_ref()
+        .and_then(|(path, _)| snapshot.file(path))
+        .unwrap_or(file);
     if let Some(id) = id {
         shown.push('#');
         shown.push_str(id);
@@ -158,7 +165,7 @@ fn describe_source(ctx: &Ctx, target: &RelPath, id: Option<&str>, fragment: bool
     if fragment {
         out.push_str(" (a fragment: it's published only inside the pages that include it)");
     }
-    if let Some(preview) = first_paragraph(file, &ctx.model, heading.map(|h| h.section)) {
+    if let Some(preview) = first_paragraph(written_in, &ctx.model, heading.map(|h| h.section)) {
         out.push_str("\n\n---\n\n");
         out.push_str(&preview);
     }

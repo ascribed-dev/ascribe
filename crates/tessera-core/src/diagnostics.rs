@@ -128,7 +128,7 @@ pub const LINK_ID_MISSING: DiagnosticSlug = DiagnosticSlug("link-id-missing");
 /// `ASC038`, error, file level: SPEC §8.2, "Links | Target is a fragment".
 pub const LINK_TO_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-to-fragment");
 
-/// `ASC039`, error, page level: SPEC §8.2, "Links | Target id exists only inside a fragment the target page includes (page level)".
+/// `ASC039`, retired: a link can name a heading from a fragment the target page includes (SPEC §4.2).
 pub const LINK_ID_IN_FRAGMENT: DiagnosticSlug = DiagnosticSlug("link-id-in-fragment");
 
 /// `ASC040`, error, page level: SPEC §8.2, "Links | Target id is removed by a build (page level, per build)".

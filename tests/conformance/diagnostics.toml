@@ -457,9 +457,8 @@ slug = "link-id-in-fragment"
 severity = "error"
 level = "page"
 spec = "4.2"
-row = "Links | Target id exists only inside a fragment the target page includes (page level)"
 message = "`{id}` is a heading in the fragment `{fragment}`, not in `{path}` itself; link to a page, not to an id that exists only inside a fragment"
-fix = "Link to the page without the `#id`, or to a heading the page itself contains."
+retired = "A link can name a heading from a fragment the target page includes (SPEC §4.2), so this is no longer an error. A heading a build removes is `link-id-removed`."
 
 [[diagnostic]]
 code = "ASC040"

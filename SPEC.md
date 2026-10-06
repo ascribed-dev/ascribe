@@ -373,7 +373,7 @@ Transcludes a file or a heading's section into the current document.
 - Bindings are decided in the file where a directive is written. With `{heading=false}`, a heading-bound directive under the omitted heading, such as `@available`, still describes the rest of the included section, as it does in the fragment.
 - **Relative paths resolve from the file they're written in.** Every piece of content keeps its source file. Link destinations, image sources, and nested include paths inside a fragment resolve against the fragment's location, not the including page's. A fragment that links to `keys.md` means the `keys.md` next to the fragment, wherever it's included.
 - **Ids are checked on the expanded page.** Headings and `@id`s in included content become ids of the including page, and every id on a page MUST be unique after expansion. Including the same fragment twice on one page, or including a fragment whose ids collide with the page's own, is an error reported at the include site (§8.1).
-- **Links target pages, not fragments.** A fragment isn't published on its own, so a link to a fragment file is an error. A page's linkable ids are its own source ids (§5.5), not those of the fragments it includes: a link naming an id that exists only inside an included fragment is an error, and processors name the fragment when they report it. Link to the page that includes it.
+- **Links target pages, not fragments.** A fragment isn't published on its own, so a link to a fragment file is an error. Link to the page that includes it instead: a page's linkable ids are its own source ids (§5.5) and those of the headings its includes bring in, so a link to `setup.md#prerequisites` works when `prerequisites` is a heading in a fragment `setup.md` includes. Like any heading, one from a fragment can be removed by a build, and a link to it is then an error in that build (§9.3).
 
 ### 4.3 `@variant`
 
@@ -643,7 +643,7 @@ Links are CommonMark links. Their destinations are **file paths**.
 See [](keys.md#rotate-keys).
 ```
 
-- **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading in the target file by its source id; the compiled link points at that heading's page id (§5.5). Only the target file's own headings have source ids there; headings it includes from fragments don't (§4.2).
+- **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading of the target page by its source id: one of the target file's own headings, or one that a fragment it includes brings in (§4.2). The compiled link points at that heading's page id (§5.5).
 - The target file, and the id if present, MUST exist. A destination that is only `#id` names a heading in the file it's written in; in a fragment, that's a heading of the fragment itself, and the compiled link points at that heading's page id on each page that includes the fragment. In each build, the target page MUST also be published: a link to a page the build drops (§9.3) is an error in that build. To link to such a page from shared content, put the link in a `@variant` arm that the same build removes.
 - **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2).
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
@@ -865,7 +865,6 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |
 | Links | Target is a fragment | Error |
-| Links | Target id exists only inside a fragment the target page includes (page level) | Error |
 | Links | Target id is removed by a build (page level, per build) | Error |
 | Links | Target page isn't published by a build (page level, per build) | Error |
 | Links | Destination is a route rather than a file path | Warning |
@@ -992,6 +991,7 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 
 - A page begins with its title as a level-1 heading, then its page-level availability line, if it has one. Its other frontmatter isn't included.
 - Raw HTML in the source keeps its text and loses its tags, so `<kbd>Ctrl</kbd>` becomes `Ctrl`. Comments, and the contents of `<script>` and `<style>`, are dropped.
+- An inline `<br>` becomes a hard line break, or `; ` where the text stays on one line (a table cell or a heading), so code spans either side of it stay apart. Nothing is added for a `<br>` at the start or end of a cell.
 - An availability line gives each target's label, then its state and the version it begins at, as in the element library (§9.7): `Self-managed (preview, 3.4+)`, `Self-managed (GA, 3.3+)`, or, for a history, `Self-managed (preview 3.3, GA 3.5, deprecated 4.0)`. Targets are separated by `; `.
 - A dimensional arm's label joins the labels of one attribute's values with ` / `, and several attributes with `, `. A note without a title leads with its type's label alone (`**Tip**`).
 - A widget becomes its plain fallback followed by its content, unless the widget drops its content; its title, primary, and attributes aren't shown.

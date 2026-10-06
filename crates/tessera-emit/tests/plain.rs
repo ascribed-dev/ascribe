@@ -212,6 +212,26 @@ fn block_quotes_tables_and_breaks() {
 }
 
 #[test]
+fn a_br_separates_what_a_cell_holds() {
+    // Code spans either side of a `<br>` stay two code spans (#84).
+    assert_eq!(
+        body("| Messages |\n|---|\n| `one`<br>`two` |\n"),
+        "| Messages |\n| --- |\n| `one`; `two` |\n"
+    );
+    assert_eq!(
+        body("| a |\n|---|\n| x <br/> y<BR /> |\n| <br>z |\n"),
+        "| a |\n| --- |\n| x; y |\n| z |\n"
+    );
+    // In a paragraph it's a line break.
+    assert_eq!(body("a<br>b\n"), "a\\\nb\n");
+}
+
+#[test]
+fn code_spans_that_touch_stay_apart() {
+    assert_eq!(body("`a`<span></span>`b`\n"), "`a` `b`\n");
+}
+
+#[test]
 fn text_is_escaped_so_it_reads_back_the_same() {
     assert_eq!(
         body("Use \\*stars\\* and snake_case and \\[brackets\\].\n"),
