@@ -16,6 +16,7 @@ mod formatting;
 mod fsx;
 mod hover;
 mod links;
+mod log;
 mod nav;
 mod position;
 mod preview;

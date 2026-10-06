@@ -170,7 +170,7 @@ impl Core {
     }
 
     fn log(&self, text: &str) {
-        eprintln!("tessera-lsp: {text}");
+        crate::log::line(format_args!("{text}"));
     }
 
     // -- Startup ------------------------------------------------------------

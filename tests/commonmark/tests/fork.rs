@@ -14,6 +14,9 @@
 //! - `COMMONMARK_VERBOSE=1` prints every failing example.
 //! - `COMMONMARK_WRITE_BASELINE=1` rewrites both baselines from this run.
 
+// A test harness run with `harness = false`: its report is printed.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
+
 use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Arc;

@@ -5,15 +5,28 @@ use std::io::IsTerminal;
 use std::path::PathBuf;
 
 use tessera_check::{LoadError, LocateError, Project};
+use tessera_core::Coded;
 
 use crate::cli::{Color, Global};
 
 /// Why a project couldn't be loaded, ready to report.
+#[derive(Debug, thiserror::Error)]
 pub enum Failure {
     /// No `ascribe.toml` was found, or `--config` names none.
+    #[error(transparent)]
     Config(LocateError),
     /// Loading failed.
+    #[error(transparent)]
     Load(LoadError),
+}
+
+impl Coded for Failure {
+    fn code(&self) -> &'static str {
+        match self {
+            Failure::Config(e) => e.code(),
+            Failure::Load(e) => e.code(),
+        }
+    }
 }
 
 /// Finds the content model (`--config`, or the nearest `ascribe.toml` in the

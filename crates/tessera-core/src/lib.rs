@@ -13,6 +13,7 @@
 //! | [`line_index`] | [`LineIndex`]: byte offsets to lines and UTF-8, UTF-16, or scalar-value columns |
 //! | [`text_edit`] | [`TextEdit`] and [`apply_edits`]: fixes, formatting, refactoring |
 //! | [`issue`] | [`Issue`]: a problem, by registry slug, with its message arguments |
+//! | [`error`] | [`Coded`]: errors a caller can tell apart by a stable code |
 //! | [`diagnostics`] | One [`DiagnosticSlug`] constant per entry of `tests/conformance/diagnostics.toml` |
 //! | [`schema`] | [`DirectiveSchema`], and the built-in schemas of SPEC §4 |
 //! | [`attributes`] | [`parse_attribute_block`]: the attribute-block parser |
@@ -30,6 +31,7 @@ pub mod attributes;
 pub mod availability;
 pub mod consumer;
 pub mod diagnostics;
+pub mod error;
 pub mod issue;
 pub mod line_index;
 pub mod names;
@@ -42,6 +44,7 @@ pub mod text_edit;
 pub use attribute_block::{Attribute, AttributeBlock, AttributeValue, Token};
 pub use attributes::{ParsedAttributes, parse_attribute_block};
 pub use consumer::{AssetPlacement, AssetUse, ConsumerProfile, Router, SlugScope, Slugger};
+pub use error::Coded;
 pub use issue::{Arg, DiagnosticSlug, Fix, Issue, Related};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 pub use path::{

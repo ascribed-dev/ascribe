@@ -1269,6 +1269,7 @@ dependencies = [
  "tessera-lsp",
  "tessera-model",
  "tessera-sources",
+ "thiserror",
 ]
 
 [[package]]

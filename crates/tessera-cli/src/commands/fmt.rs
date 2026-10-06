@@ -20,9 +20,10 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::Args as ClapArgs;
-use tessera_check::{LoadError, Project};
+use tessera_check::{LoadError, LocateError, Project};
+use tessera_core::Coded;
 use tessera_core::diagnostics::MODEL_TOML_SYNTAX;
-use tessera_model::ContentModel;
+use tessera_fmt::FormatFilesError;
 
 use crate::cli::Global;
 use crate::context::locate;
@@ -62,18 +63,67 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
             exit::code(exit::PROBLEMS)
         }
         Ok(_) => exit::code(exit::OK),
-        Err(message) => {
-            let _ = writeln!(err, "error: {message}");
-            exit::code(exit::FAILURE)
+        Err(e) => exit::code(exit::fail(&mut err, &e)),
+    }
+}
+
+/// Why `ascribe fmt` couldn't format.
+#[derive(Debug, thiserror::Error)]
+pub enum FmtError {
+    /// No content model was found.
+    #[error(transparent)]
+    Locate(#[from] LocateError),
+    /// The content model can't be used, worded for `ascribe fmt`: the pages
+    /// aren't read, so a project whose pages have errors can still be
+    /// formatted.
+    #[error(
+        "{} isn't a valid content model ({}); run `ascribe check` for details",
+        config.display(),
+        model_slugs(error).join(", ")
+    )]
+    Model {
+        /// The content model.
+        config: PathBuf,
+        /// Why it can't be used.
+        error: LoadError,
+    },
+    /// A file couldn't be read, written, or formatted.
+    #[error(transparent)]
+    Format(#[from] FormatFilesError),
+}
+
+impl Coded for FmtError {
+    fn code(&self) -> &'static str {
+        match self {
+            FmtError::Locate(e) => e.code(),
+            FmtError::Model { error, .. } => error.code(),
+            FmtError::Format(e) => e.code(),
         }
+    }
+}
+
+/// The slugs of the content model's problems.
+fn model_slugs(error: &LoadError) -> Vec<&str> {
+    match error {
+        LoadError::Model { diagnostics, .. } => {
+            diagnostics.iter().map(|d| d.slug.as_str()).collect()
+        }
+        // The file couldn't be read, or isn't UTF-8: the content model's
+        // syntax error.
+        LoadError::Read { .. } => vec![MODEL_TOML_SYNTAX.as_str()],
     }
 }
 
 /// Formats every file, listing each that changed (or would have), and
 /// returns how many did.
-fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<usize, String> {
-    let config = locate(global).map_err(|e| e.to_string())?;
-    let model = load_model(&config)?;
+fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<usize, FmtError> {
+    let config = locate(global)?;
+    let model = Project::load_model(&config)
+        .map_err(|error| FmtError::Model {
+            config: config.clone(),
+            error,
+        })?
+        .model;
     let verb = if options.check {
         "would reformat"
     } else {
@@ -82,30 +132,7 @@ fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<us
     let mut list = |file: &Path| {
         let _ = writeln!(out, "{verb} {}", file.display());
     };
-    tessera_fmt::format_files(&config, &model, &options.paths, options.check, &mut list)
-        .map(|changed| changed.len())
-        .map_err(|e| e.to_string())
-}
-
-/// The content model, or why it can't be used, as `ascribe fmt` words it:
-/// the pages aren't read, so a project whose pages have errors can still be
-/// formatted.
-fn load_model(config: &Path) -> Result<ContentModel, String> {
-    Project::load_model(config)
-        .map(|loaded| loaded.model)
-        .map_err(|e| {
-            let slugs: Vec<&str> = match &e {
-                LoadError::Model { diagnostics, .. } => {
-                    diagnostics.iter().map(|d| d.slug.as_str()).collect()
-                }
-                // The file couldn't be read, or isn't UTF-8: the content
-                // model's syntax error.
-                LoadError::Read { .. } => vec![MODEL_TOML_SYNTAX.as_str()],
-            };
-            format!(
-                "{} isn't a valid content model ({}); run `ascribe check` for details",
-                config.display(),
-                slugs.join(", ")
-            )
-        })
+    let changed =
+        tessera_fmt::format_files(&config, &model, &options.paths, options.check, &mut list)?;
+    Ok(changed.len())
 }

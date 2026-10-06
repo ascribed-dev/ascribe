@@ -123,6 +123,8 @@ Each command is one call into a library, after the project is loaded. The call t
 
 The language server calls the same code where it does the same job: `tessera_fmt::format` for formatting, and `tessera_diff::compare_builds`, which `diff_project` calls, for review. It checks incrementally, so it calls `check_file` and `PageChecker` instead of `diagnose`, and `crates/tessera-cli/tests/lsp_parity.rs` holds the two to the same diagnostics.
 
+When an entry can't do its work, it returns an error type, never a string. Each error implements `tessera_core::Coded`: its `code()` is a short lowercase identifier (`unknown_build`, `git_not_found`) that names the failure whatever the message says, and an error that wraps another has the inner one's code. `crates/tessera-cli/src/exit.rs` lists every code once, in a test, and turns an error into the exit code the command gives (`2`, for every one). Libraries return errors and don't print: `clippy::print_stdout` and `clippy::print_stderr` are denied workspace-wide, and allowed only in the CLI, the benchmarks, the test harnesses, and the language server's log (`crates/tessera-lsp/src/log.rs`).
+
 ## Two HTML renderers
 
 The site output is Markdown with web components, and two things turn it into HTML:

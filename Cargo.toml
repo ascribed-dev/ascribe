@@ -74,6 +74,12 @@ todo = "warn"
 # Stops new long functions; the threshold is in clippy.toml. Functions that
 # were already longer allow it by name.
 too_many_lines = "warn"
+# Only the binary prints: a library returns what happened and its caller
+# reports it. The crates that print (the CLI, the language server's log, the
+# benchmarks and corpus tools) allow these where they do; tests are exempt
+# through clippy.toml.
+print_stdout = "warn"
+print_stderr = "warn"
 
 # What ships: the binary in the npm packages and the VS Code extension. Link-time
 # optimization across every crate, in one code generation unit, makes it about

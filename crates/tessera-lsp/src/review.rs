@@ -159,9 +159,9 @@ impl ReviewBase {
 pub(crate) fn resolve_base(
     root: &Path,
     requested: Option<&str>,
-) -> Result<(Repository, Base), String> {
-    let repo = Repository::discover(root).map_err(|e| explain(&e))?;
-    let base = repo.base(requested, false).map_err(|e| explain(&e))?;
+) -> Result<(Repository, Base), BaseError> {
+    let repo = Repository::discover(root).map_err(BaseError)?;
+    let base = repo.base(requested, false).map_err(BaseError)?;
     Ok((repo, base))
 }
 
@@ -175,8 +175,8 @@ pub(crate) fn info_of(base: &Base) -> BaseInfo {
 }
 
 /// Reads the project at a resolved base.
-pub(crate) fn read_base(repo: &Repository, base: &Base) -> Result<ReviewBase, String> {
-    let revision = Revision::read(repo, base.compared()).map_err(|e| explain(&e))?;
+pub(crate) fn read_base(repo: &Repository, base: &Base) -> Result<ReviewBase, BaseError> {
+    let revision = Revision::read(repo, base.compared()).map_err(BaseError)?;
     let (project, model_text) = match revision {
         Some(revision) => (Some(revision.project()), revision.model_text),
         None => (None, String::new()),
@@ -188,6 +188,17 @@ pub(crate) fn read_base(repo: &Repository, base: &Base) -> Result<ReviewBase, St
         pages: Mutex::default(),
         changes: Mutex::default(),
     })
+}
+
+/// Why a base can't be set: the comparison's error, worded for the editor.
+#[derive(Debug, thiserror::Error)]
+#[error("{}", explain(.0))]
+pub(crate) struct BaseError(DiffError);
+
+impl tessera_core::Coded for BaseError {
+    fn code(&self) -> &'static str {
+        tessera_core::Coded::code(&self.0)
+    }
 }
 
 /// Why a base can't be set, in the editor's terms: `ascribe diff`'s messages
