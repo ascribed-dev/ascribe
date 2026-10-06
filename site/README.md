@@ -58,7 +58,7 @@ npm test              # after a build
 - `test/nav.test.ts`: every published page is in `src/nav.ts`, and it names nothing else.
 - `test/links.test.ts`: every link and anchor between the built pages lands.
 - `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
-- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): variants switch and the choice holds on the next page; the availability badge on an unreleased page; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
+- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
 
 ## Addresses
 

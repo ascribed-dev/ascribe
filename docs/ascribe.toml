@@ -44,8 +44,8 @@ available = true
 label = "in main, not yet released"
 
 [features.next]
-name = "In main, not yet released"
-available = "ascribe unreleased"
+name = "Ascribe 0.2.0"
+available = "ascribe 0.2.0"
 
 [phrases]
 # The latest release: the workspace version in Cargo.toml, and every
