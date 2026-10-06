@@ -210,6 +210,65 @@ describe.each(ENGINES)("%s", (engine) => {
     });
   });
 
+  describe("light and dark", () => {
+    const LIGHT = "rgb(9, 105, 218)";
+    const DARK = "rgb(68, 147, 248)";
+    const optIn = "<style>:root { color-scheme: light dark; }</style>";
+
+    async function noteColor(
+      body: string,
+      colorScheme: "light" | "dark",
+      scheme?: string,
+    ): Promise<string> {
+      context = await browser.newContext({ colorScheme });
+      const page = await open(context, body + NOTE, { script: false });
+      if (scheme !== undefined) {
+        await page.evaluate(
+          (s) => document.documentElement.setAttribute("data-ascribe-scheme", s),
+          scheme,
+        );
+      }
+      const color = await page
+        .locator("ascribe-note[type=security]")
+        .evaluate((note) => getComputedStyle(note).borderInlineStartColor);
+      await context.close();
+      return color;
+    }
+
+    it("stays light on a page that declares no color-scheme", async () => {
+      expect(await noteColor("", "dark")).toBe(LIGHT);
+    });
+
+    it("follows the system on a page that declares light dark", async () => {
+      expect(await noteColor(optIn, "dark")).toBe(DARK);
+      expect(await noteColor(optIn, "light")).toBe(LIGHT);
+    });
+
+    it("follows data-ascribe-scheme over the system and color-scheme", async () => {
+      expect(await noteColor("", "light", "dark")).toBe(DARK);
+      expect(await noteColor(optIn, "dark", "light")).toBe(LIGHT);
+    });
+
+    it("lets a site's own value win", async () => {
+      const own = "<style>:root { --ascribe-note-color: rgb(1, 2, 3); }</style>";
+      expect(await noteColor(optIn + own, "dark")).toBe("rgb(1, 2, 3)");
+    });
+  });
+
+  describe("glossary terms", () => {
+    it("underlines a term's link with dots, and no other link", async () => {
+      const page = await fresh(
+        '<p><a id="term" href="/g#t" title="A term." data-ascribe-term="t">term</a> <a id="other" href="/x" title="X">other</a></p>',
+        { script: false },
+      );
+      const style = (id: string) =>
+        page.locator(`#${id}`).evaluate((a) => getComputedStyle(a).textDecorationStyle);
+      expect(await style("term")).toBe("dotted");
+      expect(await style("other")).toBe("solid");
+      await context.close();
+    });
+  });
+
   describe("with the script", () => {
     it("registers exactly tabs, tab, and group", async () => {
       const page = await fresh(ALL);
@@ -407,6 +466,16 @@ describe.each(ENGINES)("%s", (engine) => {
 
     it("has no violations without the script", async () => {
       const page = await fresh(ALL, { script: false });
+      expect(await audit(page)).toEqual([]);
+      await context.close();
+    });
+
+    it("has no violations in dark mode", async () => {
+      context = await browser.newContext({ colorScheme: "dark" });
+      const page = await open(
+        context,
+        `<style>:root { color-scheme: light dark; background: #0d1117; color: #e6edf3; }</style>${ALL}`,
+      );
       expect(await audit(page)).toEqual([]);
       await context.close();
     });

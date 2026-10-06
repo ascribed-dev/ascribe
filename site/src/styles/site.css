@@ -1,6 +1,6 @@
 /*
  * The docs site's styles: light and dark, following the system. The element
- * library (@ascribed/elements) is themed through its --ascribe-* properties.
+ * library (@ascribed/elements) follows `color-scheme` on its own.
  */
 
 :root {
@@ -33,43 +33,6 @@
     --accent: #4493f8;
     --accent-surface: #121d2f;
     --code-background: #151b23;
-
-    /* The element library's defaults are light; these are their dark values
-       (issue #94). */
-    --ascribe-border-color: #3d444d;
-    --ascribe-muted-color: #9198a1;
-
-    --ascribe-note-color: #4493f8;
-    --ascribe-note-background: #121d2f;
-    --ascribe-tip-color: #3fb950;
-    --ascribe-tip-background: #12261e;
-    --ascribe-important-color: #ab7df8;
-    --ascribe-important-background: #1f1a33;
-    --ascribe-warning-color: #d29922;
-    --ascribe-warning-background: #272115;
-    --ascribe-caution-color: #f85149;
-    --ascribe-caution-background: #2d1517;
-
-    --ascribe-steps-color: #4493f8;
-    --ascribe-steps-marker-text-color: #0d1117;
-
-    --ascribe-tab-color: #9198a1;
-    --ascribe-tab-active-color: #4493f8;
-    --ascribe-tab-focus-color: #4493f8;
-    --ascribe-tab-hover-background: #151b23;
-
-    --ascribe-state-color: #9198a1;
-    --ascribe-state-background: #212830;
-    --ascribe-state-ga-color: #3fb950;
-    --ascribe-state-ga-background: #12261e;
-    --ascribe-state-preview-color: #ab7df8;
-    --ascribe-state-preview-background: #1f1a33;
-    --ascribe-state-beta-color: #4493f8;
-    --ascribe-state-beta-background: #121d2f;
-    --ascribe-state-deprecated-color: #d29922;
-    --ascribe-state-deprecated-background: #272115;
-    --ascribe-state-removed-color: #f85149;
-    --ascribe-state-removed-background: #2d1517;
   }
 }
 
@@ -395,12 +358,6 @@ pre {
 .page img {
   max-width: 100%;
   height: auto;
-}
-
-/* Glossary links carry the term's definition as their title; nothing else
-   marks them (issue #95). */
-.page a[title] {
-  text-decoration-style: dotted;
 }
 
 .page-footer {

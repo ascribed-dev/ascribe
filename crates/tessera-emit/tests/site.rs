@@ -350,7 +350,7 @@ fn images_carry_their_attributes_and_the_models_defaults() {
 }
 
 #[test]
-fn glossary_links_carry_the_definition_as_their_title() {
+fn glossary_links_carry_the_definition_as_their_title_and_name_the_term() {
     let project = memory_project(
         FULL_MODEL,
         &[
@@ -361,7 +361,7 @@ fn glossary_links_carry_the_definition_as_their_title() {
     let out = strip_frontmatter(&site(&project, "site", "index.md"));
     assert_eq!(
         out,
-        "Keep your [API key](/docs/reference/glossary#api-key \"A secret token that authenticates the Quill agent to Quill Cloud.\") safe.\n"
+        "Keep your [API key](/docs/reference/glossary#api-key \"A secret token that authenticates the Quill agent to Quill Cloud.\")<ascribe-attributes data-ascribe-term=\"api-key\"></ascribe-attributes> safe.\n"
     );
 }
 

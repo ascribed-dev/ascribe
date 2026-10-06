@@ -10,7 +10,7 @@ The site output (SPEC §9.4) is markdown plus custom elements. This contract is 
 | `@available`, badge or filter | [`<ascribe-availability>`](#4-ascribe-availability-and-ascribe-availability-target) with `<ascribe-availability-target>` | CSS only |
 | `@details` | [`<details>`](#5-details) with `<summary>` | Optional CSS |
 | Project widget | [An element named after the widget](#6-project-widgets), and `<ascribe-group>` for groups | The project's own; `<ascribe-group>` is the library's |
-| Glossary term | [An ordinary link](#7-glossary-terms) | None |
+| Glossary term | [An ordinary link](#7-glossary-terms), marked with `data-ascribe-term` | Optional CSS |
 
 A change to this contract changes the site emitter (`crates/tessera-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
 
@@ -222,4 +222,16 @@ A wrapping widget follows §0's layout for elements that wrap markdown; an empty
 
 ## 7. Glossary terms
 
-There's no element for glossary terms. In the site output, an occurrence the glossary links (docs/content/contracts/content-model.md §13) is an ordinary markdown link to the term's `link` target, as a route, with the term's definition as the link title: `[API key](/docs/reference/glossary/#api-key "A secret token that authenticates the Quill agent.")`. Terms without a `link` stay plain text (content-model.md Q7).
+There's no element for glossary terms. In the site output, an occurrence the glossary links (docs/content/contracts/content-model.md §13) is an ordinary markdown link to the term's `link` target, as a route, with the term's definition as the link title, followed directly by an attribute marker (docs/content/contracts/site-render.md §2.3) that gives the `<a>` a `data-ascribe-term` attribute holding the term's id:
+
+```markdown
+[API key](/docs/reference/glossary/#api-key "A secret token that authenticates the Quill agent.")<ascribe-attributes data-ascribe-term="api-key"></ascribe-attributes>
+```
+
+```html
+<a href="/docs/reference/glossary/#api-key" title="A secret token that authenticates the Quill agent." data-ascribe-term="api-key">API key</a>
+```
+
+Terms without a `link` stay plain text (content-model.md Q7).
+
+**Rendering:** a link, which the library's CSS underlines with dots (`a[data-ascribe-term]`). A site restyles it, or shows the definition as a popover, by selecting on the attribute.

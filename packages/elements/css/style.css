@@ -4,6 +4,12 @@
  * Everything here works without the script; only <ascribe-tabs> adds
  * behavior. Theme it by setting the --ascribe-* custom properties (listed in
  * README.md) on :root or any ancestor.
+ *
+ * The colors are light or dark as the page is: dark where the page's
+ * `color-scheme` is `dark`, or `light dark` with the reader's system in dark
+ * mode, and light otherwise, including on a page that declares no
+ * `color-scheme`. A page whose own colors don't follow its `color-scheme`
+ * sets `data-ascribe-scheme="light"` or `"dark"` on its root element.
  */
 
 :root {
@@ -60,6 +66,59 @@
   --ascribe-state-deprecated-background: #fff8c5;
   --ascribe-state-removed-color: #cf222e;
   --ascribe-state-removed-background: #ffebe9;
+}
+
+/* The same colors, light and dark. `light-dark()` picks by the element's
+   `color-scheme`, which it inherits from the page; an engine without
+   `light-dark()` keeps the light colors above. */
+@supports (color: light-dark(#000, #fff)) {
+  :root {
+    --ascribe-border-color: light-dark(#d0d7de, #3d444d);
+    --ascribe-muted-color: light-dark(#57606a, #9198a1);
+
+    --ascribe-note-color: light-dark(#0969da, #4493f8);
+    --ascribe-note-background: light-dark(#ddf4ff, #121d2f);
+    --ascribe-tip-color: light-dark(#1a7f37, #3fb950);
+    --ascribe-tip-background: light-dark(#dafbe1, #12261e);
+    --ascribe-important-color: light-dark(#8250df, #ab7df8);
+    --ascribe-important-background: light-dark(#fbefff, #1f1a33);
+    --ascribe-warning-color: light-dark(#9a6700, #d29922);
+    --ascribe-warning-background: light-dark(#fff8c5, #272115);
+    --ascribe-caution-color: light-dark(#cf222e, #f85149);
+    --ascribe-caution-background: light-dark(#ffebe9, #2d1517);
+
+    --ascribe-steps-color: light-dark(#0969da, #4493f8);
+    --ascribe-steps-marker-text-color: light-dark(#ffffff, #0d1117);
+
+    --ascribe-tab-color: light-dark(#57606a, #9198a1);
+    --ascribe-tab-active-color: light-dark(#0969da, #4493f8);
+    --ascribe-tab-focus-color: light-dark(#0969da, #4493f8);
+    --ascribe-tab-hover-background: light-dark(#f6f8fa, #151b23);
+
+    --ascribe-state-color: light-dark(#57606a, #9198a1);
+    --ascribe-state-background: light-dark(#eaeef2, #212830);
+    --ascribe-state-ga-color: light-dark(#1a7f37, #3fb950);
+    --ascribe-state-ga-background: light-dark(#dafbe1, #12261e);
+    --ascribe-state-preview-color: light-dark(#8250df, #ab7df8);
+    --ascribe-state-preview-background: light-dark(#fbefff, #1f1a33);
+    --ascribe-state-beta-color: light-dark(#0969da, #4493f8);
+    --ascribe-state-beta-background: light-dark(#ddf4ff, #121d2f);
+    --ascribe-state-deprecated-color: light-dark(#9a6700, #d29922);
+    --ascribe-state-deprecated-background: light-dark(#fff8c5, #272115);
+    --ascribe-state-removed-color: light-dark(#cf222e, #f85149);
+    --ascribe-state-removed-background: light-dark(#ffebe9, #2d1517);
+  }
+
+  /* A page that says which it is. */
+  :root[data-ascribe-scheme="light"]
+    :is(ascribe-note, ascribe-steps, ascribe-tabs, ascribe-availability) {
+    color-scheme: light;
+  }
+
+  :root[data-ascribe-scheme="dark"]
+    :is(ascribe-note, ascribe-steps, ascribe-tabs, ascribe-availability) {
+    color-scheme: dark;
+  }
 }
 
 /* <ascribe-note> ---------------------------------------------------------- */
@@ -299,4 +358,12 @@ ascribe-availability-target[states$=" removed"] {
 
 ascribe-group {
   display: block;
+}
+
+/* Glossary terms ---------------------------------------------------------- */
+
+/* A link to a glossary term, whose title is the term's definition. */
+a[data-ascribe-term] {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
 }
