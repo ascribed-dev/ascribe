@@ -27,13 +27,20 @@ function run(command: string, args: string[], env: NodeJS.ProcessEnv = process.e
 }
 
 run("cargo", ["build", "-p", "tessera-cli", "--locked"]);
+// Where cargo put it: `target/` unless CARGO_TARGET_DIR or `build.target-dir`
+// says otherwise.
+const metadata = spawnSync("cargo", ["metadata", "--format-version", "1", "--no-deps"], {
+  cwd: root,
+  encoding: "utf8",
+  maxBuffer: 64 * 1024 * 1024,
+});
+if (metadata.status !== 0) {
+  process.stderr.write(metadata.stderr);
+  process.exit(metadata.status ?? 1);
+}
+const targetDir = (JSON.parse(metadata.stdout) as { target_directory: string }).target_directory;
 run("pnpm", ["--filter", "@ascribed/cli", "stage-native", target], {
   ...process.env,
-  [`ASCRIBE_BIN_${target.replace("-", "_").toUpperCase()}`]: path.join(
-    root,
-    "target",
-    "debug",
-    exe,
-  ),
+  [`ASCRIBE_BIN_${target.replace("-", "_").toUpperCase()}`]: path.join(targetDir, "debug", exe),
 });
 run("pnpm", ["-r", "build"]);

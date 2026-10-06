@@ -12,13 +12,13 @@ cargo test --workspace --locked
 pnpm -r test
 ```
 
-To build every JS package, as CI does before it type-checks and tests them:
+To build every JS package, as CI's Astro job does:
 
 ```sh
 pnpm build:all
 ```
 
-It builds the `ascribe` binary (`cargo build -p tessera-cli`), stages it into `@ascribed/cli`'s package for your platform, then runs `pnpm -r build`, which builds the packages in dependency order. `pnpm -r build` alone stops at `examples/astro-site`, whose build runs the binary.
+It builds the `ascribe` binary (`cargo build -p tessera-cli`), stages it into `@ascribed/cli`'s package for your platform, then runs `pnpm -r build`, which builds the packages in dependency order. `pnpm -r build` alone stops at `examples/astro-site`, whose build runs the binary. It finds the binary wherever Cargo puts it (`CARGO_TARGET_DIR` included), and works on the platforms `@ascribed/cli` ships for: macOS on Apple silicon, Linux on x64 and arm64, and Windows on x64.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) describes how the code is put together, and each crate and package has a README. [packages/vscode/DEVELOPMENT.md](packages/vscode/DEVELOPMENT.md) covers the extension.
 

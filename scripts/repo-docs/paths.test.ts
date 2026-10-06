@@ -18,7 +18,14 @@ function files(): string[] {
   const crates = readdirSync(path.join(root, "crates"))
     .map((name) => `crates/${name}/README.md`)
     .filter((file) => existsSync(path.join(root, file)));
-  return ["ARCHITECTURE.md", "AGENTS.md", "CONTRIBUTING.md", "README.md", ...crates];
+  return [
+    "ARCHITECTURE.md",
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "tests/zod/README.md",
+    ...crates,
+  ];
 }
 
 /** The text outside fenced code blocks, and the lines of the shell blocks. */
@@ -61,6 +68,9 @@ function code(markdown: string): string[] {
   return [...Array.from(prose.matchAll(/`([^`\n]+)`/g), (m) => m[1] ?? ""), ...shell];
 }
 
+/** Paths the files name that aren't in this repository: a project's output. */
+const elsewhere = ["_ascribe/", ".ascribe/"];
+
 /**
  * Where a code span that reads as a path in this repository is, from `dir`:
  * next to the file if it's there, else at the root. `undefined` when it
@@ -72,7 +82,15 @@ function pathIn(span: string, dir: string): string | undefined {
   if (!/^[\w.@-]+(\/[\w.@-]+)*\/?$/.test(span) || !span.includes("/")) return undefined;
   const first = span.split("/")[0] ?? "";
   const bases = [dir, root].filter((at) => existsSync(path.join(at, first)));
-  if (bases.length === 0) return undefined;
+  // A span that names a file, with an extension, under a folder that's
+  // nowhere is a typo, unless it's in a project's output. (A first segment
+  // with a dot, such as `example.com`, is a host, not a folder.)
+  if (bases.length === 0) {
+    const file = /\.\w+$/.test(span) && !first.includes(".");
+    return file && !elsewhere.some((prefix) => span.startsWith(prefix))
+      ? path.join(dir, span)
+      : undefined;
+  }
   return (
     bases.map((at) => path.join(at, span)).find((at) => existsSync(at)) ?? path.join(dir, span)
   );

@@ -32,7 +32,7 @@ let resolved = project.resolve_build(&build, &router);
 
 - **Read files only through `FileSystem`.** Nothing else in this crate touches the disk, outside tests. A crate that reads a project's files any other way has to repeat the boundary, case, and link rules, and has got them wrong before.
 - **The index is a pure function of one file.** `index_file` knows nothing about other files or the disk, so it can be cached until the file or the model changes. What depends on other files is in `Project`.
-- **One implementation of each rule.** References and snippets are decided in `references.rs` and `snippet/`, and every tool calls them, so `ascribe check`, the build, and the language server can't disagree.
+- **One implementation of each rule.** References and snippets are decided in `src/references.rs` and `src/snippet/`, and every tool calls them, so `ascribe check`, the build, and the language server can't disagree.
 - **Report nothing.** Problems are recorded as `Issue`s, on the project (`Project::problems`) or on a resolved page (`ResolvedPage::problems`), for the checks to word and report.
 - **Incremental equals from scratch.** After any sequence of changes, an `IncrementalProject`'s snapshot equals a `Project::load_with_ids` of the same files, and the file ids mean what they mean to `tessera_check::Project`.
 

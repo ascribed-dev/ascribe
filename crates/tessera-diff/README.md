@@ -11,7 +11,7 @@ What changed between a git revision and the working tree, as readers will see it
 | `src/words.rs` | The word-level diff inside changed prose |
 | `src/compare.rs` | Comparing builds page by page, the files a change comes from (`because`), and the report's types |
 | `src/drift.rs` | `drift`: the snippets whose code differs between a commit and the working tree, read only from the files `git diff` lists, and for each page that shows one whether the page changed apart from it (through `compare.rs`); and the snippets that resolved at the base and don't now |
-| `src/html/` | The static report (`--format html`): rendering each changed page now and at the base with anchors, inlining its images, and writing one HTML file around the report's data. `report.js` and `report.css` are built from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`; don't edit them by hand, and that package's `test/embedded.test.ts` fails while they're out of date. |
+| `src/html/` | The static report (`--format html`): rendering each changed page now and at the base with anchors, inlining its images, and writing one HTML file around the report's data. `report.js` and `report.css` are built from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`; don't edit them by hand, and `packages/review/test/embedded.test.ts` fails while they're out of date. |
 
 The binary links no git library and no HTTP client: `git` is run as a process with a fixed argument list, never through a shell, so nothing else in Ascribe depends on `git` being present. Nothing here is used by the language server.
 

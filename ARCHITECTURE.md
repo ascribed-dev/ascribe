@@ -45,10 +45,10 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | `tests/commonmark` | The CommonMark spec's examples, run against the fork and the parser. |
 | `tests/corpora` | Real documentation sets, the 3,000-page synthetic project (`tests/corpora/synthetic`), and the performance benchmarks with their baselines. |
 | `tests/render` | The site-render fixtures both HTML renderers must pass. |
-| `tests/zod` | Type-checks the generated Zod schemas and validates pages with them. |
+| [`tests/zod`](tests/zod) | Type-checks the generated Zod schemas and validates pages with them. |
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
-| `scripts/` | Release scripts (`scripts/release`), the review and sources fixtures, a check of the READMEs' links, and `build-all.ts`. |
+| `scripts/` | Release scripts (`scripts/release`), the review and sources fixtures, the checks that the READMEs link to real docs pages (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
 | `project-docs/` | Plans. They describe what was intended, not necessarily what is. |
 
 ## How the crates depend on each other
@@ -66,7 +66,7 @@ tessera-sources    core, model, resolve
 tessera-emit       core, syntax, model, resolve
 tessera-diff       core, syntax, model, resolve, emit
 tessera-lsp        core, syntax, model, resolve, check, emit, diff, fmt
-tessera-cli        everything above but comrak-tessera
+tessera-cli        core, model, resolve, check, emit, diff, sources, fmt, lsp
 ```
 
 There are no cycles. Every crate's `Cargo.toml` takes our crates from `[workspace.dependencies]` in the root [Cargo.toml](Cargo.toml).
@@ -102,8 +102,8 @@ The steps every surface shares, in order:
 ## Loading a project, and reading files
 
 - **Finding `ascribe.toml`.** The commands look in `--config` or the nearest parent (`tessera_check::Project::find_config`, called from `crates/tessera-cli/src/context.rs`). The language server looks from its workspace folders (`find_config` in `crates/tessera-lsp/src/core.rs`). `ascribe fmt` has its own (`crates/tessera-cli/src/commands/fmt.rs`).
-- **Loading.** `tessera_check::Project::load` reads the content model (`tessera_model::load`) and the sources, and is what `check` reports on. The commands that resolve builds (`build`, `diff`, `drift`, `sources`) then build a `tessera_resolve::Project` over the same files. The language server loads with `tessera_model::load_str_in` and `tessera_resolve::IncrementalProject::load`, since it holds unsaved text and updates in place.
-- **Reading.** `tessera_resolve::FileSystem` (`crates/tessera-resolve/src/fs.rs`) is where a project's files are read: it knows the content root, which files are sources, the boundary a file must stay inside, exact-case names, and symbolic links. `DiskFs` reads a real project, `MemoryFs` holds one for tests, and `tessera_diff::GitFs` reads one at a commit. Some reads don't go through it: the content model's (`crates/tessera-model/src/lib.rs`), the output directory's (`crates/tessera-emit/src/store.rs`), the copies of sources in other repositories (`crates/tessera-sources/src/copies.rs`), and `fmt`'s (`crates/tessera-cli/src/commands/fmt.rs`).
+- **Loading.** `tessera_check::Project::load` reads the content model (`tessera_model::load`) and the sources, and is what `check` reports on. The page-level checks index it again as a `tessera_resolve::Project` (`crates/tessera-check/src/page/bridge.rs`), unless the caller passes its own index (`PageChecker::with_index`). The commands that resolve builds (`build`, `diff`, `drift`, `sources`) build their own `tessera_resolve::Project` over the same files as well, so they index the project twice. The language server loads with `tessera_model::load_str_in` and `tessera_resolve::IncrementalProject::load`, since it holds unsaved text and updates in place.
+- **Reading.** `tessera_resolve::FileSystem` (`crates/tessera-resolve/src/fs.rs`) is where a project's files are read: it knows the content root, which files are sources, the boundary a file must stay inside, exact-case names, and symbolic links. `DiskFs` reads a real project, `MemoryFs` holds one for tests, and `tessera_diff::GitFs` reads one at a commit. Many reads don't go through it; [the inventory](project-docs/optimization/inventory.md#2-file-reading-has-a-home-that-isnt-used) counts them. Examples: the content model's (`crates/tessera-model/src/lib.rs`), `ascribe.lock`'s (`crates/tessera-check/src/project.rs`, `crates/tessera-sources/src/lib.rs`), the output directory's (`crates/tessera-emit/src/store.rs`), the copies of sources in other repositories (`crates/tessera-sources/src/copies.rs`), `fmt`'s (`crates/tessera-cli/src/commands/fmt.rs`), the language server's walk when files change (`crates/tessera-lsp/src/core.rs`), and the images the HTML report inlines (`DiskAssets` in `crates/tessera-diff/src/html/mod.rs`), which skips the boundary, case, and link rules.
 - **Git.** `tessera-diff` (`crates/tessera-diff/src/git.rs`) and `tessera-sources` (`crates/tessera-sources/src/remote.rs`) run the `git` executable with a fixed argument list. No git or HTTP library is linked.
 
 ## Two HTML renderers
