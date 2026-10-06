@@ -9,6 +9,8 @@
 # reports on examples/quill every time. It runs on its own, not from ci.yml:
 # a report isn't a check, and with Ascribe from npm it can't pass before a
 # canary has what a pull request's docs use, so it doesn't hold up a merge.
+# A failure while the canary lacks what the pull request ships only means
+# "wait", so it doesn't fail the job (scripts/release/canary.ts).
 # The region's end tag is indented so a formatter doesn't put a blank line
 # before it, which the page would show (issue #107).
 # :snippet-start: job
@@ -44,10 +46,13 @@ jobs:
       - run: npm install --global @ascribed/cli
       - run: npm install --global @ascribed/cli@next # :remove:
       - name: Write the report
+        id: report # :remove:
+        continue-on-error: true # :remove:
         run: >
           ascribe diff --config docs
           --base "origin/$GITHUB_BASE_REF" --format html > review.html
       - id: upload
+        if: steps.report.outcome == 'success' # :remove:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: review.html
@@ -56,6 +61,7 @@ jobs:
           archive: false
           if-no-files-found: error # :remove:
       - name: Link the report from the summary
+        if: steps.report.outcome == 'success' # :remove:
         env:
           URL: ${{ steps.upload.outputs.artifact-url }}
         run: |
@@ -67,6 +73,11 @@ jobs:
             echo
             echo "[Open the review report]($URL)"
           } >> "$GITHUB_STEP_SUMMARY"
+      # :remove-start:
+      - name: Fail, unless it waits for a canary
+        if: steps.report.outcome != 'success'
+        run: node scripts/release/canary.ts failed
+      # :remove-end:
       # :snippet-end:
 
   # Whether the pull request changes docs/, or a file a page takes an example
@@ -103,10 +114,13 @@ jobs:
           node-version-file: .nvmrc
       - run: npm install --global @ascribed/cli@next
       - name: Write the report
+        id: report
+        continue-on-error: true
         run: >
           ascribe diff --config examples/quill
           --base "origin/$GITHUB_BASE_REF" --format html > quill-review.html
       - id: upload
+        if: steps.report.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: quill-review.html
@@ -114,6 +128,7 @@ jobs:
           archive: false
           if-no-files-found: error
       - name: Link the report from the summary
+        if: steps.report.outcome == 'success'
         env:
           URL: ${{ steps.upload.outputs.artifact-url }}
         run: |
@@ -125,3 +140,6 @@ jobs:
             echo
             echo "[Open the review report]($URL): every changed page of examples/quill, rendered with its changes marked."
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail, unless it waits for a canary
+        if: steps.report.outcome != 'success'
+        run: node scripts/release/canary.ts failed
