@@ -80,6 +80,7 @@ The features `crates/tessera-lsp/src/server.rs` handles. Each new form is consid
 An element, an attribute, a class, or the order of what the `site` output writes.
 
 - [ ] The site output, in `crates/tessera-emit/src/site/`, and its contract in `docs/content/contracts/site-render.md`.
+- [ ] A new or renamed element, attribute, class, or id: in `crates/tessera-core/src/names.rs`, its one home, then each package's generated `names.ts` (`packages/astro/src/names.ts`, `packages/vscode/src/names.ts`), rewritten by `ASCRIBE_BLESS=1 cargo test -p tessera-core --test names`. Code uses the constant, never the literal; that test fails on a literal elsewhere, and on a stylesheet selecting a name that isn't declared.
 - [ ] Ascribe's own renderer, `render_site_html` in `crates/tessera-emit/src/render/`, which the page preview and the HTML report use.
 - [ ] The fixtures in `tests/render/`, which both renderers must pass: ours, and the site's through `@ascribed/astro`.
 - [ ] Source anchors in review mode (`crates/tessera-emit/src/site/anchor.rs`, tested by `crates/tessera-emit/tests/site_anchors.rs`): the page with anchors is the page without them, plus the anchors.

@@ -9,7 +9,7 @@
 //! definition as the title and a marker naming the term (element contract
 //! §7).
 
-use tessera_core::{AssetUse, AttributeValue};
+use tessera_core::{AssetUse, AttributeValue, names};
 use tessera_resolve::{LinkTarget, RefKind, ResolvedBlock, ResolvedLink};
 use tessera_syntax::{Image, Inline, InlineKind, Link, LinkForm};
 
@@ -176,7 +176,7 @@ fn link_inline(
     // the `<a>` its attributes.
     if let Some((id, _)) = term {
         st.out
-            .push_str(&marker(&[("data-ascribe-term".to_owned(), id)]));
+            .push_str(&marker(&[(names::DATA_TERM.to_owned(), id)]));
     }
     st.line_start = false;
 }

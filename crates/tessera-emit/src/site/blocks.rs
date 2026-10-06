@@ -12,6 +12,7 @@
 //! ([`super::anchor`]).
 
 use tessera_core::availability::{Detail, Entry, parse_availability};
+use tessera_core::names;
 use tessera_core::{Attributes, DefaultValue};
 use tessera_model::ContentModel;
 use tessera_resolve::{ResolvedArm, ResolvedBlock, ResolvedKind};
@@ -438,7 +439,7 @@ impl Renderer<'_> {
             "note" => vec![self.element(spanning(), self.note(line, &texts(bound)))],
             "steps" => vec![self.element(
                 spanning(),
-                wrap("ascribe-steps", &Attrs::new(), &texts(bound)),
+                wrap(names::ELEMENT_STEPS, &Attrs::new(), &texts(bound)),
             )],
             "details" => {
                 vec![self.element(spanning(), self.details(directive, line, &texts(bound)))]
@@ -507,7 +508,7 @@ impl Renderer<'_> {
             .with("type", kind)
             .with("label", label)
             .with_opt("heading", self.title_text(line));
-        wrap("ascribe-note", &attrs, content)
+        wrap(names::ELEMENT_NOTE, &attrs, content)
     }
 
     /// `<details>` with a `<summary>` (contract §5): the title's inline
@@ -621,7 +622,7 @@ impl Renderer<'_> {
             })
             .collect();
         wrap(
-            "ascribe-group",
+            names::ELEMENT_GROUP,
             &Attrs::new().with("widget", name),
             &elements,
         )
@@ -657,12 +658,12 @@ impl Renderer<'_> {
                 let attrs = Attrs::new()
                     .with_opt("value", value)
                     .with_opt("label", label);
-                let text = wrap("ascribe-tab", &attrs, &self.blocks(&arm.children));
+                let text = wrap(names::ELEMENT_TAB, &attrs, &self.blocks(&arm.children));
                 self.arm_element(block, arm, text)
             })
             .collect();
         let attrs = Attrs::new().with_opt("sync", sync);
-        wrap("ascribe-tabs", &attrs, &tabs)
+        wrap(names::ELEMENT_TABS, &attrs, &tabs)
     }
 }
 
@@ -683,17 +684,20 @@ pub(crate) fn availability_element(model: &ContentModel, scope: &str, entries: &
                 );
             format!(
                 "{}{}{}",
-                open("ascribe-availability-target", &attrs),
+                open(names::ELEMENT_AVAILABILITY_TARGET, &attrs),
                 super::element::escape(&view.text),
-                close("ascribe-availability-target")
+                close(names::ELEMENT_AVAILABILITY_TARGET)
             )
         })
         .collect();
     format!(
         "{}\n{}\n{}",
-        open("ascribe-availability", &Attrs::new().with("scope", scope)),
+        open(
+            names::ELEMENT_AVAILABILITY,
+            &Attrs::new().with("scope", scope)
+        ),
         targets.join("; "),
-        close("ascribe-availability")
+        close(names::ELEMENT_AVAILABILITY)
     )
 }
 

@@ -8,6 +8,9 @@
   // With one content type, the generated `schema` is that type's schema.
   "ignoreIssues": {
     "tests/zod/generated/*.ts": ["duplicates"],
+    // Generated whole from crates/tessera-core/src/names.rs: every package
+    // gets every name, whichever it uses.
+    "packages/*/src/names.ts": ["exports"],
   },
   "workspaces": {
     ".": {

@@ -12,6 +12,7 @@
 // mutates the tree, `satteri.ts` queues commands).
 
 import { find, html } from "property-information";
+import { COMMENT_ANCHOR, DATA_SOURCE, DATA_VIA, ELEMENT_ATTRIBUTES } from "./names.js";
 
 /** The parts of a hast node the rules read. Both processors' trees fit it. */
 export interface HastNode {
@@ -41,8 +42,8 @@ export interface Edit {
   trim: { node: HastNode; value: string }[];
 }
 
-const OPEN = /^<ascribe-attributes((?: [a-z][a-z0-9-]*="[^"\r\n]*")*)>$/;
-const CLOSE = "</ascribe-attributes>";
+const OPEN = new RegExp(`^<${ELEMENT_ATTRIBUTES}((?: [a-z][a-z0-9-]*="[^"\\r\\n]*")*)>$`);
+const CLOSE = `</${ELEMENT_ATTRIBUTES}>`;
 const ATTRIBUTE = / ([a-z][a-z0-9-]*)="([^"]*)"/g;
 const HEADING = /^h[1-6]$/;
 
@@ -157,7 +158,7 @@ export interface AnchorEdit {
   replace?: { node: HastNode; value: string };
 }
 
-const ANCHOR = /^<!--ascribe-anchor((?: [a-z][a-z0-9-]*="[^"\r\n]*")+)-->\s*$/;
+const ANCHOR = new RegExp(`^<!--${COMMENT_ANCHOR}((?: [a-z][a-z0-9-]*="[^"\\r\\n]*")+)-->\\s*$`);
 
 /** Finds every source anchor comment in `root`, and what it applies to. */
 export function findAnchors(root: HastNode): AnchorEdit[] {
@@ -257,8 +258,8 @@ function parseAnchor(text: string): Anchor | undefined {
 }
 
 function anchorAttributes(source: string, via: string | undefined): Attribute[] {
-  const attributes: Attribute[] = [["data-ascribe-source", source]];
-  if (via !== undefined) attributes.push(["data-ascribe-via", via]);
+  const attributes: Attribute[] = [[DATA_SOURCE, source]];
+  if (via !== undefined) attributes.push([DATA_VIA, via]);
   return attributes;
 }
 

@@ -62,6 +62,16 @@ import {
   threadsNotice,
   unsentText,
 } from "./text.js";
+import {
+  CLASS_LABEL,
+  CLASS_LABEL_BEFORE,
+  CLASS_MARKS,
+  DATA_REVIEW,
+  DATA_SCHEME,
+  DATA_SHOW,
+  DATA_SOURCE,
+  DATA_VIA,
+} from "../names.js";
 
 type ServerHelpers = Parameters<NonNullable<Parameters<typeof defineToolbarApp>[0]["init"]>>[2];
 type AppEvents = Parameters<NonNullable<Parameters<typeof defineToolbarApp>[0]["init"]>>[1];
@@ -184,7 +194,7 @@ class ReviewApp {
     this.live.setAttribute("role", "status");
     this.live.setAttribute("aria-live", "polite");
     canvas.append(style, this.panel, this.live);
-    this.siteScheme = doc.documentElement.getAttribute("data-ascribe-scheme");
+    this.siteScheme = doc.documentElement.getAttribute(DATA_SCHEME);
     const win = doc.defaultView;
     win
       ?.matchMedia?.("(prefers-color-scheme: dark)")
@@ -198,7 +208,7 @@ class ReviewApp {
       this.restyleTimer = setTimeout(() => this.applyScheme(), 400);
     };
     const observer = new MutationObserver((records) => {
-      if (records.some((r) => r.attributeName !== "data-ascribe-scheme")) restyle();
+      if (records.some((r) => r.attributeName !== DATA_SCHEME)) restyle();
     });
     for (const target of [doc.documentElement, doc.body]) {
       observer.observe(target, { attributes: true });
@@ -400,10 +410,10 @@ class ReviewApp {
   /** Each mark's label opens its block's source. */
   private linkLabels(): void {
     for (const mark of this.marks) {
-      const source = mark.element.getAttribute("data-ascribe-source");
+      const source = mark.element.getAttribute(DATA_SOURCE);
       const label = labelOf(mark.element);
       if (source === null || !label) continue;
-      label.title = `Open ${describeSource(source, mark.element.getAttribute("data-ascribe-via"))}`;
+      label.title = `Open ${describeSource(source, mark.element.getAttribute(DATA_VIA))}`;
       label.tabIndex = 0;
       label.setAttribute("role", "link");
       const open = (event: Event) => {
@@ -421,7 +431,7 @@ class ReviewApp {
   private ensureStyle(): void {
     if (this.style?.isConnected) return;
     this.style = this.doc.createElement("style");
-    this.style.setAttribute("data-ascribe-review", "");
+    this.style.setAttribute(DATA_REVIEW, "");
     this.style.textContent = marksCss;
     this.doc.head.append(this.style);
   }
@@ -432,8 +442,8 @@ class ReviewApp {
     this.stopSources = undefined;
     if (this.root) {
       clearMarks(this.root);
-      this.root.classList.remove("ascribe-marks");
-      this.root.removeAttribute("data-ascribe-show");
+      this.root.classList.remove(CLASS_MARKS);
+      this.root.removeAttribute(DATA_SHOW);
     }
     this.root = undefined;
     this.marked = undefined;
@@ -615,9 +625,8 @@ class ReviewApp {
     if (this.panel.dataset["scheme"] !== scheme) this.panel.dataset["scheme"] = scheme;
     if (site !== null) return;
     const html = this.doc.documentElement;
-    if (!this.root) html.removeAttribute("data-ascribe-scheme");
-    else if (html.getAttribute("data-ascribe-scheme") !== scheme)
-      html.setAttribute("data-ascribe-scheme", scheme);
+    if (!this.root) html.removeAttribute(DATA_SCHEME);
+    else if (html.getAttribute(DATA_SCHEME) !== scheme) html.setAttribute(DATA_SCHEME, scheme);
   }
 
   /** Keeps the panel clear of the column of threads, over the page beside it. */
@@ -849,7 +858,7 @@ class ReviewApp {
       this.el(
         "span",
         "",
-        "A layout or component is probably dropping the data-ascribe-source attributes, so nothing can be placed on the page. Everything is listed here instead.",
+        `A layout or component is probably dropping the ${DATA_SOURCE} attributes, so nothing can be placed on the page. Everything is listed here instead.`,
       ),
     );
     if (changes.length > 0) {
@@ -986,10 +995,10 @@ class ReviewApp {
 
 /** The label the marks put on a block: inside it at its start, or just before it. */
 function labelOf(element: HTMLElement): HTMLElement | undefined {
-  const inside = element.querySelector<HTMLElement>(":scope > .ascribe-label");
+  const inside = element.querySelector<HTMLElement>(`:scope > .${CLASS_LABEL}`);
   if (inside) return inside;
   const before = element.previousElementSibling;
-  return before instanceof HTMLElement && before.classList.contains("ascribe-label-before")
+  return before instanceof HTMLElement && before.classList.contains(CLASS_LABEL_BEFORE)
     ? before
     : undefined;
 }

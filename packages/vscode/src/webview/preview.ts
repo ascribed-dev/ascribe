@@ -35,6 +35,14 @@ import type {
   ToWebview,
   WebviewAsset,
 } from "../preview/protocol.js";
+import {
+  DATA_SOURCE,
+  ELEMENT_AVAILABILITY,
+  ELEMENT_AVAILABILITY_TARGET,
+  ELEMENT_NOTE,
+  ELEMENT_STEPS,
+  ELEMENT_TABS,
+} from "../names.js";
 
 declare function acquireVsCodeApi(): {
   postMessage(message: FromWebview): void;
@@ -175,11 +183,11 @@ function showAvailability(targets: AvailabilityTarget[]): void {
     availability.replaceChildren();
     return;
   }
-  const wrapper = document.createElement("ascribe-availability");
+  const wrapper = document.createElement(ELEMENT_AVAILABILITY);
   wrapper.setAttribute("scope", "page");
   targets.forEach((item, index) => {
     if (index > 0) wrapper.append("; ");
-    const element = document.createElement("ascribe-availability-target");
+    const element = document.createElement(ELEMENT_AVAILABILITY_TARGET);
     element.setAttribute("target", item.target);
     element.setAttribute("dimension", item.dimension);
     element.setAttribute("states", item.states.join(" "));
@@ -228,7 +236,7 @@ function quietScroll(scroll: () => void): void {
 }
 
 function readBlocks(): void {
-  blocks = [...content.querySelectorAll<HTMLElement>("[data-ascribe-source]")].map((element) => ({
+  blocks = [...content.querySelectorAll<HTMLElement>(`[${DATA_SOURCE}]`)].map((element) => ({
     element,
     lines:
       pagePath === null
@@ -294,14 +302,14 @@ content.addEventListener("dblclick", (event) => {
 
 function report(): RenderReport {
   const elements: Record<string, number> = {};
-  for (const tag of ["ascribe-tabs", "ascribe-note", "ascribe-steps", "ascribe-availability"]) {
+  for (const tag of [ELEMENT_TABS, ELEMENT_NOTE, ELEMENT_STEPS, ELEMENT_AVAILABILITY]) {
     elements[tag] = content.querySelectorAll(tag).length;
   }
   return {
     headings: [...content.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((h) => h.id),
     anchored: blocks.filter((b) => b.lines !== undefined).length,
     elements,
-    elementsDefined: customElements.get("ascribe-tabs") !== undefined,
+    elementsDefined: customElements.get(ELEMENT_TABS) !== undefined,
     violations: [...violations],
     marks: review.counts(),
     reviewHeader: review.headerText(),

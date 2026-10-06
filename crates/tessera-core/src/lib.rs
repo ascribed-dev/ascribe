@@ -18,6 +18,7 @@
 //! | [`attributes`] | [`parse_attribute_block`]: the attribute-block parser |
 //! | [`attribute_block`] | [`AttributeBlock`]: parsed attributes, with spans (SPEC §3.3) |
 //! | [`path`] | [`RelPath`], and how link and image destinations resolve |
+//! | [`names`] | The names Ascribe puts on a page: elements, attributes, classes, and ids |
 //! | [`reserved`] | Attribute keys a content model can't declare (SPEC §7.2) |
 //! | [`consumer`] | The [`Slugger`], [`Router`], and [`ConsumerProfile`] traits (SPEC §9.5) |
 //!
@@ -31,6 +32,7 @@ pub mod consumer;
 pub mod diagnostics;
 pub mod issue;
 pub mod line_index;
+pub mod names;
 pub mod path;
 pub mod reserved;
 pub mod schema;
