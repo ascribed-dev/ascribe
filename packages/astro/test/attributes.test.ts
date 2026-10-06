@@ -136,6 +136,30 @@ describe("findAnchors", () => {
     }
   });
 
+  it("applies a code block's anchor to the figure a code title put it in", () => {
+    const pre = element("pre", [text("code")]);
+    const figure: HastNode = {
+      type: "element",
+      tagName: "figure",
+      properties: { className: ["code-title"] },
+      children: [element("figcaption", [text("a.ts")]), pre],
+    };
+    const [edit] = findAnchors({
+      type: "root",
+      children: [anchor(' tag="pre" source="a.md:3-6"'), text("\n"), figure],
+    });
+    expect(edit?.targets).toEqual([
+      { node: figure, attributes: [["data-ascribe-source", "a.md:3-6"]] },
+    ]);
+    // Any other figure isn't the block.
+    const other: HastNode = { ...figure, properties: {} };
+    const [none] = findAnchors({
+      type: "root",
+      children: [anchor(' tag="pre" source="a.md:3-6"'), other],
+    });
+    expect(none?.targets).toEqual([]);
+  });
+
   it("gives a list's items their lines only when they match", () => {
     const list = element("ul", [text("\n"), element("li"), text("\n"), element("li")]);
     const [edit] = findAnchors({

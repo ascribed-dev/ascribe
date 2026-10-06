@@ -9,9 +9,14 @@ type ShikiTransformer = NonNullable<
   NonNullable<NonNullable<AstroUserConfig["markdown"]>["shikiConfig"]>["transformers"]
 >[number];
 
-/** The `title="…"` in a code block's meta, if it has one. */
+/**
+ * The `title="…"` in a code block's meta, if it has one. The meta has its
+ * Markdown escapes taken off (`title="say \"hi\""` arrives as
+ * `title="say "hi""`), so the title ends at a quote followed by a space or the
+ * end, and a quote inside it survives.
+ */
 export function codeTitle(meta: string): string | undefined {
-  return /(?:^|\s)title="([^"]*)"/.exec(meta)?.[1] || undefined;
+  return /(?:^|\s)title="(.*?)"(?=\s|$)/.exec(meta)?.[1] || undefined;
 }
 
 export const codeTitles: ShikiTransformer = {

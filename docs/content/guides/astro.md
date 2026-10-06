@@ -58,6 +58,9 @@ Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`.
 
 ### 6. Load the elements in your layout
 
+A layout loads the element library and shows the page's availability:
+
+@available: next
 @snippet {title=src/layouts/Docs.astro}: code:examples/astro-site/src/layouts/Docs.astro
 
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: the page title, navigation, and table of contents (`headings` from `render`) come from your own components.
@@ -66,6 +69,8 @@ A page's `available` frontmatter reaches the layout as `entry.data.available`: a
 
 @available: next
 `<Availability available={entry.data.available} />`, from `@ascribed/astro/Availability.astro`, renders it as a badge, as the layout above does: the same markup the site output gives a section's `@available`, which the element library styles. It renders nothing for a page with no availability.
+
+In a release without `Availability.astro`, copy [its markup]({repo}/blob/main/packages/astro/src/Availability.astro) into your layout in place of the component.
 
 ### 7. Build
 

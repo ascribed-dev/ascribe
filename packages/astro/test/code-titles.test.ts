@@ -30,6 +30,10 @@ describe("codeTitle", () => {
     expect(codeTitle("")).toBeUndefined();
     expect(codeTitle('subtitle="x"')).toBeUndefined();
     expect(codeTitle('title=""')).toBeUndefined();
+    // A quote in the title, which arrives with its backslash taken off, and a backslash.
+    expect(codeTitle('title="say "hi""')).toBe('say "hi"');
+    expect(codeTitle('title="say "hi"" wrap')).toBe('say "hi"');
+    expect(codeTitle('title="C:\\dir"')).toBe("C:\\dir");
   });
 });
 

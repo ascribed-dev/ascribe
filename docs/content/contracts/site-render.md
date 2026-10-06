@@ -197,7 +197,7 @@ A renderer applies each anchor comment, and removes it, along with the whitespac
 2. When the target is a `ul` or `ol` and the comment has `items`, and the list has as many `li` children as `items` has ranges, each `li` gets `data-ascribe-source` with the list's path and its range, and the list's `data-ascribe-via`. Otherwise its items get none.
 3. Anything else, such as text, an element of another name, or no next sibling, is no target: the comment is removed and applies to nothing.
 
-An attribute the target already has is replaced. Implementations apply anchors after the consumer's syntax highlighting (which keeps a code block's `<pre>`) and before anything that reads an element's properties.
+An attribute the target already has is replaced. Implementations apply anchors after the consumer's syntax highlighting (which keeps a code block's `<pre>`) and before anything that reads an element's properties. Highlighting that puts a titled code block in a figure with its title as the caption, as `@ascribed/astro` does (`<figure class="code-title">`), makes that figure the target of a `tag="pre"` anchor, so the block's mark holds its caption.
 
 ### 7.5 The same page
 

@@ -139,6 +139,25 @@ describe("review in the site preview", () => {
     }
   });
 
+  it("marks a changed titled code block, its caption and all", async () => {
+    const root = await gitSite("review-code-title");
+    await edit(path.join(root, "content", "Reference", "Options.md"), (text) =>
+      text.replace("threads: 4", "threads: 8"),
+    );
+    const server = await serveDev(root);
+    try {
+      const page = await startReview(server.origin, `${BASE}/reference/options`);
+      // The code-titles transformer put the block in a figure; the anchor marks the figure.
+      const changed = page.locator('figure.code-title[data-ascribe-change="changed"]');
+      await expect.poll(() => changed.count(), { timeout: 30_000 }).toBe(1);
+      await expect(changed.locator("> figcaption").textContent()).resolves.toBe("loom.yaml");
+      await expect(panel(page).textContent()).resolves.toContain("1 change on this page");
+      await page.close();
+    } finally {
+      await server.stop();
+    }
+  });
+
   it("marks nothing until review is turned on", async () => {
     const root = await gitSite("review-off");
     await edit(path.join(root, GUIDE), addParagraph);
