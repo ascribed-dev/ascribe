@@ -19,7 +19,7 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 
 ## Rules that aren't obvious
 
-- **A clean-up changes no output.** If a change is meant to be a refactor, the outputs, diagnostics, and JSON stay byte for byte the same. A bug found on the way gets its own pull request.
+- **A clean-up changes no output.** If a change is meant to be a refactor, the outputs, diagnostics, and JSON stay byte for byte the same; `node scripts/compare/outputs.ts --base main` shows it, and CI runs it on pull requests labeled `optimization`. A bug found on the way gets its own pull request.
 - **Contracts don't move.** `SPEC.md`, `docs/content/contracts/`, `packages/elements/CONTRACT.md`, the commands' JSON, and the published packages' APIs change only by a decision recorded with the change, never as a side effect.
 - **One home per fact.** Don't copy a list, a name, or a version into a second file. Generate it from the first, or add a test that compares the two.
 - **Libraries don't print and don't panic on input.** Only `tessera-cli` writes to standard output or error, apart from the language server's log lines to its client (`crates/tessera-lsp/src/core.rs`, `crates/tessera-lsp/src/server.rs`); a library returns what happened and lets its caller report it. `unwrap`, `expect`, and `panic!` are linted; an invariant that holds gets a local `#[allow]` with a comment saying why.
