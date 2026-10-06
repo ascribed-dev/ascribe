@@ -11,15 +11,19 @@
 //   // src/content.config.ts
 //   import { defineCollection } from "astro:content";
 //   import { ascribeCollection } from "@ascribed/astro/content";
+//   // The generated schema. With the project outside the Astro root, import the
+//   // copy inside it instead: "../.astro/integrations/_ascribed_astro/schema.ts".
 //   import { schema } from "../.ascribe/build/site/site/_ascribe/schema.ts";
 //   export const collections = { docs: defineCollection(ascribeCollection({ schema })) };
 //
-//   // a layout's <head>
-//   import Elements from "@ascribed/astro/Elements.astro";   // <Elements />
+//   // a layout
+//   import Elements from "@ascribed/astro/Elements.astro";           // <Elements /> in <head>
+//   import Availability from "@ascribed/astro/Availability.astro";   // the page's availability
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
 import { findBinary } from "./binary.js";
+import { codeTitles } from "./code-titles.js";
 import { SeenFiles, watchDev } from "./dev.js";
 import { copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
@@ -29,8 +33,9 @@ import { runDiff } from "./review/diff.js";
 import { APP_ID } from "./review/protocol.js";
 import { readRoutes } from "./review/routes.js";
 import { channelProblem, ReviewServer, type ToolbarChannel } from "./review/server.js";
-import { anchorsFor, reviewFor, runBuild } from "./run.js";
+import { anchorsFor, hasWarnings, reviewFor, runBuild } from "./run.js";
 import { satteriAscribeAttributes } from "./satteri.js";
+import { copySchema } from "./schema.js";
 
 export { default as rehypeAscribeAttributes } from "./rehype.js";
 export { satteriAscribeAttributes } from "./satteri.js";
@@ -62,6 +67,12 @@ export interface AscribeOptions {
    * removes the app. `astro build` never has it.
    */
   review?: boolean;
+  /**
+   * Show a code block's title (`title="…"` in its info string, as `@snippet`
+   * writes it) above it, with a Shiki transformer that puts the block in a
+   * `<figure class="code-title">` with a `<figcaption>`. Default `true`.
+   */
+  codeTitles?: boolean;
 }
 
 /** The toolbar app's icon: a speech bubble over a page. */
@@ -89,7 +100,14 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
   return {
     name: "@ascribed/astro",
     hooks: {
-      "astro:config:setup": async ({ config, command, logger, updateConfig, addDevToolbarApp }) => {
+      "astro:config:setup": async ({
+        config,
+        command,
+        logger,
+        updateConfig,
+        addDevToolbarApp,
+        createCodegenDir,
+      }) => {
         const root = fileURLToPath(config.root);
         const project = readProject(path.resolve(root, options.project ?? "."));
         // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build.
@@ -143,6 +161,8 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         if (command !== "preview") {
           const found = findBinary({ binary: options.binary, root });
           binary = found;
+          // The schema's copy inside the Astro root, for content.config.ts to import.
+          const codegen = fileURLToPath(createCodegenDir());
           rebuild = async () => {
             logger.info(`running ${path.basename(found)} build for "${options.build}"`);
             const result = await runBuild({
@@ -154,8 +174,10 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               // While review is on, the JSON output says which page is at each route.
               outputs: review?.active ? ["site", "json"] : ["site"],
             });
-            if (result.diagnostics !== "") logger.warn(result.diagnostics);
+            if (hasWarnings(result.diagnostics)) logger.warn(result.diagnostics);
+            else if (result.diagnostics !== "") logger.info(result.diagnostics);
             if (result.summary !== "") logger.info(result.summary);
+            copySchema(siteRoot, codegen);
           };
           // The sources as the first build reads them: the watcher may report their edits late.
           if (command === "dev") seen.prime([project.contentRoot, project.configPath]);
@@ -165,6 +187,9 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
 
         // Dev serving of `_ascribe/files/`; the build copies them in `astro:build:done`.
         updateConfig({
+          ...(options.codeTitles === false
+            ? {}
+            : { markdown: { shikiConfig: { transformers: [codeTitles] } } }),
           vite: {
             // `Elements.astro` is Astro source, so Vite must compile it, not load it as a Node module.
             ssr: { noExternal: ["@ascribed/astro"] },

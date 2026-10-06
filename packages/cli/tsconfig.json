@@ -3,6 +3,9 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
+    // The published maps carry their sources: the package doesn't publish src/,
+    // which they point at (issue #92).
+    "inlineSources": true,
     "types": ["node"]
   },
   "include": ["src"]

@@ -31,12 +31,17 @@ import { schema } from "../.ascribe/build/site/site/_ascribe/schema.ts";
 export const collections = { docs: defineCollection(ascribeCollection({ schema })) };
 ```
 
+If the Ascribe project is outside the Astro root (`project: "../docs"`), import `../.astro/integrations/_ascribed_astro/schema.ts` instead: the integration copies the schema there after each build, so TypeScript finds `astro/zod` from it.
+
 ```astro
 ---
 // A layout
 import Elements from "@ascribed/astro/Elements.astro";
+import Availability from "@ascribed/astro/Availability.astro";
+const { entry } = Astro.props;
 ---
 <head><Elements /></head>
+<Availability available={entry.data.available} />
 ```
 
 The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: `ascribe.toml`, the collection, the route, the layout, the options, what `astro dev` does, and [review in the site preview](https://ascribed-dev.com/guides/astro/#review-in-the-site-preview). [Review](https://ascribed-dev.com/guides/review/) walks through reviewing a pull request on your site.
@@ -50,6 +55,7 @@ The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: 
 | `binary` | The `ascribe` binary, relative to the Astro root. By default, `ASCRIBE_BIN`, then the binary `@ascribed/cli` installed. |
 | `anchors` | Source anchors (`ascribe build --anchors`), for review: `"dev"` in `astro dev` only, `true` always. By default, `false`, though `review` turns them on in `astro dev`. |
 | `review` | The **Ascribe review** app in `astro dev`'s toolbar: a pull request's changes and comments on the real page. `false` leaves it out. By default, `true`. Never in `astro build`. |
+| `codeTitles` | A code block's title (`title="…"` in its info string, as `@snippet` writes it) above it: a Shiki transformer puts the block in a `<figure class="code-title">` with a `<figcaption>`. `false` leaves it out. By default, `true`. |
 
 ## Development
 
@@ -58,13 +64,16 @@ The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: 
 | `src/index.ts` | The integration |
 | `src/content.ts` | `ascribeCollection`, for `content.config.ts` |
 | `src/Elements.astro` | Loads `@ascribed/elements` (stylesheet and script) |
+| `src/Availability.astro` | A page's availability as the element library's badge |
+| `src/code-titles.ts` | The Shiki transformer that shows code block titles |
+| `src/schema.ts` | Copies the generated schema inside the Astro root |
 | `src/attributes.ts` | The attribute-marker and source-anchor rules, on a hast tree |
 | `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's Markdown processors |
 | `src/project.ts`, `src/binary.ts`, `src/run.ts`, `src/files.ts`, `src/dev.ts` | `ascribe.toml`, the binary, running it, serving files, dev rebuilds |
 | `src/review/` | Review in the site preview, on the dev server's side: `ascribe diff`, the pull request (through `@ascribed/review/github` and `gh`), the routes, `.ascribe/dev.json`, and the toolbar channel's requests (`server.ts`, `protocol.ts`) |
 | `src/toolbar/` | The **Ascribe review** toolbar app, in the page: the panel, and the `@ascribed/review` overlay on the page's blocks |
 
-The site imports `schema` from the generated file by path, so the output directory and the build name appear there as well as in `ascribe.toml` and the integration's options. That's deliberate: Vite compiles the TypeScript file where it is, so the site keeps the schema's exact inferred types, which a virtual module re-exporting it would hide.
+The site imports `schema` from the generated file by path, so the output directory and the build name appear there as well as in `ascribe.toml` and the integration's options. That's deliberate: Vite compiles the TypeScript file where it is, so the site keeps the schema's exact inferred types, which a virtual module re-exporting it would hide. For the same reason the copy in `.astro/` is a file, not a module the integration provides; TypeScript can't type a virtual module from a file without repeating its exports.
 
 ```sh
 pnpm --filter @ascribed/astro test
