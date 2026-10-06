@@ -16,6 +16,8 @@
     "release/**/*.cts",
     "review-fixture/**/*.ts",
     "sources-fixture/**/*.ts",
-    "docs-site/**/*.ts"
+    "docs-site/**/*.ts",
+    "compare/**/*.ts",
+    "project-docs/**/*.ts"
   ]
 }

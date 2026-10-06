@@ -806,6 +806,7 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
     }
 
+    // Unix only: it locks the folder with a mode, which Windows ignores.
     #[cfg(unix)]
     #[test]
     fn an_unreadable_directory_is_reported_not_skipped() {

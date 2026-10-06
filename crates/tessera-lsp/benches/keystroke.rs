@@ -38,6 +38,9 @@ use synthetic::Client;
 
 const KEYSTROKES: usize = 100;
 
+// Longer than the lint allows from before it was on. Split it only while
+// changing it for another reason.
+#[allow(clippy::too_many_lines)]
 fn run(pages: usize) {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();

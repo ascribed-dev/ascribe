@@ -8,6 +8,12 @@ name: Site from npm
 # reports; it doesn't run on pull requests, since a pull request may use a
 # feature no canary has yet. CI's site job (site.yml) builds pull requests with
 # their own Ascribe.
+#
+# A push can still document something the canary doesn't have yet. When the
+# check fails and the canary lacks what the commit ships, the job says it's
+# waiting for a canary, with a link to start one, and passes: the run after
+# that canary is the real check. A failure with a canary that has the commit
+# stays red (scripts/release/canary.ts).
 
 on:
   workflow_run:
@@ -41,6 +47,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, to compare with the canary's commit if it fails.
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: site/.nvmrc
@@ -52,13 +61,32 @@ jobs:
           mkdir "$RUNNER_TEMP/alone"
           git archive HEAD | tar -x -C "$RUNNER_TEMP/alone"
           echo "SITE_DIR=$RUNNER_TEMP/alone/site" >> "$GITHUB_ENV"
-      - run: npm ci
+      # Each step below goes on only if the one before it passed, and a
+      # failure is judged by the last step: real, or waiting for a canary.
+      - id: install
+        run: npm ci
         working-directory: ${{ env.SITE_DIR }}
-      - run: npm run follow-next
+        continue-on-error: true
+      - id: follow
+        if: steps.install.outcome == 'success'
+        run: npm run follow-next
         working-directory: ${{ env.SITE_DIR }}
-      - run: npm run build
+        continue-on-error: true
+      - id: build
+        if: steps.follow.outcome == 'success'
+        run: npm run build
         working-directory: ${{ env.SITE_DIR }}
-      - run: npx playwright-core install --with-deps chromium
+        continue-on-error: true
+      - id: browser
+        if: steps.build.outcome == 'success'
+        run: npx playwright-core install --with-deps chromium
         working-directory: ${{ env.SITE_DIR }}
-      - run: npm test
+        continue-on-error: true
+      - id: test
+        if: steps.browser.outcome == 'success'
+        run: npm test
         working-directory: ${{ env.SITE_DIR }}
+        continue-on-error: true
+      - name: Fail, unless it waits for a canary
+        if: steps.test.outcome != 'success'
+        run: node scripts/release/canary.ts failed

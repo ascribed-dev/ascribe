@@ -10,6 +10,9 @@ use tessera_core::{LineIndex, Span};
 
 use crate::nav::{Ctx, directive_at};
 
+// Longer than the lint allows from before it was on. Split it only while
+// changing it for another reason.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCommand> {
     let Some(file) = ctx.file() else {
         return Vec::new();
