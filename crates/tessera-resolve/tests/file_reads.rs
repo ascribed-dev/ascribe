@@ -49,6 +49,10 @@ const FILES: &[(&str, &str)] = &[
         "crates/tessera-cli/src/docs.rs",
         "a test, compiled only with `cfg(test)`, that reads this repository's docs",
     ),
+    (
+        "crates/tessera-cli/src/shapes.rs",
+        "a test, compiled only with `cfg(test)`, that reads this repository's generated schemas and types",
+    ),
 ];
 
 fn workspace() -> PathBuf {

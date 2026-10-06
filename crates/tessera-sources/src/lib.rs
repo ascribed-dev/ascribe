@@ -394,6 +394,7 @@ impl Synced {
 
 /// A file a snippet names that couldn't be copied.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct Failure {
     /// Its path in the source.
     pub path: String,
@@ -403,6 +404,7 @@ pub struct Failure {
 
 /// What [`fetch`] did.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct FetchReport {
     /// Each source looked at, in declaration order.
     pub sources: Vec<SourceFetch>,
@@ -415,6 +417,7 @@ pub struct FetchReport {
 
 /// What [`fetch`] did for one source.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct SourceFetch {
     /// The source.
     pub name: String,
@@ -560,6 +563,7 @@ fn replace(lock: &mut Lock, pin: LockedSource) {
 
 /// What [`update`] did.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct UpdateReport {
     /// Each source, in declaration order.
     pub sources: Vec<SourceUpdate>,
@@ -569,6 +573,7 @@ pub struct UpdateReport {
 
 /// What [`update`] did for one source.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct SourceUpdate {
     /// The source.
     pub name: String,
@@ -598,6 +603,7 @@ pub struct SourceUpdate {
 
 /// How a copy changed.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct FileUpdate {
     /// Its path in the source.
     pub path: String,
@@ -607,6 +613,7 @@ pub struct FileUpdate {
 
 /// What happened to a copy.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum FileChange {
     /// It's new.
@@ -744,6 +751,7 @@ fn update_one(
 
 /// Each source's pin and the state of its copies, read from the files alone.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct StatusReport {
     /// Each source in another repository, in declaration order.
     pub sources: Vec<SourceStatus>,
@@ -751,6 +759,7 @@ pub struct StatusReport {
 
 /// One source's pin and copies.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct SourceStatus {
     /// The source.
     pub name: String,
@@ -766,6 +775,7 @@ pub struct SourceStatus {
 
 /// A file of a source's copies.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct CopyStatus {
     /// Its path in the source.
     pub path: String,
@@ -775,6 +785,7 @@ pub struct CopyStatus {
 
 /// The state of a copy.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum CopyState {
     /// It's the file the lock pins, and a snippet uses it.

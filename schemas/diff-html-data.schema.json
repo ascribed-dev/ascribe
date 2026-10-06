@@ -1,0 +1,495 @@
+{
+  "$defs": {
+    "Anchor": {
+      "description": "Where a block's text is written: the README's anchor grammar, the same\nstring the rendered page carries in `data-ascribe-source` and\n`data-ascribe-via`.",
+      "properties": {
+        "source": {
+          "description": "`<path>:<first>-<last>`: the file's content path, percent-encoded by\nsegment, and the block's first and last lines, from 1.",
+          "type": "string"
+        },
+        "via": {
+          "description": "The includes the block came through, outermost first, each\n`<path>:<line>`. Empty for a block written in the page itself.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "source",
+        "via"
+      ],
+      "type": "object"
+    },
+    "BaseInfo": {
+      "description": "The base of a comparison, in the report.",
+      "properties": {
+        "commit": {
+          "description": "The commit it names.",
+          "type": "string"
+        },
+        "merge_base": {
+          "description": "The merge base of that commit and `HEAD`, which the comparison reads;\n`null` with `--base-exact`, which reads `commit`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested": {
+          "description": "The revision asked for, or the default branch used.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requested",
+        "commit",
+        "merge_base"
+      ],
+      "type": "object"
+    },
+    "BuildData": {
+      "description": "One build's changed pages.",
+      "properties": {
+        "build": {
+          "description": "The build's name.",
+          "type": "string"
+        },
+        "pages": {
+          "description": "Its changed pages, in path order.",
+          "items": {
+            "$ref": "#/$defs/PageData"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "build",
+        "pages"
+      ],
+      "type": "object"
+    },
+    "Change": {
+      "description": "One block's change.",
+      "properties": {
+        "after": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For a removed block, and a moved block's old place: the block of the\nnew version it came after, among its siblings. Absent when it was\nfirst."
+        },
+        "kind": {
+          "$ref": "#/$defs/ChangeKind",
+          "description": "What happened to it."
+        },
+        "now": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where it's written now: every kind but `removed`."
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For a removed block, and a moved block's old place: the block of the\nnew version it was inside. Absent at the top of the page."
+        },
+        "text": {
+          "description": "For a removed block, its text, whitespace collapsed, so it can be\nshown where it was.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "was": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where it was written: every kind but `added`."
+        },
+        "words": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Words"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For changed prose, the words that differ."
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "ChangeKind": {
+      "description": "The kinds of block change.",
+      "oneOf": [
+        {
+          "const": "changed",
+          "description": "The block's content changed.",
+          "type": "string"
+        },
+        {
+          "const": "added",
+          "description": "The block is new.",
+          "type": "string"
+        },
+        {
+          "const": "removed",
+          "description": "The block is gone.",
+          "type": "string"
+        },
+        {
+          "const": "moved",
+          "description": "The same block is somewhere else.",
+          "type": "string"
+        }
+      ]
+    },
+    "Counts": {
+      "description": "How many changes of each kind a page has.",
+      "properties": {
+        "added": {
+          "description": "Blocks only in the new version.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "changed": {
+          "description": "Blocks whose content changed.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "moved": {
+          "description": "Blocks in both, somewhere else.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "removed": {
+          "description": "Blocks only in the old version.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "changed",
+        "added",
+        "removed",
+        "moved"
+      ],
+      "type": "object"
+    },
+    "ImageRef": {
+      "description": "An image a page refers to.",
+      "properties": {
+        "bytes": {
+          "description": "Its size, when it's too large to include.",
+          "format": "uint",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "image": {
+          "description": "Its key in `images`, when it's included.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "description": "The image's source file.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "type": "object"
+    },
+    "Limit": {
+      "description": "How many changed pages a report renders, and how many it left out.",
+      "properties": {
+        "omitted": {
+          "description": "How many it left out.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "pages": {
+          "description": "The most it renders.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "pages",
+        "omitted"
+      ],
+      "type": "object"
+    },
+    "PageData": {
+      "description": "One changed page: `ascribe diff --format json`'s, and its renderings.",
+      "properties": {
+        "because": {
+          "description": "The other changed files the page's change can come from: fragments it\nincludes and pages its links take a title or a heading from, in path\norder; then the snippets whose code changed, by address\n(`code:app.py#main`); and `ascribe.toml` (last) when the content model\nis a cause.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "changes": {
+          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page.",
+          "items": {
+            "$ref": "#/$defs/Change"
+          },
+          "type": "array"
+        },
+        "counts": {
+          "$ref": "#/$defs/Counts",
+          "description": "How many changes of each kind."
+        },
+        "now": {
+          "description": "The page now, as a key of `pages`; `null` when there's none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "omitted": {
+          "description": "Whether it's beyond the limit, so not rendered.",
+          "type": "boolean"
+        },
+        "own_file_changed": {
+          "description": "Whether the page's own file changed (or exists on one side only).",
+          "type": "boolean"
+        },
+        "page_changed": {
+          "description": "What changed about the page itself besides its blocks, in this\norder: `title`, `frontmatter`, `availability` (the page-level one),\nand `route`. Empty for an added or removed page.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "path": {
+          "description": "The page's content path.",
+          "type": "string"
+        },
+        "route": {
+          "description": "Its route: the new one, or for a removed page the old one.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/PageStatus",
+          "description": "Whether the build publishes it only now, only before, or in both\nwith a difference."
+        },
+        "title": {
+          "description": "Its title, when the build has one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "was": {
+          "description": "The page before, as a key of `pages`; `null` when there's none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "route",
+        "status",
+        "own_file_changed",
+        "because",
+        "page_changed",
+        "counts",
+        "changes",
+        "title",
+        "now",
+        "was",
+        "omitted"
+      ],
+      "type": "object"
+    },
+    "PageStatus": {
+      "description": "Whether a page is new, gone, or different.",
+      "oneOf": [
+        {
+          "const": "added",
+          "description": "The build publishes it now, and didn't before.",
+          "type": "string"
+        },
+        {
+          "const": "removed",
+          "description": "The build published it before, and doesn't now.",
+          "type": "string"
+        },
+        {
+          "const": "changed",
+          "description": "The build publishes it in both, and it differs.",
+          "type": "string"
+        }
+      ]
+    },
+    "RenderedPage": {
+      "description": "A page rendered: its HTML, and what each image reference in it is.",
+      "properties": {
+        "html": {
+          "description": "The page's content, rendered with source anchors.",
+          "type": "string"
+        },
+        "images": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ImageRef"
+          },
+          "description": "Each image reference the HTML writes, and what it is.",
+          "type": "object"
+        }
+      },
+      "required": [
+        "html",
+        "images"
+      ],
+      "type": "object"
+    },
+    "Words": {
+      "description": "The words that differ inside a changed block of prose. Ranges are\n`[start, end)` in characters (Unicode scalar values) of each side's\n`text`, which is the block's text with whitespace collapsed.",
+      "properties": {
+        "now": {
+          "description": "Ranges in `now_text`: words added or replacing others.",
+          "items": {
+            "items": {
+              "format": "uint",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "now_text": {
+          "description": "The block's text now.",
+          "type": "string"
+        },
+        "was": {
+          "description": "Ranges in `was_text`: words removed or replaced.",
+          "items": {
+            "items": {
+              "format": "uint",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "was_text": {
+          "description": "The block's text before.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "now",
+        "was",
+        "now_text",
+        "was_text"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The data the report's script draws from. Its keys, like the JSON\nreport's, are snake_case.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "base": {
+      "$ref": "#/$defs/BaseInfo",
+      "description": "What was compared with."
+    },
+    "builds": {
+      "description": "What changed, per build.",
+      "items": {
+        "$ref": "#/$defs/BuildData"
+      },
+      "type": "array"
+    },
+    "image_limit": {
+      "description": "The size, in bytes, above which an image isn't included.",
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "images": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Each image, as a `data:` URL, once however many pages use it.",
+      "type": "object"
+    },
+    "limit": {
+      "$ref": "#/$defs/Limit",
+      "description": "How many changed pages the report renders, and how many it left out."
+    },
+    "pages": {
+      "additionalProperties": {
+        "$ref": "#/$defs/RenderedPage"
+      },
+      "description": "Each rendered page, once however many builds render it alike.",
+      "type": "object"
+    },
+    "working_tree_errors": {
+      "description": "How many errors `ascribe check` finds in the working tree.",
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "ascribe_version",
+    "base",
+    "working_tree_errors",
+    "builds",
+    "pages",
+    "images",
+    "limit",
+    "image_limit"
+  ],
+  "title": "ReportData",
+  "type": "object"
+}

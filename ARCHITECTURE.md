@@ -48,6 +48,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | [`tests/zod`](tests/zod) | Type-checks the generated Zod schemas and validates pages with them. |
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
+| `schemas/` | The JSON Schemas of the JSON the commands and the language server write, generated from the Rust types (`crates/tessera-cli/src/shapes.rs`). |
 | `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
 | `project-docs/` | Plans. They describe what was intended, not necessarily what is. |
 
@@ -148,10 +149,12 @@ They're meant to agree, and these tests hold them to it:
 | Where each output's files go, and what Ascribe may replace | `tessera_emit::OutputDir` | [Output layout](docs/content/contracts/output-layout.md) |
 | Images and linked files | `crates/tessera-emit/src/assets.rs` | [Assets](docs/content/contracts/assets.md) |
 | The Zod schema, `_ascribe/schema.ts` | `crates/tessera-emit/src/zod/` | [crates/tessera-emit/README.md](crates/tessera-emit/README.md#zod), with each field type's schema in the [content model contract](docs/content/contracts/content-model.md); `tests/zod` type-checks it |
-| The commands' JSON reports | `crates/tessera-cli/src/report/`, `tessera-diff`, `tessera-sources` | The [command reference](docs/content/reference/cli.md) |
+| The commands' JSON reports | `crates/tessera-cli/src/report/`, `tessera-diff`, `tessera-sources` | The [JSON report contract](docs/content/contracts/json-reports.md), with each one's schema, and the [command reference](docs/content/reference/cli.md) |
 | Diagnostics: codes, severities, messages | `tests/conformance/diagnostics.toml`, through `tessera_check::Registry` | The [diagnostics reference](docs/content/reference/diagnostics.md), generated from the registry |
 
 The names the site output, the HTML report, and review put on a page (elements, attributes, classes, and ids) have one home, `tessera_core::names` (`crates/tessera-core/src/names.rs`). The TypeScript imports them from a module generated from it in each package (`packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`), and `crates/tessera-core/tests/names.rs` fails on a literal of one anywhere else in source, and on a stylesheet, Astro template, or the docs site's code using a name that isn't declared.
+
+The JSON that Rust writes and TypeScript reads has one home too: the Rust types that write it. `crates/tessera-cli/src/shapes.rs` derives a JSON Schema from each (`schemars`, through the `json-schema` features of `tessera-diff`, `tessera-sources`, and `tessera-lsp`, which only that test turns on), writes them to `schemas/`, and generates from them the TypeScript types each package reads them as: `packages/astro/src/shapes.ts` and `packages/review/src/shapes.ts` (`ascribe diff`'s JSON, and the HTML report's data) and `packages/vscode/src/shapes.ts` (the language server's answers to the custom requests). The commands' schemas are published in the [JSON report contract](docs/content/contracts/json-reports.md). Every field needs a doc comment, which becomes its description.
 
 `SPEC.md`, the contracts in `docs/content/contracts/`, the commands' JSON, and the published packages' APIs are fixed lines: code behind them can change, and they don't change without a decision to change them.
 
@@ -181,6 +184,7 @@ Some files are generated from a source, or copied from what the code writes, and
 |---|---|
 | `tests/conformance/tests/docs.rs` | The diagnostics reference's fragments in `docs/content/_generated/` |
 | `crates/tessera-cli/src/docs.rs` | Each command's options in `docs/content/_generated/` |
+| `crates/tessera-cli/src/shapes.rs` | The JSON Schemas in `schemas/`, the TypeScript types in `packages/astro/src/shapes.ts`, `packages/review/src/shapes.ts`, and `packages/vscode/src/shapes.ts`, and the schemas' fragments in `docs/content/_generated/`, from the Rust types that write the JSON |
 | `crates/tessera-cli/tests/output.rs` | The command output in `crates/tessera-cli/tests/output/` |
 | `crates/tessera-core/tests/names.rs` | The names Ascribe puts on a page, `packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`, from `crates/tessera-core/src/names.rs` |
 | `crates/tessera-emit/tests/site_anchors.rs` | The site-render fixtures' inputs and corpus in `tests/render/` |

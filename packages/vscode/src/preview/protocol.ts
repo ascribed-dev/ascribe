@@ -1,6 +1,22 @@
 // The types of the `ascribe/preview` request (`crates/tessera-lsp/src/preview.rs`),
 // the review requests (`crates/tessera-lsp/src/review.rs`), and of the
-// messages between the extension and the preview's webview.
+// messages between the extension and the preview's webview. What the server
+// answers is generated from its Rust types, in `../shapes.ts`.
+
+import type { PageDiff, PreviewBuild, PreviewProblem } from "../shapes.js";
+
+export type {
+  BaseInfo,
+  Change,
+  ChangedPage,
+  ChangesResult,
+  Counts,
+  PageDiff,
+  PreviewBuild,
+  PreviewResult,
+  PreviewSection,
+  SetBaseResult,
+} from "../shapes.js";
 
 /** The parameters of `ascribe/preview`. */
 export interface PreviewParams {
@@ -11,49 +27,11 @@ export interface PreviewParams {
   review?: boolean;
 }
 
-export interface PreviewBuild {
-  name: string;
-  /** Whether it's the editor's build: the picker's default. */
-  editor: boolean;
-  description: string;
-}
-
-interface PreviewAsset {
-  /** The reference as the page's HTML writes it, without `#fragment`. */
-  reference: string;
-  /** The source file, an absolute path. */
-  path: string;
-  kind: "image" | "link";
-  /** Whether the preview may read the file: it is in the content root or an `assetRoots` directory. */
-  servable: boolean;
-}
-
-interface PreviewLink {
-  href: string;
-  path: string;
-  id: string | null;
-}
-
-/** A heading written in the previewed file. The HTML's source anchors locate every block. */
-export interface PreviewSection {
-  id: string;
-  /** From 0. */
-  line: number;
-}
-
-interface PreviewPage {
-  path: string;
-  route: string;
-  title: string | null;
-  frontmatter: PageFrontmatter;
-  html: string;
-  assets: PreviewAsset[];
-  links: PreviewLink[];
-  sections: PreviewSection[];
-}
-
-/** The site output's frontmatter: `available` is a list of targets. */
-interface PageFrontmatter {
+/**
+ * The site output's frontmatter, which a preview's page `frontmatter` is:
+ * `available` is a list of targets. `tests/zod` checks its schema.
+ */
+export interface PageFrontmatter {
   available?: AvailabilityTarget[];
   [key: string]: unknown;
 }
@@ -66,99 +44,6 @@ export interface AvailabilityTarget {
   text: string;
 }
 
-interface PreviewProblem {
-  severity: "error" | "warning" | "info";
-  message: string;
-}
-
-export interface PreviewResult {
-  build: string;
-  builds: PreviewBuild[];
-  projectRoot: string | null;
-  contentRoot: string | null;
-  /** Directories outside the content root that the page's assets are in. */
-  assetRoots: string[];
-  documentVersion: number | null;
-  page: PreviewPage | null;
-  problems: PreviewProblem[];
-  /** With `review: true` and a base set: what changed on the page. */
-  review?: PreviewReview | null;
-}
-
-/** A review base, as `ascribe diff` reports it. */
-export interface BaseInfo {
-  /** The revision asked for, or the default branch used. */
-  requested: string;
-  commit: string;
-  /** The merge base of `commit` and `HEAD`, which is compared with. */
-  merge_base: string | null;
-}
-
-/** How many blocks changed, by kind. */
-export interface Counts {
-  changed: number;
-  added: number;
-  removed: number;
-  moved: number;
-}
-
-/** Where a block is written: the anchor grammar's `source` and `via`. */
-interface Anchor {
-  source: string;
-  via: string[];
-}
-
-/** One block's change, as `ascribe diff --format json` writes it (`@ascribed/review/marks` draws it). */
-export interface Change {
-  kind: "changed" | "added" | "removed" | "moved";
-  now?: Anchor;
-  was?: Anchor;
-  words?: { now: [number, number][]; was: [number, number][]; now_text: string; was_text: string };
-  after?: Anchor;
-  parent?: Anchor;
-  text?: string;
-}
-
-/** A changed page, as `ascribe diff --format json` reports it (its keys are snake_case). */
-export interface PageChanges {
-  path: string;
-  route: string;
-  status: "added" | "removed" | "changed";
-  own_file_changed: boolean;
-  /** The other changed files the page's change comes from, content paths; `ascribe.toml` last. */
-  because: string[];
-  page_changed: string[];
-  counts: Counts;
-  changes: Change[];
-}
-
-/** What changed on the previewed page against the review base. */
-interface PreviewReview {
-  base: BaseInfo;
-  /** `null` when the page didn't change. */
-  changes: PageChanges | null;
-  /** The page as it was, rendered with anchors; `null` for a new page or no change. */
-  wasHtml: string | null;
-}
-
-/** The answer to `ascribe/review/setBase`. */
-export interface SetBaseResult {
-  base: BaseInfo | null;
-  problem: string | null;
-}
-
-/** A changed page in the list: `PageChanges` without its `changes`, and its title. */
-export type ChangedPage = Omit<PageChanges, "changes"> & { title: string | null };
-
-/** The answer to `ascribe/review/changes`. */
-export interface ChangesResult {
-  build: string;
-  base: BaseInfo | null;
-  contentRoot: string | null;
-  pages: ChangedPage[];
-  problem: string | null;
-}
-
 /** What the preview shows about review, while it's on: the page's changes. */
 export interface ReviewView {
   /** The base's name: "main". */
@@ -166,7 +51,7 @@ export interface ReviewView {
   /** The commit compared with, shortened: "1a2b3c4". */
   commit: string;
   /** `null` when the page didn't change. */
-  page: PageChanges | null;
+  page: PageDiff | null;
   wasHtml: string | null;
   /** The files the page changed through, when its own file didn't change. */
   causes: { label: string; path: string }[];

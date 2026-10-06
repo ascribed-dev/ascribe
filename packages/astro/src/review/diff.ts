@@ -1,11 +1,12 @@
 // Running `ascribe diff --format json` for the integration's build.
 import { execFile } from "node:child_process";
-import type { DiffBase, DiffPage } from "./protocol.js";
+import type { DiffReport } from "../shapes.js";
+import type { BaseInfo, PageDiff } from "./protocol.js";
 
 /** One build's changes against a base. */
 export interface DiffResult {
-  base: DiffBase;
-  pages: DiffPage[];
+  base: BaseInfo;
+  pages: PageDiff[];
   /** How many errors `ascribe check` finds in the working tree for the build. */
   errors: number;
 }
@@ -56,11 +57,8 @@ export function runDiff(options: {
 
 /** The build's part of `ascribe diff --format json`'s output. */
 export function parseDiff(json: string, build: string): DiffResult {
-  const report = JSON.parse(json) as {
-    base?: DiffBase;
-    working_tree_errors?: number;
-    builds?: { build: string; pages: DiffPage[] }[];
-  };
+  // Checked as far as telling a diff report from other JSON.
+  const report = JSON.parse(json) as Partial<DiffReport>;
   if (report.base === undefined || !Array.isArray(report.builds)) {
     throw new Error("not a diff report");
   }

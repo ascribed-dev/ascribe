@@ -8,7 +8,7 @@ import {
   CHANGED_EVENT,
   REQUEST_EVENT,
   RESULT_EVENT,
-  type DiffPage,
+  type PageDiff,
   type PageView,
   type Result,
 } from "../src/review/protocol.js";
@@ -42,7 +42,7 @@ class FakeChannel {
   }
 }
 
-function page(path: string, route: string, init: Partial<DiffPage> = {}): DiffPage {
+function page(path: string, route: string, init: Partial<PageDiff> = {}): PageDiff {
   return {
     path,
     route,
