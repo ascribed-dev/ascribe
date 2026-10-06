@@ -4,7 +4,7 @@
 // `npm ci`, `npm run follow-next`, and `npm run build`, from npm alone.
 //
 // It's the only place the site touches packages/. The binary is
-// `ASCRIBE_BIN`, or else target/debug/ascribe (`cargo build -p tessera-cli`).
+// `ASCRIBE_BIN`, or else target/debug/ascribe (`cargo build -p ascribe-cli`).
 // The workspace's packages are built and packed, and the packs installed
 // over the registry's without saving, so the lockfile keeps the canary.
 //
@@ -32,7 +32,7 @@ const binary = path.resolve(
 );
 if (!existsSync(binary)) {
   throw new Error(
-    `no ascribe binary at ${binary}: run \`cargo build -p tessera-cli\`, or set ASCRIBE_BIN`,
+    `no ascribe binary at ${binary}: run \`cargo build -p ascribe-cli\`, or set ASCRIBE_BIN`,
   );
 }
 if (!existsSync(path.join(root, "node_modules"))) {

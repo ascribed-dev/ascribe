@@ -2,7 +2,7 @@
 // READMEs and the extension's manifest link to the site's pages, at the
 // address in docs/ascribe.toml's `[consumer] site`, and each link lands on a
 // page and a heading the docs have. (The binary's help is checked by
-// crates/tessera-cli/src/docs.rs, and the site's own links by site/test/.)
+// crates/ascribe-cli/src/docs.rs, and the site's own links by site/test/.)
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";

@@ -4,7 +4,7 @@
 //
 //   node scripts/release/notices.ts [--out <file>]
 //
-// The crate list is what Cargo resolves for `tessera-cli`'s normal
+// The crate list is what Cargo resolves for `ascribe-cli`'s normal
 // dependencies, so a crate that's only a build tool or a test dependency isn't
 // listed. The vendored comrak fork is. Crates that share a license text are
 // listed together under one copy of it.
@@ -19,7 +19,7 @@ import { root } from "./manifests.ts";
 
 const LICENSE_FILE = /^(licen[cs]e|copying|unlicense|notice)(?![a-z])/i;
 /** In-repo crates that aren't Ascribe's own code. */
-const VENDORED = new Set(["comrak-tessera"]);
+const VENDORED = new Set(["comrak-ascribe"]);
 
 /** The parts of `cargo metadata`'s output that the notices read. */
 interface CargoMetadata {
@@ -55,8 +55,8 @@ export function thirdPartyNotices(): string {
   ) as CargoMetadata;
   const packages = new Map(metadata.packages.map((p) => [p.id, p]));
   const nodes = new Map(metadata.resolve.nodes.map((n) => [n.id, n]));
-  const start = metadata.packages.find((p) => p.name === "tessera-cli");
-  if (!start) throw new Error("the workspace has no tessera-cli package");
+  const start = metadata.packages.find((p) => p.name === "ascribe-cli");
+  if (!start) throw new Error("the workspace has no ascribe-cli package");
 
   const seen = new Set<string>();
   const visit = (id: string): void => {

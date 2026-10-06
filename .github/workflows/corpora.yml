@@ -41,18 +41,18 @@ jobs:
       - name: Install time
         run: "[ -x /usr/bin/time ] || { sudo apt-get update && sudo apt-get install -y time; }"
       - name: Build the command
-        run: cargo build --release -p tessera-cli -p tessera-corpora
+        run: cargo build --release -p ascribe-cli -p ascribe-corpora
       - name: Recognition and conversion checks over the corpora
-        run: cargo test --release -p tessera-corpora -- --include-ignored --nocapture
+        run: cargo test --release -p ascribe-corpora -- --include-ignored --nocapture
       - name: Benchmarks
         env:
           ASCRIBE_BENCH_OUT: ${{ github.workspace }}/bench-results.jsonl
         run: |
           rm -f "$ASCRIBE_BENCH_OUT"
-          cargo bench -p tessera-corpora --bench perf
-          cargo bench -p tessera-lsp --bench keystroke
-          cargo bench -p tessera-resolve --bench incremental
-          cargo bench -p tessera-lsp --bench completion
+          cargo bench -p ascribe-corpora --bench perf
+          cargo bench -p ascribe-lsp --bench keystroke
+          cargo bench -p ascribe-resolve --bench incremental
+          cargo bench -p ascribe-lsp --bench completion
       - name: Compare with the recorded baselines
         if: ${{ !inputs.record }}
         run: ./target/release/corpora compare bench-results.jsonl

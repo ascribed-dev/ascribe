@@ -10,13 +10,13 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use tessera_conformance::{DiagnosticsRegistry, Suite, discover};
+use ascribe_conformance::{DiagnosticsRegistry, Suite, discover};
 
 fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn cases() -> Vec<tessera_conformance::Case> {
+fn cases() -> Vec<ascribe_conformance::Case> {
     let suite = Suite::bundled();
     discover(&suite.cases_dir(), &suite.shared_model_path())
         .unwrap()

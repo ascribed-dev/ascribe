@@ -30,8 +30,8 @@ Use these in the UI, the docs, and the code's user-facing strings.
 ## What exists today
 
 - `ascribe check --format json` reports every diagnostic with its code, slug, message, range, related places, and `fixes` (edits that would fix it). It checks the whole project; there's no way to check one file, or text that isn't saved.
-- The diagnostics registry (`tests/conformance/diagnostics.toml`) holds each diagnostic's message and a `fix` paragraph, and is embedded in the binary (`crates/tessera-check/src/registry.rs`), though the binary doesn't read `fix` yet. `docs/diagnostics.md` is generated from it. Neither is reachable from the command line.
-- The language server publishes the file-level diagnostics and the page-level ones of the editor's build only (`[editor] build`), with quick fixes (`crates/tessera-lsp/src/code_action.rs`). `check` covers every build, so the editor can show fewer problems than `check` finds. Agents in VS Code read what the server publishes, but not dependably: Copilot reads the Problems panel one second after its own edit, keeps at most 20 problems, and does so behind an experiment flag. No agent applies the server's quick fixes; fixes reach agents only through `check`'s JSON. With `ascribe.startServers: "onDemand"` (the default), a project's server starts only when one of its files is opened, so an agent that edits files on disk gets none.
+- The diagnostics registry (`tests/conformance/diagnostics.toml`) holds each diagnostic's message and a `fix` paragraph, and is embedded in the binary (`crates/ascribe-check/src/registry.rs`), though the binary doesn't read `fix` yet. `docs/diagnostics.md` is generated from it. Neither is reachable from the command line.
+- The language server publishes the file-level diagnostics and the page-level ones of the editor's build only (`[editor] build`), with quick fixes (`crates/ascribe-lsp/src/code_action.rs`). `check` covers every build, so the editor can show fewer problems than `check` finds. Agents in VS Code read what the server publishes, but not dependably: Copilot reads the Problems panel one second after its own edit, keeps at most 20 problems, and does so behind an experiment flag. No agent applies the server's quick fixes; fixes reach agents only through `check`'s JSON. With `ascribe.startServers: "onDemand"` (the default), a project's server starts only when one of its files is opened, so an agent that edits files on disk gets none.
 - A whole-project check of 3,000 pages takes 0.78 s to 2.0 s in a release build (`tests/corpora/RESULTS.md`).
 - `ascribe build --emit plain` and `--emit json` write resolved pages. `ascribe diff` reports changed pages and blocks. Review ([the review plan](../review/README.md)) shows changes and pull request threads in the page preview.
 - Nothing writes agent instructions, there's no MCP server, and the repository has no `AGENTS.md`.
@@ -60,13 +60,13 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 
 | Piece | Where | What it does |
 |---|---|---|
-| The loop | `tessera-cli` | `check` on files and on unsaved text; `explain`, `model`, `outline`, `link`, `render`, `refs` |
+| The loop | `ascribe-cli` | `check` on files and on unsaved text; `explain`, `model`, `outline`, `link`, `render`, `refs` |
 | Diagnostics on disk edits | `packages/vscode` | Starts a project's server when one of its files changes on disk |
-| Agent instructions and the skill | `tessera-cli` (`ascribe agents sync`), `packages/cli` | Writes the project's rules into the files agents read, and the skill into the shared skills folder |
-| Agent prompts | `tessera-cli`, `tessera-diff`, `tessera-lsp`, `@ascribed/review`, `packages/vscode` | **Prompt agent** on problems, threads, and changes; `check --format prompt` and `diff --format prompt` |
-| `ascribe mcp` | `tessera-cli`, a new crate `tessera-mcp` | The loop's commands as typed tools |
+| Agent instructions and the skill | `ascribe-cli` (`ascribe agents sync`), `packages/cli` | Writes the project's rules into the files agents read, and the skill into the shared skills folder |
+| Agent prompts | `ascribe-cli`, `ascribe-diff`, `ascribe-lsp`, `@ascribed/review`, `packages/vscode` | **Prompt agent** on problems, threads, and changes; `check --format prompt` and `diff --format prompt` |
+| `ascribe mcp` | `ascribe-cli`, a new crate `ascribe-mcp` | The loop's commands as typed tools |
 | VS Code integration | `packages/vscode` | Registers the MCP server; tools that see unsaved text and review |
-| Hooks and packaging | `tessera-cli` (`ascribe agents hook`), `plugins/` | A check after each edit and before an agent finishes, for Claude Code, Codex, and Copilot; one plugin; setup for Copilot's cloud agent |
+| Hooks and packaging | `ascribe-cli` (`ascribe agents hook`), `plugins/` | A check after each edit and before an agent finishes, for Claude Code, Codex, and Copilot; one plugin; setup for Copilot's cloud agent |
 
 ## Phases
 
@@ -90,9 +90,9 @@ Phases 1 to 4 are the autonomous loop and are useful without the rest. Phases 5 
 
 ### What can run at the same time
 
-- **Phases 1, 2, and 3.** Phases 1 and 2 both add to `crates/tessera-cli/src/commands/`, `docs/cli.md`, and `CHANGELOG.md`; expect small conflicts and keep both sides. Phase 3 is TypeScript only.
+- **Phases 1, 2, and 3.** Phases 1 and 2 both add to `crates/ascribe-cli/src/commands/`, `docs/cli.md`, and `CHANGELOG.md`; expect small conflicts and keep both sides. Phase 3 is TypeScript only.
 - **Phases 4 and 5**, once 1 and 2 are merged. Phase 4 adds `ascribe agents`; phase 5 adds a prompt module and touches the extension.
-- **Phases 6 and 7**, once 4 and 5 are merged. Phase 6 works in `tessera-diff`, `@ascribed/review`, and the extension; phase 7 in a new crate. Both add to the prompt module from phase 5: keep both sides' additions.
+- **Phases 6 and 7**, once 4 and 5 are merged. Phase 6 works in `ascribe-diff`, `@ascribed/review`, and the extension; phase 7 in a new crate. Both add to the prompt module from phase 5: keep both sides' additions.
 - **Phases 8 and 9**, once 6 and 7 are merged. Phase 8 is the extension; phase 9 is the binary and `plugins/`.
 
 Phases 10 and 11 run one at a time. When two run at once, each works on its own branch, and the second to merge rebases before its final checks.
@@ -128,8 +128,8 @@ Rules:
 - Match the surrounding code's style, comment density, and naming. Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - **Harnesses change fast.** VS Code's chat, MCP, and language model tool APIs; Copilot's instruction and prompt file formats; Claude Code's hooks, plugins, and skills; the MCP specification; the `AGENTS.md` convention. Check each against its current documentation before designing against it, and say in the pull request what you checked and its version or date.
 - **No network and no agent in tests.** Tests check what Ascribe writes: JSON, prompts, instruction files, MCP messages. Whether an agent does well with them is tried by hand in phase 11.
-- **New commands** follow `docs/cli.md`'s conventions (option names, exit codes, `schema_version`), get tests in `crates/tessera-cli/tests/`, and a section in `docs/cli.md`.
-- **Server work:** a new request gets its own module like `crates/tessera-lsp/src/preview.rs`, a handler in `server.rs`, scenario tests in `crates/tessera-lsp/tests/`, and a section in `crates/tessera-lsp/README.md`.
+- **New commands** follow `docs/cli.md`'s conventions (option names, exit codes, `schema_version`), get tests in `crates/ascribe-cli/tests/`, and a section in `docs/cli.md`.
+- **Server work:** a new request gets its own module like `crates/ascribe-lsp/src/preview.rs`, a handler in `server.rs`, scenario tests in `crates/ascribe-lsp/tests/`, and a section in `crates/ascribe-lsp/README.md`.
 - **Extension work:** unit tests with vitest (`packages/vscode/test/unit/`), integration tests (`packages/vscode/test/integration/suite/`) against the real server. Everything goes to the server of the project that owns the file (`ProjectRegistry.serverFor`).
 - **Review UI** follows the review plan's [mockup](../review/mockup.html). A phase that adds to review's UI changes the mockup first, in the same pull request.
 - **User-visible changes** update the docs named in the phase and add a line to the unreleased section of `CHANGELOG.md`.
@@ -142,7 +142,7 @@ Rules:
   cargo clippy --workspace --all-targets --locked -- -D warnings
   cargo test --workspace --locked
   pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
-  cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+  cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
   ```
 
   (`corepack pnpm` where `pnpm` isn't on the path.)

@@ -1,5 +1,5 @@
-// The types of the `ascribe/preview` request (`crates/tessera-lsp/src/preview.rs`),
-// the review requests (`crates/tessera-lsp/src/review.rs`), and of the
+// The types of the `ascribe/preview` request (`crates/ascribe-lsp/src/preview.rs`),
+// the review requests (`crates/ascribe-lsp/src/review.rs`), and of the
 // messages between the extension and the preview's webview. What the server
 // answers is generated from its Rust types, in `../shapes.ts`.
 

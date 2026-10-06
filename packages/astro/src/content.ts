@@ -16,7 +16,7 @@ import { siteRoot } from "virtual:ascribe/site";
  * pages, with the generated Zod schema (`_ascribe/schema.ts`'s `schema`).
  *
  * Entry ids are Astro's own (`guides/my-setup` for `Guides/My Setup.md`, `index`
- * for the root page), which is what `AstroRouter` in `tessera-resolve`
+ * for the root page), which is what `AstroRouter` in `ascribe-resolve`
  * computes, so a page's route is the base path plus its id, and the root page is
  * at the base path itself.
  */

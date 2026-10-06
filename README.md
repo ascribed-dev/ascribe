@@ -51,7 +51,7 @@ The compiler is a Rust workspace; the npm packages and the extension are a pnpm 
 
 | Directory | Contents |
 |---|---|
-| `crates/` | The compiler: `tessera-syntax` (parsing), `tessera-model` (`ascribe.toml`), `tessera-resolve` (includes, builds, links), `tessera-check`, `tessera-emit` (outputs), `tessera-diff` (what changed since a git revision), `tessera-sources` (sources in other repositories), `tessera-fmt`, `tessera-lsp`, `tessera-cli` (the `ascribe` binary), and `comrak-tessera`, a fork of the CommonMark parser |
+| `crates/` | The compiler: `ascribe-syntax` (parsing), `ascribe-model` (`ascribe.toml`), `ascribe-resolve` (includes, builds, links), `ascribe-check`, `ascribe-emit` (outputs), `ascribe-diff` (what changed since a git revision), `ascribe-sources` (sources in other repositories), `ascribe-fmt`, `ascribe-lsp`, `ascribe-cli` (the `ascribe` binary), and `comrak-ascribe`, a fork of the CommonMark parser |
 | `packages/` | `cli`, `astro`, `elements`, `review`, and `vscode` |
 | `tests/` | The conformance suite and its diagnostics registry, the CommonMark suite, real-world corpora, and cross-implementation fixtures |
 | `examples/` | Example projects and content models |
@@ -64,7 +64,7 @@ corepack enable && pnpm install
 pnpm -r test                           # the packages
 ```
 
-[ARCHITECTURE.md](ARCHITECTURE.md) is the map: what each crate and package is for, and how they reach each other. Each crate and package has a README with its own details. [CONTRIBUTING.md](CONTRIBUTING.md) says what CI checks, and [SECURITY.md](SECURITY.md) how to report a vulnerability. [RELEASING.md](RELEASING.md) is how a release is made. The crates keep the project's working name, Tessera.
+[ARCHITECTURE.md](ARCHITECTURE.md) is the map: what each crate and package is for, and how they reach each other. Each crate and package has a README with its own details. [CONTRIBUTING.md](CONTRIBUTING.md) says what CI checks, and [SECURITY.md](SECURITY.md) how to report a vulnerability. [RELEASING.md](RELEASING.md) is how a release is made.
 
 ## License
 

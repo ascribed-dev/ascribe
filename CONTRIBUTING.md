@@ -18,7 +18,7 @@ To build every JS package, as CI's Astro job does:
 pnpm build:all
 ```
 
-It builds the `ascribe` binary (`cargo build -p tessera-cli`), stages it into `@ascribed/cli`'s package for your platform, then runs `pnpm -r build`, which builds the packages in dependency order. `pnpm -r build` alone stops at `examples/astro-site`, whose build runs the binary. It finds the binary wherever Cargo puts it (`CARGO_TARGET_DIR` included), and works on the platforms `@ascribed/cli` ships for: macOS on Apple silicon, Linux on x64 and arm64, and Windows on x64.
+It builds the `ascribe` binary (`cargo build -p ascribe-cli`), stages it into `@ascribed/cli`'s package for your platform, then runs `pnpm -r build`, which builds the packages in dependency order. `pnpm -r build` alone stops at `examples/astro-site`, whose build runs the binary. It finds the binary wherever Cargo puts it (`CARGO_TARGET_DIR` included), and works on the platforms `@ascribed/cli` ships for: macOS on Apple silicon, Linux on x64 and arm64, and Windows on x64.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) describes how the code is put together, and each crate and package has a README. [packages/vscode/DEVELOPMENT.md](packages/vscode/DEVELOPMENT.md) covers the extension.
 
@@ -35,7 +35,7 @@ pnpm format:check && pnpm lint && pnpm exec knip && pnpm typecheck && pnpm test
 ```
 
 - Behavior changes come with a conformance case in [tests/conformance](tests/conformance). Diagnostics are defined only in `tests/conformance/diagnostics.toml`; the diagnostics reference is generated from it.
-- Changes to `crates/comrak-tessera` follow [FORK.md](crates/comrak-tessera/FORK.md): mark each one `// TESSERA:` and update the table.
+- Changes to `crates/comrak-ascribe` follow [FORK.md](crates/comrak-ascribe/FORK.md): mark each one `// ASCRIBE:` and update the table.
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions. A new Node or Rust version goes in every file that names it; `scripts/docs-site/facts.test.ts` finds each one, and fails until they agree.
 - Dependencies are audited. `cargo deny` ([deny.toml](deny.toml)) allows the licenses listed there and crates.io only, and warns on a second version of a crate. It also reports security advisories, as a failed step that doesn't fail CI, since a new one can appear with no change here: file an issue for it, and fix it or ignore it in deny.toml with the issue as the reason. `cargo machete` and `knip` ([knip.jsonc](knip.jsonc)) fail on an unused dependency, and `knip` on an unused file or export too. Where one is wrong, ignore the name in its configuration with a comment saying why. Install the Rust tools with `cargo install --locked cargo-deny@0.20.2 cargo-machete@0.9.2`, the versions `rust.yml` pins.
@@ -55,19 +55,19 @@ node scripts/compare/outputs.ts --base main
 
 It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `diff`, and `drift` with each on every example project and `docs/`, in a temporary copy whose base commit changes a word throughout, so `diff` and `drift` always have the same changes to report. It also builds the Astro example with each revision's packages. It prints each file that differs, then `same (N files)` or `N of M files differ` for each project, and exits 1 when anything differs and 2 when it couldn't compare. `examples/getting-started` and `examples/docs-repository` stop with errors on purpose (a broken link, and sources that need `ascribe sources fetch`), so only their reports are compared, not built outputs. `--before <ascribe> --after <ascribe>` compares two binaries you already have. Label the pull request `optimization`, and CI runs the same comparison against its base and fails on a difference. When a decision in [project-docs/decisions.md](project-docs/decisions.md) accepts a change to some outputs, `--accept '<pattern>'` (once per pattern) accepts the files whose `<project>: <file>` line matches it, with `*` for anything; they're still shown, marked `(accepted)`, and only another difference makes it exit 1. A pattern that matches nothing makes it exit 2. In CI, add the label `outputs changed` and put the patterns, one a line, in a ```` ```outputs changed ```` block in the pull request's description.
 
-A test, `cargo test -p tessera-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
+A test, `cargo test -p ascribe-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
 
 ## Documenting a change
 
 The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds a line to the unreleased section of [CHANGELOG.md](CHANGELOG.md). What no release has yet is marked `@available: next` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):
 
 ```sh
-cargo build -p tessera-cli
+cargo build -p ascribe-cli
 ./target/debug/ascribe check --deny-warnings --config docs
 ./target/debug/ascribe fmt --check --config docs
 ```
 
-A page's code examples aren't copies: each is taken with [`@snippet`](docs/content/reference/directives.md#snippet) from a file that's built, tested, or run, so it changes when the file does. `[sources.code]` in `docs/ascribe.toml` lists the folders a page may take one from: `examples/`, the workflows in `.github/workflows/`, and the command output in `crates/tessera-cli/tests/output/`. To show part of a file, mark it with tags in its comments, and give the page its address:
+A page's code examples aren't copies: each is taken with [`@snippet`](docs/content/reference/directives.md#snippet) from a file that's built, tested, or run, so it changes when the file does. `[sources.code]` in `docs/ascribe.toml` lists the folders a page may take one from: `examples/`, the workflows in `.github/workflows/`, and the command output in `crates/ascribe-cli/tests/output/`. To show part of a file, mark it with tags in its comments, and give the page its address:
 
 ```toml
 # :snippet-start: project
@@ -80,7 +80,7 @@ content-root = "docs"
 @snippet: code:examples/content-models/full.toml#project
 ```
 
-A line ending in `# :remove:`, or the lines between `# :remove-start:` and `# :remove-end:`, are left out of the example; `.github/workflows/drift.yml` uses them for what this repository adds to the job its guide gives users. The command output in `crates/tessera-cli/tests/output/` is written by `crates/tessera-cli/tests/output.rs`, which fails when a command's output changes; run it with `ASCRIBE_BLESS=1 cargo test -p tessera-cli --test output` to rewrite the files, and read the diff. An example with no file behind it, a few lines showing syntax, stays in the page as a code block.
+A line ending in `# :remove:`, or the lines between `# :remove-start:` and `# :remove-end:`, are left out of the example; `.github/workflows/drift.yml` uses them for what this repository adds to the job its guide gives users. The command output in `crates/ascribe-cli/tests/output/` is written by `crates/ascribe-cli/tests/output.rs`, which fails when a command's output changes; run it with `ASCRIBE_BLESS=1 cargo test -p ascribe-cli --test output` to rewrite the files, and read the diff. An example with no file behind it, a few lines showing syntax, stays in the page as a code block.
 
 On a pull request, the **Drift** workflow's summary lists the pages whose examples the change touched: first those whose words around the example didn't change, which are the ones to reread, then those that changed along with it. It never fails and never comments. When it lists a page, read the sentences around the example against the new code, and fix the page in the same pull request if they no longer hold. An empty summary means no example changed.
 
@@ -89,7 +89,7 @@ On a pull request, the **Drift** workflow's summary lists the pages whose exampl
 The user docs in `docs/` are an Ascribe project, and `site/` publishes them with Astro. `site/` isn't in the pnpm workspace: it installs Ascribe from npm with its own lockfile, as a user's site does. To see a change to the docs, or to Ascribe and its docs together, build the site with this checkout's Ascribe:
 
 ```sh
-cargo build -p tessera-cli
+cargo build -p ascribe-cli
 cd site
 npm ci
 npm run build:checkout   # this checkout's binary and packages, installed without saving
@@ -105,7 +105,7 @@ Three checks run Ascribe from npm, the nightly canary `next`, not from the check
 
 ## Generated docs
 
-Parts of the user docs repeat what the code already says, so they're generated from it, as fragments in `docs/content/_generated/` that pages include: the diagnostics, from `tests/conformance/diagnostics.toml`; each command's options, from the `clap` help text in `crates/tessera-cli/src/`; and the extension's settings and commands, from `packages/vscode/package.json`. Each fragment says at its top what generates it. A test beside each source fails when its fragments are stale; change the source, not the fragment, then run the test with `ASCRIBE_BLESS=1` to rewrite them (`ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`, `ASCRIBE_BLESS=1 cargo test -p tessera-cli docs`, or `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`). The phrases in `docs/ascribe.toml` whose values are in another file, such as `version`, are checked against it too.
+Parts of the user docs repeat what the code already says, so they're generated from it, as fragments in `docs/content/_generated/` that pages include: the diagnostics, from `tests/conformance/diagnostics.toml`; each command's options, from the `clap` help text in `crates/ascribe-cli/src/`; and the extension's settings and commands, from `packages/vscode/package.json`. Each fragment says at its top what generates it. A test beside each source fails when its fragments are stale; change the source, not the fragment, then run the test with `ASCRIBE_BLESS=1` to rewrite them (`ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`, `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`, or `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`). The phrases in `docs/ascribe.toml` whose values are in another file, such as `version`, are checked against it too.
 
 ## If you move a checkout
 

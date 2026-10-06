@@ -11,7 +11,7 @@ This is for agents inside VS Code (Copilot, Cursor, Claude Code's panel), which 
 ## Context
 
 - `packages/vscode/src/registry.ts` (`ProjectRegistry`): finding projects, starting servers on demand, and the watcher for `ascribe.toml`. `projects.ts` holds the project type and path helpers.
-- `crates/tessera-lsp/README.md`, "Diagnostics": the server publishes file-level diagnostics and the page-level ones of the editor's build only. An agent reading the Problems panel sees less than `ascribe check` reports.
+- `crates/ascribe-lsp/README.md`, "Diagnostics": the server publishes file-level diagnostics and the page-level ones of the editor's build only. An agent reading the Problems panel sees less than `ascribe check` reports.
 - `packages/vscode/package.json`: `ascribe.startServers` and its description.
 - `packages/vscode/test/integration/suite/monorepo.it.ts`: the suite that checks what starts when.
 - Issue [#56](https://github.com/ascribed-dev/ascribe/issues/56): VS Code's file watcher can miss a new directory on Linux. Read it before adding a watcher; the same weakness applies here.
@@ -46,7 +46,7 @@ Fixing #56 (say in the pull request whether this phase makes it better, worse, o
 ```sh
 pnpm --filter ascribe-vscode test
 pnpm typecheck && pnpm lint && pnpm format:check
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 ```
 
 ## Commits

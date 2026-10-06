@@ -2,10 +2,10 @@
 //! the outline (SPEC §5.3). `syntax.rs` calls [`image`] for a paragraph that is
 //! one image.
 
-use tessera_conformance::outline::normalize_ws;
-use tessera_conformance::{AttrValue, Attributes, Node, Row};
-use tessera_core::{AttributeBlock, AttributeValue, Span};
-use tessera_syntax::{Image, Table, raw_text};
+use ascribe_conformance::outline::normalize_ws;
+use ascribe_conformance::{AttrValue, Attributes, Node, Row};
+use ascribe_core::{AttributeBlock, AttributeValue, Span};
+use ascribe_syntax::{Image, Table, raw_text};
 
 /// The outline's `image` block for an image alone in its paragraph.
 pub(super) fn image(source: &str, image: &Image) -> Node {

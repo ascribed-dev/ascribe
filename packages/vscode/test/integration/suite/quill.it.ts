@@ -75,7 +75,7 @@ describe("with the real language server on examples/quill", () => {
     await diagnosticsOf(broken, (all) => all.length === 0);
   });
 
-  it("formats through tessera-fmt on save when enabled", async () => {
+  it("formats through ascribe-fmt on save when enabled", async () => {
     const file = uriOf("docs", "format-on-save.md");
     const input = "@note{type = tip}: Save safely.\n";
     writeFileSync(file.fsPath, "placeholder\n");

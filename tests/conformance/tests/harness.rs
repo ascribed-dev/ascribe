@@ -7,7 +7,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use tessera_conformance::{
+use ascribe_conformance::{
     AdapterResult, BuildResult, Case, ConformanceAdapter, Diagnostic, Directive, Filter, Form,
     Node, Outcome, OutputKind, PageResult, Registry, Suite,
 };

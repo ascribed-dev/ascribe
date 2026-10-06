@@ -1,5 +1,5 @@
 [package]
-name = "tessera-conformance"
+name = "ascribe-conformance"
 description = "The Ascribe conformance harness: case discovery, expectations, skips, and adapters."
 version.workspace = true
 edition.workspace = true
@@ -18,12 +18,12 @@ toml.workspace = true
 # The Ascribe crates the adapters need, as dev-dependencies.
 [dev-dependencies]
 serde_json.workspace = true
-tessera-check.workspace = true
-tessera-core.workspace = true
-tessera-fmt.workspace = true
-tessera-model.workspace = true
-tessera-resolve.workspace = true
-tessera-syntax.workspace = true
+ascribe-check.workspace = true
+ascribe-core.workspace = true
+ascribe-fmt.workspace = true
+ascribe-model.workspace = true
+ascribe-resolve.workspace = true
+ascribe-syntax.workspace = true
 
 [[test]]
 name = "conformance"

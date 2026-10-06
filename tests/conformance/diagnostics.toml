@@ -2,12 +2,12 @@
 #
 # One entry for every diagnostic an Ascribe processor reports: every row of
 # SPEC §8.2, and every rule for loading ascribe.toml. Crates report problems
-# by slug (tessera-core's `Issue`, whose slug constants mirror this file); the
+# by slug (ascribe-core's `Issue`, whose slug constants mirror this file); the
 # checks map each slug to its code, severity, and message here; conformance
 # cases name diagnostics by slug.
 #
 # tests/conformance/tests/registry.rs checks this file against SPEC.md's
-# §8.2 table and the SPEC sections it cites, and tessera-core's tests check
+# §8.2 table and the SPEC sections it cites, and ascribe-core's tests check
 # its slug constants against it.
 #
 # Required fields:

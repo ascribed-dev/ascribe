@@ -130,7 +130,7 @@ link = "guides/editor.md#site-preview"
 path = ".."                               # relative to the folder ascribe.toml is in
 include = [                               # what's readable; everything else isn't
   ".github/workflows/**",
-  "crates/tessera-cli/tests/output/**",
+  "crates/ascribe-cli/tests/output/**",
   "examples/**",
 ]
 ignore = ["**/node_modules/**"]

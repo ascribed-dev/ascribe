@@ -12,7 +12,7 @@ This phase also builds the delivery (copy, or open in chat) that phase 6 reuses.
 
 - [The agent prompt format](README.md#the-agent-prompt-format) and [decisions 5, 6, 7, and 8](README.md#decisions).
 - Phase 1's `help`, `docs`, and `fixes` on each diagnostic.
-- `crates/tessera-lsp/src/code_action.rs`: where quick fixes are offered. `crates/tessera-lsp/src/server.rs` (`execute_command`): how the server runs a command.
+- `crates/ascribe-lsp/src/code_action.rs`: where quick fixes are offered. `crates/ascribe-lsp/src/server.rs` (`execute_command`): how the server runs a command.
 - `packages/vscode/src/`: how commands are registered, and `package.json`'s menus.
 - VS Code, to check against current documentation: the command that opens chat with a query that isn't submitted; `vscode.env.clipboard`; `vscode.env.openExternal` for another extension's URI handler.
 - No agent reads LSP code actions (the report found none that does), so the code action below is for the person at the editor. Agents get fixes from `check`'s JSON.
@@ -82,7 +82,7 @@ Review prompts (phase 6); sending a prompt without the user seeing it; choosing 
 cargo test --workspace --locked
 pnpm --filter ascribe-vscode test
 pnpm typecheck && pnpm lint && pnpm format:check
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 ```
 
 ## Commits

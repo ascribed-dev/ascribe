@@ -60,7 +60,7 @@ A chat participant (`@ascribe`); tools that edit, reply, or resolve; anything fo
 ```sh
 pnpm --filter ascribe-vscode test
 pnpm typecheck && pnpm lint && pnpm format:check
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 ```
 
 ## Commits

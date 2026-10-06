@@ -8,7 +8,7 @@
 //! - [`perf`]: timing the commands and comparing with recorded baselines.
 //!
 //! The synthetic 3,000-page project the benchmarks share is in the
-//! `tessera-synthetic` crate.
+//! `ascribe-synthetic` crate.
 
 pub mod convert;
 pub mod corpus;

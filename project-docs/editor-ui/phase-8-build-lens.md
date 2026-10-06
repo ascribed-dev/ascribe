@@ -8,8 +8,8 @@ Choose a build, and the editor dims what that build leaves out of the page: vari
 
 ## Context
 
-- `crates/tessera-resolve`: how a build resolves a page (`VariantMode` selection, `AvailabilityMode` filter, `DropReason`), already used by `ascribe/preview` (`crates/tessera-lsp/src/preview.rs`).
-- `crates/tessera-model`: `Build`, its `variants` and `availability` settings.
+- `crates/ascribe-resolve`: how a build resolves a page (`VariantMode` selection, `AvailabilityMode` filter, `DropReason`), already used by `ascribe/preview` (`crates/ascribe-lsp/src/preview.rs`).
+- `crates/ascribe-model`: `Build`, its `variants` and `availability` settings.
 - Phase 6's status bar item, and phase 1's `ascribe/targets` (`builds`).
 - VS Code: `window.createTextEditorDecorationType` (`opacity`), `setDecorations`, and hover messages on decorations.
 
@@ -48,7 +48,7 @@ Ranges are source ranges of whole blocks or arms (from the directive line to `@e
    - a `switch` build, where nothing is excluded;
    - unsaved edits.
 2. The command, the status bar integration, and the decorations, with unit tests for mapping results to decorations, and an integration test on a copy of `examples/monorepo/docs`: `self-hosted` dims the cloud arm in `getting-started.md` and the scheduled-rollouts section in `guides/rollouts.md`.
-3. Document `ascribe/buildView` in `crates/tessera-lsp/README.md`; the lens in `docs/editor.md`; `CHANGELOG.md`.
+3. Document `ascribe/buildView` in `crates/ascribe-lsp/README.md`; the lens in `docs/editor.md`; `CHANGELOG.md`.
 
 ## Out of scope
 
@@ -64,7 +64,7 @@ Dimming in the preview (it already renders a chosen build); showing fragments' c
 ```sh
 cargo test --workspace --locked
 pnpm --filter ascribe-vscode test
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 pnpm lint && pnpm format:check && cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings
 ```
 

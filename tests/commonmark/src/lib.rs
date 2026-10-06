@@ -2,7 +2,7 @@
 //!
 //! The suite is renderer-agnostic: [`run`] takes any `&str -> String` HTML
 //! renderer. `baselines/comrak.toml` records unmodified comrak from
-//! crates.io; the `comrak-tessera` fork's baselines, with the Ascribe option
+//! crates.io; the `comrak-ascribe` fork's baselines, with the Ascribe option
 //! off and on, are next to it.
 //!
 //! A baseline pins the exact set of failing examples, not just a count, so a

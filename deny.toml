@@ -19,7 +19,7 @@ yanked = "deny"
 # whichever of these it is.
 allow = [
   "Apache-2.0",
-  "BSD-2-Clause",     # crates/comrak-tessera, and upstream comrak
+  "BSD-2-Clause",     # crates/comrak-ascribe, and upstream comrak
   "BSD-3-Clause",
   "MIT",
   "MPL-2.0",          # Ascribe's own crates
@@ -46,7 +46,7 @@ skip = [
   { crate = "bitflags@1.3.2", reason = "lsp-types and its fluent-uri still use bitflags 1" },
 ]
 # Not duplicates to this check, since they're different crates, but known:
-# `comrak` and `comrak-tessera` (above), and `serde_yaml_ng` beside
+# `comrak` and `comrak-ascribe` (above), and `serde_yaml_ng` beside
 # `yaml-rust2`, on purpose: one reads values, the other gives positions.
 
 [sources]

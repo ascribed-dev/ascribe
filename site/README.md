@@ -40,7 +40,7 @@ npm run build         # astro build, then Pagefind's index of dist/
 With this checkout's Ascribe, for working on Ascribe and its docs together, and for a pull request's preview:
 
 ```sh
-cargo build -p tessera-cli          # or set ASCRIBE_BIN
+cargo build -p ascribe-cli          # or set ASCRIBE_BIN
 pnpm install                        # at the repository's root
 npm ci
 npm run build:checkout

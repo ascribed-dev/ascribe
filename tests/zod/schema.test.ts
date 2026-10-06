@@ -3,7 +3,7 @@
 // options), and they accept the frontmatter the site output writes for the
 // Quill project and reject what the content model doesn't allow.
 //
-// `generated/` is written by `ASCRIBE_BLESS=1 cargo test -p tessera-emit --test
+// `generated/` is written by `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test
 // zod`, which also fails when it's out of date.
 
 import { describe, expect, it } from "vitest";

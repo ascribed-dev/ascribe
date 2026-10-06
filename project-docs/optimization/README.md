@@ -1,5 +1,7 @@
 # Optimization
 
+> The crates were renamed from `tessera-*` to `ascribe-*` in phase 8A. This plan and its phase files keep the old names, as they were written; [ARCHITECTURE.md](../../ARCHITECTURE.md) has the new ones.
+
 A clean-up of Ascribe's code and infrastructure, done on purpose and in order: find out what we have, make it safe to change, then remove what's repeated, slow, or left over. It also leaves trails, so the next round of growth is easier to follow than this one was.
 
 Ascribe grew fast because the problems are hard, and most of that growth is worth keeping. This plan isn't a rewrite and adds no features. It's the work of making what exists smaller to hold in your head.

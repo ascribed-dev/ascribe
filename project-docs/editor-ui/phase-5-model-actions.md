@@ -16,10 +16,10 @@ Actions that change the content model, reachable like every other action (palett
 ## Context
 
 - Phase 2's `src/edit.rs` (`ascribe/edit`) and phase 3's registry; these become more operations and actions.
-- `crates/tessera-model`: how `ascribe.toml` is loaded and validated (phrase key rules, the one-role rule for names, availability spec syntax, feature rules). Reuse its validation for arguments.
-- `crates/tessera-lsp/src/refactor.rs`: the existing rename (pages and ids), for multi-file edits.
+- `crates/ascribe-model`: how `ascribe.toml` is loaded and validated (phrase key rules, the one-role rule for names, availability spec syntax, feature rules). Reuse its validation for arguments.
+- `crates/ascribe-lsp/src/refactor.rs`: the existing rename (pages and ids), for multi-file edits.
 - `docs/content-model.md`: `[phrases]` (§11), `[glossary]` (§12), `[features]` (§9), `[dimensions]` (§6), `[builds]` (§16).
-- `crates/tessera-lsp/src/core.rs`: how the server reloads the model when `ascribe.toml` changes (an open buffer wins over the disk).
+- `crates/ascribe-lsp/src/core.rs`: how the server reloads the model when `ascribe.toml` changes (an open buffer wins over the disk).
 
 ## Design
 
@@ -57,7 +57,7 @@ Add each to the registry with writer-facing titles ("Make this a phrase", "Add t
 1. `toml_edit` round-trip editing in the server, with tests that comments, blank lines, and order survive each kind of change.
 2. The five operations in `ascribe/edit`, with tests including the "no new diagnostics" check on `examples/quill` and `examples/monorepo`, and an unsaved `ascribe.toml` buffer.
 3. The actions, wizards, and bar group in the extension, with unit and integration tests (rename preview shown; cancel leaves nothing changed).
-4. Document the operations in `crates/tessera-lsp/README.md`, the actions in `docs/editor.md`, and a line in `CHANGELOG.md`.
+4. Document the operations in `crates/ascribe-lsp/README.md`, the actions in `docs/editor.md`, and a line in `CHANGELOG.md`.
 
 ## Out of scope
 
@@ -74,7 +74,7 @@ Removing model entries; editing types, widgets, or builds by form; anything acro
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 pnpm --filter ascribe-vscode test
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 pnpm lint && pnpm format:check && cargo fmt --all --check
 ```
 

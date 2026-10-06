@@ -1,0 +1,28 @@
+[package]
+name = "ascribe-resolve"
+description = "The project graph and the resolution passes: includes, availability, build modes, phrases, heading ids, links, and glossary."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_yaml_ng.workspace = true
+ascribe-core.workspace = true
+ascribe-model.workspace = true
+ascribe-syntax.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+serde_json.workspace = true
+tempfile = "3"
+ascribe-synthetic.workspace = true
+
+[[bench]]
+name = "incremental"
+harness = false
+
+[lints]
+workspace = true

@@ -1,14 +1,14 @@
 //! The adapter for page-level checks.
 //!
 //! It handles the `page-check` tag. A case with it expects, per build, the
-//! diagnostics `tessera_check::check_pages` reports for that build: the same
+//! diagnostics `ascribe_check::check_pages` reports for that build: the same
 //! entry point `ascribe check`, the build, and the language server call. The
 //! build's pages and assets come from the resolve adapter's code, so a case
 //! that expects both (the Quill project, the selection cases) runs whole; and
 //! the file-level diagnostics a case lists at the top level are
 //! `check_files`, as for the `check` tag.
 
-use tessera_conformance::{AdapterResult, BuildResult, Case, ConformanceAdapter, Diagnostic};
+use ascribe_conformance::{AdapterResult, BuildResult, Case, ConformanceAdapter, Diagnostic};
 
 /// Handles the cases that expect page-level diagnostics.
 pub struct PageCheckAdapter;

@@ -169,7 +169,7 @@ and `ariadne::sources` (which builds line tables for every file) **for every
 diagnostic**, so the cost is diagnostics x corpus size. Converted Docker (1,116
 files, 8.6 MB, about 4,000 diagnostics): **80 s** in text and **3.2 s** as JSON.
 Converted Elastic (21 MB, 2,895): over **100 s** against 7 s. Reproduce with
-`cargo bench -p tessera-corpora --bench perf` (the noisy project, 1,000 pages
+`cargo bench -p ascribe-corpora --bench perf` (the noisy project, 1,000 pages
 with one warning each: 1.4 s against 0.25 s; the gap grows with the corpus).
 The fix is one cache built once per report. **Fixed:** the report now fills
 one source cache as it goes, so each file's text is read and indexed once; on

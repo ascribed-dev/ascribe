@@ -26,7 +26,7 @@
 // workflow's own steps, a stand-in for `gh` (fake-gh.ts), and no GitHub.
 //
 // It needs `git`, an `ascribe` binary (ASCRIBE_BIN, or `cargo build -p
-// tessera-cli`), and for --local, `bash` and `jq`. For GitHub, it needs the
+// ascribe-cli`), and for --local, `bash` and `jq`. For GitHub, it needs the
 // GitHub CLI (`gh`), signed in with access to both repositories, and `git`
 // able to read and push them (`gh auth setup-git`).
 import { execFileSync, spawnSync } from "node:child_process";
@@ -640,7 +640,7 @@ function binary(): string {
   );
   const found = process.env["ASCRIBE_BIN"] ?? (existsSync(built) ? built : undefined);
   if (found === undefined)
-    fail("No `ascribe` to run: set ASCRIBE_BIN, or run `cargo build -p tessera-cli`.");
+    fail("No `ascribe` to run: set ASCRIBE_BIN, or run `cargo build -p ascribe-cli`.");
   return found;
 }
 

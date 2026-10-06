@@ -8,11 +8,11 @@ Six commands that tell an agent what it would otherwise guess: what a diagnostic
 
 ## Context
 
-- `crates/tessera-cli/src/commands/`: how a command is declared, loads the project, and reports. `docs/cli.md`: the conventions for options, exit codes, and JSON.
-- `tests/conformance/diagnostics.toml` and the code that generates `docs/diagnostics.md` from it (`tests/conformance/tests/docs.rs`): the source for `explain`. The registry has to reach the binary; see how `tessera-check` reads it today.
-- `crates/tessera-model`: the resolved content model (page types, frontmatter, dimensions, phrases, features, glossary, widgets, builds).
-- `crates/tessera-lsp/src/` (`nav.rs`, `definition.rs`, `links.rs`, `refactor.rs`, `docs.rs`): heading ids, link resolution, references for rename, and the directive documentation hover shows.
-- `crates/tessera-emit` (`plain`): the resolved CommonMark output `render` reuses.
+- `crates/ascribe-cli/src/commands/`: how a command is declared, loads the project, and reports. `docs/cli.md`: the conventions for options, exit codes, and JSON.
+- `tests/conformance/diagnostics.toml` and the code that generates `docs/diagnostics.md` from it (`tests/conformance/tests/docs.rs`): the source for `explain`. The registry has to reach the binary; see how `ascribe-check` reads it today.
+- `crates/ascribe-model`: the resolved content model (page types, frontmatter, dimensions, phrases, features, glossary, widgets, builds).
+- `crates/ascribe-lsp/src/` (`nav.rs`, `definition.rs`, `links.rs`, `refactor.rs`, `docs.rs`): heading ids, link resolution, references for rename, and the directive documentation hover shows.
+- `crates/ascribe-emit` (`plain`): the resolved CommonMark output `render` reuses.
 - [Decision 3](README.md#decisions): compact, versioned, capped.
 
 ## Design
@@ -41,7 +41,7 @@ Details:
 
 1. `explain`, the registry's `example` field, the default model, and a registry test that every example's `wrong` text produces that diagnostic under its model and its `right` text doesn't.
 2. `model`, with the shared text summary, tested against `examples/content-models/`.
-3. `outline`, `link`, and `refs`, reusing the server's navigation code. If that code lives in `tessera-lsp` and the CLI can't depend on it cleanly, move the shared part down to `tessera-resolve` or `tessera-check` in its own commit, with no behavior change.
+3. `outline`, `link`, and `refs`, reusing the server's navigation code. If that code lives in `ascribe-lsp` and the CLI can't depend on it cleanly, move the shared part down to `ascribe-resolve` or `ascribe-check` in its own commit, with no behavior change.
 4. `render`.
 5. `ascribe --help`: examples before options, and a short "For agents" paragraph naming `check --format concise`, `explain`, and `model`. Agents read `--help` first.
 6. `docs/cli.md` (a section per command, with its JSON), `CHANGELOG.md`.

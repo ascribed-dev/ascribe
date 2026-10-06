@@ -124,7 +124,7 @@ This repository runs this workflow on a pair of made-up repositories, built by [
 
 A snippet keeps the code on the page current, but not the sentence around it. When a pull request changes a region and not the page that shows it, the page now explains code that may work differently. `ascribe drift` lists those pages:
 
-@snippet {lang=text}: code:crates/tessera-cli/tests/output/drift-guide.txt
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/drift-guide.txt
 
 A page covers the code it shows: the regions and whole files it takes snippets from, its fragments' included. Nothing else needs to be declared, and nothing else is reported. A region whose lines only moved, or whose file changed somewhere else, isn't a change. A page that changed in the same pull request, or through a fragment it includes, is in the second group: someone touched it, so it's listed but not flagged. An example that no longer resolves, because its region was renamed or its file moved and the page wasn't updated, is listed first, with why; `ascribe check` fails on it too.
 

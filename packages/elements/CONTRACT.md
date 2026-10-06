@@ -12,7 +12,7 @@ The site output (SPEC §9.4) is markdown plus custom elements. This contract is 
 | Project widget | [An element named after the widget](#6-project-widgets), and `<ascribe-group>` for groups | The project's own; `<ascribe-group>` is the library's |
 | Glossary term | [An ordinary link](#7-glossary-terms), marked with `data-ascribe-term` | Optional CSS |
 
-A change to this contract changes the site emitter (`crates/tessera-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
+A change to this contract changes the site emitter (`crates/ascribe-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
 
 ## 0. Rules for every element
 

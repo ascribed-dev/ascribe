@@ -29,7 +29,7 @@ on:
       # docs/ascribe.toml.
       - "examples/**"
       - ".github/workflows/**"
-      - "crates/tessera-cli/tests/output/**"
+      - "crates/ascribe-cli/tests/output/**"
   workflow_dispatch:
 
 permissions:

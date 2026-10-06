@@ -1,8 +1,8 @@
 //! Times `ascribe check`, `ascribe build`, `ascribe diff`, and `ascribe
 //! drift` on the 3,000-page synthetic project and on the converted Elastic corpus.
 //!
-//! Run with `cargo bench -p tessera-corpora --bench perf` (build the CLI first
-//! with `cargo build --release -p tessera-cli`; the bench finds `ascribe` next
+//! Run with `cargo bench -p ascribe-corpora --bench perf` (build the CLI first
+//! with `cargo build --release -p ascribe-cli`; the bench finds `ascribe` next
 //! to the other release binaries, or in `ASCRIBE_BIN`). For each project it
 //! prints:
 //!
@@ -35,12 +35,12 @@ use std::process::{Command, Stdio};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use tessera_check::{Project, check_all_builds, check_files};
-use tessera_corpora::convert::{self, Extra};
-use tessera_corpora::corpus::{self, Corpus};
-use tessera_emit::{EmitContext, Emitter, PlainEmitter, emit};
-use tessera_resolve::AstroRouter;
-use tessera_synthetic::{CONTENT_ROOT, Synthetic, report::record};
+use ascribe_check::{Project, check_all_builds, check_files};
+use ascribe_corpora::convert::{self, Extra};
+use ascribe_corpora::corpus::{self, Corpus};
+use ascribe_emit::{EmitContext, Emitter, PlainEmitter, emit};
+use ascribe_resolve::AstroRouter;
+use ascribe_synthetic::{CONTENT_ROOT, Synthetic, report::record};
 
 mod memory;
 
@@ -59,7 +59,7 @@ fn ascribe_bin() -> PathBuf {
     let bin = release.join("ascribe");
     assert!(
         bin.exists(),
-        "{} not found: run `cargo build --release -p tessera-cli` first",
+        "{} not found: run `cargo build --release -p ascribe-cli` first",
         bin.display()
     );
     bin
@@ -117,7 +117,7 @@ fn phases(name: &str, dir: &Path) {
     // first build and render plain markdown.
     let model = Arc::new(project.model().clone());
     let start = Instant::now();
-    let resolved = tessera_resolve::Project::load(
+    let resolved = ascribe_resolve::Project::load(
         model.clone(),
         project.layout().clone(),
         project.file_system(),

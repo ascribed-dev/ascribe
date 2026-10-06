@@ -1,13 +1,13 @@
-//! The adapter for `tessera-fmt`: the `format` tag (canonical form, SPEC §8.3).
+//! The adapter for `ascribe-fmt`: the `format` tag (canonical form, SPEC §8.3).
 //!
 //! A case's `input.md` is formatted under the case's content model, loaded by
-//! `tessera-model`, and the result is compared with the case's `formatted`
+//! `ascribe-model`, and the result is compared with the case's `formatted`
 //! file. The runner formats the result again to check that formatting is
 //! idempotent.
 
-use tessera_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter};
-use tessera_core::FileId;
-use tessera_fmt::{format_source, options_from_model};
+use ascribe_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter};
+use ascribe_core::FileId;
+use ascribe_fmt::{format_source, options_from_model};
 
 /// Handles the `format` tag.
 pub struct FormatAdapter;
@@ -24,7 +24,7 @@ impl ConformanceAdapter for FormatAdapter {
     fn format(&self, case: &Case, source: &str) -> AdapterResult<String> {
         let text = std::fs::read_to_string(&case.model)
             .map_err(|e| AdapterError(format!("couldn't read {}: {e}", case.model.display())))?;
-        let model = tessera_model::load_str(&text, FileId::new(0)).map_err(|issues| {
+        let model = ascribe_model::load_str(&text, FileId::new(0)).map_err(|issues| {
             let slugs: Vec<&str> = issues.iter().map(|i| i.slug.as_str()).collect();
             AdapterError(format!(
                 "{} isn't a valid content model: {}",

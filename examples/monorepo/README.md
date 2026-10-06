@@ -22,7 +22,7 @@ handbook/                        the engineering handbook, a project
       content/                   case-sensitive glossary, its own phrases
 ```
 
-Each project has no errors or warnings under any of its builds, and its files are in canonical form; tests in `crates/tessera-cli` keep it that way.
+Each project has no errors or warnings under any of its builds, and its files are in canonical form; tests in `crates/ascribe-cli` keep it that way.
 
 ## Things to try
 

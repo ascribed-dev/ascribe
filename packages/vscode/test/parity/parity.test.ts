@@ -5,7 +5,7 @@
 // Asset URLs differ by design (the preview points at source files, Astro at
 // its optimized copies), so they're compared by the source file they resolve to.
 //
-//   cargo build -p tessera-cli
+//   cargo build -p ascribe-cli
 //   pnpm --filter @ascribed/elements build && pnpm --filter @ascribed/astro build
 //   pnpm --filter ascribe-vscode test:parity
 //
@@ -88,7 +88,7 @@ async function copyVariant(variant: Variant): Promise<string> {
 }
 
 beforeAll(async () => {
-  expect(existsSync(binary), `${binary} exists (cargo build -p tessera-cli, or ASCRIBE_BIN)`).toBe(
+  expect(existsSync(binary), `${binary} exists (cargo build -p ascribe-cli, or ASCRIBE_BIN)`).toBe(
     true,
   );
   for (const variant of VARIANTS) {

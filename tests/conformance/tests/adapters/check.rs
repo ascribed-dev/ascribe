@@ -1,6 +1,6 @@
-//! The adapter for `tessera-check`: file-level diagnostics.
+//! The adapter for `ascribe-check`: file-level diagnostics.
 //!
-//! It handles the `check` tag. Its diagnostics are `tessera_check::check_files`
+//! It handles the `check` tag. Its diagnostics are `ascribe_check::check_files`
 //! on a project built from the case: the case's content model, and every
 //! `.md` file under its content root. That's the same entry point
 //! `ascribe check`, the build, and the language server call.
@@ -8,11 +8,11 @@
 //! A `check` case that also carries `structure` or `parser` gets its
 //! diagnostics here, from the whole check, not from the parser alone.
 
-use tessera_check::{Project, check_files};
-use tessera_conformance::{
+use ascribe_check::{Project, check_files};
+use ascribe_conformance::{
     AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic,
 };
-use tessera_core::{FileId, RelPath, WideEncoding};
+use ascribe_core::{FileId, RelPath, WideEncoding};
 
 /// Handles the cases that expect file-level diagnostics.
 pub struct CheckAdapter;
@@ -37,7 +37,7 @@ impl ConformanceAdapter for CheckAdapter {
 pub fn project(case: &Case) -> Result<Project, AdapterError> {
     let text = std::fs::read_to_string(&case.model)
         .map_err(|e| AdapterError(format!("couldn't read {}: {e}", case.model.display())))?;
-    let model = tessera_model::load_str(&text, FileId::new(0)).map_err(|issues| {
+    let model = ascribe_model::load_str(&text, FileId::new(0)).map_err(|issues| {
         let slugs: Vec<_> = issues.iter().map(|i| i.slug.to_string()).collect();
         AdapterError(format!(
             "{} doesn't load: {}",
@@ -70,14 +70,14 @@ pub fn file_level_diagnostics(case: &Case) -> Result<Vec<Diagnostic>, AdapterErr
 /// a 1-based line, and a column in Unicode scalar values.
 pub fn to_conformance(
     project: &Project,
-    diagnostics: Vec<tessera_check::Diagnostic>,
+    diagnostics: Vec<ascribe_check::Diagnostic>,
 ) -> Result<Vec<Diagnostic>, AdapterError> {
     let mut out = Vec::new();
     for d in diagnostics {
         let file = project
             .file(d.location.file)
             .ok_or_else(|| AdapterError(format!("{} has no file", d.slug)))?;
-        let index = tessera_core::LineIndex::new(file.text);
+        let index = ascribe_core::LineIndex::new(file.text);
         let pos = index
             .wide_line_col(WideEncoding::Utf32, d.location.span.start())
             .ok_or_else(|| AdapterError(format!("bad location for {}", d.slug)))?;

@@ -29,7 +29,7 @@ test/e2e/                         the end-to-end tests
 ```sh
 pnpm install
 # For local workspace development only, stage a native binary into the optional package:
-cargo build -p tessera-cli
+cargo build -p ascribe-cli
 ASCRIBE_BIN_DARWIN_ARM64="$PWD/target/debug/ascribe" pnpm --filter @ascribed/cli stage-native darwin-arm64
 pnpm --filter @ascribed/cli build
 pnpm --filter @ascribed/elements build

@@ -13,13 +13,13 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
-use tessera_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
+use ascribe_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
 
 fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs";
+const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs";
 
 #[test]
 fn every_diagnostic_says_how_to_fix_it() {
@@ -175,7 +175,7 @@ const RULE_GROUPS: &[(&str, &str)] = &[
 /// What each fragment starts with: what generates it, and how.
 const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by \
      tests/conformance/tests/docs.rs. Edit the registry, then run \
-     `ASCRIBE_BLESS=1 cargo test -p tessera-conformance --test docs`. -->\n";
+     `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
 /// source-file diagnostics, the content model's, and the retired ones (empty

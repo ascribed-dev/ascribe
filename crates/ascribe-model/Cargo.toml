@@ -1,0 +1,23 @@
+[package]
+name = "ascribe-model"
+description = "Loads and validates a documentation set's content model, ascribe.toml."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ascribe-core.workspace = true
+serde_yaml_ng.workspace = true
+# The hashes `ascribe.lock` records for copied files.
+sha2.workspace = true
+# `preserve_order` keeps declaration order.
+toml = { workspace = true, features = ["preserve_order"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+toml.workspace = true

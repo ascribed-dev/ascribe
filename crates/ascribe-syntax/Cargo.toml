@@ -1,0 +1,20 @@
+[package]
+name = "ascribe-syntax"
+description = "Ascribe parsing: Ascribe lines, the structure pass, and the syntax tree."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+comrak-ascribe.workspace = true
+ascribe-core.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+ascribe-commonmark-suite = { path = "../../tests/commonmark" }
+
+[lints]
+workspace = true

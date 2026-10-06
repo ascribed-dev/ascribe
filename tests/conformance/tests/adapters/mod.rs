@@ -14,9 +14,9 @@ pub mod resolve;
 mod structure;
 mod syntax;
 
+use ascribe_conformance::Registry;
 #[allow(unused_imports)]
 pub use check::{file_level_diagnostics, to_conformance};
-use tessera_conformance::Registry;
 
 /// Registers every adapter. Earlier registrations are asked first.
 pub fn register(registry: &mut Registry) {

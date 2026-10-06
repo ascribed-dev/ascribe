@@ -1,6 +1,6 @@
 // The Astro end-to-end test: a real `astro build` of this site,
 // then the built HTML checked in Chromium. Run by `pnpm test:e2e`; it needs a
-// built `ascribe` binary (`cargo build -p tessera-cli`, or ASCRIBE_BIN) and
+// built `ascribe` binary (`cargo build -p ascribe-cli`, or ASCRIBE_BIN) and
 // `pnpm --filter @ascribed/astro build` and `pnpm --filter @ascribed/elements build`.
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";

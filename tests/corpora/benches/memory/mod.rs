@@ -9,9 +9,9 @@ use std::io::{BufRead as _, BufReader, Read as _, Write as _};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 
+use ascribe_synthetic::report::record_megabytes;
+use ascribe_synthetic::{CONTENT_ROOT, Synthetic, TYPING_LINE, TYPING_PREFIX};
 use serde_json::{Value, json};
-use tessera_synthetic::report::record_megabytes;
-use tessera_synthetic::{CONTENT_ROOT, Synthetic, TYPING_LINE, TYPING_PREFIX};
 
 const TIME: &str = "/usr/bin/time";
 

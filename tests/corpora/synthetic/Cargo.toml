@@ -1,5 +1,5 @@
 [package]
-name = "tessera-synthetic"
+name = "ascribe-synthetic"
 description = "The synthetic Ascribe project the benchmarks share: generated pages, fragments, and images."
 version.workspace = true
 edition.workspace = true

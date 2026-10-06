@@ -5,7 +5,7 @@ Tests and benchmarks against real documentation and a synthetic project of
 
 | | |
 |---|---|
-| `synthetic/` | `tessera-synthetic`: the 3,000-page project every benchmark shares. No dependencies. |
+| `synthetic/` | `ascribe-synthetic`: the 3,000-page project every benchmark shares. No dependencies. |
 | `src/corpus.rs` | The three corpora, and fetching them: shallow, sparse, blobless clones at pinned commits into `target/corpora/`. |
 | `src/recognize.rs` | What the parser finds in unconverted Markdown, classed. |
 | `src/convert/` | Elastic, Astro, and Docker constructs to Ascribe, at volume. |
@@ -19,8 +19,8 @@ Tests and benchmarks against real documentation and a synthetic project of
 
 ```sh
 cargo test --workspace                      # offline and fast: corpus tests skip, with a message, unless cached
-ASCRIBE_CORPORA=fetch cargo test --release -p tessera-corpora -- --include-ignored --nocapture
-corpora fetch|recognize <corpus>|convert <corpus>   # cargo run --release -p tessera-corpora --bin corpora
+ASCRIBE_CORPORA=fetch cargo test --release -p ascribe-corpora -- --include-ignored --nocapture
+corpora fetch|recognize <corpus>|convert <corpus>   # cargo run --release -p ascribe-corpora --bin corpora
 ```
 
 `ASCRIBE_CORPORA` sets what a test does about a corpus: unset (or `skip`) never

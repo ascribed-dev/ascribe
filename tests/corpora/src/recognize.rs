@@ -21,12 +21,12 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use serde::Serialize;
-use tessera_check::{Project, SourceFile, check_file};
-use tessera_core::{FileId, LineCol, LineIndex, RelPath, Span};
-use tessera_syntax::{
+use ascribe_check::{Project, SourceFile, check_file};
+use ascribe_core::{FileId, LineCol, LineIndex, RelPath, Span};
+use ascribe_syntax::{
     Block, BlockKind, DirectiveLine, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
 };
+use serde::Serialize;
 
 /// Diagnostics that are about a project's files existing, not about what the
 /// parser recognized: a corpus is checked as loose pages with no assets and no
@@ -124,7 +124,7 @@ fn markdown_path(page: &str) -> String {
 /// declared phrases: the project is empty), and lists what is recognized.
 pub fn recognize(pages: &[(String, String)]) -> Report {
     let mut report = Report::default();
-    let model = match tessera_model::load_str("spec = \"0.1\"\n", FileId::new(0)) {
+    let model = match ascribe_model::load_str("spec = \"0.1\"\n", FileId::new(0)) {
         Ok(model) => model,
         Err(_) => return report,
     };
@@ -160,7 +160,7 @@ pub fn recognize(pages: &[(String, String)]) -> Report {
         report.bytes += text.len();
         let lines = LineIndex::new(text);
         let mut found = Vec::new();
-        let doc = parse(text, &ParseOptions::new(tessera_core::builtin_schemas()));
+        let doc = parse(text, &ParseOptions::new(ascribe_core::builtin_schemas()));
         let mut walker = Walker {
             out: &mut found,
             text,

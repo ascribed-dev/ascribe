@@ -40,7 +40,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: cargo build -p tessera-cli --locked
+      - run: cargo build -p ascribe-cli --locked
       - run: target/debug/ascribe check --deny-warnings --config docs
       - run: target/debug/ascribe fmt --check --config docs
       - run: npm ci

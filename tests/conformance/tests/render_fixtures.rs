@@ -3,7 +3,7 @@
 //! and a fixture written from a source has its page without anchors.
 //!
 //! The fixtures themselves run against the two implementations:
-//! `tessera-emit`'s `render_site_html` and `@ascribed/astro`'s markdown
+//! `ascribe-emit`'s `render_site_html` and `@ascribed/astro`'s markdown
 //! plugin.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]

@@ -24,9 +24,9 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
+use ascribe_corpora::corpus::{self, Corpus};
+use ascribe_corpora::recognize::{Report, recognize};
 use serde::{Deserialize, Serialize};
-use tessera_corpora::corpus::{self, Corpus};
-use tessera_corpora::recognize::{Report, recognize};
 
 #[derive(Deserialize)]
 struct Verdicts {
@@ -124,7 +124,7 @@ fn run(corpus: Corpus) {
         assert_eq!(
             current, recorded,
             "{corpus}: recognition changed since the recorded baseline; review the difference, \
-             then ASCRIBE_CORPORA_BLESS=1 cargo test -p tessera-corpora --test recognition"
+             then ASCRIBE_CORPORA_BLESS=1 cargo test -p ascribe-corpora --test recognition"
         );
     }
 

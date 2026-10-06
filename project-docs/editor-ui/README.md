@@ -40,7 +40,7 @@ Do them in order. Each phase leaves the repository green and can be its own pull
 - Branch before committing; never commit to `main`.
 - Read the current code before the phase file's pointers: line numbers drift. If the phase file and the code disagree, or a decision above can't be met, stop and report instead of choosing silently.
 - Match the surrounding code's style, comment density, and naming. Libraries don't panic on user input; `unwrap` and `expect` are linted.
-- **Server work:** a new request gets its own module like `crates/tessera-lsp/src/preview.rs` (a `METHOD` constant, serde parameter and result types), a handler in `server.rs`, scenario tests in `crates/tessera-lsp/tests/` (the in-process harness in `tests/support/mod.rs`), and a section in `crates/tessera-lsp/README.md` documenting the request for other clients. Requests answer from the current snapshot, so they include unsaved edits.
+- **Server work:** a new request gets its own module like `crates/ascribe-lsp/src/preview.rs` (a `METHOD` constant, serde parameter and result types), a handler in `server.rs`, scenario tests in `crates/ascribe-lsp/tests/` (the in-process harness in `tests/support/mod.rs`), and a section in `crates/ascribe-lsp/README.md` documenting the request for other clients. Requests answer from the current snapshot, so they include unsaved edits.
 - **Extension work:** unit tests with vitest (`packages/vscode/test/unit/`) for anything that doesn't need VS Code; integration tests (`packages/vscode/test/integration/suite/`) for what does, against the real server. `test/fixtures/monorepo` is the multi-project fixture; `examples/monorepo` is for trying things by hand (**Run and Debug → Extension: several projects**).
 - **User-visible changes** update `docs/editor.md` and add a line to the unreleased section of `CHANGELOG.md` in the same phase.
 - Tests must be correct on Windows: no hard-coded `/` in filesystem paths, `file:///C:/…` URIs with three slashes, and drive-letter case folded when comparing.
@@ -52,7 +52,7 @@ Do them in order. Each phase leaves the repository green and can be its own pull
   cargo clippy --workspace --all-targets --locked -- -D warnings
   cargo test --workspace --locked
   pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
-  cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+  cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
   ```
 
   (`corepack pnpm` where `pnpm` isn't on the path.)

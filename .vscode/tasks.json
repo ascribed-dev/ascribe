@@ -7,7 +7,7 @@
       "label": "server: build",
       "detail": "Build the ascribe binary (target/debug/ascribe).",
       "type": "shell",
-      "command": "cargo build -p tessera-cli",
+      "command": "cargo build -p ascribe-cli",
       "problemMatcher": ["$rustc"]
     },
     {

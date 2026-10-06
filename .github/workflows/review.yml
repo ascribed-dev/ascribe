@@ -94,7 +94,7 @@ jobs:
           fetch-depth: 0
       - id: changed
         run: |
-          if git diff --quiet "origin/$GITHUB_BASE_REF...HEAD" -- docs .github/workflows crates/tessera-cli/tests/output examples; then
+          if git diff --quiet "origin/$GITHUB_BASE_REF...HEAD" -- docs .github/workflows crates/ascribe-cli/tests/output examples; then
             echo "::notice::The pull request doesn't change docs, or the files its examples come from, so there's no report for it."
             echo "docs=false" >> "$GITHUB_OUTPUT"
           else

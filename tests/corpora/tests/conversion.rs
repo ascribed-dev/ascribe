@@ -11,10 +11,10 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
+use ascribe_check::{Project, Severity, check_all_builds};
+use ascribe_corpora::convert::{self, Converted, Extra};
+use ascribe_corpora::corpus::{self, Corpus};
 use serde::{Deserialize, Serialize};
-use tessera_check::{Project, Severity, check_all_builds};
-use tessera_corpora::convert::{self, Converted, Extra};
-use tessera_corpora::corpus::{self, Corpus};
 
 fn convert_one(corpus: Corpus, path: &str, text: &str, docset: &str) -> Converted {
     convert::convert(
@@ -26,7 +26,7 @@ fn convert_one(corpus: Corpus, path: &str, text: &str, docset: &str) -> Converte
     )
 }
 
-fn check(converted: &Converted) -> Vec<tessera_check::Diagnostic> {
+fn check(converted: &Converted) -> Vec<ascribe_check::Diagnostic> {
     let dir = tempfile::tempdir().expect("temp dir");
     converted.write_to(dir.path()).expect("writes");
     let project = Project::load(&dir.path().join("ascribe.toml")).expect("the model loads");
