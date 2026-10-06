@@ -87,22 +87,24 @@ hand with **record** set, on GitHub's `ubuntu-latest` runner (AMD EPYC 7763, 4
 logical cores). Every metric was recorded again there, so the file holds one
 machine's numbers. It was recorded again the same day, on the same CPU, once
 the release profile was in (see [The release profile](#the-release-profile)),
-which made each command 5 to 12 percent faster. Medians:
+which made each command 5 to 12 percent faster, and again once `diff` and
+`drift` were made faster (optimization phase 7A, [below](#where-diff-and-drift-spend-their-time)).
+Medians:
 
 | | time |
 |---|---|
-| `ascribe check` | 652 ms |
+| `ascribe check` | 667 ms |
 | `ascribe build --emit plain,json`, first; again | 1.8 s; 1.6 s |
-| `ascribe diff`, nothing changed | 1.28 s |
-| `ascribe diff`, one page; a fragment 100 pages include; a phrase every page uses | 1.30 s; 1.29 s; 1.32 s |
-| `ascribe diff` with snippets, nothing changed; a region ten pages show | 1.76 s; 1.76 s |
-| `ascribe drift` with snippets, nothing changed; a region ten pages show | 480 ms; 857 ms |
-| `ascribe check --format json`, converted Elastic sample | 3.1 s |
-| language server: page keystroke, fragment keystroke, completion | 1.6 ms, 9.1 ms, 3.3 ms |
+| `ascribe diff`, nothing changed | 843 ms |
+| `ascribe diff`, one page; a fragment 100 pages include; a phrase every page uses | 792 ms; 814 ms; 1.02 s |
+| `ascribe diff` with snippets, nothing changed; a region ten pages show | 1.07 s; 1.07 s |
+| `ascribe drift` with snippets, nothing changed; a region ten pages show | 485 ms; 535 ms |
+| `ascribe check --format json`, converted Elastic sample | 3.2 s |
+| language server: page keystroke, fragment keystroke, completion | 1.6 ms, 8.0 ms, 3.2 ms |
 
-`diff` takes the same time whatever changed, which is
-`project-docs/optimization/inventory.md` finding 4; phase 7 of that plan
-sets its target. Completion is the slowest context, a link by page title, at
+`diff` took the same time whatever changed (1.28 to 1.32 s), which was
+`project-docs/optimization/inventory.md` finding 4; now only a change that
+reaches every page, such as a phrase, costs more. Completion is the slowest context, a link by page title, at
 3,000 pages (`lsp/completion-3000`); the benchmark didn't record it before.
 
 ### Peak memory
@@ -165,6 +167,113 @@ say so in the commit. A recording that lacks a required metric fails and
 leaves the file as it was. A runner isn't always the same CPU (two runs on
 2026-10-06 got an EPYC 9V74 and an EPYC 7763, about 15 percent apart), which
 the margin absorbs.
+
+## Where `diff` and `drift` spend their time
+
+Measured on 2026-10-06 (optimization phase 7A), before changing anything, on
+the cloud container described above, in a release build of `main` at
+de59172: the commands' wall time (median of five), and each step timed in
+process by a scratch program calling the same library functions. The
+projects are the benchmark's: the 3,000-page synthetic project in git, with
+and without a snippet on every page.
+
+`ascribe diff`, nothing changed, 1.37 s:
+
+| Step | time |
+|---|--:|
+| loading the working tree (`tessera_check::Project::load`) | 40 ms |
+| finding the repository and the base (three `git` calls) | 6 ms |
+| reading the base from `git`: `ls-tree`, then one `cat-file --batch` for 3,261 blobs | 200 ms |
+| indexing the base | 150 ms |
+| indexing the working tree | 210 ms |
+| counting the working tree's errors, a full check (beside the next step) | 600 ms |
+| comparing: resolving and fingerprinting all 3,000 pages, on both sides | 475 ms |
+
+The first five steps ran one after another, then the last two side by side,
+so the command took about 600 ms plus the slower of the two. It took the
+same whatever changed, since the comparison resolved every page, changed or
+not. `git` itself was about 140 ms of it (`ls-tree` 5 ms, `cat-file` 120 ms
+on the benchmark's loose objects), so the time isn't mostly in `git`.
+
+**With snippets** (1.80 s with a region ten pages show changed): indexing
+the base took 363 ms instead of 150, the full check 840 ms instead of 600,
+and the comparison 530 ms. The base's indexing read each of the 100 code
+files through its own `git cat-file` process, 102 processes in all; 100
+such processes take 230 ms alone. Reading a code file once per page that
+shows it is ruled out: the working tree's index reads each code file once
+(`CodeFiles`), and the base's kept each blob it had read.
+
+**`ascribe drift`**, with snippets: 0.38 s with nothing changed, which is
+the working tree's index (295 ms) and one `git diff` (10 ms). With a region
+ten pages show changed, 0.95 s: the same, then reading the base (215 ms) and
+indexing it (350 ms, with the 100 `git` processes), one after the other.
+Telling which of the ten pages changed apart from their examples took 9 ms.
+
+What changed, in pull request order:
+
+1. **A short path for what didn't change.** A page can differ only when its
+   own file, a file it includes, or a file it links to reads differently:
+   the text differs, the same text resolves differently (a link's target
+   appeared, an image went away), or a snippet's code differs. The
+   comparison finds those files from the two versions' indexes, adds the
+   files that include them and the files that link to those, and resolves
+   only those pages; any other page resolves the same on both sides. A
+   change to the content model, or to a page the glossary links to, still
+   compares every page. Nothing is taken from `git`'s listing.
+   `crates/tessera-diff/tests/reach.rs` checks, on random pairs of
+   versions, that the result is exactly what comparing every page gives.
+   The comparison went from 475 ms to 13 ms.
+2. **Each code file once, through one `git` process,** kept open for the
+   reads snippets ask for, instead of one process per file.
+3. **The two versions side by side.** `diff` counts the errors beside
+   everything else, and reads and indexes the base beside indexing the
+   working tree. `drift` reads the base beside the working tree's index
+   when `git diff` lists a file in one of the project's sources' folders,
+   where an example's code is; otherwise it reads it only when an example
+   changed, as before.
+
+The commands' wall time on the same container, median of five:
+
+| | before | after |
+|---|--:|--:|
+| `ascribe diff`, nothing changed | 1.37 s | 0.71 s |
+| `ascribe diff` with snippets, a region ten pages show changed | 1.80 s | 0.88 s |
+| `ascribe drift` with snippets, nothing changed | 383 ms | 375 ms |
+| `ascribe drift` with snippets, a region ten pages show changed | 951 ms | 504 ms |
+| `ascribe check`, for comparison | 614 ms | 606 ms |
+
+`diff` now takes about as long as `check`, and can't take less: its report
+counts the errors `ascribe check` finds in the working tree
+(`working_tree_errors`), which is a full check. So the plan's target, a
+quarter of the time before, isn't met. On the runner (the baselines above,
+recorded before and after on the same CPU), with nothing changed `diff` went
+from 1.28 s to 843 ms, a third less, 1.26 times `check`'s 667 ms; with one
+page changed from 1.30 s to 792 ms; with snippets from 1.76 s to 1.07 s; and
+`drift` with a region changed from 857 ms to 535 ms. The optimization plan's
+measure is set to at most 1.3 times `check`. The other target, `diff` with
+snippets at most twice `diff` without, is met (1.3 times). Peak memory of
+`diff` with nothing changed went from 547 MB to 371 MB, since only the pages
+a change reaches are resolved.
+
+What `diff` spends over `check` (0.18 s on the runner, about 0.1 s on the
+container), timed in process on the container: the full check alone took
+590 to 605 ms; inside `diff`, beside the base's reading and indexing, the
+working tree's indexing, and the `git` processes, all sharing four cores,
+the whole took 640 to 745 ms, so 35 to 110 ms is the threads and `git`
+contending for the cores (more on a busier machine); freeing both versions'
+indexes and the report when the command ends takes another 50 ms (`check`
+frees almost nothing); and the three `git` calls that find the repository
+and the base take about 15 ms. Reading the base from `git` and comparing
+aren't in it: they finish inside the check's time. The contention can't go
+without making `check` itself faster, which this plan leaves alone. The
+50 ms could go by not freeing the indexes at exit (`std::mem::forget` in
+the CLI once the report is written), a one-line change with nothing else
+to gain, so it isn't made here.
+
+The reports are byte for byte the same before and after: `diff` as JSON,
+HTML, and text and `drift` as JSON, text, and summary, on each of the
+benchmark's six cases, on `docs/` against five bases from 5 to 100 commits
+back, and on every example (`scripts/compare/outputs.ts`).
 
 ## The release profile
 

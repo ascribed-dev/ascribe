@@ -1397,6 +1397,7 @@ dependencies = [
 name = "tessera-diff"
 version = "0.2.0"
 dependencies = [
+ "proptest",
  "schemars",
  "serde",
  "serde_json",

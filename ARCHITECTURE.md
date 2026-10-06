@@ -169,7 +169,7 @@ The JSON that Rust writes and TypeScript reads has one home too: the Rust types 
 | Conformance cases, written from the spec | `tests/conformance/cases/`, run by `cargo test -p tessera-conformance` |
 | Snapshots (`insta`) | `crates/tessera-emit/tests/snapshots/` and `crates/tessera-cli/tests/snapshots/`. Review a change with `cargo insta review` |
 | Property tests (`proptest`) | `tessera-core`, `tessera-syntax`, `tessera-resolve`, `tessera-fmt`, `tessera-check` |
-| Two implementations compared | `crates/tessera-syntax/tests/agreement.rs` (two parsers), `crates/tessera-resolve/tests/incremental_differential.rs` and `crates/tessera-lsp/tests/differential.rs` (incremental against from scratch), `crates/tessera-check/tests/parity.rs` (checks against the index), `crates/tessera-cli/tests/lsp_parity.rs` (the command against the server), and the renderers above |
+| Two implementations compared | `crates/tessera-syntax/tests/agreement.rs` (two parsers), `crates/tessera-resolve/tests/incremental_differential.rs` and `crates/tessera-lsp/tests/differential.rs` (incremental against from scratch), `crates/tessera-diff/tests/reach.rs` (`diff`'s short path against comparing every page), `crates/tessera-check/tests/parity.rs` (checks against the index), `crates/tessera-cli/tests/lsp_parity.rs` (the command against the server), and the renderers above |
 | The command's output, as files the docs show | `crates/tessera-cli/tests/output.rs`, writing `crates/tessera-cli/tests/output/` |
 | Browser tests | `packages/elements/test/`, in Chromium, Firefox, and WebKit |
 | The editor | `packages/vscode/test/integration/`, in a real VS Code (CI only) |

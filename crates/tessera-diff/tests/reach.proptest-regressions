@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 30b0b759427b7c5a50f0554fa1cdf9c67de1a71b961a02890089876bf6769cad # shrinks to start = [Write { file: 4, front: 0, body: [12] }, Write { file: 1, front: 0, body: [1] }], change = [Write { file: 1, front: 0, body: [] }]
+cc 3583d0443b8ca638d4c72a43f4c6f829f5557d10885fb6017953ece78b9b548b # shrinks to start = [Write { file: 4, front: 0, body: [14] }], change = [File { file: 6 }]
+cc e64ec8832eb3b8e17718ec68ff3ee40ee2183670e9cf9aa25c9cecdc328c7f2a # shrinks to start = [Write { file: 0, front: 0, body: [31] }], change = [Code { file: 1, text: Some(0) }]
+cc e7f181f1f0c4926524145eabc681bcc1bface8cbfc62ed1f76c5424bd4f945c5 # shrinks to start = [Write { file: 7, front: 0, body: [9] }], change = [Write { file: 1, front: 0, body: [0] }]
+cc a6637b0c0513cc5c95562df6c4e06221f5d8ded6a990c49a05ef283b73b02d7a # shrinks to start = [Write { file: 5, front: 0, body: [29] }], change = [Write { file: 4, front: 0, body: [23] }]

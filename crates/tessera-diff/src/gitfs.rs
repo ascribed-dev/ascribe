@@ -11,7 +11,7 @@ use tessera_resolve::{
 };
 
 use crate::DiffError;
-use crate::git::{Repository, Tree};
+use crate::git::{BlobReader, Repository, Tree};
 
 /// The content model's file name.
 pub const MODEL_FILE: &str = "ascribe.toml";
@@ -23,7 +23,7 @@ pub const MODEL_FILE: &str = "ascribe.toml";
 /// Every source file is read when it's made, through one `git cat-file
 /// --batch`. Other files (images, downloads) are only listed: a probe needs
 /// to know they exist, not what they hold. A code file a snippet reads is
-/// read when it's first asked for, and kept. A symbolic link is listed as a
+/// read when it's first asked for, and kept, all through one `git` process. A symbolic link is listed as a
 /// file but never followed, so a source file that's a link isn't a source.
 #[derive(Clone, Debug)]
 pub struct GitFs {
@@ -41,10 +41,23 @@ pub struct GitFs {
     /// Every file's path from the repository's root, lowercased, to its
     /// real spelling, for the case-mismatch probe.
     folded: HashMap<String, RelPath>,
-    /// The repository, for reading code files.
-    repo: Repository,
-    /// The code files read so far, by blob.
-    code: Arc<Mutex<HashMap<String, Vec<u8>>>>,
+    /// The code files read so far, by blob, and the `git` that reads them.
+    code: Arc<Mutex<CodeFiles>>,
+}
+
+/// The code files a [`GitFs`] has read, and the one `git` process that
+/// reads them as snippets ask for them.
+struct CodeFiles {
+    read: HashMap<String, Vec<u8>>,
+    git: BlobReader,
+}
+
+impl std::fmt::Debug for CodeFiles {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CodeFiles")
+            .field("read", &self.read.len())
+            .finish_non_exhaustive()
+    }
 }
 
 /// A project read at a revision: its content model, as text and loaded, and
@@ -149,8 +162,10 @@ impl GitFs {
             contents: BTreeMap::new(),
             sources: Sources::default(),
             folded: HashMap::new(),
-            repo: repo.clone(),
-            code: Arc::default(),
+            code: Arc::new(Mutex::new(CodeFiles {
+                read: HashMap::new(),
+                git: repo.blob_reader(),
+            })),
         };
         fs.folded = fs
             .tree
@@ -321,16 +336,14 @@ impl FileSystem for GitFs {
             .filter(|e| !e.symlink)
             .ok_or_else(missing)?;
         let mut code = self.code.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Some(bytes) = code.get(&entry.object) {
+        if let Some(bytes) = code.read.get(&entry.object) {
             return Ok(bytes.clone());
         }
-        let bytes = self
-            .repo
-            .read_blobs(&[entry.object.as_str()])
-            .map_err(|e| io::Error::other(e.to_string()))?
-            .pop()
-            .unwrap_or_default();
-        code.insert(entry.object.clone(), bytes.clone());
+        let bytes = code
+            .git
+            .read(&entry.object)
+            .map_err(|e| io::Error::other(e.to_string()))?;
+        code.read.insert(entry.object.clone(), bytes.clone());
         Ok(bytes)
     }
 

@@ -28,6 +28,7 @@ schemars = { workspace = true, optional = true }
 json-schema = ["dep:schemars"]
 
 [dev-dependencies]
+proptest.workspace = true
 tempfile = "3"
 
 [lints]

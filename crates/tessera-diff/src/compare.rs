@@ -1,7 +1,7 @@
 //! Comparing two versions of a project, build by build and page by page.
 
 use std::borrow::Cow;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use serde::Serialize;
 use tessera_core::RelPath;
@@ -197,6 +197,7 @@ impl ChangedFiles {
 /// that isn't a build of `now` is skipped.
 pub fn compare_builds(base: Option<Side<'_>>, now: Side<'_>, builds: &[&str]) -> Vec<BuildDiff> {
     let changed = ChangedFiles::between(base, now);
+    let reach = base.and_then(|base| reachable(base, now));
     let routers = Routers::new(base, now);
     let mut out = Vec::new();
     for name in builds {
@@ -207,8 +208,10 @@ pub fn compare_builds(base: Option<Side<'_>>, now: Side<'_>, builds: &[&str]) ->
         if let Some((b, _)) = &sides.base {
             paths.extend(b.project.pages().map(|p| &p.path));
         }
+        // A page nothing it uses changed in resolves the same on both sides.
         let pages = paths
             .into_iter()
+            .filter(|path| reach.as_ref().is_none_or(|reach| reach.contains(*path)))
             .filter_map(|path| sides.compare(path, &changed))
             .collect();
         out.push(BuildDiff {
@@ -260,6 +263,104 @@ pub fn changed_apart_from_snippets(
         })
         .map(|path| (*path).clone())
         .collect()
+}
+
+/// The pages whose resolved form can differ between `base` and `now`, in
+/// any build; `None` when any page can, because the content model differs.
+///
+/// A page resolves from its own file, the files it includes, the files it
+/// links to (a link's text can be the target's title or heading, its URL
+/// the target's route and page id, and whether it links at all depends on
+/// whether the build publishes the target), and the glossary's pages.
+/// Nothing else is shared between pages: a route is a function of the
+/// page's own path (`Router::route`), heading ids are assigned within one
+/// page, and two pages that take the same route are found only by the site
+/// output (`AstroRouter::collisions`), never in a resolved page. So a
+/// page can differ only when one of those files differs: its text, what its
+/// references resolve to (a file appearing or going away, an image found),
+/// or its snippets' code. This is the reach the language server's
+/// incremental update uses ([`tessera_resolve::Affected::re_resolve`]),
+/// found from the two versions' indexes instead of from a list of changes,
+/// so nothing `git` says is taken on trust.
+fn reachable(base: Side<'_>, now: Side<'_>) -> Option<BTreeSet<RelPath>> {
+    if base.model_text != now.model_text {
+        return None;
+    }
+    let sides = [base.project, now.project];
+    let mut touched: BTreeSet<&RelPath> = BTreeSet::new();
+    for file in now.project.files() {
+        if differs(base.project, now.project, file) {
+            touched.insert(&file.path);
+        }
+    }
+    touched.extend(
+        base.project
+            .files()
+            .filter(|f| now.project.file(&f.path).is_none())
+            .map(|f| &f.path),
+    );
+
+    // Who includes what, in either version, by the target's path and by its
+    // path with case folded (an include of a twin that differs only in case
+    // has a problem that names it).
+    let mut includers: HashMap<String, BTreeSet<&RelPath>> = HashMap::new();
+    for project in sides {
+        for file in project.files() {
+            for target in file.includes.iter().filter_map(|i| i.target.as_ref()) {
+                includers
+                    .entry(target.as_str().to_lowercase())
+                    .or_default()
+                    .insert(&file.path);
+            }
+        }
+    }
+    let with_includers = |start: &mut dyn Iterator<Item = &RelPath>| {
+        let mut seen: BTreeSet<RelPath> = BTreeSet::new();
+        let mut queue: Vec<RelPath> = start.cloned().collect();
+        while let Some(next) = queue.pop() {
+            if !seen.insert(next.clone()) {
+                continue;
+            }
+            for file in includers
+                .get(&next.as_str().to_lowercase())
+                .into_iter()
+                .flatten()
+            {
+                if !seen.contains(*file) {
+                    queue.push((*file).clone());
+                }
+            }
+        }
+        seen
+    };
+
+    let mut reached = with_includers(&mut touched.into_iter());
+    let glossary = tessera_resolve::glossary_targets(now.project.model());
+    if reached.iter().any(|p| glossary.contains(p)) {
+        return None;
+    }
+    let linkers: Vec<RelPath> = reached
+        .iter()
+        .flat_map(|target| sides.into_iter().flat_map(|p| p.links_to(target)))
+        .map(|site| site.file.clone())
+        .collect();
+    reached.extend(with_includers(&mut linkers.iter()));
+    Some(reached)
+}
+
+/// Whether a file of `now` reads differently in `base`: it isn't there, its
+/// text differs, or the same text resolves differently (a reference's target
+/// appeared or went away, a snippet's code changed).
+fn differs(base: &Project, now: &Project, file: &tessera_resolve::FileIndex) -> bool {
+    let Some(was) = base.file(&file.path) else {
+        return true;
+    };
+    was.source != file.source
+        || base.resolutions(&file.path) != now.resolutions(&file.path)
+        || file
+            .snippets
+            .iter()
+            .any(|s| base.snippet_at(&file.path, s.span) != now.snippet_at(&file.path, s.span))
 }
 
 /// Each version's router.
