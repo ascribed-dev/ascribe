@@ -376,6 +376,28 @@ fn link_completion_finds_a_heading_by_title() {
     // After `#`: the ids of the file already named.
     let ids = complete(&mut client, &page, "See [x](keys.md#$0\n");
     assert_eq!(new_text(&item(&ids, "Create a key")), "create-key");
+    // A page's ids include those of the fragments it includes (#90).
+    f.write(
+        "docs/_fragments/limits.md",
+        "## Rate limits\n\nEach key makes 100 requests a minute.\n",
+    );
+    f.write(
+        "docs/limits.md",
+        "---\ntitle: Limits\ndescription: Limits.\n---\n\n@include: _fragments/limits.md\n",
+    );
+    client.watched(&[
+        (
+            f.path("docs/_fragments/limits.md").as_path(),
+            lsp_types::FileChangeType::CREATED,
+        ),
+        (
+            f.path("docs/limits.md").as_path(),
+            lsp_types::FileChangeType::CREATED,
+        ),
+    ]);
+    client.settle();
+    let included = complete(&mut client, &page, "See [x](limits.md#$0\n");
+    assert_eq!(new_text(&item(&included, "Rate limits")), "rate-limits");
     // A fragment's ids aren't linkable.
     let fragment_ids = complete(
         &mut client,

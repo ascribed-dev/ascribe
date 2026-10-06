@@ -24,9 +24,23 @@ struct State {
     /// Whether the next character starts a line, where `#`, `>`, `-`, and
     /// list markers mean something.
     line_start: bool,
-    /// A `<br>` on content that stays on one line: `; ` goes before whatever
-    /// comes next, so a break at the end of a cell leaves nothing.
-    separator: bool,
+    /// What a `<br>` left to write before whatever comes next, so a `<br>` at
+    /// the end of the content leaves nothing.
+    pending: Pending,
+    /// Where the last code span ended in `out`: a code span right after it
+    /// would touch it.
+    code_end: Option<usize>,
+}
+
+/// What a `<br>` leaves to write before the content that follows it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum Pending {
+    #[default]
+    Nothing,
+    /// `; `, on content that stays on one line.
+    Separator,
+    /// A hard line break, which a break in the source that follows it joins.
+    LineBreak,
 }
 
 /// Writes `inlines`, using `links` (a block's resolved links, by span) to
@@ -40,7 +54,8 @@ pub(crate) fn render(
     let mut st = State {
         out: String::new(),
         line_start: true,
-        separator: false,
+        pending: Pending::Nothing,
+        code_end: None,
     };
     write(r, links, inlines, style, &mut st);
     st.out
@@ -57,15 +72,15 @@ fn write(
         match &inline.kind {
             // A `<br>` is a line break; where the content stays on one line,
             // it separates what's either side of it with `; `, so code spans
-            // on either side stay apart.
+            // on either side stay apart. Either is written only once content
+            // follows it.
             InlineKind::Html(text) if is_br(text) => {
-                if style.one_line {
-                    st.separator = !st.out.trim().is_empty();
-                } else {
-                    let kept = st.out.trim_end_matches(' ').len();
-                    st.out.truncate(kept);
-                    st.out.push_str("\\\n");
-                    st.line_start = true;
+                if !st.out.trim().is_empty() {
+                    st.pending = if style.one_line {
+                        Pending::Separator
+                    } else {
+                        Pending::LineBreak
+                    };
                 }
             }
             InlineKind::Text(text) => escape_into(text, st),
@@ -75,14 +90,20 @@ fn write(
             InlineKind::Code(code) => {
                 separate(st);
                 // Two code spans that touch would read as one run of backticks.
-                if st.out.ends_with('`') {
+                if st.code_end == Some(st.out.len()) {
                     st.out.push(' ');
                 }
                 st.out.push_str(&code_span(code));
+                st.code_end = Some(st.out.len());
                 st.line_start = false;
             }
             InlineKind::SoftBreak if style.one_line => space(st),
             InlineKind::HardBreak if style.one_line => space(st),
+            // A break in the source right after a `<br>` is the line break the
+            // `<br>` already makes.
+            InlineKind::SoftBreak | InlineKind::HardBreak if st.pending == Pending::LineBreak => {
+                separate(st);
+            }
             InlineKind::SoftBreak => {
                 st.out.push('\n');
                 st.line_start = true;
@@ -108,12 +129,21 @@ fn is_br(html: &str) -> bool {
         .is_some_and(|rest| rest.trim_end_matches('/').trim().is_empty())
 }
 
-/// Writes the `; ` a `<br>` left pending, before content that follows it.
+/// Writes what a `<br>` left pending, before content that follows it.
 fn separate(st: &mut State) {
-    if std::mem::take(&mut st.separator) {
-        let kept = st.out.trim_end().len();
-        st.out.truncate(kept);
-        st.out.push_str("; ");
+    match std::mem::take(&mut st.pending) {
+        Pending::Nothing => {}
+        Pending::Separator => {
+            let kept = st.out.trim_end().len();
+            st.out.truncate(kept);
+            st.out.push_str("; ");
+        }
+        Pending::LineBreak => {
+            let kept = st.out.trim_end_matches(' ').len();
+            st.out.truncate(kept);
+            st.out.push_str("\\\n");
+            st.line_start = true;
+        }
     }
 }
 
@@ -139,12 +169,13 @@ fn marked(
     let mut inner = State {
         out: String::new(),
         line_start: false,
-        separator: false,
+        pending: Pending::Nothing,
+        code_end: None,
     };
     write(r, links, children, style, &mut inner);
     st.line_start = st.line_start && inner.out.is_empty();
     if inner.out.trim().is_empty() {
-        if !st.separator {
+        if st.pending == Pending::Nothing {
             st.out.push_str(&inner.out);
         }
     } else {
@@ -153,6 +184,10 @@ fn marked(
         st.out.push_str(&inner.out);
         st.out.push_str(marker);
         st.line_start = false;
+    }
+    // A `<br>` at the end of the emphasis comes after its closing marker.
+    if inner.pending != Pending::Nothing && !st.out.trim().is_empty() {
+        st.pending = inner.pending;
     }
 }
 
@@ -315,7 +350,7 @@ pub(crate) fn code_span(code: &str) -> String {
 }
 
 fn escape_into(text: &str, st: &mut State) {
-    let text = if st.separator {
+    let text = if st.pending != Pending::Nothing {
         text.trim_start()
     } else {
         text

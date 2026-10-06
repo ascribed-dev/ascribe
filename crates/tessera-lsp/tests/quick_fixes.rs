@@ -591,6 +591,45 @@ fn heading_rename_updates_fragment_links_and_offers_a_stable_id() {
 }
 
 #[test]
+fn id_rename_in_a_fragment_updates_links_through_the_including_page() {
+    // SPEC §4.2: a link names a fragment's heading through a page that
+    // includes it (#90).
+    let f = quill();
+    let fragment = f.path("docs/_fragments/limits.md");
+    let fragment_text = "## Rate limits\n@id: custom\n\nEach key makes 100 requests a minute.\n";
+    write(&f, "docs/_fragments/limits.md", fragment_text);
+    write(
+        &f,
+        "docs/limits.md",
+        "---\ntitle: Limits\ndescription: Limits.\n---\n\n@include: _fragments/limits.md\n\nSee [above](#custom).\n",
+    );
+    let source_text = format!(
+        "{}\n[Limits](limits.md#custom)\n",
+        read(&f, "docs/install-agent.md")
+    );
+    write(&f, "docs/install-agent.md", &source_text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let result = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": uri(&fragment).as_str() },
+                "position": position(fragment_text, fragment_text.find("custom").expect("id") + 1),
+                "newName": "limits"
+            }),
+        )
+        .response_result
+        .expect("id rename");
+    let changed = apply_workspace_edit(&f, &result);
+    notify_changed(&mut client, &changed);
+    assert!(read(&f, "docs/_fragments/limits.md").contains("@id: limits"));
+    assert!(read(&f, "docs/limits.md").contains("[above](#limits)"));
+    assert!(read(&f, "docs/install-agent.md").contains("[Limits](limits.md#limits)"));
+    assert_no_errors(&client);
+}
+
+#[test]
 fn heading_rename_updates_ids_changed_by_slug_renumbering() {
     let f = quill();
     let target = f.path("docs/keys.md");

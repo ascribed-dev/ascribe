@@ -222,13 +222,24 @@ fn a_br_separates_what_a_cell_holds() {
         body("| a |\n|---|\n| x <br/> y<BR /> |\n| <br>z |\n"),
         "| a |\n| --- |\n| x; y |\n| z |\n"
     );
-    // In a paragraph it's a line break.
+    // In a paragraph it's a line break, which a line break in the source
+    // right after it joins, and which the end of the paragraph drops.
     assert_eq!(body("a<br>b\n"), "a\\\nb\n");
+    assert_eq!(body("line one<br>\nline two\n"), "line one\\\nline two\n");
+    assert_eq!(body("a <br>  \nb\n"), "a\\\nb\n");
+    assert_eq!(body("`end`<br>\n\nNext.\n"), "`end`\n\nNext.\n");
+    assert_eq!(body("*a<br>*\nb\n"), "*a*\\\nb\n");
+    assert_eq!(
+        body("1. Step one<br>\n   continues\n"),
+        "1. Step one\\\n   continues\n"
+    );
 }
 
 #[test]
 fn code_spans_that_touch_stay_apart() {
     assert_eq!(body("`a`<span></span>`b`\n"), "`a` `b`\n");
+    // A literal backtick before a code span isn't a code span.
+    assert_eq!(body("\\``b`\n"), "\\``b`\n");
 }
 
 #[test]
