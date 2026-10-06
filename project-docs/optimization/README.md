@@ -126,7 +126,7 @@ Taken from the inventory, and again at the end. Each is a count a finding names;
 | Lines in library crates that print | 7 | 0 |
 | Commands timed with no baseline | 2 | 0 |
 | `diff` on 3,000 pages, nothing changed | 1.3 s | Set in phase 7 |
-| Release binary | 10.5 MB | Set in phase 7 |
+| Release binary, macOS arm64 | 10.5 MB | 7.0 MB, without a slower `check` (phase 7B; every platform in [RESULTS.md](../../tests/corpora/RESULTS.md#the-release-profile)) |
 | Peak memory on 3,000 pages | Unmeasured | Recorded in phase 2 (`tests/corpora/baselines/perf.json`, `memory/*`); stays within the baseline's margin |
 
 ## Out of scope

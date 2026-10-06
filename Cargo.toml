@@ -73,6 +73,18 @@ todo = "warn"
 # were already longer allow it by name.
 too_many_lines = "warn"
 
+# What ships: the binary in the npm packages and the VS Code extension. Link-time
+# optimization across every crate, in one code generation unit, makes it about
+# a third smaller on macOS and Linux and a little faster, for about a minute
+# more of release build. Debug info is stripped (Cargo's default) and symbols
+# kept, so a panic's backtrace names its functions. `panic` stays `unwind`:
+# the language server catches a handler's panic and keeps running, and
+# `tessera-lsp` won't compile with `abort`. The measurements, and the settings
+# not taken, are in tests/corpora/RESULTS.md.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+
 [profile.dev.package]
 # Snapshot diffs are much faster with these optimized.
 insta.opt-level = 3

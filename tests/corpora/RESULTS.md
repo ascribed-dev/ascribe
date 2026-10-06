@@ -164,6 +164,60 @@ leaves the file as it was. A runner isn't always the same CPU (two runs on
 2026-10-06 got an EPYC 9V74 and an EPYC 7763, about 15 percent apart), which
 the margin absorbs.
 
+## The release profile
+
+`[profile.release]` in the workspace's `Cargo.toml` sets `lto = "fat"` and
+`codegen-units = 1`. Measured on 2026-10-06 (optimization phase 7B) with each
+setting given to Cargo on its own and together, by a temporary workflow on the
+release build's own runners, building as `.github/workflows/release-build.yml`
+does (Zig and glibc 2.28 on Linux, a static C runtime on Windows). Binary size:
+
+| Setting | macOS arm64 | Linux arm64 | Linux x64 | Windows x64 |
+|---|--:|--:|--:|--:|
+| none (before) | 10.49 MB | 11.91 MB | 12.38 MB | 9.44 MB |
+| `lto = "thin"` | 10.47 MB | 11.90 MB | 12.41 MB | 9.68 MB |
+| `lto = "fat"` | 7.35 MB | 8.08 MB | 8.88 MB | 8.91 MB |
+| `codegen-units = 1` | 7.91 MB | 8.64 MB | 9.41 MB | 8.78 MB |
+| `lto = "thin"`, `codegen-units = 1` | 7.74 MB | 8.50 MB | 9.38 MB | 9.11 MB |
+| **`lto = "fat"`, `codegen-units = 1` (taken)** | **6.99 MB** | **7.66 MB** | **8.62 MB** | **8.65 MB** |
+| `strip = "symbols"` | 7.83 MB | 7.89 MB | 9.16 MB | 9.43 MB |
+| fat, one unit, `strip = "symbols"` | 5.98 MB | 6.21 MB | 7.54 MB | 8.65 MB |
+| fat, one unit, `opt-level = "s"` | 5.84 MB | 6.48 MB | 6.71 MB | 6.18 MB |
+
+The time of the 3,000-page commands, each binary in turn on one
+`ubuntu-latest` runner (an AMD EPYC, faster than the one the baselines were
+recorded on), the benchmark's median, best of two rounds:
+
+| | none (before) | fat, one unit (taken) | fat, one unit, `strip = "symbols"` | fat, one unit, `opt-level = "s"` |
+|---|--:|--:|--:|--:|
+| `ascribe check` | 452 ms | 440 ms (-3%) | 434 ms (-4%) | 467 ms (+3%) |
+| `ascribe check` with snippets | 598 ms | 579 ms (-3%) | 569 ms (-5%) | 602 ms (+1%) |
+| `ascribe build`, first | 1.26 s | 1.22 s (-3%) | 1.22 s (-3%) | 1.37 s (+8%) |
+| `ascribe diff`, nothing changed | 957 ms | 942 ms (-2%) | 889 ms (-7%) | 979 ms (+2%) |
+| `ascribe drift` with snippets, a region changed | 620 ms | 593 ms (-4%) | 608 ms (-2%) | 631 ms (+2%) |
+
+Peak memory didn't change (within 1 MB). Thin link-time optimization alone
+changed neither size nor time.
+
+A clean release build of `tessera-cli` on those runners, one run each, went
+from 108 s to 170 s on macOS, 69 s to 128 s on Linux arm64, 84 s to 129 s on
+Linux x64, and 140 s to 218 s on Windows: about a minute more, and the same on
+every job that builds a release binary (the release and canary workflows'
+build jobs, the Astro end-to-end jobs, and the Corpora workflow).
+
+Not taken:
+
+- **`strip = "symbols"`** saves another 1.0 MB on macOS, 1.4 MB on Linux arm64,
+  and 1.1 MB on Linux x64 (nothing on Windows, whose symbols are in a separate
+  file), but a panic's backtrace would lose its function names. The release
+  build keeps them on Linux on purpose (`release-build.yml`, pull request #78).
+- **`opt-level = "s"`** saves another 1.2 to 2.5 MB, but makes `check` 3 to 4
+  percent slower than before and 7 percent slower than the profile taken; the
+  plan asked for no slower.
+- **`panic = "abort"`** isn't an option: the language server catches a
+  handler's panic and keeps running, which needs unwinding.
+  `crates/tessera-lsp/src/server.rs` refuses to compile with it.
+
 ## Completion
 
 `crates/tessera-lsp/benches/completion.rs` times every completion context at
