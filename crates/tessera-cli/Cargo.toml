@@ -27,6 +27,12 @@ tessera-model.workspace = true
 tessera-sources.workspace = true
 
 [dev-dependencies]
+# The JSON Schemas of what the commands and the language server write, and the
+# TypeScript generated from them (src/shapes.rs).
+schemars.workspace = true
+tessera-diff = { workspace = true, features = ["json-schema"] }
+tessera-lsp = { workspace = true, features = ["json-schema"] }
+tessera-sources = { workspace = true, features = ["json-schema"] }
 insta.workspace = true
 # Integration tests copy example projects to a temporary directory.
 tempfile = "3"

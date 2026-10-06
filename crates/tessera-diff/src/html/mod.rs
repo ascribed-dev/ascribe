@@ -108,36 +108,64 @@ pub struct Version<'a> {
 /// The data the report's script draws from. Its keys, like the JSON
 /// report's, are snake_case.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 struct Data<'a> {
+    /// The version of Ascribe that wrote it.
     ascribe_version: &'static str,
+    /// What was compared with.
     base: &'a BaseInfo,
+    /// How many errors `ascribe check` finds in the working tree.
     working_tree_errors: usize,
+    /// What changed, per build.
     builds: Vec<BuildData<'a>>,
-    pages: BTreeMap<String, Rendered>,
+    /// Each rendered page, once however many builds render it alike.
+    pages: BTreeMap<String, RenderedPage>,
+    /// Each image, as a `data:` URL, once however many pages use it.
     images: BTreeMap<String, String>,
+    /// How many changed pages the report renders, and how many it left out.
     limit: Limit,
+    /// The size, in bytes, above which an image isn't included.
     image_limit: usize,
 }
 
+/// The schema of the data the report's script reads, generated into
+/// `@ascribed/review`'s TypeScript by `crates/tessera-cli/src/shapes.rs`.
+#[cfg(feature = "json-schema")]
+pub fn data_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+    generator.root_schema_for::<Data<'static>>()
+}
+
+/// How many changed pages a report renders, and how many it left out.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 struct Limit {
+    /// The most it renders.
     pages: usize,
+    /// How many it left out.
     omitted: usize,
 }
 
+/// One build's changed pages.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 struct BuildData<'a> {
+    /// The build's name.
     build: &'a str,
+    /// Its changed pages, in path order.
     pages: Vec<PageData<'a>>,
 }
 
+/// One changed page: `ascribe diff --format json`'s, and its renderings.
 #[derive(Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 struct PageData<'a> {
     #[serde(flatten)]
     diff: &'a PageDiff,
+    /// Its title, when the build has one.
     title: Option<String>,
-    /// The page now and before, as keys of `pages`.
+    /// The page now, as a key of `pages`; `null` when there's none.
     now: Option<String>,
+    /// The page before, as a key of `pages`; `null` when there's none.
     was: Option<String>,
     /// Whether it's beyond the limit, so not rendered.
     omitted: bool,
@@ -145,14 +173,19 @@ struct PageData<'a> {
 
 /// A page rendered: its HTML, and what each image reference in it is.
 #[derive(Clone, PartialEq, Serialize)]
-struct Rendered {
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+struct RenderedPage {
+    /// The page's content, rendered with source anchors.
     html: String,
+    /// Each image reference the HTML writes, and what it is.
     images: BTreeMap<String, ImageRef>,
 }
 
+/// An image a page refers to.
 #[derive(Clone, PartialEq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 struct ImageRef {
-    /// The source file.
+    /// The image's source file.
     path: String,
     /// Its key in `images`, when it's included.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -166,14 +199,14 @@ struct ImageRef {
 /// it.
 #[derive(Default)]
 struct Store {
-    pages: BTreeMap<String, Rendered>,
-    page_keys: Vec<(Rendered, String)>,
+    pages: BTreeMap<String, RenderedPage>,
+    page_keys: Vec<(RenderedPage, String)>,
     images: BTreeMap<String, String>,
     image_keys: HashMap<String, String>,
 }
 
 impl Store {
-    fn page(&mut self, rendered: Rendered) -> String {
+    fn page(&mut self, rendered: RenderedPage) -> String {
         if let Some((_, key)) = self.page_keys.iter().find(|(r, _)| *r == rendered) {
             return key.clone();
         }
@@ -327,7 +360,7 @@ fn render(
     build_name: &str,
     path: &RelPath,
     store: &mut Store,
-) -> Option<(Rendered, Option<String>)> {
+) -> Option<(RenderedPage, Option<String>)> {
     let (emitted, title) = emit(version.project, build_name, path)?;
     let html = render_site_html(without_frontmatter(&emitted.text));
     let mut images = BTreeMap::new();
@@ -353,7 +386,7 @@ fn render(
         }
         images.insert(reference, image);
     }
-    Some((Rendered { html, images }, title))
+    Some((RenderedPage { html, images }, title))
 }
 
 /// The page at `path` of the build `build_name` of `project`, rendered as the

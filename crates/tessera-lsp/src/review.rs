@@ -65,6 +65,7 @@ fn present<'de, D: Deserializer<'de>>(d: D) -> Result<Option<Option<String>>, D:
 
 /// The answer to `ascribe/review/setBase`.
 #[derive(Debug, Default, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct SetBaseResult {
     /// What the base resolved to; `null` once it's dropped, or when it
@@ -86,6 +87,7 @@ pub struct ChangesParams {
 
 /// The answer to `ascribe/review/changes`.
 #[derive(Clone, Debug, Default, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct ChangesResult {
     /// The build the pages are of.
@@ -96,6 +98,7 @@ pub struct ChangesResult {
     pub content_root: Option<String>,
     /// The changed pages, in path order: `ascribe diff`'s pages without their
     /// `changes`, each with its `title`.
+    #[cfg_attr(feature = "json-schema", schemars(schema_with = "changed_pages"))]
     pub pages: Vec<Json>,
     /// Why there are no pages to list, when that isn't because nothing
     /// changed.
@@ -323,6 +326,40 @@ pub(crate) fn changes(target: Option<&ChangesTarget>, build_name: Option<&str>) 
     }
     *last = Some((key, result.clone()));
     result
+}
+
+/// The schema of [`ChangesResult::pages`], which [`summary`] writes: each a
+/// `ChangedPage`, `ascribe diff`'s page without `changes`, with `title`.
+#[cfg(feature = "json-schema")]
+fn changed_pages(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+    use schemars::JsonSchema as _;
+
+    let mut page = PageDiff::json_schema(generator);
+    let mut title = generator.subschema_for::<Option<String>>();
+    title.insert(
+        "description".to_owned(),
+        "The page's title; `null` when it has none.".into(),
+    );
+    if let Some(properties) = page.get_mut("properties").and_then(Json::as_object_mut) {
+        properties.remove("changes");
+        properties.insert("title".to_owned(), title.into());
+    }
+    if let Some(required) = page.get_mut("required").and_then(Json::as_array_mut) {
+        required.retain(|name| name != "changes");
+        required.push("title".into());
+    }
+    page.insert(
+        "description".to_owned(),
+        "A changed page in the list: `ascribe diff`'s page without its block changes, and its title."
+            .into(),
+    );
+    generator
+        .definitions_mut()
+        .insert("ChangedPage".to_owned(), page.into());
+    schemars::json_schema!({
+        "type": "array",
+        "items": { "$ref": "#/$defs/ChangedPage" },
+    })
 }
 
 /// A changed page as the list shows it: `ascribe diff`'s page without its

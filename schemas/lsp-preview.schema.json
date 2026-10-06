@@ -1,0 +1,642 @@
+{
+  "$defs": {
+    "Anchor": {
+      "description": "Where a block's text is written: the README's anchor grammar, the same\nstring the rendered page carries in `data-ascribe-source` and\n`data-ascribe-via`.",
+      "properties": {
+        "source": {
+          "description": "`<path>:<first>-<last>`: the file's content path, percent-encoded by\nsegment, and the block's first and last lines, from 1.",
+          "type": "string"
+        },
+        "via": {
+          "description": "The includes the block came through, outermost first, each\n`<path>:<line>`. Empty for a block written in the page itself.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "source",
+        "via"
+      ],
+      "type": "object"
+    },
+    "AssetKind": {
+      "description": "What a page uses an asset as.",
+      "oneOf": [
+        {
+          "const": "image",
+          "description": "An image the page shows.",
+          "type": "string"
+        },
+        {
+          "const": "link",
+          "description": "A file a link targets.",
+          "type": "string"
+        }
+      ]
+    },
+    "BaseInfo": {
+      "description": "The base of a comparison, in the report.",
+      "properties": {
+        "commit": {
+          "description": "The commit it names.",
+          "type": "string"
+        },
+        "merge_base": {
+          "description": "The merge base of that commit and `HEAD`, which the comparison reads;\n`null` with `--base-exact`, which reads `commit`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested": {
+          "description": "The revision asked for, or the default branch used.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requested",
+        "commit",
+        "merge_base"
+      ],
+      "type": "object"
+    },
+    "Change": {
+      "description": "One block's change.",
+      "properties": {
+        "after": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For a removed block, and a moved block's old place: the block of the\nnew version it came after, among its siblings. Absent when it was\nfirst."
+        },
+        "kind": {
+          "$ref": "#/$defs/ChangeKind",
+          "description": "What happened to it."
+        },
+        "now": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where it's written now: every kind but `removed`."
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For a removed block, and a moved block's old place: the block of the\nnew version it was inside. Absent at the top of the page."
+        },
+        "text": {
+          "description": "For a removed block, its text, whitespace collapsed, so it can be\nshown where it was.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "was": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where it was written: every kind but `added`."
+        },
+        "words": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Words"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For changed prose, the words that differ."
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "ChangeKind": {
+      "description": "The kinds of block change.",
+      "oneOf": [
+        {
+          "const": "changed",
+          "description": "The block's content changed.",
+          "type": "string"
+        },
+        {
+          "const": "added",
+          "description": "The block is new.",
+          "type": "string"
+        },
+        {
+          "const": "removed",
+          "description": "The block is gone.",
+          "type": "string"
+        },
+        {
+          "const": "moved",
+          "description": "The same block is somewhere else.",
+          "type": "string"
+        }
+      ]
+    },
+    "Counts": {
+      "description": "How many changes of each kind a page has.",
+      "properties": {
+        "added": {
+          "description": "Blocks only in the new version.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "changed": {
+          "description": "Blocks whose content changed.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "moved": {
+          "description": "Blocks in both, somewhere else.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "removed": {
+          "description": "Blocks only in the old version.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "changed",
+        "added",
+        "removed",
+        "moved"
+      ],
+      "type": "object"
+    },
+    "PageDiff": {
+      "description": "What changed on one page of a build.",
+      "properties": {
+        "because": {
+          "description": "The other changed files the page's change can come from: fragments it\nincludes and pages its links take a title or a heading from, in path\norder; then the snippets whose code changed, by address\n(`code:app.py#main`); and `ascribe.toml` (last) when the content model\nis a cause.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "changes": {
+          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page.",
+          "items": {
+            "$ref": "#/$defs/Change"
+          },
+          "type": "array"
+        },
+        "counts": {
+          "$ref": "#/$defs/Counts",
+          "description": "How many changes of each kind."
+        },
+        "own_file_changed": {
+          "description": "Whether the page's own file changed (or exists on one side only).",
+          "type": "boolean"
+        },
+        "page_changed": {
+          "description": "What changed about the page itself besides its blocks, in this\norder: `title`, `frontmatter`, `availability` (the page-level one),\nand `route`. Empty for an added or removed page.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "path": {
+          "description": "The page's content path.",
+          "type": "string"
+        },
+        "route": {
+          "description": "Its route: the new one, or for a removed page the old one.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/PageStatus",
+          "description": "Whether the build publishes it only now, only before, or in both\nwith a difference."
+        }
+      },
+      "required": [
+        "path",
+        "route",
+        "status",
+        "own_file_changed",
+        "because",
+        "page_changed",
+        "counts",
+        "changes"
+      ],
+      "type": "object"
+    },
+    "PageStatus": {
+      "description": "Whether a page is new, gone, or different.",
+      "oneOf": [
+        {
+          "const": "added",
+          "description": "The build publishes it now, and didn't before.",
+          "type": "string"
+        },
+        {
+          "const": "removed",
+          "description": "The build published it before, and doesn't now.",
+          "type": "string"
+        },
+        {
+          "const": "changed",
+          "description": "The build publishes it in both, and it differs.",
+          "type": "string"
+        }
+      ]
+    },
+    "PreviewAsset": {
+      "description": "An asset the page uses.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/AssetKind",
+          "description": "What the page uses it as."
+        },
+        "path": {
+          "description": "The source file, as an absolute path: the file the reference names,\nresolved from the file it is written in.",
+          "type": "string"
+        },
+        "reference": {
+          "description": "The reference as the HTML writes it, before any `#fragment`: an\n`<img src>` for an image, an `<a href>` for a link target. Relative\nto the page for an image, root-relative for a link target.\nPercent-encoded as a URL is.",
+          "type": "string"
+        },
+        "servable": {
+          "description": "Whether the preview may read the file: it is in the content root, or\nin a directory listed in `assetRoots`. A file it may not read is\nreported in `problems` and isn't shown.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "reference",
+        "path",
+        "kind",
+        "servable"
+      ],
+      "type": "object"
+    },
+    "PreviewBuild": {
+      "description": "A build of the content model, for a picker.",
+      "properties": {
+        "description": {
+          "description": "What it does, in the content model's terms: `variants: switch,\navailability: badge`.",
+          "type": "string"
+        },
+        "editor": {
+          "description": "Whether it is the editor's build (`[editor] build`): the picker's\ndefault.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "The build's name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "editor",
+        "description"
+      ],
+      "type": "object"
+    },
+    "PreviewLink": {
+      "description": "A link to another page.",
+      "properties": {
+        "href": {
+          "description": "The `href` as the HTML writes it: the route, and `#` and the page id\nwhen it names a heading.",
+          "type": "string"
+        },
+        "id": {
+          "description": "The page id of the heading the link names.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "description": "The target page, as an absolute path.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "href",
+        "path",
+        "id"
+      ],
+      "type": "object"
+    },
+    "PreviewPage": {
+      "description": "A rendered page.",
+      "properties": {
+        "assets": {
+          "description": "Every asset the page uses.",
+          "items": {
+            "$ref": "#/$defs/PreviewAsset"
+          },
+          "type": "array"
+        },
+        "frontmatter": {
+          "additionalProperties": true,
+          "description": "The frontmatter the site output writes, as JSON: `available` is the\nlist of targets a layout passes to `<ascribe-availability>`.",
+          "type": "object"
+        },
+        "html": {
+          "description": "The page's content as HTML: the site markdown, with source anchors,\nafter `render_site_html`, without its frontmatter and without a\nlayout.",
+          "type": "string"
+        },
+        "links": {
+          "description": "The page links in the content, so a click opens the file.",
+          "items": {
+            "$ref": "#/$defs/PreviewLink"
+          },
+          "type": "array"
+        },
+        "path": {
+          "description": "The page's content path.",
+          "type": "string"
+        },
+        "route": {
+          "description": "The page's route on the site.",
+          "type": "string"
+        },
+        "sections": {
+          "description": "The headings written in the previewed file itself, in order. The\nHTML's source anchors locate every block, headings included.",
+          "items": {
+            "$ref": "#/$defs/PreviewSection"
+          },
+          "type": "array"
+        },
+        "title": {
+          "description": "The page's title (its frontmatter `title`, phrases substituted).",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "route",
+        "title",
+        "frontmatter",
+        "html",
+        "assets",
+        "links",
+        "sections"
+      ],
+      "type": "object"
+    },
+    "PreviewProblem": {
+      "description": "A problem with showing a page.",
+      "properties": {
+        "message": {
+          "description": "What the author should read.",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/ProblemSeverity",
+          "description": "How much it matters."
+        }
+      },
+      "required": [
+        "severity",
+        "message"
+      ],
+      "type": "object"
+    },
+    "PreviewReview": {
+      "description": "What changed on the previewed page against the review base.",
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/BaseInfo",
+          "description": "The base compared with."
+        },
+        "changes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageDiff"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The page's changes, as `ascribe diff --format json` reports a page\n(its keys are snake_case); `null` when the page didn't change."
+        },
+        "wasHtml": {
+          "description": "The page as it was at the base, rendered as `html` is, with source\nanchors, for showing removed blocks and changed blocks as they were;\n`null` when the page didn't change or is new.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "base",
+        "changes",
+        "wasHtml"
+      ],
+      "type": "object"
+    },
+    "PreviewSection": {
+      "description": "A heading written in the previewed file.",
+      "properties": {
+        "id": {
+          "description": "The heading's id on the page (its `id` in the HTML).",
+          "type": "string"
+        },
+        "line": {
+          "description": "The line it starts on, from 0.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "line"
+      ],
+      "type": "object"
+    },
+    "ProblemSeverity": {
+      "description": "How much a problem with showing a page matters.",
+      "oneOf": [
+        {
+          "const": "error",
+          "description": "Nothing can be shown: the page or the build couldn't be read.",
+          "type": "string"
+        },
+        {
+          "const": "warning",
+          "description": "The page is shown, but something on it isn't, or won't publish as it\nis.",
+          "type": "string"
+        },
+        {
+          "const": "info",
+          "description": "There's no page to show, for an ordinary reason: the file isn't a\npage, or the build doesn't publish it.",
+          "type": "string"
+        }
+      ]
+    },
+    "Words": {
+      "description": "The words that differ inside a changed block of prose. Ranges are\n`[start, end)` in characters (Unicode scalar values) of each side's\n`text`, which is the block's text with whitespace collapsed.",
+      "properties": {
+        "now": {
+          "description": "Ranges in `now_text`: words added or replacing others.",
+          "items": {
+            "items": {
+              "format": "uint",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "now_text": {
+          "description": "The block's text now.",
+          "type": "string"
+        },
+        "was": {
+          "description": "Ranges in `was_text`: words removed or replaced.",
+          "items": {
+            "items": {
+              "format": "uint",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "was_text": {
+          "description": "The block's text before.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "now",
+        "was",
+        "now_text",
+        "was_text"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/preview`. It always says which builds exist and\nwhere the project's files are, so a client can offer the picker and know\nwhich directories the preview may read; `page` is there when there is\nsomething to show, and `problems` says why not, or what is missing.",
+  "properties": {
+    "assetRoots": {
+      "description": "The directories outside the content root that the page's assets are\nin and the preview may read: the directory of each asset that\nis in the project but not in the content root, and nowhere else. Never\nthe project root, `node_modules`, or the output directory.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "build": {
+      "description": "The build the answer is for; empty when there is no project.",
+      "type": "string"
+    },
+    "builds": {
+      "description": "Every build of the content model, in the order it declares them.",
+      "items": {
+        "$ref": "#/$defs/PreviewBuild"
+      },
+      "type": "array"
+    },
+    "contentRoot": {
+      "description": "The content root, as a path.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "documentVersion": {
+      "description": "The version of the open document the answer was computed from, or\n`null` when the file isn't open (its text is the disk's). A client\nthat sent version *n* and gets an older one has raced its own edit\nand asks again.",
+      "format": "int32",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "page": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PreviewPage"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The rendered page."
+    },
+    "problems": {
+      "description": "Problems with showing the page: why there is none, or what in it\ncan't be shown.",
+      "items": {
+        "$ref": "#/$defs/PreviewProblem"
+      },
+      "type": "array"
+    },
+    "projectRoot": {
+      "description": "The project's `ascribe.toml` directory, as a path.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "review": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PreviewReview"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "With `review: true`, what changed on the page against the review\nbase; `null` when there's no base or no page, or review wasn't asked\nfor."
+    }
+  },
+  "required": [
+    "build",
+    "builds",
+    "projectRoot",
+    "contentRoot",
+    "assetRoots",
+    "documentVersion",
+    "page",
+    "problems",
+    "review"
+  ],
+  "title": "PreviewResult",
+  "type": "object"
+}

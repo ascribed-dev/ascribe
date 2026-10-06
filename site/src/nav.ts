@@ -31,6 +31,7 @@ export const nav: NavGroup[] = [
       "contracts/site-render.md",
       "contracts/output-layout.md",
       "contracts/assets.md",
+      "contracts/json-reports.md",
     ],
   },
 ];

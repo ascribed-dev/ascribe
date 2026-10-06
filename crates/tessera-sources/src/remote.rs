@@ -78,6 +78,7 @@ pub(crate) struct TreeFile {
 
 /// The commits between two pins.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct Commits {
     /// How many.
     pub count: usize,
@@ -98,6 +99,7 @@ pub(crate) enum History {
 
 /// A commit, by its hash and the first line of its message.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct CommitLine {
     /// Its full hash.
     pub commit: String,

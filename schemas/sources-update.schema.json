@@ -1,0 +1,352 @@
+{
+  "$defs": {
+    "BrokenExample": {
+      "description": "A snippet that resolved at the base and doesn't in the working tree: its\nregion, file, or source is gone.",
+      "properties": {
+        "address": {
+          "description": "Its address, as the page writes it.",
+          "type": "string"
+        },
+        "problem": {
+          "description": "The slug of the diagnostic `ascribe check` reports for it\n(`snippet-region-missing`).",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Why it doesn't resolve, in a few words.",
+          "type": "string"
+        },
+        "source": {
+          "description": "The source the address names.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "address",
+        "source",
+        "problem",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "ChangedExample": {
+      "description": "A snippet whose code changed.",
+      "properties": {
+        "added": {
+          "description": "Lines only in the code now.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "address": {
+          "description": "Its address, as the page writes it.",
+          "type": "string"
+        },
+        "file": {
+          "description": "The code file now, from the repository's root.",
+          "type": "string"
+        },
+        "removed": {
+          "description": "Lines only in the code at the base.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source": {
+          "description": "The source the address names.",
+          "type": "string"
+        },
+        "was_file": {
+          "description": "The code file at the base, when it was renamed since.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "address",
+        "source",
+        "file",
+        "was_file",
+        "added",
+        "removed"
+      ],
+      "type": "object"
+    },
+    "CommitLine": {
+      "description": "A commit, by its hash and the first line of its message.",
+      "properties": {
+        "commit": {
+          "description": "Its full hash.",
+          "type": "string"
+        },
+        "subject": {
+          "description": "The first line of its message.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "commit",
+        "subject"
+      ],
+      "type": "object"
+    },
+    "Commits": {
+      "description": "The commits between two pins.",
+      "properties": {
+        "count": {
+          "description": "How many.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "newest": {
+          "description": "The newest, newest first, at most 20.",
+          "items": {
+            "$ref": "#/$defs/CommitLine"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "count",
+        "newest"
+      ],
+      "type": "object"
+    },
+    "DriftPage": {
+      "description": "A page with an example that changed or broke.",
+      "properties": {
+        "broken": {
+          "description": "The examples that resolved at the base and don't now, by address.",
+          "items": {
+            "$ref": "#/$defs/BrokenExample"
+          },
+          "type": "array"
+        },
+        "builds": {
+          "description": "The builds that show it with a changed example, in the order asked\nfor.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "examples": {
+          "description": "The examples that changed, by address. Empty when only `broken`\nisn't.",
+          "items": {
+            "$ref": "#/$defs/ChangedExample"
+          },
+          "type": "array"
+        },
+        "page_changed": {
+          "description": "Whether the page changed apart from its examples: its own file, or\nits resolved content through anything else it uses (a fragment, the\ncontent model), in any of those builds. When it didn't, the example\nchanged and the words around it didn't.",
+          "type": "boolean"
+        },
+        "path": {
+          "description": "The page's content path.",
+          "type": "string"
+        },
+        "route": {
+          "description": "Its route, in the first of the builds it's in.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "route",
+        "builds",
+        "page_changed",
+        "examples",
+        "broken"
+      ],
+      "type": "object"
+    },
+    "Failure": {
+      "description": "A file a snippet names that couldn't be copied.",
+      "properties": {
+        "path": {
+          "description": "Its path in the source.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Why.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "FileChange": {
+      "description": "What happened to a copy.",
+      "oneOf": [
+        {
+          "const": "added",
+          "description": "It's new.",
+          "type": "string"
+        },
+        {
+          "const": "changed",
+          "description": "Its contents changed.",
+          "type": "string"
+        },
+        {
+          "const": "removed",
+          "description": "It's gone.",
+          "type": "string"
+        }
+      ]
+    },
+    "FileUpdate": {
+      "description": "How a copy changed.",
+      "properties": {
+        "change": {
+          "$ref": "#/$defs/FileChange",
+          "description": "What happened to it."
+        },
+        "path": {
+          "description": "Its path in the source.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "change"
+      ],
+      "type": "object"
+    },
+    "SourceUpdate": {
+      "description": "What `update` did for one source.",
+      "properties": {
+        "back": {
+          "description": "Whether the new pin isn't after the old one: it moved back, or to\nanother line of history. No commits are counted then.",
+          "type": "boolean"
+        },
+        "commits": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Commits"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The commits after the old pin up to the new one, when it moved\nforward from one and the repository could say."
+        },
+        "failed": {
+          "description": "The files snippets name that couldn't be copied.",
+          "items": {
+            "$ref": "#/$defs/Failure"
+          },
+          "type": "array"
+        },
+        "files": {
+          "description": "The copies that changed.",
+          "items": {
+            "$ref": "#/$defs/FileUpdate"
+          },
+          "type": "array"
+        },
+        "first_copy": {
+          "description": "Whether these are the first files copied from the source.",
+          "type": "boolean"
+        },
+        "followed": {
+          "description": "The revision followed: `--to`'s, the branch, or `HEAD`.",
+          "type": "string"
+        },
+        "from": {
+          "description": "The pin before, if it had one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "git": {
+          "description": "Its repository.",
+          "type": "string"
+        },
+        "moved": {
+          "description": "Whether the pin moved.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "The source.",
+          "type": "string"
+        },
+        "to": {
+          "description": "The pin now.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "git",
+        "followed",
+        "from",
+        "to",
+        "moved",
+        "back",
+        "commits",
+        "files",
+        "failed",
+        "first_copy"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe sources update --format json` writes: how each source's pin\nmoved, and the pages whose examples the new copies change.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "changed": {
+      "description": "Whether any file changed: a copy, or the lock.",
+      "type": "boolean"
+    },
+    "pages": {
+      "description": "The pages whose examples the new copies change, as `ascribe drift\n--format json` lists them; `null` when nothing changed, or when that\ncan't be told.",
+      "items": {
+        "$ref": "#/$defs/DriftPage"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "pages_unavailable": {
+      "description": "Why there are no `pages`, when there aren't.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "sources": {
+      "description": "What the update did for each source, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/SourceUpdate"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version",
+    "changed",
+    "sources",
+    "pages",
+    "pages_unavailable"
+  ],
+  "title": "SourcesUpdateReport",
+  "type": "object"
+}
