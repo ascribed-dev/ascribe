@@ -76,6 +76,19 @@ case-sensitive = true
 term = "orphan"
 definition = "No link."
 
+[glossary.terms.build]
+term = "build"
+aliases = ["builds"]
+definition = "A named output configuration."
+link = "/glossary.md#build"
+match = "marked"
+
+[glossary.terms.mode]
+term = "mode"
+definition = "How a build treats content."
+link = "/glossary.md#mode"
+match = "every"
+
 [consumer]
 profile = "astro"
 base-path = "/docs/"

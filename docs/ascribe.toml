@@ -65,12 +65,16 @@ term = "build"
 aliases = ["builds"]
 definition = "A named set of choices, in ascribe.toml, for which variants and which availability a page's output keeps."
 link = "reference/content-model.md#16-buildsname"
+# Also an ordinary word: link the occurrences that mean the term.
+match = "marked"
 
 [glossary.terms.variant]
 term = "variant"
 aliases = ["variants"]
 definition = "Alternative content for a value of a dimension, written with @variant."
 link = "reference/directives.md#variant"
+# Also an ordinary word: link the occurrences that mean the term.
+match = "marked"
 
 [glossary.terms.dimension]
 term = "dimension"
@@ -89,6 +93,8 @@ term = "phrase"
 aliases = ["phrases"]
 definition = "A reusable string declared in ascribe.toml and written {key} in a page."
 link = "reference/directives.md#phrases"
+# Also an ordinary word: link the occurrences that mean the term.
+match = "marked"
 
 [glossary.terms.content-model]
 term = "content model"

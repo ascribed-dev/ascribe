@@ -270,7 +270,14 @@ impl Loader<'_> {
             self.check_keys(
                 &path,
                 term_t,
-                &["term", "aliases", "definition", "link", "case-sensitive"],
+                &[
+                    "term",
+                    "aliases",
+                    "definition",
+                    "link",
+                    "case-sensitive",
+                    "match",
+                ],
             );
             let term = self
                 .require(&path, term_t, sp(item), "term")
@@ -286,6 +293,16 @@ impl Loader<'_> {
                 .get("case-sensitive")
                 .and_then(|c| self.boolean(&format!("{path}.case-sensitive"), c))
                 .unwrap_or(out.case_sensitive);
+            let match_mode = term_t
+                .get("match")
+                .and_then(|m| {
+                    self.choice(&format!("{path}.match"), m, &["first", "every", "marked"])
+                })
+                .map_or(out.match_mode, |s| match s.as_str() {
+                    "every" => GlossaryMatch::Every,
+                    "marked" => GlossaryMatch::Marked,
+                    _ => GlossaryMatch::First,
+                });
             let link = term_t.get("link").and_then(|l| {
                 let text = self.string(&format!("{path}.link"), l, true)?;
                 self.glossary_link(id, &text, sp(l), project, fragments)
@@ -301,6 +318,7 @@ impl Loader<'_> {
                 definition,
                 link,
                 case_sensitive,
+                match_mode,
             });
         }
         self.glossary_duplicates(&out, tt);

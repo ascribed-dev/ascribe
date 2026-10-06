@@ -8,6 +8,9 @@
 //!   code, or raw HTML.
 //! - `match = "first"` links the first occurrence of each term on the page
 //!   (the resolved page, after includes and build modes); `"every"` links all.
+//!   A term with `match = "marked"` is never linked here: authors link the
+//!   occurrences that mean it, and the term is left out of matching like a
+//!   term with no link.
 //! - A term with no `link` isn't linked. Neither is one whose page the build
 //!   doesn't publish, whose id the build removes, or that is the page itself.
 //!
@@ -37,6 +40,9 @@ pub(crate) fn link_terms(resolver: &BuildResolver<'_>, page: &mut ResolvedPage) 
     let mut candidates: Vec<Candidate> = Vec::new();
     let mut urls: BTreeMap<&str, String> = BTreeMap::new();
     for term in &glossary.terms {
+        if term.match_mode == GlossaryMatch::Marked {
+            continue;
+        }
         if let Some(url) = term_url(resolver, page, term) {
             urls.insert(term.id.as_str(), url);
         } else {
@@ -47,6 +53,7 @@ pub(crate) fn link_terms(resolver: &BuildResolver<'_>, page: &mut ResolvedPage) 
                 text: text.clone(),
                 term: term.id.clone(),
                 case_sensitive: term.case_sensitive,
+                first_only: term.match_mode == GlossaryMatch::First,
             });
         }
     }
@@ -55,7 +62,6 @@ pub(crate) fn link_terms(resolver: &BuildResolver<'_>, page: &mut ResolvedPage) 
     let mut linker = Linker {
         candidates,
         urls,
-        first_only: glossary.match_mode == GlossaryMatch::First,
         linked: BTreeSet::new(),
     };
     linker.blocks(&mut page.blocks);
@@ -88,12 +94,12 @@ struct Candidate {
     text: String,
     term: String,
     case_sensitive: bool,
+    first_only: bool,
 }
 
 struct Linker<'a> {
     candidates: Vec<Candidate>,
     urls: BTreeMap<&'a str, String>,
-    first_only: bool,
     linked: BTreeSet<String>,
 }
 
@@ -161,8 +167,7 @@ impl Linker<'_> {
             };
             let end = at + len;
             let term = candidate.term.clone();
-            let already = self.linked.contains(&term);
-            if self.first_only && already {
+            if candidate.first_only && self.linked.contains(&term) {
                 at = end;
                 continue;
             }

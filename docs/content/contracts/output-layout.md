@@ -1,6 +1,6 @@
 ---
 title: Output-layout contract
-description: Where ascribe build writes each build's output, how it records what it wrote, and how it replaces a previous output.
+description: Where ascribe build writes each [build](../reference/content-model.md#16-buildsname)'s output, how it records what it wrote, and how it replaces a previous output.
 ---
 
 This contract says where `ascribe build` writes each build's output, how it records what it wrote, and how it replaces a previous build's output without ever deleting a file it didn't write. It's implemented once for every emitter, and the site emitter uses the same code; the Astro integration reads the output it describes.

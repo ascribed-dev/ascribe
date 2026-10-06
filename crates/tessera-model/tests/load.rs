@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 use tessera_core::availability::parse_availability;
 use tessera_core::{Attributes, Binding, FileId, Forms, Primary, TitleRule};
 use tessera_model::{
-    AvailabilityMode, AvailabilityProblem, ContentModel, TrailingSlash, TypeMatch, VariantMode,
-    load, load_str, load_str_in,
+    AvailabilityMode, AvailabilityProblem, ContentModel, GlossaryMatch, TrailingSlash, TypeMatch,
+    VariantMode, load, load_str, load_str_in,
 };
 
 fn examples() -> PathBuf {
@@ -450,6 +450,18 @@ fn glossary_links_must_name_existing_pages() {
     // Without the project directory the existence check is skipped.
     assert!(load_str(&missing, FileId::new(0)).is_ok());
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn a_glossary_term_can_set_its_own_match() {
+    let text = "spec = \"0.1\"\n[glossary]\nmatch = \"every\"\n[glossary.terms.a]\nterm = \"A\"\ndefinition = \"x\"\nmatch = \"marked\"\n[glossary.terms.b]\nterm = \"B\"\ndefinition = \"x\"\n";
+    let m = load_str(text, FileId::new(0)).unwrap();
+    let modes: Vec<_> = m.glossary.terms.iter().map(|t| t.match_mode).collect();
+    assert_eq!(modes, [GlossaryMatch::Marked, GlossaryMatch::Every]);
+    // `marked` is a term setting, not a glossary default.
+    let all = text.replace("match = \"every\"", "match = \"marked\"");
+    let issues = load_str(&all, FileId::new(0)).unwrap_err();
+    assert_eq!(issues[0].slug.as_str(), "model-invalid-value");
 }
 
 #[test]

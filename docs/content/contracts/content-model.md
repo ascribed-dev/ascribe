@@ -406,7 +406,7 @@ The glossary (SPEC §5.4): terms, their definitions, and how occurrences are mat
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `match` | string | `"first"` | Which occurrences are linked: `"first"`, the first occurrence of each term on each page, or `"every"`, every occurrence. "Page" means the resolved page for a build, after includes and build modes. |
+| `match` | string | `"first"` | Which occurrences are linked: `"first"`, the first occurrence of each term on each page, or `"every"`, every occurrence. "Page" means the resolved page for a build, after includes and build modes. A term can override it. |
 | `case-sensitive` | boolean | `false` | Whether occurrences must match a term's case exactly. When `false`, matching ignores case. A term can override it. |
 | `terms` | table of terms | `{}` | The terms, keyed by term id (`key` rule). |
 
@@ -419,6 +419,7 @@ The glossary (SPEC §5.4): terms, their definitions, and how occurrences are mat
 | `definition` | string | **required** | A short plain-text definition, shown on hover in the editor and included in the JSON output. |
 | `link` | string (path) | none | Where the full definition lives: a source file path relative to the content root, with an optional `#id`, written as in a link (SPEC §5.2; a leading `/` is allowed and means the same). It MUST name a page, not a fragment. Occurrences are linked here. |
 | `case-sensitive` | boolean | the `[glossary]` setting | Overrides `case-sensitive` for this term, for terms like `Go` that collide with ordinary words. |
+| `match` | string | the `[glossary]` setting | Overrides `match` for this term: `"first"`, `"every"`, or `"marked"`. A `"marked"` term isn't linked automatically at all, for words like `build` that also have ordinary senses: link the occurrences that mean the term with an ordinary link to its page. `"marked"` is a term setting only; `[glossary]` doesn't accept it. |
 
 **Matching**: occurrences match whole words only; the longest matching term wins where terms overlap (`API key` over `API`); matching applies to prose only, never to headings, link text, code, raw HTML, or text inside a directive's primary identifier. A term with no `link` isn't linked in the site or plain-markdown output; its definition still reaches the editor and the JSON output. SPEC §5.4 says only that occurrences are linked to definitions.
 

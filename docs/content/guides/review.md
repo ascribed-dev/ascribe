@@ -4,7 +4,7 @@ description: Reviewing a pull request as readers will see it, in the page previe
 available: next
 ---
 
-Ascribe shows a pull request the way readers will see it: each page it changes, rendered, with the changed blocks marked, and the pull request's review comments beside the blocks they're about. You read the change as pages instead of as a diff of Markdown files, comment where you're reading, and your comments land in the pull request like any other review. A change to a fragment shows on every page that includes it, a change to a phrase on every page that uses it, and reformatting shows on none.
+Ascribe shows a pull request the way readers will see it: each page it changes, rendered, with the changed blocks marked, and the pull request's review comments beside the blocks they're about. You read the change as pages instead of as a diff of Markdown files, comment where you're reading, and your comments land in the pull request like any other review. A change to a fragment shows on every page that includes it, a change to a [phrase](../reference/directives.md#phrases) on every page that uses it, and reformatting shows on none.
 
 ![The site preview under review: a changed paragraph marked in the site's own layout, with a review thread beside it and the Ascribe review panel above Astro's toolbar](../images/review-site-preview.png)
 

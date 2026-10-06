@@ -29,7 +29,7 @@ A project that installs `@ascribed/cli` gets exactly the version it pins, in the
 
 ### Diagnostics
 
-Every [diagnostic](../reference/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the build named by `[editor] build` in `ascribe.toml`.
+Every [diagnostic](../reference/diagnostics.md) appears as you type, including in unsaved files, for every file of the project, open or not: fix a heading's id, and the broken links to it in other files clear. Page-level diagnostics are for the [build](../reference/content-model.md#16-buildsname) named by `[editor] build` in `ascribe.toml`.
 
 In a workspace with several projects, the Problems panel lists only the projects whose language server is running. See [The Problems panel](#the-problems-panel).
 

@@ -37,7 +37,7 @@ The source pages go in `content/`. If your Ascribe project lives elsewhere, such
 
 @snippet {title=astro.config.mjs}: code:examples/astro-site/astro.config.mjs
 
-`build` names the build in `ascribe.toml` whose output the site shows. A project without `[builds]` has one, `site`.
+`build` names the [build](../reference/content-model.md#16-buildsname) in `ascribe.toml` whose output the site shows. A project without `[builds]` has one, `site`.
 
 ### 4. Define the collection
 
