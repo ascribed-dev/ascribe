@@ -4,9 +4,9 @@ Part of [Optimization](README.md), from [phase 3, part C](phase-3-trails.md#part
 
 | Lint | Flagged in library code | Flagged in all targets | Decision |
 |---|--:|--:|---|
-| `clippy::too_many_lines`, threshold 150 | 6 | 9 | Kept |
-| `unreachable_pub` | 135 | 274 | Not kept |
-| `clippy::indexing_slicing` | 214 | 1,061 | Not kept |
+| `clippy::too_many_lines`, threshold 150 | 8 | 9 | Kept |
+| `unreachable_pub` | 135 | 273 | Not kept |
+| `clippy::indexing_slicing` | 194 | 1,021 | Not kept |
 
 ## How it was counted
 
@@ -17,7 +17,7 @@ cargo clippy --workspace --all-targets --locked --message-format=json -- \
   -W unreachable_pub -W clippy::too_many_lines -W clippy::indexing_slicing
 ```
 
-"All targets" is that run, which is what CI checks. "Library code" is the same run without `--all-targets`, so it leaves out tests, benchmarks, and `#[cfg(test)]` modules. Each warning is counted once by file and line. `crates/comrak-tessera` doesn't use the workspace lints and isn't counted.
+"All targets" is that run, which is what CI checks. "Library code" is the same run without `--all-targets`, so it leaves out tests, benchmarks, and `#[cfg(test)]` modules. Each warning is counted once by file and line, so two indexes on one line count once. In this run `tests/conformance` and `tests/corpora` are library targets too, since their helpers live in `src/`. `crates/comrak-tessera` doesn't use the workspace lints and isn't counted.
 
 ## `clippy::too_many_lines`: kept
 
@@ -59,7 +59,7 @@ The change is 34 added lines and no code moved. It stops new functions past 150 
 | `tessera-lsp` | 7 | 47 |
 | `tessera-resolve` | 0 | 37 |
 | `tessera-sources` | 0 | 21 |
-| `tests/conformance` | 0 | 18 |
+| `tests/conformance` | 0 | 17 |
 | `tessera-emit` | 0 | 11 |
 | `tessera-fmt` | 0 | 9 |
 | `tessera-syntax` | 0 | 3 |
@@ -83,22 +83,22 @@ If it's wanted anyway, the change is mechanical: with the lint on, `cargo clippy
 
 | Crate | Library code | All targets |
 |---|--:|--:|
-| `tessera-diff` | 44 | 97 |
-| `tessera-model` | 40 | 63 |
+| `tessera-diff` | 38 | 89 |
+| `tessera-model` | 33 | 55 |
 | `tessera-resolve` | 32 | 145 |
-| `tessera-syntax` | 27 | 184 |
-| `tessera-core` | 20 | 55 |
-| `tessera-lsp` | 16 | 232 |
-| `tessera-emit` | 11 | 45 |
+| `tessera-syntax` | 26 | 181 |
+| `tessera-core` | 19 | 53 |
+| `tessera-lsp` | 13 | 228 |
+| `tessera-emit` | 11 | 44 |
 | `tests/corpora` | 9 | 17 |
-| `tessera-check` | 5 | 66 |
-| `tests/conformance` | 5 | 27 |
-| `tessera-fmt` | 3 | 6 |
-| `tessera-sources` | 2 | 29 |
-| `tessera-cli` | 0 | 94 |
+| `tests/conformance` | 5 | 24 |
+| `tessera-check` | 3 | 61 |
+| `tessera-fmt` | 3 | 5 |
+| `tessera-sources` | 2 | 27 |
+| `tessera-cli` | 0 | 91 |
 | `tests/commonmark` | 0 | 1 |
 
-A random sample of 30 of the 200 library hits in `crates/` was read, and none can panic on input. They fall into a few kinds:
+A random sample of 30 of the 180 library lines in `crates/` was read, and none can panic on input. They fall into a few kinds:
 
 - **Inside a bounds check:** `while i < bytes.len() { … bytes[i] … }` in `tessera-core/src/path.rs`, `tessera-syntax/src/convert.rs`, `tessera-model/src/inline.rs`, and `tessera-diff/src/words.rs`.
 - **After a length test in the same expression:** `b.len() >= 2 && b[0] …` in `tessera-lsp/src/uri.rs`, `tessera-model/src/loader.rs`, and `tessera-model/src/types.rs`.
@@ -106,4 +106,4 @@ A random sample of 30 of the 200 library hits in `crates/` was read, and none ca
 - **Indexes from the data they index:** positions from a diff of the same two lists in `tessera-diff/src/align.rs`, and `blocks[end - 1]` where `end` is past the block that found it in `tessera-resolve/src/index/headings.rs`.
 - **Two vectors built in step:** `LineIndex`'s `wide[line]` in `tessera-core/src/line_index.rs` follows a `lines.get(line)?`, and `new` pushes to both together.
 
-`git log` holds no fix for an index or slice panic. Where input does decide a position, as in the language server's line and column, the code already uses `get`. Keeping the lint would turn about 200 safe lines into `get` calls with fallback branches that can't run, which hide the invariant rather than state it. If a fuzzing or property test ever finds an index panic, that's the time to try again, with `allow-indexing-slicing-in-tests` set so tests stay quiet.
+`git log` holds no fix for an index or slice panic. Where input does decide a position, as in the language server's line and column, the code already uses `get`. Keeping the lint would turn about 190 safe lines into `get` calls with fallback branches that can't run, which hide the invariant rather than state it. If a fuzzing or property test ever finds an index panic, that's the time to try again, with `allow-indexing-slicing-in-tests` set so tests stay quiet.
