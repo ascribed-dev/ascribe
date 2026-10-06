@@ -43,10 +43,11 @@ test("a variant group is a switcher, and the reader's choice holds on the next p
   await page.close();
 });
 
-test("a page marked unreleased shows its availability badge", async () => {
+test("a page marked with an availability shows its badge", async () => {
   const page = await open("/guides/review/");
   const badge = page.locator('ascribe-availability[scope="page"] ascribe-availability-target');
-  expect(await badge.getAttribute("states")).toContain("unreleased");
+  // "unreleased" until a release ships the page's feature, then the release.
+  expect(await badge.getAttribute("target")).toBe("ascribe");
   expect(await badge.isVisible()).toBe(true);
   // The element library's stylesheet draws it as a badge.
   const radius = await badge.evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
