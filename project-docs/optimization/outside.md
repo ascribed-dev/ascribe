@@ -30,7 +30,7 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | Thing | What uses it | Who can change it |
 |---|---|---|
 | Organization `ascribed` | Owns the packages below | Maintainer |
-| `@ascribed/cli`, `@ascribed/astro`, `@ascribed/elements`, `@ascribed/review`, and `@ascribed/cli-darwin-arm64`, `-linux-arm64`, `-linux-x64`, `-win32-x64` | Users; `site/` and the Drift and Review jobs install `@next` | Published only by `release.yml` and `canary.yml` |
+| `@ascribed/cli`, `@ascribed/astro`, `@ascribed/elements`, `@ascribed/review`, and `@ascribed/cli-darwin-arm64`, `-linux-arm64`, `-linux-x64`, `-win32-x64` | Users; `site/` and the Drift and Review jobs install `@next` | `release.yml` and `canary.yml`; a new package's first version by hand, by the maintainer ([RELEASING.md](../../RELEASING.md#setting-it-up)) |
 | Trusted publishers on each package: `release.yml` with environment `release`, and `canary.yml` with environment `canary` | Publishing without a token | Maintainer, on each package's npm page |
 | Tag `latest` | `npm install`. 0.1.1, except **`@ascribed/review`'s, which is `0.1.2-next.2`**, a canary, until the next release moves it | `release.yml` |
 | Tags `next` and `next-pending` | The nightly canary (0.1.2-next.6 when the inventory ran) | `canary.yml` |
