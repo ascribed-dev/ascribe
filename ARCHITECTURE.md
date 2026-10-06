@@ -66,7 +66,7 @@ tessera-sources    core, model, resolve
 tessera-emit       core, syntax, model, resolve
 tessera-diff       core, syntax, model, resolve, check, emit
 tessera-lsp        core, syntax, model, resolve, check, emit, diff, fmt
-tessera-cli        core, model, resolve, check, emit, diff, sources, fmt, lsp
+tessera-cli        core, model, check, emit, diff, sources, fmt, lsp
 ```
 
 There are no cycles. Every crate's `Cargo.toml` takes our crates from `[workspace.dependencies]` in the root [Cargo.toml](Cargo.toml).
