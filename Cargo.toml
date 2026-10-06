@@ -47,6 +47,8 @@ comrak-tessera = { path = "crates/comrak-tessera" }
 # External crates shared across the workspace.
 ariadne = "0.6"
 clap = { version = "4", features = ["derive"] }
+# Upstream comrak, only for the CommonMark suite (tests/commonmark), which
+# compares the fork against it. The binary renders with the fork.
 comrak = { version = "0.55", default-features = false }
 insta = { version = "1", features = ["yaml"] }
 proptest = "1"

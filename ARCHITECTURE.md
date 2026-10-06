@@ -63,7 +63,7 @@ tessera-fmt        core, syntax, model
 tessera-resolve    core, syntax, model
 tessera-check      core, syntax, model, resolve
 tessera-sources    core, model, resolve
-tessera-emit       core, syntax, model, resolve
+tessera-emit       core, syntax, model, resolve, comrak-tessera
 tessera-diff       core, syntax, model, resolve, check, emit
 tessera-lsp        core, syntax, model, resolve, check, emit, diff, fmt
 tessera-cli        core, model, check, emit, diff, sources, fmt, lsp
@@ -127,7 +127,7 @@ The language server calls the same code where it does the same job: `tessera_fmt
 
 The site output is Markdown with web components, and two things turn it into HTML:
 
-- **Ours,** `render_site_html` in `crates/tessera-emit/src/render/`, used by the editor's preview and the HTML report.
+- **Ours,** `render_site_html` in `crates/tessera-emit/src/render/`, used by the editor's preview and the HTML report. It renders with the comrak fork, the parser `tessera-syntax` uses, with Ascribe's option off.
 - **The site's,** Astro's Markdown pipeline with our plugin: `packages/astro/src/satteri.ts` for Astro's default processor, `packages/astro/src/rehype.ts` for `unified()`.
 
 They're meant to agree, and these tests hold them to it:

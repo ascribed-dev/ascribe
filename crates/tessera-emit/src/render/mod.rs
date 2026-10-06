@@ -39,7 +39,7 @@
 //! block. A list's anchor also gives each of its items an anchor, found by
 //! counting nested lists. comrak escapes `<` in text, so the next `<` is a tag.
 
-use comrak::{Options, markdown_to_html};
+use comrak_tessera::{Options, markdown_to_html};
 use tessera_core::names;
 
 /// The tag name of the attribute marker.

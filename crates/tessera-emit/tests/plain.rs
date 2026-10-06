@@ -344,9 +344,10 @@ fn a_title_that_spans_lines_is_one_heading() {
 /// The text a CommonMark parser reads from `markdown`: text and code, with
 /// breaks as newlines.
 fn text_of(markdown: &str) -> String {
-    use comrak::nodes::NodeValue;
-    let arena = comrak::Arena::new();
-    let root = comrak::parse_document(&arena, markdown, &comrak::Options::default());
+    use comrak_tessera::nodes::NodeValue;
+    let arena = comrak_tessera::Arena::new();
+    let root =
+        comrak_tessera::parse_document(&arena, markdown, &comrak_tessera::Options::default());
     let mut out = String::new();
     for node in root.descendants() {
         match &node.data.borrow().value {
