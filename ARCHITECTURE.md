@@ -48,7 +48,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | [`tests/zod`](tests/zod) | Type-checks the generated Zod schemas and validates pages with them. |
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
-| `scripts/` | Release scripts (`scripts/release`), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
+| `scripts/` | Release scripts (`scripts/release`), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
 | `project-docs/` | Plans. They describe what was intended, not necessarily what is. |
 
 ## How the crates depend on each other

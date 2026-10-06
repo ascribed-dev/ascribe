@@ -1,5 +1,16 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CANARY, VERSION, canaryVersion, relockWorkspace, unreleasedSection } from "./manifests.ts";
+import {
+  CANARY,
+  VERSION,
+  canaryVersion,
+  npmPackages,
+  relockWorkspace,
+  root,
+  targets,
+  unreleasedSection,
+} from "./manifests.ts";
 
 const changelog = (heading: string): string =>
   `# Changelog\n\nIntro.\n\n${heading}\n\n- A change.\n\n## 0.1.1 (2026-10-02)\n\n- Earlier.\n`;
@@ -72,5 +83,79 @@ describe("relockWorkspace", () => {
   it("keeps Windows line endings", () => {
     const relocked = relockWorkspace(lock.replaceAll("\n", "\r\n"), "0.1.1", "0.1.2-next.5");
     expect(relocked).toBe(relockWorkspace(lock, "0.1.1", "0.1.2-next.5").replaceAll("\n", "\r\n"));
+  });
+});
+
+// `targets` and `npmPackages` are the one list of platforms. The files below
+// can't import it (a workflow, the launcher in the published package, a script
+// that runs before anything is built), so each is compared with it here.
+describe("the platforms", () => {
+  const read = (path: string): string => readFileSync(join(root, path), "utf8");
+  const names = targets.map(({ target }) => target);
+  const exe = (target: string): string | undefined =>
+    targets.find((each) => each.target === target)?.exe;
+
+  it("are the platform packages, each in its own folder", () => {
+    const platforms = readdirSync(join(root, "packages/cli/platforms")).sort();
+    expect(platforms).toEqual(names.map((target) => `cli-${target}`));
+    const cli = JSON.parse(read("packages/cli/package.json")) as {
+      optionalDependencies: Record<string, string>;
+    };
+    expect(Object.keys(cli.optionalDependencies)).toEqual(
+      npmPackages.filter((each) => each.target !== undefined).map(({ name }) => name),
+    );
+  });
+
+  it("are the ones the launcher looks for, and the ones stage-native copies", () => {
+    const launcher = read("packages/cli/src/binary.ts");
+    const packages = /const packages[^=]*=\s*\{([^}]*)\}/.exec(launcher)?.[1] ?? "";
+    expect(
+      Array.from(packages.matchAll(/"([\w-]+)":\s*"([@\w/-]+)"/g), ([, t, p]) => [t, p]),
+    ).toEqual(
+      npmPackages
+        .filter((each) => each.target !== undefined)
+        .map(({ target, name }) => [target, name]),
+    );
+
+    const stage = read("packages/cli/scripts/stage-native.mjs");
+    const staged = /const targets = \[([\s\S]*?)\n\];/.exec(stage)?.[1] ?? "";
+    expect(
+      Array.from(staged.matchAll(/\["(\w+)", "(\w+)", "(\w+)"\]/g), ([, os, cpu, variable]) => [
+        `${os}-${cpu}`,
+        variable,
+      ]),
+    ).toEqual(
+      names.map((target) => [target, `ASCRIBE_BIN_${target.replace("-", "_").toUpperCase()}`]),
+    );
+  });
+
+  it("are the ones CI builds the Astro example on", () => {
+    const ci = read(".github/workflows/ci.yml");
+    const entries = Array.from(
+      ci.matchAll(/^\s*\w+='(\{"os".*\})'$/gm),
+      ([, json]) => JSON.parse(json ?? "") as { target: string; env_target: string; exe: string },
+    );
+    expect(entries.map(({ target }) => target).sort()).toEqual(names);
+    for (const entry of entries) {
+      expect(entry.env_target).toBe(entry.target.replace("-", "_").toUpperCase());
+      expect(entry.exe).toBe(exe(entry.target));
+    }
+  });
+
+  it("are the ones a release builds and smoke-tests", () => {
+    const workflow = read(".github/workflows/release-build.yml");
+    // A job's `matrix.include` entries: `- { target: …, exe: … }`, as `target exe`.
+    const matrix = (job: string): string[] => {
+      const include = new RegExp(
+        `^ {2}${job}:\\n[\\s\\S]*?include:\\n((?: {10}- \\{.*\\}\\n)+)`,
+        "m",
+      );
+      return Array.from(
+        include.exec(workflow)?.[1]?.matchAll(/target: ([\w-]+)(?:.*exe: ([\w.]+))?/g) ?? [],
+        ([, target, exe]) => (exe === undefined ? `${target}` : `${target} ${exe}`),
+      );
+    };
+    expect(matrix("build")).toEqual(targets.map(({ target, exe }) => `${target} ${exe}`));
+    expect(matrix("smoke")).toEqual(names);
   });
 });
