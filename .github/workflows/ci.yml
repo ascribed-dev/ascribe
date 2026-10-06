@@ -20,7 +20,10 @@ name: CI
 # - A pull request labeled `optimization` also compares every output with its
 #   base's (scripts/compare/outputs.ts): a clean-up must change none. Adding
 #   or removing a label starts a run, so the label counts as soon as it's
-#   added, and stops counting as soon as it's removed.
+#   added, and stops counting as soon as it's removed. A change to the
+#   outputs that a decision in project-docs/decisions.md accepts adds the
+#   label `outputs changed` too: the comparison still runs and lists every
+#   difference, but warns instead of failing.
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
@@ -175,10 +178,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # The checkout is the merge commit GitHub made; its first parent is the
       # base it was made on. The base branch's tip may have moved on since.
-      - run: |
+      - env:
+          ACCEPTED: ${{ contains(github.event.pull_request.labels.*.name, 'outputs changed') }}
+        run: |
           set -o pipefail
+          status=0
           node scripts/compare/outputs.ts --base HEAD^1 --out "$RUNNER_TEMP/compare" |
-            tee "$RUNNER_TEMP/compare.txt"
+            tee "$RUNNER_TEMP/compare.txt" || status=$?
+          # 1 is a difference; 2 is a comparison that couldn't run, which no label excuses.
+          if [ "$status" = 1 ] && [ "$ACCEPTED" = true ]; then
+            echo "::warning::The outputs changed, and the pull request is labeled \`outputs changed\`: check the differences above are the ones its decision accepts."
+            exit 0
+          fi
+          exit "$status"
       - if: always()
         run: |
           if [ -f "$RUNNER_TEMP/compare.txt" ]; then
