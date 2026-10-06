@@ -1,0 +1,26 @@
+description: >-
+  A snippet leaves out blank lines at the start and end of what's left once
+  tag lines and removed lines are gone, so where a formatter puts a tag line
+  doesn't change it. An Astro, Svelte, or Vue component takes tags in either
+  `//` or `<!-- -->` comments, in its script and in its markup.
+spec: ["4.8"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - paragraph: "Blank lines at a region's edges are left out:"
+          - code: "- run: npm test\n"
+            info: yml
+          - paragraph: "An Astro component's frontmatter and markup:"
+          - code: "const { title } = Astro.props;\n"
+            info: astro
+          - code: "<h1>{title}</h1>\n"
+            info: astro
+          - paragraph: "A Svelte component's script and markup:"
+          - code: "export let name;\n"
+            info: svelte
+          - code: "<p>Hello {name}</p>\n"
+            info: svelte
