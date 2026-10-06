@@ -112,7 +112,8 @@ fn machine() -> String {
 
 /// Compares `results` with the baseline at `baseline`; with `record`, writes
 /// the results as the new baseline's metrics (keeping its margin, floor, and
-/// targets) instead.
+/// targets) instead, unless a [`REQUIRED`] metric is missing from them, which
+/// fails and leaves the file as it was.
 ///
 /// # Errors
 ///
@@ -127,7 +128,23 @@ pub fn compare(
         &std::fs::read_to_string(baseline).map_err(|e| format!("{}: {e}", baseline.display()))?,
     )
     .map_err(|e| format!("{}: {e}", baseline.display()))?;
+    let missing: Vec<&str> = REQUIRED
+        .iter()
+        .copied()
+        .filter(|r| !results.contains_key(*r))
+        .collect();
     if record {
+        // A recording without a required metric would drop its baseline
+        // unnoticed; keep the old file instead.
+        if !missing.is_empty() {
+            return Ok(Comparison {
+                text: format!(
+                    "not recorded: missing from the results: {}\n",
+                    missing.join(", ")
+                ),
+                ok: false,
+            });
+        }
         base.machine = machine();
         base.metrics = results
             .values()
@@ -150,11 +167,9 @@ pub fn compare(
         "{:<44} {:>10} {:>10} {:>10} {:>10}  status\n",
         "metric", "median", "baseline", "limit", "target"
     ));
-    for required in REQUIRED {
-        if !results.contains_key(*required) {
-            ok = false;
-            text.push_str(&format!("{required:<44} missing from the results\n"));
-        }
+    for required in &missing {
+        ok = false;
+        text.push_str(&format!("{required:<44} missing from the results\n"));
     }
     for (name, r) in &results {
         let recorded = base.metrics.get(name).copied();

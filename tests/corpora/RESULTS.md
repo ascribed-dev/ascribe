@@ -119,8 +119,10 @@ synthetic project, median of three runs:
 | language server, after 100 edits to that page | 186 MB |
 
 Runs differed by less than 0.2 MB. `diff` holds about twice what `check`
-does, since it loads the project at both revisions. The language server
-doesn't grow over 100 edits.
+does, since it loads the project at both revisions. The language server's
+peak memory doesn't rise above its load peak over 100 edits. That's a
+high-water mark, not the memory it holds after them, so it wouldn't show a
+small leak per edit.
 
 The memory metrics are named `memory/…` and recorded in megabytes, in the same
 JSON line fields as a time. The comparison is the same too: a metric fails
@@ -157,7 +159,8 @@ running is noticed. Re-record after an intended change on the machine the job
 runs on, never a laptop: run the Corpora workflow by hand from the branch with
 **record** set, which runs `corpora compare results.jsonl --record`, prints the
 new file, and uploads it as the `perf-baseline` artifact. Commit that file and
-say so in the commit. A runner isn't always the same CPU (two runs on
+say so in the commit. A recording that lacks a required metric fails and
+leaves the file as it was. A runner isn't always the same CPU (two runs on
 2026-10-06 got an EPYC 9V74 and an EPYC 7763, about 15 percent apart), which
 the margin absorbs.
 

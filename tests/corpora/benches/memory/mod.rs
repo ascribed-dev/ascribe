@@ -175,7 +175,9 @@ impl Meter {
     /// peak memory once it has loaded the project and published the first
     /// diagnostics of an open page, and again after 100 edits to that page,
     /// each waited for. Each is a separate run of `ascribe lsp`, ended
-    /// with `shutdown` and `exit`.
+    /// with `shutdown` and `exit`. Both are peaks, not the memory the server
+    /// holds at the end: the second differs from the first only if editing
+    /// went above the load peak.
     pub fn lsp(&self, bin: &Path, root: &Path) {
         for (name, metric, edits) in [
             (
