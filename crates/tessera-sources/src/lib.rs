@@ -87,6 +87,23 @@ pub enum SourcesError {
     },
 }
 
+impl tessera_core::Coded for SourcesError {
+    fn code(&self) -> &'static str {
+        match self {
+            SourcesError::GitNotFound => "git_not_found",
+            SourcesError::Git { .. } => "git_failed",
+            SourcesError::UnknownSource(_) => "unknown_source",
+            SourcesError::NotRemote(_) => "source_not_remote",
+            SourcesError::Lock(_) => "lock_unreadable",
+            SourcesError::BadRevision(_) => "unknown_revision",
+            SourcesError::ToNeedsOneSource => "to_needs_one_source",
+            SourcesError::NoCache => "no_cache",
+            SourcesError::Cache { .. } => "cache_unwritable",
+            SourcesError::Write { .. } => "copy_unwritable",
+        }
+    }
+}
+
 /// Where fetched repositories are kept.
 #[derive(Clone, Debug)]
 pub struct Options {

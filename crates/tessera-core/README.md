@@ -11,6 +11,7 @@ Every crate builds on it, so a change here is a change to all of them.
 | `src/span.rs` | `FileId`, `Span`, `Location` | Where things are: UTF-8 byte ranges in a file, by id. |
 | `src/line_index.rs` | `LineIndex`, `LineCol`, `WideEncoding` | Byte offsets to lines, and to UTF-8, UTF-16, or scalar-value columns, for the editor and the reports. |
 | `src/text_edit.rs` | `TextEdit`, `apply_edits` | Edits to a file: fixes, formatting, renames. |
+| `src/error.rs` | `Coded` | Errors a caller tells apart by a stable code (`git_not_found`), whatever the message says. Every error a command can stop on implements it; the CLI's `exit.rs` lists the codes. |
 | `src/issue.rs` | `Issue`, `DiagnosticSlug`, `Fix`, `Related` | A problem, by registry slug, with its message arguments. Crates find problems as `Issue`s; `tessera-check` words them. |
 | `src/diagnostics.rs` | One `DiagnosticSlug` constant per diagnostic | Every slug in `tests/conformance/diagnostics.toml`, in the same order. A `DiagnosticSlug` can't be made outside this crate, so a misspelled slug doesn't compile. |
 | `src/path.rs` | `RelPath`, `classify_destination`, `percent_decode` | Every path the crates exchange: relative, `/`-separated on every platform, normalized. How a link or image destination becomes one. |

@@ -9,6 +9,9 @@
 //! cargo test -p tessera-conformance --test conformance -- samples/appendix-b
 //! ```
 
+// A test harness run with `harness = false`: its report is printed.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
+
 mod adapters;
 
 use std::process::ExitCode;

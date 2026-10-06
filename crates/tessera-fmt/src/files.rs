@@ -35,6 +35,16 @@ pub enum FormatFilesError {
     },
 }
 
+impl tessera_core::Coded for FormatFilesError {
+    fn code(&self) -> &'static str {
+        match self {
+            FormatFilesError::Io { .. } => "format_io",
+            FormatFilesError::NotUtf8 { .. } => "not_utf8",
+            FormatFilesError::BadEdits { .. } => "format_bad_edits",
+        }
+    }
+}
+
 /// Formats every `.md` file under `paths` (each a file, or a directory
 /// searched recursively) or, with no path, under the content root of the
 /// project whose content model, `model`, is at `config`. Each file that

@@ -7,6 +7,9 @@
 //! - `COMMONMARK_VERBOSE=1` prints every failing example.
 //! - `COMMONMARK_WRITE_BASELINE=1` rewrites the baseline from this run.
 
+// A test harness run with `harness = false`: its report is printed.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
+
 use std::process::ExitCode;
 
 use tessera_commonmark_suite::{Baseline, SPEC_VERSION, load_bundled_examples, run, suite_dir};
