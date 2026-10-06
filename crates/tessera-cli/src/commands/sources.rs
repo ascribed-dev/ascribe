@@ -5,13 +5,11 @@
 
 use std::io::{self, Write};
 use std::process::ExitCode;
-use std::sync::Arc;
 
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
 use tessera_check::{LoadError, Project};
-use tessera_core::FileId;
-use tessera_diff::{DiffError, DriftPage, DriftReport, Repository, Side, drift};
+use tessera_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_project};
 use tessera_sources::{
     CopyState, FetchReport, FileChange, Options, SourceUpdate, SourcesError, StatusReport,
     UpdateReport, Workspace, short,
@@ -128,7 +126,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace), u8> {
     let project = load_project(global).map_err(|failure| {
         let message = match failure {
-            Failure::Config(message) => message,
+            Failure::Config(e) => e.to_string(),
             Failure::Load(LoadError::Model { diagnostics, .. }) => {
                 let mut text = format!("{} has errors", tessera_check::MODEL_FILE);
                 for d in diagnostics {
@@ -140,11 +138,7 @@ fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace
         };
         fail(err, &message)
     })?;
-    let index = tessera_resolve::Project::load(
-        Arc::new(project.model().clone()),
-        project.layout().clone(),
-        project.file_system(),
-    );
+    let index = project.index();
     let workspace = Workspace::new(project.root(), project.model(), &index)
         .map_err(|e| fail(err, &e.to_string()))?;
     Ok((project, workspace))
@@ -382,29 +376,12 @@ fn pages(global: &Global) -> Result<Option<DriftReport>, String> {
         }
         e => e.to_string(),
     };
-    let repo = Repository::discover(project.root()).map_err(why)?;
-    let base = repo.base(Some("HEAD"), true).map_err(why)?;
-    let now_project = tessera_resolve::Project::load(
-        Arc::new(project.model().clone()),
-        project.layout().clone(),
-        project.file_system(),
-    );
-    let now = Side {
-        project: &now_project,
-        model_text: project
-            .file(FileId::new(0))
-            .map(|f| f.text)
-            .unwrap_or_default(),
+    let options = DriftOptions {
+        base: Some("HEAD"),
+        base_exact: true,
+        builds: &[],
     };
-    let names: Vec<&str> = project
-        .model()
-        .builds
-        .iter()
-        .map(|b| b.name.as_str())
-        .collect();
-    drift(&repo, &base, now, project.file_system(), &names)
-        .map(Some)
-        .map_err(why)
+    drift_project(&project, &options).map(Some).map_err(why)
 }
 
 /// `9f2c41d → a3a8411`, or `a3a8411` for a first pin.

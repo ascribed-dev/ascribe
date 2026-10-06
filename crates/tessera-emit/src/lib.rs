@@ -32,6 +32,9 @@
 //! # Ok(()) }
 //! ```
 //!
+//! [`write_outputs`] does all of that for each build of a project, as
+//! `ascribe build` does once the checks have passed.
+//!
 //! The JSON output's schema is in the crate's README.
 
 pub mod assets;
@@ -43,6 +46,7 @@ mod plain;
 pub mod render;
 pub mod site;
 mod store;
+mod write;
 pub mod zod;
 
 pub use assets::Placement;
@@ -56,3 +60,4 @@ pub use plain::PlainEmitter;
 pub use render::render_site_html;
 pub use site::{AstroProfile, SiteEmitter};
 pub use store::{Contents, EmittedFile, FileKind, OutputDir, OutputOptions, Replaced, StoreError};
+pub use write::{Output, WriteEvent, WriteOptions, Written, write_outputs};

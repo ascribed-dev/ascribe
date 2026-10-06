@@ -5,15 +5,14 @@ The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, and `lsp`. How t
 | Module | Role |
 |---|---|
 | `src/cli.rs` | The command line: options every subcommand shares, and the subcommands. Its header says what a new subcommand needs. |
-| `src/commands/` | One module per subcommand, each with an `Args` type and a `run` |
-| `src/context.rs` | Finding and loading the project: `--config`, or the nearest `ascribe.toml` |
-| `src/commands/diff.rs` | `ascribe diff`: loads the working tree as `build` does, reads the base through `tessera_diff`, and writes the report as text, JSON, or HTML (`tessera_diff::html`) |
-| `src/commands/drift.rs` | `ascribe drift`: loads the working tree as `diff` does, asks `tessera_diff::drift` which pages' examples changed, and writes its groups as text, JSON, or Markdown for a CI job's summary |
-| `src/commands/diagnose.rs` | What `check` and `build` share: choosing builds, and the diagnostics reported for them |
+| `src/commands/` | One module per subcommand, each with an `Args` type and a `run`: the arguments, one call into a library (the [command entries](../../ARCHITECTURE.md#each-commands-entry)), and the report |
+| `src/context.rs` | Finding and loading the project: `--config`, or the nearest `ascribe.toml` (`tessera_check::Project::locate`), then `Project::load` |
+| `src/commands/diff.rs` | `ascribe diff`: calls `tessera_diff::diff_project`, and writes the report as text, JSON, or HTML |
+| `src/commands/drift.rs` | `ascribe drift`: calls `tessera_diff::drift_project`, and writes its groups as text, JSON, or Markdown for a CI job's summary |
 | `src/report/` | The text and JSON reports |
 | `src/exit.rs` | The exit codes: 0 (no errors), 1 (errors, or warnings under `--deny-warnings`), 2 (the command couldn't run) |
 
-`check`, `build`, and the language server call the same checking functions (`tessera_check::check_all_builds`, and `check_project` for one build), so they report identical diagnostics. Codes, slugs, severities, and message templates come from the diagnostics registry, `tests/conformance/diagnostics.toml`.
+`check` and `build` call `tessera_check::diagnose`, and it and the language server call the same checking functions (`tessera_check::check_all_builds`, and `check_project` for one build), so they report identical diagnostics. Codes, slugs, severities, and message templates come from the diagnostics registry, `tests/conformance/diagnostics.toml`.
 
 The JSON report's `schema_version` changes only when a field is removed or changes meaning; new fields can appear without it, so consumers ignore fields they don't know.
 

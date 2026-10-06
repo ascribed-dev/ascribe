@@ -12,9 +12,11 @@ publish.workspace = true
 tessera-core.workspace = true
 tessera-syntax.workspace = true
 tessera-model.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
+tempfile = "3"
 tessera-commonmark-suite = { path = "../../tests/commonmark" }
 toml.workspace = true
 
