@@ -289,7 +289,7 @@ fn and_list(items: &[&str]) -> String {
 
 pub(crate) fn failure_message(failure: Failure) -> String {
     match failure {
-        Failure::Config(message) => message,
+        Failure::Config(e) => e.to_string(),
         Failure::Load(LoadError::Model { diagnostics, .. }) => model_errors(
             &format!("{} has errors", tessera_check::MODEL_FILE),
             diagnostics.iter().map(|d| d.message.clone()),

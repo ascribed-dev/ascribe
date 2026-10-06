@@ -190,7 +190,11 @@ fn report_failure(
     err: &mut dyn Write,
 ) -> u8 {
     let (message, files, diagnostics) = match failure {
-        Failure::Config(message) => (message, FileTable::of_model(String::new()), Vec::new()),
+        Failure::Config(e) => (
+            e.to_string(),
+            FileTable::of_model(String::new()),
+            Vec::new(),
+        ),
         Failure::Load(LoadError::Model { text, diagnostics }) => (
             format!(
                 "{} has errors, so nothing can be built",

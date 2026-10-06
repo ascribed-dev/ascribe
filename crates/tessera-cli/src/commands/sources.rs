@@ -128,7 +128,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace), u8> {
     let project = load_project(global).map_err(|failure| {
         let message = match failure {
-            Failure::Config(message) => message,
+            Failure::Config(e) => e.to_string(),
             Failure::Load(LoadError::Model { diagnostics, .. }) => {
                 let mut text = format!("{} has errors", tessera_check::MODEL_FILE);
                 for d in diagnostics {

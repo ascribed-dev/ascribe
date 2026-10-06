@@ -45,7 +45,8 @@ use checks::check_sources;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
 pub use page::{PageChecker, check_all_builds, check_builds, check_pages, check_project};
 pub use project::{
-    FileEntry, LOCK_FILE_ID, LoadError, MODEL_FILE, Project, ReadFailure, SourceFile,
+    FileEntry, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile, Project, ReadFailure,
+    SourceFile,
 };
 pub use registry::{Entry, Level, Registry};
 

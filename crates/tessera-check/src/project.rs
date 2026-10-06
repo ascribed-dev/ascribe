@@ -79,6 +79,41 @@ pub enum LoadError {
     },
 }
 
+/// Why [`Project::locate`] found no content model.
+#[derive(Debug, thiserror::Error)]
+pub enum LocateError {
+    /// The current directory, where the search starts, can't be read.
+    #[error("can't read the current directory: {0}")]
+    CurrentDir(io::Error),
+    /// No `ascribe.toml` is in the current directory or a parent.
+    #[error(
+        "no {} found in {} or any parent directory; run ascribe from a project, or pass --config",
+        MODEL_FILE,
+        dir.display()
+    )]
+    NotFound {
+        /// The directory the search started in.
+        dir: PathBuf,
+    },
+    /// The content model named isn't a file.
+    #[error("{} doesn't exist or isn't a file", path.display())]
+    NotAFile {
+        /// The path named.
+        path: PathBuf,
+    },
+}
+
+/// A content model as [`Project::load_model`] loads it.
+#[derive(Clone, Debug)]
+pub struct ModelFile {
+    /// The project root: the directory containing `ascribe.toml`.
+    pub root: PathBuf,
+    /// The content model's text.
+    pub text: String,
+    /// The content model.
+    pub model: ContentModel,
+}
+
 /// A documentation set: its content model and source files.
 ///
 /// The content model is file id 0, and the source files have ids 1, 2, … in
@@ -134,6 +169,30 @@ impl Project {
             .find(|p| p.is_file())
     }
 
+    /// The content model a command works on: `config` when given (a file, or
+    /// a directory that holds `ascribe.toml`), or else the nearest
+    /// `ascribe.toml` in the current directory or a parent.
+    ///
+    /// # Errors
+    ///
+    /// The current directory can't be read, no `ascribe.toml` is found, or
+    /// `config` names none.
+    pub fn locate(config: Option<&Path>) -> Result<PathBuf, LocateError> {
+        let config = match config {
+            Some(path) if path.is_dir() => path.join(MODEL_FILE),
+            Some(path) => path.to_owned(),
+            None => {
+                let cwd = std::env::current_dir().map_err(LocateError::CurrentDir)?;
+                Project::find_config(&cwd).ok_or(LocateError::NotFound { dir: cwd })?
+            }
+        };
+        if config.is_file() {
+            Ok(config)
+        } else {
+            Err(LocateError::NotAFile { path: config })
+        }
+    }
+
     /// Loads the project whose content model is at `config`: the model, then
     /// every source file under its content root, as
     /// [`tessera_resolve::FileSystem::sources`] finds them.
@@ -142,27 +201,7 @@ impl Project {
     /// isn't valid UTF-8, is still a source file, with its [`ReadFailure`];
     /// `check_files` reports it and checks the rest.
     pub fn load(config: &Path) -> Result<Project, LoadError> {
-        let text = fs::read(config)
-            .map_err(|e| read_error(config, e))
-            .and_then(|bytes| {
-                String::from_utf8(bytes).map_err(|_| LoadError::Read {
-                    path: config.display().to_string(),
-                    message: "the file isn't valid UTF-8".into(),
-                })
-            })?;
-        let root = match config.parent() {
-            Some(p) if !p.as_os_str().is_empty() => p.to_owned(),
-            _ => PathBuf::from("."),
-        };
-        let model = match tessera_model::load_str_in(&text, FileId::new(0), &root) {
-            Ok(model) => model,
-            Err(issues) => {
-                return Err(LoadError::Model {
-                    text,
-                    diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
-                });
-            }
-        };
+        let ModelFile { root, text, model } = Project::load_model(config)?;
         let content_root =
             RelPath::parse(&model.project.content_root).map_err(|e| LoadError::Read {
                 path: config.display().to_string(),
@@ -176,6 +215,36 @@ impl Project {
             text,
             sources,
         ))
+    }
+
+    /// Loads only the content model at `config`, the first step of
+    /// [`Project::load`], for a command that doesn't need the pages read:
+    /// `ascribe fmt`, which reads the files it formats itself.
+    ///
+    /// # Errors
+    ///
+    /// The file can't be read or isn't valid UTF-8 ([`LoadError::Read`]), or
+    /// the content model has errors ([`LoadError::Model`]).
+    pub fn load_model(config: &Path) -> Result<ModelFile, LoadError> {
+        let text = fs::read(config)
+            .map_err(|e| read_error(config, e))
+            .and_then(|bytes| {
+                String::from_utf8(bytes).map_err(|_| LoadError::Read {
+                    path: config.display().to_string(),
+                    message: "the file isn't valid UTF-8".into(),
+                })
+            })?;
+        let root = match config.parent() {
+            Some(p) if !p.as_os_str().is_empty() => p.to_owned(),
+            _ => PathBuf::from("."),
+        };
+        match tessera_model::load_str_in(&text, FileId::new(0), &root) {
+            Ok(model) => Ok(ModelFile { root, text, model }),
+            Err(issues) => Err(LoadError::Model {
+                text,
+                diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
+            }),
+        }
     }
 
     /// Reads every source file under `root/content_root`. The files that

@@ -20,10 +20,13 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::Args as ClapArgs;
-use tessera_core::{FileId, apply_edits};
+use tessera_check::{LoadError, Project};
+use tessera_core::apply_edits;
+use tessera_core::diagnostics::MODEL_TOML_SYNTAX;
 use tessera_model::ContentModel;
 
 use crate::cli::Global;
+use crate::context::locate;
 use crate::exit;
 
 /// Arguments of `ascribe fmt`.
@@ -69,7 +72,7 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 
 /// Formats every file, and returns how many changed (or would have).
 fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<usize, String> {
-    let config = find_config(global)?;
+    let config = locate(global).map_err(|e| e.to_string())?;
     let project = config
         .parent()
         .map_or_else(|| PathBuf::from("."), Path::to_owned);
@@ -114,42 +117,27 @@ fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<us
     Ok(changed)
 }
 
-/// `--config`, or the nearest `ascribe.toml` in the current directory or a parent.
-fn find_config(global: &Global) -> Result<PathBuf, String> {
-    let config = match &global.config {
-        Some(path) if path.is_dir() => path.join(tessera_check::MODEL_FILE),
-        Some(path) => path.clone(),
-        None => {
-            let cwd = std::env::current_dir()
-                .map_err(|e| format!("can't read the current directory: {e}"))?;
-            tessera_check::Project::find_config(&cwd).ok_or_else(|| {
-                format!(
-                    "no {} found in {} or any parent directory; run ascribe from a project, or pass --config",
-                    tessera_check::MODEL_FILE,
-                    cwd.display()
-                )
-            })?
-        }
-    };
-    if config.is_file() {
-        Ok(config)
-    } else {
-        Err(format!(
-            "{} doesn't exist or isn't a file",
-            config.display()
-        ))
-    }
-}
-
-fn load_model(path: &Path) -> Result<ContentModel, String> {
-    tessera_model::load_with_file(path, FileId::new(0)).map_err(|issues| {
-        let slugs: Vec<&str> = issues.iter().map(|i| i.slug.as_str()).collect();
-        format!(
-            "{} isn't a valid content model ({}); run `ascribe check` for details",
-            path.display(),
-            slugs.join(", ")
-        )
-    })
+/// The content model, or why it can't be used, as `ascribe fmt` words it:
+/// the pages aren't read, so a project whose pages have errors can still be
+/// formatted.
+fn load_model(config: &Path) -> Result<ContentModel, String> {
+    Project::load_model(config)
+        .map(|loaded| loaded.model)
+        .map_err(|e| {
+            let slugs: Vec<&str> = match &e {
+                LoadError::Model { diagnostics, .. } => {
+                    diagnostics.iter().map(|d| d.slug.as_str()).collect()
+                }
+                // The file couldn't be read, or isn't UTF-8: the content
+                // model's syntax error.
+                LoadError::Read { .. } => vec![MODEL_TOML_SYNTAX.as_str()],
+            };
+            format!(
+                "{} isn't a valid content model ({}); run `ascribe check` for details",
+                config.display(),
+                slugs.join(", ")
+            )
+        })
 }
 
 /// Whether a directory holds a file named exactly `ascribe.toml` and isn't
