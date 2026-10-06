@@ -75,7 +75,7 @@ Ascribe doesn't read the other repository whenever it checks. It copies the file
 
 1. Write the `@snippet`, then run `ascribe sources fetch`. It pins the source to the head of its branch the first time, and copies the file.
 2. Commit `ascribe.lock` and `sources/`.
-3. When the code moves on, run `ascribe sources update`. It moves the pin, copies the files again, and lists the pages whose examples changed, the way `ascribe drift` does, so the pull request that moves the pin says which pages to read. The pages are found by comparing with the docs' last commit, so in a new repository, commit once first.
+3. When the code moves on, run `ascribe sources update`, or let [the update pull request](#the-update-pull-request) run it. It moves the pin, copies the files again, and lists the pages whose examples changed, the way `ascribe drift` does, so the pull request that moves the pin says which pages to read. The pages are found by comparing with the docs' last commit, so in a new repository, commit once first.
 
 Everything else reads the copies: `ascribe check`, `ascribe build`, the editor, and `ascribe diff` and `ascribe drift`, which read the copies at the base from the docs repository's own history. None of them run `git` against the code's repository or use the network, and `ascribe check` fails on a copy edited by hand, since the change belongs in the code. `ascribe sources status` shows each pin and copy.
 
@@ -87,6 +87,36 @@ Everything else reads the copies: `ascribe check`, `ascribe build`, the editor, 
   ```
 
 See [a source in another repository](../reference/content-model.md#a-source-in-another-repository) and [`ascribe sources`](../reference/cli.md#ascribe-sources).
+
+### The update pull request
+
+Nothing moves a pin unless something runs `ascribe sources update`. This GitHub Actions workflow runs it on a schedule, in the docs repository, and when an example changed, opens a pull request that moves the pins and updates the copies. There's one at a time: while it's open, each run updates it in place, on the branch `ascribe/update-sources`.
+
+@snippet {lang=yaml}: code:examples/docs-repository/.github/workflows/update-sources.yml#workflow
+
+The pull request's title names each source and its new pin. Its description is what `ascribe sources update --format summary` writes: the commits that came in, linked to the comparison on GitHub, the copies that changed, and the pages to reread, as `ascribe drift` groups them. When an example no longer resolves, because its region was renamed or its file moved, the description says so, with `ascribe check`'s errors, and the pull request fails your docs' checks like any other.
+
+Because the copies are in its diff, the pull request is reviewed like any change to the docs: your checks, the [review report](review.md), and your site's preview all show the pages with the new code.
+
+- **When it opens one.** Only when a copy changed. A run where the code moved but no example did changes nothing: no branch, no pull request, a green run. A run that can't reach the code's repository fails, with `git`'s message. If the examples go back to what the default branch has, it closes the open pull request.
+- **Fixing a page.** Push the fix to the pull request's branch. From then on, the job leaves the branch alone, so your commits aren't overwritten, until the pull request is merged or closed. The next run after that opens a new one.
+- **Merging it** brings the docs up to date with the code. Nothing merges it for you.
+- **The schedule.** The default is once each weekday. GitHub stops a scheduled workflow in a public repository after 60 days without activity there; you can start it again from the Actions tab, and run it by hand at any time.
+
+#### The access it needs
+
+The workflow takes two tokens from a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app) that you create for your organization:
+
+1. Create the App with no webhook, and give it two repository permissions: **Contents** (read and write) and **Pull requests** (read and write).
+2. Install it on the docs repository and the code's repositories, and nowhere else.
+3. In the docs repository, add the App's client ID as the Actions variable `SOURCES_APP_CLIENT_ID`, and a private key for it as the secret `SOURCES_APP_PRIVATE_KEY`.
+4. In the workflow, list the code's repositories in `repositories`.
+
+The first token can write to the docs repository only; the second can only read the code, and `git` uses it only while the pins move. An App's token is needed for two reasons: the default token can't read another private repository, and a pull request it opens doesn't run your checks until someone approves them.
+
+Your docs repository needs a workflow that runs `ascribe check` on pull requests, so a pull request with a broken example fails.
+
+This repository runs this workflow on a pair of made-up repositories, built by [`scripts/sources-fixture/setup.ts`]({repo}/blob/main/scripts/sources-fixture/setup.ts) from [`examples/docs-repository`]({repo}/tree/main/examples/docs-repository): the workflow above is taken from that folder.
 
 ## When an example changes
 

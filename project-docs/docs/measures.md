@@ -71,6 +71,29 @@ What stayed illustrative: syntax in the directive reference and the contracts, e
 
 The measures phase 11 takes on real pull requests (how often the report was right, whether `covers` would have helped, whether anyone acted on it, and the build time with snippets) wait for 15 merged pull requests with the Drift workflow on.
 
+## The update pull request
+
+The update workflow (`examples/docs-repository/.github/workflows/update-sources.yml`) on the sources fixture, built and checked by `scripts/sources-fixture/setup.ts`.
+
+### Phase 10: the pass on this machine, 2026-10-06
+
+`setup.ts --local`: the workflow's own steps, run with bash against two local repositories, with a stand-in for `gh`. Each step is a scripted change in the code repository, followed by one run.
+
+| Change | Pull request | Run | Description |
+|---|---|---|---|
+| An example changed | Opened | 1 s | Right: `login.md` to reread |
+| A region renamed, before that was merged | Updated in place | 1 s | Right: `connect.md` broken, with `check`'s error; `login.md` to reread |
+| The code put back | Closed | under 1 s | |
+| A change no page shows | None | under 1 s | |
+| A file moved | Opened | 1 s | Right: `quickstart.md` broken, with `check`'s error |
+| Someone pushed to the branch, then an example changed | Left alone | under 1 s | |
+
+The run times here leave out the runner, the tokens, and installing Ascribe. CI runs this pass on each pull request (rust.yml).
+
+### Phase 10: the pass on GitHub, and two weeks on a schedule
+
+Not measured yet. It needs `ascribed-dev/sources-fixture-code` and `sources-fixture-docs` and the GitHub App, then `setup.ts ascribed-dev --pass` to run the same steps there and check the pull requests' checks. After that, the schedule stays on for two weeks, with a scripted change each Monday, Wednesday, and Friday. Record: how many pull requests were opened, updated, and closed; whether each description was right; and how long a run takes.
+
 ## Issues filed from dogfooding
 
 | Phase | Issues |
@@ -78,4 +101,5 @@ The measures phase 11 takes on real pull requests (how often the report was righ
 | 1 | #82, #83, #84, #85 |
 | 4 | #91, #92, #93, #94, #95, #96 |
 | 5 | None |
+| 10 | #113 |
 | 11 | #105, #106, #107, #108 |
