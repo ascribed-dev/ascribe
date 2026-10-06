@@ -7,11 +7,9 @@
 
 use std::io::{self, Write};
 use std::process::ExitCode;
-use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
 use tessera_check::select_builds;
-use tessera_core::FileId;
 use tessera_diff::{DiffError, DriftPage, DriftReport, Repository, Side, drift};
 
 use crate::cli::Global;
@@ -93,15 +91,8 @@ fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         Ok(found) => found,
         Err(e) => return fail_drift(err, e),
     };
-    let now_project = tessera_resolve::Project::load(
-        Arc::new(project.model().clone()),
-        project.layout().clone(),
-        project.file_system(),
-    );
-    let now_model = project
-        .file(FileId::new(0))
-        .map(|f| f.text)
-        .unwrap_or_default();
+    let now_project = project.index();
+    let now_model = project.model_text();
     let now = Side {
         project: &now_project,
         model_text: now_model,

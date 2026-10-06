@@ -5,12 +5,10 @@
 
 use std::io::{self, Write};
 use std::process::ExitCode;
-use std::sync::Arc;
 
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
 use tessera_check::{LoadError, Project};
-use tessera_core::FileId;
 use tessera_diff::{DiffError, DriftPage, DriftReport, Repository, Side, drift};
 use tessera_sources::{
     CopyState, FetchReport, FileChange, Options, SourceUpdate, SourcesError, StatusReport,
@@ -140,11 +138,7 @@ fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace
         };
         fail(err, &message)
     })?;
-    let index = tessera_resolve::Project::load(
-        Arc::new(project.model().clone()),
-        project.layout().clone(),
-        project.file_system(),
-    );
+    let index = project.index();
     let workspace = Workspace::new(project.root(), project.model(), &index)
         .map_err(|e| fail(err, &e.to_string()))?;
     Ok((project, workspace))
@@ -384,17 +378,10 @@ fn pages(global: &Global) -> Result<Option<DriftReport>, String> {
     };
     let repo = Repository::discover(project.root()).map_err(why)?;
     let base = repo.base(Some("HEAD"), true).map_err(why)?;
-    let now_project = tessera_resolve::Project::load(
-        Arc::new(project.model().clone()),
-        project.layout().clone(),
-        project.file_system(),
-    );
+    let now_project = project.index();
     let now = Side {
         project: &now_project,
-        model_text: project
-            .file(FileId::new(0))
-            .map(|f| f.text)
-            .unwrap_or_default(),
+        model_text: project.model_text(),
     };
     let names: Vec<&str> = project
         .model()

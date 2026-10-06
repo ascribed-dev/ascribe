@@ -7,11 +7,9 @@
 
 use std::io::{self, Write};
 use std::process::ExitCode;
-use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
 use tessera_check::{Diagnostic, LoadError, diagnose, select_builds};
-use tessera_core::FileId;
 use tessera_diff::html::{AssetFiles, DiskAssets, GitAssets, Version, write_html};
 use tessera_diff::{
     BuildDiff, DiffError, PageDiff, PageStatus, Report, Repository, Revision, Side, compare_builds,
@@ -108,15 +106,8 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         Err(e) => return fail_diff(err, e),
     };
 
-    let now_project = tessera_resolve::Project::load(
-        Arc::new(project.model().clone()),
-        project.layout().clone(),
-        project.file_system(),
-    );
-    let now_model = project
-        .file(FileId::new(0))
-        .map(|f| f.text)
-        .unwrap_or_default();
+    let now_project = project.index();
+    let now_model = project.model_text();
     let before_project = before.as_ref().map(Revision::project);
     let before_side = before
         .as_ref()

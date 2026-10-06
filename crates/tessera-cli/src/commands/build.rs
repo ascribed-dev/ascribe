@@ -9,7 +9,6 @@
 
 use std::io::{self, Write};
 use std::process::ExitCode;
-use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
 use tessera_check::{Diagnosed, LoadError, Project, diagnose};
@@ -129,11 +128,7 @@ fn write_outputs(
     anchors: bool,
     err: &mut dyn Write,
 ) -> Result<(), String> {
-    let index = tessera_resolve::Project::load(
-        Arc::new(project.model().clone()),
-        project.layout().clone(),
-        project.file_system(),
-    );
+    let index = project.index();
     let options = WriteOptions {
         outputs: emit_names
             .iter()

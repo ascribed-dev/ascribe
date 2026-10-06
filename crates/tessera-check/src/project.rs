@@ -409,6 +409,23 @@ impl Project {
         &self.layout
     }
 
+    /// The source index over the same files: what a command that resolves
+    /// builds (`build`, `diff`, `drift`, `sources`) works on. It's read again
+    /// through [`Project::file_system`], so the two can't disagree about which
+    /// files exist; reading them once is left for later.
+    pub fn index(&self) -> tessera_resolve::Project {
+        tessera_resolve::Project::load(
+            Arc::new(self.model.clone()),
+            self.layout.clone(),
+            self.file_system(),
+        )
+    }
+
+    /// The content model's text.
+    pub fn model_text(&self) -> &str {
+        &self.model_text
+    }
+
     /// The files the checks probe for what isn't a source file held in memory:
     /// the disk, or the file system given to [`Project::from_parts_with_fs`].
     pub fn file_system(&self) -> &dyn FileSystem {
