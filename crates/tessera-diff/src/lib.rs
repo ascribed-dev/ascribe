@@ -135,6 +135,25 @@ pub enum DiffError {
     },
 }
 
+impl tessera_core::Coded for DiffError {
+    fn code(&self) -> &'static str {
+        match self {
+            DiffError::UnknownBuild(e) => tessera_core::Coded::code(e),
+            DiffError::GitNotFound => "git_not_found",
+            DiffError::NotARepository { .. } => "not_a_repository",
+            DiffError::UnknownRevision(_) => "unknown_revision",
+            DiffError::NoDefaultBranch => "no_default_branch",
+            DiffError::ShallowHistory(_) => "shallow_history",
+            DiffError::NoCommonHistory(_) => "no_common_history",
+            DiffError::OutsideRepository(_) => "outside_repository",
+            DiffError::Path(_) => "bad_path",
+            DiffError::BaseModel { .. } => "base_model_invalid",
+            DiffError::BaseModelText { .. } => "base_model_not_utf8",
+            DiffError::Git { .. } => "git_failed",
+        }
+    }
+}
+
 /// The whole report, as `ascribe diff --format json` writes it.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]

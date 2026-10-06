@@ -9,10 +9,11 @@ use std::process::ExitCode;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
 use tessera_check::{LoadError, Project};
+use tessera_core::Coded;
 use tessera_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_project};
 use tessera_sources::{
-    CopyState, FetchReport, FileChange, Options, SourceUpdate, SourcesError, StatusReport,
-    UpdateReport, Workspace, short,
+    CopyState, FetchReport, FileChange, Options, SourceUpdate, StatusReport, UpdateReport,
+    Workspace, short,
 };
 
 use crate::cli::Global;
@@ -139,8 +140,8 @@ fn workspace(global: &Global, err: &mut dyn Write) -> Result<(Project, Workspace
         fail(err, &message)
     })?;
     let index = project.index();
-    let workspace = Workspace::new(project.root(), project.model(), &index)
-        .map_err(|e| fail(err, &e.to_string()))?;
+    let workspace =
+        Workspace::new(project.root(), project.model(), &index).map_err(|e| exit::fail(err, &e))?;
     Ok((project, workspace))
 }
 
@@ -153,11 +154,11 @@ fn run_fetch(global: &Global, args: &FetchArgs, out: &mut dyn Write, err: &mut d
     };
     let options = match Options::from_env() {
         Ok(options) => options,
-        Err(e) => return fail(err, &e.to_string()),
+        Err(e) => return exit::fail(err, &e),
     };
     let report = match tessera_sources::fetch(&workspace, &args.names, &options) {
         Ok(report) => report,
-        Err(e) => return fail_sources(err, &e),
+        Err(e) => return exit::fail(err, &e),
     };
     let _ = write_fetch(out, err, &report);
     if report.has_failures() {
@@ -216,11 +217,6 @@ fn first_copy(err: &mut dyn Write, name: &str) -> io::Result<()> {
         err,
         "note: these are the first files copied from {name}, into sources/{name}/. Commit them with the docs: everyone who can read this repository can read them, which matters when the code's repository is private."
     )
-}
-
-/// `git`'s failure, naming the source and repeating its message.
-pub(crate) fn fail_sources(err: &mut dyn Write, e: &SourcesError) -> u8 {
-    fail(err, &e.to_string())
 }
 
 /// What `ascribe sources status --format json` writes: each source's pin and
@@ -310,12 +306,12 @@ fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut
     };
     let options = match Options::from_env() {
         Ok(options) => options,
-        Err(e) => return fail(err, &e.to_string()),
+        Err(e) => return exit::fail(err, &e),
     };
     let report =
         match tessera_sources::update(&workspace, &args.names, args.to.as_deref(), &options) {
             Ok(report) => report,
-            Err(e) => return fail_sources(err, &e),
+            Err(e) => return exit::fail(err, &e),
         };
     // The pages whose examples changed: the working tree, with the new
     // copies, against HEAD.
@@ -331,7 +327,7 @@ fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut
         UpdateFormat::Json => {
             let (pages, unavailable) = match &pages {
                 Ok(drift) => (drift.as_ref().map(|d| d.pages.as_slice()), None),
-                Err(reason) => (None, Some(reason.as_str())),
+                Err(reason) => (None, Some(reason.to_string())),
             };
             serde_json::to_writer_pretty(
                 &mut *out,
@@ -376,15 +372,32 @@ pub(crate) struct UpdateJson<'a> {
     /// can't be told.
     pages: Option<&'a [DriftPage]>,
     /// Why there are no `pages`, when there aren't.
-    pages_unavailable: Option<&'a str>,
+    pages_unavailable: Option<String>,
 }
 
-/// `ascribe drift` between `HEAD` and the working tree, over every build:
-/// the pages whose examples the new copies change. `Err` says why there's
-/// no telling, as when the project isn't in a git repository.
-fn pages(global: &Global) -> Result<Option<DriftReport>, String> {
-    let project = load_project(global).map_err(|_| "the project doesn't load".to_owned())?;
-    let why = |e: DiffError| match e {
+/// Why [`pages`] can't list the pages whose examples changed, in the words
+/// `update` gives after "The pages aren't listed: ".
+#[derive(Debug, thiserror::Error)]
+pub enum PagesUnavailable {
+    /// The project doesn't load.
+    #[error("the project doesn't load")]
+    Load(Failure),
+    /// The comparison couldn't run.
+    #[error("{}", drift_reason(.0))]
+    Drift(DiffError),
+}
+
+impl Coded for PagesUnavailable {
+    fn code(&self) -> &'static str {
+        match self {
+            PagesUnavailable::Load(e) => e.code(),
+            PagesUnavailable::Drift(e) => e.code(),
+        }
+    }
+}
+
+fn drift_reason(e: &DiffError) -> String {
+    match e {
         DiffError::NotARepository { .. } => {
             "the project isn't in a git repository, so there's nothing to compare the copies with"
                 .to_owned()
@@ -393,13 +406,22 @@ fn pages(global: &Global) -> Result<Option<DriftReport>, String> {
             "the repository has no commit yet to compare the copies with".to_owned()
         }
         e => e.to_string(),
-    };
+    }
+}
+
+/// `ascribe drift` between `HEAD` and the working tree, over every build:
+/// the pages whose examples the new copies change. `Err` says why there's
+/// no telling, as when the project isn't in a git repository.
+fn pages(global: &Global) -> Result<Option<DriftReport>, PagesUnavailable> {
+    let project = load_project(global).map_err(PagesUnavailable::Load)?;
     let options = DriftOptions {
         base: Some("HEAD"),
         base_exact: true,
         builds: &[],
     };
-    drift_project(&project, &options).map(Some).map_err(why)
+    drift_project(&project, &options)
+        .map(Some)
+        .map_err(PagesUnavailable::Drift)
 }
 
 /// `9f2c41d → a3a8411`, or `a3a8411` for a first pin.
@@ -467,7 +489,7 @@ fn write_update_text(
     err: &mut dyn Write,
     report: &UpdateReport,
     to: Option<&str>,
-    pages: &Result<Option<DriftReport>, String>,
+    pages: &Result<Option<DriftReport>, PagesUnavailable>,
 ) -> io::Result<()> {
     for source in &report.sources {
         let name = &source.name;
@@ -533,7 +555,7 @@ fn write_update_summary(
     out: &mut dyn Write,
     report: &UpdateReport,
     to: Option<&str>,
-    pages: &Result<Option<DriftReport>, String>,
+    pages: &Result<Option<DriftReport>, PagesUnavailable>,
     site: Option<&str>,
 ) -> io::Result<()> {
     if !report.changed {
@@ -603,13 +625,45 @@ fn write_update_summary(
             write_summary_groups(out, drift, site)
         }
         Ok(_) => writeln!(out, "\nNo page's examples changed."),
-        Err(reason) => writeln!(out, "\nThe pages aren't listed: {}.", escape(reason)),
+        Err(reason) => writeln!(
+            out,
+            "\nThe pages aren't listed: {}.",
+            escape(&reason.to_string())
+        ),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{code_span, compare_url};
+    use tessera_check::LoadError;
+    use tessera_diff::DiffError;
+
+    use super::{PagesUnavailable, code_span, compare_url};
+    use crate::context::Failure;
+
+    #[test]
+    fn why_pages_are_unavailable() {
+        let load = PagesUnavailable::Load(Failure::Load(LoadError::Read {
+            path: "a".to_owned(),
+            message: "b".to_owned(),
+        }));
+        assert_eq!(load.to_string(), "the project doesn't load");
+        let not_a_repository = PagesUnavailable::Drift(DiffError::NotARepository {
+            dir: "a".to_owned(),
+            message: "b".to_owned(),
+        });
+        assert_eq!(
+            not_a_repository.to_string(),
+            "the project isn't in a git repository, so there's nothing to compare the copies with"
+        );
+        let no_commit = PagesUnavailable::Drift(DiffError::UnknownRevision("HEAD".to_owned()));
+        assert_eq!(
+            no_commit.to_string(),
+            "the repository has no commit yet to compare the copies with"
+        );
+        let other = PagesUnavailable::Drift(DiffError::GitNotFound);
+        assert_eq!(other.to_string(), DiffError::GitNotFound.to_string());
+    }
 
     #[test]
     fn code_span_holds_any_subject() {

@@ -55,6 +55,15 @@ pub enum ServeError {
     Params(#[from] serde_json::Error),
 }
 
+impl tessera_core::Coded for ServeError {
+    fn code(&self) -> &'static str {
+        match self {
+            ServeError::Protocol(_) => "lsp_protocol",
+            ServeError::Params(_) => "lsp_initialize_params",
+        }
+    }
+}
+
 /// How the session ended.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Exit {
@@ -280,7 +289,7 @@ fn workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
 /// Runs a handler, logging a panic instead of letting it end the server.
 fn guarded(what: &str, f: impl FnOnce()) {
     if let Err(panic) = catch_unwind(AssertUnwindSafe(f)) {
-        eprintln!("tessera-lsp: panic in {what}: {}", panic_message(&*panic));
+        crate::log::line(format_args!("panic in {what}: {}", panic_message(&*panic)));
     }
 }
 
@@ -339,10 +348,10 @@ fn parse<T: serde::de::DeserializeOwned>(notification: &Notification) -> Option<
     match serde_json::from_value(notification.params.clone()) {
         Ok(params) => Some(params),
         Err(e) => {
-            eprintln!(
-                "tessera-lsp: bad parameters for {}: {e}",
+            crate::log::line(format_args!(
+                "bad parameters for {}: {e}",
                 notification.method
-            );
+            ));
             None
         }
     }
@@ -428,11 +437,11 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
         Ok(Ok(value)) => Response::new_ok(id, value),
         Ok(Err(response)) => response,
         Err(panic) => {
-            eprintln!(
-                "tessera-lsp: panic in {}: {}",
+            crate::log::line(format_args!(
+                "panic in {}: {}",
                 request.method,
                 panic_message(&*panic)
-            );
+            ));
             Response::new_err(
                 id,
                 ErrorCode::InternalError as i32,
@@ -682,7 +691,7 @@ fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Va
             }
             Err(problem) => SetBaseResult {
                 base: None,
-                problem: Some(problem),
+                problem: Some(problem.to_string()),
             },
         }
     }
@@ -746,14 +755,31 @@ fn worker(shared: &Shared) {
             Err(panic) => {
                 // The round is dropped, not retried: the same input would
                 // panic again. The next change to these files queues them.
-                eprintln!(
-                    "tessera-lsp: panic computing diagnostics: {}",
+                crate::log::line(format_args!(
+                    "panic computing diagnostics: {}",
                     panic_message(&*panic)
-                );
+                ));
                 continue;
             }
         };
         let mut core = shared.lock();
         guarded("publishing diagnostics", || core.finish(&job, outcome));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use lsp_server::Connection;
+    use tessera_core::Coded;
+
+    /// The one error code a test outside this crate can't reach: lsp-server
+    /// makes its protocol errors itself. The CLI's tests list the rest.
+    #[test]
+    fn protocol_error_code() {
+        let (client, server) = Connection::memory();
+        drop(client);
+        let error = super::serve(server, Default::default()).unwrap_err();
+        assert!(matches!(error, super::ServeError::Protocol(_)), "{error}");
+        assert_eq!(error.code(), "lsp_protocol");
     }
 }

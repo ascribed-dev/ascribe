@@ -8,8 +8,8 @@ mod support;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use comrak::nodes::NodeValue;
-use comrak::{Arena, Options, parse_document};
+use comrak_tessera::nodes::NodeValue;
+use comrak_tessera::{Arena, Options, parse_document};
 use tessera_emit::EmitContext;
 use tessera_emit::{Emitter, JsonEmitter, OutputDir, PlainEmitter, emit};
 use tessera_resolve::AstroRouter;

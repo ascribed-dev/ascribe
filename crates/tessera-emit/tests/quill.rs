@@ -7,8 +7,8 @@ mod support;
 
 use std::collections::BTreeMap;
 
-use comrak::nodes::NodeValue;
-use comrak::{Arena, Options, parse_document};
+use comrak_tessera::nodes::NodeValue;
+use comrak_tessera::{Arena, Options, parse_document};
 use support::{emit_build, load, quill};
 use tessera_emit::{Emitter, JsonEmitter, PlainEmitter};
 

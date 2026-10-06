@@ -25,6 +25,7 @@ tessera-fmt.workspace = true
 tessera-lsp.workspace = true
 tessera-model.workspace = true
 tessera-sources.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 # The JSON Schemas of what the commands and the language server write, and the

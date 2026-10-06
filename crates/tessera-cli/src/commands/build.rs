@@ -12,7 +12,7 @@ use std::process::ExitCode;
 
 use clap::{Args as ClapArgs, ValueEnum};
 use tessera_check::{Diagnosed, LoadError, Project, diagnose};
-use tessera_emit::{Output, WriteEvent, WriteOptions};
+use tessera_emit::{EmitError, Output, WriteEvent, WriteOptions};
 use tessera_model::Build;
 
 use crate::cli::Global;
@@ -95,7 +95,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
         builds,
     } = match diagnose(&project, &args.build) {
         Ok(found) => found,
-        Err(e) => return fail(err, &e.to_string()),
+        Err(e) => return exit::fail(err, &e),
     };
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
@@ -115,19 +115,19 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
 
     match write_outputs(&project, &builds, &args.emit, args.anchors, err) {
         Ok(()) => exit::OK,
-        Err(message) => fail(err, &message),
+        Err(e) => exit::fail(err, &e),
     }
 }
 
 /// Resolves each build and writes its outputs, reporting each as it's
-/// written. Errors are ready to print.
+/// written.
 fn write_outputs(
     project: &Project,
     builds: &[&Build],
     emit_names: &[Emit],
     anchors: bool,
     err: &mut dyn Write,
-) -> Result<(), String> {
+) -> Result<(), EmitError> {
     let index = project.index();
     let options = WriteOptions {
         outputs: emit_names
@@ -160,9 +160,7 @@ fn write_outputs(
             ),
         };
     };
-    tessera_emit::write_outputs(&index, project.root(), builds, &options, &mut report)
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+    tessera_emit::write_outputs(&index, project.root(), builds, &options, &mut report).map(|_| ())
 }
 
 fn plural(n: usize) -> &'static str {

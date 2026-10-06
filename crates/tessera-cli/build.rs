@@ -3,6 +3,9 @@
 //! `ASCRIBE_COMMIT`. The nightly canary does, so a canary says what it was
 //! built from; other builds print the version alone.
 
+// A build script talks to Cargo on standard output.
+#![allow(clippy::print_stdout)]
+
 use std::env;
 
 fn main() {

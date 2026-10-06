@@ -78,6 +78,15 @@ pub enum LoadError {
     },
 }
 
+impl tessera_core::Coded for LoadError {
+    fn code(&self) -> &'static str {
+        match self {
+            LoadError::Read { .. } => "project_unreadable",
+            LoadError::Model { .. } => "model_invalid",
+        }
+    }
+}
+
 /// Why [`Project::locate`] found no content model.
 #[derive(Debug, thiserror::Error)]
 pub enum LocateError {
@@ -100,6 +109,16 @@ pub enum LocateError {
         /// The path named.
         path: PathBuf,
     },
+}
+
+impl tessera_core::Coded for LocateError {
+    fn code(&self) -> &'static str {
+        match self {
+            LocateError::CurrentDir(_) => "current_dir_unreadable",
+            LocateError::NotFound { .. } => "model_not_found",
+            LocateError::NotAFile { .. } => "model_not_a_file",
+        }
+    }
 }
 
 /// A content model as [`Project::load_model`] loads it.

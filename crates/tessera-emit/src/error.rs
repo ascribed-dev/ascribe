@@ -31,3 +31,14 @@ pub enum EmitError {
     #[error(transparent)]
     Store(#[from] StoreError),
 }
+
+impl tessera_core::Coded for EmitError {
+    fn code(&self) -> &'static str {
+        match self {
+            EmitError::Read { .. } => "asset_unreadable",
+            EmitError::Render { .. } => "render_failed",
+            EmitError::Invalid { .. } => "build_invalid",
+            EmitError::Store(e) => tessera_core::Coded::code(e),
+        }
+    }
+}
