@@ -66,13 +66,17 @@ jobs:
           GH_TOKEN: ${{ steps.docs.outputs.token }}
           BOT: ${{ steps.docs.outputs.app-slug }}[bot]
         run: |
-          # Someone pushed to the branch, to fix a page: leave it alone.
-          if git fetch --quiet --depth=1 origin "$BRANCH" 2>/dev/null &&
-            [ "$(git log -1 --format=%an FETCH_HEAD)" != "$BOT" ]; then
-            echo "$BRANCH has commits from someone else, so it's left as it is. Merge or close its pull request to get updates again." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+          # The open pull request from this repository's own branch, not a fork's.
+          open=$(gh pr list --head "$BRANCH" --state open --json number,isCrossRepository \
+            --jq 'map(select(.isCrossRepository | not)) | .[0].number // empty')
+          if [ -n "$open" ] && git fetch --quiet --depth=2 origin "$BRANCH"; then
+            # Someone pushed to it, to fix a page: leave it alone.
+            if [ "$(git log -1 --format=%an FETCH_HEAD)" != "$BOT" ]; then
+              echo "$BRANCH has commits from someone else, so it's left as it is. Merge or close its pull request to get updates again." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            pushed=$(git log -1 --format='%T %P' FETCH_HEAD)
           fi
-          open=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
           # No example changed (a pin may have moved): nothing to read.
           if [ -z "$(git status --porcelain -- sources)" ]; then
             echo "No example changed." >> "$GITHUB_STEP_SUMMARY"
@@ -99,6 +103,11 @@ jobs:
           git switch --quiet --create "$BRANCH"
           git add ascribe.lock sources
           git commit --quiet --message "$title"
+          # The pull request has this already: don't push it again.
+          if [ "$(git log -1 --format='%T %P')" = "${pushed:-}" ]; then
+            echo "The pull request is up to date." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           git push --quiet --force origin "$BRANCH"
           if [ -n "$open" ]; then
             gh pr edit "$open" --title "$title" --body-file "$RUNNER_TEMP/body.md"

@@ -94,6 +94,8 @@ Nothing moves a pin unless something runs `ascribe sources update`. This GitHub 
 
 @snippet {lang=yaml}: code:examples/docs-repository/.github/workflows/update-sources.yml#workflow
 
+Until a release has `ascribe sources`, install `@ascribed/cli@next` in it instead.
+
 The pull request's title names each source and its new pin. Its description is what `ascribe sources update --format summary` writes: the commits that came in, linked to the comparison on GitHub, the copies that changed, and the pages to reread, as `ascribe drift` groups them. When an example no longer resolves, because its region was renamed or its file moved, the description says so, with `ascribe check`'s errors, and the pull request fails your docs' checks like any other.
 
 Because the copies are in its diff, the pull request is reviewed like any change to the docs: your checks, the [review report](review.md), and your site's preview all show the pages with the new code.
@@ -112,7 +114,7 @@ The workflow takes two tokens from a [GitHub App](https://docs.github.com/en/app
 3. In the docs repository, add the App's client ID as the Actions variable `SOURCES_APP_CLIENT_ID`, and a private key for it as the secret `SOURCES_APP_PRIVATE_KEY`.
 4. In the workflow, list the code's repositories in `repositories`.
 
-The first token can write to the docs repository only; the second can only read the code, and `git` uses it only while the pins move. An App's token is needed for two reasons: the default token can't read another private repository, and a pull request it opens doesn't run your checks until someone approves them.
+The first token can write to the docs repository only; the second can only read the code, and `git` uses it only while the pins move. The App's private key can do more than either: with it, anyone who can change a workflow in the docs repository can make a token that writes to the code. When that matters, make a second App with only **Contents** (read), install it on the code's repositories, and give the second token step its client ID and key. An App's token is needed for two reasons: the default token can't read another private repository, and a pull request it opens doesn't run your checks until someone approves them.
 
 Your docs repository needs a workflow that runs `ascribe check` on pull requests, so a pull request with a broken example fails.
 

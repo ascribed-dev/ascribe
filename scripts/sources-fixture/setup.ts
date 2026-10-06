@@ -136,6 +136,8 @@ edit(docs, "ascribe.toml", (text) => {
 run(ascribe, ["sources", "fetch"], docs);
 run(ascribe, ["check", "--deny-warnings"], docs);
 commit(docs, "The Lantern SDK's docs");
+/** The docs as built, which the pass puts back when it's done. */
+const built = git(docs, "rev-parse", "HEAD");
 if (owner !== undefined) {
   for (const open of ghJson<{ number: number }[]>(
     "pr",
@@ -178,12 +180,17 @@ type Outcome = "opened" | "updated" | "closed" | "none" | "left";
 interface Step {
   /** Someone pushes a commit of their own to the update branch first. */
   edit?: boolean;
-  change: Change;
+  /** The open pull request is merged first, keeping its branch, as GitHub does by default. */
+  merge?: boolean;
+  /** The change made in the code repository, if any. */
+  change?: Change;
   outcome: Outcome;
   /** The pages the description lists among the examples that changed. */
   changed?: string[];
   /** The pages it lists among the examples that no longer resolve: `ascribe check` fails on them. */
   broken?: string[];
+  /** Whether `ascribe check` fails on the pull request, when that isn't because of `broken`. */
+  fails?: boolean;
 }
 
 const PASS: Step[] = [
@@ -193,6 +200,9 @@ const PASS: Step[] = [
   { change: "unrelated", outcome: "none" },
   { change: "move", outcome: "opened", changed: [], broken: ["quickstart.md"] },
   { edit: true, change: "example", outcome: "left" },
+  // The merged branch had the moved quickstart, so `main` fails `check` already.
+  { merge: true, outcome: "opened", changed: ["login.md"], broken: [], fails: true },
+  { outcome: "left" },
 ];
 
 if (options.local || options.pass) {
@@ -201,8 +211,11 @@ if (options.local || options.pass) {
   let failed = 0;
   for (const step of PASS) {
     if (step.edit) host.edit();
-    makeChange(code, step.change);
-    git(code, "push", "-q", "origin", "main");
+    if (step.merge) host.merge();
+    if (step.change !== undefined) {
+      makeChange(code, step.change);
+      git(code, "push", "-q", "origin", "main");
+    }
     const before = host.snapshot();
     const seconds = host.run();
     const after = host.snapshot();
@@ -210,13 +223,13 @@ if (options.local || options.pass) {
     const problems = outcome === step.outcome ? check(step, after) : [`expected ${step.outcome}`];
     if (problems.length === 0 && after.open !== undefined && step.broken !== undefined) {
       const passed = host.checks(after.open.number);
-      if (passed !== (step.broken.length === 0)) {
+      if (passed === fails(step)) {
         problems.push(`its checks ${passed ? "passed" : "failed"}`);
       }
     }
     failed += problems.length > 0 ? 1 : 0;
     rows.push(
-      `  ${`${step.edit ? "edit, then " : ""}${step.change}`.padEnd(20)} ${outcome.padEnd(8)} ${`${seconds}s`.padStart(5)}  ${
+      `  ${label(step).padEnd(24)} ${outcome.padEnd(8)} ${`${seconds}s`.padStart(5)}  ${
         problems.length > 0 ? `WRONG: ${problems.join("; ")}` : "right"
       }`,
     );
@@ -225,13 +238,16 @@ if (options.local || options.pass) {
       console.log(indent(`${after.open.title}\n\n${after.open.body}`));
     }
   }
-  // Ready for the schedule: the code as it was built, and no pull request.
+  // Ready for the schedule: the code and the docs as they were built, and no pull request.
   makeChange(code, "restore");
   git(code, "push", "-q", "origin", "main");
   host.close();
   deleteBranch();
+  git(docs, "checkout", "-q", "main");
+  git(docs, "reset", "-q", "--hard", built);
+  git(docs, "push", "-q", "--force", "origin", "main");
   console.log(
-    `\nThe pass:\n  ${"change".padEnd(20)} ${"pull".padEnd(8)} ${"run".padStart(5)}  description\n${rows.join("\n")}`,
+    `\nThe pass:\n  ${"change".padEnd(24)} ${"pull".padEnd(8)} ${"run".padStart(5)}  description\n${rows.join("\n")}`,
   );
   if (failed > 0) fail(`\n${failed} of ${PASS.length} steps weren't right.`);
 }
@@ -249,8 +265,21 @@ interface Host {
   checks(number: number): boolean;
   /** Pushes a commit of someone else's to the update branch. */
   edit(): void;
+  /** Merges the open update pull request into `main`, keeping its branch. */
+  merge(): void;
   /** Closes the open update pull request, if there is one. */
   close(): void;
+}
+
+/** Whether `ascribe check` should fail on the step's pull request. */
+function fails(step: Step): boolean {
+  return step.fails ?? (step.broken ?? []).length > 0;
+}
+
+function label(step: Step): string {
+  const first = [step.edit ? "edit" : "", step.merge ? "merge" : ""].filter(Boolean).join(", ");
+  const change = step.change ?? "nothing new";
+  return first === "" ? change : `${first}, then ${change}`;
 }
 
 function classify(before: Snapshot, after: Snapshot): Outcome {
@@ -282,9 +311,9 @@ function check(step: Step, after: Snapshot): string[] {
       );
     }
   }
-  const fails = body.includes("### `ascribe check` fails");
-  if (fails !== step.broken.length > 0) {
-    problems.push(`the description ${fails ? "says" : "doesn't say"} \`ascribe check\` fails`);
+  const says = body.includes("### `ascribe check` fails");
+  if (says !== fails(step)) {
+    problems.push(`the description ${says ? "says" : "doesn't say"} \`ascribe check\` fails`);
   }
   if (!/^Update sources: api to [0-9a-f]{7}, examples to [0-9a-f]{7}$/.test(after.open.title)) {
     problems.push(`its title is "${after.open.title}"`);
@@ -347,11 +376,31 @@ function localHost(): Host {
       if (open === undefined) return {};
       return { open: { ...open, head: branchHead() ?? "" } };
     },
-    checks(number) {
-      const open = pulls().pulls.find((p) => p.number === number);
-      return !(open?.body ?? "").includes("### `ascribe check` fails");
+    checks() {
+      // What the docs' check.yml runs, on the branch.
+      const checkout = join(work, `checks-${runs}`);
+      execFileSync("git", [
+        "clone",
+        "-q",
+        "--depth",
+        "1",
+        "--branch",
+        BRANCH,
+        fileUrl(remote(DOCS_NAME)),
+        checkout,
+      ]);
+      const result = spawnSync(ascribe, ["check", "--deny-warnings"], { cwd: checkout });
+      return result.status === 0;
     },
     edit: () => pushEdit(),
+    merge() {
+      const open = pulls().pulls.find((p) => p.state === "OPEN");
+      if (open === undefined) fail("There's no pull request to merge.");
+      mergeBranch();
+      const saved = pulls();
+      for (const pull of saved.pulls) if (pull.number === open.number) pull.state = "CLOSED";
+      writeFileSync(state, JSON.stringify(saved, null, 2));
+    },
     close() {
       const open = pulls().pulls.find((p) => p.state === "OPEN");
       if (open === undefined) return;
@@ -440,6 +489,13 @@ function gitHubHost(): Host {
       return watched.status === 0;
     },
     edit: () => pushEdit(),
+    merge() {
+      const open = this.snapshot().open;
+      if (open === undefined) fail("There's no pull request to merge.");
+      gh("pr", "merge", String(open.number), "--repo", docsRepo, "--merge");
+      git(docs, "checkout", "-q", "main");
+      git(docs, "pull", "-q", "--ff-only", "origin", "main");
+    },
     close() {
       const open = this.snapshot().open;
       if (open !== undefined) {
@@ -461,6 +517,24 @@ function gitHubHost(): Host {
 function branchHead(): string | undefined {
   const line = git(docs, "ls-remote", "origin", `refs/heads/${BRANCH}`);
   return line === "" ? undefined : line.split(/\s/)[0];
+}
+
+/** Merges the update branch into the docs' `main` and pushes it, as merging its pull request does. */
+function mergeBranch(): void {
+  git(docs, "fetch", "-q", "origin", BRANCH);
+  git(docs, "checkout", "-q", "main");
+  git(
+    docs,
+    "-c",
+    "user.name=A Writer",
+    "merge",
+    "-q",
+    "--no-ff",
+    "-m",
+    "Merge the update",
+    "FETCH_HEAD",
+  );
+  git(docs, "push", "-q", "origin", "main");
 }
 
 /** Pushes a commit to the update branch as someone else would, fixing a page by hand. */

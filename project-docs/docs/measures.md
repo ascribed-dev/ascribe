@@ -87,12 +87,14 @@ The update workflow (`examples/docs-repository/.github/workflows/update-sources.
 | A change no page shows | None | under 1 s | |
 | A file moved | Opened | 1 s | Right: `quickstart.md` broken, with `check`'s error |
 | Someone pushed to the branch, then an example changed | Left alone | under 1 s | |
+| That pull request merged, its branch kept | Opened | 1 s | Right: `login.md` to reread; `check` fails, since the merge left the quickstart broken on `main` |
+| Nothing new | Left alone: no push | under 1 s | |
 
 The run times here leave out the runner, the tokens, and installing Ascribe. CI runs this pass on each pull request (rust.yml).
 
 ### Phase 10: the pass on GitHub, and two weeks on a schedule
 
-Not measured yet. It needs `ascribed-dev/sources-fixture-code` and `sources-fixture-docs` and the GitHub App, then `setup.ts ascribed-dev --pass` to run the same steps there and check the pull requests' checks. After that, the schedule stays on for two weeks, with a scripted change each Monday, Wednesday, and Friday. Record: how many pull requests were opened, updated, and closed; whether each description was right; and how long a run takes.
+Not measured yet. The repositories and the App are set up. The first run, on 2026-10-06, failed at `ascribe sources`: `@ascribed/cli@next` was a canary built before phase 9 merged. `0.1.2-next.5` has it. Next: `setup.ts ascribed-dev --pass`, which runs the same steps there and waits for each pull request's checks. After that, the schedule stays on for two weeks, with a scripted change each Monday, Wednesday, and Friday. Record: how many pull requests were opened, updated, and closed; whether each description was right; and how long a run takes.
 
 ## Issues filed from dogfooding
 
