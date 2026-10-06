@@ -1,0 +1,55 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // `ascribe` comes from this repository's own build, not a package.
+  "ignoreBinaries": ["ascribe"],
+  // The docs site is its own npm project, installed from the published
+  // packages, and "Site from npm" checks it (site-npm.yml).
+  "ignore": ["site/**"],
+  // With one content type, the generated `schema` is that type's schema.
+  "ignoreIssues": {
+    "tests/zod/generated/*.ts": ["duplicates"],
+  },
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.{ts,cts}"],
+      "project": ["scripts/**/*.{ts,cts,mjs}"],
+      // VS Code provides `vscode` to the release smoke test's suite, which runs inside it.
+      "ignoreDependencies": ["vscode"],
+    },
+    // The published packages: each path their `exports` names is a contract,
+    // so its exports count as used.
+    "packages/astro": {
+      "entry": ["src/index.ts", "src/rehype.ts", "src/satteri.ts", "src/content.ts", "src/*.astro"],
+    },
+    "packages/cli": {
+      "entry": ["scripts/*.mjs"],
+    },
+    "packages/elements": {
+      "entry": ["src/index.ts"],
+      // The accessibility test reads `axe-core/axe.min.js` by path, into the page.
+      "ignoreDependencies": ["axe-core"],
+    },
+    "packages/review": {
+      "entry": [
+        "src/github/index.ts",
+        "src/marks/index.ts",
+        "src/overlay/index.ts",
+        "src/place/index.ts",
+      ],
+    },
+    "packages/vscode": {
+      // Release packaging runs `vsce` by name (scripts/release/pack.ts and
+      // publish.ts), and the language server packages are the test stub's
+      // (test/stub-server/ascribe), a script with no extension.
+      "ignoreDependencies": [
+        "@vscode/vsce",
+        "vscode-languageserver",
+        "vscode-languageserver-textdocument",
+      ],
+    },
+    "tests/zod": {
+      // The modules `ascribe build` generates, which the test checks whole.
+      "entry": ["schema.test.ts", "generated/*.ts"],
+    },
+  },
+}

@@ -16,7 +16,7 @@ import {
 } from "./projects.js";
 
 /** `ascribe.startServers`: when a project's server starts. */
-export type StartServers = "onDemand" | "all";
+type StartServers = "onDemand" | "all";
 
 /** The most projects found in one workspace. */
 const MAX_PROJECTS = 50;

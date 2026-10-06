@@ -14,8 +14,8 @@ import {
 import { ThreadsController, type ThreadsApi } from "./threads.js";
 
 /** The language server's review requests (`crates/tessera-lsp/README.md`). */
-export const SET_BASE_REQUEST = "ascribe/review/setBase";
-export const CHANGES_REQUEST = "ascribe/review/changes";
+const SET_BASE_REQUEST = "ascribe/review/setBase";
+const CHANGES_REQUEST = "ascribe/review/changes";
 
 /** What review needs from the preview. */
 export interface ReviewHost {

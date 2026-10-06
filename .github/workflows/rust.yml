@@ -26,6 +26,24 @@ jobs:
       - run: rustup toolchain install
       - run: cargo fmt --all --check
 
+  # Advisories, licenses, duplicates, and sources (deny.toml), and unused
+  # dependencies. The tools are pinned here, as the actions are.
+  dependencies:
+    name: cargo deny and cargo machete
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install
+      - uses: taiki-e/install-action@183e4297cca2404691e9380e1307288dced5c82a # v2.87.25
+        with:
+          tool: cargo-deny@0.20.2,cargo-machete@0.9.2
+      - run: cargo deny --locked check bans licenses sources
+      # A new advisory comes from outside, not from the change being tested, so
+      # it shows as a failed step without failing the job (deny.toml).
+      - run: cargo deny --locked check advisories
+        continue-on-error: true
+      - run: cargo machete
+
   check:
     name: clippy and test (${{ matrix.os }})
     strategy:

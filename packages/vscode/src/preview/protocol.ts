@@ -18,7 +18,7 @@ export interface PreviewBuild {
   description: string;
 }
 
-export interface PreviewAsset {
+interface PreviewAsset {
   /** The reference as the page's HTML writes it, without `#fragment`. */
   reference: string;
   /** The source file, an absolute path. */
@@ -28,7 +28,7 @@ export interface PreviewAsset {
   servable: boolean;
 }
 
-export interface PreviewLink {
+interface PreviewLink {
   href: string;
   path: string;
   id: string | null;
@@ -41,7 +41,7 @@ export interface PreviewSection {
   line: number;
 }
 
-export interface PreviewPage {
+interface PreviewPage {
   path: string;
   route: string;
   title: string | null;
@@ -53,7 +53,7 @@ export interface PreviewPage {
 }
 
 /** The site output's frontmatter: `available` is a list of targets. */
-export interface PageFrontmatter {
+interface PageFrontmatter {
   available?: AvailabilityTarget[];
   [key: string]: unknown;
 }
@@ -66,7 +66,7 @@ export interface AvailabilityTarget {
   text: string;
 }
 
-export interface PreviewProblem {
+interface PreviewProblem {
   severity: "error" | "warning" | "info";
   message: string;
 }
@@ -103,7 +103,7 @@ export interface Counts {
 }
 
 /** Where a block is written: the anchor grammar's `source` and `via`. */
-export interface Anchor {
+interface Anchor {
   source: string;
   via: string[];
 }
@@ -133,7 +133,7 @@ export interface PageChanges {
 }
 
 /** What changed on the previewed page against the review base. */
-export interface PreviewReview {
+interface PreviewReview {
   base: BaseInfo;
   /** `null` when the page didn't change. */
   changes: PageChanges | null;

@@ -27,7 +27,7 @@ import { comparable, throughFolder } from "../projects.js";
 import type { ChangedPage, LocalState, ThreadsMethod, ThreadsView } from "./protocol.js";
 
 /** The scope posting review comments needs: `repo` (`public_repo` covers public repositories only). */
-export const GITHUB_SCOPES = ["repo"];
+const GITHUB_SCOPES = ["repo"];
 
 /** A project's connection to its pull request. */
 export type Connection =

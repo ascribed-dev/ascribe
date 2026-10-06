@@ -109,7 +109,7 @@ export function thread(init: ThreadInit) {
 }
 
 /** One page of a pull request connection, wrapped as `repository.pullRequest.<field>`. */
-export function page<T>(field: string, nodes: T[], endCursor: string | null = null) {
+function page<T>(field: string, nodes: T[], endCursor: string | null = null) {
   return {
     repository: {
       pullRequest: {

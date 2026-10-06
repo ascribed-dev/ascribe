@@ -9,7 +9,7 @@ export function plural(count: number, one: string, many = `${one}s`): string {
 }
 
 /** The last segment of a content path. */
-export function fileName(path: string): string {
+function fileName(path: string): string {
   return path.slice(path.lastIndexOf("/") + 1);
 }
 

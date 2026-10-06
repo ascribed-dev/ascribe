@@ -35,7 +35,7 @@ const MARKER = /<!-- ascribe:anchor (\S+)(?: build=(\S+))?( quote=text)? -->/g;
 export const PLACEHOLDER = "<!-- ascribe:review -->";
 
 /** Ends a review's summary when anchored comments follow it. */
-export const SUMMARY_END = "<!-- ascribe:summary -->";
+const SUMMARY_END = "<!-- ascribe:summary -->";
 
 /** `body` without the placeholder summary. */
 export function withoutPlaceholder(body: string): string {

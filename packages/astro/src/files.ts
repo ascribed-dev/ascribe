@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** The directory of published files inside a site output root. */
-export function publishedDir(siteRoot: string): string {
+function publishedDir(siteRoot: string): string {
   return path.join(siteRoot, "_ascribe", "files");
 }
 

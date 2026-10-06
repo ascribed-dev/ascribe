@@ -1,0 +1,54 @@
+# cargo-deny's checks for the Rust workspace: `cargo deny check` runs them all.
+# rust.yml's `dependencies` job runs them: licenses, bans, and sources must
+# pass, and advisories report without failing the job (below).
+# https://embarkstudios.github.io/cargo-deny/
+
+[advisories]
+# RustSec advisories: vulnerabilities, unmaintained crates, and yanked
+# versions. The database changes on its own, so a new advisory would turn every
+# pull request red at once; CI shows it as a failed step instead, in a job that
+# passes. When one appears, file an issue, and either fix it or list it here
+# with the issue as the reason:
+#   ignore = [{ id = "RUSTSEC-0000-0000", reason = "#123" }]
+yanked = "deny"
+
+[licenses]
+# The licenses in the tree today, by name. A crate under any other license
+# fails the check until someone decides about it. scripts/release/notices.ts
+# copies each crate's license text into the binary's THIRD-PARTY-NOTICES,
+# whichever of these it is.
+allow = [
+  "Apache-2.0",
+  "BSD-2-Clause",     # crates/comrak-tessera, and upstream comrak
+  "BSD-3-Clause",
+  "MIT",
+  "MPL-2.0",          # Ascribe's own crates
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+  "Zlib",
+]
+confidence-threshold = 0.9
+
+[bans]
+# A second version of a crate warns. The ones below are known; the rest are new.
+multiple-versions = "warn"
+wildcards = "deny"
+# Path dependencies inside the workspace have no version.
+allow-wildcard-paths = true
+skip = [
+  # Upstream `comrak` (tessera-emit renders HTML with it) uses 0.13, and the
+  # fork 0.14. Optimization phase 5, part D, removes upstream comrak.
+  { crate = "phf@0.13.1", reason = "upstream comrak beside the fork" },
+  { crate = "phf_codegen@0.13.1", reason = "upstream comrak beside the fork" },
+  { crate = "phf_generator@0.13.1", reason = "upstream comrak beside the fork" },
+  { crate = "phf_shared@0.13.1", reason = "upstream comrak beside the fork" },
+  { crate = "bitflags@1.3.2", reason = "lsp-types and its fluent-uri still use bitflags 1" },
+]
+# Not duplicates to this check, since they're different crates, but known:
+# `comrak` and `comrak-tessera` (above), and `serde_yaml_ng` beside
+# `yaml-rust2`, on purpose: one reads values, the other gives positions.
+
+[sources]
+# crates.io only.
+unknown-registry = "deny"
+unknown-git = "deny"

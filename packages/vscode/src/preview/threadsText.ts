@@ -69,9 +69,6 @@ export function againstText(view: ThreadsView | null): string {
   return pr ? `#${pr.number} against ` : "Against ";
 }
 
-/** The `ascribe.review.sourceComments` setting. */
-export type SourceCommentsSetting = "auto" | "on" | "off";
-
 /**
  * Whether the source editor shows review threads: with `auto`, only when the
  * GitHub Pull Requests extension isn't active, since it shows them already.
