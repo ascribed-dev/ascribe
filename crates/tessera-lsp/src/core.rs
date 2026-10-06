@@ -17,6 +17,7 @@ use lsp_types::{
     TextDocumentContentChangeEvent, Uri,
 };
 use tessera_check::Diagnostic;
+use tessera_core::path::{normalize, relative_path};
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
 use tessera_resolve::{
@@ -29,7 +30,7 @@ use crate::docs::Doc;
 use crate::fsx::{BufferFs, LayerFs};
 use crate::nav::Ctx;
 use crate::position::Encoding;
-use crate::uri::{normalize, path_to_uri, relative_to, uri_to_path};
+use crate::uri::{path_to_uri, uri_to_path};
 
 /// The content model's file name, at the project root.
 const MODEL_FILE: &str = "ascribe.toml";
@@ -88,11 +89,10 @@ impl Loaded {
 
     /// What a path on disk is to this project.
     fn classify(&self, abs: &Path) -> Option<Kind> {
-        let rel = relative_to(&self.root, abs)?;
-        if rel == MODEL_FILE {
+        let project_rel = relative_path(&self.root, abs)?;
+        if project_rel.as_str() == MODEL_FILE {
             return Some(Kind::Model);
         }
-        let project_rel = RelPath::parse(&rel).ok()?;
         if project_rel
             .segments()
             .any(|s| IGNORED_DIRS.contains(&s) || s == "node_modules")
@@ -102,8 +102,7 @@ impl Loaded {
         let content = normalize(&self.root.join(self.layout.content_root.as_str()));
         // A file in a nested project's folder is no source of this one, open
         // or not, as a file in a hidden directory isn't.
-        if let Some(content_rel) = relative_to(&content, abs)
-            && let Ok(content_path) = RelPath::parse(&content_rel)
+        if let Some(content_path) = relative_path(&content, abs)
             && content_path.is_inside()
             && self.inc.snapshot().is_source(&content_path)
         {
@@ -221,6 +220,8 @@ impl Core {
         let config = self.config.as_ref()?;
         match self.docs.get(config) {
             Some(doc) => Some(doc.text.clone()),
+            // Outside FileSystem: the content model, which says where the
+            // content root is.
             None => std::fs::read_to_string(config).ok(),
         }
     }
@@ -299,7 +300,7 @@ impl Core {
             .docs
             .iter()
             .filter_map(|(path, doc)| {
-                let rel = RelPath::parse(&relative_to(&content, path)?).ok()?;
+                let rel = relative_path(&content, path)?;
                 (rel.is_inside() && is_source_path(&rel)).then(|| (rel, doc.text.clone()))
             })
             .collect();
@@ -483,6 +484,9 @@ impl Core {
         let Some(loaded) = self.loaded.as_ref() else {
             return;
         };
+        // Outside FileSystem: what the editor says changed, which can be any
+        // path in the workspace. A source file in it is read through DiskFs
+        // below.
         let Ok(meta) = std::fs::metadata(path) else {
             return self.collect_deleted(path, changes, mirror);
         };
@@ -566,7 +570,7 @@ impl Core {
             Some(Kind::Model) | None => return,
         }
         // The path may have been a directory: everything known below it goes.
-        let Some(dir) = relative_to(&loaded.root, path) else {
+        let Some(dir) = relative_path(&loaded.root, path) else {
             return;
         };
         let prefix = format!("{dir}/");
@@ -616,6 +620,8 @@ impl Core {
     fn refresh_from_disk(&mut self, path: &Path) {
         let mut changes = Vec::new();
         let mut mirror = Vec::new();
+        // Outside FileSystem: whether the file whose buffer closed is still
+        // there; `collect_present` reads it through DiskFs.
         if path.is_file() {
             self.collect_present(path, &mut changes, &mut mirror);
         } else {

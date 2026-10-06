@@ -25,6 +25,7 @@ use lsp_types::{
     ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
     Uri, WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
 };
+use tessera_core::path::normalize;
 use tessera_core::{LineIndex, Span};
 
 use crate::compute::{Outcome, compute};
@@ -282,7 +283,7 @@ fn workspace_folders(params: &InitializeParams) -> Vec<PathBuf> {
             folders.push(path);
         }
     }
-    folders.iter().map(|p| crate::uri::normalize(p)).collect()
+    folders.iter().map(|p| normalize(p)).collect()
 }
 
 /// Runs a handler, logging a panic instead of letting it end the server.
@@ -496,9 +497,7 @@ fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Valu
             .config
             .as_ref()
             .zip(crate::uri::uri_to_path(&uri))
-            .is_some_and(|(config, path)| {
-                crate::uri::normalize(config) == crate::uri::normalize(&path)
-            });
+            .is_some_and(|(config, path)| normalize(config) == normalize(&path));
         if is_model {
             core.project_nav_target().and_then(|ctx| {
                 crate::refactor::rename_model_key(
