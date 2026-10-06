@@ -84,7 +84,8 @@ pub trait FileSystem {
     // raised it: which files count as sources.
     fn sources(&self) -> Sources;
 
-    /// The text of a source file, by content path.
+    /// The text of a source file, by content path. A file whose symbolic
+    /// links lead out of the content root can't be read (SPEC §2.1).
     fn read(&self, path: &RelPath) -> io::Result<String>;
 
     /// Whether a file exists at a path relative to the project root. The
@@ -99,7 +100,9 @@ pub trait FileSystem {
 
     /// Where a file or folder is once every symbolic link on the way to it is
     /// followed, as a path relative to the project root: the path itself when
-    /// none of its segments is a link. `None` when it isn't there, or a link
+    /// none of its segments is a link. It starts with at least as many `..`
+    /// as `project_path` does, so a path through a folder above the project
+    /// root compares with that folder's own real path. `None` when it isn't there, or a link
     /// leads where no path from the project root reaches (another drive). A
     /// snippet reads a file only when this is inside its source (SPEC §4.8).
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath>;
@@ -164,6 +167,31 @@ impl DiskFs {
         self.project_root.join(self.content_root.as_str())
     }
 
+    /// Whether `real`, a canonical path, is a source file of the content root
+    /// whose canonical path is `root`: under it, named as a source is, and
+    /// not in another project's folder.
+    fn is_source_at(&self, root: &Path, real: &Path) -> bool {
+        let Ok(rest) = real.strip_prefix(root) else {
+            return false;
+        };
+        let Some(rel) = rest
+            .to_str()
+            .and_then(|r| RelPath::parse(&r.replace('\\', "/")).ok())
+        else {
+            return false;
+        };
+        if !is_source_path(&rel) {
+            return false;
+        }
+        let own = self.project_root.canonicalize().ok();
+        // A folder below the content root that holds an `ascribe.toml` is
+        // another project's, unless it's this project's own.
+        real.ancestors()
+            .skip(1)
+            .take_while(|dir| *dir != root)
+            .all(|dir| own.as_deref() == Some(dir) || !dir.join(MODEL_FILE).is_file())
+    }
+
     /// The names in a directory, or `None` when it can't be listed.
     fn list(&self, dir: &Path) -> Option<Arc<[String]>> {
         let read = || -> Option<Arc<[String]>> {
@@ -202,7 +230,21 @@ impl FileSystem for DiskFs {
     }
 
     fn read(&self, path: &RelPath) -> io::Result<String> {
-        fs::read_to_string(self.content_dir().join(path.as_str()))
+        let file = self.content_dir().join(path.as_str());
+        // A source file is read where its links lead, and that must be a
+        // source file too, so a link can't put any other file on disk in a
+        // page (SPEC §2.1).
+        let root = self.content_dir().canonicalize()?;
+        let real = file.canonicalize()?;
+        if !self.is_source_at(&root, &real) {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!(
+                    "`{path}` is a symbolic link, or is in a linked folder, that leads to a file that isn't a source file of the content root"
+                ),
+            ));
+        }
+        fs::read_to_string(file)
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {
@@ -276,11 +318,18 @@ impl FileSystem for DiskFs {
     }
 
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        // Measured from the folder the path's leading `..`s reach, so the
+        // answer keeps them: `../docs/ascribe.toml`, not `ascribe.toml`.
+        let ups = project_path.up_count();
         let root = self.project_root.canonicalize().ok()?;
+        let base = root.ancestors().nth(ups)?;
         let path = project_path
             .segments()
             .fold(self.project_root.clone(), |p, s| p.join(s));
-        relative_path(&root, &path.canonicalize().ok()?)
+        let rest = relative_path(base, &path.canonicalize().ok()?)?;
+        let mut segments = vec![".."; ups];
+        segments.extend(rest.segments());
+        RelPath::parse(&segments.join("/")).ok()
     }
 
     fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {

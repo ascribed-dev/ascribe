@@ -9,34 +9,59 @@
 
 use tessera_core::Span;
 
-/// How a file's line comments are written.
+/// One way of writing a line comment.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CommentStyle {
+pub struct Marker {
     /// What starts a comment: `//`, `#`, `--`, `;`, or `<!--`.
     pub open: &'static str,
     /// What ends one on the same line: `-->` after `<!--`, otherwise none.
     pub close: Option<&'static str>,
 }
 
-const SLASHES: CommentStyle = CommentStyle {
+/// How a file's line comments are written: one marker, or, for a component
+/// file with both script and markup (`.astro`, `.svelte`, `.vue`), either of
+/// two.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CommentStyle {
+    /// The markers a tag line may use.
+    pub markers: &'static [Marker],
+}
+
+const SLASHES_MARKER: Marker = Marker {
     open: "//",
     close: None,
 };
-const HASH: CommentStyle = CommentStyle {
-    open: "#",
-    close: None,
-};
-const DASHES: CommentStyle = CommentStyle {
-    open: "--",
-    close: None,
-};
-const SEMICOLON: CommentStyle = CommentStyle {
-    open: ";",
-    close: None,
-};
-const HTML: CommentStyle = CommentStyle {
+const HTML_MARKER: Marker = Marker {
     open: "<!--",
     close: Some("-->"),
+};
+
+const SLASHES: CommentStyle = CommentStyle {
+    markers: &[SLASHES_MARKER],
+};
+const HASH: CommentStyle = CommentStyle {
+    markers: &[Marker {
+        open: "#",
+        close: None,
+    }],
+};
+const DASHES: CommentStyle = CommentStyle {
+    markers: &[Marker {
+        open: "--",
+        close: None,
+    }],
+};
+const SEMICOLON: CommentStyle = CommentStyle {
+    markers: &[Marker {
+        open: ";",
+        close: None,
+    }],
+};
+const HTML: CommentStyle = CommentStyle {
+    markers: &[HTML_MARKER],
+};
+const COMPONENT: CommentStyle = CommentStyle {
+    markers: &[SLASHES_MARKER, HTML_MARKER],
 };
 
 /// The comment table of SPEC §4.8, by extension.
@@ -61,7 +86,8 @@ const TABLE: &[(CommentStyle, &[&str])] = &[
         SEMICOLON,
         &["asm", "clj", "cljs", "el", "ini", "lisp", "scm"],
     ),
-    (HTML, &["htm", "html", "md", "mdx", "svg", "vue", "xml"]),
+    (HTML, &["htm", "html", "md", "mdx", "svg", "xml"]),
+    (COMPONENT, &["astro", "svelte", "vue"]),
 ];
 
 /// The comment syntax of files with this extension, compared without regard
@@ -241,33 +267,37 @@ fn lines(text: &str) -> Vec<Line<'_>> {
     out
 }
 
-/// The tag a whole line holds: what's between the comment marker and the end
+/// The tag a whole line holds: what's between a comment marker and the end
 /// of the line (or the closing `-->`), trimmed, when it starts with `:`.
 fn tag_line(line: &str, style: CommentStyle) -> Option<&str> {
-    let rest = line.trim().strip_prefix(style.open)?;
-    let rest = match style.close {
-        Some(close) => rest.trim_end().strip_suffix(close)?,
-        None => rest,
-    };
-    let tag = rest.trim();
-    tag.starts_with(':').then_some(tag)
+    style.markers.iter().find_map(|marker| {
+        let rest = line.trim().strip_prefix(marker.open)?;
+        let rest = match marker.close {
+            Some(close) => rest.trim_end().strip_suffix(close)?,
+            None => rest,
+        };
+        let tag = rest.trim();
+        tag.starts_with(':').then_some(tag)
+    })
 }
 
 /// The one-line tag at the end of a line, such as `:remove:`, when the line
-/// ends with the comment marker, optional whitespace, and the tag.
+/// ends with a comment marker, optional whitespace, and the tag.
 fn ends_with_tag(line: &str, style: CommentStyle, name: &str) -> bool {
-    let mut rest = line.trim_end();
-    if let Some(close) = style.close {
-        let Some(r) = rest.strip_suffix(close) else {
+    let tag = format!(":{name}:");
+    style.markers.iter().any(|marker| {
+        let mut rest = line.trim_end();
+        if let Some(close) = marker.close {
+            let Some(r) = rest.strip_suffix(close) else {
+                return false;
+            };
+            rest = r.trim_end();
+        }
+        let Some(rest) = rest.strip_suffix(tag.as_str()) else {
             return false;
         };
-        rest = r.trim_end();
-    }
-    let tag = format!(":{name}:");
-    let Some(rest) = rest.strip_suffix(tag.as_str()) else {
-        return false;
-    };
-    rest.trim_end().ends_with(style.open)
+        rest.trim_end().ends_with(marker.open)
+    })
 }
 
 /// A tag line's name and argument: `:snippet-start: setup` is
@@ -460,7 +490,8 @@ pub struct Extracted {
 }
 
 /// Takes the snippet out of `text`: `region`'s lines, or every line, without
-/// hidden lines, dedented by their common leading whitespace. `tags` is what
+/// hidden lines or the blank lines at the start and end of what's left,
+/// dedented by their common leading whitespace. `tags` is what
 /// [`scan`] found in `text`; a file with no comment syntax has
 /// [`Tags::default`], so nothing is hidden.
 pub fn extract(text: &str, tags: &Tags, region: Option<&Region>) -> Extracted {
@@ -469,11 +500,18 @@ pub fn extract(text: &str, tags: &Tags, region: Option<&Region>) -> Extracted {
         Some(r) => (r.start + 1, r.end),
         None => (0, lines.len()),
     };
-    let kept: Vec<&str> = (from..to)
+    let blank = |l: &str| l.trim().is_empty();
+    let mut kept: Vec<&str> = (from..to)
         .filter(|i| !tags.hidden.get(*i).copied().unwrap_or(false))
         .filter_map(|i| lines.get(i).map(|l| l.text))
         .collect();
-    let blank = |l: &str| l.trim().is_empty();
+    // Blank lines at the start and end go, so where a formatter puts a tag
+    // line doesn't change the snippet.
+    while kept.last().is_some_and(|l| blank(l)) {
+        kept.pop();
+    }
+    let lead = kept.iter().take_while(|l| blank(l)).count();
+    kept.drain(..lead);
     // The common leading whitespace, character for character, of the lines
     // that aren't blank.
     let mut common: Option<&str> = None;
@@ -607,6 +645,33 @@ fn main() {
     }
 
     #[test]
+    fn blank_lines_at_the_edges_go() {
+        let text = "\
+    - name: Report
+# :snippet-start: step
+
+  - run: drift
+  # :remove-start:
+  - run: secret
+  # :remove-end:
+    \t
+
+# :snippet-end:
+";
+        assert_eq!(region(text, HASH, "step"), "- run: drift\n");
+        // Blank lines between kept lines stay.
+        let text = "# :snippet-start: a\nx\n\n\ny\n# :snippet-end:\n";
+        assert_eq!(region(text, HASH, "a"), "x\n\n\ny\n");
+        // So do a region's lines, for what it covers.
+        let tags = hash(text);
+        assert_eq!(extract(text, &tags, tags.region("a")).lines, Some((2, 5)));
+        // A whole file is trimmed too; a blank one is empty.
+        let text = "\n# :remove:\nx\n\n";
+        assert_eq!(extract(text, &hash(text), None).code, "x\n");
+        assert_eq!(extract("\n\n", &Tags::default(), None).code, "");
+    }
+
+    #[test]
     fn each_comment_marker() {
         for (ext, start, end) in [
             ("rs", "// :snippet-start: r", "// :snippet-end:"),
@@ -623,6 +688,12 @@ fn main() {
             let style = comment_style(ext).expect("a known extension");
             let text = format!("before\n  {start}  \nbody\n{end}\nafter\n");
             assert_eq!(region(&text, style, "r"), "body\n", "{ext}");
+        }
+        for ext in ["astro", "svelte", "vue"] {
+            let style = comment_style(ext).expect("a known extension");
+            let text = "---\n// :snippet-start: script\nconst a = 1; // :remove:\nconst b = 2;\n// :snippet-end:\n---\n<!-- :snippet-start: body -->\n<p>{b}</p>\n<i>x</i> <!-- :remove: -->\n<!-- :snippet-end: -->\n";
+            assert_eq!(region(text, style, "script"), "const b = 2;\n", "{ext}");
+            assert_eq!(region(text, style, "body"), "<p>{b}</p>\n", "{ext}");
         }
         assert_eq!(comment_style("json"), None);
         assert_eq!(comment_style("TOML"), Some(HASH));

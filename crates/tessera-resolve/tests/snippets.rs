@@ -246,3 +246,89 @@ fn a_link_out_of_the_source_is_refused() {
     assert_eq!(problem("@snippet: code:hidden.py#main\n"), link);
     assert_eq!(problem("@snippet: code:linked/far.py#main\n"), link);
 }
+
+/// A source whose folder holds the project reaches the project's own files:
+/// their real paths are compared from the same folder as the source's.
+#[test]
+fn a_source_above_the_project_reads_its_files() {
+    use std::fs;
+    use tessera_resolve::DiskFs;
+
+    let dir = tempfile::tempdir().expect("a temp dir");
+    let root = dir.path();
+    let model = "\
+spec = \"0.1\"
+
+[project]
+content-root = \"content\"
+
+[sources.code]
+path = \"..\"
+include = [\"docs/ascribe.toml\", \"examples/**\"]
+";
+    fs::create_dir_all(root.join("docs/content")).expect("docs");
+    fs::create_dir_all(root.join("examples")).expect("examples");
+    fs::write(
+        root.join("docs/ascribe.toml"),
+        format!("{model}# :snippet-start: sources\n[sources]\n# :snippet-end:\n"),
+    )
+    .expect("the model");
+    fs::write(root.join("examples/a.py"), APP.1).expect("an example");
+
+    let model = Arc::new(load_str(model, FileId::new(0)).expect("a model"));
+    let layout = Layout::from_model(&model);
+    for address in ["code:docs/ascribe.toml#sources", "code:examples/a.py#main"] {
+        fs::write(
+            root.join("docs/content/index.md"),
+            format!("---\ntitle: T\n---\n@snippet: {address}\n"),
+        )
+        .expect("the page");
+        let fs = DiskFs::new(root.join("docs"), &layout);
+        let project = Project::load(model.clone(), layout.clone(), &fs);
+        let file = project.file(&index()).expect("the page");
+        let snippet = file.snippets.first().expect("a snippet");
+        let issues = snippet_issues(snippet, project.model(), &fs, &CodeFiles::new(), file.file);
+        assert!(issues.is_empty(), "{address}: {issues:?}");
+    }
+}
+
+/// A link that leads above a source's folder is refused, however wide its
+/// patterns: `../above.py` isn't a path in the folder.
+#[cfg(unix)]
+#[test]
+fn a_link_above_a_source_at_the_parent_is_refused() {
+    use std::fs;
+    use std::os::unix::fs::symlink;
+    use tessera_resolve::DiskFs;
+
+    let dir = tempfile::tempdir().expect("a temp dir");
+    let root = dir.path();
+    fs::create_dir_all(root.join("repo/docs/content")).expect("docs");
+    fs::create_dir_all(root.join("repo/examples")).expect("examples");
+    fs::write(root.join("above.py"), APP.1).expect("above");
+    symlink("../../above.py", root.join("repo/examples/up.py")).expect("up");
+    fs::write(
+        root.join("repo/docs/content/index.md"),
+        "---\ntitle: T\n---\n@snippet: code:examples/up.py#main\n",
+    )
+    .expect("the page");
+    for include in ["", "include = [\"**/*.py\"]\n"] {
+        let model = format!(
+            "spec = \"0.1\"\n\n[project]\ncontent-root = \"content\"\n\n[sources.code]\npath = \"..\"\n{include}"
+        );
+        let model = Arc::new(load_str(&model, FileId::new(0)).expect("a model"));
+        let layout = Layout::from_model(&model);
+        let fs = DiskFs::new(root.join("repo/docs"), &layout);
+        let project = Project::load(model, layout, &fs);
+        let file = project.file(&index()).expect("the page");
+        let snippet = file.snippets.first().expect("a snippet");
+        let issues = snippet_issues(snippet, project.model(), &fs, &CodeFiles::new(), file.file);
+        assert_eq!(
+            issues
+                .first()
+                .map(|i| (i.slug.as_str().to_owned(), i.variant)),
+            is("snippet-file-missing", Some("link")),
+            "{include:?}"
+        );
+    }
+}

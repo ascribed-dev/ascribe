@@ -1,0 +1,11 @@
+jobs:
+  test:
+    steps:
+# :snippet-start: steps
+
+      - run: npm test
+      # :remove-start:
+      - run: npm run secret
+      # :remove-end:
+
+# :snippet-end:

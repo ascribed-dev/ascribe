@@ -421,9 +421,10 @@ pub fn resolve_snippet(
     })
 }
 
-/// `path` relative to `folder`, when it's inside it.
+/// `path` relative to `folder`, when it's inside it. A path that starts
+/// with more `..`s than the folder is above it, not inside.
 fn relative_to(path: &RelPath, folder: &RelPath) -> Option<String> {
-    if !path.starts_with(folder) {
+    if !path.starts_with(folder) || path.up_count() > folder.up_count() {
         return None;
     }
     let rest: Vec<&str> = path.segments().skip(folder.segments().count()).collect();

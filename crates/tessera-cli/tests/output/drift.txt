@@ -6,7 +6,7 @@ Examples that no longer resolve. `ascribe check` reports them too:
 
 Examples that changed. The page shows the new code; check the words around it:
   reference/content-model.md
-    code:examples/quill/ascribe.toml#dimensions (+4 −1)
+    code:examples/quill/ascribe.toml#dimensions (+3 −1)
 
 Examples that changed along with the page:
   guides/review.md

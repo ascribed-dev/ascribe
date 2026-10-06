@@ -1,0 +1,15 @@
+---
+// :snippet-start: props
+const { title } = Astro.props;
+const debug = true; // :remove:
+// :snippet-end:
+---
+
+<html>
+  <body>
+    <!-- :snippet-start: body -->
+    <h1>{title}</h1>
+    <p>{debug && "debug"}</p> <!-- :remove: -->
+    <!-- :snippet-end: -->
+  </body>
+</html>

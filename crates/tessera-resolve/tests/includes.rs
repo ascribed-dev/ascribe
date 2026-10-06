@@ -418,3 +418,89 @@ fn a_page_id_of_an_included_section_is_still_its_source_id_in_the_fragment() {
     // Each is `setup` in its own file: page ids come from build resolution.
     assert!(headings.iter().all(|(_, h)| h.source_id == "setup"));
 }
+
+/// A source file is read where its links lead, and that must be a source
+/// file too: a link out of the content root, or to a file in it that isn't a
+/// source (a hidden file, one that isn't Markdown, another project's), makes
+/// it unreadable. No other file on disk reaches a page, by `@include` or as a
+/// page of its own. A link to a source file is read.
+#[cfg(unix)]
+#[test]
+fn a_link_to_a_file_that_isnt_a_source_is_not_read() {
+    use std::fs;
+    use std::os::unix::fs::symlink;
+    use tessera_resolve::{DiskFs, Layout};
+
+    let dir = tempfile::tempdir().expect("a temp dir");
+    let root = dir.path();
+    let docs = root.join("project/docs");
+    for folder in ["inside", ".hidden", "nested"] {
+        fs::create_dir_all(docs.join(folder)).expect("a folder");
+    }
+    fs::create_dir_all(root.join("elsewhere")).expect("elsewhere");
+    fs::write(root.join("secret.md"), "The secret.\n").expect("secret");
+    fs::write(root.join("elsewhere/far.md"), "Far away.\n").expect("far");
+    fs::write(docs.join("inside/_near.md"), "Nearby.\n").expect("near");
+    fs::write(docs.join(".hidden/key.md"), "Hidden.\n").expect("hidden");
+    fs::write(docs.join("notes.txt"), "Not Markdown.\n").expect("notes");
+    fs::write(docs.join("nested/ascribe.toml"), "spec = \"0.1\"\n").expect("nested");
+    fs::write(docs.join("nested/page.md"), "Another project's.\n").expect("theirs");
+    let links = [
+        ("_alias.md", "inside/_near.md"),
+        ("_out.md", "../../secret.md"),
+        ("linked", "../../elsewhere"),
+        ("_hidden.md", ".hidden/key.md"),
+        ("_notes.md", "notes.txt"),
+        ("_nested.md", "nested/page.md"),
+    ];
+    for (name, target) in links {
+        symlink(target, docs.join(name)).expect("a link");
+    }
+    let includes = [
+        "_alias.md",
+        "_out.md",
+        "linked/far.md",
+        "_hidden.md",
+        "_notes.md",
+        "_nested.md",
+    ];
+    let body: String = includes
+        .iter()
+        .map(|i| format!("@include: {i}\n\n"))
+        .collect();
+    fs::write(docs.join("index.md"), format!("{PAGE}# Page\n\n{body}")).expect("the page");
+
+    let model = support::model();
+    let layout = Layout::from_model(&model);
+    let fs = DiskFs::new(root.join("project"), &layout);
+    let p = Project::load(model, layout, &fs);
+    let mut unreadable: Vec<(String, bool)> = p
+        .unreadable()
+        .iter()
+        .map(|u| {
+            (
+                u.path.to_string(),
+                u.reason.contains("isn't a source file of the content root"),
+            )
+        })
+        .collect();
+    unreadable.sort();
+    let refused = [
+        "_hidden.md",
+        "_nested.md",
+        "_notes.md",
+        "_out.md",
+        "linked/far.md",
+    ];
+    assert_eq!(
+        unreadable,
+        refused.map(|path| (path.to_owned(), true)).to_vec()
+    );
+    let page = expand(&p, "index.md");
+    assert_eq!(texts(&p, &page), ["# Page", "Nearby."]);
+    let issues = p.problems(&path("index.md"));
+    let missing: Vec<(String, u32)> = [9, 11, 13, 15, 17]
+        .map(|line| ("include-target-missing".to_owned(), line))
+        .to_vec();
+    assert_eq!(slugs(&p, "index.md", &issues), missing);
+}
