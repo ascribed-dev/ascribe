@@ -12,8 +12,7 @@ use tessera_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet
 
 use crate::Diagnostic;
 
-/// The content model's file name, at the project root.
-pub const MODEL_FILE: &str = "ascribe.toml";
+pub use tessera_model::MODEL_FILE;
 
 /// The id of `ascribe.lock` (SPEC §7.4), for locations in it: past any
 /// source file's, and before the code files'.

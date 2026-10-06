@@ -15,6 +15,9 @@
 //!   around them did.
 //! - [`html`]: the report as one self-contained HTML file, every changed
 //!   page rendered with its changes marked.
+//! - [`diff_project`] and [`drift_project`]: `ascribe diff` and `ascribe
+//!   drift` on a project loaded from disk, from choosing the builds to the
+//!   finished report.
 //!
 //! The binary links no git library: everything goes through the `git`
 //! executable, so nothing else in Ascribe depends on `git` being present.
@@ -38,6 +41,7 @@
 //! ```
 
 mod align;
+mod command;
 mod compare;
 mod drift;
 pub mod git;
@@ -48,6 +52,7 @@ mod words;
 
 use serde::Serialize;
 
+pub use command::{DiffOptions, DriftOptions, ProjectDiff, diff_project, drift_project};
 pub use compare::{
     BuildDiff, Change, ChangeKind, Counts, PageDiff, PageStatus, Side, Words, compare_builds,
     compare_page_in,
@@ -66,6 +71,9 @@ pub const SCHEMA_VERSION: u32 = 1;
 /// Why a comparison couldn't run.
 #[derive(Debug, thiserror::Error)]
 pub enum DiffError {
+    /// A build named isn't one of the content model's.
+    #[error(transparent)]
+    UnknownBuild(#[from] tessera_check::UnknownBuild),
     /// The `git` executable isn't on the path.
     #[error("git not found: ascribe diff runs `git`, so it needs git installed and on the path")]
     GitNotFound,
@@ -141,7 +149,7 @@ pub struct Report {
     /// How many errors `ascribe check` finds in the working tree, for the
     /// builds compared. The comparison runs regardless, but a page with an
     /// error may not render as it will once it's fixed, so a reviewer should
-    /// know. Zero until the caller sets it: this crate doesn't check.
+    /// know. [`diff_project`] sets it; [`Report::new`] leaves it zero.
     pub working_tree_errors: usize,
     /// What changed, per build, in the order asked for.
     pub builds: Vec<BuildDiff>,

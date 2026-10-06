@@ -1,4 +1,7 @@
 //! Document formatting through the Ascribe-aware formatter.
+//!
+//! It formats the editor's buffer with `tessera_fmt::format`, which
+//! `tessera_fmt::format_files` (`ascribe fmt`) calls for each file on disk.
 
 use lsp_types::{DocumentFormattingParams, TextEdit};
 use tessera_core::LineIndex;

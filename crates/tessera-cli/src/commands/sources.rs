@@ -9,7 +9,7 @@ use std::process::ExitCode;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 use serde::Serialize;
 use tessera_check::{LoadError, Project};
-use tessera_diff::{DiffError, DriftPage, DriftReport, Repository, Side, drift};
+use tessera_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_project};
 use tessera_sources::{
     CopyState, FetchReport, FileChange, Options, SourceUpdate, SourcesError, StatusReport,
     UpdateReport, Workspace, short,
@@ -376,22 +376,12 @@ fn pages(global: &Global) -> Result<Option<DriftReport>, String> {
         }
         e => e.to_string(),
     };
-    let repo = Repository::discover(project.root()).map_err(why)?;
-    let base = repo.base(Some("HEAD"), true).map_err(why)?;
-    let now_project = project.index();
-    let now = Side {
-        project: &now_project,
-        model_text: project.model_text(),
+    let options = DriftOptions {
+        base: Some("HEAD"),
+        base_exact: true,
+        builds: &[],
     };
-    let names: Vec<&str> = project
-        .model()
-        .builds
-        .iter()
-        .map(|b| b.name.as_str())
-        .collect();
-    drift(&repo, &base, now, project.file_system(), &names)
-        .map(Some)
-        .map_err(why)
+    drift_project(&project, &options).map(Some).map_err(why)
 }
 
 /// `9f2c41d → a3a8411`, or `a3a8411` for a first pin.

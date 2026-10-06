@@ -9,16 +9,12 @@ use std::io::{self, Write};
 use std::process::ExitCode;
 
 use clap::{Args as ClapArgs, ValueEnum};
-use tessera_check::{Diagnostic, LoadError, diagnose, select_builds};
-use tessera_diff::html::{AssetFiles, DiskAssets, GitAssets, Version, write_html};
-use tessera_diff::{
-    BuildDiff, DiffError, PageDiff, PageStatus, Report, Repository, Revision, Side, compare_builds,
-};
+use tessera_check::{Diagnostic, LoadError};
+use tessera_diff::{BuildDiff, DiffError, DiffOptions, PageDiff, PageStatus, Report, diff_project};
 
 use crate::cli::Global;
 use crate::context::{Failure, load_project};
 use crate::exit;
-use crate::report::Counts;
 
 /// Arguments of `ascribe diff`.
 #[derive(Debug, ClapArgs)]
@@ -89,52 +85,16 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         Ok(project) => project,
         Err(failure) => return fail(err, &failure_message(failure)),
     };
-    let builds = match select_builds(&project, &args.build) {
-        Ok(builds) => builds,
-        Err(e) => return fail(err, &e.to_string()),
+    let options = DiffOptions {
+        base: args.base.as_deref(),
+        base_exact: args.base_exact,
+        builds: &args.build,
     };
-    let repo = match Repository::discover(project.root()) {
-        Ok(repo) => repo,
+    let diff = match diff_project(&project, &options) {
+        Ok(diff) => diff,
         Err(e) => return fail_diff(err, e),
     };
-    let base = match repo.base(args.base.as_deref(), args.base_exact) {
-        Ok(base) => base,
-        Err(e) => return fail_diff(err, e),
-    };
-    let before = match Revision::read(&repo, base.compared()) {
-        Ok(before) => before,
-        Err(e) => return fail_diff(err, e),
-    };
-
-    let now_project = project.index();
-    let now_model = project.model_text();
-    let before_project = before.as_ref().map(Revision::project);
-    let before_side = before
-        .as_ref()
-        .zip(before_project.as_ref())
-        .map(|(revision, project)| Side {
-            project,
-            model_text: &revision.model_text,
-        });
-    let now_side = Side {
-        project: &now_project,
-        model_text: now_model,
-    };
-    let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-    // Counting the errors is a full check of the working tree: it runs beside
-    // the comparison, so the two take about as long as the slower one.
-    let (diffs, errors) = std::thread::scope(|scope| {
-        let errors = scope.spawn(|| working_tree_errors(&project, &args.build));
-        let diffs = compare_builds(before_side, now_side, &names);
-        (
-            diffs,
-            errors
-                .join()
-                .unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
-        )
-    });
-    let mut report = Report::new(&repo, &base, diffs);
-    report.working_tree_errors = errors;
+    let report = &diff.report;
     if report.working_tree_errors > 0 {
         let _ = writeln!(
             err,
@@ -144,26 +104,11 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     }
 
     let written = match args.format {
-        Format::Text => write_text(out, &report),
-        Format::Json => serde_json::to_writer_pretty(&mut *out, &report)
+        Format::Text => write_text(out, report),
+        Format::Json => serde_json::to_writer_pretty(&mut *out, report)
             .map_err(io::Error::from)
             .and_then(|()| writeln!(out)),
-        Format::Html => {
-            let now_files = DiskAssets::new(project.root(), &now_project);
-            let base_files = before.as_ref().map(|r| GitAssets::new(&repo, &r.fs));
-            let base = before_project
-                .as_ref()
-                .zip(base_files.as_ref())
-                .map(|(project, files)| Version {
-                    project,
-                    files: files as &dyn AssetFiles,
-                });
-            let now = Version {
-                project: &now_project,
-                files: &now_files,
-            };
-            out.write_all(write_html(&report, base, now).as_bytes())
-        }
+        Format::Html => out.write_all(diff.html().as_bytes()),
     };
     if let Err(e) = written
         && e.kind() != io::ErrorKind::BrokenPipe
@@ -175,12 +120,6 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     } else {
         exit::OK
     }
-}
-
-/// How many errors `ascribe check` finds for the builds compared, as it
-/// would with the same `--build` options.
-fn working_tree_errors(project: &tessera_check::Project, names: &[String]) -> usize {
-    diagnose(project, names).map_or(0, |found| Counts::of(&found.diagnostics).errors)
 }
 
 /// The warning about the working tree's errors, naming the `ascribe check`

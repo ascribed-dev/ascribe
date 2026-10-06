@@ -1339,6 +1339,7 @@ dependencies = [
  "serde_yaml_ng",
  "similar",
  "tempfile",
+ "tessera-check",
  "tessera-core",
  "tessera-emit",
  "tessera-model",
@@ -1371,10 +1372,12 @@ name = "tessera-fmt"
 version = "0.2.0"
 dependencies = [
  "proptest",
+ "tempfile",
  "tessera-commonmark-suite",
  "tessera-core",
  "tessera-model",
  "tessera-syntax",
+ "thiserror",
  "toml",
 ]
 
