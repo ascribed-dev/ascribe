@@ -6,6 +6,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use tessera_core::RelPath;
+use tessera_resolve::{DiskFs, FileSystem};
 
 /// The largest file Ascribe copies: a megabyte is generous for an example.
 pub const SIZE_LIMIT: usize = 1024 * 1024;
@@ -25,14 +26,17 @@ pub(crate) fn not_text(bytes: &[u8]) -> Option<&'static str> {
 pub(crate) struct Folder {
     /// The project root.
     root: PathBuf,
+    /// The project's files.
+    files: DiskFs,
     /// The folder, relative to the root: `sources/<name>`.
     rel: RelPath,
 }
 
 impl Folder {
-    pub(crate) fn new(root: &Path, rel: RelPath) -> Folder {
+    pub(crate) fn new(root: &Path, files: &DiskFs, rel: RelPath) -> Folder {
         Folder {
             root: root.to_path_buf(),
+            files: files.clone(),
             rel,
         }
     }
@@ -44,15 +48,20 @@ impl Folder {
     /// Every file in the folder, by path relative to it, without following
     /// links.
     pub(crate) fn files(&self) -> Vec<String> {
-        let mut out = Vec::new();
-        list(&self.dir(), "", &mut out);
-        out.sort();
-        out
+        self.files
+            .files_in(&self.rel)
+            .iter()
+            .filter_map(|path| path.relative_to(&self.rel))
+            .map(|path| path.as_str().to_owned())
+            .collect()
     }
 
     /// The bytes of a copy, if it's a file (not a link).
     pub(crate) fn read(&self, path: &str) -> Option<Vec<u8>> {
         let full = self.path(path)?;
+        // Outside FileSystem: a copy is read only to compare it with what
+        // would be written over it, and never through a link, which
+        // `FileSystem::read_file` follows.
         let meta = fs::symlink_metadata(&full).ok()?;
         if !meta.is_file() {
             return None;
@@ -131,26 +140,4 @@ impl Folder {
 
 fn on_disk(base: &Path, rel: &RelPath) -> PathBuf {
     rel.segments().fold(base.to_path_buf(), |p, s| p.join(s))
-}
-
-fn list(dir: &Path, prefix: &str, out: &mut Vec<String>) {
-    let Ok(entries) = fs::read_dir(dir) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let Ok(kind) = entry.file_type() else {
-            continue;
-        };
-        let name = entry.file_name().to_string_lossy().into_owned();
-        let path = if prefix.is_empty() {
-            name
-        } else {
-            format!("{prefix}/{name}")
-        };
-        if kind.is_dir() {
-            list(&entry.path(), &path, out);
-        } else {
-            out.push(path);
-        }
-    }
 }

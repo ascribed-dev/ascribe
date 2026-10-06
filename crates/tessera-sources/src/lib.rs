@@ -26,6 +26,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use tessera_core::RelPath;
 use tessera_model::{ContentModel, LOCK_FILE, Lock, LockedFile, LockedSource, Source, file_hash};
+use tessera_resolve::{DiskFs, FileSystem, Layout};
 
 pub use copies::SIZE_LIMIT;
 pub use remote::{CommitLine, Commits, NEWEST};
@@ -113,6 +114,8 @@ impl Options {
 #[derive(Clone, Debug)]
 pub struct Workspace {
     root: PathBuf,
+    /// The project's files.
+    files: DiskFs,
     sources: Vec<Source>,
     lock: Lock,
     /// The lock's text as it is on disk, so it's only written when it
@@ -135,8 +138,10 @@ impl Workspace {
         model: &ContentModel,
         project: &tessera_resolve::Project,
     ) -> Result<Workspace, SourcesError> {
-        let lock_text = std::fs::read(root.join(LOCK_FILE))
+        let files = DiskFs::new(root, &Layout::from_model(model));
+        let lock_text = RelPath::parse(LOCK_FILE)
             .ok()
+            .and_then(|path| files.read_file(&path).ok())
             .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
         let lock = match &lock_text {
             None => Lock::default(),
@@ -161,6 +166,7 @@ impl Workspace {
         }
         Ok(Workspace {
             root: root.to_path_buf(),
+            files,
             sources: model.sources.clone(),
             lock,
             lock_text,
@@ -202,7 +208,11 @@ impl Workspace {
     }
 
     fn folder(&self, source: &Source) -> Folder {
-        Folder::new(&self.root, RelPath::parse(&source.path).unwrap_or_default())
+        Folder::new(
+            &self.root,
+            &self.files,
+            RelPath::parse(&source.path).unwrap_or_default(),
+        )
     }
 
     /// Makes a source's copies those of `commit`: keeps each copy `previous`
@@ -461,8 +471,11 @@ pub fn fetch(
             let folder = Source::copies_folder(&locked.name);
             // A source in this repository may use that folder itself.
             if !workspace.sources.iter().any(|s| s.path == folder) {
-                let folder =
-                    Folder::new(&workspace.root, RelPath::parse(&folder).unwrap_or_default());
+                let folder = Folder::new(
+                    &workspace.root,
+                    &workspace.files,
+                    RelPath::parse(&folder).unwrap_or_default(),
+                );
                 for path in locked.files.keys() {
                     folder.remove(path).map_err(|e| SourcesError::Write {
                         path: path.clone(),
