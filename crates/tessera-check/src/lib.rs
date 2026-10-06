@@ -31,6 +31,7 @@
 //! each distinct problem once, naming the builds it appears in
 //! ([`Diagnostic::builds`]).
 
+mod builds;
 mod checks;
 mod diagnostic;
 pub mod page;
@@ -38,12 +39,14 @@ mod project;
 pub mod registry;
 mod yaml;
 
+pub use builds::{Diagnosed, UnknownBuild, diagnose, select_builds};
 pub use checks::check_file;
 use checks::check_sources;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
 pub use page::{PageChecker, check_all_builds, check_builds, check_pages, check_project};
 pub use project::{
-    FileEntry, LOCK_FILE_ID, LoadError, MODEL_FILE, Project, ReadFailure, SourceFile,
+    FileEntry, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile, Project, ReadFailure,
+    SourceFile,
 };
 pub use registry::{Entry, Level, Registry};
 

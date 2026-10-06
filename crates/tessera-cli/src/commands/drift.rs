@@ -7,14 +7,11 @@
 
 use std::io::{self, Write};
 use std::process::ExitCode;
-use std::sync::Arc;
 
 use clap::{Args as ClapArgs, ValueEnum};
-use tessera_core::FileId;
-use tessera_diff::{DiffError, DriftPage, DriftReport, Repository, Side, drift};
+use tessera_diff::{DiffError, DriftOptions, DriftPage, DriftReport, drift_project};
 
 use crate::cli::Global;
-use crate::commands::diagnose::select_builds;
 use crate::commands::diff::{fail, fail_diff, failure_message};
 use crate::context::load_project;
 use crate::exit;
@@ -81,33 +78,12 @@ fn report(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write
         Ok(project) => project,
         Err(failure) => return fail(err, &failure_message(failure)),
     };
-    let builds = match select_builds(&project, &args.build) {
-        Ok(builds) => builds,
-        Err(message) => return fail(err, &message),
+    let options = DriftOptions {
+        base: args.base.as_deref(),
+        base_exact: false,
+        builds: &args.build,
     };
-    let found = Repository::discover(project.root()).and_then(|repo| {
-        let base = repo.base(args.base.as_deref(), false)?;
-        Ok((repo, base))
-    });
-    let (repo, base) = match found {
-        Ok(found) => found,
-        Err(e) => return fail_drift(err, e),
-    };
-    let now_project = tessera_resolve::Project::load(
-        Arc::new(project.model().clone()),
-        project.layout().clone(),
-        project.file_system(),
-    );
-    let now_model = project
-        .file(FileId::new(0))
-        .map(|f| f.text)
-        .unwrap_or_default();
-    let now = Side {
-        project: &now_project,
-        model_text: now_model,
-    };
-    let names: Vec<&str> = builds.iter().map(|b| b.name.as_str()).collect();
-    let report = match drift(&repo, &base, now, project.file_system(), &names) {
+    let report = match drift_project(&project, &options) {
         Ok(report) => report,
         Err(e) => return fail_drift(err, e),
     };

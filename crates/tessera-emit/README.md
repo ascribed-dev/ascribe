@@ -12,6 +12,7 @@ Emitters for Ascribe's outputs. An emitter renders the **resolved tree** (`tesse
 
 - `Emitter` (`emitter.rs`): `name`, `page_path`, `render_page`, and the defaults `place_asset` (the mirrored path and a relative reference, asset contract §3), `generated` (files under `_ascribe/`), and `warnings`. `emit(&dyn Emitter, &EmitContext, &ResolvedBuild) -> Emission` renders every page and lists each asset the pages use once.
 - `assets.rs`: `mirrored_path`, `relative_reference`, `encode_path`, and `markdown_destination`, which write a reference so CommonMark reads it back as written (asset contract §4).
+- `write_outputs` (`write.rs`): what `ascribe build` does once its checks pass: resolves each build and writes each output through `OutputDir`, reporting each as it's written.
 - `OutputDir` (`store.rs`): the [output-layout contract](https://ascribed-dev.com/contracts/output-layout/): the lock, staging, manifests, and replacing a previous output without touching a file the manifest didn't list.
 - `labels.rs`: text the outputs share (the availability line and each target's text, an arm's label).
 - `site/`, `render/`, `zod/`: the site output (below).
@@ -165,4 +166,4 @@ See the [output-layout contract](https://ascribed-dev.com/contracts/output-layou
 
 ## Tests
 
-`tests/plain.rs` (each construct), `tests/store.rs` (the output-layout contract), `tests/assets.rs` (the output works with the source removed), and `tests/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/site.rs`, `tests/site_quill.rs`, `tests/site_assets.rs`, `tests/render_fixtures.rs`, and `tests/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.
+`tests/plain.rs` (each construct), `tests/store.rs` (the output-layout contract), `tests/write.rs` (`write_outputs`), `tests/assets.rs` (the output works with the source removed), and `tests/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/site.rs`, `tests/site_quill.rs`, `tests/site_assets.rs`, `tests/render_fixtures.rs`, and `tests/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.

@@ -8,7 +8,8 @@ Which diagnostics exist, with their codes, severities, and messages, is defined 
 
 | Module | Main types and functions | What it does |
 |---|---|---|
-| `src/project.rs` | `Project`, `SourceFile`, `LoadError`, `Project::find_config`, `Project::load` | A project as the checks see it: the content model and every source file's text, read through `tessera_resolve::DiskFs`. `Project::load` is how the commands load a project; `from_parts_with_fs` builds one over another `FileSystem`, as the language server does. |
+| `src/project.rs` | `Project`, `SourceFile`, `LoadError`, `Project::locate`, `Project::load`, `Project::load_model`, `Project::index` | A project as the checks see it: the content model and every source file's text, read through `tessera_resolve::DiskFs`. `Project::locate` finds the content model a command works on, and `Project::load` is how the commands load a project (`fmt` takes only `load_model`); `index` is the source index over the same files, for the commands that resolve builds; `from_parts_with_fs` builds one over another `FileSystem`, as the language server does. |
+| `src/builds.rs` | `select_builds`, `diagnose`, `UnknownBuild` | What `ascribe check` and `ascribe build` call: the builds named by `--build`, and their diagnostics, each problem once. `diff` and `drift` choose builds with `select_builds` too. |
 | `src/lib.rs` | `check_files` | The file-level checks over every file: the content model's warnings, the lock and the copies of sources, then each file's diagnostics, in file order and source order. |
 | `src/checks/` | `check_file` | The file-level checks of one file (SPEC §8.1): the parser's issues, then attributes (`attrs.rs`), availability (`avail.rs`), frontmatter (`frontmatter.rs`), references and snippets (`refs.rs`), and sources in other repositories (`sources.rs`). |
 | `src/page/` | `check_project`, `check_all_builds`, `check_builds`, `PageChecker` | The page-level checks, on resolved pages: duplicate ids, links to ids, and what a build removes. `check_project` is file-level then page-level for one build; `check_all_builds` reports each distinct problem once, naming the builds it appears in. `src/page/bridge.rs` builds the source index over a checked project. |
@@ -17,9 +18,9 @@ Which diagnostics exist, with their codes, severities, and messages, is defined 
 | `src/yaml.rs` | | Where a key or value is in a frontmatter block, so a problem is reported at its line. |
 
 ```rust,ignore
-let config = tessera_check::Project::find_config(&cwd).ok_or("no ascribe.toml")?;
+let config = tessera_check::Project::locate(None)?;
 let project = tessera_check::Project::load(&config)?;
-let diagnostics = tessera_check::check_all_builds(&project);
+let found = tessera_check::diagnose(&project, &[])?;
 ```
 
 ## Rules
@@ -32,6 +33,7 @@ let diagnostics = tessera_check::check_all_builds(&project);
 
 ## Tests
 
+- `tests/commands.rs`: what the commands call, each with a typed result: `locate`, `load_model`, `select_builds`, and `diagnose`.
 - `tests/checks.rs`: the file-level checks, on small projects in memory or in a temporary folder.
 - `tests/page.rs`: the page-level checks.
 - `tests/page_index.rs`: checking resolved pages over an index the caller already has reports what `check` reports.
