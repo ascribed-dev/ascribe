@@ -7,6 +7,7 @@ import { shellHtml } from "./html.js";
 import type {
   FromWebview,
   ImageReport,
+  PageFrontmatter,
   PreviewParams,
   PreviewResult,
   RenderReport,
@@ -530,6 +531,7 @@ export class PreviewController implements vscode.Disposable {
         assetRoots: [],
         documentVersion: null,
         page: null,
+        review: null,
       }),
       problems,
     };
@@ -565,7 +567,7 @@ export class PreviewController implements vscode.Disposable {
       build: result.build,
       builds: result.builds,
       title: result.page?.title ?? null,
-      available: result.page?.frontmatter.available ?? [],
+      available: (result.page?.frontmatter as PageFrontmatter | undefined)?.available ?? [],
       html: result.page?.html ?? null,
       assets,
       problems,

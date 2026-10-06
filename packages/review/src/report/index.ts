@@ -12,66 +12,13 @@ import {
   markChanges,
   setShow,
   showSources,
-  type Change,
   type Mark,
   type Show,
 } from "../marks/index.js";
 import { DATA_SHOW, ID_REPORT, ID_REPORT_DATA } from "../names.js";
+import type { BuildData, ImageRef, PageData, RenderedPage, ReportData } from "../shapes.js";
 
-/** The report's data, as `ascribe diff --format html` writes it. */
-export interface ReportData {
-  ascribe_version: string;
-  base: { requested: string; commit: string; merge_base: string | null };
-  /** How many errors `ascribe check` finds in the working tree; absent from older reports. */
-  working_tree_errors?: number;
-  builds: BuildData[];
-  /** Each rendered page, once however many builds render it alike. */
-  pages: Record<string, RenderedPage>;
-  /** Each image, as a `data:` URL, once however many pages use it. */
-  images: Record<string, string>;
-  /** How many changed pages a report renders, and how many it left out. */
-  limit: { pages: number; omitted: number };
-  /** The size, in bytes, above which an image isn't included. */
-  image_limit: number;
-}
-
-export interface BuildData {
-  build: string;
-  pages: PageData[];
-}
-
-/** One changed page: `ascribe diff --format json`'s, and its renderings. */
-interface PageData {
-  path: string;
-  route: string;
-  status: "added" | "removed" | "changed";
-  own_file_changed: boolean;
-  because: string[];
-  page_changed: string[];
-  counts: { changed: number; added: number; removed: number; moved: number };
-  changes: Change[];
-  title: string | null;
-  /** The page now and before, as keys of `pages`; null when there's none. */
-  now: string | null;
-  was: string | null;
-  /** Whether it's beyond the report's limit, so not rendered. */
-  omitted: boolean;
-}
-
-interface RenderedPage {
-  html: string;
-  /** Each image reference the HTML writes, and what it is. */
-  images: Record<string, ImageRef>;
-}
-
-interface ImageRef {
-  /** The image's source file. */
-  path: string;
-  /** Its key in `images`, when it's included. */
-  image?: string;
-  /** Its size, when it's too large to include. */
-  bytes?: number;
-}
+export type { BuildData, ReportData } from "../shapes.js";
 
 interface State {
   build: number;

@@ -29,6 +29,7 @@ import {
   DATA_WAS_SOURCE,
   ELEMENT_TAB,
 } from "../names.js";
+import type { Anchor, Change, Words } from "../shapes.js";
 // @ascribed/review/marks: marks what changed on a rendered page, in the
 // browser.
 //
@@ -44,32 +45,8 @@ import {
 // element they change gets `data-ascribe-change`, so `clearMarks` can put the
 // page back as it was rendered.
 
-/** Where a block is written: the anchor grammar's `source` and `via`. */
-export interface Anchor {
-  source: string;
-  via: string[];
-}
-
-/** The words that differ inside a changed block of prose. */
-export interface Words {
-  /** `[start, end)` ranges, in characters, of `now_text`. */
-  now: [number, number][];
-  /** `[start, end)` ranges, in characters, of `was_text`. */
-  was: [number, number][];
-  now_text: string;
-  was_text: string;
-}
-
-/** One block's change, as `ascribe diff --format json` writes it. */
-export interface Change {
-  kind: "changed" | "added" | "removed" | "moved";
-  now?: Anchor;
-  was?: Anchor;
-  words?: Words;
-  after?: Anchor;
-  parent?: Anchor;
-  text?: string;
-}
+/** A block's change, where it's written, and its words, as `ascribe diff --format json` writes them. */
+export type { Anchor, Change, Words } from "../shapes.js";
 
 /** What the page shows: its changes, the page as it will be, or as it was. */
 export type Show = "changes" | "will" | "was";

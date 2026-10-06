@@ -4,7 +4,7 @@
 
 import * as path from "node:path";
 import { countsText } from "./counts.js";
-import type { BaseInfo, ChangedPage, PageChanges } from "./protocol.js";
+import type { BaseInfo, ChangedPage, PageDiff } from "./protocol.js";
 
 /** The content model's file, which `because` names last when it's a cause. */
 const MODEL_FILE = "ascribe.toml";
@@ -30,7 +30,7 @@ export function sameBase(a: BaseInfo, b: BaseInfo): boolean {
 }
 
 /** A changed page's detail in the list: its counts, and what it changed through. */
-export function pageDetail(page: Omit<PageChanges, "changes">): string {
+export function pageDetail(page: Omit<PageDiff, "changes">): string {
   let text: string;
   if (page.status === "added") text = "New page";
   else if (page.status === "removed") text = "Removed";
@@ -53,7 +53,7 @@ export function pageDetail(page: Omit<PageChanges, "changes">): string {
  * cause's content path (or `ascribe.toml`) and its absolute path.
  */
 export function causes(
-  page: Omit<PageChanges, "changes"> | null,
+  page: Omit<PageDiff, "changes"> | null,
   roots: { projectRoot: string | null; contentRoot: string | null },
 ): { label: string; path: string }[] {
   if (!page || page.own_file_changed || page.status !== "changed") return [];

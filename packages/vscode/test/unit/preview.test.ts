@@ -125,6 +125,7 @@ describe("what the preview says", () => {
     documentVersion: 1,
     page: null,
     problems: [],
+    review: null,
     ...extra,
   });
   const situation = (extra: Partial<PreviewSituation> = {}): PreviewSituation => ({

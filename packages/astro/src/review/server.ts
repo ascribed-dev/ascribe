@@ -19,7 +19,7 @@ import {
   REQUEST_EVENT,
   RESULT_EVENT,
   type ChangedPage,
-  type DiffPage,
+  type PageDiff,
   type PageView,
   type Request,
   type Result,
@@ -323,7 +323,7 @@ export class ReviewServer {
 }
 
 /** A changed page as the list shows it: without its changes, with its title. */
-function listed(page: DiffPage, title: string | null): ChangedPage {
+function listed(page: PageDiff, title: string | null): ChangedPage {
   return {
     title,
     path: page.path,

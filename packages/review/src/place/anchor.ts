@@ -2,13 +2,10 @@
 // include. The path is a content path, `/`-separated, each segment
 // percent-encoded except for ASCII letters, digits, `-`, `.`, `_`, and `~`.
 
-/** Where a rendered block came from: its `data-ascribe-source` and `data-ascribe-via`. */
-export interface Anchor {
-  /** `<path>:<first>-<last>`. */
-  source: string;
-  /** The includes it came through, outermost first, each `<path>:<line>`. */
-  via: string[];
-}
+import type { Anchor } from "../shapes.js";
+
+/** Where a rendered block came from: its `data-ascribe-source` and `data-ascribe-via`, as `ascribe diff` writes them. */
+export type { Anchor };
 
 /** A block's source, parsed. `path` is decoded. */
 export interface SourceRange {
