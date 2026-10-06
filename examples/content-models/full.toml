@@ -115,6 +115,12 @@ term = "Quill Server"
 definition = "The self-managed Quill server."
 case-sensitive = true
 
+# An ordinary word too: linked only where an author links it.
+[glossary.terms.agent]
+term = "agent"
+definition = "The Quill process that syncs a machine's files."
+match = "marked"
+
 # Declaration order is canonical attribute order.
 # :snippet-start: images
 [images.attributes]

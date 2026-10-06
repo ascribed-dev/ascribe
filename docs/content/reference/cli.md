@@ -93,7 +93,7 @@ Each build writes each output to `<output-dir>/<build>/<output>/`, `.ascribe/bui
 | Output | What it is | For |
 |---|---|---|
 | `site` | Markdown with web components (`<ascribe-note>`, `<ascribe-tabs>`, and the rest), heading ids and image attributes as markers the Astro integration applies, and the generated Zod schema in `_ascribe/schema.ts` | An Astro site, through `@ascribed/astro` ([Astro](../guides/astro.md)) |
-| `plain` | Fully resolved CommonMark with no HTML: notes as quotes, variants as labeled sections, availability as text, and links as absolute URLs | Search indexes, LLMs, and export |
+| `plain` | Fully resolved CommonMark with no HTML: notes as quotes, [variants](directives.md#variant) as labeled sections, availability as text, and links as absolute URLs | Search indexes, LLMs, and export |
 | `json` | The resolved tree of each page | Your own tools |
 
 Without `[consumer] site` in `ascribe.toml`, plain-Markdown links are root-relative instead of absolute, and the build says so.
@@ -112,7 +112,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 ## `ascribe diff`
 @available: next
 
-Shows what changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, phrase, or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
+Shows what changed between a git revision and the working tree, as readers will see it: which pages of each [build](content-model.md#16-buildsname) changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, [phrase](directives.md#phrases), or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
 
 @include: ../_generated/cli-diff-options.md
 

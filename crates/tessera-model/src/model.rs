@@ -222,12 +222,15 @@ pub enum GlossaryMatch {
     First,
     /// Every occurrence.
     Every,
+    /// None: the term is linked only where an author writes the link. Set
+    /// per term, for words that also have ordinary senses.
+    Marked,
 }
 
 /// `[glossary]`.
 #[derive(Clone, Debug)]
 pub struct Glossary {
-    /// Which occurrences are linked.
+    /// The default for terms that don't set `match` (`First` or `Every`).
     pub match_mode: GlossaryMatch,
     /// The default for terms that don't set `case-sensitive`.
     pub case_sensitive: bool,
@@ -252,6 +255,9 @@ pub struct GlossaryTerm {
     /// Whether matching is case-sensitive for this term (the term's setting,
     /// else the glossary's).
     pub case_sensitive: bool,
+    /// Which occurrences of this term are linked (the term's setting, else
+    /// the glossary's).
+    pub match_mode: GlossaryMatch,
 }
 
 /// A project widget.

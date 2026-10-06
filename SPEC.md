@@ -665,7 +665,7 @@ Images are CommonMark images. Alt text and titles use CommonMark's own syntax. O
 
 ### 5.4 Glossary terms
 
-The content model MAY declare a glossary (§7.2). Processors link occurrences of glossary terms to their definitions according to the glossary's settings. Authors don't mark glossary terms in source.
+The content model MAY declare a glossary (§7.2). Processors link occurrences of glossary terms to their definitions according to the glossary's settings. Authors don't mark glossary terms in source, except for a term whose settings turn automatic linking off: processors don't link that term, and authors link the occurrences that mean it with an ordinary link (§5.2), for words that also have ordinary senses.
 
 Terms are matched in each resolved page's text, after phrases are substituted and a build's modes are applied, so "the first occurrence" is the first a reader sees. Emphasized text counts as prose. A term isn't linked on the page it links to, and a term whose target page or heading a build doesn't publish isn't linked in that build.
 

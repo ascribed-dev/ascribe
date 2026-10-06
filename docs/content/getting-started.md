@@ -35,7 +35,7 @@ Install the **Ascribe** extension for VS Code from the Marketplace:
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-It checks your pages as you type, completes directives, phrases, and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](guides/editor.md).
+It checks your pages as you type, completes directives, [phrases](reference/directives.md#phrases), and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](guides/editor.md).
 
 ## Create `ascribe.toml`
 

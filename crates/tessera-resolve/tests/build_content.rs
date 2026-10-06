@@ -534,7 +534,7 @@ fn glossary_project(body: &str) -> tessera_resolve::Project {
         ("index.md", &page(body)),
         (
             "glossary.md",
-            "---\ntitle: Glossary\n---\n\n## API key\n\n## API\n\n## Go\n",
+            "---\ntitle: Glossary\n---\n\n## API key\n\n## API\n\n## Go\n\n## Build\n\n## Mode\n",
         ),
     ])
 }
@@ -582,6 +582,34 @@ fn matching_is_whole_word_and_case_insensitive_unless_the_term_says_otherwise() 
             ("go".to_owned(), "Go".to_owned())
         ]
     );
+}
+
+#[test]
+fn a_term_can_set_its_own_match() {
+    let p = glossary_project(
+        "Every build has a mode. Builds differ by mode. Rotate the API key, then the API key.\n\nSee [a build](glossary.md#build).\n",
+    );
+    let resolved = resolve(&p, "index.md", "site");
+    // `build` is `marked`: never linked automatically, only by the author's
+    // link. `mode` is `every`; `API key` keeps the glossary's `first`.
+    assert_eq!(
+        glossed(&resolved),
+        [
+            ("mode".to_owned(), "mode".to_owned()),
+            ("mode".to_owned(), "mode".to_owned()),
+            ("api-key".to_owned(), "API key".to_owned())
+        ]
+    );
+    let ResolvedKind::Leaf(leaf) = &resolved.blocks[1].kind else {
+        panic!("a paragraph");
+    };
+    let BlockKind::Paragraph(par) = &leaf.kind else {
+        panic!("a paragraph");
+    };
+    let InlineKind::Link(link) = &par.inlines[1].kind else {
+        panic!("the author's link");
+    };
+    assert_eq!(link.destination, "/docs/glossary/#build");
 }
 
 #[test]

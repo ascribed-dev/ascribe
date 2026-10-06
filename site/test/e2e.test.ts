@@ -75,7 +75,8 @@ test("a link between pages lands on the page, and a glossary link on its heading
   expect(await page.locator("h1").textContent()).toBe("Astro");
 
   await page.goto(`${server.url}/reference/diagnostics/`);
-  const term = page.locator("article a[data-ascribe-term]").first();
+  // A glossary link to a heading (the first one on this page links to a page).
+  const term = page.locator('article a[data-ascribe-term][href*="#"]').first();
   const href = await term.getAttribute("href");
   expect(href).toMatch(/#/);
   await term.click();
