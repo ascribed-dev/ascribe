@@ -97,7 +97,9 @@ With the source directory, and everything outside the output, removed or moved, 
 
 ## 7. The preview
 
-The editor preview doesn't copy assets. It resolves references with the same rules (§1 and §2), from the file each reference is written in, and rewrites them to webview URLs of the source files. So a fragment's image shows in the preview exactly as it's found for a build.
+The editor preview doesn't copy assets. It resolves references with the same rules (§1 and §2), from the file each reference is written in, and rewrites them to webview URLs of the source files. So a fragment's image shows in the preview as it's found for a build.
+
+The preview serves the content root and, for an asset elsewhere in the project, that asset's own directory. Outside the content root, it doesn't serve an asset that sits directly in the project root, or one in `node_modules` or `.git`. Such an asset shows as a broken image in the preview, with a warning that names it and says why, though a build copies it. A reference into the output directory never becomes an asset: §2 step 5 reports it as not existing.
 
 ## Example
 

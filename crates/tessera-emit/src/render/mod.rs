@@ -2,10 +2,11 @@
 //! attribute markers applied.
 //!
 //! It is comrak's CommonMark rendering with raw HTML passed through (SPEC
-//! §9.5, "HTML passthrough"), plus the two things the markers add: a
+//! §9.5, "HTML passthrough"), plus the three things the markers add: a
 //! `<ascribe-attributes>` marker that ends a heading gives the heading its
-//! attributes (its `id`), and one directly after an image gives the `<img>`
-//! its attributes. The editor preview renders with it. The Astro markdown
+//! attributes (its `id`), one directly after an image gives the `<img>` its
+//! attributes, and one directly after a link gives the `<a>` its attributes
+//! (a glossary link's `data-ascribe-term`). The editor preview renders with it. The Astro markdown
 //! plugin (`@ascribed/astro`) does the same in Astro's pipeline, and
 //! `tests/render/`'s fixtures keep the two equal.
 //!
@@ -18,7 +19,10 @@
 //!   heading's opening tag has no attributes, applies to the heading; the
 //!   marker and the whitespace and line breaks before it are removed;
 //! - a marker directly after an `<img … />` tag, with nothing between, applies
-//!   to the image; the marker is removed.
+//!   to the image; the marker is removed;
+//! - a marker directly after an `</a>` tag, with nothing between, applies to
+//!   the link it closes; the marker is removed. A link holds no link, so its
+//!   opening tag is the last `<a ` before it.
 //!
 //! comrak escapes `<`, `>`, `&`, and `"` in every attribute value it writes,
 //! so a tag ends at its first `>`, and the text of a heading or code span
@@ -90,6 +94,8 @@ fn apply_markers(html: &str) -> String {
         // end of a heading: the image rule is the more specific one.
         if let Some(edit) = image_edit(html, &marker) {
             edits.push(edit);
+        } else if let Some(mut found) = link_edits(html, &marker) {
+            edits.append(&mut found);
         } else if let Some(mut found) = heading_edits(html, &marker) {
             edits.append(&mut found);
         }
@@ -442,6 +448,32 @@ fn image_edit(html: &str, marker: &Found) -> Option<Edit> {
     })
 }
 
+/// A marker directly after a link's `</a>`: the link's opening tag gets the
+/// attributes, replacing any it has by the same name (§3), and the marker
+/// goes.
+fn link_edits(html: &str, marker: &Found) -> Option<Vec<Edit>> {
+    let before = html[..marker.start].strip_suffix("</a>")?;
+    let start = before.rfind("<a ")?;
+    // The tag holds no `>`: comrak escapes it in every attribute value.
+    let tag_end = start + html[start..].find('>')?;
+    let existing = parse_existing(&html[start + "<a".len()..tag_end])?;
+    let mut tag = String::from("<a");
+    tag.push_str(&write_attributes(&existing, &marker.attributes));
+    tag.push('>');
+    Some(vec![
+        Edit {
+            start,
+            end: tag_end + 1,
+            text: tag,
+        },
+        Edit {
+            start: marker.start,
+            end: marker.end,
+            text: String::new(),
+        },
+    ])
+}
+
 /// The attributes comrak wrote on a tag, as `(name, decoded value)`.
 fn parse_existing(text: &str) -> Option<Vec<(String, String)>> {
     let mut out = Vec::new();
@@ -491,6 +523,28 @@ mod tests {
         assert_eq!(
             html,
             "<p><img src=\"./a.png\" alt=\"A\" title=\"T\" width=\"600\" loading=\"lazy\" /></p>\n"
+        );
+    }
+
+    #[test]
+    fn a_marker_after_a_link_gives_the_a_its_attributes() {
+        let html = render_site_html(
+            "An [*API* key](/g#api-key \"A token.\")<ascribe-attributes data-ascribe-term=\"api-key\"></ascribe-attributes> here.\n",
+        );
+        assert_eq!(
+            html,
+            "<p>An <a href=\"/g#api-key\" title=\"A token.\" data-ascribe-term=\"api-key\"><em>API</em> key</a> here.</p>\n"
+        );
+    }
+
+    #[test]
+    fn a_marker_after_an_image_in_a_link_applies_to_the_image() {
+        let html = render_site_html(
+            "[![A](./a.png)<ascribe-attributes width=\"1\"></ascribe-attributes>](/x)<ascribe-attributes data-x=\"2\"></ascribe-attributes>\n",
+        );
+        assert_eq!(
+            html,
+            "<p><a href=\"/x\" data-x=\"2\"><img src=\"./a.png\" alt=\"A\" width=\"1\" /></a></p>\n"
         );
     }
 

@@ -6,7 +6,8 @@
 //! requires `html = true` is only for the plain output), an image
 //! followed by its attribute marker, links as the
 //! consumer's routes and URLs, and a glossary link with its term's
-//! definition as the title (element contract §7).
+//! definition as the title and a marker naming the term (element contract
+//! §7).
 
 use tessera_core::{AssetUse, AttributeValue};
 use tessera_resolve::{LinkTarget, RefKind, ResolvedBlock, ResolvedLink};
@@ -134,7 +135,7 @@ fn link_inline(
     st: &mut State,
 ) {
     let resolved = resolved(block, node, RefKind::Link);
-    let mut definition = None;
+    let mut term = None;
     let destination = match resolved.map(|l| &l.target) {
         Some(LinkTarget::External) => markdown_destination(&link.destination),
         Some(LinkTarget::Page { url, .. }) => markdown_destination(url),
@@ -148,9 +149,10 @@ fn link_inline(
             return;
         }
         // A glossary link (SPEC §5.4): an ordinary link to the term's route,
-        // with its definition as the title (element contract §7).
+        // with its definition as the title and a marker naming the term
+        // (element contract §7).
         None => {
-            definition = r.glossary_definition(block, link);
+            term = r.glossary_term(block, link);
             markdown_destination(&link.destination)
         }
     };
@@ -164,9 +166,18 @@ fn link_inline(
         return;
     }
     let text = render(r, block, &link.children, mode);
-    let shown = definition.as_deref().or(link.title.as_deref());
+    let shown = term
+        .as_ref()
+        .map(|(_, definition)| definition.as_str())
+        .or(link.title.as_deref());
     st.out
         .push_str(&format!("[{text}]({destination}{})", title(shown)));
+    // Directly after the link, with nothing between: the marker that gives
+    // the `<a>` its attributes.
+    if let Some((id, _)) = term {
+        st.out
+            .push_str(&marker(&[("data-ascribe-term".to_owned(), id)]));
+    }
     st.line_start = false;
 }
 

@@ -97,9 +97,14 @@ impl Renderer<'_> {
         render(self, block, list, mode)
     }
 
-    /// The definition a glossary link carries as its title: the term whose
-    /// use in this block has this URL and text.
-    pub(crate) fn glossary_definition(&self, block: &ResolvedBlock, link: &Link) -> Option<String> {
+    /// The glossary term a link is a use of, as its id and the definition
+    /// the link carries as its title: the term whose use in this block has
+    /// this URL and text.
+    pub(crate) fn glossary_term(
+        &self,
+        block: &ResolvedBlock,
+        link: &Link,
+    ) -> Option<(String, String)> {
         let text = plain_text(&link.children);
         let used = block
             .glossary
@@ -110,7 +115,7 @@ impl Renderer<'_> {
             .terms
             .iter()
             .find(|t| t.id == used.term)
-            .map(|t| t.definition.clone())
+            .map(|t| (t.id.clone(), t.definition.clone()))
     }
 
     /// A list of sibling blocks as chunks: one string per block (a directive

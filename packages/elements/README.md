@@ -39,6 +39,37 @@ elements. Defaults are in `css/style.css`.
 | Tabs | `--ascribe-tab-color`, `--ascribe-tab-active-color`, `--ascribe-tab-focus-color`, `--ascribe-tab-hover-background` |
 | Availability | `--ascribe-state-color` and `--ascribe-state-background`, and `--ascribe-state-<state>-color` and `--ascribe-state-<state>-background` for `ga`, `preview`, `beta`, `deprecated`, and `removed` |
 
+### Light and dark
+
+The default colors are light or dark as the page is. They're dark where the
+page's `color-scheme` is `dark`, or `light dark` while the reader's system is in
+dark mode, and light otherwise, including on a page that declares no
+`color-scheme`. So a site with a dark mode gets dark elements by declaring it:
+
+```css
+:root {
+  color-scheme: light dark;
+}
+```
+
+A page whose colors don't follow its `color-scheme` sets
+`data-ascribe-scheme="light"` or `"dark"` on its root element, as the review
+marks read it. The defaults use CSS `light-dark()`; a browser without it shows
+the light colors. A property a site sets replaces both colors, so set it for
+each scheme when you set one:
+
+```css
+:root {
+  --ascribe-note-color: light-dark(#0550ae, #79c0ff);
+}
+```
+
+### Glossary terms
+
+A glossary link carries `data-ascribe-term` with the term's id, and its title
+is the definition. The library underlines it with dots; restyle it by
+selecting on the attribute, such as `a[data-ascribe-term]`.
+
 ### A project's own note types and lifecycle states
 
 Notes and availability targets carry their type or states as attributes, so a
