@@ -152,6 +152,8 @@ It lists the changed pages of each build, with counts, and marks a page that cha
 - a **removed** block is shown where it was, from the base, struck through and collapsed to one line, with **Show** to expand it;
 - a **moved** block has a double bar and the label Moved, with a link to a stub at its old place, and back.
 
+A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes ("2 changes").
+
 **Show: Changes / As it will be / As it was** switches between the marks, the page as it will be with none, and the page as it was at the base. The arrows step through the changes ("3 of 10 on this page"), and after the last one offer the next changed page. Hovering over a block shows the source file and line it came from (`guides/install.md:12`). The colors work in light and dark, and every mark has a label as well as a color.
 
 A report renders at most 300 changed pages; the rest are listed by name, and the report says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [The report in CI](../guides/review.md#the-report-in-ci) has a GitHub Actions job that uploads the report on every pull request.
