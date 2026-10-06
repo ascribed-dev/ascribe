@@ -3,10 +3,10 @@
 //! their arms. `syntax.rs` writes the CommonMark blocks and calls
 //! [`node`] for the rest.
 
-use tessera_conformance::outline::normalize_ws;
-use tessera_conformance::{Arm, AttrValue, Attributes, Binding, Directive, Form, Group, Node};
-use tessera_core::AttributeValue;
-use tessera_syntax::{Block, BlockKind, Bound, DirectiveLine, PrimaryValue, TitleLine, raw_text};
+use ascribe_conformance::outline::normalize_ws;
+use ascribe_conformance::{Arm, AttrValue, Attributes, Binding, Directive, Form, Group, Node};
+use ascribe_core::AttributeValue;
+use ascribe_syntax::{Block, BlockKind, Bound, DirectiveLine, PrimaryValue, TitleLine, raw_text};
 
 use super::syntax::text;
 

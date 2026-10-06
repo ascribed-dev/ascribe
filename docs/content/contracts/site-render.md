@@ -14,7 +14,7 @@ This contract defines the one syntax the site output uses for all three, the **a
 | Implementation | Used by |
 |---|---|
 | The Astro markdown plugin in `@ascribed/astro` | The published site |
-| `render_site_html()` in `tessera-emit` | The editor preview |
+| `render_site_html()` in `ascribe-emit` | The editor preview |
 
 The shared fixtures in [`tests/render/`]({repo}/tree/main/tests/render/) are what keep them equal: both must pass every fixture.
 
@@ -160,7 +160,7 @@ A block's anchor is two HTML attributes on the block's own element:
 - **An include** is `<path>:<line>`: the file holding the `@include` and its line.
 - `data-ascribe-source` holds the block's source. When the block came through includes, `data-ascribe-via` holds them, outermost first, separated by single spaces. A block written in the page itself has no `data-ascribe-via`.
 
-To parse one, split at the last `:`; the path can't contain an unencoded `:`. These are the same facts as the JSON output's `source` (`crates/tessera-emit/README.md`), without byte spans.
+To parse one, split at the last `:`; the path can't contain an unencoded `:`. These are the same facts as the JSON output's `source` (`crates/ascribe-emit/README.md`), without byte spans.
 
 ### 7.2 Which blocks have one
 

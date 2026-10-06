@@ -4,9 +4,9 @@
 
 use std::process::ExitCode;
 
-use tessera_corpora::corpus::{self, Corpus};
-use tessera_corpora::recognize::recognize;
-use tessera_corpora::{convert, perf};
+use ascribe_corpora::corpus::{self, Corpus};
+use ascribe_corpora::recognize::recognize;
+use ascribe_corpora::{convert, perf};
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();

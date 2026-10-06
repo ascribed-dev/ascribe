@@ -1,5 +1,5 @@
 [package]
-name = "tessera-commonmark-suite"
+name = "ascribe-commonmark-suite"
 description = "Runs the official CommonMark spec examples against a markdown renderer."
 version.workspace = true
 edition.workspace = true
@@ -16,7 +16,7 @@ toml.workspace = true
 
 [dev-dependencies]
 comrak.workspace = true
-comrak-tessera.workspace = true
+comrak-ascribe.workspace = true
 
 [[test]]
 name = "commonmark"

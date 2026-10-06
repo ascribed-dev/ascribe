@@ -8,11 +8,11 @@ An agent can check the file it just wrote, or text it hasn't written yet, and ge
 
 ## Context
 
-- `crates/tessera-cli/src/commands/check.rs` and `diagnose.rs`: the command and what it shares with `build`. `crates/tessera-cli/src/context.rs` (`load_project`): finding `ascribe.toml` and loading the project.
+- `crates/ascribe-cli/src/commands/check.rs` and `diagnose.rs`: the command and what it shares with `build`. `crates/ascribe-cli/src/context.rs` (`load_project`): finding `ascribe.toml` and loading the project.
 - `docs/cli.md`, "`ascribe check`": the options, exit codes, and JSON schema this phase extends. The JSON already has `fixes`, and says a field's meaning can't change without a new `schema_version`.
-- `tests/conformance/diagnostics.toml`: each diagnostic's `fix` paragraph. `crates/tessera-check/src/registry.rs` embeds the registry in the binary, but its `Entry` doesn't read `fix` yet: add the field. `docs/diagnostics.md` is generated from the registry, with one heading per code (`#asc036-link-target-missing`).
-- `crates/tessera-lsp/src/fsx.rs` and `tessera_resolve::incremental`: how the server lays unsaved text over the files on disk. `--stdin` needs the same thing.
-- `crates/tessera-lsp/README.md`, "Diagnostics": the server publishes file-level diagnostics plus the page-level ones of **the editor's build only** (`[editor] build`; `ContentModel::editor_default_build`). `check` covers every build.
+- `tests/conformance/diagnostics.toml`: each diagnostic's `fix` paragraph. `crates/ascribe-check/src/registry.rs` embeds the registry in the binary, but its `Entry` doesn't read `fix` yet: add the field. `docs/diagnostics.md` is generated from the registry, with one heading per code (`#asc036-link-target-missing`).
+- `crates/ascribe-lsp/src/fsx.rs` and `ascribe_resolve::incremental`: how the server lays unsaved text over the files on disk. `--stdin` needs the same thing.
+- `crates/ascribe-lsp/README.md`, "Diagnostics": the server publishes file-level diagnostics plus the page-level ones of **the editor's build only** (`[editor] build`; `ContentModel::editor_default_build`). `check` covers every build.
 - `tests/corpora/RESULTS.md`: a whole-project check, all builds, release build, takes 0.78 s on the synthetic 3,000-page project and 2.0 s on the Elastic sample. A per-edit check that pays that is too slow for a hook.
 
 ## Design
@@ -62,7 +62,7 @@ Each entry in `fixes` gains one field:
 
 Every fix the checks offer is labeled where it's made, and a test fails for one that isn't. When unsure, a fix is unsafe. Nothing applies fixes in this plan; the label is there so an agent reading the JSON can tell a spelling correction from a rewrite, and so a later `--fix` can be limited to safe ones. Ruff, rustc, oxlint, and Biome all label fixes this way ([the research report](../../reports/Agent%20first%20interfaces%20for%20docs%20tools.md)).
 
-The URL's base is one constant, pointing at `docs/diagnostics.md` in the repository at the tag of the running version. **Since docs phase 5, the docs are a site:** the base is the diagnostics page on it, `https://ascribed-dev.com/reference/diagnostics/`, with each code's anchor (`#asc036-link-target-missing`). Build it from `docs_site!` in `crates/tessera-cli/src/cli.rs`, whose test checks it against `[consumer] site` in `docs/ascribe.toml`. The site follows `main`, not a release's tag. In the language server, the same URL is each diagnostic's `codeDescription.href`, so the code is a link in the Problems panel and agents that read LSP diagnostics get it.
+The URL's base is one constant, pointing at `docs/diagnostics.md` in the repository at the tag of the running version. **Since docs phase 5, the docs are a site:** the base is the diagnostics page on it, `https://ascribed-dev.com/reference/diagnostics/`, with each code's anchor (`#asc036-link-target-missing`). Build it from `docs_site!` in `crates/ascribe-cli/src/cli.rs`, whose test checks it against `[consumer] site` in `docs/ascribe.toml`. The site follows `main`, not a release's tag. In the language server, the same URL is each diagnostic's `codeDescription.href`, so the code is a link in the Problems panel and agents that read LSP diagnostics get it.
 
 Text output is unchanged apart from honoring paths.
 
@@ -77,7 +77,7 @@ Measure on both 3,000-page corpora, in a release build, and add the numbers to `
 3. `--editor-build` and `builds_checked`; `--format concise` and `--summary`.
 4. The registry's `fix` in `Entry`; `help`, `docs`, and each fix's `applicability` in the JSON; `codeDescription` in the server, with a scenario test.
 5. The benchmarks and `RESULTS.md`.
-6. `docs/cli.md`, `crates/tessera-lsp/README.md`, `CHANGELOG.md`.
+6. `docs/cli.md`, `crates/ascribe-lsp/README.md`, `CHANGELOG.md`.
 
 ## Out of scope
 

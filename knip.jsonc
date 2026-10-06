@@ -8,10 +8,10 @@
   // With one content type, the generated `schema` is that type's schema.
   "ignoreIssues": {
     "tests/zod/generated/*.ts": ["duplicates"],
-    // Generated whole from crates/tessera-core/src/names.rs: every package
+    // Generated whole from crates/ascribe-core/src/names.rs: every package
     // gets every name, whichever it uses.
     "packages/*/src/names.ts": ["exports"],
-    // Generated whole from the Rust types by crates/tessera-cli/src/shapes.rs:
+    // Generated whole from the Rust types by crates/ascribe-cli/src/shapes.rs:
     // every type a shape refers to, whichever the package names.
     "packages/*/src/shapes.ts": ["types"],
   },

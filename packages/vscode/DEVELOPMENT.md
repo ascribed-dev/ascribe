@@ -9,14 +9,14 @@ Open the repository in VS Code and press F5, or pick a configuration in **Run an
 - **Extension: examples/quill** opens `examples/quill`, one project.
 - **Extension: several projects** opens [`examples/monorepo`](../../examples/monorepo), a repository with code and three projects, one nested in another. Its README lists things to try.
 
-Either one runs the `extension: prepare` task first, then opens an Extension Development Host: a second VS Code window running this checkout's extension, with your other extensions turned off. The task builds the server (`cargo build -p tessera-cli`), copies it to `bin/<platform>-<arch>/`, where the extension looks for its bundled binary, and bundles the extension and the webview files. The development window loads this extension in place of an installed copy of Ascribe. Breakpoints in `src/` work in the first window.
+Either one runs the `extension: prepare` task first, then opens an Extension Development Host: a second VS Code window running this checkout's extension, with your other extensions turned off. The task builds the server (`cargo build -p ascribe-cli`), copies it to `bin/<platform>-<arch>/`, where the extension looks for its bundled binary, and bundles the extension and the webview files. The development window loads this extension in place of an installed copy of Ascribe. Breakpoints in `src/` work in the first window.
 
 After changing the extension, rebuild and run **Developer: Reload Window** in the development window. To rebuild on each save, run the `extension: watch` task (or `pnpm --filter ascribe-vscode watch`), then only reload. After changing the server, run the `extension: stage server` task and restart it with **Ascribe: Restart Language Server**.
 
 Without VS Code's Run and Debug, the same steps from a terminal are:
 
 ```sh
-cargo build -p tessera-cli
+cargo build -p ascribe-cli
 pnpm --filter ascribe-vscode stage-server
 pnpm --filter ascribe-vscode build
 code --extensionDevelopmentPath="$PWD/packages/vscode" examples/quill
@@ -46,7 +46,7 @@ Its **Build** picker lists the content model's builds and starts at the
 editor's (`[editor] build`).
 
 It doesn't render anything itself. It sends the language server the custom
-request `ascribe/preview` (`crates/tessera-lsp/README.md`), whose answer is
+request `ascribe/preview` (`crates/ascribe-lsp/README.md`), whose answer is
 the site markdown (the site emitter) rendered by the same code that
 the Astro plugin's fixtures pin (`render_site_html`, `tests/render/`). The
 webview draws that HTML with `@ascribed/elements`, bundled into
@@ -117,7 +117,7 @@ and `{key}` phrases. TextMate can't see past a line, and doesn't know the conten
 model, so the rest is the server's semantic tokens: title lines, declared and
 undeclared phrases, project widgets, and a text primary's later lines. The
 `semanticTokenTypes` and `semanticTokenScopes` in `package.json` map the server's
-legend (`crates/tessera-lsp/README.md`) to theme scopes; a unit test keeps them
+legend (`crates/ascribe-lsp/README.md`) to theme scopes; a unit test keeps them
 in step.
 
 ## Development
@@ -150,7 +150,7 @@ The parity test (`test/parity/`) builds `examples/astro-site` with its own
 every arm of every group, one filtered to the cloud), starts `ascribe lsp` on
 each, and compares each page's preview HTML with Astro's built `<article>`:
 elements, attributes, heading ids, image attributes, and asset URLs by source
-file. It needs `cargo build -p tessera-cli` (or `ASCRIBE_BIN`), and the
+file. It needs `cargo build -p ascribe-cli` (or `ASCRIBE_BIN`), and the
 `@ascribed/elements` and `@ascribed/astro` builds (the Astro site uses them). What it leaves out, and why,
 is in `test/parity/normalize.ts`.
 

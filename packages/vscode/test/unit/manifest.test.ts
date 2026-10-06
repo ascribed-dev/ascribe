@@ -141,12 +141,12 @@ describe("package.json", () => {
 
 /**
  * The language server's semantic token legend is a contract (see
- * crates/tessera-lsp/README.md): the extension must map every type and
+ * crates/ascribe-lsp/README.md): the extension must map every type and
  * modifier it declares to a theme scope. Skipped if that README has no
  * legend.
  */
 describe("semantic tokens and the server's legend", () => {
-  const readme = new URL("../../../../crates/tessera-lsp/README.md", import.meta.url);
+  const readme = new URL("../../../../crates/ascribe-lsp/README.md", import.meta.url);
   const legend = existsSync(readme) ? readFileSync(readme, "utf8") : "";
   const types = [...legend.matchAll(/^\| \d+ \| `(ascribe\w+)` \|.*\| `([^`]+)` \|$/gm)].map(
     (match) => ({ id: match[1] ?? "", scope: match[2] ?? "" }),

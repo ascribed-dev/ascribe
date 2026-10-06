@@ -12,7 +12,7 @@
 
 use std::process::ExitCode;
 
-use tessera_commonmark_suite::{Baseline, SPEC_VERSION, load_bundled_examples, run, suite_dir};
+use ascribe_commonmark_suite::{Baseline, SPEC_VERSION, load_bundled_examples, run, suite_dir};
 
 const RENDERER: &str =
     "comrak (crates.io, unmodified), CommonMark options only, render.unsafe = true";
@@ -62,7 +62,7 @@ fn main() -> ExitCode {
             }
         };
         let header =
-            "# Written by `COMMONMARK_WRITE_BASELINE=1 cargo test -p tessera-commonmark-suite`.\n";
+            "# Written by `COMMONMARK_WRITE_BASELINE=1 cargo test -p ascribe-commonmark-suite`.\n";
         if let Err(err) = std::fs::write(&path, format!("{header}{text}")) {
             eprintln!("error: couldn't write {}: {err}", path.display());
             return ExitCode::FAILURE;

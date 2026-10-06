@@ -78,6 +78,232 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d902e3d592a523def97af8f317b08ce16b7ab854c1985a0c671e6f15cebc236"
 
 [[package]]
+name = "ascribe-check"
+version = "0.2.0"
+dependencies = [
+ "ascribe-core",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "proptest",
+ "serde",
+ "serde_yaml_ng",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "yaml-rust2",
+]
+
+[[package]]
+name = "ascribe-cli"
+version = "0.2.0"
+dependencies = [
+ "ariadne",
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-diff",
+ "ascribe-emit",
+ "ascribe-fmt",
+ "ascribe-lsp",
+ "ascribe-model",
+ "ascribe-sources",
+ "clap",
+ "insta",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "ascribe-commonmark-suite"
+version = "0.2.0"
+dependencies = [
+ "comrak",
+ "comrak-ascribe",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
+name = "ascribe-conformance"
+version = "0.2.0"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-fmt",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "insta",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
+name = "ascribe-core"
+version = "0.2.0"
+dependencies = [
+ "proptest",
+ "serde",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
+name = "ascribe-corpora"
+version = "0.2.0"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-emit",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "ascribe-synthetic",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
+name = "ascribe-diff"
+version = "0.2.0"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-emit",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "proptest",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "similar",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "ascribe-emit"
+version = "0.2.0"
+dependencies = [
+ "ascribe-core",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "comrak-ascribe",
+ "html5ever",
+ "insta",
+ "markup5ever_rcdom",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "ascribe-fmt"
+version = "0.2.0"
+dependencies = [
+ "ascribe-commonmark-suite",
+ "ascribe-core",
+ "ascribe-model",
+ "ascribe-syntax",
+ "proptest",
+ "tempfile",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
+name = "ascribe-lsp"
+version = "0.2.0"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-diff",
+ "ascribe-emit",
+ "ascribe-fmt",
+ "ascribe-model",
+ "ascribe-resolve",
+ "ascribe-syntax",
+ "ascribe-synthetic",
+ "crossbeam-channel",
+ "lsp-server",
+ "lsp-types",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "ascribe-model"
+version = "0.2.0"
+dependencies = [
+ "ascribe-core",
+ "serde_yaml_ng",
+ "sha2",
+ "toml",
+]
+
+[[package]]
+name = "ascribe-resolve"
+version = "0.2.0"
+dependencies = [
+ "ascribe-core",
+ "ascribe-model",
+ "ascribe-syntax",
+ "ascribe-synthetic",
+ "proptest",
+ "serde_json",
+ "serde_yaml_ng",
+ "tempfile",
+]
+
+[[package]]
+name = "ascribe-sources"
+version = "0.2.0"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-model",
+ "ascribe-resolve",
+ "schemars",
+ "serde",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "ascribe-syntax"
+version = "0.2.0"
+dependencies = [
+ "ascribe-commonmark-suite",
+ "ascribe-core",
+ "comrak-ascribe",
+ "proptest",
+]
+
+[[package]]
+name = "ascribe-synthetic"
+version = "0.2.0"
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -227,7 +453,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "comrak-tessera"
+name = "comrak-ascribe"
 version = "0.55.0"
 dependencies = [
  "arbitrary",
@@ -1295,232 +1521,6 @@ checksum = "5fed54709c5b3a53d09bb1c113ea4f5ceafd1e772ddcb0030a82e1d56c087b08"
 dependencies = [
  "new_debug_unreachable",
 ]
-
-[[package]]
-name = "tessera-check"
-version = "0.2.0"
-dependencies = [
- "proptest",
- "serde",
- "serde_yaml_ng",
- "tempfile",
- "tessera-core",
- "tessera-model",
- "tessera-resolve",
- "tessera-syntax",
- "thiserror",
- "toml",
- "yaml-rust2",
-]
-
-[[package]]
-name = "tessera-cli"
-version = "0.2.0"
-dependencies = [
- "ariadne",
- "clap",
- "insta",
- "schemars",
- "serde",
- "serde_json",
- "tempfile",
- "tessera-check",
- "tessera-core",
- "tessera-diff",
- "tessera-emit",
- "tessera-fmt",
- "tessera-lsp",
- "tessera-model",
- "tessera-sources",
- "thiserror",
-]
-
-[[package]]
-name = "tessera-commonmark-suite"
-version = "0.2.0"
-dependencies = [
- "comrak",
- "comrak-tessera",
- "serde",
- "serde_json",
- "thiserror",
- "toml",
-]
-
-[[package]]
-name = "tessera-conformance"
-version = "0.2.0"
-dependencies = [
- "insta",
- "serde",
- "serde_json",
- "serde_yaml_ng",
- "tessera-check",
- "tessera-core",
- "tessera-fmt",
- "tessera-model",
- "tessera-resolve",
- "tessera-syntax",
- "thiserror",
- "toml",
-]
-
-[[package]]
-name = "tessera-core"
-version = "0.2.0"
-dependencies = [
- "proptest",
- "serde",
- "thiserror",
- "toml",
-]
-
-[[package]]
-name = "tessera-corpora"
-version = "0.2.0"
-dependencies = [
- "serde",
- "serde_json",
- "serde_yaml_ng",
- "tempfile",
- "tessera-check",
- "tessera-core",
- "tessera-emit",
- "tessera-model",
- "tessera-resolve",
- "tessera-syntax",
- "tessera-synthetic",
- "toml",
-]
-
-[[package]]
-name = "tessera-diff"
-version = "0.2.0"
-dependencies = [
- "proptest",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml_ng",
- "similar",
- "tempfile",
- "tessera-check",
- "tessera-core",
- "tessera-emit",
- "tessera-model",
- "tessera-resolve",
- "tessera-syntax",
- "thiserror",
-]
-
-[[package]]
-name = "tessera-emit"
-version = "0.2.0"
-dependencies = [
- "comrak-tessera",
- "html5ever",
- "insta",
- "markup5ever_rcdom",
- "serde",
- "serde_json",
- "serde_yaml_ng",
- "tempfile",
- "tessera-core",
- "tessera-model",
- "tessera-resolve",
- "tessera-syntax",
- "thiserror",
-]
-
-[[package]]
-name = "tessera-fmt"
-version = "0.2.0"
-dependencies = [
- "proptest",
- "tempfile",
- "tessera-commonmark-suite",
- "tessera-core",
- "tessera-model",
- "tessera-syntax",
- "thiserror",
- "toml",
-]
-
-[[package]]
-name = "tessera-lsp"
-version = "0.2.0"
-dependencies = [
- "crossbeam-channel",
- "lsp-server",
- "lsp-types",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml_ng",
- "tempfile",
- "tessera-check",
- "tessera-core",
- "tessera-diff",
- "tessera-emit",
- "tessera-fmt",
- "tessera-model",
- "tessera-resolve",
- "tessera-syntax",
- "tessera-synthetic",
- "thiserror",
-]
-
-[[package]]
-name = "tessera-model"
-version = "0.2.0"
-dependencies = [
- "serde_yaml_ng",
- "sha2",
- "tessera-core",
- "toml",
-]
-
-[[package]]
-name = "tessera-resolve"
-version = "0.2.0"
-dependencies = [
- "proptest",
- "serde_json",
- "serde_yaml_ng",
- "tempfile",
- "tessera-core",
- "tessera-model",
- "tessera-syntax",
- "tessera-synthetic",
-]
-
-[[package]]
-name = "tessera-sources"
-version = "0.2.0"
-dependencies = [
- "schemars",
- "serde",
- "tempfile",
- "tessera-check",
- "tessera-core",
- "tessera-model",
- "tessera-resolve",
- "thiserror",
-]
-
-[[package]]
-name = "tessera-syntax"
-version = "0.2.0"
-dependencies = [
- "comrak-tessera",
- "proptest",
- "tessera-commonmark-suite",
- "tessera-core",
-]
-
-[[package]]
-name = "tessera-synthetic"
-version = "0.2.0"
 
 [[package]]
 name = "thiserror"

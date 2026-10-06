@@ -23,7 +23,7 @@ import { baseCommit, baseName, causes, fromContentPath, parseSource } from "./re
 import { BuildChoices, previewProblems } from "./routing.js";
 import { findDevServer, noDevServerMessage, pageUrl, sectionAt } from "./site.js";
 
-/** The custom request the language server answers (`crates/tessera-lsp/README.md`). */
+/** The custom request the language server answers (`crates/ascribe-lsp/README.md`). */
 const PREVIEW_REQUEST = "ascribe/preview";
 
 const VIEW_TYPE = "ascribe.preview";

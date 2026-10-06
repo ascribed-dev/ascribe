@@ -1,12 +1,12 @@
-//! The CommonMark spec examples against the `comrak-tessera` fork,
+//! The CommonMark spec examples against the `comrak-ascribe` fork,
 //! twice: with the Ascribe option off and with it on.
 //!
 //! - Off, the fork must match unmodified comrak exactly: its baseline,
-//!   `baselines/comrak-tessera-off.toml`, must equal `baselines/comrak.toml`
+//!   `baselines/comrak-ascribe-off.toml`, must equal `baselines/comrak.toml`
 //!   apart from the renderer description.
 //! - On, every example that fails and passes with the option off must involve
 //!   a line that is a valid directive line, and is justified in this suite's
-//!   README. The baseline is `baselines/comrak-tessera-on.toml`.
+//!   README. The baseline is `baselines/comrak-ascribe-on.toml`.
 //!
 //! Prints both pass counts and fails if either result differs from its
 //! baseline in either direction.
@@ -21,20 +21,20 @@ use std::path::Path;
 use std::process::ExitCode;
 use std::sync::Arc;
 
-use comrak_tessera::tessera::TesseraOptions;
-use tessera_commonmark_suite::{
+use ascribe_commonmark_suite::{
     Baseline, Example, Report, SPEC_VERSION, load_bundled_examples, run, suite_dir,
 };
+use comrak_ascribe::ascribe::AscribeOptions;
 
 const RENDERER_OFF: &str =
-    "comrak-tessera (the fork), Ascribe option off, CommonMark options only, render.unsafe = true";
-const RENDERER_ON: &str = "comrak-tessera (the fork), Ascribe option on with the built-in keywords, \
+    "comrak-ascribe (the fork), Ascribe option off, CommonMark options only, render.unsafe = true";
+const RENDERER_ON: &str = "comrak-ascribe (the fork), Ascribe option on with the built-in keywords, \
      `end`, and a project widget, CommonMark options only, render.unsafe = true";
 
 /// The built-in keywords (SPEC §4), `end`, and one project widget, as in the
 /// fork's spike tests. Only `@note` and the widget take a text primary.
-fn keywords() -> TesseraOptions {
-    TesseraOptions::new()
+fn keywords() -> AscribeOptions {
+    AscribeOptions::new()
         .keyword("id", false)
         .keyword("include", false)
         .keyword("variant", false)
@@ -46,18 +46,18 @@ fn keywords() -> TesseraOptions {
         .keyword("quill-demo", true)
 }
 
-fn options(tessera: bool) -> comrak_tessera::Options<'static> {
-    let mut options = comrak_tessera::Options::default();
+fn options(ascribe: bool) -> comrak_ascribe::Options<'static> {
+    let mut options = comrak_ascribe::Options::default();
     // The spec examples expect raw HTML to pass through.
     options.render.r#unsafe = true;
-    if tessera {
-        options.extension.tessera = Some(Arc::new(keywords()));
+    if ascribe {
+        options.extension.ascribe = Some(Arc::new(keywords()));
     }
     options
 }
 
-fn render_with(options: &comrak_tessera::Options) -> impl FnMut(&str) -> String {
-    move |markdown| comrak_tessera::markdown_to_html(markdown, options)
+fn render_with(options: &comrak_ascribe::Options) -> impl FnMut(&str) -> String {
+    move |markdown| comrak_ascribe::markdown_to_html(markdown, options)
 }
 
 /// Compares a report with its baseline, or rewrites the baseline. Returns
@@ -114,7 +114,7 @@ fn write_baseline(report: &Report, renderer: &str, path: &Path) -> bool {
             return false;
         }
     };
-    let header = "# Written by `COMMONMARK_WRITE_BASELINE=1 cargo test -p tessera-commonmark-suite --test fork`.\n\
+    let header = "# Written by `COMMONMARK_WRITE_BASELINE=1 cargo test -p ascribe-commonmark-suite --test fork`.\n\
                   # Every example that fails only with the Ascribe option on is justified in README.md.\n";
     match std::fs::write(path, format!("{header}{text}")) {
         Ok(()) => {
@@ -136,8 +136,8 @@ fn changed_by_option(examples: &[Example]) -> Vec<u32> {
     examples
         .iter()
         .filter(|ex| {
-            comrak_tessera::markdown_to_html(&ex.markdown, &off)
-                != comrak_tessera::markdown_to_html(&ex.markdown, &on)
+            comrak_ascribe::markdown_to_html(&ex.markdown, &off)
+                != comrak_ascribe::markdown_to_html(&ex.markdown, &on)
         })
         .map(|ex| ex.example)
         .collect()
@@ -146,7 +146,7 @@ fn changed_by_option(examples: &[Example]) -> Vec<u32> {
 /// The directive line [`check_after_directive_line`] puts before every
 /// example, and the HTML the fork renders for it.
 const LEADING_LINE: &str = "@end\n";
-const LEADING_HTML: &str = "<div data-tessera-line=\"@end\">\n</div>\n";
+const LEADING_HTML: &str = "<div data-ascribe-line=\"@end\">\n</div>\n";
 
 /// A directive line is a leaf block that closes when the next line starts,
 /// so putting one before an example must leave the example's own blocks
@@ -156,7 +156,7 @@ const LEADING_HTML: &str = "<div data-tessera-line=\"@end\">\n</div>\n";
 fn check_after_directive_line(examples: &[Example]) -> bool {
     let options = options(true);
     let report = run(examples, |markdown| {
-        let html = comrak_tessera::markdown_to_html(&format!("{LEADING_LINE}{markdown}"), &options);
+        let html = comrak_ascribe::markdown_to_html(&format!("{LEADING_LINE}{markdown}"), &options);
         match html.strip_prefix(LEADING_HTML) {
             Some(rest) => rest.to_string(),
             None => html,
@@ -185,8 +185,8 @@ fn main() -> ExitCode {
 
     let off = run(&examples, render_with(&options(false)));
     let on = run(&examples, render_with(&options(true)));
-    let mut ok = check(&off, RENDERER_OFF, "comrak-tessera-off.toml");
-    ok &= check(&on, RENDERER_ON, "comrak-tessera-on.toml");
+    let mut ok = check(&off, RENDERER_OFF, "comrak-ascribe-off.toml");
+    ok &= check(&on, RENDERER_ON, "comrak-ascribe-on.toml");
 
     // With the option off, the fork must behave exactly as upstream does.
     match Baseline::load(&suite_dir().join("baselines").join("comrak.toml")) {

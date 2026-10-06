@@ -9,7 +9,7 @@ Part of [Agents](README.md). Requires phases 1 and 2. Rust only.
 ## Context
 
 - Phase 2's `ascribe model` text summary: the body of what's written here.
-- `docs/directives.md` and `crates/tessera-lsp/src/docs.rs`: the directive reference, for a short cheat sheet of only the directives the project uses.
+- `docs/directives.md` and `crates/ascribe-lsp/src/docs.rs`: the directive reference, for a short cheat sheet of only the directives the project uses.
 - [The research report](../../reports/Agent%20first%20interfaces%20for%20docs%20tools.md), "Skills reach nine harnesses from one directory" and "Seven places the plan's assumptions no longer match the documentation". What it records, as of October 2026, each to confirm against the live documentation before building:
   - **`AGENTS.md`.** Copilot, Cursor, Claude Code, and Amp read nested files in subfolders. **Codex doesn't:** it reads from the repository's root down to the directory it was started in, and nothing below. Codex's own instructions tell it to run every programmatic check an `AGENTS.md` names.
   - **`CLAUDE.md`.** Claude Code reads `AGENTS.md` itself, but only when no `CLAUDE.md` (or `.claude/CLAUDE.md`, or `CLAUDE.local.md`) exists at or above the working directory. Once one exists, `AGENTS.md` loads only if that file imports it (`@AGENTS.md`; imports resolve relative to the importing file). Claude Code also has path-scoped rules: `.claude/rules/*.md` with a `paths:` list.
@@ -83,7 +83,7 @@ One skill, `ascribe`, in the Agent Skills format, the same for every project: it
 
 The examples live inside this repository, so running `sync` on them for real would write a root `AGENTS.md` and files under this repository's own `.github/`, which Copilot and other agents would then apply to everyone working on Ascribe. Don't. Instead:
 
-- A test copies `examples/quill` and `examples/monorepo` into a temporary git repository, runs `sync` with every target, and compares the files written with snapshots kept in `crates/tessera-cli/tests/`. `ASCRIBE_BLESS=1` rewrites them.
+- A test copies `examples/quill` and `examples/monorepo` into a temporary git repository, runs `sync` with every target, and compares the files written with snapshots kept in `crates/ascribe-cli/tests/`. `ASCRIBE_BLESS=1` rewrites them.
 - `docs/agents.md` shows the quill snapshot as its example.
 - The CI recipe (`ascribe agents sync --check`) is documented for users; this repository's CI runs the snapshot test.
 

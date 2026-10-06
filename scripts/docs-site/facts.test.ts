@@ -110,7 +110,7 @@ test("every file that names the Node version names the one in package.json", () 
 test("the Rust version in Cargo.toml is rust-toolchain.toml's", () => {
   const channel = value(table(read("rust-toolchain.toml"), "toolchain"), "channel");
   const minimum = value(table(read("Cargo.toml"), "workspace.package"), "rust-version");
-  // `rust-version` is the toolchain's major and minor. (crates/comrak-tessera
+  // `rust-version` is the toolchain's major and minor. (crates/comrak-ascribe
   // keeps its own: it's a fork, and states what upstream supports.)
   expect(channel).toMatch(/^\d+\.\d+\.\d+$/);
   expect(minimum).toBe(channel?.replace(/\.\d+$/, ""));

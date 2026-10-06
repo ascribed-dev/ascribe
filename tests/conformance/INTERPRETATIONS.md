@@ -45,8 +45,8 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Th
 ## What the suite doesn't cover
 
 - **Canonical form (§8.3).** The `format` tag's cases (`cases/format/`) and the harness's formatting interface (`formatted`) check what §8.3 states. Where it's silent (errors and the formatter, trailing whitespace outside a container's colon, block quote and marker-line indentation, awkward blank-line gaps, attribute blocks with undeclared keys, image blocks, and title lines), a case may record the formatter's behavior rather than a reading of the spec.
-- **Outputs (§9.4).** The plain, site, and JSON outputs aren't checked by these cases; `tessera-emit`'s tests snapshot them.
+- **Outputs (§9.4).** The plain, site, and JSON outputs aren't checked by these cases; `ascribe-emit`'s tests snapshot them.
 - **Registry-change reports (§5.1).** "When a key is added to the registry, the pages whose existing literal `{key}` text would change" is a report between two versions of a model, which a case can't state.
 - **Phrases in frontmatter (§5.1).** Nothing in a resolved outline shows them.
-- **Loader rules (`docs/content/reference/content-model.md`).** Only the one that is a §8.2 row (`model-name-multiple-roles`) has cases; the rest are tested in `tessera-model`. `model-dimension-value-shared` overlaps that row (a value in two dimensions) and has no case here for that reason.
-- **Editor features (§10).** Completion, hover, and refactoring are tested in `tessera-lsp`.
+- **Loader rules (`docs/content/reference/content-model.md`).** Only the one that is a §8.2 row (`model-name-multiple-roles`) has cases; the rest are tested in `ascribe-model`. `model-dimension-value-shared` overlaps that row (a value in two dimensions) and has no case here for that reason.
+- **Editor features (§10).** Completion, hover, and refactoring are tested in `ascribe-lsp`.

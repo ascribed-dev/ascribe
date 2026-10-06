@@ -11,7 +11,7 @@ Every page action is defined once and reachable from the Command Palette, an **A
 - `packages/vscode/src/extension.ts`: how commands are registered today, and the `AscribeApi` tests use.
 - `packages/vscode/src/registry.ts`: `ProjectRegistry.serverFor(uri)` and `ProjectServer.request(method, params)`, which send a request to the project that owns a file.
 - `packages/vscode/package.json`: `contributes.commands`, `contributes.menus` (`commandPalette` with `when` clauses on `ascribe.active`), and the `ascribe.active` context key.
-- Phase 1's `ascribe/context` and `ascribe/targets`, and phase 2's `ascribe/edit` (documented in `crates/tessera-lsp/README.md`).
+- Phase 1's `ascribe/context` and `ascribe/targets`, and phase 2's `ascribe/edit` (documented in `crates/ascribe-lsp/README.md`).
 - `packages/vscode/src/preview/controller.ts`: an example of quick picks (`selectPreviewBuild`).
 
 ## Design
@@ -78,7 +78,7 @@ The actions bar and its key (phase 4); content-model actions (phase 5).
 ```sh
 pnpm --filter ascribe-vscode typecheck
 pnpm --filter ascribe-vscode test
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 pnpm lint && pnpm format:check
 ```
 

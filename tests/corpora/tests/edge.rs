@@ -10,7 +10,7 @@
     clippy::print_stderr
 )]
 
-use tessera_corpora::recognize::recognize;
+use ascribe_corpora::recognize::recognize;
 
 fn classes(text: &str) -> Vec<String> {
     recognize(&[("page.md".to_owned(), text.to_owned())])

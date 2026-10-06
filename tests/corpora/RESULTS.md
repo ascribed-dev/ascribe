@@ -3,12 +3,12 @@
 Measured with `cargo bench` in a release build. Reproduce everything below with:
 
 ```sh
-cargo build --release -p tessera-cli -p tessera-corpora
+cargo build --release -p ascribe-cli -p ascribe-corpora
 export ASCRIBE_CORPORA=fetch   # the Elastic part of the benchmark needs the corpus
-ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p tessera-corpora --bench perf
-ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p tessera-lsp --bench keystroke
-ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p tessera-resolve --bench incremental
-ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p tessera-lsp --bench completion
+ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p ascribe-corpora --bench perf
+ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p ascribe-lsp --bench keystroke
+ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p ascribe-resolve --bench incremental
+ASCRIBE_BENCH_OUT=results.jsonl cargo bench -p ascribe-lsp --bench completion
 ./target/release/corpora compare results.jsonl
 ```
 
@@ -63,7 +63,7 @@ Synthetic project (3,000 pages, 100 fragments, 60 images), median of the runs:
 | incremental: a model change re-indexes all 3,100 files | 163 ms |
 
 These agree with the figures recorded before the benchmarks shared one
-generator, `tessera-synthetic` (page keystroke 3.0 ms both times, fragment 9.0
+generator, `ascribe-synthetic` (page keystroke 3.0 ms both times, fragment 9.0
 ms both times), which is the check that the shared generator makes the same
 project.
 
@@ -181,7 +181,7 @@ and without a snippet on every page.
 
 | Step | time |
 |---|--:|
-| loading the working tree (`tessera_check::Project::load`) | 40 ms |
+| loading the working tree (`ascribe_check::Project::load`) | 40 ms |
 | finding the repository and the base (three `git` calls) | 6 ms |
 | reading the base from `git`: `ls-tree`, then one `cat-file --batch` for 3,261 blobs | 200 ms |
 | indexing the base | 150 ms |
@@ -220,7 +220,7 @@ What changed, in pull request order:
    only those pages; any other page resolves the same on both sides. A
    change to the content model, or to a page the glossary links to, still
    compares every page. Nothing is taken from `git`'s listing.
-   `crates/tessera-diff/tests/reach.rs` checks, on random pairs of
+   `crates/ascribe-diff/tests/reach.rs` checks, on random pairs of
    versions, that the result is exactly what comparing every page gives.
    The comparison went from 475 ms to 13 ms.
 2. **Each code file once, through one `git` process,** kept open for the
@@ -310,7 +310,7 @@ recorded on), the benchmark's median, best of two rounds:
 Peak memory didn't change (within 1 MB). Thin link-time optimization alone
 changed neither size nor time.
 
-A clean release build of `tessera-cli` on those runners, one run each, went
+A clean release build of `ascribe-cli` on those runners, one run each, went
 from 108 s to 170 s on macOS, 69 s to 128 s on Linux arm64, 84 s to 129 s on
 Linux x64, and 140 s to 218 s on Windows: about a minute more, and the same on
 every job that builds a release binary (the release and canary workflows'
@@ -327,12 +327,12 @@ Not taken:
   plan asked for no slower.
 - **`panic = "abort"`** isn't an option: the language server catches a
   handler's panic and keeps running, which needs unwinding.
-  `crates/tessera-lsp/src/server.rs` refuses to compile with it.
+  `crates/ascribe-lsp/src/server.rs` refuses to compile with it.
 
 ## Completion
 
-`crates/tessera-lsp/benches/completion.rs` times every completion context at
+`crates/ascribe-lsp/benches/completion.rs` times every completion context at
 20 to 3,000 pages and records the slowest, a link by page title at 3,000
-pages, as `lsp/completion-3000` with `tessera_synthetic::report::record`. The
+pages, as `lsp/completion-3000` with `ascribe_synthetic::report::record`. The
 workflow runs it, and `baselines/perf.json` has its 50 ms target and its
 runner baseline.

@@ -1,18 +1,18 @@
 [workspace]
 resolver = "3"
 members = [
-    "crates/comrak-tessera",
-    "crates/tessera-core",
-    "crates/tessera-syntax",
-    "crates/tessera-model",
-    "crates/tessera-check",
-    "crates/tessera-resolve",
-    "crates/tessera-emit",
-    "crates/tessera-diff",
-    "crates/tessera-sources",
-    "crates/tessera-fmt",
-    "crates/tessera-lsp",
-    "crates/tessera-cli",
+    "crates/comrak-ascribe",
+    "crates/ascribe-core",
+    "crates/ascribe-syntax",
+    "crates/ascribe-model",
+    "crates/ascribe-check",
+    "crates/ascribe-resolve",
+    "crates/ascribe-emit",
+    "crates/ascribe-diff",
+    "crates/ascribe-sources",
+    "crates/ascribe-fmt",
+    "crates/ascribe-lsp",
+    "crates/ascribe-cli",
     "tests/conformance",
     "tests/commonmark",
     "tests/corpora",
@@ -28,21 +28,21 @@ repository = "https://github.com/ascribed-dev/ascribe"
 publish = false
 
 [workspace.dependencies]
-# Internal crates. Depend on these with `tessera-core.workspace = true`.
-tessera-core = { path = "crates/tessera-core" }
-tessera-syntax = { path = "crates/tessera-syntax" }
-tessera-model = { path = "crates/tessera-model" }
-tessera-check = { path = "crates/tessera-check" }
-tessera-resolve = { path = "crates/tessera-resolve" }
-tessera-emit = { path = "crates/tessera-emit" }
-tessera-diff = { path = "crates/tessera-diff" }
-tessera-sources = { path = "crates/tessera-sources" }
-tessera-fmt = { path = "crates/tessera-fmt" }
-tessera-lsp = { path = "crates/tessera-lsp" }
+# Internal crates. Depend on these with `ascribe-core.workspace = true`.
+ascribe-core = { path = "crates/ascribe-core" }
+ascribe-syntax = { path = "crates/ascribe-syntax" }
+ascribe-model = { path = "crates/ascribe-model" }
+ascribe-check = { path = "crates/ascribe-check" }
+ascribe-resolve = { path = "crates/ascribe-resolve" }
+ascribe-emit = { path = "crates/ascribe-emit" }
+ascribe-diff = { path = "crates/ascribe-diff" }
+ascribe-sources = { path = "crates/ascribe-sources" }
+ascribe-fmt = { path = "crates/ascribe-fmt" }
+ascribe-lsp = { path = "crates/ascribe-lsp" }
 # The synthetic project the benchmarks share. A dev-dependency only.
-tessera-synthetic = { path = "tests/corpora/synthetic" }
-# The comrak fork. Depend on it as `comrak-tessera.workspace = true`.
-comrak-tessera = { path = "crates/comrak-tessera" }
+ascribe-synthetic = { path = "tests/corpora/synthetic" }
+# The comrak fork. Depend on it as `comrak-ascribe.workspace = true`.
+comrak-ascribe = { path = "crates/comrak-ascribe" }
 
 # External crates shared across the workspace.
 ariadne = "0.6"
@@ -90,7 +90,7 @@ print_stderr = "warn"
 # more of release build. Debug info is stripped (Cargo's default) and symbols
 # kept, so a panic's backtrace names its functions. `panic` stays `unwind`:
 # the language server catches a handler's panic and keeps running, and
-# `tessera-lsp` won't compile with `abort`. The measurements, and the settings
+# `ascribe-lsp` won't compile with `abort`. The measurements, and the settings
 # not taken, are in tests/corpora/RESULTS.md.
 [profile.release]
 lto = "fat"

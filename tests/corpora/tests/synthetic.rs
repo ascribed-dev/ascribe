@@ -8,8 +8,8 @@
     clippy::print_stderr
 )]
 
-use tessera_check::{Project, check_all_builds};
-use tessera_synthetic::Synthetic;
+use ascribe_check::{Project, check_all_builds};
+use ascribe_synthetic::Synthetic;
 
 fn check(project: Synthetic) -> usize {
     let dir = tempfile::tempdir().expect("temp dir");

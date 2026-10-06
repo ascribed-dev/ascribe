@@ -8,19 +8,19 @@ This file documents the case format and the harness. Each crate connects through
 
 ```sh
 # Everything: prints each failure and skip, then the totals.
-cargo test -p tessera-conformance --test conformance
+cargo test -p ascribe-conformance --test conformance
 
 # Only cases with a tag (repeatable), or only cases whose id contains some text.
-cargo test -p tessera-conformance --test conformance -- --tag structure
-cargo test -p tessera-conformance --test conformance -- samples/appendix-b
+cargo test -p ascribe-conformance --test conformance -- --tag structure
+cargo test -p ascribe-conformance --test conformance -- samples/appendix-b
 
 # The harness's own tests.
-cargo test -p tessera-conformance --lib --test harness
+cargo test -p ascribe-conformance --lib --test harness
 ```
 
 `cargo test --workspace` runs all of these. The run fails if any case fails or `SKIPS.toml` is stale.
 
-Every case runs through the runner: each area tag has an adapter (`tests/adapters/`), and `SKIPS.toml` is empty, so nothing is skipped. (No case carries the `output` tag; the emitters' outputs are tested in `tessera-emit`. A case that uses it needs an adapter first.) The `page-check` adapter reports a build's diagnostics from `tessera_check::check_pages`, the entry point `ascribe check`, `ascribe build`, and the language server share.
+Every case runs through the runner: each area tag has an adapter (`tests/adapters/`), and `SKIPS.toml` is empty, so nothing is skipped. (No case carries the `output` tag; the emitters' outputs are tested in `ascribe-emit`. A case that uses it needs an adapter first.) The `page-check` adapter reports a build's diagnostics from `ascribe_check::check_pages`, the entry point `ascribe check`, `ascribe build`, and the language server share.
 
 ## Layout
 
@@ -32,7 +32,7 @@ tests/conformance/
   _model/            the shared fixture model, ascribe.toml
   cases/             the cases, grouped by area: cases/<area>/<case>/
   snapshots/         insta snapshots of expected outputs
-  src/               the harness library (crate tessera-conformance)
+  src/               the harness library (crate ascribe-conformance)
   tests/
     conformance.rs   the runner
     adapters/        adapters connecting the harness to the Ascribe crates
@@ -372,7 +372,7 @@ pub trait ConformanceAdapter {
 - `format` returns `source` in canonical form under the case's content model (see Formatting).
 - A panic inside an adapter fails that case; the run continues.
 
-To connect a crate: add the crate as a dev-dependency of `tessera-conformance`, implement the trait in a module under `tests/adapters/`, register it, remove the tag's entry from `SKIPS.toml`, and make the cases pass.
+To connect a crate: add the crate as a dev-dependency of `ascribe-conformance`, implement the trait in a module under `tests/adapters/`, register it, remove the tag's entry from `SKIPS.toml`, and make the cases pass.
 
 ## Worked example: the Appendix B page
 

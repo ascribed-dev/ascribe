@@ -13,7 +13,7 @@ import {
 } from "./reviewText.js";
 import { ThreadsController, type ThreadsApi } from "./threads.js";
 
-/** The language server's review requests (`crates/tessera-lsp/README.md`). */
+/** The language server's review requests (`crates/ascribe-lsp/README.md`). */
 const SET_BASE_REQUEST = "ascribe/review/setBase";
 const CHANGES_REQUEST = "ascribe/review/changes";
 

@@ -1,0 +1,21 @@
+[package]
+name = "ascribe-core"
+description = "Shared types for the Ascribe toolchain: spans, the line index, directive schemas, and the attribute and availability-spec parsers."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+# The registry sync test reads tests/conformance/diagnostics.toml; proptest checks the attribute parser.
+toml.workspace = true
+proptest.workspace = true
+
+[lints]
+workspace = true

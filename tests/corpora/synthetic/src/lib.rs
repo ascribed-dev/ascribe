@@ -13,14 +13,14 @@
 //! other pages (one of them to a heading), and an image; one page in ten also
 //! has a section that only some deployments see (`@available: cloud`). It has
 //! no diagnostics of any severity, so checking it measures the work and not the
-//! reporting; the `tessera-corpora` tests check that.
+//! reporting; the `ascribe-corpora` tests check that.
 //!
 //! [`Synthetic::with_snippets`] adds a source, `code/`, of [`CODE_FILES`]
 //! tagged Python files beside the content, and a `@snippet` of one of their
 //! regions to every page, for measuring what snippets cost.
 //!
 //! ```
-//! use tessera_synthetic::Synthetic;
+//! use ascribe_synthetic::Synthetic;
 //!
 //! let project = Synthetic::new(3000);
 //! assert_eq!(project.page_path(1234), "s4/p1234.md");

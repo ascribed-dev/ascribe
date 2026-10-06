@@ -1,4 +1,4 @@
-<!-- Generated from the help text in crates/tessera-cli/src/ by crates/tessera-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p tessera-cli docs`. -->
+<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
 
 - `--build <NAME>`: Build only this build. Repeat it for several. By default, every build in `ascribe.toml`.
 - `--emit <OUTPUTS>`: Which outputs to write, separated by commas. All of them by default.

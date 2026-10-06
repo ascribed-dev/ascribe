@@ -12,10 +12,10 @@ The rest of the sidebar, for the active file's project:
 
 ## Context
 
-- `crates/tessera-resolve`: the project's resolved links and includes (the snapshot already knows every link's target and every include's fragment, for diagnostics and rename).
-- `crates/tessera-lsp/src/refactor.rs`: rename finds every link to a page or id; the same search answers "used by".
-- `crates/tessera-lsp/src/complete.rs` and phase 1's `src/targets.rs`: lists of pages, fragments, and model entries.
-- `crates/tessera-model`: whether model entries keep their source spans in `ascribe.toml` (for "go to declaration"); `crates/tessera-lsp/src/definition.rs` already jumps from a phrase or feature key to its entry, so the spans exist somewhere.
+- `crates/ascribe-resolve`: the project's resolved links and includes (the snapshot already knows every link's target and every include's fragment, for diagnostics and rename).
+- `crates/ascribe-lsp/src/refactor.rs`: rename finds every link to a page or id; the same search answers "used by".
+- `crates/ascribe-lsp/src/complete.rs` and phase 1's `src/targets.rs`: lists of pages, fragments, and model entries.
+- `crates/ascribe-model`: whether model entries keep their source spans in `ascribe.toml` (for "go to declaration"); `crates/ascribe-lsp/src/definition.rs` already jumps from a phrase or feature key to its entry, so the spans exist somewhere.
 - Phase 6's view container and `src/ui/projectsView.ts`.
 
 ## Design
@@ -45,7 +45,7 @@ The rest of the sidebar, for the active file's project:
 
 ## Tasks
 
-1. `textDocument/references` and `ascribe/inventory` in the server, with scenario tests (including references across includes, and counts after an unsaved edit), documented in `crates/tessera-lsp/README.md`.
+1. `textDocument/references` and `ascribe/inventory` in the server, with scenario tests (including references across includes, and counts after an unsaved edit), documented in `crates/ascribe-lsp/README.md`.
 2. The three views and their refresh rules in the extension, with unit tests for tree building and integration tests on a copy of `examples/quill` and on `test/fixtures/monorepo` (a nested project's views list only its own pages and model).
 3. `docs/editor.md` and `CHANGELOG.md`.
 
@@ -65,7 +65,7 @@ Editing from the views beyond opening locations; navigation files.
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 pnpm --filter ascribe-vscode test
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 pnpm lint && pnpm format:check && cargo fmt --all --check
 ```
 

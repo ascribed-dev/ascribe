@@ -14,7 +14,7 @@ Every output is self-contained: it works without access to the source files (SPE
 | 20 | Do the same in the site output, with the `astro` profile's placement |
 | 25 | Resolve the same references to source files for the preview |
 
-Paths below are `/`-separated and relative, as `tessera_core::RelPath` represents them. A **content path** is relative to the content root; the **project root** is the directory containing `ascribe.toml`.
+Paths below are `/`-separated and relative, as `ascribe_core::RelPath` represents them. A **content path** is relative to the content root; the **project root** is the directory containing `ascribe.toml`.
 
 ## 1. Which references are assets
 
@@ -33,7 +33,7 @@ Not assets:
 
 ## 2. Resolving a reference
 
-A reference resolves **from the file it's written in** (SPEC §4.2). In content included from a fragment, that's the fragment, not the page that includes it; for a reference-style image or link, it's the file holding the link reference definition, which CommonMark requires to be the same file. `tessera_core::classify_destination` and `LocalDestination::resolve` implement steps 1–4.
+A reference resolves **from the file it's written in** (SPEC §4.2). In content included from a fragment, that's the fragment, not the page that includes it; for a reference-style image or link, it's the file holding the link reference definition, which CommonMark requires to be the same file. `ascribe_core::classify_destination` and `LocalDestination::resolve` implement steps 1–4.
 
 1. **Classify.** A destination with a scheme or starting with `//` is external (§1). Otherwise it's local.
 2. **Split.** Everything after the first `#` is the fragment. For an asset, the fragment is kept and written after the rewritten reference (`manual.pdf#page=2`). `?` has no special meaning.
@@ -80,7 +80,7 @@ The Astro integration's tests verify both behaviors against the Astro version it
 
 Every asset reference in a page is rewritten to point at the copy, including references in content included from fragments. The rewritten reference is relative to **the page's** output location, not the fragment's, since included content becomes part of the page (SPEC §4.2).
 
-- **Relative references** go from the directory of the page's output file to the copy, and always start with `./` or `../` (`tessera_core::RelPath::relative_from`), so no consumer takes them for a package name or a URL. From `guides/install.md` to `_fragments/diagram.png`: `../_fragments/diagram.png`.
+- **Relative references** go from the directory of the page's output file to the copy, and always start with `./` or `../` (`ascribe_core::RelPath::relative_from`), so no consumer takes them for a package name or a URL. From `guides/install.md` to `_fragments/diagram.png`: `../_fragments/diagram.png`.
 - **URLs** (site links under `astro`) are `base-path`, then `_ascribe/files/`, then the mirrored path, with each segment percent-encoded where a URL path needs it. With `base-path = "/docs/"`: `/docs/_ascribe/files/downloads/quill.yaml`.
 - **Fragments** from step 2 of §2 are appended after `#`.
 - **Writing the destination.** In markdown outputs, the emitter writes the reference so that CommonMark parses it back to exactly that text: in angle brackets (`<../My Diagrams/a.png>`) when it contains a space or a parenthesis, with `<`, `>`, and `\` backslash-escaped. `%`, `#`, and `?` in a file name are percent-encoded (`%25`, `%23`, `%3F`), since a consumer would otherwise read them as an escape, a fragment, or a query. The JSON output records the rewritten reference as a plain string, next to the asset's source path.

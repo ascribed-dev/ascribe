@@ -1,4 +1,4 @@
-//! The adapter for `tessera-resolve`'s build resolution.
+//! The adapter for `ascribe-resolve`'s build resolution.
 //!
 //! It handles the `resolve` tag (resolution passes and build modes, SPEC
 //! §9.2, §9.3). For a build it resolves every page of the case's project with
@@ -11,20 +11,20 @@
 //! page-level problems the resolution records.
 //!
 //! The build's page-level diagnostics are not read off the resolved pages: they
-//! are `tessera_check::check_pages`, the same entry point `ascribe check`, the
+//! are `ascribe_check::check_pages`, the same entry point `ascribe check`, the
 //! build, and the language server call, so a case that expects them
 //! tests what a user sees.
 
-use tessera_conformance::outline::normalize_ws;
-use tessera_conformance::{
+use ascribe_conformance::outline::normalize_ws;
+use ascribe_conformance::{
     AdapterError, AdapterResult, Arm, BuildResult, Case, ConformanceAdapter, Diagnostic, Directive,
     Form, Group, Node, PageResult,
 };
-use tessera_core::Span;
-use tessera_resolve::{
+use ascribe_core::Span;
+use ascribe_resolve::{
     DefaultRouter, Project, ResolvedBlock, ResolvedBuild, ResolvedKind, Substitution,
 };
-use tessera_syntax::{BlockKind, Bound, DirectiveLine, InlineKind, PrimaryValue, raw_text};
+use ascribe_syntax::{BlockKind, Bound, DirectiveLine, InlineKind, PrimaryValue, raw_text};
 
 use super::include::load_project;
 use super::structure::attributes;
@@ -80,7 +80,7 @@ fn page_diagnostics(case: &Case, name: &str) -> Result<Vec<Diagnostic>, AdapterE
         .model()
         .build(name)
         .ok_or_else(|| err(format!("the case's model has no build `{name}`")))?;
-    super::check::to_conformance(&project, tessera_check::check_pages(&project, build))
+    super::check::to_conformance(&project, ascribe_check::check_pages(&project, build))
 }
 
 fn result(project: &Project, resolved: &ResolvedBuild) -> Result<BuildResult, AdapterError> {
@@ -234,10 +234,10 @@ fn directive(
         Some(PrimaryValue::Unexpected(_)) | None => None,
     };
     let binding = line.binding.map(|b| match b {
-        Bound::Own => tessera_conformance::Binding::SelfBinding,
-        Bound::Heading => tessera_conformance::Binding::Heading,
-        Bound::FollowingBlock => tessera_conformance::Binding::FollowingBlock,
-        Bound::Unbound => tessera_conformance::Binding::Unbound,
+        Bound::Own => ascribe_conformance::Binding::SelfBinding,
+        Bound::Heading => ascribe_conformance::Binding::Heading,
+        Bound::FollowingBlock => ascribe_conformance::Binding::FollowingBlock,
+        Bound::Unbound => ascribe_conformance::Binding::Unbound,
     });
     Directive {
         name: line.name.clone(),
@@ -251,7 +251,7 @@ fn directive(
 }
 
 /// A paragraph, or an image when the paragraph is one image alone.
-fn paragraph(source: &str, block: &ResolvedBlock, p: &tessera_syntax::Paragraph) -> Node {
+fn paragraph(source: &str, block: &ResolvedBlock, p: &ascribe_syntax::Paragraph) -> Node {
     if let [only] = p.inlines.as_slice()
         && let InlineKind::Image(image) = &only.kind
     {

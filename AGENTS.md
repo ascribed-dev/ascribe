@@ -1,6 +1,6 @@
 # Working on Ascribe
 
-Ascribe is a markup language and toolchain for documentation written as code: Markdown with `@` directives, a content model in `ascribe.toml`, and one compiler that builds a website, plain Markdown, and JSON. The compiler is a Rust workspace in `crates/` (named `tessera-*`, the project's working name); the npm packages and the VS Code extension are a pnpm workspace in `packages/`.
+Ascribe is a markup language and toolchain for documentation written as code: Markdown with `@` directives, a content model in `ascribe.toml`, and one compiler that builds a website, plain Markdown, and JSON. The compiler is a Rust workspace in `crates/` (`ascribe-*`); the npm packages and the VS Code extension are a pnpm workspace in `packages/`.
 
 Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code: it says which crate owns what, and where the tests are. The README of the crate or package you're changing has the rest. [SPEC.md](SPEC.md) defines the language.
 
@@ -22,14 +22,14 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - **A clean-up changes no output.** If a change is meant to be a refactor, the outputs, diagnostics, and JSON stay byte for byte the same; `node scripts/compare/outputs.ts --base main` shows it, and CI runs it on pull requests labeled `optimization`. An output change a recorded decision accepts is named file by file with `--accept` (in CI, the label `outputs changed` and a block in the description; see CONTRIBUTING.md), never waved through whole. A bug found on the way gets its own pull request.
 - **Contracts don't move.** `SPEC.md`, `docs/content/contracts/`, `packages/elements/CONTRACT.md`, the commands' JSON, and the published packages' APIs change only by a decision recorded with the change, never as a side effect.
 - **One home per fact.** Don't copy a list, a name, or a version into a second file. Generate it from the first, or add a test that compares the two.
-- **Libraries don't print and don't panic on input.** Only `tessera-cli` writes to standard output or error, apart from the language server's log, which goes through `crates/tessera-lsp/src/log.rs`; a library returns what happened, failures as an error type with a stable code (`tessera_core::Coded`), and lets its caller report it. A lint holds this. `unwrap`, `expect`, and `panic!` are linted; an invariant that holds gets a local `#[allow]` with a comment saying why.
-- **Diagnostics live in one file,** `tests/conformance/diagnostics.toml`. A new one is added there and in `crates/tessera-core/src/diagnostics.rs`, in the same order; a test compares them.
+- **Libraries don't print and don't panic on input.** Only `ascribe-cli` writes to standard output or error, apart from the language server's log, which goes through `crates/ascribe-lsp/src/log.rs`; a library returns what happened, failures as an error type with a stable code (`ascribe_core::Coded`), and lets its caller report it. A lint holds this. `unwrap`, `expect`, and `panic!` are linted; an invariant that holds gets a local `#[allow]` with a comment saying why.
+- **Diagnostics live in one file,** `tests/conformance/diagnostics.toml`. A new one is added there and in `crates/ascribe-core/src/diagnostics.rs`, in the same order; a test compares them.
 - **Behavior changes come with a conformance case** in `tests/conformance/cases/`.
 - **Generated files aren't edited by hand.** A file that says what generates it is rewritten by running its test with `ASCRIBE_BLESS=1`; read the diff before committing it. See ARCHITECTURE.md's list.
 - **Never accept snapshots blindly.** Review `insta` changes with `cargo insta review`.
-- **Read project files through `tessera_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there; a read of anything else says why in a comment starting `Outside FileSystem:`, or `crates/tessera-resolve/tests/file_reads.rs` fails.
+- **Read project files through `ascribe_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there; a read of anything else says why in a comment starting `Outside FileSystem:`, or `crates/ascribe-resolve/tests/file_reads.rs` fails.
 - **Two renderers must agree.** A change to the site output's markup changes the fixtures in `tests/render/`, and both `render_site_html` and the Astro plugin pass them.
-- **`crates/comrak-tessera` is a fork.** Mark each change `// TESSERA:` and list it in `crates/comrak-tessera/FORK.md`.
+- **`crates/comrak-ascribe` is a fork.** Mark each change `// ASCRIBE:` and list it in `crates/comrak-ascribe/FORK.md`.
 - **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and the unreleased section of `CHANGELOG.md`. Don't run a formatter over Markdown.
 - **Paths, case, and links differ by platform.** Pull requests run on Linux and Windows; macOS and arm64 run after the merge. A change about paths runs the full matrix from its branch (Actions → CI → Run workflow).
 

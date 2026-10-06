@@ -1,12 +1,12 @@
-//! The adapter for `tessera-model`: loading `ascribe.toml` (the `model` tag).
+//! The adapter for `ascribe-model`: loading `ascribe.toml` (the `model` tag).
 //!
 //! A `model` case's diagnostics are what the loader reports for the case's
 //! content model, in `ascribe.toml` (a loader rule is `file: ascribe.toml`,
 //! README, "The shared model and the content root"). The fixtures for the
-//! other loader rules are in `crates/tessera-model/tests/`.
+//! other loader rules are in `crates/ascribe-model/tests/`.
 
-use tessera_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic};
-use tessera_core::{FileId, LineIndex, WideEncoding};
+use ascribe_conformance::{AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic};
+use ascribe_core::{FileId, LineIndex, WideEncoding};
 
 /// Handles the cases that expect content-model diagnostics.
 pub struct ModelAdapter;
@@ -23,7 +23,7 @@ impl ConformanceAdapter for ModelAdapter {
     fn diagnostics(&self, case: &Case) -> AdapterResult<Vec<Diagnostic>> {
         let text = std::fs::read_to_string(&case.model)
             .map_err(|e| AdapterError(format!("couldn't read {}: {e}", case.model.display())))?;
-        let issues = match tessera_model::load_str(&text, FileId::new(0)) {
+        let issues = match ascribe_model::load_str(&text, FileId::new(0)) {
             Ok(model) => model.warnings,
             Err(issues) => issues,
         };

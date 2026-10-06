@@ -6,8 +6,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use tessera_conformance::registry::placeholders;
-use tessera_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
+use ascribe_conformance::registry::placeholders;
+use ascribe_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
 
 fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")

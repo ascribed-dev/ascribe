@@ -9,7 +9,7 @@ import { expect, test } from "vitest";
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
 test("the checklists name every request the language server handles", () => {
-  const server = readFileSync(path.join(root, "crates/tessera-lsp/src/server.rs"), "utf8");
+  const server = readFileSync(path.join(root, "crates/ascribe-lsp/src/server.rs"), "utf8");
   const handler = server.slice(server.indexOf("fn handle_request("));
   const arms = handler.slice(0, handler.indexOf("\n}\n"));
   const requests = Array.from(
@@ -18,7 +18,7 @@ test("the checklists name every request the language server handles", () => {
   );
   // Ascribe's own requests are constants in their modules, such as `crate::preview::METHOD`.
   for (const [, module = "", constant = ""] of arms.matchAll(/crate::(\w+)::(\w+) =>/g)) {
-    const source = readFileSync(path.join(root, `crates/tessera-lsp/src/${module}.rs`), "utf8");
+    const source = readFileSync(path.join(root, `crates/ascribe-lsp/src/${module}.rs`), "utf8");
     const value = new RegExp(`const ${constant}: &str = "([^"]+)"`).exec(source)?.[1];
     requests.push(value ?? `crate::${module}::${constant}`);
   }

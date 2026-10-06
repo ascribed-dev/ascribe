@@ -2,7 +2,7 @@
 
 Shared fixtures for the [site-render contract](https://ascribed-dev.com/contracts/site-render/). Each pairs site markdown, as Ascribe's site emitter writes it, with the HTML it must render to. Two implementations run them, and both must pass every fixture:
 
-- `render_site_html()` in `tessera-emit`, used by the editor preview;
+- `render_site_html()` in `ascribe-emit`, used by the editor preview;
 - the markdown plugin in `@ascribed/astro`, used by the published site.
 
 Both implementations must keep passing every fixture, so a change to how a construct renders changes the fixture and both implementations together. Add a fixture for any construct whose rendering needs pinning.
@@ -19,7 +19,7 @@ tests/render/
   corpus/quill/<build>/  examples/quill's pages, with anchors (<page>.md) and without (<page>.unanchored.md)
 ```
 
-The source-anchor fixtures' `input.md` and `unanchored.md`, and the corpus, are the site emitter's output, which `crates/tessera-emit/tests/site_anchors.rs` checks. After a change to the emitter, run it with `ASCRIBE_BLESS=1` to rewrite them, and check the diff.
+The source-anchor fixtures' `input.md` and `unanchored.md`, and the corpus, are the site emitter's output, which `crates/ascribe-emit/tests/site_anchors.rs` checks. After a change to the emitter, run it with `ASCRIBE_BLESS=1` to rewrite them, and check the diff.
 
 `fixtures.toml` lists each fixture's `covers`: the constructs it checks. `tests/conformance/tests/render_fixtures.rs` checks that every directory is listed, and every listed fixture has a description, at least one construct, and both files.
 

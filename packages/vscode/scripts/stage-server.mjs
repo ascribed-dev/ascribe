@@ -15,7 +15,7 @@ const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const exe = process.platform === "win32" ? "ascribe.exe" : "ascribe";
 const source = resolve(process.argv[2] ?? join(packageRoot, "..", "..", "target", "debug", exe));
 if (!existsSync(source)) {
-  console.error(`No binary at ${source}. Build it with \`cargo build -p tessera-cli\`.`);
+  console.error(`No binary at ${source}. Build it with \`cargo build -p ascribe-cli\`.`);
   process.exit(1);
 }
 

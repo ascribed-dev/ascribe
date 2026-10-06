@@ -281,7 +281,7 @@ export class ProjectServer implements vscode.Disposable {
  * command, and a second project's server (which offers the same ones) would
  * fail to start with "command already exists".
  *
- * `ascribe.openFile` (`OPEN_FILE` in crates/tessera-lsp/src/links.rs) is the
+ * `ascribe.openFile` (`OPEN_FILE` in crates/ascribe-lsp/src/links.rs) is the
  * server's only command; the extension registers it in `extension.ts`. A
  * command the server adds needs the same treatment.
  */

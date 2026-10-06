@@ -34,7 +34,7 @@ const executable = resolveBinary(); // the absolute path of this platform's ascr
 The platform packages are in `platforms/`. Their binaries aren't in the repository: a release stages each one before packing (`scripts/release/pack.ts`). To try the launcher with a local build, stage it by hand:
 
 ```sh
-cargo build -p tessera-cli
+cargo build -p ascribe-cli
 ASCRIBE_BIN_DARWIN_ARM64=target/debug/ascribe pnpm --filter @ascribed/cli stage-native darwin-arm64
 ```
 

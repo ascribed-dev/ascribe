@@ -1,6 +1,6 @@
 # Licenses of the corpora
 
-Nothing from a corpus is committed to this repository: `tessera-corpora`
+Nothing from a corpus is committed to this repository: `ascribe-corpora`
 fetches each at a pinned commit into `target/corpora/` (or
 `ASCRIBE_CORPORA_DIR`) when a test or benchmark needs it. This file records
 what each repository's license allows, as the task asks, **before any committed

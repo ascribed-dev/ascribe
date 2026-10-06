@@ -1,5 +1,5 @@
 // Writes the static report's script and stylesheet into the Rust crate that
-// embeds them (`crates/tessera-diff/src/html/`), which builds without
+// embeds them (`crates/ascribe-diff/src/html/`), which builds without
 // Node:
 //
 //   pnpm --filter @ascribed/review embed
@@ -20,9 +20,9 @@ const here = (path: string): string => fileURLToPath(new URL(path, import.meta.u
 
 /** Where the crate keeps the files. */
 export const target = {
-  js: here("../../crates/tessera-diff/src/html/report.js"),
-  css: here("../../crates/tessera-diff/src/html/report.css"),
-  hash: here("../../crates/tessera-diff/src/html/report.js.sha256"),
+  js: here("../../crates/ascribe-diff/src/html/report.js"),
+  css: here("../../crates/ascribe-diff/src/html/report.css"),
+  hash: here("../../crates/ascribe-diff/src/html/report.js.sha256"),
 };
 
 const header = (what: string): string =>

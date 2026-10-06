@@ -1,7 +1,7 @@
 // The JSON Ascribe writes that this package reads, as TypeScript types.
 // Generated from the Rust types that write it, through the JSON Schemas in
-// schemas/, by crates/tessera-cli/src/shapes.rs. Change the Rust types, then
-// run `ASCRIBE_BLESS=1 cargo test -p tessera-cli shapes`. Don't edit it.
+// schemas/, by crates/ascribe-cli/src/shapes.rs. Change the Rust types, then
+// run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`. Don't edit it.
 //
 // - DiffReport (`ascribe diff --format json`)
 

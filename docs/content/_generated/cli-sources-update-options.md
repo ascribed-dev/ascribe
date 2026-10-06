@@ -1,4 +1,4 @@
-<!-- Generated from the help text in crates/tessera-cli/src/ by crates/tessera-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p tessera-cli docs`. -->
+<!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
 
 - `[NAME]...`: The sources to update. By default, every source in another repository.
 - `--to <REV>`: Move the pin to this revision instead of the head of the source's branch: a commit's full hash, a branch, or a tag. Only for one source: name it.

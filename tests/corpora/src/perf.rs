@@ -1,7 +1,7 @@
 //! Comparing benchmark results with recorded baselines.
 //!
-//! The benchmarks (`benches/perf.rs`, and those of `tessera-resolve` and
-//! `tessera-lsp`, when
+//! The benchmarks (`benches/perf.rs`, and those of `ascribe-resolve` and
+//! `ascribe-lsp`, when
 //! `ASCRIBE_BENCH_OUT` is set) append one JSON line per metric. A metric
 //! **regresses** when its median exceeds `baseline * margin + floor_ms`, and
 //! **misses its target** when it exceeds an absolute limit from the spec's

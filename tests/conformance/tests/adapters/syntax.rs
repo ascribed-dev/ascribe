@@ -1,28 +1,28 @@
-//! The adapter for `tessera-syntax`: directive lines and the structure pass.
+//! The adapter for `ascribe-syntax`: directive lines and the structure pass.
 //!
 //! It handles the `parser` tag (Ascribe-line recognition, directive heads,
 //! attributes, and primaries, SPEC §3.1–§3.4) and the `structure` tag
 //! (containers, groups, titles, binding, SPEC §3.5–§3.10, §4). Its outline
-//! is `tessera_syntax::parse`'s tree, with the Ascribe nodes written by
+//! is `ascribe_syntax::parse`'s tree, with the Ascribe nodes written by
 //! [`super::structure`]. Its diagnostics are the parser's own issues.
 //!
 //! Directive schemas come from the built-ins plus the widgets in the case's
 //! `ascribe.toml`, read with only what parsing needs, so a case can test the
 //! parser without a model the loader would accept.
 
-use tessera_conformance::outline::normalize_ws;
-use tessera_conformance::{
+use ascribe_conformance::outline::normalize_ws;
+use ascribe_conformance::{
     AdapterError, AdapterResult, Case, ConformanceAdapter, Diagnostic, Node,
 };
-use tessera_core::{
+use ascribe_core::{
     self as core, Binding as SchemaBinding, DirectiveSchema, Forms, LineIndex, Origin, Primary,
     TitleRule, WideEncoding,
 };
-use tessera_syntax::{Block, BlockKind, ParseOptions, parse, raw_text};
+use ascribe_syntax::{Block, BlockKind, ParseOptions, parse, raw_text};
 
 use super::structure;
 
-/// Handles the tags whose cases `tessera-syntax` alone can answer.
+/// Handles the tags whose cases `ascribe-syntax` alone can answer.
 pub struct SyntaxAdapter;
 
 impl ConformanceAdapter for SyntaxAdapter {
@@ -216,9 +216,9 @@ pub(super) fn text(source: &str, span: core::Span) -> String {
 }
 
 /// A paragraph, or an image when the paragraph is one image alone.
-fn paragraph(source: &str, block: &Block, p: &tessera_syntax::Paragraph) -> Node {
+fn paragraph(source: &str, block: &Block, p: &ascribe_syntax::Paragraph) -> Node {
     if let [only] = p.inlines.as_slice()
-        && let tessera_syntax::InlineKind::Image(image) = &only.kind
+        && let ascribe_syntax::InlineKind::Image(image) = &only.kind
     {
         return super::inline::image(source, image);
     }

@@ -61,7 +61,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: cargo build -p tessera-cli --locked
+      - run: cargo build -p ascribe-cli --locked
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: packages/vscode/out/vscode-test
@@ -94,7 +94,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: cargo build -p tessera-cli --locked
+      - run: cargo build -p ascribe-cli --locked
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: packages/vscode/out/vscode-test
@@ -127,7 +127,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: cargo build -p tessera-cli --release --locked
+      - run: cargo build -p ascribe-cli --release --locked
       - run: echo "ASCRIBE_BIN_${{ matrix.env_target }}=$GITHUB_WORKSPACE/target/release/${{ matrix.exe }}" >> "$GITHUB_ENV"
       - run: pnpm --filter @ascribed/cli stage-native ${{ matrix.target }}
       - run: pnpm --filter @ascribed/cli build

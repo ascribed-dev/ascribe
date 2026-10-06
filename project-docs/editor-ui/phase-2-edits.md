@@ -1,6 +1,6 @@
 # Phase 2: Page edits
 
-Part of [Editor UI](README.md). Requires phase 1. Rust only (`crates/tessera-lsp`, and `crates/tessera-fmt` if a helper belongs there).
+Part of [Editor UI](README.md). Requires phase 1. Rust only (`crates/ascribe-lsp`, and `crates/ascribe-fmt` if a helper belongs there).
 
 ## Goal
 
@@ -9,9 +9,9 @@ Part of [Editor UI](README.md). Requires phase 1. Rust only (`crates/tessera-lsp
 ## Context
 
 - Phase 1's `src/context.rs`: the node kinds and ranges an operation acts on. Operations should find their target the same way, so `ascribe/context` and `ascribe/edit` never disagree about what's at a position.
-- `crates/tessera-fmt`: `format`, `format_parsed`, `format_source`, and `options_from_model`. Canonical form for directives, attributes, and their order (SPEC §8.3).
-- `crates/tessera-lsp/src/code_action.rs`: how existing quick fixes build `TextEdit`s and `WorkspaceEdit`s.
-- `crates/tessera-lsp/src/refactor.rs`: multi-file edits (rename), for operations that touch more than one file.
+- `crates/ascribe-fmt`: `format`, `format_parsed`, `format_source`, and `options_from_model`. Canonical form for directives, attributes, and their order (SPEC §8.3).
+- `crates/ascribe-lsp/src/code_action.rs`: how existing quick fixes build `TextEdit`s and `WorkspaceEdit`s.
+- `crates/ascribe-lsp/src/refactor.rs`: multi-file edits (rename), for operations that touch more than one file.
 - `docs/directives.md`: the syntax each operation writes (`@note`, `@steps`, `@details`, `@variant` groups, `@available`, `@include`, images and their attributes, project widgets, `@id`), including how directives are indented inside list items.
 
 ## Design
@@ -59,7 +59,7 @@ Operations, by where they apply:
 
 Rules for every operation:
 
-- **Canonical.** After applying the edit, `tessera_fmt::format` on the result makes no change in the edited range. Build the new text with the formatter's own functions where they exist, rather than by hand.
+- **Canonical.** After applying the edit, `ascribe_fmt::format` on the result makes no change in the edited range. Build the new text with the formatter's own functions where they exist, rather than by hand.
 - **Lists.** Inside a list item, written directives are indented to the item's content (directives.md, "Lists and block quotes").
 - **Minimal.** The edit touches only what the action changes, so a reviewer's diff shows only that.
 - **Validated against the model.** `type`, `dimension`, `values`, widget names and attributes, and `spec` are checked against the content model; an invalid argument returns an error naming the valid choices, never an edit that creates a diagnostic.
@@ -71,7 +71,7 @@ Rules for every operation:
 2. A test for every operation: the edit applied to a page produces the expected text, and formatting the result changes nothing. Add a property-style test that runs every applicable operation at every position of the `examples/quill` and `examples/monorepo` pages (with valid default arguments) and checks the result is canonical and has no new diagnostics.
 3. Errors: stale version, an action that doesn't apply at the position, and invalid arguments, each with a test.
 4. Lists: wrapping a list item's paragraph in a note, and inserting a variant group inside a step, indent correctly.
-5. Document `ascribe/edit` in `crates/tessera-lsp/README.md`: the params, the result, the operation table with each one's arguments, and the guarantee that results are canonical.
+5. Document `ascribe/edit` in `crates/ascribe-lsp/README.md`: the params, the result, the operation table with each one's arguments, and the guarantee that results are canonical.
 
 ## Out of scope
 
@@ -86,7 +86,7 @@ Edits to `ascribe.toml` (phase 5); any extension change; deciding which operatio
 ## Verify
 
 ```sh
-cargo test -p tessera-lsp --locked
+cargo test -p ascribe-lsp --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo fmt --all --check
 ```

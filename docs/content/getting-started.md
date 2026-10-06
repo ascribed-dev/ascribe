@@ -79,7 +79,7 @@ npx ascribe check
 
 The link to `configure.md` is reported, since that page doesn't exist yet:
 
-@snippet {lang=text}: code:crates/tessera-cli/tests/output/getting-started-check.txt
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/getting-started-check.txt
 
 Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with a `title`, and check again.
 

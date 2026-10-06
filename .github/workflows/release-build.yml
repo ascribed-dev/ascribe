@@ -82,7 +82,7 @@ jobs:
           cargo install --locked cargo-zigbuild@0.23.4
       # No build cache: a release is built from scratch.
       - if: "!matrix.zig"
-        run: cargo build -p tessera-cli --release --locked
+        run: cargo build -p ascribe-cli --release --locked
       # Zig's linker would strip the symbol table along with the debug info, so
       # the build keeps both and `strip` drops only the debug info: a panic's
       # backtrace keeps its function names, as on the other platforms. The binary
@@ -93,7 +93,7 @@ jobs:
           RUSTFLAGS: -C link-arg=-Wl,--build-id
         run: |
           triple=$(rustc -vV | sed -n 's/^host: //p')
-          cargo zigbuild -p tessera-cli --release --locked --target "$triple.$GLIBC"
+          cargo zigbuild -p ascribe-cli --release --locked --target "$triple.$GLIBC"
           mkdir -p target/release
           cp "target/$triple/release/ascribe" target/release/ascribe
           strip --strip-debug target/release/ascribe

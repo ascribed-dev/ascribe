@@ -1,4 +1,4 @@
-<!-- Generated from the Rust types by crates/tessera-cli/src/shapes.rs, with schemas/check.schema.json. Change the types, then run `ASCRIBE_BLESS=1 cargo test -p tessera-cli shapes`. -->
+<!-- Generated from the Rust types by crates/ascribe-cli/src/shapes.rs, with schemas/check.schema.json. Change the types, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`. -->
 [`schemas/check.schema.json`]({repo}/blob/main/schemas/check.schema.json):
 
 ```json

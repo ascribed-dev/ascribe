@@ -1,6 +1,6 @@
 # Phase 1: Context and targets
 
-Part of [Editor UI](README.md). Rust only (`crates/tessera-lsp`).
+Part of [Editor UI](README.md). Rust only (`crates/ascribe-lsp`).
 
 ## Goal
 
@@ -11,13 +11,13 @@ Two read-only requests the extension builds every action on:
 
 ## Context
 
-- `crates/tessera-lsp/src/nav.rs`: `Ctx` (a request's view of one file and its project), `hit_at` (what's at an offset: links, includes, phrases, ids), `directive_at`, `identifier_primary`, `relative_path`, `encode_destination`. Most of what `ascribe/context` needs is here or one step from it.
-- `crates/tessera-lsp/src/code_action.rs`: how a request turns an LSP range into offsets (`ctx.encoding.offset_lenient`), and finds the directive at a position.
-- `crates/tessera-lsp/src/preview.rs` and `preview_request` in `server.rs`: the pattern for a custom request (a module with `METHOD`, `Deserialize` params and `Serialize` result in camelCase, a handler that reads the snapshot).
-- `crates/tessera-lsp/src/complete.rs`: already lists pages, ids, phrases, note types, dimension values, and widget attributes for completion; reuse its sources rather than duplicating them.
-- `crates/tessera-syntax`: the block tree (`Block`, `DirectiveLine`, containers, groups, lists, headings) with spans.
-- `crates/tessera-model`: the content model (`ContentModel`: types, dimensions with labels, phrases, features, notes, glossary, widgets with attribute schemas, builds).
-- `crates/tessera-lsp/README.md`: document both requests next to "The preview request".
+- `crates/ascribe-lsp/src/nav.rs`: `Ctx` (a request's view of one file and its project), `hit_at` (what's at an offset: links, includes, phrases, ids), `directive_at`, `identifier_primary`, `relative_path`, `encode_destination`. Most of what `ascribe/context` needs is here or one step from it.
+- `crates/ascribe-lsp/src/code_action.rs`: how a request turns an LSP range into offsets (`ctx.encoding.offset_lenient`), and finds the directive at a position.
+- `crates/ascribe-lsp/src/preview.rs` and `preview_request` in `server.rs`: the pattern for a custom request (a module with `METHOD`, `Deserialize` params and `Serialize` result in camelCase, a handler that reads the snapshot).
+- `crates/ascribe-lsp/src/complete.rs`: already lists pages, ids, phrases, note types, dimension values, and widget attributes for completion; reuse its sources rather than duplicating them.
+- `crates/ascribe-syntax`: the block tree (`Block`, `DirectiveLine`, containers, groups, lists, headings) with spans.
+- `crates/ascribe-model`: the content model (`ContentModel`: types, dimensions with labels, phrases, features, notes, glossary, widgets with attribute schemas, builds).
+- `crates/ascribe-lsp/README.md`: document both requests next to "The preview request".
 
 ## Design
 
@@ -70,14 +70,14 @@ All of it comes from the current snapshot and model, so it includes unsaved edit
 
 1. Add `src/context.rs` with `ascribe/context`, and `src/targets.rs` with `ascribe/targets`, wired into `server.rs` like `ascribe/preview`. Return an empty result (not an error) for a document outside the project's sources.
 2. Reuse `nav.rs` and `complete.rs` rather than walking the tree a second way. If a helper needs to move to be shared, move it.
-3. Scenario tests in `crates/tessera-lsp/tests/` (a new `context.rs` is fine), for each node kind and selection kind above, including:
+3. Scenario tests in `crates/ascribe-lsp/tests/` (a new `context.rs` is fine), for each node kind and selection kind above, including:
    - a cursor inside a variant arm inside a list item inside steps (the full `at` chain);
    - a selection inside one paragraph (`prose`, inline), across two paragraphs (`blocks`), and across a paragraph and a code block (`mixed`);
    - a blank line between blocks (`insertable`) and a blank line inside a code block (not insertable);
    - unsaved edits: change the buffer, then ask;
    - `ascribe/targets` link paths from a page in a subfolder, and fragments' include paths;
    - UTF-16 positions on a line with non-ASCII text.
-4. Document both requests in `crates/tessera-lsp/README.md`: params, result, and that other clients can use them.
+4. Document both requests in `crates/ascribe-lsp/README.md`: params, result, and that other clients can use them.
 
 ## Out of scope
 
@@ -87,12 +87,12 @@ Edits (phase 2) and any extension change.
 
 - Both requests answer correctly for every node kind and selection kind listed, with tests.
 - A request for a page in a nested project goes to, and is answered by, that project's server only (the existing routing; add a test if one doesn't cover a custom request).
-- `cargo test -p tessera-lsp --locked` passes, and the README documents both requests.
+- `cargo test -p ascribe-lsp --locked` passes, and the README documents both requests.
 
 ## Verify
 
 ```sh
-cargo test -p tessera-lsp --locked
+cargo test -p ascribe-lsp --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo fmt --all --check
 ```

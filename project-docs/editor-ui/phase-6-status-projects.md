@@ -57,7 +57,7 @@ Choosing a different editor build (it's `[editor] build` in `ascribe.toml`); the
 ```sh
 pnpm --filter ascribe-vscode typecheck
 pnpm --filter ascribe-vscode test
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 pnpm lint && pnpm format:check
 ```
 

@@ -1,6 +1,6 @@
 // The names Ascribe puts on a page: elements, attributes, classes, and ids.
-// Generated from crates/tessera-core/src/names.rs by
-// `ASCRIBE_BLESS=1 cargo test -p tessera-core --test names`. Don't edit it.
+// Generated from crates/ascribe-core/src/names.rs by
+// `ASCRIBE_BLESS=1 cargo test -p ascribe-core --test names`. Don't edit it.
 
 /** `<ascribe-note>`: a note (packages/elements/CONTRACT.md §1). */
 export const ELEMENT_NOTE = "ascribe-note";

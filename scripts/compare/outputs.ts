@@ -11,7 +11,7 @@
 // The projects are every folder under examples/ with an ascribe.toml, and
 // docs/. They're copied, with what docs/ reads from the rest of the
 // repository, into a temporary git repository set up as the determinism test
-// sets it up (crates/tessera-cli/tests/determinism.rs): its one commit has
+// sets it up (crates/ascribe-cli/tests/determinism.rs): its one commit has
 // "the" made "a" in every code file and every second page, so `diff` and
 // `drift` always have the same changes to report. In that copy both binaries
 // run `check`, `build` (every output, then the site again with anchors),
@@ -70,7 +70,7 @@ export const ROOT = "<root>";
 const DIFF_LINES = 40;
 
 /** What's copied: the projects, and what docs/ascribe.toml's `[sources.code]` reads besides them. */
-const COPIED = ["examples", "docs", ".github/workflows", "crates/tessera-cli/tests/output"];
+const COPIED = ["examples", "docs", ".github/workflows", "crates/ascribe-cli/tests/output"];
 
 /** Projects whose `check` and `build` stop with errors, by design. */
 export const FAILING = ["examples/docs-repository", "examples/getting-started"];
@@ -222,7 +222,9 @@ function revision(name: string): string {
  */
 function binary(checkout: string, target: string, to: string): string {
   console.error(`Building ascribe in ${checkout}`);
-  run("cargo", ["build", "--locked", "-p", "tessera-cli", "--target-dir", target], checkout);
+  // By the binary's name, not its package's, which was `tessera-cli` before
+  // phase 8A renamed the crates: a base from before then builds too.
+  run("cargo", ["build", "--locked", "--bin", "ascribe", "--target-dir", target], checkout);
   mkdirSync(to, { recursive: true });
   const copy = path.join(to, exe);
   cpSync(path.join(target, "debug", exe), copy);

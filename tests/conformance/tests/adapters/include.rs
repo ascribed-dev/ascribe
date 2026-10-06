@@ -1,4 +1,4 @@
-//! The adapter for `tessera-resolve`'s source index.
+//! The adapter for `ascribe-resolve`'s source index.
 //!
 //! It handles the `include` tag (includes and the source index, SPEC §4.2) and
 //! the `slug` tag (heading slugs and source ids, SPEC §5.5).
@@ -13,9 +13,9 @@
 
 use std::sync::Arc;
 
-use tessera_conformance::{AdapterError, Case, ConformanceAdapter};
-use tessera_core::{FileId, RelPath};
-use tessera_resolve::{DiskFs, Layout, Project};
+use ascribe_conformance::{AdapterError, Case, ConformanceAdapter};
+use ascribe_core::{FileId, RelPath};
+use ascribe_resolve::{DiskFs, Layout, Project};
 
 /// Handles the tags whose cases the source index helps answer.
 pub struct IncludeAdapter;
@@ -42,7 +42,7 @@ fn err(e: impl std::fmt::Display) -> AdapterError {
 /// doesn't exist for a single-file case).
 pub fn load_project(case: &Case) -> Result<Project, AdapterError> {
     let text = std::fs::read_to_string(&case.model).map_err(err)?;
-    let model = tessera_model::load_str(&text, FileId::new(0))
+    let model = ascribe_model::load_str(&text, FileId::new(0))
         .map_err(|issues| AdapterError(format!("the case's model doesn't load: {issues:?}")))?;
     let content_root = case
         .content_root()

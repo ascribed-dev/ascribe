@@ -1,0 +1,27 @@
+[package]
+name = "ascribe-check"
+description = "File- and page-level validation of Ascribe documents, producing diagnostics."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ascribe-core.workspace = true
+ascribe-model.workspace = true
+ascribe-syntax.workspace = true
+ascribe-resolve.workspace = true
+serde.workspace = true
+serde_yaml_ng.workspace = true
+toml.workspace = true
+yaml-rust2 = "0.13"
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+tempfile = "3"
+
+[lints]
+workspace = true

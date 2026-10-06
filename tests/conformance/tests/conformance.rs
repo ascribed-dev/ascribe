@@ -4,9 +4,9 @@
 //! fails or `SKIPS.toml` is stale.
 //!
 //! ```text
-//! cargo test -p tessera-conformance --test conformance
-//! cargo test -p tessera-conformance --test conformance -- --tag structure
-//! cargo test -p tessera-conformance --test conformance -- samples/appendix-b
+//! cargo test -p ascribe-conformance --test conformance
+//! cargo test -p ascribe-conformance --test conformance -- --tag structure
+//! cargo test -p ascribe-conformance --test conformance -- samples/appendix-b
 //! ```
 
 // A test harness run with `harness = false`: its report is printed.
@@ -16,7 +16,7 @@ mod adapters;
 
 use std::process::ExitCode;
 
-use tessera_conformance::{Registry, Suite, filter_from_args};
+use ascribe_conformance::{Registry, Suite, filter_from_args};
 
 fn main() -> ExitCode {
     let mut registry = Registry::new();

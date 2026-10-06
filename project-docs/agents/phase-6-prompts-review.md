@@ -9,7 +9,7 @@ A reviewer reading a pull request as pages can hand a comment, every open commen
 ## Context
 
 - [The agent prompt format](README.md#the-agent-prompt-format), and [decisions 5, 6, and 7](README.md#decisions). Decision 6 matters most here: a review comment is text from someone else. Decision 7 splits the work: the binary builds the prompts about changes (it owns `ascribe diff`), and `@ascribed/review` builds the prompts about threads (it owns the GitHub data).
-- `crates/tessera-diff/` and `crates/tessera-cli/src/commands/diff.rs`: the comparison, its JSON, and the HTML report (`src/html/`, whose script is bundled from `packages/review/src/report/`).
+- `crates/ascribe-diff/` and `crates/ascribe-cli/src/commands/diff.rs`: the comparison, its JSON, and the HTML report (`src/html/`, whose script is bundled from `packages/review/src/report/`).
 - `packages/review/src/overlay/`: the overlay, its cards, the all-comments dialog, and `OverlayHost` (`types.ts`). `packages/review/src/place/`: `LocatedThread`, with its file and lines. `packages/review/src/github/`: the session.
 - `packages/vscode/src/preview/` (`threads.ts`, `threadsRequests.ts`, `sourceComments.ts`, `controller.ts`) and `packages/vscode/src/webview/threads.ts`: the page preview's host. `packages/astro`: the site preview's host.
 - [`../review/mockup.html`](../review/mockup.html): the mockup this phase changes first.
@@ -104,7 +104,7 @@ pnpm --filter @ascribed/review test
 pnpm --filter ascribe-vscode test
 cargo test --workspace --locked
 pnpm typecheck && pnpm lint && pnpm format:check
-cargo build -p tessera-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
+cargo build -p ascribe-cli && ASCRIBE_BIN=$PWD/target/debug/ascribe pnpm --filter ascribe-vscode test:integration
 ```
 
 ## Commits

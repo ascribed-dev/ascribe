@@ -26,7 +26,7 @@ function run(command: string, args: string[], env: NodeJS.ProcessEnv = process.e
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-run("cargo", ["build", "-p", "tessera-cli", "--locked"]);
+run("cargo", ["build", "-p", "ascribe-cli", "--locked"]);
 // Where cargo put it: `target/` unless CARGO_TARGET_DIR or `build.target-dir`
 // says otherwise.
 const metadata = spawnSync("cargo", ["metadata", "--format-version", "1", "--no-deps"], {
