@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "BaseInfo": {
+      "description": "The base of a comparison, in the report.",
+      "properties": {
+        "commit": {
+          "description": "The commit it names.",
+          "type": "string"
+        },
+        "merge_base": {
+          "description": "The merge base of that commit and `HEAD`, which the comparison reads;\n`null` with `--base-exact`, which reads `commit`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested": {
+          "description": "The revision asked for, or the default branch used.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requested",
+        "commit",
+        "merge_base"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/review/setBase`.",
+  "properties": {
+    "base": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BaseInfo"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "What the base resolved to; `null` once it's dropped, or when it\ncouldn't be set."
+    },
+    "problem": {
+      "description": "Why the base couldn't be set: no project, not a repository, an\nunknown revision, `git` missing. The base set before, if any, stays.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "base",
+    "problem"
+  ],
+  "title": "SetBaseResult",
+  "type": "object"
+}

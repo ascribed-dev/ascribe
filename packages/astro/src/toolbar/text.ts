@@ -1,6 +1,6 @@
 // What the toolbar app says, apart from the DOM so it can be tested by itself.
 import type { LocatedThread } from "@ascribed/review/overlay";
-import type { ChangedPage, Counts, DiffPage, PageView, ThreadsState } from "../review/protocol.js";
+import type { ChangedPage, Counts, PageDiff, PageView, ThreadsState } from "../review/protocol.js";
 
 /** "10 changes on this page", or "3 of 10 on this page" while stepping through them. */
 export function position(total: number, at: number): string {
@@ -20,7 +20,7 @@ export function countsText(counts: Counts): string {
 }
 
 /** A changed page's line in the list: its counts, or what happened to it. */
-export function pageDetail(page: Omit<DiffPage, "changes">): string {
+export function pageDetail(page: Omit<PageDiff, "changes">): string {
   if (page.status === "added") return "new page";
   if (page.status === "removed") return "removed";
   const counts = countsText(page.counts);
@@ -87,7 +87,7 @@ export function threadsNotice(threads: ThreadsState): string | undefined {
  * path order, or past the last, the first (`first`). Removed pages are
  * skipped. `null` when no other page changed.
  */
-export function nextChangedPage<P extends Omit<DiffPage, "changes">>(
+export function nextChangedPage<P extends Omit<PageDiff, "changes">>(
   pages: readonly P[],
   current: string | null,
 ): { page: P; first: boolean } | null {

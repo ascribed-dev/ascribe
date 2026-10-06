@@ -63,6 +63,7 @@ pub struct PreviewParams {
 /// which directories the preview may read; `page` is there when there is
 /// something to show, and `problems` says why not, or what is missing.
 #[derive(Debug, Default, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewResult {
     /// The build the answer is for; empty when there is no project.
@@ -96,6 +97,7 @@ pub struct PreviewResult {
 
 /// What changed on the previewed page against the review base.
 #[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewReview {
     /// The base compared with.
@@ -111,6 +113,7 @@ pub struct PreviewReview {
 
 /// A build of the content model, for a picker.
 #[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewBuild {
     /// The build's name.
@@ -125,6 +128,7 @@ pub struct PreviewBuild {
 
 /// A rendered page.
 #[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewPage {
     /// The page's content path.
@@ -135,6 +139,10 @@ pub struct PreviewPage {
     pub title: Option<String>,
     /// The frontmatter the site output writes, as JSON: `available` is the
     /// list of targets a layout passes to `<ascribe-availability>`.
+    #[cfg_attr(
+        feature = "json-schema",
+        schemars(with = "serde_json::Map<String, Json>")
+    )]
     pub frontmatter: Json,
     /// The page's content as HTML: the site markdown, with source anchors,
     /// after [`render_site_html`], without its frontmatter and without a
@@ -151,6 +159,7 @@ pub struct PreviewPage {
 
 /// An asset the page uses.
 #[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewAsset {
     /// The reference as the HTML writes it, before any `#fragment`: an
@@ -161,16 +170,28 @@ pub struct PreviewAsset {
     /// The source file, as an absolute path: the file the reference names,
     /// resolved from the file it is written in.
     pub path: String,
-    /// `image` or `link`.
-    pub kind: &'static str,
+    /// What the page uses it as.
+    pub kind: AssetKind,
     /// Whether the preview may read the file: it is in the content root, or
     /// in a directory listed in `assetRoots`. A file it may not read is
     /// reported in `problems` and isn't shown.
     pub servable: bool,
 }
 
+/// What a page uses an asset as.
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "lowercase")]
+pub enum AssetKind {
+    /// An image the page shows.
+    Image,
+    /// A file a link targets.
+    Link,
+}
+
 /// A link to another page.
 #[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewLink {
     /// The `href` as the HTML writes it: the route, and `#` and the page id
@@ -184,6 +205,7 @@ pub struct PreviewLink {
 
 /// A heading written in the previewed file.
 #[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewSection {
     /// The heading's id on the page (its `id` in the HTML).
@@ -194,32 +216,48 @@ pub struct PreviewSection {
 
 /// A problem with showing a page.
 #[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewProblem {
-    /// `error`, `warning`, or `info`.
-    pub severity: &'static str,
+    /// How much it matters.
+    pub severity: ProblemSeverity,
     /// What the author should read.
     pub message: String,
+}
+
+/// How much a problem with showing a page matters.
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "lowercase")]
+pub enum ProblemSeverity {
+    /// Nothing can be shown: the page or the build couldn't be read.
+    Error,
+    /// The page is shown, but something on it isn't, or won't publish as it
+    /// is.
+    Warning,
+    /// There's no page to show, for an ordinary reason: the file isn't a
+    /// page, or the build doesn't publish it.
+    Info,
 }
 
 impl PreviewProblem {
     fn info(message: impl Into<String>) -> PreviewProblem {
         PreviewProblem {
-            severity: "info",
+            severity: ProblemSeverity::Info,
             message: message.into(),
         }
     }
 
     fn warning(message: impl Into<String>) -> PreviewProblem {
         PreviewProblem {
-            severity: "warning",
+            severity: ProblemSeverity::Warning,
             message: message.into(),
         }
     }
 
     fn error(message: impl Into<String>) -> PreviewProblem {
         PreviewProblem {
-            severity: "error",
+            severity: ProblemSeverity::Error,
             message: message.into(),
         }
     }
@@ -500,8 +538,8 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
             reference,
             path: path_text(&file),
             kind: match placed.usage {
-                AssetUse::Image => "image",
-                AssetUse::Link => "link",
+                AssetUse::Image => AssetKind::Image,
+                AssetUse::Link => AssetKind::Link,
             },
             servable,
         });

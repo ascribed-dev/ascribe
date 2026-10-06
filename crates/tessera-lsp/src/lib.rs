@@ -33,8 +33,8 @@ use lsp_server::Connection;
 
 pub use position::Encoding;
 pub use preview::{
-    METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage, PreviewParams,
-    PreviewProblem, PreviewResult, PreviewReview, PreviewSection,
+    AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,
+    PreviewParams, PreviewProblem, PreviewResult, PreviewReview, PreviewSection, ProblemSeverity,
 };
 pub use review::{
     CHANGES_METHOD as REVIEW_CHANGES_METHOD, ChangesParams, ChangesResult,

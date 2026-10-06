@@ -2,7 +2,7 @@ import * as assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import * as vscode from "vscode";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
-import type { PageChanges } from "../../../src/preview/protocol.js";
+import type { PageDiff } from "../../../src/preview/protocol.js";
 import { activated, uriOf, waitFor, workspace } from "./helpers.js";
 
 // Review in the preview with the real `ascribe lsp`, on a copy of
@@ -51,7 +51,7 @@ describe("review, with the real language server on a quill repository", () => {
     );
     const report = JSON.parse(
       execFileSync(binary, ["diff", "--format", "json"], { cwd: workspace(), encoding: "utf8" }),
-    ) as { builds: { build: string; pages: PageChanges[] }[] };
+    ) as { builds: { build: string; pages: PageDiff[] }[] };
     const site = report.builds.find((b) => b.build === render.result.build);
     const fromCli = site?.pages.find((p) => p.path === "install-agent.md");
     assert.ok(fromCli, "ascribe diff reports the page");

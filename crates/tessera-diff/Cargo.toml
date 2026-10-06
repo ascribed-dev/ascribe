@@ -20,6 +20,12 @@ tessera-model.workspace = true
 tessera-resolve.workspace = true
 tessera-syntax.workspace = true
 thiserror.workspace = true
+schemars = { workspace = true, optional = true }
+
+[features]
+# Derives a JSON Schema for each type it writes as JSON. Only tessera-cli's
+# tests turn it on, to generate the schemas (crates/tessera-cli/src/shapes.rs).
+json-schema = ["dep:schemars"]
 
 [dev-dependencies]
 proptest.workspace = true

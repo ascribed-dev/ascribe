@@ -255,6 +255,21 @@ snippets at most twice `diff` without, is met (1.3 times). Peak memory of
 `diff` with nothing changed went from 547 MB to 371 MB, since only the pages
 a change reaches are resolved.
 
+What `diff` spends over `check` (0.18 s on the runner, about 0.1 s on the
+container), timed in process on the container: the full check alone took
+590 to 605 ms; inside `diff`, beside the base's reading and indexing, the
+working tree's indexing, and the `git` processes, all sharing four cores,
+the whole took 640 to 745 ms, so 35 to 110 ms is the threads and `git`
+contending for the cores (more on a busier machine); freeing both versions'
+indexes and the report when the command ends takes another 50 ms (`check`
+frees almost nothing); and the three `git` calls that find the repository
+and the base take about 15 ms. Reading the base from `git` and comparing
+aren't in it: they finish inside the check's time. The contention can't go
+without making `check` itself faster, which this plan leaves alone. The
+50 ms could go by not freeing the indexes at exit (`std::mem::forget` in
+the CLI once the report is written), a one-line change with nothing else
+to gain, so it isn't made here.
+
 The reports are byte for byte the same before and after: `diff` as JSON,
 HTML, and text and `drift` as JSON, text, and summary, on each of the
 benchmark's six cases, on `docs/` against five bases from 5 to 100 commits

@@ -25,6 +25,7 @@ pub struct Side<'a> {
 
 /// What changed in one build.
 #[derive(Clone, Debug, PartialEq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct BuildDiff {
     /// The build's name.
     pub build: String,
@@ -34,6 +35,7 @@ pub struct BuildDiff {
 
 /// What changed on one page of a build.
 #[derive(Clone, Debug, PartialEq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct PageDiff {
     /// The page's content path.
@@ -64,6 +66,7 @@ pub struct PageDiff {
 
 /// Whether a page is new, gone, or different.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum PageStatus {
     /// The build publishes it now, and didn't before.
@@ -76,6 +79,7 @@ pub enum PageStatus {
 
 /// How many changes of each kind a page has.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct Counts {
     /// Blocks whose content changed.
     pub changed: usize,
@@ -89,6 +93,7 @@ pub struct Counts {
 
 /// One block's change.
 #[derive(Clone, Debug, PartialEq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct Change {
     /// What happened to it.
     pub kind: ChangeKind,
@@ -118,6 +123,7 @@ pub struct Change {
 
 /// The kinds of block change.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum ChangeKind {
     /// The block's content changed.
@@ -134,6 +140,7 @@ pub enum ChangeKind {
 /// `[start, end)` in characters (Unicode scalar values) of each side's
 /// `text`, which is the block's text with whitespace collapsed.
 #[derive(Clone, Debug, PartialEq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct Words {
     /// Ranges in `now_text`: words added or replacing others.

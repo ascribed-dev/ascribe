@@ -21,7 +21,7 @@ import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { PreviewResult } from "../../src/preview/protocol.js";
+import type { PageFrontmatter, PreviewResult } from "../../src/preview/protocol.js";
 import { canonicalReference } from "../../src/preview/refs.js";
 import { LspClient } from "./lsp.js";
 import { treeOf, walk, type Tree } from "./normalize.js";
@@ -258,7 +258,7 @@ describe("the preview equals the published site", () => {
           // The layout's title and page-level badges come from the same frontmatter.
           expect(rendered.title).toBe(astroTitle);
           expect(
-            (rendered.frontmatter.available ?? []).map((t) => ({
+            ((rendered.frontmatter as PageFrontmatter).available ?? []).map((t) => ({
               target: t.target,
               dimension: t.dimension,
               states: t.states,

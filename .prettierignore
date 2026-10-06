@@ -11,7 +11,9 @@ crates/
 tests/
 examples/
 
-# Generated and third-party files.
+# Generated and third-party files. The JSON Schemas are written by
+# crates/tessera-cli/src/shapes.rs, as serde_json prints them.
+schemas/
 pnpm-lock.yaml
 package-lock.json
 **/.astro/

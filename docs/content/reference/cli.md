@@ -45,7 +45,7 @@ Diagnostics go to standard output. A failure that stops the command (exit code 2
 
 ### JSON output
 
-`--format json` writes one JSON document to standard output, whatever the outcome, so a tool can always parse it. The schema is versioned: `schema_version` changes only when a field is removed or changes meaning. New fields can appear without a new version, so **ignore fields you don't know**.
+`--format json` writes one JSON document to standard output, whatever the outcome, so a tool can always parse it. The schema is versioned: `schema_version` changes only when a field is removed or changes meaning. New fields can appear without a new version, so **ignore fields you don't know**. The [JSON report contract](../contracts/json-reports.md) has each command's schema.
 
 | Field | Type | Meaning |
 |---|---|---|

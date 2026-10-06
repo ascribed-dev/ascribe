@@ -26,6 +26,7 @@ use tessera_syntax::{
 /// string the rendered page carries in `data-ascribe-source` and
 /// `data-ascribe-via`.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct Anchor {
     /// `<path>:<first>-<last>`: the file's content path, percent-encoded by
     /// segment, and the block's first and last lines, from 1.

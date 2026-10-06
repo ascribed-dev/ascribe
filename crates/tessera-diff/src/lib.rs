@@ -156,6 +156,7 @@ impl tessera_core::Coded for DiffError {
 
 /// The whole report, as `ascribe diff --format json` writes it.
 #[derive(Clone, Debug, PartialEq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct Report {
     /// [`SCHEMA_VERSION`].
     pub schema_version: u32,
@@ -176,6 +177,7 @@ pub struct Report {
 
 /// The base of a comparison, in the report.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct BaseInfo {
     /// The revision asked for, or the default branch used.
@@ -189,6 +191,7 @@ pub struct BaseInfo {
 
 /// The repository, in the report.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct RepositoryInfo {
     /// The repository's top-level directory, as git prints it.

@@ -7,10 +7,10 @@
 // the server tells every page with `ascribe:review:changed`, naming the
 // `from` tab, which already knows.
 
-import type { Change } from "@ascribed/review/marks";
+import type { BaseInfo, PageDiff } from "../shapes.js";
 
-/** A block change, as `ascribe diff --format json` reports it and the marks take it. */
-export type { Change };
+/** `ascribe diff --format json`'s types: a changed page, its block changes, and the base. */
+export type { BaseInfo, Change, Counts, PageDiff } from "../shapes.js";
 
 /** The toolbar app's id, also the prefix of its events. */
 export const APP_ID = "ascribe:review";
@@ -33,34 +33,8 @@ export interface Result {
   error?: { message: string; code?: string };
 }
 
-export interface Counts {
-  changed: number;
-  added: number;
-  removed: number;
-  moved: number;
-}
-
-/** A changed page, as `ascribe diff --format json` lists it. */
-export interface DiffPage {
-  path: string;
-  route: string;
-  status: "added" | "removed" | "changed";
-  own_file_changed: boolean;
-  because: string[];
-  page_changed: string[];
-  counts: Counts;
-  changes: Change[];
-}
-
 /** A changed page in the list: without its changes, and with its title when the build has it. */
-export type ChangedPage = Omit<DiffPage, "changes"> & { title: string | null };
-
-/** The base compared with, as `ascribe diff` reports it. */
-export interface DiffBase {
-  requested: string;
-  commit: string;
-  merge_base: string | null;
-}
+export type ChangedPage = Omit<PageDiff, "changes"> & { title: string | null };
 
 /** How the checkout's `HEAD` relates to the pull request's head commit. */
 export type LocalState = "same" | "behind" | "ahead" | "diverged" | "missing";
@@ -90,8 +64,8 @@ export interface PageView {
   /** The page's content path; `null` for a route that isn't one. */
   path: string | null;
   /** The page's changes; `null` when it didn't change. */
-  page: DiffPage | null;
-  base: DiffBase | null;
+  page: PageDiff | null;
+  base: BaseInfo | null;
   /** Why the changes couldn't be read, when they couldn't. */
   problem: string | null;
   /** How many errors `ascribe check` finds in the working tree for the build. */

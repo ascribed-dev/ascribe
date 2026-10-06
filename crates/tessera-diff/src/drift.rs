@@ -31,6 +31,7 @@ pub const DRIFT_SCHEMA_VERSION: u32 = 1;
 
 /// The report, as `ascribe drift --format json` writes it.
 #[derive(Clone, Debug, PartialEq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 pub struct DriftReport {
     /// [`DRIFT_SCHEMA_VERSION`].
     pub schema_version: u32,
@@ -46,6 +47,7 @@ pub struct DriftReport {
 
 /// A page with an example that changed or broke.
 #[derive(Clone, Debug, PartialEq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct DriftPage {
     /// The page's content path.
@@ -70,6 +72,7 @@ pub struct DriftPage {
 /// A snippet that resolved at the base and doesn't in the working tree: its
 /// region, file, or source is gone.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct BrokenExample {
     /// Its address, as the page writes it.
@@ -85,6 +88,7 @@ pub struct BrokenExample {
 
 /// A snippet whose code changed.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub struct ChangedExample {
     /// Its address, as the page writes it.

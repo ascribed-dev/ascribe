@@ -3,7 +3,7 @@
 // the toolbar.
 import { afterEach, describe, expect, it } from "vitest";
 import type { LocatedThread } from "@ascribed/review/overlay";
-import type { DiffPage, ThreadsState } from "../src/review/protocol.js";
+import type { PageDiff, ThreadsState } from "../src/review/protocol.js";
 import {
   anchorsArrived,
   anchoredBlocks,
@@ -99,7 +99,7 @@ describe("the page", () => {
   });
 });
 
-function changed(path: string, init: Partial<Omit<DiffPage, "changes">> = {}) {
+function changed(path: string, init: Partial<Omit<PageDiff, "changes">> = {}) {
   return {
     path,
     route: `/docs/${path.replace(/\.md$/, "")}`,

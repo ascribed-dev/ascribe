@@ -219,9 +219,15 @@ fn first_copy(err: &mut dyn Write, name: &str) -> io::Result<()> {
     )
 }
 
+/// What `ascribe sources status --format json` writes: each source's pin and
+/// the state of its copies, read from the files alone.
 #[derive(Serialize)]
-struct StatusJson<'a> {
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct StatusJson<'a> {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
     schema_version: u32,
+    /// The version of Ascribe that wrote it.
     ascribe_version: &'static str,
     #[serde(flatten)]
     report: &'a StatusReport,
@@ -347,13 +353,25 @@ fn run_update(global: &Global, args: &UpdateArgs, out: &mut dyn Write, err: &mut
     exit::OK
 }
 
+/// What `ascribe sources update --format json` writes: how each source's pin
+/// moved, and the pages whose examples the new copies change.
 #[derive(Serialize)]
-struct UpdateJson<'a> {
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+pub(crate) struct UpdateJson<'a> {
+    /// The version of this schema. It changes only when a field is removed
+    /// or changes meaning.
     schema_version: u32,
+    /// The version of Ascribe that wrote it.
     ascribe_version: &'static str,
+    /// Whether any file changed: a copy, or the lock.
     changed: bool,
+    /// What the update did for each source, in declaration order.
     sources: &'a [SourceUpdate],
+    /// The pages whose examples the new copies change, as `ascribe drift
+    /// --format json` lists them; `null` when nothing changed, or when that
+    /// can't be told.
     pages: Option<&'a [DriftPage]>,
+    /// Why there are no `pages`, when there aren't.
     pages_unavailable: Option<String>,
 }
 

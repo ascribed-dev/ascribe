@@ -5,12 +5,10 @@
 import { findBlock, parseSource } from "@ascribed/review/marks";
 import type { Change } from "../review/protocol.js";
 import { DATA_SOURCE, DATA_UI, DATA_VIA } from "../names.js";
+import type { Anchor } from "../shapes.js";
 
-/** An anchor, as the marks and the overlay take it. */
-export interface Anchor {
-  source: string;
-  via: string[];
-}
+/** An anchor, as `ascribe diff` writes it and the marks and the overlay take it. */
+export type { Anchor };
 
 /** The page's anchored blocks, in order, leaving out review's own elements. */
 export function anchoredBlocks(doc: Document): HTMLElement[] {

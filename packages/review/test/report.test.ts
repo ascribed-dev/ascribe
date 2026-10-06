@@ -35,6 +35,7 @@ function data(): ReportData {
   return {
     ascribe_version: "0.0.0",
     base: { requested: "main", commit: "0123456789", merge_base: "0123456789" },
+    working_tree_errors: 0,
     builds: [
       {
         build: "site",
