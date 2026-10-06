@@ -11,14 +11,14 @@ What changed between a git revision and the working tree, as readers will see it
 | `src/words.rs` | The word-level diff inside changed prose |
 | `src/compare.rs` | Comparing builds page by page, the files a change comes from (`because`), and the report's types |
 | `src/drift.rs` | `drift`: the snippets whose code differs between a commit and the working tree, read only from the files `git diff` lists, and for each page that shows one whether the page changed apart from it (through `compare.rs`); and the snippets that resolved at the base and don't now |
-| `src/html/` | The static report (`--format html`): rendering each changed page now and at the base with anchors, inlining its images, and writing one HTML file around the report's data. `report.js` and `report.css` are built from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`; don't edit them by hand, and that package's `test/embedded.test.ts` fails while they're out of date. |
+| `src/html/` | The static report (`--format html`): rendering each changed page now and at the base with anchors, inlining its images, and writing one HTML file around the report's data. `report.js` and `report.css` are built from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`; don't edit them by hand, and `packages/review/test/embedded.test.ts` fails while they're out of date. |
 
 The binary links no git library and no HTTP client: `git` is run as a process with a fixed argument list, never through a shell, so nothing else in Ascribe depends on `git` being present. Nothing here is used by the language server.
 
 ## Rules
 
 - **Positions never reach a fingerprint.** A block that moved down the file, or was rewrapped, fingerprints the same. Text is compared with whitespace collapsed; what a reader sees besides text (a link's resolved URL, an availability badge's labels, a glossary link, an arm's label) is in the fingerprint too.
-- **Anchors follow the review plan's anchor grammar** (`project-docs/review/README.md`), the same strings the site output writes as `data-ascribe-source` and `data-ascribe-via`, and lines are counted as the JSON output's `lines` are.
+- **Anchors follow the [site-render contract's source anchors](https://ascribed-dev.com/contracts/site-render/#7-source-anchors)**, the same strings the site output writes as `data-ascribe-source` and `data-ascribe-via`, and lines are counted as the JSON output's `lines` are.
 - **Limits** keep a generated page from taking seconds: `words::MAX_TOKENS` for the word diff, `align::MAX_CHILDREN` for comparing inside a container, `align::MAX_PAIRS` for pairing within one unmatched run. The static report keeps a large change openable: `html::MAX_PAGES` pages rendered, `html::MAX_IMAGE_BYTES` per image.
 
 ## Tests
