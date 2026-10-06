@@ -5,8 +5,6 @@
 # repository adds. It installs `next`, the canary of `main`, over the release
 # the job installs, since these docs follow `main`. It never fails on what it
 # reports, and never comments: the summary is the report.
-# The region's end tag is indented so a formatter doesn't put a blank line
-# before it, which the page would show (issue #107).
 # :snippet-start: job
 name: Drift
 
@@ -41,4 +39,5 @@ jobs:
         run: >
           ascribe drift --config docs --base "origin/$GITHUB_BASE_REF"
           --format summary >> "$GITHUB_STEP_SUMMARY"
-      # :snippet-end:
+
+# :snippet-end:

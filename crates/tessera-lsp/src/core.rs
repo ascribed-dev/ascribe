@@ -20,7 +20,8 @@ use tessera_check::Diagnostic;
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
 use tessera_resolve::{
-    Affected, ApplyError, Change, DiskFs, IncrementalProject, Layout, ResolvedCache, is_source_path,
+    Affected, ApplyError, Change, DiskFs, FileSystem, IncrementalProject, Layout, ResolvedCache,
+    is_source_path,
 };
 
 use crate::compute::to_lsp;
@@ -500,7 +501,9 @@ impl Core {
                 if self.docs.contains_key(path) {
                     return;
                 }
-                match std::fs::read_to_string(path) {
+                // Read as the source index reads it, so a link out of the
+                // content root is refused here too.
+                match DiskFs::new(&loaded.root, &loaded.layout).read(&content) {
                     Ok(text) => {
                         changes.push(Change::Edited {
                             path: content,

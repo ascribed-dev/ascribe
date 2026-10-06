@@ -418,3 +418,65 @@ fn a_page_id_of_an_included_section_is_still_its_source_id_in_the_fragment() {
     // Each is `setup` in its own file: page ids come from build resolution.
     assert!(headings.iter().all(|(_, h)| h.source_id == "setup"));
 }
+
+/// A source file is read where its links lead, and a link out of the content
+/// root makes it unreadable: no file from elsewhere on disk reaches a page,
+/// by `@include` or as a page of its own. A link that stays inside is read.
+#[cfg(unix)]
+#[test]
+fn a_link_out_of_the_content_root_is_not_read() {
+    use std::fs;
+    use std::os::unix::fs::symlink;
+    use tessera_resolve::{DiskFs, Layout};
+
+    let dir = tempfile::tempdir().expect("a temp dir");
+    let root = dir.path();
+    fs::create_dir_all(root.join("project/docs/inside")).expect("docs");
+    fs::create_dir_all(root.join("elsewhere")).expect("elsewhere");
+    fs::write(root.join("secret.md"), "The secret.\n").expect("secret");
+    fs::write(root.join("elsewhere/far.md"), "Far away.\n").expect("far");
+    fs::write(root.join("project/docs/inside/_near.md"), "Nearby.\n").expect("near");
+    symlink("../../secret.md", root.join("project/docs/_out.md")).expect("out");
+    symlink("../../elsewhere", root.join("project/docs/linked")).expect("linked");
+    symlink("inside/_near.md", root.join("project/docs/_alias.md")).expect("alias");
+    fs::write(
+        root.join("project/docs/index.md"),
+        format!(
+            "{PAGE}# Page\n\n@include: _alias.md\n\n@include: _out.md\n\n@include: linked/far.md\n"
+        ),
+    )
+    .expect("the page");
+
+    let model = support::model();
+    let layout = Layout::from_model(&model);
+    let fs = DiskFs::new(root.join("project"), &layout);
+    let p = Project::load(model, layout, &fs);
+    let mut unreadable: Vec<(String, bool)> = p
+        .unreadable()
+        .iter()
+        .map(|u| {
+            (
+                u.path.to_string(),
+                u.reason.contains("leads out of the content root"),
+            )
+        })
+        .collect();
+    unreadable.sort();
+    assert_eq!(
+        unreadable,
+        [
+            ("_out.md".to_owned(), true),
+            ("linked/far.md".to_owned(), true)
+        ]
+    );
+    let page = expand(&p, "index.md");
+    assert_eq!(texts(&p, &page), ["# Page", "Nearby."]);
+    let issues = p.problems(&path("index.md"));
+    assert_eq!(
+        slugs(&p, "index.md", &issues),
+        [
+            ("include-target-missing".to_owned(), 9),
+            ("include-target-missing".to_owned(), 11)
+        ]
+    );
+}

@@ -229,7 +229,7 @@ Includes another file, or one heading's section of it, in place.
 @include {heading=false}: guides/setup.md#install
 ```
 
-- **Paths** are relative to the file they're written in, or to the content root when they start with `/`. Only source files (`.md` files under the content root) can be included.
+- **Paths** are relative to the file they're written in, or to the content root when they start with `/`. Only source files (`.md` files under the content root) can be included. A symbolic link is followed, but only to a file under the content root: a source file whose link leads out can't be read, so no file from elsewhere on disk ends up in a page.
 - `#id` includes only the section of the heading with that id. `{heading=false}` leaves out that section's own heading; it has no effect without `#id`, and Ascribe warns.
 - Included content becomes part of the page: phrases and builds apply to it, and its ids must not collide with the page's.
 - **Relative paths inside a fragment resolve from the fragment**, not the page including it, so a fragment's links and images work wherever it's included.
@@ -419,8 +419,8 @@ labels = { macos = "macOS" }  # :remove:
 
 - `:snippet-start: <name>` opens a region, and `:snippet-end:` closes the innermost open one. `:snippet-end: <name>` closes the region with that name, so regions can overlap as well as nest. A region name is letters, digits, `-`, `_`, and `.`, and is used once in a file.
 - `:remove-start:` and `:remove-end:` leave out the lines between them, and a line that ends with `:remove:` in a comment is left out itself.
-- Tag lines and removed lines never appear in a snippet. What's left is dedented by its common indentation.
-- A tag counts only in a line comment: `//` (C, Go, Java, JavaScript, Rust, TypeScript, and others), `#` (Python, Ruby, shell, TOML, YAML, and others), `--` (Lua, SQL, Haskell, Elm), `;` (INI, Lisp), or `<!-- -->` (HTML, XML, Markdown). A file whose extension isn't in the [table in the spec]({repo}/blob/main/SPEC.md#48-snippet) can be used whole, but not by region.
+- Tag lines and removed lines never appear in a snippet, nor do blank lines at the start and end of what's left, so a formatter's blank line before an end tag doesn't end up in the page. What's left is dedented by its common indentation.
+- A tag counts only in a line comment: `//` (C, Go, Java, JavaScript, Rust, TypeScript, and others), `#` (Python, Ruby, shell, TOML, YAML, and others), `--` (Lua, SQL, Haskell, Elm), `;` (INI, Lisp), or `<!-- -->` (HTML, XML, Markdown). Astro, Svelte, and Vue components take either `//` or `<!-- -->`, so a region can be marked in the frontmatter or script and in the markup. A file whose extension isn't in the [table in the spec]({repo}/blob/main/SPEC.md#48-snippet) can be used whole, but not by region.
 - Bluehawk's other tags (`state`, `replace`, `uncomment`, and `emphasize`) are reserved. A file that uses one can't be used by a snippet yet, so its code is never shown with a tag left in.
 
 Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See [Source files](diagnostics.md#source-files) in the diagnostics reference.

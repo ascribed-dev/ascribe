@@ -85,7 +85,7 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
 
 - Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, or a mapping of dimensions to values) is a frontmatter value of the wrong type (§8.2).
-- The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
+- The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A symbolic link on the way to a source file is followed, and the file it leads to MUST be under the content root, so a link can't put a file from elsewhere on disk in a page; one that leads out is an error on that file, and it isn't a source another file can include. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
 
 ### 2.2 Pages and fragments
 
@@ -359,7 +359,7 @@ Transcludes a file or a heading's section into the current document.
 
 - **Form:** line. **Binding:** self. **Primary:** REQUIRED path, optionally followed by `#` and an id.
 - **Paths** are relative to the including file, or, when they begin with `/`, relative to the content root. Processors MUST NOT resolve a bare filename by searching other directories. A path is percent-decoded as a link destination is (§5.2), so `my%20snippet.md` names `my snippet.md`, and an empty `#` (`file.md#`) includes the whole file.
-- Only a source file (§2.1) can be included: a file outside the content root, or that isn't Markdown, is reported as a target that doesn't exist.
+- Only a source file (§2.1) can be included: a file outside the content root, or that isn't Markdown, is reported as a target that doesn't exist. So is a file whose symbolic links lead out of the content root (§2.1).
 - With `#id`, only the section of the heading with that source id (§5.5) is included.
 - **Attributes:**
 
@@ -579,10 +579,10 @@ labels = { macos = "macOS" }  # :remove:
 # :snippet-end:
 ```
 
-- **Tag lines.** A tag counts only in a line comment, in the comment syntax of the file's extension (the table below). A **tag line** is a line holding only optional whitespace, the comment marker, optional whitespace, the tag, and optional whitespace (then the closing `-->` for `<!--`).
+- **Tag lines.** A tag counts only in a line comment, in the comment syntax of the file's extension (the table below). A component file, with a script and markup, takes either marker on any line. A **tag line** is a line holding only optional whitespace, the comment marker, optional whitespace, the tag, and optional whitespace (then the closing `-->` for `<!--`).
 - **`:snippet-start: <name>`** opens a region and **`:snippet-end:`** closes the innermost open one; `:snippet-end: <name>` closes the open region with that name, so regions may overlap as well as nest. A region holds the lines between its start and end tag lines. A region name is letters, digits, `-`, `_`, and `.` (ABNF rule `region-name`), and MUST be unique in its file.
 - **`:remove-start:`** and **`:remove-end:`** leave out the lines between them, and a line that ends with the comment marker, optional whitespace, and **`:remove:`** (then `-->` for `<!--`) is left out itself. Removal blocks may nest, and apply to every snippet of the file.
-- **Tag lines never appear in a snippet**, nor do removed lines. The lines that remain are dedented by their common leading whitespace; lines holding only whitespace are emptied and don't count toward it.
+- **Tag lines never appear in a snippet**, nor do removed lines. Of the lines that remain, those holding only whitespace at the start and the end are dropped, so where a formatter puts a tag line doesn't change the snippet. The rest are dedented by their common leading whitespace; lines holding only whitespace are emptied and don't count toward it.
 - Every start tag MUST have an end tag, and every end tag a start. An unclosed tag or an end with nothing to close makes every snippet of the file an error.
 - **Reserved tags.** Bluehawk's other tags are reserved for later revisions: `state`, `state-remove`, `state-uncomment`, `replace`, `uncomment`, and `emphasize`, each as `-start` and `-end` tag lines, and `:emphasize:` and `:uncomment:` at the end of a line, as `:remove:` is written. A file that uses one can't be used by a snippet, so its code is never shown with a tag left in.
 
@@ -594,7 +594,8 @@ The comment syntax of each extension:
 | `#` | `bash`, `cfg`, `conf`, `ex`, `exs`, `fish`, `hcl`, `nix`, `pl`, `pm`, `ps1`, `py`, `r`, `rb`, `sh`, `tf`, `toml`, `yaml`, `yml`, `zsh` |
 | `--` | `elm`, `hs`, `lua`, `sql` |
 | `;` | `asm`, `clj`, `cljs`, `el`, `ini`, `lisp`, `scm` |
-| `<!--` … `-->` | `htm`, `html`, `md`, `mdx`, `svg`, `vue`, `xml` |
+| `<!--` … `-->` | `htm`, `html`, `md`, `mdx`, `svg`, `xml` |
+| `//` or `<!--` … `-->` | `astro`, `svelte`, `vue` |
 
 Extensions are compared without regard to case. A file whose extension isn't in the table has no tags: it can be used whole, but not by region. The table grows with revisions of this specification.
 

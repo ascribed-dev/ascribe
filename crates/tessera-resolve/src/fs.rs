@@ -84,7 +84,8 @@ pub trait FileSystem {
     // raised it: which files count as sources.
     fn sources(&self) -> Sources;
 
-    /// The text of a source file, by content path.
+    /// The text of a source file, by content path. A file whose symbolic
+    /// links lead out of the content root can't be read (SPEC §2.1).
     fn read(&self, path: &RelPath) -> io::Result<String>;
 
     /// Whether a file exists at a path relative to the project root. The
@@ -99,7 +100,9 @@ pub trait FileSystem {
 
     /// Where a file or folder is once every symbolic link on the way to it is
     /// followed, as a path relative to the project root: the path itself when
-    /// none of its segments is a link. `None` when it isn't there, or a link
+    /// none of its segments is a link. It starts with at least as many `..`
+    /// as `project_path` does, so a path through a folder above the project
+    /// root compares with that folder's own real path. `None` when it isn't there, or a link
     /// leads where no path from the project root reaches (another drive). A
     /// snippet reads a file only when this is inside its source (SPEC §4.8).
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath>;
@@ -202,7 +205,23 @@ impl FileSystem for DiskFs {
     }
 
     fn read(&self, path: &RelPath) -> io::Result<String> {
-        fs::read_to_string(self.content_dir().join(path.as_str()))
+        let file = self.content_dir().join(path.as_str());
+        // A source file is read where its links lead, and that must be in
+        // the content root, so a link can't put any file on disk in a page
+        // (SPEC §2.1).
+        let inside = self
+            .content_dir()
+            .canonicalize()
+            .and_then(|root| Ok(file.canonicalize()?.starts_with(root)))?;
+        if !inside {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!(
+                    "`{path}` is a symbolic link, or is in a linked folder, that leads out of the content root"
+                ),
+            ));
+        }
+        fs::read_to_string(file)
     }
 
     fn probe(&self, project_path: &RelPath) -> Probe {
@@ -276,11 +295,18 @@ impl FileSystem for DiskFs {
     }
 
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath> {
+        // Measured from the folder the path's leading `..`s reach, so the
+        // answer keeps them: `../docs/ascribe.toml`, not `ascribe.toml`.
+        let ups = project_path.up_count();
         let root = self.project_root.canonicalize().ok()?;
+        let base = root.ancestors().nth(ups)?;
         let path = project_path
             .segments()
             .fold(self.project_root.clone(), |p, s| p.join(s));
-        relative_path(&root, &path.canonicalize().ok()?)
+        let rest = relative_path(base, &path.canonicalize().ok()?)?;
+        let mut segments = vec![".."; ups];
+        segments.extend(rest.segments());
+        RelPath::parse(&segments.join("/")).ok()
     }
 
     fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {
