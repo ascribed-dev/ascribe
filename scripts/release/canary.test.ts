@@ -58,7 +58,10 @@ test("a commit the canary includes fails", () => {
   const { dir, commit } = repository();
   commit("crates/cli/src/main.rs");
   const canary = commit("docs/content/page.md");
-  expect(verdict(dir, canary)).toMatchObject({ waiting: false, why: expect.stringContaining("includes") });
+  expect(verdict(dir, canary)).toMatchObject({
+    waiting: false,
+    why: expect.stringContaining("includes"),
+  });
   // The canary is newer than the commit checked.
   commit("crates/cli/src/main.rs");
   const newer = commit("packages/astro/index.ts");
@@ -71,7 +74,10 @@ test("a commit after the canary that changes nothing that ships fails", () => {
   const canary = commit("crates/cli/src/main.rs");
   commit("docs/content/page.md");
   commit("site/src/pages/index.astro");
-  expect(verdict(dir, canary)).toMatchObject({ waiting: false, why: expect.stringContaining("Nothing that ships") });
+  expect(verdict(dir, canary)).toMatchObject({
+    waiting: false,
+    why: expect.stringContaining("Nothing that ships"),
+  });
 });
 
 test("a pull request's merge commit that changes what ships waits", () => {

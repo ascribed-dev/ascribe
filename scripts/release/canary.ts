@@ -43,7 +43,12 @@ export type Verdict =
 export function verdict(cwd: string, canary: string | undefined): Verdict {
   const commit = git(cwd, "rev-parse", "HEAD").stdout.trim();
   if (canary === undefined || !/^[0-9a-f]{40}$/.test(canary)) {
-    return { waiting: false, canary: undefined, commit, why: "There's no canary on npm to compare with." };
+    return {
+      waiting: false,
+      canary: undefined,
+      commit,
+      why: "There's no canary on npm to compare with.",
+    };
   }
   if (git(cwd, "cat-file", "-e", `${canary}^{commit}`).status !== 0) {
     return {
@@ -68,7 +73,11 @@ export function verdict(cwd: string, canary: string | undefined): Verdict {
 }
 
 function git(cwd: string, ...args: string[]): { status: number | null; stdout: string } {
-  const result = spawnSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  const result = spawnSync("git", args, {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
   return { status: result.status, stdout: result.stdout };
 }
 
