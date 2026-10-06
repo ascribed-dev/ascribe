@@ -30,6 +30,8 @@ One pull request.
 - **Every TypeScript literal** in `src/` becomes an import. CSS selectors can't import; a test reads each stylesheet and fails on an `ascribe-` or `data-ascribe-` name that isn't in the list.
 - **A test** fails when a literal of one of these names appears in source outside the two homes. Tests and fixtures may keep literals: they're the independent check.
 
+**As built (#143):** the names are generated into `packages/astro/src/names.ts` and `packages/vscode/src/names.ts`, so no package gains a dependency or an export. `@ascribed/elements` and `@ascribed/review` keep their literals for now: they're bundled into the HTML report's embedded script and the site's JavaScript, and an import changes those bytes, which decision 2 rules out. Until Kyle decides how to take that change, the test checks every name those two packages write is declared, so a rename fails until they're changed too.
+
 ### Part B: JSON shapes
 
 One pull request per shape family, in this order: `check`'s report; `diff` and `drift`; `sources`; the language server's custom requests.

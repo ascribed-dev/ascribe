@@ -14,6 +14,8 @@ import { findAnchors, findEdits, toProperty, type HastNode } from "./attributes.
 /** Applies the site output's attribute markers (`ascribe-attributes`) and source anchors. */
 export function satteriAscribeAttributes(): HastVisitorInstance & { name: string } {
   return {
+    // The plugin's own name, shown in Astro's errors; it's spelled like the
+    // marker (ELEMENT_ATTRIBUTES) but isn't it, so it stays a literal.
     name: "ascribe-attributes",
     before(root, ctx) {
       for (const edit of findEdits(root as HastNode)) {
