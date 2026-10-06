@@ -37,4 +37,6 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, the checks, documenting a change, and the docs site.
 - [RELEASING.md](RELEASING.md): how a release and the nightly canary are made.
+- [project-docs/checklists.md](project-docs/checklists.md): what a change to the language, a command, or the site output's markup must touch. Go through the one that fits before opening a pull request.
+- [project-docs/decisions.md](project-docs/decisions.md): the decisions in force. A decision made in an issue or a review is added there in the pull request that acts on it.
 - `project-docs/`: plans, each with its decisions. A plan says what was intended; the code and ARCHITECTURE.md say what is.

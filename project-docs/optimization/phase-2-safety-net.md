@@ -16,7 +16,7 @@ A way to prove that a clean-up changed nothing a user can see, and numbers for t
 - `tests/corpora/`: `benches/perf.rs` times the commands, `src/perf.rs` and `corpora compare [--record]` check them against `baselines/perf.json`, and `RESULTS.md` explains the margin. `.github/workflows/corpora.yml` runs it weekly.
 - `tests/corpora/synthetic/`: the 3,000-page project every benchmark shares.
 - Files in the output path that use `HashMap` or `HashSet`: in `tessera-diff`, `align.rs`, `tree.rs`, `gitfs.rs`, `html/mod.rs`; in `tessera-emit`, `emitter.rs`; in `tessera-resolve`, `project.rs`, `fs.rs`, `slug/github.rs`, `incremental/cache.rs`, `build/modes.rs`, `build/mod.rs`, `build/availability.rs`, `snippet/mod.rs`.
-- Rust tests that run only on Unix, all about symbolic links: `crates/tessera-cli/tests/sources.rs`, `crates/tessera-model/tests/load.rs`, `crates/tessera-resolve/src/fs.rs`, `crates/tessera-resolve/tests/includes.rs`, `crates/tessera-resolve/tests/snippets.rs`, `crates/tessera-sources/tests/fetch.rs`.
+- Rust tests that run only on Unix: `crates/tessera-cli/tests/sources.rs`, `crates/tessera-model/tests/load.rs`, `crates/tessera-resolve/src/fs.rs`, `crates/tessera-resolve/tests/includes.rs`, `crates/tessera-resolve/tests/snippets.rs`, `crates/tessera-sources/tests/fetch.rs`. All are about symbolic links except the ones in `sources.rs` (a fake `git` script) and `fs.rs` (a folder locked by its Unix mode).
 - `.github/workflows/ci.yml` and `rust.yml`: how jobs are added, and that Rust runs on Windows for pull requests.
 
 ## Design

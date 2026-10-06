@@ -4,6 +4,8 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 mod common;
+#[path = "../../../tests/support/links.rs"]
+mod links;
 
 use common::{Code, Docs};
 use tessera_sources::{CopyState, SourcesError, fetch, status};
@@ -240,7 +242,6 @@ fn no_access_names_the_source_and_repeats_git() {
     assert!(!docs.exists("ascribe.lock") && !docs.exists("sources"));
 }
 
-#[cfg(unix)]
 #[test]
 fn a_copy_cant_be_written_through_a_link_out_of_its_folder() {
     let code = Code::new();
@@ -253,7 +254,7 @@ fn a_copy_cant_be_written_through_a_link_out_of_its_folder() {
     );
     let outside = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(docs.root().join("sources").join("api")).unwrap();
-    std::os::unix::fs::symlink(outside.path(), docs.root().join("sources/api/src")).unwrap();
+    links::dir(outside.path(), docs.root().join("sources/api/src"));
     let error = fetch(&docs.workspace(), &[], &docs.options()).unwrap_err();
     assert!(matches!(error, SourcesError::Write { .. }), "{error}");
     assert!(!outside.path().join("auth.rs").exists());

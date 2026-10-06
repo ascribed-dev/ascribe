@@ -4,7 +4,9 @@
 # takes it from this file: the lines marked `:remove:` are what this
 # repository adds. It installs `next`, the canary of `main`, over the release
 # the job installs, since these docs follow `main`. It never fails on what it
-# reports, and never comments: the summary is the report.
+# reports, and never comments: the summary is the report. Here, with Ascribe
+# from npm, a failure while the canary lacks what the pull request ships only
+# means "wait", so it doesn't fail the job (scripts/release/canary.ts).
 # :snippet-start: job
 name: Drift
 
@@ -36,8 +38,15 @@ jobs:
       - run: npm install --global @ascribed/cli
       - run: npm install --global @ascribed/cli@next # :remove:
       - name: Report changed examples
+        id: report # :remove:
+        continue-on-error: true # :remove:
         run: >
           ascribe drift --config docs --base "origin/$GITHUB_BASE_REF"
           --format summary >> "$GITHUB_STEP_SUMMARY"
+      # :remove-start:
+      - name: Fail, unless it waits for a canary
+        if: steps.report.outcome != 'success'
+        run: node scripts/release/canary.ts failed
+      # :remove-end:
 
 # :snippet-end:

@@ -68,9 +68,11 @@ jobs:
           fi
 
           # Plans and reports are prose nothing builds or tests; only the formatter reads them.
+          # The decision log and the change checklists are the exception: a test checks them.
           code=true
           if [ "$files" != all ] && [ -n "$files" ] &&
-            ! printf '%s\n' "$files" | grep -qvE '^(project-docs|reports|research_notes)/'; then
+            ! printf '%s\n' "$files" | grep -qvE '^(project-docs|reports|research_notes)/' &&
+            ! printf '%s\n' "$files" | grep -qE '^project-docs/(decisions|checklists)\.md$'; then
             code=false
           fi
 

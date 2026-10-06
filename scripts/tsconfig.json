@@ -19,6 +19,7 @@
     "sources-fixture/**/*.ts",
     "docs-site/**/*.ts",
     "repo-docs/**/*.ts",
-    "compare/**/*.ts"
+    "compare/**/*.ts",
+    "project-docs/**/*.ts"
   ]
 }

@@ -37,8 +37,10 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 - Changes to `crates/comrak-tessera` follow [FORK.md](crates/comrak-tessera/FORK.md): mark each one `// TESSERA:` and update the table.
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions.
+- A change to the language, a new command or option, or a change to the site output's markup goes through its list in [project-docs/checklists.md](project-docs/checklists.md): each line is done, or says why it doesn't apply.
+- A decision made in an issue, a review, or a conversation is added to [project-docs/decisions.md](project-docs/decisions.md) in the pull request that acts on it.
 
-A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter.
+A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter, unless it changes `project-docs/decisions.md` or `project-docs/checklists.md`, which a test checks.
 
 ### A clean-up that changes no output
 
@@ -95,6 +97,8 @@ npm test                 # navigation, links, and the site in Chromium
 For `astro dev`, which rebuilds as you edit pages, run `ASCRIBE_BIN=../target/debug/ascribe npm run dev` after `build:checkout`; without `ASCRIBE_BIN`, it runs the binary from npm. `npm ci` puts back the packages from npm. [site/README.md](site/README.md) has the rest.
 
 The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, Ascribe, or a file the docs take examples from gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/`, or a file its pages take examples from, gets a review report of its pages from the **Review** workflow.
+
+Three checks run Ascribe from npm, the nightly canary `next`, not from the checkout: **Site from npm** on each push to `main`, and the **Drift** and **Review** reports on pull requests. A page documenting what you just changed can't pass them until a canary has the change. When one of them fails and the canary doesn't have what the commit ships yet, it doesn't fail: it passes with a warning, "Waiting for a canary that includes …", and its summary links to the **Canary** workflow, which a maintainer can start by hand rather than wait a night. On `main`, the run after the canary is the real check, and starts on its own; on a pull request, re-run the job once a canary has what it needs. A failure when the canary already has the commit stays red. `scripts/release/canary.ts` makes that call, and `node scripts/release/canary.ts paths` lists what counts as shipping.
 
 ## Generated docs
 

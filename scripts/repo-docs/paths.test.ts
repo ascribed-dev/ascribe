@@ -1,5 +1,5 @@
 // The files that map the repository for someone starting cold (ARCHITECTURE.md,
-// AGENTS.md, and the crates' READMEs) name paths and commands, and each one
+// AGENTS.md, the crates' READMEs, the decisions, and the change checklists) name paths and commands, and each one
 // must exist: a map that points at a moved file sends its reader nowhere.
 //
 // A path is a relative link, or a code span whose first segment is a file or
@@ -24,6 +24,8 @@ function files(): string[] {
     "CONTRIBUTING.md",
     "README.md",
     "tests/zod/README.md",
+    "project-docs/decisions.md",
+    "project-docs/checklists.md",
     ...crates,
   ];
 }

@@ -45,6 +45,8 @@ The `marketplace` job publishes without a token. Each hop checks the one before 
 
 The only values the workflow holds are `AZURE_CLIENT_ID` and `AZURE_TENANT_ID`, as variables on the `release` environment. They aren't secrets, and nothing in the repository can sign in without a token GitHub issues to a run in that environment.
 
+[What lives outside the repository](project-docs/optimization/outside.md) lists every account, environment, secret, and package this page relies on, with who can change each.
+
 ## Before the first release
 
 Do these once. Each says how to check it.
@@ -88,7 +90,7 @@ Drop `--dry-run`, and repeat for `@ascribed/cli-darwin-arm64`, `@ascribed/cli-li
 
 **Check:** `npm trust list @ascribed/cli` (for each package) shows the repository, `release.yml`, and the `release` environment. The real check is a release: the `npm` job succeeds, and each package's page shows a provenance badge.
 
-**A package that doesn't exist yet** can't have a trusted publisher, because npm needs the package to exist first. Its first publish needs a token: a granular access token on npmjs.com with **Read and write** on the `@ascribed` scope and **Bypass two-factor authentication** ticked. Without the bypass option, npm asks for a one-time password (`EOTP`), which a CI job can't give. Put it in the `release` environment as `NPM_TOKEN`, set `NODE_AUTH_TOKEN` from it for that one run, and delete it once the package exists and trusts the workflow.
+**A package that doesn't exist yet** can't have a trusted publisher, because npm needs the package to exist first. Its first version is published by hand, from your own npm account, as [the nightly canary's setup](#setting-it-up) says in step 3. No workflow reads a token.
 
 ### 4. VS Code Marketplace: a managed identity
 
@@ -160,7 +162,7 @@ git push origin v0.2.0
 
 Actions → **Release** → Run workflow, from the tag `v0.2.0` (under "Use workflow from", choose Tags), with **publish** checked. The workflow checks that the tag matches the version. The build, pack, and smoke jobs run as in the dry run; then each publishing job waits for your approval.
 
-1. **Approve `npm`.** **Check:** `npm view @ascribed/cli@0.2.0 version` and `npm view @ascribed/astro@0.2.0 version` print `0.2.0`, and each package's npm page shows a provenance badge.
+1. **Approve `npm`.** **Check:** `npm view @ascribed/cli@0.2.0 version` and `npm view @ascribed/astro@0.2.0 version` print `0.2.0`, and each package's npm page shows a provenance badge. `npm view <package> dist-tags` shows `latest` at `0.2.0` for all eight packages. A package whose first version was a canary has that canary as `latest` until a release; `@ascribed/review`'s `latest` is `0.1.2-next.2` until the release after 0.1.1.
 2. **Approve `marketplace`.** **Check:** the Marketplace page for `Ascribe.ascribe-vscode` shows 0.2.0 (it can take a few minutes to appear).
 3. **Approve `github`.** **Check:** a draft release `v0.2.0` exists with eight archives and packages and `SHA256SUMS`, and the changelog section as its notes.
 
@@ -255,7 +257,7 @@ The [canary workflow](.github/workflows/canary.yml) publishes the npm packages (
 - **The version** is `<next>-next.<n>`: the version after the latest release, and the workflow's run number. The next version is the one the changelog's unreleased section names (`## 0.2.0 (unreleased)`), or a patch bump of the workspace's version under `## Unreleased`. `node scripts/release/version.ts --canary <n>` stamps it in the working tree; it's never committed. A canary sorts before the release it leads to, so `npm install` of a range never picks one.
 - **Run numbers have to keep rising.** They restart if `canary.yml` is renamed or deleted and recreated, and then each canary's version may already be on npm, so it publishes nothing and passes. If that happens, name the unreleased section's version (`## 0.2.0 (unreleased)`), or wait for the next release, so the versions are new.
 - **Its commit** is each package's `gitHead` (`npm view @ascribed/cli@next gitHead`), and `ascribe --version` prints it: `ascribe 0.1.2-next.42 (3f9c2a1b7d4e)`.
-- **It runs only when something ships.** It compares `main` with the last canary's commit, in `crates/`, `packages/`, `scripts/release/`, `Cargo.toml`, `Cargo.lock`, and `pnpm-lock.yaml`. When nothing there has changed, it publishes nothing, and the run passes.
+- **It runs only when something ships.** It compares `main` with the last canary's commit, in the files that ship, which `node scripts/release/canary.ts paths` lists. When nothing there has changed, it publishes nothing, and the run passes.
 - **It builds, packs, and smoke-tests as a release does,** with the same jobs (`release-build.yml`). If any of them fails, nothing is published and `next` stays where it was.
 - **It publishes from the `canary` environment,** with provenance. Every package goes under the holding tag `next-pending` first, and `next` moves to the new canary on each package only once all of them are on npm, so `next` never mixes two nights. Then it calls the [docs site](#the-docs-site)'s build hook, so the site rebuilds with the new canary.
 
@@ -267,7 +269,13 @@ Do these once, after the release setup above.
 
 1. **The `canary` environment.** Settings → Environments → **New environment** → `canary`. No required reviewers. **Deployment branches and tags:** Selected branches and tags → add the branch rule `main`. **Check:** the environment has no reviewers and allows only `main`.
 2. **A second trusted publisher on each npm package.** A package can trust up to ten workflows. On each package's npm page, Settings → Trusted Publisher → add a GitHub Actions publisher: organization or user `ascribed-dev`, repository `ascribe`, workflow filename `canary.yml`, environment `canary`, with **Allow npm publish** and **Allow npm dist-tag** both ticked (the canary moves `next` itself). Do it for every package that exists. Leave the `release.yml` one as it is. The workflow filename must be `canary.yml`, not `release-build.yml`: npm checks the workflow that was started, not a reusable one it calls. **Check:** each package's Trusted Publisher settings list both `release.yml` (environment `release`) and `canary.yml` (environment `canary`). The real check is a canary: the `npm` job succeeds, and `npm view @ascribed/cli dist-tags` shows `next` on it and `latest` unchanged.
-3. **A package that doesn't exist yet** (such as a new one no release has published) can't have a trusted publisher, so its first canary needs a token. Make a granular access token as in [npm: trusted publishing](#3-npm-trusted-publishing), put it in the `canary` environment as the secret `NPM_TOKEN`, and run the canary by hand. npm still publishes the other packages through trusted publishing, and the new one with the token. Then add the new package's trusted publishers (`canary.yml` and `release.yml`), and delete the secret and the token. The canary fails while the secret is set and every package is on npm, so it can't be left behind. npm makes a package's first version its `latest` too, so until a release publishes the package, `latest` is that canary. **Check:** the new package is on npm under `next`, and the `canary` environment has no `NPM_TOKEN`.
+3. **A package that doesn't exist yet** (such as a new one no release has published) can't have a trusted publisher, because npm needs the package to exist first. The canary's `npm` job stops before publishing anything, and its error names the package. Publish that package's first version by hand, signed in to npm (`npm login`) as an owner of the `@ascribed` organization, so npm asks for your two-factor code and no token is made:
+   1. Download the failed run's `release` artifact, and unzip it.
+   2. `npm publish npm/<tarball> --access public --tag next`, with the new package's tarball from the artifact's `npm/` folder.
+   3. Add the package's trusted publishers: `canary.yml`, as in step 2, and `release.yml`, as in [npm: trusted publishing](#3-npm-trusted-publishing).
+   4. Re-run the failed job. It skips the version you published, publishes the rest, and moves `next`.
+
+   That first version has no provenance badge. npm makes it the package's `latest` too, so until a release publishes the package, `latest` is that canary; the release's [publish check](#7-publish) catches it. **Check:** the new package is on npm under `next`, and its Trusted Publisher settings list both workflows.
 
 ### A bad canary
 
@@ -284,7 +292,7 @@ npm dist-tag add @ascribed/cli@0.1.2-next.41 next                         # for 
 
 The user docs are published at <https://ascribed-dev.com>, the address in `[consumer]` in `docs/ascribe.toml`. Netlify builds it from `main`, as a user's host would: `site/netlify.toml` installs the site's packages, moves Ascribe's to the canary `next` names (`npm run follow-next`), and builds. No Rust, no workspace, and no secret, so the site follows `main` through the canary, a night behind it at most. It rebuilds when `main` changes `docs/` or `site/`, and when the canary calls its build hook. A pull request gets a preview from the **Site** workflow instead, built with its own Ascribe. [site/README.md](site/README.md) has the details.
 
-**A build that fails** leaves the last good deploy up, and Netlify emails the owner. The usual cause is a page documenting a feature merged that day, which the canary doesn't have until the night's run; the canary's build hook then rebuilds it. When waiting a night matters, run the canary by hand. Netlify's deploy log (Deploys, in the site's dashboard) shows the error; `cd site && npm ci && npm run follow-next && npm run build` reproduces it.
+**A build that fails** leaves the last good deploy up, and Netlify emails the owner. The usual cause is a page documenting a feature merged that day, which the canary doesn't have until the night's run; the canary's build hook then rebuilds it. When waiting a night matters, run the canary by hand. The **Site from npm** workflow, which builds the site the same way on each push to `main`, doesn't fail for that cause: while the canary lacks what the commit ships, a failure ends with a warning, "Waiting for a canary that includes …", and a link to run the canary, and the run after the canary is the real check ([CONTRIBUTING.md](CONTRIBUTING.md#the-docs-site)). Netlify's deploy log (Deploys, in the site's dashboard) shows the error; `cd site && npm ci && npm run follow-next && npm run build` reproduces it.
 
 ### Setting it up
 
