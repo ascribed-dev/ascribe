@@ -85,18 +85,20 @@ release build, 4,546 pages, 32 MB.
 `baselines/perf.json` was recorded on 2026-10-06 by the Corpora workflow run by
 hand with **record** set, on GitHub's `ubuntu-latest` runner (AMD EPYC 7763, 4
 logical cores). Every metric was recorded again there, so the file holds one
-machine's numbers. Medians:
+machine's numbers. It was recorded again the same day, on the same CPU, once
+the release profile was in (see [The release profile](#the-release-profile)),
+which made each command 5 to 12 percent faster. Medians:
 
 | | time |
 |---|---|
-| `ascribe check` | 704 ms |
-| `ascribe build --emit plain,json`, first; again | 1.9 s; 1.7 s |
-| `ascribe diff`, nothing changed | 1.45 s |
-| `ascribe diff`, one page; a fragment 100 pages include; a phrase every page uses | 1.40 s; 1.42 s; 1.41 s |
-| `ascribe diff` with snippets, nothing changed; a region ten pages show | 1.87 s; 1.86 s |
-| `ascribe drift` with snippets, nothing changed; a region ten pages show | 518 ms; 923 ms |
-| `ascribe check --format json`, converted Elastic sample | 3.3 s |
-| language server: page keystroke, fragment keystroke, completion | 1.7 ms, 8.6 ms, 4.0 ms |
+| `ascribe check` | 652 ms |
+| `ascribe build --emit plain,json`, first; again | 1.8 s; 1.6 s |
+| `ascribe diff`, nothing changed | 1.28 s |
+| `ascribe diff`, one page; a fragment 100 pages include; a phrase every page uses | 1.30 s; 1.29 s; 1.32 s |
+| `ascribe diff` with snippets, nothing changed; a region ten pages show | 1.76 s; 1.76 s |
+| `ascribe drift` with snippets, nothing changed; a region ten pages show | 480 ms; 857 ms |
+| `ascribe check --format json`, converted Elastic sample | 3.1 s |
+| language server: page keystroke, fragment keystroke, completion | 1.6 ms, 9.1 ms, 3.3 ms |
 
 `diff` takes the same time whatever changed, which is
 `project-docs/optimization/inventory.md` finding 4; phase 7 of that plan
@@ -114,9 +116,9 @@ synthetic project, median of three runs:
 | `ascribe check` | 221 MB |
 | `ascribe build --emit plain,json`, first | 265 MB |
 | `ascribe diff`, nothing changed | 547 MB |
-| `ascribe diff`, a phrase every page uses changed | 550 MB |
-| language server, the project loaded and a page's diagnostics published | 186 MB |
-| language server, after 100 edits to that page | 186 MB |
+| `ascribe diff`, a phrase every page uses changed | 549 MB |
+| language server, the project loaded and a page's diagnostics published | 185 MB |
+| language server, after 100 edits to that page | 185 MB |
 
 Runs differed by less than 0.2 MB. `diff` holds about twice what `check`
 does, since it loads the project at both revisions. The language server's
