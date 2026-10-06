@@ -264,7 +264,11 @@ pub fn changed_apart_from_snippets(
 /// A page resolves from its own file, the files it includes, the files it
 /// links to (a link's text can be the target's title or heading, its URL
 /// the target's route and page id, and whether it links at all depends on
-/// whether the build publishes the target), and the glossary's pages. So a
+/// whether the build publishes the target), and the glossary's pages.
+/// Nothing else is shared between pages: a route is a function of the
+/// page's own path (`Router::route`), heading ids are assigned within one
+/// page, and two pages that take the same route are found only by the site
+/// output (`AstroRouter::collisions`), never in a resolved page. So a
 /// page can differ only when one of those files differs: its text, what its
 /// references resolve to (a file appearing or going away, an image found),
 /// or its snippets' code. This is the reach the language server's
