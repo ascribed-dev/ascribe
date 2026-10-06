@@ -4,13 +4,14 @@
 
 import { AscribeGroup } from "./group.js";
 import { AscribeTab, AscribeTabs } from "./tabs.js";
+import { ELEMENT_GROUP, ELEMENT_TAB, ELEMENT_TABS } from "./names.js";
 
 export { AscribeGroup, AscribeTab, AscribeTabs };
 
 const registry: [string, CustomElementConstructor][] = [
-  ["ascribe-tabs", AscribeTabs],
-  ["ascribe-tab", AscribeTab],
-  ["ascribe-group", AscribeGroup],
+  [ELEMENT_TABS, AscribeTabs],
+  [ELEMENT_TAB, AscribeTab],
+  [ELEMENT_GROUP, AscribeGroup],
 ];
 
 for (const [name, constructor] of registry) {

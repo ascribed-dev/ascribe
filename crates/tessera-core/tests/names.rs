@@ -5,8 +5,8 @@
 //! - No source outside the two homes writes one of the names as a literal.
 //!   Tests and fixtures may: they're the independent check.
 //! - Every `ascribe-` or `data-ascribe-` name a stylesheet selects, an Astro
-//!   template writes, the docs site's code uses, or source in `NOT_YET`
-//!   writes is one of them, since none of those imports the constants yet.
+//!   template writes, or the docs site's code uses is one of them, since
+//!   none of those can import the constants.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -19,14 +19,12 @@ const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p tessera-core --test names";
 
 /// The packages that import the names, each from its own `src/names.ts`, so
 /// none needs a dependency it doesn't have.
-const PACKAGES: &[&str] = &["packages/astro", "packages/vscode"];
-
-/// Source that still writes the names as literals: they're bundled into the
-/// HTML report's script and the site's, whose bytes an import would change
-/// (project-docs/optimization/phase-4-one-home-per-fact.md, part A). Until
-/// they import the constants, each name they write must be declared, so a
-/// renamed constant fails here until they're changed too.
-const NOT_YET: &[&str] = &["packages/elements/src/", "packages/review/src/"];
+const PACKAGES: &[&str] = &[
+    "packages/astro",
+    "packages/elements",
+    "packages/review",
+    "packages/vscode",
+];
 
 /// The script extensions the guard reads.
 const SCRIPTS: &[&str] = &["ts", "tsx", "mts", "cts", "js", "mjs", "cjs"];
@@ -38,6 +36,17 @@ const COINCIDENCES: &[(&str, &str)] = &[
     (
         "packages/astro/src/satteri.ts",
         "name: \"ascribe-attributes\"",
+    ),
+    // The key a tab choice is stored under: readers' saved choices would be
+    // lost if it followed a renamed element.
+    (
+        "packages/elements/src/tabs.ts",
+        "STORAGE_PREFIX = \"ascribe-tabs:\"",
+    ),
+    // The user agent of review's requests to GitHub.
+    (
+        "packages/review/src/github/transport.ts",
+        "\"user-agent\": \"ascribe-review\"",
     ),
 ];
 
@@ -248,7 +257,6 @@ fn no_source_writes_a_name_outside_its_homes() {
             continue;
         }
         let text = fs::read_to_string(&path).expect("reads a source file");
-        let not_yet = NOT_YET.iter().any(|dir| rel.starts_with(dir));
         for (number, line) in code_lines(&path, &text) {
             if COINCIDENCES
                 .iter()
@@ -257,13 +265,7 @@ fn no_source_writes_a_name_outside_its_homes() {
                 continue;
             }
             for name in names_in(&line) {
-                let known = ALL.iter().find(|n| n.value == name);
-                if not_yet {
-                    // A prefix an id is built from (`ascribe-move-${n}`) isn't a name.
-                    if known.is_none() && !name.ends_with('-') {
-                        stray.push(format!("{rel}:{number}: `{name}` isn't declared"));
-                    }
-                } else if let Some(known) = known {
+                if let Some(known) = ALL.iter().find(|n| n.value == name) {
                     stray.push(format!(
                         "{rel}:{number}: `{name}` is `names::{}`",
                         known.constant

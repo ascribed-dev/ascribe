@@ -16,6 +16,7 @@ import {
   type Mark,
   type Show,
 } from "../marks/index.js";
+import { DATA_SHOW, ID_REPORT, ID_REPORT_DATA } from "../names.js";
 
 /** The report's data, as `ascribe diff --format html` writes it. */
 export interface ReportData {
@@ -263,7 +264,7 @@ export function start(root: HTMLElement, data: ReportData): void {
   const step = (by: number): void => {
     if (state.show !== "changes") {
       state.show = "changes";
-      if (article.hasAttribute("data-ascribe-show")) setShow(article, "changes");
+      if (article.hasAttribute(DATA_SHOW)) setShow(article, "changes");
       else render();
     }
     if (marks.length === 0) return;
@@ -486,7 +487,7 @@ export function start(root: HTMLElement, data: ReportData): void {
     const page = build?.pages[state.page];
     main.replaceChildren(controls);
     article.replaceChildren();
-    article.removeAttribute("data-ascribe-show");
+    article.removeAttribute(DATA_SHOW);
     article.className = "r-page";
     if (!page) return;
     main.append(h("h1", { class: "r-page-heading" }, [page.title ?? page.path]));
@@ -541,6 +542,6 @@ export function start(root: HTMLElement, data: ReportData): void {
   render();
 }
 
-const data = document.getElementById("ascribe-review-data");
-const app = document.getElementById("ascribe-review");
+const data = document.getElementById(ID_REPORT_DATA);
+const app = document.getElementById(ID_REPORT);
 if (data && app) start(app, JSON.parse(data.textContent ?? "{}") as ReportData);
