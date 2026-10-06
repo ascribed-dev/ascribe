@@ -65,7 +65,7 @@ The features `crates/tessera-lsp/src/server.rs` handles. Each new form is consid
 
 ## A new command or option
 
-- [ ] The arguments and help text, in `crates/tessera-cli/src/cli.rs` and `crates/tessera-cli/src/commands/`. The work itself is in a library crate, so the language server and other callers can reach it; the command parses its arguments and reports.
+- [ ] The arguments and help text, in `crates/tessera-cli/src/cli.rs` and `crates/tessera-cli/src/commands/`. The work itself is one entry function in a library crate, taking plain arguments and returning a typed result, so the language server and other callers can reach it; the command parses its arguments, calls it, and reports. A new command's entry goes in ARCHITECTURE.md's [Each command's entry](../ARCHITECTURE.md#each-commands-entry).
 - [ ] Exit codes from `crates/tessera-cli/src/exit.rs` only, and the command's "Exit codes" section in `docs/content/reference/cli.md` says which it uses.
 - [ ] The command reference's fragments in `docs/content/_generated/`, regenerated from the help text by `crates/tessera-cli/src/docs.rs` (`ASCRIBE_BLESS=1 cargo test -p tessera-cli docs`). A new command also gets a section in `docs/content/reference/cli.md` that includes its fragment. An option no release has yet is listed in `UNRELEASED` in `docs.rs`.
 - [ ] With `--format json`: the shape's fields documented in the command's section of `docs/content/reference/cli.md`, keys in snake_case, and a schema version that rises when a field is removed or changes meaning.
