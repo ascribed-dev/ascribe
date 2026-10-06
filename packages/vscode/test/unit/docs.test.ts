@@ -4,6 +4,8 @@
 // with ASCRIBE_BLESS=1 to rewrite them. To change what a setting's row says,
 // change its description in package.json. VS Code's manifest has no field for
 // what a command does, so each command's description is here, in `commands`.
+// A setting or command no release has yet is listed in `available`, which
+// gives its row an availability.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -36,6 +38,26 @@ const commands: Record<string, string> = {
   "ascribe.refreshComments":
     "Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../guides/editor.md#comments-in-the-preview).",
 };
+
+/** The availability of each setting or command no release has yet, by id. */
+const available: Record<string, string> = {
+  "ascribe.openPagePreview": "next",
+  "ascribe.openSitePreview": "next",
+  "ascribe.startReview": "next",
+  "ascribe.stopReview": "next",
+  "ascribe.changedPages": "next",
+  "ascribe.refreshComments": "next",
+  "ascribe.preview.scrollPreviewWithEditor": "next",
+  "ascribe.preview.scrollEditorWithPreview": "next",
+  "ascribe.review.sourceComments": "next",
+};
+
+/** The attribute block that ends a row's first cell, for an id in `available`. */
+function availability(id: string): string {
+  const spec = available[id];
+  if (spec === undefined) return "";
+  return /^[\w.-]+$/.test(spec) ? ` {available=${spec}}` : ` {available="${spec}"}`;
+}
 
 interface Setting {
   default: unknown;
@@ -80,7 +102,7 @@ function settings(): string {
       const description = setting.enumDescriptions?.[i];
       if (description) what += ` \`${value}\`: ${description}`;
     });
-    out += `| \`${key}\` | ${fallback} | ${cell(what)} |\n`;
+    out += `| \`${key}\`${availability(key)} | ${fallback} | ${cell(what)} |\n`;
   }
   return out;
 }
@@ -96,7 +118,7 @@ function commandTable(): string {
   for (const command of manifest.contributes.commands) {
     if (hidden.has(command.command)) continue;
     const what = commands[command.command] ?? "";
-    out += `| **${command.category}: ${command.title}** | ${cell(what)} |\n`;
+    out += `| **${command.category}: ${command.title}**${availability(command.command)} | ${cell(what)} |\n`;
   }
   return out;
 }
@@ -116,6 +138,14 @@ describe("the editor guide", () => {
         ),
       );
     expect(Object.keys(commands).sort()).toEqual(shown.sort());
+  });
+
+  it("gives an availability only to settings and commands it shows", () => {
+    const ids = [
+      ...Object.keys(manifest.contributes.configuration.properties),
+      ...Object.keys(commands),
+    ];
+    expect(Object.keys(available).filter((id) => !ids.includes(id))).toEqual([]);
   });
 
   it.each(fragments)("has a current _generated/%s", (name, text) => {

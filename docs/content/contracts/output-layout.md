@@ -67,14 +67,12 @@ Each emitter root has a manifest beside it, `<output-dir>/<build>/<emitter>.mani
 }
 ```
 
-<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (issue #82 in this repository). -->
-
 | Field | Meaning |
 |---|---|
 | `format` | Always `"ascribe-manifest"`. A file at a manifest's path without it isn't a manifest, and isn't Ascribe's (§4). |
 | `version` | The manifest format's version: `1`. A reader rejects versions it doesn't know. |
 | `build`, `emitter` | Which output this is. |
-| `anchors` | `true` when the site output has source anchors (`ascribe build --anchors`; site-render contract §7). Absent otherwise. |
+| `anchors` {available=next} | `true` when the site output has source anchors (`ascribe build --anchors`; site-render contract §7). Absent otherwise. |
 | `files` | Every file in the emitter root that Ascribe wrote, sorted by `path`. |
 | `files[].path` | The file's path relative to the emitter root, `/`-separated. |
 | `files[].kind` | `"page"`, `"asset"`, or `"generated"` (anything else Ascribe writes, such as a schema). |
