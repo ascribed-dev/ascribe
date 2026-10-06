@@ -1,0 +1,8 @@
+description: >-
+  A glossary term can turn automatic linking off; the author then links the
+  occurrences that mean the term with an ordinary link, and both pages are
+  valid.
+spec: ["5.4", "7.2"]
+tags: [check]
+
+diagnostics: []
