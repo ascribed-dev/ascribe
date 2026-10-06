@@ -167,6 +167,31 @@ impl DiskFs {
         self.project_root.join(self.content_root.as_str())
     }
 
+    /// Whether `real`, a canonical path, is a source file of the content root
+    /// whose canonical path is `root`: under it, named as a source is, and
+    /// not in another project's folder.
+    fn is_source_at(&self, root: &Path, real: &Path) -> bool {
+        let Ok(rest) = real.strip_prefix(root) else {
+            return false;
+        };
+        let Some(rel) = rest
+            .to_str()
+            .and_then(|r| RelPath::parse(&r.replace('\\', "/")).ok())
+        else {
+            return false;
+        };
+        if !is_source_path(&rel) {
+            return false;
+        }
+        let own = self.project_root.canonicalize().ok();
+        // A folder below the content root that holds an `ascribe.toml` is
+        // another project's, unless it's this project's own.
+        real.ancestors()
+            .skip(1)
+            .take_while(|dir| *dir != root)
+            .all(|dir| own.as_deref() == Some(dir) || !dir.join(MODEL_FILE).is_file())
+    }
+
     /// The names in a directory, or `None` when it can't be listed.
     fn list(&self, dir: &Path) -> Option<Arc<[String]>> {
         let read = || -> Option<Arc<[String]>> {
@@ -206,18 +231,16 @@ impl FileSystem for DiskFs {
 
     fn read(&self, path: &RelPath) -> io::Result<String> {
         let file = self.content_dir().join(path.as_str());
-        // A source file is read where its links lead, and that must be in
-        // the content root, so a link can't put any file on disk in a page
-        // (SPEC §2.1).
-        let inside = self
-            .content_dir()
-            .canonicalize()
-            .and_then(|root| Ok(file.canonicalize()?.starts_with(root)))?;
-        if !inside {
+        // A source file is read where its links lead, and that must be a
+        // source file too, so a link can't put any other file on disk in a
+        // page (SPEC §2.1).
+        let root = self.content_dir().canonicalize()?;
+        let real = file.canonicalize()?;
+        if !self.is_source_at(&root, &real) {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
                 format!(
-                    "`{path}` is a symbolic link, or is in a linked folder, that leads out of the content root"
+                    "`{path}` is a symbolic link, or is in a linked folder, that leads to a file that isn't a source file of the content root"
                 ),
             ));
         }

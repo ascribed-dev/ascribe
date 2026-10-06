@@ -229,7 +229,7 @@ Includes another file, or one heading's section of it, in place.
 @include {heading=false}: guides/setup.md#install
 ```
 
-- **Paths** are relative to the file they're written in, or to the content root when they start with `/`. Only source files (`.md` files under the content root) can be included. A symbolic link is followed, but only to a file under the content root: a source file whose link leads out can't be read, so no file from elsewhere on disk ends up in a page.
+- **Paths** are relative to the file they're written in, or to the content root when they start with `/`. Only source files (`.md` files under the content root) can be included. A symbolic link is followed, but only to another source file: a source file whose link leads out of the content root, or to a hidden, non-Markdown, or other project's file, can't be read, so no other file on disk ends up in a page.
 - `#id` includes only the section of the heading with that id. `{heading=false}` leaves out that section's own heading; it has no effect without `#id`, and Ascribe warns.
 - Included content becomes part of the page: phrases and builds apply to it, and its ids must not collide with the page's.
 - **Relative paths inside a fragment resolve from the fragment**, not the page including it, so a fragment's links and images work wherever it's included.
