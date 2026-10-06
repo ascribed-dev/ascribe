@@ -641,6 +641,9 @@ impl IncrementalProject {
     /// root or the output directory, and [`ApplyError::NestedProjectChanged`]
     /// when the batch adds or removes a nested project's `ascribe.toml`.
     /// Nothing is applied.
+    // Longer than the lint allows from before it was on. Split it only while
+    // changing it for another reason.
+    #[allow(clippy::too_many_lines)]
     pub fn apply(
         &mut self,
         changes: impl IntoIterator<Item = Change>,

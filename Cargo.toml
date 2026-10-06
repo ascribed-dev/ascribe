@@ -69,6 +69,9 @@ expect_used = "warn"
 panic = "warn"
 dbg_macro = "warn"
 todo = "warn"
+# Stops new long functions; the threshold is in clippy.toml. Functions that
+# were already longer allow it by name.
+too_many_lines = "warn"
 
 [profile.dev.package]
 # Snapshot diffs are much faster with these optimized.
