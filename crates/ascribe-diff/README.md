@@ -5,7 +5,7 @@ What changed between a git revision and the working tree, as readers will see it
 | Module | Role |
 |---|---|
 | `src/git.rs` | Running `git`: `Repository` (the repository's root and the project's folder in it), `Base` (the revision, and its merge base with `HEAD`), listing a commit's tree, listing the files that differ between a commit and the working tree (renames followed), and reading blobs through one `git cat-file --batch`, all at once or (`BlobReader`) one at a time through a process kept open |
-| `src/gitfs.rs` | `GitFs`, a `ascribe_resolve::FileSystem` over a commit's tree, with `DiskFs`'s rules for which files are sources and which folders are other projects'; `Revision`, a project's content model and files at a commit. A code file a snippet reads is read when it's asked for, through one `git` process for the whole revision |
+| `src/gitfs.rs` | `GitFs`, an `ascribe_resolve::FileSystem` over a commit's tree, with `DiskFs`'s rules for which files are sources and which folders are other projects'; `Revision`, a project's content model and files at a commit. A code file a snippet reads is read when it's asked for, through one `git` process for the whole revision |
 | `src/tree.rs` | A resolved page as a tree of nodes (blocks, list items, arms), each with its source anchor and a fingerprint of its content without positions |
 | `src/align.rs` | Aligning two versions of a page's nodes: a longest-common-subsequence diff over fingerprints, pairing by kind and word overlap, recursion into changed containers, and moves |
 | `src/words.rs` | The word-level diff inside changed prose |

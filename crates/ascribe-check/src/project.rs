@@ -138,7 +138,7 @@ pub struct ModelFile {
 /// path order when a project is loaded (the same numbering as
 /// `ascribe_resolve::Project`). A project built from parts may use any
 /// distinct ids from 1 (it finds a file by id, not by position): the language
-/// server gives the ids of a `ascribe_resolve::Snapshot`, which are stable
+/// server gives the ids of an `ascribe_resolve::Snapshot`, which are stable
 /// per path across updates and have gaps where files were deleted
 /// (`ascribe_resolve::incremental`). Source texts are held in memory: the
 /// language server builds a `Project` from its open buffers, and the command

@@ -207,7 +207,7 @@ from `ascribe-fmt`; the VS Code client applies those edits on save when
 
 ## How it works
 
-- **The project** is a `ascribe_resolve::IncrementalProject` built from the
+- **The project** is an `ascribe_resolve::IncrementalProject` built from the
   `ascribe.toml` found as [The project](#the-project) says. File ids follow `ascribe-resolve`: source files
   have ids from 1, `ascribe.toml` is 0, an id names a path and is never reused.
 - **Changes** reach it as `Change`s from three sources: open documents

@@ -31,7 +31,7 @@ fn incremental(files: &[(&str, &str)]) -> IncrementalProject {
     IncrementalProject::load(model, layout, fs)
 }
 
-/// A `ascribe_check::Project` over a snapshot's files, with the snapshot's ids.
+/// An `ascribe_check::Project` over a snapshot's files, with the snapshot's ids.
 fn check_project(snapshot: &Snapshot) -> Project {
     let sources = snapshot
         .files()

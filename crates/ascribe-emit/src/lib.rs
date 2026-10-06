@@ -8,7 +8,7 @@
 //! build that keeps several arms of a group emits all of them, and a filter
 //! build emits the availability annotations still attached.
 //!
-//! [`emit`] walks a [`ascribe_resolve::ResolvedBuild`] and returns an
+//! [`emit`] walks an [`ascribe_resolve::ResolvedBuild`] and returns an
 //! [`Emission`]: every page, and one copy of every asset the surviving pages
 //! use: images mirrored beside the pages that use them, other files under
 //! the output's own directory, and references rewritten to match.
