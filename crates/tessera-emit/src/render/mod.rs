@@ -40,9 +40,10 @@
 //! counting nested lists. comrak escapes `<` in text, so the next `<` is a tag.
 
 use comrak::{Options, markdown_to_html};
+use tessera_core::names;
 
 /// The tag name of the attribute marker.
-const MARKER: &str = "ascribe-attributes";
+const MARKER: &str = names::ELEMENT_ATTRIBUTES;
 
 /// Renders site markdown as HTML: CommonMark with raw HTML allowed, GFM's
 /// tables, strikethrough, bare links, and task lists as Astro's defaults have
@@ -216,9 +217,6 @@ fn encode(value: &str) -> String {
     out
 }
 
-/// The start of an anchor comment.
-const ANCHOR: &str = "<!--ascribe-anchor";
-
 /// An anchor comment found in rendered HTML.
 struct FoundAnchor {
     start: usize,
@@ -259,11 +257,13 @@ fn apply_anchors(html: &str) -> String {
 /// Every well-formed anchor comment: `<!--ascribe-anchor`, ` name="value"`
 /// attributes with `tag` and `source` among them, and `-->`.
 fn anchors(html: &str) -> Vec<FoundAnchor> {
+    // The start of an anchor comment.
+    let anchor = format!("<!--{}", names::COMMENT_ANCHOR);
     let mut found = Vec::new();
     let mut from = 0;
-    while let Some(at) = html[from..].find(ANCHOR) {
+    while let Some(at) = html[from..].find(&anchor) {
         let start = from + at;
-        from = start + ANCHOR.len();
+        from = start + anchor.len();
         let Some((attributes, len)) = parse_anchor(&html[from..]) else {
             continue;
         };
@@ -385,9 +385,9 @@ fn list_items(html: &str, from: usize) -> Vec<usize> {
 }
 
 fn anchor_attributes(source: &str, via: Option<&str>) -> String {
-    let mut out = format!(" data-ascribe-source=\"{}\"", encode(source));
+    let mut out = format!(" {}=\"{}\"", names::DATA_SOURCE, encode(source));
     if let Some(via) = via {
-        out.push_str(&format!(" data-ascribe-via=\"{}\"", encode(via)));
+        out.push_str(&format!(" {}=\"{}\"", names::DATA_VIA, encode(via)));
     }
     out
 }

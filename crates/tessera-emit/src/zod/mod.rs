@@ -33,13 +33,18 @@
 use std::fmt::Write as _;
 
 use serde_yaml_ng::Value;
+use tessera_core::names;
 use tessera_model::{ContentModel, ContentType, Field, FieldType, inline};
 
 /// The Zod module for a content model.
 pub fn generate(model: &ContentModel) -> String {
     let mut out = String::new();
     out.push_str(HEADER);
-    out.push_str(RESERVED);
+    out.push_str(
+        &RESERVED
+            .replace("{availability-target}", names::ELEMENT_AVAILABILITY_TARGET)
+            .replace("{availability}", names::ELEMENT_AVAILABILITY),
+    );
     let mut names = Vec::new();
     for ty in &model.types {
         let ident = identifier(&ty.name);
@@ -100,10 +105,11 @@ import { z } from \"astro/zod\";
 ";
 
 /// The reserved keys: `available` as the site output writes it (element
-/// contract §4), and `variant` as written (SPEC §4.3).
+/// contract §4), and `variant` as written (SPEC §4.3). `{availability}` and
+/// `{availability-target}` stand for the elements' names.
 const RESERVED: &str = "
 /** One target of a page's availability: the attributes of a
- * `<ascribe-availability-target>`, and the text it shows. */
+ * `<{availability-target}>`, and the text it shows. */
 export const availableTargetSchema = z.strictObject({
   target: z.string(),
   dimension: z.string(),
@@ -113,7 +119,7 @@ export const availableTargetSchema = z.strictObject({
 });
 
 /** A page's availability, for a layout to show with
- * `<ascribe-availability scope=\"page\">`. */
+ * `<{availability} scope=\"page\">`. */
 export const availableSchema = z.array(availableTargetSchema);
 export type Available = z.infer<typeof availableSchema>;
 

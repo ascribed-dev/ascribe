@@ -12,14 +12,19 @@
 //! An element the emitter writes itself (`<ascribe-note>`, `<details>`, and the
 //! rest) carries `data-ascribe-source` and `data-ascribe-via` on its own tag.
 
-use tessera_core::{FileId, RelPath, Span};
+use tessera_core::{FileId, RelPath, Span, names};
 use tessera_resolve::{IncludeSite, ResolvedBlock};
 
 use super::element::escape;
 use crate::emitter::EmitContext;
 
-/// The start of every anchor comment.
-pub(crate) const ANCHOR_START: &str = "<!--ascribe-anchor ";
+/// Whether `line` starts an anchor comment: `<!--ascribe-anchor` and a
+/// space.
+pub(crate) fn starts_anchor(line: &str) -> bool {
+    line.strip_prefix("<!--")
+        .and_then(|rest| rest.strip_prefix(names::COMMENT_ANCHOR))
+        .is_some_and(|rest| rest.starts_with(' '))
+}
 
 /// Where a block came from, in the contract's grammar.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -84,7 +89,8 @@ impl Anchor {
     /// `tag` element. `items` holds a list's items' lines.
     pub(crate) fn comment(&self, tag: &str, items: &[(u32, u32)]) -> String {
         let mut out = format!(
-            "{ANCHOR_START}tag=\"{tag}\" source=\"{}\"",
+            "<!--{} tag=\"{tag}\" source=\"{}\"",
+            names::COMMENT_ANCHOR,
             escape(&self.source)
         );
         if !self.via.is_empty() {
@@ -105,9 +111,9 @@ impl Anchor {
         let Some(end) = element.find('>') else {
             return element;
         };
-        let mut attrs = format!(" data-ascribe-source=\"{}\"", escape(&self.source));
+        let mut attrs = format!(" {}=\"{}\"", names::DATA_SOURCE, escape(&self.source));
         if !self.via.is_empty() {
-            attrs.push_str(&format!(" data-ascribe-via=\"{}\"", escape(&self.via)));
+            attrs.push_str(&format!(" {}=\"{}\"", names::DATA_VIA, escape(&self.via)));
         }
         let mut out = element;
         out.insert_str(end, &attrs);

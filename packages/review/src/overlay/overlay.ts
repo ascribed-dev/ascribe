@@ -41,6 +41,16 @@ import type {
   ReviewEvent,
   ThreadSummary,
 } from "./types.js";
+import {
+  DATA_CHANGE,
+  DATA_OVERLAY,
+  DATA_SHOW,
+  DATA_SOURCE,
+  DATA_UI,
+  DATA_VIA,
+  DATA_WAS_SOURCE,
+  ELEMENT_TAB,
+} from "../names.js";
 
 /** Options for `createOverlay`. */
 export interface OverlayOptions {
@@ -352,8 +362,8 @@ class ReviewOverlay implements Overlay {
 
   private uiHost(tag: "div" | "span"): HTMLElement {
     const host = this.doc.createElement(tag);
-    host.setAttribute("data-ascribe-ui", "");
-    host.setAttribute("data-ascribe-overlay", "");
+    host.setAttribute(DATA_UI, "");
+    host.setAttribute(DATA_OVERLAY, "");
     return host;
   }
 
@@ -426,28 +436,28 @@ class ReviewOverlay implements Overlay {
   }
 
   private anchorOf(element: Element): Anchor | undefined {
-    const source = element.getAttribute("data-ascribe-source");
+    const source = element.getAttribute(DATA_SOURCE);
     if (source === null) return undefined;
-    const via = (element.getAttribute("data-ascribe-via") ?? "").split(" ").filter(Boolean);
+    const via = (element.getAttribute(DATA_VIA) ?? "").split(" ").filter(Boolean);
     return { source, via };
   }
 
   /** The block an event's target is in: the innermost anchored element. */
   private blockOf(target: EventTarget | null): HTMLElement | undefined {
     if (!(target instanceof Element)) return undefined;
-    if (target.closest("[data-ascribe-overlay]") && target !== this.toolsHost) {
+    if (target.closest(`[${DATA_OVERLAY}]`) && target !== this.toolsHost) {
       // A marker: the block it's on.
-      const marker = this.markers.find((m) => m.host === target.closest("[data-ascribe-overlay]"));
+      const marker = this.markers.find((m) => m.host === target.closest(`[${DATA_OVERLAY}]`));
       if (marker) return marker.block;
     }
-    const block = target.closest<HTMLElement>("[data-ascribe-source]");
+    const block = target.closest<HTMLElement>(`[${DATA_SOURCE}]`);
     return block && this.root.contains(block) ? block : undefined;
   }
 
   /** The block's text as the page shows it, for a comment to quote. */
   private shownText(anchor: Anchor): string | undefined {
     const key = anchorKey(anchor);
-    for (const el of Array.from(this.root.querySelectorAll<HTMLElement>("[data-ascribe-source]"))) {
+    for (const el of Array.from(this.root.querySelectorAll<HTMLElement>(`[${DATA_SOURCE}]`))) {
       const at = this.anchorOf(el);
       if (at && anchorKey(at) === key) return blockText(el) || undefined;
     }
@@ -455,10 +465,8 @@ class ReviewOverlay implements Overlay {
   }
 
   private removedElement(anchor: Anchor): HTMLElement | null {
-    for (const el of Array.from(
-      this.root.querySelectorAll<HTMLElement>("[data-ascribe-was-source]"),
-    )) {
-      if (el.getAttribute("data-ascribe-was-source") === anchor.source) return el;
+    for (const el of Array.from(this.root.querySelectorAll<HTMLElement>(`[${DATA_WAS_SOURCE}]`))) {
+      if (el.getAttribute(DATA_WAS_SOURCE) === anchor.source) return el;
     }
     return null;
   }
@@ -510,8 +518,8 @@ class ReviewOverlay implements Overlay {
 
   /** Whether what the page shows hides a block: removed text in "as it will be", new text in "as it was". */
   private hiddenByShow(element: HTMLElement): boolean {
-    const show = this.root.getAttribute("data-ascribe-show");
-    const kind = element.closest("[data-ascribe-change]")?.getAttribute("data-ascribe-change");
+    const show = this.root.getAttribute(DATA_SHOW);
+    const kind = element.closest(`[${DATA_CHANGE}]`)?.getAttribute(DATA_CHANGE);
     if (show === "will") return kind === "removed" || kind === "moved-from";
     if (show === "was") return kind === "added" || kind === "moved";
     return false;
@@ -524,7 +532,7 @@ class ReviewOverlay implements Overlay {
       node !== null && node !== this.root.parentElement;
       node = node.parentElement
     ) {
-      if (node.localName === "ascribe-tab" && node.hidden) {
+      if (node.localName === ELEMENT_TAB && node.hidden) {
         return `In the ${node.getAttribute("label") ?? ""} tab, which isn't showing.`;
       }
       if (node.localName === "details" && !(node as HTMLDetailsElement).open) {
@@ -553,7 +561,7 @@ class ReviewOverlay implements Overlay {
       node !== null && node !== this.root;
       node = node.parentElement
     ) {
-      if (node.localName === "ascribe-tab" && node.hidden) shown = node.parentElement;
+      if (node.localName === ELEMENT_TAB && node.hidden) shown = node.parentElement;
       if (node.localName === "details" && !(node as HTMLDetailsElement).open) {
         const summary = node.querySelector(":scope > summary");
         if (!(shown && summary?.contains(shown))) shown = node;
@@ -608,7 +616,7 @@ class ReviewOverlay implements Overlay {
     if (this.wide)
       this.root.style.setProperty("margin-inline-end", `${COLUMN_WIDTH + COLUMN_GAP}px`);
     else this.root.style.removeProperty("margin-inline-end");
-    for (const el of Array.from(this.root.querySelectorAll<HTMLElement>("[data-ascribe-source]"))) {
+    for (const el of Array.from(this.root.querySelectorAll<HTMLElement>(`[${DATA_SOURCE}]`))) {
       if (el.hasAttribute("tabindex")) continue;
       el.tabIndex = 0;
       this.focusable.push(el);
@@ -657,7 +665,7 @@ class ReviewOverlay implements Overlay {
         node = node.parentElement
       ) {
         let on: HTMLElement | null = null;
-        if (node.localName === "ascribe-tab") on = tabButton(node);
+        if (node.localName === ELEMENT_TAB) on = tabButton(node);
         if (node.localName === "details") {
           const summary = node.querySelector<HTMLElement>(":scope > summary");
           if (summary && !summary.contains(element)) on = summary;

@@ -3,6 +3,7 @@
 //
 //   node scripts/compare/outputs.ts --base <revision>
 //   node scripts/compare/outputs.ts --before <ascribe> --after <ascribe>
+//   ... --accept '<pattern>' ...
 //
 // --base builds the `before` binary from that revision, in a temporary git
 // worktree, and the `after` binary from this checkout (or takes --after).
@@ -32,6 +33,14 @@
 // link, on purpose) and examples/docs-repository (its sources need
 // `ascribe sources fetch`) are expected to fail, so only their reports are
 // compared, not built outputs.
+//
+// --accept, given once per pattern, accepts a difference a decision in
+// project-docs/decisions.md accepts: a file whose heading line
+// (`<project>: <file>`) matches a pattern still prints its diff, marked
+// `(accepted)`, but doesn't make the exit 1. In a pattern `*` stands for
+// anything, `/` and spaces included; the rest is matched as it is, whole. A
+// pattern that matches no difference is an error (2), so it can't outlive the
+// change it was for.
 //
 // The outputs stay in --out (a new temporary directory by default). The
 // checkout isn't written to, except for the Astro example's `dist/` and the
@@ -94,17 +103,19 @@ function main(): void {
       after: { type: "string" },
       "skip-site": { type: "boolean", default: false },
       out: { type: "string" },
+      accept: { type: "string", multiple: true, default: [] },
     },
   });
   if ((options.base === undefined) === (options.before === undefined)) {
     fail(
-      "usage: outputs.ts --base <revision> [--after <ascribe>] [--skip-site] [--out <dir>]\n" +
-        "       outputs.ts --before <ascribe> --after <ascribe> [--out <dir>]",
+      "usage: outputs.ts --base <revision> [--after <ascribe>] [--skip-site] [--out <dir>] [--accept <pattern>]...\n" +
+        "       outputs.ts --before <ascribe> --after <ascribe> [--out <dir>] [--accept <pattern>]...",
     );
   }
   if (options.before !== undefined && options.after === undefined) {
     fail("--before needs --after");
   }
+  const accept = new Acceptance(options.accept);
   const out = path.resolve(options.out ?? mkdtempSync(path.join(tmpdir(), "ascribe-compare-")));
   mkdirSync(out, { recursive: true });
 
@@ -133,14 +144,14 @@ function main(): void {
     const copy = path.join(out, "copy");
     const files = copyProjects(copy);
     const spellings = rootSpellings([copy, root, ...(worktree ? [worktree] : [])]);
-    const results: [string, number, number][] = [];
+    const results: [string, Counts][] = [];
     for (const project of projects(files)) {
       const runs = {} as Record<Side, Run>;
       for (const side of SIDES) {
         console.error(`Running ${side} on ${project}`);
         runs[side] = runProject(binaries[side], copy, project, spellings, side === "before");
       }
-      results.push([project, ...compare(runs, project, path.join(out, "projects", project))]);
+      results.push([project, compare(runs, project, path.join(out, "projects", project), accept)]);
     }
     if (worktree !== undefined && !options["skip-site"]) {
       const sites = {} as Record<Side, Run>;
@@ -150,17 +161,25 @@ function main(): void {
         sites[side] = buildSite(checkout, binaries[side], spellings);
       }
       const name = "examples/astro-site/dist";
-      results.push([`${name} (Astro)`, ...compare(sites, name, path.join(out, "site"))]);
+      results.push([`${name} (Astro)`, compare(sites, name, path.join(out, "site"), accept)]);
     }
 
     console.log();
-    for (const [name, differ, total] of results) {
+    for (const [name, { differ, accepted, total }] of results) {
       console.log(
-        `${name}: ${differ === 0 ? `same (${total} files)` : `${differ} of ${total} files differ`}`,
+        `${name}: ${
+          differ === 0
+            ? `same (${total} files)`
+            : `${differ} of ${total} files differ${accepted > 0 ? ` (${accepted} accepted)` : ""}`
+        }`,
       );
     }
     console.error(`\nThe outputs are in ${out}`);
-    process.exitCode = results.some(([, differ]) => differ > 0) ? 1 : 0;
+    const unused = accept.unused();
+    if (unused.length > 0) {
+      fail(`--accept matched no difference: ${unused.join(", ")}`);
+    }
+    process.exitCode = results.some(([, c]) => c.differ > c.accepted) ? 1 : 0;
   } finally {
     if (worktree !== undefined) {
       // Cleaning up mustn't hide what stopped the comparison.
@@ -392,13 +411,57 @@ function buildSite(checkout: string, ascribe: string, spellings: string[]): Run 
   return found;
 }
 
+/** How many files differ, how many of those `--accept` accepts, and how many there are. */
+interface Counts {
+  differ: number;
+  accepted: number;
+  total: number;
+}
+
+/** The `--accept` patterns, and which have matched a difference. */
+export class Acceptance {
+  readonly #patterns: [string, RegExp][];
+  readonly #used = new Set<string>();
+
+  constructor(patterns: string[]) {
+    this.#patterns = patterns.map((p) => [
+      p,
+      new RegExp(
+        `^${p
+          .split("*")
+          .map((part) => part.replace(/[\\^$.|?*+()[\]{}]/g, "\\$&"))
+          .join(".*")}$`,
+        "s",
+      ),
+    ]);
+  }
+
+  /** Whether a difference whose heading is `heading` is accepted. */
+  accepts(heading: string): boolean {
+    let found = false;
+    for (const [pattern, re] of this.#patterns) {
+      if (re.test(heading)) {
+        this.#used.add(pattern);
+        found = true;
+      }
+    }
+    return found;
+  }
+
+  /** The patterns that accepted nothing. */
+  unused(): string[] {
+    return this.#patterns.map(([p]) => p).filter((p) => !this.#used.has(p));
+  }
+}
+
 /**
  * Compares two runs of `label`. Writes each side's files under `out`, prints
- * a short diff of each file that differs, and returns how many do, of how many.
+ * a short diff of each file that differs, and returns the counts.
  */
-function compare(runs: Record<Side, Run>, label: string, out: string): [number, number] {
+function compare(runs: Record<Side, Run>, label: string, out: string, accept: Acceptance): Counts {
   const names = [...new Set([...runs.before.keys(), ...runs.after.keys()])].sort();
   let differ = 0;
+  let accepted = 0;
   for (const side of SIDES) {
     for (const [name, bytes] of runs[side]) {
       const file = path.join(out, side, safeName(name));
@@ -412,7 +475,12 @@ function compare(runs: Record<Side, Run>, label: string, out: string): [number, 
       continue;
     }
     differ += 1;
-    console.log(`\n${label}: ${name}`);
+    const heading = `${label}: ${name}`;
+    const ok = accept.accepts(heading);
+    if (ok) {
+      accepted += 1;
+    }
+    console.log(`\n${heading}${ok ? " (accepted)" : ""}`);
     if (before === undefined || after === undefined) {
       console.log(`  only ${before === undefined ? "after" : "before"}`);
     } else if (isBinary(before) || isBinary(after)) {
@@ -426,7 +494,7 @@ function compare(runs: Record<Side, Run>, label: string, out: string): [number, 
       );
     }
   }
-  return [differ, names.length];
+  return { differ, accepted, total: names.length };
 }
 
 /** A command's name as a path: `ascribe build/site/x.md` stays a path, and spaces and `-`s do no harm. */

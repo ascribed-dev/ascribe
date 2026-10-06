@@ -6,6 +6,11 @@
   var AscribeGroup = class extends HTMLElement {
   };
 
+  // ../elements/src/names.ts
+  var ELEMENT_TABS = "ascribe-tabs";
+  var ELEMENT_TAB = "ascribe-tab";
+  var ELEMENT_GROUP = "ascribe-group";
+
   // ../elements/src/tabs.ts
   var STORAGE_PREFIX = "ascribe-tabs:";
   var pageChoices = /* @__PURE__ */ new Map();
@@ -51,7 +56,7 @@
     #setup() {
       if (!this.isConnected || this.#ready) return;
       this.#tabs = Array.from(this.children).filter(
-        (child) => child.localName === "ascribe-tab"
+        (child) => child.localName === ELEMENT_TAB
       );
       if (this.#tabs.length === 0) return;
       this.#ready = true;
@@ -156,13 +161,46 @@
 
   // ../elements/src/index.ts
   var registry = [
-    ["ascribe-tabs", AscribeTabs],
-    ["ascribe-tab", AscribeTab],
-    ["ascribe-group", AscribeGroup]
+    [ELEMENT_TABS, AscribeTabs],
+    [ELEMENT_TAB, AscribeTab],
+    [ELEMENT_GROUP, AscribeGroup]
   ];
   for (const [name, constructor] of registry) {
     if (!customElements.get(name)) customElements.define(name, constructor);
   }
+
+  // src/names.ts
+  var ELEMENT_TAB2 = "ascribe-tab";
+  var DATA_SOURCE = "data-ascribe-source";
+  var DATA_VIA = "data-ascribe-via";
+  var ID_REPORT = "ascribe-review";
+  var ID_REPORT_DATA = "ascribe-review-data";
+  var DATA_SHOW = "data-ascribe-show";
+  var DATA_CHANGE = "data-ascribe-change";
+  var DATA_UI = "data-ascribe-ui";
+  var DATA_LABEL = "data-ascribe-label";
+  var DATA_HINT = "data-ascribe-hint";
+  var DATA_MOVE = "data-ascribe-move";
+  var DATA_HAS_WAS = "data-ascribe-has-was";
+  var DATA_WAS_ONLY = "data-ascribe-was-only";
+  var DATA_WAS_SOURCE = "data-ascribe-was-source";
+  var CLASS_MARKS = "ascribe-marks";
+  var CLASS_LABEL = "ascribe-label";
+  var CLASS_LABEL_BEFORE = "ascribe-label-before";
+  var CLASS_INS = "ascribe-ins";
+  var CLASS_DEL = "ascribe-del";
+  var CLASS_REMOVED = "ascribe-removed";
+  var CLASS_REMOVED_BODY = "ascribe-removed-body";
+  var CLASS_TOGGLE = "ascribe-toggle";
+  var CLASS_OPEN = "ascribe-open";
+  var CLASS_MOVED_FROM = "ascribe-moved-from";
+  var CLASS_MOVE_NOTE = "ascribe-move-note";
+  var CLASS_MOVE_AFTER = "ascribe-move-after";
+  var CLASS_MOVE_LINK = "ascribe-move-link";
+  var CLASS_WAS_COPY = "ascribe-was-copy";
+  var CLASS_HINT = "ascribe-hint";
+  var CLASS_FLASH = "ascribe-flash";
+  var CLASS_WHERE = "ascribe-where";
 
   // src/marks/index.ts
   var LABELS = {
@@ -186,7 +224,7 @@
     "td",
     "th",
     // A tab's panel: before it would put the label among the tab list's panels.
-    "ascribe-tab"
+    ELEMENT_TAB2
   ]);
   function parseSource(source) {
     const colon = source.lastIndexOf(":");
@@ -222,13 +260,13 @@
     return text;
   }
   function viaOf(element) {
-    return element.getAttribute("data-ascribe-via") ?? "";
+    return element.getAttribute(DATA_VIA) ?? "";
   }
   function findBlock(root, anchor) {
     const via = anchor.via.join(" ");
-    const anchored = Array.from(root.querySelectorAll("[data-ascribe-source]"));
+    const anchored = Array.from(root.querySelectorAll(`[${DATA_SOURCE}]`));
     const exact = anchored.find(
-      (el) => el.getAttribute("data-ascribe-source") === anchor.source && viaOf(el) === via
+      (el) => el.getAttribute(DATA_SOURCE) === anchor.source && viaOf(el) === via
     );
     if (exact) return exact;
     const want = parseSource(anchor.source);
@@ -237,7 +275,7 @@
     let bestSpan = Infinity;
     for (const el of anchored) {
       if (viaOf(el) !== via) continue;
-      const has = parseSource(el.getAttribute("data-ascribe-source") ?? "");
+      const has = parseSource(el.getAttribute(DATA_SOURCE) ?? "");
       if (!has || has.path !== want.path) continue;
       if (has.first > want.first || has.last < want.last) continue;
       const span = has.last - has.first;
@@ -251,18 +289,18 @@
   function ui(doc, tag, className, text) {
     const el = doc.createElement(tag);
     el.className = className;
-    el.setAttribute("data-ascribe-ui", "");
+    el.setAttribute(DATA_UI, "");
     if (text !== void 0) el.textContent = text;
     return el;
   }
   function addLabel(element, kind) {
     const doc = element.ownerDocument;
-    const label = ui(doc, "span", "ascribe-label", LABELS[kind]);
-    label.setAttribute("data-ascribe-label", kind);
+    const label = ui(doc, "span", CLASS_LABEL, LABELS[kind]);
+    label.setAttribute(DATA_LABEL, kind);
     if (LABEL_INSIDE.has(element.localName)) {
       element.prepend(label);
     } else {
-      label.classList.add("ascribe-label-before");
+      label.classList.add(CLASS_LABEL_BEFORE);
       element.before(label);
     }
   }
@@ -274,8 +312,8 @@
   function copyOf(element) {
     const copy = element.cloneNode(true);
     for (const el of [copy, ...Array.from(copy.querySelectorAll("*"))]) {
-      el.removeAttribute("data-ascribe-source");
-      el.removeAttribute("data-ascribe-via");
+      el.removeAttribute(DATA_SOURCE);
+      el.removeAttribute(DATA_VIA);
       el.removeAttribute("id");
     }
     return copy;
@@ -301,7 +339,7 @@
     const walk = (node) => {
       for (const child of Array.from(node.childNodes)) {
         if (child.nodeType === Node.TEXT_NODE) text += child.nodeValue ?? "";
-        else if (child instanceof Element && !child.hasAttribute("data-ascribe-ui")) walk(child);
+        else if (child instanceof Element && !child.hasAttribute(DATA_UI)) walk(child);
       }
     };
     walk(element);
@@ -321,7 +359,7 @@
       const parent = change.parent ? findBlock(this.root, change.parent) : null;
       if (after && after !== parent && after.parentElement) {
         let previous2 = this.#last.get(after) ?? after;
-        for (let next = previous2.nextElementSibling; next && (next.hasAttribute("data-ascribe-was-only") || next.classList.contains("ascribe-move-after")); next = next.nextElementSibling) {
+        for (let next = previous2.nextElementSibling; next && (next.hasAttribute(DATA_WAS_ONLY) || next.classList.contains(CLASS_MOVE_AFTER)); next = next.nextElementSibling) {
           previous2 = next;
         }
         const el2 = make(after.parentElement);
@@ -336,7 +374,7 @@
         previous.after(el);
       } else {
         const first = Array.from(container.children).find(
-          (c) => c.hasAttribute("data-ascribe-source") || c.hasAttribute("data-ascribe-ui")
+          (c) => c.hasAttribute(DATA_SOURCE) || c.hasAttribute(DATA_UI)
         );
         if (first) first.before(el);
         else container.append(el);
@@ -370,7 +408,7 @@
             }
             offset += ch.length;
           }
-        } else if (child instanceof Element && !child.hasAttribute("data-ascribe-ui") && !child.hasAttribute("data-ascribe-source")) {
+        } else if (child instanceof Element && !child.hasAttribute(DATA_UI) && !child.hasAttribute(DATA_SOURCE)) {
           walk(child);
         }
       }
@@ -425,9 +463,9 @@
     edits.sort((a, b) => b.at - a.at || (a.kind === "del" ? -1 : 1));
     for (const edit of edits) {
       if (edit.kind === "ins") {
-        wrapRange(map, offset + edit.at, offset + edit.end, () => ui(doc, "ins", "ascribe-ins"));
+        wrapRange(map, offset + edit.at, offset + edit.end, () => ui(doc, "ins", CLASS_INS));
       } else {
-        const del = ui(doc, "del", "ascribe-del", edit.text);
+        const del = ui(doc, "del", CLASS_DEL, edit.text);
         insertAt(map, offset + edit.at, del, element);
       }
     }
@@ -476,27 +514,27 @@
     const was = options.was ?? null;
     const placer = new Placer(root);
     const marks = [];
-    root.classList.add("ascribe-marks");
-    if (!root.hasAttribute("data-ascribe-show")) root.setAttribute("data-ascribe-show", "changes");
+    root.classList.add(CLASS_MARKS);
+    if (!root.hasAttribute(DATA_SHOW)) root.setAttribute(DATA_SHOW, "changes");
     let moveCount = 0;
     for (const change of changes) {
       switch (change.kind) {
         case "added":
         case "changed": {
           const element = change.now ? findBlock(root, change.now) : null;
-          if (!element || element.hasAttribute("data-ascribe-change")) break;
-          element.setAttribute("data-ascribe-change", change.kind);
+          if (!element || element.hasAttribute(DATA_CHANGE)) break;
+          element.setAttribute(DATA_CHANGE, change.kind);
           addLabel(element, change.kind);
           if (change.kind === "changed") {
-            if (change.was) element.setAttribute("data-ascribe-was-source", change.was.source);
+            if (change.was) element.setAttribute(DATA_WAS_SOURCE, change.was.source);
             const before = was && change.was ? findBlock(was, change.was) : null;
             if (change.words) markWords(element, change.words);
             if (before) {
               const copy = copyOf(before);
-              copy.setAttribute("data-ascribe-ui", "");
-              copy.setAttribute("data-ascribe-was-only", "");
+              copy.setAttribute(DATA_UI, "");
+              copy.setAttribute(DATA_WAS_ONLY, "");
               element.after(copy);
-              element.setAttribute("data-ascribe-has-was", "");
+              element.setAttribute(DATA_HAS_WAS, "");
             }
           }
           marks.push({ change, element });
@@ -505,20 +543,20 @@
         case "removed": {
           const before = was && change.was ? findBlock(was, change.was) : null;
           const element = placer.place(change, (container) => {
-            const holder = ui(doc, holderFor(container), "ascribe-removed");
-            holder.setAttribute("data-ascribe-change", "removed");
-            if (change.was) holder.setAttribute("data-ascribe-was-source", change.was.source);
-            const label = ui(doc, "span", "ascribe-label", LABELS.removed);
-            label.setAttribute("data-ascribe-label", "removed");
-            const body = ui(doc, "div", "ascribe-removed-body");
+            const holder = ui(doc, holderFor(container), CLASS_REMOVED);
+            holder.setAttribute(DATA_CHANGE, "removed");
+            if (change.was) holder.setAttribute(DATA_WAS_SOURCE, change.was.source);
+            const label = ui(doc, "span", CLASS_LABEL, LABELS.removed);
+            label.setAttribute(DATA_LABEL, "removed");
+            const body = ui(doc, "div", CLASS_REMOVED_BODY);
             if (before) body.append(...contentOf(holder, before));
             else body.textContent = change.text ?? "";
-            const toggle = ui(doc, "button", "ascribe-toggle", "Show");
+            const toggle = ui(doc, "button", CLASS_TOGGLE, "Show");
             toggle.type = "button";
             toggle.setAttribute("aria-expanded", "false");
             toggle.addEventListener("click", (event) => {
               event.stopPropagation();
-              const open = holder.classList.toggle("ascribe-open");
+              const open = holder.classList.toggle(CLASS_OPEN);
               toggle.textContent = open ? "Collapse" : "Show";
               toggle.setAttribute("aria-expanded", String(open));
             });
@@ -530,45 +568,45 @@
         }
         case "moved": {
           const element = change.now ? findBlock(root, change.now) : null;
-          if (!element || element.hasAttribute("data-ascribe-change")) break;
+          if (!element || element.hasAttribute(DATA_CHANGE)) break;
           const id = `ascribe-move-${++moveCount}`;
           const before = was && change.was ? findBlock(was, change.was) : null;
           const stub = placer.place(change, (container) => {
-            const holder = ui(doc, holderFor(container), "ascribe-moved-from");
+            const holder = ui(doc, holderFor(container), CLASS_MOVED_FROM);
             holder.id = `${id}-from`;
-            holder.setAttribute("data-ascribe-change", "moved-from");
-            if (change.was) holder.setAttribute("data-ascribe-was-source", change.was.source);
-            const note = ui(doc, "span", "ascribe-move-note");
+            holder.setAttribute(DATA_CHANGE, "moved-from");
+            if (change.was) holder.setAttribute(DATA_WAS_SOURCE, change.was.source);
+            const note = ui(doc, "span", CLASS_MOVE_NOTE);
             note.append(doc.createTextNode(`A ${blockWord(element)} moved from here `));
-            const link = ui(doc, "a", "ascribe-move-link");
+            const link = ui(doc, "a", CLASS_MOVE_LINK);
             link.href = `#${id}`;
             note.append(link);
             holder.append(note);
-            const copy = ui(doc, "div", "ascribe-was-copy");
-            copy.setAttribute("data-ascribe-was-only", "");
+            const copy = ui(doc, "div", CLASS_WAS_COPY);
+            copy.setAttribute(DATA_WAS_ONLY, "");
             if (before) copy.append(...contentOf(holder, before));
             else copy.textContent = change.text ?? ownText(element);
             holder.append(copy);
             return holder;
           });
-          element.setAttribute("data-ascribe-change", "moved");
-          element.setAttribute("data-ascribe-move", id);
+          element.setAttribute(DATA_CHANGE, "moved");
+          element.setAttribute(DATA_MOVE, id);
           if (!element.id) element.id = id;
           addLabel(element, "moved");
-          const back = ui(doc, "a", "ascribe-move-link");
+          const back = ui(doc, "a", CLASS_MOVE_LINK);
           back.href = `#${stub.id}`;
           back.textContent = `from “${headingBefore(root, stub) ?? "the top of the page"}” ↑`;
-          const forward = stub.querySelector(".ascribe-move-link");
+          const forward = stub.querySelector(`.${CLASS_MOVE_LINK}`);
           if (forward) {
             forward.href = `#${element.id}`;
             forward.textContent = `to “${headingBefore(root, element) ?? "the top of the page"}” ↓`;
           }
           if (LABEL_INSIDE.has(element.localName)) {
-            const note = ui(doc, "span", "ascribe-move-note");
+            const note = ui(doc, "span", CLASS_MOVE_NOTE);
             note.append(" ", back);
             element.append(note);
           } else {
-            const holder = ui(doc, "div", "ascribe-move-note ascribe-move-after");
+            const holder = ui(doc, "div", `${CLASS_MOVE_NOTE} ${CLASS_MOVE_AFTER}`);
             holder.append(back);
             element.after(holder);
           }
@@ -596,7 +634,7 @@
     const summaries = /* @__PURE__ */ new Map();
     for (const { change, element } of marks) {
       for (let el = element; el && el !== root; el = el.parentElement) {
-        if (el.localName === "ascribe-tab") {
+        if (el.localName === ELEMENT_TAB2) {
           const tab = tabs.get(el) ?? { added: false, count: 0 };
           if (el === element && change.kind === "added") tab.added = true;
           else tab.count++;
@@ -610,8 +648,8 @@
     }
     const doc = root.ownerDocument;
     const hint = (kind, text) => {
-      const el = ui(doc, "span", "ascribe-hint", ` ${text}`);
-      el.setAttribute("data-ascribe-hint", kind);
+      const el = ui(doc, "span", CLASS_HINT, ` ${text}`);
+      el.setAttribute(DATA_HINT, kind);
       return el;
     };
     const watching = [];
@@ -644,8 +682,8 @@
   }
   function tabButton(tab) {
     const group = tab.parentElement;
-    if (tab.localName !== "ascribe-tab" || !group) return null;
-    const tabs = Array.from(group.children).filter((c) => c.localName === "ascribe-tab");
+    if (tab.localName !== ELEMENT_TAB2 || !group) return null;
+    const tabs = Array.from(group.children).filter((c) => c.localName === ELEMENT_TAB2);
     const buttons = group.querySelectorAll(
       ':scope > [role="tablist"] > [role="tab"]'
     );
@@ -664,28 +702,28 @@
   function clearMarks(root) {
     for (const observer of tabWatchers.get(root) ?? []) observer.disconnect();
     tabWatchers.delete(root);
-    for (const el of Array.from(root.querySelectorAll("[data-ascribe-ui]"))) {
+    for (const el of Array.from(root.querySelectorAll(`[${DATA_UI}]`))) {
       if (el.localName === "ins") el.replaceWith(...Array.from(el.childNodes));
       else el.remove();
     }
-    for (const el of Array.from(root.querySelectorAll("[data-ascribe-change]"))) {
-      el.removeAttribute("data-ascribe-change");
-      el.removeAttribute("data-ascribe-has-was");
-      el.removeAttribute("data-ascribe-was-source");
-      if (el.hasAttribute("data-ascribe-move")) {
-        if (el.id === el.getAttribute("data-ascribe-move")) el.removeAttribute("id");
-        el.removeAttribute("data-ascribe-move");
+    for (const el of Array.from(root.querySelectorAll(`[${DATA_CHANGE}]`))) {
+      el.removeAttribute(DATA_CHANGE);
+      el.removeAttribute(DATA_HAS_WAS);
+      el.removeAttribute(DATA_WAS_SOURCE);
+      if (el.hasAttribute(DATA_MOVE)) {
+        if (el.id === el.getAttribute(DATA_MOVE)) el.removeAttribute("id");
+        el.removeAttribute(DATA_MOVE);
       }
     }
     root.normalize();
   }
   function setShow(root, show) {
-    root.setAttribute("data-ascribe-show", show);
+    root.setAttribute(DATA_SHOW, show);
   }
   function reveal(element) {
     for (let el = element; el; el = el.parentElement) {
       if (el instanceof HTMLDetailsElement && !el.open) el.open = true;
-      if (el.localName === "ascribe-tab" && el.hidden) tabButton(el)?.click();
+      if (el.localName === ELEMENT_TAB2 && el.hidden) tabButton(el)?.click();
     }
   }
   function goTo(element) {
@@ -693,19 +731,19 @@
     if (typeof element.scrollIntoView === "function") {
       element.scrollIntoView({ block: "center", behavior: "smooth" });
     }
-    element.classList.remove("ascribe-flash");
+    element.classList.remove(CLASS_FLASH);
     void element.offsetWidth;
-    element.classList.add("ascribe-flash");
+    element.classList.add(CLASS_FLASH);
     if (!element.hasAttribute("tabindex")) element.setAttribute("tabindex", "-1");
     element.focus({ preventScroll: true });
   }
   function showSources(root) {
     const doc = root.ownerDocument;
-    const tip = ui(doc, "span", "ascribe-where");
+    const tip = ui(doc, "span", CLASS_WHERE);
     tip.setAttribute("role", "status");
     let current = null;
     const show = (target) => {
-      const el = target instanceof Element ? target.closest("[data-ascribe-source], [data-ascribe-was-source]") : null;
+      const el = target instanceof Element ? target.closest(`[${DATA_SOURCE}], [${DATA_WAS_SOURCE}]`) : null;
       if (el === current) return;
       current = el;
       if (!el || !root.contains(el)) {
@@ -713,8 +751,8 @@
         current = null;
         return;
       }
-      const source = el.getAttribute("data-ascribe-source");
-      tip.textContent = source ? describeSource(source, el.getAttribute("data-ascribe-via")) : `was ${describeSource(el.getAttribute("data-ascribe-was-source") ?? "")}`;
+      const source = el.getAttribute(DATA_SOURCE);
+      tip.textContent = source ? describeSource(source, el.getAttribute(DATA_VIA)) : `was ${describeSource(el.getAttribute(DATA_WAS_SOURCE) ?? "")}`;
       const box = el.getBoundingClientRect();
       const host = root.getBoundingClientRect();
       tip.style.top = `${box.top - host.top}px`;
@@ -891,7 +929,7 @@
     const step = (by) => {
       if (state.show !== "changes") {
         state.show = "changes";
-        if (article.hasAttribute("data-ascribe-show")) setShow(article, "changes");
+        if (article.hasAttribute(DATA_SHOW)) setShow(article, "changes");
         else render();
       }
       if (marks.length === 0) return;
@@ -1096,7 +1134,7 @@
       const page = build?.pages[state.page];
       main.replaceChildren(controls);
       article.replaceChildren();
-      article.removeAttribute("data-ascribe-show");
+      article.removeAttribute(DATA_SHOW);
       article.className = "r-page";
       if (!page) return;
       main.append(h("h1", { class: "r-page-heading" }, [page.title ?? page.path]));
@@ -1145,7 +1183,7 @@
     fromHash();
     render();
   }
-  var data = document.getElementById("ascribe-review-data");
-  var app = document.getElementById("ascribe-review");
+  var data = document.getElementById(ID_REPORT_DATA);
+  var app = document.getElementById(ID_REPORT);
   if (data && app) start(app, JSON.parse(data.textContent ?? "{}"));
 })();

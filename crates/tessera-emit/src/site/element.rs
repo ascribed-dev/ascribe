@@ -3,6 +3,8 @@
 //! escaped, in the contract's order, and layout that makes CommonMark parse
 //! the markdown inside a wrapping element as markdown.
 
+use tessera_core::names;
+
 /// `&`, `<`, `>`, and `"` escaped as the contract says (§0), for an
 /// attribute value, and safe as element text.
 pub(crate) fn escape(value: &str) -> String {
@@ -90,7 +92,7 @@ pub(crate) fn marker(attrs: &[(String, String)]) -> String {
     for (name, value) in attrs {
         out = out.with(name, value.as_str());
     }
-    empty("ascribe-attributes", &out)
+    empty(names::ELEMENT_ATTRIBUTES, &out)
 }
 
 #[cfg(test)]
