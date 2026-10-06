@@ -27,6 +27,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use lsp_types::{TextDocumentIdentifier, Uri};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
+use tessera_core::path::{normalize, relative_path};
 use tessera_core::{AssetUse, LineIndex, RelPath, WideEncoding};
 use tessera_diff::{BaseInfo, PageDiff, PageStatus, Side};
 use tessera_emit::assets::encode_path;
@@ -36,7 +37,7 @@ use tessera_resolve::{AstroRouter, DropReason, FileKind, LinkTarget, ResolvedBlo
 
 use crate::core::Core;
 use crate::review::ReviewBase;
-use crate::uri::{normalize, relative_to, uri_to_path};
+use crate::uri::uri_to_path;
 
 /// The request's method name.
 pub const METHOD: &str = "ascribe/preview";
@@ -345,9 +346,7 @@ impl Core {
         };
         let document = document.unwrap_or_default();
         let content_root = normalize(&loaded.root.join(loaded.layout.content_root.as_str()));
-        let content_path = relative_to(&content_root, &document)
-            .and_then(|rel| RelPath::parse(&rel).ok())
-            .filter(RelPath::is_inside);
+        let content_path = relative_path(&content_root, &document).filter(RelPath::is_inside);
         Ok(Target {
             snapshot: loaded.inc.snapshot(),
             model: loaded.model.clone(),
@@ -645,9 +644,7 @@ fn serve(target: &Target, file: &Path) -> Result<Option<PathBuf>, &'static str> 
 
 /// Whether `path` is inside `base`.
 fn within(base: &Path, path: &Path) -> bool {
-    relative_to(base, path)
-        .and_then(|rel| RelPath::parse(&rel).ok())
-        .is_some_and(|rel| rel.is_inside())
+    relative_path(base, path).is_some_and(|rel| rel.is_inside())
 }
 
 /// Splits the site output's frontmatter (`---`, YAML, `---`, a blank line)

@@ -128,6 +128,7 @@ impl Cache {
             source: source.to_owned(),
             batch_ssh: false,
         };
+        // Outside FileSystem: the cache of repositories, outside the project.
         if !remote.dir.join("HEAD").is_file() {
             std::fs::create_dir_all(&remote.dir).map_err(|e| SourcesError::Cache {
                 path: remote.dir.display().to_string(),

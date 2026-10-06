@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use lsp_types::{Location, Position, Range, Uri};
+use tessera_core::path::normalize;
 use tessera_core::{LineIndex, RelPath, Span};
 use tessera_emit::labels::plain_text;
 use tessera_model::ContentModel;
@@ -18,7 +19,7 @@ use tessera_resolve::{FileIndex, Heading, Include, PhraseUse, Reference, Snapsho
 use tessera_syntax::{Block, BlockKind, DirectiveLine, PrimaryValue};
 
 use crate::position::Encoding;
-use crate::uri::{normalize, path_to_uri};
+use crate::uri::path_to_uri;
 
 /// What a navigation request works from.
 pub(crate) struct Ctx {
