@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::io;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use tessera_core::RelPath;
@@ -326,7 +326,7 @@ impl FileSystem for DiskFs {
         let path = project_path
             .segments()
             .fold(self.project_root.clone(), |p, s| p.join(s));
-        let rest = relative_path(base, &path.canonicalize().ok()?)?;
+        let rest = tessera_core::path::relative_path(base, &path.canonicalize().ok()?)?;
         let mut segments = vec![".."; ups];
         segments.extend(rest.segments());
         RelPath::parse(&segments.join("/")).ok()
@@ -363,22 +363,6 @@ fn list_files(dir: &Path, rel: &RelPath, out: &mut Vec<RelPath>) {
             out.push(child);
         }
     }
-}
-
-/// `to` as a path relative to the directory `from`, both canonical: `None`
-/// when they share no root (another drive) or a name on the way isn't UTF-8.
-fn relative_path(from: &Path, to: &Path) -> Option<RelPath> {
-    let from: Vec<Component<'_>> = from.components().collect();
-    let to: Vec<Component<'_>> = to.components().collect();
-    let common = from.iter().zip(&to).take_while(|(a, b)| a == b).count();
-    if common == 0 {
-        return None;
-    }
-    let mut segments: Vec<&str> = vec![".."; from.len() - common];
-    for component in &to[common..] {
-        segments.push(component.as_os_str().to_str()?);
-    }
-    RelPath::parse(&segments.join("/")).ok()
 }
 
 /// What a walk of the content root needs to know besides the tree.

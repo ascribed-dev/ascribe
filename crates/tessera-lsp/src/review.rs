@@ -26,12 +26,12 @@ use std::sync::{Arc, Mutex, PoisonError};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value as Json;
 use tessera_core::RelPath;
+use tessera_core::path::normalize;
 use tessera_diff::{Base, BaseInfo, DiffError, PageDiff, Repository, Revision, Side};
 use tessera_model::ContentModel;
 use tessera_resolve::{AstroRouter, Project, Snapshot, Version};
 
 use crate::core::Core;
-use crate::uri::normalize;
 
 /// The method that sets or drops the base.
 pub const SET_BASE_METHOD: &str = "ascribe/review/setBase";

@@ -14,6 +14,7 @@ use lsp_types::{DiagnosticRelatedInformation, DiagnosticSeverity, Location, Numb
 use tessera_check::{
     Diagnostic, PageChecker, Project, ReadFailure, Severity, SourceFile, check_file,
 };
+use tessera_core::path::normalize;
 use tessera_core::{FileId, LineIndex, RelPath};
 use tessera_model::ContentModel;
 use tessera_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, ResolvedPage, Snapshot};
@@ -21,7 +22,7 @@ use tessera_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, Resolved
 use crate::core::Core;
 use crate::fsx::LayerFs;
 use crate::position::Encoding;
-use crate::uri::{normalize, path_to_uri};
+use crate::uri::path_to_uri;
 
 /// What one round of diagnostics has to do.
 pub(crate) struct Job {

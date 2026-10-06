@@ -4,7 +4,7 @@
 //! widgets, consumer, builds, and editor are in `sections.rs`.
 
 use std::collections::HashMap;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use tessera_core::availability::{AvailabilitySpec, parse_availability};
 use tessera_core::{FileId, Issue, Location, Span, diagnostics};
@@ -599,7 +599,7 @@ impl<'s> Loader<'s> {
     /// as much of it as exists.
     fn resolve(&self, rel: &str) -> PathBuf {
         let base = self.project_dir.map(Path::to_path_buf).unwrap_or_default();
-        let mut joined = normalize(&base.join(rel));
+        let mut joined = tessera_core::path::normalize(&base.join(rel));
         // `docs` and `..` cancel out to nothing, which is the current
         // directory.
         if joined.as_os_str().is_empty() {
@@ -1236,21 +1236,4 @@ fn is_absolute(s: &str) -> bool {
     s.starts_with('/')
         || s.starts_with('\\')
         || (b.len() >= 2 && b[0].is_ascii_alphabetic() && b[1] == b':')
-}
-
-/// Removes `.` and resolves `..` lexically.
-fn normalize(path: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    for c in path.components() {
-        match c {
-            Component::CurDir => {}
-            Component::ParentDir => {
-                if !out.pop() {
-                    out.push("..");
-                }
-            }
-            other => out.push(other.as_os_str()),
-        }
-    }
-    out
 }

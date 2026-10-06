@@ -138,7 +138,9 @@ impl GitFs {
                 layout.content_root.to_string(),
             ));
         }
-        let own_folder = relative_to(&project_dir, &content_dir).filter(|p| !p.is_root());
+        let own_folder = project_dir
+            .relative_to(&content_dir)
+            .filter(|p| !p.is_root());
         let mut fs = GitFs {
             tree,
             project_dir,
@@ -192,7 +194,7 @@ impl GitFs {
             .files
             .iter()
             .filter(|(_, e)| !e.symlink)
-            .filter_map(|(p, _)| relative_to(p, &self.content_dir))
+            .filter_map(|(p, _)| p.relative_to(&self.content_dir))
             .filter(|p| !p.is_root())
             .collect();
         // The directories below the content root that hold an `ascribe.toml`,
@@ -257,15 +259,6 @@ fn listed(project_dir: &RelPath, layout: &Layout, model: &ContentModel) -> Vec<R
     out.sort();
     out.dedup();
     out
-}
-
-/// `path` relative to `dir`, when it's `dir` or inside it.
-fn relative_to(path: &RelPath, dir: &RelPath) -> Option<RelPath> {
-    if !path.starts_with(dir) {
-        return None;
-    }
-    let rest: Vec<&str> = path.segments().skip(dir.segments().count()).collect();
-    RelPath::parse(&rest.join("/")).ok()
 }
 
 impl FileSystem for GitFs {
