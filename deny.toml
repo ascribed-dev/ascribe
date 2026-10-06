@@ -1,9 +1,15 @@
-# cargo-deny's checks for the Rust workspace: `cargo deny check` runs them all,
-# in rust.yml's lint job. https://embarkstudios.github.io/cargo-deny/
+# cargo-deny's checks for the Rust workspace: `cargo deny check` runs them all.
+# rust.yml's `dependencies` job runs them: licenses, bans, and sources must
+# pass, and advisories report without failing the job (below).
+# https://embarkstudios.github.io/cargo-deny/
 
 [advisories]
 # RustSec advisories: vulnerabilities, unmaintained crates, and yanked
-# versions. An advisory that appears is listed in an issue, not ignored here.
+# versions. The database changes on its own, so a new advisory would turn every
+# pull request red at once; CI shows it as a failed step instead, in a job that
+# passes. When one appears, file an issue, and either fix it or list it here
+# with the issue as the reason:
+#   ignore = [{ id = "RUSTSEC-0000-0000", reason = "#123" }]
 yanked = "deny"
 
 [licenses]
