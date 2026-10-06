@@ -1,5 +1,5 @@
 ---
-title: Options
+title: "`loom.yaml` options"
 description: Every Loom option.
 ---
 

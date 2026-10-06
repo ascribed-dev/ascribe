@@ -22,11 +22,23 @@
 //!
 //! Each entry has the attributes of a `<ascribe-availability-target>` and its
 //! text. `variant` passes through as written.
+//!
+//! A field that sets `inline = "code"` is written as its plain text, for a
+//! layout's `<title>`, search, and sorting, and its formatted form goes under
+//! the reserved `formatted`, as HTML, for its heading and navigation:
+//!
+//! ```yaml
+//! title: ascribe.toml reference
+//! formatted:
+//!   title: <code>ascribe.toml</code> reference
+//! ```
 
 use serde_yaml_ng::{Mapping, Value};
+use tessera_model::Segment;
 use tessera_resolve::ResolvedPage;
 
 use super::blocks::availability_target;
+use super::element::escape;
 use crate::emitter::PageContext;
 use crate::error::EmitError;
 
@@ -52,6 +64,18 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
             map.remove(&key);
         }
     }
+    let key = Value::String("formatted".to_owned());
+    map.remove(&key);
+    if !page.formatted.is_empty() {
+        let mut formatted = Mapping::new();
+        for field in &page.formatted {
+            formatted.insert(
+                Value::String(field.name.clone()),
+                Value::String(html(&field.segments)),
+            );
+        }
+        map.insert(key, Value::Mapping(formatted));
+    }
     if map.is_empty() {
         return Ok(String::new());
     }
@@ -60,6 +84,18 @@ pub(crate) fn render(cx: &PageContext<'_>, page: &ResolvedPage) -> Result<String
         message: format!("can't write the frontmatter: {e}"),
     })?;
     Ok(format!("---\n{yaml}---\n\n"))
+}
+
+/// A formatted value as HTML: its text escaped, and each code span a
+/// `<code>`.
+pub(crate) fn html(segments: &[Segment]) -> String {
+    segments
+        .iter()
+        .map(|segment| match segment {
+            Segment::Text(text) => escape(text),
+            Segment::Code(code) => format!("<code>{}</code>", escape(code)),
+        })
+        .collect()
 }
 
 fn target_value(view: &super::blocks::TargetView) -> Value {

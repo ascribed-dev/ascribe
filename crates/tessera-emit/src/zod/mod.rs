@@ -25,11 +25,15 @@
 //!   collection that holds them all.
 //!
 //! It also exports `availableSchema` and `variantSchema`, for layouts.
+//!
+//! A type with fields that set `inline = "code"` also has `formatted`: each
+//! such field's formatted form, as HTML, which the site output writes beside
+//! the field's plain text.
 
 use std::fmt::Write as _;
 
 use serde_yaml_ng::Value;
-use tessera_model::{ContentModel, ContentType, Field, FieldType};
+use tessera_model::{ContentModel, ContentType, Field, FieldType, inline};
 
 /// The Zod module for a content model.
 pub fn generate(model: &ContentModel) -> String {
@@ -148,8 +152,35 @@ fn object(fields: &[Field], reserved: bool, base: usize) -> String {
     if reserved {
         let _ = writeln!(out, "{inner}available: availableSchema.optional(),");
         let _ = writeln!(out, "{inner}variant: variantSchema.optional(),");
+        let formatted: Vec<&Field> = fields.iter().filter(|f| f.inline.is_some()).collect();
+        if !formatted.is_empty() {
+            let _ = writeln!(
+                out,
+                "{inner}formatted: {},",
+                formatted_schema(&formatted, base + 2)
+            );
+        }
     }
     let _ = write!(out, "{}}})", " ".repeat(base));
+    out
+}
+
+/// `formatted`: the HTML of each `inline` field, there whenever the field
+/// has a value, its own or its default.
+fn formatted_schema(fields: &[&Field], base: usize) -> String {
+    let inner = " ".repeat(base + 2);
+    let mut out = String::from("z.strictObject({\n");
+    let mut any_required = false;
+    for field in fields {
+        let present = field.required || field.default.is_some();
+        any_required |= present;
+        let optional = if present { "" } else { ".optional()" };
+        let _ = writeln!(out, "{inner}{}: z.string(){optional},", key(&field.name));
+    }
+    let _ = write!(out, "{}}})", " ".repeat(base));
+    if !any_required {
+        out.push_str(".optional()");
+    }
     out
 }
 
@@ -167,6 +198,15 @@ fn key(name: &str) -> String {
 fn field_schema(field: &Field, base: usize) -> String {
     let mut out = type_schema(&field.ty, base);
     if let Some(default) = &field.default {
+        // The site output writes an `inline` field as its plain text.
+        let plain;
+        let default = match (field.inline, default) {
+            (Some(_), Value::String(text)) => {
+                plain = Value::String(inline::plain_text(&inline::parse(text, &|_| None)));
+                &plain
+            }
+            _ => default,
+        };
         let _ = write!(out, ".default({})", default_value(&field.ty, default));
     } else if !field.required {
         out.push_str(".optional()");

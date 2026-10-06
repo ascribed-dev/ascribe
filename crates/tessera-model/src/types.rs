@@ -4,6 +4,7 @@
 use serde_yaml_ng::Value;
 use tessera_core::{Issue, Location, diagnostics};
 
+use crate::inline::InlineMarkup;
 use crate::names::suggest;
 
 /// The type of a frontmatter field.
@@ -38,6 +39,9 @@ pub struct Field {
     pub default: Option<Value>,
     /// Whether phrases (SPEC §5.1) are substituted in the value.
     pub phrases: bool,
+    /// The inline markup the value is read with (`inline = "code"`), on a
+    /// content type's top-level `string` fields.
+    pub inline: Option<InlineMarkup>,
     /// Help text.
     pub description: Option<String>,
 }
@@ -309,6 +313,7 @@ pub fn default_mismatch(ty: &FieldType, v: &Value) -> Option<String> {
             required: true,
             default: None,
             phrases: false,
+            inline: None,
             description: None,
         }],
     };
@@ -332,6 +337,7 @@ mod tests {
             required,
             default: None,
             phrases: false,
+            inline: None,
             description: None,
         }
     }

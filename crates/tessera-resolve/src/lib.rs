@@ -86,9 +86,9 @@ pub mod snippet;
 
 pub use astro::AstroRouter;
 pub use build::{
-    Annotation, Availability, BuildResolver, DefaultRouter, DropReason, DroppedPage, GlossaryUse,
-    HeadingIds, LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind,
-    ResolvedLink, ResolvedPage, Scope, Substitution,
+    Annotation, Availability, BuildResolver, DefaultRouter, DropReason, DroppedPage,
+    FormattedField, GlossaryUse, HeadingIds, LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild,
+    ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, Scope, Substitution,
 };
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,

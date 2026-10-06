@@ -22,7 +22,7 @@
 pub(crate) mod inline;
 
 use tessera_core::RelPath;
-use tessera_model::{ContentModel, PlainContent};
+use tessera_model::{ContentModel, PlainContent, Segment};
 use tessera_resolve::{ResolvedBlock, ResolvedKind, ResolvedLink, ResolvedPage};
 use tessera_syntax::{Alignment, BlockKind, Bound, CodeBlock, DirectiveLine, PrimaryValue, Table};
 
@@ -70,7 +70,9 @@ fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
         model: cx.emit.model,
     };
     let mut chunks = Vec::new();
-    if let Some(title) = &page.title {
+    if let Some(segments) = page.formatted_title() {
+        chunks.push(format!("# {}", formatted_heading(segments)));
+    } else if let Some(title) = &page.title {
         // A folded YAML scalar can hold a line break; a heading can't.
         let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
         chunks.push(format!("# {}", escape(&title, false)));
@@ -84,6 +86,37 @@ fn render_page(cx: &PageContext<'_>, page: &ResolvedPage) -> String {
         out.push('\n');
     }
     out
+}
+
+/// A title read with `inline = "code"` as a heading's text: its text
+/// escaped, with line breaks and runs of spaces made one space, and its code
+/// spans as code spans.
+fn formatted_heading(segments: &[Segment]) -> String {
+    let mut out = String::new();
+    for segment in segments {
+        match segment {
+            Segment::Text(text) => {
+                let mut collapsed = String::with_capacity(text.len());
+                let mut space = false;
+                for ch in text.chars() {
+                    if ch.is_whitespace() {
+                        space = true;
+                        continue;
+                    }
+                    if std::mem::take(&mut space) {
+                        collapsed.push(' ');
+                    }
+                    collapsed.push(ch);
+                }
+                if space {
+                    collapsed.push(' ');
+                }
+                out.push_str(&escape(&collapsed, false));
+            }
+            Segment::Code(code) => out.push_str(&inline::code_span(code)),
+        }
+    }
+    out.trim().to_owned()
 }
 
 /// What kind of list the last emitted block was, so that an adjacent list of

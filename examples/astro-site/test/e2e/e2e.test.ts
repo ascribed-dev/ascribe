@@ -41,12 +41,19 @@ describe("the built site", () => {
     for (const [route, title] of [
       [BASE, "Loom documentation"],
       [`${BASE}/guides/my-setup`, "Set up Loom"],
-      [`${BASE}/reference/options`, "Options"],
+      [`${BASE}/reference/options`, "loom.yaml options"],
     ] as const) {
       const page = await open(route);
       await expect(page.locator("main > h1").textContent()).resolves.toBe(title);
       await page.close();
     }
+  });
+
+  it("shows a title's code spans in the heading, and the plain title in <title>", async () => {
+    const page = await open(`${BASE}/reference/options`);
+    await expect(page.locator("main > h1").innerHTML()).resolves.toBe("<code>loom.yaml</code> options");
+    await expect(page.title()).resolves.toBe("loom.yaml options");
+    await page.close();
   });
 
   it("follows links that only work if Ascribe's routes are Astro's", async () => {

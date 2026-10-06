@@ -18,8 +18,9 @@ trailing-slash = "never"
 [types.page]
 default = true
 
+# `inline = "code"`: a title can show code, as "`loom.yaml` options".
 [types.page.frontmatter]
-title = "string"
+title = { type = "string", inline = "code" }
 description = "string?"
 
 # `@variant {pm=npm}:` and friends: a group the site keeps as tabs.

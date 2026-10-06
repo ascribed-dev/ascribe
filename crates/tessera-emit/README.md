@@ -25,7 +25,7 @@ output.replace(&build.name, "plain", &emission.files)?;
 
 ## Plain markdown
 
-Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading, the page-level `Available:` line if it has one, then its blocks. SPEC §9.4's table, as implemented:
+Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading (with its code spans, when `title` sets `inline = "code"`), the page-level `Available:` line if it has one, then its blocks. SPEC §9.4's table, as implemented:
 
 | Source | Output |
 |---|---|
@@ -48,7 +48,7 @@ Markdown plus web components, for a consumer that renders CommonMark with raw HT
 
 | Source | Output |
 |---|---|
-| Frontmatter | Passed through, phrases substituted; `available` becomes a list of targets |
+| Frontmatter | Passed through, phrases substituted; `available` becomes a list of targets; a field that sets `inline = "code"` is its plain text, with its HTML under `formatted` |
 | Heading | An ATX heading ending in `<ascribe-attributes id="…"></ascribe-attributes>` with its page id, after a space |
 | Image | `![alt](./path "title")`, then a marker with its attributes and the model's defaults |
 | `@note` | `<ascribe-note type label heading>` wrapping the content |
@@ -68,7 +68,7 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ### Zod
 
-`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys, and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema`. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p tessera-emit --test zod`.
+`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys (and `formatted`, for a type whose fields set `inline = "code"`), and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema`. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p tessera-emit --test zod`.
 
 ## JSON
 
@@ -84,8 +84,9 @@ One document per page, at the page's source path with `.json` for `.md`. `schema
 | `path` | string | The page's source path, relative to the content root |
 | `route` | string | The page's root-relative URL, as the router made it |
 | `site` | string or null | `[consumer] site`, the origin to put before a root-relative URL |
-| `title` | string or null | The frontmatter `title`, phrases substituted |
-| `frontmatter` | object or null | The frontmatter, with phrases substituted in the fields that ask for it |
+| `title` | string or null | The frontmatter `title`, phrases substituted, as plain text |
+| `frontmatter` | object or null | The frontmatter, with phrases substituted in the fields that ask for it, and fields that set `inline = "code"` as plain text |
+| `formatted` | object, when there is one | Each field that sets `inline = "code"`, as a list of `{type: "text" \| "code", value}` |
 | `availability` | object or null | The page's own availability (frontmatter `available`) |
 | `headings` | array | Every surviving heading: `level`, `text`, `id` (its page id), `sourceId`, `explicit`, `source` |
 | `assets` | array | Every surviving asset reference on the page: `source` (its source path), `path` (the copy's path in this output), `reference` (how this page refers to it), `kind` (`"image"` or `"link"`), `fragment`, `writtenIn` (the file the reference is written in), `span` |

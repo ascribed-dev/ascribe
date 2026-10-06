@@ -31,7 +31,8 @@ related = { type = "list(object)?", fields = { title = "string", url = "string" 
 files = ["reference/**", "api/**/*.md"]
 
 [types.reference.frontmatter]
-title = "string"
+# Code spans in the title, as in "`ascribe.toml` reference".
+title = { type = "string", inline = "code" }
 api-version = "string?"
 
 # :snippet-start: fragments
