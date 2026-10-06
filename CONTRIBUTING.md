@@ -29,8 +29,10 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 - Changes to `crates/comrak-tessera` follow [FORK.md](crates/comrak-tessera/FORK.md): mark each one `// TESSERA:` and update the table.
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions.
+- A change to the language, a new command or option, or a change to the site output's markup goes through its list in [project-docs/checklists.md](project-docs/checklists.md): each line is done, or says why it doesn't apply.
+- A decision made in an issue, a review, or a conversation is added to [project-docs/decisions.md](project-docs/decisions.md) in the pull request that acts on it.
 
-A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter.
+A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter, unless it changes `project-docs/decisions.md` or `project-docs/checklists.md`, which a test checks.
 
 ### A clean-up that changes no output
 
