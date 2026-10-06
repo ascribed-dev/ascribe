@@ -3,3 +3,7 @@
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
 allow-panic-in-tests = true
+
+# Flags the longest few functions, not hundreds: see
+# project-docs/optimization/lints.md.
+too-many-lines-threshold = 150
