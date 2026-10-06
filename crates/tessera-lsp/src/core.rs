@@ -220,6 +220,8 @@ impl Core {
         let config = self.config.as_ref()?;
         match self.docs.get(config) {
             Some(doc) => Some(doc.text.clone()),
+            // Outside FileSystem: the content model, which says where the
+            // content root is.
             None => std::fs::read_to_string(config).ok(),
         }
     }
@@ -482,6 +484,9 @@ impl Core {
         let Some(loaded) = self.loaded.as_ref() else {
             return;
         };
+        // Outside FileSystem: what the editor says changed, which can be any
+        // path in the workspace. A source file in it is read through DiskFs
+        // below.
         let Ok(meta) = std::fs::metadata(path) else {
             return self.collect_deleted(path, changes, mirror);
         };
@@ -615,6 +620,8 @@ impl Core {
     fn refresh_from_disk(&mut self, path: &Path) {
         let mut changes = Vec::new();
         let mut mirror = Vec::new();
+        // Outside FileSystem: whether the file whose buffer closed is still
+        // there; `collect_present` reads it through DiskFs.
         if path.is_file() {
             self.collect_present(path, &mut changes, &mut mirror);
         } else {

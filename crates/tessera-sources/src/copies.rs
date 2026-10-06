@@ -59,8 +59,8 @@ impl Folder {
     /// The bytes of a copy, if it's a file (not a link).
     pub(crate) fn read(&self, path: &str) -> Option<Vec<u8>> {
         let full = self.path(path)?;
-        // Outside FileSystem: a copy is read only to compare it with what
-        // would be written over it, and never through a link, which
+        // Outside FileSystem: a copy is read only to compare it with what would
+        // be written over it, and never through a link, which
         // `FileSystem::read_file` follows.
         let meta = fs::symlink_metadata(&full).ok()?;
         if !meta.is_file() {
@@ -88,6 +88,7 @@ impl Folder {
         if self.read(path).as_deref() == Some(bytes) {
             return Ok(false);
         }
+        // Outside FileSystem: writing a copy, which the FileSystem doesn't do.
         // From the project root down, every folder that exists is a real
         // one.
         let mut dir = self.root.clone();
@@ -107,6 +108,7 @@ impl Folder {
                 Err(e) => return Err(e),
             }
         }
+        // Outside FileSystem: as above.
         // A link where the copy goes is replaced, not written through.
         if fs::symlink_metadata(&full).is_ok_and(|m| !m.is_file()) {
             fs::remove_file(&full)?;

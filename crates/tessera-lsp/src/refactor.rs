@@ -36,6 +36,8 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
         let new_uri = Uri::from_str(&file.new_uri).ok()?;
         let old_abs = normalize(&crate::uri::uri_to_path(&old_uri)?);
         let new_abs = normalize(&crate::uri::uri_to_path(&new_uri)?);
+        // Outside FileSystem: whether a rename's target is taken, for any path
+        // the editor names.
         if relative_path(root, &old_abs).is_none()
             || relative_path(root, &new_abs).is_none()
             || (new_abs.exists() && new_abs != old_abs)

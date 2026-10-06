@@ -17,6 +17,8 @@ pub enum Failure {
 /// Finds the content model (`--config`, or the nearest `ascribe.toml` in the
 /// current directory or a parent) and loads the project.
 pub fn load_project(global: &Global) -> Result<Project, Failure> {
+    // Outside FileSystem: the path given with `--config`, or the one found,
+    // before there's a project.
     let config = match &global.config {
         Some(path) if path.is_dir() => path.join(tessera_check::MODEL_FILE),
         Some(path) => path.clone(),
@@ -32,6 +34,7 @@ pub fn load_project(global: &Global) -> Result<Project, Failure> {
             })?
         }
     };
+    // Outside FileSystem: as above.
     if !config.is_file() {
         return Err(Failure::Config(format!(
             "{} doesn't exist or isn't a file",

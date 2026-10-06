@@ -49,6 +49,7 @@ It uses `tessera-core`, `tessera-syntax`, and `tessera-model`, and no other crat
 - `tests/build_content.rs`, `tests/build_modes.rs`: build resolution: phrases, page ids, links, assets, the glossary, build modes, and availability.
 - `tests/quill.rs`, `tests/build_quill.rs`: `examples/quill` indexes, expands, and resolves under each of its builds with no problems.
 - `tests/incremental.rs`: what each kind of change invalidates and caches.
+- `tests/file_reads.rs`: every read of the disk in the workspace's crates outside `FileSystem` says why, in a comment starting `Outside FileSystem:`.
 - `tests/incremental_differential.rs`: a property test that, after each step of random edits, the incremental project equals a load from scratch.
 - Unit tests in `src/fs.rs` cover discovery and links on a real disk; the slugger's run the upstream fixtures.
 - `benches/incremental.rs`: an incremental update on 3,000 pages, run with `cargo bench -p tessera-resolve --bench incremental`.

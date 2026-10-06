@@ -27,7 +27,7 @@ Setup: `corepack enable && pnpm install`. `pnpm typecheck` needs `@ascribed/cli`
 - **Behavior changes come with a conformance case** in `tests/conformance/cases/`.
 - **Generated files aren't edited by hand.** A file that says what generates it is rewritten by running its test with `ASCRIBE_BLESS=1`; read the diff before committing it. See ARCHITECTURE.md's list.
 - **Never accept snapshots blindly.** Review `insta` changes with `cargo insta review`.
-- **Read project files through `tessera_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there.
+- **Read project files through `tessera_resolve::FileSystem`.** It knows the content root, the boundary, exact-case names, and symbolic links. A new direct `std::fs` read of a project file repeats bugs already fixed there; a read of anything else says why in a comment starting `Outside FileSystem:`, or `crates/tessera-resolve/tests/file_reads.rs` fails.
 - **Two renderers must agree.** A change to the site output's markup changes the fixtures in `tests/render/`, and both `render_site_html` and the Astro plugin pass them.
 - **`crates/comrak-tessera` is a fork.** Mark each change `// TESSERA:` and list it in `crates/comrak-tessera/FORK.md`.
 - **Docs change with the code.** A change a user would notice updates its page under `docs/content/` and the unreleased section of `CHANGELOG.md`. Don't run a formatter over Markdown.

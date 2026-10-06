@@ -72,6 +72,11 @@ impl DiskAssets {
 
 impl AssetFiles for DiskAssets {
     fn read(&self, content_path: &RelPath) -> Option<Vec<u8>> {
+        // Outside FileSystem: an image is read from where the build copies
+        // it (`EmitContext::asset_source`), so the report shows what the
+        // build writes. The build's asset copies don't go through
+        // FileSystem either; moving both is a behavior change, not this
+        // clean-up's.
         fs::read(self.content_dir.join(content_path.as_str())).ok()
     }
 }
