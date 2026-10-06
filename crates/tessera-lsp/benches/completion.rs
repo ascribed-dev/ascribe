@@ -9,7 +9,8 @@
 //! types into it and asks, `SAMPLES` times, while the server checks the edit in
 //! the background as it would in an editor. The target is 50 ms at 3,000
 //! pages; the process exits non-zero
-//! if any 95th percentile misses it.
+//! if any 95th percentile misses it. With `ASCRIBE_BENCH_OUT` set, the link by
+//! page title at 3,000 pages is recorded as `lsp/completion-3000`.
 
 #![allow(
     clippy::expect_used,
@@ -146,6 +147,11 @@ fn run(pages: usize) -> Vec<(String, Duration, Duration)> {
                 !result["items"].as_array().is_none_or(Vec::is_empty),
                 "{name}: no items: {result}"
             );
+        }
+        // The slowest context, a link by page title, stands for completion in
+        // `corpora compare` (`lsp/completion-3000`).
+        if pages == 3000 && name == "link, page title" {
+            tessera_synthetic::report::record("lsp/completion-3000", &mut times.clone());
         }
         times.sort();
         let q = |f: f64| times[((times.len() as f64 - 1.0) * f).round() as usize];

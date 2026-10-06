@@ -15,11 +15,20 @@
 //!   project, the file-level checks, and the page-level checks of every build;
 //!   and, for a build, resolving and emitting plain markdown.
 //!
+//! Then the peak memory of `ascribe check`, `ascribe build` (first),
+//! `ascribe diff`, and the language server on the synthetic project (see
+//! `memory/mod.rs`).
+//!
 //! The Elastic corpus is fetched at the pinned commit (skipped, with a
 //! message, when the network isn't there). With `ASCRIBE_BENCH_OUT` set, the
 //! command timings are also appended as JSON lines for `corpora compare`.
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::print_stdout)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::print_stdout,
+    clippy::panic
+)]
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -32,6 +41,8 @@ use tessera_corpora::corpus::{self, Corpus};
 use tessera_emit::{EmitContext, Emitter, PlainEmitter, emit};
 use tessera_resolve::AstroRouter;
 use tessera_synthetic::{CONTENT_ROOT, Synthetic, report::record};
+
+mod memory;
 
 fn median(times: &mut [Duration]) -> Duration {
     times.sort();
@@ -304,6 +315,64 @@ fn diff_snippets(bin: &Path, dir: &Path) {
     println!();
 }
 
+/// Peak memory on the synthetic project at `root` and its git copy at
+/// `git` (as [`diff`] leaves it: nothing changed).
+fn memory(bin: &Path, dir: &Path, root: &Path, git: &Path) {
+    let Some(meter) = memory::Meter::new(dir) else {
+        return;
+    };
+    println!("synthetic project: peak memory");
+    meter.cli(
+        "  ascribe check",
+        "memory/check-synthetic-3000",
+        bin,
+        root,
+        &["check"],
+        || {},
+    );
+    let output = root.join(".ascribe");
+    meter.cli(
+        "  ascribe build (first: writes every output)",
+        "memory/build-synthetic-3000-first",
+        bin,
+        root,
+        &["build", "--emit", "plain,json"],
+        || {
+            let _ = std::fs::remove_dir_all(&output);
+        },
+    );
+    if git.join(".git").exists() {
+        let args = ["diff", "--base", "main", "--format", "json"];
+        meter.cli(
+            "  ascribe diff (nothing changed)",
+            "memory/diff-synthetic-3000-unchanged",
+            bin,
+            git,
+            &args,
+            || {},
+        );
+        let model = git.join("ascribe.toml");
+        let text = std::fs::read_to_string(&model).expect("reads");
+        std::fs::write(
+            &model,
+            text.replace("product = \"Quill\"", "product = \"Quill Cloud\""),
+        )
+        .expect("writes");
+        meter.cli(
+            "  ascribe diff (phrase used by every page changed)",
+            "memory/diff-synthetic-3000-phrase",
+            bin,
+            git,
+            &args,
+            || {},
+        );
+        std::fs::write(&model, text).expect("writes");
+    }
+    let _ = std::fs::remove_dir_all(&output);
+    meter.lsp(bin, &root.canonicalize().expect("the project's path"));
+    println!();
+}
+
 fn machine() {
     let cpu = std::fs::read_to_string("/proc/cpuinfo")
         .ok()
@@ -397,6 +466,7 @@ fn main() {
 
     diff(&bin, dir.path());
     diff_snippets(&bin, dir.path());
+    memory(&bin, dir.path(), &root, &dir.path().join("synthetic-git"));
 
     // The same command on a project with a diagnostic on every page: the text
     // report is the default, and FINDINGS.md P1 is about what it costs.

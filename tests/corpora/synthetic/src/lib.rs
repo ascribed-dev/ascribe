@@ -335,19 +335,32 @@ pub mod report {
     /// the metric `name`. Failures to write are ignored: a benchmark's
     /// numbers matter more than its bookkeeping.
     pub fn record(name: &str, times: &mut [Duration]) {
+        let mut ms: Vec<f64> = times.iter().map(|t| t.as_secs_f64() * 1000.0).collect();
+        append(name, &mut ms);
+    }
+
+    /// Appends the median and 95th percentile of `megabytes` as the metric
+    /// `name`, which starts with `memory/`. The line has the same fields as a
+    /// time's, and `corpora compare` treats it the same way; only the unit
+    /// differs.
+    pub fn record_megabytes(name: &str, megabytes: &mut [f64]) {
+        append(name, megabytes);
+    }
+
+    fn append(name: &str, values: &mut [f64]) {
         let Some(path) = std::env::var_os("ASCRIBE_BENCH_OUT") else {
             return;
         };
-        if times.is_empty() {
+        if values.is_empty() {
             return;
         }
-        times.sort();
-        let at = |q: f64| times[((times.len() as f64 - 1.0) * q).round() as usize];
+        values.sort_by(f64::total_cmp);
+        let at = |q: f64| values[((values.len() as f64 - 1.0) * q).round() as usize];
         let line = format!(
             "{{\"name\":\"{name}\",\"median_ms\":{:.4},\"p95_ms\":{:.4},\"runs\":{}}}\n",
-            at(0.5).as_secs_f64() * 1000.0,
-            at(0.95).as_secs_f64() * 1000.0,
-            times.len()
+            at(0.5),
+            at(0.95),
+            values.len()
         );
         if let Ok(mut file) = std::fs::OpenOptions::new()
             .create(true)

@@ -7,6 +7,10 @@
 //! **misses its target** when it exceeds an absolute limit from the spec's
 //! performance targets. Both are read from `baselines/perf.json`.
 //!
+//! A metric whose name starts with `memory/` is a peak resident memory in
+//! megabytes, not a time: its line has the same fields, and it's compared the
+//! same way, with the floor read as megabytes.
+//!
 //! The margin is deliberately generous (see `RESULTS.md`): shared CI runners
 //! vary by a factor of two between runs and by more between machines, and the
 //! job exists to catch an algorithm that got worse, not a few percent.
@@ -65,8 +69,16 @@ pub const REQUIRED: &[&str] = &[
     "check/synthetic-3000",
     "build/synthetic-3000-first",
     "check/noisy-1000-text",
+    "diff/synthetic-3000-unchanged",
+    "drift/synthetic-3000-snippets-unchanged",
     "lsp/keystroke-page-3000",
     "lsp/keystroke-fragment-3000",
+    "lsp/completion-3000",
+    "memory/check-synthetic-3000",
+    "memory/build-synthetic-3000-first",
+    "memory/diff-synthetic-3000-unchanged",
+    "memory/lsp-load-3000",
+    "memory/lsp-100-edits-3000",
 ];
 
 /// Reads a results file: the last line for a metric wins.
@@ -100,7 +112,8 @@ fn machine() -> String {
 
 /// Compares `results` with the baseline at `baseline`; with `record`, writes
 /// the results as the new baseline's metrics (keeping its margin, floor, and
-/// targets) instead.
+/// targets) instead, unless a [`REQUIRED`] metric is missing from them, which
+/// fails and leaves the file as it was.
 ///
 /// # Errors
 ///
@@ -115,7 +128,23 @@ pub fn compare(
         &std::fs::read_to_string(baseline).map_err(|e| format!("{}: {e}", baseline.display()))?,
     )
     .map_err(|e| format!("{}: {e}", baseline.display()))?;
+    let missing: Vec<&str> = REQUIRED
+        .iter()
+        .copied()
+        .filter(|r| !results.contains_key(*r))
+        .collect();
     if record {
+        // A recording without a required metric would drop its baseline
+        // unnoticed; keep the old file instead.
+        if !missing.is_empty() {
+            return Ok(Comparison {
+                text: format!(
+                    "not recorded: missing from the results: {}\n",
+                    missing.join(", ")
+                ),
+                ok: false,
+            });
+        }
         base.machine = machine();
         base.metrics = results
             .values()
@@ -138,11 +167,9 @@ pub fn compare(
         "{:<44} {:>10} {:>10} {:>10} {:>10}  status\n",
         "metric", "median", "baseline", "limit", "target"
     ));
-    for required in REQUIRED {
-        if !results.contains_key(*required) {
-            ok = false;
-            text.push_str(&format!("{required:<44} missing from the results\n"));
-        }
+    for required in &missing {
+        ok = false;
+        text.push_str(&format!("{required:<44} missing from the results\n"));
     }
     for (name, r) in &results {
         let recorded = base.metrics.get(name).copied();
