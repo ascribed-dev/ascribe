@@ -98,7 +98,16 @@ describe("the full content model's schema", () => {
   it("has a schema for each type, and one for any of them", () => {
     expect(Object.keys(full.schemas)).toEqual(["guide", "reference"]);
     expect(full.contentTypes.reference.files).toEqual(["reference/**", "api/**/*.md"]);
-    expect(full.schema.safeParse({ title: "R", "api-version": "3" }).success).toBe(true);
+    const reference = { title: "R", "api-version": "3", formatted: { title: "<code>R</code>" } };
+    expect(full.schema.safeParse(reference).success).toBe(true);
     expect(full.schema.safeParse({ nope: 1 }).success).toBe(false);
+  });
+
+  it("has the formatted form of a field that sets inline", () => {
+    const page = { title: "ascribe.toml reference", formatted: { title: "<code>ascribe.toml</code> reference" } };
+    expect(full.referenceSchema.parse(page).formatted.title).toBe("<code>ascribe.toml</code> reference");
+    // The site output always writes it beside the title.
+    expect(full.referenceSchema.safeParse({ title: "R" }).success).toBe(false);
+    expect(full.referenceSchema.safeParse({ ...page, formatted: { title: "R", nope: "" } }).success).toBe(false);
   });
 });

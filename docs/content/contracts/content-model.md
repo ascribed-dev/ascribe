@@ -202,9 +202,9 @@ api-version = "string"
 
 A type with neither `files` nor `default = true` could never apply, and is an error (`model-type-unreachable`). The rules in steps 2 and 4 are document diagnostics, listed in SPEC §8.2.
 
-**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page (SPEC §5.2). The field MAY accept phrases (§12).
+**The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page (SPEC §5.2). The field MAY accept phrases (§12), and MAY set `inline = "code"` for code spans in the title (§6.3).
 
-**Reserved keys.** `available` (SPEC §4.4) and `variant` (SPEC §4.3) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type MUST NOT declare them (`model-field-reserved`). Generated consumer schemas include them automatically. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type MUST NOT declare it (`model-field-reserved`).
+**Reserved keys.** `available` (SPEC §4.4) and `variant` (SPEC §4.3) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type MUST NOT declare them (`model-field-reserved`). Generated consumer schemas include them automatically. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type MUST NOT declare it (`model-field-reserved`). `formatted` is reserved on page types as well: the site output writes the formatted form of `inline` fields under it (§6.3), so a type MUST NOT declare it (`model-field-reserved`). A page's own frontmatter can't use it either, since no type declares it.
 
 **Unknown frontmatter keys.** A page whose frontmatter has a key its type doesn't declare (and that isn't reserved) is an error on the page.
 
@@ -276,9 +276,40 @@ Grammar (ABNF, with the rules of SPEC Appendix A):
 | `values` | array of strings | required when `type` uses bare `enum`; not allowed otherwise | The enumeration's values, for values that aren't simple words, such as `["Getting started", "How-to"]`. Values MUST be distinct. Values of a `set(enum)` attribute MUST be tokens. |
 | `default` | any TOML value | none | The value used when the field or attribute is absent. It MUST have the declared type (a TOML string for `string` and `enum`, integer or float for `number`, boolean for `boolean`, local date for `date`, array for `list`, inline table for `object`, a string or array of strings for `set`). A field with a default is optional; adding `?` as well is allowed and changes nothing. |
 | `phrases` | boolean | `false` | Whether phrases (SPEC §5.1) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §12. |
+| `inline` | string | none | The inline markup the value is read with. The one value is `"code"`: code spans. Allowed only on a content type's top-level `string` fields (and `string?`), not in objects or the fragment schema. See §6.3. |
 | `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
 
 Nesting beyond one level of `fields` is allowed but discouraged; keep frontmatter flat.
+
+### 6.3 Inline code in a field
+
+A `string` field is plain text: a backtick in it is a backtick. A field that sets `inline = "code"` is read as inline Markdown that knows only code spans, so a page title can show code:
+
+```toml
+[types.reference.frontmatter]
+title = { type = "string", inline = "code" }
+```
+
+```yaml
+title: "`ascribe.toml` reference"
+```
+
+- **Code spans** are CommonMark's (CommonMark §6.1): a run of backticks opens one, the next run of the same length closes it, and a run with no closer is literal. Their content is normalized as CommonMark does: line endings become spaces, and one space is stripped from each end when both ends have one.
+- **Escapes.** Outside code spans, a backslash before ASCII punctuation escapes it, as in CommonMark, so `` \` `` is a literal backtick. Inside them, a backslash is literal.
+- **Nothing else is markup.** Emphasis, links, and HTML stay literal text. A title becomes the text of other links (empty link text, SPEC §5.2), where a link or emphasis would cause trouble.
+- **Phrases** (`phrases = true`) are substituted in the text, never inside code spans, as in prose (SPEC §5.1).
+
+Each output carries two forms of the value. The **plain text** is the value without markup: the code spans' content, with no backticks (`ascribe.toml reference`). The **formatted form** keeps the code spans. Where each goes:
+
+| Output | Plain text | Formatted form |
+|---|---|---|
+| Site output (its frontmatter) | The field's frontmatter value, for a layout's `<title>`, search, and sorting | `formatted.<field>`, as HTML (`<code>ascribe.toml</code> reference`), for a layout's heading and navigation |
+| Empty link text (SPEC §5.2) | Not used | The link text, with the title's code spans |
+| Plain-markdown output | Not used | The page's level-1 heading |
+| JSON output | `title` and `frontmatter.<field>` | `formatted.<field>`, a list of `{ "type": "text" \| "code", "value": … }` |
+| Generated Zod schema | The field, as `z.string()` | `formatted`, with a `z.string()` for each field |
+
+A field the page leaves out gets its default's formatted form, so `formatted.<field>` is there whenever the field has a value. The setting is per field, not on for every `string`, so a backtick in an existing field keeps its meaning.
 
 ---
 
@@ -680,13 +711,14 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-type-multiple-defaults` | At most one type sets `default = true`. | `` only one content type can be the default, but `{a}` and `{b}` both set default = true `` |
 | `model-type-unreachable` | Every type has `files` or `default = true`. | `` content type `{type}` has no `files` and isn't the default, so no page can use it `` |
 | `model-type-title` | Every page type declares `title` as a required `string`. | `` content type `{type}` must declare title = "string": it's the page title, used for empty link text ``<br>`` content type `{type}`: `title` must be a required string, not "{found}" `` |
-| `model-field-reserved` | No content type or fragment schema declares `available` or `variant`, and no content type declares `slug`. | `` `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]` ``<br>`` `{field}` is reserved by the Ascribe spec, and fragments can't use it ``<br>`` `slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]` `` |
+| `model-field-reserved` | No content type or fragment schema declares `available` or `variant`, and no content type declares `slug` or `formatted`. | `` `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]` ``<br>`` `{field}` is reserved by the Ascribe spec, and fragments can't use it ``<br>`` `slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]` ``<br>`` `formatted` is reserved by the site output, which writes the formatted form of `inline` fields under it; remove it from `[types.{type}.frontmatter]` `` |
 | `model-type-syntax` | Every field and attribute type parses under §6.1, and is allowed where it's used: no `date`, `list`, or `object` for attributes; no `set` for fields; `object`, `list(object)`, and bare `enum` only in table form. | `` "{type}" isn't a valid {kind} type: {detail} ``, for example `` "strng?" isn't a valid field type: expected string, number, boolean, date, enum(…), or list(…) `` |
 | `model-type-fields` | `fields` is present exactly when the type is `object` or `list(object)`, optional or not. | `` field `{field}` is an object, so it needs `fields` ``<br>`` `fields` is only allowed on object fields, and `{field}` is "{type}" `` |
 | `model-enum-values` | An enumeration has at least one value and no duplicates, and its values come from exactly one of `enum(…)` and `values`. `values` appears only with bare `enum`. | `` `{field}` has an empty enumeration ``<br>`` "{value}" appears twice in the enumeration for `{field}` ``<br>`` `{field}`: list enumeration values in enum(…) or in `values`, not both ``<br>`` `{field}` is a bare enum, so it needs `values` `` |
 | `model-set-token` | Every value of a `set(enum)` attribute is a token (SPEC §3.3). | `` "{value}" can't be in a value set: members can't contain spaces or any of , \| { } = " `` |
 | `model-default-type` | A `default` has the declared type, and an enumeration default is one of its values. | `` default for `{field}` must be {type}, but it's {found} ``<br>`` default "{value}" for `{field}` isn't one of: {values} `` |
 | `model-phrases-field-type` | `phrases = true` is set only on `string` and `list(string)` fields. | `` phrases = true only works on string and list(string) fields, and `{field}` is "{type}" `` |
+| `model-inline-field` | `inline` is `"code"`, and is set only on a content type's top-level `string` fields (§6.3). | `` inline = "code" only works on string fields, and `{field}` is "{type}" ``<br>`` inline must be "code", not "{value}" ``<br>`` inline = "code" only works on a content type's top-level fields, and `{field}` is in {place} `` |
 | `model-pattern-syntax` | Every pattern parses under §1.3, doesn't start with `/`, and has no `..` segment. | `` "{pattern}" isn't a valid pattern: {detail} ``<br>`` pattern "{pattern}" is already relative to the content root; remove the leading / ``<br>`` pattern "{pattern}" can't contain .. `` |
 | `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `heading` or `primary` on widgets; and on both, HTML's global attributes (such as `id`, `class`, `style`, and `title`), any key starting with `aria-`, and HTML's event-handler attributes (such as `onclick`, `onload`, and `onerror`). The lists are explicit, in `tessera_core::reserved`, so keys that merely begin with `on`, such as `online` or `only-if`, are allowed. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
@@ -787,3 +819,4 @@ Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recomme
 19. **Features referring to features (SPEC §4.4).** *Decision:* not allowed, so there are no chains or cycles.
 20. **Phrases in frontmatter (SPEC §5.1).** *Decision:* opt in per field with `phrases = true`, on `string` and `list(string)` fields only; off by default.
 21. **Spec version matching (SPEC §11).** *Decision:* `spec` is a quoted string that must exactly equal a version the processor implements; `"0.1"` for now. Revisit compatibility ranges when 0.2 exists.
+22. **Code in a page title (SPEC §7.2).** *Decision:* opt in per field with `inline = "code"`, on a content type's top-level `string` fields, and code spans only (§6.3). Every output carries the plain text and the formatted form. *Considered:* reading code spans in every title, which would change the meaning of every existing title with a backtick and make `title` the one string field that isn't plain text; and links or emphasis in titles, which go wrong where a title becomes the text of another link.

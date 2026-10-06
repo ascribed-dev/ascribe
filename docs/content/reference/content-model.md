@@ -172,9 +172,12 @@ api-version = "string"
 
 A type with neither `files` nor `default = true` could never apply, and is an error (`model-type-unreachable`). The rules in steps 2 and 4 are document diagnostics, listed in [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics).
 
-**The page title.** Every page type must declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field may accept phrases (§11).
+**The page title.** Every page type must declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field may accept phrases (§11), and code spans (§5.3).
 
 **Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)) and `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
+
+@available: next
+`formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
 
 **Unknown frontmatter keys.** A page whose frontmatter has a key its type doesn't declare (and that isn't reserved) is an error on the page.
 
@@ -246,9 +249,36 @@ Grammar (ABNF, with the rules of SPEC Appendix A):
 | `values` | array of strings | required when `type` uses bare `enum`; not allowed otherwise | The enumeration's values, for values that aren't simple words, such as `["Getting started", "How-to"]`. Values must be distinct. Values of a `set(enum)` attribute must be tokens. |
 | `default` | any TOML value | none | The value used when the field or attribute is absent. It must have the declared type (a TOML string for `string` and `enum`, integer or float for `number`, boolean for `boolean`, local date for `date`, array for `list`, inline table for `object`, a string or array of strings for `set`). A field with a default is optional; adding `?` as well is allowed and changes nothing. |
 | `phrases` | boolean | `false` | Whether phrases ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §11. |
+| `inline` | string | none | `"code"` reads the value's code spans. Allowed only on a content type's top-level `string` fields (and `string?`). See §5.3. |
 | `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
 
 Nesting beyond one level of `fields` is allowed but discouraged; keep frontmatter flat.
+
+### 5.3 Code in a field
+
+@available: next
+A `string` field is plain text: a backtick in it is a backtick. To show code in a page title, set `inline = "code"` on the field:
+
+```toml
+[types.reference.frontmatter]
+title = { type = "string", inline = "code" }
+```
+
+```yaml
+---
+title: "`ascribe.toml` reference"
+---
+```
+
+The value is then read as Markdown that knows only code spans. A run of backticks opens a code span, and the next run of the same length closes it. Outside code spans, a backslash escapes punctuation, so `` \` `` is a literal backtick. Emphasis, links, and HTML stay literal text, since a title also becomes the text of other links. With `phrases = true` as well, phrases are substituted outside code spans, never inside them.
+
+Each output has the title both ways: as plain text, `ascribe.toml reference`, and formatted, with the code spans kept.
+
+- **Empty link text** and the plain-markdown output's heading keep the code spans: ``[`ascribe.toml` reference](…)``.
+- **The site output** writes the field as plain text, for a layout's `<title>`, search, and sorting, and its formatted form as HTML under `formatted`, for the page's heading and navigation. The generated schema types both, so a layout uses `entry.data.formatted.title` with `set:html`. See [Astro](../guides/astro.md#6-load-the-elements-in-your-layout).
+- **The JSON output** has the plain text in `title` and `frontmatter`, and the formatted form in `formatted.title`, a list of text and code pieces.
+
+Only a content type's own `string` fields can set it, not fields in objects or the fragment schema, and `"code"` is its only value (`model-inline-field`).
 
 ---
 

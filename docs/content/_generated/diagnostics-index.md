@@ -141,3 +141,4 @@
 | [ASC138](../reference/diagnostics.md#asc138-source-copy-changed) | `source-copy-changed` | Error | File |
 | [ASC139](../reference/diagnostics.md#asc139-source-copy-unlocked) | `source-copy-unlocked` | Error | File |
 | [ASC140](../reference/diagnostics.md#asc140-source-copy-unused) | `source-copy-unused` | Warning | File |
+| [ASC141](../reference/diagnostics.md#asc141-model-inline-field) | `model-inline-field` | Error | File |

@@ -60,6 +60,9 @@ export const referenceSchema = z.strictObject({
   "api-version": z.string().optional(),
   available: availableSchema.optional(),
   variant: variantSchema.optional(),
+  formatted: z.strictObject({
+    title: z.string(),
+  }),
 });
 export type Reference = z.infer<typeof referenceSchema>;
 

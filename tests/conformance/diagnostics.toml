@@ -835,6 +835,7 @@ group = "content-types"
 message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
 messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
 messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
+messages.formatted = "`formatted` is reserved by the site output, which writes the formatted form of `inline` fields under it; remove it from `[types.{type}.frontmatter]`"
 fix = "Remove the field from the type. Every page accepts it already, with the meaning the specification gives it."
 
 [[diagnostic]]
@@ -1552,3 +1553,15 @@ spec = "7.4"
 row = "Source copies | A copy that no snippet uses"
 message = "no snippet uses `{path}` any more; `ascribe sources fetch` removes it"
 fix = "Run `ascribe sources fetch`, which removes the copies no snippet uses."
+
+[[diagnostic]]
+code = "ASC141"
+slug = "model-inline-field"
+severity = "error"
+level = "file"
+spec = "7.2"
+group = "content-types"
+message = "inline = \"code\" only works on string fields, and `{field}` is \"{type}\""
+messages.value = "inline must be \"code\", not \"{value}\""
+messages.nested = "inline = \"code\" only works on a content type's top-level fields, and `{field}` is in {place}"
+fix = "Remove `inline`, or set it to \"code\" on a string field of a content type's `frontmatter`."

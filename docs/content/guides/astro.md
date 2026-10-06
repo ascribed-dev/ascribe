@@ -65,6 +65,9 @@ A layout loads the element library and shows the page's availability:
 
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: the page title, navigation, and table of contents (`headings` from `render`) come from your own components.
 
+@available: next
+The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`: use `title` everywhere. See [code in a field](../reference/content-model.md#53-code-in-a-field).
+
 A page's `available` frontmatter reaches the layout as `entry.data.available`: a list of targets, each with the text to show.
 
 @available: next

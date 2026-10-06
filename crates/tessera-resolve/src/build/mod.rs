@@ -70,13 +70,13 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use tessera_core::{FileId, RelPath, Router, Slugger, Span};
-use tessera_model::Build;
+use tessera_model::{Build, Segment};
 
 pub use router::DefaultRouter;
 pub use tree::{
-    Annotation, Availability, DropReason, DroppedPage, GlossaryUse, HeadingIds, LinkTarget,
-    ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink,
-    ResolvedPage, ResolvedRow, Scope, Substitution,
+    Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
+    LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind,
+    ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
 };
 
 use crate::index::FileKind;
@@ -171,9 +171,14 @@ impl<'p> BuildResolver<'p> {
     }
 
     /// A page's title as links show it: the frontmatter `title`, with the
-    /// phrases the content model allows substituted.
-    pub(crate) fn title_of(&self, path: &RelPath) -> Option<String> {
-        self.stage(path).and_then(|p| p.title.clone())
+    /// phrases the content model allows substituted, and in pieces when it
+    /// sets `inline`.
+    pub(crate) fn title_of(&self, path: &RelPath) -> Option<Vec<Segment>> {
+        let page = self.stage(path)?;
+        match page.formatted_title() {
+            Some(segments) => Some(segments.to_vec()),
+            None => page.title.clone().map(|t| vec![Segment::Text(t)]),
+        }
     }
 
     /// A page after passes 2 to 5 (availability, build modes, phrases,
@@ -251,10 +256,13 @@ impl<'p> BuildResolver<'p> {
         problems.extend(mode_problems);
         // Step 4: phrases.
         phrases::substitute_blocks(project, &mut blocks);
-        let frontmatter = index
-            .frontmatter
-            .as_ref()
-            .map(|f| phrases::frontmatter(model, path, f));
+        let (frontmatter, formatted) = match &index.frontmatter {
+            Some(f) => {
+                let (value, formatted) = phrases::frontmatter(model, path, f);
+                (Some(value), formatted)
+            }
+            None => (None, Vec::new()),
+        };
         let title = frontmatter
             .as_ref()
             .and_then(|f| f.get("title"))
@@ -269,6 +277,7 @@ impl<'p> BuildResolver<'p> {
             route: self.router.route(path),
             frontmatter,
             title,
+            formatted,
             availability: page_availability,
             blocks,
             assets: Vec::new(),

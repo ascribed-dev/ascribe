@@ -216,6 +216,14 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Fix:** Rename the attribute.
 
+#### ASC141 `model-inline-field`
+
+Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** inline = "code" only works on string fields, and `{field}` is "\{type}"
+
+**Fix:** Remove `inline`, or set it to "code" on a string field of a content type's `frontmatter`.
+
 ### Dimensions, names, lifecycle states, notes, and features
 
 #### ASC082 `model-name-multiple-roles`

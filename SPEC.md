@@ -659,7 +659,7 @@ See [](keys.md#rotate-keys).
 
 - **Paths** are relative to the linking file, or relative to the content root when they begin with `/`. An optional `#id` names a heading of the target page by its source id: one of the target file's own headings, or one that a fragment it includes brings in (§4.2). The compiled link points at that heading's page id (§5.5).
 - The target file, and the id if present, MUST exist. A destination that is only `#id` names a heading in the file it's written in; in a fragment, that's a heading of the fragment itself, and the compiled link points at that heading's page id on each page that includes the fragment. In each build, the target page MUST also be published: a link to a page the build drops (§9.3) is an error in that build. To link to such a page from shared content, put the link in a `@variant` arm that the same build removes.
-- **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2).
+- **Empty link text** is replaced by the target's title: the heading text when an id is given, and the page title otherwise. A page's title is its frontmatter `title`, which every content type requires (§7.2). When the content model reads code spans in `title`, the link text keeps them.
 - **External URLs** (with a scheme such as `https:`) are passed through unchanged.
 - **Routes.** At compile time, paths are rewritten into the consumer's URLs using the consumer profile (§9.5). Source files never contain routes. A destination that looks like a published route rather than a file path produces a warning offering conversion. A local destination looks like a route when it names no existing file and its last segment has no file extension or it ends in `/` (`/guides/install/`, `../guides/install`); it then gets that warning instead of a missing-file error.
 
@@ -734,7 +734,7 @@ A content model declares the following.
 
 | Declaration | Contents | Used by |
 |---|---|---|
-| Content types | A frontmatter schema per page type, each requiring a string `title`, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. Each type names the pages it applies to by path pattern, and at most one type is the default for pages no pattern matches | §2, §5.2 |
+| Content types | A frontmatter schema per page type, each requiring a string `title`, and a fragment schema. Fields are typed as string, number, boolean, date, enumeration, list, or object, and may be optional or have a default. A page type's string field may opt in to code spans, so a title can show code. Each type names the pages it applies to by path pattern, and at most one type is the default for pages no pattern matches | §2, §5.2 |
 | Fragment patterns | Additional globs that mark files as fragments | §2.2 |
 | Directive schemas | For each project widget: forms, primary kind, attributes, binding, title, groupable, plain fallback | §3, §6 |
 | Dimensions | Each dimension's name, values, and display labels, and which values are versionless | §4.3, §4.4 |
@@ -754,6 +754,8 @@ Built-in directive schemas are defined by this specification, not by the content
 Dimension names, dimension values, lifecycle states, and feature keys are names (ABNF rule `name-word`). A name MUST NOT be used in more than one of these roles, and a dimension value MUST NOT belong to more than one dimension; processors reject a content model that does either when loading it. This keeps every bare word in an availability spec unambiguous (§4.4). Dimension names are also attribute keys (§4.3), so they follow the attribute key rule (ABNF rule `key`, §3.3).
 
 The site output writes image attributes onto `<img>` elements and project widgets' attributes onto custom elements (§9.4), so a content model MUST NOT declare an attribute key that HTML already gives a meaning there: `src`, `alt`, or `title` for images; `heading` or `primary` for widgets, which the site output uses for a widget's title and identifier primary; and, for both, HTML's global attributes (such as `id`, `class`, `style`, `title`, `hidden`, and `slot`), ARIA attributes (`aria-…`), and event-handler attributes such as `onclick`. Keys that merely begin with `on`, such as `online`, are allowed. Processors reject a content model that does when loading it.
+
+A string field is plain text unless the content model opts it in to code spans. Such a field's value is read as CommonMark inline content that recognizes only code spans and backslash escapes; everything else in it is literal text. The outputs carry both its plain text, the value without markup, and its formatted form, which keeps the code spans: the site output writes the plain text as the field's value and the formatted form beside it, and a page title's formatted form is used for its level-1 heading in plain markdown and for empty link text (§5.2). Phrases in such a field are substituted outside its code spans only (§5.1).
 
 A page's content type is the one whose path patterns match it. A page matched by more than one type's patterns is an error; there's no precedence between types. A page no type matches gets the default type, and it's an error if there isn't one.
 
@@ -1053,7 +1055,7 @@ Astro is the primary consumer, through its content collections.
 - Compiled pages from the site output are loaded into an Astro content collection.
 - The collection's schema MUST be generated from the content model, as a Zod schema.
 - Page layouts are the project's own.
-- Page-level frontmatter, including `available`, reaches the layout as collection data. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
+- Page-level frontmatter, including `available`, reaches the layout as collection data. A field that reads code spans (§7.2) arrives as its plain text, with its formatted form as HTML under the reserved `formatted`. `available` arrives as a list of its targets, each with what a layout needs to show it: the target, its dimension, states, versions, and display text (element contract §4).
 
 An Astro integration SHOULD provide the collection configuration and generated schema, load the element library, and supply the markdown processing needed for explicit heading ids.
 

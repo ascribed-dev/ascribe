@@ -5,7 +5,8 @@
 
 mod build_support;
 
-use build_support::{path, plain, project, resolve, summary};
+use build_support::{MODEL, path, plain, project, project_with, resolve, summary};
+use tessera_model::Segment;
 use tessera_resolve::{LinkTarget, RefKind, ResolvedBlock, ResolvedKind, ResolvedPage};
 use tessera_syntax::{BlockKind, InlineKind};
 
@@ -115,6 +116,45 @@ fn frontmatter_phrases_apply_only_to_the_fields_that_opt_in() {
     assert_eq!(fm["note"].as_str(), Some("{product}"));
     assert_eq!(fm["tags"][0].as_str(), Some("Quill Cloud"));
     assert_eq!(fm["tags"][1].as_str(), Some("plain"));
+}
+
+#[test]
+fn an_inline_field_is_plain_text_beside_its_pieces() {
+    let model = MODEL.replace(
+        "title = { type = \"string\", phrases = true }",
+        "title = { type = \"string\", phrases = true, inline = \"code\" }\nsummary = { type = \"string\", inline = \"code\", default = \"`x` {product}\" }",
+    );
+    let p = project_with(
+        &model,
+        &[(
+            "index.md",
+            "---\ntitle: \"`{product}` for {product}\"\n---\n\nBody.\n",
+        )],
+    );
+    let resolved = resolve(&p, "index.md", "site");
+    // Phrases are substituted in the text, not in code spans (SPEC §5.1).
+    assert_eq!(resolved.title.as_deref(), Some("{product} for Quill"));
+    let fm = resolved.frontmatter.as_ref().expect("frontmatter");
+    assert_eq!(fm["title"].as_str(), Some("{product} for Quill"));
+    assert_eq!(
+        resolved.formatted_title(),
+        Some(
+            &[
+                Segment::Code("{product}".into()),
+                Segment::Text(" for Quill".into())
+            ][..]
+        )
+    );
+    // A field the page leaves out has its default's pieces; a default
+    // doesn't take phrases.
+    assert_eq!(resolved.formatted[1].name, "summary");
+    assert_eq!(
+        resolved.formatted[1].segments,
+        vec![
+            Segment::Code("x".into()),
+            Segment::Text(" {product}".into())
+        ]
+    );
 }
 
 // -- Page ids ---------------------------------------------------------------
