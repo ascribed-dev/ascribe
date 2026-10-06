@@ -5,7 +5,7 @@ description: Install Ascribe, write a first page, check it, build it, and publis
 
 Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project, writes a first page, and publishes it with Astro.
 
-You need [Node.js](https://nodejs.org) {node} or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc 2.28 or later, which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64).
+You need [Node.js](https://nodejs.org) {node} or later. Ascribe runs on macOS on Apple silicon, Linux (x64 and arm64, with glibc 2.28 or later (2.39 for 0.1.1 and earlier), which includes the build images of Netlify, Vercel, Cloudflare Pages, and AWS Amplify), and Windows (x64).
 
 ## Install the command
 
