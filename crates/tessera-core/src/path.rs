@@ -11,6 +11,7 @@
 //! images, and includes.
 
 use std::fmt;
+use std::path::{Component, Path, PathBuf};
 
 use serde::Serialize;
 
@@ -139,6 +140,18 @@ impl RelPath {
     pub fn starts_with(&self, prefix: &RelPath) -> bool {
         let mut mine = self.segments();
         prefix.segments().all(|p| mine.next() == Some(p))
+    }
+
+    /// This path relative to the directory `dir`, when it's `dir` or inside
+    /// it. A path that starts with more `..`s than `dir` is above it, not
+    /// inside, though its segments start with `dir`'s: `../../a` isn't in
+    /// `..`.
+    pub fn relative_to(&self, dir: &RelPath) -> Option<RelPath> {
+        if !self.starts_with(dir) || self.up_count() > dir.up_count() {
+            return None;
+        }
+        let rest: Vec<&str> = self.segments().skip(dir.segments().count()).collect();
+        Some(RelPath(rest.join("/")))
     }
 
     /// The text of a relative reference from the directory `from_dir` to this
@@ -276,6 +289,85 @@ pub fn percent_decode(text: &str) -> String {
     String::from_utf8(out).unwrap_or_else(|_| text.to_owned())
 }
 
+/// `path` with `.` and `..` resolved lexically, without touching the disk. A
+/// leading drive letter is made upper case, so `c:\dir` and `C:\dir`
+/// compare equal.
+pub fn normalize(path: &Path) -> PathBuf {
+    let mut out = PathBuf::new();
+    for (i, component) in path.components().enumerate() {
+        match component {
+            Component::Prefix(_) | Component::Normal(_)
+                if i == 0 && is_drive(&component.as_os_str().to_string_lossy()) =>
+            {
+                out.push(upper_drive(&component.as_os_str().to_string_lossy()));
+            }
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if !out.pop() {
+                    out.push("..");
+                }
+            }
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
+}
+
+/// The path from the directory `from` to `to`, both absolute and normalized
+/// (or both canonical), with `..` where `to` is outside `from`. A leading
+/// drive letter matches in either case; any other name matches exactly. `None` when they share no root (different drives),
+/// or a name on the way from their common folder to `to` isn't UTF-8.
+pub fn relative_path(from: &Path, to: &Path) -> Option<RelPath> {
+    let from: Vec<Component<'_>> = from.components().collect();
+    let to: Vec<Component<'_>> = to.components().collect();
+    let common = from
+        .iter()
+        .zip(&to)
+        .enumerate()
+        .take_while(|(i, (a, b))| same_component(*i, a, b))
+        .count();
+    if common == 0 {
+        return None;
+    }
+    let mut segments: Vec<&str> = vec![".."; from.len() - common];
+    for component in &to[common..] {
+        segments.push(component.as_os_str().to_str()?);
+    }
+    RelPath::parse(&segments.join("/")).ok()
+}
+
+/// Whether two components at position `i` are the same. A drive, the first
+/// component, is the same in either case: `c:` and `C:` are one drive. A
+/// folder named `c:` further in is a name like any other.
+fn same_component(i: usize, a: &Component<'_>, b: &Component<'_>) -> bool {
+    let (x, y) = (
+        a.as_os_str().to_string_lossy(),
+        b.as_os_str().to_string_lossy(),
+    );
+    if i == 0 && is_drive(&x) && is_drive(&y) {
+        return x.eq_ignore_ascii_case(&y);
+    }
+    a == b
+}
+
+/// Whether a path component is a drive, such as `C:`.
+pub fn is_drive(component: &str) -> bool {
+    let bytes = component.as_bytes();
+    bytes.len() == 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+}
+
+/// `text` with a leading drive letter in upper case: `c:\dir` is `C:\dir`.
+pub fn upper_drive(text: &str) -> String {
+    let bytes = text.as_bytes();
+    if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
+        let mut out = String::with_capacity(text.len());
+        out.push(bytes[0].to_ascii_uppercase() as char);
+        out.push_str(&text[1..]);
+        return out;
+    }
+    text.to_owned()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -397,5 +489,79 @@ mod tests {
             Ok(p("../shared/logo.png"))
         );
         assert_eq!(local("x.png").resolve(&p("index.md")), Ok(p("x.png")));
+    }
+
+    #[test]
+    fn a_path_relative_to_a_folder_it_is_in() {
+        assert_eq!(p("a/b/c").relative_to(&p("a")), Some(p("b/c")));
+        assert_eq!(p("a/b").relative_to(&p("a/b")), Some(RelPath::root()));
+        assert_eq!(p("a/b").relative_to(&RelPath::root()), Some(p("a/b")));
+        assert_eq!(p("ab/c").relative_to(&p("a")), None);
+        assert_eq!(p("../x").relative_to(&p("..")), Some(p("x")));
+        // Above the folder, though its segments start with the folder's.
+        assert_eq!(p("../../above.py").relative_to(&p("..")), None);
+        assert_eq!(p("../a").relative_to(&RelPath::root()), None);
+    }
+
+    #[test]
+    fn relative_paths_climb_out_of_the_base() {
+        let base = Path::new("/p/project");
+        assert_eq!(
+            relative_path(base, Path::new("/p/project/docs/a.md")),
+            Some(p("docs/a.md"))
+        );
+        assert_eq!(
+            relative_path(base, Path::new("/p/docs/a.md")),
+            Some(p("../docs/a.md"))
+        );
+        assert_eq!(relative_path(base, base), Some(RelPath::root()));
+        // No shared root.
+        assert_eq!(relative_path(base, Path::new("docs/a.md")), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_name_that_isnt_utf8_has_no_relative_path() {
+        use std::ffi::OsStr;
+        use std::os::unix::ffi::OsStrExt;
+        let name = OsStr::from_bytes(b"caf\xe9.md");
+        assert_eq!(
+            relative_path(Path::new("/p"), &Path::new("/p").join(name)),
+            None
+        );
+    }
+
+    #[test]
+    fn normalize_resolves_dots() {
+        assert_eq!(
+            normalize(Path::new("/a/b/../c/./d")),
+            PathBuf::from("/a/c/d")
+        );
+    }
+
+    #[test]
+    fn drive_letter_case_does_not_matter_when_comparing() {
+        let base = Path::new("C:/Users/kyle/proj");
+        assert_eq!(
+            relative_path(base, Path::new("c:/Users/kyle/proj/docs/a.md")),
+            Some(p("docs/a.md"))
+        );
+        assert_eq!(
+            relative_path(Path::new("c:/Users/kyle"), Path::new("C:/Users/kyle/x.md")),
+            Some(p("x.md"))
+        );
+        // Different drives share nothing.
+        assert_eq!(relative_path(base, Path::new("D:/Users/kyle/x.md")), None);
+        // Only a leading drive letter ignores case: further in, `c:` and
+        // `C:` are two folders.
+        assert_eq!(
+            relative_path(Path::new("/w/c:"), Path::new("/w/C:/secret.py")),
+            Some(p("../C:/secret.py"))
+        );
+        assert_eq!(normalize(Path::new("c:/a/../b")), PathBuf::from("C:/b"));
+        assert!(is_drive("c:"));
+        assert!(!is_drive("cd:"));
+        assert_eq!(upper_drive("c:/x"), "C:/x");
+        assert_eq!(upper_drive("/x"), "/x");
     }
 }

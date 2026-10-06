@@ -353,6 +353,8 @@ impl Loader<'_> {
             return None;
         }
         if let Some(dir) = self.project_dir {
+            // Outside FileSystem: the content model is checked before there's a
+            // project. This asks only whether a glossary link's page is there.
             let file = dir.join(&project.value.content_root).join(rel);
             if !file.is_file() {
                 self.push(

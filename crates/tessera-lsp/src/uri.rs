@@ -5,15 +5,16 @@
 //! path (including the `file:///c%3A/dir` form VS Code sends for Windows
 //! drives), and the reverse.
 
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use lsp_types::Uri;
+use tessera_core::path::{is_drive, upper_drive};
 
 /// The path a `file:` URI names, or `None` for any other scheme (an
 /// `untitled:` buffer, a `vscode-notebook-cell:` URI). A Windows drive path has
 /// its drive letter in upper case, so it compares equal to the same path from
-/// anywhere else (see [`normalize`]).
+/// anywhere else (see [`tessera_core::path::normalize`]).
 pub fn uri_to_path(uri: &Uri) -> Option<PathBuf> {
     decode_file_uri(uri.as_str(), cfg!(windows)).map(PathBuf::from)
 }
@@ -51,24 +52,6 @@ fn drive_path(decoded: &str) -> Option<String> {
         return None;
     }
     Some(upper_drive(rest))
-}
-
-/// Whether a path component is a drive, such as `C:`.
-fn is_drive(component: &str) -> bool {
-    let bytes = component.as_bytes();
-    bytes.len() == 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
-}
-
-/// `text` with a leading drive letter in upper case: `c:\dir` is `C:\dir`.
-fn upper_drive(text: &str) -> String {
-    let bytes = text.as_bytes();
-    if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
-        let mut out = String::with_capacity(text.len());
-        out.push(bytes[0].to_ascii_uppercase() as char);
-        out.push_str(&text[1..]);
-        return out;
-    }
-    text.to_owned()
 }
 
 /// The `file:` URI of an absolute path.
@@ -118,66 +101,6 @@ fn percent_decode(text: &str) -> Option<String> {
     String::from_utf8(out).ok()
 }
 
-/// `path` with `.` and `..` resolved lexically, without touching the disk.
-pub fn normalize(path: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    for (i, component) in path.components().enumerate() {
-        match component {
-            // A drive letter is compared as upper case.
-            Component::Prefix(_) | Component::Normal(_)
-                if i == 0 && is_drive(&component.as_os_str().to_string_lossy()) =>
-            {
-                out.push(upper_drive(&component.as_os_str().to_string_lossy()));
-            }
-            Component::CurDir => {}
-            Component::ParentDir => {
-                if !out.pop() {
-                    out.push("..");
-                }
-            }
-            other => out.push(other.as_os_str()),
-        }
-    }
-    out
-}
-
-/// The path from `base` to `path`, both absolute and normalized, as
-/// `/`-separated segments, with `..` where `path` is outside `base`. `None`
-/// when they share no root (different drives).
-pub fn relative_to(base: &Path, path: &Path) -> Option<String> {
-    let base: Vec<Component> = base.components().collect();
-    let path: Vec<Component> = path.components().collect();
-    let common = base
-        .iter()
-        .zip(&path)
-        .take_while(|(a, b)| same_component(a, b))
-        .count();
-    if common == 0 {
-        return None;
-    }
-    let mut segments: Vec<String> = Vec::new();
-    for _ in common..base.len() {
-        segments.push("..".to_owned());
-    }
-    for component in &path[common..] {
-        segments.push(component.as_os_str().to_string_lossy().into_owned());
-    }
-    Some(segments.join("/"))
-}
-
-/// Whether two components are the same. Drive letters are the same in either
-/// case: `c:` and `C:` are one drive.
-fn same_component(a: &Component, b: &Component) -> bool {
-    let (x, y) = (
-        a.as_os_str().to_string_lossy(),
-        b.as_os_str().to_string_lossy(),
-    );
-    if is_drive(&x) && is_drive(&y) {
-        return x.eq_ignore_ascii_case(&y);
-    }
-    a == b
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -197,27 +120,6 @@ mod tests {
     fn other_schemes_are_not_files() {
         let uri = Uri::from_str("untitled:Untitled-1").expect("a uri");
         assert_eq!(uri_to_path(&uri), None);
-    }
-
-    #[test]
-    fn relative_paths_climb_out_of_the_base() {
-        let base = Path::new("/p/project");
-        assert_eq!(
-            relative_to(base, Path::new("/p/project/docs/a.md")).as_deref(),
-            Some("docs/a.md")
-        );
-        assert_eq!(
-            relative_to(base, Path::new("/p/docs/a.md")).as_deref(),
-            Some("../docs/a.md")
-        );
-    }
-
-    #[test]
-    fn normalize_resolves_dots() {
-        assert_eq!(
-            normalize(Path::new("/a/b/../c/./d")),
-            PathBuf::from("/a/c/d")
-        );
     }
 
     #[test]
@@ -258,21 +160,5 @@ mod tests {
         assert_eq!(uri.as_str(), "file:///C:/Users/x%20y.md");
         let lower = path_to_uri(Path::new("c:/Users/x.md")).expect("a uri");
         assert_eq!(lower.as_str(), "file:///C:/Users/x.md");
-    }
-
-    #[test]
-    fn drive_letter_case_does_not_matter_when_comparing() {
-        let base = Path::new("C:/Users/kyle/proj");
-        assert_eq!(
-            relative_to(base, Path::new("c:/Users/kyle/proj/docs/a.md")).as_deref(),
-            Some("docs/a.md")
-        );
-        assert_eq!(
-            relative_to(Path::new("c:/Users/kyle"), Path::new("C:/Users/kyle/x.md")).as_deref(),
-            Some("x.md")
-        );
-        // Different drives share nothing.
-        assert_eq!(relative_to(base, Path::new("D:/Users/kyle/x.md")), None);
-        assert_eq!(normalize(Path::new("c:/a/../b")), PathBuf::from("C:/b"));
     }
 }
