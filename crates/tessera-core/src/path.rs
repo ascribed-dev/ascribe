@@ -314,8 +314,8 @@ pub fn normalize(path: &Path) -> PathBuf {
 }
 
 /// The path from the directory `from` to `to`, both absolute and normalized
-/// (or both canonical), with `..` where `to` is outside `from`. Drive letters
-/// match in either case. `None` when they share no root (different drives),
+/// (or both canonical), with `..` where `to` is outside `from`. A leading
+/// drive letter matches in either case; any other name matches exactly. `None` when they share no root (different drives),
 /// or a name on the way from their common folder to `to` isn't UTF-8.
 pub fn relative_path(from: &Path, to: &Path) -> Option<RelPath> {
     let from: Vec<Component<'_>> = from.components().collect();
@@ -323,7 +323,8 @@ pub fn relative_path(from: &Path, to: &Path) -> Option<RelPath> {
     let common = from
         .iter()
         .zip(&to)
-        .take_while(|(a, b)| same_component(a, b))
+        .enumerate()
+        .take_while(|(i, (a, b))| same_component(*i, a, b))
         .count();
     if common == 0 {
         return None;
@@ -335,14 +336,15 @@ pub fn relative_path(from: &Path, to: &Path) -> Option<RelPath> {
     RelPath::parse(&segments.join("/")).ok()
 }
 
-/// Whether two components are the same. Drive letters are the same in either
-/// case: `c:` and `C:` are one drive.
-fn same_component(a: &Component<'_>, b: &Component<'_>) -> bool {
+/// Whether two components at position `i` are the same. A drive, the first
+/// component, is the same in either case: `c:` and `C:` are one drive. A
+/// folder named `c:` further in is a name like any other.
+fn same_component(i: usize, a: &Component<'_>, b: &Component<'_>) -> bool {
     let (x, y) = (
         a.as_os_str().to_string_lossy(),
         b.as_os_str().to_string_lossy(),
     );
-    if is_drive(&x) && is_drive(&y) {
+    if i == 0 && is_drive(&x) && is_drive(&y) {
         return x.eq_ignore_ascii_case(&y);
     }
     a == b
@@ -550,6 +552,12 @@ mod tests {
         );
         // Different drives share nothing.
         assert_eq!(relative_path(base, Path::new("D:/Users/kyle/x.md")), None);
+        // Only a leading drive letter ignores case: further in, `c:` and
+        // `C:` are two folders.
+        assert_eq!(
+            relative_path(Path::new("/w/c:"), Path::new("/w/C:/secret.py")),
+            Some(p("../C:/secret.py"))
+        );
         assert_eq!(normalize(Path::new("c:/a/../b")), PathBuf::from("C:/b"));
         assert!(is_drive("c:"));
         assert!(!is_drive("cd:"));
