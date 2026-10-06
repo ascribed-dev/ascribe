@@ -392,8 +392,8 @@ pub fn resolve_snippet(
         let inside = fs
             .real_path(&path)
             .zip(fs.real_path(&folder))
-            .and_then(|(real, folder)| relative_to(&real, &folder))
-            .is_some_and(|rest| source.reads(&rest));
+            .and_then(|(real, folder)| real.relative_to(&folder))
+            .is_some_and(|rest| source.reads(rest.as_str()));
         if !inside {
             return Err(SnippetError::Link);
         }
@@ -401,7 +401,9 @@ pub fn resolve_snippet(
     let file = code.read(fs, &path).map_err(|e| match e {
         ReadError::Missing => SnippetError::Missing { actual: None },
         ReadError::Case(actual) => SnippetError::Missing {
-            actual: relative_to(&actual, &folder),
+            actual: actual
+                .relative_to(&folder)
+                .map(|rest| rest.as_str().to_owned()),
         },
         ReadError::NotText(reason) => SnippetError::NotText(reason),
     })?;
@@ -419,16 +421,6 @@ pub fn resolve_snippet(
         code: extracted.code,
         lines: extracted.lines,
     })
-}
-
-/// `path` relative to `folder`, when it's inside it. A path that starts
-/// with more `..`s than the folder is above it, not inside.
-fn relative_to(path: &RelPath, folder: &RelPath) -> Option<String> {
-    if !path.starts_with(folder) || path.up_count() > folder.up_count() {
-        return None;
-    }
-    let rest: Vec<&str> = path.segments().skip(folder.segments().count()).collect();
-    Some(rest.join("/"))
 }
 
 /// The file-level issues of a `@snippet` (SPEC §8.2), reported at its
