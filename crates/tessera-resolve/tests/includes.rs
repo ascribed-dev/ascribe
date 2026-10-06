@@ -2,6 +2,8 @@
 
 #![allow(clippy::expect_used, clippy::panic)]
 
+#[path = "../../../tests/support/links.rs"]
+mod links;
 mod support;
 
 use support::{path, project, slugs};
@@ -424,11 +426,9 @@ fn a_page_id_of_an_included_section_is_still_its_source_id_in_the_fragment() {
 /// source (a hidden file, one that isn't Markdown, another project's), makes
 /// it unreadable. No other file on disk reaches a page, by `@include` or as a
 /// page of its own. A link to a source file is read.
-#[cfg(unix)]
 #[test]
 fn a_link_to_a_file_that_isnt_a_source_is_not_read() {
     use std::fs;
-    use std::os::unix::fs::symlink;
     use tessera_resolve::{DiskFs, Layout};
 
     let dir = tempfile::tempdir().expect("a temp dir");
@@ -445,25 +445,35 @@ fn a_link_to_a_file_that_isnt_a_source_is_not_read() {
     fs::write(docs.join("notes.txt"), "Not Markdown.\n").expect("notes");
     fs::write(docs.join("nested/ascribe.toml"), "spec = \"0.1\"\n").expect("nested");
     fs::write(docs.join("nested/page.md"), "Another project's.\n").expect("theirs");
-    let links = [
+    links::dir("../../elsewhere", docs.join("linked"));
+    let files = [
         ("_alias.md", "inside/_near.md"),
         ("_out.md", "../../secret.md"),
-        ("linked", "../../elsewhere"),
         ("_hidden.md", ".hidden/key.md"),
         ("_notes.md", "notes.txt"),
         ("_nested.md", "nested/page.md"),
     ];
-    for (name, target) in links {
-        symlink(target, docs.join(name)).expect("a link");
+    // Without file links, the folder link is still tested on its own.
+    let files_ok = files
+        .iter()
+        .all(|(name, target)| links::file(target, docs.join(name)));
+    if !files_ok {
+        for (name, _) in files {
+            let _ = fs::remove_file(docs.join(name));
+        }
     }
-    let includes = [
-        "_alias.md",
-        "_out.md",
-        "linked/far.md",
-        "_hidden.md",
-        "_notes.md",
-        "_nested.md",
-    ];
+    let includes: &[&str] = if files_ok {
+        &[
+            "_alias.md",
+            "_out.md",
+            "linked/far.md",
+            "_hidden.md",
+            "_notes.md",
+            "_nested.md",
+        ]
+    } else {
+        &["linked/far.md"]
+    };
     let body: String = includes
         .iter()
         .map(|i| format!("@include: {i}\n\n"))
@@ -485,22 +495,33 @@ fn a_link_to_a_file_that_isnt_a_source_is_not_read() {
         })
         .collect();
     unreadable.sort();
-    let refused = [
-        "_hidden.md",
-        "_nested.md",
-        "_notes.md",
-        "_out.md",
-        "linked/far.md",
-    ];
+    let mut refused: Vec<&str> = includes
+        .iter()
+        .copied()
+        .filter(|i| *i != "_alias.md")
+        .collect();
+    refused.sort_unstable();
     assert_eq!(
         unreadable,
-        refused.map(|path| (path.to_owned(), true)).to_vec()
+        refused
+            .iter()
+            .map(|path| ((*path).to_owned(), true))
+            .collect::<Vec<_>>()
     );
     let page = expand(&p, "index.md");
-    assert_eq!(texts(&p, &page), ["# Page", "Nearby."]);
+    let read: &[&str] = if files_ok {
+        &["# Page", "Nearby."]
+    } else {
+        &["# Page"]
+    };
+    assert_eq!(texts(&p, &page), read);
     let issues = p.problems(&path("index.md"));
-    let missing: Vec<(String, u32)> = [9, 11, 13, 15, 17]
-        .map(|line| ("include-target-missing".to_owned(), line))
-        .to_vec();
+    // The page's first include is on line 7, and they're two lines apart.
+    let missing: Vec<(String, u32)> = (7..)
+        .step_by(2)
+        .zip(includes)
+        .filter(|(_, i)| **i != "_alias.md")
+        .map(|(line, _)| ("include-target-missing".to_owned(), line))
+        .collect();
     assert_eq!(slugs(&p, "index.md", &issues), missing);
 }

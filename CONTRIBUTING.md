@@ -31,8 +31,22 @@ pnpm format:check && pnpm lint && pnpm exec knip && pnpm typecheck && pnpm test
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions.
 - Dependencies are audited. `cargo deny` ([deny.toml](deny.toml)) allows the licenses listed there and crates.io only, and warns on a second version of a crate. It also reports security advisories, as a failed step that doesn't fail CI, since a new one can appear with no change here: file an issue for it, and fix it or ignore it in deny.toml with the issue as the reason. `cargo machete` and `knip` ([knip.jsonc](knip.jsonc)) fail on an unused dependency, and `knip` on an unused file or export too. Where one is wrong, ignore the name in its configuration with a comment saying why. Install the Rust tools with `cargo install --locked cargo-deny@0.20.2 cargo-machete@0.9.2`, the versions `rust.yml` pins.
+- A change to the language, a new command or option, or a change to the site output's markup goes through its list in [project-docs/checklists.md](project-docs/checklists.md): each line is done, or says why it doesn't apply.
+- A decision made in an issue, a review, or a conversation is added to [project-docs/decisions.md](project-docs/decisions.md) in the pull request that acts on it.
 
-A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter.
+A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter, unless it changes `project-docs/decisions.md` or `project-docs/checklists.md`, which a test checks.
+
+### A clean-up that changes no output
+
+A pull request meant to change nothing a reader or a tool sees (the [optimization plan](project-docs/optimization/README.md) is made of them) shows it by comparing outputs with its base:
+
+```sh
+node scripts/compare/outputs.ts --base main
+```
+
+It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `diff`, and `drift` with each on every example project and `docs/`, in a temporary copy whose base commit changes a word throughout, so `diff` and `drift` always have the same changes to report. It also builds the Astro example with each revision's packages. It prints each file that differs, then `same (N files)` or `N of M files differ` for each project, and exits 1 when anything differs and 2 when it couldn't compare. `examples/getting-started` and `examples/docs-repository` stop with errors on purpose (a broken link, and sources that need `ascribe sources fetch`), so only their reports are compared, not built outputs. `--before <ascribe> --after <ascribe>` compares two binaries you already have. Label the pull request `optimization`, and CI runs the same comparison against its base and fails on a difference.
+
+A test, `cargo test -p tessera-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
 
 ## Documenting a change
 
@@ -77,6 +91,8 @@ npm test                 # navigation, links, and the site in Chromium
 For `astro dev`, which rebuilds as you edit pages, run `ASCRIBE_BIN=../target/debug/ascribe npm run dev` after `build:checkout`; without `ASCRIBE_BIN`, it runs the binary from npm. `npm ci` puts back the packages from npm. [site/README.md](site/README.md) has the rest.
 
 The site is published at <https://ascribed-dev.com>. A pull request that changes `docs/`, `site/`, Ascribe, or a file the docs take examples from gets a preview of the site built with its own Ascribe, linked from the **Site** workflow's summary, and one that changes `docs/`, or a file its pages take examples from, gets a review report of its pages from the **Review** workflow.
+
+Three checks run Ascribe from npm, the nightly canary `next`, not from the checkout: **Site from npm** on each push to `main`, and the **Drift** and **Review** reports on pull requests. A page documenting what you just changed can't pass them until a canary has the change. When one of them fails and the canary doesn't have what the commit ships yet, it doesn't fail: it passes with a warning, "Waiting for a canary that includes …", and its summary links to the **Canary** workflow, which a maintainer can start by hand rather than wait a night. On `main`, the run after the canary is the real check, and starts on its own; on a pull request, re-run the job once a canary has what it needs. A failure when the canary already has the commit stays red. `scripts/release/canary.ts` makes that call, and `node scripts/release/canary.ts paths` lists what counts as shipping.
 
 ## Generated docs
 
