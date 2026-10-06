@@ -11,7 +11,8 @@
 //! link's own folder. On Unix both kinds are symbolic links. On Windows a
 //! linked folder is a directory junction, which needs no privilege, and a
 //! linked file is a symbolic link, which needs one: where it can't be made,
-//! [`file`] prints why and returns `false`, and the test returns early.
+//! [`file`] prints why and returns `false`, and the test leaves out what
+//! needs that link.
 
 #![allow(dead_code)]
 
@@ -50,7 +51,8 @@ pub fn file(target: impl AsRef<Path>, link: impl AsRef<Path>) -> bool {
             // skip shows in the log of a passing run.
             let _ = writeln!(
                 io::stderr(),
-                "skipped: this account can't make symbolic links to files ({error})"
+                "skipped: can't make a symbolic link at {} ({error})",
+                link.display()
             );
             false
         }
