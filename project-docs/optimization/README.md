@@ -127,7 +127,7 @@ Taken from the inventory, and again at the end. Each is a count a finding names;
 | Commands timed with no baseline | 2 | 0 |
 | `diff` on 3,000 pages, nothing changed | 1.3 s | Set in phase 7 |
 | Release binary | 10.5 MB | Set in phase 7 |
-| Peak memory on 3,000 pages | Unmeasured | Set in phase 2 |
+| Peak memory on 3,000 pages | Unmeasured | Recorded in phase 2 (`check` 221 MB, `build` 265 MB, `diff` 547 MB); stays within the baseline's margin |
 
 ## Out of scope
 
