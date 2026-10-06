@@ -20,6 +20,12 @@ pub struct UnknownBuild {
     pub known: Vec<String>,
 }
 
+impl tessera_core::Coded for UnknownBuild {
+    fn code(&self) -> &'static str {
+        "unknown_build"
+    }
+}
+
 /// The builds named in `names`, in the order given and each once; every
 /// build of the content model when none is named.
 ///

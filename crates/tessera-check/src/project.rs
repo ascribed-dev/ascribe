@@ -78,6 +78,15 @@ pub enum LoadError {
     },
 }
 
+impl tessera_core::Coded for LoadError {
+    fn code(&self) -> &'static str {
+        match self {
+            LoadError::Read { .. } => "project_unreadable",
+            LoadError::Model { .. } => "model_invalid",
+        }
+    }
+}
+
 /// Why [`Project::locate`] found no content model.
 #[derive(Debug, thiserror::Error)]
 pub enum LocateError {
@@ -100,6 +109,16 @@ pub enum LocateError {
         /// The path named.
         path: PathBuf,
     },
+}
+
+impl tessera_core::Coded for LocateError {
+    fn code(&self) -> &'static str {
+        match self {
+            LocateError::CurrentDir(_) => "current_dir_unreadable",
+            LocateError::NotFound { .. } => "model_not_found",
+            LocateError::NotAFile { .. } => "model_not_a_file",
+        }
+    }
 }
 
 /// A content model as [`Project::load_model`] loads it.
@@ -162,6 +181,7 @@ impl std::fmt::Debug for Files {
 impl Project {
     /// The nearest `ascribe.toml` in `start` or one of its parents.
     pub fn find_config(start: &Path) -> Option<PathBuf> {
+        // Outside FileSystem: looking for a project, before there is one.
         start
             .ancestors()
             .map(|dir| dir.join(MODEL_FILE))
@@ -177,6 +197,8 @@ impl Project {
     /// The current directory can't be read, no `ascribe.toml` is found, or
     /// `config` names none.
     pub fn locate(config: Option<&Path>) -> Result<PathBuf, LocateError> {
+        // Outside FileSystem: the path given with `--config`, or the one found,
+        // before there's a project.
         let config = match config {
             Some(path) if path.is_dir() => path.join(MODEL_FILE),
             Some(path) => path.to_owned(),
@@ -225,6 +247,8 @@ impl Project {
     /// The file can't be read or isn't valid UTF-8 ([`LoadError::Read`]), or
     /// the content model has errors ([`LoadError::Model`]).
     pub fn load_model(config: &Path) -> Result<ModelFile, LoadError> {
+        // Outside FileSystem: the content model says where the content root is,
+        // so it's read before there's a FileSystem to read through.
         let text = fs::read(config)
             .map_err(|e| read_error(config, e))
             .and_then(|bytes| {

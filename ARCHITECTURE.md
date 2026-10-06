@@ -63,7 +63,7 @@ tessera-fmt        core, syntax, model
 tessera-resolve    core, syntax, model
 tessera-check      core, syntax, model, resolve
 tessera-sources    core, model, resolve
-tessera-emit       core, syntax, model, resolve
+tessera-emit       core, syntax, model, resolve, comrak-tessera
 tessera-diff       core, syntax, model, resolve, check, emit
 tessera-lsp        core, syntax, model, resolve, check, emit, diff, fmt
 tessera-cli        core, model, check, emit, diff, sources, fmt, lsp
@@ -103,7 +103,8 @@ The steps every surface shares, in order:
 
 - **Finding `ascribe.toml`.** The commands look in `--config` or the nearest parent (`tessera_check::Project::locate`, called from `crates/tessera-cli/src/context.rs`). The language server looks from its workspace folders (`find_config` in `crates/tessera-lsp/src/core.rs`).
 - **Loading.** `tessera_check::Project::load` reads the content model (`Project::load_model`) and the sources, and is what `check` reports on; every command loads its project with it, through `load_project` in `crates/tessera-cli/src/context.rs`, except `fmt`, which takes only the content model (`Project::load_model`) so that a project whose pages have errors can still be formatted. The page-level checks index it again as a `tessera_resolve::Project` (`crates/tessera-check/src/page/bridge.rs`), unless the caller passes its own index (`PageChecker::with_index`). The commands that resolve builds (`build`, `diff`, `drift`, `sources`) take their own `tessera_resolve::Project` over the same files from `Project::index`, so they index the project twice. The language server loads with `tessera_model::load_str_in` and `tessera_resolve::IncrementalProject::load`, since it holds unsaved text and updates in place.
-- **Reading.** `tessera_resolve::FileSystem` (`crates/tessera-resolve/src/fs.rs`) is where a project's files are read: it knows the content root, which files are sources, the boundary a file must stay inside, exact-case names, and symbolic links. `DiskFs` reads a real project, `MemoryFs` holds one for tests, and `tessera_diff::GitFs` reads one at a commit. Many reads don't go through it; [the inventory](project-docs/optimization/inventory.md#2-file-reading-has-a-home-that-isnt-used) counts them. Examples: the content model's (`crates/tessera-model/src/lib.rs`), `ascribe.lock`'s (`crates/tessera-check/src/project.rs`, `crates/tessera-sources/src/lib.rs`), the output directory's (`crates/tessera-emit/src/store.rs`), the copies of sources in other repositories (`crates/tessera-sources/src/copies.rs`), `fmt`'s (`crates/tessera-fmt/src/files.rs`), the language server's walk when files change (`crates/tessera-lsp/src/core.rs`), and the images the HTML report inlines (`DiskAssets` in `crates/tessera-diff/src/html/mod.rs`), which skips the boundary, case, and link rules.
+- **Reading.** `tessera_resolve::FileSystem` (`crates/tessera-resolve/src/fs.rs`) is where a project's files are read: it knows the content root, which files are sources, the boundary a file must stay inside, exact-case names, and symbolic links. `DiskFs` reads a real project, `MemoryFs` holds one for tests, and `tessera_diff::GitFs` reads one at a commit. A read anywhere else says why it isn't a project read, in a comment starting `Outside FileSystem:`, and `crates/tessera-resolve/tests/file_reads.rs` fails on one that doesn't. The ones left: the content model's (`crates/tessera-model/src/lib.rs`, and its checks that the folders it names exist), finding and reading `ascribe.toml` (`Project::locate` and `Project::load_model` in `crates/tessera-check/src/project.rs`), the output directory's (`crates/tessera-emit/src/store.rs`), writing the copies of sources in other repositories (`crates/tessera-sources/src/copies.rs`), `fmt`'s (`crates/tessera-fmt/src/files.rs`), the language server's walk when files change (`crates/tessera-lsp/src/core.rs`), and assets: the build copies them from `EmitContext::asset_source`, and the HTML report inlines them from the same place (`DiskAssets` in `crates/tessera-diff/src/html/mod.rs`), both skipping the boundary, case, and link rules.
+- **Paths.** `tessera_core::path` holds the path helpers every crate shares: `RelPath::relative_to` (a path inside a folder), `relative_path` (from one directory on disk to another, with a leading drive letter matched in either case), and `normalize`.
 - **Git.** `tessera-diff` (`crates/tessera-diff/src/git.rs`) and `tessera-sources` (`crates/tessera-sources/src/remote.rs`) run the `git` executable with a fixed argument list. No git or HTTP library is linked.
 
 ## Each command's entry
@@ -122,11 +123,13 @@ Each command is one call into a library, after the project is loaded. The call t
 
 The language server calls the same code where it does the same job: `tessera_fmt::format` for formatting, and `tessera_diff::compare_builds`, which `diff_project` calls, for review. It checks incrementally, so it calls `check_file` and `PageChecker` instead of `diagnose`, and `crates/tessera-cli/tests/lsp_parity.rs` holds the two to the same diagnostics.
 
+When an entry can't do its work, it returns an error type, never a string. Each error implements `tessera_core::Coded`: its `code()` is a short lowercase identifier (`unknown_build`, `git_not_found`) that names the failure whatever the message says, and an error that wraps another has the inner one's code. `crates/tessera-cli/src/exit.rs` lists every code once, in a test, and turns an error into the exit code the command gives (`2`, for every one). Libraries return errors and don't print: `clippy::print_stdout` and `clippy::print_stderr` are denied workspace-wide, and allowed only in the CLI, the benchmarks, the test harnesses, and the language server's log (`crates/tessera-lsp/src/log.rs`).
+
 ## Two HTML renderers
 
 The site output is Markdown with web components, and two things turn it into HTML:
 
-- **Ours,** `render_site_html` in `crates/tessera-emit/src/render/`, used by the editor's preview and the HTML report.
+- **Ours,** `render_site_html` in `crates/tessera-emit/src/render/`, used by the editor's preview and the HTML report. It renders with the comrak fork, the parser `tessera-syntax` uses, with Ascribe's option off.
 - **The site's,** Astro's Markdown pipeline with our plugin: `packages/astro/src/satteri.ts` for Astro's default processor, `packages/astro/src/rehype.ts` for `unified()`.
 
 They're meant to agree, and these tests hold them to it:

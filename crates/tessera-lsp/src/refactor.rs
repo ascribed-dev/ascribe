@@ -8,6 +8,7 @@ use lsp_types::{
     FileOperationRegistrationOptions, RenameFilesParams, RenameParams, TextEdit, Uri,
     WorkspaceEdit,
 };
+use tessera_core::path::{normalize, relative_path};
 use tessera_core::{Destination, LineIndex, RelPath, Span, TextEdit as ByteEdit};
 use tessera_resolve::{FileIndex, PhrasePlace, Target};
 use tessera_syntax::{Block, BlockKind, InlineKind};
@@ -33,20 +34,22 @@ pub(crate) fn will_rename(ctx: &Ctx, params: RenameFilesParams) -> Option<Worksp
     for file in params.files {
         let old_uri = Uri::from_str(&file.old_uri).ok()?;
         let new_uri = Uri::from_str(&file.new_uri).ok()?;
-        let old_abs = crate::uri::normalize(&crate::uri::uri_to_path(&old_uri)?);
-        let new_abs = crate::uri::normalize(&crate::uri::uri_to_path(&new_uri)?);
-        if crate::uri::relative_to(root, &old_abs).is_none()
-            || crate::uri::relative_to(root, &new_abs).is_none()
+        let old_abs = normalize(&crate::uri::uri_to_path(&old_uri)?);
+        let new_abs = normalize(&crate::uri::uri_to_path(&new_uri)?);
+        // Outside FileSystem: whether a rename's target is taken, for any path
+        // the editor names.
+        if relative_path(root, &old_abs).is_none()
+            || relative_path(root, &new_abs).is_none()
             || (new_abs.exists() && new_abs != old_abs)
         {
             return Some(WorkspaceEdit::default());
         }
-        let old = crate::uri::relative_to(&ctx.content_dir, &old_abs)?;
-        let new = crate::uri::relative_to(&ctx.content_dir, &new_abs)?;
-        if old == ".." || old.starts_with("../") || new == ".." || new.starts_with("../") {
+        let old = relative_path(&ctx.content_dir, &old_abs)?;
+        let new = relative_path(&ctx.content_dir, &new_abs)?;
+        if !old.is_inside() || !new.is_inside() {
             return Some(WorkspaceEdit::default());
         }
-        mappings.push((RelPath::parse(&old).ok()?, RelPath::parse(&new).ok()?));
+        mappings.push((old, new));
     }
     if mappings.is_empty() {
         return Some(WorkspaceEdit::default());

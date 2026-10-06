@@ -65,7 +65,7 @@ Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its or
 
 ### `render_site_html`
 
-`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview uses it; the Astro plugin must pass the same fixtures.
+`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark (the fork in `crates/comrak-tessera`, with Ascribe's option off) with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview uses it; the Astro plugin must pass the same fixtures.
 
 ### Zod
 

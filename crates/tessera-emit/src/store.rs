@@ -103,6 +103,19 @@ pub enum StoreError {
     },
 }
 
+impl tessera_core::Coded for StoreError {
+    fn code(&self) -> &'static str {
+        match self {
+            StoreError::Locked { .. } => "output_locked",
+            StoreError::NotManifest { .. } => "not_a_manifest",
+            StoreError::UnknownVersion { .. } => "unknown_manifest_version",
+            StoreError::BadEntry { .. } => "bad_manifest_entry",
+            StoreError::Conflicts(_) => "output_conflicts",
+            StoreError::Io { .. } => "output_io",
+        }
+    }
+}
+
 fn io_err(action: &'static str, path: &Path) -> impl FnOnce(io::Error) -> StoreError {
     let path = path.display().to_string();
     move |source| StoreError::Io {

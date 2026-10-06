@@ -73,6 +73,8 @@ pub fn load(path: impl AsRef<Path>) -> Result<ContentModel, Vec<Issue>> {
 /// [`load`], locating issues in `file`.
 pub fn load_with_file(path: impl AsRef<Path>, file: FileId) -> Result<ContentModel, Vec<Issue>> {
     let path = path.as_ref();
+    // Outside FileSystem: the content model is read before there's a project,
+    // since it says where the content root is.
     let text = match std::fs::read(path) {
         Ok(bytes) => match String::from_utf8(bytes) {
             Ok(text) => text,

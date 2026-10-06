@@ -35,6 +35,16 @@ pub enum FormatFilesError {
     },
 }
 
+impl tessera_core::Coded for FormatFilesError {
+    fn code(&self) -> &'static str {
+        match self {
+            FormatFilesError::Io { .. } => "format_io",
+            FormatFilesError::NotUtf8 { .. } => "not_utf8",
+            FormatFilesError::BadEdits { .. } => "format_bad_edits",
+        }
+    }
+}
+
 /// Formats every `.md` file under `paths` (each a file, or a directory
 /// searched recursively) or, with no path, under the content root of the
 /// project whose content model, `model`, is at `config`. Each file that
@@ -65,6 +75,10 @@ pub fn format_files(
         .map_or_else(|| PathBuf::from("."), Path::to_owned);
     let parse_options = options_from_model(model);
 
+    // Outside FileSystem: `fmt` formats the files and folders it's given, as
+    // given, and this crate can't use tessera-resolve. A link out of the
+    // content root is still followed here; that's a known gap, for its own
+    // change.
     let roots: Vec<PathBuf> = if paths.is_empty() {
         vec![project.join(&model.project.content_root)]
     } else {
@@ -80,6 +94,7 @@ pub fn format_files(
 
     let mut changed = Vec::new();
     for file in files {
+        // Outside FileSystem: as above.
         let source = std::fs::read(&file).map_err(|source| FormatFilesError::Io {
             path: file.clone(),
             source,
@@ -110,6 +125,7 @@ pub fn format_files(
 /// `own`, this project's folder: it's another project's folder, whose files
 /// that project's model formats.
 fn holds_model(dir: &Path, own: Option<&Path>) -> bool {
+    // Outside FileSystem: as in `format_files`.
     if own.is_some() && std::fs::canonicalize(dir).ok().as_deref() == own {
         return false;
     }
@@ -127,6 +143,7 @@ fn collect(
     own: Option<&Path>,
     files: &mut Vec<PathBuf>,
 ) -> Result<(), FormatFilesError> {
+    // Outside FileSystem: as in `format_files`.
     let io = |source| FormatFilesError::Io {
         path: path.to_owned(),
         source,

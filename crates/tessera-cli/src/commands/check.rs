@@ -62,10 +62,7 @@ fn check(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     };
     let diagnostics = match diagnose(&project, &args.build) {
         Ok(found) => found.diagnostics,
-        Err(message) => {
-            let _ = writeln!(err, "error: {message}");
-            return exit::FAILURE;
-        }
+        Err(e) => return exit::fail(err, &e),
     };
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();

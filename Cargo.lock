@@ -1269,6 +1269,7 @@ dependencies = [
  "tessera-lsp",
  "tessera-model",
  "tessera-sources",
+ "thiserror",
 ]
 
 [[package]]
@@ -1352,7 +1353,7 @@ dependencies = [
 name = "tessera-emit"
 version = "0.2.0"
 dependencies = [
- "comrak",
+ "comrak-tessera",
  "html5ever",
  "insta",
  "markup5ever_rcdom",
