@@ -7,6 +7,10 @@
 //! **misses its target** when it exceeds an absolute limit from the spec's
 //! performance targets. Both are read from `baselines/perf.json`.
 //!
+//! A metric whose name starts with `memory/` is a peak resident memory in
+//! megabytes, not a time: its line has the same fields, and it's compared the
+//! same way, with the floor read as megabytes.
+//!
 //! The margin is deliberately generous (see `RESULTS.md`): shared CI runners
 //! vary by a factor of two between runs and by more between machines, and the
 //! job exists to catch an algorithm that got worse, not a few percent.
@@ -65,8 +69,15 @@ pub const REQUIRED: &[&str] = &[
     "check/synthetic-3000",
     "build/synthetic-3000-first",
     "check/noisy-1000-text",
+    "diff/synthetic-3000-unchanged",
+    "drift/synthetic-3000-snippets-unchanged",
     "lsp/keystroke-page-3000",
     "lsp/keystroke-fragment-3000",
+    "memory/check-synthetic-3000",
+    "memory/build-synthetic-3000-first",
+    "memory/diff-synthetic-3000-unchanged",
+    "memory/lsp-load-3000",
+    "memory/lsp-100-edits-3000",
 ];
 
 /// Reads a results file: the last line for a metric wins.
