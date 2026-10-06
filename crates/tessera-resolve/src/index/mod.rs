@@ -23,11 +23,11 @@ pub(crate) mod walk;
 use std::sync::Arc;
 
 use tessera_core::availability::{AvailabilityError, AvailabilitySpec, parse_availability};
-use tessera_core::{FileId, RelPath, Slugger, Span};
+use tessera_core::{AttributeValue, FileId, RelPath, Slugger, Span};
 use tessera_model::ContentModel;
 use tessera_syntax::{
     Block, BlockKind, Bound, DirectiveLine, InlineKind, ParseOptions, ParsedDocument, Phrase,
-    PrimaryValue, parse,
+    PrimaryValue, TableRow, parse,
 };
 
 use crate::snippet::SnippetUse;
@@ -158,14 +158,17 @@ pub struct PhraseUse {
     pub place: PhrasePlace,
 }
 
-/// An `@available` directive (SPEC §4.4).
+/// An `@available` directive, or the `available` attribute of a table row
+/// (SPEC §4.4).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AvailabilityMarker {
-    /// The directive line.
+    /// The directive line, or the row's attribute block.
     pub span: Span,
-    /// The primary's text and span, if the directive has one.
+    /// The primary's text and span, if the directive has one; for a row, the
+    /// attribute's value, without its quotes.
     pub primary: Option<(String, Span)>,
-    /// What the directive binds, as the structure pass decided.
+    /// What the directive binds, as the structure pass decided. `None` for a
+    /// row.
     pub binding: Option<Bound>,
     /// The primary read as an availability spec. A bare name may be a feature
     /// key instead; build resolution decides, from the model.
@@ -266,6 +269,9 @@ pub fn index_parsed(
             }
             BlockKind::Directive(line) if line.name == "snippet" => {
                 snippets.push(SnippetUse::of(line));
+            }
+            BlockKind::Table(table) => {
+                availability.extend(table.rows.iter().filter_map(row_availability));
             }
             _ => {}
         }
@@ -371,6 +377,40 @@ fn include_of(line: &DirectiveLine, written_in: &RelPath) -> Include {
         target,
         section,
         heading,
+    }
+}
+
+/// The `available` attribute of a table row, when it has one whose value is
+/// text (a value set is the wrong type, which the checks report).
+fn row_availability(row: &TableRow) -> Option<AvailabilityMarker> {
+    let block = row.attributes.as_ref()?;
+    let value = block.get("available")?.value.as_ref()?;
+    let (text, span) = attribute_text(value)?;
+    let spec = Some(parse_availability(&text, span.start()));
+    Some(AvailabilityMarker {
+        span: block.span,
+        primary: Some((text, span)),
+        binding: None,
+        spec,
+    })
+}
+
+/// An attribute value's text and the span it's written in: a quoted value's
+/// span is inside its quotes, unless escapes make the text differ from the
+/// source, when it's the whole value.
+fn attribute_text(value: &AttributeValue) -> Option<(String, Span)> {
+    match value {
+        AttributeValue::Token(t) => Some((t.text.clone(), t.span)),
+        AttributeValue::Quoted { text, span } => {
+            let inner = Span::new(span.start() + 1, span.end().saturating_sub(1));
+            let span = if inner.len() == text.len() {
+                inner
+            } else {
+                *span
+            };
+            Some((text.clone(), span))
+        }
+        AttributeValue::Set { .. } => None,
     }
 }
 

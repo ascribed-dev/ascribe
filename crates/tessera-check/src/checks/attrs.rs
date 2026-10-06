@@ -1,7 +1,7 @@
 //! Attribute keys and value types against a schema (SPEC §3.3, §4.3, §5.3).
 //!
 //! The parser reports what's wrong with an attribute block's *shape*; these
-//! checks report what needs a schema: keys the directive or image doesn't
+//! checks report what needs a schema: keys the directive, image, or row doesn't
 //! declare, values of the wrong type, `@variant` dimensions and values, and
 //! required attributes that are missing.
 
@@ -20,6 +20,8 @@ pub(super) enum Owner<'a> {
     Directive(&'a DirectiveSchema),
     /// An image.
     Image,
+    /// A table row (SPEC §4.4).
+    Row,
 }
 
 impl Ctx<'_> {
@@ -100,6 +102,7 @@ impl Ctx<'_> {
             Owner::Image => issue
                 .with_variant("image")
                 .with_arg("keys", quoted_list(&keys)),
+            Owner::Row => issue.with_variant("row"),
             Owner::Directive(schema) => {
                 let issue = issue.with_arg("name", schema.name.clone());
                 if keys.is_empty() {

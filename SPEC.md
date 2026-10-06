@@ -66,7 +66,7 @@ Sections marked *non-normative*, examples, and notes are informative.
 
 ### 1.4 Relationship to CommonMark
 
-An Ascribe document is a CommonMark document. Everything CommonMark defines keeps its meaning, except where this specification assigns meaning to text CommonMark treats as ordinary paragraph content (directive lines, title lines, phrases, and attribute blocks after images).
+An Ascribe document is a CommonMark document. Everything CommonMark defines keeps its meaning, except where this specification assigns meaning to text CommonMark treats as ordinary paragraph content (directive lines, title lines, phrases, and attribute blocks after images and at the end of a table row's first cell).
 
 Processors MAY support common CommonMark extensions, such as GitHub Flavored Markdown tables. This specification doesn't depend on them.
 
@@ -161,7 +161,7 @@ Built-in keywords never contain a hyphen. Project widget names always contain on
 
 ### 3.3 Attributes
 
-Attributes use one grammar everywhere: after a directive name, and after an image (§5.3).
+Attributes use one grammar everywhere: after a directive name, after an image (§5.3), and at the end of a table row's first cell (§4.4).
 
 ```
 {key=value, key=value}
@@ -453,6 +453,19 @@ Declares where content applies and its lifecycle state. Unlike `@variant`, it do
   ---
   ```
 
+- **Table row:** a row of a table (where the processor supports tables, §1.4) takes a spec from the `available` attribute of an attribute block (§3.3) that ends its first cell. A spec with spaces or commas is quoted, as any such value is:
+
+  ```
+  | Option | Meaning |
+  |---|---|
+  | `anchors` {available="self-managed preview 3.4"} | Marks each block with its source. |
+  ```
+
+  - The block is the last thing in the first cell of a body row, after a space or alone in the cell, and closes at the end of the cell. It isn't part of the cell's content. A `{` that touches the text before it, a block followed by more text, a block in code, in another cell, or in the header row, and braces with no `=` in them (a phrase candidate, §5.1) stay text.
+  - `available` is the only attribute a row takes. Its value is a spec or a feature key, checked as an `@available` primary is.
+  - The row's spec is a scope inside the table's, so it MUST NOT exceed the availability the table has (§4.4 Scope). A filter build removes a row that isn't available (§9.3); the header row has no spec of its own, so a table always keeps it.
+  - There is no inline form. Removing part of a sentence breaks the sentence, and a badge in the middle of one is noise: a value that differs by release is written as prose ("glibc 2.28 or later (2.39 for 0.1.1 and earlier)").
+
 #### Availability specs
 
 A spec is a comma-separated list of **targets**, each optionally followed by its lifecycle (ABNF rule `availability`).
@@ -626,7 +639,7 @@ See the [streaming API reference]({api}streaming).
   - Frontmatter fields, as the content model declares.
 - **Where phrases never apply:** code spans, indented code blocks, and raw HTML.
 - **Escapes in code.** A backslash doesn't escape in code, so in a fenced block with `phrases=true`, `\{key}` is a backslash followed by a phrase, and a fence's content never differs from its source except where phrases are substituted. For a literal `{key}` in code, leave `phrases=true` off that fence.
-- **Distinction from attributes:** `{…}` directly after a directive name, or directly after an image and closed on the same line, is an attribute block (§3.3), not a phrase, whatever it contains. So `![Logo](logo.png){cloud}` is an attribute block with a bare key, which is an error; to put a phrase right after an image, separate it with a space or escape it (`\{cloud}`).
+- **Distinction from attributes:** `{…}` directly after a directive name, or directly after an image and closed on the same line, is an attribute block (§3.3), not a phrase, whatever it contains. So is the block that ends a table row's first cell (§4.4). So `![Logo](logo.png){cloud}` is an attribute block with a bare key, which is an error; to put a phrase right after an image, separate it with a space or escape it (`\{cloud}`).
 - **Values** are inserted as literal text. They aren't scanned for phrases or markup, and they don't vary by case, number, or argument.
 - **Destinations are checked after substitution.** A destination's phrases are substituted before it's resolved and checked, as in the build, so `[reference]({api}streaming)` names an external URL, not a missing file.
 - **Keeping source and output in agreement.** Whether `{key}` is a phrase depends on a registry the reader can't see, so processors SHOULD report two cases:
@@ -811,7 +824,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 
 | Construct | Condition | Severity |
 |---|---|---|
-| Attributes | Unknown key for the directive or image | Error |
+| Attributes | Unknown key for the directive, image, or table row | Error |
 | Attributes | Value doesn't match the key's declared type | Error |
 | Attributes | Bare key without a value | Error |
 | Attributes | Unquoted value containing a reserved character | Error |
@@ -911,7 +924,7 @@ A formatter changes only Ascribe constructs, and never how a page renders:
 - Directive lines in a blockquote keep the `>` and one space. Directive lines on a list marker's own line, and indentation written with tabs, are left as written.
 - It keeps a blank line between a following-block directive and its block when removing it would change how the page renders (a list's tightness), when the directive has a text primary, or when anything but blank lines sits in the gap (a link reference definition).
 - It leaves an attribute block with a bare or repeated key as written. An undeclared key keeps its place, and the rest are ordered and respaced. A quoted value that needs no quotes loses them.
-- It removes an empty attribute block after an image, and leaves an image's attribute block in a table cell as written.
+- It removes an empty attribute block after an image, and leaves an image's attribute block in a table cell, and a table row's attribute block, as written.
 - Title lines are left as written.
 
 ---
@@ -1009,6 +1022,8 @@ A compiler MUST provide the site output and the plain-markdown output. It MAY pr
 | `@details` | `<details>` with the title in `<summary>` | The title in bold, then the content |
 | `@available`, `badge` | A `<ascribe-availability>` element; page-level availability passed through as frontmatter | A line such as "Available: Quill Cloud (GA); self-managed (preview, 3.4+)" |
 | `@available`, `filter` | Unavailable content removed; the rest annotated as in `badge` | Unavailable content removed; the rest annotated as in `badge` |
+| Table row's `available`, `badge` | A `<ascribe-availability scope="row">` element at the end of the row's first cell, on one line | The text "(Available: …)" at the end of the row's first cell |
+| Table row's `available`, `filter` | Unavailable rows removed; the rest annotated as in `badge` | Unavailable rows removed; the rest annotated as in `badge` |
 | Project widget | A custom element with the widget's name and attributes | The widget's plain fallback, or nothing |
 | `@snippet` | A fenced code block | A fenced code block |
 | Phrases, includes, links, glossary | Resolved into ordinary markdown | Resolved; links made absolute |

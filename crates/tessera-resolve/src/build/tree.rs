@@ -11,7 +11,8 @@
 //!   [`ResolvedKind::Group`]; a group reduced to one arm is that arm's blocks;
 //! - every `@available` that survives stays a directive block, with its
 //!   [`Annotation`]; every block also carries its **effective availability**
-//!   (SPEC §4.4, after inheritance);
+//!   (SPEC §4.4, after inheritance), and a table the availability of each row
+//!   that has its own ([`ResolvedBlock::rows`]);
 //! - phrases are substituted in the inline content and code, and listed as
 //!   [`Substitution`]s over the source text;
 //! - every heading has its page id ([`HeadingIds`]);
@@ -119,6 +120,10 @@ pub struct ResolvedBlock {
     pub annotation: Option<Annotation>,
     /// For a code block a `@snippet` became, the snippet (SPEC §4.8).
     pub snippet: Option<Arc<Snippet>>,
+    /// For a table, its body rows that have an availability of their own
+    /// (SPEC §4.4), in source order. A filter build has removed the rows that
+    /// aren't available from the table itself.
+    pub rows: Vec<ResolvedRow>,
     /// The phrases substituted in this block's own inline content, in source
     /// order, as replacements over the source text. Their spans are in
     /// [`ResolvedBlock::file`].
@@ -187,6 +192,15 @@ pub struct ResolvedItem {
     pub marker: Span,
     /// The blocks in it.
     pub children: Vec<ResolvedBlock>,
+}
+
+/// A table row with its own availability (SPEC §4.4).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ResolvedRow {
+    /// The row, in the table's file.
+    pub span: Span,
+    /// The row's effective availability: its own spec, in the table's.
+    pub availability: Arc<Availability>,
 }
 
 /// An arm of a resolved group.
@@ -346,6 +360,8 @@ pub enum Scope {
     Section,
     /// An `@available` that binds the block it touches.
     Block,
+    /// The `available` attribute of a table row.
+    Row,
 }
 
 impl Scope {
@@ -355,6 +371,7 @@ impl Scope {
             Scope::Page => "page",
             Scope::Section => "section",
             Scope::Block => "block",
+            Scope::Row => "row",
         }
     }
 }
@@ -371,8 +388,8 @@ pub struct Availability {
     pub feature: Option<String>,
     /// The scope it was written for.
     pub scope: Scope,
-    /// Where it's written: the `@available` directive line, or the
-    /// frontmatter.
+    /// Where it's written: the `@available` directive line, the frontmatter,
+    /// or a table row's attribute block.
     pub written_at: Location,
     /// The scope it sits in, whose availability it inherits. A node is
     /// available only if every spec in this chain says so.

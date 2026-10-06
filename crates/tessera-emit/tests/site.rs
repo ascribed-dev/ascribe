@@ -403,3 +403,33 @@ fn two_pages_with_one_route_are_refused() {
         "{message}"
     );
 }
+
+#[test]
+fn a_rows_availability_ends_its_first_cell() {
+    let out = body(
+        "| Key | Meaning |\n|---|---|\n| `a` | All. |\n| `b` {available=\"self-managed preview 3.4\"} | New. |\n| {available=cloud} | Empty. |\n",
+    );
+    assert_eq!(
+        out,
+        "| Key | Meaning |\n| --- | --- |\n| `a` | All. |\n\
+         | `b` <ascribe-availability scope=\"row\"><ascribe-availability-target target=\"self-managed\" dimension=\"deployment\" states=\"preview\" versions=\"3.4\">Self-managed (preview, 3.4+)</ascribe-availability-target></ascribe-availability> | New. |\n\
+         | <ascribe-availability scope=\"row\"><ascribe-availability-target target=\"cloud\" dimension=\"deployment\" states=\"ga\">Quill Cloud (GA)</ascribe-availability-target></ascribe-availability> | Empty. |\n"
+    );
+    // A filter build drops the rows that aren't available, and badges the
+    // rest.
+    let project = memory_project(
+        FULL_MODEL,
+        &[(
+            "index.md",
+            &page(
+                "| Key |\n|---|\n| `b` {available=\"self-managed preview 3.4\"} |\n| `c` {available=cloud} |\n",
+            ),
+        )],
+    );
+    let cloud = site(&project, "cloud", "index.md");
+    assert!(!cloud.contains("`b`"), "{cloud}");
+    assert!(
+        cloud.contains("| `c` <ascribe-availability scope=\"row\">"),
+        "{cloud}"
+    );
+}

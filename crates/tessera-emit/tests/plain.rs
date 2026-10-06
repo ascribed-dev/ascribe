@@ -392,3 +392,13 @@ fn a_heading_that_ends_in_a_hash_isnt_read_as_closed() {
     assert_eq!(body("## \\#\n"), "## \\#\n");
     assert_eq!(body("## C\\#\n"), "## C\\#\n");
 }
+
+#[test]
+fn a_rows_availability_ends_its_first_cell() {
+    assert_eq!(
+        body(
+            "| Key | Meaning |\n|---|---|\n| `a` | All. |\n| `b` {available=\"self-managed preview 3.4\"} | New. |\n"
+        ),
+        "| Key | Meaning |\n| --- | --- |\n| `a` | All. |\n| `b` (Available: Self-managed (preview, 3.4+)) | New. |\n"
+    );
+}

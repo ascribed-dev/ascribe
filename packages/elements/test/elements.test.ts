@@ -192,6 +192,23 @@ describe.each(ENGINES)("%s", (engine) => {
       await context.close();
     });
 
+    it("sits inline in a table row's first cell, with no lead-in", async () => {
+      const page = await fresh(
+        `<table><tr><td><code>stream</code> <ascribe-availability scope="row"><ascribe-availability-target target="cloud" dimension="deployment" states="beta">Quill Cloud (Beta)</ascribe-availability-target></ascribe-availability></td><td>Streams.</td></tr></table>`,
+        { script: false },
+      );
+      const row = page.locator("ascribe-availability");
+      expect(await row.evaluate((el) => getComputedStyle(el).display)).toBe("inline");
+      expect(await pseudo(page, "ascribe-availability", "::before", "content")).toBe("none");
+      const code = await page.locator("code").boundingBox();
+      const badge = await page.locator("ascribe-availability-target").boundingBox();
+      // On the code's line, after it.
+      expect(badge && code && badge.x > code.x && Math.abs(badge.y - code.y) < code.height).toBe(
+        true,
+      );
+      await context.close();
+    });
+
     it("keeps all content in the DOM with neither script nor CSS", async () => {
       const page = await fresh(ALL, { script: false, css: false });
       const text = await page.locator("main").innerText();

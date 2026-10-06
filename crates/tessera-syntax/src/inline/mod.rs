@@ -17,6 +17,9 @@
 //!   `tessera_core::parse_attribute_block`. The fork's inline parser skips the
 //!   block, so its contents never become emphasis or links; this finds the
 //!   same block with the fork's own scan. See [`image`].
+//! - **Attribute blocks at the end of a table row's first cell** (SPEC §4.4),
+//!   which the fork reads as text: this takes them out of the cell. See
+//!   [`row`].
 //!
 //! Code spans, indented code, raw HTML, and fences without `phrases=true`
 //! hold no candidates because they hold no [`InlineKind::Text`].
@@ -24,6 +27,7 @@
 mod definition;
 mod image;
 mod phrase;
+mod row;
 
 pub(crate) use phrase::code_candidates;
 
@@ -81,8 +85,13 @@ impl Pass<'_> {
                 }
             }
             BlockKind::Table(t) => {
-                for cell in t.rows.iter_mut().flat_map(|r| &mut r.cells) {
-                    self.inlines(&mut cell.inlines);
+                for row in &mut t.rows {
+                    if !row.header {
+                        self.row_attributes(row);
+                    }
+                    for cell in &mut row.cells {
+                        self.inlines(&mut cell.inlines);
+                    }
                 }
             }
             BlockKind::Directive(line) => self.directive(line),

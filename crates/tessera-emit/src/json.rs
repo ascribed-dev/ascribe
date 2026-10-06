@@ -257,6 +257,9 @@ struct ItemJson {
 #[derive(Serialize)]
 struct RowJson {
     header: bool,
+    /// The row's own availability, in its table's (SPEC §4.4).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    availability: Option<AvailabilityJson>,
     cells: Vec<CellJson>,
 }
 
@@ -484,6 +487,7 @@ impl Writer<'_, '_> {
                 Scope::Page => "page",
                 Scope::Section => "section",
                 Scope::Block => "block",
+                Scope::Row => "row",
             },
             feature: a.feature.clone(),
             source: self.source_ref(a.written_at),
@@ -554,6 +558,11 @@ impl Writer<'_, '_> {
                         .iter()
                         .map(|row| RowJson {
                             header: row.header,
+                            availability: block
+                                .rows
+                                .iter()
+                                .find(|r| r.span == row.span)
+                                .map(|r| self.availability(&r.availability)),
                             cells: row
                                 .cells
                                 .iter()

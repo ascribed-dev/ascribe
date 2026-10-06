@@ -1,14 +1,43 @@
-//! `@available` specs, in a directive or in `available` frontmatter
-//! (SPEC §4.4).
+//! `@available` specs, in a directive, in `available` frontmatter, or in a
+//! table row's attribute block (SPEC §4.4).
 
 use tessera_core::availability::parse_availability;
-use tessera_core::{Issue, Location, Span, diagnostics};
+use tessera_core::{
+    AttributeBlock, AttributeSchema, AttributeType, AttributeValue, Issue, Location, Span,
+    diagnostics,
+};
 use tessera_model::AvailabilityProblem;
 
 use super::Ctx;
+use super::attrs::Owner;
 use super::text::quoted_list;
 
 impl Ctx<'_> {
+    /// A table row's attribute block: `available` is its only key, and its
+    /// value is a spec.
+    pub(super) fn check_row(&mut self, block: &AttributeBlock) {
+        let declared = [AttributeSchema {
+            key: "available".to_owned(),
+            ty: AttributeType::String,
+            required: false,
+            default: None,
+            description: None,
+        }];
+        self.check_block(block, &declared, Owner::Row);
+        match block.get("available").and_then(|a| a.value.as_ref()) {
+            Some(AttributeValue::Token(t)) => {
+                self.check_availability_text(&t.text, t.span.start(), t.span, true);
+            }
+            Some(AttributeValue::Quoted { text, span }) => {
+                // Escapes inside the quotes move the spec off its source.
+                let precise = text.len() + 2 == span.len();
+                self.check_availability_text(text, span.start() + 1, *span, precise);
+            }
+            // A value set is the wrong type, which `check_block` reported.
+            Some(AttributeValue::Set { .. }) | None => {}
+        }
+    }
+
     /// Parses a spec and checks it against the content model: syntax,
     /// targets, states, versionless targets, and history order.
     ///

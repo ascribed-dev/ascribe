@@ -412,6 +412,19 @@ impl Renderer<'_> {
                 .map(|c| cell(&block.links, &c.inlines))
                 .collect();
             cells.resize(width, String::new());
+            // A row's availability ends its first cell.
+            if let Some(r) = block.rows.iter().find(|r| r.span == row.span)
+                && let Some(first) = cells.first_mut()
+            {
+                let shown = availability_display(self.model, &r.availability.spec);
+                let note = format!("(Available: {})", escape(&shown, false).replace('|', "\\|"));
+                if first.is_empty() {
+                    *first = note;
+                } else {
+                    first.push(' ');
+                    first.push_str(&note);
+                }
+            }
             lines.push(format!("| {} |", cells.join(" | ")));
             if n == 0 {
                 // Each column keeps its alignment.

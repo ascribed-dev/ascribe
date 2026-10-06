@@ -208,7 +208,7 @@ impl Pass<'_> {
 }
 
 /// Pushes the text `text[from..to]` if it isn't empty.
-fn push_text(text: &str, base: usize, from: usize, to: usize, out: &mut Vec<Inline>) {
+pub(super) fn push_text(text: &str, base: usize, from: usize, to: usize, out: &mut Vec<Inline>) {
     if from < to {
         out.push(Inline {
             span: Span::new(base + from, base + to),

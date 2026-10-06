@@ -13,10 +13,12 @@ use std::sync::Arc;
 use tessera_core::availability::{AvailabilitySpec, Detail, Entry, Version, parse_availability};
 use tessera_core::{Issue, Location, Span, diagnostics};
 use tessera_model::ContentModel;
-use tessera_syntax::{Block, BlockKind, Bound};
+use tessera_syntax::{Block, BlockKind, Bound, Table};
 
 use super::tree::ResolvedKind;
-use super::tree::{Annotation, Availability, ResolvedArm, ResolvedBlock, ResolvedItem, Scope};
+use super::tree::{
+    Annotation, Availability, ResolvedArm, ResolvedBlock, ResolvedItem, ResolvedRow, Scope,
+};
 use crate::expand::{ExpandedBlock, ExpandedKind, IncludeSite, PageProblem};
 use crate::index::FileIndex;
 use crate::project::Project;
@@ -491,6 +493,13 @@ impl Annotator<'_> {
     }
 
     fn block(&mut self, block: &ExpandedBlock, scope: Option<Arc<Availability>>) -> ResolvedBlock {
+        let rows = match &block.kind {
+            ExpandedKind::Leaf(Block {
+                kind: BlockKind::Table(table),
+                ..
+            }) => self.rows(block, table, &scope),
+            _ => Vec::new(),
+        };
         let kind = match &block.kind {
             ExpandedKind::Leaf(b) => ResolvedKind::Leaf(b.clone()),
             ExpandedKind::BlockQuote { children } => ResolvedKind::BlockQuote {
@@ -544,11 +553,53 @@ impl Annotator<'_> {
             heading: None,
             annotation: self.annotation(block),
             snippet: block.snippet.clone(),
+            rows,
             substitutions: Vec::new(),
             links: Vec::new(),
             glossary: Vec::new(),
             kind,
         }
+    }
+
+    /// The table's rows that have an `available` attribute whose spec parses,
+    /// each with its spec chained onto the table's.
+    fn rows(
+        &mut self,
+        block: &ExpandedBlock,
+        table: &Table,
+        scope: &Option<Arc<Availability>>,
+    ) -> Vec<ResolvedRow> {
+        let Some(index) = self.project.file_by_id(block.file) else {
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        for row in &table.rows {
+            let Some(attributes) = &row.attributes else {
+                continue;
+            };
+            let Some(marker) = index
+                .availability
+                .iter()
+                .find(|m| m.span == attributes.span)
+            else {
+                continue;
+            };
+            let (Some((text, _)), Some(Ok(spec))) = (&marker.primary, &marker.spec) else {
+                continue;
+            };
+            let declared = Declared {
+                spec: resolve_spec(self.model(), text, spec),
+                at: Location::new(block.file, attributes.span),
+            };
+            let chained = self.chain(&[(declared, block.via.clone())], Scope::Row, scope.clone());
+            if let Some(availability) = chained {
+                out.push(ResolvedRow {
+                    span: row.span,
+                    availability,
+                });
+            }
+        }
+        out
     }
 
     /// What a surviving `@available` declares: its spec as shown, with a

@@ -76,7 +76,7 @@ pub use router::DefaultRouter;
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, GlossaryUse, HeadingIds, LinkTarget,
     ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink,
-    ResolvedPage, Scope, Substitution,
+    ResolvedPage, ResolvedRow, Scope, Substitution,
 };
 
 use crate::index::FileKind;

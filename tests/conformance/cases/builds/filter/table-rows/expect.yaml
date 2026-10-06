@@ -1,0 +1,58 @@
+description: >-
+  A filter build removes the table rows that aren't available and keeps the
+  header row; a badge build keeps every row. A row's spec may be a feature
+  key.
+spec: ["4.4", "9.3"]
+tags: [resolve]
+
+builds:
+  site:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - table:
+              - Key
+              - "`a`"
+              - row: "`b`"
+                attributes: {available: cloud}
+              - row: "`c`"
+                attributes: {available: self-managed preview 3.4}
+              - row: "`d`"
+                attributes: {available: streaming-sync}
+  cloud-pdf:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - table:
+              - Key
+              - "`a`"
+              - row: "`b`"
+                attributes: {available: cloud}
+              - row: "`d`"
+                attributes: {available: streaming-sync}
+  sm-3.3:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - table:
+              - Key
+              - "`a`"
+  sm-3.4:
+    pages:
+      index.md:
+        outline:
+          - heading: 1
+            text: Page
+          - table:
+              - Key
+              - "`a`"
+              - row: "`c`"
+                attributes: {available: self-managed preview 3.4}
+              - row: "`d`"
+                attributes: {available: streaming-sync}

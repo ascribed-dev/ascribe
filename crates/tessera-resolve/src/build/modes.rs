@@ -14,7 +14,7 @@ use std::sync::Arc;
 use tessera_core::{Issue, Location, diagnostics};
 use tessera_model::{AvailabilityMode, Build, ContentModel, VariantMode};
 
-use tessera_syntax::{BlockKind, DirectiveLine};
+use tessera_syntax::{Block, BlockKind, DirectiveLine};
 
 use super::availability::page_availability;
 use super::tree::{Availability, DropReason, ResolvedArm, ResolvedBlock, ResolvedKind};
@@ -118,6 +118,7 @@ impl Modes<'_> {
                 out.extend(self.group(block));
                 continue;
             }
+            self.rows(&mut block);
             for children in block.child_lists_mut() {
                 let taken = std::mem::take(children);
                 *children = self.list(taken);
@@ -125,6 +126,30 @@ impl Modes<'_> {
             out.push(block);
         }
         out
+    }
+
+    /// Removes a table's rows that aren't available (SPEC §4.4). The header
+    /// row has no availability of its own, so a table always keeps it.
+    fn rows(&self, block: &mut ResolvedBlock) {
+        let AvailabilityMode::Filter { target, version } = &self.build.availability else {
+            return;
+        };
+        let ResolvedKind::Leaf(Block {
+            kind: BlockKind::Table(table),
+            ..
+        }) = &mut block.kind
+        else {
+            return;
+        };
+        let (kept, removed): (Vec<_>, Vec<_>) =
+            std::mem::take(&mut block.rows).into_iter().partition(|r| {
+                r.availability
+                    .is_available(self.model, target, version.as_ref())
+            });
+        table
+            .rows
+            .retain(|row| !removed.iter().any(|r| r.span == row.span));
+        block.rows = kept;
     }
 
     /// A group under the build's selection: conflicting arms are removed; one
@@ -230,17 +255,20 @@ fn conflicts(opener: &DirectiveLine, selection: &[(String, Vec<String>)]) -> boo
 }
 
 /// The availability specs that content in `blocks` is under: each block's
-/// own effective spec and every spec it sits in, by identity.
+/// own effective spec, each surviving table row's, and every spec they sit
+/// in, by identity.
 pub(crate) fn live(blocks: &[ResolvedBlock]) -> HashSet<*const Availability> {
     let mut set = HashSet::new();
     for block in blocks {
         block.visit(&mut |b| {
-            let mut spec = b.availability.as_ref();
-            while let Some(a) = spec {
-                if !set.insert(Arc::as_ptr(a)) {
-                    break;
+            let rows = b.rows.iter().map(|r| &r.availability);
+            for mut spec in b.availability.iter().chain(rows) {
+                while set.insert(Arc::as_ptr(spec)) {
+                    let Some(enclosing) = &spec.enclosing else {
+                        break;
+                    };
+                    spec = enclosing;
                 }
-                spec = a.enclosing.as_ref();
             }
         });
     }

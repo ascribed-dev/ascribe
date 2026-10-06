@@ -37,7 +37,9 @@
 //!   [`ParsedDocument::escaped_phrases`];
 //! - **image attribute blocks** (SPEC §5.3) as [`Image::attributes`], for
 //!   every form of image, parsed by `tessera_core::parse_attribute_block`,
-//!   with their issues in [`ParsedDocument::issues`].
+//!   with their issues in [`ParsedDocument::issues`];
+//! - **row attribute blocks** (SPEC §4.4) at the end of a table body row's
+//!   first cell, as [`TableRow::attributes`], taken out of the cell's inlines.
 //!
 //! **Link reference definitions** ([`ParsedDocument::definitions`]) are a side
 //! list rather than blocks: each has exact spans for its label,

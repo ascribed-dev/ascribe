@@ -308,6 +308,7 @@ impl<'a> Converter<'a> {
                                     TableCell { span, inlines }
                                 })
                                 .collect(),
+                            attributes: None,
                         }
                     })
                     .collect::<Vec<_>>();

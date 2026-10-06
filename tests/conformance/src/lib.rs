@@ -28,7 +28,9 @@ pub use adapter::{
 };
 pub use case::{Case, CaseError, CaseKind, discover};
 pub use expect::{BuildExpect, Expect, ExpectedDiagnostic, OutputKind, OutputSlot, PageExpect};
-pub use outline::{Arm, AttrValue, Attributes, Binding, Directive, Form, Group, Node, Outline};
+pub use outline::{
+    Arm, AttrValue, Attributes, Binding, Directive, Form, Group, Node, Outline, Row,
+};
 pub use registry::{DiagnosticsRegistry, Entry, Level, RegistryError, Severity};
 pub use runner::{CaseReport, Filter, Outcome, Report, RunError, Suite, filter_from_args};
 pub use skips::{Check, SkipEntry, SkipTarget, Skips};

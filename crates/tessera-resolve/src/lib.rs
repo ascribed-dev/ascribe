@@ -88,7 +88,7 @@ pub use astro::AstroRouter;
 pub use build::{
     Annotation, Availability, BuildResolver, DefaultRouter, DropReason, DroppedPage, GlossaryUse,
     HeadingIds, LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind,
-    ResolvedLink, ResolvedPage, Scope, Substitution,
+    ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
 };
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,

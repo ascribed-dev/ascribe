@@ -199,7 +199,9 @@ fn outline(source: &str, blocks: &[Block]) -> Vec<Node> {
                 text: Some(h.literal.trim_end().to_owned()),
             }),
             BlockKind::ThematicBreak => Some(Node::ThematicBreak),
-            BlockKind::Table(_) => Some(Node::Table),
+            BlockKind::Table(t) => Some(Node::Table {
+                rows: Some(super::inline::rows(t, &|span| text(source, span))),
+            }),
             // Directives, containers, groups, and the end lines that close
             // nothing.
             _ => structure::node(source, block, &|blocks| outline(source, blocks)),

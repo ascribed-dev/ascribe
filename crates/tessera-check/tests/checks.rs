@@ -157,6 +157,34 @@ fn available_specs_are_checked_against_the_model() {
 }
 
 #[test]
+fn a_rows_available_is_checked_like_a_directives() {
+    let cases = [
+        ("{available=\"cloud, self-managed preview 3.4\"}", vec![]),
+        ("{available=cloud}", vec![]),
+        ("{available=edge}", vec!["available-unknown"]),
+        ("{available=\"cloud 3.3\"}", vec!["available-versionless"]),
+        ("{available=\"cloud (preview\"}", vec!["available-syntax"]),
+        ("{since=3.4}", vec!["attribute-unknown-key"]),
+    ];
+    for (block, expected) in cases {
+        let p = project(&[("index.md", &page(&format!("| a |\n|---|\n| x {block} |")))]);
+        assert_eq!(slugs(&p), expected, "{block}");
+    }
+    // A problem in the spec is located in it, inside the quotes.
+    let text = page("| a |\n|---|\n| x {available=\"cloud, edge\"} |");
+    let p = project(&[("index.md", &text)]);
+    let d = one(&p);
+    assert_eq!(&text[d.location.span.range()], "edge");
+    let p = project(&[("index.md", &page("| a |\n|---|\n| x {since=3.4} |"))]);
+    let d = one(&p);
+    assert!(
+        d.message.contains("only attribute is `available`"),
+        "{}",
+        d.message
+    );
+}
+
+#[test]
 fn the_dimension_message_suggests_a_value() {
     let p = project(&[(
         "index.md",

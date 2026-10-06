@@ -341,6 +341,20 @@ impl Renderer<'_> {
                 .map(|c| self.inlines(block, &c.inlines, mode).replace('|', "\\|"))
                 .collect();
             cells.resize(width, String::new());
+            // A row's availability ends its first cell (contract §4).
+            if let Some(r) = block.rows.iter().find(|r| r.span == row.span)
+                && let Some(first) = cells.first_mut()
+            {
+                let badge = availability_element(self.model, "row", &r.availability.spec.entries)
+                    .replace('\n', "")
+                    .replace('|', "\\|");
+                if first.is_empty() {
+                    *first = badge;
+                } else {
+                    first.push(' ');
+                    first.push_str(&badge);
+                }
+            }
             lines.push(format!("| {} |", cells.join(" | ")));
             if n == 0 {
                 let delimiters: Vec<&str> = (0..width)

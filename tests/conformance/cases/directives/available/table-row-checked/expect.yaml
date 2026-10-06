@@ -1,0 +1,10 @@
+description: >-
+  A row's `available` is checked as an `@available` primary is, and
+  `available` is the only attribute a row takes.
+spec: ["3.3", "4.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: available-unknown, line: 7}
+  - {slug: available-versionless, line: 8}
+  - {slug: attribute-unknown-key, line: 9}
