@@ -29,6 +29,9 @@
 //! content model (unknown attribute keys) aren't run here; a block with a key
 //! the schema doesn't declare is normalized but its order is kept.
 //!
+//! [`format_files`] formats the files of a project on disk, as `ascribe
+//! fmt` does.
+//!
 //! # Guarantees
 //!
 //! Formatting is idempotent, and the formatted file parses to the same
@@ -48,6 +51,7 @@
 
 mod attributes;
 mod blank;
+mod files;
 mod head;
 mod indent;
 mod skip;
@@ -58,6 +62,8 @@ use tessera_syntax::{
     Block, BlockKind, DirectiveLine, EndLine, Inline, InlineKind, ParseOptions, ParsedDocument,
     PrimaryValue, parse,
 };
+
+pub use files::{FormatFilesError, format_files};
 
 use indent::Owner;
 pub use skip::NON_BLOCKING;

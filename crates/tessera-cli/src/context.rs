@@ -2,46 +2,32 @@
 //! content model and load the project.
 
 use std::io::IsTerminal;
-use tessera_check::{LoadError, Project};
+use std::path::PathBuf;
+
+use tessera_check::{LoadError, LocateError, Project};
 
 use crate::cli::{Color, Global};
 
 /// Why a project couldn't be loaded, ready to report.
 pub enum Failure {
     /// No `ascribe.toml` was found, or `--config` names none.
-    Config(String),
+    Config(LocateError),
     /// Loading failed.
     Load(LoadError),
 }
 
 /// Finds the content model (`--config`, or the nearest `ascribe.toml` in the
-/// current directory or a parent) and loads the project.
+/// current directory or a parent) and loads the project. Every command that
+/// works on a project loads it here; `fmt` takes only the first half, with
+/// [`Project::load_model`].
 pub fn load_project(global: &Global) -> Result<Project, Failure> {
-    // Outside FileSystem: the path given with `--config`, or the one found,
-    // before there's a project.
-    let config = match &global.config {
-        Some(path) if path.is_dir() => path.join(tessera_check::MODEL_FILE),
-        Some(path) => path.clone(),
-        None => {
-            let cwd = std::env::current_dir()
-                .map_err(|e| Failure::Config(format!("can't read the current directory: {e}")))?;
-            Project::find_config(&cwd).ok_or_else(|| {
-                Failure::Config(format!(
-                    "no {} found in {} or any parent directory; run ascribe from a project, or pass --config",
-                    tessera_check::MODEL_FILE,
-                    cwd.display()
-                ))
-            })?
-        }
-    };
-    // Outside FileSystem: as above.
-    if !config.is_file() {
-        return Err(Failure::Config(format!(
-            "{} doesn't exist or isn't a file",
-            config.display()
-        )));
-    }
+    let config = locate(global).map_err(Failure::Config)?;
     Project::load(&config).map_err(Failure::Load)
+}
+
+/// The content model `--config` names, or the nearest one.
+pub fn locate(global: &Global) -> Result<PathBuf, LocateError> {
+    Project::locate(global.config.as_deref())
 }
 
 /// Whether to color output written to `stream_is_terminal`.

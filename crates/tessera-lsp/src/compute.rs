@@ -5,6 +5,12 @@
 //! functions `ascribe check` does (`tessera_check::check_file`, and the
 //! page-level checks of the editor's build); [`Core::finish`] publishes under
 //! the lock, and only what is still current.
+//!
+//! It doesn't call `tessera_check::diagnose`, the entry `ascribe check`
+//! uses: that checks every build of a whole project at once, and the server
+//! checks only the files an edit affects, in the editor's one build, over the
+//! index it keeps current. `crates/tessera-cli/tests/lsp_parity.rs` holds
+//! the two to the same diagnostics.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;

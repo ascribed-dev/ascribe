@@ -11,9 +11,10 @@ What changed between a git revision and the working tree, as readers will see it
 | `src/words.rs` | The word-level diff inside changed prose |
 | `src/compare.rs` | Comparing builds page by page, the files a change comes from (`because`), and the report's types |
 | `src/drift.rs` | `drift`: the snippets whose code differs between a commit and the working tree, read only from the files `git diff` lists, and for each page that shows one whether the page changed apart from it (through `compare.rs`); and the snippets that resolved at the base and don't now |
+| `src/command.rs` | `diff_project` and `drift_project`: `ascribe diff` and `ascribe drift` on a project `tessera_check` loaded, from choosing the builds to the finished report, the working tree's error count included; `ProjectDiff::html` renders the report |
 | `src/html/` | The static report (`--format html`): rendering each changed page now and at the base with anchors, inlining its images, and writing one HTML file around the report's data. `report.js` and `report.css` are built from `packages/review` and `packages/elements` by `pnpm --filter @ascribed/review embed`; don't edit them by hand, and `packages/review/test/embedded.test.ts` fails while they're out of date. |
 
-The binary links no git library and no HTTP client: `git` is run as a process with a fixed argument list, never through a shell, so nothing else in Ascribe depends on `git` being present. Nothing here is used by the language server.
+The binary links no git library and no HTTP client: `git` is run as a process with a fixed argument list, never through a shell, so nothing else in Ascribe depends on `git` being present. The language server's review calls `compare_builds` and `compare_page_in`. It depends on `tessera-check` for loading the working tree and counting its errors.
 
 ## Rules
 
@@ -23,6 +24,7 @@ The binary links no git library and no HTTP client: `git` is run as a process wi
 
 ## Tests
 
+- `tests/command.rs`: `diff_project` and `drift_project` in a temporary repository, each with a typed result, an unknown build among the errors.
 - `tests/git.rs`: reading a project at a revision in a temporary repository: at the root and in a subfolder, a content root above the project folder, a nested project, unusual paths, a rename, no project at the base, base discovery (`origin/main` without `origin/HEAD` included), and the errors, a shallow clone and unrelated histories among them.
 - `tests/html.rs`: the static report on projects in memory: both sides rendered with anchors, pages shared across builds stored once, added and removed pages, the page limit, images inlined up to the size limit, and no requests to the network.
 - `tests/compare.rs`: the comparison on projects in memory: each change kind, nesting, moves, the limits, and pages changed only through a fragment, a phrase, or a build's settings, page-level changes, CRLF line endings, and which linked pages count as a cause.

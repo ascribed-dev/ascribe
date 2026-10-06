@@ -48,7 +48,7 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | [`tests/zod`](tests/zod) | Type-checks the generated Zod schemas and validates pages with them. |
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
-| `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
+| `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
 | `project-docs/` | Plans. They describe what was intended, not necessarily what is. |
 
 ## How the crates depend on each other
@@ -64,9 +64,9 @@ tessera-resolve    core, syntax, model
 tessera-check      core, syntax, model, resolve
 tessera-sources    core, model, resolve
 tessera-emit       core, syntax, model, resolve
-tessera-diff       core, syntax, model, resolve, emit
+tessera-diff       core, syntax, model, resolve, check, emit
 tessera-lsp        core, syntax, model, resolve, check, emit, diff, fmt
-tessera-cli        core, model, resolve, check, emit, diff, sources, fmt, lsp
+tessera-cli        core, model, check, emit, diff, sources, fmt, lsp
 ```
 
 There are no cycles. Every crate's `Cargo.toml` takes our crates from `[workspace.dependencies]` in the root [Cargo.toml](Cargo.toml).
@@ -79,7 +79,7 @@ Every surface reaches the same core.
 
 | Surface | Where | How it reaches the core |
 |---|---|---|
-| Command line | `tessera-cli` | Calls the crates. Each subcommand is a module in `crates/tessera-cli/src/commands/`. |
+| Command line | `tessera-cli` | Each subcommand is a module in `crates/tessera-cli/src/commands/`: its arguments, one call into a library ([Each command's entry](#each-commands-entry)), and the report. |
 | Language server | `tessera-lsp` | Calls the crates, over an `IncrementalProject` it keeps current as the editor types. |
 | VS Code | `packages/vscode` | Starts `ascribe lsp`, one server per project (`packages/vscode/src/registry.ts`). The preview and review use custom requests: `ascribe/preview`, `ascribe/review/setBase`, and `ascribe/review/changes`. |
 | Astro | `packages/astro` | Runs the binary: `ascribe build` (`packages/astro/src/run.ts`) and, for review, `ascribe diff` (`packages/astro/src/review/diff.ts`). Then reads the files it wrote. |
@@ -101,11 +101,27 @@ The steps every surface shares, in order:
 
 ## Loading a project, and reading files
 
-- **Finding `ascribe.toml`.** The commands look in `--config` or the nearest parent (`tessera_check::Project::find_config`, called from `crates/tessera-cli/src/context.rs`). The language server looks from its workspace folders (`find_config` in `crates/tessera-lsp/src/core.rs`). `ascribe fmt` has its own (`crates/tessera-cli/src/commands/fmt.rs`).
-- **Loading.** `tessera_check::Project::load` reads the content model (`tessera_model::load`) and the sources, and is what `check` reports on. The page-level checks index it again as a `tessera_resolve::Project` (`crates/tessera-check/src/page/bridge.rs`), unless the caller passes its own index (`PageChecker::with_index`). The commands that resolve builds (`build`, `diff`, `drift`, `sources`) build their own `tessera_resolve::Project` over the same files as well, so they index the project twice. The language server loads with `tessera_model::load_str_in` and `tessera_resolve::IncrementalProject::load`, since it holds unsaved text and updates in place.
-- **Reading.** `tessera_resolve::FileSystem` (`crates/tessera-resolve/src/fs.rs`) is where a project's files are read: it knows the content root, which files are sources, the boundary a file must stay inside, exact-case names, and symbolic links. `DiskFs` reads a real project, `MemoryFs` holds one for tests, and `tessera_diff::GitFs` reads one at a commit. A read anywhere else says why it isn't a project read, in a comment starting `Outside FileSystem:`, and `crates/tessera-resolve/tests/file_reads.rs` fails on one that doesn't. The ones left: the content model's (`crates/tessera-model/src/lib.rs`, and its checks that the folders it names exist), looking for `ascribe.toml`, the output directory's (`crates/tessera-emit/src/store.rs`), writing the copies of sources in other repositories (`crates/tessera-sources/src/copies.rs`), `fmt`'s (`crates/tessera-cli/src/commands/fmt.rs`), the language server's walk when files change (`crates/tessera-lsp/src/core.rs`), and assets: the build copies them from `EmitContext::asset_source`, and the HTML report inlines them from the same place (`DiskAssets` in `crates/tessera-diff/src/html/mod.rs`), both skipping the boundary, case, and link rules.
-- **Paths.** `tessera_core::path` holds the path helpers every crate shares: `RelPath::relative_to` (a path inside a folder), `relative_path` (from one directory on disk to another, with drive letters matched in either case), and `normalize`.
+- **Finding `ascribe.toml`.** The commands look in `--config` or the nearest parent (`tessera_check::Project::locate`, called from `crates/tessera-cli/src/context.rs`). The language server looks from its workspace folders (`find_config` in `crates/tessera-lsp/src/core.rs`).
+- **Loading.** `tessera_check::Project::load` reads the content model (`Project::load_model`) and the sources, and is what `check` reports on; every command loads its project with it, through `load_project` in `crates/tessera-cli/src/context.rs`, except `fmt`, which takes only the content model (`Project::load_model`) so that a project whose pages have errors can still be formatted. The page-level checks index it again as a `tessera_resolve::Project` (`crates/tessera-check/src/page/bridge.rs`), unless the caller passes its own index (`PageChecker::with_index`). The commands that resolve builds (`build`, `diff`, `drift`, `sources`) take their own `tessera_resolve::Project` over the same files from `Project::index`, so they index the project twice. The language server loads with `tessera_model::load_str_in` and `tessera_resolve::IncrementalProject::load`, since it holds unsaved text and updates in place.
+- **Reading.** `tessera_resolve::FileSystem` (`crates/tessera-resolve/src/fs.rs`) is where a project's files are read: it knows the content root, which files are sources, the boundary a file must stay inside, exact-case names, and symbolic links. `DiskFs` reads a real project, `MemoryFs` holds one for tests, and `tessera_diff::GitFs` reads one at a commit. A read anywhere else says why it isn't a project read, in a comment starting `Outside FileSystem:`, and `crates/tessera-resolve/tests/file_reads.rs` fails on one that doesn't. The ones left: the content model's (`crates/tessera-model/src/lib.rs`, and its checks that the folders it names exist), finding and reading `ascribe.toml` (`Project::locate` and `Project::load_model` in `crates/tessera-check/src/project.rs`), the output directory's (`crates/tessera-emit/src/store.rs`), writing the copies of sources in other repositories (`crates/tessera-sources/src/copies.rs`), `fmt`'s (`crates/tessera-fmt/src/files.rs`), the language server's walk when files change (`crates/tessera-lsp/src/core.rs`), and assets: the build copies them from `EmitContext::asset_source`, and the HTML report inlines them from the same place (`DiskAssets` in `crates/tessera-diff/src/html/mod.rs`), both skipping the boundary, case, and link rules.
+- **Paths.** `tessera_core::path` holds the path helpers every crate shares: `RelPath::relative_to` (a path inside a folder), `relative_path` (from one directory on disk to another, with a leading drive letter matched in either case), and `normalize`.
 - **Git.** `tessera-diff` (`crates/tessera-diff/src/git.rs`) and `tessera-sources` (`crates/tessera-sources/src/remote.rs`) run the `git` executable with a fixed argument list. No git or HTTP library is linked.
+
+## Each command's entry
+
+Each command is one call into a library, after the project is loaded. The call takes plain arguments (the project, and options) and returns a typed result; the CLI parses the arguments, prints the result, and chooses the exit code. A tool that wraps a command calls the same function.
+
+| Command | Entry | Notes |
+|---|---|---|
+| `check` | `tessera_check::diagnose` | Chooses the builds (`select_builds`) and returns their diagnostics. |
+| `build` | `tessera_check::diagnose`, then `tessera_emit::write_outputs` | The report is printed between the two, and a build with errors stops there. `write_outputs` reports each output as it's written through a callback. |
+| `diff` | `tessera_diff::diff_project` | Returns the report, with the working tree's error count; `ProjectDiff::html` renders it for `--format html`. |
+| `drift` | `tessera_diff::drift_project` | |
+| `fmt` | `tessera_fmt::format_files` | Takes the content model from `Project::load_model`, and reports each file changed through a callback. |
+| `sources` | `tessera_sources::fetch`, `status`, `update` | Over a `tessera_sources::Workspace`. `update` then calls `drift_project` against `HEAD` for the pages whose examples changed. |
+| `lsp` | `tessera_lsp::run_stdio` | |
+
+The language server calls the same code where it does the same job: `tessera_fmt::format` for formatting, and `tessera_diff::compare_builds`, which `diff_project` calls, for review. It checks incrementally, so it calls `check_file` and `PageChecker` instead of `diagnose`, and `crates/tessera-cli/tests/lsp_parity.rs` holds the two to the same diagnostics.
 
 ## Two HTML renderers
 

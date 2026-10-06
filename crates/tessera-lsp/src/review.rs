@@ -15,6 +15,11 @@
 //! `git` until a base is set, so a server without `git` on the path works as
 //! before, and `setBase` says why it can't.
 //!
+//! The changes come from `tessera_diff::compare_builds`, the comparison
+//! `ascribe diff` makes in `tessera_diff::diff_project`. The server doesn't
+//! call that entry: it compares the editor's snapshot, with unsaved text, and
+//! keeps the base between requests instead of reading it each time.
+//!
 //! The base never changes once read, so it keeps what's computed from it: the
 //! pages as they were, by build and path, and the last list of changed pages,
 //! with the snapshot it was computed from.

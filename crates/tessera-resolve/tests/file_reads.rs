@@ -49,11 +49,6 @@ const FILES: &[(&str, &str)] = &[
         "crates/tessera-cli/src/docs.rs",
         "a test, compiled only with `cfg(test)`, that reads this repository's docs",
     ),
-    (
-        "crates/tessera-cli/src/commands/fmt.rs",
-        "phase 5B of the optimization plan replaces how `fmt` loads a project; \
-         what reads remain move after it, and this entry goes",
-    ),
 ];
 
 fn workspace() -> PathBuf {

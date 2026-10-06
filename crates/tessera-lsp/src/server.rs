@@ -36,6 +36,14 @@ use crate::position::Encoding;
 use crate::tokens::{legend, semantic_tokens};
 use crate::{Options, PublishInfo};
 
+// A handler's panic is caught (`guarded` and the worker below), so one bad
+// request doesn't end the server. That needs unwinding: with `panic = "abort"`
+// in a profile, the first panic would end the process.
+#[cfg(panic = "abort")]
+compile_error!(
+    "the language server catches a handler's panic, which needs `panic = \"unwind\"`: remove `panic = \"abort\"` from the profile"
+);
+
 /// Why the server stopped.
 #[derive(Debug, thiserror::Error)]
 pub enum ServeError {

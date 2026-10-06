@@ -55,6 +55,9 @@ pub use types::{
 
 use tessera_core::FileId;
 
+/// The content model's file name, at the project root.
+pub const MODEL_FILE: &str = "ascribe.toml";
+
 /// Reads and validates `ascribe.toml` at `path`.
 ///
 /// Issues are located in file `FileId::new(0)`; use [`load_with_file`] when

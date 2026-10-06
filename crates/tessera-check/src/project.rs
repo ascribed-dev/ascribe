@@ -12,8 +12,7 @@ use tessera_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet
 
 use crate::Diagnostic;
 
-/// The content model's file name, at the project root.
-pub const MODEL_FILE: &str = "ascribe.toml";
+pub use tessera_model::MODEL_FILE;
 
 /// The id of `ascribe.lock` (SPEC §7.4), for locations in it: past any
 /// source file's, and before the code files'.
@@ -79,6 +78,41 @@ pub enum LoadError {
     },
 }
 
+/// Why [`Project::locate`] found no content model.
+#[derive(Debug, thiserror::Error)]
+pub enum LocateError {
+    /// The current directory, where the search starts, can't be read.
+    #[error("can't read the current directory: {0}")]
+    CurrentDir(io::Error),
+    /// No `ascribe.toml` is in the current directory or a parent.
+    #[error(
+        "no {} found in {} or any parent directory; run ascribe from a project, or pass --config",
+        MODEL_FILE,
+        dir.display()
+    )]
+    NotFound {
+        /// The directory the search started in.
+        dir: PathBuf,
+    },
+    /// The content model named isn't a file.
+    #[error("{} doesn't exist or isn't a file", path.display())]
+    NotAFile {
+        /// The path named.
+        path: PathBuf,
+    },
+}
+
+/// A content model as [`Project::load_model`] loads it.
+#[derive(Clone, Debug)]
+pub struct ModelFile {
+    /// The project root: the directory containing `ascribe.toml`.
+    pub root: PathBuf,
+    /// The content model's text.
+    pub text: String,
+    /// The content model.
+    pub model: ContentModel,
+}
+
 /// A documentation set: its content model and source files.
 ///
 /// The content model is file id 0, and the source files have ids 1, 2, … in
@@ -135,6 +169,32 @@ impl Project {
             .find(|p| p.is_file())
     }
 
+    /// The content model a command works on: `config` when given (a file, or
+    /// a directory that holds `ascribe.toml`), or else the nearest
+    /// `ascribe.toml` in the current directory or a parent.
+    ///
+    /// # Errors
+    ///
+    /// The current directory can't be read, no `ascribe.toml` is found, or
+    /// `config` names none.
+    pub fn locate(config: Option<&Path>) -> Result<PathBuf, LocateError> {
+        // Outside FileSystem: the path given with `--config`, or the one found,
+        // before there's a project.
+        let config = match config {
+            Some(path) if path.is_dir() => path.join(MODEL_FILE),
+            Some(path) => path.to_owned(),
+            None => {
+                let cwd = std::env::current_dir().map_err(LocateError::CurrentDir)?;
+                Project::find_config(&cwd).ok_or(LocateError::NotFound { dir: cwd })?
+            }
+        };
+        if config.is_file() {
+            Ok(config)
+        } else {
+            Err(LocateError::NotAFile { path: config })
+        }
+    }
+
     /// Loads the project whose content model is at `config`: the model, then
     /// every source file under its content root, as
     /// [`tessera_resolve::FileSystem::sources`] finds them.
@@ -143,6 +203,31 @@ impl Project {
     /// isn't valid UTF-8, is still a source file, with its [`ReadFailure`];
     /// `check_files` reports it and checks the rest.
     pub fn load(config: &Path) -> Result<Project, LoadError> {
+        let ModelFile { root, text, model } = Project::load_model(config)?;
+        let content_root =
+            RelPath::parse(&model.project.content_root).map_err(|e| LoadError::Read {
+                path: config.display().to_string(),
+                message: e.to_string(),
+            })?;
+        let sources = Project::read_sources(&root, &content_root)?;
+        Ok(Project::from_parts(
+            root,
+            content_root,
+            model,
+            text,
+            sources,
+        ))
+    }
+
+    /// Loads only the content model at `config`, the first step of
+    /// [`Project::load`], for a command that doesn't need the pages read:
+    /// `ascribe fmt`, which reads the files it formats itself.
+    ///
+    /// # Errors
+    ///
+    /// The file can't be read or isn't valid UTF-8 ([`LoadError::Read`]), or
+    /// the content model has errors ([`LoadError::Model`]).
+    pub fn load_model(config: &Path) -> Result<ModelFile, LoadError> {
         // Outside FileSystem: the content model says where the content root is,
         // so it's read before there's a FileSystem to read through.
         let text = fs::read(config)
@@ -157,28 +242,13 @@ impl Project {
             Some(p) if !p.as_os_str().is_empty() => p.to_owned(),
             _ => PathBuf::from("."),
         };
-        let model = match tessera_model::load_str_in(&text, FileId::new(0), &root) {
-            Ok(model) => model,
-            Err(issues) => {
-                return Err(LoadError::Model {
-                    text,
-                    diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
-                });
-            }
-        };
-        let content_root =
-            RelPath::parse(&model.project.content_root).map_err(|e| LoadError::Read {
-                path: config.display().to_string(),
-                message: e.to_string(),
-            })?;
-        let sources = Project::read_sources(&root, &content_root)?;
-        Ok(Project::from_parts(
-            root,
-            content_root,
-            model,
-            text,
-            sources,
-        ))
+        match tessera_model::load_str_in(&text, FileId::new(0), &root) {
+            Ok(model) => Ok(ModelFile { root, text, model }),
+            Err(issues) => Err(LoadError::Model {
+                text,
+                diagnostics: issues.iter().map(Diagnostic::from_issue).collect(),
+            }),
+        }
     }
 
     /// Reads every source file under `root/content_root`. The files that
@@ -341,6 +411,23 @@ impl Project {
     /// Where the content root and the output directory are.
     pub fn layout(&self) -> &Layout {
         &self.layout
+    }
+
+    /// The source index over the same files: what a command that resolves
+    /// builds (`build`, `diff`, `drift`, `sources`) works on. It's read again
+    /// through [`Project::file_system`], so the two can't disagree about which
+    /// files exist; reading them once is left for later.
+    pub fn index(&self) -> tessera_resolve::Project {
+        tessera_resolve::Project::load(
+            Arc::new(self.model.clone()),
+            self.layout.clone(),
+            self.file_system(),
+        )
+    }
+
+    /// The content model's text.
+    pub fn model_text(&self) -> &str {
+        &self.model_text
     }
 
     /// The files the checks probe for what isn't a source file held in memory:
