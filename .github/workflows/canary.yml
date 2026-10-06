@@ -92,10 +92,6 @@ jobs:
       contents: read
       # npm trusted publishing and provenance both use the job's OIDC token.
       id-token: write
-    env:
-      # Set only for the first publish of a package that doesn't exist yet, which
-      # can't have a trusted publisher; RELEASING.md says how, and to delete it after.
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # No registry-url, as in release.yml: it would stop npm's OIDC exchange.
@@ -108,19 +104,16 @@ jobs:
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: test "$(node scripts/release/version.ts --canary "$GITHUB_RUN_NUMBER")" = "$VERSION"
-      # The token is for one run. Once every package is on npm, its being set
-      # fails the canary, so it can't be forgotten.
-      - name: Use the one-time token, while a package isn't on npm yet
-        if: env.NPM_TOKEN != ''
+      # A package npm has never had can't have a trusted publisher yet, so its
+      # first version is published by hand. Say so, rather than fail on npm's
+      # authentication error partway through.
+      - name: Check that every package is on npm
         run: |
           missing=$(node scripts/release/publish.ts missing)
-          if [ -z "$missing" ]; then
-            echo "::error::Every package is on npm, so the NPM_TOKEN secret is no longer needed. Add each package's trusted publishers, then delete the secret from the canary environment and revoke the token (RELEASING.md)."
+          if [ -n "$missing" ]; then
+            echo "::error::Not on npm yet, so no trusted publisher: $missing. Publish its first version by hand (RELEASING.md, the nightly canary's setup), then re-run this job."
             exit 1
           fi
-          echo "Not on npm yet, so published with the token: $missing"
-          # npm still tries trusted publishing first, and uses the token where that fails.
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$HOME/.npmrc"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release
