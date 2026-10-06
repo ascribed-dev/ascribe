@@ -1,6 +1,8 @@
 # Optimization
 
-> The crates were renamed from `tessera-*` to `ascribe-*` in phase 8A. This plan and its phase files keep the old names, as they were written; [ARCHITECTURE.md](../../ARCHITECTURE.md) has the new ones.
+> **Finished** on 6 October 2026. Every measure below has its final number, and each one that missed its target says why. The truth now lives in [ARCHITECTURE.md](../../ARCHITECTURE.md) and [AGENTS.md](../../AGENTS.md), the decisions that still bind in [decisions.md](../decisions.md#clean-ups-and-checks), the lints in [lints.md](../lints.md), and what lives outside the repository in [outside.md](../outside.md). This folder is history.
+>
+> The crates were renamed from `tessera-*` to `ascribe-*` in phase 8A ([#151](https://github.com/ascribed-dev/ascribe/pull/151)). This plan and its phase files keep the old names, as they were written.
 
 A clean-up of Ascribe's code and infrastructure, done on purpose and in order: find out what we have, make it safe to change, then remove what's repeated, slow, or left over. It also leaves trails, so the next round of growth is easier to follow than this one was.
 
@@ -40,7 +42,7 @@ One likely cause sits behind several of these: much of the code arrives as separ
 
 ## Proposed decisions
 
-Proposed, not settled. Once agreed, they bind every phase, as in the other plans.
+Proposed, not settled. Once agreed, they bind every phase, as in the other plans. Decisions 2, 4, 6, 7, and 9 held, and bind the work after the plan: they're decisions 37 to 41 in [decisions.md](../decisions.md#clean-ups-and-checks).
 
 1. **Measure first.** Nothing is cleaned up before phase 1's inventory exists. Every later phase names the number it means to move.
 2. **A clean-up changes no behavior.** A pull request in this plan produces the same outputs as before, and shows it with phase 2's comparison. A bug found along the way is fixed in its own pull request, or filed.
@@ -115,21 +117,23 @@ now ──┬─ 2A comparison ───────┬─ 4A names ── 4B sh
 
 Taken from the inventory, and again at the end. Each is a count a finding names; lines of code isn't one, since size isn't the problem.
 
-| Measure | Now | Target |
-|---|--:|--:|
-| Pushes to `main` that fail the site check, of the last 10 | 4 | 0 |
-| File reads outside `FileSystem` | 34 | 0, or each with a stated reason |
-| Source files holding `data-ascribe-source` as a literal | 14 | 2 (one per language, generated) |
-| TypeScript files declaring a JSON shape Rust writes, untested | 7 | 0 |
-| Facts in several files with no test between them | 4 | 0 |
-| Ways the commands load a project | 2, plus the language server's | 1, plus the language server's |
-| Commands whose core is in the CLI crate | 2 | 0 |
-| Functions returning an error as a string | 10 | 0 |
-| Lines in library crates that print | 7 | 0 |
-| Commands timed with no baseline | 2 | 0 |
-| `diff` on 3,000 pages, nothing changed | 1.3 s | At most 1.3 times `check`'s time (0.84 s against 0.67 s on the runner). `check`'s time is its floor: it counts the working tree's errors (phase 7A; [RESULTS.md](../../tests/corpora/RESULTS.md#where-diff-and-drift-spend-their-time)) |
-| Release binary, macOS arm64 | 10.5 MB | 7.0 MB, without a slower `check` (phase 7B; every platform in [RESULTS.md](../../tests/corpora/RESULTS.md#the-release-profile)) |
-| Peak memory on 3,000 pages | Unmeasured | Recorded in phase 2 (`tests/corpora/baselines/perf.json`, `memory/*`); stays within the baseline's margin |
+| Measure | Before | Target | After (6 October 2026) |
+|---|--:|--:|--:|
+| Pushes to `main` that fail the site check, of the last 10 | 4 | 0 | **0**: 8 passed and 2 were cancelled by a newer push (#129 to #149) |
+| File reads outside `FileSystem` | 34 | 0, or each with a stated reason | **25, each with its reason** in an `Outside FileSystem:` comment, in 12 files; `crates/ascribe-resolve/tests/file_reads.rs` fails on one without |
+| Source files holding `data-ascribe-source` as a literal | 14 | 2 (one per language, generated) | **5**: its one home, `crates/ascribe-core/src/names.rs`, and a generated `names.ts` in each of the four packages that use it. Accepted: phase 4A generated one module per package so no package gains a dependency, and `crates/ascribe-core/tests/names.rs` fails on a literal anywhere else |
+| TypeScript files declaring a JSON shape Rust writes, untested | 7 | 0 | **0**: the three `shapes.ts` are generated from the Rust types (4B) |
+| Facts in several files with no test between them | 4 | 0 | **0**: the Node and Rust versions, the glibc floor, and the docs' source folders (`scripts/docs-site/facts.test.ts`, 4D) |
+| Ways the commands load a project | 2, plus the language server's | 1, plus the language server's | **1**, plus the language server's (5B) |
+| Commands whose core is in the CLI crate | 2 | 0 | **0** (5B) |
+| Functions returning an error as a string | 10 | 0 | **0** (5C) |
+| Lines in library crates that print | 7 | 0 | **1**: the language server's log, `crates/ascribe-lsp/src/log.rs`, since standard error is its log by protocol. Accepted; a lint denies any other (5C) |
+| Commands timed with no baseline | 2 | 0 | **0** (2B) |
+| `diff` on 3,000 pages, nothing changed | 1.3 s | At most 1.3 times `check`'s time (phase 7A; [RESULTS.md](../../tests/corpora/RESULTS.md#where-diff-and-drift-spend-their-time)) | **0.82 s against `check`'s 0.66 s, 1.24 times**, on the runner. Phase 7A's first target, a quarter of the time, was missed and accepted when #150 merged: `check`'s time is the floor, since `diff` counts the working tree's errors |
+| Release binary, macOS arm64 | 10.5 MB | 7.0 MB, without a slower `check` (phase 7B; every platform in [RESULTS.md](../../tests/corpora/RESULTS.md#the-release-profile)) | **6.99 MB**, with `check` 3 percent faster (7B); 5D's one parser has made it smaller since, by 4.5 percent on Linux |
+| Peak memory on 3,000 pages | Unmeasured | Recorded in phase 2 (`tests/corpora/baselines/perf.json`, `memory/*`); stays within the baseline's margin | **Recorded, and within it**: every `memory/*` metric within 2 percent of its baseline; `diff` with nothing changed fell from 547 MB to 371 MB (7A) |
+
+The "After" column was taken on `main` at `b27d9f8`, the way the inventory took each: the commands on the Corpora workflow's runner ([run 37542947220](https://github.com/ascribed-dev/ascribe/actions/runs/37542947220)), and the counts from the code. The rest of the inventory's headline numbers are in its [After](inventory.md#after) section.
 
 ## Out of scope
 
@@ -150,3 +154,34 @@ Answered by the maintainer on 6 October 2026, and recorded in [decisions.md](../
 4. Which of phase 6's three options for the canary wait do you prefer? **Option 1**, with option 2 as a manual button, as phase 6 recommends. Actions jobs can't end neutral, so while waiting the check passes with a warning annotation and a summary line saying it's waiting.
 
 Answered by phase 1: the parser fork is small to maintain (76 added lines) and stays. Its only work is the "one parser" test in phase 5.
+
+## What we'd do differently
+
+**What the first sketch got wrong.** It assumed old workarounds, slow CI, no performance budgets, a costly fork, and 2,600 lines of workflows. The inventory found none of those ([What the first sketch got wrong](inventory.md#what-the-first-sketch-got-wrong)), and the plan shrank to what it measured. Measure before planning the phases, not after.
+
+**What the reviews added.**
+
+- **The safety net needed its own test.** For the first pull requests of phase 4, `outputs unchanged` built the base and the change into one target folder, so Cargo reused the base's crates and the job passed without comparing anything (#145). Every green result before the fix had to be taken again. A comparison should prove it compared two different things, from its first day.
+- **An exception has to be as narrow as the decision.** The first way to accept a recorded output change let every difference through; the review sent it back to name each file (#143). The same rule served 8A.
+- **Parallel pull requests collide on the guards, not only on the code.** 5A's check on file reads and 5B's move of `fmt` broke each other (#142, #144). The "Not at the same time" table named the shared file but not the shared check.
+- **The `optimization` label belongs on a pull request when it's opened.** Adding it later cancels the first CI run and leaves a red "all checks".
+
+**What took longer than expected.**
+
+- **Phase 5,** because 5A and 5B both needed `fmt` and had to merge in turn, and 5A merged `main` twice.
+- **Phase 4A,** which needed a decision partway through (decision 35, on the bundled scripts' bytes).
+- **Phase 7A** missed its first target, a quarter of the time, because `diff` must count the working tree's errors, which takes as long as `check`. The target was restated against `check` ([Measures](#measures)).
+
+**What we'd measure next time.** CI time wasn't in the Measures table, and it grew: a pull request takes a minute longer and a quarter more machine time, mostly in the Windows Rust job and in phase 2A's own `determinism` test ([#154](https://github.com/ascribed-dev/ascribe/issues/154)). A plan that adds checks should budget their time like any other cost (decision 9).
+
+## Left open
+
+Each is filed, so nothing here is only "noted" ([decision 5](#proposed-decisions)):
+
+- [#130](https://github.com/ascribed-dev/ascribe/issues/130): library crates' public functions that no other crate uses.
+- [#137](https://github.com/ascribed-dev/ascribe/issues/137): the output comparison fails when run twice into the same `--out`.
+- [#139](https://github.com/ascribed-dev/ascribe/issues/139): `@ascribed/astro`'s declarations import types from its dev dependencies. Waiting on the maintainer's call.
+- [#152](https://github.com/ascribed-dev/ascribe/issues/152): `ascribe fmt` follows a link out of the content root, the gap phase 5A left in `crates/ascribe-fmt/src/files.rs`.
+- [#153](https://github.com/ascribed-dev/ascribe/issues/153): a conformance case that doesn't test what it says, found during the rename.
+- [#154](https://github.com/ascribed-dev/ascribe/issues/154): CI on pull requests got slower.
+- [#155](https://github.com/ascribed-dev/ascribe/issues/155): `pnpm test` fails locally after `pnpm build:all` on Linux x64.

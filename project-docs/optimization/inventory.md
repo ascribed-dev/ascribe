@@ -400,3 +400,66 @@ The three under [Outside the repository](#outside-the-repository). **Phase 6.**
 - **Phase 6 has one job that matters,** the canary wait, plus an audit of dependencies and a short list of leftovers.
 - **Phase 7 is mostly `diff`,** and a release profile.
 - **Phase 3 matters more than its place in the list suggests,** and changes no code, so it can run beside phase 2.
+
+## After
+
+Taken again on 6 October 2026, when phases 2 to 8 had merged, for [phase 8](phase-8-close.md#part-b-the-measures). The plan's [Measures](README.md#measures) table has the counts.
+
+**The laptop numbers couldn't be taken the same way:** the Apple M1 Pro isn't reachable from where phase 8 ran. So both sides were taken again on one machine, a 4-core Linux x64 cloud container, building `d48ed66` (this inventory's commit) and #151's head (`main` at `b27d9f8` with the rename) each into an empty target folder. Read the columns against each other, not against the M1's figures above.
+
+| What | Before (`d48ed66`) | After |
+|---|--:|--:|
+| Clean debug build of the command | 34 s | 31 s |
+| Clean release build | 66 s | 143 s |
+| Rebuild after a change in `ascribe-core` | 3.1 s | 2.9 s |
+| Rebuild after a change in `ascribe-cli` | 2.6 s | 2.6 s |
+| Build all tests | 60 s | 72 s |
+| Run all Rust tests | 55 s, 1,625 tests | 80 s, 1,675 tests |
+| Clippy, after the tests are built | 21 s | 20 s |
+| JS lint, format check | 1.4 s, 5.0 s | 1.5 s, 4.7 s |
+| Release binary, Linux x64 | 12.5 MB | 8.2 MB |
+
+- **The release build takes twice as long,** for link-time optimization (phase 7B, which measured about a minute more on every platform and accepted it for a third off the binary).
+- **The Rust tests take 25 s longer, and one test is most of it:** `ascribe-cli`'s `determinism` test (phase 2A), which runs the binary over every example project, takes 21.5 s alone; the other test programs together went from 58 s to 61 s. Filed with CI's growth as [#154](https://github.com/ascribed-dev/ascribe/issues/154).
+- JS unit test time wasn't taken: this machine can't run the elements' Firefox and WebKit tests, which were 19 of the 29 seconds.
+
+**CI**, from GitHub's records of the last 100 CI runs (from 6 October, 14:26 UTC on), as the inventory took it:
+
+| | Before | After |
+|---|--:|--:|
+| CI on a pull request, median | 5.3 min | 6.3 min |
+| CI on a push to `main`, median | 3.4 min | 4.9 min |
+| Machine time per pull request (8 green runs) | 18.4 min | 24.2 min |
+| Longest job: Rust on Windows | 4.7 min | 6.9 min |
+
+The plan added `outputs unchanged` (about 2 minutes, beside the others) and the dependency audits (12 s); the Windows job, which sets the wall time, grew most. Filed as [#154](https://github.com/ascribed-dev/ascribe/issues/154).
+
+**Speed and memory on 3,000 pages,** on the Corpora workflow's runner, against phase 2B's first baselines (the inventory's own figures are the M1's):
+
+| Command | Phase 2B (runner) | After (runner) |
+|---|--:|--:|
+| `check` | 704 ms | 659 ms |
+| `build`, first time | 1.93 s | 1.80 s |
+| `diff`, nothing changed | 1.45 s | 0.82 s |
+| `diff`, with snippets, nothing changed | 1.87 s | 1.05 s |
+| `drift`, one region changed | 923 ms | 545 ms |
+| Peak memory: `check`, `build`, `diff` with nothing changed | 221, 265, 547 MB | 221, 265, 371 MB |
+
+The language server still answers a keystroke in 2 to 9 ms on 3,000 pages.
+
+**Review findings,** counted in the reviews on GitHub, by the kinds in the plan's [What reviews have shown](README.md#what-reviews-have-shown) table: the ten pull requests merged before phase 2 began (#116 to #126, without #124, an issue; five had no review) against the ten most recent (#141 to #150, all reviewed). Every review was by one reviewer, so the count is rough.
+
+| Kind | Before (27 findings) | After (33 findings) |
+|---|--:|--:|
+| The same fact is written in several places | 1 | 3 |
+| The same bug is fixed once per surface | 3 | 1 |
+| A language change doesn't reach every surface | 3 | 0 |
+| A workaround outlives its cause | 0 | 0 |
+| One change breaks another surface | 2 | 2 |
+| A cost appears unmeasured | 0 | 2 |
+| A decision is made and not recorded | 1 | 5 |
+| Things are left behind | 0 | 1 |
+| Some platforms are checked less | 1 | 0 |
+| Something else | 16 | 19 |
+
+How each was classed: duplicated logic, or a gap in a one-home check, is the first kind; two parallel pull requests where one breaks the other's check is "one change breaks another" (a plain note about merge order is "something else"); the same fix made twice in different code is "the same bug"; a reviewer asking for a decision or a deferral to be written down is "not recorded"; a cost counts only where the reviewer raised one. Before, "something else" was mostly correctness and security bugs in new feature code. After, it's gaps in the checks themselves (#145, #146), merge order between parallel pull requests, and nits. The rise in "not recorded" is reviewers holding the new rule that decisions go in `decisions.md`, so it reads as the rule working, not as a new problem.

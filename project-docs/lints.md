@@ -1,6 +1,6 @@
 # Lints tried
 
-Part of [Optimization](README.md), from [phase 3, part C](phase-3-trails.md#part-c-three-lints-tried). Three lints were turned on in a scratch run, counted per crate, sampled, and decided on. One is kept.
+The lints tried for the workspace, and why each was kept or not. It started in the [optimization plan](optimization/README.md)'s [phase 3, part C](optimization/phase-3-trails.md#part-c-three-lints-tried), and moved here when that plan finished; add a lint tried later here too. Three lints were turned on in a scratch run, counted per crate, sampled, and decided on. One is kept.
 
 | Lint | Flagged in library code | Flagged in all targets | Decision |
 |---|--:|--:|---|
