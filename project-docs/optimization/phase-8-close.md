@@ -12,7 +12,7 @@ The one naming question is settled, the measures are taken again, and the plan s
 
 - The [plan](README.md): the measures table, the decisions, and the open questions.
 - The [inventory](inventory.md): the numbers to take again, and how each was taken.
-- The crates are `tessera-*` and the product is Ascribe ([open question 2](README.md#open-questions)). The name appears in crate names and paths, `use` lines, the fork (`comrak-tessera`, with `// TESSERA:` markers and a test that counts them), `Cargo.toml`, workflows, scripts, docs, and the plans.
+- The crates are `tessera-*` and the product is Ascribe. The maintainer decided to rename them, and the JSON output's page format with them ([open question 2](README.md#open-questions); [decisions.md](../decisions.md#the-optimization-plan), decision 31). The name appears in crate names and paths, `use` lines, the fork (`comrak-tessera`, with `// TESSERA:` markers and a test that counts them), `Cargo.toml`, workflows, scripts, docs, and the plans.
 - Nothing is published under the `tessera` name: every crate has `publish = false`. The npm packages are `@ascribed/*` and the binary is `ascribe`.
 - `ARCHITECTURE.md`, `AGENTS.md`, `project-docs/decisions.md`, and `checklists.md`, from phase 3.
 
@@ -20,15 +20,14 @@ The one naming question is settled, the measures are taken again, and the plan s
 
 ### Part A: the crate names
 
-Only if the maintainer decides to rename. If the answer is "keep `tessera`", record that in `project-docs/decisions.md` with the reason, add a line to `ARCHITECTURE.md` saying `tessera` is the internal name of Ascribe's crates, and skip the rest of this part.
-
-If renaming:
+The maintainer decided to rename ([decision 31](../decisions.md#the-optimization-plan)).
 
 - One pull request, nothing else in it, merged when no other Rust pull request is open.
 - Crate names, folder names, `use` paths, workspace dependency keys, the binary's package name, and every mention in workflows, scripts, READMEs, and docs.
 - The fork: rename the crate and the cargo feature or option names that we chose; keep the `// TESSERA:` markers only if the maintainer wants the patch to stay easy to compare with history, and update `FORK.md` and its counting test either way.
 - Finished plans under `project-docs/` keep the old name: they're history. Add one line to each plan's top note saying the crates were renamed.
-- No behavior changes; the comparison must report `same`, and the JSON outputs must not contain the crate name anywhere (check first: if any output or diagnostic prints it, that's a contract and it stays as it is).
+- The JSON output's page format, `format: "tessera-page"` (`crates/tessera-emit/src/json.rs`), is renamed too (to `"ascribe-page"`, unless the maintainer names another), with its documentation in `crates/tessera-emit/README.md`. Ascribe hasn't launched, so this contract can change ([decision 29](../decisions.md#process)). Any TypeScript that checks the value changes with it, and the pull request says whether the schema version rises. It's the one change in output: the comparison reports `same` for everything else.
+- Otherwise no behavior changes, and no output or diagnostic contains the crate name. Check first: if another output, a diagnostic, or a published file prints it, stop and report.
 
 ### Part B: the measures
 
@@ -47,25 +46,25 @@ If renaming:
 
 ## Tasks
 
-1. Part A, by the maintainer's decision.
+1. Part A: the rename.
 2. Part B: the measures, the "After" section, the misses dealt with.
 3. Part C: the closing notes, the decisions carried over, the map corrected.
 
 ## Out of scope
 
 - New clean-up work. What's found here is filed.
-- Renaming anything users see.
+- Renaming anything users see, apart from the page format above.
 
 ## Acceptance criteria
 
 - Every measure has a second number, taken the same way as the first.
 - Every miss is fixed, filed, or accepted in writing.
-- If renamed: `cargo test --workspace --locked` passes, the comparison reports `same`, and a search for the old name finds it only in history (finished plans, the changelog, the fork's upstream-facing notes).
+- After the rename: `cargo test --workspace --locked` passes, the comparison reports `same` apart from the page format, and a search for the old name finds it only in history (finished plans, the changelog, the fork's upstream-facing notes).
 - Every path and command in `ARCHITECTURE.md` and `AGENTS.md` exists.
 
 ## Stop and report if
 
-- The crate name turns out to appear in an output, a diagnostic, or a published file.
+- The crate name turns out to appear in an output, a diagnostic, or a published file, other than the page format.
 - A measure can't be taken the way the inventory took it.
 
 ## Verify
@@ -79,6 +78,6 @@ node scripts/compare/outputs.ts --base origin/main
 
 ## Commits
 
-1. "Rename the crates" (only if decided)
+1. "Rename the crates"
 2. "Report the optimization plan's measures"
 3. "Close the optimization plan"
