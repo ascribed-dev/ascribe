@@ -3,7 +3,7 @@ source: crates/tessera-cli/tests/diff.rs
 expression: "serde_json::to_string_pretty(&data).expect(\"JSON\")"
 ---
 {
-  "ascribe_version": "0.1.1",
+  "ascribe_version": "<version>",
   "base": {
     "commit": "<commit>",
     "merge_base": "<commit>",

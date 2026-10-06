@@ -297,6 +297,9 @@ fn report_data(html: &str, commits: &[&str]) -> serde_json::Value {
     for commit in commits {
         text = text.replace(commit, "<commit>");
     }
+    let version = format!("\"ascribe_version\":\"{}\"", env!("CARGO_PKG_VERSION"));
+    assert!(text.contains(&version), "{text}");
+    text = text.replace(&version, "\"ascribe_version\":\"<version>\"");
     serde_json::from_str(&text).expect("JSON")
 }
 
