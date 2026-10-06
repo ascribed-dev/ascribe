@@ -8,7 +8,7 @@
 //! | Module | Checks |
 //! |---|---|
 //! | `attrs` | Attribute keys and types, `@variant` dimensions, required attributes |
-//! | `avail` | `@available` specs and the `available` frontmatter key |
+//! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
@@ -157,8 +157,13 @@ impl Ctx<'_> {
                     }
                 }
                 BlockKind::Table(t) => {
-                    for cell in t.rows.iter().flat_map(|r| &r.cells) {
-                        self.inlines(&cell.inlines);
+                    for row in &t.rows {
+                        if let Some(block) = &row.attributes {
+                            self.check_row(block);
+                        }
+                        for cell in &row.cells {
+                            self.inlines(&cell.inlines);
+                        }
                     }
                 }
                 BlockKind::Directive(d) => self.directive(d),

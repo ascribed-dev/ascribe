@@ -291,6 +291,13 @@ impl<'p> TreeBuilder<'p> {
                     let mut cells = Vec::new();
                     for row in &t.rows {
                         own.push_str(if row.header { "\u{1}H" } else { "\u{1}R" });
+                        if let Some(r) = block.rows.iter().find(|r| r.span == row.span) {
+                            own.push_str(&format!(
+                                "\u{1}available\u{1}{}",
+                                self.availability(&r.availability)
+                            ));
+                            uses_model = true;
+                        }
                         for cell in &row.cells {
                             own.push('\u{2}');
                             self.inlines(block, &cell.inlines, &mut own);

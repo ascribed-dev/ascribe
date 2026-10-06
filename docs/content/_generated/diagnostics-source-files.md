@@ -6,7 +6,7 @@
 
 Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
-**When:** Unknown key for the directive or image.
+**When:** Unknown key for the directive, image, or table row.
 
 **Message:** `@{name}` has no attribute `{key}`; its attributes are: \{keys}
 

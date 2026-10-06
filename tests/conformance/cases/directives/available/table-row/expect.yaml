@@ -1,0 +1,15 @@
+description: >-
+  A body row takes an availability from an attribute block at the end of its
+  first cell, after a space or alone in the cell. The block isn't part of the
+  cell's content, and a quoted value holds a spec with spaces and commas.
+spec: ["3.3", "4.4"]
+tags: [inline]
+
+outline:
+  - table:
+      - Key
+      - "`anchors`"
+      - row: "`review`"
+        attributes: {available: "cloud, self-managed preview 3.4"}
+      - row: ""
+        attributes: {available: cloud}

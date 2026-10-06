@@ -1,0 +1,16 @@
+description: >-
+  Only an attribute block that ends a body row's first cell, after a space,
+  belongs to the row. Braces with no `=` are a phrase candidate or text; a
+  block that isn't last, touches the text before it, is in code, is in
+  another cell, or is in the header row stays text.
+spec: ["4.4", "5.1"]
+tags: [inline]
+
+outline:
+  - table:
+      - "a {available=next}"
+      - "x {next}"
+      - "{available=next} x"
+      - "x{available=next}"
+      - "`{available=next}`"
+      - "x"

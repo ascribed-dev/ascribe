@@ -75,7 +75,7 @@ Spaces between the parts don't matter, and nothing else may be on the line: `@st
 
 ([SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes))
 
-Attributes are `key=value` pairs in braces, separated by commas. They use the same syntax after a directive's name and after an image.
+Attributes are `key=value` pairs in braces, separated by commas. They use the same syntax after a directive's name, after an image, and at the end of a table row's first cell ([table rows](#table-rows)).
 
 ```markdown
 @note {type=caution}: …
@@ -336,6 +336,25 @@ A spec is a comma-separated list of **targets**, each with an optional lifecycle
 ```
 
 Each build decides what happens to availability: `badge` keeps everything and marks it, and a filter such as `{ filter = "self-managed 3.3" }` removes what isn't available there.
+
+#### Table rows
+@available: next
+
+A table row takes a spec from an attribute block at the end of its first cell, with the key `available`. Quote a spec that has spaces or commas:
+
+```markdown
+| Option | Meaning |
+|---|---|
+| `timeout` | Seconds to wait for the agent. |
+| `stream` {available="self-managed preview 3.4"} | Streams results as they arrive. |
+| `sync` {available=streaming-sync} | Keeps the local copy in sync. |
+```
+
+- The block goes last in the row's first cell, after a space, and isn't part of the cell's text. The header row can't have one.
+- `available` is the only key a row takes. Its spec is checked like an `@available` line's, and can't go beyond the table's own availability.
+- A `badge` build marks the row at the end of its first cell, and a filter build removes the row where it isn't available.
+
+There's no form for part of a sentence: a filter would break the sentence, and a badge in the middle of one gets in the way. Write a value that differs by release as prose, such as "glibc 2.28 or later (2.39 for 0.1.1 and earlier)".
 
 ### `@note`
 

@@ -144,7 +144,9 @@ fn outline(project: &Project, blocks: &[ResolvedBlock]) -> Result<Vec<Node>, Ada
                     text: Some(h.literal.trim_end().to_owned()),
                 }),
                 BlockKind::ThematicBreak => Some(Node::ThematicBreak),
-                BlockKind::Table(_) => Some(Node::Table),
+                BlockKind::Table(t) => Some(Node::Table {
+                    rows: Some(super::inline::rows(t, &|span| text(source, span, subs))),
+                }),
                 BlockKind::Directive(line) => Some(Node::Directive(directive(
                     source,
                     block,

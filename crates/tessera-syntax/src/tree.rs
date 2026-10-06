@@ -31,8 +31,9 @@
 //! - **The inline pass fills in inline extensions**: [`InlineKind::Phrase`] for a
 //!   `{key}` candidate in text (and [`Link::destination_phrases`],
 //!   [`Image::destination_phrases`], and [`CodeBlock::phrases`] where a
-//!   candidate isn't an inline node), and [`Image::attributes`] for the
-//!   attribute block after an image.
+//!   candidate isn't an inline node), [`Image::attributes`] for the
+//!   attribute block after an image, and [`TableRow::attributes`] for the one
+//!   at the end of a table row's first cell.
 //!
 //! # Text
 //!
@@ -300,6 +301,10 @@ pub struct TableRow {
     pub header: bool,
     /// The row's cells.
     pub cells: Vec<TableCell>,
+    /// The attribute block at the end of a body row's first cell, which gives
+    /// the row its availability (SPEC §4.4). The cell's span covers it; its
+    /// inlines don't. Its problems are in [`ParsedDocument::issues`].
+    pub attributes: Option<AttributeBlock>,
 }
 
 /// A table cell.

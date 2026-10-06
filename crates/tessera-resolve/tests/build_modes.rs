@@ -782,3 +782,111 @@ fn an_include_problem_in_content_a_build_removes_is_not_recorded_for_that_build(
     );
     assert!(slugs(&resolve(&p, "index.md", "cloud-only")).is_empty());
 }
+
+// -- Table rows ---------------------------------------------------------------
+
+const ROWS: &str = "| Key | Meaning |
+|---|---|
+| `a` | Everywhere. |
+| `b` {available=cloud} | Cloud only. |
+| `c` {available=\"self-managed preview 3.4\"} | Self-managed from 3.4. |
+| `d` {available=streaming-sync} | A feature. |
+";
+
+/// The first cell of each row of the page's first table, as plain text.
+fn first_cells(page: &tessera_resolve::ResolvedPage) -> Vec<String> {
+    let ResolvedKind::Leaf(block) = &page.blocks[0].kind else {
+        panic!("{:?}", page.blocks[0]);
+    };
+    let tessera_syntax::BlockKind::Table(table) = &block.kind else {
+        panic!("{block:?}");
+    };
+    table
+        .rows
+        .iter()
+        .map(|r| build_support::plain(&r.cells[0].inlines))
+        .collect()
+}
+
+#[test]
+fn badge_keeps_every_row_with_its_availability() {
+    let p = project(&[("index.md", &page(ROWS))]);
+    let page = resolve(&p, "index.md", "site");
+    assert_eq!(first_cells(&page), ["Key", "a", "b", "c", "d"]);
+    let rows: Vec<(String, Option<String>, Scope)> = page.blocks[0]
+        .rows
+        .iter()
+        .map(|r| {
+            (
+                r.availability.text.clone(),
+                r.availability.feature.clone(),
+                r.availability.scope,
+            )
+        })
+        .collect();
+    assert_eq!(
+        rows,
+        [
+            ("cloud".into(), None, Scope::Row),
+            ("self-managed preview 3.4".into(), None, Scope::Row),
+            (
+                "cloud, self-managed preview 3.4".into(),
+                Some("streaming-sync".into()),
+                Scope::Row
+            ),
+        ]
+    );
+}
+
+#[test]
+fn filter_removes_the_rows_that_arent_available() {
+    let p = project(&[("index.md", &page(ROWS))]);
+    assert_eq!(
+        first_cells(&resolve(&p, "index.md", "cloud")),
+        ["Key", "a", "b", "d"]
+    );
+    assert_eq!(
+        first_cells(&resolve(&p, "index.md", "sm-3.3")),
+        ["Key", "a"]
+    );
+    let page = resolve(&p, "index.md", "sm-3.4");
+    assert_eq!(first_cells(&page), ["Key", "a", "c", "d"]);
+    // The rows that stay keep their availability, to be badged.
+    assert_eq!(page.blocks[0].rows.len(), 2);
+}
+
+#[test]
+fn a_rows_spec_sits_in_its_tables() {
+    let p = project(&[(
+        "index.md",
+        &page("@available: cloud\n| a |\n|---|\n| x {available=self-managed} |\n"),
+    )]);
+    let page = resolve(&p, "index.md", "site");
+    let table = page
+        .blocks
+        .iter()
+        .find(|b| !b.rows.is_empty())
+        .expect("the table");
+    let row = &table.rows[0].availability;
+    assert_eq!(
+        row.enclosing.as_ref().map(|e| (e.text.as_str(), e.scope)),
+        Some(("cloud", Scope::Block))
+    );
+    let problems: Vec<_> = page
+        .problems
+        .iter()
+        .map(|p| {
+            (
+                p.issue.slug.as_str().to_owned(),
+                p.issue.arg("scope").map(str::to_owned),
+            )
+        })
+        .collect();
+    assert_eq!(
+        problems,
+        [(
+            "available-exceeds-scope".to_owned(),
+            Some("block".to_owned())
+        )]
+    );
+}

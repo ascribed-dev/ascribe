@@ -84,12 +84,25 @@ pub enum Node {
         /// The block's source text. Content field.
         text: Option<String>,
     },
-    /// A table, where the parser supports them. Its contents aren't described.
-    Table,
+    /// A table, where the parser supports them. Content field: its rows,
+    /// each described by its first cell and that cell's attribute block.
+    Table {
+        /// The rows, the header row first. Content field.
+        rows: Option<Vec<Row>>,
+    },
     /// A directive in line or container form, other than an arm of a group.
     Directive(Directive),
     /// A group of arms of one groupable directive (SPEC §3.6).
     Group(Group),
+}
+
+/// A table row, described by its first cell (SPEC §4.4).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Row {
+    /// The first cell's inline source text, without its attribute block.
+    pub text: String,
+    /// The attribute block at the end of the first cell.
+    pub attributes: Attributes,
 }
 
 /// A directive (SPEC §3).
@@ -289,10 +302,18 @@ fn node_from_value(value: &Value, path: &str) -> Result<Node, OutlineError> {
         "html" => Node::Html {
             text: opt_scalar_string(main, path)?,
         },
-        "table" => {
-            expect_null(main, path, kind)?;
-            Node::Table
-        }
+        "table" => Node::Table {
+            rows: match main {
+                Value::Null => None,
+                Value::Sequence(rows) => Some(
+                    rows.iter()
+                        .enumerate()
+                        .map(|(i, v)| row_from_value(v, &format!("{path}.table[{i}]")))
+                        .collect::<Result<_, _>>()?,
+                ),
+                _ => return err(path, "write `table:` alone, or with a list of rows"),
+            },
+        },
         "directive" => {
             let name = match main.as_str() {
                 Some(name) => name.to_owned(),
@@ -347,6 +368,27 @@ fn node_from_value(value: &Value, path: &str) -> Result<Node, OutlineError> {
     };
     f.finish()?;
     Ok(node)
+}
+
+/// A row: its first cell's text, or a mapping with `row` (the text) and
+/// `attributes`.
+fn row_from_value(value: &Value, path: &str) -> Result<Row, OutlineError> {
+    let Value::Mapping(map) = value else {
+        return Ok(Row {
+            text: scalar_string(value, path)?,
+            attributes: Attributes::new(),
+        });
+    };
+    let mut f = Fields::new(map.clone(), path)?;
+    let row = Row {
+        text: match f.opt_string("row")? {
+            Some(text) => text,
+            None => return err(path, "a row is its first cell's text, or `row: <text>`"),
+        },
+        attributes: f.attributes()?,
+    };
+    f.finish()?;
+    Ok(row)
 }
 
 fn arm_from_value(value: &Value, path: &str) -> Result<Arm, OutlineError> {
@@ -589,7 +631,22 @@ fn node_to_value(node: &Node) -> Value {
         Node::Item { children } => put(&mut m, "item", outline_to_value(children)),
         Node::ThematicBreak => return s("thematic-break"),
         Node::Html { text } => put(&mut m, "html", opt_value(text)),
-        Node::Table => return s("table"),
+        Node::Table { rows: None } => return s("table"),
+        Node::Table { rows: Some(rows) } => {
+            let rows = rows
+                .iter()
+                .map(|row| {
+                    if row.attributes.is_empty() {
+                        return s(&row.text);
+                    }
+                    let mut r = Mapping::new();
+                    put(&mut r, "row", s(&row.text));
+                    put_attributes(&mut r, &row.attributes);
+                    Value::Mapping(r)
+                })
+                .collect();
+            put(&mut m, "table", Value::Sequence(rows));
+        }
         Node::Directive(d) => {
             put(&mut m, "directive", s(&d.name));
             if d.form == Form::Container {
@@ -684,7 +741,7 @@ fn kind_name(node: &Node) -> String {
         Node::Item { .. } => "item".into(),
         Node::ThematicBreak => "thematic-break".into(),
         Node::Html { .. } => "html".into(),
-        Node::Table => "table".into(),
+        Node::Table { .. } => "table".into(),
         Node::Directive(d) => format!("directive `{}`", d.name),
         Node::Group(g) => format!("group `{}`", g.name),
     }
@@ -874,7 +931,28 @@ fn compare_nodes(e: &Node, a: &Node, path: &str, diffs: &mut Vec<String>) {
             }
             compare_lists(ec, ac, &format!("{path}.children"), diffs);
         }
-        (ThematicBreak, ThematicBreak) | (Table, Table) => {}
+        (ThematicBreak, ThematicBreak) => {}
+        (Table { rows: er }, Table { rows: ar }) => {
+            let Some(er) = er else {
+                return;
+            };
+            let Some(ar) = ar else {
+                diffs.push(format!("{path}.table: expected rows, got none"));
+                return;
+            };
+            let shown = |rows: &[Row]| {
+                let rows: Vec<String> = rows
+                    .iter()
+                    .map(|r| format!("{:?} {}", r.text, show_attrs(&r.attributes)))
+                    .collect();
+                format!("[{}]", rows.join(", "))
+            };
+            let same = er.len() == ar.len()
+                && er.iter().zip(ar).all(|(e, a)| {
+                    normalize_ws(&e.text) == normalize_ws(&a.text) && e.attributes == a.attributes
+                });
+            check(same, path, "table", shown(er), shown(ar), diffs);
+        }
         (Directive(ed), Directive(ad)) => {
             check(
                 ed.name == ad.name,

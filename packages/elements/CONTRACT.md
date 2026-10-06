@@ -139,7 +139,7 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 
 | Attribute | Required | Meaning |
 |---|---|---|
-| `scope` | yes | What the annotation applies to: `section` (an `@available` at the top of a section), `block` (one bound to a block), or `page`. |
+| `scope` | yes | What the annotation applies to: `section` (an `@available` at the top of a section), `block` (one bound to a block), `row` (a table row's `available`), or `page`. |
 
 **Children:** one `<ascribe-availability-target>` per target of the effective spec (feature keys resolved), in the spec's order, separated by the text `; `. No markdown.
 
@@ -147,6 +147,7 @@ An availability annotation (SPEC §4.4, §9.4), in badge builds and, for content
 
 - `section`: directly after the section's heading, as the next block.
 - `block`: directly before the block it annotates, where the `@available` line was.
+- `row`: at the end of the row's first cell, after a space (or alone in an empty cell), all on one line: inside a table cell the element has no line breaks.
 - `page`: the emitter doesn't write one. Page-level availability reaches the layout as frontmatter (SPEC §9.4, §9.6): `available` is a list with one entry per target, in the spec's order and with feature keys resolved, each holding this element's attributes and its text: `{ target, dimension, states: [...], versions: [...], text }`, with `versions` left out as the attribute is. A layout that shows it renders this element with `scope="page"`, one `<ascribe-availability-target>` per entry, joining `states` and `versions` with single spaces.
 
 ### `<ascribe-availability-target>`
@@ -175,7 +176,7 @@ That is: the target's label, then in parentheses either one state's label, follo
 </ascribe-availability>
 ```
 
-**Rendering, with or without JavaScript:** a line of badges styled by each target's last state (`[states$="deprecated"]` and so on), with a lead-in such as "Available:" from CSS generated content, which a site can restyle or translate. With no CSS, the text reads as a sentence: `Quill Cloud (GA); Self-managed (preview, 3.4+)`.
+**Rendering, with or without JavaScript:** a line of badges styled by each target's last state (`[states$="deprecated"]` and so on), with a lead-in such as "Available:" from CSS generated content, which a site can restyle or translate. With `scope="row"`, the badges sit inline in the cell, with no lead-in. With no CSS, the text reads as a sentence: `Quill Cloud (GA); Self-managed (preview, 3.4+)`.
 
 ## 5. `<details>`
 

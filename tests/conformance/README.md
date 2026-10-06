@@ -175,11 +175,21 @@ An outline is a YAML list of blocks. Each block is a mapping with exactly one **
 | `item` | list of child blocks | — |
 | `thematic-break` | none | — |
 | `html` | source text (optional) | — |
-| `table` | none (contents aren't described) | — |
+| `table` | its rows (optional) | — |
 | `directive` | name, without `@` (required) | `form`, `attributes`, `primary`, `title`, `binding`, `children` |
 | `group` | name of the groupable directive (required) | `arms` |
 
 `image` is a paragraph that consists of a single image and, optionally, its attribute block (§5.3). An image inside other text is part of the paragraph's text.
+
+A `table` is described by its rows, the header row first, each by its first cell: the cell's text, or a mapping with `row` (the text) and `attributes` (the attribute block that ends the cell, SPEC §4.4). The rest of the row isn't described. A `table` with no rows written matches any table.
+
+```yaml
+- table:
+    - Key
+    - "`anchors`"
+    - row: "`review`"
+      attributes: {available: cloud}
+```
 
 ### Directives
 

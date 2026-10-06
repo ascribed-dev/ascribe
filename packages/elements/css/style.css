@@ -313,6 +313,16 @@ ascribe-availability::before {
   color: var(--ascribe-muted-color);
 }
 
+/* A table row's badges follow the first cell's text, on its line. */
+ascribe-availability[scope="row"] {
+  display: inline;
+  margin: 0;
+}
+
+ascribe-availability[scope="row"]::before {
+  content: none;
+}
+
 ascribe-availability-target {
   --_color: var(--ascribe-state-color);
   --_background: var(--ascribe-state-background);

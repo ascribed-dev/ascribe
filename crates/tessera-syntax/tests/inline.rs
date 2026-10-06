@@ -693,3 +693,107 @@ fn an_arms_title_stays_the_same_as_its_openers_after_the_inline_pass() {
         Some(vec!["product".to_owned()])
     );
 }
+
+/// The table's rows, after the inline pass.
+fn rows(d: &ParsedDocument) -> &[TableRow] {
+    match &d.blocks[0].kind {
+        BlockKind::Table(t) => &t.rows,
+        other => panic!("not a table: {other:?}"),
+    }
+}
+
+#[test]
+fn a_block_at_the_end_of_a_rows_first_cell_is_the_rows() {
+    let source = "| Key | Meaning |\n|---|---|\n| `anchors` {available=\"cloud, self-managed preview 3.4\"} | Marks blocks. |\n";
+    let d = doc(source);
+    assert!(d.issues.is_empty(), "{:?}", d.issues);
+    let row = &rows(&d)[1];
+    let block = row.attributes.as_ref().expect("a block");
+    assert_eq!(
+        cut(source, block.span),
+        "{available=\"cloud, self-managed preview 3.4\"}"
+    );
+    assert_eq!(
+        block
+            .get("available")
+            .and_then(|a| a.value.as_ref()?.as_text()),
+        Some("cloud, self-managed preview 3.4")
+    );
+    // The cell keeps its span, and its content ends before the block.
+    let cell = &row.cells[0];
+    assert!(cut(source, cell.span).contains("{available"));
+    assert_eq!(cell.inlines.len(), 1);
+    assert_eq!(cut(source, cell.inlines[0].span), "`anchors`");
+}
+
+#[test]
+fn a_cell_that_is_only_a_block_is_left_empty() {
+    let source = "| a | b |\n|---|---|\n| {available=next} | x |\n";
+    let d = doc(source);
+    let row = &rows(&d)[1];
+    assert!(row.attributes.is_some());
+    assert!(row.cells[0].inlines.is_empty());
+}
+
+#[test]
+fn text_before_the_block_loses_only_its_trailing_space() {
+    let source = "| a |\n|---|\n| The *new* key  {available=next} |\n";
+    let d = doc(source);
+    let cell = &rows(&d)[1].cells[0];
+    let last = cell.inlines.last().expect("inlines");
+    assert!(
+        matches!(&last.kind, InlineKind::Text(t) if t == " key"),
+        "{last:?}"
+    );
+    assert_eq!(cut(source, last.span), " key");
+}
+
+#[test]
+fn braces_that_arent_a_rows_block_stay_in_the_cell() {
+    for (cell, phrases) in [
+        // A phrase candidate, not a block.
+        ("x {next}", vec!["next"]),
+        // Not at the end of the cell.
+        ("{available=next} x", vec![]),
+        // Not after a space.
+        ("x{available=next}", vec![]),
+        // In code.
+        ("`{available=next}`", vec![]),
+        // Not the first cell.
+        ("x | {available=next}", vec![]),
+    ] {
+        let source = format!("| a | b |\n|---|---|\n| {cell} |\n");
+        let d = doc(&source);
+        let row = &rows(&d)[1];
+        assert!(row.attributes.is_none(), "{cell:?}");
+        assert_eq!(keys(&row.cells[0].inlines), phrases, "{cell:?}");
+    }
+}
+
+#[test]
+fn the_header_row_has_no_block() {
+    let source = "| a {available=next} |\n|---|\n| x |\n";
+    let d = doc(source);
+    assert!(rows(&d)[0].attributes.is_none());
+}
+
+#[test]
+fn an_images_block_in_a_first_cell_is_the_images() {
+    let source = "| a |\n|---|\n| ![x](s.png){width=1} |\n| ![x](s.png) {available=next} |\n";
+    let d = doc(source);
+    let rows = rows(&d);
+    assert!(rows[1].attributes.is_none());
+    assert!(rows[2].attributes.is_some());
+    let InlineKind::Image(image) = &rows[2].cells[0].inlines[0].kind else {
+        panic!("{:?}", rows[2].cells[0].inlines);
+    };
+    assert!(image.attributes.is_none());
+}
+
+#[test]
+fn a_rows_block_reports_what_is_wrong_with_it() {
+    let source = "| a |\n|---|\n| x {available=cloud, self-managed preview 3.4} |\n";
+    let d = doc(source);
+    assert!(rows(&d)[1].attributes.is_some());
+    assert_eq!(slugs(&d), ["attribute-syntax"]);
+}
