@@ -415,6 +415,20 @@ fn movement(source: &SourceUpdate, code: fn(&str) -> String) -> String {
     }
 }
 
+/// Text from another repository as a Markdown code span, so a commit subject
+/// can't mention someone, refer to an issue (`Fixes #12`), or add markup in
+/// the pull request it's quoted in.
+fn code_span(text: &str) -> String {
+    let longest = text.split(|c| c != '`').map(str::len).max().unwrap_or(0);
+    let fence = "`".repeat(longest + 1);
+    let pad = if text.starts_with('`') || text.ends_with('`') {
+        " "
+    } else {
+        ""
+    };
+    format!("{fence}{pad}{text}{pad}{fence}")
+}
+
 /// The address a comparison of two commits is under, for a repository on
 /// github.com: `https://github.com/acme/api`. None for any other host, whose
 /// addresses the summary doesn't guess.
@@ -564,7 +578,7 @@ fn write_update_summary(
                     out,
                     "  - `{}` {}",
                     short(&line.commit),
-                    escape(&line.subject)
+                    code_span(&line.subject)
                 )?;
             }
             if commits.count > commits.newest.len() {
@@ -600,7 +614,15 @@ fn write_update_summary(
 
 #[cfg(test)]
 mod tests {
-    use super::compare_url;
+    use super::{code_span, compare_url};
+
+    #[test]
+    fn code_span_holds_any_subject() {
+        assert_eq!(code_span("Fixes #12 @someone"), "`Fixes #12 @someone`");
+        assert_eq!(code_span("Use `login` now"), "``Use `login` now``");
+        assert_eq!(code_span("Use `login`"), "`` Use `login` ``");
+        assert_eq!(code_span("`a``"), "``` `a`` ```");
+    }
 
     #[test]
     fn compare_url_is_github_only() {
