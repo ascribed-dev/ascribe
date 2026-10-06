@@ -1,0 +1,43 @@
+---
+// A page's availability (its `available` frontmatter, `entry.data.available`)
+// as the badge the element library styles: the markup the site output gives a
+// section's `@available` (element contract §4), with `scope="page"`.
+//
+//   import Availability from "@ascribed/astro/Availability.astro";
+//   <Availability available={entry.data.available} />
+//
+// It renders nothing when the page has no availability.
+interface Props {
+  available:
+    | readonly {
+        target: string;
+        dimension: string;
+        states: readonly string[];
+        versions?: readonly string[] | undefined;
+        text: string;
+      }[]
+    | undefined;
+}
+
+const { available } = Astro.props;
+---
+
+{
+  available && available.length > 0 && (
+    <ascribe-availability scope="page">
+      {available.map((item, i) => (
+        <>
+          {i > 0 && "; "}
+          <ascribe-availability-target
+            target={item.target}
+            dimension={item.dimension}
+            states={item.states.join(" ")}
+            versions={item.versions?.join(" ")}
+          >
+            {item.text}
+          </ascribe-availability-target>
+        </>
+      ))}
+    </ascribe-availability>
+  )
+}

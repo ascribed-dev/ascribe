@@ -14,7 +14,8 @@
   "sideEffects": false,
   "files": [
     "dist",
-    "src/Elements.astro"
+    "src/Elements.astro",
+    "src/Availability.astro"
   ],
   "exports": {
     ".": {
@@ -30,6 +31,7 @@
       "default": "./dist/satteri.js"
     },
     "./Elements.astro": "./src/Elements.astro",
+    "./Availability.astro": "./src/Availability.astro",
     "./content": {
       "types": "./dist/content.d.ts",
       "default": "./dist/content.js"

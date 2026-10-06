@@ -163,6 +163,14 @@ describe("the built site", () => {
     await page.close();
   });
 
+  it("shows a code block's title above it", async () => {
+    const page = await open(`${BASE}/reference/options`);
+    const figure = page.locator("article figure.code-title");
+    await expect(figure.locator("> figcaption").textContent()).resolves.toBe("loom.yaml");
+    await expect(figure.locator("> pre").textContent()).resolves.toContain("threads: 4");
+    await page.close();
+  });
+
   it("serves a linked file at <base>/_ascribe/files/", async () => {
     const page = await open(`${BASE}/guides/my-setup`);
     const href = await page.getByRole("link", { name: "sample config" }).getAttribute("href");

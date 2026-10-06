@@ -12,6 +12,9 @@
 //   the marker's other attributes, are compared;
 // - the inside of a `<pre>`: Astro highlights code with Shiki (`<span>`s
 //   with inline colors); the language and the text are compared;
+// - a code block's title: `@ascribed/astro`'s Shiki transformer puts a titled
+//   block in a `<figure class="code-title">` with a `<figcaption>`, and the
+//   preview shows the block alone; the block inside is compared;
 // - typographic punctuation: Astro's `smartypants` turns quotes and dashes
 //   into curly ones, which never happens inside a marker; both sides are
 //   compared with straight ones;
@@ -43,6 +46,10 @@ export async function treeOf(page: Page, selector: string): Promise<Tree | undef
         .replace(/\s+/g, " ");
     const reduce = (element: Element): unknown => {
       const tag = element.tagName.toLowerCase();
+      if (tag === "figure" && element.classList.contains("code-title")) {
+        const pre = element.querySelector(":scope > pre");
+        if (pre) return reduce(pre);
+      }
       if (tag === "pre") {
         const code = element.querySelector("code");
         const language =

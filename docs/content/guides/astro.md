@@ -45,6 +45,9 @@ The source pages go in `content/`. If your Ascribe project lives elsewhere, such
 
 The schema's path is `<output-dir>/<build>/site/_ascribe/schema.ts`, in the directory holding `ascribe.toml`. Importing it by path keeps its exact types, so `entry.data` is typed from your content types. If you change `[project] output-dir`, the build, or the integration's `project`, change this line too.
 
+@available: next
+If the Ascribe project is outside the Astro root (`project: "../docs"`), import the copy of the schema the integration writes inside it instead, `.astro/integrations/_ascribed_astro/schema.ts`, which is `../.astro/integrations/_ascribed_astro/schema.ts` from `src/content.config.ts`. The schema imports `astro/zod`, which TypeScript can only find from inside the Astro project, so type-checking (`astro check`, `tsc`) fails on the original there; Astro's own build works with either. The integration updates the copy after each build.
+
 ### 5. Add a route
 
 A page's URL is the base path plus its entry id, and the root page, `content/index.md` (entry id `index`), is at the base path itself. That's what Ascribe's links point to:
@@ -55,11 +58,19 @@ Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`.
 
 ### 6. Load the elements in your layout
 
+A layout loads the element library and shows the page's availability:
+
+@available: next
 @snippet {title=src/layouts/Docs.astro}: code:examples/astro-site/src/layouts/Docs.astro
 
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: the page title, navigation, and table of contents (`headings` from `render`) come from your own components.
 
-A page's `available` frontmatter reaches the layout as `entry.data.available`: a list of targets, each with the text to show. The layout above renders it as a badge.
+A page's `available` frontmatter reaches the layout as `entry.data.available`: a list of targets, each with the text to show.
+
+@available: next
+`<Availability available={entry.data.available} />`, from `@ascribed/astro/Availability.astro`, renders it as a badge, as the layout above does: the same markup the site output gives a section's `@available`, which the element library styles. It renders nothing for a page with no availability.
+
+In a release without `Availability.astro`, copy [its markup]({repo}/blob/main/packages/astro/src/Availability.astro) into your layout in place of the component.
 
 ### 7. Build
 
@@ -79,12 +90,17 @@ npx astro build
 | `binary` | The `ascribe` binary to run, relative to the Astro root. By default, the `ASCRIBE_BIN` environment variable, then the binary `@ascribed/cli` installed. |
 | `anchors` | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
 | `review` | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. |
+| `codeTitles` | Show a code block's title above it ([code block titles](#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
 
 ## What the integration does
 
 - **Fails the Astro build** when `ascribe build` reports an error (the compiler's report is the error), and when `ascribe.toml`'s `[consumer]` `site`, `base-path`, or `trailing-slash` disagrees with Astro's `site`, `base`, or `trailingSlash`. Astro's `trailingSlash: "ignore"` agrees with either value.
 - **Adds its Markdown plugin** to Astro's Markdown processor, to apply heading ids, image attributes, glossary terms' `data-ascribe-term`, and source anchors: to the default Sätteri processor's `hastPlugins`, or to a `unified()` processor's `rehypePlugins`. Both plugins are exported, as `@ascribed/astro/satteri` and `@ascribed/astro/rehype`, for a processor you configure yourself.
 - **Serves the files pages link to** (other than pages and images) at `<base>_ascribe/files/`, in `astro dev` and in the built site.
+- @available: next
+  **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](#code-block-titles)).
+- @available: next
+  **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([step 4](#4-define-the-collection)).
 
 ### In `astro dev`
 
@@ -120,6 +136,20 @@ Comparing again after a save runs `ascribe diff` once, which takes about as long
 ## Styling
 
 The elements render into the page (no shadow DOM), so your site's styles apply to them, and they're themed with CSS custom properties such as `--ascribe-tip-color` and `--ascribe-tab-active-color`. The [element library's README]({repo}/blob/main/packages/elements/README.md#theming) lists them, and shows how to style your own note types and lifecycle states.
+
+### Code block titles
+@available: next
+
+A code block's title, such as a [`@snippet`](../reference/directives.md#snippet)'s `title`, is in its info string (`` ```mjs title="astro.config.mjs" ``). Astro's highlighting ignores it, so the integration adds a Shiki transformer that puts a titled block in a figure with the title as its caption:
+
+```html
+<figure class="code-title">
+  <figcaption>astro.config.mjs</figcaption>
+  <pre class="astro-code">…</pre>
+</figure>
+```
+
+The figure has your browser's default margins, and the caption no style of its own; style `figure.code-title` and its `figcaption` to suit your site. Titles need Astro's default highlighting, Shiki; with `syntaxHighlight: "prism"` or `false`, they aren't shown.
 
 ## Other Markdown processors
 

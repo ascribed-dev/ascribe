@@ -177,7 +177,14 @@ export function findAnchors(root: HastNode): AnchorEdit[] {
         next++;
       }
       const target = children[next];
-      if (target?.type === "element" && target.tagName?.toLowerCase() === anchor.tag) {
+      if (anchor.tag === "pre" && target !== undefined && isCodeTitle(target)) {
+        // A titled code block, which the code-titles transformer put in a
+        // figure: the anchor marks the figure, so the mark holds the caption.
+        edit.targets.push({
+          node: target,
+          attributes: anchorAttributes(anchor.source, anchor.via),
+        });
+      } else if (target?.type === "element" && target.tagName?.toLowerCase() === anchor.tag) {
         edit.targets.push({
           node: target,
           attributes: anchorAttributes(anchor.source, anchor.via),
@@ -204,6 +211,23 @@ export function findAnchors(root: HastNode): AnchorEdit[] {
     }
   });
   return edits;
+}
+
+/** Whether a node is a `<figure class="code-title">` holding a `<pre>` (`code-titles.ts`). */
+function isCodeTitle(node: HastNode): boolean {
+  if (node.type !== "element" || node.tagName?.toLowerCase() !== "figure") return false;
+  const className = node.properties?.["className"] ?? node.properties?.["class"];
+  const classes = Array.isArray(className)
+    ? className.map(String)
+    : typeof className === "string"
+      ? className.split(/\s+/)
+      : [];
+  return (
+    classes.includes("code-title") &&
+    (node.children ?? []).some(
+      (child) => child.type === "element" && child.tagName?.toLowerCase() === "pre",
+    )
+  );
 }
 
 interface Anchor {

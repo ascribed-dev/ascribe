@@ -37,6 +37,11 @@ This release adds **review**: reading a pull request as readers will see it, pag
 - **Review in the site preview.** In `astro dev`, an **Ascribe review** app in Astro's dev toolbar marks a change's blocks on the real page, in your site's layout, and shows the pull request's review threads beside them, with commenting, replying, resolving, and submitting through the GitHub CLI, which the dev server runs. Comments stay off when the dev server listens on the network, or when the Vite config lets other pages reach it. A route that isn't an Ascribe page lists the changed pages, and a page whose layout drops the source anchors lists its changes and threads. The `review` option (on by default) turns the app off; `astro build` output has no anchors, overlay, or review code. See [Review in the site preview](docs/content/guides/astro.md#review-in-the-site-preview).
 - `astro dev` writes its address to `.ascribe/dev.json` in the project, for the editor's site preview, and removes it when it stops.
 - The `anchors` option turns source anchors on: `"dev"` in `astro dev` only, `true` always. The Markdown plugins apply them.
+- A code block's title, such as a `@snippet`'s, shows above it: the integration adds a Shiki transformer that puts a titled block in a `<figure class="code-title">` with a `<figcaption>`. The `codeTitles` option turns it off. See [code block titles](docs/content/guides/astro.md#code-block-titles).
+- `@ascribed/astro/Availability.astro` renders a page's `available` frontmatter as the element library's badge, so a layout needn't copy its markup: `<Availability available={entry.data.available} />`.
+- The integration copies the generated schema into `.astro/integrations/_ascribed_astro/schema.ts` after each build. A site whose Ascribe project is outside the Astro root imports that copy, so type-checking finds `astro/zod`. See [define the collection](docs/content/guides/astro.md#4-define-the-collection).
+- A clean build's check summary (`checked 14 files: 0 errors, 0 warnings`) is logged as info, not as a warning.
+- The published source maps of the npm packages include their sources, so Vite no longer warns that they point to missing files.
 
 ### The language server
 

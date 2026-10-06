@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import Availability from "@ascribed/astro/Availability.astro";
 import Elements from "@ascribed/astro/Elements.astro";
 
 interface Props {
@@ -23,25 +24,7 @@ const { title, description, available } = entry.data;
   <body>
     <main>
       <h1>{title}</h1>
-      {
-        available && available.length > 0 && (
-          <ascribe-availability scope="page">
-            {available.map((item, i) => (
-              <>
-                {i > 0 && "; "}
-                <ascribe-availability-target
-                  target={item.target}
-                  dimension={item.dimension}
-                  states={item.states.join(" ")}
-                  versions={item.versions?.join(" ")}
-                >
-                  {item.text}
-                </ascribe-availability-target>
-              </>
-            ))}
-          </ascribe-availability>
-        )
-      }
+      <Availability available={available} />
       <nav aria-label="On this page">
         <ul>
           {

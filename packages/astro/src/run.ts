@@ -10,6 +10,17 @@ export interface BuildResult {
   summary: string;
 }
 
+/** A check summary with nothing to report: `checked 14 files: 0 errors, 0 warnings`. */
+const CLEAN = /^checked [^:\n]*: 0 errors, 0 warnings$/;
+
+/**
+ * Whether a build's report is worth a warning: anything but a clean check's
+ * summary line, which is logged at info level.
+ */
+export function hasWarnings(diagnostics: string): boolean {
+  return diagnostics !== "" && !CLEAN.test(diagnostics);
+}
+
 /**
  * Whether an Astro command builds with source anchors, given the integration's
  * `anchors` option: `"dev"` means in `astro dev` only, so `astro build` has

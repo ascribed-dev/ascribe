@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { anchorsFor, reviewFor, runBuild } from "../src/run.js";
+import { anchorsFor, hasWarnings, reviewFor, runBuild } from "../src/run.js";
 
 // A stand-in for the compiler: a shell script, so these run where /bin/sh does.
 function script(body: string): string {
@@ -97,5 +97,23 @@ describe("reviewFor", () => {
     expect(reviewFor(undefined, "build")).toBe(false);
     expect(reviewFor(true, "build")).toBe(false);
     expect(reviewFor(true, "preview")).toBe(false);
+  });
+});
+
+describe("hasWarnings", () => {
+  it("is false for nothing and for a clean check's summary, which is logged as info", () => {
+    expect(hasWarnings("")).toBe(false);
+    expect(hasWarnings("checked 14 files: 0 errors, 0 warnings")).toBe(false);
+    expect(hasWarnings("checked 1 file: 0 errors, 0 warnings")).toBe(false);
+  });
+
+  it("is true for a report with warnings, or anything else", () => {
+    expect(
+      hasWarnings(
+        "[ASC041] Warning: this looks like a route\n   ╭─[ docs/keys.md:7:15 ]\n───╯\nchecked 4 files: 0 errors, 1 warning",
+      ),
+    ).toBe(true);
+    expect(hasWarnings("checked 4 files: 0 errors, 2 warnings")).toBe(true);
+    expect(hasWarnings("something unexpected")).toBe(true);
   });
 });

@@ -4,7 +4,10 @@
     "types": [],
     "noEmit": false,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    // The published maps carry their sources: the package doesn't publish src/,
+    // which they point at (issue #92).
+    "inlineSources": true
   },
   "include": ["src"]
 }
