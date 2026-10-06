@@ -40,7 +40,7 @@ A pull request meant to change nothing a reader or a tool sees (the [optimizatio
 node scripts/compare/outputs.ts --base main
 ```
 
-It builds `ascribe` at `main` and at your checkout, runs `check` and `build` with each on every example project and `docs/`, builds the Astro example with each revision's packages, and prints each file that differs, then `same` or `N files differ` for each project. It exits 1 when anything differs. `--diff-base <revision>` compares `diff` and `drift` too, and `--before <ascribe> --after <ascribe>` compares two binaries you already have. Label the pull request `optimization`, and CI runs the same comparison against its base and fails on a difference.
+It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `diff`, and `drift` with each on every example project and `docs/`, in a temporary copy whose base commit changes a word throughout, so `diff` and `drift` always have the same changes to report. It also builds the Astro example with each revision's packages. It prints each file that differs, then `same (N files)` or `N of M files differ` for each project, and exits 1 when anything differs and 2 when it couldn't compare. `examples/getting-started` and `examples/docs-repository` stop with errors on purpose (a broken link, and sources that need `ascribe sources fetch`), so only their reports are compared, not built outputs. `--before <ascribe> --after <ascribe>` compares two binaries you already have. Label the pull request `optimization`, and CI runs the same comparison against its base and fails on a difference.
 
 A test, `cargo test -p tessera-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
 

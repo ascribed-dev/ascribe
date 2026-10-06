@@ -19,10 +19,11 @@ name: CI
 #   they report, and don't hold up a merge.
 # - A pull request labeled `optimization` also compares every output with its
 #   base's (scripts/compare/outputs.ts): a clean-up must change none. Adding
-#   a label starts a run, so the label counts as soon as it's added.
+#   or removing a label starts a run, so the label counts as soon as it's
+#   added, and stops counting as soon as it's removed.
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
   schedule:
@@ -160,8 +161,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The base, to build it, and history behind it for diff and drift.
-          fetch-depth: 0
+          # The base, to build it.
+          fetch-depth: 2
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -170,13 +171,11 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - env:
-          BASE: origin/${{ github.base_ref }}
-        run: |
+      # The checkout is the merge commit GitHub made; its first parent is the
+      # base it was made on. The base branch's tip may have moved on since.
+      - run: |
           set -o pipefail
-          # diff and drift compare against a revision twenty commits back, so
-          # they have changes to show.
-          node scripts/compare/outputs.ts --base "$BASE" --diff-base "$BASE~20" --out "$RUNNER_TEMP/compare" |
+          node scripts/compare/outputs.ts --base HEAD^1 --out "$RUNNER_TEMP/compare" |
             tee "$RUNNER_TEMP/compare.txt"
       - if: always()
         run: |

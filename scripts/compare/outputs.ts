@@ -6,11 +6,17 @@
 //
 // --base builds the `before` binary from that revision, in a temporary git
 // worktree, and the `after` binary from this checkout (or takes --after).
-// For every project here (each folder under examples/ with an ascribe.toml,
-// and docs/), both binaries run `check` (text and JSON) and `build` (every
-// output, then the site again with anchors), and the script compares their
-// reports and output files byte for byte. Paths to the checkout or the
-// worktree are replaced with `<root>` first, so two checkouts compare equal.
+//
+// The projects are every folder under examples/ with an ascribe.toml, and
+// docs/. They're copied, with what docs/ reads from the rest of the
+// repository, into a temporary git repository set up as the determinism test
+// sets it up (crates/tessera-cli/tests/determinism.rs): its one commit has
+// "the" made "a" in every code file and every second page, so `diff` and
+// `drift` always have the same changes to report. In that copy both binaries
+// run `check`, `build` (every output, then the site again with anchors),
+// `diff`, and `drift`, in each of their formats, and the script compares
+// their reports and output files byte for byte. Paths to the copy, the
+// checkout, or the worktree are replaced with `<root>` first.
 //
 // With --base, it also builds examples/astro-site with the packages at both
 // revisions (each with its own binary) and compares `dist/`. Astro names
@@ -18,16 +24,18 @@
 // the files are compared as they are. --skip-site leaves this out; it needs
 // `pnpm install` to have run.
 //
-// --diff-base <revision> also runs `diff` (text, JSON, and HTML) and `drift`
-// (text and JSON) against that revision, which must be in the history.
-//
 // It prints each file that differs with a short diff, then one line per
-// project, `same` or `N files differ`. It exits 1 when anything differs, and
-// 2 when it couldn't compare.
-// The outputs stay in --out (a new temporary directory by default).
+// project: `same (N files)` or `N of M files differ`. It exits 1 when anything
+// differs, and 2 when it couldn't compare, which includes a `before` binary
+// that fails on a project that should pass or builds nothing: two identical
+// failures would otherwise count as `same`. examples/getting-started (a broken
+// link, on purpose) and examples/docs-repository (its sources need
+// `ascribe sources fetch`) are expected to fail, so only their reports are
+// compared, not built outputs.
 //
-// Each project's output folder is moved aside while the script runs and put
-// back after, so a build you have there is kept.
+// The outputs stay in --out (a new temporary directory by default). The
+// checkout isn't written to, except for the Astro example's `dist/` and the
+// packages' builds.
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   cpSync,
@@ -36,7 +44,6 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
-  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -53,6 +60,26 @@ export const ROOT = "<root>";
 /** Lines of diff shown per file. */
 const DIFF_LINES = 40;
 
+/** What's copied: the projects, and what docs/ascribe.toml's `[sources.code]` reads besides them. */
+const COPIED = ["examples", "docs", ".github/workflows", "crates/tessera-cli/tests/output"];
+
+/** Projects whose `check` and `build` stop with errors, by design. */
+export const FAILING = ["examples/docs-repository", "examples/getting-started"];
+
+/** Each command run on each project, as in the determinism test. */
+const COMMANDS = [
+  ["check"],
+  ["check", "--format", "json"],
+  ["diff", "--base", "HEAD"],
+  ["diff", "--base", "HEAD", "--format", "json"],
+  ["diff", "--base", "HEAD", "--format", "html"],
+  ["drift", "--base", "HEAD"],
+  ["drift", "--base", "HEAD", "--format", "json"],
+  ["drift", "--base", "HEAD", "--format", "summary"],
+  ["build"],
+  ["build", "--emit", "site", "--anchors"],
+];
+
 type Side = "before" | "after";
 const SIDES: Side[] = ["before", "after"];
 
@@ -65,15 +92,14 @@ function main(): void {
       base: { type: "string" },
       before: { type: "string" },
       after: { type: "string" },
-      "diff-base": { type: "string" },
       "skip-site": { type: "boolean", default: false },
       out: { type: "string" },
     },
   });
   if ((options.base === undefined) === (options.before === undefined)) {
     fail(
-      "usage: outputs.ts --base <revision> [--after <ascribe>] [--diff-base <revision>] [--skip-site] [--out <dir>]\n" +
-        "       outputs.ts --before <ascribe> --after <ascribe> [--diff-base <revision>] [--out <dir>]",
+      "usage: outputs.ts --base <revision> [--after <ascribe>] [--skip-site] [--out <dir>]\n" +
+        "       outputs.ts --before <ascribe> --after <ascribe> [--out <dir>]",
     );
   }
   if (options.before !== undefined && options.after === undefined) {
@@ -81,16 +107,16 @@ function main(): void {
   }
   const out = path.resolve(options.out ?? mkdtempSync(path.join(tmpdir(), "ascribe-compare-")));
   mkdirSync(out, { recursive: true });
-  const diffBase = options["diff-base"] && revision(options["diff-base"]);
 
   let worktree: string | undefined;
   try {
     const binaries = {} as Record<Side, string>;
     if (options.base !== undefined) {
       const base = revision(options.base);
-      worktree = path.join(out, "worktree");
-      console.error(`Checking out ${options.base} (${base.slice(0, 12)}) in ${worktree}`);
-      git(root, "worktree", "add", "--detach", "--force", worktree, base);
+      const at = path.join(out, "worktree");
+      console.error(`Checking out ${options.base} (${base.slice(0, 12)}) in ${at}`);
+      git(root, "worktree", "add", "--detach", "--force", at, base);
+      worktree = at;
       binaries.before = binary(worktree, path.join(out, "bin", "before"));
     } else if (options.before !== undefined) {
       binaries.before = path.resolve(options.before);
@@ -100,15 +126,17 @@ function main(): void {
         ? binary(root, path.join(out, "bin", "after"))
         : path.resolve(options.after);
 
-    const spellings = rootSpellings([root, ...(worktree ? [worktree] : [])]);
-    const results: [string, number][] = [];
-    for (const project of projects()) {
+    const copy = path.join(out, "copy");
+    const files = copyProjects(copy);
+    const spellings = rootSpellings([copy, root, ...(worktree ? [worktree] : [])]);
+    const results: [string, number, number][] = [];
+    for (const project of projects(files)) {
       const runs = {} as Record<Side, Run>;
       for (const side of SIDES) {
         console.error(`Running ${side} on ${project}`);
-        runs[side] = runProject(binaries[side], project, diffBase, spellings);
+        runs[side] = runProject(binaries[side], copy, project, spellings, side === "before");
       }
-      results.push([project, compare(runs, project, path.join(out, "projects", project))]);
+      results.push([project, ...compare(runs, project, path.join(out, "projects", project))]);
     }
     if (worktree !== undefined && !options["skip-site"]) {
       const sites = {} as Record<Side, Run>;
@@ -118,20 +146,25 @@ function main(): void {
         sites[side] = buildSite(checkout, binaries[side], spellings);
       }
       const name = "examples/astro-site/dist";
-      results.push([`${name} (Astro)`, compare(sites, name, path.join(out, "site"))]);
+      results.push([`${name} (Astro)`, ...compare(sites, name, path.join(out, "site"))]);
     }
 
     console.log();
-    for (const [name, n] of results) {
+    for (const [name, differ, total] of results) {
       console.log(
-        `${name}: ${n === 0 ? "same" : `${n} ${n === 1 ? "file differs" : "files differ"}`}`,
+        `${name}: ${differ === 0 ? `same (${total} files)` : `${differ} of ${total} files differ`}`,
       );
     }
     console.error(`\nThe outputs are in ${out}`);
-    process.exitCode = results.some(([, n]) => n > 0) ? 1 : 0;
+    process.exitCode = results.some(([, differ]) => differ > 0) ? 1 : 0;
   } finally {
     if (worktree !== undefined) {
-      git(root, "worktree", "remove", "--force", worktree);
+      // Cleaning up mustn't hide what stopped the comparison.
+      try {
+        git(root, "worktree", "remove", "--force", worktree);
+      } catch (e) {
+        console.error(`warning: couldn't remove the worktree ${worktree}: ${String(e)}`);
+      }
     }
   }
 }
@@ -163,111 +196,162 @@ function binary(checkout: string, to: string): string {
   return copy;
 }
 
-/** Each project: a folder under examples/ with an ascribe.toml, and docs/, relative to the root with `/`. */
-export function projects(): string[] {
-  const found: string[] = [];
-  const walk = (dir: string): void => {
-    for (const entry of readdirSync(path.join(root, dir), { withFileTypes: true })) {
-      if (
-        entry.isDirectory() &&
-        !["node_modules", ".ascribe", "dist", ".astro"].includes(entry.name)
-      ) {
-        walk(`${dir}/${entry.name}`);
-      } else if (entry.name === "ascribe.toml") {
-        found.push(dir);
+/** `text` with every whole word "the" made "a": a change that keeps every directive, region, and link working. */
+export function reword(text: string): string {
+  return text.replace(/\bthe\b/g, "a");
+}
+
+/**
+ * Copies the projects into `to`, as a repository whose one commit has the
+ * words changed and whose working tree is the projects as they are here.
+ * Returns the files copied, with `/`.
+ */
+function copyProjects(to: string): string[] {
+  // Tracked files, and new ones not yet added, but nothing ignored, such as a build.
+  const listed = git(
+    root,
+    "ls-files",
+    "-z",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+    "--",
+    ...COPIED,
+  );
+  const files = [...new Set(listed.split("\0").filter((f) => f !== ""))]
+    .filter((f) => existsSync(path.join(root, f)))
+    .sort();
+  let pages = 0;
+  const originals: [string, Buffer][] = [];
+  for (const file of files) {
+    const bytes = readFileSync(path.join(root, file));
+    const name = path.posix.basename(file);
+    const target = path.join(to, file);
+    mkdirSync(path.dirname(target), { recursive: true });
+    let reworded: string | undefined;
+    if (!isBinary(bytes) && name !== "ascribe.toml" && name !== "ascribe.lock") {
+      const text = bytes.toString("utf8");
+      if (Buffer.from(text, "utf8").equals(bytes)) {
+        if (!name.endsWith(".md") || ++pages % 2 === 0) {
+          reworded = reword(text);
+        }
       }
     }
+    if (reworded !== undefined && reworded !== bytes.toString("utf8")) {
+      writeFileSync(target, reworded);
+      originals.push([target, bytes]);
+    } else {
+      writeFileSync(target, bytes);
+    }
+  }
+  const commit = (...args: string[]): void => {
+    execFileSync(
+      "git",
+      [
+        "-c",
+        "user.name=Mira Okafor",
+        "-c",
+        "user.email=mira@example.com",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "core.autocrlf=false",
+        "-c",
+        "init.defaultBranch=main",
+        ...args,
+      ],
+      {
+        cwd: to,
+        stdio: ["ignore", "ignore", "inherit"],
+        env: {
+          ...process.env,
+          GIT_AUTHOR_DATE: "2026-10-01T12:00:00+00:00",
+          GIT_COMMITTER_DATE: "2026-10-01T12:00:00+00:00",
+        },
+      },
+    );
   };
-  walk("examples");
-  found.push("docs");
-  return found.sort();
+  commit("init", "-q");
+  commit("add", "-A");
+  commit("commit", "-q", "-m", "The base");
+  for (const [target, bytes] of originals) {
+    writeFileSync(target, bytes);
+  }
+  return files;
+}
+
+/** The projects among `files`: each folder with an ascribe.toml, with `/`. */
+export function projects(files: string[]): string[] {
+  return files
+    .filter((f) => f.endsWith("/ascribe.toml"))
+    .map((f) => f.slice(0, -"/ascribe.toml".length))
+    .sort();
 }
 
 /** The project's `[project] output-dir`, or the default, relative to the project. */
 export function outputDir(toml: string): string {
-  const line = toml.split(/\r?\n/).find((l) => /^\s*output-dir\s*=/.test(l));
-  return line?.replace(/^[^=]*=\s*"([^"]*)".*$/, "$1") ?? ".ascribe/build";
+  for (const line of toml.split(/\r?\n/)) {
+    const value = /^\s*output-dir\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(line);
+    if (value) {
+      return value[1] ?? value[2] ?? "";
+    }
+  }
+  return ".ascribe/build";
 }
 
-/** Runs every command on `project` with `ascribe`: each one's report, and each output file. */
+/**
+ * Runs every command on `project`, in the copy at `copy`, with `ascribe`:
+ * each one's report, and each output file. With `strict`, a command that
+ * exits other than as expected, or a build that writes nothing, means the
+ * comparison can't be trusted, and fails it.
+ */
 function runProject(
   ascribe: string,
+  copy: string,
   project: string,
-  diffBase: string | undefined,
   spellings: string[],
+  strict: boolean,
 ): Run {
-  const dir = path.join(root, project);
+  const dir = path.join(copy, project);
   const outputs = path.join(dir, outputDir(readFileSync(path.join(dir, "ascribe.toml"), "utf8")));
-  const commands: string[][] = [
-    ["check"],
-    ["check", "--format", "json"],
-    ["build"],
-    ["build", "--emit", "site", "--anchors"],
-  ];
-  if (diffBase !== undefined) {
-    commands.push(
-      ["diff", "--base", diffBase],
-      ["diff", "--base", diffBase, "--format", "json"],
-      ["diff", "--base", diffBase, "--format", "html"],
-      ["drift", "--base", diffBase],
-      ["drift", "--base", diffBase, "--format", "json"],
-    );
-  }
+  const failing = FAILING.includes(project);
   const found: Run = new Map();
-  const saved = `${outputs}.compare-saved`;
-  const hadOutputs = existsSync(outputs);
-  // The folders above the output folder that a build would make, to remove after.
-  const made: string[] = [];
-  for (
-    let d = path.dirname(outputs);
-    d.startsWith(dir + path.sep) && !existsSync(d);
-    d = path.dirname(d)
-  ) {
-    made.push(d);
-  }
-  if (hadOutputs) {
-    renameSync(outputs, saved);
-  }
-  try {
-    for (const args of commands) {
-      const name = `ascribe ${args.join(" ")}`;
-      const result = spawnSync(ascribe, ["--color", "never", ...args], {
-        cwd: dir,
-        maxBuffer: 1 << 30,
-      });
-      if (result.error) {
-        fail(`can't run ${ascribe}: ${result.error.message}`);
-      }
-      found.set(
-        `${name}.txt`,
-        Buffer.concat([
-          Buffer.from(`exit ${result.status}\n--- stdout\n`),
-          normalize(result.stdout, spellings),
-          Buffer.from("\n--- stderr\n"),
-          normalize(result.stderr, spellings),
-        ]),
-      );
-      if (args[0] === "build" && existsSync(outputs)) {
-        for (const file of filesUnder(outputs)) {
-          if (file !== ".lock") {
-            found.set(
-              `${name}/${file}`,
-              normalize(readFileSync(path.join(outputs, file)), spellings),
-            );
-          }
-        }
-        rmSync(outputs, { recursive: true, force: true });
-      }
-    }
-  } finally {
+  for (const args of COMMANDS) {
+    const name = `ascribe ${args.join(" ")}`;
     rmSync(outputs, { recursive: true, force: true });
-    if (hadOutputs) {
-      renameSync(saved, outputs);
+    const result = spawnSync(ascribe, ["--color", "never", ...args], {
+      cwd: dir,
+      maxBuffer: 1 << 30,
+    });
+    if (result.error) {
+      fail(`can't run ${ascribe}: ${result.error.message}`);
     }
-    for (const d of made) {
-      rmSync(d, { recursive: true, force: true });
+    const expected = failing && (args[0] === "check" || args[0] === "build") ? 1 : 0;
+    if (strict && result.status !== expected) {
+      fail(
+        `${project}: \`${name}\` with the before binary exited ${result.status}, not ${expected}, so there's nothing to compare\n${result.stderr.toString()}`,
+      );
+    }
+    found.set(
+      `${name}.txt`,
+      Buffer.concat([
+        Buffer.from(`exit ${result.status}\n--- stdout\n`),
+        normalize(result.stdout, spellings),
+        Buffer.from("\n--- stderr\n"),
+        normalize(result.stderr, spellings),
+      ]),
+    );
+    if (args[0] === "build") {
+      const written = existsSync(outputs) ? filesUnder(outputs).filter((f) => f !== ".lock") : [];
+      if (strict && !failing && written.length === 0) {
+        fail(`${project}: \`${name}\` with the before binary wrote nothing to ${outputs}`);
+      }
+      for (const file of written) {
+        found.set(`${name}/${file}`, normalize(readFileSync(path.join(outputs, file)), spellings));
+      }
     }
   }
+  rmSync(outputs, { recursive: true, force: true });
   return found;
 }
 
@@ -296,9 +380,9 @@ function buildSite(checkout: string, ascribe: string, spellings: string[]): Run 
 
 /**
  * Compares two runs of `label`. Writes each side's files under `out`, prints
- * a short diff of each file that differs, and returns how many do.
+ * a short diff of each file that differs, and returns how many do, of how many.
  */
-function compare(runs: Record<Side, Run>, label: string, out: string): number {
+function compare(runs: Record<Side, Run>, label: string, out: string): [number, number] {
   const names = [...new Set([...runs.before.keys(), ...runs.after.keys()])].sort();
   let differ = 0;
   for (const side of SIDES) {
@@ -328,7 +412,7 @@ function compare(runs: Record<Side, Run>, label: string, out: string): number {
       );
     }
   }
-  return differ;
+  return [differ, names.length];
 }
 
 /** A command's name as a path: `ascribe build/site/x.md` stays a path, and spaces and `-`s do no harm. */
@@ -427,10 +511,8 @@ if (
   try {
     main();
   } catch (e) {
-    if (!(e instanceof Failure)) {
-      throw e;
-    }
-    console.error(`error: ${e.message}`);
+    // Anything that stops the comparison is a 2, not the 1 that means "they differ".
+    console.error(e instanceof Failure ? `error: ${e.message}` : e);
     process.exitCode = 2;
   }
 }

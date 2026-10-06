@@ -14,7 +14,8 @@
 //! don't. The working tree is the projects as they are.
 //!
 //! `scripts/compare/outputs.ts` makes the same comparison between two
-//! binaries, for a pull request that means to change nothing.
+//! binaries, for a pull request that means to change nothing, in a copy set
+//! up the same way: a change to one belongs in the other.
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
@@ -228,7 +229,8 @@ fn output_dir(project: &Path) -> PathBuf {
         .lines()
         .find_map(|l| {
             let (key, value) = l.split_once('=')?;
-            (key.trim() == "output-dir").then(|| value.trim().trim_matches('"').to_owned())
+            let value = value.split('#').next()?.trim();
+            (key.trim() == "output-dir").then(|| value.trim_matches(['"', '\'']).to_owned())
         })
         .unwrap_or_else(|| ".ascribe/build".to_owned());
     join(project, &dir)

@@ -1,19 +1,38 @@
 // The comparison script's pure parts. The script itself runs in CI on pull
 // requests labeled `optimization` (ci.yml).
 import { expect, test } from "vitest";
-import { isBinary, normalize, outputDir, projects, ROOT, rootSpellings } from "./outputs.ts";
+import {
+  isBinary,
+  normalize,
+  outputDir,
+  projects,
+  reword,
+  ROOT,
+  rootSpellings,
+} from "./outputs.ts";
 
-test("every example project and the docs are compared", () => {
-  const found = projects();
-  expect(found).toContain("docs");
-  expect(found).toContain("examples/quill");
-  // Nested projects count too.
-  expect(found).toContain("examples/monorepo/handbook/pages/security");
+test("each folder with an ascribe.toml is a project, nested ones too", () => {
+  const files = [
+    "docs/ascribe.toml",
+    "docs/content/index.md",
+    "examples/monorepo/handbook/ascribe.toml",
+    "examples/monorepo/handbook/pages/security/ascribe.toml",
+  ];
+  expect(projects(files)).toEqual([
+    "docs",
+    "examples/monorepo/handbook",
+    "examples/monorepo/handbook/pages/security",
+  ]);
 });
 
 test("the output folder comes from ascribe.toml", () => {
   expect(outputDir('[project]\noutput-dir = "out/site"  # here\n')).toBe("out/site");
+  expect(outputDir("[project]\noutput-dir = 'out/single'\n")).toBe("out/single");
   expect(outputDir("[project]\ncontent-root = 'docs'\n")).toBe(".ascribe/build");
+});
+
+test("the base changes whole words only", () => {
+  expect(reword("the theme, then the_x; The other the.")).toBe("a theme, then the_x; The other a.");
 });
 
 test("a root is replaced however it's written", () => {
