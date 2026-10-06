@@ -214,6 +214,9 @@ impl<'p> TreeBuilder<'p> {
         })
     }
 
+    // Longer than the lint allows from before it was on. Split it only while
+    // changing it for another reason.
+    #[allow(clippy::too_many_lines)]
     fn block(&mut self, block: &ResolvedBlock) -> Node {
         let anchor = self.anchor(block.file, block.span, &block.via);
         let mut files = self.files_of(block.file, &block.via);

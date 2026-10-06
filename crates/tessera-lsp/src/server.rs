@@ -81,6 +81,9 @@ impl Shared {
 ///
 /// The client's `initialize` isn't understood, or the client breaks the
 /// protocol before the session starts.
+// Longer than the lint allows from before it was on. Split it only while
+// changing it for another reason.
+#[allow(clippy::too_many_lines)]
 pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeError> {
     let (id, params) = connection.initialize_start()?;
     let params: InitializeParams = serde_json::from_value(params)?;

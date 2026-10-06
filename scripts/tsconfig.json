@@ -18,6 +18,7 @@
     "review-fixture/**/*.ts",
     "sources-fixture/**/*.ts",
     "docs-site/**/*.ts",
-    "repo-docs/**/*.ts"
+    "repo-docs/**/*.ts",
+    "compare/**/*.ts"
   ]
 }

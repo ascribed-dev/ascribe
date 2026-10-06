@@ -40,6 +40,18 @@ pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 
 A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter.
 
+### A clean-up that changes no output
+
+A pull request meant to change nothing a reader or a tool sees (the [optimization plan](project-docs/optimization/README.md) is made of them) shows it by comparing outputs with its base:
+
+```sh
+node scripts/compare/outputs.ts --base main
+```
+
+It builds `ascribe` at `main` and at your checkout and runs `check`, `build`, `diff`, and `drift` with each on every example project and `docs/`, in a temporary copy whose base commit changes a word throughout, so `diff` and `drift` always have the same changes to report. It also builds the Astro example with each revision's packages. It prints each file that differs, then `same (N files)` or `N of M files differ` for each project, and exits 1 when anything differs and 2 when it couldn't compare. `examples/getting-started` and `examples/docs-repository` stop with errors on purpose (a broken link, and sources that need `ascribe sources fetch`), so only their reports are compared, not built outputs. `--before <ascribe> --after <ascribe>` compares two binaries you already have. Label the pull request `optimization`, and CI runs the same comparison against its base and fails on a difference.
+
+A test, `cargo test -p tessera-cli --test determinism`, holds that one binary writes the same bytes from one run to the next, which the comparison relies on.
+
 ## Documenting a change
 
 The user docs are in `docs/`, an Ascribe project, and change in the same pull request as the code they describe. A change someone using Ascribe would notice updates the page that describes it, under `docs/content/`, and adds a line to the unreleased section of [CHANGELOG.md](CHANGELOG.md). What no release has yet is marked `@available: next` on its page or section. Every page must pass the checks CI runs on it (in `site.yml`):

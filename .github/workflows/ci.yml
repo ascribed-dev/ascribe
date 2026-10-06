@@ -17,8 +17,13 @@ name: CI
 #   docs take code examples from (docs/ascribe.toml's [sources]) changed.
 # - The review and drift reports run on their own (review.yml, drift.yml):
 #   they report, and don't hold up a merge.
+# - A pull request labeled `optimization` also compares every output with its
+#   base's (scripts/compare/outputs.ts): a clean-up must change none. Adding
+#   or removing a label starts a run, so the label counts as soon as it's
+#   added, and stops counting as soon as it's removed.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
   schedule:
@@ -143,11 +148,52 @@ jobs:
     # The pull request's preview is deployed with Netlify's secrets.
     secrets: inherit
 
+  # A clean-up (project-docs/optimization/) changes no output: the base's
+  # binary and packages against this pull request's, on every project and the
+  # Astro example. Only for pull requests labeled `optimization`.
+  compare:
+    name: outputs unchanged
+    needs: changes
+    if: >-
+      needs.changes.outputs.code == 'true' &&
+      contains(github.event.pull_request.labels.*.name, 'optimization')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The base, to build it.
+          fetch-depth: 2
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The checkout is the merge commit GitHub made; its first parent is the
+      # base it was made on. The base branch's tip may have moved on since.
+      - run: |
+          set -o pipefail
+          node scripts/compare/outputs.ts --base HEAD^1 --out "$RUNNER_TEMP/compare" |
+            tee "$RUNNER_TEMP/compare.txt"
+      - if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/compare.txt" ]; then
+            {
+              echo '### Outputs compared with the base'
+              echo '```text'
+              # The summary's limit is 1 MiB; the job's log has everything.
+              head -c 500000 "$RUNNER_TEMP/compare.txt"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   # The one check branch protection requires. It passes when every job above
   # passed or was skipped, and fails when one failed or was cancelled.
   gate:
     name: all checks
-    needs: [changes, prose, rust, js, site]
+    needs: [changes, prose, rust, js, site, compare]
     if: always()
     runs-on: ubuntu-latest
     steps:

@@ -427,6 +427,9 @@ impl Loader<'_> {
         out
     }
 
+    // Longer than the lint allows from before it was on. Split it only while
+    // changing it for another reason.
+    #[allow(clippy::too_many_lines)]
     fn widget(&mut self, name: &str, name_span: Span, item: &V<'_>) -> Option<Widget> {
         let path = join("widgets", name);
         let mut ok = self.name_ok(name, name_span, "widget", NameRule::Widget);
