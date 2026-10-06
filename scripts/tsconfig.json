@@ -11,5 +11,11 @@
     "sourceMap": false,
     "types": ["node"]
   },
-  "include": ["release/**/*.ts", "release/**/*.cts", "review-fixture/**/*.ts", "docs-site/**/*.ts"]
+  "include": [
+    "release/**/*.ts",
+    "release/**/*.cts",
+    "review-fixture/**/*.ts",
+    "sources-fixture/**/*.ts",
+    "docs-site/**/*.ts"
+  ]
 }
