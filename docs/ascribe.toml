@@ -51,8 +51,12 @@ available = "ascribe 0.2.0"
 # The latest release: the workspace version in Cargo.toml, and every
 # package.json under packages/.
 version = "0.2.0"
-# `engines.node` in packages/cli/package.json.
+# `engines.node` in package.json. scripts/docs-site/facts.test.ts checks it,
+# and every other file that names the Node version.
 node = "24"
+# The oldest glibc the Linux binaries run on: `GLIBC` in
+# .github/workflows/release-build.yml. scripts/docs-site/facts.test.ts checks it.
+glibc = "2.28"
 # `engines.vscode` in packages/vscode/package.json.
 vscode = "1.138"
 # The repository. Link to a file as `{repo}/blob/main/<path>`, and to a folder
@@ -121,6 +125,7 @@ link = "guides/editor.md#site-preview"
 # other places, which need the same change when `include` changes: the paths
 # in .github/workflows/site-npm.yml, the site path pattern in
 # .github/workflows/ci.yml, and `ignore` in site/netlify.toml.
+# scripts/docs-site/facts.test.ts fails until they agree.
 [sources.code]
 path = ".."                               # relative to the folder ascribe.toml is in
 include = [                               # what's readable; everything else isn't
