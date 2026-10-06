@@ -12,6 +12,7 @@
 //! surviving content references.
 
 use tessera_core::{Issue, Location, RelPath, Span, diagnostics};
+use tessera_model::Segment;
 use tessera_syntax::{Inline, InlineKind};
 
 use super::BuildResolver;
@@ -100,7 +101,7 @@ impl Links<'_, '_> {
         reference: &Reference,
         resolution: &Resolution,
         block: &ResolvedBlock,
-    ) -> (LinkTarget, Option<String>) {
+    ) -> (LinkTarget, Option<Vec<Segment>>) {
         let target = match resolution {
             Resolution::External => LinkTarget::External,
             Resolution::Asset { path, fragment } => {
@@ -138,7 +139,7 @@ impl Links<'_, '_> {
         target: &RelPath,
         id: Option<&str>,
         is_fragment: bool,
-    ) -> (LinkTarget, Option<String>) {
+    ) -> (LinkTarget, Option<Vec<Segment>>) {
         // SPEC §5.2: a `#id` alone in a fragment names a heading of the
         // fragment itself, which the page that includes it publishes. Any
         // other link to a fragment is an error.
@@ -211,7 +212,7 @@ impl Links<'_, '_> {
                     url,
                     text_filled: text_empty && !heading.text.is_empty(),
                 };
-                (target, Some(heading.text.clone()))
+                (target, Some(vec![Segment::Text(heading.text.clone())]))
             }
         }
     }
@@ -227,7 +228,7 @@ impl Links<'_, '_> {
 /// Rewrites the link node for its resolved target: a page link's destination
 /// becomes its URL, and empty text becomes the target's title. Returns the
 /// destination as it was.
-fn patch(node: &mut Inline, target: &LinkTarget, title: Option<String>) -> String {
+fn patch(node: &mut Inline, target: &LinkTarget, title: Option<Vec<Segment>>) -> String {
     let span: Span = node.span;
     match &mut node.kind {
         InlineKind::Link(link) => {
@@ -238,10 +239,16 @@ fn patch(node: &mut Inline, target: &LinkTarget, title: Option<String>) -> Strin
             {
                 link.destination = url.clone();
                 if *text_filled && let Some(title) = title {
-                    link.children = vec![Inline {
-                        span,
-                        kind: InlineKind::Text(title),
-                    }];
+                    link.children = title
+                        .into_iter()
+                        .map(|segment| Inline {
+                            span,
+                            kind: match segment {
+                                Segment::Text(text) => InlineKind::Text(text),
+                                Segment::Code(code) => InlineKind::Code(code),
+                            },
+                        })
+                        .collect();
                 }
             }
             before

@@ -96,7 +96,8 @@ impl Node {
 pub(crate) struct PageTree {
     /// The page's route.
     pub route: String,
-    /// Its title, phrases substituted.
+    /// Its title, phrases substituted, to compare: in pieces when it sets
+    /// `inline`.
     pub title: Option<String>,
     /// Its frontmatter, serialized, without `title` and `available`.
     pub frontmatter: Option<String>,
@@ -130,17 +131,29 @@ impl<'p> TreeBuilder<'p> {
         // YAML values don't implement `Hash`; their serialization is stable.
         // `title` and `available` are left out: they're compared as shown,
         // as the title and the availability.
+        // A field that sets `inline` is compared in pieces, so adding a
+        // code span is a change though the plain text is the same.
         let frontmatter = page.frontmatter.as_ref().and_then(|f| {
             let mut f = f.clone();
             if let Some(map) = f.as_mapping_mut() {
                 map.remove("title");
                 map.remove("available");
+                for field in page.formatted.iter().filter(|f| f.name != "title") {
+                    map.insert(
+                        field.name.as_str().into(),
+                        format!("{:?}", field.segments).into(),
+                    );
+                }
             }
             serde_yaml_ng::to_string(&f).ok()
         });
+        let title = match page.formatted_title() {
+            Some(segments) => Some(format!("{segments:?}")),
+            None => page.title.clone(),
+        };
         let availability = page.availability.as_deref().map(|a| self.availability(a));
         let mut hasher = DefaultHasher::new();
-        page.title.hash(&mut hasher);
+        title.hash(&mut hasher);
         frontmatter.hash(&mut hasher);
         availability.hash(&mut hasher);
         for node in &nodes {
@@ -148,7 +161,7 @@ impl<'p> TreeBuilder<'p> {
         }
         PageTree {
             route: page.route.clone(),
-            title: page.title.clone(),
+            title,
             frontmatter,
             availability,
             nodes,

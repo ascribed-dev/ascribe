@@ -170,6 +170,11 @@ fn cases() -> Vec<Case> {
         ),
         case(
             "model-field-reserved",
+            Some("formatted"),
+            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nformatted = \"string?\" #!\n",
+        ),
+        case(
+            "model-field-reserved",
             Some("fragment"),
             "spec = \"0.1\"\n[fragments.frontmatter]\nvariant = \"string?\" #!\n",
         ),
@@ -247,6 +252,26 @@ fn cases() -> Vec<Case> {
             "model-phrases-field-type",
             None,
             "spec = \"0.1\"\n[fragments.frontmatter]\ncount = { type = \"number\", phrases = true } #!\n",
+        ),
+        case(
+            "model-inline-field",
+            None,
+            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\ntags = { type = \"list(string)\", inline = \"code\" } #!\n",
+        ),
+        case(
+            "model-inline-field",
+            Some("value"),
+            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = { type = \"string\", inline = \"emphasis\" } #!\n",
+        ),
+        case(
+            "model-inline-field",
+            Some("nested"),
+            "spec = \"0.1\"\n[fragments.frontmatter]\nlabel = { type = \"string\", inline = \"code\" } #!\n",
+        ),
+        case(
+            "model-inline-field",
+            Some("nested"),
+            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nmeta = { type = \"object\", fields = { label = { type = \"string\", inline = \"code\" } } } #!\n",
         ),
         case(
             "model-pattern-syntax",

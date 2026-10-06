@@ -141,18 +141,20 @@ impl Loader<'_> {
                 {
                     // Under the `astro` profile, `slug` is
                     // the entry id Astro's loader uses instead of the path.
+                    // The site output writes `inline` fields' formatted form
+                    // under `formatted`.
                     let reserved: &dyn Fn(&str) -> bool =
-                        &|n| matches!(n, "available" | "variant" | "slug");
+                        &|n| matches!(n, "available" | "variant" | "slug" | "formatted");
                     for (fname, span, _) in entries(ft) {
                         if reserved(fname) {
                             let issue = self
                                 .issue(diagnostics::MODEL_FIELD_RESERVED, span)
                                 .with_arg("field", fname)
                                 .with_arg("type", name);
-                            self.push(if fname == "slug" {
-                                issue.with_variant("slug")
-                            } else {
-                                issue
+                            self.push(match fname {
+                                "slug" => issue.with_variant("slug"),
+                                "formatted" => issue.with_variant("formatted"),
+                                _ => issue,
                             });
                         }
                     }
@@ -183,6 +185,7 @@ impl Loader<'_> {
                         required: true,
                         default: None,
                         phrases: false,
+                        inline: None,
                         description: None,
                     }],
                 },

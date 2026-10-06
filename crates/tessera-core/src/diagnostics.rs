@@ -453,6 +453,9 @@ pub const SOURCE_COPY_UNLOCKED: DiagnosticSlug = DiagnosticSlug("source-copy-unl
 /// `ASC140`, warning, file level: SPEC §8.2, "Source copies | A copy that no snippet uses".
 pub const SOURCE_COPY_UNUSED: DiagnosticSlug = DiagnosticSlug("source-copy-unused");
 
+/// `ASC141`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-field");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -595,4 +598,5 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_CHANGED,
     SOURCE_COPY_UNLOCKED,
     SOURCE_COPY_UNUSED,
+    MODEL_INLINE_FIELD,
 ];

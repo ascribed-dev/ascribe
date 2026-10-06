@@ -446,6 +446,22 @@ fn a_title_change_changes_the_page_with_no_block_changes() {
 }
 
 #[test]
+fn a_code_span_added_to_a_title_that_reads_them_changes_the_title() {
+    let model = "spec = \"0.1\"\n[types.page]\ndefault = true\n[types.page.frontmatter]\ntitle = { type = \"string\", inline = \"code\" }\n[builds.site]\n";
+    let a = version(model, &[("install.md", PAGE)]);
+    let b = version(
+        model,
+        &[(
+            "install.md",
+            &PAGE.replace("title: Install", "title: \"`Install`\""),
+        )],
+    );
+    let page = page(&a, &b);
+    assert_eq!(page.status, PageStatus::Changed);
+    assert_eq!(page.page_changed, ["title"]);
+}
+
+#[test]
 fn other_frontmatter_and_availability_are_named_apart_from_the_title() {
     let model = "spec = \"0.1\"\n[dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\n[builds.site]\n";
     let a = version(model, &[("install.md", PAGE)]);

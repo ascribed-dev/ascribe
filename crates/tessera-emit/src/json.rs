@@ -7,6 +7,7 @@
 use serde::Serialize;
 use tessera_core::availability::parse_availability;
 use tessera_core::{AssetUse, FileId, Location, RelPath, Span};
+use tessera_model::Segment;
 use tessera_resolve::{
     Annotation, Availability, GlossaryUse, HeadingIds, IncludeSite, LinkTarget, RefKind,
     ResolvedBlock, ResolvedKind, ResolvedLink, ResolvedPage, Scope, Substitution,
@@ -65,6 +66,10 @@ struct PageDoc {
     site: Option<String>,
     title: Option<String>,
     frontmatter: Option<serde_json::Value>,
+    /// The fields read with `inline = "code"`, each as text and code
+    /// inlines; their plain text is in `frontmatter`.
+    #[serde(skip_serializing_if = "serde_json::Map::is_empty")]
+    formatted: serde_json::Map<String, serde_json::Value>,
     availability: Option<AvailabilityJson>,
     headings: Vec<HeadingJson>,
     assets: Vec<AssetJson>,
@@ -390,6 +395,22 @@ enum InlineBody {
 // ---------------------------------------------------------------------------
 // Building it
 
+/// A formatted field's value: `{ "type": "text" | "code", "value": … }` for
+/// each piece, as inlines are written but without spans, since the value
+/// comes from the frontmatter.
+fn formatted_value(segments: &[Segment]) -> serde_json::Value {
+    segments
+        .iter()
+        .map(|segment| {
+            let (kind, value) = match segment {
+                Segment::Text(v) => ("text", v),
+                Segment::Code(v) => ("code", v),
+            };
+            serde_json::json!({ "type": kind, "value": value })
+        })
+        .collect()
+}
+
 struct Writer<'a, 'c> {
     cx: &'a PageContext<'c>,
 }
@@ -411,6 +432,11 @@ impl Writer<'_, '_> {
                 .frontmatter
                 .as_ref()
                 .and_then(|f| serde_json::to_value(f).ok()),
+            formatted: page
+                .formatted
+                .iter()
+                .map(|field| (field.name.clone(), formatted_value(&field.segments)))
+                .collect(),
             availability: page.availability.as_deref().map(|a| self.availability(a)),
             headings: page
                 .headings()

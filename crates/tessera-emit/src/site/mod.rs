@@ -5,7 +5,7 @@
 //!
 //! | Source | Site output |
 //! |---|---|
-//! | Frontmatter | Passed through; `available` as a list of targets |
+//! | Frontmatter | Passed through; `available` as a list of targets; `inline` fields as plain text, and as HTML under `formatted` |
 //! | Heading | An ATX heading ending in a `<ascribe-attributes>` marker with its page id |
 //! | Image with attributes | The image, then a marker with the attributes |
 //! | `@note` | `<ascribe-note type label heading>` wrapping the content |

@@ -22,6 +22,7 @@ use std::sync::Arc;
 
 use tessera_core::availability::AvailabilitySpec;
 use tessera_core::{FileId, Location, RelPath, Span};
+use tessera_model::Segment;
 use tessera_syntax::{Block, Bound, DirectiveLine, EndLine};
 
 use crate::expand::{IncludeSite, PageProblem};
@@ -44,8 +45,14 @@ pub struct ResolvedPage {
     /// model says take them (`phrases = true`). `None` when the file has no
     /// frontmatter or it isn't valid YAML.
     pub frontmatter: Option<serde_yaml_ng::Value>,
-    /// The page's title: the frontmatter `title`, substituted.
+    /// The page's title as plain text: the frontmatter `title`, substituted,
+    /// and without code spans' backticks when the field sets `inline`.
     pub title: Option<String>,
+    /// The fields whose values are read with inline markup (`inline =
+    /// "code"`), in declaration order, each in pieces. A field the page
+    /// leaves out has its default's. The plain text of each is in
+    /// [`ResolvedPage::frontmatter`].
+    pub formatted: Vec<FormattedField>,
     /// The page-level availability (the frontmatter `available`, after
     /// feature keys), which every node inherits unless it has its own.
     pub availability: Option<Arc<Availability>>,
@@ -63,7 +70,24 @@ pub struct ResolvedPage {
     pub problems: Vec<PageProblem>,
 }
 
+/// A frontmatter field read with inline markup.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FormattedField {
+    /// The field's name.
+    pub name: String,
+    /// Its value: text, with phrases substituted, and code spans.
+    pub segments: Vec<Segment>,
+}
+
 impl ResolvedPage {
+    /// The title in pieces, when `title` sets `inline`.
+    pub fn formatted_title(&self) -> Option<&[Segment]> {
+        self.formatted
+            .iter()
+            .find(|f| f.name == "title")
+            .map(|f| f.segments.as_slice())
+    }
+
     /// Calls `f` on every block, in document order, a block before the
     /// blocks inside it.
     pub fn visit<'a>(&'a self, f: &mut impl FnMut(&'a ResolvedBlock)) {

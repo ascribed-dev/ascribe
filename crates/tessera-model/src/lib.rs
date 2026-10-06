@@ -10,6 +10,7 @@
 //! |---|---|
 //! | [`model`] | [`ContentModel`], its parts, and the queries other crates ask |
 //! | [`types`] | Field types, and [`validate_frontmatter`] |
+//! | [`inline`] | Code spans in a field that sets `inline = "code"` |
 //! | [`pattern`] | [`Pattern`]: the glob syntax of `files` and fragment patterns |
 //! | [`lock`] | [`Lock`]: `ascribe.lock`, the pins of sources in other repositories |
 //!
@@ -30,6 +31,7 @@
 //! returned issues include the warnings found before the failure.
 
 mod fields;
+pub mod inline;
 mod loader;
 pub mod lock;
 pub mod model;
@@ -41,6 +43,7 @@ pub mod types;
 
 use std::path::Path;
 
+pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash};
 pub use model::*;
 pub use names::suggest;

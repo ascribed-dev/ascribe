@@ -5,6 +5,7 @@ use serde_yaml_ng::Value;
 use tessera_core::{AttributeSchema, AttributeType, DefaultValue, SetMember, Span, diagnostics};
 use toml::de::{DeTable, DeValue};
 
+use crate::inline::InlineMarkup;
 use crate::loader::{Loader, NameRule};
 use crate::toml_util::{V, describe, entries, join, sp, to_yaml};
 use crate::types::{Field, FieldType, default_mismatch};
@@ -255,6 +256,8 @@ struct Common {
     fields: Vec<Field>,
     default: Option<(Span, &'static str)>,
     phrases: bool,
+    /// `inline`, with the span of its value.
+    inline: Option<(InlineMarkup, Span)>,
     description: Option<String>,
 }
 
@@ -266,6 +269,15 @@ impl Loader<'_> {
         t: &DeTable<'_>,
         reserved: Option<&dyn Fn(&str) -> bool>,
     ) -> Vec<Field> {
+        // `inline` is for a content type's own fields: the outputs carry a
+        // formatted form only for those.
+        let place = if path.starts_with("types.") && path.ends_with(".frontmatter") {
+            None
+        } else if path.starts_with("fragments.") {
+            Some("`[fragments.frontmatter]`")
+        } else {
+            Some("an object")
+        };
         let mut out = Vec::new();
         for (name, name_span, item) in entries(t) {
             let ok = self.name_ok(name, name_span, "frontmatter field", NameRule::NameWord);
@@ -278,7 +290,7 @@ impl Loader<'_> {
                 continue;
             }
             let p = join(path, name);
-            if let Some(f) = self.field(&p, name, item) {
+            if let Some(f) = self.field(&p, name, item, place) {
                 out.push(f);
             }
         }
@@ -317,7 +329,7 @@ impl Loader<'_> {
         out
     }
 
-    fn field(&mut self, path: &str, name: &str, v: &V<'_>) -> Option<Field> {
+    fn field(&mut self, path: &str, name: &str, v: &V<'_>, place: Option<&str>) -> Option<Field> {
         let c = self.common(path, name, v, Kind::Field)?;
         let ty = to_field_type(&c.base, &c.values, &c.fields);
         if c.phrases && !phrase_capable(&ty) {
@@ -326,6 +338,25 @@ impl Loader<'_> {
                     .with_arg("field", name)
                     .with_arg("type", base_text(&c.base)),
             );
+        }
+        let mut inline = None;
+        if let Some((markup, span)) = c.inline {
+            if let Some(place) = place {
+                self.push(
+                    self.issue(diagnostics::MODEL_INLINE_FIELD, span)
+                        .with_variant("nested")
+                        .with_arg("field", name)
+                        .with_arg("place", place),
+                );
+            } else if ty != FieldType::String {
+                self.push(
+                    self.issue(diagnostics::MODEL_INLINE_FIELD, span)
+                        .with_arg("field", name)
+                        .with_arg("type", base_text(&c.base)),
+                );
+            } else {
+                inline = Some(markup);
+            }
         }
         let mut default = None;
         if let Some((span, _)) = c.default {
@@ -360,6 +391,7 @@ impl Loader<'_> {
             ty,
             default,
             phrases: c.phrases,
+            inline,
             description: c.description,
         })
     }
@@ -467,6 +499,7 @@ impl Loader<'_> {
                         "values",
                         "default",
                         "phrases",
+                        "inline",
                         "description",
                     ],
                     Kind::Attribute => &["type", "values", "default", "description"],
@@ -510,6 +543,7 @@ impl Loader<'_> {
             fields: Vec::new(),
             default: None,
             phrases: false,
+            inline: None,
             description: None,
         };
         let Some(t) = table else { return Some(c) };
@@ -579,6 +613,18 @@ impl Loader<'_> {
         }
         if let Some(p) = t.get("phrases") {
             c.phrases = self.boolean(&format!("{path}.phrases"), p).unwrap_or(false);
+        }
+        if let Some(i) = t.get("inline")
+            && let Some(value) = self.string(&format!("{path}.inline"), i, false)
+        {
+            match InlineMarkup::from_name(&value) {
+                Some(markup) => c.inline = Some((markup, sp(i))),
+                None => self.push(
+                    self.issue(diagnostics::MODEL_INLINE_FIELD, sp(i))
+                        .with_variant("value")
+                        .with_arg("value", value),
+                ),
+            }
         }
         if let Some(d) = t.get("description") {
             c.description = self.string(&format!("{path}.description"), d, true);

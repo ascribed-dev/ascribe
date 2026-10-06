@@ -9,11 +9,11 @@
 
 use serde_yaml_ng::Value;
 use tessera_core::{RelPath, Span};
-use tessera_model::{ContentModel, FieldType, TypeMatch};
+use tessera_model::{ContentModel, FieldType, TypeMatch, inline};
 use tessera_syntax::{BlockKind, Inline, InlineKind, LinkForm, Phrase};
 
 use super::inlines::own_lists_mut;
-use super::tree::{ResolvedBlock, ResolvedKind, Substitution};
+use super::tree::{FormattedField, ResolvedBlock, ResolvedKind, Substitution};
 use crate::index::substitute;
 use crate::project::Project;
 use crate::references::destination_phrases;
@@ -174,24 +174,54 @@ pub(crate) fn merge_text(list: &mut Vec<Inline>) {
 
 /// The frontmatter with phrases substituted in the fields the content model
 /// says take them (`phrases = true`): a `string`, or
-/// each item of a `list(string)`, however deep in objects.
-pub(crate) fn frontmatter(model: &ContentModel, path: &RelPath, value: &Value) -> Value {
+/// each item of a `list(string)`, however deep in objects. A field read with
+/// inline markup (`inline = "code"`) becomes its plain text, and its pieces
+/// are returned beside it, with those of the defaults of such fields the
+/// page leaves out.
+pub(crate) fn frontmatter(
+    model: &ContentModel,
+    path: &RelPath,
+    value: &Value,
+) -> (Value, Vec<FormattedField>) {
     let mut out = value.clone();
     let fields = match model.type_for(path.as_str()) {
         TypeMatch::One(t) => &t.frontmatter.fields,
-        _ => return out,
+        _ => return (out, Vec::new()),
     };
+    let mut formatted = Vec::new();
     if let Value::Mapping(map) = &mut out {
-        for (key, item) in map.iter_mut() {
-            if let Some(field) = key
-                .as_str()
-                .and_then(|k| fields.iter().find(|f| f.name == k))
-            {
-                typed(item, &field.ty, field.phrases, model);
+        for field in fields {
+            let Some(item) = map.get_mut(field.name.as_str()) else {
+                // Phrases aren't substituted in a default, so they aren't
+                // here either.
+                if field.inline.is_some()
+                    && let Some(Value::String(text)) = &field.default
+                {
+                    formatted.push(FormattedField {
+                        name: field.name.clone(),
+                        segments: inline::parse(text, &|_| None),
+                    });
+                }
+                continue;
+            };
+            match item {
+                Value::String(text) if field.inline.is_some() => {
+                    let segments = if field.phrases {
+                        inline::parse(text, &|key| model.phrase(key).map(str::to_owned))
+                    } else {
+                        inline::parse(text, &|_| None)
+                    };
+                    *text = inline::plain_text(&segments);
+                    formatted.push(FormattedField {
+                        name: field.name.clone(),
+                        segments,
+                    });
+                }
+                _ => typed(item, &field.ty, field.phrases, model),
             }
         }
     }
-    out
+    (out, formatted)
 }
 
 fn typed(value: &mut Value, ty: &FieldType, phrases: bool, model: &ContentModel) {
