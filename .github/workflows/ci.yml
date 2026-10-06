@@ -22,8 +22,9 @@ name: CI
 #   or removing a label starts a run, so the label counts as soon as it's
 #   added, and stops counting as soon as it's removed. A change to the
 #   outputs that a decision in project-docs/decisions.md accepts adds the
-#   label `outputs changed` too: the comparison still runs and lists every
-#   difference, but warns instead of failing.
+#   label `outputs changed` too, and lists the files it accepts in the
+#   description (see the job): those still show, but only another difference
+#   fails.
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
@@ -163,6 +164,10 @@ jobs:
       needs.changes.outputs.code == 'true' &&
       contains(github.event.pull_request.labels.*.name, 'optimization')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # To read the description's accepted differences.
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -178,19 +183,37 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # The checkout is the merge commit GitHub made; its first parent is the
       # base it was made on. The base branch's tip may have moved on since.
+      # With the label `outputs changed`, the differences a decision accepts
+      # are listed in the pull request's description, one pattern a line
+      # (scripts/compare/outputs.ts --accept), in a block of their own:
+      #
+      #   ```outputs changed
+      #   *: ascribe diff --base HEAD --format html.txt
+      #   ```
+      #
+      # It's read here rather than from the event, so a re-run sees an edit.
       - env:
           ACCEPTED: ${{ contains(github.event.pull_request.labels.*.name, 'outputs changed') }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
           set -o pipefail
-          status=0
-          node scripts/compare/outputs.ts --base HEAD^1 --out "$RUNNER_TEMP/compare" |
-            tee "$RUNNER_TEMP/compare.txt" || status=$?
-          # 1 is a difference; 2 is a comparison that couldn't run, which no label excuses.
-          if [ "$status" = 1 ] && [ "$ACCEPTED" = true ]; then
-            echo "::warning::The outputs changed, and the pull request is labeled \`outputs changed\`: check the differences above are the ones its decision accepts."
-            exit 0
+          accept=()
+          if [ "$ACCEPTED" = true ]; then
+            body=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .body)
+            while IFS= read -r pattern; do
+              if [ -n "$pattern" ]; then
+                accept+=(--accept "$pattern")
+              fi
+            done < <(printf '%s\n' "$body" | tr -d '\r' |
+              awk '/^```outputs changed[[:space:]]*$/ { on = 1; next } on && /^```/ { on = 0 } on')
+            if [ "${#accept[@]}" = 0 ]; then
+              echo "::error::The pull request is labeled \`outputs changed\`, but its description has no \`\`\`outputs changed block of patterns."
+              exit 2
+            fi
           fi
-          exit "$status"
+          node scripts/compare/outputs.ts --base HEAD^1 --out "$RUNNER_TEMP/compare" "${accept[@]}" |
+            tee "$RUNNER_TEMP/compare.txt"
       - if: always()
         run: |
           if [ -f "$RUNNER_TEMP/compare.txt" ]; then

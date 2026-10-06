@@ -2,6 +2,7 @@
 // requests labeled `optimization` (ci.yml).
 import { expect, test } from "vitest";
 import {
+  Acceptance,
   isBinary,
   normalize,
   outputDir,
@@ -52,4 +53,20 @@ test("binary files are left as they are", () => {
   const bytes = Buffer.from([0x89, 0x50, 0x00, 0x2f, 0x74, 0x6d, 0x70]);
   expect(isBinary(bytes)).toBe(true);
   expect(normalize(bytes, ["/tmp"])).toEqual(bytes);
+});
+
+test("an accepted difference matches its pattern whole, with `*` for anything", () => {
+  const accept = new Acceptance([
+    "*: ascribe diff --base HEAD --format html.txt",
+    "examples/astro-site/dist: index.html",
+    "docs: (unused)",
+  ]);
+  expect(accept.accepts("examples/monorepo/docs: ascribe diff --base HEAD --format html.txt")).toBe(
+    true,
+  );
+  expect(accept.accepts("docs: ascribe diff --base HEAD --format json.txt")).toBe(false);
+  expect(accept.accepts("examples/astro-site/dist: index.html")).toBe(true);
+  expect(accept.accepts("examples/astro-site/dist: guides/index.html")).toBe(false);
+  expect(accept.accepts("examples/astro-site/dist: index.htmlx")).toBe(false);
+  expect(accept.unused()).toEqual(["docs: (unused)"]);
 });
