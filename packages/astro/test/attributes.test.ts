@@ -72,6 +72,15 @@ describe("findEdits", () => {
     expect(edits[0]?.target).toBe(image);
   });
 
+  it("gives a marker after a link to the link", () => {
+    const link = element("a", [text("API key")], { href: "/g#api-key", title: "A token." });
+    const paragraph = element("p", [link, open(' data-ascribe-term="api-key"'), close, text(" x")]);
+    const edits = findEdits({ type: "root", children: [paragraph] });
+    expect(edits).toHaveLength(1);
+    expect(edits[0]?.target).toBe(link);
+    expect(edits[0]?.attributes.map(toProperty)).toEqual([["dataAscribeTerm", "api-key"]]);
+  });
+
   it("removes all the whitespace before a heading's marker, across nodes", () => {
     const heading = element("h2", [text("A"), text(" \t"), text("\n"), open(' id="a"'), close]);
     const edits = findEdits({ type: "root", children: [heading] });

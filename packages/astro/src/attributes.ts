@@ -4,7 +4,8 @@
 // Both markdown processors Astro 7.3 can run hand a user plugin the same tree
 // at the same point: after markdown became hast, before Astro's own image and
 // heading-id passes. A marker is then two adjacent `raw` nodes (an open tag and
-// a close tag), and the elements it applies to are `<h1>`–`<h6>` and `<img>`.
+// a close tag), and the elements it applies to are `<h1>`–`<h6>`, `<img>`,
+// and `<a>`.
 // An anchor comment is a `raw` node beside the block it names. So the rules
 // live here once, as pure functions from a tree to a list of edits, and each
 // processor's adapter applies the edits with its own means (`rehype.ts`
@@ -26,7 +27,7 @@ export type Attribute = readonly [name: string, value: string];
 
 /** What applying one marker changes. */
 export interface Edit {
-  /** The heading or image that gets the attributes. */
+  /** The heading, image, or link that gets the attributes. */
   target: HastNode;
   /** The marker's attributes, in the order written. */
   attributes: Attribute[];
@@ -45,7 +46,7 @@ const CLOSE = "</ascribe-attributes>";
 const ATTRIBUTE = / ([a-z][a-z0-9-]*)="([^"]*)"/g;
 const HEADING = /^h[1-6]$/;
 
-/** Finds every marker that applies to a heading or an image in `root`. */
+/** Finds every marker that applies to a heading, an image, or a link in `root`. */
 export function findEdits(root: HastNode): Edit[] {
   const edits: Edit[] = [];
   visitParents(root, (parent) => {
@@ -58,8 +59,12 @@ export function findEdits(root: HastNode): Edit[] {
       const last = i + length - 1;
       const marker = children.slice(i, last + 1);
       const before = children[i - 1];
-      if (before !== undefined && before.type === "element" && before.tagName === "img") {
-        // Directly after an image, whatever else the marker ends.
+      if (
+        before !== undefined &&
+        before.type === "element" &&
+        (before.tagName === "img" || before.tagName === "a")
+      ) {
+        // Directly after an image or a link, whatever else the marker ends.
         edits.push({ target: before, attributes, remove: marker, trim: [] });
       } else if (isHeading && last === children.length - 1) {
         edits.push({

@@ -46,6 +46,11 @@ covers = ["image-in-text", "image-in-link"]
 description = "Two images in a paragraph with text around them, and an image inside a link."
 
 [[fixture]]
+name = "link-term"
+covers = ["link-inline"]
+description = "Links followed by markers, one with code as its text, give the <a> its attributes; a marker after a space doesn't."
+
+[[fixture]]
 name = "attribute-values"
 covers = ["attribute-values", "heading"]
 description = "Escaped quotes, ampersands, and angle brackets in marker values decode; spaces and commas stay."
