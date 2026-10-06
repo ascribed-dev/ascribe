@@ -23,12 +23,12 @@ import { BuildChoices, previewProblems } from "./routing.js";
 import { findDevServer, noDevServerMessage, pageUrl, sectionAt } from "./site.js";
 
 /** The custom request the language server answers (`crates/tessera-lsp/README.md`). */
-export const PREVIEW_REQUEST = "ascribe/preview";
+const PREVIEW_REQUEST = "ascribe/preview";
 
-export const VIEW_TYPE = "ascribe.preview";
+const VIEW_TYPE = "ascribe.preview";
 
 /** How long after the last change the preview asks for a new render. */
-export const DEBOUNCE_MS = 100;
+const DEBOUNCE_MS = 100;
 
 /** How long after the last change on disk (an image replaced, a file created). */
 const DISK_DEBOUNCE_MS = 250;
@@ -87,7 +87,7 @@ export interface PreviewApi {
 }
 
 /** The site preview, for tests. */
-export interface SiteApi {
+interface SiteApi {
   /** From now on, records the addresses it would open in the browser instead of opening them. */
   captureExternal(): void;
   /** The addresses opened in the browser, in order. */
@@ -1156,8 +1156,6 @@ function affectsProject(document: vscode.TextDocument): boolean {
 function panelTitle(document: vscode.TextDocument | undefined): string {
   return document ? `Preview: ${path.basename(document.uri.fsPath)}` : "Ascribe preview";
 }
-
-export { isExternal };
 
 /** Whether the preview and the editor scroll together, in a direction, for a document. */
 function scrollSetting(

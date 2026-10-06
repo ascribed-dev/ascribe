@@ -33,6 +33,8 @@ jobs:
       - run: pnpm --filter @ascribed/elements exec playwright-core install --with-deps chromium firefox webkit
       - run: pnpm format:check
       - run: pnpm lint
+      # Unused files, exports, and dependencies (knip.jsonc).
+      - run: pnpm exec knip
       # Astro and VS Code resolve declarations from these generated package builds.
       - run: pnpm --filter @ascribed/cli build
       - run: pnpm --filter @ascribed/elements build

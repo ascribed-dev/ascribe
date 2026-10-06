@@ -18,9 +18,6 @@ export const REQUEST_EVENT = "ascribe:review:request";
 export const RESULT_EVENT = "ascribe:review:result";
 export const CHANGED_EVENT = "ascribe:review:changed";
 
-/** What the page asks for, besides the overlay's own requests (`OverlayMethod`). */
-export type AppMethod = "status" | "start" | "stop" | "page" | "refresh";
-
 export interface Request {
   /** The page's own id, made when it loads. */
   tab: string;

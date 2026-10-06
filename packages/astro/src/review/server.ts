@@ -378,7 +378,7 @@ const NETWORK_PROBLEM =
   "the dev server is listening on the network (`--host`), so anyone who can reach it could comment as you";
 
 /** Whether Vite's `server.host`, or the address the server listens on, keeps the server on this machine: unset, `false`, or a loopback name. */
-export function isLoopback(host: unknown): boolean {
+function isLoopback(host: unknown): boolean {
   if (host === undefined || host === false) return true;
   if (typeof host !== "string") return false;
   const name = host.toLowerCase().replace(/^\[(.*)\]$/, "$1");

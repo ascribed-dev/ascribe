@@ -40,7 +40,7 @@ export interface BuildData {
 }
 
 /** One changed page: `ascribe diff --format json`'s, and its renderings. */
-export interface PageData {
+interface PageData {
   path: string;
   route: string;
   status: "added" | "removed" | "changed";
@@ -57,13 +57,13 @@ export interface PageData {
   omitted: boolean;
 }
 
-export interface RenderedPage {
+interface RenderedPage {
   html: string;
   /** Each image reference the HTML writes, and what it is. */
   images: Record<string, ImageRef>;
 }
 
-export interface ImageRef {
+interface ImageRef {
   /** The image's source file. */
   path: string;
   /** Its key in `images`, when it's included. */
@@ -108,7 +108,7 @@ function button(
 }
 
 /** `2 changed · 1 added`. */
-export function describeCounts(counts: PageData["counts"]): string {
+function describeCounts(counts: PageData["counts"]): string {
   const parts: string[] = [];
   for (const kind of ["changed", "added", "removed", "moved"] as const) {
     if (counts[kind] > 0) parts.push(`${counts[kind]} ${kind}`);

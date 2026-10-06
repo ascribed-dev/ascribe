@@ -24,7 +24,7 @@ export function launchChromium(): Promise<Browser> {
 }
 
 /** A port nothing is listening on. */
-export function freePort(): Promise<number> {
+function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer();
     server.once("error", reject);

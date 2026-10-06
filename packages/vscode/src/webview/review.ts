@@ -21,7 +21,7 @@ import { againstText, threadsNotice } from "../preview/threadsText.js";
 import type { Threads } from "./threads.js";
 
 /** "10 changes on this page", or "3 of 10 on this page" while stepping through them. */
-export function position(total: number, at: number): string {
+function position(total: number, at: number): string {
   if (total === 0) return "No changes on this page";
   if (at >= 0 && at < total) return `${at + 1} of ${total} on this page`;
   return total === 1 ? "1 change on this page" : `${total} changes on this page`;

@@ -2,7 +2,7 @@ import * as path from "node:path";
 import { compareVersions, formatVersion, parseVersion, type Version } from "./version.js";
 
 /** Where a resolved binary came from, in the order they're tried. */
-export type BinarySource = "setting" | "project" | "bundled";
+type BinarySource = "setting" | "project" | "bundled";
 
 /** What binary resolution needs from the machine, so tests can fake it. */
 export interface BinaryEnvironment {
@@ -37,7 +37,7 @@ export interface ResolvedBinary {
 }
 
 /** No usable binary: what was tried, and what to do about it. */
-export interface BinaryNotFound {
+interface BinaryNotFound {
   readonly message: string;
   /** Each place looked at, and why it didn't work. */
   readonly tried: readonly string[];

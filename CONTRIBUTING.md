@@ -22,13 +22,15 @@ CI runs all of these, and every check must pass:
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
-pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
+cargo deny check && cargo machete
+pnpm format:check && pnpm lint && pnpm exec knip && pnpm typecheck && pnpm test
 ```
 
 - Behavior changes come with a conformance case in [tests/conformance](tests/conformance). Diagnostics are defined only in `tests/conformance/diagnostics.toml`; the diagnostics reference is generated from it.
 - Changes to `crates/comrak-tessera` follow [FORK.md](crates/comrak-tessera/FORK.md): mark each one `// TESSERA:` and update the table.
 - Libraries don't panic on user input; `unwrap` and `expect` are linted.
 - Dependencies come from Dependabot. Keep the toolchain, `.nvmrc`, and lockfiles current rather than pinning old versions.
+- Dependencies are audited. `cargo deny` ([deny.toml](deny.toml)) allows the licenses listed there and crates.io only, fails on a security advisory, and warns on a second version of a crate. `cargo machete` and `knip` ([knip.jsonc](knip.jsonc)) fail on an unused dependency, and `knip` on an unused file or export too. Where one is wrong, ignore the name in its configuration with a comment saying why. Install the Rust tools with `cargo install --locked cargo-deny@0.20.2 cargo-machete@0.9.2`, the versions `rust.yml` pins.
 
 A pull request runs them on Linux and Windows, and `main` runs them on Linux and macOS. Every platform, with the Astro end-to-end on each, runs every night. So a break that shows only on macOS or arm64 appears after the merge, not on the pull request: if your change is about paths, case, or links on one of those, start a full run from your branch (Actions → CI → Run workflow). A change to `project-docs/`, `reports/`, or `research_notes/` alone runs only the formatter.
 

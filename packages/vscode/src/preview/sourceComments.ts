@@ -18,7 +18,7 @@ import { messageOf, type ThreadsController } from "./threads.js";
 import { imagesAsLinks, showSourceComments } from "./threadsText.js";
 
 /** The GitHub Pull Requests extension, which shows review threads on source lines itself. */
-export const PULL_REQUESTS_EXTENSION = "GitHub.vscode-pull-request-github";
+const PULL_REQUESTS_EXTENSION = "GitHub.vscode-pull-request-github";
 
 /** A thread in the editor, as the tests see it. */
 export interface SourceThreadRecord {
