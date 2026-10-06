@@ -256,6 +256,9 @@ impl OutputDir {
         result
     }
 
+    // Longer than the lint allows from before it was on. Split it only while
+    // changing it for another reason.
+    #[allow(clippy::too_many_lines)]
     fn replace_staged(
         &self,
         build: &str,

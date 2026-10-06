@@ -805,6 +805,9 @@ fn show_attrs(attrs: &Attributes) -> String {
     format!("{{{}}}", parts.join(", "))
 }
 
+// Longer than the lint allows from before it was on. Split it only while
+// changing it for another reason.
+#[allow(clippy::too_many_lines)]
 fn compare_nodes(e: &Node, a: &Node, path: &str, diffs: &mut Vec<String>) {
     use Node::*;
     match (e, a) {

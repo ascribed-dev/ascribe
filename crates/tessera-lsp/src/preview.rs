@@ -331,6 +331,9 @@ impl Core {
 }
 
 /// Answers `ascribe/preview` for a target.
+// Longer than the lint allows from before it was on. Split it only while
+// changing it for another reason.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -> PreviewResult {
     let model = &*target.model;
     let editor = model.editor_default_build();
