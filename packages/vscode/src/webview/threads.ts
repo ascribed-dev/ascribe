@@ -23,6 +23,7 @@ import type {
   ThreadsView,
   ToWebview,
 } from "../preview/protocol.js";
+import { DATA_SOURCE, DATA_UI, DATA_VIA } from "../names.js";
 
 export class Threads {
   private overlay: Overlay | undefined;
@@ -164,8 +165,8 @@ export class Threads {
   /** Every anchored block on the page, in its order: the marks' and overlay's own elements aside. */
   private anchors(): Anchor[] {
     const anchors: Anchor[] = [];
-    for (const element of this.content.querySelectorAll("[data-ascribe-source]")) {
-      if (element.closest("[data-ascribe-ui]")) continue;
+    for (const element of this.content.querySelectorAll(`[${DATA_SOURCE}]`)) {
+      if (element.closest(`[${DATA_UI}]`)) continue;
       anchors.push(anchorOf(element));
     }
     return anchors;
@@ -199,7 +200,7 @@ export class Threads {
 
 function anchorOf(element: Element): Anchor {
   return {
-    source: element.getAttribute("data-ascribe-source") ?? "",
-    via: (element.getAttribute("data-ascribe-via") ?? "").split(" ").filter(Boolean),
+    source: element.getAttribute(DATA_SOURCE) ?? "",
+    via: (element.getAttribute(DATA_VIA) ?? "").split(" ").filter(Boolean),
   };
 }

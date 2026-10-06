@@ -33,7 +33,7 @@ mod frontmatter;
 mod inline;
 mod profile;
 
-pub(crate) use anchor::ANCHOR_START;
+pub(crate) use anchor::starts_anchor;
 pub use profile::{ASTRO_VERSION, AstroProfile};
 
 use tessera_core::{AssetPlacement, AssetUse, ConsumerProfile, RelPath};

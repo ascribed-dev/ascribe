@@ -20,7 +20,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
-use tessera_core::{AssetUse, RelPath};
+use tessera_core::{AssetUse, RelPath, names};
 use tessera_emit::assets::encode_path;
 use tessera_emit::{EmitContext, SiteEmitter, emit_page, render_site_html};
 use tessera_resolve::{AstroRouter, Project};
@@ -301,13 +301,15 @@ fn page_shell(title: &str, json: &str) -> String {
          <style>\n{STYLE}</style>\n\
          </head>\n\
          <body>\n\
-         <div id=\"ascribe-review\"><noscript>This report draws its pages with JavaScript; turn it on to see them.</noscript></div>\n\
-         <script type=\"application/json\" id=\"ascribe-review-data\">{json}</script>\n\
+         <div id=\"{root}\"><noscript>This report draws its pages with JavaScript; turn it on to see them.</noscript></div>\n\
+         <script type=\"application/json\" id=\"{data}\">{json}</script>\n\
          <script>{SCRIPT}</script>\n\
          </body>\n\
          </html>\n",
         version = env!("CARGO_PKG_VERSION"),
         title = escape_text(title),
+        root = names::ID_REPORT,
+        data = names::ID_REPORT_DATA,
     )
 }
 

@@ -2,6 +2,7 @@
 // made, and counts in words.
 import type { LocatedThread } from "../place/place.js";
 import type { Author } from "../shared/types.js";
+import { DATA_OVERLAY, DATA_UI } from "../names.js";
 
 /** `"1 comment"`, `"2 comments"`. */
 export function plural(count: number, one: string, many = `${one}s`): string {
@@ -171,8 +172,8 @@ export function blockText(block: Element): string {
     if (!(node instanceof Element)) return;
     const tag = node.tagName.toUpperCase();
     if (
-      node.hasAttribute("data-ascribe-overlay") ||
-      (node.hasAttribute("data-ascribe-ui") && tag !== "INS") ||
+      node.hasAttribute(DATA_OVERLAY) ||
+      (node.hasAttribute(DATA_UI) && tag !== "INS") ||
       ["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT"].includes(tag) ||
       unseen(node)
     ) {

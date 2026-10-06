@@ -149,6 +149,8 @@ They're meant to agree, and these tests hold them to it:
 | The commands' JSON reports | `crates/tessera-cli/src/report/`, `tessera-diff`, `tessera-sources` | The [command reference](docs/content/reference/cli.md) |
 | Diagnostics: codes, severities, messages | `tests/conformance/diagnostics.toml`, through `tessera_check::Registry` | The [diagnostics reference](docs/content/reference/diagnostics.md), generated from the registry |
 
+The names the site output, the HTML report, and review put on a page (elements, attributes, classes, and ids) have one home, `tessera_core::names` (`crates/tessera-core/src/names.rs`). The TypeScript imports them from a module generated from it in each package (`packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`), and `crates/tessera-core/tests/names.rs` fails on a literal of one anywhere else in source, and on a stylesheet, Astro template, or the docs site's code using a name that isn't declared.
+
 `SPEC.md`, the contracts in `docs/content/contracts/`, the commands' JSON, and the published packages' APIs are fixed lines: code behind them can change, and they don't change without a decision to change them.
 
 ## Tests
@@ -178,6 +180,7 @@ Some files are generated from a source, or copied from what the code writes, and
 | `tests/conformance/tests/docs.rs` | The diagnostics reference's fragments in `docs/content/_generated/` |
 | `crates/tessera-cli/src/docs.rs` | Each command's options in `docs/content/_generated/` |
 | `crates/tessera-cli/tests/output.rs` | The command output in `crates/tessera-cli/tests/output/` |
+| `crates/tessera-core/tests/names.rs` | The names Ascribe puts on a page, `packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`, from `crates/tessera-core/src/names.rs` |
 | `crates/tessera-emit/tests/site_anchors.rs` | The site-render fixtures' inputs and corpus in `tests/render/` |
 | `crates/tessera-emit/tests/zod.rs` | The generated schemas in `tests/zod/generated/` |
 | `packages/vscode/test/unit/docs.test.ts` | The extension's settings and commands in `docs/content/_generated/` |

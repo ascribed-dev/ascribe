@@ -3,6 +3,8 @@
 // (CSS generated content); with it, the group follows the WAI-ARIA tabs
 // pattern.
 
+import { ELEMENT_TAB } from "./names.js";
+
 const STORAGE_PREFIX = "ascribe-tabs:";
 
 /** Choices made this page load, for readers whose storage is unavailable. */
@@ -65,7 +67,7 @@ export class AscribeTabs extends HTMLElement {
   #setup(): void {
     if (!this.isConnected || this.#ready) return;
     this.#tabs = Array.from(this.children).filter(
-      (child): child is HTMLElement => child.localName === "ascribe-tab",
+      (child): child is HTMLElement => child.localName === ELEMENT_TAB,
     );
     if (this.#tabs.length === 0) return;
     this.#ready = true;

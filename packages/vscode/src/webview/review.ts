@@ -19,6 +19,14 @@ import { countsText as breakdown, errorsText } from "../preview/counts.js";
 import type { FromWebview, ReviewView } from "../preview/protocol.js";
 import { againstText, threadsNotice } from "../preview/threadsText.js";
 import type { Threads } from "./threads.js";
+import {
+  CLASS_LABEL,
+  CLASS_LABEL_BEFORE,
+  CLASS_MARKS,
+  DATA_SHOW,
+  DATA_SOURCE,
+  DATA_VIA,
+} from "../names.js";
 
 /** "10 changes on this page", or "3 of 10 on this page" while stepping through them. */
 function position(total: number, at: number): string {
@@ -106,8 +114,8 @@ export class Review {
       this.stopSources?.();
       this.stopSources = undefined;
       clearMarks(this.content);
-      this.content.classList.remove("ascribe-marks");
-      this.content.removeAttribute("data-ascribe-show");
+      this.content.classList.remove(CLASS_MARKS);
+      this.content.removeAttribute(DATA_SHOW);
       return;
     }
     let was: ParentNode | null = null;
@@ -121,10 +129,10 @@ export class Review {
     this.marks = markChanges(this.content, view.page?.changes ?? [], { was });
     setShow(this.content, this.show);
     for (const mark of this.marks) {
-      const source = mark.element.getAttribute("data-ascribe-source");
+      const source = mark.element.getAttribute(DATA_SOURCE);
       const label = labelOf(mark.element);
       if (source === null || !label) continue;
-      label.title = `Open ${describeSource(source, mark.element.getAttribute("data-ascribe-via"))}`;
+      label.title = `Open ${describeSource(source, mark.element.getAttribute(DATA_VIA))}`;
       label.tabIndex = 0;
       label.setAttribute("role", "link");
     }
@@ -133,10 +141,10 @@ export class Review {
 
   /** A click on a mark's label opens the block's source. */
   private clickLabel(event: Event): void {
-    const label = event.target instanceof Element ? event.target.closest(".ascribe-label") : null;
+    const label = event.target instanceof Element ? event.target.closest(`.${CLASS_LABEL}`) : null;
     if (!label || !this.content.contains(label)) return;
     const mark = this.marks.find((m) => labelOf(m.element) === label);
-    const source = mark?.element.getAttribute("data-ascribe-source");
+    const source = mark?.element.getAttribute(DATA_SOURCE);
     if (!source) return;
     event.preventDefault();
     event.stopPropagation();
@@ -302,10 +310,10 @@ export class Review {
 
 /** The label the marks put on a block: inside it at its start, or just before it. */
 function labelOf(element: HTMLElement): HTMLElement | undefined {
-  const inside = element.querySelector<HTMLElement>(":scope > .ascribe-label");
+  const inside = element.querySelector<HTMLElement>(`:scope > .${CLASS_LABEL}`);
   if (inside) return inside;
   const before = element.previousElementSibling;
-  return before instanceof HTMLElement && before.classList.contains("ascribe-label-before")
+  return before instanceof HTMLElement && before.classList.contains(CLASS_LABEL_BEFORE)
     ? before
     : undefined;
 }

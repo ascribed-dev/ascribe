@@ -583,7 +583,7 @@ pub(crate) fn list(
 pub(crate) fn starts_nested(chunk: &str) -> bool {
     let mut lines = chunk.lines();
     let mut first = lines.next().unwrap_or("");
-    if first.starts_with(crate::site::ANCHOR_START) {
+    if crate::site::starts_anchor(first) {
         first = lines.next().unwrap_or("");
     }
     let digits = first.chars().take_while(char::is_ascii_digit).count();

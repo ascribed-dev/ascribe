@@ -4,6 +4,7 @@
 // DOM by itself.
 import { findBlock, parseSource } from "@ascribed/review/marks";
 import type { Change } from "../review/protocol.js";
+import { DATA_SOURCE, DATA_UI, DATA_VIA } from "../names.js";
 
 /** An anchor, as the marks and the overlay take it. */
 export interface Anchor {
@@ -13,8 +14,8 @@ export interface Anchor {
 
 /** The page's anchored blocks, in order, leaving out review's own elements. */
 export function anchoredBlocks(doc: Document): HTMLElement[] {
-  return Array.from(doc.querySelectorAll<HTMLElement>("[data-ascribe-source]")).filter(
-    (element) => element.closest("[data-ascribe-ui]") === null,
+  return Array.from(doc.querySelectorAll<HTMLElement>(`[${DATA_SOURCE}]`)).filter(
+    (element) => element.closest(`[${DATA_UI}]`) === null,
   );
 }
 
@@ -27,7 +28,7 @@ export function contentRoot(blocks: readonly HTMLElement[]): HTMLElement | undef
   if (first === undefined) return undefined;
   let root: HTMLElement | null = first.parentElement;
   while (root && !blocks.every((block) => root?.contains(block))) root = root.parentElement;
-  while (root?.hasAttribute("data-ascribe-source")) root = root.parentElement;
+  while (root?.hasAttribute(DATA_SOURCE)) root = root.parentElement;
   if (!root || root === first.ownerDocument.documentElement) return first.ownerDocument.body;
   return root;
 }
@@ -38,8 +39,8 @@ export function contentRoot(blocks: readonly HTMLElement[]): HTMLElement | undef
  */
 export function pageFile(blocks: readonly HTMLElement[]): string | null {
   for (const block of blocks) {
-    if ((block.getAttribute("data-ascribe-via") ?? "").trim() !== "") continue;
-    const parsed = parseSource(block.getAttribute("data-ascribe-source") ?? "");
+    if ((block.getAttribute(DATA_VIA) ?? "").trim() !== "") continue;
+    const parsed = parseSource(block.getAttribute(DATA_SOURCE) ?? "");
     if (parsed) return parsed.path;
   }
   return null;
@@ -48,8 +49,8 @@ export function pageFile(blocks: readonly HTMLElement[]): string | null {
 /** An element's anchor. */
 export function anchorOf(element: Element): Anchor {
   return {
-    source: element.getAttribute("data-ascribe-source") ?? "",
-    via: (element.getAttribute("data-ascribe-via") ?? "").split(" ").filter(Boolean),
+    source: element.getAttribute(DATA_SOURCE) ?? "",
+    via: (element.getAttribute(DATA_VIA) ?? "").split(" ").filter(Boolean),
   };
 }
 
