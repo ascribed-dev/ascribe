@@ -1,5 +1,5 @@
 ---
-title: ascribe.toml format contract
+title: "`ascribe.toml` format contract"
 description: The normative contract for the content model file, with the rules a loader enforces and the decisions behind them.
 ---
 

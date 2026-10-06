@@ -9,15 +9,17 @@ output-dir = ".ascribe/build"
 [types.guide]
 default = true
 
+# Titles can show code ("`ascribe.toml` reference"); the site's layout uses
+# the formatted title for the heading and the sidebar.
 [types.guide.frontmatter]
-title = "string"
+title = { type = "string", inline = "code" }
 description = "string"
 
 [types.reference]
 files = ["reference/**", "contracts/**"]
 
 [types.reference.frontmatter]
-title = "string"
+title = { type = "string", inline = "code" }
 description = "string"
 since = "string?"
 

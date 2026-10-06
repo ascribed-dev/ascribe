@@ -1,6 +1,6 @@
 ---
 // The site's navigation, from src/nav.ts, with each page's title from the
-// collection. A page named in nav.ts that the collection doesn't have fails
+// collection, formatted (its code spans as <code>). A page named in nav.ts that the collection doesn't have fails
 // the build.
 import { getEntry } from "astro:content";
 import { entryId, nav } from "../nav.ts";
@@ -20,7 +20,7 @@ const groups = await Promise.all(
         const id = entryId(file);
         const entry = await getEntry("docs", id);
         if (!entry) throw new Error(`src/nav.ts names ${file}, which isn't a page of the site`);
-        return { id, title: entry.data.title, href: id === "index" ? base : `${base}${id}/` };
+        return { id, title: entry.data.formatted.title, href: id === "index" ? base : `${base}${id}/` };
       }),
     ),
   })),
@@ -36,7 +36,7 @@ const groups = await Promise.all(
           {group.pages.map((page) => (
             <li>
               <a href={page.href} aria-current={page.id === current ? "page" : undefined}>
-                {page.title}
+                <Fragment set:html={page.title} />
               </a>
             </li>
           ))}
