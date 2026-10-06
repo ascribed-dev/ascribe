@@ -172,13 +172,9 @@ When it starts, a server logs the `ascribe.toml` it uses: `using the project at 
 
 ## Settings
 
-<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (issue #82 in this repository). -->
-
 @include: ../_generated/editor-settings.md
 
 ## Commands
-
-<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (issue #82 in this repository). -->
 
 @include: ../_generated/editor-commands.md
 

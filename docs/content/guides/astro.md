@@ -84,16 +84,14 @@ npx astro build
 
 ## Options
 
-<!-- Rows for what isn't released yet aren't marked: availability can't mark a table row (issue #82 in this repository). -->
-
 | Option | Meaning |
 |---|---|
 | `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
 | `binary` | The `ascribe` binary to run, relative to the Astro root. By default, the `ASCRIBE_BIN` environment variable, then the binary `@ascribed/cli` installed. |
-| `anchors` | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
-| `review` | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. |
-| `codeTitles` | Show a code block's title above it ([code block titles](#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
+| `anchors` {available=next} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
+| `review` {available=next} | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. |
+| `codeTitles` {available=next} | Show a code block's title above it ([code block titles](#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
 
 ## What the integration does
 
