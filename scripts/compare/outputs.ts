@@ -196,6 +196,10 @@ function revision(name: string): string {
  * directory the second build reuses the base's crates, and either fails or
  * compares the base with itself. Both stay under this checkout's `target/`, so
  * they're kept between runs and in CI's cache.
+ *
+ * A run of the version before this fix leaves the base's crates in `target/`,
+ * and they stay fresh for every later build here, this script's included,
+ * until `cargo clean -p <crate>` removes each crate that differs from the base.
  */
 function binary(checkout: string, target: string, to: string): string {
   console.error(`Building ascribe in ${checkout}`);
