@@ -341,6 +341,18 @@ fn add_id_reference_edits(
     edits: &mut HashMap<RelPath, Vec<ByteEdit>>,
     phrase_edits: &mut HashMap<String, TextEdit>,
 ) -> Option<()> {
+    // A link names the heading through the page it's on: the file itself, or
+    // a page that includes it (SPEC §4.2).
+    let mut names_heading = HashMap::new();
+    let mut links_here = |path: &RelPath| {
+        *names_heading.entry(path.clone()).or_insert_with(|| {
+            path == target
+                || ctx
+                    .snapshot
+                    .page_heading(path, old_id)
+                    .is_some_and(|(written_in, _)| &written_in == target)
+        })
+    };
     for file in ctx.snapshot.files() {
         for include in &file.includes {
             if include.target.as_ref() != Some(target) || include.section.as_deref() != Some(old_id)
@@ -361,7 +373,9 @@ fn add_id_reference_edits(
             let Target::Local(local) = &reference.target else {
                 continue;
             };
-            if local.path.as_ref() != Some(target) || local.fragment.as_deref() != Some(old_id) {
+            if local.fragment.as_deref() != Some(old_id)
+                || !local.path.as_ref().is_some_and(&mut links_here)
+            {
                 continue;
             }
             for span in destination_spans(file, reference.destination_span, &reference.destination)
@@ -404,8 +418,10 @@ fn add_id_reference_edits(
                         );
                         continue;
                     }
+                    // The page the link names, which may include `target`.
+                    let page = local.path.as_ref().unwrap_or(target);
                     let new_path =
-                        destination_path(local.written.starts_with('/'), &file.path, target);
+                        destination_path(local.written.starts_with('/'), &file.path, page);
                     let query_start = local.written.find('?').unwrap_or(local.written.len());
                     let mut replacement =
                         format!("{new_path}{}#{new_id}", &local.written[query_start..]);

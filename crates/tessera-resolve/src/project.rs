@@ -462,16 +462,29 @@ impl Project {
     /// heading with that source id: the text a link with no text shows
     /// (SPEC §5.2).
     pub fn title_for(&self, path: &RelPath, id: Option<&str>) -> Option<&str> {
-        let file = self.files.get(path)?;
         match id {
-            Some(id) => file.heading_by_id(id).map(|h| h.text.as_str()),
-            None => file.title.as_deref(),
+            Some(id) => self.page_heading(path, id).map(|(_, h)| h.text.as_str()),
+            None => self.files.get(path)?.title.as_deref(),
         }
     }
 
     /// The heading with this source id in a file.
     pub fn heading(&self, path: &RelPath, id: &str) -> Option<&Heading> {
         self.files.get(path)?.heading_by_id(id)
+    }
+
+    /// The heading a link's `#id` names on a page (SPEC §4.2, §5.2): one of
+    /// the page's own headings, or else one from a fragment the page
+    /// includes, with the path of the file it's written in.
+    pub fn page_heading(&self, page: &RelPath, id: &str) -> Option<(RelPath, &Heading)> {
+        let file = self.files.get(page)?;
+        if let Some(heading) = file.heading_by_id(id) {
+            return Some((page.clone(), heading));
+        }
+        self.expansion(page)?
+            .headings(self)
+            .into_iter()
+            .find(|(path, heading)| path != page && heading.source_id == id)
     }
 
     /// What every link and image in a file names, in the order of
@@ -842,8 +855,9 @@ impl Project {
         out
     }
 
-    /// A link's `#id` must be a source id of the target page itself, not of a
-    /// fragment it includes (SPEC §4.2, §5.2).
+    /// A link's `#id` must name a heading on the target page: one of its own,
+    /// or one from a fragment it includes (SPEC §4.2, §5.2). Whether a build
+    /// keeps the heading is the build's check (`link-id-removed`).
     fn link_id_problem(
         &self,
         _reference: &Reference,
@@ -851,28 +865,14 @@ impl Project {
         target: &RelPath,
         id: &str,
     ) -> Vec<Issue> {
-        let Some(file) = self.files.get(target) else {
-            return Vec::new();
-        };
-        if file.heading_by_id(id).is_some() {
+        if !self.files.contains_key(target) || self.page_heading(target, id).is_some() {
             return Vec::new();
         }
-        let in_fragment = self.expansion(target).and_then(|page| {
-            page.headings(self)
-                .into_iter()
-                .find(|(file_path, heading)| file_path != target && heading.source_id == id)
-                .map(|(file_path, _)| file_path)
-        });
-        let issue = match in_fragment {
-            Some(fragment) => Issue::new(diagnostics::LINK_ID_IN_FRAGMENT, at)
-                .with_arg("id", id)
-                .with_arg("fragment", fragment.to_string())
-                .with_arg("path", target.to_string()),
-            None => Issue::new(diagnostics::LINK_ID_MISSING, at)
+        vec![
+            Issue::new(diagnostics::LINK_ID_MISSING, at)
                 .with_arg("path", target.to_string())
                 .with_arg("id", id),
-        };
-        vec![issue]
+        ]
     }
 }
 

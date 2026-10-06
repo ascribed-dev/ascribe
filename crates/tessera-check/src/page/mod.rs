@@ -7,7 +7,7 @@
 //! | Row | Comes from |
 //! |---|---|
 //! | `id-duplicate`, `heading-duplicate-without-id` | the page's resolved headings |
-//! | `link-id-missing`, `link-id-in-fragment` | the source index, for the links the build publishes |
+//! | `link-id-missing` | the source index, for the links the build publishes |
 //! | `include-id-missing`, `include-cycle` | include expansion |
 //! | `variant-no-arm-survives`, `available-exceeds-scope` | build modes and the availability scope check |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |

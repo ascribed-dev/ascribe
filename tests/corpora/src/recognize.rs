@@ -35,7 +35,6 @@ pub const OUT_OF_SCOPE: &[&str] = &[
     "link-target-missing",
     "link-id-missing",
     "link-to-fragment",
-    "link-id-in-fragment",
     "link-route",
     "image-source-missing",
     "include-target-missing",

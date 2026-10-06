@@ -376,6 +376,28 @@ fn link_completion_finds_a_heading_by_title() {
     // After `#`: the ids of the file already named.
     let ids = complete(&mut client, &page, "See [x](keys.md#$0\n");
     assert_eq!(new_text(&item(&ids, "Create a key")), "create-key");
+    // A page's ids include those of the fragments it includes (#90).
+    f.write(
+        "docs/_fragments/limits.md",
+        "## Rate limits\n\nEach key makes 100 requests a minute.\n",
+    );
+    f.write(
+        "docs/limits.md",
+        "---\ntitle: Limits\ndescription: Limits.\n---\n\n@include: _fragments/limits.md\n",
+    );
+    client.watched(&[
+        (
+            f.path("docs/_fragments/limits.md").as_path(),
+            lsp_types::FileChangeType::CREATED,
+        ),
+        (
+            f.path("docs/limits.md").as_path(),
+            lsp_types::FileChangeType::CREATED,
+        ),
+    ]);
+    client.settle();
+    let included = complete(&mut client, &page, "See [x](limits.md#$0\n");
+    assert_eq!(new_text(&item(&included, "Rate limits")), "rate-limits");
     // A fragment's ids aren't linkable.
     let fragment_ids = complete(
         &mut client,
@@ -662,6 +684,37 @@ fn location(v: &Value) -> (String, u64, u64) {
         v["range"]["start"]["line"].as_u64().unwrap(),
         v["range"]["start"]["character"].as_u64().unwrap(),
     )
+}
+
+#[test]
+fn a_link_to_a_heading_from_an_included_fragment_finds_it_in_the_fragment() {
+    // SPEC §4.2: a page's linkable ids include its fragments' (#90).
+    let f = quill();
+    f.write(
+        "docs/_fragments/limits.md",
+        "## Rate limits\n\nEach key makes 100 requests a minute.\n",
+    );
+    f.write(
+        "docs/limits.md",
+        "---\ntitle: Limits\ndescription: Limits.\n---\n\n@include: _fragments/limits.md\n",
+    );
+    let page = f.path("docs/quickstart.md");
+    let mut client = Client::start(&f.root());
+    client.open(&page, 1, "See [the limits](limits.md#rate-limits).\n");
+    let got = definition(&mut client, &page, json!({ "line": 0, "character": 20 })).unwrap();
+    assert_eq!(
+        location(&got),
+        (
+            uri(&f.path("docs/_fragments/limits.md"))
+                .as_str()
+                .to_owned(),
+            0,
+            0
+        )
+    );
+    let value = hover_text(&mut client, &page, json!({ "line": 0, "character": 20 }));
+    assert!(value.contains("**Rate limits**"), "{value}");
+    assert!(value.contains("100 requests a minute"), "{value}");
 }
 
 #[test]

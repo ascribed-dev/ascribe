@@ -19,7 +19,7 @@ use lsp_types::{
 use tessera_core::schema::{AttributeSchema, AttributeType, Attributes, Origin, SetMember};
 use tessera_core::{LineIndex, RelPath, percent_decode};
 use tessera_resolve::references::{include_target, reference_target};
-use tessera_resolve::{FileIndex, RefKind, Target};
+use tessera_resolve::{FileIndex, Heading, RefKind, Target};
 use tessera_syntax::{Block, BlockKind, CodeBlock, Inline, InlineKind};
 
 use crate::hover::{attribute_line, describe_directive, type_name};
@@ -460,8 +460,9 @@ impl Cx<'_> {
     }
 
     /// The headings of a file, by the id being typed: for `file.md#…` and
-    /// `@include: file.md#…`. A link can't name a fragment's ids, except the
-    /// fragment's own.
+    /// `@include: file.md#…`. A link names a page's ids, its fragments'
+    /// included (SPEC §4.2); it can't name a fragment's ids, except the
+    /// fragment's own. An include names the file's own.
     fn headings_of(
         &self,
         target: Option<&RelPath>,
@@ -479,10 +480,19 @@ impl Cx<'_> {
             return (Vec::new(), false);
         }
         let wanted = percent_decode(typed).to_lowercase();
-        let mut matches: Vec<_> = file
-            .headings
-            .iter()
-            .filter(|h| !h.source_id.is_empty())
+        let snapshot = &self.ctx.snapshot;
+        let headings: Vec<&Heading> = match snapshot.expansion(target) {
+            Some(page) if !include => page
+                .headings(snapshot)
+                .into_iter()
+                .map(|(_, h)| h)
+                .collect(),
+            _ => file.headings.iter().collect(),
+        };
+        let mut seen = std::collections::HashSet::new();
+        let mut matches: Vec<_> = headings
+            .into_iter()
+            .filter(|h| !h.source_id.is_empty() && seen.insert(h.source_id.as_str()))
             .filter(|h| {
                 wanted.is_empty()
                     || h.source_id.to_lowercase().contains(&wanted)

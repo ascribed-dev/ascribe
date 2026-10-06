@@ -12,7 +12,9 @@ Every problem Ascribe reports, with its code, its name, and how to fix it. `ascr
 
 In the editor, many diagnostics offer a quick fix. See [Editing](../guides/editor.md).
 
-<!-- Each section has its own index of codes: a page can't link to a heading in a fragment it includes (issue #90 in this repository). -->
+## Index
+
+@include: ../_generated/diagnostics-index.md
 
 ## Source files
 

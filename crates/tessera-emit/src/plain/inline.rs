@@ -24,6 +24,23 @@ struct State {
     /// Whether the next character starts a line, where `#`, `>`, `-`, and
     /// list markers mean something.
     line_start: bool,
+    /// What a `<br>` left to write before whatever comes next, so a `<br>` at
+    /// the end of the content leaves nothing.
+    pending: Pending,
+    /// Where the last code span ended in `out`: a code span right after it
+    /// would touch it.
+    code_end: Option<usize>,
+}
+
+/// What a `<br>` leaves to write before the content that follows it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum Pending {
+    #[default]
+    Nothing,
+    /// `; `, on content that stays on one line.
+    Separator,
+    /// A hard line break, which a break in the source that follows it joins.
+    LineBreak,
 }
 
 /// Writes `inlines`, using `links` (a block's resolved links, by span) to
@@ -37,6 +54,8 @@ pub(crate) fn render(
     let mut st = State {
         out: String::new(),
         line_start: true,
+        pending: Pending::Nothing,
+        code_end: None,
     };
     write(r, links, inlines, style, &mut st);
     st.out
@@ -51,16 +70,40 @@ fn write(
 ) {
     for inline in inlines {
         match &inline.kind {
+            // A `<br>` is a line break; where the content stays on one line,
+            // it separates what's either side of it with `; `, so code spans
+            // on either side stay apart. Either is written only once content
+            // follows it.
+            InlineKind::Html(text) if is_br(text) => {
+                if !st.out.trim().is_empty() {
+                    st.pending = if style.one_line {
+                        Pending::Separator
+                    } else {
+                        Pending::LineBreak
+                    };
+                }
+            }
             InlineKind::Text(text) => escape_into(text, st),
             // A tag is dropped, and its text is in the text around it.
             InlineKind::Html(text) => escape_into(&super::html_text(text), st),
             InlineKind::Phrase(p) => escape_into(&format!("{{{}}}", p.key), st),
             InlineKind::Code(code) => {
+                separate(st);
+                // Two code spans that touch would read as one run of backticks.
+                if st.code_end == Some(st.out.len()) {
+                    st.out.push(' ');
+                }
                 st.out.push_str(&code_span(code));
+                st.code_end = Some(st.out.len());
                 st.line_start = false;
             }
             InlineKind::SoftBreak if style.one_line => space(st),
             InlineKind::HardBreak if style.one_line => space(st),
+            // A break in the source right after a `<br>` is the line break the
+            // `<br>` already makes.
+            InlineKind::SoftBreak | InlineKind::HardBreak if st.pending == Pending::LineBreak => {
+                separate(st);
+            }
             InlineKind::SoftBreak => {
                 st.out.push('\n');
                 st.line_start = true;
@@ -73,6 +116,33 @@ fn write(
             InlineKind::Strong(children) => marked(r, links, children, "**", style, st),
             InlineKind::Link(link) => link_inline(r, links, inline, link, style, st),
             InlineKind::Image(image) => image_inline(r, links, inline, image, st),
+        }
+    }
+}
+
+/// Whether a piece of inline HTML is a `<br>` tag.
+fn is_br(html: &str) -> bool {
+    let lower = html.trim().to_ascii_lowercase();
+    lower
+        .strip_prefix("<br")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .is_some_and(|rest| rest.trim_end_matches('/').trim().is_empty())
+}
+
+/// Writes what a `<br>` left pending, before content that follows it.
+fn separate(st: &mut State) {
+    match std::mem::take(&mut st.pending) {
+        Pending::Nothing => {}
+        Pending::Separator => {
+            let kept = st.out.trim_end().len();
+            st.out.truncate(kept);
+            st.out.push_str("; ");
+        }
+        Pending::LineBreak => {
+            let kept = st.out.trim_end_matches(' ').len();
+            st.out.truncate(kept);
+            st.out.push_str("\\\n");
+            st.line_start = true;
         }
     }
 }
@@ -99,16 +169,25 @@ fn marked(
     let mut inner = State {
         out: String::new(),
         line_start: false,
+        pending: Pending::Nothing,
+        code_end: None,
     };
     write(r, links, children, style, &mut inner);
     st.line_start = st.line_start && inner.out.is_empty();
     if inner.out.trim().is_empty() {
-        st.out.push_str(&inner.out);
+        if st.pending == Pending::Nothing {
+            st.out.push_str(&inner.out);
+        }
     } else {
+        separate(st);
         st.out.push_str(marker);
         st.out.push_str(&inner.out);
         st.out.push_str(marker);
         st.line_start = false;
+    }
+    // A `<br>` at the end of the emphasis comes after its closing marker.
+    if inner.pending != Pending::Nothing && !st.out.trim().is_empty() {
+        st.pending = inner.pending;
     }
 }
 
@@ -146,6 +225,7 @@ fn link_inline(
         write(r, links, &link.children, style, st);
         return;
     };
+    separate(st);
     if link.form == LinkForm::Autolink
         && matches!(resolved.map(|l| &l.target), Some(LinkTarget::External))
         && !destination.starts_with('<')
@@ -192,6 +272,7 @@ fn image_inline(
         Some(LinkTarget::External) | None => Some(markdown_destination(&image.destination)),
         Some(LinkTarget::Page { .. } | LinkTarget::Unresolved) => None,
     };
+    separate(st);
     st.line_start = false;
     match destination {
         // The attribute block (`{width=600}`) has no plain-markdown form.
@@ -269,9 +350,15 @@ pub(crate) fn code_span(code: &str) -> String {
 }
 
 fn escape_into(text: &str, st: &mut State) {
+    let text = if st.pending != Pending::Nothing {
+        text.trim_start()
+    } else {
+        text
+    };
     if text.is_empty() {
         return;
     }
+    separate(st);
     st.out.push_str(&escape(text, st.line_start));
     st.line_start = st.line_start && text.chars().all(char::is_whitespace);
 }

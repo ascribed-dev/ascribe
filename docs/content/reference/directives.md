@@ -238,6 +238,9 @@ Includes another file, or one heading's section of it, in place.
 
 Links target pages, not fragments: link to the page that includes a fragment.
 
+@available: next
+A link can name a heading the fragment brings in, as `setup.md#prerequisites`, just as it names one of the page's own.
+
 ### `@variant`
 
 ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant))
@@ -465,7 +468,7 @@ Links point at **files**, not URLs. Ascribe writes each output's URLs.
 See [](keys.md#rotate-keys).
 ```
 
-- Paths are relative to the file, or to the content root when they start with `/`. `#id` names a heading in the target file by its id.
+- Paths are relative to the file, or to the content root when they start with `/`. `#id` names a heading on the target page by its id: one of its own, or one from a fragment it includes.
 - The file, and the id, must exist. A link to a fragment is an error: link to a page that includes it.
 - **Empty link text** is filled in with the target's title: the heading's text with an id, or the page's `title`.
 - External URLs (`https://…`) pass through unchanged.

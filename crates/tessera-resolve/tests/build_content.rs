@@ -418,14 +418,13 @@ fn a_link_to_a_heading_removed_by_a_selection_is_recorded() {
 }
 
 #[test]
-fn links_with_a_missing_target_or_an_id_only_in_a_fragment_are_left_unresolved_without_a_build_problem()
- {
+fn links_with_a_missing_target_or_id_are_left_unresolved_without_a_build_problem() {
     // The source index reports these (`link-target-missing`, `link-id-missing`,
-    // `link-id-in-fragment`); the build records nothing more.
+    // `link-to-fragment`); the build records nothing more.
     let p = project(&[
         (
             "index.md",
-            &page("[a](nope.md) [b](keys.md#missing) [c](keys.md#frag) [d](_f.md)\n"),
+            &page("[a](nope.md) [b](keys.md#missing) [d](_f.md)\n"),
         ),
         ("keys.md", "---\ntitle: Keys\n---\n\n@include: _f.md\n"),
         ("_f.md", "## Frag\n"),
@@ -437,6 +436,52 @@ fn links_with_a_missing_target_or_an_id_only_in_a_fragment_are_left_unresolved_w
             .iter()
             .all(|l| l.target == LinkTarget::Unresolved)
     );
+}
+
+#[test]
+fn a_link_to_a_heading_from_an_included_fragment_resolves_on_the_including_page() {
+    // SPEC §4.2: the ids of included fragments are the page's own (#90).
+    let p = project(&[
+        ("index.md", &page("[](keys.md#frag) [x](keys.md#nested)\n")),
+        (
+            "keys.md",
+            "---\ntitle: Keys\n---\n\n## Frag\n@id: own\n\n@include: _f.md\n",
+        ),
+        ("_f.md", "## Frag\n\n@include: _g.md\n"),
+        ("_g.md", "### Nested\n"),
+    ]);
+    let resolved = resolve(&p, "index.md", "site");
+    assert!(resolved.problems.is_empty(), "{:?}", resolved.problems);
+    let targets: Vec<_> = links(&resolved)
+        .into_iter()
+        .map(|l| match l.target {
+            LinkTarget::Page { page, id, .. } => (page.to_string(), id),
+            other => panic!("unresolved: {other:?}"),
+        })
+        .collect();
+    assert_eq!(
+        targets,
+        [
+            ("keys.md".to_owned(), Some("frag".to_owned())),
+            ("keys.md".to_owned(), Some("nested".to_owned())),
+        ]
+    );
+}
+
+#[test]
+fn a_link_to_a_fragment_heading_a_build_removes_is_recorded() {
+    let p = project(&[
+        ("index.md", &page("[SM](keys.md#sm-setup)\n")),
+        (
+            "keys.md",
+            "---\ntitle: Keys\n---\n\n@variant {deployment=cloud}:\nCloud.\n@variant {deployment=self-managed}:\n@include: _sm.md\n@end\n",
+        ),
+        ("_sm.md", "## Self-managed setup\n@id: sm-setup\n\nText.\n"),
+    ]);
+    assert!(resolve(&p, "index.md", "site").problems.is_empty());
+    let cloud = resolve(&p, "index.md", "cloud-only");
+    assert_eq!(cloud.problems.len(), 1);
+    assert_eq!(cloud.problems[0].issue.slug.as_str(), "link-id-removed");
 }
 
 #[test]
