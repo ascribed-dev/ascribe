@@ -185,3 +185,4 @@ Each is filed, so nothing here is only "noted" ([decision 5](#proposed-decisions
 - [#153](https://github.com/ascribed-dev/ascribe/issues/153): a conformance case that doesn't test what it says, found during the rename.
 - [#154](https://github.com/ascribed-dev/ascribe/issues/154): CI on pull requests got slower.
 - [#155](https://github.com/ascribed-dev/ascribe/issues/155): `pnpm test` fails locally after `pnpm build:all` on Linux x64.
+- [#157](https://github.com/ascribed-dev/ascribe/issues/157): comrak-ascribe's `pathological_emphases` test sits at its 4 second timeout on the Linux runner.
