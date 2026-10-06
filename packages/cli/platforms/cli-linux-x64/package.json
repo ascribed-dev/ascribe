@@ -1,6 +1,6 @@
 {
   "name": "@ascribed/cli-linux-x64",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Ascribe native binary for Linux x64.",
   "license": "MPL-2.0",
   "repository": {

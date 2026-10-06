@@ -50,7 +50,7 @@ available = "ascribe unreleased"
 [phrases]
 # The latest release: the workspace version in Cargo.toml, and every
 # package.json under packages/.
-version = "0.1.1"
+version = "0.2.0"
 # `engines.node` in packages/cli/package.json.
 node = "24"
 # `engines.vscode` in packages/vscode/package.json.

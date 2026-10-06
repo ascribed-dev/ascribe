@@ -4,6 +4,8 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
+## 0.2.0 (2026-10-06)
+
 This release adds **review**: reading a pull request as readers will see it, page by page, with the changed blocks marked and the pull request's review comments beside them. It works in VS Code's page preview, in your site's own pages under `astro dev`, and as an HTML report CI can attach to every pull request. Comments are ordinary GitHub review comments, so there's nothing to set up or host. See [Review](docs/content/guides/review.md).
 
 ### The language

@@ -1,6 +1,6 @@
 {
   "name": "@ascribed/review",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Reviewing Ascribe pages as readers see them: changed blocks marked on the rendered page, and a pull request's review threads beside them.",
   "type": "module",
   "license": "MPL-2.0",

@@ -1236,7 +1236,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-check"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "proptest",
  "serde",
@@ -1253,7 +1253,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-cli"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "ariadne",
  "clap",
@@ -1274,7 +1274,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-commonmark-suite"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "comrak",
  "comrak-tessera",
@@ -1286,7 +1286,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-conformance"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "insta",
  "serde",
@@ -1304,7 +1304,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "proptest",
  "serde",
@@ -1314,7 +1314,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-corpora"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1332,7 +1332,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-diff"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1349,7 +1349,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-emit"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "comrak",
  "html5ever",
@@ -1368,7 +1368,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-fmt"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "proptest",
  "tessera-commonmark-suite",
@@ -1380,7 +1380,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-lsp"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "crossbeam-channel",
  "lsp-server",
@@ -1403,7 +1403,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-model"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "serde_yaml_ng",
  "sha2",
@@ -1413,7 +1413,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-resolve"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "proptest",
  "serde_json",
@@ -1427,7 +1427,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-sources"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "serde",
  "tempfile",
@@ -1440,7 +1440,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-syntax"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "comrak-tessera",
  "proptest",
@@ -1450,7 +1450,7 @@ dependencies = [
 
 [[package]]
 name = "tessera-synthetic"
-version = "0.1.1"
+version = "0.2.0"
 
 [[package]]
 name = "thiserror"
