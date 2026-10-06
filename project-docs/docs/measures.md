@@ -92,9 +92,28 @@ The update workflow (`examples/docs-repository/.github/workflows/update-sources.
 
 The run times here leave out the runner, the tokens, and installing Ascribe. CI runs this pass on each pull request (rust.yml).
 
-### Phase 10: the pass on GitHub, and two weeks on a schedule
+### Phase 10: the pass on GitHub, 2026-10-06
 
-Not measured yet. The repositories and the App are set up. The first run, on 2026-10-06, failed at `ascribe sources`: `@ascribed/cli@next` was a canary built before phase 9 merged. `0.1.2-next.5` has it. Next: `setup.ts ascribed-dev --pass`, which runs the same steps there and waits for each pull request's checks. After that, the schedule stays on for two weeks, with a scripted change each Monday, Wednesday, and Friday. Record: how many pull requests were opened, updated, and closed; whether each description was right; and how long a run takes.
+`setup.ts ascribed-dev --pass`, run by Kyle: each scripted change pushed to `ascribed-dev/sources-fixture-code`, then the update workflow started by hand in `sources-fixture-docs`, with `@ascribed/cli@0.1.2-next.5` and the App's tokens. After each run, the script read the pull request, and where one was open, waited for its checks (`check.yml`).
+
+| Change | Pull request | Run | Description and checks |
+|---|---|---|---|
+| An example changed | Opened | 19 s | Right; checks passed |
+| A region renamed, before that was merged | Updated in place | 18 s | Right; checks failed on `connect.md` |
+| The code put back | Closed | 25 s | |
+| A change no page shows | None | 23 s | |
+| A file moved | Opened | 23 s | Right; checks failed on `quickstart.md` |
+| Someone pushed to the branch, then an example changed | Left alone | 16 s | |
+| That pull request merged, its branch kept | Opened | 32 s | Right; checks failed, as `main` had the broken quickstart |
+| Nothing new | Left alone: no push | 18 s | |
+
+**Every step was right.** A run takes 16 to 32 seconds, from the job's start to its end, including the tokens and installing Ascribe from npm. The checks on each pull request started without anyone approving them, since the App opened it.
+
+An earlier pass that day, with the workflow before review, had the first six steps right too (the first run took 70 s). The review then found that after a hand-fixed pull request was merged, the job never opened another, which that pass didn't cover; the seventh step is for it. Before either, the first run failed at `ascribe sources`: `@ascribed/cli@next` was a canary built before phase 9 merged.
+
+### Phase 10: two weeks on a schedule
+
+From 2026-10-06, the update workflow runs each weekday at 06:17 UTC, and the code repository makes a scripted change each Monday, Wednesday, and Friday at 05:00 UTC (`change.yml`, in `changes.ts`'s order). Record, after two weeks: how many pull requests were opened, updated, and closed; whether each description was right; and how long a run takes.
 
 ## Issues filed from dogfooding
 
