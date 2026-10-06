@@ -57,19 +57,20 @@ function node(): string {
 
 test("every file that names the Node version names the one in package.json", () => {
   const version = node();
-  const found: string[] = [];
+  // Each place, and the setting or sentence there that names a version.
+  const found: [string, string][] = [];
 
   // What each package says it runs on.
   for (const file of tracked("package.json", "**/package.json")) {
     const engine = (JSON.parse(read(file)) as { engines?: { node?: string } }).engines?.node;
-    if (engine !== undefined) found.push(`${file}: engines.node ${engine}`);
+    if (engine !== undefined) found.push([file, `engines.node ${engine}`]);
   }
   // What the workflows, and the version managers, set up.
-  for (const file of tracked(".nvmrc", "**/.nvmrc")) found.push(`${file}: ${read(file).trim()}`);
+  for (const file of tracked(".nvmrc", "**/.nvmrc")) found.push([file, read(file).trim()]);
   for (const file of tracked("*.yml", "*.yaml").filter((file) => !file.startsWith("tests/"))) {
     const text = read(file);
     for (const setting of all(text, /^\s*node-version:\s*(\S+)/gm)) {
-      found.push(`${file}: node-version ${setting}`);
+      found.push([file, `node-version ${setting}`]);
     }
     for (const setting of all(text, /^\s*node-version-file:\s*(\S+)/gm)) {
       expect(existsSync(path.join(root, setting)), `${file}: ${setting}`).toBe(true);
@@ -77,14 +78,14 @@ test("every file that names the Node version names the one in package.json", () 
   }
   // What the docs and the guides for contributors say. The docs write the
   // `{node}` phrase rather than a number.
-  found.push(`docs/ascribe.toml: the node phrase ${phrase("node")}`);
+  found.push(["docs/ascribe.toml", `the node phrase ${phrase("node")}`]);
   const prose = [
     ...tracked("*.md").filter((file) => !file.includes("/")),
     ...tracked("packages/*/README.md", "docs/content/*.md", ".github/workflows/*.yml"),
   ];
   for (const file of prose.filter((file) => file !== "CHANGELOG.md")) {
     for (const major of all(read(file), /\bNode\.js (\d+)/g))
-      found.push(`${file}: Node.js ${major}`);
+      found.push([file, `Node.js ${major}`]);
   }
   expect(read("docs/content/getting-started.md")).toContain(
     "[Node.js](https://nodejs.org) {node} or later",
@@ -95,8 +96,13 @@ test("every file that names the Node version names the one in package.json", () 
     }
   }
 
-  const named = (entry: string): string | undefined => /(\d+)\D*$/.exec(entry)?.[1];
-  expect(found.filter((entry) => named(entry) !== version)).toEqual([]);
+  // The major: the first number in the setting (`>=24`, `24.11.0`).
+  const major = (setting: string): string | undefined => /\d+/.exec(setting)?.[0];
+  expect(
+    found
+      .filter(([, setting]) => major(setting) !== version)
+      .map(([file, setting]) => `${file}: ${setting}`),
+  ).toEqual([]);
   // The workflows, both version files, five packages, the phrase, and CONTRIBUTING.md.
   expect(found.length).toBeGreaterThan(15);
 });
@@ -117,10 +123,14 @@ test("the glibc floor is release-build.yml's everywhere it's written", () => {
 
   expect(phrase("glibc"), "docs/ascribe.toml's glibc phrase").toBe(floor);
   expect(read("docs/content/getting-started.md")).toContain("glibc {glibc} or later");
+  // The directives reference and SPEC.md use the floor as their example of
+  // prose that differs by release, so it moves with the floor too.
   for (const file of [
     ".github/workflows/release-build.yml",
     "RELEASING.md",
     "packages/cli/README.md",
+    "docs/content/reference/directives.md",
+    "SPEC.md",
   ]) {
     const named = all(read(file), /\bglibc (\d+\.\d+)/g);
     expect(named.length, `${file} names the floor`).toBeGreaterThan(0);
