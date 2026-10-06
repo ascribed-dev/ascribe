@@ -72,6 +72,7 @@ use std::sync::Arc;
 use tessera_core::{FileId, RelPath, Router, Slugger, Span};
 use tessera_model::{Build, Segment};
 
+pub use glossary::glossary_targets;
 pub use router::DefaultRouter;
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,

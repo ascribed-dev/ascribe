@@ -100,6 +100,7 @@ use cache::ParseCache;
 use overlay::Overlay;
 use signature::{Fingerprints, structure_signature};
 
+use crate::build::glossary_targets;
 use crate::fs::{FileSystem, MODEL_FILE, in_nested_project, is_source_path};
 use crate::index::{FileIndex, FileKind, Target, index_parsed, parse_source};
 use crate::layout::Layout;
@@ -1142,15 +1143,4 @@ impl IncrementalProject {
             model: impact,
         })
     }
-}
-
-/// The pages the glossary's terms link to.
-fn glossary_targets(model: &ContentModel) -> BTreeSet<RelPath> {
-    model
-        .glossary
-        .terms
-        .iter()
-        .filter_map(|t| t.link.as_ref())
-        .filter_map(|(path, _)| RelPath::parse(path.trim_start_matches('/')).ok())
-        .collect()
 }

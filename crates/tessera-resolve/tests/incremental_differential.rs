@@ -20,84 +20,10 @@ use proptest::prelude::*;
 use tessera_core::RelPath;
 use tessera_resolve::{ApplyError, Change, IncrementalProject, Layout, ModelImpact};
 
-use incremental_support::{Consumer, ModelSpec, World, dump, load, path, scratch};
-
-const SOURCES: &[&str] = &[
-    "index.md",
-    "guide.md",
-    "_shared.md",
-    "_deep/inner.md",
-    "glossary.md",
-    "Guide.md",
-    "shared/thing.md",
-    "sub/index.md",
-    "nested/page.md",
-    "nested/sub/deep.md",
-];
-
-/// Project paths of files that aren't sources.
-const FILES: &[&str] = &[
-    "docs/logo.png",
-    "docs/img/pic.png",
-    "docs/files/a.pdf",
-    "README.md",
-    "docs/.hidden/x.md",
-    "docs/Logo.png",
-    "docs/guide",
-    "docs/files/",
-    // Each makes its directory a nested project's folder.
-    "docs/nested/ascribe.toml",
-    "docs/nested/sub/ascribe.toml",
-];
-
-/// File names that differ from another only in case. The base file system and
-/// the overlay may pick different twins for those, so the run that starts from
-/// a non-empty base leaves them out.
-const TWINS: &[&str] = &["docs/Logo.png", "Guide.md"];
-
-/// Files that make a nested project, which loads the project again, from a
-/// non-empty base: the run that has twins leaves them out.
-const NESTED: &[&str] = &["docs/nested/ascribe.toml", "docs/nested/sub/ascribe.toml"];
-
-const FRONT: &[&str] = &[
-    "",
-    "---\ntitle: Page\n---\n\n",
-    "---\ntitle: '{product} guide'\n---\n\n",
-    "---\ntitle: Cloud only\navailable: cloud\n---\n\n",
-    "---\ntitle: Index\n---\n\n",
-];
-
-const BODY: &[&str] = &[
-    "# Intro\n",
-    "## Setup\n",
-    "## Setup\n",
-    "## {product} tips\n",
-    "## Details\n@id: details\n",
-    "@include: _shared.md\n",
-    "@include: _shared.md#shared-setup\n",
-    "@include: _deep/inner.md\n",
-    "@include: missing.md\n",
-    "@include: /guide.md\n",
-    "[a](guide.md) and [b](guide.md#setup)\n",
-    "[](guide.md)\n",
-    "[](guide.md#setup)\n",
-    "[c](index.md#intro) [x](_shared.md)\n",
-    "[route](/guide) [r2](sub/)\n",
-    "![l](logo.png) ![p](img/pic.png)\n",
-    "[dl](files/a.pdf) [case](GUIDE.md) [o](../README.md)\n",
-    "The API key is here. [g](glossary.md#api)\n",
-    "[ref][r] and [p]({api}x)\n\n[r]: guide.md\n",
-    "@variant {deployment=cloud}:\nCloud text\n@variant {deployment=self-managed}:\nSM text\n@end\n",
-    "## Cloud feature\n@available: cloud\n\nText.\n",
-    "@quill-callout: Heads up\n",
-    "## Shared setup\n",
-    "## API\n@id: api\n",
-    "![l](Logo.png) [dir](files/)\n",
-    "@include: shared/thing.md\n",
-    "Some prose about {extra} and more.\n",
-    "@include: nested/page.md\n",
-    "[n](nested/sub/deep.md) ![i](nested/page.md)\n",
-];
+use incremental_support::{
+    BODY, Consumer, FILES, FRONT, ModelSpec, NESTED, SOURCES, TWINS, World, dump, load, path,
+    render, scratch,
+};
 
 fn models() -> Vec<ModelSpec> {
     let base = ModelSpec::base();
@@ -146,15 +72,6 @@ fn models() -> Vec<ModelSpec> {
             ..base
         },
     ]
-}
-
-fn render(front: usize, body: &[usize]) -> String {
-    let mut text = FRONT[front % FRONT.len()].to_owned();
-    for at in body {
-        text.push_str(BODY[at % BODY.len()]);
-        text.push('\n');
-    }
-    text
 }
 
 #[derive(Clone, Debug)]

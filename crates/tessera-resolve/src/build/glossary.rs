@@ -24,7 +24,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use tessera_core::RelPath;
-use tessera_model::{GlossaryMatch, GlossaryTerm};
+use tessera_model::{ContentModel, GlossaryMatch, GlossaryTerm};
 use tessera_syntax::{Inline, InlineKind, Link, LinkForm};
 
 use super::BuildResolver;
@@ -67,6 +67,23 @@ pub(crate) fn link_terms(resolver: &BuildResolver<'_>, page: &mut ResolvedPage) 
     linker.blocks(&mut page.blocks);
 }
 
+/// The pages the glossary's terms link to: a change to what others see of
+/// one can change every page that uses a term.
+pub fn glossary_targets(model: &ContentModel) -> BTreeSet<RelPath> {
+    model
+        .glossary
+        .terms
+        .iter()
+        .filter_map(|t| t.link.as_ref())
+        .filter_map(|(path, _)| glossary_target(path))
+        .collect()
+}
+
+/// The page a term's link names, as a content path.
+fn glossary_target(path: &str) -> Option<RelPath> {
+    RelPath::parse(path.trim_start_matches('/')).ok()
+}
+
 /// The URL a term links to on this page, if it links anywhere.
 fn term_url(
     resolver: &BuildResolver<'_>,
@@ -74,7 +91,7 @@ fn term_url(
     term: &GlossaryTerm,
 ) -> Option<String> {
     let (path, id) = term.link.as_ref()?;
-    let target = RelPath::parse(path.trim_start_matches('/')).ok()?;
+    let target = glossary_target(path)?;
     if target == page.path || !resolver.is_published(&target) {
         return None;
     }

@@ -22,6 +22,7 @@ tessera-syntax.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+proptest.workspace = true
 tempfile = "3"
 
 [lints]
