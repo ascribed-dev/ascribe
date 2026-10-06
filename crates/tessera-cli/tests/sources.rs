@@ -415,6 +415,9 @@ fn tree(dir: &Path) -> BTreeMap<String, Vec<u8>> {
 
 /// `check`, `build`, and `sources status` don't run `git` at all: a `git`
 /// first on the path that records being run is never run.
+///
+/// Unix only: the fake is a shell script, and Windows runs only a `git.exe`
+/// found on the path.
 #[cfg(unix)]
 #[test]
 fn check_build_and_status_never_run_git() {

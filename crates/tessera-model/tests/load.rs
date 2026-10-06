@@ -4,6 +4,9 @@
 
 use std::path::{Path, PathBuf};
 
+#[path = "../../../tests/support/links.rs"]
+mod links;
+
 use tessera_core::availability::parse_availability;
 use tessera_core::{Attributes, Binding, FileId, Forms, Primary, TitleRule};
 use tessera_model::{
@@ -468,13 +471,10 @@ fn a_glossary_term_can_set_its_own_match() {
 fn the_output_directory_is_compared_after_resolving_links() {
     let dir = scratch("links");
     std::fs::create_dir_all(dir.join("docs")).unwrap();
-    #[cfg(unix)]
-    {
-        std::os::unix::fs::symlink(dir.join("docs"), dir.join("alias")).unwrap();
-        let text = "spec = \"0.1\"\n[project]\noutput-dir = \"alias/out\"\n";
-        let issues = load_str_in(text, FileId::new(0), &dir).unwrap_err();
-        assert_eq!(issues[0].slug.as_str(), "model-output-overlaps-content");
-    }
+    links::dir(dir.join("docs"), dir.join("alias"));
+    let text = "spec = \"0.1\"\n[project]\noutput-dir = \"alias/out\"\n";
+    let issues = load_str_in(text, FileId::new(0), &dir).unwrap_err();
+    assert_eq!(issues[0].slug.as_str(), "model-output-overlaps-content");
     let _ = std::fs::remove_dir_all(&dir);
 }
 
