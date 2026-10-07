@@ -70,8 +70,9 @@ Every change to an upstream file is marked in the code with a `// ASCRIBE:` comm
 | | | `CommonMarkFormatter::format_ascribe_line` | New method, after `format_front_matter` |
 | `src/xml.rs` | 1 | `XmlFormatter::format_node` | A `raw` attribute on `ascribe_line` |
 | `src/tests/sourcepos.rs` | 3 | `ASCRIBE_LINE`, `node_values`, `sourcepos` | Upstream's test requires a case for every node type |
+| `src/tests/pathological.rs` | 1 | `pathological_emphases` | A 10 second timeout, was 4: the debug build passed 4 seconds on CI's Linux runner ([#157](https://github.com/ascribed-dev/ascribe/issues/157)) |
 
-In total: 76 lines added and 3 changed in 8 upstream source files (48 of the added lines are code; the rest are comments), in 20 hunks, plus 13 lines in one upstream test. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
+In total: 76 lines added and 3 changed in 8 upstream source files (48 of the added lines are code; the rest are comments), in 20 hunks, plus 13 lines in one upstream test and a longer timeout in another. The new arms sit next to long-standing neighbors (`Document`, `FrontMatter`, `Paragraph`, block quotes) rather than at the end of each `match`, because upstream appends its own new node types at the end.
 
 Link reference definition support added 68 lines and changed 7 in two upstream files, in 7 hunks (`lib.rs` and `parser/mod.rs`; about half the added lines are comments), and the definition types and `locate` in `src/ascribe.rs`. It adds no node and no `NodeValue` variant, and doesn't change what is parsed.
 

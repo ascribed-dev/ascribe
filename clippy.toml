@@ -6,5 +6,5 @@ allow-panic-in-tests = true
 allow-print-in-tests = true
 
 # Flags the longest few functions, not hundreds: see
-# project-docs/optimization/lints.md.
+# project-docs/lints.md.
 too-many-lines-threshold = 150

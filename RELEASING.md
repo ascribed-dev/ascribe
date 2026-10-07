@@ -45,7 +45,7 @@ The `marketplace` job publishes without a token. Each hop checks the one before 
 
 The only values the workflow holds are `AZURE_CLIENT_ID` and `AZURE_TENANT_ID`, as variables on the `release` environment. They aren't secrets, and nothing in the repository can sign in without a token GitHub issues to a run in that environment.
 
-[What lives outside the repository](project-docs/optimization/outside.md) lists every account, environment, secret, and package this page relies on, with who can change each.
+[What lives outside the repository](project-docs/outside.md) lists every account, environment, secret, and package this page relies on, with who can change each.
 
 ## Before the first release
 

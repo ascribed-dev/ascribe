@@ -168,7 +168,7 @@ The JSON that Rust writes and TypeScript reads has one home too: the Rust types 
 | Integration tests | Each crate's `tests/` |
 | Conformance cases, written from the spec | `tests/conformance/cases/`, run by `cargo test -p ascribe-conformance` |
 | Snapshots (`insta`) | `crates/ascribe-emit/tests/snapshots/` and `crates/ascribe-cli/tests/snapshots/`. Review a change with `cargo insta review` |
-| Property tests (`proptest`) | `ascribe-core`, `ascribe-syntax`, `ascribe-resolve`, `ascribe-fmt`, `ascribe-check` |
+| Property tests (`proptest`) | `ascribe-core`, `ascribe-syntax`, `ascribe-resolve`, `ascribe-fmt`, `ascribe-check`, `ascribe-diff` |
 | Two implementations compared | `crates/ascribe-syntax/tests/agreement.rs` (two parsers), `crates/ascribe-resolve/tests/incremental_differential.rs` and `crates/ascribe-lsp/tests/differential.rs` (incremental against from scratch), `crates/ascribe-diff/tests/reach.rs` (`diff`'s short path against comparing every page), `crates/ascribe-check/tests/parity.rs` (checks against the index), `crates/ascribe-cli/tests/lsp_parity.rs` (the command against the server), and the renderers above |
 | The command's output, as files the docs show | `crates/ascribe-cli/tests/output.rs`, writing `crates/ascribe-cli/tests/output/` |
 | Browser tests | `packages/elements/test/`, in Chromium, Firefox, and WebKit |
