@@ -5,7 +5,10 @@ use ntest::timeout;
 
 // input: python3 -c 'n = 50000; print("*a_ " * n)'
 #[test]
-#[timeout(4000)]
+// ASCRIBE: 10 s, was 4 s. It takes under 1 s on a laptop, but the debug
+// build passed 4 s on CI's Linux runner (#157). Quadratic parsing of this
+// input would still take minutes.
+#[timeout(10000)]
 fn pathological_emphases() {
     let n = 50_000;
     let input = "*a_ ".repeat(n);
