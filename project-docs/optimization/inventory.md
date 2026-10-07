@@ -405,7 +405,7 @@ The three under [Outside the repository](#outside-the-repository). **Phase 6.**
 
 Taken again on 6 October 2026, when phases 2 to 8 had merged, for [phase 8](phase-8-close.md#part-b-the-measures). The plan's [Measures](README.md#measures) table has the counts.
 
-**The laptop numbers couldn't be taken the same way:** the Apple M1 Pro isn't reachable from where phase 8 ran. So both sides were taken again on one machine, a 4-core Linux x64 cloud container, building `d48ed66` (this inventory's commit) and #151's head (`main` at `b27d9f8` with the rename) each into an empty target folder. Read the columns against each other, not against the M1's figures above.
+**The laptop numbers couldn't be taken the same way:** the Apple M1 Pro isn't reachable from where phase 8 ran. So both sides were taken again on one machine, a 4-core Linux x64 cloud container, building `d48ed66` (this inventory's commit) and #151's head (`main` at `b27d9f8` with the rename) each into an empty target folder. Read the columns against each other, not against the M1's figures above. The maintainer accepted this in place of the M1's measure on 7 October 2026 ([decision 5](README.md#proposed-decisions)).
 
 | What | Before (`d48ed66`) | After |
 |---|--:|--:|
