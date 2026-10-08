@@ -2,6 +2,9 @@
 
 #![allow(clippy::expect_used, clippy::panic)]
 
+#[path = "../../../tests/support/links.rs"]
+mod links;
+
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -240,4 +243,57 @@ fn a_file_with_errors_is_left_alone_and_is_not_a_failure() {
     let out = p.fmt(&["--check"]);
     assert_eq!(code(&out), 0, "{}", stdout(&out));
     assert_eq!(p.read("docs/a.md"), broken);
+}
+
+#[test]
+fn a_link_out_of_the_content_root_is_reported_and_left_alone() {
+    let p = Project::new("link-out");
+    p.write("outside/far.md", MESSY);
+    p.write("outside/folder/deep.md", MESSY);
+    p.write("docs/real.md", MESSY);
+    p.write("docs/.hidden/secret.md", MESSY);
+    links::dir(Path::new("../outside/folder"), p.dir.join("docs/linked"));
+    let files = links::file(Path::new("../outside/far.md"), p.dir.join("docs/far.md"))
+        && links::file(Path::new(".hidden/secret.md"), p.dir.join("docs/secret.md"))
+        && links::file(Path::new("real.md"), p.dir.join("docs/alias.md"));
+    let refused: &[&str] = if files {
+        &["far.md", "linked/deep.md", "secret.md"]
+    } else {
+        &["linked/deep.md"]
+    };
+
+    let out = p.fmt(&[]);
+    assert_eq!(code(&out), 2, "{}{}", stdout(&out), stderr(&out));
+    // Reported as `check` reports them, and neither read nor written.
+    let err = stderr(&out);
+    for path in refused {
+        assert!(
+            err.contains(&format!(
+                "[ASC123] Error: this file can't be read: `{path}` is a symbolic link, or is in a linked folder, that leads to a file that isn't a source file of the content root"
+            )),
+            "{err}"
+        );
+    }
+    assert_eq!(err.lines().count(), refused.len(), "{err}");
+    assert_eq!(p.read("outside/far.md"), MESSY);
+    assert_eq!(p.read("outside/folder/deep.md"), MESSY);
+    assert_eq!(p.read("docs/.hidden/secret.md"), MESSY);
+    // The rest is formatted, a link to a source file included.
+    assert_eq!(p.read("docs/real.md"), CLEAN);
+    assert!(!stdout(&out).contains("deep.md"), "{}", stdout(&out));
+
+    // Named on its own, it's refused too.
+    let out = p.fmt(&["--check", "docs/linked/deep.md"]);
+    assert_eq!(code(&out), 2, "{}", stderr(&out));
+    assert!(stdout(&out).is_empty(), "{}", stdout(&out));
+    assert!(
+        stderr(&out).contains("`linked/deep.md`"),
+        "{}",
+        stderr(&out)
+    );
+
+    // A file outside the content root named as itself is formatted, as before.
+    let out = p.fmt(&["outside/far.md"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert_eq!(p.read("outside/far.md"), CLEAN);
 }

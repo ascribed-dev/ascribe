@@ -106,6 +106,7 @@ dependencies = [
  "ascribe-fmt",
  "ascribe-lsp",
  "ascribe-model",
+ "ascribe-resolve",
  "ascribe-sources",
  "clap",
  "insta",

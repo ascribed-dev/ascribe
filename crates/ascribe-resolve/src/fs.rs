@@ -239,9 +239,7 @@ impl FileSystem for DiskFs {
         if !self.is_source_at(&root, &real) {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
-                format!(
-                    "`{path}` is a symbolic link, or is in a linked folder, that leads to a file that isn't a source file of the content root"
-                ),
+                link_out(path),
             ));
         }
         fs::read_to_string(file)
@@ -341,6 +339,63 @@ impl FileSystem for DiskFs {
         out.sort();
         out
     }
+}
+
+/// Why a file reached through a symbolic link can't be read: the link leads
+/// to a file that isn't a source file of the content root. `path` is the
+/// file's content path.
+fn link_out(path: &RelPath) -> String {
+    format!(
+        "`{path}` is a symbolic link, or is in a linked folder, that leads to a file that isn't a source file of the content root"
+    )
+}
+
+impl ascribe_core::SourceBoundary for DiskFs {
+    fn check_link(&self, path: &Path) -> Result<(), String> {
+        // Where `path` is in the content root, as written: made absolute
+        // without following a link, so `rel` keeps any linked segment.
+        let (Ok(file), Ok(content)) = (
+            std::path::absolute(path).map(|p| lexical(&p)),
+            std::path::absolute(self.content_dir()).map(|p| lexical(&p)),
+        ) else {
+            return Ok(());
+        };
+        let Ok(rel) = file.strip_prefix(&content) else {
+            // Not in the content root: no source file of this project.
+            return Ok(());
+        };
+        let (Ok(root), Ok(real)) = (content.canonicalize(), file.canonicalize()) else {
+            // Not there: reading it reports that.
+            return Ok(());
+        };
+        // No segment in the content root is a link: the file is where its
+        // path says.
+        if root.join(rel) == real || self.is_source_at(&root, &real) {
+            return Ok(());
+        }
+        let shown = rel
+            .to_str()
+            .and_then(|r| RelPath::parse(&r.replace('\\', "/")).ok())
+            .unwrap_or_default();
+        Err(link_out(&shown))
+    }
+}
+
+/// `path` with its `.` and `..` segments worked out by name, as Windows
+/// makes a path absolute, so a path written through `..` compares with the
+/// content root.
+fn lexical(path: &Path) -> PathBuf {
+    let mut out = PathBuf::new();
+    for part in path.components() {
+        match part {
+            std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => {
+                out.pop();
+            }
+            other => out.push(other),
+        }
+    }
+    out
 }
 
 /// The files under `dir` (at `rel` from the project root), without following

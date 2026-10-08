@@ -8,6 +8,7 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 - **JSON Schemas for the commands' JSON.** What `ascribe check`, `build`, `diff`, `drift`, `sources status`, and `sources update` write with `--format json` is described by a JSON Schema, generated from the code that writes it. See the [JSON report contract](docs/content/contracts/json-reports.md).
 - **The `json` output's page `format` is `"ascribe-page"`,** where it was `"tessera-page"`, the project's working name. Its `schemaVersion` stays `1`. A tool that checks the value needs the new one. See [the JSON output](crates/ascribe-emit/README.md#json).
 - The language server's log lines, in the editor's output panel, start with `ascribe-lsp:`, where they started with `tessera-lsp:`.
+- **Fixed:** `ascribe fmt` no longer follows a symbolic link out of the content root. A file that's a link, or is in a linked folder, that leads to a file that isn't a source file of the content root is left alone and reported as `ascribe check` reports it (`source-unreadable`), and `fmt` exits with 2. It was formatted and written where the link led. See [`ascribe fmt`](docs/content/reference/cli.md#ascribe-fmt).
 - **Smaller downloads.** The `ascribe` binary is built with link-time optimization: about a third smaller on macOS and Linux (7.0 MB on macOS arm64, from 10.5 MB) and 8 percent smaller on Windows, and a little faster.
 
 ## 0.2.0 (2026-10-06)

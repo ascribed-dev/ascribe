@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use ascribe_core::apply_edits;
+use ascribe_core::{SourceBoundary, apply_edits};
 use ascribe_model::{ContentModel, MODEL_FILE};
 
 use crate::{format, options_from_model};
@@ -45,6 +45,26 @@ impl ascribe_core::Coded for FormatFilesError {
     }
 }
 
+/// What [`format_files`] did.
+#[derive(Debug, Default)]
+pub struct Formatted {
+    /// The files that changed, or with `check` would have.
+    pub changed: Vec<PathBuf>,
+    /// The files left alone because a symbolic link on the way to them leads
+    /// out of the content root, in path order.
+    pub refused: Vec<Refused>,
+}
+
+/// A file [`format_files`] didn't read, because a symbolic link on the way to
+/// it leads to a file that isn't a source file of the content root.
+#[derive(Debug)]
+pub struct Refused {
+    /// The file, as it was found.
+    pub path: PathBuf,
+    /// Why, as `check` words it ([`SourceBoundary::check_link`]).
+    pub reason: String,
+}
+
 /// Formats every `.md` file under `paths` (each a file, or a directory
 /// searched recursively) or, with no path, under the content root of the
 /// project whose content model, `model`, is at `config`. Each file that
@@ -57,7 +77,10 @@ impl ascribe_core::Coded for FormatFilesError {
 /// Directories whose names start with `.`, `node_modules`, and directories
 /// inside the searched ones that hold an `ascribe.toml` other than the
 /// project's own (another project, formatted under its own model) are
-/// skipped. The files are formatted in path order, each once.
+/// skipped. A file in the content root reached through a symbolic link that
+/// leads to a file that isn't a source file of the content root, as
+/// `boundary` decides, is neither read nor written, and is returned in
+/// [`Formatted::refused`]. The files are formatted in path order, each once.
 ///
 /// # Errors
 ///
@@ -68,17 +91,17 @@ pub fn format_files(
     model: &ContentModel,
     paths: &[PathBuf],
     check: bool,
+    boundary: &dyn SourceBoundary,
     on_changed: &mut dyn FnMut(&Path),
-) -> Result<Vec<PathBuf>, FormatFilesError> {
+) -> Result<Formatted, FormatFilesError> {
     let project = config
         .parent()
         .map_or_else(|| PathBuf::from("."), Path::to_owned);
     let parse_options = options_from_model(model);
 
     // Outside FileSystem: `fmt` formats the files and folders it's given, as
-    // given, and this crate can't use ascribe-resolve. A link out of the
-    // content root is still followed here; that's a known gap, for its own
-    // change.
+    // given, and this crate can't use ascribe-resolve. `boundary` keeps a link
+    // in the content root from leading out of it, as FileSystem does.
     let roots: Vec<PathBuf> = if paths.is_empty() {
         vec![project.join(&model.project.content_root)]
     } else {
@@ -92,8 +115,12 @@ pub fn format_files(
     files.sort();
     files.dedup();
 
-    let mut changed = Vec::new();
+    let mut done = Formatted::default();
     for file in files {
+        if let Err(reason) = boundary.check_link(&file) {
+            done.refused.push(Refused { path: file, reason });
+            continue;
+        }
         // Outside FileSystem: as above.
         let source = std::fs::read(&file).map_err(|source| FormatFilesError::Io {
             path: file.clone(),
@@ -116,9 +143,9 @@ pub fn format_files(
             })?;
         }
         on_changed(&file);
-        changed.push(file);
+        done.changed.push(file);
     }
-    Ok(changed)
+    Ok(done)
 }
 
 /// Whether a directory holds a file named exactly `ascribe.toml` and isn't

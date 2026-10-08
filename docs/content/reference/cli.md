@@ -276,11 +276,13 @@ It lists each file it changed.
 
 @include: ../_generated/cli-fmt-options.md
 
+It formats only what `ascribe check` reads: a file in the content root that's a symbolic link, or is in a linked folder, is formatted only when the link leads to a source file of the content root. One that leads anywhere else is left alone and reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics.md#asc123-source-unreadable)), and the other files are still formatted.
+
 | Code | Meaning |
 |---|---|
 | `0` | Every file was formatted, or, with `--check`, none needed it |
 | `1` | With `--check`: a file would change |
-| `2` | A problem: no `ascribe.toml`, a content model with errors, or a path or file that can't be read |
+| `2` | A problem: no `ascribe.toml`, a content model with errors, a path or file that can't be read, or a symbolic link that leads out of the content root |
 
 ## `ascribe lsp`
 

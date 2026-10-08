@@ -8,21 +8,27 @@
 //!   (another project's folder, unless it's this project's own) are skipped.
 //! - **The project.** `--config`, or the nearest `ascribe.toml` at or above the
 //!   current directory. Its content model decides which lines are directives.
+//! - **Links.** A file in the content root reached through a symbolic link
+//!   that leads to a file that isn't a source file of the content root is
+//!   left alone and reported on standard error as `check` reports it
+//!   (`source-unreadable`, SPEC §2.1).
 //! - **Without `--check`** files are rewritten in place, and each file that
 //!   changed is listed. **With `--check`** nothing is written, and each file
 //!   that would change is listed.
 //! - **Exit status.** `0` when nothing needed formatting (`--check`) or every
 //!   file was formatted; `1` under `--check` when a file would change; `2` for a
-//!   problem: no project, an invalid model, an unreadable path or file.
+//!   problem: no project, an invalid model, an unreadable path or file, or a
+//!   link out of the content root (the other files are still formatted).
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::{LoadError, LocateError, Project};
-use ascribe_core::Coded;
-use ascribe_core::diagnostics::MODEL_TOML_SYNTAX;
-use ascribe_fmt::FormatFilesError;
+use ascribe_check::{Diagnostic, LoadError, LocateError, Project};
+use ascribe_core::diagnostics::{MODEL_TOML_SYNTAX, SOURCE_UNREADABLE};
+use ascribe_core::{Coded, FileId, Issue, Location, Span};
+use ascribe_fmt::{FormatFilesError, Formatted};
+use ascribe_resolve::{DiskFs, Layout};
 use clap::Args as ClapArgs;
 
 use crate::cli::Global;
@@ -45,7 +51,9 @@ pub struct Args {
     /// Directories whose names start with `.`, `node_modules`, and
     /// directories inside the searched ones that hold an `ascribe.toml` other
     /// than the project's own (another project, formatted under its own
-    /// model) are skipped.
+    /// model) are skipped. So is a file in the content root reached through a
+    /// symbolic link that leads to a file that isn't a source file of the
+    /// content root, and it's reported.
     pub paths: Vec<PathBuf>,
 }
 
@@ -54,15 +62,38 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     let mut out = std::io::stdout().lock();
     let mut err = std::io::stderr().lock();
     match format_all(global, &args, &mut out) {
-        Ok(changed) if args.check && changed > 0 => {
-            let _ = writeln!(
-                err,
-                "{changed} file{} would be reformatted",
-                if changed == 1 { "" } else { "s" }
-            );
-            exit::code(exit::PROBLEMS)
+        Ok(done) => {
+            for refused in &done.refused {
+                let issue = Issue::new(
+                    SOURCE_UNREADABLE,
+                    Location::new(FileId::new(0), Span::empty(0)),
+                )
+                .with_arg("reason", refused.reason.clone());
+                let d = Diagnostic::from_issue(&issue);
+                let _ = writeln!(
+                    err,
+                    "{}: [{}] Error: {}",
+                    refused.path.display(),
+                    d.code,
+                    d.message
+                );
+            }
+            let changed = done.changed.len();
+            if args.check && changed > 0 {
+                let _ = writeln!(
+                    err,
+                    "{changed} file{} would be reformatted",
+                    if changed == 1 { "" } else { "s" }
+                );
+            }
+            if !done.refused.is_empty() {
+                exit::code(exit::FAILURE)
+            } else if args.check && changed > 0 {
+                exit::code(exit::PROBLEMS)
+            } else {
+                exit::code(exit::OK)
+            }
         }
-        Ok(_) => exit::code(exit::OK),
         Err(e) => exit::code(exit::fail(&mut err, &e)),
     }
 }
@@ -115,15 +146,15 @@ fn model_slugs(error: &LoadError) -> Vec<&str> {
 }
 
 /// Formats every file, listing each that changed (or would have), and
-/// returns how many did.
-fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<usize, FmtError> {
+/// returns what it did.
+fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<Formatted, FmtError> {
     let config = locate(global)?;
-    let model = Project::load_model(&config)
-        .map_err(|error| FmtError::Model {
-            config: config.clone(),
-            error,
-        })?
-        .model;
+    let file = Project::load_model(&config).map_err(|error| FmtError::Model {
+        config: config.clone(),
+        error,
+    })?;
+    let model = file.model;
+    let boundary = DiskFs::new(file.root, &Layout::from_model(&model));
     let verb = if options.check {
         "would reformat"
     } else {
@@ -132,7 +163,12 @@ fn format_all(global: &Global, options: &Args, out: &mut dyn Write) -> Result<us
     let mut list = |file: &Path| {
         let _ = writeln!(out, "{verb} {}", file.display());
     };
-    let changed =
-        ascribe_fmt::format_files(&config, &model, &options.paths, options.check, &mut list)?;
-    Ok(changed.len())
+    Ok(ascribe_fmt::format_files(
+        &config,
+        &model,
+        &options.paths,
+        options.check,
+        &boundary,
+        &mut list,
+    )?)
 }

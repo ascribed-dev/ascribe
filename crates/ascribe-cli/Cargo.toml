@@ -24,6 +24,7 @@ ascribe-emit.workspace = true
 ascribe-fmt.workspace = true
 ascribe-lsp.workspace = true
 ascribe-model.workspace = true
+ascribe-resolve.workspace = true
 ascribe-sources.workspace = true
 thiserror.workspace = true
 
