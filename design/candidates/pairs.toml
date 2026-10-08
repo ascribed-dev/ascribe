@@ -198,6 +198,49 @@ bg = "background"
 kind = "text"
 where = "Review's Show and Moved links"
 
+# Review's overlay: its threads, buttons, and the unsent bar.
+[[pair]]
+fg = "focus"
+bg = "surface"
+kind = "text"
+where = "Links in a thread"
+
+[[pair]]
+fg = "accent-text"
+bg = "focus"
+kind = "text"
+where = "A primary button's label"
+
+[[pair]]
+fg = "background"
+bg = "removed"
+kind = "text"
+where = "The Discard button's label"
+
+[[pair]]
+fg = "added"
+bg = "surface"
+kind = "text"
+where = "A resolved thread's badge"
+
+[[pair]]
+fg = "changed"
+bg = "surface"
+kind = "text"
+where = "An unsent thread's badge"
+
+[[pair]]
+fg = "removed"
+bg = "surface"
+kind = "text"
+where = "A removed or detached thread's badge"
+
+[[pair]]
+fg = "text"
+bg = "changed-background"
+kind = "text"
+where = "The unsent bar, and its note"
+
 [[distinct]]
 a = "added"
 b = "removed"

@@ -136,7 +136,7 @@ Comparing again after a save runs `ascribe diff` once, which takes about as long
 
 ## Styling
 
-The elements render into the page (no shadow DOM), so your site's styles apply to them, and they're themed with CSS custom properties such as `--ascribe-tip-color` and `--ascribe-tab-active-color`. The [element library's README]({repo}/blob/main/packages/elements/README.md#theming) lists them, and shows how to style your own note types and lifecycle states.
+The elements render into the page (no shadow DOM), so your site's styles apply to them, and they're themed with CSS custom properties such as `--ascribe-tip-color` and `--ascribe-tab-active-color`. The [element library's README]({repo}/blob/main/packages/elements/README.md#theming) lists them, and shows how to style your own note types and lifecycle states. Their names don't change, but their default colors are Ascribe's and may change in a release, as the changelog notes, so set the ones your site needs fixed.
 
 ### Code block titles
 @available: next

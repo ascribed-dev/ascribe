@@ -13,22 +13,22 @@
 
 :root {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
-  --ascribe-review-added: #1a7f37;
-  --ascribe-review-added-background: #dcf7e3;
-  --ascribe-review-changed: #8a5a00;
-  --ascribe-review-changed-background: #fff1c2;
-  --ascribe-review-removed: #c4222d;
-  --ascribe-review-removed-background: #ffe4e2;
-  --ascribe-review-moved: #7a3fd0;
-  --ascribe-review-moved-background: #f0e6ff;
-  --ascribe-review-muted: #5b6475;
+  --ascribe-review-added: #057256;
+  --ascribe-review-added-background: #c7fae5;
+  --ascribe-review-changed: #845502;
+  --ascribe-review-changed-background: #fee9d0;
+  --ascribe-review-removed: #ca3f02;
+  --ascribe-review-removed-background: #fef4f1;
+  --ascribe-review-moved: #932f8e;
+  --ascribe-review-moved-background: #fff2fd;
+  --ascribe-review-muted: #676c75;
   --ascribe-review-surface: #ffffff;
-  --ascribe-review-flash: #fff6bf;
-  --ascribe-review-focus: #1f6feb;
+  --ascribe-review-flash: #fee9d0;
+  --ascribe-review-focus: #5962e8;
   --ascribe-review-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --ascribe-review-text: #1d2330;
-  --ascribe-review-border: #d3d8e0;
-  --ascribe-review-thread: #f5f7fb;
+  --ascribe-review-text: #22272e;
+  --ascribe-review-border: #e3e6ec;
+  --ascribe-review-thread: #f7f9fd;
   --ascribe-review-input: #ffffff;
   --ascribe-review-accent-text: #ffffff;
   /* End of generated root. */
@@ -38,23 +38,23 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-ascribe-scheme="light"]) {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
-    --ascribe-review-added: #4fc572;
-    --ascribe-review-added-background: #133520;
-    --ascribe-review-changed: #dcb13a;
-    --ascribe-review-changed-background: #3a2f0d;
-    --ascribe-review-removed: #ff8279;
-    --ascribe-review-removed-background: #401918;
-    --ascribe-review-moved: #c59bff;
-    --ascribe-review-moved-background: #2d2440;
-    --ascribe-review-muted: #929bab;
-    --ascribe-review-surface: #1e2026;
-    --ascribe-review-flash: #3b3514;
-    --ascribe-review-focus: #5aa2ff;
-    --ascribe-review-text: #d9dde5;
-    --ascribe-review-border: #343a45;
-    --ascribe-review-thread: #272b33;
-    --ascribe-review-input: #1e2026;
-    --ascribe-review-accent-text: #0b1220;
+    --ascribe-review-added: #22c598;
+    --ascribe-review-added-background: #003929;
+    --ascribe-review-changed: #e0992e;
+    --ascribe-review-changed-background: #432900;
+    --ascribe-review-removed: #fe7f57;
+    --ascribe-review-removed-background: #511b0a;
+    --ascribe-review-moved: #ffc8f9;
+    --ascribe-review-moved-background: #461c43;
+    --ascribe-review-muted: #a5a9b2;
+    --ascribe-review-surface: #0c0f16;
+    --ascribe-review-flash: #432900;
+    --ascribe-review-focus: #b3c0ff;
+    --ascribe-review-text: #f0f3f7;
+    --ascribe-review-border: #393d46;
+    --ascribe-review-thread: #13171f;
+    --ascribe-review-input: #0c0f16;
+    --ascribe-review-accent-text: #0c0f16;
     /* End of generated root. */
     --ascribe-review-blend: screen;
   }
@@ -62,23 +62,23 @@
 
 :root[data-ascribe-scheme="dark"] {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
-  --ascribe-review-added: #4fc572;
-  --ascribe-review-added-background: #133520;
-  --ascribe-review-changed: #dcb13a;
-  --ascribe-review-changed-background: #3a2f0d;
-  --ascribe-review-removed: #ff8279;
-  --ascribe-review-removed-background: #401918;
-  --ascribe-review-moved: #c59bff;
-  --ascribe-review-moved-background: #2d2440;
-  --ascribe-review-muted: #929bab;
-  --ascribe-review-surface: #1e2026;
-  --ascribe-review-flash: #3b3514;
-  --ascribe-review-focus: #5aa2ff;
-  --ascribe-review-text: #d9dde5;
-  --ascribe-review-border: #343a45;
-  --ascribe-review-thread: #272b33;
-  --ascribe-review-input: #1e2026;
-  --ascribe-review-accent-text: #0b1220;
+  --ascribe-review-added: #22c598;
+  --ascribe-review-added-background: #003929;
+  --ascribe-review-changed: #e0992e;
+  --ascribe-review-changed-background: #432900;
+  --ascribe-review-removed: #fe7f57;
+  --ascribe-review-removed-background: #511b0a;
+  --ascribe-review-moved: #ffc8f9;
+  --ascribe-review-moved-background: #461c43;
+  --ascribe-review-muted: #a5a9b2;
+  --ascribe-review-surface: #0c0f16;
+  --ascribe-review-flash: #432900;
+  --ascribe-review-focus: #b3c0ff;
+  --ascribe-review-text: #f0f3f7;
+  --ascribe-review-border: #393d46;
+  --ascribe-review-thread: #13171f;
+  --ascribe-review-input: #0c0f16;
+  --ascribe-review-accent-text: #0c0f16;
   /* End of generated root. */
   --ascribe-review-blend: screen;
 }

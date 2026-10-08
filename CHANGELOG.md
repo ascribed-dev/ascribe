@@ -11,6 +11,115 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 - **A snippet whose file isn't at the pin says so.** When a file a snippet names isn't in the code's repository at the commit `ascribe.lock` pins, because it was moved or deleted there, `ascribe check` says that, and how to fix it, where it said to run `ascribe sources fetch`, which can't help. The update pull request quotes the new message. `ascribe sources fetch` and `update` record those files in `ascribe.lock`, under a new key, `missing`, and `ascribe sources status` shows them as `not_at_pin`. The lock's `version` stays `1`; a lock with `missing` can't be read by an earlier release. See [`ascribe.lock` and the copies](docs/content/contracts/content-model.md#191-ascribelock-and-the-copies).
 - **Fixed:** `ascribe fmt` no longer follows a symbolic link out of the content root. A file that's a link, or is in a linked folder, that leads to a file that isn't a source file of the content root is left alone and reported as `ascribe check` reports it (`source-unreadable`), and `fmt` exits with 2. It was formatted and written where the link led. See [`ascribe fmt`](docs/content/reference/cli.md#ascribe-fmt).
 - **A title with code shows it in review.** The page preview's heading in VS Code, the HTML report's list of pages and its page headings, and the list of comments in the editor and the site preview show a title's code spans as code, where they showed plain text. **Ascribe: Changed Pages** writes them between backticks. The HTML report's data, and the language server's `ascribe/preview` and `ascribe/review/changes` answers, have the formatted title beside the plain one. See [code in a field](docs/content/reference/content-model.md#53-code-in-a-field).
+- **New default colors for the elements and review.** The element library, review's marks and comment threads, the review panel in Astro's dev toolbar, and the HTML report take Ascribe's palette: an indigo accent over cool grays, with notes, availability badges, and review's marks in matching hues. Added and removed differ in more than red and green, for readers with red-green color blindness. The report's frame uses Ascribe's type scale. **Behavior change:** a site that doesn't set the `--ascribe-*` and `--ascribe-review-*` custom properties looks different. Their names are unchanged, and their defaults may change again in a release, always noted here. To keep the previous look, add this to the site's stylesheet, after the element library's and review's:
+
+  <details>
+  <summary>The previous default colors</summary>
+
+  ```css
+  /* The element library */
+  @supports (color: light-dark(#000, #fff)) {
+    :root {
+      --ascribe-border-color: light-dark(#d0d7de, #3d444d);
+      --ascribe-muted-color: light-dark(#57606a, #9198a1);
+      --ascribe-note-color: light-dark(#0969da, #4493f8);
+      --ascribe-note-background: light-dark(#ddf4ff, #121d2f);
+      --ascribe-tip-color: light-dark(#1a7f37, #3fb950);
+      --ascribe-tip-background: light-dark(#dafbe1, #12261e);
+      --ascribe-important-color: light-dark(#8250df, #ab7df8);
+      --ascribe-important-background: light-dark(#fbefff, #1f1a33);
+      --ascribe-warning-color: light-dark(#9a6700, #d29922);
+      --ascribe-warning-background: light-dark(#fff8c5, #272115);
+      --ascribe-caution-color: light-dark(#cf222e, #f85149);
+      --ascribe-caution-background: light-dark(#ffebe9, #2d1517);
+      --ascribe-steps-color: light-dark(#0969da, #4493f8);
+      --ascribe-steps-marker-text-color: light-dark(#ffffff, #0d1117);
+      --ascribe-tab-color: light-dark(#57606a, #9198a1);
+      --ascribe-tab-active-color: light-dark(#0969da, #4493f8);
+      --ascribe-tab-focus-color: light-dark(#0969da, #4493f8);
+      --ascribe-tab-hover-background: light-dark(#f6f8fa, #151b23);
+      --ascribe-state-color: light-dark(#57606a, #9198a1);
+      --ascribe-state-background: light-dark(#eaeef2, #212830);
+      --ascribe-state-ga-color: light-dark(#1a7f37, #3fb950);
+      --ascribe-state-ga-background: light-dark(#dafbe1, #12261e);
+      --ascribe-state-preview-color: light-dark(#8250df, #ab7df8);
+      --ascribe-state-preview-background: light-dark(#fbefff, #1f1a33);
+      --ascribe-state-beta-color: light-dark(#0969da, #4493f8);
+      --ascribe-state-beta-background: light-dark(#ddf4ff, #121d2f);
+      --ascribe-state-deprecated-color: light-dark(#9a6700, #d29922);
+      --ascribe-state-deprecated-background: light-dark(#fff8c5, #272115);
+      --ascribe-state-removed-color: light-dark(#cf222e, #f85149);
+      --ascribe-state-removed-background: light-dark(#ffebe9, #2d1517);
+    }
+  }
+
+  /* Review's marks and overlay */
+  :root {
+    --ascribe-review-added: #1a7f37;
+    --ascribe-review-added-background: #dcf7e3;
+    --ascribe-review-changed: #8a5a00;
+    --ascribe-review-changed-background: #fff1c2;
+    --ascribe-review-removed: #c4222d;
+    --ascribe-review-removed-background: #ffe4e2;
+    --ascribe-review-moved: #7a3fd0;
+    --ascribe-review-moved-background: #f0e6ff;
+    --ascribe-review-muted: #5b6475;
+    --ascribe-review-surface: #ffffff;
+    --ascribe-review-flash: #fff6bf;
+    --ascribe-review-focus: #1f6feb;
+    --ascribe-review-text: #1d2330;
+    --ascribe-review-border: #d3d8e0;
+    --ascribe-review-thread: #f5f7fb;
+    --ascribe-review-input: #ffffff;
+    --ascribe-review-accent-text: #ffffff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-ascribe-scheme="light"]) {
+      --ascribe-review-added: #4fc572;
+      --ascribe-review-added-background: #133520;
+      --ascribe-review-changed: #dcb13a;
+      --ascribe-review-changed-background: #3a2f0d;
+      --ascribe-review-removed: #ff8279;
+      --ascribe-review-removed-background: #401918;
+      --ascribe-review-moved: #c59bff;
+      --ascribe-review-moved-background: #2d2440;
+      --ascribe-review-muted: #929bab;
+      --ascribe-review-surface: #1e2026;
+      --ascribe-review-flash: #3b3514;
+      --ascribe-review-focus: #5aa2ff;
+      --ascribe-review-text: #d9dde5;
+      --ascribe-review-border: #343a45;
+      --ascribe-review-thread: #272b33;
+      --ascribe-review-input: #1e2026;
+      --ascribe-review-accent-text: #0b1220;
+    }
+  }
+
+  :root[data-ascribe-scheme="dark"] {
+    --ascribe-review-added: #4fc572;
+    --ascribe-review-added-background: #133520;
+    --ascribe-review-changed: #dcb13a;
+    --ascribe-review-changed-background: #3a2f0d;
+    --ascribe-review-removed: #ff8279;
+    --ascribe-review-removed-background: #401918;
+    --ascribe-review-moved: #c59bff;
+    --ascribe-review-moved-background: #2d2440;
+    --ascribe-review-muted: #929bab;
+    --ascribe-review-surface: #1e2026;
+    --ascribe-review-flash: #3b3514;
+    --ascribe-review-focus: #5aa2ff;
+    --ascribe-review-text: #d9dde5;
+    --ascribe-review-border: #343a45;
+    --ascribe-review-thread: #272b33;
+    --ascribe-review-input: #1e2026;
+    --ascribe-review-accent-text: #0b1220;
+  }
+  ```
+
+  </details>
+
+  See [theming](packages/elements/README.md#theming).
 - **Smaller downloads.** The `ascribe` binary is built with link-time optimization: about a third smaller on macOS and Linux (7.0 MB on macOS arm64, from 10.5 MB) and 8 percent smaller on Windows, and a little faster.
 - `@ascribed/astro` declares `satteri` and `@types/hast` as optional peer dependencies. Its `@ascribed/astro/satteri` and `@ascribed/astro/rehype` declarations import types from them, so a project that type-checks those declarations (`skipLibCheck: false`) needs the one it imports, which a Sätteri or `unified()` processor already brings.
 

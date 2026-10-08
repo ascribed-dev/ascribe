@@ -58,9 +58,9 @@ test("every candidate palette passes every pairing, in light and dark", () => {
   }
 });
 
-test("the pairs use every semantic color but the two that carry no meaning", () => {
+test("the pairs use every semantic color but the border, which carries no meaning", () => {
   const used = new Set(inputs.pairs.flatMap((p) => [p.fg, p.bg]));
-  expect(COLORS.filter((c) => !used.has(c))).toEqual(["border", "changed-background"]);
+  expect(COLORS.filter((c) => !used.has(c))).toEqual(["border"]);
 });
 
 test("a candidate names the key it got wrong", () => {
