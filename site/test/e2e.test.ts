@@ -1,8 +1,9 @@
-// The built site in Chromium: variants, availability, code titles, links
-// between pages, search, the edit link, the 404 page, and the narrow layout.
+// The built site in Chromium: the head and the header's mark, variants,
+// availability, code titles, links between pages, search, the edit link, the
+// 404 page, and the narrow layout.
 import { afterAll, beforeAll, expect, test } from "vitest";
 import type { Browser, Page } from "playwright-core";
-import { launchChromium, requireBuild, serve } from "./built.ts";
+import { launchChromium, requireBuild, serve, siteAddress } from "./built.ts";
 
 let server: Awaited<ReturnType<typeof serve>>;
 let browser: Browser;
@@ -18,11 +19,69 @@ afterAll(async () => {
   await server?.close();
 });
 
+/** `#rrggbb` as getComputedStyle writes it. */
+function rgb(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 async function open(path: string, width = 1280): Promise<Page> {
   const page = await browser.newPage({ viewport: { width, height: 900 } });
   await page.goto(server.url + path);
   return page;
 }
+
+test("the head names the icons, the social card, and a theme color per scheme", async () => {
+  const page = await open("/getting-started/");
+  const icons = await page
+    .locator('link[rel="icon"], link[rel="apple-touch-icon"]')
+    .evaluateAll((links) => links.map((link) => (link as HTMLLinkElement).href));
+  expect(icons.map((href) => new URL(href).pathname)).toEqual([
+    "/favicon.ico",
+    "/favicon.svg",
+    "/apple-touch-icon.png",
+  ]);
+  for (const href of icons) {
+    const response = await page.request.get(href);
+    expect(response.status(), href).toBe(200);
+  }
+
+  // A shared link's card is an absolute address on the site; it's served here.
+  const card = await page.locator('meta[property="og:image"]').getAttribute("content");
+  expect(card).toBe(`${await siteAddress()}/social-card.png`);
+  const served = await page.request.get(`${server.url}${new URL(card ?? "").pathname}`);
+  expect(served.status()).toBe(200);
+  expect(served.headers()["content-type"]).toBe("image/png");
+  expect(await page.locator('meta[name="twitter:card"]').getAttribute("content")).toBe(
+    "summary_large_image",
+  );
+
+  const themes = await page
+    .locator('meta[name="theme-color"]')
+    .evaluateAll((metas) =>
+      metas.map((meta) => [meta.getAttribute("media"), meta.getAttribute("content")]),
+    );
+  expect(themes.map(([media]) => media)).toEqual([
+    "(prefers-color-scheme: light)",
+    "(prefers-color-scheme: dark)",
+  ]);
+  // Each is the page's background in its scheme.
+  for (const [media, color] of themes) {
+    const scheme = media?.includes("dark") ? "dark" : "light";
+    await page.emulateMedia({ colorScheme: scheme });
+    const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(background, scheme).toBe(rgb(color ?? ""));
+  }
+  await page.close();
+});
+
+test("the header's mark links home and is named", async () => {
+  const page = await open("/guides/astro/");
+  const home = page.getByRole("link", { name: "Ascribe", exact: true });
+  expect(await home.getAttribute("href")).toBe("/");
+  expect(await home.getByRole("img", { name: "Ascribe" }).isVisible()).toBe(true);
+  await page.close();
+});
 
 test("a variant group is a switcher, and the reader's choice holds on the next page", async () => {
   const page = await open("/getting-started/");
