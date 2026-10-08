@@ -49,9 +49,7 @@ pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_has
 pub use model::*;
 pub use names::suggest;
 pub use pattern::{Pattern, PatternError};
-pub use types::{
-    Field, FieldType, FrontmatterSchema, SchemaOwner, is_calendar_date, validate_frontmatter,
-};
+pub use types::{Field, FieldType, FrontmatterSchema, SchemaOwner, validate_frontmatter};
 
 use ascribe_core::FileId;
 
