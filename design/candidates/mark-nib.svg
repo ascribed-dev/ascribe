@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <title>Nib</title>
-  <desc>A pen nib, point down, with its slit: to ascribe is to write something down and say whose it is. A solid shape, so it holds up best of the three at 16 pixels and in a tinted activity bar. Weak because a nib is common: editors, writing apps, and signing tools use one, so it says "writing" more than "Ascribe".</desc>
-  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
-  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
-</svg>

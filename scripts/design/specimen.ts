@@ -9,7 +9,7 @@
 // element library's, review's, and the docs site's own stylesheets with each
 // candidate's colors, so adding a candidate adds no code.
 
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "smol-toml";
@@ -59,8 +59,10 @@ export interface Candidate {
 }
 
 export interface Mark {
-  /** The file's name without `mark-` and `.svg`. */
+  /** The file's name without `mark-` and `.svg`, or `chosen` for design/mark.svg. */
   id: string;
+  /** Where it is, from the repository's root. */
+  path: string;
   title: string;
   description: string;
   svg: string;
@@ -285,8 +287,7 @@ export function readPairs(text: string): { pairs: Pair[]; distinct: Distinct[] }
 }
 
 /** Reads one candidate mark, taking its name and note from its `<title>` and `<desc>`. */
-export function readMark(id: string, svg: string): Mark {
-  const file = `mark-${id}.svg`;
+export function readMark(id: string, svg: string, file = `design/candidates/mark-${id}.svg`): Mark {
   if (!/<svg [^>]*viewBox="0 0 \d+ \d+"/.test(svg)) throw new Error(`${file}: no viewBox`);
   if (/<(image|text|style|foreignObject)\b|font-family|xlink:href="data:/.test(svg)) {
     throw new Error(`${file}: an image, text, font, or style; a mark is paths only`);
@@ -296,7 +297,13 @@ export function readMark(id: string, svg: string): Mark {
   if (title === undefined || description === undefined) {
     throw new Error(`${file}: needs a <title> and a <desc>`);
   }
-  return { id, title, description: description.trim().replace(/\s+/g, " "), svg: svg.trim() };
+  return {
+    id,
+    path: file,
+    title,
+    description: description.trim().replace(/\s+/g, " "),
+    svg: svg.trim(),
+  };
 }
 
 /** Reads a wordmark: paths only, in a viewBox, like a mark. */
@@ -335,6 +342,24 @@ export function readInputs(): Inputs {
         wordmark: readWordmark(wordmark, readFileSync(join(CANDIDATES, wordmark), "utf8")),
       };
     });
+  // The chosen mark, once there is one, comes first.
+  const design = join(ROOT, "design");
+  if (existsSync(join(design, "mark.svg"))) {
+    const chosen = readMark(
+      "chosen",
+      readFileSync(join(design, "mark.svg"), "utf8"),
+      "design/mark.svg",
+    );
+    const wordmark = join(design, "wordmark.svg");
+    marks.unshift(
+      existsSync(wordmark)
+        ? {
+            ...chosen,
+            wordmark: readWordmark("design/wordmark.svg", readFileSync(wordmark, "utf8")),
+          }
+        : chosen,
+    );
+  }
   const { pairs, distinct } = readPairs(readFileSync(join(CANDIDATES, "pairs.toml"), "utf8"));
   const stylesheets: Record<string, string> = {};
   for (const path of Object.keys(EMIT)) {
@@ -760,7 +785,7 @@ export function renderSpecimen(inputs: Inputs): string {
   const marks = inputs.marks
     .map(
       (m) =>
-        `<div><h3>${esc(m.title)}</h3><p>${esc(m.description)}</p><p><code>design/candidates/mark-${esc(m.id)}.svg</code></p></div>`,
+        `<div><h3>${esc(m.title)}</h3><p>${esc(m.description)}</p><p><code>${esc(m.path)}</code></p></div>`,
     )
     .join("\n");
   const toc = inputs.candidates.map((c) => `<a href="#${esc(c.id)}">${esc(c.name)}</a>`).join("");

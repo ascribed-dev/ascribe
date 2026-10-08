@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <title>Cited</title>
-  <desc>A lowercase a in brackets, as a citation is set: [a]. Closing the bracket turns the Bracket candidate from code into a reference. Weak at 16 pixels, where three shapes crowd one square, and square brackets still say "code" to some.</desc>
-  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
-  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
-</svg>

@@ -35,7 +35,6 @@ test("red and green move closer for a reader without red or green cones", () => 
 test("there's a baseline, and two or three palettes to choose from", () => {
   expect(inputs.candidates.filter((c) => c.baseline).map((c) => c.id)).toEqual(["baseline"]);
   expect(inputs.candidates.filter((c) => !c.baseline).length).toBeGreaterThanOrEqual(2);
-  expect(inputs.marks.length).toBeGreaterThanOrEqual(3);
 });
 
 test("every candidate palette passes every pairing, in light and dark", () => {
@@ -66,6 +65,12 @@ test("a candidate names the key it got wrong", () => {
   expect(() => readCandidate("x", good.replace('"#ffffff"', '"#FFF"'))).toThrow(
     'x.toml palette.gray.0: "#FFF" isn\'t a lowercase #rrggbb',
   );
+});
+
+test("the chosen mark comes first, with its wordmark", () => {
+  const [chosen] = inputs.marks;
+  expect(chosen?.path).toBe("design/mark.svg");
+  expect(chosen?.wordmark).toContain("<title>ascribe</title>");
 });
 
 test("a mark is paths in a viewBox, with a title and a note", () => {
