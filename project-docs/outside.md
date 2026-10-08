@@ -52,6 +52,19 @@ It holds names, never values. When you add, rename, or remove one of these, chan
 | A Netlify personal access token, with an expiry | `NETLIFY_AUTH_TOKEN`, above | Maintainer; it needs replacing when it expires |
 | The domain `ascribed-dev.com` | The docs site, and `[consumer]` in `docs/ascribe.toml` | Maintainer. Its registrar and DNS weren't checked |
 
+## Images
+
+The mark's images that an outside account shows, generated in this repository ([design/README.md](../design/README.md#the-assets)). Each is uploaded by hand on the account's settings page, and again when the image changes; nothing in the repository can.
+
+| Where it shows | The file | Who can change it |
+|---|---|---|
+| The `ascribed-dev` organization's avatar on GitHub | `design/out/avatar.png` | Maintainer, in the organization's settings |
+| The repository's social preview, shown when a link to it is shared | `site/public/social-card.png` | Maintainer, in the repository's settings (General, Social preview) |
+| The Marketplace publisher `Ascribe`'s logo | `design/out/avatar.png` | Maintainer, on the publisher's management page |
+| The npm organization `ascribed` | Nothing yet: npm shows a Gravatar for an account. Whether an organization can take one wasn't checked | Maintainer |
+
+The extension's own icon and the docs site's favicon and social card aren't here: the extension package and the site carry them.
+
 ## Not checked
 
 These need the maintainer's accounts, so neither the inventory nor this page could look: Netlify's settings, the npm trusted-publisher entries, the GitHub App's permissions, the Marketplace publisher's members, the domain's registrar, and what the `copilot` environment is for.
