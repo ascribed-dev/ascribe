@@ -72,7 +72,11 @@ th, td { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--line); text-ali
 <div class="candidate-marks">
 <div><h3>Bracket</h3><p>A lowercase a with an opening bracket in its margin, like a note's bar or review's change bar: text, and something said about it. The a is drawn from a circle and a stem, so there's no font to license. Weak in that it reads as two letters, &quot;[a&quot;, and the bracket alone suggests code more than documents.</p><p><code>design/candidates/mark-bracket.svg</code></p></div>
 <div><h3>Caret</h3><p>The proofreader's caret, the mark for &quot;insert here&quot;, with a dot: an A, and an edit. It ties the name to review and to writing, reads at 16 pixels as a clear A, and needs no letterforms drawn. Weak where a plain chevron already means &quot;collapse&quot; or &quot;up&quot;; the dot is what tells them apart, and it's small at 16.</p><p><code>design/candidates/mark-caret.svg</code></p></div>
+<div><h3>Cited</h3><p>A lowercase a in brackets, as a citation is set: [a]. Closing the bracket turns the Bracket candidate from code into a reference. Weak at 16 pixels, where three shapes crowd one square, and square brackets still say &quot;code&quot; to some.</p><p><code>design/candidates/mark-cited.svg</code></p></div>
+<div><h3>Double dagger</h3><p>The double dagger, the footnote mark that sends a reader to the source: ‡. Bold and plain, it holds up at 16 pixels and tints well in the activity bar. Weak because it has nothing of the name in it, and it's close to a plus or a cross at a glance.</p><p><code>design/candidates/mark-dagger.svg</code></p></div>
+<div><h3>Footnote</h3><p>A lowercase a with a raised asterisk: a word with a note on it, the plainest sign that something is cited. The a is drawn from a circle and a stem, so there's no font to license, and at 16 pixels the asterisk becomes a spark at the corner. Weak where an asterisk alone means &quot;required&quot; or &quot;new&quot; in forms and toolbars, so the a has to carry it.</p><p><code>design/candidates/mark-footnote.svg</code></p></div>
 <div><h3>Nib</h3><p>A pen nib, point down, with its slit: to ascribe is to write something down and say whose it is. A solid shape, so it holds up best of the three at 16 pixels and in a tinted activity bar. Weak because a nib is common: editors, writing apps, and signing tools use one, so it says &quot;writing&quot; more than &quot;Ascribe&quot;.</p><p><code>design/candidates/mark-nib.svg</code></p></div>
+<div><h3>Section</h3><p>The section sign, the mark that cites a part of a law or a specification: §. Documentation as code is close to a spec, and the sign is rare in software toolbars. In full color the whole sign takes the accent. Weak at 16 pixels, where its loops close up, and some readers will take it for an S.</p><p><code>design/candidates/mark-section.svg</code></p></div>
 </div>
 <section id="baseline">
 <h2>Baseline</h2>
@@ -222,6 +226,224 @@ th, td { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--line); text-ali
 </div>
 </div>
 <div class="mark">
+<p class="mark-name">Cited</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Double dagger</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Footnote</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
 <p class="mark-name">Nib</p>
 <div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <title>Nib</title>
@@ -282,6 +504,70 @@ th, td { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--line); text-ali
   <title>Nib</title>
   <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
   <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Section</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
 </svg><span>Getting started · Ascribe</span></span></div>
 </div>
 </div></div>
@@ -471,6 +757,224 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
 </div>
 </div>
 <div class="mark">
+<p class="mark-name">Cited</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Double dagger</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Footnote</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
 <p class="mark-name">Nib</p>
 <div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <title>Nib</title>
@@ -531,6 +1035,70 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
   <title>Nib</title>
   <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
   <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Section</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
 </svg><span>Getting started · Ascribe</span></span></div>
 </div>
 </div></div>
@@ -789,6 +1357,224 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
 </div>
 </div>
 <div class="mark">
+<p class="mark-name">Cited</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Double dagger</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Footnote</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
 <p class="mark-name">Nib</p>
 <div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <title>Nib</title>
@@ -849,6 +1635,70 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
   <title>Nib</title>
   <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
   <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Section</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
 </svg><span>Getting started · Ascribe</span></span></div>
 </div>
 </div></div>
@@ -1038,6 +1888,224 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
 </div>
 </div>
 <div class="mark">
+<p class="mark-name">Cited</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Double dagger</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Footnote</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
 <p class="mark-name">Nib</p>
 <div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <title>Nib</title>
@@ -1098,6 +2166,70 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
   <title>Nib</title>
   <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
   <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Section</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
 </svg><span>Getting started · Ascribe</span></span></div>
 </div>
 </div></div>
@@ -1356,6 +2488,224 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
 </div>
 </div>
 <div class="mark">
+<p class="mark-name">Cited</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Double dagger</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Footnote</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
 <p class="mark-name">Nib</p>
 <div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <title>Nib</title>
@@ -1416,6 +2766,70 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
   <title>Nib</title>
   <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
   <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Section</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
 </svg><span>Getting started · Ascribe</span></span></div>
 </div>
 </div></div>
@@ -1605,6 +3019,224 @@ body { font-size: 1.0625rem; line-height: 1.7; font-weight: 400; }
 </div>
 </div>
 <div class="mark">
+<p class="mark-name">Cited</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Cited</title>
+  <path class="second" d="M7.5 5 H3.5 V27 H7.5 M24.5 5 H28.5 V27 H24.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14.5" cy="19.5" r="5" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <rect x="18" y="12.5" width="3.5" height="14.75" rx="1.75" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Double dagger</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Footnote</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Footnote</title>
+  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
+  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
 <p class="mark-name">Nib</p>
 <div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <title>Nib</title>
@@ -1665,6 +3297,70 @@ body { font-size: 1.0625rem; line-height: 1.7; font-weight: 400; }
   <title>Nib</title>
   <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
   <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Section</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
 </svg><span>Getting started · Ascribe</span></span></div>
 </div>
 </div></div>

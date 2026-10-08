@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Section</title>
+  <desc>The section sign, the mark that cites a part of a law or a specification: §. Documentation as code is close to a spec, and the sign is rare in software toolbars. In full color the whole sign takes the accent. Weak at 16 pixels, where its loops close up, and some readers will take it for an S.</desc>
+  <path class="second" d="M21.5 6.5 C20.5 3.5 10.5 3 10.5 8.5 C10.5 12.5 21.5 12.5 21.5 17.5 C21.5 21 17 22 15 22" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="second" d="M10.5 25.5 C11.5 28.5 21.5 29 21.5 23.5 C21.5 19.5 10.5 19.5 10.5 14.5 C10.5 11 15 10 17 10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

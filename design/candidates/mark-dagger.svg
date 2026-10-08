@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Double dagger</title>
+  <desc>The double dagger, the footnote mark that sends a reader to the source: ‡. Bold and plain, it holds up at 16 pixels and tints well in the activity bar. Weak because it has nothing of the name in it, and it's close to a plus or a cross at a glance.</desc>
+  <path d="M16 3 V29" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="second" d="M8.5 10 H23.5 M8.5 22 H23.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg>
