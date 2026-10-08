@@ -239,9 +239,7 @@ impl FileSystem for DiskFs {
         if !self.is_source_at(&root, &real) {
             return Err(io::Error::new(
                 io::ErrorKind::PermissionDenied,
-                format!(
-                    "`{path}` is a symbolic link, or is in a linked folder, that leads to a file that isn't a source file of the content root"
-                ),
+                link_out(path),
             ));
         }
         fs::read_to_string(file)
@@ -340,6 +338,67 @@ impl FileSystem for DiskFs {
         list_files(&dir, project_dir, &mut out);
         out.sort();
         out
+    }
+}
+
+/// Why a file reached through a symbolic link can't be read: the link leads
+/// to a file that isn't a source file of the content root. `path` is the
+/// file's content path.
+fn link_out(path: impl std::fmt::Display) -> String {
+    format!(
+        "`{path}` is a symbolic link, or is in a linked folder, that leads to a file that isn't a source file of the content root"
+    )
+}
+
+impl ascribe_core::SourceBoundary for DiskFs {
+    fn check_link(&self, path: &Path) -> Result<(), String> {
+        // Everything is compared once links are followed, so no other
+        // spelling of the content root (a link to it, another case, `\\?\`)
+        // gets past the check.
+        let (Ok(root), Ok(real)) = (self.content_dir().canonicalize(), path.canonicalize()) else {
+            // Not there: reading it reports that.
+            return Ok(());
+        };
+        if self.is_source_at(&root, &real) {
+            return Ok(());
+        }
+        // The path as written, `..` and all: the system follows a link before
+        // it applies the `..` after it.
+        let file = if path.is_absolute() {
+            path.to_owned()
+        } else {
+            match std::env::current_dir() {
+                Ok(dir) => dir.join(path),
+                Err(_) => return Ok(()),
+            }
+        };
+        // The nearest folder on the way to the file that is the content root,
+        // however it's spelled. With none, the file isn't in the content root.
+        let Some((dir, rest)) = file
+            .ancestors()
+            .skip(1)
+            .find(|dir| dir.canonicalize().is_ok_and(|d| d == root))
+            .and_then(|dir| Some((dir, file.strip_prefix(dir).ok()?)))
+        else {
+            return Ok(());
+        };
+        // A file reached through no link is where its path says, and is
+        // formatted as named.
+        let mut at = dir.to_owned();
+        let mut linked = false;
+        for part in rest.components() {
+            at.push(part);
+            if matches!(part, std::path::Component::Normal(_))
+                && fs::symlink_metadata(&at).is_ok_and(|m| m.file_type().is_symlink())
+            {
+                linked = true;
+                break;
+            }
+        }
+        if !linked {
+            return Ok(());
+        }
+        Err(link_out(rest.to_string_lossy().replace('\\', "/")))
     }
 }
 

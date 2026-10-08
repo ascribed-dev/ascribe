@@ -49,4 +49,5 @@ SPEC.md is normative, and the cases in `cases/` were written from it by hand. Th
 - **Registry-change reports (§5.1).** "When a key is added to the registry, the pages whose existing literal `{key}` text would change" is a report between two versions of a model, which a case can't state.
 - **Phrases in frontmatter (§5.1).** Nothing in a resolved outline shows them.
 - **Loader rules (`docs/content/reference/content-model.md`).** Only the one that is a §8.2 row (`model-name-multiple-roles`) has cases; the rest are tested in `ascribe-model`. `model-dimension-value-shared` overlaps that row (a value in two dimensions) and has no case here for that reason.
+- **Symbolic links (§2.1).** A case is files checked into git, which can't keep a link on every platform, so a link on the way to a source file is tested in the crates instead: `ascribe-resolve`'s `includes` test for `check`, and `ascribe-cli`'s `fmt` test for the formatter.
 - **Editor features (§10).** Completion, hover, and refactoring are tested in `ascribe-lsp`.
