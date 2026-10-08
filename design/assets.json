@@ -40,6 +40,15 @@
       }
     },
     {
+      "path": "site/src/assets/logo.svg",
+      "width": 153,
+      "height": 32,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f"
+      }
+    },
+    {
       "path": "packages/vscode/media/icon.png",
       "width": 256,
       "height": 256,

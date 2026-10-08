@@ -23,7 +23,7 @@
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: spacing, light. */
   --ascribe-space: 1rem;
   --ascribe-space-small: 0.5rem;
-  --ascribe-border-color: #d0d7de;
+  --ascribe-border-color: #e3e6ec;
   --ascribe-radius: 0.375rem;
   /* End of generated spacing. */
 
@@ -31,52 +31,52 @@
   --ascribe-text-color: inherit;
   --ascribe-surface-color: transparent;
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: text, light. */
-  --ascribe-muted-color: #57606a;
+  --ascribe-muted-color: #676c75;
   /* End of generated text. */
 
   /* Note types: an accent color and a tinted background each. */
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: notes, light. */
-  --ascribe-note-color: #0969da;
-  --ascribe-note-background: #ddf4ff;
-  --ascribe-tip-color: #1a7f37;
-  --ascribe-tip-background: #dafbe1;
-  --ascribe-important-color: #8250df;
-  --ascribe-important-background: #fbefff;
-  --ascribe-warning-color: #9a6700;
-  --ascribe-warning-background: #fff8c5;
-  --ascribe-caution-color: #cf222e;
-  --ascribe-caution-background: #ffebe9;
+  --ascribe-note-color: #474dc6;
+  --ascribe-note-background: #f5f6fe;
+  --ascribe-tip-color: #057256;
+  --ascribe-tip-background: #e1fff2;
+  --ascribe-important-color: #932f8e;
+  --ascribe-important-background: #fff2fd;
+  --ascribe-warning-color: #845502;
+  --ascribe-warning-background: #fef5eb;
+  --ascribe-caution-color: #a73303;
+  --ascribe-caution-background: #fef4f1;
   /* End of generated notes. */
 
   /* Steps */
   --ascribe-steps-marker-size: 1.75rem;
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: steps, light. */
-  --ascribe-steps-color: #0969da;
+  --ascribe-steps-color: #5962e8;
   --ascribe-steps-marker-text-color: #ffffff;
   /* End of generated steps. */
 
   /* Tabs */
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: tabs, light. */
-  --ascribe-tab-color: #57606a;
-  --ascribe-tab-active-color: #0969da;
-  --ascribe-tab-focus-color: #0969da;
-  --ascribe-tab-hover-background: #f6f8fa;
+  --ascribe-tab-color: #676c75;
+  --ascribe-tab-active-color: #5962e8;
+  --ascribe-tab-focus-color: #5962e8;
+  --ascribe-tab-hover-background: #f7f9fd;
   /* End of generated tabs. */
 
   /* Availability lifecycle states: an accent color and a background each. */
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light. */
-  --ascribe-state-color: #57606a;
-  --ascribe-state-background: #eaeef2;
-  --ascribe-state-ga-color: #1a7f37;
-  --ascribe-state-ga-background: #dafbe1;
-  --ascribe-state-preview-color: #8250df;
-  --ascribe-state-preview-background: #fbefff;
-  --ascribe-state-beta-color: #0969da;
-  --ascribe-state-beta-background: #ddf4ff;
-  --ascribe-state-deprecated-color: #9a6700;
-  --ascribe-state-deprecated-background: #fff8c5;
-  --ascribe-state-removed-color: #cf222e;
-  --ascribe-state-removed-background: #ffebe9;
+  --ascribe-state-color: #676c75;
+  --ascribe-state-background: #f0f3f7;
+  --ascribe-state-ga-color: #057256;
+  --ascribe-state-ga-background: #e1fff2;
+  --ascribe-state-preview-color: #932f8e;
+  --ascribe-state-preview-background: #fff2fd;
+  --ascribe-state-beta-color: #474dc6;
+  --ascribe-state-beta-background: #f5f6fe;
+  --ascribe-state-deprecated-color: #845502;
+  --ascribe-state-deprecated-background: #fef5eb;
+  --ascribe-state-removed-color: #a73303;
+  --ascribe-state-removed-background: #fef4f1;
   /* End of generated states. */
 }
 
@@ -86,51 +86,51 @@
 @supports (color: light-dark(#000, #fff)) {
   :root {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: spacing, light-dark. */
-    --ascribe-border-color: light-dark(#d0d7de, #3d444d);
+    --ascribe-border-color: light-dark(#e3e6ec, #393d46);
     /* End of generated spacing. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: text, light-dark. */
-    --ascribe-muted-color: light-dark(#57606a, #9198a1);
+    --ascribe-muted-color: light-dark(#676c75, #a5a9b2);
     /* End of generated text. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: notes, light-dark. */
-    --ascribe-note-color: light-dark(#0969da, #4493f8);
-    --ascribe-note-background: light-dark(#ddf4ff, #121d2f);
-    --ascribe-tip-color: light-dark(#1a7f37, #3fb950);
-    --ascribe-tip-background: light-dark(#dafbe1, #12261e);
-    --ascribe-important-color: light-dark(#8250df, #ab7df8);
-    --ascribe-important-background: light-dark(#fbefff, #1f1a33);
-    --ascribe-warning-color: light-dark(#9a6700, #d29922);
-    --ascribe-warning-background: light-dark(#fff8c5, #272115);
-    --ascribe-caution-color: light-dark(#cf222e, #f85149);
-    --ascribe-caution-background: light-dark(#ffebe9, #2d1517);
+    --ascribe-note-color: light-dark(#474dc6, #91a1fe);
+    --ascribe-note-background: light-dark(#f5f6fe, #161b3a);
+    --ascribe-tip-color: light-dark(#057256, #22c598);
+    --ascribe-tip-background: light-dark(#e1fff2, #02251a);
+    --ascribe-important-color: light-dark(#932f8e, #ffc8f9);
+    --ascribe-important-background: light-dark(#fff2fd, #2d132b);
+    --ascribe-warning-color: light-dark(#845502, #e0992e);
+    --ascribe-warning-background: light-dark(#fef5eb, #2b1a03);
+    --ascribe-caution-color: light-dark(#a73303, #fe7f57);
+    --ascribe-caution-background: light-dark(#fef4f1, #341308);
     /* End of generated notes. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: steps, light-dark. */
-    --ascribe-steps-color: light-dark(#0969da, #4493f8);
-    --ascribe-steps-marker-text-color: light-dark(#ffffff, #0d1117);
+    --ascribe-steps-color: light-dark(#5962e8, #91a1fe);
+    --ascribe-steps-marker-text-color: light-dark(#ffffff, #0c0f16);
     /* End of generated steps. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: tabs, light-dark. */
-    --ascribe-tab-color: light-dark(#57606a, #9198a1);
-    --ascribe-tab-active-color: light-dark(#0969da, #4493f8);
-    --ascribe-tab-focus-color: light-dark(#0969da, #4493f8);
-    --ascribe-tab-hover-background: light-dark(#f6f8fa, #151b23);
+    --ascribe-tab-color: light-dark(#676c75, #a5a9b2);
+    --ascribe-tab-active-color: light-dark(#5962e8, #91a1fe);
+    --ascribe-tab-focus-color: light-dark(#5962e8, #b3c0ff);
+    --ascribe-tab-hover-background: light-dark(#f7f9fd, #13171f);
     /* End of generated tabs. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light-dark. */
-    --ascribe-state-color: light-dark(#57606a, #9198a1);
-    --ascribe-state-background: light-dark(#eaeef2, #212830);
-    --ascribe-state-ga-color: light-dark(#1a7f37, #3fb950);
-    --ascribe-state-ga-background: light-dark(#dafbe1, #12261e);
-    --ascribe-state-preview-color: light-dark(#8250df, #ab7df8);
-    --ascribe-state-preview-background: light-dark(#fbefff, #1f1a33);
-    --ascribe-state-beta-color: light-dark(#0969da, #4493f8);
-    --ascribe-state-beta-background: light-dark(#ddf4ff, #121d2f);
-    --ascribe-state-deprecated-color: light-dark(#9a6700, #d29922);
-    --ascribe-state-deprecated-background: light-dark(#fff8c5, #272115);
-    --ascribe-state-removed-color: light-dark(#cf222e, #f85149);
-    --ascribe-state-removed-background: light-dark(#ffebe9, #2d1517);
+    --ascribe-state-color: light-dark(#676c75, #a5a9b2);
+    --ascribe-state-background: light-dark(#f0f3f7, #22272e);
+    --ascribe-state-ga-color: light-dark(#057256, #22c598);
+    --ascribe-state-ga-background: light-dark(#e1fff2, #02251a);
+    --ascribe-state-preview-color: light-dark(#932f8e, #ffc8f9);
+    --ascribe-state-preview-background: light-dark(#fff2fd, #2d132b);
+    --ascribe-state-beta-color: light-dark(#474dc6, #91a1fe);
+    --ascribe-state-beta-background: light-dark(#f5f6fe, #161b3a);
+    --ascribe-state-deprecated-color: light-dark(#845502, #e0992e);
+    --ascribe-state-deprecated-background: light-dark(#fef5eb, #2b1a03);
+    --ascribe-state-removed-color: light-dark(#a73303, #fe7f57);
+    --ascribe-state-removed-background: light-dark(#fef4f1, #341308);
     /* End of generated states. */
   }
 
