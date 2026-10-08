@@ -12,6 +12,7 @@
  */
 
 :root {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
   --ascribe-review-added: #1a7f37;
   --ascribe-review-added-background: #dcf7e3;
   --ascribe-review-changed: #8a5a00;
@@ -25,17 +26,18 @@
   --ascribe-review-flash: #fff6bf;
   --ascribe-review-focus: #1f6feb;
   --ascribe-review-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  /* The review overlay's threads and controls (@ascribed/review/overlay). */
   --ascribe-review-text: #1d2330;
   --ascribe-review-border: #d3d8e0;
   --ascribe-review-thread: #f5f7fb;
   --ascribe-review-input: #ffffff;
   --ascribe-review-accent-text: #ffffff;
+  /* End of generated root. */
   --ascribe-review-blend: multiply;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-ascribe-scheme="light"]) {
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
     --ascribe-review-added: #4fc572;
     --ascribe-review-added-background: #133520;
     --ascribe-review-changed: #dcb13a;
@@ -53,11 +55,13 @@
     --ascribe-review-thread: #272b33;
     --ascribe-review-input: #1e2026;
     --ascribe-review-accent-text: #0b1220;
+    /* End of generated root. */
     --ascribe-review-blend: screen;
   }
 }
 
 :root[data-ascribe-scheme="dark"] {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
   --ascribe-review-added: #4fc572;
   --ascribe-review-added-background: #133520;
   --ascribe-review-changed: #dcb13a;
@@ -75,6 +79,7 @@
   --ascribe-review-thread: #272b33;
   --ascribe-review-input: #1e2026;
   --ascribe-review-accent-text: #0b1220;
+  /* End of generated root. */
   --ascribe-review-blend: screen;
 }
 

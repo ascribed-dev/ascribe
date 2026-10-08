@@ -7,15 +7,47 @@
      editor's theme instead, so notes, badges, steps and tabs read in dark and
      high-contrast themes too. Accents are the theme's chart colors; each tint
      is its accent over the editor background, so the page's text stays
-     readable on it. The fallbacks are the library's own values. */
+     readable on it. The fallbacks are the library's own values.
+
+     Review's marks are in the theme's git decoration colors, and its threads
+     beside the page (the overlay) in the theme's widget, input, and button
+     colors, with review's own light values as the fallbacks. */
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
   --ascribe-border-color: var(--vscode-widget-border, var(--vscode-panel-border, #d0d7de));
   --ascribe-muted-color: var(--vscode-descriptionForeground, #57606a);
-
   --ascribe-note-color: var(--vscode-charts-blue, #0969da);
   --ascribe-tip-color: var(--vscode-charts-green, #1a7f37);
   --ascribe-important-color: var(--vscode-charts-purple, #8250df);
   --ascribe-warning-color: var(--vscode-charts-yellow, #9a6700);
   --ascribe-caution-color: var(--vscode-charts-red, #cf222e);
+  --ascribe-steps-color: var(--vscode-button-background, #0969da);
+  --ascribe-steps-marker-text-color: var(--vscode-button-foreground, #ffffff);
+  --ascribe-tab-color: var(--vscode-foreground, #57606a);
+  --ascribe-tab-active-color: var(--vscode-textLink-foreground, #0969da);
+  --ascribe-tab-focus-color: var(--vscode-focusBorder, #0969da);
+  --ascribe-tab-hover-background: var(--vscode-toolbar-hoverBackground, #f6f8fa);
+  --ascribe-state-color: var(--vscode-descriptionForeground, #57606a);
+  --ascribe-state-ga-color: var(--vscode-charts-green, #1a7f37);
+  --ascribe-state-preview-color: var(--vscode-charts-purple, #8250df);
+  --ascribe-state-beta-color: var(--vscode-charts-blue, #0969da);
+  --ascribe-state-deprecated-color: var(--vscode-charts-yellow, #9a6700);
+  --ascribe-state-removed-color: var(--vscode-charts-red, #cf222e);
+  --ascribe-review-added: var(--vscode-gitDecoration-addedResourceForeground, #1a7f37);
+  --ascribe-review-changed: var(--vscode-gitDecoration-modifiedResourceForeground, #8a5a00);
+  --ascribe-review-removed: var(--vscode-gitDecoration-deletedResourceForeground, #c4222d);
+  --ascribe-review-moved: var(--vscode-charts-purple, #7a3fd0);
+  --ascribe-review-muted: var(--vscode-descriptionForeground, #5b6475);
+  --ascribe-review-flash: color-mix(
+    in srgb,
+    var(--vscode-editor-findMatchHighlightBackground, #fff6bf) 50%,
+    var(--vscode-editor-background, Canvas)
+  );
+  --ascribe-review-focus: var(--vscode-textLink-foreground, #1f6feb);
+  --ascribe-review-mono: var(--vscode-editor-font-family, ui-monospace, monospace);
+  --ascribe-review-border: var(--vscode-widget-border, var(--vscode-panel-border, #d3d8e0));
+  --ascribe-review-font: var(--vscode-font-family, system-ui, sans-serif);
+  /* End of generated root. */
+
   --ascribe-note-background: color-mix(in srgb, var(--ascribe-note-color) 12%, transparent);
   --ascribe-tip-background: color-mix(in srgb, var(--ascribe-tip-color) 12%, transparent);
   --ascribe-important-background: color-mix(
@@ -26,20 +58,6 @@
   --ascribe-warning-background: color-mix(in srgb, var(--ascribe-warning-color) 12%, transparent);
   --ascribe-caution-background: color-mix(in srgb, var(--ascribe-caution-color) 12%, transparent);
 
-  --ascribe-steps-color: var(--vscode-button-background, #0969da);
-  --ascribe-steps-marker-text-color: var(--vscode-button-foreground, #ffffff);
-
-  --ascribe-tab-color: var(--vscode-foreground, #57606a);
-  --ascribe-tab-active-color: var(--vscode-textLink-foreground, #0969da);
-  --ascribe-tab-focus-color: var(--vscode-focusBorder, #0969da);
-  --ascribe-tab-hover-background: var(--vscode-toolbar-hoverBackground, #f6f8fa);
-
-  --ascribe-state-color: var(--vscode-descriptionForeground, #57606a);
-  --ascribe-state-ga-color: var(--vscode-charts-green, #1a7f37);
-  --ascribe-state-preview-color: var(--vscode-charts-purple, #8250df);
-  --ascribe-state-beta-color: var(--vscode-charts-blue, #0969da);
-  --ascribe-state-deprecated-color: var(--vscode-charts-yellow, #9a6700);
-  --ascribe-state-removed-color: var(--vscode-charts-red, #cf222e);
   --ascribe-state-background: color-mix(in srgb, var(--ascribe-state-color) 15%, transparent);
   --ascribe-state-ga-background: color-mix(in srgb, var(--ascribe-state-ga-color) 15%, transparent);
   --ascribe-state-preview-background: color-mix(
@@ -63,13 +81,8 @@
     transparent
   );
 
-  /* Review's marks, in the theme's git decoration colors. The tints are
-     opaque, over the editor background, so the flash on a block fades into
-     them cleanly. */
-  --ascribe-review-added: var(--vscode-gitDecoration-addedResourceForeground, #1a7f37);
-  --ascribe-review-changed: var(--vscode-gitDecoration-modifiedResourceForeground, #8a5a00);
-  --ascribe-review-removed: var(--vscode-gitDecoration-deletedResourceForeground, #c4222d);
-  --ascribe-review-moved: var(--vscode-charts-purple, #7a3fd0);
+  /* Review's tints are opaque, over the editor background, so the flash on a
+     block fades into them cleanly. */
   --ascribe-review-added-background: color-mix(
     in srgb,
     var(--ascribe-review-added) 15%,
@@ -90,27 +103,15 @@
     var(--ascribe-review-moved) 15%,
     var(--vscode-editor-background, Canvas)
   );
-  --ascribe-review-muted: var(--vscode-descriptionForeground, #5b6475);
   --ascribe-review-surface: var(--vscode-editor-background, Canvas);
-  --ascribe-review-flash: color-mix(
-    in srgb,
-    var(--vscode-editor-findMatchHighlightBackground, #fff6bf) 50%,
-    var(--vscode-editor-background, Canvas)
-  );
-  --ascribe-review-focus: var(--vscode-textLink-foreground, #1f6feb);
-  --ascribe-review-mono: var(--vscode-editor-font-family, ui-monospace, monospace);
 
-  /* Review's threads beside the page (the overlay), in the theme's widget,
-     input, and button colors. */
   --ascribe-review-text: var(--vscode-editor-foreground, CanvasText);
-  --ascribe-review-border: var(--vscode-widget-border, var(--vscode-panel-border, #d3d8e0));
   --ascribe-review-thread: var(
     --vscode-editorWidget-background,
     color-mix(in srgb, currentColor 4%, var(--vscode-editor-background, Canvas))
   );
   --ascribe-review-input: var(--vscode-input-background, Field);
   --ascribe-review-accent-text: var(--vscode-editor-background, Canvas);
-  --ascribe-review-font: var(--vscode-font-family, system-ui, sans-serif);
   --ascribe-review-blend: multiply;
 }
 
@@ -126,7 +127,9 @@ body {
   padding: 0 1.5rem 3rem;
   color: var(--vscode-editor-foreground, CanvasText);
   background: var(--vscode-editor-background, Canvas);
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: body, light. */
   font-family: var(--vscode-font-family, system-ui, sans-serif);
+  /* End of generated body. */
   line-height: 1.6;
 }
 
@@ -203,11 +206,15 @@ body {
 }
 
 .problems li[data-severity="error"] {
-  color: var(--vscode-errorForeground, #c00);
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: error, light. */
+  color: var(--vscode-errorForeground, #cc0000);
+  /* End of generated error. */
 }
 
 .problems li[data-severity="warning"] {
-  color: var(--vscode-editorWarning-foreground, #b80);
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: warning, light. */
+  color: var(--vscode-editorWarning-foreground, #bb8800);
+  /* End of generated warning. */
 }
 
 main img {
@@ -437,7 +444,9 @@ body.site-mode main {
   flex: 1;
   width: 100%;
   border: 0;
-  background: #fff;
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, light. */
+  background: #ffffff;
+  /* End of generated frame. */
 }
 
 .site-problem {
