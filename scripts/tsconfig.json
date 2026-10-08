@@ -20,7 +20,7 @@
     "docs-site/**/*.ts",
     "repo-docs/**/*.ts",
     "compare/**/*.ts",
-    "design/**/*.ts",
-    "project-docs/**/*.ts"
+    "project-docs/**/*.ts",
+    "design/**/*.ts"
   ]
 }

@@ -695,9 +695,9 @@ npx ascribe build</code></pre></figure></ascribe-tab><ascribe-tab role="tabpanel
 :root {
   color-scheme: light dark;
 
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
   --text: #1f2328;
   --muted: #59636e;
   --background: #ffffff;
@@ -706,6 +706,7 @@ npx ascribe build</code></pre></figure></ascribe-tab><ascribe-tab role="tabpanel
   --accent: #0969da;
   --accent-surface: #ddf4ff;
   --code-background: #f6f8fa;
+  /* End of generated root. */
 
   --header-height: 3.5rem;
   --sidebar-width: 16rem;
@@ -714,6 +715,7 @@ npx ascribe build</code></pre></figure></ascribe-tab><ascribe-tab role="tabpanel
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
     --text: #e6edf3;
     --muted: #9198a1;
     --background: #0d1117;
@@ -722,6 +724,7 @@ npx ascribe build</code></pre></figure></ascribe-tab><ascribe-tab role="tabpanel
     --accent: #4493f8;
     --accent-surface: #121d2f;
     --code-background: #151b23;
+    /* End of generated root. */
   }
 }
 
@@ -852,7 +855,9 @@ pre {
 }
 
 .search-dialog::backdrop {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: backdrop, light. */
   background: rgb(0 0 0 / 0.4);
+  /* End of generated backdrop. */
 }
 
 .search-close {
@@ -1136,18 +1141,23 @@ pre {
   --ascribe-font-weight-strong: 600;
 
   /* Spacing, borders */
+  --ascribe-border-width: 1px;
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: spacing, light. */
   --ascribe-space: 1rem;
   --ascribe-space-small: 0.5rem;
-  --ascribe-border-width: 1px;
   --ascribe-border-color: #d0d7de;
   --ascribe-radius: 0.375rem;
+  /* End of generated spacing. */
 
   /* Surfaces and text */
   --ascribe-text-color: inherit;
-  --ascribe-muted-color: #57606a;
   --ascribe-surface-color: transparent;
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: text, light. */
+  --ascribe-muted-color: #57606a;
+  /* End of generated text. */
 
   /* Note types: an accent color and a tinted background each. */
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: notes, light. */
   --ascribe-note-color: #0969da;
   --ascribe-note-background: #ddf4ff;
   --ascribe-tip-color: #1a7f37;
@@ -1158,19 +1168,25 @@ pre {
   --ascribe-warning-background: #fff8c5;
   --ascribe-caution-color: #cf222e;
   --ascribe-caution-background: #ffebe9;
+  /* End of generated notes. */
 
   /* Steps */
-  --ascribe-steps-color: #0969da;
   --ascribe-steps-marker-size: 1.75rem;
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: steps, light. */
+  --ascribe-steps-color: #0969da;
   --ascribe-steps-marker-text-color: #ffffff;
+  /* End of generated steps. */
 
   /* Tabs */
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: tabs, light. */
   --ascribe-tab-color: #57606a;
   --ascribe-tab-active-color: #0969da;
   --ascribe-tab-focus-color: #0969da;
   --ascribe-tab-hover-background: #f6f8fa;
+  /* End of generated tabs. */
 
   /* Availability lifecycle states: an accent color and a background each. */
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light. */
   --ascribe-state-color: #57606a;
   --ascribe-state-background: #eaeef2;
   --ascribe-state-ga-color: #1a7f37;
@@ -1183,6 +1199,7 @@ pre {
   --ascribe-state-deprecated-background: #fff8c5;
   --ascribe-state-removed-color: #cf222e;
   --ascribe-state-removed-background: #ffebe9;
+  /* End of generated states. */
 }
 
 /* The same colors, light and dark. `light-dark()` picks by the element's
@@ -1190,9 +1207,15 @@ pre {
    `light-dark()` keeps the light colors above. */
 @supports (color: light-dark(#000, #fff)) {
   :root {
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: spacing, light-dark. */
     --ascribe-border-color: light-dark(#d0d7de, #3d444d);
-    --ascribe-muted-color: light-dark(#57606a, #9198a1);
+    /* End of generated spacing. */
 
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: text, light-dark. */
+    --ascribe-muted-color: light-dark(#57606a, #9198a1);
+    /* End of generated text. */
+
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: notes, light-dark. */
     --ascribe-note-color: light-dark(#0969da, #4493f8);
     --ascribe-note-background: light-dark(#ddf4ff, #121d2f);
     --ascribe-tip-color: light-dark(#1a7f37, #3fb950);
@@ -1203,15 +1226,21 @@ pre {
     --ascribe-warning-background: light-dark(#fff8c5, #272115);
     --ascribe-caution-color: light-dark(#cf222e, #f85149);
     --ascribe-caution-background: light-dark(#ffebe9, #2d1517);
+    /* End of generated notes. */
 
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: steps, light-dark. */
     --ascribe-steps-color: light-dark(#0969da, #4493f8);
     --ascribe-steps-marker-text-color: light-dark(#ffffff, #0d1117);
+    /* End of generated steps. */
 
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: tabs, light-dark. */
     --ascribe-tab-color: light-dark(#57606a, #9198a1);
     --ascribe-tab-active-color: light-dark(#0969da, #4493f8);
     --ascribe-tab-focus-color: light-dark(#0969da, #4493f8);
     --ascribe-tab-hover-background: light-dark(#f6f8fa, #151b23);
+    /* End of generated tabs. */
 
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light-dark. */
     --ascribe-state-color: light-dark(#57606a, #9198a1);
     --ascribe-state-background: light-dark(#eaeef2, #212830);
     --ascribe-state-ga-color: light-dark(#1a7f37, #3fb950);
@@ -1224,6 +1253,7 @@ pre {
     --ascribe-state-deprecated-background: light-dark(#fff8c5, #272115);
     --ascribe-state-removed-color: light-dark(#cf222e, #f85149);
     --ascribe-state-removed-background: light-dark(#ffebe9, #2d1517);
+    /* End of generated states. */
   }
 
   /* A page that says which it is. */
@@ -1510,6 +1540,7 @@ a[data-ascribe-term] {
  */
 
 :root {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
   --ascribe-review-added: #1a7f37;
   --ascribe-review-added-background: #dcf7e3;
   --ascribe-review-changed: #8a5a00;
@@ -1523,17 +1554,18 @@ a[data-ascribe-term] {
   --ascribe-review-flash: #fff6bf;
   --ascribe-review-focus: #1f6feb;
   --ascribe-review-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  /* The review overlay's threads and controls (@ascribed/review/overlay). */
   --ascribe-review-text: #1d2330;
   --ascribe-review-border: #d3d8e0;
   --ascribe-review-thread: #f5f7fb;
   --ascribe-review-input: #ffffff;
   --ascribe-review-accent-text: #ffffff;
+  /* End of generated root. */
   --ascribe-review-blend: multiply;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-ascribe-scheme="light"]) {
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
     --ascribe-review-added: #4fc572;
     --ascribe-review-added-background: #133520;
     --ascribe-review-changed: #dcb13a;
@@ -1551,11 +1583,13 @@ a[data-ascribe-term] {
     --ascribe-review-thread: #272b33;
     --ascribe-review-input: #1e2026;
     --ascribe-review-accent-text: #0b1220;
+    /* End of generated root. */
     --ascribe-review-blend: screen;
   }
 }
 
 :root[data-ascribe-scheme="dark"] {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
   --ascribe-review-added: #4fc572;
   --ascribe-review-added-background: #133520;
   --ascribe-review-changed: #dcb13a;
@@ -1573,6 +1607,7 @@ a[data-ascribe-term] {
   --ascribe-review-thread: #272b33;
   --ascribe-review-input: #1e2026;
   --ascribe-review-accent-text: #0b1220;
+  /* End of generated root. */
   --ascribe-review-blend: screen;
 }
 

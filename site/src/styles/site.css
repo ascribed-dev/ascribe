@@ -6,9 +6,9 @@
 :root {
   color-scheme: light dark;
 
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
   --text: #1f2328;
   --muted: #59636e;
   --background: #ffffff;
@@ -17,6 +17,7 @@
   --accent: #0969da;
   --accent-surface: #ddf4ff;
   --code-background: #f6f8fa;
+  /* End of generated root. */
 
   --header-height: 3.5rem;
   --sidebar-width: 16rem;
@@ -25,6 +26,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
     --text: #e6edf3;
     --muted: #9198a1;
     --background: #0d1117;
@@ -33,6 +35,7 @@
     --accent: #4493f8;
     --accent-surface: #121d2f;
     --code-background: #151b23;
+    /* End of generated root. */
   }
 }
 
@@ -163,7 +166,9 @@ pre {
 }
 
 .search-dialog::backdrop {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: backdrop, light. */
   background: rgb(0 0 0 / 0.4);
+  /* End of generated backdrop. */
 }
 
 .search-close {
