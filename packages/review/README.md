@@ -32,7 +32,7 @@ Each changed block gets a label (Added, Changed, Removed, Moved) and a bar in th
 
 The blocks are found by their anchors: the element with exactly a change's anchor, or, when there's none (a paragraph in a tight list item has no element of its own), the smallest anchored element with the same file and includes whose lines contain it.
 
-The colors are the `--ascribe-review-*` custom properties at the top of `marks.css`, with light and dark values.
+The colors are the `--ascribe-review-*` custom properties at the top of `marks.css`, with light and dark values. Their names don't change; their defaults are Ascribe's design tokens, shared with `@ascribed/elements`, and a release may change them, noting it in the changelog.
 
 ## The static report
 

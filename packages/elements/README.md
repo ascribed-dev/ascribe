@@ -29,6 +29,12 @@ directly.
 Set any of these custom properties on `:root`, or on any ancestor of the
 elements. Defaults are in `css/style.css`.
 
+The names are part of the [contract](CONTRACT.md) and don't change. The
+default values are Ascribe's design tokens, shared with review and the HTML
+report, and a release may change them; the changelog says so under **Behavior
+change**, with the previous values. A site that needs a fixed look sets the
+properties itself.
+
 | Group | Properties |
 |---|---|
 | Type | `--ascribe-font-family`, `--ascribe-font-size-small`, `--ascribe-font-weight-strong` |
