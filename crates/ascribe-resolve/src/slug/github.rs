@@ -24,7 +24,7 @@ use super::table::REMOVED;
 
 /// The slug of one piece of text, without numbering: what upstream's
 /// standalone `slug(value)` returns. Repeated calls give the same result.
-pub fn github_slug(text: &str) -> String {
+pub(crate) fn github_slug(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     // JavaScript's `toLowerCase` and Rust's `str::to_lowercase` both apply
     // the full Unicode mappings, including the final-sigma rule; the

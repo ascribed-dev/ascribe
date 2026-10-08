@@ -493,13 +493,6 @@ impl Project {
         self.resolutions.get(path).map_or(&[], |r| r.as_slice())
     }
 
-    /// The resolution of one reference of a file, by its span.
-    pub fn resolution_at(&self, path: &RelPath, span: Span) -> Option<&Resolution> {
-        let file = self.files.get(path)?;
-        let at = file.references.iter().position(|r| r.span == span)?;
-        self.resolutions.get(path)?.get(at)
-    }
-
     /// The code block a file's `@snippet` at `span` becomes, when its address
     /// gives one (SPEC §4.8).
     pub fn snippet_at(&self, path: &RelPath, span: Span) -> Option<&Arc<Snippet>> {
@@ -597,7 +590,7 @@ impl Project {
     }
 
     /// The assets of an already expanded page.
-    pub fn page_assets(&self, page: &ExpandedPage) -> Vec<PageAsset> {
+    pub(crate) fn page_assets(&self, page: &ExpandedPage) -> Vec<PageAsset> {
         let mut out = Vec::new();
         page.visit(&mut |block| {
             let Some(index) = self.file_by_id(block.file) else {

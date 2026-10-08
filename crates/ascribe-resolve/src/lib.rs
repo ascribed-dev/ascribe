@@ -101,7 +101,7 @@ pub use incremental::{
 };
 pub use index::{
     AvailabilityMarker, ExplicitId, FileIndex, FileKind, Heading, Include, Local, PhrasePlace,
-    PhraseUse, RefKind, Reference, Target, heading_text, index_file, index_parsed, parse_source,
+    PhraseUse, RefKind, Reference, Target, heading_text, index_file,
 };
 pub use layout::Layout;
 pub use project::{
@@ -112,6 +112,6 @@ pub use references::{
     reference_issue, reference_target, resolve_reference,
 };
 pub use snippet::{
-    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, parse_address,
-    resolve_snippet, snippet_issues,
+    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, resolve_snippet,
+    snippet_issues,
 };

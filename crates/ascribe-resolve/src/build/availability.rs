@@ -85,7 +85,7 @@ impl Availability {
     /// so.
     ///
     /// `version` is `None` for a versionless target.
-    pub fn is_available(
+    pub(crate) fn is_available(
         &self,
         model: &ContentModel,
         target: &str,

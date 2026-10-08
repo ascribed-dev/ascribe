@@ -29,7 +29,7 @@ impl DefaultRouter {
 
     /// A router under a base path, such as `/docs/` (a missing leading or
     /// trailing slash is added).
-    pub fn with_base(base: &str, trailing_slash: bool) -> DefaultRouter {
+    pub(crate) fn with_base(base: &str, trailing_slash: bool) -> DefaultRouter {
         let mut base = base.trim().to_owned();
         if !base.starts_with('/') {
             base.insert(0, '/');

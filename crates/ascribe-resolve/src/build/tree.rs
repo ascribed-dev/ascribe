@@ -105,23 +105,6 @@ impl ResolvedPage {
         });
         out
     }
-
-    /// The page id of the heading written at `span` in `file`, if it
-    /// survived the build. A fragment included twice has its headings twice;
-    /// this is the first.
-    pub fn page_id_of(&self, file: FileId, span: Span) -> Option<&str> {
-        let mut found = None;
-        self.visit(&mut |block| {
-            if found.is_none()
-                && block.file == file
-                && block.span == span
-                && let Some(ids) = &block.heading
-            {
-                found = Some(ids.page_id.as_str());
-            }
-        });
-        found
-    }
 }
 
 /// A block of a resolved page: a block of one source file.
@@ -247,7 +230,7 @@ impl ResolvedBlock {
     }
 
     /// Calls `f` on each block directly inside this one.
-    pub fn for_each_child<'a>(&'a self, f: &mut impl FnMut(&'a ResolvedBlock)) {
+    pub(crate) fn for_each_child<'a>(&'a self, f: &mut impl FnMut(&'a ResolvedBlock)) {
         match &self.kind {
             ResolvedKind::Leaf(_) => {}
             ResolvedKind::BlockQuote { children } | ResolvedKind::Container { children, .. } => {

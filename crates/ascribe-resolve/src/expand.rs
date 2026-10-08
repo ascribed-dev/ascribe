@@ -150,7 +150,7 @@ impl ExpandedBlock {
     /// The source ranges of this block's own inline content: the whole block
     /// for a leaf, and for a container or a group only the titles of its
     /// opener or arms, since the blocks inside are blocks of their own.
-    pub fn own_ranges(&self) -> Vec<Span> {
+    pub(crate) fn own_ranges(&self) -> Vec<Span> {
         match &self.kind {
             ExpandedKind::Leaf(block) => walk::own_ranges(block),
             ExpandedKind::BlockQuote { .. } | ExpandedKind::List { .. } => Vec::new(),

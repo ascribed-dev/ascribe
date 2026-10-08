@@ -7,7 +7,7 @@
 //! check`, the build, and the language server can't disagree about what a
 //! snippet is. It covers:
 //!
-//! - reading an address, `<source>:<path>#<region>` ([`parse_address`]);
+//! - reading an address, `<source>:<path>#<region>` (`parse_address`);
 //! - finding its file through its source, with the source's patterns and
 //!   exact-case names ([`resolve_snippet`]), and reading each file once per
 //!   [`CodeFiles`];
@@ -72,7 +72,7 @@ pub enum AddressError {
 
 /// Reads a `@snippet` primary as an address (SPEC Appendix A
 /// `snippet-address`).
-pub fn parse_address(primary: &str) -> Result<Address, AddressError> {
+pub(crate) fn parse_address(primary: &str) -> Result<Address, AddressError> {
     let Some((source, rest)) = primary.split_once(':') else {
         return Err(AddressError::NoSource);
     };
@@ -229,7 +229,7 @@ impl CodeFile {
     }
 
     /// The names of its regions, in the order they start.
-    pub fn region_names(&self) -> Vec<&str> {
+    pub(crate) fn region_names(&self) -> Vec<&str> {
         self.tags.regions.iter().map(|r| r.name.as_str()).collect()
     }
 }

@@ -9,7 +9,7 @@
 //!   external or local, a source file or an asset, and whether it looks like
 //!   a route (SPEC §5.2) ([`reference_target`], [`include_target`]);
 //! - whether it's there: the boundary rule (SPEC §9.4,
-//!   [`Layout::is_allowed`]) and exact-case names on every platform
+//!   `Layout::is_allowed`) and exact-case names on every platform
 //!   ([`FileSystem::probe`]) ([`resolve_reference`]);
 //! - the page a route most likely names;
 //! - the file-level issue, if any ([`reference_issue`], [`include_issue`]),
