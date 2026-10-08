@@ -292,8 +292,35 @@ fn a_link_out_of_the_content_root_is_reported_and_left_alone() {
         stderr(&out)
     );
 
-    // A file outside the content root named as itself is formatted, as before.
-    let out = p.fmt(&["outside/far.md"]);
+    // So is a `..` after the link, which Unix applies after following it:
+    // `linked/..` is `outside`. (Windows works `..` out by name first.)
+    p.write("outside/up.md", MESSY);
+    if cfg!(unix) {
+        let out = p.fmt(&["docs/linked/../up.md"]);
+        assert_eq!(code(&out), 2, "{}{}", stdout(&out), stderr(&out));
+        assert!(
+            stderr(&out).contains("`linked/../up.md`"),
+            "{}",
+            stderr(&out)
+        );
+        assert_eq!(p.read("outside/up.md"), MESSY);
+    }
+
+    // And the content root spelled another way: through a link to it.
+    links::dir(Path::new("docs"), p.dir.join("other-name"));
+    let out = p.fmt(&["other-name/linked"]);
+    assert_eq!(code(&out), 2, "{}{}", stdout(&out), stderr(&out));
+    assert!(
+        stderr(&out).contains("`linked/deep.md`"),
+        "{}",
+        stderr(&out)
+    );
+    assert_eq!(p.read("outside/folder/deep.md"), MESSY);
+
+    // A file outside the content root named as itself is formatted, as before,
+    // and so is one named through a `..` and no link.
+    let out = p.fmt(&["outside/far.md", "docs/../outside/up.md"]);
     assert_eq!(code(&out), 0, "{}", stderr(&out));
     assert_eq!(p.read("outside/far.md"), CLEAN);
+    assert_eq!(p.read("outside/up.md"), CLEAN);
 }
