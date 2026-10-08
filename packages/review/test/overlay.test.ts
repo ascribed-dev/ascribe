@@ -120,7 +120,8 @@ class FakeHost implements OverlayHost {
   }
   async allThreads(): Promise<ThreadSummary[]> {
     const page: ThreadSummary["pages"] = [
-      { path: "guide.md", title: "Guide", formatted_title: null },
+      // Without `formatted_title`, as a host written before it has none.
+      { path: "guide.md", title: "Guide" },
     ];
     return [
       ...this.blocks.flatMap((b) => b.threads),
