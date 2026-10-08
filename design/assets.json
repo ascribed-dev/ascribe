@@ -75,6 +75,15 @@
       }
     },
     {
+      "path": "design/out/header-vscode.png",
+      "width": 532,
+      "height": 192,
+      "sources": {
+        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    },
+    {
       "path": "design/out/avatar.png",
       "width": 512,
       "height": 512,

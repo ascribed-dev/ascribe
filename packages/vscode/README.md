@@ -1,3 +1,5 @@
+<p><img src="https://raw.githubusercontent.com/ascribed-dev/ascribe/main/design/out/header-vscode.png" alt="Ascribe" width="266" height="96"></p>
+
 # Ascribe for VS Code
 
 Write [Ascribe](https://github.com/ascribed-dev/ascribe) documentation with the checks, completion, navigation, and preview a programming language gets. Ascribe is Markdown with directives for the structure documentation needs: callouts, procedures, alternatives by platform or product, availability, and reusable content.

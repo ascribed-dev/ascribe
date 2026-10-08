@@ -65,6 +65,7 @@ Every image of the mark that something needs is generated from `mark.svg`, `word
 | `packages/vscode/media/icon.png` | The extension's Marketplace listing and Extensions view | 256 pixels, the dark full-color mark on a rounded tile in the dark surface color, so it reads in a light or a dark editor |
 | `packages/vscode/media/activity.svg` | The extension's activity bar icon | 24 pixels, `currentColor` only, which VS Code tints. The mark takes the middle 20, as tall as the codicons beside it |
 | `design/out/header-light.svg`, `header-dark.svg` | The header of `README.md` and `packages/vscode/README.md`, in GitHub's `<picture>` | The wordmark, 48 pixels tall, in the light and the dark text color |
+| `design/out/header-vscode.png` | The header of `packages/vscode/README.md`, the extension's Marketplace page, which takes no SVG and can't follow the reader's scheme | 192 pixels tall, for a 96 pixel header on a high-density screen: the wordmark in the dark text color on a rounded plate in the dark surface color, the icon's tile, so it reads on a light or a dark page |
 | `design/out/avatar.png` | The GitHub organization and the Marketplace publisher | 512 pixels, the full-color mark on white, inside the circle an avatar is cropped to |
 
 The colors come from `candidates/chosen.toml` because the chosen palette isn't in `tokens.toml` yet. When `tokens.toml` holds it, the script reads the colors from there instead, so the two can't drift.
