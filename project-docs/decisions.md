@@ -8,7 +8,7 @@ What this file isn't:
 
 - **Rules a contributor follows on every change** are in [CONTRIBUTING.md](../CONTRIBUTING.md), and what a kind of change must touch is in [checklists.md](checklists.md).
 - **What the language means** is in [SPEC.md](../SPEC.md), and what each output promises is in the contracts under [docs/content/contracts/](../docs/content/contracts/).
-- **The plans in progress** keep their own decisions: [agents](agents/README.md#decisions) and [editor UI](editor-ui/README.md#decisions).
+- **The plans in progress** keep their own decisions: [agents](agents/README.md#decisions), [editor UI](editor-ui/README.md#decisions), and [visual design](visual-design/README.md#decisions).
 
 The finished plans, docs and review, were removed from `project-docs/` on 5 October 2026. Their decisions below link to the last version of each, at commit `5f5dd4c`. The optimization plan finished on 6 October 2026 and was removed on 7 October; its decisions link to its last version, at commit `52da4c4`, and the ones that still bind are under [Clean-ups and checks](#clean-ups-and-checks).
 
