@@ -11,6 +11,7 @@ import {
   readCandidate,
   readInputs,
   readMark,
+  readWordmark,
   renderSpecimen,
   SPECIMEN,
 } from "./specimen.ts";
@@ -76,6 +77,13 @@ test("a mark is paths in a viewBox, with a title and a note", () => {
     "paths only",
   );
   expect(() => readMark("x", "<svg><title>X</title><desc>.</desc></svg>")).toThrow("viewBox");
+});
+
+test("a wordmark is paths in a viewBox too", () => {
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.5 -18 84 18.5"><path d="M0 0"/></svg>';
+  expect(readWordmark("w.svg", svg)).toBe(svg);
+  expect(() => readWordmark("w.svg", svg.replace("<path", "<text"))).toThrow("paths only");
 });
 
 test("design/specimen.html is up to date", () => {

@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <title>Footnote</title>
-  <desc>A lowercase a with a raised asterisk: a word with a note on it, the plainest sign that something is cited. The a is drawn from a circle and a stem, so there's no font to license, and at 16 pixels the asterisk becomes a spark at the corner. Weak where an asterisk alone means "required" or "new" in forms and toolbars, so the a has to carry it.</desc>
-  <circle cx="11.5" cy="20.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
-  <rect x="16" y="12" width="4" height="16.5" rx="2" fill="currentColor"/>
-  <path class="second" d="M26 2.5 V11.5 M22.1 4.75 L29.9 9.25 M22.1 9.25 L29.9 4.75" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
-</svg>

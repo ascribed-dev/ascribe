@@ -64,6 +64,8 @@ export interface Mark {
   title: string;
   description: string;
   svg: string;
+  /** The wordmark drawn to go with it, `wordmark-<id>.svg`, if there is one. */
+  wordmark?: string;
 }
 
 /** The semantic colors every candidate defines: those the pairs and the stylesheets use. */
@@ -297,6 +299,15 @@ export function readMark(id: string, svg: string): Mark {
   return { id, title, description: description.trim().replace(/\s+/g, " "), svg: svg.trim() };
 }
 
+/** Reads a wordmark: paths only, in a viewBox, like a mark. */
+export function readWordmark(file: string, svg: string): string {
+  if (!/<svg [^>]*viewBox="[-\d. ]+"/.test(svg)) throw new Error(`${file}: no viewBox`);
+  if (/<(image|text|style|foreignObject)\b|font-family|xlink:href="data:/.test(svg)) {
+    throw new Error(`${file}: an image, text, font, or style; a wordmark is paths only`);
+  }
+  return svg.trim();
+}
+
 export interface Inputs {
   candidates: Candidate[];
   marks: Mark[];
@@ -315,7 +326,15 @@ export function readInputs(): Inputs {
     .sort((a, b) => Number(b.baseline) - Number(a.baseline) || a.id.localeCompare(b.id));
   const marks = files
     .filter((f) => f.startsWith("mark-") && f.endsWith(".svg"))
-    .map((f) => readMark(f.slice(5, -4), readFileSync(join(CANDIDATES, f), "utf8")));
+    .map((f) => {
+      const mark = readMark(f.slice(5, -4), readFileSync(join(CANDIDATES, f), "utf8"));
+      const wordmark = `wordmark-${mark.id}.svg`;
+      if (!files.includes(wordmark)) return mark;
+      return {
+        ...mark,
+        wordmark: readWordmark(wordmark, readFileSync(join(CANDIDATES, wordmark), "utf8")),
+      };
+    });
   const { pairs, distinct } = readPairs(readFileSync(join(CANDIDATES, "pairs.toml"), "utf8"));
   const stylesheets: Record<string, string> = {};
   for (const path of Object.keys(EMIT)) {
@@ -494,7 +513,11 @@ function marksBlock(marks: Mark[], scheme: Scheme): string {
 <div class="sizes one">${one}</div>
 <div class="sizes full">${full}</div>
 <div class="uses">
-<div class="lockup full">${sized(mark, 32)}<span>ascribe</span></div>
+<div class="lockup full">${sized(mark, 32)}${
+      mark.wordmark === undefined
+        ? "<span>ascribe</span>"
+        : mark.wordmark.replace("<svg ", '<svg height="25" role="img" class="wordmark" ')
+    }</div>
 <div class="activity ${bar}" title="VS Code's activity bar">
 <span class="active">${sized(mark, 24)}</span><span class="glyph"></span>
 </div>
@@ -642,7 +665,8 @@ nav.toc a { margin-right: 1rem; color: inherit; }
 .sizes svg, .uses svg { display: block; flex: none; }
 .full .second { color: var(--c-accent); }
 .uses { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; margin-bottom: 0.5rem; }
-.lockup { display: flex; align-items: center; gap: 0.5rem; font-size: 1.75rem; font-weight: 650; letter-spacing: -0.01em; }
+.lockup .wordmark { width: auto; margin-bottom: 2px; }
+.lockup { display: flex; align-items: flex-end; gap: 0.5rem; font-size: 1.75rem; font-weight: 650; letter-spacing: -0.01em; }
 .activity { display: flex; flex-direction: column; gap: 0; width: 48px; padding-block: 4px; border-radius: 4px; }
 .activity > span { display: flex; justify-content: center; align-items: center; height: 48px; }
 .activity .active { border-left: 2px solid var(--vs-border); color: var(--vs-active); }
