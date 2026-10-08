@@ -114,6 +114,7 @@ ascribe-availability::before {
 `pnpm --filter @ascribed/elements test` compiles the library and drives Chromium
 through Playwright in Chromium, Firefox, and WebKit. Install them with
 `pnpm --filter @ascribed/elements exec playwright-core install chromium firefox webkit`.
+CI runs them in Playwright's container image, which has all three.
 Chromium uses `/opt/pw-browsers/chromium` when present, or the binary in
 `ASCRIBE_CHROMIUM`. `ASCRIBE_ENGINES=chromium` (a comma-separated subset) runs
 fewer engines on a machine that can't install all three.

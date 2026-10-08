@@ -35,6 +35,7 @@ jobs:
     # By hand, it runs from `main` only; the `canary` environment enforces it too.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
       version: ${{ steps.stamp.outputs.version }}
@@ -89,6 +90,7 @@ jobs:
     name: publish to npm under next
     needs: [version, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     # Limited to `main`, with no reviewers: the canary is unattended.
     environment: canary
     permissions:
@@ -135,6 +137,7 @@ jobs:
     name: rebuild the docs site
     needs: [version, npm]
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
       SITE_BUILD_HOOK: ${{ secrets.SITE_BUILD_HOOK }}
       VERSION: ${{ needs.version.outputs.version }}
