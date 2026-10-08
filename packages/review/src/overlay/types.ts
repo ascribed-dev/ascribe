@@ -34,9 +34,10 @@ export interface ThreadSummary {
   thread: LocatedThread;
   /**
    * The pages that show it, by content path; empty when no page is known to.
-   * `formatted_title` is the title formatted, when its field sets `inline`.
+   * `formatted_title` is the title formatted, when its field sets `inline`;
+   * a host that doesn't know it leaves it out.
    */
-  pages: { path: string; title: string | null; formatted_title: FormattedPiece[] | null }[];
+  pages: { path: string; title: string | null; formatted_title?: FormattedPiece[] | null }[];
 }
 
 /** A failure the host reports: `message` is a sentence to show; `code` is a `ReviewError` code. */
