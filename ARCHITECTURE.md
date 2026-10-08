@@ -48,9 +48,9 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | [`tests/zod`](tests/zod) | Type-checks the generated Zod schemas and validates pages with them. |
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
-| [`design/`](design) | The design tokens, `design/tokens.toml`: every color, font stack, space, and radius of Ascribe's stylesheets. |
+| [`design/`](design) | The design tokens, `design/tokens.toml`: every color, font stack, space, and radius of Ascribe's stylesheets. The mark (`mark.svg`, one color from `currentColor`, and `mark-color.svg`) and the wordmark (`wordmark.svg`). `design/candidates/` holds the chosen palette and type scale (`chosen.toml`), today's values to compare with (`baseline.toml`), and the color pairings both are checked against; `design/specimen.html`, generated from them by `scripts/design/specimen.ts`, shows them side by side. |
 | `schemas/` | The JSON Schemas of the JSON the commands and the language server write, generated from the Rust types (`crates/ascribe-cli/src/shapes.rs`). |
-| `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), the design tokens' generator (`scripts/design`), and `build-all.ts`. |
+| `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), the design tokens' generator and the design specimen (`scripts/design`), and `build-all.ts`. |
 | `project-docs/` | Plans. They describe what was intended, not necessarily what is. |
 
 ## How the crates depend on each other
@@ -193,6 +193,7 @@ Some files are generated from a source, or copied from what the code writes, and
 | `crates/ascribe-emit/tests/site_anchors.rs` | The site-render fixtures' inputs and corpus in `tests/render/` |
 | `crates/ascribe-emit/tests/zod.rs` | The generated schemas in `tests/zod/generated/` |
 | `packages/vscode/test/unit/docs.test.ts` | The extension's settings and commands in `docs/content/_generated/` |
+| `scripts/design/specimen.test.ts` | The design specimen, `design/specimen.html`, from `design/candidates/` and the stylesheets it renders |
 | `scripts/design/tokens.test.ts` | The generated blocks of each stylesheet `design/tokens.toml` lists, from it. Then `pnpm --filter @ascribed/review embed` copies them into the report's stylesheet |
 
 The corpora's recorded counts in `tests/corpora/baselines/` have their own variable, `ASCRIBE_CORPORA_BLESS=1` ([tests/corpora/README.md](tests/corpora/README.md)).
