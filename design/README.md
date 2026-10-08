@@ -7,7 +7,7 @@
 - `[palette]`: every color value, named by hue and step (`indigo.435`). The step is 1000 × (1 − the color's OKLCH lightness), rounded, so a higher step is darker; a tie takes the next step.
 - `[color]`: what each color is for (`note`, `added`, `site.text`), with a `light` and a `dark` value, each a palette name. Stylesheets take these, never a palette name. The element library, review, the HTML report, and the Astro toolbar share the top-level ones, which are the chosen palette's semantic colors; the docs site and the VS Code preview have their own.
 - `[font]`, `[space]`, `[radius]`: values the stylesheets use as they are.
-- `[type]`: the type scale, each step a `size`, a `line` height, and a `weight`, as `type.<step>.<key>`. The HTML report's frame sets its text with it; the element library takes the site's type.
+- `[type]`: the type scale, each step a weight, a size, and a line height as the `font` shorthand writes them (`"600 0.75rem/1.4"`). The HTML report's frame sets its text with it; the element library takes the site's type.
 - `[emit."<stylesheet>".<block>]`: what a stylesheet's generated block declares. Each key is a property, and its value is a token (`"color.muted"`) or a template with tokens in braces (`"var(--vscode-charts-blue, {color.note})"`).
 
 The `--ascribe-*` and `--ascribe-review-*` properties are public: sites theme the elements and review with them. Their names don't change, and a test holds them; their default values are these tokens and may change in a release, noted in the changelog under **Behavior change** with the previous values (decision 44 in `project-docs/decisions.md`).

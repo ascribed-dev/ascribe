@@ -15,7 +15,7 @@ export interface Tokens {
   palette: Map<string, string>;
   /** Color token (`color.review.added`) to its light and dark palette names. */
   colors: Map<string, { light: string; dark: string }>;
-  /** Font, type, space, and radius token (`font.ui`, `type.body.size`) to its CSS value. */
+  /** Font, space, radius, and type token (`font.ui`) to its CSS value. */
   values: Map<string, string>;
   /** Stylesheet, then block name, then property to its token or template. */
   emit: Map<string, Map<string, Map<string, string>>>;
@@ -41,7 +41,7 @@ const COLOR_VALUE = /^(#[0-9a-f]{6}|rgb\(\d+ \d+ \d+ \/ [\d.]+\))$/;
 export function load(text: string): Tokens {
   const source = parse(text) as Table;
   const problems: string[] = [];
-  const known = new Set(["palette", "color", "font", "type", "space", "radius", "emit"]);
+  const known = new Set(["palette", "color", "font", "space", "radius", "type", "emit"]);
   for (const key of Object.keys(source)) {
     if (!known.has(key)) problems.push(`[${key}] isn't a section tokens.toml has`);
   }
@@ -75,21 +75,10 @@ export function load(text: string): Tokens {
   }
 
   const values = new Map<string, string>();
-  for (const section of ["font", "space", "radius"]) {
+  for (const section of ["font", "space", "radius", "type"]) {
     for (const [key, value] of Object.entries((source[section] ?? {}) as Table)) {
       if (typeof value !== "string") problems.push(`${section}.${key}: a value is a string`);
       values.set(`${section}.${key}`, String(value));
-    }
-  }
-
-  for (const [step, entry] of Object.entries((source.type ?? {}) as Table)) {
-    const keys = isTable(entry) ? Object.keys(entry).sort().join(",") : "";
-    if (keys !== "line,size,weight") {
-      problems.push(`type.${step}: a step has a size, a line, and a weight, and nothing else`);
-      continue;
-    }
-    for (const [key, value] of Object.entries(entry as Table)) {
-      values.set(`type.${step}.${key}`, String(value));
     }
   }
 

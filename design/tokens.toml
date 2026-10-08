@@ -14,7 +14,8 @@
 #
 # [font], [space], [radius]: values the stylesheets use as they are.
 #
-# [type]: the type scale, each step a size, a line height, and a weight.
+# [type]: the type scale, each step a weight, a size, and a line height, as
+# the `font` shorthand writes them.
 #
 # [emit]: each stylesheet's generated blocks, by the name its markers give:
 # the property each declares, and the token it takes. A value with `{…}` is
@@ -22,16 +23,25 @@
 
 # The palette ---------------------------------------------------------------
 
-[palette.neutral]
+[palette.gray]
 0 = "#ffffff"
 18 = "#f7f9fd"
+22 = "#f6f8fa"
 37 = "#f0f3f7"
+57 = "#e6edf3"
 76 = "#e3e6ec"
+119 = "#d1d9e0"
 266 = "#a5a9b2"
+323 = "#9198a1"
 470 = "#676c75"
+505 = "#59636e"
+616 = "#3d444d"
 640 = "#393d46"
 729 = "#22272e"
+746 = "#1f2328"
+780 = "#151b23"
 796 = "#13171f"
+824 = "#0d1117"
 831 = "#0c0f16"
 
 [palette.indigo]
@@ -74,18 +84,6 @@
 695 = "#461c43"
 764 = "#2d132b"
 
-# The docs site's own colors, and the VS Code preview's fallbacks.
-[palette.gray]
-22 = "#f6f8fa"
-57 = "#e6edf3"
-119 = "#d1d9e0"
-323 = "#9198a1"
-505 = "#59636e"
-616 = "#3d444d"
-746 = "#1f2328"
-780 = "#151b23"
-824 = "#0d1117"
-
 [palette.blue]
 46 = "#ddf4ff"
 337 = "#4493f8"
@@ -100,51 +98,6 @@
 a22 = "rgb(0 0 0 / 0.22)"
 a30 = "rgb(0 0 0 / 0.3)"
 a40 = "rgb(0 0 0 / 0.4)"
-
-# Shared: the element library, review's marks and overlay, the HTML report's
-# frame, and the Astro toolbar's panel take these ---------------------------
-
-[color]
-text = { light = "neutral.729", dark = "neutral.37" }
-muted = { light = "neutral.470", dark = "neutral.266" }
-background = { light = "neutral.0", dark = "neutral.831" }
-# A raised area: a sidebar, a thread, a tab under the pointer.
-surface = { light = "neutral.18", dark = "neutral.796" }
-border = { light = "neutral.76", dark = "neutral.640" }
-# Steps' markers, the selected tab, links, and primary buttons.
-accent = { light = "indigo.435", dark = "indigo.265" }
-# Text on the accent or the focus color: a step's number, a button's label.
-accent-text = { light = "neutral.0", dark = "neutral.831" }
-code-background = { light = "neutral.18", dark = "neutral.796" }
-# Focus rings, and review's links and primary buttons.
-focus = { light = "indigo.435", dark = "indigo.180" }
-
-# Notes, each a color and a tinted background.
-note = { light = "indigo.511", dark = "indigo.265" }
-note-background = { light = "indigo.25", dark = "indigo.764" }
-tip = { light = "green.509", dark = "green.266" }
-tip-background = { light = "green.25", dark = "green.764" }
-important = { light = "magenta.510", dark = "magenta.104" }
-important-background = { light = "magenta.26", dark = "magenta.764" }
-warning = { light = "amber.510", dark = "amber.264" }
-warning-background = { light = "amber.26", dark = "amber.765" }
-caution = { light = "red.509", dark = "red.265" }
-caution-background = { light = "red.26", dark = "red.764" }
-# An availability state with no color of its own; the others take a note's.
-state = { light = "neutral.470", dark = "neutral.266" }
-state-background = { light = "neutral.37", dark = "neutral.729" }
-
-# Review's marks.
-added = { light = "green.509", dark = "green.266" }
-added-background = { light = "green.56", dark = "green.694" }
-changed = { light = "amber.510", dark = "amber.264" }
-changed-background = { light = "amber.56", dark = "amber.694" }
-removed = { light = "red.436", dark = "red.265" }
-removed-background = { light = "red.26", dark = "red.696" }
-moved = { light = "magenta.510", dark = "magenta.104" }
-moved-background = { light = "magenta.26", dark = "magenta.695" }
-# A block that was just scrolled to.
-flash = { light = "amber.56", dark = "amber.694" }
 
 # The review overlay's bottom sheet.
 [color.review.shadow]
@@ -167,7 +120,7 @@ light = "gray.505"
 dark = "gray.323"
 
 [color.site.background]
-light = "neutral.0"
+light = "gray.0"
 dark = "gray.824"
 
 [color.site.surface]
@@ -202,11 +155,141 @@ dark = "yellow.341"
 
 # Behind a site's page, before it paints.
 [color.preview.frame]
-light = "neutral.0"
-dark = "neutral.0"
+light = "gray.0"
+dark = "gray.0"
 
 # Shared ----------------------------------------------------------------------
 
+# Ascribe's own pages, the element library, review, the HTML report, and the
+# Astro toolbar.
+[color.text]
+light = "gray.729"
+dark = "gray.37"
+
+[color.muted]
+light = "gray.470"
+dark = "gray.266"
+
+[color.background]
+light = "gray.0"
+dark = "gray.831"
+
+# Panels, code, and table headers on the background; a thread; a tab under
+# the pointer.
+[color.surface]
+light = "gray.18"
+dark = "gray.796"
+
+[color.border]
+light = "gray.76"
+dark = "gray.640"
+
+# Links, the current page, steps' markers, and the selected tab.
+[color.accent]
+light = "indigo.435"
+dark = "indigo.265"
+
+# Text on the accent or the focus color: a step's number, a button's label.
+[color.accent-text]
+light = "gray.0"
+dark = "gray.831"
+
+[color.code-background]
+light = "gray.18"
+dark = "gray.796"
+
+# Focus rings, and review's links and primary buttons.
+[color.focus]
+light = "indigo.435"
+dark = "indigo.180"
+
+# Notes, each a color and a tinted background.
+[color.note]
+light = "indigo.511"
+dark = "indigo.265"
+
+[color.note-background]
+light = "indigo.25"
+dark = "indigo.764"
+
+[color.tip]
+light = "green.509"
+dark = "green.266"
+
+[color.tip-background]
+light = "green.25"
+dark = "green.764"
+
+[color.important]
+light = "magenta.510"
+dark = "magenta.104"
+
+[color.important-background]
+light = "magenta.26"
+dark = "magenta.764"
+
+[color.warning]
+light = "amber.510"
+dark = "amber.264"
+
+[color.warning-background]
+light = "amber.26"
+dark = "amber.765"
+
+[color.caution]
+light = "red.509"
+dark = "red.265"
+
+[color.caution-background]
+light = "red.26"
+dark = "red.764"
+
+# An availability state with no color of its own; the others take a note's.
+[color.state]
+light = "gray.470"
+dark = "gray.266"
+
+[color.state-background]
+light = "gray.37"
+dark = "gray.729"
+
+# Review's marks.
+[color.added]
+light = "green.509"
+dark = "green.266"
+
+[color.added-background]
+light = "green.56"
+dark = "green.694"
+
+[color.changed]
+light = "amber.510"
+dark = "amber.264"
+
+[color.changed-background]
+light = "amber.56"
+dark = "amber.694"
+
+[color.removed]
+light = "red.436"
+dark = "red.265"
+
+[color.removed-background]
+light = "red.26"
+dark = "red.696"
+
+[color.moved]
+light = "magenta.510"
+dark = "magenta.104"
+
+[color.moved-background]
+light = "magenta.26"
+dark = "magenta.695"
+
+# A block that was just scrolled to.
+[color.flash]
+light = "amber.56"
+dark = "amber.694"
 # Behind a dialog: the docs site's search, review's dialogs.
 [color.scrim]
 light = "black.a40"
@@ -223,21 +306,21 @@ overlay-ui = 'system-ui, -apple-system, "Segoe UI", sans-serif'
 fallback-ui = "system-ui, sans-serif"
 fallback-mono = "ui-monospace, monospace"
 
-# The type scale, for the text Ascribe's own pages set: the HTML report's
-# frame. A compact scale, about 1.2 from step to step, with heavier headings.
-# The element library takes the site's type instead.
-[type]
-caption = { size = "0.75rem", line = 1.4, weight = 600 }
-small = { size = "0.875rem", line = 1.5, weight = 400 }
-body = { size = "1rem", line = 1.6, weight = 400 }
-h1 = { size = "1.875rem", line = 1.2, weight = 700 }
-
 [space]
 base = "1rem"
 small = "0.5rem"
 
 [radius]
 base = "0.375rem"
+
+# The type scale, for the text Ascribe's own pages set: the HTML report's
+# frame. A compact scale, about 1.2 from step to step, with heavier headings.
+# The element library takes the site's type instead.
+[type]
+caption = "600 0.75rem/1.4"
+small = "400 0.875rem/1.5"
+body = "400 1rem/1.6"
+h1 = "700 1.875rem/1.2"
 
 # What each stylesheet declares ---------------------------------------------
 
@@ -340,11 +423,10 @@ base = "0.375rem"
 "--r-notice" = "color.warning-background"
 "--r-ui" = "font.ui"
 "--r-mono" = "font.review-mono"
-"--r-caption" = "{type.caption.weight} {type.caption.size}/{type.caption.line}"
-"--r-caption-size" = "type.caption.size"
-"--r-small" = "{type.small.weight} {type.small.size}/{type.small.line}"
-"--r-body" = "{type.body.weight} {type.body.size}/{type.body.line}"
-"--r-h1" = "{type.h1.weight} {type.h1.size}/{type.h1.line}"
+"--r-caption" = "type.caption"
+"--r-small" = "type.small"
+"--r-body" = "type.body"
+"--r-h1" = "type.h1"
 
 [emit."packages/review/src/report/report.css".elements]
 "--ascribe-border-color" = "color.border"

@@ -794,7 +794,6 @@ a[data-ascribe-term] {
   --r-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --r-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --r-caption: 600 0.75rem/1.4;
-  --r-caption-size: 0.75rem;
   --r-small: 400 0.875rem/1.5;
   --r-body: 400 1rem/1.6;
   --r-h1: 700 1.875rem/1.2;
@@ -882,7 +881,8 @@ body {
 
 .r-sub {
   color: var(--r-muted);
-  font-size: var(--r-caption-size);
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
 }
 
 .r-head .r-notice {
@@ -915,7 +915,8 @@ body {
 
 .r-build {
   display: block;
-  font-size: var(--r-caption-size);
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
   color: var(--r-muted);
   margin-bottom: 4px;
 }
@@ -970,20 +971,21 @@ body {
 .r-page-path,
 .r-page-via {
   display: block;
-  font-family: var(--r-mono);
-  font-size: var(--r-caption-size);
+  font: var(--r-caption) var(--r-mono);
+  font-weight: 400;
   color: var(--r-muted);
   overflow-wrap: anywhere;
 }
 
 .r-page-counts {
   display: block;
-  font-size: var(--r-caption-size);
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
 }
 
 .r-omitted li {
-  font-family: var(--r-mono);
-  font-size: var(--r-caption-size);
+  font: var(--r-caption) var(--r-mono);
+  font-weight: 400;
   color: var(--r-muted);
   padding: 2px 8px;
 }
@@ -1019,7 +1021,8 @@ body {
 }
 
 .r-show {
-  font-size: var(--r-caption-size);
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
   color: var(--r-muted);
 }
 
@@ -1079,7 +1082,8 @@ body {
 }
 
 .r-legend {
-  font-size: var(--r-caption-size);
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
   color: var(--r-muted);
   margin-top: 6px;
 }
@@ -1108,7 +1112,8 @@ body {
   border-radius: 4px;
   padding: 8px 12px;
   color: var(--r-muted);
-  font-size: var(--r-caption-size);
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
 }
 
 /* The page: Ascribe's bare render, in a readable measure. */
