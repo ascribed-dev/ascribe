@@ -212,6 +212,7 @@ describe("what the preview says", () => {
         path: "index.md",
         route: "/",
         title: null,
+        formattedTitle: null,
         frontmatter: {},
         html: "",
         assets: [],

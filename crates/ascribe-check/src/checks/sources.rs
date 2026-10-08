@@ -15,13 +15,12 @@ use crate::{Diagnostic, Project};
 /// none of them read is unused.
 pub(crate) fn check_sources(project: &Project) -> Vec<Diagnostic> {
     let model = project.model();
-    let lock = match project.lock_text() {
-        None => Lock::default(),
-        Some(text) => match Lock::parse(text, LOCK_FILE_ID) {
-            Ok(lock) => lock,
-            // A lock that can't be read says nothing about the copies.
-            Err(issues) => return issues.iter().map(Diagnostic::from_issue).collect(),
-        },
+    let default = Lock::default();
+    let lock = match project.lock() {
+        None => &default,
+        Some(Ok(lock)) => lock,
+        // A lock that can't be read says nothing about the copies.
+        Some(Err(issues)) => return issues.iter().map(Diagnostic::from_issue).collect(),
     };
     let mut issues: Vec<Issue> = Vec::new();
     let at_lock = |span: Span| Location::new(LOCK_FILE_ID, span);

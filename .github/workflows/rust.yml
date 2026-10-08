@@ -57,7 +57,8 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo build --workspace --locked
-      - run: cargo test --workspace --locked
+      # The determinism test runs in a job of its own, below, at the same time.
+      - run: cargo test --workspace --locked -- --skip every_output_is_the_same_twice
       # The sources fixture's pass, on this machine: the update pull request's
       # workflow (examples/docs-repository), run with this build against two
       # local repositories (scripts/sources-fixture/setup.ts).
@@ -67,3 +68,22 @@ jobs:
           node-version-file: .nvmrc
       - if: runner.os == 'Linux'
         run: node scripts/sources-fixture/setup.ts --local
+
+  # crates/ascribe-cli/tests/determinism.rs, the longest test program, beside
+  # the job above rather than after the rest of its tests. It starts from that
+  # job's cache of the dependencies and leaves the saving to it.
+  determinism:
+    name: determinism (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: check
+          save-if: false
+      - run: cargo test -p ascribe-cli --test determinism --locked

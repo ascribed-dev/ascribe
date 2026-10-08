@@ -53,7 +53,17 @@
     "smol-toml": "^1.9.0"
   },
   "peerDependencies": {
-    "astro": "^7.3.5"
+    "@types/hast": "^3.0.0",
+    "astro": "^7.3.5",
+    "satteri": "^0.10.3"
+  },
+  "peerDependenciesMeta": {
+    "@types/hast": {
+      "optional": true
+    },
+    "satteri": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/hast": "^3.0.4",

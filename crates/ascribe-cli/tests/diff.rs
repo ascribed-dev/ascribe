@@ -420,3 +420,44 @@ fn a_clean_working_tree_says_nothing_on_standard_error() {
     let json: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("JSON");
     assert_eq!(json["working_tree_errors"], 0);
 }
+
+#[test]
+fn html_report_formats_a_title_with_code() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/ascribe.toml",
+        &format!(
+            "{MODEL}\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\n"
+        ),
+    );
+    write(
+        dir.path(),
+        "site/docs/keys.md",
+        "---\ntitle: \"`ascribe.toml` keys\"\n---\n\nKeys.\n",
+    );
+    commit(dir.path(), "second");
+    write(
+        dir.path(),
+        "site/docs/keys.md",
+        "---\ntitle: \"`ascribe.toml` keys\"\n---\n\nEvery key.\n",
+    );
+    let out = ascribe(
+        &site(&dir),
+        &["diff", "--format", "html", "--build", "site"],
+    );
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let data = report_data(&stdout(&out), &[]);
+    let page = &data["builds"][0]["pages"][0];
+    assert_eq!(page["path"], "keys.md");
+    // The plain title for tooltips and search, and the formatted one for the
+    // page list and the heading.
+    assert_eq!(page["title"], "ascribe.toml keys");
+    assert_eq!(
+        page["formatted_title"],
+        serde_json::json!([
+            { "type": "code", "value": "ascribe.toml" },
+            { "type": "text", "value": " keys" },
+        ])
+    );
+}

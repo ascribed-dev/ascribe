@@ -119,7 +119,9 @@ class FakeHost implements OverlayHost {
     return made;
   }
   async allThreads(): Promise<ThreadSummary[]> {
-    const page: ThreadSummary["pages"] = [{ path: "guide.md", title: "Guide" }];
+    const page: ThreadSummary["pages"] = [
+      { path: "guide.md", title: "Guide", formatted_title: null },
+    ];
     return [
       ...this.blocks.flatMap((b) => b.threads),
       ...this.removed.flatMap((b) => b.threads),
@@ -605,7 +607,16 @@ describe("the overlay", () => {
     host.others = [
       {
         thread: thread("E", 4, { path: "other.md", lines: { first: 4, last: 4 } }),
-        pages: [{ path: "other.md", title: "Other" }],
+        pages: [
+          {
+            path: "other.md",
+            title: "other.md keys",
+            formatted_title: [
+              { type: "code", value: "other.md" },
+              { type: "text", value: " keys" },
+            ],
+          },
+        ],
       },
     ];
     const o = await open();
@@ -616,6 +627,9 @@ describe("the overlay", () => {
     const entries = () => all(".thread-list li").map((li) => li.textContent);
     expect(entries()).toHaveLength(2);
     expect(entries()[0]).toContain("guide.md:3 · Guide");
+    // A formatted title shows its code spans as code.
+    expect(entries()[1]).toContain("other.md:4 · other.md keys");
+    expect(all(".thread-list .where code").map((c) => c.textContent)).toEqual(["other.md"]);
     one(".segmented button", "Detached").click();
     expect(entries()[0]).toContain("no block, was guide.md");
     // As on its card, where it's Detached, not Outdated.

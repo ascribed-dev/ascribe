@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { nativeBinaryPath, nativePackageName, resolveBinary } from "../src/binary.js";
 
 describe("platform selection", () => {
@@ -23,11 +23,29 @@ describe("platform selection", () => {
     );
   });
 
-  it("reports the optional package when it is not installed", () => {
-    expect(() => nativeBinaryPath("linux", "x64")).toThrow(
-      /could not find its native package @ascribed\/cli-linux-x64/,
-    );
-    expect(() => nativeBinaryPath("linux", "x64")).toThrow(/optional dependencies/);
+  it("reports the optional package when it is not installed", async () => {
+    // A built checkout stages the host's binary, so resolution is made to fail
+    // here rather than depending on what is installed.
+    vi.resetModules();
+    vi.doMock("node:module", () => ({
+      createRequire: () => ({
+        resolve: (request: string) => {
+          throw Object.assign(new Error(`Cannot find module '${request}'`), {
+            code: "MODULE_NOT_FOUND",
+          });
+        },
+      }),
+    }));
+    try {
+      const { nativeBinaryPath: missing } = await import("../src/binary.js");
+      expect(() => missing("linux", "x64")).toThrow(
+        /could not find its native package @ascribed\/cli-linux-x64/,
+      );
+      expect(() => missing("linux", "x64")).toThrow(/optional dependencies/);
+    } finally {
+      vi.doUnmock("node:module");
+      vi.resetModules();
+    }
   });
 
   it("exposes resolveBinary as the integration API", () => {

@@ -117,6 +117,18 @@ export interface DiffReport {
   builds: BuildDiff[];
 }
 
+/**
+ * A piece of a formatted value, as the JSON output writes it:
+ * `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
+ * formatted title, such as the review report's, writes it the same way.
+ */
+export interface FormattedPiece {
+  /** What the piece is. */
+  type: PieceKind;
+  /** Its text: a code span's content without its backticks. */
+  value: string;
+}
+
 /** An image a page refers to. */
 export interface ImageRef {
   /** The image's source file. */
@@ -171,6 +183,11 @@ export interface PageData {
   changes: Change[];
   /** Its title, when the build has one. */
   title: string | null;
+  /**
+   * Its title formatted, when its field sets `inline = "code"`: for the
+   * page list and the page's heading. `title` stays the plain text.
+   */
+  formatted_title: FormattedPiece[] | null;
   /** The page now, as a key of `pages`; `null` when there's none. */
   now: string | null;
   /** The page before, as a key of `pages`; `null` when there's none. */
@@ -217,6 +234,9 @@ export interface PageDiff {
 
 /** Whether a page is new, gone, or different. */
 export type PageStatus = "added" | "removed" | "changed";
+
+/** What a piece of a formatted value is. */
+export type PieceKind = "text" | "code";
 
 /** A page rendered: its HTML, and what each image reference in it is. */
 export interface RenderedPage {

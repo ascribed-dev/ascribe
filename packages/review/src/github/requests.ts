@@ -5,6 +5,7 @@
 import { anchorKey, parseSource, type Anchor } from "../place/anchor.js";
 import { lineHunks, shiftLine, type Hunk, type Sides } from "../place/lines.js";
 import type { PageRef, PlacedThreads } from "../place/place.js";
+import type { FormattedPiece } from "../shapes.js";
 import { ReviewError } from "../shared/errors.js";
 import { gitMaybe } from "../shared/git.js";
 import { parseRemote } from "./repository.js";
@@ -31,6 +32,8 @@ export interface ChangedPageRef {
   status: "added" | "removed" | "changed";
   because: readonly string[];
   title?: string | null;
+  /** The title formatted, when its field sets `inline = "code"`. */
+  formatted_title?: readonly FormattedPiece[] | null;
 }
 
 /** What answering a request needs. */
@@ -264,12 +267,16 @@ function fromKey(key: string): Anchor {
 export function pagesShowing(
   file: string,
   pages: readonly ChangedPageRef[],
-): { path: string; title: string | null }[] {
+): { path: string; title: string | null; formatted_title: FormattedPiece[] | null }[] {
   return pages
     .filter((page) => page.status !== "removed")
     .filter((page) => page.path === file || page.because.includes(file))
     .sort((a, b) => Number(b.path === file) - Number(a.path === file))
-    .map((page) => ({ path: page.path, title: page.title ?? null }));
+    .map((page) => ({
+      path: page.path,
+      title: page.title ?? null,
+      formatted_title: page.formatted_title ? [...page.formatted_title] : null,
+    }));
 }
 
 /**

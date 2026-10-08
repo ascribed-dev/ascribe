@@ -181,8 +181,9 @@ export class ReviewServer {
         page: pagePath === undefined ? undefined : { build: this.options.build, path: pagePath },
         lastPage: pagePath === undefined ? undefined : this.pages.get(pagePath),
         changedPages: async () => {
-          const changes = await this.changes();
-          return "result" in changes ? changes.result.pages : [];
+          const [changes, routes] = await Promise.all([this.changes(), this.readRoutes()]);
+          if (!("result" in changes)) return [];
+          return changes.result.pages.map((p) => listed(p, routes.get(normalizeRoute(p.route))));
         },
       },
       method as OverlayMethod,
@@ -291,11 +292,10 @@ export class ReviewServer {
     if (!this.on) throw new Error("Review is off.");
     const route = normalizeRoute(typeof params["route"] === "string" ? params["route"] : "/");
     const fromPage = typeof params["path"] === "string" ? params["path"] : null;
-    this.routes ??= this.options.readRoutes().catch(() => new Map<string, RoutedPage>());
     const [changes, connection, routes] = await Promise.all([
       this.changes(),
       this.connected(),
-      this.routes,
+      this.readRoutes(),
     ]);
     const pages = "result" in changes ? changes.result.pages : [];
     const shown = pages.filter((p) => p.status !== "removed");
@@ -310,10 +310,16 @@ export class ReviewServer {
       problem: "error" in changes ? changes.error : null,
       errors: "result" in changes ? changes.result.errors : 0,
       threads: threadsState(connection),
-      changedPages: pages.map((p) => listed(p, routes.get(normalizeRoute(p.route))?.title ?? null)),
+      changedPages: pages.map((p) => listed(p, routes.get(normalizeRoute(p.route)))),
       contentRoot: this.options.contentRoot,
       separator: path.sep,
     };
+  }
+
+  /** The build's pages by route, read once until the next rebuild. */
+  private readRoutes(): Promise<Map<string, RoutedPage>> {
+    this.routes ??= this.options.readRoutes().catch(() => new Map<string, RoutedPage>());
+    return this.routes;
   }
 
   /** Tells every page the threads or the changes changed; `from` is the page that did it. */
@@ -323,9 +329,10 @@ export class ReviewServer {
 }
 
 /** A changed page as the list shows it: without its changes, with its title. */
-function listed(page: PageDiff, title: string | null): ChangedPage {
+function listed(page: PageDiff, routed: RoutedPage | undefined): ChangedPage {
   return {
-    title,
+    title: routed?.title ?? null,
+    formatted_title: routed?.formatted_title ?? null,
     path: page.path,
     route: page.route,
     status: page.status,

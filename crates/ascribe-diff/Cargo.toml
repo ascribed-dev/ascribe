@@ -25,7 +25,7 @@ schemars = { workspace = true, optional = true }
 [features]
 # Derives a JSON Schema for each type it writes as JSON. Only ascribe-cli's
 # tests turn it on, to generate the schemas (crates/ascribe-cli/src/shapes.rs).
-json-schema = ["dep:schemars"]
+json-schema = ["dep:schemars", "ascribe-emit/json-schema"]
 
 [dev-dependencies]
 proptest.workspace = true

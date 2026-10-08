@@ -348,7 +348,9 @@ body {
   color: var(--r-accent);
 }
 
-.r-page code {
+.r-page code,
+.r-page-title code,
+.r-page-heading code {
   font-family: var(--r-mono);
   font-size: 0.875em;
   background: var(--r-code);

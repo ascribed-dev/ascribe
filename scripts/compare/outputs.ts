@@ -42,7 +42,8 @@
 // pattern that matches no difference is an error (2), so it can't outlive the
 // change it was for.
 //
-// The outputs stay in --out (a new temporary directory by default). The
+// The outputs stay in --out (a new temporary directory by default). A run
+// first removes what an earlier run left there, so --out can be reused. The
 // checkout isn't written to, except for the Astro example's `dist/` and the
 // packages' builds.
 import { execFileSync, spawnSync } from "node:child_process";
@@ -118,6 +119,11 @@ function main(): void {
   const accept = new Acceptance(options.accept);
   const out = path.resolve(options.out ?? mkdtempSync(path.join(tmpdir(), "ascribe-compare-")));
   mkdirSync(out, { recursive: true });
+  // An earlier run's copy is a repository with its commit already made, and its
+  // reports would sit beside this run's.
+  for (const earlier of ["copy", "projects", "site"]) {
+    rmSync(path.join(out, earlier), { recursive: true, force: true });
+  }
 
   let worktree: string | undefined;
   try {
