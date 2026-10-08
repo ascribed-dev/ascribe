@@ -5,7 +5,7 @@
 
 [candidate]
 name = "Ink"
-summary = "Indigo accent over cool neutrals; tighter, heavier headings."
+summary = "The chosen palette and type scale: indigo accent over cool neutrals; tighter, heavier headings."
 
 # Each hue's steps run from 50 (lightest) to 950 (darkest), made in OKLCH at
 # fixed lightnesses, so the same step of two hues has the same lightness.

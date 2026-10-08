@@ -47,6 +47,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 8. **The mark is chosen by the maintainer.** Phase 2 produces candidates and stops. Nothing downstream starts on a mark that hasn't been chosen. Whatever is chosen must read in one color at 16 pixels, because the activity bar and the favicon need that.
 9. **Assets are generated.** Every raster and every size comes from the source SVGs in `design/` by one script. The generated files are committed, since the extension package and the site need them at build time, beside a manifest of the source's hashes; a test fails when a source changed and the script wasn't run.
 10. **Codicons first.** The extension uses VS Code's icons for everything they cover. An Ascribe glyph is added only for a concept on phase 6's list, and all of them ship as one icon font.
+11. **The mark is the footnote, in Inter; the palette and type scale are Ink.** Chosen by the maintainer in phase 2 ([#169](https://github.com/ascribed-dev/ascribe/pull/169)): a lowercase a with a raised asterisk, outlined from Inter Bold, with the wordmark in Inter Semibold (`design/mark.svg`, `design/mark-color.svg`, `design/wordmark.svg`); an indigo accent over cool neutrals, with a compact type scale (`design/candidates/chosen.toml`).
 
 ## Phases
 
