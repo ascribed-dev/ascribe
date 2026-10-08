@@ -20,8 +20,22 @@ jobs:
   check:
     name: format, lint, typecheck, and test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The element library's tests drive Chromium, Firefox, and WebKit, and the
+    # preview's drive Chromium. Playwright's image has all three and the system
+    # packages they need, so the job downloads neither. Its tag is the
+    # playwright-core version in pnpm-lock.yaml (scripts/ci/workflows.test.ts).
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+    env:
+      # The job runs as root, and Firefox won't start under a home directory
+      # another user owns, which is what Actions gives a container.
+      HOME: /root
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The checkout belongs to the runner's user and the job runs as root,
+      # which git refuses unless told to trust it. Tests run `git ls-files`.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       # Installs the pnpm version named in package.json's `packageManager`.
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -29,8 +43,6 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The element library's tests drive Chromium, Firefox, and WebKit.
-      - run: pnpm --filter @ascribed/elements exec playwright-core install --with-deps chromium firefox webkit
       - run: pnpm format:check
       - run: pnpm lint
       # Unused files, exports, and dependencies (knip.jsonc).
@@ -51,6 +63,7 @@ jobs:
   vscode:
     name: VS Code extension integration tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -81,6 +94,7 @@ jobs:
       matrix:
         os: ${{ fromJSON(inputs.vscode-os) }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash
@@ -114,6 +128,7 @@ jobs:
         # Each entry has os, target, env_target, and exe; ci.yml lists them.
         include: ${{ fromJSON(inputs.astro-targets) }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash
@@ -147,6 +162,7 @@ jobs:
       - run: pnpm --filter @ascribed/astro build
       - run: pnpm --filter @ascribed/astro test
       - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install --with-deps chromium
+        timeout-minutes: 5
         if: runner.os == 'Linux'
       - run: pnpm --filter @ascribed/example-astro-site exec playwright-core install chromium
         if: runner.os != 'Linux'
