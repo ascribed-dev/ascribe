@@ -60,7 +60,7 @@ impl Version {
 }
 
 /// Compares two component lists under the `numeric` version scheme.
-pub fn compare_components(a: &[u64], b: &[u64]) -> Ordering {
+pub(crate) fn compare_components(a: &[u64], b: &[u64]) -> Ordering {
     let len = a.len().max(b.len());
     for i in 0..len {
         let x = a.get(i).copied().unwrap_or(0);
