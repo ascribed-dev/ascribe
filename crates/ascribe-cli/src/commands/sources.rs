@@ -288,6 +288,9 @@ fn write_status(out: &mut dyn Write, report: &StatusReport) -> io::Result<()> {
                 CopyState::Unlocked => "not in ascribe.lock; `ascribe sources fetch` replaces it",
                 CopyState::Unused => "no snippet uses it; `ascribe sources fetch` removes it",
                 CopyState::NotCopied => "not copied yet; `ascribe sources fetch` copies it",
+                CopyState::NotAtPin => {
+                    "not in the repository at the pin; fix the snippet, or the code and run `ascribe sources update`"
+                }
             };
             writeln!(out, "  {}: {state}", file.path)?;
         }

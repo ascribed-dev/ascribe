@@ -112,3 +112,63 @@ fn unsound_tags_point_into_the_code_file() {
     assert_eq!(&code.text[at.span.range()], "# :snippet-start: a");
     assert!(project.file(at.file).is_none());
 }
+
+#[test]
+fn a_file_not_at_the_pin_is_reported_as_such() {
+    const REMOTE: &str = r#"
+spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[sources.api]
+git = "https://github.com/acme/api.git"
+"#;
+    let messages = |git: &str| {
+        let model = ascribe_model::load_str(REMOTE, FileId::new(0)).expect("a model");
+        let lock = format!(
+            "version = 1\n\n[[source]]\nname = \"api\"\ngit = \"{git}\"\n\
+             commit = \"9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e\"\nmissing = [\"src/gone.py\"]\n"
+        );
+        let fs = MemoryFs::new(&Layout::from_model(&model)).with_file("ascribe.lock", &lock);
+        let text = "---\ntitle: T\n---\n@snippet: api:src/gone.py\n\n@snippet: api:src/new.py\n";
+        let sources =
+            Project::from_sources([(RelPath::parse("index.md").expect("a path"), text.into())]);
+        let project = Project::from_parts_with_fs(
+            PathBuf::from("/no/such/project"),
+            RelPath::parse("docs").expect("a path"),
+            model,
+            REMOTE.to_owned(),
+            sources,
+            Arc::new(fs),
+        );
+        check_files(&project)
+            .into_iter()
+            .filter(|d| d.slug.as_str() == "snippet-file-missing")
+            .map(|d| d.message)
+            .collect::<Vec<_>>()
+    };
+    // `ascribe sources` found `src/gone.py` isn't at the pin: fetching won't
+    // copy it. `src/new.py` hasn't been looked for yet.
+    let found = messages("https://github.com/acme/api.git");
+    assert_eq!(found.len(), 2, "{found:?}");
+    assert!(
+        found[0].starts_with(
+            "`src/gone.py` isn't in source `api`'s repository at 9f2c41d, the commit ascribe.lock pins"
+        ),
+        "{}",
+        found[0]
+    );
+    assert!(
+        found[1].ends_with("run `ascribe sources fetch`"),
+        "{}",
+        found[1]
+    );
+    // A pin to another repository says nothing about this one's files.
+    let found = messages("https://github.com/acme/old.git");
+    assert!(
+        found[0].ends_with("run `ascribe sources fetch`"),
+        "{}",
+        found[0]
+    );
+}

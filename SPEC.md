@@ -796,13 +796,14 @@ A source with `git` is a repository other than the project's. Checking and build
   name = "api"
   git = "https://github.com/acme/api.git"
   commit = "9f2c41d0e0c4a1b2c3d4e5f60718293a4b5c6d7e"
+  missing = ["examples/quickstart.ts"]
 
   [source.files]
   "src/auth.rs" = "sha256:5d41402abc4b2a76b9719d911017c592ae2fd2b1f6b3b0f0d5ce64b4c7d0e1a2"
   ```
 
-  `version` is `1`. Each `[[source]]` pins one source: its name, its `git` as the content model gave it when it was pinned, its commit as 40 or 64 hexadecimal digits, and each copy's path with the SHA-256 of its bytes, as `sha256:` and 64 lowercase hexadecimal digits. No two entries name the same source.
-- Processors check the lock and the copies whenever they check the project, from the files alone: each entry names a source the content model declares with `git`, and the same `git`; each file the lock lists is in the source's folder with that hash; each file in the source's folder is listed; and each copy is used by a snippet. A snippet whose file has no copy is an error that says how to copy it.
+  `version` is `1`. Each `[[source]]` pins one source: its name, its `git` as the content model gave it when it was pinned, its commit as 40 or 64 hexadecimal digits, and each copy's path with the SHA-256 of its bytes, as `sha256:` and 64 lowercase hexadecimal digits. `missing`, which may be left out, lists the paths snippets named that weren't in the repository at that commit, so weren't copied; no path is both copied and missing. No two entries name the same source.
+- Processors check the lock and the copies whenever they check the project, from the files alone: each entry names a source the content model declares with `git`, and the same `git`; each file the lock lists is in the source's folder with that hash; each file in the source's folder is listed; and each copy is used by a snippet. A snippet whose file has no copy is an error that says how to copy it, or, when the lock lists the file as `missing`, that it isn't in the repository at the pinned commit.
 - **No history, no network.** Copying, and moving a pin to another commit, are a processor's commands of their own, and the only operations that reach another repository. Checking and building read the copies, so the same commit of the project checks and builds the same way on any machine.
 
 ---

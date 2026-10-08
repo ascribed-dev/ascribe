@@ -594,10 +594,10 @@ A page names a file through its source as `<source>:<path>`, with the path relat
 
 `check` and `build` never fetch anything. A source with `git` is read from copies kept in the project:
 
-- `ascribe.lock`, beside `ascribe.toml`, pins each such source to a commit, and records the hash of each file copied from it.
+- `ascribe.lock`, beside `ascribe.toml`, pins each such source to a commit, and records the hash of each file copied from it, and which files snippets name that aren't in the repository at that commit.
 - The files the project's snippets use are copied, whole, into `sources/<name>/` beside `ascribe.toml`, at the paths they have in their repository. Only those files are copied, not the repository, and not everything `include` matches. `sources/` can't be inside the content root.
 
-Both are written by [`ascribe sources fetch` and `ascribe sources update`](cli.md#ascribe-sources), and committed with the rest of the docs. `check` reports a copy that was changed by hand, a copy the lock doesn't list, a copy no snippet uses any more, and a snippet whose file hasn't been copied yet. The copies are published to everyone who can read the docs repository: for a private code repository and public docs, that's a decision to make knowingly.
+Both are written by [`ascribe sources fetch` and `ascribe sources update`](cli.md#ascribe-sources), and committed with the rest of the docs. `check` reports a copy that was changed by hand, a copy the lock doesn't list, a copy no snippet uses any more, and a snippet whose file hasn't been copied yet, or isn't in the repository at the pinned commit because it was moved or deleted there. The copies are published to everyone who can read the docs repository: for a private code repository and public docs, that's a decision to make knowingly.
 
 ---
 

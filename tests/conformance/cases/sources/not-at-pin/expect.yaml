@@ -1,0 +1,9 @@
+description: >-
+  A snippet that names a file `ascribe.lock` lists as `missing`, one that
+  wasn't in the source's repository at the pinned commit, is a missing file,
+  with a message that says so rather than how to copy it.
+spec: ["4.8", "7.4", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: snippet-file-missing, file: index.md, line: 9}

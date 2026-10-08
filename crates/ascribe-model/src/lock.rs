@@ -1,10 +1,11 @@
 //! `ascribe.lock` (SPEC §7.4): the commit each source in another repository
-//! is pinned to, and the hash of each file copied from it.
+//! is pinned to, the hash of each file copied from it, and the files snippets
+//! name that aren't in the repository at that commit.
 //!
 //! Ascribe writes the lock ([`Lock::to_toml`]) when it copies files or moves
 //! a pin, and reads it ([`Lock::parse`]) whenever it checks a project.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
@@ -38,6 +39,11 @@ pub struct LockedSource {
     pub commit: String,
     /// The copies, by path relative to the source's folder.
     pub files: BTreeMap<String, LockedFile>,
+    /// The files snippets named that weren't in the repository at the
+    /// commit when the copies were made, by path relative to the source's
+    /// folder. `check` says so of them, rather than that they haven't been
+    /// copied yet.
+    pub missing: BTreeSet<String>,
     /// The entry's `name` value, for reporting.
     pub span: Span,
 }
@@ -101,6 +107,10 @@ impl Lock {
             let _ = writeln!(out, "name = {}", quoted(&source.name));
             let _ = writeln!(out, "git = {}", quoted(&source.git));
             let _ = writeln!(out, "commit = {}", quoted(&source.commit));
+            if !source.missing.is_empty() {
+                let paths: Vec<String> = source.missing.iter().map(|p| quoted(p)).collect();
+                let _ = writeln!(out, "missing = [{}]", paths.join(", "));
+            }
             if !source.files.is_empty() {
                 out.push_str("\n[source.files]\n");
                 for (path, file) in &source.files {
@@ -210,7 +220,7 @@ impl Reader {
 
     fn source(&mut self, table: &DeTable<'_>, span: Span) -> Option<LockedSource> {
         for (key, key_span, _) in entries(table) {
-            if !matches!(key, "name" | "git" | "commit" | "files") {
+            if !matches!(key, "name" | "git" | "commit" | "files" | "missing") {
                 self.problem(key_span, format!("a `[[source]]` has no key `{key}`"));
             }
         }
@@ -248,12 +258,41 @@ impl Reader {
                 ),
             }
         }
+        let mut missing = BTreeSet::new();
+        if let Some(v) = table.get("missing") {
+            match v.get_ref() {
+                DeValue::Array(items) => {
+                    for item in items.iter() {
+                        match item.get_ref() {
+                            DeValue::String(path) if files.contains_key(path.as_ref()) => {
+                                self.problem(
+                                    sp(item),
+                                    format!("`{path}` is both in `files` and in `missing`"),
+                                );
+                            }
+                            DeValue::String(path) => {
+                                missing.insert(path.to_string());
+                            }
+                            other => self.problem(
+                                sp(item),
+                                format!("a path in `missing` is {}, not a string", describe(other)),
+                            ),
+                        }
+                    }
+                }
+                other => self.problem(
+                    sp(v),
+                    format!("`missing` is {}, not an array", describe(other)),
+                ),
+            }
+        }
         let ((name, name_span), (git, _), (commit, _)) = (name?, git?, commit?);
         Some(LockedSource {
             name,
             git,
             commit,
             files,
+            missing,
             span: name_span,
         })
     }
@@ -300,6 +339,11 @@ impl Reader {
     }
 }
 
+/// A commit's first seven characters, as `git` shows it.
+pub fn short_commit(commit: &str) -> &str {
+    commit.get(..7).unwrap_or(commit)
+}
+
 /// A commit's full hash: 40 hexadecimal digits (SHA-1), or 64 (SHA-256).
 pub fn is_commit(text: &str) -> bool {
     matches!(text.len(), 40 | 64) && text.bytes().all(|b| b.is_ascii_hexdigit())
@@ -336,6 +380,7 @@ mod tests {
                     git: "git@github.com:acme/web.git".into(),
                     commit: COMMIT.into(),
                     files: BTreeMap::new(),
+                    missing: BTreeSet::from(["src/gone.rs".to_owned()]),
                     span: Span::empty(0),
                 },
                 LockedSource {
@@ -343,6 +388,7 @@ mod tests {
                     git: "https://github.com/acme/api.git".into(),
                     commit: COMMIT.into(),
                     files,
+                    missing: BTreeSet::new(),
                     span: Span::empty(0),
                 },
             ],
@@ -366,7 +412,10 @@ mod tests {
         let api = read.source("api").expect("api");
         assert_eq!(api.commit, COMMIT);
         assert_eq!(api.files["src/a \"b\".rs"].hash, file_hash(b"fn a() {}\n"));
-        assert!(read.source("web").expect("web").files.is_empty());
+        let web = read.source("web").expect("web");
+        assert!(web.files.is_empty());
+        assert_eq!(web.missing, BTreeSet::from(["src/gone.rs".to_owned()]));
+        assert!(read.source("api").expect("api").missing.is_empty());
         // The same lock writes the same text.
         assert_eq!(read.to_toml(), text);
     }
@@ -402,6 +451,21 @@ mod tests {
         assert_eq!(
             bad(&format!("{source}[source.files]\n\"a.rs\" = \"md5:1\"\n")),
             ["the hash of `a.rs`, `md5:1`, isn't `sha256:` and 64 lowercase hexadecimal digits"]
+        );
+        assert_eq!(
+            bad(&format!("{source}missing = \"a.rs\"\n")),
+            ["`missing` is a string, not an array"]
+        );
+        assert_eq!(
+            bad(&format!("{source}missing = [1]\n")),
+            ["a path in `missing` is a number, not a string"]
+        );
+        assert_eq!(
+            bad(&format!(
+                "{source}missing = [\"a.rs\"]\n[source.files]\n\"a.rs\" = \"{}\"\n",
+                file_hash(b"")
+            )),
+            ["`a.rs` is both in `files` and in `missing`"]
         );
         assert_eq!(
             bad("version = 1\n[[source]]\ngit = \"x\"\n"),

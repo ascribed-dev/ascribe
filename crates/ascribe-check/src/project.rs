@@ -6,8 +6,8 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use ascribe_core::{FileId, LineIndex, RelPath};
-use ascribe_model::{ContentModel, LOCK_FILE};
+use ascribe_core::{FileId, Issue, LineIndex, RelPath};
+use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedSource};
 use ascribe_resolve::{CodeFile, CodeFiles, DiskFs, FileSystem, Layout, SourceSet};
 
 use crate::Diagnostic;
@@ -165,6 +165,8 @@ pub struct Project {
     code: Arc<CodeFiles>,
     /// The text of `ascribe.lock`, when there is one.
     lock_text: Option<String>,
+    /// `ascribe.lock` read, or its problems, when there's one.
+    lock: Option<Result<Lock, Vec<Issue>>>,
 }
 
 /// The file system a project probes for what isn't a source file. It has a
@@ -387,6 +389,9 @@ impl Project {
             .ok()
             .and_then(|path| fs.read_file(&path).ok())
             .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
+        let lock = lock_text
+            .as_deref()
+            .map(|text| Lock::parse(text, LOCK_FILE_ID));
         Project {
             root,
             layout,
@@ -398,6 +403,7 @@ impl Project {
             fs: Files(fs),
             code: Arc::default(),
             lock_text,
+            lock,
         }
     }
 
@@ -490,6 +496,21 @@ impl Project {
     /// The text of `ascribe.lock`, when the project has one.
     pub fn lock_text(&self) -> Option<&str> {
         self.lock_text.as_deref()
+    }
+
+    /// `ascribe.lock` read, or its problems, when the project has one.
+    pub(crate) fn lock(&self) -> Option<&Result<Lock, Vec<Issue>>> {
+        self.lock.as_ref()
+    }
+
+    /// The pin of the source `name` in another repository, when
+    /// `ascribe.lock` can be read and pins it to the repository the content
+    /// model names.
+    pub(crate) fn pin(&self, name: &str) -> Option<&LockedSource> {
+        let url = &self.model.source(name)?.git.as_ref()?.url;
+        // A lock that can't be read is reported by the sources check.
+        let lock = self.lock.as_ref()?.as_ref().ok()?;
+        lock.source(name).filter(|l| &l.git == url)
     }
 
     /// What a file id names.

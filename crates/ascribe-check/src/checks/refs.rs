@@ -10,6 +10,7 @@
 //! the image checks that need the content model.
 
 use ascribe_core::{Issue, Location, Span, diagnostics};
+use ascribe_model::short_commit;
 use ascribe_resolve::{
     RefKind, SnippetUse, destination_phrases, destination_span, include_issue, include_target,
     reference_issue, reference_target, resolve_reference, snippet_issues,
@@ -18,6 +19,7 @@ use ascribe_syntax::{DirectiveLine, Image, Inline, Link, LinkForm, Phrase};
 
 use super::Ctx;
 use super::attrs::{Owner, required_missing};
+use crate::Project;
 
 impl Ctx<'_> {
     /// `@include: path#id` (SPEC §4.2): the target must be a source file of
@@ -44,7 +46,7 @@ impl Ctx<'_> {
             project.code_files(),
             self.id,
         ) {
-            self.report(issue);
+            self.report(not_at_pin(issue, &snippet, project));
         }
     }
 
@@ -152,4 +154,22 @@ struct Reference<'a> {
     label: Option<Span>,
     children: &'a [Inline],
     alt: Option<Span>,
+}
+
+/// A file a snippet names that has no copy, when `ascribe sources` found it
+/// isn't in the repository at the pin (SPEC §7.4): `fetch` can't copy it, so
+/// the issue says so instead.
+fn not_at_pin(issue: Issue, snippet: &SnippetUse, project: &Project) -> Issue {
+    if issue.slug != diagnostics::SNIPPET_FILE_MISSING || issue.variant != Some("no-copy") {
+        return issue;
+    }
+    let Some(Ok(address)) = &snippet.address else {
+        return issue;
+    };
+    match project.pin(&address.source) {
+        Some(pin) if pin.missing.contains(&address.path) => issue
+            .with_variant("not-at-pin")
+            .with_arg("commit", short_commit(&pin.commit).to_owned()),
+        _ => issue,
+    }
 }
