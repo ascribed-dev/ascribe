@@ -123,7 +123,7 @@ export const EMIT: Record<string, Record<string, string>> = {
     "--border": "color.border",
     "--accent": "color.accent",
     "--accent-surface": "color.accent-surface",
-    "--code-background": "color.code-background",
+    "--focus": "color.focus",
   },
   "packages/elements/css/style.css": {
     "--ascribe-border-color": "color.border",

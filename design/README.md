@@ -1,13 +1,13 @@
 # Design tokens
 
-`tokens.toml` is the one place a color, font stack, space, or radius of Ascribe's own stylesheets is written. Each stylesheet's variables are generated from it, between marker comments; nothing else in a stylesheet names a color.
+`tokens.toml` is the one place a color, font stack, step of the type scale, space, or radius of Ascribe's own stylesheets is written. Each stylesheet's variables are generated from it, between marker comments; nothing else in a stylesheet names a color.
 
 ## The file
 
 - `[palette]`: every color value, named by hue and step (`indigo.435`). The step is 1000 × (1 − the color's OKLCH lightness), rounded, so a higher step is darker; a tie takes the next step.
 - `[color]`: what each color is for (`note`, `added`, `site.text`), with a `light` and a `dark` value, each a palette name. Stylesheets take these, never a palette name. The element library, review, the HTML report, and the Astro toolbar share the top-level ones, which are the chosen palette's semantic colors; the docs site and the VS Code preview have their own.
 - `[font]`, `[space]`, `[radius]`: values the stylesheets use as they are.
-- `[type]`: the type scale, each step a weight, a size, and a line height as the `font` shorthand writes them (`"600 0.75rem/1.4"`). The HTML report's frame sets its text with it; the element library takes the site's type.
+- `[type]`: the type scale, each step a weight, a size, and a line height (`650 1.375rem/1.3`), for the `font` shorthand with a family after it: `font: var(--type-h2) var(--font)`. The docs site and the HTML report's frame set their text with it; the element library takes the site's type.
 - `[emit."<stylesheet>".<block>]`: what a stylesheet's generated block declares. Each key is a property, and its value is a token (`"color.muted"`) or a template with tokens in braces (`"var(--vscode-charts-blue, {color.note})"`).
 
 The `--ascribe-*` and `--ascribe-review-*` properties are public: sites theme the elements and review with them. Their names don't change, and a test holds them; their default values are these tokens and may change in a release, noted in the changelog under **Behavior change** with the previous values (decision 44 in `project-docs/decisions.md`).
@@ -65,6 +65,7 @@ Every image of the mark that something needs is generated from `mark.svg`, `word
 | `site/public/favicon.ico` | Browsers that want an `.ico` | 32 pixels, the full-color mark on a white tile, so it shows on a light or a dark tab |
 | `site/public/apple-touch-icon.png` | A phone's home screen | 180 pixels, the full-color mark on white |
 | `site/public/social-card.png` | Links to the docs site and the repository | 1200 × 630: the mark, the wordmark, and the tagline on white |
+| `site/src/assets/logo.svg` | The docs site's header, inline | The mark beside the wordmark, `currentColor` only, its asterisk keeping `class="second"` for the page to color |
 | `packages/vscode/media/icon.png` | The extension's Marketplace listing and Extensions view | 256 pixels, the dark full-color mark on a rounded tile in the dark surface color, so it reads in a light or a dark editor |
 | `packages/vscode/media/activity.svg` | The extension's activity bar icon | 24 pixels, `currentColor` only, which VS Code tints. The mark takes the middle 20, as tall as the codicons beside it |
 | `design/out/header-light.svg`, `header-dark.svg` | The header of `README.md` and `packages/vscode/README.md`, in GitHub's `<picture>` | The wordmark, 48 pixels tall, in the light and the dark text color |

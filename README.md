@@ -1,4 +1,9 @@
-# Ascribe
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="design/out/header-dark.svg" />
+    <img src="design/out/header-light.svg" alt="Ascribe" width="218" height="48" />
+  </picture>
+</h1>
 
 Ascribe is a markup language, content model, and toolchain for documentation written as code. It's Markdown with a small set of directives for the structure documentation needs: callouts, procedures, alternatives by platform or product, availability by deployment and version, and reusable content. A schema, `ascribe.toml`, says what a documentation set may contain; the editor checks it as you type; and one compiler builds it into a website, plain Markdown, and JSON.
 

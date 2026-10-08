@@ -7,13 +7,15 @@ astro.config.mjs            ascribe({ project: "../docs", build: "site" }); rout
 netlify.toml                production's build on Netlify
 public/_redirects           pages that moved, from their old address to their new one
 public/*.png, favicon.*     the mark's favicons, touch icon, and social card, generated (../design/README.md)
+src/assets/logo.svg         the header's mark and wordmark, generated (../design/README.md)
 src/content.config.ts       the collection, with the schema ascribe build generates in ../docs
 src/nav.ts                  the sidebar: every page, grouped and in order
 src/pages/[...slug].astro   a route per page: the base path plus its entry id
 src/pages/404.astro         the 404 page
 src/layouts/                the shell (header, sidebar) and a docs page (title, availability, edit link, contents)
 src/components/             search, the sidebar, the table of contents, the page's availability badge
-src/styles/site.css         light and dark, following the system, and the element library's theme
+src/styles/site.css         light and dark, following the system, and the element library's theme; its colors and type are generated from ../design/tokens.toml
+src/theme.ts                the theme-color for each scheme, read from site.css
 scripts/follow-next.mjs     production's extra step: the newest canary, without saving
 scripts/checkout.mjs        a build with this checkout's Ascribe, for local work and previews
 test/                       navigation, links and anchors, redirects, and the built site in Chromium
@@ -59,7 +61,7 @@ npm test              # after a build
 - `test/nav.test.ts`: every published page is in `src/nav.ts`, and it names nothing else.
 - `test/links.test.ts`: every link and anchor between the built pages lands.
 - `test/redirects.test.ts`: each redirect in `public/_redirects` leads from an address that isn't a page to one that is.
-- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
+- `test/e2e.test.ts`, in Chromium (`ASCRIBE_CHROMIUM`, or `/opt/pw-browsers/chromium`, or Playwright's own: `npx playwright-core install chromium`): the favicons, touch icon, and social card resolve, and the card's address is absolute; one `theme-color` per scheme, each the page's background; the header's mark links home and has an accessible name; variants switch and the choice holds on the next page; the availability badge on a page that has one; notes and steps; links between pages and glossary links; the sidebar; search, with the network blocked; the edit link; the 404 page; and the menu at phone width.
 
 ## Addresses
 

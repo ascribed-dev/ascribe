@@ -186,9 +186,9 @@ describe("the shared colors", () => {
     expect(failing).toEqual([]);
   });
 
-  test("are every color the pairings name, but the docs site's own", () => {
+  test("are every color the pairings name", () => {
     const named = new Set(pairs.flatMap(({ fg, bg }) => [fg, bg]));
-    expect([...named].filter((name) => !shared.has(name))).toEqual(["accent-surface"]);
+    expect([...named].filter((name) => !shared.has(name))).toEqual([]);
   });
 
   test("are the chosen palette's", () => {
