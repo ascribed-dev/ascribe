@@ -6,6 +6,7 @@ Ascribe's user docs, `../docs`, as a website: plain Astro with `@ascribed/astro`
 astro.config.mjs            ascribe({ project: "../docs", build: "site" }); routing as in ../docs/ascribe.toml's [consumer]
 netlify.toml                production's build on Netlify
 public/_redirects           pages that moved, from their old address to their new one
+public/*.png, favicon.*     the mark's favicons, touch icon, and social card, generated (../design/README.md)
 src/content.config.ts       the collection, with the schema ascribe build generates in ../docs
 src/nav.ts                  the sidebar: every page, grouped and in order
 src/pages/[...slug].astro   a route per page: the base path plus its entry id

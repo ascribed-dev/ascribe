@@ -5,6 +5,7 @@
 node_modules/
 dist/
 out/
+!/design/out/
 coverage/
 *.tsbuildinfo
 

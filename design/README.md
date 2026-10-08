@@ -50,7 +50,34 @@ pnpm --filter @ascribed/review embed
 
 ## The mark
 
-`mark.svg` is the mark in one color, from `currentColor`; its asterisk carries `class="second"`, the part a second color goes on. `mark-color.svg` is the same paths in the chosen palette's light text and accent colors, for a light background; a test holds it to both. `wordmark.svg` is "ascribe". All three are outlines from Inter (SIL Open Font License), so no font file ships with them.
+`mark.svg` is the mark in one color, from `currentColor`; its asterisk carries `class="second"`, the part a second color goes on. `mark-color.svg` is the same paths in the chosen palette's light text and accent colors, for a light background; a test holds it to both. `wordmark.svg` is "ascribe". `tagline.svg` is the line on the social card. All four are outlines from Inter (SIL Open Font License), so no font file ships with them.
+
+## The assets
+
+Every image of the mark that something needs is generated from `mark.svg`, `wordmark.svg`, `tagline.svg`, and the chosen palette's colors in `candidates/chosen.toml`, by one script. The full-color mark for a dark background is `mark.svg` with its `class="second"` asterisk in the dark accent and the rest in the dark text color; it isn't a file of its own.
+
+| Asset | For | Form |
+|---|---|---|
+| `site/public/favicon.svg` | The docs site's tab | The mark in the text color, with a `prefers-color-scheme` rule inside for a dark tab |
+| `site/public/favicon.ico` | Browsers that want an `.ico` | 32 pixels, the full-color mark on a white tile, so it shows on a light or a dark tab |
+| `site/public/apple-touch-icon.png` | A phone's home screen | 180 pixels, the full-color mark on white |
+| `site/public/social-card.png` | Links to the docs site and the repository | 1200 × 630: the mark, the wordmark, and the tagline on white |
+| `packages/vscode/media/icon.png` | The extension's Marketplace listing and Extensions view | 256 pixels, the dark full-color mark on a rounded tile in the dark surface color, so it reads in a light or a dark editor |
+| `packages/vscode/media/activity.svg` | The extension's activity bar icon | 24 pixels, `currentColor` only, which VS Code tints. The mark takes the middle 20, as tall as the codicons beside it |
+| `design/out/header-light.svg`, `header-dark.svg` | The header of `README.md` and `packages/vscode/README.md`, in GitHub's `<picture>` | The wordmark, 48 pixels tall, in the light and the dark text color |
+| `design/out/avatar.png` | The GitHub organization and the Marketplace publisher | 512 pixels, the full-color mark on white, inside the circle an avatar is cropped to |
+
+The colors come from `candidates/chosen.toml` because the chosen palette isn't in `tokens.toml` yet. When `tokens.toml` holds it, the script reads the colors from there instead, so the two can't drift.
+
+The SVGs are written in a fixed form (paths only, two decimals, no comments or metadata), so they're the same bytes on every platform. The PNGs come from `sharp`, whose output can differ slightly between platforms.
+
+After changing a source, rewrite them all and look at them:
+
+```sh
+node scripts/design/assets.ts
+```
+
+`design/assets.json` records each asset, its size, and the hash of each source it's made from. `scripts/design/assets.test.ts` fails when a source has changed since the script last ran, naming the command, and when an asset is missing, the wrong size, or, for an SVG, different from what the script writes now. It doesn't compare a PNG's pixels.
 
 ## Candidates and the specimen
 
