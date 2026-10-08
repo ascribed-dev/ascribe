@@ -314,7 +314,7 @@ fn split_tag(tag: &str) -> Option<(&str, &str)> {
 }
 
 /// SPEC Appendix A `region-name`.
-pub fn is_region_name(name: &str) -> bool {
+pub(crate) fn is_region_name(name: &str) -> bool {
     !name.is_empty()
         && name
             .chars()

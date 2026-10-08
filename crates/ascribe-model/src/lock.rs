@@ -345,7 +345,7 @@ pub fn short_commit(commit: &str) -> &str {
 }
 
 /// A commit's full hash: 40 hexadecimal digits (SHA-1), or 64 (SHA-256).
-pub fn is_commit(text: &str) -> bool {
+pub(crate) fn is_commit(text: &str) -> bool {
     matches!(text.len(), 40 | 64) && text.bytes().all(|b| b.is_ascii_hexdigit())
 }
 

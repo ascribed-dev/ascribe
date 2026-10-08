@@ -117,7 +117,7 @@ fn found(v: &Value) -> String {
 }
 
 /// Whether `s` is a real calendar date written `YYYY-MM-DD`.
-pub fn is_calendar_date(s: &str) -> bool {
+pub(crate) fn is_calendar_date(s: &str) -> bool {
     let b = s.as_bytes();
     if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {
         return false;
@@ -304,7 +304,7 @@ impl Cx<'_> {
 
 /// Checks a default value against a field type. Returns what was found when
 /// it doesn't conform.
-pub fn default_mismatch(ty: &FieldType, v: &Value) -> Option<String> {
+pub(crate) fn default_mismatch(ty: &FieldType, v: &Value) -> Option<String> {
     let schema = FrontmatterSchema {
         owner: SchemaOwner::Fragment,
         fields: vec![Field {

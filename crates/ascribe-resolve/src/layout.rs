@@ -46,7 +46,7 @@ impl Layout {
     /// Whether a build may copy the file at this content path: it's inside the
     /// content root or inside the project root, and not inside the output
     /// directory (SPEC §9.4).
-    pub fn is_allowed(&self, content_path: &RelPath) -> bool {
+    pub(crate) fn is_allowed(&self, content_path: &RelPath) -> bool {
         let in_project = self.project_path(content_path);
         let inside = content_path.is_inside() || in_project.is_inside();
         let in_output = !self.output_dir.is_root() && in_project.starts_with(&self.output_dir);

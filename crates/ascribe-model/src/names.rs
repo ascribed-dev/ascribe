@@ -16,7 +16,7 @@ pub fn is_key(s: &str) -> bool {
 
 /// SPEC Appendix A `widget-name`: lowercase words of letters and digits
 /// joined by single hyphens, with at least one hyphen, starting with a letter.
-pub fn is_widget_name(s: &str) -> bool {
+pub(crate) fn is_widget_name(s: &str) -> bool {
     let words: Vec<&str> = s.split('-').collect();
     words.len() >= 2
         && words.iter().all(|w| {
@@ -28,14 +28,14 @@ pub fn is_widget_name(s: &str) -> bool {
 }
 
 /// Build names: a letter, then letters, digits, `_`, `-`, or `.`.
-pub fn is_build_name(s: &str) -> bool {
+pub(crate) fn is_build_name(s: &str) -> bool {
     let mut chars = s.chars();
     matches!(chars.next(), Some(c) if c.is_ascii_alphabetic())
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.'))
 }
 
 /// SPEC Appendix A `version`: `1*DIGIT *( "." 1*DIGIT )`.
-pub fn is_version(s: &str) -> bool {
+pub(crate) fn is_version(s: &str) -> bool {
     !s.is_empty()
         && s.split('.')
             .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))

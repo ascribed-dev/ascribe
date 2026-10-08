@@ -91,13 +91,8 @@ impl FileIndex {
         self.headings.iter().find(|h| h.source_id == id)
     }
 
-    /// The reference whose node has this span.
-    pub fn reference_at(&self, span: Span) -> Option<&Reference> {
-        self.references.iter().find(|r| r.span == span)
-    }
-
     /// The include whose directive has this span.
-    pub fn include_at(&self, span: Span) -> Option<&Include> {
+    pub(crate) fn include_at(&self, span: Span) -> Option<&Include> {
         self.includes.iter().find(|i| i.span == span)
     }
 
@@ -201,7 +196,7 @@ pub fn index_file(
 /// the text, the file's id (it's in every location), and the model's
 /// directive keywords and note types alone, which is what lets the
 /// incremental update reuse it ([`crate::incremental`]).
-pub fn parse_source(file: FileId, source: &str, model: &ContentModel) -> ParsedDocument {
+pub(crate) fn parse_source(file: FileId, source: &str, model: &ContentModel) -> ParsedDocument {
     let options = ParseOptions::new(model.directive_schemas())
         .with_file(file)
         .with_note_types(model.notes.iter().map(|n| n.name.clone()).collect());
@@ -210,7 +205,7 @@ pub fn parse_source(file: FileId, source: &str, model: &ContentModel) -> ParsedD
 
 /// Indexes a file that is already parsed ([`parse_source`] of the same
 /// `source`, `file`, and model): the second half of [`index_file`].
-pub fn index_parsed(
+pub(crate) fn index_parsed(
     file: FileId,
     path: &RelPath,
     source: Arc<str>,

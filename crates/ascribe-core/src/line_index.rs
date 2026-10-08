@@ -201,7 +201,7 @@ impl LineIndex {
     ///
     /// Returns `None` if the line doesn't exist, or the column is past the
     /// line's text or inside a multi-byte character.
-    pub fn to_wide(&self, enc: WideEncoding, pos: LineCol) -> Option<WideLineCol> {
+    pub(crate) fn to_wide(&self, enc: WideEncoding, pos: LineCol) -> Option<WideLineCol> {
         self.offset(pos)?;
         let mut col = pos.col;
         for c in &self.wide[pos.line as usize] {
@@ -221,7 +221,7 @@ impl LineIndex {
     /// Returns `None` if the line doesn't exist, or the column is past the
     /// line's text or in the middle of a character (such as between the two
     /// UTF-16 code units of a character outside the Basic Multilingual Plane).
-    pub fn to_utf8(&self, enc: WideEncoding, pos: WideLineCol) -> Option<LineCol> {
+    pub(crate) fn to_utf8(&self, enc: WideEncoding, pos: WideLineCol) -> Option<LineCol> {
         let line = self.lines.get(pos.line as usize)?;
         let mut utf8 = 0u32;
         let mut wide = 0u32;

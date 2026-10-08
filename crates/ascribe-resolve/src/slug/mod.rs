@@ -26,7 +26,8 @@ mod table;
 
 use ascribe_core::Slugger;
 
-pub use github::{GithubSlugger, github_slug};
+pub use github::GithubSlugger;
+pub(crate) use github::github_slug;
 
 /// The `github-slugger` release the `github` slugger matches.
 pub const GITHUB_SLUGGER_VERSION: &str = "2.0.0";

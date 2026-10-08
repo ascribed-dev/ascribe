@@ -263,7 +263,7 @@ struct Common {
 
 impl Loader<'_> {
     /// `[…frontmatter]` or a nested `fields` table: name-word keys, field types.
-    pub fn field_table(
+    pub(crate) fn field_table(
         &mut self,
         path: &str,
         t: &DeTable<'_>,
@@ -298,7 +298,7 @@ impl Loader<'_> {
     }
 
     /// `[images.attributes]` and `[widgets.<name>.attributes]`.
-    pub fn attribute_table(
+    pub(crate) fn attribute_table(
         &mut self,
         path: &str,
         t: &DeTable<'_>,

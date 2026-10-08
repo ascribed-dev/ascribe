@@ -63,7 +63,7 @@ struct RoleName {
 impl<'s> Loader<'s> {
     // ---- helpers ---------------------------------------------------------
 
-    pub fn loc(&self, span: Span) -> Location {
+    pub(crate) fn loc(&self, span: Span) -> Location {
         Location::new(self.file, span)
     }
 
@@ -79,7 +79,7 @@ impl<'s> Loader<'s> {
         self.src.get(span.range()).unwrap_or("")
     }
 
-    pub fn wrong_type(&mut self, path: &str, v: &V<'_>, expected: &str) {
+    pub(crate) fn wrong_type(&mut self, path: &str, v: &V<'_>, expected: &str) {
         let mut issue = self
             .issue(diagnostics::MODEL_WRONG_TYPE, sp(v))
             .with_arg("key", path)
@@ -174,7 +174,7 @@ impl<'s> Loader<'s> {
     }
 
     /// Reports unknown keys in a table whose keys this reference defines.
-    pub fn check_keys(&mut self, path: &str, t: &DeTable<'_>, allowed: &[&str]) {
+    pub(crate) fn check_keys(&mut self, path: &str, t: &DeTable<'_>, allowed: &[&str]) {
         for (key, span, _) in entries(t) {
             if allowed.contains(&key) {
                 continue;
@@ -209,7 +209,7 @@ impl<'s> Loader<'s> {
     }
 
     /// Checks a name against a grammar; reports `model-invalid-name`.
-    pub fn name_ok(&mut self, name: &str, span: Span, role: &str, rule: NameRule) -> bool {
+    pub(crate) fn name_ok(&mut self, name: &str, span: Span, role: &str, rule: NameRule) -> bool {
         let (ok, text) = match rule {
             NameRule::Key => (is_key(name), names::KEY_RULE),
             NameRule::NameWord => (is_name_word(name), names::NAME_WORD_RULE),

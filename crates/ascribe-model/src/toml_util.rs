@@ -15,7 +15,7 @@ pub fn sp<T>(v: &Spanned<T>) -> Span {
 }
 
 /// A key's text.
-pub fn key_str<'a>(k: &'a Spanned<std::borrow::Cow<'_, str>>) -> &'a str {
+pub(crate) fn key_str<'a>(k: &'a Spanned<std::borrow::Cow<'_, str>>) -> &'a str {
     k.get_ref().as_ref()
 }
 
@@ -51,7 +51,7 @@ pub fn join(path: &str, key: &str) -> String {
 
 /// Converts a TOML value to YAML, for checking defaults with the same code
 /// that checks frontmatter.
-pub fn to_yaml(v: &DeValue<'_>) -> Value {
+pub(crate) fn to_yaml(v: &DeValue<'_>) -> Value {
     match v {
         DeValue::String(s) => Value::String(s.to_string()),
         DeValue::Boolean(b) => Value::Bool(*b),

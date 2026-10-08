@@ -50,7 +50,7 @@ impl AstroRouter {
 
     /// A router under a base path, such as `/docs/` (a missing leading or
     /// trailing slash is added).
-    pub fn with_base(base: &str, trailing_slash: bool) -> AstroRouter {
+    pub(crate) fn with_base(base: &str, trailing_slash: bool) -> AstroRouter {
         let mut base = base.trim().to_owned();
         if !base.starts_with('/') {
             base.insert(0, '/');
@@ -77,7 +77,7 @@ impl AstroRouter {
     /// The entry id Astro's `glob` loader gives a page: its path without the
     /// extension, each segment slugged, and a final `/index` removed. The root
     /// `index.md` (and `index/index.md`) is `index`.
-    pub fn entry_id(page: &RelPath) -> String {
+    pub(crate) fn entry_id(page: &RelPath) -> String {
         // The extension is removed before slugging: `a.b.md` is `a.b`, then
         // `ab`.
         let count = page.segments().count();
@@ -101,7 +101,7 @@ impl AstroRouter {
     /// slash, and any `#fragment` or `?query` is ignored. Percent-encoding is
     /// decoded. When several pages have the route ([`AstroRouter::collisions`]),
     /// the first in `pages` order wins.
-    pub fn page_for_route<'a>(
+    pub(crate) fn page_for_route<'a>(
         &self,
         route: &str,
         pages: impl IntoIterator<Item = &'a RelPath>,
