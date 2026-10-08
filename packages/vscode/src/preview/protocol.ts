@@ -3,7 +3,7 @@
 // messages between the extension and the preview's webview. What the server
 // answers is generated from its Rust types, in `../shapes.ts`.
 
-import type { PageDiff, PreviewBuild, PreviewProblem } from "../shapes.js";
+import type { FormattedPiece, PageDiff, PreviewBuild, PreviewProblem } from "../shapes.js";
 
 export type {
   BaseInfo,
@@ -115,6 +115,8 @@ export type ToWebview =
       build: string;
       builds: PreviewBuild[];
       title: string | null;
+      /** The title formatted, when its field sets `inline = "code"`: the heading shows it. */
+      formattedTitle: FormattedPiece[] | null;
       available: AvailabilityTarget[];
       html: string | null;
       assets: WebviewAsset[];

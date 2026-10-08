@@ -55,7 +55,9 @@ pub use emitter::{
     emit_page,
 };
 pub use error::EmitError;
-pub use json::{JSON_SCHEMA_VERSION, JsonEmitter};
+pub use json::{
+    FormattedPiece, JSON_SCHEMA_VERSION, JsonEmitter, PieceKind, formatted_pieces, formatted_title,
+};
 pub use plain::PlainEmitter;
 pub use render::render_site_html;
 pub use site::{AstroProfile, SiteEmitter};

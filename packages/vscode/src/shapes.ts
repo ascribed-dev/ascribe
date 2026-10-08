@@ -103,6 +103,8 @@ export interface ChangedPage {
   counts: Counts;
   /** The page's title; `null` when it has none. */
   title: string | null;
+  /** The title formatted, when its field sets `inline = "code"`; `null` when it doesn't. */
+  formatted_title: FormattedPiece[] | null;
 }
 
 /** The answer to `ascribe/review/changes`. */
@@ -115,7 +117,7 @@ export interface ChangesResult {
   contentRoot: string | null;
   /**
    * The changed pages, in path order: `ascribe diff`'s pages without their
-   * `changes`, each with its `title`.
+   * `changes`, each with its `title` and `formatted_title`.
    */
   pages: ChangedPage[];
   /**
@@ -135,6 +137,18 @@ export interface Counts {
   removed: number;
   /** Blocks in both, somewhere else. */
   moved: number;
+}
+
+/**
+ * A piece of a formatted value, as the JSON output writes it:
+ * `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
+ * formatted title, such as the review report's, writes it the same way.
+ */
+export interface FormattedPiece {
+  /** What the piece is. */
+  type: PieceKind;
+  /** Its text: a code span's content without its backticks. */
+  value: string;
 }
 
 /** What changed on one page of a build. */
@@ -175,6 +189,9 @@ export interface PageDiff {
 
 /** Whether a page is new, gone, or different. */
 export type PageStatus = "added" | "removed" | "changed";
+
+/** What a piece of a formatted value is. */
+export type PieceKind = "text" | "code";
 
 /** An asset the page uses. */
 export interface PreviewAsset {
@@ -237,6 +254,11 @@ export interface PreviewPage {
   route: string;
   /** The page's title (its frontmatter `title`, phrases substituted). */
   title: string | null;
+  /**
+   * The title formatted, when its field sets `inline = "code"`: for the
+   * page's heading. `title` stays the plain text.
+   */
+  formattedTitle: FormattedPiece[] | null;
   /**
    * The frontmatter the site output writes, as JSON: `available` is the
    * list of targets a layout passes to `<ascribe-availability>`.

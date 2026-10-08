@@ -202,6 +202,17 @@
   var CLASS_FLASH = "ascribe-flash";
   var CLASS_WHERE = "ascribe-where";
 
+  // src/marks/title.ts
+  function titleNodes(formatted, plain, doc = document) {
+    if (!formatted || formatted.length === 0) return [plain];
+    return formatted.map((piece) => {
+      if (piece.type === "text") return piece.value;
+      const code = doc.createElement("code");
+      code.textContent = piece.value;
+      return code;
+    });
+  }
+
   // src/marks/index.ts
   var LABELS = {
     added: "Added",
@@ -1009,7 +1020,11 @@
       build.pages.forEach((page, i) => {
         if (!included.includes(page)) return;
         const link = h("a", { href: `#${encodeURIComponent(`${build.build}/${page.path}`)}` }, [
-          h("span", { class: "r-page-title" }, [page.title ?? page.path]),
+          h(
+            "span",
+            { class: "r-page-title" },
+            titleNodes(page.formatted_title, page.title ?? page.path)
+          ),
           h("span", { class: "r-page-path" }, [page.path]),
           h("span", { class: "r-page-counts" }, [pageSummary(page)]),
           !page.own_file_changed && page.because.length > 0 ? h("span", { class: "r-page-via" }, [`via ${page.because.join(", ")}`]) : null
@@ -1137,7 +1152,13 @@
       article.removeAttribute(DATA_SHOW);
       article.className = "r-page";
       if (!page) return;
-      main.append(h("h1", { class: "r-page-heading" }, [page.title ?? page.path]));
+      main.append(
+        h(
+          "h1",
+          { class: "r-page-heading" },
+          titleNodes(page.formatted_title, page.title ?? page.path)
+        )
+      );
       if (page.omitted || page.now === null && page.was === null) {
         main.append(
           h("p", { class: "r-empty" }, [

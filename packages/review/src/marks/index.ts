@@ -47,6 +47,7 @@ import type { Anchor, Change, Words } from "../shapes.js";
 
 /** A block's change, where it's written, and its words, as `ascribe diff --format json` writes them. */
 export type { Anchor, Change, Words } from "../shapes.js";
+export { titleNodes, type FormattedPiece, type PieceKind } from "./title.js";
 
 /** What the page shows: its changes, the page as it will be, or as it was. */
 export type Show = "changes" | "will" | "was";

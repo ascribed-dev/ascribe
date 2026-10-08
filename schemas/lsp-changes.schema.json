@@ -161,6 +161,16 @@
           "$ref": "#/$defs/Counts",
           "description": "How many changes of each kind."
         },
+        "formatted_title": {
+          "description": "The title formatted, when its field sets `inline = \"code\"`; `null` when it doesn't.",
+          "items": {
+            "$ref": "#/$defs/FormattedPiece"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "own_file_changed": {
           "description": "Whether the page's own file changed (or exists on one side only).",
           "type": "boolean"
@@ -200,7 +210,8 @@
         "because",
         "page_changed",
         "counts",
-        "title"
+        "title",
+        "formatted_title"
       ],
       "type": "object"
     },
@@ -240,6 +251,24 @@
       ],
       "type": "object"
     },
+    "FormattedPiece": {
+      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the review report's, writes it the same way.",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/PieceKind",
+          "description": "What the piece is."
+        },
+        "value": {
+          "description": "Its text: a code span's content without its backticks.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "type": "object"
+    },
     "PageStatus": {
       "description": "Whether a page is new, gone, or different.",
       "oneOf": [
@@ -256,6 +285,21 @@
         {
           "const": "changed",
           "description": "The build publishes it in both, and it differs.",
+          "type": "string"
+        }
+      ]
+    },
+    "PieceKind": {
+      "description": "What a piece of a formatted value is.",
+      "oneOf": [
+        {
+          "const": "text",
+          "description": "Text.",
+          "type": "string"
+        },
+        {
+          "const": "code",
+          "description": "A code span.",
           "type": "string"
         }
       ]
@@ -335,7 +379,7 @@
       ]
     },
     "pages": {
-      "description": "The changed pages, in path order: `ascribe diff`'s pages without their\n`changes`, each with its `title`.",
+      "description": "The changed pages, in path order: `ascribe diff`'s pages without their\n`changes`, each with its `title` and `formatted_title`.",
       "items": {
         "$ref": "#/$defs/ChangedPage"
       },

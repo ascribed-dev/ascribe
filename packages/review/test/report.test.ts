@@ -25,6 +25,7 @@ const page = (path: string, extra: Partial<ReportData["builds"][0]["pages"][0]> 
     },
   ],
   title: null,
+  formatted_title: null,
   now: "p1",
   was: "p2",
   omitted: false,
@@ -123,6 +124,28 @@ describe("the report", () => {
     const marked = root.querySelector('[data-ascribe-change="changed"]');
     expect(marked?.textContent).toContain("Agent 2.4.");
     expect(root.querySelector(".r-pos")?.textContent).toBe("1 change on this page");
+  });
+
+  it("shows a formatted title's code spans in the list and the heading", () => {
+    const root = document.createElement("div");
+    document.body.append(root);
+    const report = data();
+    const titled = page("guide.md", {
+      title: "ascribe.toml reference",
+      formatted_title: [
+        { type: "code", value: "ascribe.toml" },
+        { type: "text", value: " reference" },
+      ],
+    });
+    start(root, {
+      ...report,
+      builds: report.builds.map((b, i) => (i === 0 ? { ...b, pages: [titled] } : b)),
+    });
+    for (const selector of [".r-page-title", ".r-page-heading"]) {
+      const title = root.querySelector(selector);
+      expect(title?.textContent).toBe("ascribe.toml reference");
+      expect(title?.querySelector("code")?.textContent).toBe("ascribe.toml");
+    }
   });
 
   it("says when the working tree has errors", () => {

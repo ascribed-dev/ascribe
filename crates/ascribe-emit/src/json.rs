@@ -398,20 +398,56 @@ enum InlineBody {
 // ---------------------------------------------------------------------------
 // Building it
 
-/// A formatted field's value: `{ "type": "text" | "code", "value": … }` for
-/// each piece, as inlines are written but without spans, since the value
-/// comes from the frontmatter.
-fn formatted_value(segments: &[Segment]) -> serde_json::Value {
+/// A piece of a formatted value, as the JSON output writes it:
+/// `{ "type": "text" | "code", "value": … }`. Other JSON that shows a
+/// formatted title, such as the review report's, writes it the same way.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct FormattedPiece {
+    /// What the piece is.
+    #[serde(rename = "type")]
+    pub kind: PieceKind,
+    /// Its text: a code span's content without its backticks.
+    pub value: String,
+}
+
+/// What a piece of a formatted value is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "lowercase")]
+pub enum PieceKind {
+    /// Text.
+    Text,
+    /// A code span.
+    Code,
+}
+
+/// A formatted value's pieces, as inlines are written but without spans,
+/// since the value comes from the frontmatter.
+pub fn formatted_pieces(segments: &[Segment]) -> Vec<FormattedPiece> {
     segments
         .iter()
         .map(|segment| {
             let (kind, value) = match segment {
-                Segment::Text(v) => ("text", v),
-                Segment::Code(v) => ("code", v),
+                Segment::Text(v) => (PieceKind::Text, v),
+                Segment::Code(v) => (PieceKind::Code, v),
             };
-            serde_json::json!({ "type": kind, "value": value })
+            FormattedPiece {
+                kind,
+                value: value.clone(),
+            }
         })
         .collect()
+}
+
+/// The page's title, formatted, when its field sets `inline`.
+pub fn formatted_title(page: &ResolvedPage) -> Option<Vec<FormattedPiece>> {
+    page.formatted_title().map(formatted_pieces)
+}
+
+/// A formatted field's value: [`formatted_pieces`], as JSON.
+fn formatted_value(segments: &[Segment]) -> serde_json::Value {
+    serde_json::to_value(formatted_pieces(segments)).unwrap_or_default()
 }
 
 struct Writer<'a, 'c> {

@@ -8,6 +8,7 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 - **JSON Schemas for the commands' JSON.** What `ascribe check`, `build`, `diff`, `drift`, `sources status`, and `sources update` write with `--format json` is described by a JSON Schema, generated from the code that writes it. See the [JSON report contract](docs/content/contracts/json-reports.md).
 - **The `json` output's page `format` is `"ascribe-page"`,** where it was `"tessera-page"`, the project's working name. Its `schemaVersion` stays `1`. A tool that checks the value needs the new one. See [the JSON output](crates/ascribe-emit/README.md#json).
 - The language server's log lines, in the editor's output panel, start with `ascribe-lsp:`, where they started with `tessera-lsp:`.
+- **A title with code shows it in review.** The page preview's heading in VS Code, the HTML report's list of pages and its page headings, and the list of comments in the editor and the site preview show a title's code spans as code, where they showed plain text. **Ascribe: Changed Pages** writes them between backticks. The HTML report's data, and the language server's `ascribe/preview` and `ascribe/review/changes` answers, have the formatted title beside the plain one. See [code in a field](docs/content/reference/content-model.md#53-code-in-a-field).
 - **Smaller downloads.** The `ascribe` binary is built with link-time optimization: about a third smaller on macOS and Linux (7.0 MB on macOS arm64, from 10.5 MB) and 8 percent smaller on Windows, and a little faster.
 
 ## 0.2.0 (2026-10-06)

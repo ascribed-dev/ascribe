@@ -265,6 +265,44 @@ fn a_new_page_is_added_and_has_no_page_as_it_was() {
     let listed = changes(&mut client);
     assert_eq!(listed["pages"][0]["path"], "new.md");
     assert_eq!(listed["pages"][0]["title"], "New");
+    // Its title's field doesn't set `inline`.
+    assert_eq!(listed["pages"][0]["formatted_title"], Value::Null);
+}
+
+#[test]
+fn a_title_with_code_is_listed_and_previewed_formatted() {
+    let f = repository();
+    f.write(
+        "ascribe.toml",
+        &format!(
+            "{MODEL}\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = {{ type = \"string\", inline = \"code\" }}\n"
+        ),
+    );
+    git(&f.root(), &["commit", "-q", "-am", "Code in titles"]);
+    f.write(
+        "docs/keys.md",
+        "---\ntitle: \"`ascribe.toml` keys\"\n---\n\nKeys.\n",
+    );
+    let mut client = Client::start(&f.root());
+    client.settle();
+    set_base(&mut client, json!({}));
+    let formatted = json!([
+        { "type": "code", "value": "ascribe.toml" },
+        { "type": "text", "value": " keys" },
+    ]);
+    let listed = changes(&mut client);
+    assert_eq!(listed["pages"][0]["path"], "keys.md", "{listed}");
+    assert_eq!(listed["pages"][0]["title"], "ascribe.toml keys");
+    assert_eq!(listed["pages"][0]["formatted_title"], formatted);
+    let page = &preview(&mut client, &f.path("docs/keys.md"))["page"];
+    assert_eq!(page["title"], "ascribe.toml keys");
+    assert_eq!(page["formattedTitle"], formatted);
+    // A title without code spans still has a formatted form.
+    let page = &preview(&mut client, &f.path("docs/other.md"))["page"];
+    assert_eq!(
+        page["formattedTitle"],
+        json!([{ "type": "text", "value": "Other" }])
+    );
 }
 
 #[test]

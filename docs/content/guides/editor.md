@@ -111,7 +111,7 @@ The preview can mark what changed against a git revision, the **base**, as [`asc
 
 With review on, the preview's header shows the base, how many changes the page has (click it for the breakdown), **Changes / As it will be / As it was**, and next and previous change, with your place: "3 of 10 on this page". Past the last change, it offers the next changed page. A page that changed only through something it uses, such as a fragment, says so and links to the file. When the project has errors, the header says how many, since a page with an error may not show as it will once it's fixed, with **Show problems** to open the Problems panel. The count is the Problems panel's, which checks pages for the editor's build only. Clicking a mark's label opens the block's source with its lines selected. The marks follow your edits as you type, saved or not.
 
-**Ascribe: Changed Pages**, also the list button in the preview's title bar, lists the pages the change touches in the preview's build, each with its counts and, when its own file didn't change, what it changed through. Choosing one opens it and its preview.
+**Ascribe: Changed Pages**, also the list button in the preview's title bar, lists the pages the change touches in the preview's build, by title, each with its counts and, when its own file didn't change, what it changed through. A title with [code](../reference/content-model.md#53-code-in-a-field) shows it between backticks, as in "`` `loom.yaml` options ``"; the preview's heading shows it as code. Choosing one opens it and its preview.
 
 ### Comments in the preview
 @available: next

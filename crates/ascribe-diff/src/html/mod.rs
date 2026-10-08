@@ -21,7 +21,9 @@ use std::path::{Path, PathBuf};
 
 use ascribe_core::{AssetUse, RelPath, names};
 use ascribe_emit::assets::encode_path;
-use ascribe_emit::{EmitContext, SiteEmitter, emit_page, render_site_html};
+use ascribe_emit::{
+    EmitContext, FormattedPiece, SiteEmitter, emit_page, formatted_title, render_site_html,
+};
 use ascribe_resolve::{AstroRouter, Project};
 use serde::Serialize;
 
@@ -168,6 +170,9 @@ struct PageData<'a> {
     diff: &'a PageDiff,
     /// Its title, when the build has one.
     title: Option<String>,
+    /// Its title formatted, when its field sets `inline = "code"`: for the
+    /// page list and the page's heading. `title` stays the plain text.
+    formatted_title: Option<Vec<FormattedPiece>>,
     /// The page now, as a key of `pages`; `null` when there's none.
     now: Option<String>,
     /// The page before, as a key of `pages`; `null` when there's none.
@@ -256,6 +261,7 @@ pub fn write_html_with(
             let mut data = PageData {
                 diff,
                 title: None,
+                formatted_title: None,
                 now: None,
                 was: None,
                 omitted: false,
@@ -271,14 +277,16 @@ pub fn write_html_with(
                 if diff.status != PageStatus::Removed
                     && let Some((rendered, title)) = render(now, &build.build, &path, &mut store)
                 {
-                    data.title = title;
+                    (data.title, data.formatted_title) = (title.plain, title.formatted);
                     data.now = Some(store.page(rendered));
                 }
                 if diff.status != PageStatus::Added
                     && let Some(base) = base
                     && let Some((rendered, title)) = render(base, &build.build, &path, &mut store)
                 {
-                    data.title = data.title.or(title);
+                    if data.title.is_none() {
+                        (data.title, data.formatted_title) = (title.plain, title.formatted);
+                    }
                     data.was = Some(store.page(rendered));
                 }
             }
@@ -359,13 +367,24 @@ fn escape_text(text: &str) -> String {
         .replace('>', "&gt;")
 }
 
+/// A page's title: as text, and formatted when its field sets `inline`.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PageTitle {
+    /// The title as text, for tooltips and search; `None` when the page has
+    /// none.
+    pub plain: Option<String>,
+    /// The title formatted, for a heading or a list entry; `None` when its
+    /// field doesn't set `inline`.
+    pub formatted: Option<Vec<FormattedPiece>>,
+}
+
 /// One page of one build of `version`, rendered with anchors, and its title.
 fn render(
     version: Version<'_>,
     build_name: &str,
     path: &RelPath,
     store: &mut Store,
-) -> Option<(RenderedPage, Option<String>)> {
+) -> Option<(RenderedPage, PageTitle)> {
     let (emitted, title) = emit(version.project, build_name, path)?;
     let html = render_site_html(without_frontmatter(&emitted.text));
     let mut images = BTreeMap::new();
@@ -402,7 +421,7 @@ pub fn page_html(
     project: &Project,
     build_name: &str,
     path: &RelPath,
-) -> Option<(String, Option<String>)> {
+) -> Option<(String, PageTitle)> {
     let (emitted, title) = emit(project, build_name, path)?;
     Some((render_site_html(without_frontmatter(&emitted.text)), title))
 }
@@ -412,7 +431,7 @@ fn emit(
     project: &Project,
     build_name: &str,
     path: &RelPath,
-) -> Option<(ascribe_emit::EmittedPage, Option<String>)> {
+) -> Option<(ascribe_emit::EmittedPage, PageTitle)> {
     let model = project.model();
     let build = model.build(build_name)?;
     let router = AstroRouter::from_consumer(&model.consumer);
@@ -420,7 +439,11 @@ fn emit(
     let emitter = SiteEmitter::new(model).with_anchors(true);
     let cx = EmitContext::new(project, Path::new(""), build);
     let emitted = emit_page(&emitter, &cx, &page).ok()?;
-    Some((emitted, page.title.clone()))
+    let title = PageTitle {
+        plain: page.title.clone(),
+        formatted: formatted_title(&page),
+    };
+    Some((emitted, title))
 }
 
 /// The site output's markdown after its frontmatter (`---`, YAML, `---`).
