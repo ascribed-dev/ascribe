@@ -47,7 +47,7 @@ A pull request runs them on Linux and Windows, and `main` runs them on Linux and
 
 ### A clean-up that changes no output
 
-A pull request meant to change nothing a reader or a tool sees (the [optimization plan](project-docs/optimization/README.md) is made of them) shows it by comparing outputs with its base:
+A pull request meant to change nothing a reader or a tool sees (the [optimization plan](https://github.com/ascribed-dev/ascribe/blob/52da4c48b9cb985c8e97d926aafa4041fc47f2eb/project-docs/optimization/README.md) was made of them) shows it by comparing outputs with its base:
 
 ```sh
 node scripts/compare/outputs.ts --base main
