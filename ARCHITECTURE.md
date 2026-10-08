@@ -49,7 +49,8 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
 | `schemas/` | The JSON Schemas of the JSON the commands and the language server write, generated from the Rust types (`crates/ascribe-cli/src/shapes.rs`). |
-| `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
+| `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the design specimen (`scripts/design/specimen.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
+| `design/` | The visual design's sources. `design/candidates/` holds the candidate marks, palettes, and type scales, and the color pairings they're checked against; `design/specimen.html`, generated from them by `scripts/design/specimen.ts`, shows them side by side. |
 | `project-docs/` | Plans. They describe what was intended, not necessarily what is. |
 
 ## How the crates depend on each other
@@ -190,6 +191,7 @@ Some files are generated from a source, or copied from what the code writes, and
 | `crates/ascribe-emit/tests/site_anchors.rs` | The site-render fixtures' inputs and corpus in `tests/render/` |
 | `crates/ascribe-emit/tests/zod.rs` | The generated schemas in `tests/zod/generated/` |
 | `packages/vscode/test/unit/docs.test.ts` | The extension's settings and commands in `docs/content/_generated/` |
+| `scripts/design/specimen.test.ts` | The design specimen, `design/specimen.html`, from `design/candidates/` and the stylesheets it renders |
 
 The corpora's recorded counts in `tests/corpora/baselines/` have their own variable, `ASCRIBE_CORPORA_BLESS=1` ([tests/corpora/README.md](tests/corpora/README.md)).
 

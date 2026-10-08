@@ -1,0 +1,224 @@
+# The color pairings the stylesheets use, each checked in light and in dark
+# by scripts/design/specimen.ts and its test (README decision 5 of
+# project-docs/visual-design): 4.5:1 for `text` on its background, 3:1 for a
+# `graphic` (a border, bar, or fill that carries meaning). `fg` and `bg` are
+# semantic colors, the `[color]` names every candidate defines.
+#
+# `[[distinct]]` lists colors that appear side by side with different
+# meanings; the specimen shows how far apart they stay to a reader with
+# red-green color blindness.
+
+# The chrome: the docs site, the report, review's overlay.
+[[pair]]
+fg = "text"
+bg = "background"
+kind = "text"
+where = "Body text"
+
+[[pair]]
+fg = "text"
+bg = "surface"
+kind = "text"
+where = "Text on a surface: buttons, table headers, the hovered sidebar link"
+
+[[pair]]
+fg = "muted"
+bg = "background"
+kind = "text"
+where = "Muted text: descriptions, the table of contents, tab labels"
+
+[[pair]]
+fg = "muted"
+bg = "surface"
+kind = "text"
+where = "Muted text on a surface: the header's buttons, a code block's title"
+
+[[pair]]
+fg = "accent"
+bg = "background"
+kind = "text"
+where = "Links"
+
+[[pair]]
+fg = "accent"
+bg = "accent-surface"
+kind = "text"
+where = "The current page in the sidebar; a search match"
+
+[[pair]]
+fg = "text"
+bg = "code-background"
+kind = "text"
+where = "Inline code and code blocks"
+
+[[pair]]
+fg = "accent-text"
+bg = "accent"
+kind = "text"
+where = "A step's number on its marker; text on an accent button"
+
+[[pair]]
+fg = "accent"
+bg = "background"
+kind = "graphic"
+where = "A step's marker, the selected tab's underline, the mark's second color"
+
+[[pair]]
+fg = "focus"
+bg = "background"
+kind = "graphic"
+where = "Focus rings"
+
+# Notes: the label is the note's color on its background; the bar is the
+# same color, against the same background.
+[[pair]]
+fg = "note"
+bg = "note-background"
+kind = "text"
+where = "Note: label and bar"
+
+[[pair]]
+fg = "tip"
+bg = "tip-background"
+kind = "text"
+where = "Tip: label and bar; GA badge"
+
+[[pair]]
+fg = "important"
+bg = "important-background"
+kind = "text"
+where = "Important: label and bar; preview badge"
+
+[[pair]]
+fg = "warning"
+bg = "warning-background"
+kind = "text"
+where = "Warning: label and bar; deprecated badge"
+
+[[pair]]
+fg = "caution"
+bg = "caution-background"
+kind = "text"
+where = "Caution: label and bar; removed badge"
+
+[[pair]]
+fg = "text"
+bg = "note-background"
+kind = "text"
+where = "Text inside a note"
+
+[[pair]]
+fg = "text"
+bg = "tip-background"
+kind = "text"
+where = "Text inside a tip"
+
+[[pair]]
+fg = "text"
+bg = "important-background"
+kind = "text"
+where = "Text inside an important note"
+
+[[pair]]
+fg = "text"
+bg = "warning-background"
+kind = "text"
+where = "Text inside a warning"
+
+[[pair]]
+fg = "text"
+bg = "caution-background"
+kind = "text"
+where = "Text inside a caution"
+
+[[pair]]
+fg = "state"
+bg = "state-background"
+kind = "text"
+where = "An availability badge with no state of its own"
+
+# Review's marks.
+[[pair]]
+fg = "added"
+bg = "added-background"
+kind = "text"
+where = "Added: label and bar"
+
+[[pair]]
+fg = "changed"
+bg = "background"
+kind = "text"
+where = "Changed: label and dashed bar, on the page"
+
+[[pair]]
+fg = "removed"
+bg = "removed-background"
+kind = "text"
+where = "Removed: label and dotted bar"
+
+[[pair]]
+fg = "moved"
+bg = "moved-background"
+kind = "text"
+where = "Moved: label, note, and double bar"
+
+[[pair]]
+fg = "added"
+bg = "background"
+kind = "graphic"
+where = "An added word's underline"
+
+[[pair]]
+fg = "text"
+bg = "added-background"
+kind = "text"
+where = "Text in an added block"
+
+[[pair]]
+fg = "text"
+bg = "moved-background"
+kind = "text"
+where = "Text in a moved block"
+
+[[pair]]
+fg = "muted"
+bg = "removed-background"
+kind = "text"
+where = "A removed word, struck through"
+
+[[pair]]
+fg = "text"
+bg = "flash"
+kind = "text"
+where = "A block flashed after a jump"
+
+[[pair]]
+fg = "focus"
+bg = "background"
+kind = "text"
+where = "Review's Show and Moved links"
+
+[[distinct]]
+a = "added"
+b = "removed"
+where = "Review's marks"
+
+[[distinct]]
+a = "added"
+b = "changed"
+where = "Review's marks"
+
+[[distinct]]
+a = "tip"
+b = "caution"
+where = "Tip and caution; GA and removed badges"
+
+[[distinct]]
+a = "tip"
+b = "warning"
+where = "GA and deprecated badges"
+
+[[distinct]]
+a = "note"
+b = "important"
+where = "Note and important; beta and preview badges"
