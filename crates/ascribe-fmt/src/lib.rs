@@ -63,7 +63,7 @@ use ascribe_syntax::{
     PrimaryValue, parse,
 };
 
-pub use files::{FormatFilesError, format_files};
+pub use files::{FormatFilesError, Formatted, Refused, format_files};
 
 use indent::Owner;
 pub use skip::NON_BLOCKING;

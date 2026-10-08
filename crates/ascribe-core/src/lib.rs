@@ -19,6 +19,7 @@
 //! | [`attributes`] | [`parse_attribute_block`]: the attribute-block parser |
 //! | [`attribute_block`] | [`AttributeBlock`]: parsed attributes, with spans (SPEC §3.3) |
 //! | [`path`] | [`RelPath`], and how link and image destinations resolve |
+//! | [`boundary`] | [`SourceBoundary`]: which files a symbolic link may lead to, for a crate that walks the disk itself |
 //! | [`names`] | The names Ascribe puts on a page: elements, attributes, classes, and ids |
 //! | [`reserved`] | Attribute keys a content model can't declare (SPEC §7.2) |
 //! | [`consumer`] | The [`Slugger`], [`Router`], and [`ConsumerProfile`] traits (SPEC §9.5) |
@@ -29,6 +30,7 @@
 pub mod attribute_block;
 pub mod attributes;
 pub mod availability;
+pub mod boundary;
 pub mod consumer;
 pub mod diagnostics;
 pub mod error;
@@ -43,6 +45,7 @@ pub mod text_edit;
 
 pub use attribute_block::{Attribute, AttributeBlock, AttributeValue, Token};
 pub use attributes::{ParsedAttributes, parse_attribute_block};
+pub use boundary::SourceBoundary;
 pub use consumer::{AssetPlacement, AssetUse, ConsumerProfile, Router, SlugScope, Slugger};
 pub use error::Coded;
 pub use issue::{Arg, DiagnosticSlug, Fix, Issue, Related};
