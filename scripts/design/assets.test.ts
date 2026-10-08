@@ -152,3 +152,13 @@ test("an icon file holds one PNG", () => {
   expect(out.readUInt32LE(14)).toBe(png.length);
   expect(out.subarray(22).equals(png)).toBe(true);
 });
+
+test("the extension's Marketplace banner is the icon's tile, so the two read as one", () => {
+  const { colors } = readSources();
+  const extension = JSON.parse(read("packages/vscode/package.json")) as {
+    icon: string;
+    galleryBanner: { color: string; theme: string };
+  };
+  expect(ASSETS.map((a) => a.path)).toContain(`packages/vscode/${extension.icon}`);
+  expect(extension.galleryBanner).toEqual({ color: colors.surface.dark, theme: "dark" });
+});
