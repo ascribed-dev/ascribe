@@ -1426,7 +1426,8 @@ messages.case = "`{path}` doesn't exist in source `{source}`, but `{actual}` doe
 messages.not-included = "`{path}` is in source `{source}`'s folder, but the source's `include` and `ignore` patterns don't make it readable"
 messages.link = "`{path}` is a symbolic link, or is in a linked folder, that leads out of source `{source}`'s folder or to a file its patterns don't make readable; a snippet doesn't follow a link out of its source"
 messages.no-copy = "`{path}` from source `{source}`, in another repository, hasn't been copied into this one; run `ascribe sources fetch`"
-fix = "Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file."
+messages.not-at-pin = "`{path}` isn't in source `{source}`'s repository at {commit}, the commit ascribe.lock pins; name the file where it is now, or change the code and run `ascribe sources update {source}`"
+fix = "Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file. When the file isn't in the repository at the pinned commit, because it was moved or deleted there, `fetch` can't copy it: name the file where it is now, or change the code and move the pin with `ascribe sources update`."
 
 [[diagnostic]]
 code = "ASC130"

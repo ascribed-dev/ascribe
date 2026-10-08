@@ -45,7 +45,7 @@ use std::path::Path;
 
 pub use ascribe_core::Issue;
 pub use inline::{InlineMarkup, Segment};
-pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash};
+pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;
 pub use names::suggest;
 pub use pattern::{Pattern, PatternError};

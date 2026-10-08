@@ -136,6 +136,41 @@ fn files_that_cant_be_copied_are_reported_and_left_out() {
         problems[3].contains("patterns don't make it readable"),
         "{problems:?}"
     );
+    // The lock records the file that isn't at the pin, so `check` says so,
+    // rather than that `fetch` would copy it.
+    let lock = docs.read("ascribe.lock").unwrap();
+    assert!(lock.contains("missing = [\"src/gone.rs\"]\n"), "{lock}");
+    assert!(
+        problems[2].contains("isn't in source `api`'s repository at "),
+        "{problems:?}"
+    );
+    assert!(
+        problems[0].ends_with("run `ascribe sources fetch`"),
+        "{problems:?}"
+    );
+    let states: Vec<(String, CopyState)> = status(&docs.workspace()).sources[0]
+        .files
+        .iter()
+        .map(|f| (f.path.clone(), f.state))
+        .collect();
+    assert!(
+        states.contains(&("src/gone.rs".into(), CopyState::NotAtPin)),
+        "{states:?}"
+    );
+    assert!(
+        states.contains(&("src/big.txt".into(), CopyState::NotCopied)),
+        "{states:?}"
+    );
+    // Fetching again finds it missing at the same pin, and once no snippet
+    // names it, the lock no longer lists it.
+    let report = fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    assert_eq!(report.sources[0].failed[0].path, "src/gone.rs");
+    docs.page(
+        "index.md",
+        "---\ntitle: Home\n---\n\n@snippet: api:src/auth.rs\n",
+    );
+    fetch(&docs.workspace(), &[], &docs.options()).unwrap();
+    assert!(!docs.read("ascribe.lock").unwrap().contains("missing"));
 }
 
 #[test]

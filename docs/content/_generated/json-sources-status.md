@@ -36,6 +36,11 @@
           "const": "not_copied",
           "description": "A snippet names it, and it hasn't been copied.",
           "type": "string"
+        },
+        {
+          "const": "not_at_pin",
+          "description": "A snippet names it, and it isn't in the repository at the pin.",
+          "type": "string"
         }
       ]
     },

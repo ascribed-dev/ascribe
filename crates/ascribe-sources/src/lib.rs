@@ -28,6 +28,7 @@ use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedFile, LockedSource, Sou
 use ascribe_resolve::{DiskFs, FileSystem, Layout};
 use serde::Serialize;
 
+pub use ascribe_model::short_commit as short;
 pub use copies::SIZE_LIMIT;
 pub use remote::{CommitLine, Commits, NEWEST};
 
@@ -246,6 +247,11 @@ impl Workspace {
         let mut synced = Synced::default();
         let mut wanted = Vec::new();
         for path in self.needed(source) {
+            // A commit's files don't change: one the pin found missing still is.
+            if previous.is_some_and(|p| p.missing.contains(&path)) {
+                synced.not_at(path, commit);
+                continue;
+            }
             let kept = previous.and_then(|p| p.files.get(&path)).filter(|locked| {
                 folder
                     .read(&path)
@@ -267,10 +273,7 @@ impl Workspace {
             let mut objects: Vec<(String, String)> = Vec::new();
             for path in wanted {
                 match tree.get(&path) {
-                    None => synced.failed.push(Failure {
-                        reason: format!("it isn't in the repository at {}", short(commit)),
-                        path,
-                    }),
+                    None => synced.not_at(path, commit),
                     Some(file) if !file.regular => synced.failed.push(Failure {
                         path,
                         reason: "it's a symbolic link or a submodule, not a file".into(),
@@ -366,9 +369,20 @@ struct Synced {
     copied: Vec<String>,
     removed: Vec<String>,
     failed: Vec<Failure>,
+    /// The files that aren't in the repository at the commit.
+    missing: BTreeSet<String>,
 }
 
 impl Synced {
+    /// `path` isn't in the repository at `commit`.
+    fn not_at(&mut self, path: String, commit: &str) {
+        self.failed.push(Failure {
+            reason: format!("it isn't in the repository at {}", short(commit)),
+            path: path.clone(),
+        });
+        self.missing.insert(path);
+    }
+
     fn locked(&self, source: &Source, url: &str, commit: &str) -> LockedSource {
         LockedSource {
             name: source.name.clone(),
@@ -387,6 +401,7 @@ impl Synced {
                     )
                 })
                 .collect(),
+            missing: self.missing.clone(),
             span: ascribe_core::Span::empty(0),
         }
     }
@@ -800,6 +815,8 @@ pub enum CopyState {
     Unused,
     /// A snippet names it, and it hasn't been copied.
     NotCopied,
+    /// A snippet names it, and it isn't in the repository at the pin.
+    NotAtPin,
 }
 
 impl StatusReport {
@@ -844,7 +861,12 @@ pub fn status(workspace: &Workspace) -> StatusReport {
             files.entry(path.clone()).or_insert(CopyState::Unlocked);
         }
         for path in &needed {
-            files.entry(path.clone()).or_insert(CopyState::NotCopied);
+            let state = if pin.is_some_and(|p| p.missing.contains(path)) {
+                CopyState::NotAtPin
+            } else {
+                CopyState::NotCopied
+            };
+            files.entry(path.clone()).or_insert(state);
         }
         report.sources.push(SourceStatus {
             name: source.name.clone(),
@@ -858,9 +880,4 @@ pub fn status(workspace: &Workspace) -> StatusReport {
         });
     }
     report
-}
-
-/// A commit's first seven characters, as `git` shows it.
-pub fn short(commit: &str) -> &str {
-    commit.get(..7).unwrap_or(commit)
 }
