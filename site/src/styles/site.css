@@ -9,32 +9,42 @@
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --text: #1f2328;
-  --muted: #59636e;
+  --text: #22272e;
+  --muted: #676c75;
   --background: #ffffff;
-  --surface: #f6f8fa;
-  --border: #d1d9e0;
-  --accent: #0969da;
-  --accent-surface: #ddf4ff;
-  --code-background: #f6f8fa;
+  --surface: #f7f9fd;
+  --border: #e3e6ec;
+  --accent: #5962e8;
+  --accent-surface: #f5f6fe;
+  --focus: #5962e8;
+  --radius: 0.375rem;
+  --type-caption: 600 0.75rem/1.4;
+  --type-small: 400 0.875rem/1.5;
+  --type-body: 400 1rem/1.6;
+  --type-lead: 400 1.125rem/1.55;
+  --type-h3: 650 1.125rem/1.4;
+  --type-h2: 650 1.375rem/1.3;
+  --type-h1: 700 1.875rem/1.2;
   /* End of generated root. */
 
   --header-height: 3.5rem;
   --sidebar-width: 16rem;
   --toc-width: 14rem;
+  /* The page's line length: about 70 characters of body text. */
+  --measure: 38rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
-    --text: #e6edf3;
-    --muted: #9198a1;
-    --background: #0d1117;
-    --surface: #151b23;
-    --border: #3d444d;
-    --accent: #4493f8;
-    --accent-surface: #121d2f;
-    --code-background: #151b23;
+    --text: #f0f3f7;
+    --muted: #a5a9b2;
+    --background: #0c0f16;
+    --surface: #13171f;
+    --border: #393d46;
+    --accent: #91a1fe;
+    --accent-surface: #161b3a;
+    --focus: #b3c0ff;
     /* End of generated root. */
   }
 }
@@ -62,13 +72,22 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--text);
-  font-family: var(--font);
-  font-size: 1rem;
-  line-height: 1.6;
+  font: var(--type-body) var(--font);
 }
 
 a {
   color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 code,
@@ -88,6 +107,7 @@ pre {
   top: 0.5rem;
   z-index: 30;
   padding: 0.5rem 1rem;
+  border-radius: var(--radius);
   background: var(--background);
 }
 
@@ -107,10 +127,22 @@ pre {
 }
 
 .site-name {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem;
+  margin-left: -0.25rem;
+  border-radius: var(--radius);
   color: var(--text);
-  font-size: 1.125rem;
-  font-weight: 700;
-  text-decoration: none;
+}
+
+.site-header .site-name svg {
+  width: auto;
+  height: 1.5rem;
+}
+
+/* The mark's asterisk: the note on the word. */
+.site-name .second {
+  fill: var(--accent);
 }
 
 .site-header svg {
@@ -127,13 +159,19 @@ pre {
   gap: 0.5rem;
   padding: 0.375rem 0.625rem;
   border: 1px solid var(--border);
-  border-radius: 0.375rem;
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--muted);
-  font: inherit;
-  font-size: 0.875rem;
+  font: var(--type-small) var(--font);
   text-decoration: none;
   cursor: pointer;
+}
+
+.menu-button:hover,
+.search-button:hover,
+.repo-link:hover {
+  border-color: var(--muted);
+  color: var(--text);
 }
 
 .search-button {
@@ -146,6 +184,7 @@ pre {
   padding: 0 0.375rem;
   border: 1px solid var(--border);
   border-radius: 0.25rem;
+  background: var(--background);
 }
 
 .menu-button {
@@ -178,10 +217,12 @@ pre {
 }
 
 .search-close button {
+  padding: 0.125rem 0.375rem;
   border: 0;
+  border-radius: var(--radius);
   background: none;
   color: var(--accent);
-  font: inherit;
+  font: var(--type-small) var(--font);
   cursor: pointer;
 }
 
@@ -192,6 +233,7 @@ pre {
   --pagefind-ui-background: var(--background);
   --pagefind-ui-border: var(--border);
   --pagefind-ui-tag: var(--surface);
+  --pagefind-ui-border-radius: var(--radius);
   --pagefind-ui-font: var(--font);
 }
 
@@ -217,14 +259,15 @@ pre {
   max-height: calc(100vh - var(--header-height));
   overflow-y: auto;
   padding: 1.5rem 1rem;
-  font-size: 0.875rem;
+  font: var(--type-small) var(--font);
 }
 
 .sidebar h2,
 .toc h2 {
   margin: 0 0 0.5rem;
+  padding-inline: 0.5rem;
   color: var(--muted);
-  font-size: 0.75rem;
+  font: var(--type-caption) var(--font);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -244,7 +287,7 @@ pre {
 .toc a {
   display: block;
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius);
   color: var(--text);
   text-decoration: none;
 }
@@ -256,56 +299,79 @@ pre {
 
 .sidebar a[aria-current="page"] {
   background: var(--accent-surface);
-  color: var(--accent);
+  box-shadow: inset 2px 0 var(--accent);
   font-weight: 600;
+}
+
+.toc ul {
+  border-left: 1px solid var(--border);
+}
+
+.toc a {
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--muted);
+}
+
+.toc a:hover {
+  color: var(--text);
 }
 
 .toc li[data-depth="3"] a {
   padding-left: 1.25rem;
 }
 
-.toc a {
-  color: var(--muted);
-}
-
 .page {
   min-width: 0;
-  padding: 1.5rem 2rem 4rem;
+  padding: 2rem 2rem 4rem;
 }
 
 .page article {
-  max-width: 48rem;
+  max-width: var(--measure);
 }
 
 .page h1 {
-  margin-top: 0;
-  font-size: 2rem;
-  line-height: 1.25;
-}
-
-.page .description {
-  color: var(--muted);
-  font-size: 1.125rem;
+  margin: 0 0 0.75rem;
+  font: var(--type-h1) var(--font);
+  letter-spacing: -0.01em;
 }
 
 .page h2 {
-  margin-top: 2.5rem;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--border);
+  margin: 2.5rem 0 0.75rem;
+  font: var(--type-h2) var(--font);
+}
+
+.page h3 {
+  margin: 2rem 0 0.5rem;
+  font: var(--type-h3) var(--font);
+}
+
+.page .description {
+  margin-top: 0;
+  color: var(--muted);
+  font: var(--type-lead) var(--font);
 }
 
 .page :not(pre) > code {
   padding: 0.1em 0.35em;
+  border: 1px solid var(--border);
   border-radius: 0.25rem;
-  background: var(--code-background);
+  background: var(--surface);
+}
+
+/* Code in a heading or a link is set in its font, with no box. */
+.page :is(h1, h2, h3, a) code {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
 }
 
 .page pre {
   overflow-x: auto;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 0.375rem;
-  line-height: 1.45;
+  border-radius: var(--radius);
+  line-height: 1.5;
 }
 
 /* A code block's title, from `@snippet {title=…}`: a tab on its top edge. */
@@ -318,7 +384,7 @@ pre {
   padding: 0.25rem 0.75rem;
   border: 1px solid var(--border);
   border-bottom: none;
-  border-radius: 0.375rem 0.375rem 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   background: var(--surface);
   color: var(--muted);
   font-family: var(--font-mono);
@@ -330,9 +396,13 @@ pre {
   border-top-left-radius: 0;
 }
 
-/* Astro's Shiki theme: github-light and github-dark, as the system is. */
+/*
+ * Astro's Shiki theme: github-light-default and github-dark-default, as the
+ * system is. Code blocks sit on the page's background, where the light
+ * theme's comments pass 4.5:1; on the surface color they don't.
+ */
 .page pre.astro-code {
-  background-color: var(--code-background) !important;
+  background-color: var(--background) !important;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -346,17 +416,19 @@ pre {
   display: block;
   overflow-x: auto;
   border-collapse: collapse;
+  font: var(--type-small) var(--font);
 }
 
 .page th,
 .page td {
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
   vertical-align: top;
 }
 
 .page th {
   background: var(--surface);
+  font-weight: 600;
   text-align: left;
 }
 
@@ -366,11 +438,11 @@ pre {
 }
 
 .page-footer {
-  max-width: 48rem;
+  max-width: var(--measure);
   margin-top: 3rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
-  font-size: 0.875rem;
+  font: var(--type-small) var(--font);
 }
 
 /* Narrower screens ------------------------------------------------------------ */
@@ -422,7 +494,7 @@ pre {
   }
 
   .page {
-    padding: 1rem 1rem 3rem;
+    padding: 1.25rem 1rem 3rem;
   }
 
   .page h1 {
