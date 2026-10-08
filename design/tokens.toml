@@ -1,0 +1,701 @@
+# Ascribe's colors, font stacks, spaces, and radii: the only place one is
+# written. The stylesheets' variables are generated from this file by
+# scripts/design/tokens.ts; design/README.md says how.
+#
+# [palette]: every color value, named by hue and step. The step is
+# 1000 × (1 − the color's OKLCH lightness), rounded, so a higher step is
+# darker; a tie takes the next step. Only [color] points here, never a
+# stylesheet.
+#
+# [color]: what a color is for, with a light and a dark value, each a
+# palette name. Where two surfaces use near-identical values for one idea,
+# each keeps its own token for now.
+#
+# [font], [space], [radius]: values the stylesheets use as they are.
+#
+# [emit]: each stylesheet's generated blocks, by the name its markers give:
+# the property each declares, and the token it takes. A value with `{…}` is
+# a template, its tokens in braces.
+
+# The palette ---------------------------------------------------------------
+
+[palette.gray]
+0 = "#ffffff"
+22 = "#f6f8fa"
+24 = "#f5f7fb"
+33 = "#f3f4f7"
+39 = "#f0f2f6"
+53 = "#eaeef2"
+57 = "#e6edf3"
+103 = "#d9dde5"
+119 = "#d1d9e0"
+120 = "#d3d8e0"
+124 = "#d0d7de"
+313 = "#929bab"
+323 = "#9198a1"
+498 = "#5b6475"
+505 = "#59636e"
+515 = "#57606a"
+616 = "#3d444d"
+653 = "#343a45"
+707 = "#282c35"
+712 = "#272b33"
+726 = "#212830"
+731 = "#23262d"
+744 = "#1d2330"
+746 = "#1f2328"
+756 = "#1e2026"
+780 = "#151b23"
+817 = "#0b1220"
+824 = "#0d1117"
+
+[palette.blue]
+46 = "#ddf4ff"
+293 = "#5aa2ff"
+337 = "#4493f8"
+431 = "#1f6feb"
+460 = "#0969da"
+716 = "#172a45"
+770 = "#121d2f"
+
+[palette.green]
+43 = "#dafbe1"
+49 = "#dcf7e3"
+264 = "#4fc572"
+305 = "#3fb950"
+476 = "#1a7f37"
+703 = "#133520"
+751 = "#12261e"
+
+[palette.yellow]
+28 = "#fff8c5"
+33 = "#fff6bf"
+42 = "#fff1c2"
+221 = "#dcb13a"
+280 = "#d29922"
+341 = "#bb8800"
+446 = "#9a6700"
+492 = "#8a5a00"
+673 = "#3b3514"
+690 = "#3a2f0d"
+749 = "#272115"
+
+[palette.red]
+45 = "#ffebe9"
+60 = "#ffe4e2"
+254 = "#ff8279"
+335 = "#f85149"
+448 = "#cf222e"
+469 = "#c4222d"
+470 = "#cc0000"
+728 = "#401918"
+769 = "#2d1517"
+
+[palette.purple]
+34 = "#fbefff"
+60 = "#f0e6ff"
+234 = "#c59bff"
+312 = "#ab7df8"
+437 = "#8250df"
+479 = "#7a3fd0"
+716 = "#2d2440"
+763 = "#1f1a33"
+
+# Black at an opacity, by its percent.
+[palette.black]
+a22 = "rgb(0 0 0 / 0.22)"
+a30 = "rgb(0 0 0 / 0.3)"
+a40 = "rgb(0 0 0 / 0.4)"
+
+# The element library: the defaults of its public --ascribe-* properties ----
+
+[color.elements.border]
+light = "gray.124"
+dark = "gray.616"
+
+[color.elements.muted]
+light = "gray.515"
+dark = "gray.323"
+
+# Steps' markers, and the active and focused tab.
+[color.elements.accent]
+light = "blue.460"
+dark = "blue.337"
+
+# Text on the accent: a step's number.
+[color.elements.on-accent]
+light = "gray.0"
+dark = "gray.824"
+
+# A tab under the pointer.
+[color.elements.hover]
+light = "gray.22"
+dark = "gray.780"
+
+[color.elements.note]
+light = "blue.460"
+dark = "blue.337"
+
+[color.elements.note-background]
+light = "blue.46"
+dark = "blue.770"
+
+[color.elements.tip]
+light = "green.476"
+dark = "green.305"
+
+[color.elements.tip-background]
+light = "green.43"
+dark = "green.751"
+
+[color.elements.important]
+light = "purple.437"
+dark = "purple.312"
+
+[color.elements.important-background]
+light = "purple.34"
+dark = "purple.763"
+
+[color.elements.warning]
+light = "yellow.446"
+dark = "yellow.280"
+
+[color.elements.warning-background]
+light = "yellow.28"
+dark = "yellow.749"
+
+[color.elements.caution]
+light = "red.448"
+dark = "red.335"
+
+[color.elements.caution-background]
+light = "red.45"
+dark = "red.769"
+
+# Availability: a state with no color of its own, then each that has one.
+[color.elements.state.default]
+light = "gray.515"
+dark = "gray.323"
+
+[color.elements.state.default-background]
+light = "gray.53"
+dark = "gray.726"
+
+[color.elements.state.ga]
+light = "green.476"
+dark = "green.305"
+
+[color.elements.state.ga-background]
+light = "green.43"
+dark = "green.751"
+
+[color.elements.state.preview]
+light = "purple.437"
+dark = "purple.312"
+
+[color.elements.state.preview-background]
+light = "purple.34"
+dark = "purple.763"
+
+[color.elements.state.beta]
+light = "blue.460"
+dark = "blue.337"
+
+[color.elements.state.beta-background]
+light = "blue.46"
+dark = "blue.770"
+
+[color.elements.state.deprecated]
+light = "yellow.446"
+dark = "yellow.280"
+
+[color.elements.state.deprecated-background]
+light = "yellow.28"
+dark = "yellow.749"
+
+[color.elements.state.removed]
+light = "red.448"
+dark = "red.335"
+
+[color.elements.state.removed-background]
+light = "red.45"
+dark = "red.769"
+
+# Review: the marks on a page, the overlay's threads, the HTML report's frame,
+# and the Astro toolbar's panel --------------------------------------------
+
+[color.review.added]
+light = "green.476"
+dark = "green.264"
+
+[color.review.added-background]
+light = "green.49"
+dark = "green.703"
+
+[color.review.changed]
+light = "yellow.492"
+dark = "yellow.221"
+
+[color.review.changed-background]
+light = "yellow.42"
+dark = "yellow.690"
+
+[color.review.removed]
+light = "red.469"
+dark = "red.254"
+
+[color.review.removed-background]
+light = "red.60"
+dark = "red.728"
+
+[color.review.moved]
+light = "purple.479"
+dark = "purple.234"
+
+[color.review.moved-background]
+light = "purple.60"
+dark = "purple.716"
+
+[color.review.text]
+light = "gray.744"
+dark = "gray.103"
+
+[color.review.muted]
+light = "gray.498"
+dark = "gray.313"
+
+[color.review.surface]
+light = "gray.0"
+dark = "gray.756"
+
+[color.review.border]
+light = "gray.120"
+dark = "gray.653"
+
+# A thread's background.
+[color.review.thread]
+light = "gray.24"
+dark = "gray.712"
+
+[color.review.input]
+light = "gray.0"
+dark = "gray.756"
+
+# Focus rings, links, and primary buttons.
+[color.review.focus]
+light = "blue.431"
+dark = "blue.293"
+
+# Text on the focus color: a primary button's.
+[color.review.accent-text]
+light = "gray.0"
+dark = "gray.817"
+
+# A block that was just scrolled to.
+[color.review.flash]
+light = "yellow.33"
+dark = "yellow.673"
+
+# The bottom sheet's shadow.
+[color.review.shadow]
+light = "black.a22"
+dark = "black.a22"
+
+# The HTML report's frame. Its other colors are review's.
+[color.report.side]
+light = "gray.33"
+dark = "gray.731"
+
+[color.report.code]
+light = "gray.39"
+dark = "gray.707"
+
+[color.report.notice]
+light = "yellow.33"
+dark = "yellow.673"
+
+# The element library in the HTML report: its own light colors, and dark ones
+# from review's palette.
+[color.report.elements.border]
+light = "gray.124"
+dark = "gray.653"
+
+[color.report.elements.muted]
+light = "gray.515"
+dark = "gray.313"
+
+[color.report.elements.accent]
+light = "blue.460"
+dark = "blue.293"
+
+[color.report.elements.on-accent]
+light = "gray.0"
+dark = "gray.817"
+
+[color.report.elements.hover]
+light = "gray.22"
+dark = "gray.712"
+
+[color.report.elements.note]
+light = "blue.460"
+dark = "blue.293"
+
+[color.report.elements.note-background]
+light = "blue.46"
+dark = "blue.716"
+
+[color.report.elements.tip]
+light = "green.476"
+dark = "green.264"
+
+[color.report.elements.tip-background]
+light = "green.43"
+dark = "green.703"
+
+[color.report.elements.important]
+light = "purple.437"
+dark = "purple.234"
+
+[color.report.elements.important-background]
+light = "purple.34"
+dark = "purple.716"
+
+[color.report.elements.warning]
+light = "yellow.446"
+dark = "yellow.221"
+
+[color.report.elements.warning-background]
+light = "yellow.28"
+dark = "yellow.690"
+
+[color.report.elements.caution]
+light = "red.448"
+dark = "red.254"
+
+[color.report.elements.caution-background]
+light = "red.45"
+dark = "red.728"
+
+[color.report.elements.state.default]
+light = "gray.515"
+dark = "gray.313"
+
+[color.report.elements.state.default-background]
+light = "gray.53"
+dark = "gray.712"
+
+[color.report.elements.state.ga]
+light = "green.476"
+dark = "green.264"
+
+[color.report.elements.state.ga-background]
+light = "green.43"
+dark = "green.703"
+
+[color.report.elements.state.preview]
+light = "purple.437"
+dark = "purple.234"
+
+[color.report.elements.state.preview-background]
+light = "purple.34"
+dark = "purple.716"
+
+[color.report.elements.state.beta]
+light = "blue.460"
+dark = "blue.293"
+
+[color.report.elements.state.beta-background]
+light = "blue.46"
+dark = "blue.716"
+
+[color.report.elements.state.deprecated]
+light = "yellow.446"
+dark = "yellow.221"
+
+[color.report.elements.state.deprecated-background]
+light = "yellow.28"
+dark = "yellow.690"
+
+# The Astro toolbar's panel. Its other colors are review's.
+[color.toolbar.side]
+light = "gray.24"
+dark = "gray.731"
+
+[color.toolbar.notice]
+light = "yellow.42"
+dark = "yellow.690"
+
+[color.toolbar.shadow]
+light = "black.a30"
+dark = "black.a30"
+
+# The docs site ---------------------------------------------------------------
+
+[color.site.text]
+light = "gray.746"
+dark = "gray.57"
+
+[color.site.muted]
+light = "gray.505"
+dark = "gray.323"
+
+[color.site.background]
+light = "gray.0"
+dark = "gray.824"
+
+[color.site.surface]
+light = "gray.22"
+dark = "gray.780"
+
+[color.site.border]
+light = "gray.119"
+dark = "gray.616"
+
+[color.site.accent]
+light = "blue.460"
+dark = "blue.337"
+
+[color.site.accent-surface]
+light = "blue.46"
+dark = "blue.770"
+
+[color.site.code-background]
+light = "gray.22"
+dark = "gray.780"
+
+# The VS Code preview: fallbacks for when the editor's theme gives none ------
+
+[color.preview.error]
+light = "red.470"
+dark = "red.470"
+
+[color.preview.warning]
+light = "yellow.341"
+dark = "yellow.341"
+
+# Behind a site's page, before it paints.
+[color.preview.frame]
+light = "gray.0"
+dark = "gray.0"
+
+# Shared ----------------------------------------------------------------------
+
+# Behind a dialog: the docs site's search, review's dialogs.
+[color.scrim]
+light = "black.a40"
+dark = "black.a40"
+
+[font]
+ui = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+# Review's code and paths.
+review-mono = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace'
+# The review overlay's, when the page sets no --ascribe-review-font.
+overlay-ui = 'system-ui, -apple-system, "Segoe UI", sans-serif'
+# Fallbacks for when a host gives no font of its own.
+fallback-ui = "system-ui, sans-serif"
+fallback-mono = "ui-monospace, monospace"
+
+[space]
+base = "1rem"
+small = "0.5rem"
+
+[radius]
+base = "0.375rem"
+
+# What each stylesheet declares ---------------------------------------------
+
+[emit."packages/elements/css/style.css".root]
+"--ascribe-space" = "space.base"
+"--ascribe-space-small" = "space.small"
+"--ascribe-radius" = "radius.base"
+"--ascribe-border-color" = "color.elements.border"
+"--ascribe-muted-color" = "color.elements.muted"
+"--ascribe-note-color" = "color.elements.note"
+"--ascribe-note-background" = "color.elements.note-background"
+"--ascribe-tip-color" = "color.elements.tip"
+"--ascribe-tip-background" = "color.elements.tip-background"
+"--ascribe-important-color" = "color.elements.important"
+"--ascribe-important-background" = "color.elements.important-background"
+"--ascribe-warning-color" = "color.elements.warning"
+"--ascribe-warning-background" = "color.elements.warning-background"
+"--ascribe-caution-color" = "color.elements.caution"
+"--ascribe-caution-background" = "color.elements.caution-background"
+"--ascribe-steps-color" = "color.elements.accent"
+"--ascribe-steps-marker-text-color" = "color.elements.on-accent"
+"--ascribe-tab-color" = "color.elements.muted"
+"--ascribe-tab-active-color" = "color.elements.accent"
+"--ascribe-tab-focus-color" = "color.elements.accent"
+"--ascribe-tab-hover-background" = "color.elements.hover"
+"--ascribe-state-color" = "color.elements.state.default"
+"--ascribe-state-background" = "color.elements.state.default-background"
+"--ascribe-state-ga-color" = "color.elements.state.ga"
+"--ascribe-state-ga-background" = "color.elements.state.ga-background"
+"--ascribe-state-preview-color" = "color.elements.state.preview"
+"--ascribe-state-preview-background" = "color.elements.state.preview-background"
+"--ascribe-state-beta-color" = "color.elements.state.beta"
+"--ascribe-state-beta-background" = "color.elements.state.beta-background"
+"--ascribe-state-deprecated-color" = "color.elements.state.deprecated"
+"--ascribe-state-deprecated-background" = "color.elements.state.deprecated-background"
+"--ascribe-state-removed-color" = "color.elements.state.removed"
+"--ascribe-state-removed-background" = "color.elements.state.removed-background"
+
+[emit."packages/review/src/marks/marks.css".root]
+"--ascribe-review-added" = "color.review.added"
+"--ascribe-review-added-background" = "color.review.added-background"
+"--ascribe-review-changed" = "color.review.changed"
+"--ascribe-review-changed-background" = "color.review.changed-background"
+"--ascribe-review-removed" = "color.review.removed"
+"--ascribe-review-removed-background" = "color.review.removed-background"
+"--ascribe-review-moved" = "color.review.moved"
+"--ascribe-review-moved-background" = "color.review.moved-background"
+"--ascribe-review-muted" = "color.review.muted"
+"--ascribe-review-surface" = "color.review.surface"
+"--ascribe-review-flash" = "color.review.flash"
+"--ascribe-review-focus" = "color.review.focus"
+"--ascribe-review-mono" = "font.review-mono"
+"--ascribe-review-text" = "color.review.text"
+"--ascribe-review-border" = "color.review.border"
+"--ascribe-review-thread" = "color.review.thread"
+"--ascribe-review-input" = "color.review.input"
+"--ascribe-review-accent-text" = "color.review.accent-text"
+
+# The overlay's own names, from the page's --ascribe-review-* where it sets them.
+[emit."packages/review/src/overlay/style.ts".host]
+"--muted" = "var(--ascribe-review-muted, {color.review.muted})"
+"--line" = "var(--ascribe-review-border, {color.review.border})"
+"--thread" = "var(--ascribe-review-thread, {color.review.thread})"
+"--accent" = "var(--ascribe-review-focus, {color.review.focus})"
+"--accent-text" = "var(--ascribe-review-accent-text, {color.review.accent-text})"
+"--flash" = "var(--ascribe-review-flash, {color.review.flash})"
+"--added" = "var(--ascribe-review-added, {color.review.added})"
+"--changed" = "var(--ascribe-review-changed, {color.review.changed})"
+"--changed-background" = "var(--ascribe-review-changed-background, {color.review.changed-background})"
+"--removed" = "var(--ascribe-review-removed, {color.review.removed})"
+"--removed-background" = "var(--ascribe-review-removed-background, {color.review.removed-background})"
+"--mono" = "var(--ascribe-review-mono, {font.fallback-mono})"
+"font-family" = "var(--ascribe-review-font, {font.overlay-ui})"
+
+[emit."packages/review/src/overlay/style.ts".sheet]
+"box-shadow" = "0 -8px 24px {color.review.shadow}"
+
+[emit."packages/review/src/overlay/style.ts".backdrop]
+"background" = "color.scrim"
+
+[emit."packages/review/src/report/report.css".frame]
+"--r-page" = "color.review.surface"
+"--r-ink" = "color.review.text"
+"--r-muted" = "color.review.muted"
+"--r-side" = "color.report.side"
+"--r-line" = "color.review.border"
+"--r-accent" = "color.review.focus"
+"--r-accent-ink" = "color.review.accent-text"
+"--r-code" = "color.report.code"
+"--r-notice" = "color.report.notice"
+"--r-ui" = "font.ui"
+"--r-mono" = "font.review-mono"
+
+[emit."packages/review/src/report/report.css".elements]
+"--ascribe-border-color" = "color.report.elements.border"
+"--ascribe-muted-color" = "color.report.elements.muted"
+"--ascribe-note-color" = "color.report.elements.note"
+"--ascribe-note-background" = "color.report.elements.note-background"
+"--ascribe-tip-color" = "color.report.elements.tip"
+"--ascribe-tip-background" = "color.report.elements.tip-background"
+"--ascribe-important-color" = "color.report.elements.important"
+"--ascribe-important-background" = "color.report.elements.important-background"
+"--ascribe-warning-color" = "color.report.elements.warning"
+"--ascribe-warning-background" = "color.report.elements.warning-background"
+"--ascribe-caution-color" = "color.report.elements.caution"
+"--ascribe-caution-background" = "color.report.elements.caution-background"
+"--ascribe-steps-color" = "color.report.elements.accent"
+"--ascribe-steps-marker-text-color" = "color.report.elements.on-accent"
+"--ascribe-tab-color" = "color.report.elements.muted"
+"--ascribe-tab-active-color" = "color.report.elements.accent"
+"--ascribe-tab-focus-color" = "color.report.elements.accent"
+"--ascribe-tab-hover-background" = "color.report.elements.hover"
+"--ascribe-state-color" = "color.report.elements.state.default"
+"--ascribe-state-background" = "color.report.elements.state.default-background"
+"--ascribe-state-ga-color" = "color.report.elements.state.ga"
+"--ascribe-state-ga-background" = "color.report.elements.state.ga-background"
+"--ascribe-state-preview-color" = "color.report.elements.state.preview"
+"--ascribe-state-preview-background" = "color.report.elements.state.preview-background"
+"--ascribe-state-beta-color" = "color.report.elements.state.beta"
+"--ascribe-state-beta-background" = "color.report.elements.state.beta-background"
+"--ascribe-state-deprecated-color" = "color.report.elements.state.deprecated"
+"--ascribe-state-deprecated-background" = "color.report.elements.state.deprecated-background"
+
+[emit."packages/astro/src/toolbar/style.ts".panel]
+"--ink" = "color.review.text"
+"--muted" = "color.review.muted"
+"--win" = "color.review.surface"
+"--side" = "color.toolbar.side"
+"--line" = "color.review.border"
+"--accent" = "color.review.focus"
+"--accent-ink" = "color.review.accent-text"
+"--notice" = "color.toolbar.notice"
+"--ui" = "font.ui"
+"--mono" = "font.review-mono"
+
+[emit."packages/astro/src/toolbar/style.ts".shadow]
+"box-shadow" = "0 8px 28px {color.toolbar.shadow}"
+
+[emit."site/src/styles/site.css".root]
+"--font" = "font.ui"
+"--font-mono" = "font.mono"
+"--text" = "color.site.text"
+"--muted" = "color.site.muted"
+"--background" = "color.site.background"
+"--surface" = "color.site.surface"
+"--border" = "color.site.border"
+"--accent" = "color.site.accent"
+"--accent-surface" = "color.site.accent-surface"
+"--code-background" = "color.site.code-background"
+
+[emit."site/src/styles/site.css".backdrop]
+"background" = "color.scrim"
+
+# The editor's theme colors, with the element library's and review's light
+# values for when the theme has none.
+[emit."packages/vscode/src/webview/preview.css".root]
+"--ascribe-border-color" = "var(--vscode-widget-border, var(--vscode-panel-border, {color.elements.border}))"
+"--ascribe-muted-color" = "var(--vscode-descriptionForeground, {color.elements.muted})"
+"--ascribe-note-color" = "var(--vscode-charts-blue, {color.elements.note})"
+"--ascribe-tip-color" = "var(--vscode-charts-green, {color.elements.tip})"
+"--ascribe-important-color" = "var(--vscode-charts-purple, {color.elements.important})"
+"--ascribe-warning-color" = "var(--vscode-charts-yellow, {color.elements.warning})"
+"--ascribe-caution-color" = "var(--vscode-charts-red, {color.elements.caution})"
+"--ascribe-steps-color" = "var(--vscode-button-background, {color.elements.accent})"
+"--ascribe-steps-marker-text-color" = "var(--vscode-button-foreground, {color.elements.on-accent})"
+"--ascribe-tab-color" = "var(--vscode-foreground, {color.elements.muted})"
+"--ascribe-tab-active-color" = "var(--vscode-textLink-foreground, {color.elements.accent})"
+"--ascribe-tab-focus-color" = "var(--vscode-focusBorder, {color.elements.accent})"
+"--ascribe-tab-hover-background" = "var(--vscode-toolbar-hoverBackground, {color.elements.hover})"
+"--ascribe-state-color" = "var(--vscode-descriptionForeground, {color.elements.state.default})"
+"--ascribe-state-ga-color" = "var(--vscode-charts-green, {color.elements.state.ga})"
+"--ascribe-state-preview-color" = "var(--vscode-charts-purple, {color.elements.state.preview})"
+"--ascribe-state-beta-color" = "var(--vscode-charts-blue, {color.elements.state.beta})"
+"--ascribe-state-deprecated-color" = "var(--vscode-charts-yellow, {color.elements.state.deprecated})"
+"--ascribe-state-removed-color" = "var(--vscode-charts-red, {color.elements.state.removed})"
+"--ascribe-review-added" = "var(--vscode-gitDecoration-addedResourceForeground, {color.review.added})"
+"--ascribe-review-changed" = "var(--vscode-gitDecoration-modifiedResourceForeground, {color.review.changed})"
+"--ascribe-review-removed" = "var(--vscode-gitDecoration-deletedResourceForeground, {color.review.removed})"
+"--ascribe-review-moved" = "var(--vscode-charts-purple, {color.review.moved})"
+"--ascribe-review-muted" = "var(--vscode-descriptionForeground, {color.review.muted})"
+"--ascribe-review-flash" = "color-mix(in srgb, var(--vscode-editor-findMatchHighlightBackground, {color.review.flash}) 50%, var(--vscode-editor-background, Canvas))"
+"--ascribe-review-focus" = "var(--vscode-textLink-foreground, {color.review.focus})"
+"--ascribe-review-mono" = "var(--vscode-editor-font-family, {font.fallback-mono})"
+"--ascribe-review-border" = "var(--vscode-widget-border, var(--vscode-panel-border, {color.review.border}))"
+"--ascribe-review-font" = "var(--vscode-font-family, {font.fallback-ui})"
+
+[emit."packages/vscode/src/webview/preview.css".body]
+"font-family" = "var(--vscode-font-family, {font.fallback-ui})"
+
+[emit."packages/vscode/src/webview/preview.css".error]
+"color" = "var(--vscode-errorForeground, {color.preview.error})"
+
+[emit."packages/vscode/src/webview/preview.css".warning]
+"color" = "var(--vscode-editorWarning-foreground, {color.preview.warning})"
+
+[emit."packages/vscode/src/webview/preview.css".frame]
+"background" = "color.preview.frame"
