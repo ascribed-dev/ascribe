@@ -7,6 +7,7 @@ export { renderMarkdown, safeUrl } from "./markdown.js";
 export type {
   Anchor,
   CommentTarget,
+  FormattedPiece,
   HostError,
   LocatedThread,
   OverlayData,

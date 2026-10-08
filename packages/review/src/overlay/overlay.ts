@@ -16,7 +16,7 @@
 //   root, so they sit in the page's reading and tab order.
 //
 // Comment bodies are rendered by `markdown.ts`, as DOM nodes.
-import { findBlock, goTo, reveal, tabButton } from "../marks/index.js";
+import { findBlock, goTo, reveal, tabButton, titleNodes } from "../marks/index.js";
 import { anchorKey, formatSource, type Anchor } from "../place/anchor.js";
 import type { LocatedThread } from "../place/place.js";
 import { renderMarkdown } from "./markdown.js";
@@ -1145,18 +1145,25 @@ class ReviewOverlay implements Overlay {
     for (const summary of groups[this.filter]) {
       const { thread, pages } = summary;
       const first = thread.comments[0];
-      const page =
-        pages.length > 1 ? `on ${pages.length} pages` : (pages[0]?.title ?? pages[0]?.path ?? "");
+      const only = pages.length === 1 ? pages[0] : undefined;
+      const page = only
+        ? titleNodes(only.formatted_title, only.title ?? only.path, this.doc)
+        : pages.length > 1
+          ? [`on ${pages.length} pages`]
+          : [];
       // As on its card: a thread with no block is detached, not outdated.
       const outdated = thread.outdated && thread.detached === undefined;
-      const where = [listLabel(thread), outdated ? "outdated" : "", page]
-        .filter(Boolean)
-        .join(" · ");
+      const where = this.el("span", "where");
+      where.append([listLabel(thread), outdated ? "outdated" : ""].filter(Boolean).join(" · "));
+      if (page.length > 0) {
+        if (where.textContent) where.append(" · ");
+        where.append(...page);
+      }
       const more = thread.comments.length > 1 ? ` (+${thread.comments.length - 1})` : "";
       const item = this.el("li", "");
       const jump = this.button("", "", () => this.jump(summary), `jump:${thread.id}`);
       jump.append(
-        this.el("span", "where", where),
+        where,
         this.el(
           "span",
           "first",

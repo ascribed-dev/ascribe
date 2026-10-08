@@ -20,7 +20,7 @@
 // into the document. Nothing here evaluates it: the content security policy
 // (`html.ts`) doesn't allow inline scripts, and none is created.
 
-import { disarm } from "@ascribed/review/marks";
+import { disarm, titleNodes } from "@ascribed/review/marks";
 import { blockAt, linesInPage, type Lines } from "../preview/blocks.js";
 import { canonicalReference, isExternal, splitFragment } from "../preview/refs.js";
 import { Review } from "./review.js";
@@ -353,7 +353,7 @@ function render(message: Extract<ToWebview, { type: "render" }>): void {
   template.innerHTML = message.html;
   disarm(template.content);
   rewriteAssets(template.content, message.assets);
-  title.textContent = message.title ?? "";
+  title.replaceChildren(...titleNodes(message.formattedTitle, message.title ?? ""));
   title.hidden = message.title === null;
   showAvailability(message.available);
   content.replaceChildren(template.content);

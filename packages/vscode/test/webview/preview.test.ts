@@ -132,6 +132,7 @@ function render(seq: number, html: string | null, extra: Partial<ToWebview> = {}
     build: "site",
     builds: BUILDS,
     title: "A page",
+    formattedTitle: null,
     available: [],
     html,
     assets: [],
@@ -182,6 +183,23 @@ describe("the preview webview", () => {
       false,
     );
     await expect(preview.page.locator("h1").textContent()).resolves.toBe("A page");
+    await preview.page.close();
+  });
+
+  it("heads the page with its formatted title, code spans as code", async () => {
+    const preview = await open();
+    await preview.send(
+      render(1, "<p>Keys.</p>", {
+        title: "ascribe.toml <keys>",
+        formattedTitle: [
+          { type: "code", value: "ascribe.toml" },
+          { type: "text", value: " <keys>" },
+        ],
+      }),
+    );
+    await preview.next("rendered");
+    await expect(preview.page.locator("h1").textContent()).resolves.toBe("ascribe.toml <keys>");
+    await expect(preview.page.locator("h1 code").textContent()).resolves.toBe("ascribe.toml");
     await preview.page.close();
   });
 

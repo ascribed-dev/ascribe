@@ -4,9 +4,18 @@
 import type { CommentTarget, PendingReview, ReviewEvent } from "../github/session.js";
 import type { Anchor } from "../place/anchor.js";
 import type { LocatedThread, PlacedThreads } from "../place/place.js";
+import type { FormattedPiece } from "../shapes.js";
 import type { Thread, ThreadComment } from "../shared/types.js";
 
-export type { Anchor, CommentTarget, LocatedThread, PendingReview, PlacedThreads, ReviewEvent };
+export type {
+  Anchor,
+  CommentTarget,
+  FormattedPiece,
+  LocatedThread,
+  PendingReview,
+  PlacedThreads,
+  ReviewEvent,
+};
 
 /** What the overlay draws for the page it's on. */
 export interface OverlayData {
@@ -23,8 +32,11 @@ export interface OverlayData {
 /** A thread on the pull request, and the pages it's on. */
 export interface ThreadSummary {
   thread: LocatedThread;
-  /** The pages that show it, by content path; empty when no page is known to. */
-  pages: { path: string; title: string | null }[];
+  /**
+   * The pages that show it, by content path; empty when no page is known to.
+   * `formatted_title` is the title formatted, when its field sets `inline`.
+   */
+  pages: { path: string; title: string | null; formatted_title: FormattedPiece[] | null }[];
 }
 
 /** A failure the host reports: `message` is a sentence to show; `code` is a `ReviewError` code. */

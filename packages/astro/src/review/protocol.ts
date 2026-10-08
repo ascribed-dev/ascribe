@@ -8,6 +8,7 @@
 // `from` tab, which already knows.
 
 import type { BaseInfo, PageDiff } from "../shapes.js";
+import type { FormattedPiece } from "@ascribed/review/overlay";
 
 /** `ascribe diff --format json`'s types: a changed page, its block changes, and the base. */
 export type { BaseInfo, Change, Counts, PageDiff } from "../shapes.js";
@@ -33,8 +34,14 @@ export interface Result {
   error?: { message: string; code?: string };
 }
 
-/** A changed page in the list: without its changes, and with its title when the build has it. */
-export type ChangedPage = Omit<PageDiff, "changes"> & { title: string | null };
+/**
+ * A changed page in the list: without its changes, and with its title when
+ * the build has it, formatted when its field sets `inline = "code"`.
+ */
+export type ChangedPage = Omit<PageDiff, "changes"> & {
+  title: string | null;
+  formatted_title: FormattedPiece[] | null;
+};
 
 /** How the checkout's `HEAD` relates to the pull request's head commit. */
 export type LocalState = "same" | "behind" | "ahead" | "diverged" | "missing";

@@ -65,6 +65,7 @@ expression: "serde_json::to_string_pretty(&data).expect(\"JSON\")"
             "moved": 0,
             "removed": 0
           },
+          "formatted_title": null,
           "now": "p1",
           "omitted": false,
           "own_file_changed": false,
@@ -127,6 +128,7 @@ expression: "serde_json::to_string_pretty(&data).expect(\"JSON\")"
             "moved": 0,
             "removed": 0
           },
+          "formatted_title": null,
           "now": "p3",
           "omitted": false,
           "own_file_changed": false,

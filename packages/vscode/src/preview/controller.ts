@@ -567,6 +567,7 @@ export class PreviewController implements vscode.Disposable {
       build: result.build,
       builds: result.builds,
       title: result.page?.title ?? null,
+      formattedTitle: result.page?.formattedTitle ?? null,
       available: (result.page?.frontmatter as PageFrontmatter | undefined)?.available ?? [],
       html: result.page?.html ?? null,
       assets,

@@ -198,6 +198,24 @@
       ],
       "type": "object"
     },
+    "FormattedPiece": {
+      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the review report's, writes it the same way.",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/PieceKind",
+          "description": "What the piece is."
+        },
+        "value": {
+          "description": "Its text: a code span's content without its backticks.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "type": "object"
+    },
     "PageDiff": {
       "description": "What changed on one page of a build.",
       "properties": {
@@ -271,6 +289,21 @@
         {
           "const": "changed",
           "description": "The build publishes it in both, and it differs.",
+          "type": "string"
+        }
+      ]
+    },
+    "PieceKind": {
+      "description": "What a piece of a formatted value is.",
+      "oneOf": [
+        {
+          "const": "text",
+          "description": "Text.",
+          "type": "string"
+        },
+        {
+          "const": "code",
+          "description": "A code span.",
           "type": "string"
         }
       ]
@@ -362,6 +395,16 @@
           },
           "type": "array"
         },
+        "formattedTitle": {
+          "description": "The title formatted, when its field sets `inline = \"code\"`: for the\npage's heading. `title` stays the plain text.",
+          "items": {
+            "$ref": "#/$defs/FormattedPiece"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "frontmatter": {
           "additionalProperties": true,
           "description": "The frontmatter the site output writes, as JSON: `available` is the\nlist of targets a layout passes to `<ascribe-availability>`.",
@@ -405,6 +448,7 @@
         "path",
         "route",
         "title",
+        "formattedTitle",
         "frontmatter",
         "html",
         "assets",

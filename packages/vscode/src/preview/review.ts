@@ -9,6 +9,7 @@ import {
   fromContentPath,
   nextChangedPage,
   pageDetail,
+  pageLabel,
   sameBase,
 } from "./reviewText.js";
 import { ThreadsController, type ThreadsApi } from "./threads.js";
@@ -440,7 +441,7 @@ export class ReviewController implements vscode.Disposable {
     if (!result) return;
     type Item = vscode.QuickPickItem & { page?: ChangedPage; stop?: true };
     const items: Item[] = result.pages.map((page) => ({
-      label: page.title ?? page.path,
+      label: pageLabel(page),
       description: page.title === null ? "" : page.path,
       detail: pageDetail(page),
       page,
