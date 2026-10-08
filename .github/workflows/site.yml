@@ -28,6 +28,7 @@ jobs:
   build:
     name: check docs/, build and test site/
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       ASCRIBE_BIN: ${{ github.workspace }}/target/debug/ascribe
     steps:
@@ -46,6 +47,7 @@ jobs:
       - run: npm ci
         working-directory: site
       - run: npx playwright-core install --with-deps chromium
+        timeout-minutes: 5
         working-directory: site
       # The preview is built for its own address, so its links are right: as
       # `site` in [consumer] and in astro.config.mjs, which have to agree.
