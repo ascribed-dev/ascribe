@@ -67,6 +67,8 @@ Every image of the mark that something needs is generated from `mark.svg`, `word
 | `design/out/header-light.svg`, `header-dark.svg` | The header of `README.md` and `packages/vscode/README.md`, in GitHub's `<picture>` | The wordmark, 48 pixels tall, in the light and the dark text color |
 | `design/out/avatar.png` | The GitHub organization and the Marketplace publisher | 512 pixels, the full-color mark on white, inside the circle an avatar is cropped to |
 
+The colors come from `candidates/chosen.toml` because the chosen palette isn't in `tokens.toml` yet. When `tokens.toml` holds it, the script reads the colors from there instead, so the two can't drift.
+
 The SVGs are written in a fixed form (paths only, two decimals, no comments or metadata), so they're the same bytes on every platform. The PNGs come from `sharp`, whose output can differ slightly between platforms.
 
 After changing a source, rewrite them all and look at them:
