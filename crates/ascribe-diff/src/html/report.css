@@ -26,7 +26,7 @@
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: spacing, light. */
   --ascribe-space: 1rem;
   --ascribe-space-small: 0.5rem;
-  --ascribe-border-color: #d0d7de;
+  --ascribe-border-color: #e3e6ec;
   --ascribe-radius: 0.375rem;
   /* End of generated spacing. */
 
@@ -34,52 +34,52 @@
   --ascribe-text-color: inherit;
   --ascribe-surface-color: transparent;
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: text, light. */
-  --ascribe-muted-color: #57606a;
+  --ascribe-muted-color: #676c75;
   /* End of generated text. */
 
   /* Note types: an accent color and a tinted background each. */
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: notes, light. */
-  --ascribe-note-color: #0969da;
-  --ascribe-note-background: #ddf4ff;
-  --ascribe-tip-color: #1a7f37;
-  --ascribe-tip-background: #dafbe1;
-  --ascribe-important-color: #8250df;
-  --ascribe-important-background: #fbefff;
-  --ascribe-warning-color: #9a6700;
-  --ascribe-warning-background: #fff8c5;
-  --ascribe-caution-color: #cf222e;
-  --ascribe-caution-background: #ffebe9;
+  --ascribe-note-color: #474dc6;
+  --ascribe-note-background: #f5f6fe;
+  --ascribe-tip-color: #057256;
+  --ascribe-tip-background: #e1fff2;
+  --ascribe-important-color: #932f8e;
+  --ascribe-important-background: #fff2fd;
+  --ascribe-warning-color: #845502;
+  --ascribe-warning-background: #fef5eb;
+  --ascribe-caution-color: #a73303;
+  --ascribe-caution-background: #fef4f1;
   /* End of generated notes. */
 
   /* Steps */
   --ascribe-steps-marker-size: 1.75rem;
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: steps, light. */
-  --ascribe-steps-color: #0969da;
+  --ascribe-steps-color: #5962e8;
   --ascribe-steps-marker-text-color: #ffffff;
   /* End of generated steps. */
 
   /* Tabs */
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: tabs, light. */
-  --ascribe-tab-color: #57606a;
-  --ascribe-tab-active-color: #0969da;
-  --ascribe-tab-focus-color: #0969da;
-  --ascribe-tab-hover-background: #f6f8fa;
+  --ascribe-tab-color: #676c75;
+  --ascribe-tab-active-color: #5962e8;
+  --ascribe-tab-focus-color: #5962e8;
+  --ascribe-tab-hover-background: #f7f9fd;
   /* End of generated tabs. */
 
   /* Availability lifecycle states: an accent color and a background each. */
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light. */
-  --ascribe-state-color: #57606a;
-  --ascribe-state-background: #eaeef2;
-  --ascribe-state-ga-color: #1a7f37;
-  --ascribe-state-ga-background: #dafbe1;
-  --ascribe-state-preview-color: #8250df;
-  --ascribe-state-preview-background: #fbefff;
-  --ascribe-state-beta-color: #0969da;
-  --ascribe-state-beta-background: #ddf4ff;
-  --ascribe-state-deprecated-color: #9a6700;
-  --ascribe-state-deprecated-background: #fff8c5;
-  --ascribe-state-removed-color: #cf222e;
-  --ascribe-state-removed-background: #ffebe9;
+  --ascribe-state-color: #676c75;
+  --ascribe-state-background: #f0f3f7;
+  --ascribe-state-ga-color: #057256;
+  --ascribe-state-ga-background: #e1fff2;
+  --ascribe-state-preview-color: #932f8e;
+  --ascribe-state-preview-background: #fff2fd;
+  --ascribe-state-beta-color: #474dc6;
+  --ascribe-state-beta-background: #f5f6fe;
+  --ascribe-state-deprecated-color: #845502;
+  --ascribe-state-deprecated-background: #fef5eb;
+  --ascribe-state-removed-color: #a73303;
+  --ascribe-state-removed-background: #fef4f1;
   /* End of generated states. */
 }
 
@@ -89,51 +89,51 @@
 @supports (color: light-dark(#000, #fff)) {
   :root {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: spacing, light-dark. */
-    --ascribe-border-color: light-dark(#d0d7de, #3d444d);
+    --ascribe-border-color: light-dark(#e3e6ec, #393d46);
     /* End of generated spacing. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: text, light-dark. */
-    --ascribe-muted-color: light-dark(#57606a, #9198a1);
+    --ascribe-muted-color: light-dark(#676c75, #a5a9b2);
     /* End of generated text. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: notes, light-dark. */
-    --ascribe-note-color: light-dark(#0969da, #4493f8);
-    --ascribe-note-background: light-dark(#ddf4ff, #121d2f);
-    --ascribe-tip-color: light-dark(#1a7f37, #3fb950);
-    --ascribe-tip-background: light-dark(#dafbe1, #12261e);
-    --ascribe-important-color: light-dark(#8250df, #ab7df8);
-    --ascribe-important-background: light-dark(#fbefff, #1f1a33);
-    --ascribe-warning-color: light-dark(#9a6700, #d29922);
-    --ascribe-warning-background: light-dark(#fff8c5, #272115);
-    --ascribe-caution-color: light-dark(#cf222e, #f85149);
-    --ascribe-caution-background: light-dark(#ffebe9, #2d1517);
+    --ascribe-note-color: light-dark(#474dc6, #91a1fe);
+    --ascribe-note-background: light-dark(#f5f6fe, #161b3a);
+    --ascribe-tip-color: light-dark(#057256, #22c598);
+    --ascribe-tip-background: light-dark(#e1fff2, #02251a);
+    --ascribe-important-color: light-dark(#932f8e, #ffc8f9);
+    --ascribe-important-background: light-dark(#fff2fd, #2d132b);
+    --ascribe-warning-color: light-dark(#845502, #e0992e);
+    --ascribe-warning-background: light-dark(#fef5eb, #2b1a03);
+    --ascribe-caution-color: light-dark(#a73303, #fe7f57);
+    --ascribe-caution-background: light-dark(#fef4f1, #341308);
     /* End of generated notes. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: steps, light-dark. */
-    --ascribe-steps-color: light-dark(#0969da, #4493f8);
-    --ascribe-steps-marker-text-color: light-dark(#ffffff, #0d1117);
+    --ascribe-steps-color: light-dark(#5962e8, #91a1fe);
+    --ascribe-steps-marker-text-color: light-dark(#ffffff, #0c0f16);
     /* End of generated steps. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: tabs, light-dark. */
-    --ascribe-tab-color: light-dark(#57606a, #9198a1);
-    --ascribe-tab-active-color: light-dark(#0969da, #4493f8);
-    --ascribe-tab-focus-color: light-dark(#0969da, #4493f8);
-    --ascribe-tab-hover-background: light-dark(#f6f8fa, #151b23);
+    --ascribe-tab-color: light-dark(#676c75, #a5a9b2);
+    --ascribe-tab-active-color: light-dark(#5962e8, #91a1fe);
+    --ascribe-tab-focus-color: light-dark(#5962e8, #b3c0ff);
+    --ascribe-tab-hover-background: light-dark(#f7f9fd, #13171f);
     /* End of generated tabs. */
 
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: states, light-dark. */
-    --ascribe-state-color: light-dark(#57606a, #9198a1);
-    --ascribe-state-background: light-dark(#eaeef2, #212830);
-    --ascribe-state-ga-color: light-dark(#1a7f37, #3fb950);
-    --ascribe-state-ga-background: light-dark(#dafbe1, #12261e);
-    --ascribe-state-preview-color: light-dark(#8250df, #ab7df8);
-    --ascribe-state-preview-background: light-dark(#fbefff, #1f1a33);
-    --ascribe-state-beta-color: light-dark(#0969da, #4493f8);
-    --ascribe-state-beta-background: light-dark(#ddf4ff, #121d2f);
-    --ascribe-state-deprecated-color: light-dark(#9a6700, #d29922);
-    --ascribe-state-deprecated-background: light-dark(#fff8c5, #272115);
-    --ascribe-state-removed-color: light-dark(#cf222e, #f85149);
-    --ascribe-state-removed-background: light-dark(#ffebe9, #2d1517);
+    --ascribe-state-color: light-dark(#676c75, #a5a9b2);
+    --ascribe-state-background: light-dark(#f0f3f7, #22272e);
+    --ascribe-state-ga-color: light-dark(#057256, #22c598);
+    --ascribe-state-ga-background: light-dark(#e1fff2, #02251a);
+    --ascribe-state-preview-color: light-dark(#932f8e, #ffc8f9);
+    --ascribe-state-preview-background: light-dark(#fff2fd, #2d132b);
+    --ascribe-state-beta-color: light-dark(#474dc6, #91a1fe);
+    --ascribe-state-beta-background: light-dark(#f5f6fe, #161b3a);
+    --ascribe-state-deprecated-color: light-dark(#845502, #e0992e);
+    --ascribe-state-deprecated-background: light-dark(#fef5eb, #2b1a03);
+    --ascribe-state-removed-color: light-dark(#a73303, #fe7f57);
+    --ascribe-state-removed-background: light-dark(#fef4f1, #341308);
     /* End of generated states. */
   }
 
@@ -421,22 +421,22 @@ a[data-ascribe-term] {
 
 :root {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, light. */
-  --ascribe-review-added: #1a7f37;
-  --ascribe-review-added-background: #dcf7e3;
-  --ascribe-review-changed: #8a5a00;
-  --ascribe-review-changed-background: #fff1c2;
-  --ascribe-review-removed: #c4222d;
-  --ascribe-review-removed-background: #ffe4e2;
-  --ascribe-review-moved: #7a3fd0;
-  --ascribe-review-moved-background: #f0e6ff;
-  --ascribe-review-muted: #5b6475;
+  --ascribe-review-added: #057256;
+  --ascribe-review-added-background: #c7fae5;
+  --ascribe-review-changed: #845502;
+  --ascribe-review-changed-background: #fee9d0;
+  --ascribe-review-removed: #ca3f02;
+  --ascribe-review-removed-background: #fef4f1;
+  --ascribe-review-moved: #932f8e;
+  --ascribe-review-moved-background: #fff2fd;
+  --ascribe-review-muted: #676c75;
   --ascribe-review-surface: #ffffff;
-  --ascribe-review-flash: #fff6bf;
-  --ascribe-review-focus: #1f6feb;
+  --ascribe-review-flash: #fee9d0;
+  --ascribe-review-focus: #5962e8;
   --ascribe-review-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --ascribe-review-text: #1d2330;
-  --ascribe-review-border: #d3d8e0;
-  --ascribe-review-thread: #f5f7fb;
+  --ascribe-review-text: #22272e;
+  --ascribe-review-border: #e3e6ec;
+  --ascribe-review-thread: #f7f9fd;
   --ascribe-review-input: #ffffff;
   --ascribe-review-accent-text: #ffffff;
   /* End of generated root. */
@@ -446,23 +446,23 @@ a[data-ascribe-term] {
 @media (prefers-color-scheme: dark) {
   :root:not([data-ascribe-scheme="light"]) {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
-    --ascribe-review-added: #4fc572;
-    --ascribe-review-added-background: #133520;
-    --ascribe-review-changed: #dcb13a;
-    --ascribe-review-changed-background: #3a2f0d;
-    --ascribe-review-removed: #ff8279;
-    --ascribe-review-removed-background: #401918;
-    --ascribe-review-moved: #c59bff;
-    --ascribe-review-moved-background: #2d2440;
-    --ascribe-review-muted: #929bab;
-    --ascribe-review-surface: #1e2026;
-    --ascribe-review-flash: #3b3514;
-    --ascribe-review-focus: #5aa2ff;
-    --ascribe-review-text: #d9dde5;
-    --ascribe-review-border: #343a45;
-    --ascribe-review-thread: #272b33;
-    --ascribe-review-input: #1e2026;
-    --ascribe-review-accent-text: #0b1220;
+    --ascribe-review-added: #22c598;
+    --ascribe-review-added-background: #003929;
+    --ascribe-review-changed: #e0992e;
+    --ascribe-review-changed-background: #432900;
+    --ascribe-review-removed: #fe7f57;
+    --ascribe-review-removed-background: #511b0a;
+    --ascribe-review-moved: #ffc8f9;
+    --ascribe-review-moved-background: #461c43;
+    --ascribe-review-muted: #a5a9b2;
+    --ascribe-review-surface: #0c0f16;
+    --ascribe-review-flash: #432900;
+    --ascribe-review-focus: #b3c0ff;
+    --ascribe-review-text: #f0f3f7;
+    --ascribe-review-border: #393d46;
+    --ascribe-review-thread: #13171f;
+    --ascribe-review-input: #0c0f16;
+    --ascribe-review-accent-text: #0c0f16;
     /* End of generated root. */
     --ascribe-review-blend: screen;
   }
@@ -470,23 +470,23 @@ a[data-ascribe-term] {
 
 :root[data-ascribe-scheme="dark"] {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: root, dark. */
-  --ascribe-review-added: #4fc572;
-  --ascribe-review-added-background: #133520;
-  --ascribe-review-changed: #dcb13a;
-  --ascribe-review-changed-background: #3a2f0d;
-  --ascribe-review-removed: #ff8279;
-  --ascribe-review-removed-background: #401918;
-  --ascribe-review-moved: #c59bff;
-  --ascribe-review-moved-background: #2d2440;
-  --ascribe-review-muted: #929bab;
-  --ascribe-review-surface: #1e2026;
-  --ascribe-review-flash: #3b3514;
-  --ascribe-review-focus: #5aa2ff;
-  --ascribe-review-text: #d9dde5;
-  --ascribe-review-border: #343a45;
-  --ascribe-review-thread: #272b33;
-  --ascribe-review-input: #1e2026;
-  --ascribe-review-accent-text: #0b1220;
+  --ascribe-review-added: #22c598;
+  --ascribe-review-added-background: #003929;
+  --ascribe-review-changed: #e0992e;
+  --ascribe-review-changed-background: #432900;
+  --ascribe-review-removed: #fe7f57;
+  --ascribe-review-removed-background: #511b0a;
+  --ascribe-review-moved: #ffc8f9;
+  --ascribe-review-moved-background: #461c43;
+  --ascribe-review-muted: #a5a9b2;
+  --ascribe-review-surface: #0c0f16;
+  --ascribe-review-flash: #432900;
+  --ascribe-review-focus: #b3c0ff;
+  --ascribe-review-text: #f0f3f7;
+  --ascribe-review-border: #393d46;
+  --ascribe-review-thread: #13171f;
+  --ascribe-review-input: #0c0f16;
+  --ascribe-review-accent-text: #0c0f16;
   /* End of generated root. */
   --ascribe-review-blend: screen;
 }
@@ -783,16 +783,21 @@ a[data-ascribe-term] {
 :root {
   /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, light. */
   --r-page: #ffffff;
-  --r-ink: #1d2330;
-  --r-muted: #5b6475;
-  --r-side: #f3f4f7;
-  --r-line: #d3d8e0;
-  --r-accent: #1f6feb;
+  --r-ink: #22272e;
+  --r-muted: #676c75;
+  --r-side: #f7f9fd;
+  --r-line: #e3e6ec;
+  --r-accent: #5962e8;
   --r-accent-ink: #ffffff;
-  --r-code: #f0f2f6;
-  --r-notice: #fff6bf;
+  --r-code: #f7f9fd;
+  --r-notice: #fef5eb;
   --r-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --r-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-caption: 600 0.75rem/1.4;
+  --r-caption-size: 0.75rem;
+  --r-small: 400 0.875rem/1.5;
+  --r-body: 400 1rem/1.6;
+  --r-h1: 700 1.875rem/1.2;
   /* End of generated frame. */
   color-scheme: light dark;
 }
@@ -800,47 +805,49 @@ a[data-ascribe-term] {
 @media (prefers-color-scheme: dark) {
   :root {
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, dark. */
-    --r-page: #1e2026;
-    --r-ink: #d9dde5;
-    --r-muted: #929bab;
-    --r-side: #23262d;
-    --r-line: #343a45;
-    --r-accent: #5aa2ff;
-    --r-accent-ink: #0b1220;
-    --r-code: #282c35;
-    --r-notice: #3b3514;
+    --r-page: #0c0f16;
+    --r-ink: #f0f3f7;
+    --r-muted: #a5a9b2;
+    --r-side: #13171f;
+    --r-line: #393d46;
+    --r-accent: #91a1fe;
+    --r-accent-ink: #0c0f16;
+    --r-code: #13171f;
+    --r-notice: #2b1a03;
     /* End of generated frame. */
 
     /* The element library's colors, for a dark page. */
     /* Generated from design/tokens.toml by scripts/design/tokens.ts: elements, dark. */
-    --ascribe-border-color: #343a45;
-    --ascribe-muted-color: #929bab;
-    --ascribe-note-color: #5aa2ff;
-    --ascribe-note-background: #172a45;
-    --ascribe-tip-color: #4fc572;
-    --ascribe-tip-background: #133520;
-    --ascribe-important-color: #c59bff;
-    --ascribe-important-background: #2d2440;
-    --ascribe-warning-color: #dcb13a;
-    --ascribe-warning-background: #3a2f0d;
-    --ascribe-caution-color: #ff8279;
-    --ascribe-caution-background: #401918;
-    --ascribe-steps-color: #5aa2ff;
-    --ascribe-steps-marker-text-color: #0b1220;
-    --ascribe-tab-color: #929bab;
-    --ascribe-tab-active-color: #5aa2ff;
-    --ascribe-tab-focus-color: #5aa2ff;
-    --ascribe-tab-hover-background: #272b33;
-    --ascribe-state-color: #929bab;
-    --ascribe-state-background: #272b33;
-    --ascribe-state-ga-color: #4fc572;
-    --ascribe-state-ga-background: #133520;
-    --ascribe-state-preview-color: #c59bff;
-    --ascribe-state-preview-background: #2d2440;
-    --ascribe-state-beta-color: #5aa2ff;
-    --ascribe-state-beta-background: #172a45;
-    --ascribe-state-deprecated-color: #dcb13a;
-    --ascribe-state-deprecated-background: #3a2f0d;
+    --ascribe-border-color: #393d46;
+    --ascribe-muted-color: #a5a9b2;
+    --ascribe-note-color: #91a1fe;
+    --ascribe-note-background: #161b3a;
+    --ascribe-tip-color: #22c598;
+    --ascribe-tip-background: #02251a;
+    --ascribe-important-color: #ffc8f9;
+    --ascribe-important-background: #2d132b;
+    --ascribe-warning-color: #e0992e;
+    --ascribe-warning-background: #2b1a03;
+    --ascribe-caution-color: #fe7f57;
+    --ascribe-caution-background: #341308;
+    --ascribe-steps-color: #91a1fe;
+    --ascribe-steps-marker-text-color: #0c0f16;
+    --ascribe-tab-color: #a5a9b2;
+    --ascribe-tab-active-color: #91a1fe;
+    --ascribe-tab-focus-color: #b3c0ff;
+    --ascribe-tab-hover-background: #13171f;
+    --ascribe-state-color: #a5a9b2;
+    --ascribe-state-background: #22272e;
+    --ascribe-state-ga-color: #22c598;
+    --ascribe-state-ga-background: #02251a;
+    --ascribe-state-preview-color: #ffc8f9;
+    --ascribe-state-preview-background: #2d132b;
+    --ascribe-state-beta-color: #91a1fe;
+    --ascribe-state-beta-background: #161b3a;
+    --ascribe-state-deprecated-color: #e0992e;
+    --ascribe-state-deprecated-background: #2b1a03;
+    --ascribe-state-removed-color: #fe7f57;
+    --ascribe-state-removed-background: #341308;
     /* End of generated elements. */
   }
 }
@@ -858,7 +865,7 @@ body {
 body {
   background: var(--r-page);
   color: var(--r-ink);
-  font: 14px/1.5 var(--r-ui);
+  font: var(--r-small) var(--r-ui);
 }
 
 .r {
@@ -875,7 +882,7 @@ body {
 
 .r-sub {
   color: var(--r-muted);
-  font-size: 12.5px;
+  font-size: var(--r-caption-size);
 }
 
 .r-head .r-notice {
@@ -899,7 +906,7 @@ body {
 
 .r-side h2,
 .r-side h3 {
-  font-size: 12px;
+  font: var(--r-caption) var(--r-ui);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--r-muted);
@@ -908,7 +915,7 @@ body {
 
 .r-build {
   display: block;
-  font-size: 12px;
+  font-size: var(--r-caption-size);
   color: var(--r-muted);
   margin-bottom: 4px;
 }
@@ -964,19 +971,19 @@ body {
 .r-page-via {
   display: block;
   font-family: var(--r-mono);
-  font-size: 11.5px;
+  font-size: var(--r-caption-size);
   color: var(--r-muted);
   overflow-wrap: anywhere;
 }
 
 .r-page-counts {
   display: block;
-  font-size: 12px;
+  font-size: var(--r-caption-size);
 }
 
 .r-omitted li {
   font-family: var(--r-mono);
-  font-size: 11.5px;
+  font-size: var(--r-caption-size);
   color: var(--r-muted);
   padding: 2px 8px;
 }
@@ -1012,12 +1019,11 @@ body {
 }
 
 .r-show {
-  font-size: 12px;
+  font-size: var(--r-caption-size);
   color: var(--r-muted);
 }
 
 .r-quiet {
-  font-size: 13px;
   color: var(--r-muted);
 }
 
@@ -1033,7 +1039,6 @@ body {
 .r-primary,
 .r-link {
   font: inherit;
-  font-size: 13px;
   color: inherit;
   background: transparent;
   border: 0;
@@ -1074,7 +1079,7 @@ body {
 }
 
 .r-legend {
-  font-size: 12.5px;
+  font-size: var(--r-caption-size);
   color: var(--r-muted);
   margin-top: 6px;
 }
@@ -1103,12 +1108,12 @@ body {
   border-radius: 4px;
   padding: 8px 12px;
   color: var(--r-muted);
-  font-size: 12.5px;
+  font-size: var(--r-caption-size);
 }
 
 /* The page: Ascribe's bare render, in a readable measure. */
 .r-page-heading {
-  font-size: 1.9em;
+  font: var(--r-h1) var(--r-ui);
   margin: 8px 0 12px;
 }
 
@@ -1116,8 +1121,7 @@ body {
   position: relative;
   max-width: 46rem;
   padding-left: 12px;
-  font-size: 16px;
-  line-height: 1.6;
+  font: var(--r-body) var(--r-ui);
 }
 
 .r-page img {

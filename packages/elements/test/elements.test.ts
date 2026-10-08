@@ -228,8 +228,8 @@ describe.each(ENGINES)("%s", (engine) => {
   });
 
   describe("light and dark", () => {
-    const LIGHT = "rgb(9, 105, 218)";
-    const DARK = "rgb(68, 147, 248)";
+    const LIGHT = "rgb(71, 77, 198)";
+    const DARK = "rgb(145, 161, 254)";
     const optIn = "<style>:root { color-scheme: light dark; }</style>";
 
     async function noteColor(
@@ -491,7 +491,7 @@ describe.each(ENGINES)("%s", (engine) => {
       context = await browser.newContext({ colorScheme: "dark" });
       const page = await open(
         context,
-        `<style>:root { color-scheme: light dark; background: #0d1117; color: #e6edf3; }</style>${ALL}`,
+        `<style>:root { color-scheme: light dark; background: #0c0f16; color: #f0f3f7; }</style>${ALL}`,
       );
       expect(await audit(page)).toEqual([]);
       await context.close();
