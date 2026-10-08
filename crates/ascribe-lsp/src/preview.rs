@@ -28,7 +28,9 @@ use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{AssetUse, LineIndex, RelPath, WideEncoding};
 use ascribe_diff::{BaseInfo, PageDiff, PageStatus, Side};
 use ascribe_emit::assets::encode_path;
-use ascribe_emit::{EmitContext, SiteEmitter, emit_page, render_site_html};
+use ascribe_emit::{
+    EmitContext, FormattedPiece, SiteEmitter, emit_page, formatted_title, render_site_html,
+};
 use ascribe_model::{AvailabilityMode, Build, ContentModel, VariantMode};
 use ascribe_resolve::{AstroRouter, DropReason, FileKind, LinkTarget, ResolvedBlock, Snapshot};
 use lsp_types::{TextDocumentIdentifier, Uri};
@@ -137,6 +139,9 @@ pub struct PreviewPage {
     pub route: String,
     /// The page's title (its frontmatter `title`, phrases substituted).
     pub title: Option<String>,
+    /// The title formatted, when its field sets `inline = "code"`: for the
+    /// page's heading. `title` stays the plain text.
+    pub formatted_title: Option<Vec<FormattedPiece>>,
     /// The frontmatter the site output writes, as JSON: `available` is the
     /// list of targets a layout passes to `<ascribe-availability>`.
     #[cfg_attr(
@@ -584,6 +589,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
         path: path.to_string(),
         route: page.route.clone(),
         title: page.title.clone(),
+        formatted_title: formatted_title(&page),
         frontmatter,
         html: render_site_html(body),
         assets,

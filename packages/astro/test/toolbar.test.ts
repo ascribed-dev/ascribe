@@ -213,7 +213,7 @@ describe("what the app says", () => {
   });
 
   it("names the next changed page by its title, or its route without one", () => {
-    const page = { ...changed("install.md"), title: "Install Loom" };
+    const page = { ...changed("install.md"), title: "Install Loom", formatted_title: null };
     expect(nextPageText({ page, first: false })).toBe("Next changed page: Install Loom");
     expect(nextPageText({ page: { ...page, title: null }, first: true })).toBe(
       "First changed page: /docs/install",

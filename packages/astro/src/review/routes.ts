@@ -3,6 +3,7 @@
 // output doesn't say.
 import { open, readFile } from "node:fs/promises";
 import path from "node:path";
+import type { FormattedPiece } from "@ascribed/review/overlay";
 
 /** A route as compared: decoded, without a trailing `/` (except the root's). */
 export function normalizeRoute(route: string): string {
@@ -21,10 +22,19 @@ export interface RoutedPage {
   /** The content path. */
   path: string;
   title: string | null;
+  /** The title formatted, when its field sets `inline = "code"`. */
+  formatted_title: FormattedPiece[] | null;
 }
 
-/** How much of a page's JSON to read: its `path`, `route`, and `title` come first. */
-const HEAD_BYTES = 4096;
+/** How much of a page's JSON to read at a time. */
+const CHUNK_BYTES = 4096;
+
+/**
+ * Where the page's own keys end in the JSON output, which writes it
+ * pretty-printed: `availability` comes after `path`, `route`, `title`,
+ * `frontmatter`, and `formatted`, and before the page's blocks.
+ */
+const AFTER_HEAD = Buffer.from('\n  "availability":');
 
 /**
  * Every page of the build's JSON output (`<output-dir>/<build>/json/`), by
@@ -45,59 +55,64 @@ export async function readRoutes(jsonRoot: string): Promise<Map<string, RoutedPa
     files.map(async (entry) => {
       if (entry.kind !== "page" || typeof entry.path !== "string") return;
       const page = await readHead(path.join(jsonRoot, ...entry.path.split("/")));
-      if (page) routes.set(normalizeRoute(page.route), { path: page.path, title: page.title });
+      if (page) {
+        const { route, ...routed } = page;
+        routes.set(normalizeRoute(route), routed);
+      }
     }),
   );
   return routes;
 }
 
-/** A page's `path`, `route`, and `title`, from the start of its JSON, or the whole of it if need be. */
-async function readHead(
-  file: string,
-): Promise<{ path: string; route: string; title: string | null } | undefined> {
-  let head = "";
+/**
+ * A page's `path`, `route`, `title`, and formatted title, from the start of
+ * its JSON up to `availability`, or the whole of it if need be.
+ */
+async function readHead(file: string): Promise<(RoutedPage & { route: string }) | undefined> {
+  let text: string;
   try {
     const handle = await open(file, "r");
     try {
-      const buffer = Buffer.alloc(HEAD_BYTES);
-      const { bytesRead } = await handle.read(buffer, 0, HEAD_BYTES, 0);
-      head = buffer.subarray(0, bytesRead).toString("utf8");
+      const chunks: Buffer[] = [];
+      let read = 0;
+      let end = -1;
+      for (;;) {
+        const buffer = Buffer.alloc(CHUNK_BYTES);
+        const { bytesRead } = await handle.read(buffer, 0, CHUNK_BYTES, read);
+        if (bytesRead === 0) break;
+        chunks.push(buffer.subarray(0, bytesRead));
+        read += bytesRead;
+        // The marker may straddle two chunks, so look from just before this one.
+        end = Buffer.concat(chunks).indexOf(
+          AFTER_HEAD,
+          Math.max(0, read - bytesRead - AFTER_HEAD.length),
+        );
+        if (end >= 0) break;
+      }
+      const all = Buffer.concat(chunks);
+      // The keys before `availability`, closed as an object of their own.
+      text =
+        end >= 0
+          ? `${all.subarray(0, end).toString("utf8").replace(/,\s*$/, "")}}`
+          : all.toString("utf8");
     } finally {
       await handle.close();
     }
   } catch {
     return undefined;
   }
-  const field = (name: string): string | undefined => {
-    const match = new RegExp(`"${name}"\\s*:\\s*("(?:[^"\\\\]|\\\\.)*")`).exec(head);
-    if (!match?.[1]) return undefined;
-    try {
-      return JSON.parse(match[1]) as string;
-    } catch {
-      return undefined;
-    }
-  };
-  // The page's own keys come before `frontmatter`, so the first of each is the page's.
-  const pagePath = field("path");
-  const route = field("route");
-  const title = field("title");
-  if (pagePath !== undefined && route !== undefined && title !== undefined) {
-    return { path: pagePath, route, title };
-  }
+  let page: { path?: unknown; route?: unknown; title?: unknown; formatted?: { title?: unknown } };
   try {
-    const page = JSON.parse(await readFile(file, "utf8")) as {
-      path?: unknown;
-      route?: unknown;
-      title?: unknown;
-    };
-    return typeof page.path === "string" && typeof page.route === "string"
-      ? {
-          path: page.path,
-          route: page.route,
-          title: typeof page.title === "string" ? page.title : null,
-        }
-      : undefined;
+    page = JSON.parse(text) as typeof page;
   } catch {
     return undefined;
   }
+  if (typeof page.path !== "string" || typeof page.route !== "string") return undefined;
+  const formatted = page.formatted?.title;
+  return {
+    path: page.path,
+    route: page.route,
+    title: typeof page.title === "string" ? page.title : null,
+    formatted_title: Array.isArray(formatted) ? (formatted as FormattedPiece[]) : null,
+  };
 }

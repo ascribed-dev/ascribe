@@ -114,8 +114,18 @@ function serve(init: Partial<ReviewServerOptions> = {}) {
   const readRoutes = vi.fn(
     async () =>
       new Map([
-        ["/docs/plain", { path: "plain.md", title: "Plain" }],
-        ["/docs/guide", { path: "guide.md", title: "The guide" }],
+        ["/docs/plain", { path: "plain.md", title: "Plain", formatted_title: null }],
+        [
+          "/docs/guide",
+          {
+            path: "guide.md",
+            title: "The guide",
+            formatted_title: [
+              { type: "text" as const, value: "The " },
+              { type: "code" as const, value: "guide" },
+            ],
+          },
+        ],
       ]),
   );
   const server = new ReviewServer({
@@ -174,10 +184,17 @@ describe("ReviewServer", () => {
       pullRequest: { number: 7, url: "https://github.com/acme/docs/pull/7", baseRefName: "main" },
       local: { state: "same", behind: 0, ahead: 0 },
     });
-    expect(view.changedPages.map((p) => [p.path, p.title])).toEqual([
-      ["guide.md", "The guide"],
+    expect(view.changedPages.map((p) => [p.path, p.title, p.formatted_title])).toEqual([
+      [
+        "guide.md",
+        "The guide",
+        [
+          { type: "text", value: "The " },
+          { type: "code", value: "guide" },
+        ],
+      ],
       // A removed page isn't in the build, so it has no title.
-      ["gone.md", null],
+      ["gone.md", null, null],
     ]);
     expect(view.changedPages[0]).not.toHaveProperty("changes");
     expect(view.contentRoot).toBe("/p/content");
@@ -240,6 +257,37 @@ describe("ReviewServer", () => {
       "Shown text",
     ]);
     expect(channel.broadcasts).toContainEqual({ event: CHANGED_EVENT, payload: { from: "t2" } });
+  });
+
+  it("lists every thread with the titles of the pages that show it", async () => {
+    const { session } = fakeSession();
+    (session as unknown as Record<string, unknown>)["allThreads"] = async () => [
+      { id: "T1", path: "guide.md" },
+    ];
+    const { channel } = serve({
+      connect: async () => ({
+        state: "on",
+        session,
+        base: "origin/main",
+        local: { state: "same", behind: 0, ahead: 0 },
+      }),
+    });
+    await channel.request("start");
+    expect((await channel.request("allThreads", {})).result).toEqual([
+      {
+        thread: { id: "T1", path: "guide.md" },
+        pages: [
+          {
+            path: "guide.md",
+            title: "The guide",
+            formatted_title: [
+              { type: "text", value: "The " },
+              { type: "code", value: "guide" },
+            ],
+          },
+        ],
+      },
+    ]);
   });
 
   it("answers a failure with its message and code", async () => {

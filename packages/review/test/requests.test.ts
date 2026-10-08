@@ -21,14 +21,15 @@ function changed(
 
 describe("pagesShowing", () => {
   it("lists the file's own page first, then the pages that include it, never removed ones", () => {
+    const code = [{ type: "code", value: "a" } as const];
     const pages = [
-      changed("a.md", ["_f/note.md"]),
+      { ...changed("a.md", ["_f/note.md"]), formatted_title: code },
       changed("_f/note.md"),
       changed("gone.md", ["_f/note.md"], "removed"),
     ];
     expect(pagesShowing("_f/note.md", pages)).toEqual([
-      { path: "_f/note.md", title: "_F/NOTE.MD" },
-      { path: "a.md", title: "A.MD" },
+      { path: "_f/note.md", title: "_F/NOTE.MD", formatted_title: null },
+      { path: "a.md", title: "A.MD", formatted_title: code },
     ]);
     expect(pagesShowing("other.md", pages)).toEqual([]);
   });
@@ -159,7 +160,10 @@ describe("answerRequest", () => {
     const { session } = fakeSession();
     const answer = await answerRequest(context(session), "allThreads", {});
     expect(answer.result).toEqual([
-      { thread: { id: "T1", path: "a.md" }, pages: [{ path: "a.md", title: "A.MD" }] },
+      {
+        thread: { id: "T1", path: "a.md" },
+        pages: [{ path: "a.md", title: "A.MD", formatted_title: null }],
+      },
     ]);
   });
 

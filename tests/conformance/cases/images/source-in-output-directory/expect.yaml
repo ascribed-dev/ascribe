@@ -1,6 +1,7 @@
 description: >-
   A reference into the output directory is reported as not existing, though
-  the file is there.
+  the file is there. The case directory is the project root, so the output
+  directory is `.ascribe/build` beside `files/`, where the image is.
 spec: ["5.3", "9.4", "8.2"]
 tags: [check]
 

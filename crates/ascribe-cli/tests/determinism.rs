@@ -327,9 +327,17 @@ fn every_output_is_the_same_twice() {
         projects.iter().any(|p| p == "docs") && projects.len() > 2,
         "too few projects: {projects:?}"
     );
-    let (first, second) = (copy(&files), copy(&files));
-    let a = run_all(first.path(), &projects);
-    let b = run_all(second.path(), &projects);
+    // The two copies run at the same time, to halve the test's time; each
+    // command is still a process of its own, in a directory of its own.
+    let run = || run_all(copy(&files).path(), &projects);
+    let (a, b) = std::thread::scope(|s| {
+        let first = s.spawn(run);
+        let second = run();
+        let first = first
+            .join()
+            .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+        (first, second)
+    });
 
     let mut differences = Vec::new();
     for name in a.keys().chain(b.keys().filter(|k| !a.contains_key(*k))) {

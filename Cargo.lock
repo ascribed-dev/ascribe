@@ -207,6 +207,7 @@ dependencies = [
  "html5ever",
  "insta",
  "markup5ever_rcdom",
+ "schemars",
  "serde",
  "serde_json",
  "serde_yaml_ng",

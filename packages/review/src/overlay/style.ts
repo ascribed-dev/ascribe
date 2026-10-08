@@ -320,7 +320,8 @@ svg.connector path {
   padding-left: 8px;
   color: var(--muted);
 }
-.body code {
+.body code,
+.thread-list .where code {
   font-family: var(--mono);
   font-size: 0.92em;
   background: color-mix(in srgb, var(--muted) 14%, transparent);

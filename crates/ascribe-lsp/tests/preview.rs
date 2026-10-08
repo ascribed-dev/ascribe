@@ -62,6 +62,8 @@ fn renders_the_quill_page_as_the_site_does() {
     assert_eq!(result["problems"], json!([]));
     assert_eq!(result["page"]["path"], "install-agent.md");
     assert_eq!(result["page"]["title"], "Install the Quill agent");
+    // Its title's field doesn't set `inline`.
+    assert_eq!(result["page"]["formattedTitle"], Value::Null);
     assert_eq!(result["page"]["route"], "/install-agent/");
     let html = html(&result);
     // Tabs, a note, steps, badges: the element contract's markup.

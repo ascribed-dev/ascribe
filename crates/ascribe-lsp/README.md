@@ -129,6 +129,7 @@ and `problems` says why. Field names are camelCase.
 | `problems` | `{ severity: "error" \| "warning" \| "info", message }`: no project, an unknown build, a file that isn't a page (a fragment names the pages that include it), a page the build drops, an emit error, an asset the preview can't show. |
 | `page.path`, `page.route` | The page's content path and its route on the site. |
 | `page.title` | The page's title, phrases substituted. |
+| `page.formattedTitle` | The title formatted, when its field sets `inline = "code"`: a list of `{ type: "text" \| "code", value }` pieces, as the JSON output's `formatted.title`, for the preview's heading. `null` when the field doesn't set `inline`. |
 | `page.frontmatter` | What the site output writes as frontmatter, as JSON. `available` is the list of targets a layout hands to `<ascribe-availability>`. |
 | `page.html` | The page's content as HTML, with source anchors, without frontmatter and without a layout. |
 | `page.assets` | Each asset the page uses: `{ reference, path, kind, servable }`. `reference` is what the HTML writes, before any `#fragment`: an image's `src` is relative to the page (`./_fragments/a.png`), a link target's `href` is the site URL. `path` is the absolute source file, **resolved from the file the reference is written in** (asset contract §7), so a fragment's image is the one beside the fragment. `servable` is `true` when the file is in the content root or in a directory of `assetRoots`; a file directly in the project root, in `node_modules` or `.git`, or in the output directory isn't served, and `problems` says so. References are percent-encoded as URLs are; compare them after normalizing (`packages/vscode/src/preview/refs.ts` does). |
@@ -175,7 +176,8 @@ that fails leaves the one set before.
 build by default) lists the build's changed pages against the base, computed
 from the current snapshot, so unsaved edits count. The result is
 `{ build, base, contentRoot, pages, problem }`: `pages` are `ascribe diff`'s
-pages without their `changes`, each with its `title`, in path order;
+pages without their `changes`, each with its `title` and `formatted_title`
+(the title's pieces, as `page.formattedTitle`, or `null`), in path order;
 `problem` is set when review is off. It compares every page of the build, so
 it's for listing on demand, not per keystroke: the preview's `review: true`
 compares only its page (`ascribe_diff::compare_page_in`). The base keeps the

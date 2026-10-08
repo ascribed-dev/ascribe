@@ -9,6 +9,7 @@ import {
   causes,
   nextChangedPage,
   pageDetail,
+  pageLabel,
   parseSource,
   sameBase,
 } from "../../src/preview/reviewText.js";
@@ -23,9 +24,32 @@ function page(over: Partial<ChangedPage> = {}): ChangedPage {
     page_changed: [],
     counts: { changed: 5, added: 3, removed: 1, moved: 1 },
     title: "Install",
+    formatted_title: null,
     ...over,
   };
 }
+
+describe("pageLabel", () => {
+  it("writes a formatted title's code spans between backticks", () => {
+    expect(pageLabel(page())).toBe("Install");
+    expect(pageLabel(page({ title: null }))).toBe("guides/install.md");
+    expect(
+      pageLabel(
+        page({
+          title: "ascribe.toml reference",
+          formatted_title: [
+            { type: "code", value: "ascribe.toml" },
+            { type: "text", value: " reference" },
+          ],
+        }),
+      ),
+    ).toBe("`ascribe.toml` reference");
+    // A code span with backticks in it takes a longer fence.
+    expect(pageLabel(page({ formatted_title: [{ type: "code", value: "`a` b" }] }))).toBe(
+      "`` `a` b ``",
+    );
+  });
+});
 
 describe("pageDetail", () => {
   it("counts each kind of change, leaving out kinds with none", () => {

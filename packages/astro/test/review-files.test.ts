@@ -55,6 +55,7 @@ describe("routes", () => {
           { path: "index.json", kind: "page" },
           { path: "weave.png", kind: "asset" },
           { path: "missing.json", kind: "page" },
+          { path: "keys.json", kind: "page" },
         ],
       }),
     );
@@ -68,15 +69,53 @@ describe("routes", () => {
         frontmatter: { title: 'My "setup"' },
       }),
     );
-    // A route past the part read first, and no title: read the whole file.
+    // Not pretty-printed, so no `availability` line ends what is read: read the whole file.
     writeFileSync(
       path.join(json, "index.json"),
       JSON.stringify({ padding: "x".repeat(5000), path: "index.md", route: "/docs/" }),
     );
+    // As the JSON output writes it: pretty-printed, the formatted title
+    // before `availability`, and the blocks, read no further, after it.
+    writeFileSync(
+      path.join(json, "keys.json"),
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          path: "keys.md",
+          route: "/docs/keys",
+          title: "ascribe.toml keys",
+          frontmatter: { title: "ascribe.toml keys", notes: "x".repeat(5000) },
+          formatted: {
+            title: [
+              { type: "code", value: "ascribe.toml" },
+              { type: "text", value: " keys" },
+            ],
+          },
+          availability: null,
+          blocks: [],
+        },
+        null,
+        2,
+      ).replace('"blocks": []', '"blocks": [ cut off'),
+    );
     const routes = await readRoutes(json);
     expect([...routes.entries()].sort(([a], [b]) => a.localeCompare(b))).toEqual([
-      ["/docs", { path: "index.md", title: null }],
-      ["/docs/guides/my-setup", { path: "Guides/My Setup.md", title: 'My "setup"' }],
+      ["/docs", { path: "index.md", title: null, formatted_title: null }],
+      [
+        "/docs/guides/my-setup",
+        { path: "Guides/My Setup.md", title: 'My "setup"', formatted_title: null },
+      ],
+      [
+        "/docs/keys",
+        {
+          path: "keys.md",
+          title: "ascribe.toml keys",
+          formatted_title: [
+            { type: "code", value: "ascribe.toml" },
+            { type: "text", value: " keys" },
+          ],
+        },
+      ],
     ]);
     expect((await readRoutes(path.join(temp(), "json"))).size).toBe(0);
   });

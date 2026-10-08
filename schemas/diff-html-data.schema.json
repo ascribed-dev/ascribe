@@ -204,6 +204,24 @@
       ],
       "type": "object"
     },
+    "FormattedPiece": {
+      "description": "A piece of a formatted value, as the JSON output writes it:\n`{ \"type\": \"text\" | \"code\", \"value\": … }`. Other JSON that shows a\nformatted title, such as the review report's, writes it the same way.",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/PieceKind",
+          "description": "What the piece is."
+        },
+        "value": {
+          "description": "Its text: a code span's content without its backticks.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "type": "object"
+    },
     "ImageRef": {
       "description": "An image a page refers to.",
       "properties": {
@@ -276,6 +294,16 @@
           "$ref": "#/$defs/Counts",
           "description": "How many changes of each kind."
         },
+        "formatted_title": {
+          "description": "Its title formatted, when its field sets `inline = \"code\"`: for the\npage list and the page's heading. `title` stays the plain text.",
+          "items": {
+            "$ref": "#/$defs/FormattedPiece"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "now": {
           "description": "The page now, as a key of `pages`; `null` when there's none.",
           "type": [
@@ -335,6 +363,7 @@
         "counts",
         "changes",
         "title",
+        "formatted_title",
         "now",
         "was",
         "omitted"
@@ -357,6 +386,21 @@
         {
           "const": "changed",
           "description": "The build publishes it in both, and it differs.",
+          "type": "string"
+        }
+      ]
+    },
+    "PieceKind": {
+      "description": "What a piece of a formatted value is.",
+      "oneOf": [
+        {
+          "const": "text",
+          "description": "Text.",
+          "type": "string"
+        },
+        {
+          "const": "code",
+          "description": "A code span.",
           "type": "string"
         }
       ]

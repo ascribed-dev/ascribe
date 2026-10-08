@@ -30,7 +30,9 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_core::RelPath;
 use ascribe_core::path::normalize;
+use ascribe_diff::html::PageTitle;
 use ascribe_diff::{Base, BaseInfo, DiffError, PageDiff, Repository, Revision, Side};
+use ascribe_emit::formatted_title;
 use ascribe_model::ContentModel;
 use ascribe_resolve::{AstroRouter, Project, Snapshot, Version};
 use serde::{Deserialize, Deserializer, Serialize};
@@ -97,7 +99,7 @@ pub struct ChangesResult {
     /// The content root, as a path, which the pages' paths are relative to.
     pub content_root: Option<String>,
     /// The changed pages, in path order: `ascribe diff`'s pages without their
-    /// `changes`, each with its `title`.
+    /// `changes`, each with its `title` and `formatted_title`.
     #[cfg_attr(feature = "json-schema", schemars(schema_with = "changed_pages"))]
     pub pages: Vec<Json>,
     /// Why there are no pages to list, when that isn't because nothing
@@ -320,27 +322,33 @@ pub(crate) fn changes(target: Option<&ChangesTarget>, build_name: Option<&str>) 
         .map(|p| AstroRouter::from_consumer(&p.model().consumer));
     for diff in diffs.into_iter().flat_map(|b| b.pages) {
         let path = RelPath::parse(&diff.path).ok();
+        let title_of = |page: ascribe_resolve::ResolvedPage| PageTitle {
+            formatted: formatted_title(&page),
+            plain: page.title,
+        };
         let title = path.as_ref().and_then(|path| {
             let now = target
                 .snapshot
                 .resolve_page(path, build, &router)
-                .and_then(|p| p.title.clone());
+                .map(title_of)
+                .filter(|t| t.plain.is_some());
             now.or_else(|| {
                 let project = review.project.as_ref()?;
                 let build = project.model().build(&build.name)?;
                 project
                     .resolve_page(path, build, base_router.as_ref()?)
-                    .and_then(|p| p.title)
+                    .map(title_of)
             })
         });
-        result.pages.push(summary(diff, title));
+        result.pages.push(summary(diff, title.unwrap_or_default()));
     }
     *last = Some((key, result.clone()));
     result
 }
 
 /// The schema of [`ChangesResult::pages`], which [`summary`] writes: each a
-/// `ChangedPage`, `ascribe diff`'s page without `changes`, with `title`.
+/// `ChangedPage`, `ascribe diff`'s page without `changes`, with `title` and
+/// `formatted_title`.
 #[cfg(feature = "json-schema")]
 fn changed_pages(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
     use schemars::JsonSchema as _;
@@ -351,13 +359,21 @@ fn changed_pages(generator: &mut schemars::SchemaGenerator) -> schemars::Schema 
         "description".to_owned(),
         "The page's title; `null` when it has none.".into(),
     );
+    let mut formatted = generator.subschema_for::<Option<Vec<ascribe_emit::FormattedPiece>>>();
+    formatted.insert(
+        "description".to_owned(),
+        "The title formatted, when its field sets `inline = \"code\"`; `null` when it doesn't."
+            .into(),
+    );
     if let Some(properties) = page.get_mut("properties").and_then(Json::as_object_mut) {
         properties.remove("changes");
         properties.insert("title".to_owned(), title.into());
+        properties.insert("formatted_title".to_owned(), formatted.into());
     }
     if let Some(required) = page.get_mut("required").and_then(Json::as_array_mut) {
         required.retain(|name| name != "changes");
         required.push("title".into());
+        required.push("formatted_title".into());
     }
     page.insert(
         "description".to_owned(),
@@ -375,11 +391,18 @@ fn changed_pages(generator: &mut schemars::SchemaGenerator) -> schemars::Schema 
 
 /// A changed page as the list shows it: `ascribe diff`'s page without its
 /// block changes, and its title.
-fn summary(diff: PageDiff, title: Option<String>) -> Json {
+fn summary(diff: PageDiff, title: PageTitle) -> Json {
     let mut value = serde_json::to_value(diff).unwrap_or(Json::Null);
     if let Json::Object(map) = &mut value {
         map.remove("changes");
-        map.insert("title".to_owned(), title.map_or(Json::Null, Json::String));
+        map.insert(
+            "title".to_owned(),
+            title.plain.map_or(Json::Null, Json::String),
+        );
+        map.insert(
+            "formatted_title".to_owned(),
+            serde_json::to_value(title.formatted).unwrap_or(Json::Null),
+        );
     }
     value
 }

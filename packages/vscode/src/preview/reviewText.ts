@@ -29,6 +29,26 @@ export function sameBase(a: BaseInfo, b: BaseInfo): boolean {
   return a.requested === b.requested && a.commit === b.commit && a.merge_base === b.merge_base;
 }
 
+/**
+ * A changed page's label in the list: its title, or its path when it has
+ * none. A quick pick shows text only, so a formatted title's code spans are
+ * written as Markdown writes them, between backticks.
+ */
+export function pageLabel(page: Pick<ChangedPage, "path" | "title" | "formatted_title">): string {
+  if (!page.formatted_title || page.formatted_title.length === 0) return page.title ?? page.path;
+  return page.formatted_title
+    .map((piece) => (piece.type === "code" ? codeSpan(piece.value) : piece.value))
+    .join("");
+}
+
+/** `value` as a Markdown code span: fenced by one more backtick than its longest run. */
+function codeSpan(value: string): string {
+  const longest = Math.max(0, ...(value.match(/`+/g) ?? []).map((run) => run.length));
+  const fence = "`".repeat(longest + 1);
+  const pad = value.startsWith("`") || value.endsWith("`") ? " " : "";
+  return `${fence}${pad}${value}${pad}${fence}`;
+}
+
 /** A changed page's detail in the list: its counts, and what it changed through. */
 export function pageDetail(page: Omit<PageDiff, "changes">): string {
   let text: string;
