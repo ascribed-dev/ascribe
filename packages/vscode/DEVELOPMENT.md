@@ -120,6 +120,49 @@ undeclared phrases, project widgets, and a text primary's later lines. The
 legend (`crates/ascribe-lsp/README.md`) to theme scopes; a unit test keeps them
 in step.
 
+## Icons and colors
+
+The extension takes its look from the user's theme. Ascribe's own colors are in
+the Marketplace icon and banner, and in the preview's webview only as fallbacks
+for theme colors it can't read.
+
+- **Colors.** The native UI (status bar, tree views, decorations) uses theme
+  colors (`new vscode.ThemeColor("…")`), never a hex value; `test/unit/theme.test.ts`
+  fails on a color written in `src/`. Declare one in `contributes.colors` only
+  when no built-in color fits: an `ascribe.`-prefixed id, a description, and
+  `light`, `dark`, `highContrast`, and `highContrastLight` defaults, each a
+  reference to a built-in color where one fits. An id is public once released,
+  since users override it in `workbench.colorCustomizations`, so it's listed in
+  `docs/content/guides/editor.md`. None is declared today.
+- **Icons.** [Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
+  for everything they cover, the same one for a concept everywhere:
+
+  | Concept | Codicon |
+  |---|---|
+  | Project | `$(book)` |
+  | Page | `$(file)` |
+  | Fragment | `$(file-symlink-file)` |
+  | Link | `$(link)` |
+  | References, what uses a thing | `$(references)` |
+  | Build | `$(package)` |
+  | Problem | `$(error)`, `$(warning)`, `$(info)`, by severity |
+  | Dimension | `$(symbol-enum)` |
+  | Variant, one value of a dimension | `$(symbol-enum-member)` |
+  | Phrase | `$(symbol-string)` |
+  | Availability | `$(tag)` |
+
+  An icon of Ascribe's own is added only for a concept no codicon reads right
+  for. It's drawn as a one-color SVG on the codicon grid (16 pixels, 1 pixel
+  strokes), built into one icon font with the mark's assets
+  (`scripts/design/assets.ts`), declared in `contributes.icons` as
+  `ascribe-<name>`, and used as `$(ascribe-<name>)`; the theme test fails on one
+  that's used and not declared. There are none today.
+- **The activity bar icon** is `media/activity.svg`, generated from the mark in
+  one color for VS Code to tint. The Marketplace icon is `media/icon.png`, and the
+  banner behind it (`galleryBanner`) is the icon's tile color, which
+  `scripts/design/assets.test.ts` holds to the palette.
+  [design/README.md](../../design/README.md#the-assets) has how they're made.
+
 ## Development
 
 ```
