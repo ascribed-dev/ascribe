@@ -6,6 +6,7 @@
  */
 
 :root {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, light. */
   --r-page: #ffffff;
   --r-ink: #1d2330;
   --r-muted: #5b6475;
@@ -17,11 +18,13 @@
   --r-notice: #fff6bf;
   --r-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --r-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* End of generated frame. */
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: frame, dark. */
     --r-page: #1e2026;
     --r-ink: #d9dde5;
     --r-muted: #929bab;
@@ -31,8 +34,10 @@
     --r-accent-ink: #0b1220;
     --r-code: #282c35;
     --r-notice: #3b3514;
+    /* End of generated frame. */
 
     /* The element library's colors, for a dark page. */
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: elements, dark. */
     --ascribe-border-color: #343a45;
     --ascribe-muted-color: #929bab;
     --ascribe-note-color: #5aa2ff;
@@ -61,6 +66,7 @@
     --ascribe-state-beta-background: #172a45;
     --ascribe-state-deprecated-color: #dcb13a;
     --ascribe-state-deprecated-background: #3a2f0d;
+    /* End of generated elements. */
   }
 }
 

@@ -2,6 +2,7 @@
 // don't reach it, and its don't reach the page.
 export const PANEL_CSS = `
 .panel {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: panel, light. */
   --ink: #1d2330;
   --muted: #5b6475;
   --win: #ffffff;
@@ -12,10 +13,12 @@ export const PANEL_CSS = `
   --notice: #fff1c2;
   --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* End of generated panel. */
 }
 /* Light or dark as the page is (data-scheme), else as the reader's system is. */
 @media (prefers-color-scheme: dark) {
   .panel:not([data-scheme="light"]) {
+    /* Generated from design/tokens.toml by scripts/design/tokens.ts: panel, dark. */
     --ink: #d9dde5;
     --muted: #929bab;
     --win: #1e2026;
@@ -24,9 +27,11 @@ export const PANEL_CSS = `
     --accent: #5aa2ff;
     --accent-ink: #0b1220;
     --notice: #3a2f0d;
+    /* End of generated panel. */
   }
 }
 .panel[data-scheme="dark"] {
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: panel, dark. */
   --ink: #d9dde5;
   --muted: #929bab;
   --win: #1e2026;
@@ -35,6 +40,7 @@ export const PANEL_CSS = `
   --accent: #5aa2ff;
   --accent-ink: #0b1220;
   --notice: #3a2f0d;
+  /* End of generated panel. */
 }
 .panel {
   position: fixed;
@@ -49,7 +55,9 @@ export const PANEL_CSS = `
   color: var(--ink);
   border: 1px solid var(--ink);
   border-radius: 8px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: shadow, light. */
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.3);
+  /* End of generated shadow. */
   font: 12.5px/1.45 var(--ui);
   z-index: 1;
 }

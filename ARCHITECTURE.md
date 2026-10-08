@@ -48,8 +48,9 @@ All in `packages/`, a pnpm workspace with `examples/astro-site` and `tests/zod`.
 | [`tests/zod`](tests/zod) | Type-checks the generated Zod schemas and validates pages with them. |
 | `examples/` | Example projects. `examples/quill` is the complete one most tests use; `examples/astro-site` publishes one with Astro. |
 | `docs/`, `site/` | The user docs, an Ascribe project, and the Astro site that publishes them. `site/` installs Ascribe from npm, outside the workspace. |
+| [`design/`](design) | The design tokens, `design/tokens.toml`: every color, font stack, space, and radius of Ascribe's stylesheets. |
 | `schemas/` | The JSON Schemas of the JSON the commands and the language server write, generated from the Rust types (`crates/ascribe-cli/src/shapes.rs`). |
-| `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), and `build-all.ts`. |
+| `scripts/` | Release scripts (`scripts/release`, with `consumers.ts`, which checks the npm packages as packed), the review and sources fixtures, the comparison of two builds' outputs (`scripts/compare/outputs.ts`), the checks that the READMEs link to real docs pages and that the facts several files repeat (the Node, Rust, and glibc versions, the docs' source folders) agree (`scripts/docs-site`) and that this map's paths and commands exist (`scripts/repo-docs`), the design tokens' generator (`scripts/design`), and `build-all.ts`. |
 | `project-docs/` | Plans. They describe what was intended, not necessarily what is. |
 
 ## How the crates depend on each other
@@ -156,6 +157,8 @@ The names the site output, the HTML report, and review put on a page (elements, 
 
 The JSON that Rust writes and TypeScript reads has one home too: the Rust types that write it. `crates/ascribe-cli/src/shapes.rs` derives a JSON Schema from each (`schemars`, through the `json-schema` features of `ascribe-diff`, `ascribe-sources`, and `ascribe-lsp`, which only that test turns on), writes them to `schemas/`, and generates from them the TypeScript types each package reads them as: `packages/astro/src/shapes.ts` and `packages/review/src/shapes.ts` (`ascribe diff`'s JSON, and the HTML report's data) and `packages/vscode/src/shapes.ts` (the language server's answers to the custom requests). The commands' schemas are published in the [JSON report contract](docs/content/contracts/json-reports.md). Every field needs a doc comment, which becomes its description.
 
+The colors, font stacks, spaces, and radii of Ascribe's own stylesheets (the element library's, review's marks, overlay, and report, the Astro toolbar's, the docs site's, and the VS Code preview's) have one home too, `design/tokens.toml`. `scripts/design/tokens.ts` generates each stylesheet's variables from it, between marker comments, and `scripts/design/tokens.test.ts` fails on a stale block and on a color written anywhere else in those stylesheets ([design/README.md](design/README.md)).
+
 `SPEC.md`, the contracts in `docs/content/contracts/`, the commands' JSON, and the published packages' APIs are fixed lines: code behind them can change, and they don't change without a decision to change them.
 
 ## Tests
@@ -190,6 +193,7 @@ Some files are generated from a source, or copied from what the code writes, and
 | `crates/ascribe-emit/tests/site_anchors.rs` | The site-render fixtures' inputs and corpus in `tests/render/` |
 | `crates/ascribe-emit/tests/zod.rs` | The generated schemas in `tests/zod/generated/` |
 | `packages/vscode/test/unit/docs.test.ts` | The extension's settings and commands in `docs/content/_generated/` |
+| `scripts/design/tokens.test.ts` | The generated blocks of each stylesheet `design/tokens.toml` lists, from it. Then `pnpm --filter @ascribed/review embed` copies them into the report's stylesheet |
 
 The corpora's recorded counts in `tests/corpora/baselines/` have their own variable, `ASCRIBE_CORPORA_BLESS=1` ([tests/corpora/README.md](tests/corpora/README.md)).
 

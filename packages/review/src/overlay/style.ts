@@ -7,14 +7,12 @@
 export const OVERLAY_CSS = `
 :host {
   all: initial;
-  --text: var(--ascribe-review-text, CanvasText);
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: host, light. */
   --muted: var(--ascribe-review-muted, #5b6475);
   --line: var(--ascribe-review-border, #d3d8e0);
-  --surface: var(--ascribe-review-surface, Canvas);
   --thread: var(--ascribe-review-thread, #f5f7fb);
   --accent: var(--ascribe-review-focus, #1f6feb);
   --accent-text: var(--ascribe-review-accent-text, #ffffff);
-  --input: var(--ascribe-review-input, var(--surface));
   --flash: var(--ascribe-review-flash, #fff6bf);
   --added: var(--ascribe-review-added, #1a7f37);
   --changed: var(--ascribe-review-changed, #8a5a00);
@@ -23,6 +21,10 @@ export const OVERLAY_CSS = `
   --removed-background: var(--ascribe-review-removed-background, #ffe4e2);
   --mono: var(--ascribe-review-mono, ui-monospace, monospace);
   font-family: var(--ascribe-review-font, system-ui, -apple-system, "Segoe UI", sans-serif);
+  /* End of generated host. */
+  --text: var(--ascribe-review-text, CanvasText);
+  --surface: var(--ascribe-review-surface, Canvas);
+  --input: var(--ascribe-review-input, var(--surface));
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--text);
@@ -427,7 +429,9 @@ svg.connector path {
   overflow: auto;
   background: var(--surface);
   border-top: 2px solid var(--accent);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22);
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: sheet, light. */
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 0.22);
+  /* End of generated sheet. */
   padding: 8px 12px 10px;
   z-index: 4;
 }
@@ -443,7 +447,9 @@ svg.connector path {
 .backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  /* Generated from design/tokens.toml by scripts/design/tokens.ts: backdrop, light. */
+  background: rgb(0 0 0 / 0.4);
+  /* End of generated backdrop. */
   z-index: 8;
   display: grid;
   place-items: center;
