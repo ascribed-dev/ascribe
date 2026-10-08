@@ -31,6 +31,12 @@ test("red and green move closer for a reader without red or green cones", () => 
   expect(difference(green, green, "deutan")).toBe(0);
 });
 
+test("there's a baseline, and two or three palettes to choose from", () => {
+  expect(inputs.candidates.filter((c) => c.baseline).map((c) => c.id)).toEqual(["baseline"]);
+  expect(inputs.candidates.filter((c) => !c.baseline).length).toBeGreaterThanOrEqual(2);
+  expect(inputs.marks.length).toBeGreaterThanOrEqual(3);
+});
+
 test("every candidate palette passes every pairing, in light and dark", () => {
   for (const candidate of inputs.candidates.filter((c) => !c.baseline)) {
     const failing = checkPairs(candidate, inputs.pairs)

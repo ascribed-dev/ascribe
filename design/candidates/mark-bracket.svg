@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <desc>A lowercase a with an opening bracket in its margin, like a note's bar or review's change bar: text, and something said about it. The a is drawn from a circle and a stem, so there's no font to license. Weak in that it reads as two letters, "[a", and the bracket alone suggests code more than documents.</desc>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg>

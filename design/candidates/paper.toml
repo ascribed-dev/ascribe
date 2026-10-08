@@ -1,0 +1,138 @@
+# Warm and bookish: stone neutrals with a slightly warm white, and a deep
+# petrol blue accent, like a fountain pen's ink on paper. The accent is dark
+# in light mode, so links read as ink rather than as a bright control.
+
+[candidate]
+name = "Paper"
+summary = "Petrol-blue accent over warm neutrals; a larger body and a roomier scale for reading."
+
+# Each hue's steps run from 50 (lightest) to 950 (darkest), made in OKLCH at
+# fixed lightnesses, so the same step of two hues has the same lightness.
+[palette.neutral]
+0 = "#ffffff"
+50 = "#fbf9f6"
+100 = "#f5f2ee"
+200 = "#e9e6e1"
+300 = "#d7d4cf"
+400 = "#ada8a3"
+500 = "#8c8781"
+600 = "#706b64"
+700 = "#56524b"
+800 = "#413c36"
+900 = "#2a2620"
+950 = "#1a1611"
+975 = "#130f0a"
+
+[palette.petrol]
+50 = "#edf9ff"
+100 = "#d6f2fe"
+200 = "#ace7fe"
+300 = "#75d2f6"
+400 = "#39b9e3"
+500 = "#089ec7"
+600 = "#0582a5"
+700 = "#056b87"
+800 = "#035168"
+900 = "#023544"
+950 = "#05222c"
+
+[palette.green]
+50 = "#e4ffef"
+100 = "#cbfadf"
+200 = "#adeeca"
+300 = "#7bdcaa"
+400 = "#42c48a"
+500 = "#06a96f"
+600 = "#088c5c"
+700 = "#03734a"
+800 = "#035738"
+900 = "#023923"
+950 = "#062417"
+
+[palette.ochre]
+50 = "#fef5e8"
+100 = "#feeacb"
+200 = "#f9d7a3"
+300 = "#ebbb6f"
+400 = "#d79e37"
+500 = "#bb8307"
+600 = "#9b6c06"
+700 = "#7f5804"
+800 = "#614203"
+900 = "#402a01"
+950 = "#291b05"
+
+[palette.brick]
+50 = "#fef4f1"
+100 = "#ffe7df"
+200 = "#fed1c1"
+300 = "#ffad90"
+400 = "#fc8155"
+500 = "#e26333"
+600 = "#c44810"
+700 = "#a43702"
+800 = "#7e2902"
+900 = "#4e1f0d"
+950 = "#32150a"
+
+[palette.plum]
+50 = "#fff3f9"
+100 = "#ffe4f2"
+200 = "#ffcbe7"
+300 = "#fba5d5"
+400 = "#e782be"
+500 = "#cd65a4"
+600 = "#b14b8a"
+700 = "#943a72"
+800 = "#712b57"
+900 = "#462037"
+950 = "#2d1523"
+
+[color]
+text = { light = "neutral.900", dark = "neutral.100" }
+muted = { light = "neutral.600", dark = "neutral.400" }
+background = { light = "neutral.50", dark = "neutral.975" }
+surface = { light = "neutral.100", dark = "neutral.950" }
+border = { light = "neutral.300", dark = "neutral.800" }
+accent = { light = "petrol.800", dark = "petrol.400" }
+accent-surface = { light = "petrol.50", dark = "petrol.950" }
+accent-text = { light = "neutral.0", dark = "neutral.975" }
+code-background = { light = "neutral.100", dark = "neutral.950" }
+focus = { light = "petrol.800", dark = "petrol.300" }
+
+note = { light = "petrol.800", dark = "petrol.400" }
+note-background = { light = "petrol.50", dark = "petrol.950" }
+tip = { light = "green.800", dark = "green.400" }
+tip-background = { light = "green.50", dark = "green.950" }
+important = { light = "plum.700", dark = "plum.200" }
+important-background = { light = "plum.50", dark = "plum.950" }
+warning = { light = "ochre.700", dark = "ochre.400" }
+warning-background = { light = "ochre.50", dark = "ochre.950" }
+caution = { light = "brick.700", dark = "brick.400" }
+caution-background = { light = "brick.50", dark = "brick.950" }
+state = { light = "neutral.700", dark = "neutral.400" }
+state-background = { light = "neutral.200", dark = "neutral.900" }
+
+added = { light = "green.800", dark = "green.400" }
+added-background = { light = "green.100", dark = "green.900" }
+changed = { light = "ochre.700", dark = "ochre.400" }
+changed-background = { light = "ochre.100", dark = "ochre.900" }
+removed = { light = "brick.600", dark = "brick.400" }
+removed-background = { light = "brick.50", dark = "brick.900" }
+moved = { light = "plum.700", dark = "plum.200" }
+moved-background = { light = "plum.50", dark = "plum.900" }
+flash = { light = "ochre.100", dark = "ochre.900" }
+[font]
+ui = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+
+# A reading scale: a 17 pixel body, about 1.25 from step to step, and more
+# line height.
+[type]
+caption = { size = "0.75rem", line = 1.4, weight = 600 }
+small = { size = "0.875rem", line = 1.5, weight = 400 }
+body = { size = "1.0625rem", line = 1.7, weight = 400 }
+lead = { size = "1.25rem", line = 1.6, weight = 400 }
+h3 = { size = "1.3125rem", line = 1.35, weight = 600 }
+h2 = { size = "1.625rem", line = 1.25, weight = 600 }
+h1 = { size = "2.125rem", line = 1.15, weight = 700 }

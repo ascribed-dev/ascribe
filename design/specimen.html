@@ -66,11 +66,13 @@ th, td { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--line); text-ali
 <body>
 <h1>Ascribe design candidates</h1>
 <p class="lede">The candidate marks, palettes, and type scales, each in light and dark. The docs pages are the element library's, review's, and the docs site's own stylesheets with the candidate's colors. Contrast is WCAG 2's: 4.5:1 for text, 3:1 for a bar, border, or mark that carries meaning.</p>
-<nav class="toc"><a href="#baseline">Baseline</a></nav>
+<nav class="toc"><a href="#baseline">Baseline</a><a href="#ink">Ink</a><a href="#paper">Paper</a></nav>
 <h2>The marks</h2>
 <p class="note">Each palette below shows every mark: in one color, in full color with the palette's accent as the second color, at 16, 24, 32, 64, and 128 pixels, and in VS Code's activity bar and a browser tab.</p>
 <div class="candidate-marks">
-
+<div><h3>Bracket</h3><p>A lowercase a with an opening bracket in its margin, like a note's bar or review's change bar: text, and something said about it. The a is drawn from a circle and a stem, so there's no font to license. Weak in that it reads as two letters, &quot;[a&quot;, and the bracket alone suggests code more than documents.</p><p><code>design/candidates/mark-bracket.svg</code></p></div>
+<div><h3>Caret</h3><p>The proofreader's caret, the mark for &quot;insert here&quot;, with a dot: an A, and an edit. It ties the name to review and to writing, reads at 16 pixels as a clear A, and needs no letterforms drawn. Weak where a plain chevron already means &quot;collapse&quot; or &quot;up&quot;; the dot is what tells them apart, and it's small at 16.</p><p><code>design/candidates/mark-caret.svg</code></p></div>
+<div><h3>Nib</h3><p>A pen nib, point down, with its slit: to ascribe is to write something down and say whose it is. A solid shape, so it holds up best of the three at 16 pixels and in a tinted activity bar. Weak because a nib is common: editors, writing apps, and signing tools use one, so it says &quot;writing&quot; more than &quot;Ascribe&quot;.</p><p><code>design/candidates/mark-nib.svg</code></p></div>
 </div>
 <section id="baseline">
 <h2>Baseline</h2>
@@ -78,7 +80,211 @@ th, td { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--line); text-ali
 <div class="schemes">
 <div class="scheme" style="--c-text: #1f2328; --c-muted: #59636e; --c-background: #ffffff; --c-surface: #f6f8fa; --c-border: #d1d9e0; --c-accent: #0969da; --c-accent-surface: #ddf4ff; --c-accent-text: #ffffff; --c-code-background: #f6f8fa; --c-focus: #1f6feb; --c-note: #0969da; --c-note-background: #ddf4ff; --c-tip: #1a7f37; --c-tip-background: #dafbe1; --c-important: #8250df; --c-important-background: #fbefff; --c-warning: #9a6700; --c-warning-background: #fff8c5; --c-caution: #cf222e; --c-caution-background: #ffebe9; --c-state: #59636e; --c-state-background: #eaeef2; --c-added: #1a7f37; --c-added-background: #dcf7e3; --c-changed: #8a5a00; --c-changed-background: #fff1c2; --c-removed: #c4222d; --c-removed-background: #ffe4e2; --c-moved: #7a3fd0; --c-moved-background: #f0e6ff; --c-flash: #fff6bf">
 <h3>Light: the marks</h3>
-<div class="marks"></div>
+<div class="marks"><div class="mark">
+<p class="mark-name">Bracket</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Caret</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Nib</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div></div>
 <h3>A docs page</h3>
 <div class="frame" data-scheme="light"><template>:root:root:root { color-scheme: light; --font: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --text: #1f2328; --muted: #59636e; --background: #ffffff; --surface: #f6f8fa; --border: #d1d9e0; --accent: #0969da; --accent-surface: #ddf4ff; --code-background: #f6f8fa; --ascribe-border-color: #d1d9e0; --ascribe-muted-color: #59636e; --ascribe-note-color: #0969da; --ascribe-note-background: #ddf4ff; --ascribe-tip-color: #1a7f37; --ascribe-tip-background: #dafbe1; --ascribe-important-color: #8250df; --ascribe-important-background: #fbefff; --ascribe-warning-color: #9a6700; --ascribe-warning-background: #fff8c5; --ascribe-caution-color: #cf222e; --ascribe-caution-background: #ffebe9; --ascribe-steps-color: #0969da; --ascribe-steps-marker-text-color: #ffffff; --ascribe-tab-color: #59636e; --ascribe-tab-active-color: #0969da; --ascribe-tab-focus-color: #1f6feb; --ascribe-tab-hover-background: #f6f8fa; --ascribe-state-color: #59636e; --ascribe-state-background: #eaeef2; --ascribe-state-ga-color: #1a7f37; --ascribe-state-ga-background: #dafbe1; --ascribe-state-preview-color: #8250df; --ascribe-state-preview-background: #fbefff; --ascribe-state-beta-color: #0969da; --ascribe-state-beta-background: #ddf4ff; --ascribe-state-deprecated-color: #9a6700; --ascribe-state-deprecated-background: #fff8c5; --ascribe-state-removed-color: #cf222e; --ascribe-state-removed-background: #ffebe9; --ascribe-review-added: #1a7f37; --ascribe-review-added-background: #dcf7e3; --ascribe-review-changed: #8a5a00; --ascribe-review-changed-background: #fff1c2; --ascribe-review-removed: #c4222d; --ascribe-review-removed-background: #ffe4e2; --ascribe-review-moved: #7a3fd0; --ascribe-review-moved-background: #f0e6ff; --ascribe-review-muted: #59636e; --ascribe-review-surface: #ffffff; --ascribe-review-flash: #fff6bf; --ascribe-review-focus: #1f6feb; --ascribe-review-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --ascribe-review-text: #1f2328; --ascribe-review-border: #d1d9e0; --ascribe-review-thread: #f6f8fa; --ascribe-review-input: #ffffff; --ascribe-review-accent-text: #ffffff; }
 body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
@@ -123,7 +329,211 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
 </div>
 <div class="scheme" style="--c-text: #e6edf3; --c-muted: #9198a1; --c-background: #0d1117; --c-surface: #151b23; --c-border: #3d444d; --c-accent: #4493f8; --c-accent-surface: #121d2f; --c-accent-text: #0d1117; --c-code-background: #151b23; --c-focus: #5aa2ff; --c-note: #4493f8; --c-note-background: #121d2f; --c-tip: #3fb950; --c-tip-background: #12261e; --c-important: #ab7df8; --c-important-background: #1f1a33; --c-warning: #d29922; --c-warning-background: #272115; --c-caution: #f85149; --c-caution-background: #2d1517; --c-state: #9198a1; --c-state-background: #212830; --c-added: #4fc572; --c-added-background: #133520; --c-changed: #dcb13a; --c-changed-background: #3a2f0d; --c-removed: #ff8279; --c-removed-background: #401918; --c-moved: #c59bff; --c-moved-background: #2d2440; --c-flash: #3b3514">
 <h3>Dark: the marks</h3>
-<div class="marks"></div>
+<div class="marks"><div class="mark">
+<p class="mark-name">Bracket</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Caret</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Nib</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div></div>
 <h3>A docs page</h3>
 <div class="frame" data-scheme="dark"><template>:root:root:root { color-scheme: dark; --font: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --text: #e6edf3; --muted: #9198a1; --background: #0d1117; --surface: #151b23; --border: #3d444d; --accent: #4493f8; --accent-surface: #121d2f; --code-background: #151b23; --ascribe-border-color: #3d444d; --ascribe-muted-color: #9198a1; --ascribe-note-color: #4493f8; --ascribe-note-background: #121d2f; --ascribe-tip-color: #3fb950; --ascribe-tip-background: #12261e; --ascribe-important-color: #ab7df8; --ascribe-important-background: #1f1a33; --ascribe-warning-color: #d29922; --ascribe-warning-background: #272115; --ascribe-caution-color: #f85149; --ascribe-caution-background: #2d1517; --ascribe-steps-color: #4493f8; --ascribe-steps-marker-text-color: #0d1117; --ascribe-tab-color: #9198a1; --ascribe-tab-active-color: #4493f8; --ascribe-tab-focus-color: #5aa2ff; --ascribe-tab-hover-background: #151b23; --ascribe-state-color: #9198a1; --ascribe-state-background: #212830; --ascribe-state-ga-color: #3fb950; --ascribe-state-ga-background: #12261e; --ascribe-state-preview-color: #ab7df8; --ascribe-state-preview-background: #1f1a33; --ascribe-state-beta-color: #4493f8; --ascribe-state-beta-background: #121d2f; --ascribe-state-deprecated-color: #d29922; --ascribe-state-deprecated-background: #272115; --ascribe-state-removed-color: #f85149; --ascribe-state-removed-background: #2d1517; --ascribe-review-added: #4fc572; --ascribe-review-added-background: #133520; --ascribe-review-changed: #dcb13a; --ascribe-review-changed-background: #3a2f0d; --ascribe-review-removed: #ff8279; --ascribe-review-removed-background: #401918; --ascribe-review-moved: #c59bff; --ascribe-review-moved-background: #2d2440; --ascribe-review-muted: #9198a1; --ascribe-review-surface: #0d1117; --ascribe-review-flash: #3b3514; --ascribe-review-focus: #5aa2ff; --ascribe-review-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --ascribe-review-text: #e6edf3; --ascribe-review-border: #3d444d; --ascribe-review-thread: #151b23; --ascribe-review-input: #0d1117; --ascribe-review-accent-text: #0d1117; }
 body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
@@ -230,6 +640,1140 @@ body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
 <tr><th>h3</th><td class="spec"><code>1.25rem / 1.25 / 600</code></td><td style="font-size: 1.25rem; line-height: 1.25; font-weight: 600">Variants and availability</td></tr>
 <tr><th>h2</th><td class="spec"><code>1.5rem / 1.25 / 600</code></td><td style="font-size: 1.5rem; line-height: 1.25; font-weight: 600">Variants and availability</td></tr>
 <tr><th>h1</th><td class="spec"><code>2rem / 1.25 / 600</code></td><td style="font-size: 2rem; line-height: 1.25; font-weight: 600">Variants and availability</td></tr></table>
+</section>
+<section id="ink">
+<h2>Ink</h2>
+<p class="summary">Indigo accent over cool neutrals; tighter, heavier headings. <code>design/candidates/ink.toml</code></p>
+<div class="schemes">
+<div class="scheme" style="--c-text: #22272e; --c-muted: #676c75; --c-background: #ffffff; --c-surface: #f7f9fd; --c-border: #e3e6ec; --c-accent: #5962e8; --c-accent-surface: #f5f6fe; --c-accent-text: #ffffff; --c-code-background: #f7f9fd; --c-focus: #5962e8; --c-note: #474dc6; --c-note-background: #f5f6fe; --c-tip: #057256; --c-tip-background: #e1fff2; --c-important: #932f8e; --c-important-background: #fff2fd; --c-warning: #845502; --c-warning-background: #fef5eb; --c-caution: #a73303; --c-caution-background: #fef4f1; --c-state: #676c75; --c-state-background: #f0f3f7; --c-added: #057256; --c-added-background: #c7fae5; --c-changed: #845502; --c-changed-background: #fee9d0; --c-removed: #ca3f02; --c-removed-background: #fef4f1; --c-moved: #932f8e; --c-moved-background: #fff2fd; --c-flash: #fee9d0">
+<h3>Light: the marks</h3>
+<div class="marks"><div class="mark">
+<p class="mark-name">Bracket</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Caret</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Nib</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div></div>
+<h3>A docs page</h3>
+<div class="frame" data-scheme="light"><template>:root:root:root { color-scheme: light; --font: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --text: #22272e; --muted: #676c75; --background: #ffffff; --surface: #f7f9fd; --border: #e3e6ec; --accent: #5962e8; --accent-surface: #f5f6fe; --code-background: #f7f9fd; --ascribe-border-color: #e3e6ec; --ascribe-muted-color: #676c75; --ascribe-note-color: #474dc6; --ascribe-note-background: #f5f6fe; --ascribe-tip-color: #057256; --ascribe-tip-background: #e1fff2; --ascribe-important-color: #932f8e; --ascribe-important-background: #fff2fd; --ascribe-warning-color: #845502; --ascribe-warning-background: #fef5eb; --ascribe-caution-color: #a73303; --ascribe-caution-background: #fef4f1; --ascribe-steps-color: #5962e8; --ascribe-steps-marker-text-color: #ffffff; --ascribe-tab-color: #676c75; --ascribe-tab-active-color: #5962e8; --ascribe-tab-focus-color: #5962e8; --ascribe-tab-hover-background: #f7f9fd; --ascribe-state-color: #676c75; --ascribe-state-background: #f0f3f7; --ascribe-state-ga-color: #057256; --ascribe-state-ga-background: #e1fff2; --ascribe-state-preview-color: #932f8e; --ascribe-state-preview-background: #fff2fd; --ascribe-state-beta-color: #474dc6; --ascribe-state-beta-background: #f5f6fe; --ascribe-state-deprecated-color: #845502; --ascribe-state-deprecated-background: #fef5eb; --ascribe-state-removed-color: #a73303; --ascribe-state-removed-background: #fef4f1; --ascribe-review-added: #057256; --ascribe-review-added-background: #c7fae5; --ascribe-review-changed: #845502; --ascribe-review-changed-background: #fee9d0; --ascribe-review-removed: #ca3f02; --ascribe-review-removed-background: #fef4f1; --ascribe-review-moved: #932f8e; --ascribe-review-moved-background: #fff2fd; --ascribe-review-muted: #676c75; --ascribe-review-surface: #ffffff; --ascribe-review-flash: #fee9d0; --ascribe-review-focus: #5962e8; --ascribe-review-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --ascribe-review-text: #22272e; --ascribe-review-border: #e3e6ec; --ascribe-review-thread: #f7f9fd; --ascribe-review-input: #ffffff; --ascribe-review-accent-text: #ffffff; }
+body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
+.page h1 { font-size: 1.875rem; line-height: 1.2; font-weight: 700; } .page h2 { font-size: 1.375rem; line-height: 1.3; font-weight: 650; } .page h3 { font-size: 1.125rem; line-height: 1.4; font-weight: 650; }
+.page .description { font-size: 1.125rem; line-height: 1.55; font-weight: 400; }
+.sidebar, .toc, .page figure.code-title figcaption { font-size: 0.875rem; line-height: 1.5; font-weight: 400; }
+.sidebar h2, .toc h2 { font-size: 0.75rem; line-height: 1.4; font-weight: 600; }</template><iframe title="Ink, light"></iframe></div>
+<h3>Semantic colors</h3>
+<table class="semantic"><thead><tr><th>Color</th><th>From</th><th>Value</th><th class="num">On background</th></tr></thead><tbody>
+<tr><td><span class="chip" style="background: #22272e"></span>text</td><td><code>neutral.900</code></td><td><code>#22272e</code></td><td class="num">15.02</td></tr>
+<tr><td><span class="chip" style="background: #676c75"></span>muted</td><td><code>neutral.600</code></td><td><code>#676c75</code></td><td class="num">5.28</td></tr>
+<tr><td><span class="chip" style="background: #ffffff"></span>background</td><td><code>neutral.0</code></td><td><code>#ffffff</code></td><td class="num"></td></tr>
+<tr><td><span class="chip" style="background: #f7f9fd"></span>surface</td><td><code>neutral.50</code></td><td><code>#f7f9fd</code></td><td class="num">1.05</td></tr>
+<tr><td><span class="chip" style="background: #e3e6ec"></span>border</td><td><code>neutral.200</code></td><td><code>#e3e6ec</code></td><td class="num">1.25</td></tr>
+<tr><td><span class="chip" style="background: #5962e8"></span>accent</td><td><code>indigo.600</code></td><td><code>#5962e8</code></td><td class="num">4.84</td></tr>
+<tr><td><span class="chip" style="background: #f5f6fe"></span>accent-surface</td><td><code>indigo.50</code></td><td><code>#f5f6fe</code></td><td class="num">1.08</td></tr>
+<tr><td><span class="chip" style="background: #ffffff"></span>accent-text</td><td><code>neutral.0</code></td><td><code>#ffffff</code></td><td class="num">1.00</td></tr>
+<tr><td><span class="chip" style="background: #f7f9fd"></span>code-background</td><td><code>neutral.50</code></td><td><code>#f7f9fd</code></td><td class="num">1.05</td></tr>
+<tr><td><span class="chip" style="background: #5962e8"></span>focus</td><td><code>indigo.600</code></td><td><code>#5962e8</code></td><td class="num">4.84</td></tr>
+<tr><td><span class="chip" style="background: #474dc6"></span>note</td><td><code>indigo.700</code></td><td><code>#474dc6</code></td><td class="num">6.68</td></tr>
+<tr><td><span class="chip" style="background: #f5f6fe"></span>note-background</td><td><code>indigo.50</code></td><td><code>#f5f6fe</code></td><td class="num">1.08</td></tr>
+<tr><td><span class="chip" style="background: #057256"></span>tip</td><td><code>green.700</code></td><td><code>#057256</code></td><td class="num">5.92</td></tr>
+<tr><td><span class="chip" style="background: #e1fff2"></span>tip-background</td><td><code>green.50</code></td><td><code>#e1fff2</code></td><td class="num">1.06</td></tr>
+<tr><td><span class="chip" style="background: #932f8e"></span>important</td><td><code>magenta.700</code></td><td><code>#932f8e</code></td><td class="num">6.91</td></tr>
+<tr><td><span class="chip" style="background: #fff2fd"></span>important-background</td><td><code>magenta.50</code></td><td><code>#fff2fd</code></td><td class="num">1.08</td></tr>
+<tr><td><span class="chip" style="background: #845502"></span>warning</td><td><code>amber.700</code></td><td><code>#845502</code></td><td class="num">6.40</td></tr>
+<tr><td><span class="chip" style="background: #fef5eb"></span>warning-background</td><td><code>amber.50</code></td><td><code>#fef5eb</code></td><td class="num">1.08</td></tr>
+<tr><td><span class="chip" style="background: #a73303"></span>caution</td><td><code>red.700</code></td><td><code>#a73303</code></td><td class="num">6.74</td></tr>
+<tr><td><span class="chip" style="background: #fef4f1"></span>caution-background</td><td><code>red.50</code></td><td><code>#fef4f1</code></td><td class="num">1.08</td></tr>
+<tr><td><span class="chip" style="background: #676c75"></span>state</td><td><code>neutral.600</code></td><td><code>#676c75</code></td><td class="num">5.28</td></tr>
+<tr><td><span class="chip" style="background: #f0f3f7"></span>state-background</td><td><code>neutral.100</code></td><td><code>#f0f3f7</code></td><td class="num">1.11</td></tr>
+<tr><td><span class="chip" style="background: #057256"></span>added</td><td><code>green.700</code></td><td><code>#057256</code></td><td class="num">5.92</td></tr>
+<tr><td><span class="chip" style="background: #c7fae5"></span>added-background</td><td><code>green.100</code></td><td><code>#c7fae5</code></td><td class="num">1.15</td></tr>
+<tr><td><span class="chip" style="background: #845502"></span>changed</td><td><code>amber.700</code></td><td><code>#845502</code></td><td class="num">6.40</td></tr>
+<tr><td><span class="chip" style="background: #fee9d0"></span>changed-background</td><td><code>amber.100</code></td><td><code>#fee9d0</code></td><td class="num">1.18</td></tr>
+<tr><td><span class="chip" style="background: #ca3f02"></span>removed</td><td><code>red.600</code></td><td><code>#ca3f02</code></td><td class="num">4.97</td></tr>
+<tr><td><span class="chip" style="background: #fef4f1"></span>removed-background</td><td><code>red.50</code></td><td><code>#fef4f1</code></td><td class="num">1.08</td></tr>
+<tr><td><span class="chip" style="background: #932f8e"></span>moved</td><td><code>magenta.700</code></td><td><code>#932f8e</code></td><td class="num">6.91</td></tr>
+<tr><td><span class="chip" style="background: #fff2fd"></span>moved-background</td><td><code>magenta.50</code></td><td><code>#fff2fd</code></td><td class="num">1.08</td></tr>
+<tr><td><span class="chip" style="background: #fee9d0"></span>flash</td><td><code>amber.100</code></td><td><code>#fee9d0</code></td><td class="num">1.18</td></tr>
+</tbody></table>
+</div>
+<div class="scheme" style="--c-text: #f0f3f7; --c-muted: #a5a9b2; --c-background: #0c0f16; --c-surface: #13171f; --c-border: #393d46; --c-accent: #91a1fe; --c-accent-surface: #161b3a; --c-accent-text: #0c0f16; --c-code-background: #13171f; --c-focus: #b3c0ff; --c-note: #91a1fe; --c-note-background: #161b3a; --c-tip: #22c598; --c-tip-background: #02251a; --c-important: #ffc8f9; --c-important-background: #2d132b; --c-warning: #e0992e; --c-warning-background: #2b1a03; --c-caution: #fe7f57; --c-caution-background: #341308; --c-state: #a5a9b2; --c-state-background: #22272e; --c-added: #22c598; --c-added-background: #003929; --c-changed: #e0992e; --c-changed-background: #432900; --c-removed: #fe7f57; --c-removed-background: #511b0a; --c-moved: #ffc8f9; --c-moved-background: #461c43; --c-flash: #432900">
+<h3>Dark: the marks</h3>
+<div class="marks"><div class="mark">
+<p class="mark-name">Bracket</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Caret</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Nib</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div></div>
+<h3>A docs page</h3>
+<div class="frame" data-scheme="dark"><template>:root:root:root { color-scheme: dark; --font: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --text: #f0f3f7; --muted: #a5a9b2; --background: #0c0f16; --surface: #13171f; --border: #393d46; --accent: #91a1fe; --accent-surface: #161b3a; --code-background: #13171f; --ascribe-border-color: #393d46; --ascribe-muted-color: #a5a9b2; --ascribe-note-color: #91a1fe; --ascribe-note-background: #161b3a; --ascribe-tip-color: #22c598; --ascribe-tip-background: #02251a; --ascribe-important-color: #ffc8f9; --ascribe-important-background: #2d132b; --ascribe-warning-color: #e0992e; --ascribe-warning-background: #2b1a03; --ascribe-caution-color: #fe7f57; --ascribe-caution-background: #341308; --ascribe-steps-color: #91a1fe; --ascribe-steps-marker-text-color: #0c0f16; --ascribe-tab-color: #a5a9b2; --ascribe-tab-active-color: #91a1fe; --ascribe-tab-focus-color: #b3c0ff; --ascribe-tab-hover-background: #13171f; --ascribe-state-color: #a5a9b2; --ascribe-state-background: #22272e; --ascribe-state-ga-color: #22c598; --ascribe-state-ga-background: #02251a; --ascribe-state-preview-color: #ffc8f9; --ascribe-state-preview-background: #2d132b; --ascribe-state-beta-color: #91a1fe; --ascribe-state-beta-background: #161b3a; --ascribe-state-deprecated-color: #e0992e; --ascribe-state-deprecated-background: #2b1a03; --ascribe-state-removed-color: #fe7f57; --ascribe-state-removed-background: #341308; --ascribe-review-added: #22c598; --ascribe-review-added-background: #003929; --ascribe-review-changed: #e0992e; --ascribe-review-changed-background: #432900; --ascribe-review-removed: #fe7f57; --ascribe-review-removed-background: #511b0a; --ascribe-review-moved: #ffc8f9; --ascribe-review-moved-background: #461c43; --ascribe-review-muted: #a5a9b2; --ascribe-review-surface: #0c0f16; --ascribe-review-flash: #432900; --ascribe-review-focus: #b3c0ff; --ascribe-review-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --ascribe-review-text: #f0f3f7; --ascribe-review-border: #393d46; --ascribe-review-thread: #13171f; --ascribe-review-input: #0c0f16; --ascribe-review-accent-text: #0c0f16; }
+body { font-size: 1rem; line-height: 1.6; font-weight: 400; }
+.page h1 { font-size: 1.875rem; line-height: 1.2; font-weight: 700; } .page h2 { font-size: 1.375rem; line-height: 1.3; font-weight: 650; } .page h3 { font-size: 1.125rem; line-height: 1.4; font-weight: 650; }
+.page .description { font-size: 1.125rem; line-height: 1.55; font-weight: 400; }
+.sidebar, .toc, .page figure.code-title figcaption { font-size: 0.875rem; line-height: 1.5; font-weight: 400; }
+.sidebar h2, .toc h2 { font-size: 0.75rem; line-height: 1.4; font-weight: 600; }</template><iframe title="Ink, dark"></iframe></div>
+<h3>Semantic colors</h3>
+<table class="semantic"><thead><tr><th>Color</th><th>From</th><th>Value</th><th class="num">On background</th></tr></thead><tbody>
+<tr><td><span class="chip" style="background: #f0f3f7"></span>text</td><td><code>neutral.100</code></td><td><code>#f0f3f7</code></td><td class="num">17.22</td></tr>
+<tr><td><span class="chip" style="background: #a5a9b2"></span>muted</td><td><code>neutral.400</code></td><td><code>#a5a9b2</code></td><td class="num">8.14</td></tr>
+<tr><td><span class="chip" style="background: #0c0f16"></span>background</td><td><code>neutral.975</code></td><td><code>#0c0f16</code></td><td class="num"></td></tr>
+<tr><td><span class="chip" style="background: #13171f"></span>surface</td><td><code>neutral.950</code></td><td><code>#13171f</code></td><td class="num">1.07</td></tr>
+<tr><td><span class="chip" style="background: #393d46"></span>border</td><td><code>neutral.800</code></td><td><code>#393d46</code></td><td class="num">1.76</td></tr>
+<tr><td><span class="chip" style="background: #91a1fe"></span>accent</td><td><code>indigo.400</code></td><td><code>#91a1fe</code></td><td class="num">7.97</td></tr>
+<tr><td><span class="chip" style="background: #161b3a"></span>accent-surface</td><td><code>indigo.950</code></td><td><code>#161b3a</code></td><td class="num">1.14</td></tr>
+<tr><td><span class="chip" style="background: #0c0f16"></span>accent-text</td><td><code>neutral.975</code></td><td><code>#0c0f16</code></td><td class="num">1.00</td></tr>
+<tr><td><span class="chip" style="background: #13171f"></span>code-background</td><td><code>neutral.950</code></td><td><code>#13171f</code></td><td class="num">1.07</td></tr>
+<tr><td><span class="chip" style="background: #b3c0ff"></span>focus</td><td><code>indigo.300</code></td><td><code>#b3c0ff</code></td><td class="num">10.86</td></tr>
+<tr><td><span class="chip" style="background: #91a1fe"></span>note</td><td><code>indigo.400</code></td><td><code>#91a1fe</code></td><td class="num">7.97</td></tr>
+<tr><td><span class="chip" style="background: #161b3a"></span>note-background</td><td><code>indigo.950</code></td><td><code>#161b3a</code></td><td class="num">1.14</td></tr>
+<tr><td><span class="chip" style="background: #22c598"></span>tip</td><td><code>green.400</code></td><td><code>#22c598</code></td><td class="num">8.68</td></tr>
+<tr><td><span class="chip" style="background: #02251a"></span>tip-background</td><td><code>green.950</code></td><td><code>#02251a</code></td><td class="num">1.17</td></tr>
+<tr><td><span class="chip" style="background: #ffc8f9"></span>important</td><td><code>magenta.200</code></td><td><code>#ffc8f9</code></td><td class="num">13.58</td></tr>
+<tr><td><span class="chip" style="background: #2d132b"></span>important-background</td><td><code>magenta.950</code></td><td><code>#2d132b</code></td><td class="num">1.13</td></tr>
+<tr><td><span class="chip" style="background: #e0992e"></span>warning</td><td><code>amber.400</code></td><td><code>#e0992e</code></td><td class="num">8.00</td></tr>
+<tr><td><span class="chip" style="background: #2b1a03"></span>warning-background</td><td><code>amber.950</code></td><td><code>#2b1a03</code></td><td class="num">1.14</td></tr>
+<tr><td><span class="chip" style="background: #fe7f57"></span>caution</td><td><code>red.400</code></td><td><code>#fe7f57</code></td><td class="num">7.66</td></tr>
+<tr><td><span class="chip" style="background: #341308"></span>caution-background</td><td><code>red.950</code></td><td><code>#341308</code></td><td class="num">1.13</td></tr>
+<tr><td><span class="chip" style="background: #a5a9b2"></span>state</td><td><code>neutral.400</code></td><td><code>#a5a9b2</code></td><td class="num">8.14</td></tr>
+<tr><td><span class="chip" style="background: #22272e"></span>state-background</td><td><code>neutral.900</code></td><td><code>#22272e</code></td><td class="num">1.28</td></tr>
+<tr><td><span class="chip" style="background: #22c598"></span>added</td><td><code>green.400</code></td><td><code>#22c598</code></td><td class="num">8.68</td></tr>
+<tr><td><span class="chip" style="background: #003929"></span>added-background</td><td><code>green.900</code></td><td><code>#003929</code></td><td class="num">1.48</td></tr>
+<tr><td><span class="chip" style="background: #e0992e"></span>changed</td><td><code>amber.400</code></td><td><code>#e0992e</code></td><td class="num">8.00</td></tr>
+<tr><td><span class="chip" style="background: #432900"></span>changed-background</td><td><code>amber.900</code></td><td><code>#432900</code></td><td class="num">1.42</td></tr>
+<tr><td><span class="chip" style="background: #fe7f57"></span>removed</td><td><code>red.400</code></td><td><code>#fe7f57</code></td><td class="num">7.66</td></tr>
+<tr><td><span class="chip" style="background: #511b0a"></span>removed-background</td><td><code>red.900</code></td><td><code>#511b0a</code></td><td class="num">1.38</td></tr>
+<tr><td><span class="chip" style="background: #ffc8f9"></span>moved</td><td><code>magenta.200</code></td><td><code>#ffc8f9</code></td><td class="num">13.58</td></tr>
+<tr><td><span class="chip" style="background: #461c43"></span>moved-background</td><td><code>magenta.900</code></td><td><code>#461c43</code></td><td class="num">1.38</td></tr>
+<tr><td><span class="chip" style="background: #432900"></span>flash</td><td><code>amber.900</code></td><td><code>#432900</code></td><td class="num">1.42</td></tr>
+</tbody></table>
+</div>
+</div>
+<h3>The palette</h3>
+<div class="palette"><div class="ramp"><span class="hue">neutral</span><div class="swatch" style="background: #ffffff; color: #000000"><b>0</b><span>#ffffff</span></div><div class="swatch" style="background: #f7f9fd; color: #000000"><b>50</b><span>#f7f9fd</span></div><div class="swatch" style="background: #f0f3f7; color: #000000"><b>100</b><span>#f0f3f7</span></div><div class="swatch" style="background: #e3e6ec; color: #000000"><b>200</b><span>#e3e6ec</span></div><div class="swatch" style="background: #d0d4db; color: #000000"><b>300</b><span>#d0d4db</span></div><div class="swatch" style="background: #a5a9b2; color: #000000"><b>400</b><span>#a5a9b2</span></div><div class="swatch" style="background: #838891; color: #000000"><b>500</b><span>#838891</span></div><div class="swatch" style="background: #676c75; color: #ffffff"><b>600</b><span>#676c75</span></div><div class="swatch" style="background: #4e535c; color: #ffffff"><b>700</b><span>#4e535c</span></div><div class="swatch" style="background: #393d46; color: #ffffff"><b>800</b><span>#393d46</span></div><div class="swatch" style="background: #22272e; color: #ffffff"><b>900</b><span>#22272e</span></div><div class="swatch" style="background: #13171f; color: #ffffff"><b>950</b><span>#13171f</span></div><div class="swatch" style="background: #0c0f16; color: #ffffff"><b>975</b><span>#0c0f16</span></div></div>
+<div class="ramp"><span class="hue">indigo</span><div class="swatch" style="background: #f5f6fe; color: #000000"><b>50</b><span>#f5f6fe</span></div><div class="swatch" style="background: #e7ecff; color: #000000"><b>100</b><span>#e7ecff</span></div><div class="swatch" style="background: #d2dbfe; color: #000000"><b>200</b><span>#d2dbfe</span></div><div class="swatch" style="background: #b3c0ff; color: #000000"><b>300</b><span>#b3c0ff</span></div><div class="swatch" style="background: #91a1fe; color: #000000"><b>400</b><span>#91a1fe</span></div><div class="swatch" style="background: #7180fe; color: #000000"><b>500</b><span>#7180fe</span></div><div class="swatch" style="background: #5962e8; color: #ffffff"><b>600</b><span>#5962e8</span></div><div class="swatch" style="background: #474dc6; color: #ffffff"><b>700</b><span>#474dc6</span></div><div class="swatch" style="background: #353b98; color: #ffffff"><b>800</b><span>#353b98</span></div><div class="swatch" style="background: #23295b; color: #ffffff"><b>900</b><span>#23295b</span></div><div class="swatch" style="background: #161b3a; color: #ffffff"><b>950</b><span>#161b3a</span></div></div>
+<div class="ramp"><span class="hue">green</span><div class="swatch" style="background: #e1fff2; color: #000000"><b>50</b><span>#e1fff2</span></div><div class="swatch" style="background: #c7fae5; color: #000000"><b>100</b><span>#c7fae5</span></div><div class="swatch" style="background: #a6efd2; color: #000000"><b>200</b><span>#a6efd2</span></div><div class="swatch" style="background: #6eddb6; color: #000000"><b>300</b><span>#6eddb6</span></div><div class="swatch" style="background: #22c598; color: #000000"><b>400</b><span>#22c598</span></div><div class="swatch" style="background: #0ba880; color: #000000"><b>500</b><span>#0ba880</span></div><div class="swatch" style="background: #028b69; color: #000000"><b>600</b><span>#028b69</span></div><div class="swatch" style="background: #057256; color: #ffffff"><b>700</b><span>#057256</span></div><div class="swatch" style="background: #045741; color: #ffffff"><b>800</b><span>#045741</span></div><div class="swatch" style="background: #003929; color: #ffffff"><b>900</b><span>#003929</span></div><div class="swatch" style="background: #02251a; color: #ffffff"><b>950</b><span>#02251a</span></div></div>
+<div class="ramp"><span class="hue">amber</span><div class="swatch" style="background: #fef5eb; color: #000000"><b>50</b><span>#fef5eb</span></div><div class="swatch" style="background: #fee9d0; color: #000000"><b>100</b><span>#fee9d0</span></div><div class="swatch" style="background: #ffd4a0; color: #000000"><b>200</b><span>#ffd4a0</span></div><div class="swatch" style="background: #f3b76a; color: #000000"><b>300</b><span>#f3b76a</span></div><div class="swatch" style="background: #e0992e; color: #000000"><b>400</b><span>#e0992e</span></div><div class="swatch" style="background: #c27f05; color: #000000"><b>500</b><span>#c27f05</span></div><div class="swatch" style="background: #a16803; color: #ffffff"><b>600</b><span>#a16803</span></div><div class="swatch" style="background: #845502; color: #ffffff"><b>700</b><span>#845502</span></div><div class="swatch" style="background: #654000; color: #ffffff"><b>800</b><span>#654000</span></div><div class="swatch" style="background: #432900; color: #ffffff"><b>900</b><span>#432900</span></div><div class="swatch" style="background: #2b1a03; color: #ffffff"><b>950</b><span>#2b1a03</span></div></div>
+<div class="ramp"><span class="hue">red</span><div class="swatch" style="background: #fef4f1; color: #000000"><b>50</b><span>#fef4f1</span></div><div class="swatch" style="background: #ffe7e0; color: #000000"><b>100</b><span>#ffe7e0</span></div><div class="swatch" style="background: #ffd0c2; color: #000000"><b>200</b><span>#ffd0c2</span></div><div class="swatch" style="background: #fead94; color: #000000"><b>300</b><span>#fead94</span></div><div class="swatch" style="background: #fe7f57; color: #000000"><b>400</b><span>#fe7f57</span></div><div class="swatch" style="background: #eb5927; color: #000000"><b>500</b><span>#eb5927</span></div><div class="swatch" style="background: #ca3f02; color: #ffffff"><b>600</b><span>#ca3f02</span></div><div class="swatch" style="background: #a73303; color: #ffffff"><b>700</b><span>#a73303</span></div><div class="swatch" style="background: #812500; color: #ffffff"><b>800</b><span>#812500</span></div><div class="swatch" style="background: #511b0a; color: #ffffff"><b>900</b><span>#511b0a</span></div><div class="swatch" style="background: #341308; color: #ffffff"><b>950</b><span>#341308</span></div></div>
+<div class="ramp"><span class="hue">magenta</span><div class="swatch" style="background: #fff2fd; color: #000000"><b>50</b><span>#fff2fd</span></div><div class="swatch" style="background: #ffe3fb; color: #000000"><b>100</b><span>#ffe3fb</span></div><div class="swatch" style="background: #ffc8f9; color: #000000"><b>200</b><span>#ffc8f9</span></div><div class="swatch" style="background: #fa9ff2; color: #000000"><b>300</b><span>#fa9ff2</span></div><div class="swatch" style="background: #e67ade; color: #000000"><b>400</b><span>#e67ade</span></div><div class="swatch" style="background: #cc5cc5; color: #000000"><b>500</b><span>#cc5cc5</span></div><div class="swatch" style="background: #b040aa; color: #ffffff"><b>600</b><span>#b040aa</span></div><div class="swatch" style="background: #932f8e; color: #ffffff"><b>700</b><span>#932f8e</span></div><div class="swatch" style="background: #71236d; color: #ffffff"><b>800</b><span>#71236d</span></div><div class="swatch" style="background: #461c43; color: #ffffff"><b>900</b><span>#461c43</span></div><div class="swatch" style="background: #2d132b; color: #ffffff"><b>950</b><span>#2d132b</span></div></div></div>
+<h3>Contrast</h3>
+<p class="verdict pass">Every pairing passes, in light and in dark.</p>
+<table class="contrast"><thead><tr><th>Pair</th><th>Where</th><th>Needs</th><th class="num">Light</th><th class="num">Dark</th></tr></thead><tbody>
+<tr><td><code>text</code> on <code>background</code></td><td>Body text</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #ffffff; color: #22272e">Aa</span>15.02</td><td class="num pass"><span class="chip" style="background: #0c0f16; color: #f0f3f7">Aa</span>17.22</td></tr>
+<tr><td><code>text</code> on <code>surface</code></td><td>Text on a surface: buttons, table headers, the hovered sidebar link</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f7f9fd; color: #22272e">Aa</span>14.25</td><td class="num pass"><span class="chip" style="background: #13171f; color: #f0f3f7">Aa</span>16.13</td></tr>
+<tr><td><code>muted</code> on <code>background</code></td><td>Muted text: descriptions, the table of contents, tab labels</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #ffffff; color: #676c75">Aa</span>5.28</td><td class="num pass"><span class="chip" style="background: #0c0f16; color: #a5a9b2">Aa</span>8.14</td></tr>
+<tr><td><code>muted</code> on <code>surface</code></td><td>Muted text on a surface: the header's buttons, a code block's title</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f7f9fd; color: #676c75">Aa</span>5.01</td><td class="num pass"><span class="chip" style="background: #13171f; color: #a5a9b2">Aa</span>7.62</td></tr>
+<tr><td><code>accent</code> on <code>background</code></td><td>Links</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #ffffff; color: #5962e8">Aa</span>4.84</td><td class="num pass"><span class="chip" style="background: #0c0f16; color: #91a1fe">Aa</span>7.97</td></tr>
+<tr><td><code>accent</code> on <code>accent-surface</code></td><td>The current page in the sidebar; a search match</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f5f6fe; color: #5962e8">Aa</span>4.50</td><td class="num pass"><span class="chip" style="background: #161b3a; color: #91a1fe">Aa</span>6.98</td></tr>
+<tr><td><code>text</code> on <code>code-background</code></td><td>Inline code and code blocks</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f7f9fd; color: #22272e">Aa</span>14.25</td><td class="num pass"><span class="chip" style="background: #13171f; color: #f0f3f7">Aa</span>16.13</td></tr>
+<tr><td><code>accent-text</code> on <code>accent</code></td><td>A step's number on its marker; text on an accent button</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #5962e8; color: #ffffff">Aa</span>4.84</td><td class="num pass"><span class="chip" style="background: #91a1fe; color: #0c0f16">Aa</span>7.97</td></tr>
+<tr><td><code>accent</code> on <code>background</code></td><td>A step's marker, the selected tab's underline, the mark's second color</td><td>graphic 3:1</td><td class="num pass"><span class="chip" style="background: #ffffff; color: #5962e8">Aa</span>4.84</td><td class="num pass"><span class="chip" style="background: #0c0f16; color: #91a1fe">Aa</span>7.97</td></tr>
+<tr><td><code>focus</code> on <code>background</code></td><td>Focus rings</td><td>graphic 3:1</td><td class="num pass"><span class="chip" style="background: #ffffff; color: #5962e8">Aa</span>4.84</td><td class="num pass"><span class="chip" style="background: #0c0f16; color: #b3c0ff">Aa</span>10.86</td></tr>
+<tr><td><code>note</code> on <code>note-background</code></td><td>Note: label and bar</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f5f6fe; color: #474dc6">Aa</span>6.20</td><td class="num pass"><span class="chip" style="background: #161b3a; color: #91a1fe">Aa</span>6.98</td></tr>
+<tr><td><code>tip</code> on <code>tip-background</code></td><td>Tip: label and bar; GA badge</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #e1fff2; color: #057256">Aa</span>5.58</td><td class="num pass"><span class="chip" style="background: #02251a; color: #22c598">Aa</span>7.42</td></tr>
+<tr><td><code>important</code> on <code>important-background</code></td><td>Important: label and bar; preview badge</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fff2fd; color: #932f8e">Aa</span>6.38</td><td class="num pass"><span class="chip" style="background: #2d132b; color: #ffc8f9">Aa</span>12.01</td></tr>
+<tr><td><code>warning</code> on <code>warning-background</code></td><td>Warning: label and bar; deprecated badge</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef5eb; color: #845502">Aa</span>5.93</td><td class="num pass"><span class="chip" style="background: #2b1a03; color: #e0992e">Aa</span>7.00</td></tr>
+<tr><td><code>caution</code> on <code>caution-background</code></td><td>Caution: label and bar; removed badge</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef4f1; color: #a73303">Aa</span>6.23</td><td class="num pass"><span class="chip" style="background: #341308; color: #fe7f57">Aa</span>6.75</td></tr>
+<tr><td><code>text</code> on <code>note-background</code></td><td>Text inside a note</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f5f6fe; color: #22272e">Aa</span>13.95</td><td class="num pass"><span class="chip" style="background: #161b3a; color: #f0f3f7">Aa</span>15.07</td></tr>
+<tr><td><code>text</code> on <code>tip-background</code></td><td>Text inside a tip</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #e1fff2; color: #22272e">Aa</span>14.16</td><td class="num pass"><span class="chip" style="background: #02251a; color: #f0f3f7">Aa</span>14.72</td></tr>
+<tr><td><code>text</code> on <code>important-background</code></td><td>Text inside an important note</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fff2fd; color: #22272e">Aa</span>13.86</td><td class="num pass"><span class="chip" style="background: #2d132b; color: #f0f3f7">Aa</span>15.22</td></tr>
+<tr><td><code>text</code> on <code>warning-background</code></td><td>Text inside a warning</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef5eb; color: #22272e">Aa</span>13.93</td><td class="num pass"><span class="chip" style="background: #2b1a03; color: #f0f3f7">Aa</span>15.07</td></tr>
+<tr><td><code>text</code> on <code>caution-background</code></td><td>Text inside a caution</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef4f1; color: #22272e">Aa</span>13.90</td><td class="num pass"><span class="chip" style="background: #341308; color: #f0f3f7">Aa</span>15.18</td></tr>
+<tr><td><code>state</code> on <code>state-background</code></td><td>An availability badge with no state of its own</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f0f3f7; color: #676c75">Aa</span>4.74</td><td class="num pass"><span class="chip" style="background: #22272e; color: #a5a9b2">Aa</span>6.38</td></tr>
+<tr><td><code>added</code> on <code>added-background</code></td><td>Added: label and bar</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #c7fae5; color: #057256">Aa</span>5.14</td><td class="num pass"><span class="chip" style="background: #003929; color: #22c598">Aa</span>5.88</td></tr>
+<tr><td><code>changed</code> on <code>background</code></td><td>Changed: label and dashed bar, on the page</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #ffffff; color: #845502">Aa</span>6.40</td><td class="num pass"><span class="chip" style="background: #0c0f16; color: #e0992e">Aa</span>8.00</td></tr>
+<tr><td><code>removed</code> on <code>removed-background</code></td><td>Removed: label and dotted bar</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef4f1; color: #ca3f02">Aa</span>4.60</td><td class="num pass"><span class="chip" style="background: #511b0a; color: #fe7f57">Aa</span>5.55</td></tr>
+<tr><td><code>moved</code> on <code>moved-background</code></td><td>Moved: label, note, and double bar</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fff2fd; color: #932f8e">Aa</span>6.38</td><td class="num pass"><span class="chip" style="background: #461c43; color: #ffc8f9">Aa</span>9.87</td></tr>
+<tr><td><code>added</code> on <code>background</code></td><td>An added word's underline</td><td>graphic 3:1</td><td class="num pass"><span class="chip" style="background: #ffffff; color: #057256">Aa</span>5.92</td><td class="num pass"><span class="chip" style="background: #0c0f16; color: #22c598">Aa</span>8.68</td></tr>
+<tr><td><code>text</code> on <code>added-background</code></td><td>Text in an added block</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #c7fae5; color: #22272e">Aa</span>13.05</td><td class="num pass"><span class="chip" style="background: #003929; color: #f0f3f7">Aa</span>11.67</td></tr>
+<tr><td><code>text</code> on <code>moved-background</code></td><td>Text in a moved block</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fff2fd; color: #22272e">Aa</span>13.86</td><td class="num pass"><span class="chip" style="background: #461c43; color: #f0f3f7">Aa</span>12.52</td></tr>
+<tr><td><code>muted</code> on <code>removed-background</code></td><td>A removed word, struck through</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef4f1; color: #676c75">Aa</span>4.88</td><td class="num pass"><span class="chip" style="background: #511b0a; color: #a5a9b2">Aa</span>5.90</td></tr>
+<tr><td><code>text</code> on <code>flash</code></td><td>A block flashed after a jump</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fee9d0; color: #22272e">Aa</span>12.72</td><td class="num pass"><span class="chip" style="background: #432900; color: #f0f3f7">Aa</span>12.13</td></tr>
+<tr><td><code>focus</code> on <code>background</code></td><td>Review's Show and Moved links</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #ffffff; color: #5962e8">Aa</span>4.84</td><td class="num pass"><span class="chip" style="background: #0c0f16; color: #b3c0ff">Aa</span>10.86</td></tr>
+</tbody></table>
+<h3>With red-green color blindness</h3>
+<p class="note">How far apart colors that sit side by side look, as a distance in OKLab, to a typical reader and to readers without red (protan) or green (deutan) cones. Below 0.1 is marked: those rely on the label and the bar's shape.</p>
+<table class="distinct"><thead>
+<tr><th rowspan="2">Colors</th><th rowspan="2">Where</th><th colspan="3">Light</th><th colspan="3">Dark</th></tr>
+<tr><th class="num">Typical</th><th class="num">Protan</th><th class="num">Deutan</th><th class="num">Typical</th><th class="num">Protan</th><th class="num">Deutan</th></tr>
+</thead><tbody>
+<tr><td><code>added</code> and <code>removed</code></td><td>Review's marks</td><td class="num ">0.27</td><td class="num fail">0.09</td><td class="num ">0.14</td><td class="num ">0.28</td><td class="num ">0.13</td><td class="num ">0.10</td></tr>
+<tr><td><code>added</code> and <code>changed</code></td><td>Review's marks</td><td class="num ">0.15</td><td class="num fail">0.09</td><td class="num fail">0.09</td><td class="num ">0.21</td><td class="num ">0.12</td><td class="num ">0.13</td></tr>
+<tr><td><code>tip</code> and <code>caution</code></td><td>Tip and caution; GA and removed badges</td><td class="num ">0.23</td><td class="num ">0.13</td><td class="num fail">0.09</td><td class="num ">0.28</td><td class="num ">0.13</td><td class="num ">0.10</td></tr>
+<tr><td><code>tip</code> and <code>warning</code></td><td>GA and deprecated badges</td><td class="num ">0.15</td><td class="num fail">0.09</td><td class="num fail">0.09</td><td class="num ">0.21</td><td class="num ">0.12</td><td class="num ">0.13</td></tr>
+<tr><td><code>note</code> and <code>important</code></td><td>Note and important; beta and preview badges</td><td class="num ">0.17</td><td class="num fail">0.09</td><td class="num ">0.11</td><td class="num ">0.20</td><td class="num ">0.15</td><td class="num ">0.19</td></tr>
+</tbody></table>
+<h3>The type scale</h3>
+<p class="note">Over the system font stack: <code>system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif</code>; code in <code>ui-monospace, SFMono-Regular, Menlo, Consolas, monospace</code>. Size / line height / weight.</p>
+<table class="type"><tr><th>caption</th><td class="spec"><code>0.75rem / 1.4 / 600</code></td><td style="font-size: 0.75rem; line-height: 1.4; font-weight: 600">ON THIS PAGE</td></tr>
+<tr><th>small</th><td class="spec"><code>0.875rem / 1.5 / 400</code></td><td style="font-size: 0.875rem; line-height: 1.5; font-weight: 400">One source, resolved into a site, plain Markdown, and JSON.</td></tr>
+<tr><th>body</th><td class="spec"><code>1rem / 1.6 / 400</code></td><td style="font-size: 1rem; line-height: 1.6; font-weight: 400">One source, resolved into a site, plain Markdown, and JSON.</td></tr>
+<tr><th>lead</th><td class="spec"><code>1.125rem / 1.55 / 400</code></td><td style="font-size: 1.125rem; line-height: 1.55; font-weight: 400">One source, resolved into a site, plain Markdown, and JSON.</td></tr>
+<tr><th>h3</th><td class="spec"><code>1.125rem / 1.4 / 650</code></td><td style="font-size: 1.125rem; line-height: 1.4; font-weight: 650">Variants and availability</td></tr>
+<tr><th>h2</th><td class="spec"><code>1.375rem / 1.3 / 650</code></td><td style="font-size: 1.375rem; line-height: 1.3; font-weight: 650">Variants and availability</td></tr>
+<tr><th>h1</th><td class="spec"><code>1.875rem / 1.2 / 700</code></td><td style="font-size: 1.875rem; line-height: 1.2; font-weight: 700">Variants and availability</td></tr></table>
+</section>
+<section id="paper">
+<h2>Paper</h2>
+<p class="summary">Petrol-blue accent over warm neutrals; a larger body and a roomier scale for reading. <code>design/candidates/paper.toml</code></p>
+<div class="schemes">
+<div class="scheme" style="--c-text: #2a2620; --c-muted: #706b64; --c-background: #fbf9f6; --c-surface: #f5f2ee; --c-border: #d7d4cf; --c-accent: #035168; --c-accent-surface: #edf9ff; --c-accent-text: #ffffff; --c-code-background: #f5f2ee; --c-focus: #035168; --c-note: #035168; --c-note-background: #edf9ff; --c-tip: #035738; --c-tip-background: #e4ffef; --c-important: #943a72; --c-important-background: #fff3f9; --c-warning: #7f5804; --c-warning-background: #fef5e8; --c-caution: #a43702; --c-caution-background: #fef4f1; --c-state: #56524b; --c-state-background: #e9e6e1; --c-added: #035738; --c-added-background: #cbfadf; --c-changed: #7f5804; --c-changed-background: #feeacb; --c-removed: #c44810; --c-removed-background: #fef4f1; --c-moved: #943a72; --c-moved-background: #fff3f9; --c-flash: #feeacb">
+<h3>Light: the marks</h3>
+<div class="marks"><div class="mark">
+<p class="mark-name">Bracket</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Caret</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Nib</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-light" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-light" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div></div>
+<h3>A docs page</h3>
+<div class="frame" data-scheme="light"><template>:root:root:root { color-scheme: light; --font: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --text: #2a2620; --muted: #706b64; --background: #fbf9f6; --surface: #f5f2ee; --border: #d7d4cf; --accent: #035168; --accent-surface: #edf9ff; --code-background: #f5f2ee; --ascribe-border-color: #d7d4cf; --ascribe-muted-color: #706b64; --ascribe-note-color: #035168; --ascribe-note-background: #edf9ff; --ascribe-tip-color: #035738; --ascribe-tip-background: #e4ffef; --ascribe-important-color: #943a72; --ascribe-important-background: #fff3f9; --ascribe-warning-color: #7f5804; --ascribe-warning-background: #fef5e8; --ascribe-caution-color: #a43702; --ascribe-caution-background: #fef4f1; --ascribe-steps-color: #035168; --ascribe-steps-marker-text-color: #ffffff; --ascribe-tab-color: #706b64; --ascribe-tab-active-color: #035168; --ascribe-tab-focus-color: #035168; --ascribe-tab-hover-background: #f5f2ee; --ascribe-state-color: #56524b; --ascribe-state-background: #e9e6e1; --ascribe-state-ga-color: #035738; --ascribe-state-ga-background: #e4ffef; --ascribe-state-preview-color: #943a72; --ascribe-state-preview-background: #fff3f9; --ascribe-state-beta-color: #035168; --ascribe-state-beta-background: #edf9ff; --ascribe-state-deprecated-color: #7f5804; --ascribe-state-deprecated-background: #fef5e8; --ascribe-state-removed-color: #a43702; --ascribe-state-removed-background: #fef4f1; --ascribe-review-added: #035738; --ascribe-review-added-background: #cbfadf; --ascribe-review-changed: #7f5804; --ascribe-review-changed-background: #feeacb; --ascribe-review-removed: #c44810; --ascribe-review-removed-background: #fef4f1; --ascribe-review-moved: #943a72; --ascribe-review-moved-background: #fff3f9; --ascribe-review-muted: #706b64; --ascribe-review-surface: #fbf9f6; --ascribe-review-flash: #feeacb; --ascribe-review-focus: #035168; --ascribe-review-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --ascribe-review-text: #2a2620; --ascribe-review-border: #d7d4cf; --ascribe-review-thread: #f5f2ee; --ascribe-review-input: #fbf9f6; --ascribe-review-accent-text: #ffffff; }
+body { font-size: 1.0625rem; line-height: 1.7; font-weight: 400; }
+.page h1 { font-size: 2.125rem; line-height: 1.15; font-weight: 700; } .page h2 { font-size: 1.625rem; line-height: 1.25; font-weight: 600; } .page h3 { font-size: 1.3125rem; line-height: 1.35; font-weight: 600; }
+.page .description { font-size: 1.25rem; line-height: 1.6; font-weight: 400; }
+.sidebar, .toc, .page figure.code-title figcaption { font-size: 0.875rem; line-height: 1.5; font-weight: 400; }
+.sidebar h2, .toc h2 { font-size: 0.75rem; line-height: 1.4; font-weight: 600; }</template><iframe title="Paper, light"></iframe></div>
+<h3>Semantic colors</h3>
+<table class="semantic"><thead><tr><th>Color</th><th>From</th><th>Value</th><th class="num">On background</th></tr></thead><tbody>
+<tr><td><span class="chip" style="background: #2a2620"></span>text</td><td><code>neutral.900</code></td><td><code>#2a2620</code></td><td class="num">14.31</td></tr>
+<tr><td><span class="chip" style="background: #706b64"></span>muted</td><td><code>neutral.600</code></td><td><code>#706b64</code></td><td class="num">5.03</td></tr>
+<tr><td><span class="chip" style="background: #fbf9f6"></span>background</td><td><code>neutral.50</code></td><td><code>#fbf9f6</code></td><td class="num"></td></tr>
+<tr><td><span class="chip" style="background: #f5f2ee"></span>surface</td><td><code>neutral.100</code></td><td><code>#f5f2ee</code></td><td class="num">1.06</td></tr>
+<tr><td><span class="chip" style="background: #d7d4cf"></span>border</td><td><code>neutral.300</code></td><td><code>#d7d4cf</code></td><td class="num">1.41</td></tr>
+<tr><td><span class="chip" style="background: #035168"></span>accent</td><td><code>petrol.800</code></td><td><code>#035168</code></td><td class="num">8.39</td></tr>
+<tr><td><span class="chip" style="background: #edf9ff"></span>accent-surface</td><td><code>petrol.50</code></td><td><code>#edf9ff</code></td><td class="num">1.02</td></tr>
+<tr><td><span class="chip" style="background: #ffffff"></span>accent-text</td><td><code>neutral.0</code></td><td><code>#ffffff</code></td><td class="num">1.05</td></tr>
+<tr><td><span class="chip" style="background: #f5f2ee"></span>code-background</td><td><code>neutral.100</code></td><td><code>#f5f2ee</code></td><td class="num">1.06</td></tr>
+<tr><td><span class="chip" style="background: #035168"></span>focus</td><td><code>petrol.800</code></td><td><code>#035168</code></td><td class="num">8.39</td></tr>
+<tr><td><span class="chip" style="background: #035168"></span>note</td><td><code>petrol.800</code></td><td><code>#035168</code></td><td class="num">8.39</td></tr>
+<tr><td><span class="chip" style="background: #edf9ff"></span>note-background</td><td><code>petrol.50</code></td><td><code>#edf9ff</code></td><td class="num">1.02</td></tr>
+<tr><td><span class="chip" style="background: #035738"></span>tip</td><td><code>green.800</code></td><td><code>#035738</code></td><td class="num">8.24</td></tr>
+<tr><td><span class="chip" style="background: #e4ffef"></span>tip-background</td><td><code>green.50</code></td><td><code>#e4ffef</code></td><td class="num">1.01</td></tr>
+<tr><td><span class="chip" style="background: #943a72"></span>important</td><td><code>plum.700</code></td><td><code>#943a72</code></td><td class="num">6.43</td></tr>
+<tr><td><span class="chip" style="background: #fff3f9"></span>important-background</td><td><code>plum.50</code></td><td><code>#fff3f9</code></td><td class="num">1.03</td></tr>
+<tr><td><span class="chip" style="background: #7f5804"></span>warning</td><td><code>ochre.700</code></td><td><code>#7f5804</code></td><td class="num">6.06</td></tr>
+<tr><td><span class="chip" style="background: #fef5e8"></span>warning-background</td><td><code>ochre.50</code></td><td><code>#fef5e8</code></td><td class="num">1.03</td></tr>
+<tr><td><span class="chip" style="background: #a43702"></span>caution</td><td><code>brick.700</code></td><td><code>#a43702</code></td><td class="num">6.39</td></tr>
+<tr><td><span class="chip" style="background: #fef4f1"></span>caution-background</td><td><code>brick.50</code></td><td><code>#fef4f1</code></td><td class="num">1.03</td></tr>
+<tr><td><span class="chip" style="background: #56524b"></span>state</td><td><code>neutral.700</code></td><td><code>#56524b</code></td><td class="num">7.39</td></tr>
+<tr><td><span class="chip" style="background: #e9e6e1"></span>state-background</td><td><code>neutral.200</code></td><td><code>#e9e6e1</code></td><td class="num">1.18</td></tr>
+<tr><td><span class="chip" style="background: #035738"></span>added</td><td><code>green.800</code></td><td><code>#035738</code></td><td class="num">8.24</td></tr>
+<tr><td><span class="chip" style="background: #cbfadf"></span>added-background</td><td><code>green.100</code></td><td><code>#cbfadf</code></td><td class="num">1.09</td></tr>
+<tr><td><span class="chip" style="background: #7f5804"></span>changed</td><td><code>ochre.700</code></td><td><code>#7f5804</code></td><td class="num">6.06</td></tr>
+<tr><td><span class="chip" style="background: #feeacb"></span>changed-background</td><td><code>ochre.100</code></td><td><code>#feeacb</code></td><td class="num">1.12</td></tr>
+<tr><td><span class="chip" style="background: #c44810"></span>removed</td><td><code>brick.600</code></td><td><code>#c44810</code></td><td class="num">4.67</td></tr>
+<tr><td><span class="chip" style="background: #fef4f1"></span>removed-background</td><td><code>brick.50</code></td><td><code>#fef4f1</code></td><td class="num">1.03</td></tr>
+<tr><td><span class="chip" style="background: #943a72"></span>moved</td><td><code>plum.700</code></td><td><code>#943a72</code></td><td class="num">6.43</td></tr>
+<tr><td><span class="chip" style="background: #fff3f9"></span>moved-background</td><td><code>plum.50</code></td><td><code>#fff3f9</code></td><td class="num">1.03</td></tr>
+<tr><td><span class="chip" style="background: #feeacb"></span>flash</td><td><code>ochre.100</code></td><td><code>#feeacb</code></td><td class="num">1.12</td></tr>
+</tbody></table>
+</div>
+<div class="scheme" style="--c-text: #f5f2ee; --c-muted: #ada8a3; --c-background: #130f0a; --c-surface: #1a1611; --c-border: #413c36; --c-accent: #39b9e3; --c-accent-surface: #05222c; --c-accent-text: #130f0a; --c-code-background: #1a1611; --c-focus: #75d2f6; --c-note: #39b9e3; --c-note-background: #05222c; --c-tip: #42c48a; --c-tip-background: #062417; --c-important: #ffcbe7; --c-important-background: #2d1523; --c-warning: #d79e37; --c-warning-background: #291b05; --c-caution: #fc8155; --c-caution-background: #32150a; --c-state: #ada8a3; --c-state-background: #2a2620; --c-added: #42c48a; --c-added-background: #023923; --c-changed: #d79e37; --c-changed-background: #402a01; --c-removed: #fc8155; --c-removed-background: #4e1f0d; --c-moved: #ffcbe7; --c-moved-background: #462037; --c-flash: #402a01">
+<h3>Dark: the marks</h3>
+<div class="marks"><div class="mark">
+<p class="mark-name">Bracket</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Bracket</title>
+  <path class="second" d="M8.5 5 H4 V27 H8.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="19" cy="19.5" r="6.5" fill="none" stroke="currentColor" stroke-width="4"/>
+  <rect x="23.5" y="11" width="4" height="16.5" rx="2" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Caret</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Caret</title>
+  <path d="M3.5 27.5 L16 4.5 L28.5 27.5" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="second" cx="16" cy="24" r="3.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div>
+<div class="mark">
+<p class="mark-name">Nib</p>
+<div class="sizes one"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="sizes full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="64" height="64" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><svg width="128" height="128" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></div>
+<div class="uses">
+<div class="lockup full"><svg width="32" height="32" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>ascribe</span></div>
+<div class="activity vs-dark" title="VS Code's activity bar">
+<span class="active"><svg width="24" height="24" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg></span><span class="glyph"></span>
+</div>
+<div class="browser tab-dark" title="A browser tab"><span class="tab full"><svg width="16" height="16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Nib</title>
+  <path fill-rule="evenodd" fill="currentColor" d="M9 10 L23 10 L27 15 L16 30 L5 15 Z M14.5 17.5 a1.5 1.5 0 0 1 3 0 L17.5 25.5 L16 28 L14.5 25.5 Z"/>
+  <rect class="second" x="10" y="2" width="12" height="6" rx="1.5" fill="currentColor"/>
+</svg><span>Getting started · Ascribe</span></span></div>
+</div>
+</div></div>
+<h3>A docs page</h3>
+<div class="frame" data-scheme="dark"><template>:root:root:root { color-scheme: dark; --font: system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --text: #f5f2ee; --muted: #ada8a3; --background: #130f0a; --surface: #1a1611; --border: #413c36; --accent: #39b9e3; --accent-surface: #05222c; --code-background: #1a1611; --ascribe-border-color: #413c36; --ascribe-muted-color: #ada8a3; --ascribe-note-color: #39b9e3; --ascribe-note-background: #05222c; --ascribe-tip-color: #42c48a; --ascribe-tip-background: #062417; --ascribe-important-color: #ffcbe7; --ascribe-important-background: #2d1523; --ascribe-warning-color: #d79e37; --ascribe-warning-background: #291b05; --ascribe-caution-color: #fc8155; --ascribe-caution-background: #32150a; --ascribe-steps-color: #39b9e3; --ascribe-steps-marker-text-color: #130f0a; --ascribe-tab-color: #ada8a3; --ascribe-tab-active-color: #39b9e3; --ascribe-tab-focus-color: #75d2f6; --ascribe-tab-hover-background: #1a1611; --ascribe-state-color: #ada8a3; --ascribe-state-background: #2a2620; --ascribe-state-ga-color: #42c48a; --ascribe-state-ga-background: #062417; --ascribe-state-preview-color: #ffcbe7; --ascribe-state-preview-background: #2d1523; --ascribe-state-beta-color: #39b9e3; --ascribe-state-beta-background: #05222c; --ascribe-state-deprecated-color: #d79e37; --ascribe-state-deprecated-background: #291b05; --ascribe-state-removed-color: #fc8155; --ascribe-state-removed-background: #32150a; --ascribe-review-added: #42c48a; --ascribe-review-added-background: #023923; --ascribe-review-changed: #d79e37; --ascribe-review-changed-background: #402a01; --ascribe-review-removed: #fc8155; --ascribe-review-removed-background: #4e1f0d; --ascribe-review-moved: #ffcbe7; --ascribe-review-moved-background: #462037; --ascribe-review-muted: #ada8a3; --ascribe-review-surface: #130f0a; --ascribe-review-flash: #402a01; --ascribe-review-focus: #75d2f6; --ascribe-review-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --ascribe-review-text: #f5f2ee; --ascribe-review-border: #413c36; --ascribe-review-thread: #1a1611; --ascribe-review-input: #130f0a; --ascribe-review-accent-text: #130f0a; }
+body { font-size: 1.0625rem; line-height: 1.7; font-weight: 400; }
+.page h1 { font-size: 2.125rem; line-height: 1.15; font-weight: 700; } .page h2 { font-size: 1.625rem; line-height: 1.25; font-weight: 600; } .page h3 { font-size: 1.3125rem; line-height: 1.35; font-weight: 600; }
+.page .description { font-size: 1.25rem; line-height: 1.6; font-weight: 400; }
+.sidebar, .toc, .page figure.code-title figcaption { font-size: 0.875rem; line-height: 1.5; font-weight: 400; }
+.sidebar h2, .toc h2 { font-size: 0.75rem; line-height: 1.4; font-weight: 600; }</template><iframe title="Paper, dark"></iframe></div>
+<h3>Semantic colors</h3>
+<table class="semantic"><thead><tr><th>Color</th><th>From</th><th>Value</th><th class="num">On background</th></tr></thead><tbody>
+<tr><td><span class="chip" style="background: #f5f2ee"></span>text</td><td><code>neutral.100</code></td><td><code>#f5f2ee</code></td><td class="num">17.10</td></tr>
+<tr><td><span class="chip" style="background: #ada8a3"></span>muted</td><td><code>neutral.400</code></td><td><code>#ada8a3</code></td><td class="num">8.09</td></tr>
+<tr><td><span class="chip" style="background: #130f0a"></span>background</td><td><code>neutral.975</code></td><td><code>#130f0a</code></td><td class="num"></td></tr>
+<tr><td><span class="chip" style="background: #1a1611"></span>surface</td><td><code>neutral.950</code></td><td><code>#1a1611</code></td><td class="num">1.06</td></tr>
+<tr><td><span class="chip" style="background: #413c36"></span>border</td><td><code>neutral.800</code></td><td><code>#413c36</code></td><td class="num">1.75</td></tr>
+<tr><td><span class="chip" style="background: #39b9e3"></span>accent</td><td><code>petrol.400</code></td><td><code>#39b9e3</code></td><td class="num">8.38</td></tr>
+<tr><td><span class="chip" style="background: #05222c"></span>accent-surface</td><td><code>petrol.950</code></td><td><code>#05222c</code></td><td class="num">1.16</td></tr>
+<tr><td><span class="chip" style="background: #130f0a"></span>accent-text</td><td><code>neutral.975</code></td><td><code>#130f0a</code></td><td class="num">1.00</td></tr>
+<tr><td><span class="chip" style="background: #1a1611"></span>code-background</td><td><code>neutral.950</code></td><td><code>#1a1611</code></td><td class="num">1.06</td></tr>
+<tr><td><span class="chip" style="background: #75d2f6"></span>focus</td><td><code>petrol.300</code></td><td><code>#75d2f6</code></td><td class="num">11.18</td></tr>
+<tr><td><span class="chip" style="background: #39b9e3"></span>note</td><td><code>petrol.400</code></td><td><code>#39b9e3</code></td><td class="num">8.38</td></tr>
+<tr><td><span class="chip" style="background: #05222c"></span>note-background</td><td><code>petrol.950</code></td><td><code>#05222c</code></td><td class="num">1.16</td></tr>
+<tr><td><span class="chip" style="background: #42c48a"></span>tip</td><td><code>green.400</code></td><td><code>#42c48a</code></td><td class="num">8.63</td></tr>
+<tr><td><span class="chip" style="background: #062417"></span>tip-background</td><td><code>green.950</code></td><td><code>#062417</code></td><td class="num">1.16</td></tr>
+<tr><td><span class="chip" style="background: #ffcbe7"></span>important</td><td><code>plum.200</code></td><td><code>#ffcbe7</code></td><td class="num">13.58</td></tr>
+<tr><td><span class="chip" style="background: #2d1523"></span>important-background</td><td><code>plum.950</code></td><td><code>#2d1523</code></td><td class="num">1.13</td></tr>
+<tr><td><span class="chip" style="background: #d79e37"></span>warning</td><td><code>ochre.400</code></td><td><code>#d79e37</code></td><td class="num">8.03</td></tr>
+<tr><td><span class="chip" style="background: #291b05"></span>warning-background</td><td><code>ochre.950</code></td><td><code>#291b05</code></td><td class="num">1.14</td></tr>
+<tr><td><span class="chip" style="background: #fc8155"></span>caution</td><td><code>brick.400</code></td><td><code>#fc8155</code></td><td class="num">7.64</td></tr>
+<tr><td><span class="chip" style="background: #32150a"></span>caution-background</td><td><code>brick.950</code></td><td><code>#32150a</code></td><td class="num">1.13</td></tr>
+<tr><td><span class="chip" style="background: #ada8a3"></span>state</td><td><code>neutral.400</code></td><td><code>#ada8a3</code></td><td class="num">8.09</td></tr>
+<tr><td><span class="chip" style="background: #2a2620"></span>state-background</td><td><code>neutral.900</code></td><td><code>#2a2620</code></td><td class="num">1.27</td></tr>
+<tr><td><span class="chip" style="background: #42c48a"></span>added</td><td><code>green.400</code></td><td><code>#42c48a</code></td><td class="num">8.63</td></tr>
+<tr><td><span class="chip" style="background: #023923"></span>added-background</td><td><code>green.900</code></td><td><code>#023923</code></td><td class="num">1.47</td></tr>
+<tr><td><span class="chip" style="background: #d79e37"></span>changed</td><td><code>ochre.400</code></td><td><code>#d79e37</code></td><td class="num">8.03</td></tr>
+<tr><td><span class="chip" style="background: #402a01"></span>changed-background</td><td><code>ochre.900</code></td><td><code>#402a01</code></td><td class="num">1.41</td></tr>
+<tr><td><span class="chip" style="background: #fc8155"></span>removed</td><td><code>brick.400</code></td><td><code>#fc8155</code></td><td class="num">7.64</td></tr>
+<tr><td><span class="chip" style="background: #4e1f0d"></span>removed-background</td><td><code>brick.900</code></td><td><code>#4e1f0d</code></td><td class="num">1.39</td></tr>
+<tr><td><span class="chip" style="background: #ffcbe7"></span>moved</td><td><code>plum.200</code></td><td><code>#ffcbe7</code></td><td class="num">13.58</td></tr>
+<tr><td><span class="chip" style="background: #462037"></span>moved-background</td><td><code>plum.900</code></td><td><code>#462037</code></td><td class="num">1.38</td></tr>
+<tr><td><span class="chip" style="background: #402a01"></span>flash</td><td><code>ochre.900</code></td><td><code>#402a01</code></td><td class="num">1.41</td></tr>
+</tbody></table>
+</div>
+</div>
+<h3>The palette</h3>
+<div class="palette"><div class="ramp"><span class="hue">neutral</span><div class="swatch" style="background: #ffffff; color: #000000"><b>0</b><span>#ffffff</span></div><div class="swatch" style="background: #fbf9f6; color: #000000"><b>50</b><span>#fbf9f6</span></div><div class="swatch" style="background: #f5f2ee; color: #000000"><b>100</b><span>#f5f2ee</span></div><div class="swatch" style="background: #e9e6e1; color: #000000"><b>200</b><span>#e9e6e1</span></div><div class="swatch" style="background: #d7d4cf; color: #000000"><b>300</b><span>#d7d4cf</span></div><div class="swatch" style="background: #ada8a3; color: #000000"><b>400</b><span>#ada8a3</span></div><div class="swatch" style="background: #8c8781; color: #000000"><b>500</b><span>#8c8781</span></div><div class="swatch" style="background: #706b64; color: #ffffff"><b>600</b><span>#706b64</span></div><div class="swatch" style="background: #56524b; color: #ffffff"><b>700</b><span>#56524b</span></div><div class="swatch" style="background: #413c36; color: #ffffff"><b>800</b><span>#413c36</span></div><div class="swatch" style="background: #2a2620; color: #ffffff"><b>900</b><span>#2a2620</span></div><div class="swatch" style="background: #1a1611; color: #ffffff"><b>950</b><span>#1a1611</span></div><div class="swatch" style="background: #130f0a; color: #ffffff"><b>975</b><span>#130f0a</span></div></div>
+<div class="ramp"><span class="hue">petrol</span><div class="swatch" style="background: #edf9ff; color: #000000"><b>50</b><span>#edf9ff</span></div><div class="swatch" style="background: #d6f2fe; color: #000000"><b>100</b><span>#d6f2fe</span></div><div class="swatch" style="background: #ace7fe; color: #000000"><b>200</b><span>#ace7fe</span></div><div class="swatch" style="background: #75d2f6; color: #000000"><b>300</b><span>#75d2f6</span></div><div class="swatch" style="background: #39b9e3; color: #000000"><b>400</b><span>#39b9e3</span></div><div class="swatch" style="background: #089ec7; color: #000000"><b>500</b><span>#089ec7</span></div><div class="swatch" style="background: #0582a5; color: #000000"><b>600</b><span>#0582a5</span></div><div class="swatch" style="background: #056b87; color: #ffffff"><b>700</b><span>#056b87</span></div><div class="swatch" style="background: #035168; color: #ffffff"><b>800</b><span>#035168</span></div><div class="swatch" style="background: #023544; color: #ffffff"><b>900</b><span>#023544</span></div><div class="swatch" style="background: #05222c; color: #ffffff"><b>950</b><span>#05222c</span></div></div>
+<div class="ramp"><span class="hue">green</span><div class="swatch" style="background: #e4ffef; color: #000000"><b>50</b><span>#e4ffef</span></div><div class="swatch" style="background: #cbfadf; color: #000000"><b>100</b><span>#cbfadf</span></div><div class="swatch" style="background: #adeeca; color: #000000"><b>200</b><span>#adeeca</span></div><div class="swatch" style="background: #7bdcaa; color: #000000"><b>300</b><span>#7bdcaa</span></div><div class="swatch" style="background: #42c48a; color: #000000"><b>400</b><span>#42c48a</span></div><div class="swatch" style="background: #06a96f; color: #000000"><b>500</b><span>#06a96f</span></div><div class="swatch" style="background: #088c5c; color: #000000"><b>600</b><span>#088c5c</span></div><div class="swatch" style="background: #03734a; color: #ffffff"><b>700</b><span>#03734a</span></div><div class="swatch" style="background: #035738; color: #ffffff"><b>800</b><span>#035738</span></div><div class="swatch" style="background: #023923; color: #ffffff"><b>900</b><span>#023923</span></div><div class="swatch" style="background: #062417; color: #ffffff"><b>950</b><span>#062417</span></div></div>
+<div class="ramp"><span class="hue">ochre</span><div class="swatch" style="background: #fef5e8; color: #000000"><b>50</b><span>#fef5e8</span></div><div class="swatch" style="background: #feeacb; color: #000000"><b>100</b><span>#feeacb</span></div><div class="swatch" style="background: #f9d7a3; color: #000000"><b>200</b><span>#f9d7a3</span></div><div class="swatch" style="background: #ebbb6f; color: #000000"><b>300</b><span>#ebbb6f</span></div><div class="swatch" style="background: #d79e37; color: #000000"><b>400</b><span>#d79e37</span></div><div class="swatch" style="background: #bb8307; color: #000000"><b>500</b><span>#bb8307</span></div><div class="swatch" style="background: #9b6c06; color: #ffffff"><b>600</b><span>#9b6c06</span></div><div class="swatch" style="background: #7f5804; color: #ffffff"><b>700</b><span>#7f5804</span></div><div class="swatch" style="background: #614203; color: #ffffff"><b>800</b><span>#614203</span></div><div class="swatch" style="background: #402a01; color: #ffffff"><b>900</b><span>#402a01</span></div><div class="swatch" style="background: #291b05; color: #ffffff"><b>950</b><span>#291b05</span></div></div>
+<div class="ramp"><span class="hue">brick</span><div class="swatch" style="background: #fef4f1; color: #000000"><b>50</b><span>#fef4f1</span></div><div class="swatch" style="background: #ffe7df; color: #000000"><b>100</b><span>#ffe7df</span></div><div class="swatch" style="background: #fed1c1; color: #000000"><b>200</b><span>#fed1c1</span></div><div class="swatch" style="background: #ffad90; color: #000000"><b>300</b><span>#ffad90</span></div><div class="swatch" style="background: #fc8155; color: #000000"><b>400</b><span>#fc8155</span></div><div class="swatch" style="background: #e26333; color: #000000"><b>500</b><span>#e26333</span></div><div class="swatch" style="background: #c44810; color: #ffffff"><b>600</b><span>#c44810</span></div><div class="swatch" style="background: #a43702; color: #ffffff"><b>700</b><span>#a43702</span></div><div class="swatch" style="background: #7e2902; color: #ffffff"><b>800</b><span>#7e2902</span></div><div class="swatch" style="background: #4e1f0d; color: #ffffff"><b>900</b><span>#4e1f0d</span></div><div class="swatch" style="background: #32150a; color: #ffffff"><b>950</b><span>#32150a</span></div></div>
+<div class="ramp"><span class="hue">plum</span><div class="swatch" style="background: #fff3f9; color: #000000"><b>50</b><span>#fff3f9</span></div><div class="swatch" style="background: #ffe4f2; color: #000000"><b>100</b><span>#ffe4f2</span></div><div class="swatch" style="background: #ffcbe7; color: #000000"><b>200</b><span>#ffcbe7</span></div><div class="swatch" style="background: #fba5d5; color: #000000"><b>300</b><span>#fba5d5</span></div><div class="swatch" style="background: #e782be; color: #000000"><b>400</b><span>#e782be</span></div><div class="swatch" style="background: #cd65a4; color: #000000"><b>500</b><span>#cd65a4</span></div><div class="swatch" style="background: #b14b8a; color: #ffffff"><b>600</b><span>#b14b8a</span></div><div class="swatch" style="background: #943a72; color: #ffffff"><b>700</b><span>#943a72</span></div><div class="swatch" style="background: #712b57; color: #ffffff"><b>800</b><span>#712b57</span></div><div class="swatch" style="background: #462037; color: #ffffff"><b>900</b><span>#462037</span></div><div class="swatch" style="background: #2d1523; color: #ffffff"><b>950</b><span>#2d1523</span></div></div></div>
+<h3>Contrast</h3>
+<p class="verdict pass">Every pairing passes, in light and in dark.</p>
+<table class="contrast"><thead><tr><th>Pair</th><th>Where</th><th>Needs</th><th class="num">Light</th><th class="num">Dark</th></tr></thead><tbody>
+<tr><td><code>text</code> on <code>background</code></td><td>Body text</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fbf9f6; color: #2a2620">Aa</span>14.31</td><td class="num pass"><span class="chip" style="background: #130f0a; color: #f5f2ee">Aa</span>17.10</td></tr>
+<tr><td><code>text</code> on <code>surface</code></td><td>Text on a surface: buttons, table headers, the hovered sidebar link</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f5f2ee; color: #2a2620">Aa</span>13.47</td><td class="num pass"><span class="chip" style="background: #1a1611; color: #f5f2ee">Aa</span>16.13</td></tr>
+<tr><td><code>muted</code> on <code>background</code></td><td>Muted text: descriptions, the table of contents, tab labels</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fbf9f6; color: #706b64">Aa</span>5.03</td><td class="num pass"><span class="chip" style="background: #130f0a; color: #ada8a3">Aa</span>8.09</td></tr>
+<tr><td><code>muted</code> on <code>surface</code></td><td>Muted text on a surface: the header's buttons, a code block's title</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f5f2ee; color: #706b64">Aa</span>4.73</td><td class="num pass"><span class="chip" style="background: #1a1611; color: #ada8a3">Aa</span>7.63</td></tr>
+<tr><td><code>accent</code> on <code>background</code></td><td>Links</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fbf9f6; color: #035168">Aa</span>8.39</td><td class="num pass"><span class="chip" style="background: #130f0a; color: #39b9e3">Aa</span>8.38</td></tr>
+<tr><td><code>accent</code> on <code>accent-surface</code></td><td>The current page in the sidebar; a search match</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #edf9ff; color: #035168">Aa</span>8.23</td><td class="num pass"><span class="chip" style="background: #05222c; color: #39b9e3">Aa</span>7.25</td></tr>
+<tr><td><code>text</code> on <code>code-background</code></td><td>Inline code and code blocks</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #f5f2ee; color: #2a2620">Aa</span>13.47</td><td class="num pass"><span class="chip" style="background: #1a1611; color: #f5f2ee">Aa</span>16.13</td></tr>
+<tr><td><code>accent-text</code> on <code>accent</code></td><td>A step's number on its marker; text on an accent button</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #035168; color: #ffffff">Aa</span>8.82</td><td class="num pass"><span class="chip" style="background: #39b9e3; color: #130f0a">Aa</span>8.38</td></tr>
+<tr><td><code>accent</code> on <code>background</code></td><td>A step's marker, the selected tab's underline, the mark's second color</td><td>graphic 3:1</td><td class="num pass"><span class="chip" style="background: #fbf9f6; color: #035168">Aa</span>8.39</td><td class="num pass"><span class="chip" style="background: #130f0a; color: #39b9e3">Aa</span>8.38</td></tr>
+<tr><td><code>focus</code> on <code>background</code></td><td>Focus rings</td><td>graphic 3:1</td><td class="num pass"><span class="chip" style="background: #fbf9f6; color: #035168">Aa</span>8.39</td><td class="num pass"><span class="chip" style="background: #130f0a; color: #75d2f6">Aa</span>11.18</td></tr>
+<tr><td><code>note</code> on <code>note-background</code></td><td>Note: label and bar</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #edf9ff; color: #035168">Aa</span>8.23</td><td class="num pass"><span class="chip" style="background: #05222c; color: #39b9e3">Aa</span>7.25</td></tr>
+<tr><td><code>tip</code> on <code>tip-background</code></td><td>Tip: label and bar; GA badge</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #e4ffef; color: #035738">Aa</span>8.19</td><td class="num pass"><span class="chip" style="background: #062417; color: #42c48a">Aa</span>7.46</td></tr>
+<tr><td><code>important</code> on <code>important-background</code></td><td>Important: label and bar; preview badge</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fff3f9; color: #943a72">Aa</span>6.26</td><td class="num pass"><span class="chip" style="background: #2d1523; color: #ffcbe7">Aa</span>12.02</td></tr>
+<tr><td><code>warning</code> on <code>warning-background</code></td><td>Warning: label and bar; deprecated badge</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef5e8; color: #7f5804">Aa</span>5.89</td><td class="num pass"><span class="chip" style="background: #291b05; color: #d79e37">Aa</span>7.05</td></tr>
+<tr><td><code>caution</code> on <code>caution-background</code></td><td>Caution: label and bar; removed badge</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef4f1; color: #a43702">Aa</span>6.21</td><td class="num pass"><span class="chip" style="background: #32150a; color: #fc8155">Aa</span>6.74</td></tr>
+<tr><td><code>text</code> on <code>note-background</code></td><td>Text inside a note</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #edf9ff; color: #2a2620">Aa</span>14.03</td><td class="num pass"><span class="chip" style="background: #05222c; color: #f5f2ee">Aa</span>14.80</td></tr>
+<tr><td><code>text</code> on <code>tip-background</code></td><td>Text inside a tip</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #e4ffef; color: #2a2620">Aa</span>14.21</td><td class="num pass"><span class="chip" style="background: #062417; color: #f5f2ee">Aa</span>14.79</td></tr>
+<tr><td><code>text</code> on <code>important-background</code></td><td>Text inside an important note</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fff3f9; color: #2a2620">Aa</span>13.92</td><td class="num pass"><span class="chip" style="background: #2d1523; color: #f5f2ee">Aa</span>15.14</td></tr>
+<tr><td><code>text</code> on <code>warning-background</code></td><td>Text inside a warning</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef5e8; color: #2a2620">Aa</span>13.92</td><td class="num pass"><span class="chip" style="background: #291b05; color: #f5f2ee">Aa</span>15.02</td></tr>
+<tr><td><code>text</code> on <code>caution-background</code></td><td>Text inside a caution</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef4f1; color: #2a2620">Aa</span>13.91</td><td class="num pass"><span class="chip" style="background: #32150a; color: #f5f2ee">Aa</span>15.09</td></tr>
+<tr><td><code>state</code> on <code>state-background</code></td><td>An availability badge with no state of its own</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #e9e6e1; color: #56524b">Aa</span>6.24</td><td class="num pass"><span class="chip" style="background: #2a2620; color: #ada8a3">Aa</span>6.38</td></tr>
+<tr><td><code>added</code> on <code>added-background</code></td><td>Added: label and bar</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #cbfadf; color: #035738">Aa</span>7.54</td><td class="num pass"><span class="chip" style="background: #023923; color: #42c48a">Aa</span>5.89</td></tr>
+<tr><td><code>changed</code> on <code>background</code></td><td>Changed: label and dashed bar, on the page</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fbf9f6; color: #7f5804">Aa</span>6.06</td><td class="num pass"><span class="chip" style="background: #130f0a; color: #d79e37">Aa</span>8.03</td></tr>
+<tr><td><code>removed</code> on <code>removed-background</code></td><td>Removed: label and dotted bar</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef4f1; color: #c44810">Aa</span>4.54</td><td class="num pass"><span class="chip" style="background: #4e1f0d; color: #fc8155">Aa</span>5.51</td></tr>
+<tr><td><code>moved</code> on <code>moved-background</code></td><td>Moved: label, note, and double bar</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fff3f9; color: #943a72">Aa</span>6.26</td><td class="num pass"><span class="chip" style="background: #462037; color: #ffcbe7">Aa</span>9.82</td></tr>
+<tr><td><code>added</code> on <code>background</code></td><td>An added word's underline</td><td>graphic 3:1</td><td class="num pass"><span class="chip" style="background: #fbf9f6; color: #035738">Aa</span>8.24</td><td class="num pass"><span class="chip" style="background: #130f0a; color: #42c48a">Aa</span>8.63</td></tr>
+<tr><td><code>text</code> on <code>added-background</code></td><td>Text in an added block</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #cbfadf; color: #2a2620">Aa</span>13.09</td><td class="num pass"><span class="chip" style="background: #023923; color: #f5f2ee">Aa</span>11.67</td></tr>
+<tr><td><code>text</code> on <code>moved-background</code></td><td>Text in a moved block</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fff3f9; color: #2a2620">Aa</span>13.92</td><td class="num pass"><span class="chip" style="background: #462037; color: #f5f2ee">Aa</span>12.36</td></tr>
+<tr><td><code>muted</code> on <code>removed-background</code></td><td>A removed word, struck through</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fef4f1; color: #706b64">Aa</span>4.89</td><td class="num pass"><span class="chip" style="background: #4e1f0d; color: #ada8a3">Aa</span>5.84</td></tr>
+<tr><td><code>text</code> on <code>flash</code></td><td>A block flashed after a jump</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #feeacb; color: #2a2620">Aa</span>12.78</td><td class="num pass"><span class="chip" style="background: #402a01; color: #f5f2ee">Aa</span>12.14</td></tr>
+<tr><td><code>focus</code> on <code>background</code></td><td>Review's Show and Moved links</td><td>text 4.5:1</td><td class="num pass"><span class="chip" style="background: #fbf9f6; color: #035168">Aa</span>8.39</td><td class="num pass"><span class="chip" style="background: #130f0a; color: #75d2f6">Aa</span>11.18</td></tr>
+</tbody></table>
+<h3>With red-green color blindness</h3>
+<p class="note">How far apart colors that sit side by side look, as a distance in OKLab, to a typical reader and to readers without red (protan) or green (deutan) cones. Below 0.1 is marked: those rely on the label and the bar's shape.</p>
+<table class="distinct"><thead>
+<tr><th rowspan="2">Colors</th><th rowspan="2">Where</th><th colspan="3">Light</th><th colspan="3">Dark</th></tr>
+<tr><th class="num">Typical</th><th class="num">Protan</th><th class="num">Deutan</th><th class="num">Typical</th><th class="num">Protan</th><th class="num">Deutan</th></tr>
+</thead><tbody>
+<tr><td><code>added</code> and <code>removed</code></td><td>Review's marks</td><td class="num ">0.28</td><td class="num fail">0.07</td><td class="num ">0.20</td><td class="num ">0.26</td><td class="num ">0.12</td><td class="num fail">0.08</td></tr>
+<tr><td><code>added</code> and <code>changed</code></td><td>Review's marks</td><td class="num ">0.15</td><td class="num fail">0.07</td><td class="num ">0.12</td><td class="num ">0.18</td><td class="num fail">0.10</td><td class="num ">0.10</td></tr>
+<tr><td><code>tip</code> and <code>caution</code></td><td>Tip and caution; GA and removed badges</td><td class="num ">0.23</td><td class="num fail">0.05</td><td class="num ">0.13</td><td class="num ">0.26</td><td class="num ">0.12</td><td class="num fail">0.08</td></tr>
+<tr><td><code>tip</code> and <code>warning</code></td><td>GA and deprecated badges</td><td class="num ">0.15</td><td class="num fail">0.07</td><td class="num ">0.12</td><td class="num ">0.18</td><td class="num fail">0.10</td><td class="num ">0.10</td></tr>
+<tr><td><code>note</code> and <code>important</code></td><td>Note and important; beta and preview badges</td><td class="num ">0.21</td><td class="num fail">0.02</td><td class="num fail">0.10</td><td class="num ">0.23</td><td class="num ">0.10</td><td class="num ">0.18</td></tr>
+</tbody></table>
+<h3>The type scale</h3>
+<p class="note">Over the system font stack: <code>system-ui, -apple-system, &quot;Segoe UI&quot;, Roboto, sans-serif</code>; code in <code>ui-monospace, SFMono-Regular, Menlo, Consolas, monospace</code>. Size / line height / weight.</p>
+<table class="type"><tr><th>caption</th><td class="spec"><code>0.75rem / 1.4 / 600</code></td><td style="font-size: 0.75rem; line-height: 1.4; font-weight: 600">ON THIS PAGE</td></tr>
+<tr><th>small</th><td class="spec"><code>0.875rem / 1.5 / 400</code></td><td style="font-size: 0.875rem; line-height: 1.5; font-weight: 400">One source, resolved into a site, plain Markdown, and JSON.</td></tr>
+<tr><th>body</th><td class="spec"><code>1.0625rem / 1.7 / 400</code></td><td style="font-size: 1.0625rem; line-height: 1.7; font-weight: 400">One source, resolved into a site, plain Markdown, and JSON.</td></tr>
+<tr><th>lead</th><td class="spec"><code>1.25rem / 1.6 / 400</code></td><td style="font-size: 1.25rem; line-height: 1.6; font-weight: 400">One source, resolved into a site, plain Markdown, and JSON.</td></tr>
+<tr><th>h3</th><td class="spec"><code>1.3125rem / 1.35 / 600</code></td><td style="font-size: 1.3125rem; line-height: 1.35; font-weight: 600">Variants and availability</td></tr>
+<tr><th>h2</th><td class="spec"><code>1.625rem / 1.25 / 600</code></td><td style="font-size: 1.625rem; line-height: 1.25; font-weight: 600">Variants and availability</td></tr>
+<tr><th>h1</th><td class="spec"><code>2.125rem / 1.15 / 700</code></td><td style="font-size: 2.125rem; line-height: 1.15; font-weight: 700">Variants and availability</td></tr></table>
 </section>
 <template id="page"><header class="site-header"><a class="site-name" href="#">Ascribe</a><button class="search-button" type="button">Search<kbd>/</kbd></button><a class="repo-link" href="#"><span>GitHub</span></a></header>
 <div class="site-body">

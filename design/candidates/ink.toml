@@ -1,0 +1,138 @@
+# Cool and exact: blue-gray neutrals and an indigo accent, like ink on a
+# page. The semantic hues are pushed apart for red-green color blindness:
+# green leans teal and red leans vermilion, so added and removed differ in
+# blue and yellow as well as red and green.
+
+[candidate]
+name = "Ink"
+summary = "Indigo accent over cool neutrals; tighter, heavier headings."
+
+# Each hue's steps run from 50 (lightest) to 950 (darkest), made in OKLCH at
+# fixed lightnesses, so the same step of two hues has the same lightness.
+[palette.neutral]
+0 = "#ffffff"
+50 = "#f7f9fd"
+100 = "#f0f3f7"
+200 = "#e3e6ec"
+300 = "#d0d4db"
+400 = "#a5a9b2"
+500 = "#838891"
+600 = "#676c75"
+700 = "#4e535c"
+800 = "#393d46"
+900 = "#22272e"
+950 = "#13171f"
+975 = "#0c0f16"
+
+[palette.indigo]
+50 = "#f5f6fe"
+100 = "#e7ecff"
+200 = "#d2dbfe"
+300 = "#b3c0ff"
+400 = "#91a1fe"
+500 = "#7180fe"
+600 = "#5962e8"
+700 = "#474dc6"
+800 = "#353b98"
+900 = "#23295b"
+950 = "#161b3a"
+
+[palette.green]
+50 = "#e1fff2"
+100 = "#c7fae5"
+200 = "#a6efd2"
+300 = "#6eddb6"
+400 = "#22c598"
+500 = "#0ba880"
+600 = "#028b69"
+700 = "#057256"
+800 = "#045741"
+900 = "#003929"
+950 = "#02251a"
+
+[palette.amber]
+50 = "#fef5eb"
+100 = "#fee9d0"
+200 = "#ffd4a0"
+300 = "#f3b76a"
+400 = "#e0992e"
+500 = "#c27f05"
+600 = "#a16803"
+700 = "#845502"
+800 = "#654000"
+900 = "#432900"
+950 = "#2b1a03"
+
+[palette.red]
+50 = "#fef4f1"
+100 = "#ffe7e0"
+200 = "#ffd0c2"
+300 = "#fead94"
+400 = "#fe7f57"
+500 = "#eb5927"
+600 = "#ca3f02"
+700 = "#a73303"
+800 = "#812500"
+900 = "#511b0a"
+950 = "#341308"
+
+[palette.magenta]
+50 = "#fff2fd"
+100 = "#ffe3fb"
+200 = "#ffc8f9"
+300 = "#fa9ff2"
+400 = "#e67ade"
+500 = "#cc5cc5"
+600 = "#b040aa"
+700 = "#932f8e"
+800 = "#71236d"
+900 = "#461c43"
+950 = "#2d132b"
+
+[color]
+text = { light = "neutral.900", dark = "neutral.100" }
+muted = { light = "neutral.600", dark = "neutral.400" }
+background = { light = "neutral.0", dark = "neutral.975" }
+surface = { light = "neutral.50", dark = "neutral.950" }
+border = { light = "neutral.200", dark = "neutral.800" }
+accent = { light = "indigo.600", dark = "indigo.400" }
+accent-surface = { light = "indigo.50", dark = "indigo.950" }
+accent-text = { light = "neutral.0", dark = "neutral.975" }
+code-background = { light = "neutral.50", dark = "neutral.950" }
+focus = { light = "indigo.600", dark = "indigo.300" }
+
+note = { light = "indigo.700", dark = "indigo.400" }
+note-background = { light = "indigo.50", dark = "indigo.950" }
+tip = { light = "green.700", dark = "green.400" }
+tip-background = { light = "green.50", dark = "green.950" }
+important = { light = "magenta.700", dark = "magenta.200" }
+important-background = { light = "magenta.50", dark = "magenta.950" }
+warning = { light = "amber.700", dark = "amber.400" }
+warning-background = { light = "amber.50", dark = "amber.950" }
+caution = { light = "red.700", dark = "red.400" }
+caution-background = { light = "red.50", dark = "red.950" }
+state = { light = "neutral.600", dark = "neutral.400" }
+state-background = { light = "neutral.100", dark = "neutral.900" }
+
+added = { light = "green.700", dark = "green.400" }
+added-background = { light = "green.100", dark = "green.900" }
+changed = { light = "amber.700", dark = "amber.400" }
+changed-background = { light = "amber.100", dark = "amber.900" }
+removed = { light = "red.600", dark = "red.400" }
+removed-background = { light = "red.50", dark = "red.900" }
+moved = { light = "magenta.700", dark = "magenta.200" }
+moved-background = { light = "magenta.50", dark = "magenta.900" }
+flash = { light = "amber.100", dark = "amber.900" }
+[font]
+ui = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+
+# A compact scale, about 1.2 from step to step, with heavier headings.
+[type]
+caption = { size = "0.75rem", line = 1.4, weight = 600 }
+small = { size = "0.875rem", line = 1.5, weight = 400 }
+body = { size = "1rem", line = 1.6, weight = 400 }
+lead = { size = "1.125rem", line = 1.55, weight = 400 }
+h3 = { size = "1.125rem", line = 1.4, weight = 650 }
+h2 = { size = "1.375rem", line = 1.3, weight = 650 }
+h1 = { size = "1.875rem", line = 1.2, weight = 700 }
