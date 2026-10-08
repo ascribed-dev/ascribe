@@ -1,0 +1,87 @@
+{
+  "command": "node scripts/design/assets.ts",
+  "assets": [
+    {
+      "path": "site/public/favicon.svg",
+      "width": 32,
+      "height": 32,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    },
+    {
+      "path": "site/public/favicon.ico",
+      "width": 32,
+      "height": 32,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    },
+    {
+      "path": "site/public/apple-touch-icon.png",
+      "width": 180,
+      "height": 180,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    },
+    {
+      "path": "site/public/social-card.png",
+      "width": 1200,
+      "height": 630,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
+        "design/tagline.svg": "cca9325d1bf75647e96ce85b35d66b02efcc948c3e867e40612cab6fc740010f",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    },
+    {
+      "path": "packages/vscode/media/icon.png",
+      "width": 256,
+      "height": 256,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    },
+    {
+      "path": "packages/vscode/media/activity.svg",
+      "width": 24,
+      "height": 24,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442"
+      }
+    },
+    {
+      "path": "design/out/header-light.svg",
+      "width": 218,
+      "height": 48,
+      "sources": {
+        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    },
+    {
+      "path": "design/out/header-dark.svg",
+      "width": 218,
+      "height": 48,
+      "sources": {
+        "design/wordmark.svg": "8e01aa70ca9d6023b385c95c74ee9bb33bb479223d6f0c40b35e7e921f8f176f",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    },
+    {
+      "path": "design/out/avatar.png",
+      "width": 512,
+      "height": 512,
+      "sources": {
+        "design/mark.svg": "76ce93765c66523ddea3277cd32cea3aa30ec3701aa5379f39394c3b56a7a442",
+        "design/candidates/chosen.toml": "bb62fe2ee8374cc02a34300ccf33943a65d7b28cd0586ed333e5fbe25c8a9a54"
+      }
+    }
+  ]
+}
