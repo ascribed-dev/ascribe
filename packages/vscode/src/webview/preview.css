@@ -81,8 +81,8 @@
     transparent
   );
 
-  /* Review's tints are opaque, over the editor background, so the flash on a block fades into
-     them cleanly. */
+  /* Review's tints are opaque, over the editor background, so the flash on a
+     block fades into them cleanly. */
   --ascribe-review-added-background: color-mix(
     in srgb,
     var(--ascribe-review-added) 15%,

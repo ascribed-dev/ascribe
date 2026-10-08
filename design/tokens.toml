@@ -505,12 +505,16 @@ base = "0.375rem"
 
 # What each stylesheet declares ---------------------------------------------
 
-[emit."packages/elements/css/style.css".root]
+[emit."packages/elements/css/style.css".spacing]
 "--ascribe-space" = "space.base"
 "--ascribe-space-small" = "space.small"
-"--ascribe-radius" = "radius.base"
 "--ascribe-border-color" = "color.elements.border"
+"--ascribe-radius" = "radius.base"
+
+[emit."packages/elements/css/style.css".text]
 "--ascribe-muted-color" = "color.elements.muted"
+
+[emit."packages/elements/css/style.css".notes]
 "--ascribe-note-color" = "color.elements.note"
 "--ascribe-note-background" = "color.elements.note-background"
 "--ascribe-tip-color" = "color.elements.tip"
@@ -521,12 +525,18 @@ base = "0.375rem"
 "--ascribe-warning-background" = "color.elements.warning-background"
 "--ascribe-caution-color" = "color.elements.caution"
 "--ascribe-caution-background" = "color.elements.caution-background"
+
+[emit."packages/elements/css/style.css".steps]
 "--ascribe-steps-color" = "color.elements.accent"
 "--ascribe-steps-marker-text-color" = "color.elements.on-accent"
+
+[emit."packages/elements/css/style.css".tabs]
 "--ascribe-tab-color" = "color.elements.muted"
 "--ascribe-tab-active-color" = "color.elements.accent"
 "--ascribe-tab-focus-color" = "color.elements.accent"
 "--ascribe-tab-hover-background" = "color.elements.hover"
+
+[emit."packages/elements/css/style.css".states]
 "--ascribe-state-color" = "color.elements.state.default"
 "--ascribe-state-background" = "color.elements.state.default-background"
 "--ascribe-state-ga-color" = "color.elements.state.ga"
