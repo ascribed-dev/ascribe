@@ -8,6 +8,8 @@ It runs `ascribe build --emit site` before Astro loads content, gives you a cont
 npm install @ascribed/astro
 ```
 
+`satteri` and `@types/hast` are optional peer dependencies: the declarations of `@ascribed/astro/satteri` and `@ascribed/astro/rehype` import types from them. Astro's default Sätteri processor brings the first, and a `unified()` processor the second, so a project that uses one of those plugins has what it needs.
+
 ```js
 // astro.config.mjs
 import { defineConfig } from "astro/config";
