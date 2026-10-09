@@ -9,6 +9,9 @@
 //!
 //! Placing a block replaces what's between a file's markers, or appends the
 //! block to a file that has none, and never changes a byte outside them.
+//!
+//! In a YAML file the markers are `#` comments, indented as the start
+//! marker is, and so is each line of the block.
 
 /// What's wrong with a file's markers, so its block can't be placed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
@@ -33,37 +36,70 @@ pub struct Markers<'a> {
     pub name: &'a str,
     /// What the start marker says after its name.
     pub note: &'a str,
+    /// How the markers are written.
+    pub comment: Comment,
+}
+
+/// How a file writes a comment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Comment {
+    /// `<!-- … -->`, in Markdown.
+    Html,
+    /// `# …`, in YAML.
+    Hash,
 }
 
 impl Markers<'_> {
-    fn start(&self) -> String {
-        format!("<!-- {} start ({}) -->", self.name, self.note)
+    /// The start marker, without indentation.
+    pub fn start(&self) -> String {
+        match self.comment {
+            Comment::Html => format!("<!-- {} start ({}) -->", self.name, self.note),
+            Comment::Hash => format!("# {} start ({})", self.name, self.note),
+        }
     }
 
-    fn end(&self) -> String {
-        format!("<!-- {} end -->", self.name)
+    /// The end marker, without indentation.
+    pub fn end(&self) -> String {
+        match self.comment {
+            Comment::Html => format!("<!-- {} end -->", self.name),
+            Comment::Hash => format!("# {} end", self.name),
+        }
     }
 
-    fn is_start(&self, line: &str) -> bool {
-        let prefix = format!("<!-- {} start", self.name);
-        line.strip_prefix(&prefix)
-            .is_some_and(|rest| rest == " -->" || (rest.starts_with(' ') && rest.ends_with("-->")))
+    /// Whether `line`, trimmed, is a start marker, whatever its note.
+    pub fn is_start(&self, line: &str) -> bool {
+        match self.comment {
+            Comment::Html => {
+                let prefix = format!("<!-- {} start", self.name);
+                line.strip_prefix(&prefix).is_some_and(|rest| {
+                    rest == " -->" || (rest.starts_with(' ') && rest.ends_with("-->"))
+                })
+            }
+            Comment::Hash => {
+                let prefix = format!("# {} start", self.name);
+                line.strip_prefix(&prefix)
+                    .is_some_and(|rest| rest.is_empty() || rest.starts_with(' '))
+            }
+        }
     }
 
-    fn is_end(&self, line: &str) -> bool {
+    /// Whether `line`, trimmed, is an end marker.
+    pub fn is_end(&self, line: &str) -> bool {
         line == self.end()
     }
 
-    /// The block holding `body`, with `newline` ending each line.
-    fn block(&self, body: &str, newline: &str) -> String {
-        let mut out = self.start();
-        out.push_str(newline);
+    /// The block holding `body`, with `indent` before each line and
+    /// `newline` ending it.
+    fn block(&self, body: &str, indent: &str, newline: &str) -> String {
+        let mut out = format!("{indent}{}{newline}", self.start());
         for line in body.lines() {
+            if !line.is_empty() {
+                out.push_str(indent);
+            }
             out.push_str(line);
             out.push_str(newline);
         }
-        out.push_str(&self.end());
-        out.push_str(newline);
+        out.push_str(&format!("{indent}{}{newline}", self.end()));
         out
     }
 
@@ -72,7 +108,7 @@ impl Markers<'_> {
     /// end as the file's first line does.
     pub fn place(&self, text: Option<&str>, body: &str) -> Result<String, Damage> {
         let Some(text) = text else {
-            return Ok(self.block(body, "\n"));
+            return Ok(self.block(body, "", "\n"));
         };
         let newline = match text.find('\n') {
             Some(at) if text[..at].ends_with('\r') => "\r\n",
@@ -80,10 +116,14 @@ impl Markers<'_> {
         };
         let mut starts = Vec::new();
         let mut ends = Vec::new();
+        let mut indent = "";
         let mut offset = 0;
         for line in text.split_inclusive('\n') {
             let trimmed = line.trim();
             if self.is_start(trimmed) {
+                if self.comment == Comment::Hash {
+                    indent = &line[..line.len() - line.trim_start().len()];
+                }
                 starts.push(offset);
             } else if self.is_end(trimmed) {
                 ends.push(offset + line.len());
@@ -99,13 +139,13 @@ impl Markers<'_> {
                     }
                     out.push_str(newline);
                 }
-                out.push_str(&self.block(body, newline));
+                out.push_str(&self.block(body, "", newline));
                 Ok(out)
             }
             ([start], [end]) if start < end => Ok(format!(
                 "{}{}{}",
                 &text[..*start],
-                self.block(body, newline),
+                self.block(body, indent, newline),
                 &text[*end..]
             )),
             ([_], [_]) | ([], [_]) => Err(Damage::NoStart),
@@ -122,7 +162,22 @@ mod tests {
     const MARKERS: Markers<'static> = Markers {
         name: "ascribe:agents",
         note: "generated",
+        comment: Comment::Html,
     };
+
+    #[test]
+    fn yaml_markers_keep_their_indentation() {
+        let yaml = Markers {
+            comment: Comment::Hash,
+            ..MARKERS
+        };
+        let text = "steps:\n  - run: a\n  # ascribe:agents start (old)\n  - run: old\n  # ascribe:agents end\n  - run: b\n";
+        assert_eq!(
+            yaml.place(Some(text), "- run: new\n  shell: bash\n"),
+            Ok("steps:\n  - run: a\n  # ascribe:agents start (generated)\n  - run: new\n    shell: bash\n  # ascribe:agents end\n  - run: b\n".to_owned())
+        );
+        assert!(!yaml.is_start("# ascribe:agents:docs start (x)"));
+    }
 
     #[test]
     fn a_missing_file_gets_only_the_block() {

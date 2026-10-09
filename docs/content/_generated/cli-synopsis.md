@@ -1,7 +1,7 @@
 <!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
 
 ```text
-ascribe agents sync    [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook]
+ascribe agents sync    [--check] [--target agents-md|skills|claude|claude-rules|copilot|codex]... [--with-hook] [--cloud] [--agent]
 ascribe agents rules   [PATH]
 ascribe agents skill   [FILE]
 ascribe agents prompt  [NAME] [--arg <KEY=VALUE>]... [--list]

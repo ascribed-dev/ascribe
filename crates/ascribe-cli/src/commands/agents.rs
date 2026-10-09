@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 
 use crate::agents::sync::{self, Plan};
-use crate::agents::{checker, hook, prompts, skill};
+use crate::agents::{checker, copilot, hook, prompts, skill};
 use crate::answer::{self, FromDisk};
 use crate::cli::Global;
 use crate::context::load_project;
@@ -134,6 +134,20 @@ pub struct SyncArgs {
     /// without it.
     #[arg(long)]
     pub with_hook: bool,
+
+    /// Also write what Copilot's cloud agent needs on GitHub: steps in
+    /// .github/workflows/copilot-setup-steps.yml that install Ascribe, and
+    /// print the MCP server's JSON for the repository's settings. Implies
+    /// `--target copilot`. Steps written before are kept up to date without
+    /// it.
+    #[arg(long)]
+    pub cloud: bool,
+
+    /// With --cloud, write the MCP server into a custom agent,
+    /// .github/agents/ascribe-docs.md, instead of printing its JSON: for a
+    /// repository whose settings you can't change.
+    #[arg(long, requires = "cloud")]
+    pub agent: bool,
 }
 
 /// What `sync` can write.
@@ -152,7 +166,8 @@ pub enum Target {
     /// The rules in .claude/rules/, loaded only for the project's pages.
     ClaudeRules,
     /// The rules in .github/instructions/, loaded only for the project's
-    /// pages; with --with-hook, the hooks in .github/hooks/ascribe.json.
+    /// pages; with --with-hook, the hooks in .github/hooks/ascribe.json;
+    /// with --cloud, the cloud agent's setup.
     Copilot,
     /// Nothing of its own, since Codex reads AGENTS.md and the skill; with
     /// --with-hook, the hooks in .codex/hooks.json.
@@ -225,7 +240,12 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let targets: Vec<sync::Target> = args.target.iter().map(|t| t.sync()).collect();
-    let plan = match sync::plan(&project, &targets, args.with_hook) {
+    let options = sync::Options {
+        hooks: args.with_hook,
+        cloud: args.cloud,
+        agent: args.agent,
+    };
+    let plan = match sync::plan(&project, &targets, options) {
         Ok(plan) => plan,
         Err(e) => return exit::fail(err, &e),
     };
@@ -241,6 +261,16 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
     let result = plan.files.iter().try_for_each(|file| {
         let done = if file.changes() { "wrote" } else { "unchanged" };
         writeln!(out, "{done:<9} {}", shown(&file.path))
+    });
+    let result = result.and_then(|()| match &plan.mcp_settings {
+        Some(json) => write!(
+            out,
+            "\nCopilot's cloud agent reads its MCP servers from the repository's settings, \
+             not from a file. Paste this into {}, beside any servers already there, or run \
+             with --agent to write a custom agent that carries it:\n\n{json}",
+            copilot::MCP_SETTINGS_PLACE
+        ),
+        None => Ok(()),
     });
     answer::written(result, err).unwrap_or(exit::OK)
 }

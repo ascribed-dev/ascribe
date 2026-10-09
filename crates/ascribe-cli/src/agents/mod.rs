@@ -5,6 +5,7 @@
 //! knows none.
 
 pub mod checker;
+pub mod copilot;
 pub mod hook;
 pub mod markers;
 #[cfg(test)]

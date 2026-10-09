@@ -22,6 +22,13 @@
 //! and the MCP server too (`super::settings`): `.claude/settings.json` and
 //! `.mcp.json` for `claude`, `.codex/hooks.json` for `codex`, and
 //! `.github/hooks/ascribe.json` for `copilot`, all at the root.
+//!
+//! For Copilot's cloud agent (`--cloud`, or once the files hold it,
+//! `super::copilot`): a block of setup steps in
+//! `.github/workflows/copilot-setup-steps.yml`, and with `--agent` the
+//! custom agent `.github/agents/ascribe-docs.md` that carries the MCP
+//! server; without it, the server's JSON for the repository's settings,
+//! which no file can change.
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -33,8 +40,8 @@ use ascribe_diff::{DiffError, Repository};
 use ascribe_query::rules::{content_glob, pointer, rules};
 use ascribe_resolve::is_source_path;
 
-use super::markers::{Damage, Markers};
-use super::{settings, skill};
+use super::markers::{Comment, Damage, Markers};
+use super::{copilot, settings, skill};
 
 /// What `sync` can write.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -77,8 +84,8 @@ pub enum SyncError {
     },
     /// Copilot's files are asked for, outside a git repository.
     #[error(
-        "--target copilot needs a git repository: Copilot reads its instructions from \
-         the repository's .github/"
+        "--target copilot and --cloud need a git repository: Copilot reads its files \
+         from the repository's .github/"
     )]
     NoRepository,
     /// `git` couldn't say where the repository is.
@@ -149,6 +156,21 @@ pub struct Plan {
     pub files: Vec<Planned>,
     /// Notes for the person running it.
     pub notes: Vec<String>,
+    /// The MCP server's JSON for the repository's settings on GitHub, for
+    /// the person to paste there, when the cloud agent's setup is asked
+    /// for without a custom agent.
+    pub mcp_settings: Option<String>,
+}
+
+/// What's asked for beyond the targets' files.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Options {
+    /// The hooks (`--with-hook`).
+    pub hooks: bool,
+    /// The setup of Copilot's cloud agent (`--cloud`).
+    pub cloud: bool,
+    /// The custom agent that carries the MCP server (`--agent`).
+    pub agent: bool,
 }
 
 impl Plan {
@@ -198,19 +220,18 @@ pub fn rules_beside(
     Ok(rules(index, &RelPath::root(), &prefix))
 }
 
-/// Works out the files for `targets` (with `agents-md` and `skills` always,
-/// and each other target whose files exist already), without writing.
-/// With `hooks`, the hook entries of each of them too; without, those
-/// already written are kept up to date.
-pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, SyncError> {
-    let mut notes = Vec::new();
+/// Where `project` is in its repository: its folder, absolute; its folder
+/// in the repository; the repository's root, absolute; and a note when
+/// there's no repository, and the folder is taken as its root. With
+/// `needs_repository`, an error instead of that note.
+fn locate(
+    project: &Project,
+    needs_repository: bool,
+) -> Result<(PathBuf, RelPath, PathBuf, Vec<String>), SyncError> {
     let here = absolute(project.root());
     let (prefix, note) = prefix_of(&here)?;
-    if let Some(note) = note {
-        if asked.contains(&Target::Copilot) {
-            return Err(SyncError::NoRepository);
-        }
-        notes.push(note);
+    if note.is_some() && needs_repository {
+        return Err(SyncError::NoRepository);
     }
     // The root above the project's folder as written, not as `git` prints
     // it, so a symbolic link on the way doesn't change the paths shown.
@@ -218,6 +239,17 @@ pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, Sy
     for _ in prefix.segments() {
         root.pop();
     }
+    Ok((here, prefix, root, note.into_iter().collect()))
+}
+
+/// Works out the files for `targets` (with `agents-md` and `skills` always,
+/// and each other target whose files exist already), without writing.
+/// With `options.hooks`, the hook entries of each of them too, and with
+/// `options.cloud` the cloud agent's setup, which implies `copilot`;
+/// without, those already written are kept up to date.
+pub fn plan(project: &Project, asked: &[Target], options: Options) -> Result<Plan, SyncError> {
+    let needs_repository = asked.contains(&Target::Copilot) || options.cloud;
+    let (here, prefix, root, mut notes) = locate(project, needs_repository)?;
     let index = project.index();
     let name = if prefix.is_root() {
         "ascribe".to_owned()
@@ -250,7 +282,7 @@ pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, Sy
     };
     let claude = wants(Target::Claude, &claude_files)?;
     let with_rules = wants(Target::ClaudeRules, std::slice::from_ref(&claude_rules))?;
-    let with_copilot = wants(Target::Copilot, std::slice::from_ref(&copilot))?;
+    let with_copilot = options.cloud || wants(Target::Copilot, std::slice::from_ref(&copilot))?;
 
     let content = absolute(&project.root().join(project.content_root().as_str()));
     let mut files = Vec::new();
@@ -276,7 +308,11 @@ pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, Sy
     // AGENTS.md: the rules beside ascribe.toml, and a pointer at the root.
     let note = "generated by `ascribe agents sync`; edit ascribe.toml, not this block";
     let body = rules(&index, &RelPath::root(), &prefix);
-    let markers = Markers { name: BLOCK, note };
+    let markers = Markers {
+        name: BLOCK,
+        note,
+        comment: Comment::Html,
+    };
     add(
         here.join("AGENTS.md"),
         &|old| markers.place(old, &body),
@@ -290,6 +326,7 @@ pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, Sy
         let markers = Markers {
             name: &name,
             note: &note,
+            comment: Comment::Html,
         };
         add(
             root.join("AGENTS.md"),
@@ -302,7 +339,11 @@ pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, Sy
     // CLAUDE.md: an import of AGENTS.md, in each one there is.
     for dir in &agents_dirs {
         let note = "generated by `ascribe agents sync`; it loads AGENTS.md";
-        let markers = Markers { name: BLOCK, note };
+        let markers = Markers {
+            name: BLOCK,
+            note,
+            comment: Comment::Html,
+        };
         let create = asked.contains(&Target::Claude) && dir == &here;
         let (file, import) = match claude_md(dir, create)? {
             Some((file, import)) => (Some(file), import),
@@ -329,13 +370,10 @@ pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, Sy
     let mut skill_dirs: Vec<(PathBuf, Option<Vec<String>>)> =
         vec![(under(&root, ".agents/skills").join(skill::NAME), None)];
     if claude {
-        let mut paths = read(&claude_skill.join("SKILL.md"))?
-            .map(|text| skill_paths(&text))
-            .unwrap_or_default();
-        paths.push(glob.clone());
-        paths.sort();
-        paths.dedup();
-        skill_dirs.push((claude_skill.clone(), Some(paths)));
+        skill_dirs.push((
+            claude_skill.clone(),
+            Some(claude_skill_paths(&claude_skill, &glob)?),
+        ));
     }
     for (dir, paths) in &skill_dirs {
         for (file, text) in skill::files(paths.as_deref()) {
@@ -360,14 +398,131 @@ pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, Sy
     // Outside FileSystem: whether the repository has a `.codex` folder,
     // which isn't the project's.
     let wants_hooks = Hooks {
-        asked: hooks,
+        asked: options.hooks,
         claude,
         codex: asked.contains(&Target::Codex) || under(&root, ".codex").is_dir(),
         copilot: with_copilot,
     };
     plan_hooks(&wants_hooks, &here, &root, &mut files, &mut notes)?;
 
-    Ok(Plan { files, notes })
+    // Copilot's cloud agent.
+    let mcp_settings = plan_cloud(options, &here, &root, &mut files)?;
+
+    Ok(Plan {
+        files,
+        notes,
+        mcp_settings,
+    })
+}
+
+/// The cloud agent's setup steps and custom agent, when they're asked for
+/// or written already; and the MCP server's JSON for the repository's
+/// settings, when the setup is asked for without the custom agent.
+fn plan_cloud(
+    options: Options,
+    here: &Path,
+    root: &Path,
+    files: &mut Vec<Planned>,
+) -> Result<Option<String>, SyncError> {
+    // Projects that install the same way share a block: a global install
+    // is the same for every project, and a pinned one for each
+    // `package.json`.
+    let install = install_of(here, root)?;
+    let name = match &install {
+        copilot::Install::Global { .. } => "ascribe:copilot".to_owned(),
+        copilot::Install::Pinned { package, .. } if package.is_empty() => {
+            "ascribe:copilot:pinned".to_owned()
+        }
+        copilot::Install::Pinned { package, .. } => format!("ascribe:copilot:{package}"),
+    };
+    let markers = Markers {
+        name: &name,
+        note: "generated by `ascribe agents sync --cloud`; run it again rather than editing this block",
+        comment: Comment::Hash,
+    };
+    let setup = under(root, copilot::SETUP_STEPS);
+    let old = read(&setup)?;
+    let has_block = old
+        .as_deref()
+        .is_some_and(|text| text.lines().any(|line| markers.is_start(line.trim())));
+    if options.cloud || has_block {
+        let new = copilot::setup_steps(old.as_deref(), &markers, &install).map_err(|why| {
+            SyncError::Settings {
+                path: setup.display().to_string(),
+                why,
+            }
+        })?;
+        files.push(Planned {
+            path: setup,
+            old,
+            new,
+        });
+    }
+    let agent = under(root, copilot::AGENT);
+    let old = read(&agent)?;
+    if (options.cloud && options.agent) || old.is_some() {
+        files.push(Planned {
+            path: agent,
+            old,
+            new: copilot::agent_md(),
+        });
+        return Ok(None);
+    }
+    Ok(options.cloud.then(copilot::mcp_settings))
+}
+
+/// How the cloud agent's setup installs `ascribe`: the dependencies of the
+/// nearest `package.json` from the project's folder up to the repository's
+/// root that pins `@ascribed/cli`, with the lockfile from there up; else
+/// this version, globally.
+fn install_of(here: &Path, root: &Path) -> Result<copilot::Install, SyncError> {
+    let from_root = |dir: &Path| {
+        relative_path(root, dir)
+            .filter(|rel| !rel.is_root())
+            .map(|rel| rel.as_str().to_owned())
+            .unwrap_or_default()
+    };
+    for dir in here.ancestors() {
+        if let Some(text) = read(&dir.join("package.json"))?
+            && copilot::pins_ascribe(&text)
+        {
+            let package = from_root(dir);
+            let bin = if package.is_empty() {
+                "node_modules/.bin".to_owned()
+            } else {
+                format!("{package}/node_modules/.bin")
+            };
+            for lock_dir in dir.ancestors() {
+                for (file, command) in copilot::LOCKFILES {
+                    // Outside FileSystem: the repository's lockfiles, which
+                    // aren't the project's.
+                    if lock_dir.join(file).is_file() {
+                        return Ok(copilot::Install::Pinned {
+                            package,
+                            install: from_root(lock_dir),
+                            command,
+                            bin,
+                        });
+                    }
+                }
+                if lock_dir == root {
+                    break;
+                }
+            }
+            return Ok(copilot::Install::Pinned {
+                install: package.clone(),
+                package,
+                command: copilot::NO_LOCKFILE,
+                bin,
+            });
+        }
+        if dir == root {
+            break;
+        }
+    }
+    Ok(copilot::Install::Global {
+        version: env!("CARGO_PKG_VERSION").to_owned(),
+    })
 }
 
 /// Which agents' hooks `sync` may write, and whether they were asked for.
@@ -490,6 +645,18 @@ fn in_dir(prefix: &RelPath, name: &str) -> String {
         .join(name)
         .map(|p| p.as_str().to_owned())
         .unwrap_or_else(|_| name.to_owned())
+}
+
+/// The `paths` the skill in `dir`, for Claude Code, lists: those it lists
+/// now, and `glob`.
+fn claude_skill_paths(dir: &Path, glob: &str) -> Result<Vec<String>, SyncError> {
+    let mut paths = read(&dir.join("SKILL.md"))?
+        .map(|text| skill_paths(&text))
+        .unwrap_or_default();
+    paths.push(glob.to_owned());
+    paths.sort();
+    paths.dedup();
+    Ok(paths)
 }
 
 /// The `paths` a skill written for Claude Code lists: the content globs of

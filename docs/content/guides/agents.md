@@ -38,12 +38,12 @@ Beyond `AGENTS.md` and the skill, `sync` keeps up to date the files of each targ
 |---|---|
 | `claude` | An import of `AGENTS.md` (`@AGENTS.md`) in `CLAUDE.md`, and the skill in `.claude/skills/ascribe/`, loaded for your pages |
 | `claude-rules` | The rules in `.claude/rules/ascribe-<project>.md`, loaded only when Claude Code works on your pages |
-| `copilot` | The rules in `.github/instructions/ascribe-<project>.instructions.md`, applied only to your pages |
+| `copilot` | The rules in `.github/instructions/ascribe-<project>.instructions.md`, applied only to your pages; with `--cloud`, what [Copilot's cloud agent](#github-copilot) needs |
 | `codex` | Nothing of its own, since Codex reads `AGENTS.md` and the skill; it's there for [its hooks](#hooks) |
 
 **Claude Code** reads `AGENTS.md` by itself only while there's no `CLAUDE.md` at or above the folder it works in. So `sync` never creates a `CLAUDE.md` unless you ask with `--target claude`, and when there is one, it adds the import to it rather than copying the rules. A personal `CLAUDE.local.md` also stops Claude Code reading `AGENTS.md`; `sync` doesn't edit it, but says so, and you can add `@AGENTS.md` to it yourself.
 
-**Copilot's** files are for a repository, so `--target copilot` needs one. Outside a git repository, `sync` treats your project's folder as the root and says so.
+**Copilot's** files are for a repository, so `--target copilot` and `--cloud` need one. Outside a git repository, `sync` treats your project's folder as the root and says so.
 
 The rules in `.claude/rules/` and `.github/instructions/`, and the skill's folders, are wholly Ascribe's: `sync` rewrites them whole, and the rules files say so at the top.
 
@@ -206,3 +206,20 @@ Add it from a copy of the repository:
 ```
 
 The plugin has both kinds of manifest: `.claude-plugin/plugin.json`, which Copilot's CLI reads too, and the Agent Plugins `plugin.json`, which VS Code and Cursor read. Claude Code doesn't start a plugin's language server in a cloud session; there, use the project's entries from `--with-hook`, which Claude Code reads from the repository. To keep the language server's diagnostics out of the conversation on a project with many problems, see [the plugin's README](https://github.com/ascribed-dev/ascribe/tree/main/plugins/ascribe#readme); the stop hook still checks before Claude finishes.
+
+## GitHub Copilot
+
+In VS Code, Copilot reads `AGENTS.md`, the rules from `--target copilot`, and the skill, and the Ascribe extension gives it [the MCP server](#the-server-in-vs-code), whose prompts `new-page`, `fix`, and `review` appear as slash commands in its chat. There's nothing more to set up.
+
+Copilot's cloud agent works on GitHub, with no editor: you assign it an issue and it opens a pull request. It reads the skill from `.agents/skills/` and the hooks from `.github/hooks/`, as other agents do, but it needs `ascribe` installed, and it reads MCP servers only from the repository's settings. `--cloud` writes the rest:
+
+```shell
+ascribe agents sync --target copilot --with-hook --cloud
+```
+
+- **The setup steps.** In `.github/workflows/copilot-setup-steps.yml`, the job the cloud agent runs before it starts, steps that install Node.js and `@ascribed/cli` and run `ascribe --version`. When your project pins `@ascribed/cli` in a `package.json`, they install that folder's dependencies, with `npm ci`, `pnpm`, or `yarn` by its lockfile, and put its `node_modules/.bin` on the path; otherwise they install the version of `ascribe` that wrote them, globally. `sync` creates the workflow when there's none, and otherwise adds its steps, between markers, at the end of the `copilot-setup-steps` job's steps, leaving your steps as they are. Projects in one repository that install the same way share one block.
+- **The MCP server.** No file can change a repository's settings, so `sync` prints the server's JSON, a local server running `ascribe mcp` with each of its tools allowed, to paste into the repository's **Settings → Copilot → MCP servers**. If you can't change the settings, add `--agent`: `sync` writes `.github/agents/ascribe-docs.md` instead, a custom agent for documentation work that carries the server, which you pick when you assign the cloud agent a task.
+
+GitHub reads all of these from the default branch, so they take effect once they're merged. `--check` covers the setup steps and the custom agent, and `sync` keeps them up to date without `--cloud` once they exist.
+
+Ascribe writes no prompt files for Copilot (`.github/prompts/`): the cloud agent doesn't load them, and in VS Code the MCP server's prompts do the same.
