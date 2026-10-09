@@ -22,6 +22,9 @@
 //               threads in the preview and the source editor from a fake
 //               GitHub, against the real `ascribe lsp`. Opened through a
 //               symlink, except on Windows. Needs ASCRIBE_BIN and `git`.
+//   actions     a copy of examples/quill, the editor's actions run through
+//               their commands with scripted answers, against the real
+//               `ascribe lsp`. Needs ASCRIBE_BIN as well.
 //   site        a copy of examples/quill, Open Site Preview and the preview
 //               panel's Site view, against a fake dev server, with the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -182,6 +185,11 @@ const suites: Suite[] = [
     },
   },
   {
+    name: "actions",
+    fixture: path.join(repositoryRoot, "examples/quill"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
     name: "site",
     fixture: path.join(repositoryRoot, "examples/quill"),
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
@@ -210,7 +218,15 @@ const suites: Suite[] = [
 ];
 
 /** The suites that run the real language server. */
-const needsServer = new Set(["quill", "preview", "review", "threads", "site", "monorepo"]);
+const needsServer = new Set([
+  "quill",
+  "preview",
+  "review",
+  "threads",
+  "actions",
+  "site",
+  "monorepo",
+]);
 
 /** VS Code's output, kept for later. */
 class Captured extends Writable {

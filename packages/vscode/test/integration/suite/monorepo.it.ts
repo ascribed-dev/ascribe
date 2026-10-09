@@ -337,6 +337,32 @@ describe("with several projects, one nested in another", () => {
     });
   });
 
+  describe("actions", () => {
+    it("are offered in a file of a project, and not in a Markdown file outside every project", async () => {
+      await open(codeReadme);
+      await waitFor("ascribe.inProject to be false", () => !api.actions.inProject());
+      await open(nestedPage);
+      await waitFor("ascribe.inProject", () => api.actions.inProject());
+    });
+
+    it("go to the server of the project that owns the file", async () => {
+      // `edition` is a phrase of the nested project only, and the handbook's
+      // server has no page here.
+      const editor = await open(nestedPage);
+      // Before "edition" in "## The {edition} edition".
+      editor.selection = new vscode.Selection(5, 17, 5, 17);
+      const before = api.actions.runs.length;
+      api.actions.answerNext(["edition"]);
+      await vscode.commands.executeCommand("ascribe.action.insertPhrase");
+      try {
+        assert.deepEqual(api.actions.runs[before]?.messages, []);
+        assert.equal(editor.document.lineAt(5).text, "## The {edition} {edition}edition");
+      } finally {
+        await vscode.commands.executeCommand("workbench.action.files.revert");
+      }
+    });
+  });
+
   describe("projects that come and go", () => {
     it("adds a project when its ascribe.toml appears, and stops its server when it goes", async () => {
       const guides = path.join(workspace(), "guides");

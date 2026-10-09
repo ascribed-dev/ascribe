@@ -1,20 +1,27 @@
-// The editor guide, docs/content/guides/editor.md, includes two fragments
-// generated from package.json: the settings, and the commands in the command
-// palette. This test renders them and fails when one is out of date; run it
-// with ASCRIBE_BLESS=1 to rewrite them. To change what a setting's row says,
-// change its description in package.json. VS Code's manifest has no field for
-// what a command does, so each command's description is here, in `commands`.
-// A setting or command no release has yet is listed in `available`, which
-// gives its row an availability.
+// The editor guide, docs/content/guides/editor.md, includes three fragments
+// generated from package.json and the action registry: the settings, the
+// commands in the command palette, and the actions. This test renders them
+// and fails when one is out of date; run it with ASCRIBE_BLESS=1 to rewrite
+// them. To change what a setting's row says, change its description in
+// package.json. VS Code's manifest has no field for what a command does, so
+// each command's description is here, in `commands`, except an action's,
+// which is its description in src/actions/registry.ts. A setting or command
+// no release has yet is listed in `available`, which gives its row an
+// availability.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { ACTIONS, commandId } from "../../src/actions/registry.js";
 
 const BLESS = "ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts";
 
 const HEADER =
   "<!-- Generated from packages/vscode/package.json by packages/vscode/test/unit/docs.test.ts. " +
   `Edit the manifest, or a command's description in the test, then run \`${BLESS}\`. -->\n`;
+
+const ACTIONS_HEADER =
+  "<!-- Generated from packages/vscode/src/actions/registry.ts by packages/vscode/test/unit/docs.test.ts. " +
+  `Edit the registry, then run \`${BLESS}\`. -->\n`;
 
 /** What each command in the palette does, by id. */
 const commands: Record<string, string> = {
@@ -37,6 +44,12 @@ const commands: Record<string, string> = {
     "Lists the pages the change touches in the preview's build; choosing one opens it and its preview.",
   "ascribe.refreshComments":
     "Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../guides/editor.md#comments-in-the-preview).",
+  ...Object.fromEntries(
+    ACTIONS.map((action) => [
+      commandId(action),
+      `${action.description}. One of the [actions](../guides/editor.md#actions).`,
+    ]),
+  ),
 };
 
 /** The availability of each setting or command no release has yet, by id. */
@@ -50,6 +63,7 @@ const available: Record<string, string> = {
   "ascribe.preview.scrollPreviewWithEditor": "next",
   "ascribe.preview.scrollEditorWithPreview": "next",
   "ascribe.review.sourceComments": "next",
+  ...Object.fromEntries(ACTIONS.map((action) => [commandId(action), "next"])),
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */
@@ -123,9 +137,20 @@ function commandTable(): string {
   return out;
 }
 
+/** The actions table, in the registry's order. */
+function actionTable(): string {
+  let out = `${ACTIONS_HEADER}\n| Action | What it does | Where it applies |\n|---|---|---|\n`;
+  for (const action of ACTIONS) {
+    const lightbulb = action.lightbulb ? " Also in the lightbulb." : "";
+    out += `| **${action.title}** | ${cell(action.description)}.${lightbulb} | ${cell(action.where)} |\n`;
+  }
+  return out;
+}
+
 const fragments: [string, string][] = [
   ["editor-settings.md", settings()],
   ["editor-commands.md", commandTable()],
+  ["editor-actions.md", actionTable()],
 ];
 
 describe("the editor guide", () => {

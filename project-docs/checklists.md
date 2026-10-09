@@ -60,6 +60,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 **The editor**
 
 - [ ] The VS Code grammar, in `packages/vscode/syntaxes/`.
+- [ ] The editor's actions, in `packages/vscode/src/actions/registry.ts`: a new `ascribe/edit` operation gets an action (a test fails without one), and a new node kind in `ascribe/context` is considered for where each action applies.
 
 **The docs**
 

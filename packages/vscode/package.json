@@ -117,6 +117,156 @@
         "command": "ascribe.review.reopen",
         "title": "Reopen",
         "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.wrapNote",
+        "title": "Wrap in a note",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.setNoteType",
+        "title": "Change the note's kind",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.unwrapNote",
+        "title": "Remove the note, keeping its text",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.noteToDetails",
+        "title": "Turn the note into collapsible details",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.wrapDetails",
+        "title": "Wrap in collapsible details",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.unwrapDetails",
+        "title": "Remove the details, keeping the content",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.makeSteps",
+        "title": "Make the list steps",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.removeSteps",
+        "title": "Make the steps a plain list",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.addHeadingId",
+        "title": "Give the heading a stable id",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.copyLinkToSection",
+        "title": "Copy a link to this section",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertNote",
+        "title": "Insert a note",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertSteps",
+        "title": "Insert steps",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertDetails",
+        "title": "Insert collapsible details",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertVariantGroup",
+        "title": "Insert content that varies",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.addVariantArm",
+        "title": "Add a variant",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.removeVariantArm",
+        "title": "Remove this variant",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.markAvailable",
+        "title": "Mark where it's available",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.setPageVariant",
+        "title": "Make the page one variant",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.setPageAvailable",
+        "title": "Set where the page is available",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.linkSelection",
+        "title": "Link the selected text",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertLink",
+        "title": "Insert a link",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.setLinkTarget",
+        "title": "Change where the link goes",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.useTargetTitle",
+        "title": "Show the page's title as the link text",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertPhrase",
+        "title": "Insert a phrase",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertImage",
+        "title": "Insert an image",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.setImageWidth",
+        "title": "Set the image's width",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.setImageAlt",
+        "title": "Change the image's description",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertInclude",
+        "title": "Include a fragment",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertSnippet",
+        "title": "Insert a code snippet",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.action.insertWidget",
+        "title": "Insert a widget",
+        "category": "Ascribe"
       }
     ],
     "configuration": {
@@ -375,6 +525,126 @@
         {
           "command": "ascribe.review.reopen",
           "when": "false"
+        },
+        {
+          "command": "ascribe.action.wrapNote",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.setNoteType",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.unwrapNote",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.noteToDetails",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.wrapDetails",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.unwrapDetails",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.makeSteps",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.removeSteps",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.addHeadingId",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.copyLinkToSection",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertNote",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertSteps",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertDetails",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertVariantGroup",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.addVariantArm",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.removeVariantArm",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.markAvailable",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.setPageVariant",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.setPageAvailable",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.linkSelection",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertLink",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.setLinkTarget",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.useTargetTitle",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertPhrase",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertImage",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.setImageWidth",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.setImageAlt",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertInclude",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertSnippet",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.action.insertWidget",
+          "when": "ascribe.inProject && editorLangId == markdown"
         }
       ],
       "editor/title": [
@@ -427,8 +697,173 @@
           "when": "commentController == ascribe.review && commentThread =~ /\\bcanUnresolve\\b/",
           "group": "inline"
         }
+      ],
+      "editor/context": [
+        {
+          "submenu": "ascribe.actions",
+          "when": "ascribe.inProject && editorLangId == markdown",
+          "group": "1_modification@9"
+        }
+      ],
+      "ascribe.actions": [
+        {
+          "command": "ascribe.action.wrapNote",
+          "when": "ascribe.selection.blocks || ascribe.selection.proseOrNone && ascribe.at.paragraph",
+          "group": "3_structure@1"
+        },
+        {
+          "command": "ascribe.action.setNoteType",
+          "when": "ascribe.at.note",
+          "group": "3_structure@2"
+        },
+        {
+          "command": "ascribe.action.unwrapNote",
+          "when": "ascribe.at.note",
+          "group": "3_structure@3"
+        },
+        {
+          "command": "ascribe.action.noteToDetails",
+          "when": "ascribe.at.note",
+          "group": "3_structure@4"
+        },
+        {
+          "command": "ascribe.action.wrapDetails",
+          "when": "ascribe.selection.blocks || ascribe.selection.proseOrNone && ascribe.at.block",
+          "group": "3_structure@5"
+        },
+        {
+          "command": "ascribe.action.unwrapDetails",
+          "when": "ascribe.at.details",
+          "group": "3_structure@6"
+        },
+        {
+          "command": "ascribe.action.makeSteps",
+          "when": "ascribe.at.numberedList",
+          "group": "3_structure@7"
+        },
+        {
+          "command": "ascribe.action.removeSteps",
+          "when": "ascribe.at.steps",
+          "group": "3_structure@8"
+        },
+        {
+          "command": "ascribe.action.addHeadingId",
+          "when": "ascribe.at.headingWithoutAtId",
+          "group": "4_link@1"
+        },
+        {
+          "command": "ascribe.action.copyLinkToSection",
+          "when": "ascribe.at.headingWithId",
+          "group": "4_link@2"
+        },
+        {
+          "command": "ascribe.action.insertNote",
+          "when": "ascribe.insertable",
+          "group": "2_write@1"
+        },
+        {
+          "command": "ascribe.action.insertSteps",
+          "when": "ascribe.insertable",
+          "group": "2_write@2"
+        },
+        {
+          "command": "ascribe.action.insertDetails",
+          "when": "ascribe.insertable",
+          "group": "2_write@3"
+        },
+        {
+          "command": "ascribe.action.insertVariantGroup",
+          "when": "ascribe.insertable",
+          "group": "3_structure@9"
+        },
+        {
+          "command": "ascribe.action.addVariantArm",
+          "when": "ascribe.at.dimensionGroup",
+          "group": "3_structure@10"
+        },
+        {
+          "command": "ascribe.action.removeVariantArm",
+          "when": "ascribe.at.removableArm",
+          "group": "3_structure@11"
+        },
+        {
+          "command": "ascribe.action.markAvailable",
+          "when": "ascribe.at.markable",
+          "group": "3_structure@12"
+        },
+        {
+          "command": "ascribe.action.setPageVariant",
+          "when": "ascribe.inPage",
+          "group": "3_structure@13"
+        },
+        {
+          "command": "ascribe.action.setPageAvailable",
+          "when": "ascribe.inPage",
+          "group": "3_structure@14"
+        },
+        {
+          "command": "ascribe.action.linkSelection",
+          "when": "ascribe.selection.prose",
+          "group": "4_link@3"
+        },
+        {
+          "command": "ascribe.action.insertLink",
+          "when": "ascribe.cursor && ascribe.at.text",
+          "group": "4_link@4"
+        },
+        {
+          "command": "ascribe.action.setLinkTarget",
+          "when": "ascribe.at.link",
+          "group": "4_link@5"
+        },
+        {
+          "command": "ascribe.action.useTargetTitle",
+          "when": "ascribe.at.linkWithText",
+          "group": "4_link@6"
+        },
+        {
+          "command": "ascribe.action.insertPhrase",
+          "when": "ascribe.cursor && ascribe.at.text",
+          "group": "2_write@4"
+        },
+        {
+          "command": "ascribe.action.insertImage",
+          "when": "ascribe.insertable",
+          "group": "5_media@1"
+        },
+        {
+          "command": "ascribe.action.setImageWidth",
+          "when": "ascribe.at.image",
+          "group": "5_media@2"
+        },
+        {
+          "command": "ascribe.action.setImageAlt",
+          "when": "ascribe.at.image",
+          "group": "5_media@3"
+        },
+        {
+          "command": "ascribe.action.insertInclude",
+          "when": "ascribe.insertable",
+          "group": "5_media@4"
+        },
+        {
+          "command": "ascribe.action.insertSnippet",
+          "when": "ascribe.insertable",
+          "group": "5_media@5"
+        },
+        {
+          "command": "ascribe.action.insertWidget",
+          "when": "ascribe.insertable",
+          "group": "5_media@6"
+        }
       ]
-    }
+    },
+    "submenus": [
+      {
+        "id": "ascribe.actions",
+        "label": "Ascribe"
+      }
+    ]
   },
   "scripts": {
     "build": "node esbuild.mjs",

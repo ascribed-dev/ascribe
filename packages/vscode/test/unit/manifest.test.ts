@@ -51,7 +51,10 @@ describe("package.json", () => {
       // A review thread's buttons in the source editor act on that thread, so
       // the palette never shows them.
       if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
-      else expect(entry.when).toMatch(/^ascribe\.active\b/);
+      // An action is for a page, so it's shown in a Markdown file of a project.
+      else if (entry.command.startsWith("ascribe.action.")) {
+        expect(entry.when).toBe("ascribe.inProject && editorLangId == markdown");
+      } else expect(entry.when).toMatch(/^ascribe\.active\b/);
     }
   });
 
@@ -86,7 +89,11 @@ describe("package.json", () => {
   });
 
   it("declares the commands and settings the extension reads", () => {
-    expect(manifest.contributes.commands.map((command) => command.command)).toEqual([
+    // The actions' commands are the registry's, held to it by actions.test.ts.
+    const commands = manifest.contributes.commands
+      .map((command) => command.command)
+      .filter((id) => !id.startsWith("ascribe.action."));
+    expect(commands).toEqual([
       "ascribe.restartServer",
       "ascribe.showOutput",
       "ascribe.openPagePreview",
