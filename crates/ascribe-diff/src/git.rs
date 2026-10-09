@@ -291,7 +291,8 @@ impl Repository {
             "--untracked-files=all",
             "--no-renames",
             "--",
-            ".",
+            // The whole working tree, wherever in it `git` runs.
+            ":/",
         ])?;
         // `XY <path>` entries, NUL-separated; the paths are from the root.
         Ok(out

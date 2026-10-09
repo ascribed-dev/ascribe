@@ -48,7 +48,12 @@ pub enum Command {
     /// Keep a project loaded for its hooks: run by the first hook in a
     /// project, in the background.
     #[command(hide = true)]
-    HookServer,
+    HookServer {
+        /// The program the hook ran, which the server stops when it
+        /// changes.
+        #[arg(long, value_name = "PATH")]
+        binary: Option<std::path::PathBuf>,
+    },
 }
 
 /// Arguments of `ascribe agents hook`.
@@ -196,8 +201,8 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
             let _ = err.write_all(answer.stderr.as_bytes());
             answer.code
         }
-        Command::HookServer => match global.config.as_deref() {
-            Some(config) => match checker::serve(config, checker::IDLE) {
+        Command::HookServer { binary } => match global.config.as_deref() {
+            Some(config) => match checker::serve(config, checker::IDLE, binary.as_deref()) {
                 Ok(()) => exit::OK,
                 Err(e) => {
                     let _ = writeln!(err, "error: the check server stopped: {e}");

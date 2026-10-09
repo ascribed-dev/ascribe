@@ -380,6 +380,9 @@ struct Hooks {
 
 /// The hook entries and the MCP server, for each agent of `hooks` that has
 /// them already, or all of them when they're asked for.
+/// A settings file merged from its text now: `None` when it's left out.
+type Merge<'a> = dyn Fn(Option<&str>) -> Result<Option<String>, String> + 'a;
+
 fn plan_hooks(
     hooks: &Hooks,
     here: &Path,
@@ -395,26 +398,39 @@ fn plan_hooks(
     let has_hook = |path: &Path| -> Result<bool, SyncError> {
         Ok(read(path)?.is_some_and(|text| text.contains("agents hook")))
     };
-    let mut merge = |path: PathBuf, merged: &dyn Fn(Option<&str>) -> Result<String, String>| {
+    // A file whose meaning wouldn't change is left as it is, however it's
+    // laid out.
+    let mut merge = |path: PathBuf, merged: &Merge<'_>| {
         let old = read(&path)?;
         let new = merged(old.as_deref()).map_err(|why| SyncError::Settings {
             path: path.display().to_string(),
             why,
         })?;
-        files.push(Planned { path, old, new });
+        if let Some(mut new) = new {
+            if let Some(old) = &old
+                && settings::same_meaning(old, &new)
+            {
+                new.clone_from(old);
+            }
+            files.push(Planned { path, old, new });
+        }
         Ok::<(), SyncError>(())
     };
     if hooks.claude && (hooks.asked || has_hook(&claude_settings)?) {
         merge(claude_settings, &|old| {
-            settings::claude_settings(old, &ascribe)
+            settings::claude_settings(old, &ascribe).map(Some)
         })?;
-        merge(mcp, &|old| settings::mcp_json(old, &ascribe))?;
+        merge(mcp, &|old| settings::mcp_json(old, &ascribe, hooks.asked))?;
     }
     if hooks.codex && (hooks.asked || has_hook(&codex_hooks)?) {
-        merge(codex_hooks, &|old| settings::codex_hooks(old, &ascribe))?;
+        merge(codex_hooks, &|old| {
+            settings::codex_hooks(old, &ascribe).map(Some)
+        })?;
     }
     if (hooks.copilot && hooks.asked) || read(&copilot_hooks)?.is_some() {
-        merge(copilot_hooks, &|_| Ok(settings::copilot_hooks(&ascribe)))?;
+        merge(copilot_hooks, &|_| {
+            Ok(Some(settings::copilot_hooks(&ascribe)))
+        })?;
     }
     if hooks.asked && !hooks.claude && !hooks.codex && !hooks.copilot {
         notes.push(

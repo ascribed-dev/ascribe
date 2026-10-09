@@ -15,10 +15,12 @@
 //! or when another server has taken its place. `ASCRIBE_HOOK_SERVER=off`
 //! checks in the hook's own process instead.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::io::{self, Cursor, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
 use ascribe_check::{Project, Reported, Severity};
@@ -182,7 +184,7 @@ pub fn ask_server(
     let mut started = false;
     let mut start = || -> Result<(), NoServer> {
         if !started {
-            start_server(config).ok_or(NoServer)?;
+            start_server(config, &mailbox).ok_or(NoServer)?;
             started = true;
         }
         Ok(())
@@ -214,13 +216,16 @@ pub fn ask_server(
 }
 
 /// Starts the project's check server in the background, detached from
-/// this process, with nothing on its standard streams.
-fn start_server(config: &Path) -> Option<()> {
-    let exe = std::env::current_exe().ok()?;
-    let mut command = std::process::Command::new(exe);
+/// this process, with nothing on its standard streams. It's told the
+/// binary it's run from, and stops when that changes.
+fn start_server(config: &Path, mailbox: &Mailbox) -> Option<()> {
+    let binary = std::env::current_exe().ok()?;
+    let mut command = std::process::Command::new(runnable(&binary, mailbox)?);
     command
         .args(["agents", "hook-server", "--config"])
         .arg(config)
+        .arg("--binary")
+        .arg(&binary)
         // Not the project's folder, which a running process would keep
         // from being removed on Windows.
         .current_dir(std::env::temp_dir())
@@ -229,6 +234,44 @@ fn start_server(config: &Path) -> Option<()> {
         .stderr(std::process::Stdio::null());
     detach(&mut command);
     command.spawn().ok().map(|_| ())
+}
+
+/// The binary to run the server from. On Windows a running program can't
+/// be replaced, so the server runs from a copy in the project's folder,
+/// and installing or building a new `ascribe` isn't held up by it.
+#[cfg(windows)]
+fn runnable(binary: &Path, mailbox: &Mailbox) -> Option<PathBuf> {
+    // Outside FileSystem: the program the hook runs, and the server's
+    // copies of it in the user's cache folder.
+    let stamp = std::fs::metadata(binary).ok()?;
+    let mut hasher = std::hash::DefaultHasher::new();
+    (stamp.len(), stamp.modified().ok()).hash(&mut hasher);
+    let name = format!("ascribe-{:016x}.exe", hasher.finish());
+    let copy = mailbox.dir.join(&name);
+    std::fs::create_dir_all(&mailbox.dir).ok()?;
+    if let Ok(entries) = std::fs::read_dir(&mailbox.dir) {
+        for entry in entries.flatten() {
+            let other = entry.file_name();
+            let other = other.to_string_lossy();
+            // A copy a server still runs from can't be removed, and stays.
+            if other.starts_with("ascribe-") && other.ends_with(".exe") && *other != name {
+                let _ = std::fs::remove_file(entry.path());
+            }
+        }
+    }
+    if !copy.is_file() {
+        let partial = mailbox.dir.join(format!("tmp-{}.exe", std::process::id()));
+        std::fs::copy(binary, &partial).ok()?;
+        if std::fs::rename(&partial, &copy).is_err() {
+            let _ = std::fs::remove_file(&partial);
+        }
+    }
+    copy.is_file().then_some(copy)
+}
+
+#[cfg(not(windows))]
+fn runnable(binary: &Path, _mailbox: &Mailbox) -> Option<PathBuf> {
+    Some(binary.to_owned())
 }
 
 #[cfg(unix)]
@@ -277,8 +320,10 @@ struct Server {
 /// A project's folder in the user's cache folder, through which hooks
 /// and its check server talk: the server's `server.json`, the requests,
 /// `req-*.json`, and the answers, `res-*.json`. Each file is written
-/// whole or not at all, through a file beside it renamed into place.
+/// whole or not at all, through a `tmp-*` file beside it renamed into
+/// place.
 /// Nothing else can reach it: the folder is the user's own.
+#[derive(Clone)]
 struct Mailbox {
     dir: PathBuf,
 }
@@ -322,7 +367,8 @@ impl Mailbox {
     /// Writes `text` to `name` in the folder, whole or not at all.
     fn write(&self, name: &str, text: &str) -> io::Result<()> {
         std::fs::create_dir_all(&self.dir)?;
-        let partial = self.dir.join(format!("{name}.tmp"));
+        // A name the server takes for no request or answer.
+        let partial = self.dir.join(format!("tmp-{name}"));
         let mut options = std::fs::OpenOptions::new();
         options.write(true).create(true).truncate(true);
         #[cfg(unix)]
@@ -382,7 +428,10 @@ impl Mailbox {
                 .ok()
                 .and_then(|t| t.elapsed().ok())
                 .is_some_and(|age| age >= ABANDONED);
-            if let Some(name) = file.strip_prefix("req-") {
+            if let Some(name) = file
+                .strip_prefix("req-")
+                .filter(|name| name.ends_with(".json"))
+            {
                 // Outside FileSystem: a hook's request, in the user's
                 // cache folder.
                 let text = std::fs::read_to_string(entry.path());
@@ -392,7 +441,7 @@ impl Mailbox {
                 if let Some(ask) = text.ok().and_then(|t| serde_json::from_str(&t).ok()) {
                     requests.push((name.to_owned(), ask));
                 }
-            } else if old && (file.starts_with("res-") || file.ends_with(".tmp")) {
+            } else if old && (file.starts_with("res-") || file.starts_with("tmp-")) {
                 let _ = std::fs::remove_file(entry.path());
             }
         }
@@ -409,13 +458,18 @@ impl Mailbox {
 }
 
 /// Runs the check server for the project of `config` until it's idle for
-/// `idle`, the project's `ascribe.toml` is gone, or another server has
-/// taken its place.
+/// `idle`, the project's `ascribe.toml` is gone, another server has taken
+/// its place, or `binary`, the program it was started as, has changed or
+/// gone.
+///
+/// Requests about files are answered as they come, and whole-project
+/// checks on a thread of their own, so a stop hook's check never holds up
+/// an edit's.
 ///
 /// # Errors
 ///
 /// It can't write its file.
-pub fn serve(config: &Path, idle: Duration) -> io::Result<()> {
+pub fn serve(config: &Path, idle: Duration, binary: Option<&Path>) -> io::Result<()> {
     let config = normalize(&std::path::absolute(config)?);
     let mailbox = Mailbox::of(&config).ok_or_else(|| io::Error::other("no cache folder"))?;
     let me = Server {
@@ -427,45 +481,64 @@ pub fn serve(config: &Path, idle: Duration) -> io::Result<()> {
     };
     let text = serde_json::to_string(&me).map_err(io::Error::other)?;
     mailbox.write("server.json", &text)?;
+    let binary = binary.map(|b| (b.to_owned(), stamp(b)));
     // The heartbeat goes on while a check runs, which can take longer
     // than `STALE` on a large project.
-    let beating = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let beating = Arc::new(AtomicBool::new(true));
     let heart = {
         let beating = beating.clone();
-        let file = mailbox.server_file();
+        let mailbox = mailbox.clone();
         let me = me.clone();
-        let server = Mailbox {
-            dir: mailbox.dir.clone(),
-        };
         std::thread::spawn(move || {
-            while beating.load(std::sync::atomic::Ordering::Relaxed) {
+            while beating.load(Ordering::Relaxed) {
                 std::thread::sleep(HEARTBEAT);
-                if server.server().as_ref() != Some(&me) {
+                if mailbox.server().as_ref() != Some(&me) {
                     break;
                 }
                 let _ = std::fs::OpenOptions::new()
                     .write(true)
-                    .open(&file)
+                    .open(mailbox.server_file())
                     .and_then(|f| f.set_modified(std::time::SystemTime::now()));
             }
         })
     };
-    let mut kept = Kept {
-        cache: crate::mcp::Cache::default(),
-        watched: None,
+    let projects = {
+        let (send, receive) = mpsc::channel::<(String, Ask)>();
+        let mailbox = mailbox.clone();
+        let config = config.clone();
+        let thread = std::thread::spawn(move || {
+            // Its own projects: they aren't `Send`.
+            let cache = crate::mcp::Cache::default();
+            for (name, ask) in receive {
+                mailbox.answer(&name, &check(&cache, &config, &ask));
+            }
+        });
+        (send, thread)
     };
+    let mut kept = Kept { watched: None };
     let mut last = Instant::now();
     let mut looked = Instant::now();
     loop {
         for (name, ask) in mailbox.take_requests() {
-            let found = kept.check(&config, &ask);
-            mailbox.answer(&name, &found);
+            match ask {
+                Ask::Files(files) => {
+                    let found = kept.check_files(&config, &files);
+                    mailbox.answer(&name, &Ok(found));
+                }
+                Ask::Project => {
+                    let _ = projects.0.send((name, Ask::Project));
+                }
+            }
             last = Instant::now();
         }
-        // Outside FileSystem: whether the project's `ascribe.toml` is still
-        // there.
         if looked.elapsed() >= HEARTBEAT {
-            if last.elapsed() >= idle || !config.is_file() || mailbox.server().as_ref() != Some(&me)
+            // Outside FileSystem: whether the project's `ascribe.toml`, and
+            // the server's own program, are still as they were.
+            let replaced = binary.as_ref().is_some_and(|(b, then)| stamp(b) != *then);
+            if last.elapsed() >= idle
+                || !config.is_file()
+                || replaced
+                || mailbox.server().as_ref() != Some(&me)
             {
                 break;
             }
@@ -474,8 +547,10 @@ pub fn serve(config: &Path, idle: Duration) -> io::Result<()> {
         let wait = if last.elapsed() < BUSY { 2 } else { 25 };
         std::thread::sleep(Duration::from_millis(wait));
     }
-    beating.store(false, std::sync::atomic::Ordering::Relaxed);
+    beating.store(false, Ordering::Relaxed);
     let _ = heart.join();
+    // A project check under way is left to finish as the process ends.
+    drop(projects);
     if mailbox.server().as_ref() == Some(&me) {
         let _ = std::fs::remove_file(mailbox.server_file());
         // Only when nothing is waiting in them.
@@ -487,22 +562,20 @@ pub fn serve(config: &Path, idle: Duration) -> io::Result<()> {
     Ok(())
 }
 
-/// What a check server keeps: the project loaded for a full check, and
-/// kept current, as the language server keeps it, for the files an edit
-/// wrote.
+/// When `binary` was last written, and its size; `None` when it's gone.
+fn stamp(binary: &Path) -> Option<(Option<std::time::SystemTime>, u64)> {
+    // Outside FileSystem: the server's own program.
+    let meta = std::fs::metadata(binary).ok()?;
+    Some((meta.modified().ok(), meta.len()))
+}
+
+/// What a check server keeps for the files an edit wrote: the project,
+/// kept current as the language server keeps it.
 struct Kept {
-    cache: crate::mcp::Cache,
     watched: Option<(Watched, Vec<Stamp>)>,
 }
 
 impl Kept {
-    fn check(&mut self, config: &Path, ask: &Ask) -> Result<Found, String> {
-        match ask {
-            Ask::Project => check(&self.cache, config, ask),
-            Ask::Files(files) => Ok(self.check_files(config, files)),
-        }
-    }
-
     /// The editor's build's problems in `files`, after telling the kept
     /// project what changed on disk since the last request: what the
     /// listing shows, and `files`, whose times may not have moved.
@@ -511,6 +584,24 @@ impl Kept {
         let (watched, before) = self
             .watched
             .get_or_insert_with(|| (Watched::load(config), listing.clone()));
+        // Each file as it's named on disk: a harness may spell it in
+        // another case, where the system doesn't tell them apart.
+        let by_case: HashMap<String, &Path> = listing
+            .iter()
+            .map(|(path, _, _)| (path.to_string_lossy().to_lowercase(), path.as_path()))
+            .collect();
+        let named: HashSet<&Path> = listing.iter().map(|(path, _, _)| path.as_path()).collect();
+        let files: Vec<PathBuf> = files
+            .iter()
+            .map(|file| {
+                if named.contains(file.as_path()) {
+                    return file.clone();
+                }
+                by_case
+                    .get(&file.to_string_lossy().to_lowercase())
+                    .map_or_else(|| file.clone(), |p| p.to_path_buf())
+            })
+            .collect();
         let then: HashSet<&Stamp> = before.iter().collect();
         let mut present: Vec<PathBuf> = listing
             .iter()
@@ -520,38 +611,45 @@ impl Kept {
         present.extend(files.iter().cloned());
         present.sort();
         present.dedup();
-        let now: HashSet<&Path> = listing.iter().map(|(path, _, _)| path.as_path()).collect();
         let gone: Vec<PathBuf> = before
             .iter()
-            .filter(|(path, _, _)| !now.contains(path.as_path()))
+            .filter(|(path, _, _)| !named.contains(path.as_path()))
             .map(|(path, _, _)| path.clone())
             .collect();
         watched.changed(&present, &gone);
-        *before = listing;
         let root = watched.root().map(Path::to_owned).unwrap_or_default();
         let mut found = Found {
             build: watched.build(),
             ..Found::default()
         };
-        for file in files {
-            let shown = relative_path(&root, file).map_or_else(
-                || file.to_string_lossy().replace('\\', "/"),
-                |r| r.to_string(),
-            );
+        // A problem one file reports for another is reported once.
+        let mut seen = HashSet::new();
+        for file in &files {
             for problem in watched.problems(file) {
+                let shown = relative_path(&root, &problem.file).map_or_else(
+                    || problem.file.to_string_lossy().replace('\\', "/"),
+                    |r| r.to_string(),
+                );
+                let line = format!(
+                    "{shown}:{}: [{}] {}",
+                    problem.line, problem.code, problem.message
+                );
+                if !seen.insert(line.clone()) {
+                    continue;
+                }
                 if !problem.error {
                     found.warnings += 1;
                     continue;
                 }
                 found.errors += 1;
                 if found.lines.len() < LIMIT {
-                    found.lines.push(format!(
-                        "{shown}:{}: [{}] {}",
-                        problem.line, problem.code, problem.message
-                    ));
+                    found.lines.push(line);
                 }
             }
         }
+        drop(named);
+        drop(by_case);
+        *before = listing;
         found
     }
 }

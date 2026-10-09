@@ -214,10 +214,12 @@ fn stop(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
     let mut reasons = Vec::new();
     for config in changed_projects(cwd) {
         let dir = config.parent().map(|d| from(cwd, d)).unwrap_or_default();
-        if let Some(Ok(found)) = check_by(&config, Ask::Project, deadline, server)
-            && found.errors > 0
-        {
-            reasons.push(stop_text(&dir, &found));
+        // Out of time, the agent goes on; a project that can't be checked
+        // at all, as `ascribe check` would refuse it, holds it.
+        match check_by(&config, Ask::Project, deadline, server) {
+            Some(Ok(found)) if found.errors > 0 => reasons.push(stop_text(&dir, &found)),
+            Some(Err(why)) => reasons.push(unchecked_text(&dir, &why)),
+            Some(Ok(_)) | None => {}
         }
     }
     if reasons.is_empty() {
@@ -230,14 +232,28 @@ fn stop(harness: Harness, input: &Value, cwd: &Path, limit: Duration, server: bo
     }
 }
 
-/// Why the agent can't finish yet: the counts, the first errors, and what
-/// to do.
-fn stop_text(dir: &str, found: &Found) -> String {
-    let command = if dir == "." {
+/// The command that checks the project in `dir`, from the agent's folder.
+fn check_command(dir: &str) -> String {
+    if dir == "." {
         "ascribe check".to_owned()
     } else {
         format!("ascribe check --config {}", crate::shell::quote(dir))
-    };
+    }
+}
+
+/// Why the agent can't finish yet: the project can't be checked.
+fn unchecked_text(dir: &str, why: &str) -> String {
+    let command = check_command(dir);
+    format!(
+        "`{command}` can't check the project:\n{}\nFix this, then run `{command}`.\n",
+        why.trim_end()
+    )
+}
+
+/// Why the agent can't finish yet: the counts, the first errors, and what
+/// to do.
+fn stop_text(dir: &str, found: &Found) -> String {
+    let command = check_command(dir);
     let mut lines = vec![format!(
         "`{command}` reports {} and {}:",
         count(found.errors, "error"),

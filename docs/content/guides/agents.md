@@ -166,7 +166,7 @@ In VS Code, the Ascribe extension offers the server to VS Code's agents itself, 
 A hook is a command your agent runs at a point in its work. Ascribe's checks an agent's work without the agent having to remember: each file it writes, as it writes it, and the whole project before it finishes. One command serves Claude Code, Codex, and GitHub Copilot, which share a hook format, with the agent's name as its argument:
 
 - **After an edit**, `ascribe agents hook <agent>` checks the files the agent wrote, as `ascribe check <file> --editor-build` does, and adds their errors to what the agent reads next, at most 10, with the build it checked. It says nothing when there are none, and leaves warnings out, which would interrupt every edit.
-- **Before the agent finishes**, `ascribe agents hook <agent> --event stop` checks every build of each project whose pages the working tree changes. While there are errors, it keeps the agent working, and tells it what they are. It asks once: when the agent is already continuing because of it, it lets the agent stop.
+- **Before the agent finishes**, `ascribe agents hook <agent> --event stop` checks every build of each project whose pages or `ascribe.toml` the working tree changes, anywhere in the repository. While there are errors, or a project can't be checked at all, it keeps the agent working, and tells it why. It asks once: when the agent is already continuing because of it, it lets the agent stop. Changes the agent has committed before it stops aren't in the working tree, so they aren't checked; check them in CI.
 
 Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. The first hook in a project starts a check server in the background, which keeps the project loaded, so a check after an edit takes milliseconds on a project of thousands of pages, and stops itself after 10 idle minutes. See [`ascribe agents hook`](../reference/cli.md#ascribe-agents-hook).
 
@@ -178,13 +178,13 @@ ascribe agents sync --target claude --with-hook
 
 | Target | File | Entries |
 |---|---|---|
-| `claude` | `.claude/settings.json` and `.mcp.json` | The edit hook (after `Write` and `Edit`), the stop hook, and [the MCP server](#the-mcp-server) |
+| `claude` | `.claude/settings.json` and `.mcp.json` | The edit hook (after `Write`, `Edit`, and `MultiEdit`), the stop hook, and [the MCP server](#the-mcp-server) |
 | `codex` | `.codex/hooks.json` | The edit hook and the stop hook |
 | `copilot` | `.github/hooks/ascribe.json` | The edit hook and the stop hook, for Copilot's CLI and its cloud agent |
 
-It merges its entries into a file it shares: it replaces the entries it wrote before, and leaves every other entry and setting as it was. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them, and once a file has Ascribe's hooks, `sync` keeps them up to date without `--with-hook`.
+It merges its entries into a file it shares: it updates the entries it wrote before in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server, and leaves every other entry and setting as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them, and once a file has Ascribe's hooks, `sync` keeps them up to date without `--with-hook`; it adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
 
-The entries run `ascribe` from your path. Install it with `npm install -g @ascribed/cli`, or put the release's binary on your path; the npm package's launcher adds about 60 ms to each run, more than a check after an edit takes, so prefer the binary for hooks. When your project pins `@ascribed/cli` in its `node_modules`, the entries run that binary instead. Codex asks you to trust a project's hooks before it runs them.
+The entries run `ascribe` from your path. Install it with `npm install -g @ascribed/cli`, or put the release's binary on your path; the npm package's launcher adds about 60 ms to each run, more than a check after an edit takes, so prefer the binary for hooks. When your project pins `@ascribed/cli` in its `node_modules`, the hooks run that binary instead, found from the repository's root (`$CLAUDE_PROJECT_DIR` for Claude Code, `git rev-parse --show-toplevel` for Codex and Copilot), so an agent started in a subfolder finds it too. Two entries still run `ascribe` from your path, because neither can find the root on every system: the MCP server in `.mcp.json`, and Codex's hooks on Windows. Codex asks you to trust a project's hooks before it runs them.
 
 For Claude Code, use the plugin or the project's entries, not both: with both, it hears about each problem twice.
 

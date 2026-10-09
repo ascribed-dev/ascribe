@@ -59,7 +59,25 @@ fn git(dir: &Path, args: &[&str]) {
 /// Runs the hook with `input` on standard input, checking in its own
 /// process, or with `cache`, through the check server.
 fn hook(args: &[&str], input: &str, cache: Option<&Path>) -> Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_ascribe"));
+    hook_of(Path::new(env!("CARGO_BIN_EXE_ascribe")), args, input, cache)
+}
+
+/// Runs the hook through the check server until it answers: the first
+/// hook starts the server, which may not answer in time.
+fn served(args: &[&str], input: &str, cache: &Path) -> Output {
+    for _ in 0..20 {
+        let out = hook(args, input, Some(cache));
+        assert_eq!(out.status.code(), Some(0));
+        if !out.stdout.is_empty() {
+            return out;
+        }
+    }
+    panic!("the check server didn't answer");
+}
+
+/// [`hook`], with the binary at `exe`.
+fn hook_of(exe: &Path, args: &[&str], input: &str, cache: Option<&Path>) -> Output {
+    let mut command = Command::new(exe);
     command
         .args(["agents", "hook"])
         .args(args)
@@ -346,17 +364,7 @@ fn the_check_server_answers_and_stops_with_its_project() {
     let dir = project();
     let cache = tempfile::tempdir().unwrap();
     let input = edit_input("claude-code", dir.path(), "docs/guide.md");
-    // The first hook starts the server, which may not answer in time.
-    let mut answered = None;
-    for _ in 0..20 {
-        let out = hook(&["claude-code"], &input, Some(cache.path()));
-        assert_eq!(out.status.code(), Some(0));
-        if !out.stdout.is_empty() {
-            answered = Some(out);
-            break;
-        }
-    }
-    let out = answered.expect("the check server answered");
+    let out = served(&["claude-code"], &input, cache.path());
     assert!(context("claude-code", &out).contains("[ASC036] `missing.md` doesn't exist"));
     // One folder for the project, one for the binary's version.
     let folders = |dir: &Path| -> Vec<PathBuf> {
@@ -371,21 +379,156 @@ fn the_check_server_answers_and_stops_with_its_project() {
     assert_eq!(versions.len(), 1, "{versions:?}");
     let server = versions[0].join("server.json");
     assert!(server.is_file());
-    // An edit the server sees: fixed, nothing to say.
+    // An edit the server sees: the first error fixed, another made.
     fs::write(
         dir.path().join("docs/guide.md"),
-        CLEAN.replace("guide.md", "index.md"),
+        ERROR.replace("missing.md", "elsewhere.md"),
     )
     .unwrap();
-    assert_quiet(
-        "claude-code",
-        "edit",
-        &hook(&["claude-code"], &input, Some(cache.path())),
-    );
+    let out = served(&["claude-code"], &input, cache.path());
+    let said = context("claude-code", &out);
+    assert!(said.contains("`elsewhere.md` doesn't exist"), "{said}");
+    assert!(!said.contains("`missing.md`"), "{said}");
     // With its project gone, it stops and removes its files.
     drop(dir);
     for _ in 0..100 {
         if !projects[0].exists() {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    panic!("the check server didn't stop");
+}
+
+#[test]
+fn an_edit_to_an_included_fragment_reports_the_page_that_includes_it() {
+    let dir = project();
+    let root = dir.path();
+    fs::write(
+        root.join("docs/setup.md"),
+        "---\ntitle: Setup\n---\n\n## Set up\n@id: setup\n\n@include: _fragments/setup.md\n",
+    )
+    .unwrap();
+    fs::create_dir_all(root.join("docs/_fragments")).unwrap();
+    fs::write(
+        root.join("docs/_fragments/setup.md"),
+        "## Set up again\n@id: setup\n",
+    )
+    .unwrap();
+    let input = edit_input("claude-code", root, "docs/_fragments/setup.md");
+    let here = hook(&["claude-code"], &input, None);
+    let said = context("claude-code", &here);
+    assert!(said.contains("docs/setup.md:8: [ASC020]"), "{said}");
+    // The check server says the same.
+    let cache = tempfile::tempdir().unwrap();
+    let out = served(&["claude-code"], &input, cache.path());
+    assert_eq!(context("claude-code", &out), said);
+    // A file named in another case is the same file, where the system
+    // doesn't tell them apart.
+    if root.join("DOCS").exists() {
+        let input = edit_input("claude-code", root, "docs/_fragments/SETUP.md");
+        let out = served(&["claude-code"], &input, cache.path());
+        assert!(context("claude-code", &out).contains("[ASC020]"));
+    }
+}
+
+#[test]
+fn a_stop_sees_changes_outside_the_agents_folder() {
+    let dir = project();
+    fs::create_dir_all(dir.path().join("docs/sub")).unwrap();
+    fs::write(
+        dir.path().join("docs/index.md"),
+        format!("{CLEAN}\nAnd [more](gone.md).\n"),
+    )
+    .unwrap();
+    let out = hook(
+        &["claude-code", "--event", "stop"],
+        &stop_input("claude-code", &dir.path().join("docs/sub"), false),
+        None,
+    );
+    let value: Value = serde_json::from_str(&stdout(&out)).unwrap();
+    assert_eq!(value["decision"], "block");
+    assert!(
+        value["reason"]
+            .as_str()
+            .unwrap()
+            .contains("`gone.md` doesn't exist"),
+        "{value}"
+    );
+}
+
+#[test]
+fn a_stop_with_a_broken_model_keeps_the_agent_working() {
+    let dir = project();
+    fs::write(
+        dir.path().join("ascribe.toml"),
+        "spec = \"0.1\"\n[project\n",
+    )
+    .unwrap();
+    let out = hook(
+        &["claude-code", "--event", "stop"],
+        &stop_input("claude-code", dir.path(), false),
+        None,
+    );
+    let value: Value = serde_json::from_str(&stdout(&out)).unwrap();
+    assert_eq!(value["decision"], "block");
+    let reason = value["reason"].as_str().unwrap();
+    assert!(
+        reason.starts_with("`ascribe check` can't check the project:\n"),
+        "{reason}"
+    );
+    assert!(
+        reason.ends_with("Fix this, then run `ascribe check`.\n"),
+        "{reason}"
+    );
+}
+
+#[test]
+fn the_check_server_stops_when_its_binary_is_replaced() {
+    let dir = project();
+    let cache = tempfile::tempdir().unwrap();
+    let bin = tempfile::tempdir().unwrap();
+    let exe = bin.path().join(
+        Path::new(env!("CARGO_BIN_EXE_ascribe"))
+            .file_name()
+            .unwrap(),
+    );
+    fs::copy(env!("CARGO_BIN_EXE_ascribe"), &exe).unwrap();
+    let input = edit_input("claude-code", dir.path(), "docs/guide.md");
+    let mut answered = false;
+    for _ in 0..20 {
+        let out = hook_of(&exe, &["claude-code"], &input, Some(cache.path()));
+        if !out.stdout.is_empty() {
+            answered = true;
+            break;
+        }
+    }
+    assert!(answered, "the check server didn't answer");
+    let project = fs::read_dir(cache.path().join("hooks"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    // Replaced as an installer does, which a running program would stop
+    // on Windows.
+    fs::remove_file(&exe).unwrap();
+    fs::copy(env!("CARGO_BIN_EXE_ascribe"), &exe).unwrap();
+    fs::File::options()
+        .write(true)
+        .open(&exe)
+        .unwrap()
+        .set_modified(std::time::SystemTime::now() + std::time::Duration::from_secs(60))
+        .unwrap();
+    for _ in 0..100 {
+        // Gone with its folder, or its file gone.
+        let servers = fs::read_dir(&project)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter(|v| v.path().join("server.json").exists())
+            .count();
+        if servers == 0 {
             return;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));

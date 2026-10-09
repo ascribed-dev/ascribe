@@ -833,6 +833,16 @@ impl Core {
             .map_or(&[], |p| p.diagnostics.as_slice())
     }
 
+    /// The diagnostics last published, for each file that has any.
+    pub(crate) fn all_published(
+        &self,
+    ) -> impl Iterator<Item = (&PathBuf, &[lsp_types::Diagnostic])> {
+        self.published
+            .iter()
+            .map(|(path, p)| (path, p.diagnostics.as_slice()))
+            .filter(|(_, d)| !d.is_empty())
+    }
+
     /// Whether files are waiting to have their diagnostics computed.
     pub(crate) fn has_work(&self) -> bool {
         self.loaded.as_ref().is_some_and(|l| !l.dirty.is_empty())

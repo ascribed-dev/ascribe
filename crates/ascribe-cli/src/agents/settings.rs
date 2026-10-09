@@ -4,7 +4,8 @@
 //! `.github/hooks/ascribe.json`.
 //!
 //! A shared file is merged: Ascribe's entries (those whose command runs
-//! `ascribe agents hook`, and the `ascribe` MCP server) are replaced, and
+//! `ascribe agents hook`, and the `ascribe` MCP server) are updated in
+//! place, keeping what else a user set on them, such as a timeout, and
 //! everything else is kept, in its order. Copilot's file is Ascribe's own.
 
 use std::fmt;
@@ -24,23 +25,33 @@ pub const STOP_TIMEOUT: u64 = 60;
 /// The MCP server's name in `.mcp.json`.
 const MCP_SERVER: &str = "ascribe";
 
+/// The tools after which Claude Code runs the edit hook: `MultiEdit` is
+/// gone from its current tools, but older versions have it.
+const CLAUDE_EDITS: &str = "Write|Edit|MultiEdit";
+
 /// The MCP server's entry, `ascribe mcp`, as `.mcp.json` holds it.
 pub fn mcp_servers(ascribe: &str) -> Value {
     serde_json::json!({ "mcpServers": { MCP_SERVER: { "command": ascribe, "args": ["mcp"] } } })
 }
 
-/// What's in each command: how the project runs `ascribe`.
+/// What's in each command: how the project runs `ascribe`. A harness may
+/// run its hooks from a subfolder, so a pinned binary is found from the
+/// repository's root.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ascribe {
-    /// For a shell: `ascribe`, or the path of the binary the project pins,
-    /// from the repository's root.
+    /// For a POSIX shell (Codex's hooks, and Copilot's `bash`): `ascribe`,
+    /// or the pinned binary under `git rev-parse --show-toplevel`.
     pub shell: String,
     /// For Claude Code, whose hooks run from wherever its session is:
     /// the pinned path under `$CLAUDE_PROJECT_DIR`.
     pub claude: String,
-    /// For PowerShell, which runs a relative path only with `./`, and the
-    /// `.cmd` npm writes beside it.
+    /// For PowerShell (Copilot's `powershell`): the `.cmd` npm writes
+    /// beside the pinned binary, run with `&`.
     pub powershell: String,
+    /// Where no shell can find the repository's root on every system:
+    /// `.mcp.json`, and Codex on Windows, whose shell isn't documented.
+    /// Always `ascribe`, from the path.
+    pub plain: String,
 }
 
 impl Ascribe {
@@ -50,6 +61,7 @@ impl Ascribe {
             shell: "ascribe".to_owned(),
             claude: "ascribe".to_owned(),
             powershell: "ascribe".to_owned(),
+            plain: "ascribe".to_owned(),
         }
     }
 
@@ -57,9 +69,10 @@ impl Ascribe {
     /// `/`-separated: `node_modules/.bin/ascribe`.
     pub fn pinned(path: &str) -> Ascribe {
         Ascribe {
-            shell: path.to_owned(),
+            shell: format!("\"$(git rev-parse --show-toplevel)/{path}\""),
             claude: format!("\"$CLAUDE_PROJECT_DIR\"/{path}"),
-            powershell: format!("./{path}.cmd"),
+            powershell: format!("& \"$(git rev-parse --show-toplevel)/{path}.cmd\""),
+            plain: "ascribe".to_owned(),
         }
     }
 }
@@ -76,33 +89,69 @@ pub fn claude_settings(old: Option<&str>, ascribe: &Ascribe) -> Result<String, S
     let hooks = settings.object("hooks")?;
     hooks.set_groups(
         "PostToolUse",
-        Some("Write|Edit"),
-        &command("edit"),
+        Some(CLAUDE_EDITS),
+        &[("command", command("edit"))],
         EDIT_TIMEOUT,
     )?;
-    hooks.set_groups("Stop", None, &command("stop"), STOP_TIMEOUT)?;
+    hooks.set_groups("Stop", None, &[("command", command("stop"))], STOP_TIMEOUT)?;
     Ok(pretty(&settings))
 }
 
 /// `.codex/hooks.json`: the same as Claude Code's hooks, which Codex
 /// shares, without a matcher: Codex names its edits `apply_patch`, and the
-/// hook passes over a tool that writes no file.
+/// hook passes over a tool that writes no file. `commandWindows` runs
+/// `ascribe` from the path: Codex doesn't say which shell runs it.
 pub fn codex_hooks(old: Option<&str>, ascribe: &Ascribe) -> Result<String, String> {
-    let command = |event: &str| format!("{} agents hook codex --event {event}", ascribe.shell);
+    let command =
+        |ascribe: &str, event: &str| format!("{ascribe} agents hook codex --event {event}");
+    let commands = |event: &str| {
+        [
+            ("command", command(&ascribe.shell, event)),
+            ("commandWindows", command(&ascribe.plain, event)),
+        ]
+    };
     let mut settings = parse(old)?;
     let hooks = settings.object("hooks")?;
-    hooks.set_groups("PostToolUse", None, &command("edit"), EDIT_TIMEOUT)?;
-    hooks.set_groups("Stop", None, &command("stop"), STOP_TIMEOUT)?;
+    hooks.set_groups("PostToolUse", None, &commands("edit"), EDIT_TIMEOUT)?;
+    hooks.set_groups("Stop", None, &commands("stop"), STOP_TIMEOUT)?;
     Ok(pretty(&settings))
 }
 
-/// `.mcp.json`, with the `ascribe` MCP server.
-pub fn mcp_json(old: Option<&str>, ascribe: &Ascribe) -> Result<String, String> {
+/// `.mcp.json`, with the `ascribe` MCP server: its command and arguments
+/// set, and what else a user set on it kept. `None` when the file has no
+/// `ascribe` server and `add` isn't set: a user who removed it keeps it
+/// removed.
+pub fn mcp_json(old: Option<&str>, ascribe: &Ascribe, add: bool) -> Result<Option<String>, String> {
     let mut settings = parse(old)?;
     let servers = settings.object("mcpServers")?;
-    let ours = mcp_servers(&ascribe.shell)["mcpServers"][MCP_SERVER].clone();
-    servers.set(MCP_SERVER, Json::from(&ours));
-    Ok(pretty(&settings))
+    let ours = mcp_servers(&ascribe.plain)["mcpServers"][MCP_SERVER].clone();
+    match servers.get_mut(MCP_SERVER) {
+        Some(Json::Object(entry)) => {
+            for key in ["command", "args"] {
+                let value = Json::from(&ours[key]);
+                match entry.iter_mut().find(|(k, _)| k == key) {
+                    Some((_, old)) => *old = value,
+                    None => entry.push((key.to_owned(), value)),
+                }
+            }
+        }
+        Some(_) => return Err(format!("its `mcpServers.{MCP_SERVER}` isn't an object")),
+        None if add => servers.set(MCP_SERVER, Json::from(&ours)),
+        None => return Ok(None),
+    }
+    Ok(Some(pretty(&settings)))
+}
+
+/// Whether `old` and `new` mean the same JSON, whatever their layout and
+/// the order of their keys.
+pub fn same_meaning(old: &str, new: &str) -> bool {
+    match (
+        serde_json::from_str::<Value>(old),
+        serde_json::from_str::<Value>(new),
+    ) {
+        (Ok(old), Ok(new)) => old == new,
+        _ => false,
+    }
 }
 
 /// `.github/hooks/ascribe.json`, Copilot's: wholly Ascribe's.
@@ -178,14 +227,25 @@ impl Json {
         }
     }
 
-    /// In a `hooks` object, the groups of `event`: Ascribe's hooks taken
-    /// out of each group (and a group left empty by that dropped), then
-    /// one group with `command` added at the end.
+    /// The value at `key` in this object.
+    fn get_mut(&mut self, key: &str) -> Option<&mut Json> {
+        let Json::Object(entries) = self else {
+            return None;
+        };
+        entries.iter_mut().find(|(k, _)| k == key).map(|(_, v)| v)
+    }
+
+    /// In a `hooks` object, Ascribe's hook for `event`, with `commands`.
+    /// The first Ascribe hook there is updated in place, keeping its other
+    /// fields (a timeout the user changed) and its group, whose matcher is
+    /// set only when the group holds nothing else; any other Ascribe hook
+    /// is taken out, and a group left empty by that dropped. With none, a
+    /// group with the hook is added at the end.
     fn set_groups(
         &mut self,
         event: &str,
         matcher: Option<&str>,
-        command: &str,
+        commands: &[(&str, String)],
         timeout: u64,
     ) -> Result<(), String> {
         let Json::Object(entries) = self else {
@@ -196,6 +256,7 @@ impl Json {
             Some(_) => return Err(format!("its `hooks.{event}` isn't a list")),
             None => Vec::new(),
         };
+        let mut found = false;
         groups.retain_mut(|group| {
             let Json::Object(fields) = group else {
                 return true;
@@ -204,16 +265,49 @@ impl Json {
             else {
                 return true;
             };
-            hooks.retain(|hook| !hook.is_ascribe_hook());
-            !hooks.is_empty()
+            hooks.retain_mut(|hook| {
+                if !hook.is_ascribe_hook() {
+                    return true;
+                }
+                if found {
+                    return false;
+                }
+                found = true;
+                for (key, command) in commands {
+                    hook.set(key, Json::String(command.clone()));
+                }
+                true
+            });
+            if hooks.is_empty() {
+                return false;
+            }
+            if hooks.iter().all(Json::is_ascribe_hook) {
+                match matcher {
+                    Some(matcher) => {
+                        let matcher = Json::String(matcher.to_owned());
+                        match fields.iter_mut().find(|(k, _)| k == "matcher") {
+                            Some((_, old)) => *old = matcher,
+                            None => fields.insert(0, ("matcher".to_owned(), matcher)),
+                        }
+                    }
+                    None => fields.retain(|(k, _)| k != "matcher"),
+                }
+            }
+            true
         });
-        let mut group = Vec::new();
-        if let Some(matcher) = matcher {
-            group.push(("matcher".to_owned(), Json::String(matcher.to_owned())));
+        if !found {
+            let mut hook = vec![("type".to_owned(), Json::String("command".to_owned()))];
+            for (key, command) in commands {
+                hook.push(((*key).to_owned(), Json::String(command.clone())));
+            }
+            hook.push(("timeout".to_owned(), Json::Number(timeout.into())));
+            let mut group = Vec::new();
+            if let Some(matcher) = matcher {
+                group.push(("matcher".to_owned(), Json::String(matcher.to_owned())));
+            }
+            group.push(("hooks".to_owned(), Json::Array(vec![Json::Object(hook)])));
+            groups.push(Json::Object(group));
         }
-        let hook = serde_json::json!({ "type": "command", "command": command, "timeout": timeout });
-        group.push(("hooks".to_owned(), Json::Array(vec![Json::from(&hook)])));
-        groups.push(Json::Object(group));
         self.set(event, Json::Array(groups));
         Ok(())
     }
@@ -363,13 +457,14 @@ mod tests {
             .collect();
         assert_eq!(keys, ["permissions", "hooks", "model"]);
         let value: Value = serde_json::from_str(&new).unwrap();
+        // Ascribe's hook is updated where it was, beside the user's, whose
+        // group keeps its matcher.
         let post = value["hooks"]["PostToolUse"].as_array().unwrap();
-        assert_eq!(post.len(), 2);
-        assert_eq!(post[0]["hooks"].as_array().unwrap().len(), 1);
+        assert_eq!(post.len(), 1);
+        assert_eq!(post[0]["matcher"], "Write");
         assert_eq!(post[0]["hooks"][0]["command"], "prettier --write");
-        assert_eq!(post[1]["matcher"], "Write|Edit");
         assert_eq!(
-            post[1]["hooks"][0]["command"],
+            post[0]["hooks"][1]["command"],
             "ascribe agents hook claude-code --event edit"
         );
         let stop = value["hooks"]["Stop"].as_array().unwrap();
@@ -386,6 +481,54 @@ mod tests {
     }
 
     #[test]
+    fn a_new_hook_runs_after_each_edit_tool() {
+        let new = claude_settings(None, &Ascribe::on_path()).unwrap();
+        let value: Value = serde_json::from_str(&new).unwrap();
+        assert_eq!(
+            value["hooks"]["PostToolUse"][0]["matcher"],
+            "Write|Edit|MultiEdit"
+        );
+        assert_eq!(value["hooks"]["PostToolUse"][0]["hooks"][0]["timeout"], 10);
+    }
+
+    #[test]
+    fn a_timeout_the_user_set_is_kept_and_a_second_hook_dropped() {
+        let old = r#"{"hooks": {"Stop": [
+  {"hooks": [{"type": "command", "command": "ascribe agents hook claude-code --event stop", "timeout": 120}]},
+  {"hooks": [{"type": "command", "command": "ascribe agents hook claude-code --event stop"}]}
+]}}"#;
+        let new = claude_settings(Some(old), &Ascribe::on_path()).unwrap();
+        let value: Value = serde_json::from_str(&new).unwrap();
+        let stop = value["hooks"]["Stop"].as_array().unwrap();
+        assert_eq!(stop.len(), 1);
+        assert_eq!(stop[0]["hooks"][0]["timeout"], 120);
+    }
+
+    #[test]
+    fn layout_alone_isnt_a_change() {
+        let new = claude_settings(None, &Ascribe::on_path()).unwrap();
+        let value: Value = serde_json::from_str(&new).unwrap();
+        let four = serde_json::to_string(&value).unwrap();
+        assert_ne!(four, new);
+        assert!(same_meaning(&four, &new));
+        assert!(!same_meaning(&four.replace("10", "11"), &new));
+    }
+
+    #[test]
+    fn mcp_json_adds_its_server_only_when_asked() {
+        let old = r#"{"mcpServers":{"other":{"command":"x"}}}"#;
+        assert_eq!(mcp_json(Some(old), &Ascribe::on_path(), false), Ok(None));
+        let kept = r#"{"mcpServers":{"ascribe":{"command":"old","env":{"A":"1"}}}}"#;
+        let new = mcp_json(Some(kept), &Ascribe::on_path(), false)
+            .unwrap()
+            .unwrap();
+        let value: Value = serde_json::from_str(&new).unwrap();
+        assert_eq!(value["mcpServers"]["ascribe"]["command"], "ascribe");
+        assert_eq!(value["mcpServers"]["ascribe"]["args"][0], "mcp");
+        assert_eq!(value["mcpServers"]["ascribe"]["env"]["A"], "1");
+    }
+
+    #[test]
     fn a_file_that_isnt_an_object_is_refused() {
         assert!(claude_settings(Some("[1]"), &Ascribe::on_path()).is_err());
         assert!(claude_settings(Some("{ nope"), &Ascribe::on_path()).is_err());
@@ -395,13 +538,12 @@ mod tests {
     #[test]
     fn mcp_json_keeps_other_servers() {
         let old = r#"{"mcpServers":{"other":{"command":"x"}}}"#;
-        let new = mcp_json(Some(old), &Ascribe::pinned("node_modules/.bin/ascribe")).unwrap();
+        let pinned = Ascribe::pinned("node_modules/.bin/ascribe");
+        let new = mcp_json(Some(old), &pinned, true).unwrap().unwrap();
         let value: Value = serde_json::from_str(&new).unwrap();
         assert_eq!(value["mcpServers"]["other"]["command"], "x");
-        assert_eq!(
-            value["mcpServers"]["ascribe"]["command"],
-            "node_modules/.bin/ascribe"
-        );
+        // `.mcp.json` can't name the repository's root on every system.
+        assert_eq!(value["mcpServers"]["ascribe"]["command"], "ascribe");
     }
 
     #[test]
@@ -412,6 +554,13 @@ mod tests {
             r#""command": "\"$CLAUDE_PROJECT_DIR\"/docs/node_modules/.bin/ascribe agents hook claude-code --event edit""#
         ), "{claude}");
         let copilot = copilot_hooks(&pinned);
-        assert!(copilot.contains(r#""powershell": "./docs/node_modules/.bin/ascribe.cmd agents hook copilot --event stop""#), "{copilot}");
+        assert!(copilot.contains(r#""bash": "\"$(git rev-parse --show-toplevel)/docs/node_modules/.bin/ascribe\" agents hook copilot --event stop""#), "{copilot}");
+        assert!(copilot.contains(r#""powershell": "& \"$(git rev-parse --show-toplevel)/docs/node_modules/.bin/ascribe.cmd\" agents hook copilot --event stop""#), "{copilot}");
+        let codex = codex_hooks(None, &pinned).unwrap();
+        assert!(codex.contains(r#""command": "\"$(git rev-parse --show-toplevel)/docs/node_modules/.bin/ascribe\" agents hook codex --event edit""#), "{codex}");
+        assert!(
+            codex.contains(r#""commandWindows": "ascribe agents hook codex --event edit""#),
+            "{codex}"
+        );
     }
 }

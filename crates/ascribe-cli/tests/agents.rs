@@ -491,7 +491,7 @@ fn with_hook_writes_each_agents_hooks() {
     assert_eq!(claude["model"], "opus");
     let post = &claude["hooks"]["PostToolUse"];
     assert_eq!(post[0]["hooks"][0]["command"], "prettier --write");
-    assert_eq!(post[1]["matcher"], "Write|Edit");
+    assert_eq!(post[1]["matcher"], "Write|Edit|MultiEdit");
     assert_eq!(
         post[1]["hooks"][0]["command"],
         "ascribe agents hook claude-code --event edit"
@@ -545,6 +545,38 @@ fn with_hook_writes_each_agents_hooks() {
 }
 
 #[test]
+fn with_hook_keeps_what_the_user_changed() {
+    let repo = repository("quill");
+    let root = repo.path();
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    // Laid out by another formatter, with a longer timeout on Ascribe's
+    // stop hook, an `env` on its MCP server, and nothing else changed.
+    let settings = root.join(".claude/settings.json");
+    let mut value: serde_json::Value = serde_json::from_str(&read(&settings)).unwrap();
+    value["hooks"]["Stop"][0]["hooks"][0]["timeout"] = 300.into();
+    let mut four = Vec::new();
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+    let mut serializer = serde_json::Serializer::with_formatter(&mut four, formatter);
+    serde::Serialize::serialize(&value, &mut serializer).unwrap();
+    let four = String::from_utf8(four).unwrap();
+    write(&settings, &four);
+    let mcp = root.join(".mcp.json");
+    let mut servers: serde_json::Value = serde_json::from_str(&read(&mcp)).unwrap();
+    servers["mcpServers"]["ascribe"]["env"] = serde_json::json!({ "A": "1" });
+    write(&mcp, &serde_json::to_string(&servers).unwrap());
+    let before = read(&mcp);
+    run(root, &["agents", "sync", "--check"], 0);
+    sync(root, ".", &[]);
+    assert_eq!(read(&settings), four);
+    assert_eq!(read(&mcp), before);
+    // A server the user removed stays removed.
+    write(&mcp, "{\"mcpServers\": {}}\n");
+    sync(root, ".", &[]);
+    assert_eq!(read(&mcp), "{\"mcpServers\": {}}\n");
+    run(root, &["agents", "sync", "--check"], 0);
+}
+
+#[test]
 fn with_hook_runs_the_pinned_ascribe() {
     let repo = repository("quill");
     let root = repo.path();
@@ -557,11 +589,10 @@ fn with_hook_runs_the_pinned_ascribe() {
         ),
         "{settings}"
     );
+    // `.mcp.json` has no way to name the repository's root on every
+    // system, so it runs `ascribe` from the path.
     let mcp = read(&root.join(".mcp.json"));
-    assert!(
-        mcp.contains(r#""command": "node_modules/.bin/ascribe""#),
-        "{mcp}"
-    );
+    assert!(mcp.contains(r#""command": "ascribe""#), "{mcp}");
 }
 
 #[test]
