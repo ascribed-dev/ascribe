@@ -845,6 +845,7 @@ impl Core {
             config: self.config.clone()?,
             content_dir: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
             encoding: self.encoding,
+            fs: loaded.fs.clone(),
         })
     }
 

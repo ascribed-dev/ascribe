@@ -18,6 +18,7 @@ use ascribe_resolve::{FileIndex, Heading, Include, PhraseUse, Reference, Snapsho
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, PrimaryValue};
 use lsp_types::{Location, Position, Range, Uri};
 
+use crate::fsx::LayerFs;
 use crate::position::Encoding;
 use crate::uri::path_to_uri;
 
@@ -37,6 +38,9 @@ pub(crate) struct Ctx {
     pub content_dir: PathBuf,
     /// How the client counts columns.
     pub encoding: Encoding,
+    /// The project's files that aren't sources, as the file-level checks
+    /// read them: images, and the files of the content model's sources.
+    pub fs: Arc<LayerFs>,
 }
 
 impl Ctx {
@@ -329,6 +333,27 @@ pub(crate) fn identifier_primary(d: &DirectiveLine) -> Option<(&str, Span)> {
         Some(PrimaryValue::Identifier(p)) => Some((p.text.as_str(), p.span)),
         _ => None,
     }
+}
+
+/// The headings a link to `file` can name, in document order: a page's own
+/// and those of the fragments it includes (SPEC §4.2); a fragment's own. Each
+/// id once, the first heading with it winning, and none without an id.
+pub(crate) fn link_headings<'a>(snapshot: &'a Snapshot, file: &'a FileIndex) -> Vec<&'a Heading> {
+    match snapshot.expansion(&file.path) {
+        Some(page) => named_headings(page.headings(snapshot).into_iter().map(|(_, h)| h)),
+        None => named_headings(&file.headings),
+    }
+}
+
+/// The headings with an id, each id once, the first with it winning.
+pub(crate) fn named_headings<'a>(
+    headings: impl IntoIterator<Item = &'a Heading>,
+) -> Vec<&'a Heading> {
+    let mut seen = std::collections::HashSet::new();
+    headings
+        .into_iter()
+        .filter(|h| !h.source_id.is_empty() && seen.insert(h.source_id.as_str()))
+        .collect()
 }
 
 /// Percent-encodes what would end a link destination or an include path early

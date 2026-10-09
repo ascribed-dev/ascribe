@@ -51,7 +51,8 @@ pub use error::Coded;
 pub use issue::{Arg, DiagnosticSlug, Fix, Issue, Related};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 pub use path::{
-    Destination, LocalDestination, PathError, RelPath, classify_destination, percent_decode,
+    Destination, LocalDestination, PathError, RelPath, classify_destination, image_media_type,
+    percent_decode,
 };
 pub use schema::{
     AttributeSchema, AttributeType, Attributes, Binding, Builtin, DefaultValue, DirectiveSchema,

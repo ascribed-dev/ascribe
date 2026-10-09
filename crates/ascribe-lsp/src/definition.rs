@@ -92,13 +92,23 @@ fn feature_entry(ctx: &Ctx, text: &str) -> Option<Location> {
     model_entry(ctx, Entry::Feature(key))
 }
 
-enum Entry<'a> {
+/// An entry of `ascribe.toml` that can be found by its text.
+pub(crate) enum Entry<'a> {
+    /// A phrase, by key.
     Phrase(&'a str),
+    /// A feature, by key.
     Feature(&'a str),
+    /// A value of a dimension, as `values` of `[dimensions.<name>]` lists it.
+    DimensionValue {
+        /// The dimension's name.
+        dimension: &'a str,
+        /// The value.
+        value: &'a str,
+    },
 }
 
-/// The entry in `ascribe.toml`: a phrase's line under `[phrases]`, or a
-/// feature's `[features.<key>]` table.
+/// The entry in `ascribe.toml`: a phrase's line under `[phrases]`, a
+/// feature's `[features.<key>]` table, or a dimension's value.
 fn model_entry(ctx: &Ctx, entry: Entry<'_>) -> Option<Location> {
     let span = find_entry(&ctx.model_text, &entry)?;
     let index = LineIndex::new(&ctx.model_text);
@@ -108,8 +118,11 @@ fn model_entry(ctx: &Ctx, entry: Entry<'_>) -> Option<Location> {
     })
 }
 
-/// The span of an entry's key (or of a feature's table header) in the model.
-fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
+/// The span of an entry in the model's text: a phrase's key, a feature's
+/// table header, or a dimension value's text inside its quotes. The model
+/// keeps no spans, so this reads the text; it finds entries written as
+/// tables and keys, which is how `ascribe.toml` declares them.
+pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
     let mut table = String::new();
     let mut at = 0;
     for line in text.split_inclusive('\n') {
@@ -136,6 +149,14 @@ fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
             }
             continue;
         }
+        if let Entry::DimensionValue { dimension, value } = entry
+            && table == format!("dimensions.{dimension}")
+            && let Some((name, _)) = trimmed.split_once('=')
+            && name.trim() == "values"
+        {
+            let from = start + (line.len() - line.trim_start().len()) + name.len() + 1;
+            return array_string(text, from, value);
+        }
         if let Entry::Phrase(key) = entry
             && table == "phrases"
         {
@@ -144,6 +165,49 @@ fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
                 let lead = line.len() - line.trim_start().len();
                 return Some(Span::new(start + lead, start + lead + name.len()));
             }
+        }
+    }
+    None
+}
+
+/// The span of the string `wanted`, inside its quotes, in the TOML array
+/// that starts at or after `from` (after a key's `=`): the array may span
+/// lines and hold comments.
+fn array_string(text: &str, from: usize, wanted: &str) -> Option<Span> {
+    let rest = text.get(from..)?;
+    let open = rest.find('[')?;
+    let mut chars = rest[open + 1..].char_indices();
+    let base = from + open + 1;
+    while let Some((i, c)) = chars.next() {
+        match c {
+            ']' => return None,
+            '#' => {
+                for (_, c) in chars.by_ref() {
+                    if c == '\n' {
+                        break;
+                    }
+                }
+            }
+            '"' | '\'' => {
+                let inner = i + 1;
+                let mut end = None;
+                let mut escaped = false;
+                for (j, d) in chars.by_ref() {
+                    if escaped {
+                        escaped = false;
+                    } else if d == '\\' && c == '"' {
+                        escaped = true;
+                    } else if d == c {
+                        end = Some(j);
+                        break;
+                    }
+                }
+                let end = end?;
+                if &rest[open + 1 + inner..open + 1 + end] == wanted {
+                    return Some(Span::new(base + inner, base + end));
+                }
+            }
+            _ => {}
         }
     }
     None
@@ -163,5 +227,32 @@ mod tests {
         let p = find_entry(text, &Entry::Feature("sso")).expect("found");
         assert_eq!(&text[p.range()], "[features.sso]");
         assert!(find_entry(text, &Entry::Phrase("name")).is_none());
+    }
+
+    #[test]
+    fn dimension_values_are_found_in_their_array() {
+        let text = "[dimensions.pm]\nlabel = \"Package manager\"\nvalues = [\"npm\", 'pnpm',\n  # yarn = \"no\"\n  \"yarn\",\n]\n\n[dimensions.os]\nvalues = [\"linux\"]\n";
+        let find = |dimension, value| {
+            find_entry(text, &Entry::DimensionValue { dimension, value })
+                .map(|span| &text[span.range()])
+        };
+        assert_eq!(find("pm", "npm"), Some("npm"));
+        assert_eq!(find("pm", "pnpm"), Some("pnpm"));
+        let yarn = find_entry(
+            text,
+            &Entry::DimensionValue {
+                dimension: "pm",
+                value: "yarn",
+            },
+        )
+        .expect("found");
+        assert_eq!(&text[yarn.start() - 1..yarn.end() + 1], "\"yarn\"");
+        assert!(
+            text[..yarn.start()].ends_with("  \""),
+            "not the commented one"
+        );
+        assert_eq!(find("os", "linux"), Some("linux"));
+        assert_eq!(find("os", "npm"), None);
+        assert_eq!(find("pm", "no"), None);
     }
 }

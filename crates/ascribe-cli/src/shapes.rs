@@ -102,6 +102,20 @@ const SHAPES: &[Shape] = &[
         command: false,
         schema: |g| g.root_schema_for::<ascribe_lsp::ChangesResult>(),
     },
+    Shape {
+        file: "lsp-context",
+        title: "ContextResult",
+        written_by: "the language server, answering `ascribe/context`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::ContextResult>(),
+    },
+    Shape {
+        file: "lsp-targets",
+        title: "TargetsResult",
+        written_by: "the language server, answering `ascribe/targets`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::TargetsResult>(),
+    },
 ];
 
 /// The packages that read Ascribe's JSON, and the shapes each reads.
@@ -110,7 +124,13 @@ const PACKAGES: &[(&str, &[&str])] = &[
     ("packages/review", &["diff", "diff-html-data"]),
     (
         "packages/vscode",
-        &["lsp-preview", "lsp-set-base", "lsp-changes"],
+        &[
+            "lsp-preview",
+            "lsp-set-base",
+            "lsp-changes",
+            "lsp-context",
+            "lsp-targets",
+        ],
     ),
 ];
 

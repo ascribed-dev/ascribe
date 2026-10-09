@@ -424,6 +424,20 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             WillRenameFiles::METHOD => will_rename_request(shared, &request),
             ExecuteCommand::METHOD => execute_command(shared, &request),
             crate::preview::METHOD => preview_request(shared, &request),
+            crate::context::METHOD => {
+                answer(shared, &request, |p: crate::context::ContextParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::context::context(ctx, p.range)
+                    })
+                })
+            }
+            crate::targets::METHOD => {
+                answer(shared, &request, |p: crate::targets::TargetsParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::targets::targets(ctx, &p.kinds)
+                    })
+                })
+            }
             crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
             crate::review::CHANGES_METHOD => changes_request(shared, &request),
             method => Err(Response::new_err(
@@ -485,6 +499,27 @@ where
         }),
         None => Ok(serde_json::Value::Null),
     }
+}
+
+/// Answers a custom request about one document as [`navigation`] does, but
+/// with the empty answer (`R::default()`), not `null`, for a document that
+/// isn't a source file of the project.
+fn answer<P, R, F>(
+    shared: &Shared,
+    request: &Request,
+    read: impl FnOnce(P) -> (Uri, F),
+) -> Result<serde_json::Value, Response>
+where
+    P: serde::de::DeserializeOwned,
+    R: serde::Serialize + Default,
+    F: FnOnce(&Ctx) -> R,
+{
+    let params: P = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (uri, compute) = read(params);
+    let target = shared.lock().nav_target(&uri);
+    let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
 }
 
 fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {

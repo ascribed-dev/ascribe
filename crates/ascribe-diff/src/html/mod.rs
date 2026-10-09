@@ -466,18 +466,10 @@ fn without_frontmatter(text: &str) -> &str {
 
 /// A `data:` URL of a file, typed by its extension.
 fn data_url(path: &RelPath, contents: &[u8]) -> String {
-    let extension = path.extension().unwrap_or_default().to_ascii_lowercase();
-    let mime = match extension.as_str() {
-        "png" => "image/png",
-        "jpg" | "jpeg" => "image/jpeg",
-        "gif" => "image/gif",
-        "svg" => "image/svg+xml",
-        "webp" => "image/webp",
-        "avif" => "image/avif",
-        "ico" => "image/x-icon",
-        "bmp" => "image/bmp",
-        _ => "application/octet-stream",
-    };
+    let mime = path
+        .extension()
+        .and_then(ascribe_core::image_media_type)
+        .unwrap_or("application/octet-stream");
     format!("data:{mime};base64,{}", base64(contents))
 }
 
