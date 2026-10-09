@@ -280,6 +280,78 @@ describe("the editor's actions", () => {
     });
   });
 
+  describe("the content model", () => {
+    /**
+     * Starts an action's command with answers for its wizard and, once VS
+     * Code's refactor preview lists the changes, runs `command` in it.
+     */
+    async function runThroughPreview(
+      id: string,
+      answers: Scripted[],
+      command: "refactorPreview.apply" | "refactorPreview.discard",
+    ): Promise<RunRecord> {
+      const before = api.actions.runs.length;
+      api.actions.answerNext(answers);
+      const running = vscode.commands.executeCommand(`ascribe.action.${id}`);
+      // Until the preview is open, the command does nothing.
+      const record = await waitFor("the refactor preview", async () => {
+        await vscode.commands.executeCommand(command).then(undefined, () => undefined);
+        return api.actions.runs[before];
+      });
+      await running;
+      return record;
+    }
+
+    it("makes the selected text a phrase, in ascribe.toml and the page", async () => {
+      // "the agent" in "… and restart the agent. To install …".
+      const editor = await open("keys.md", 13, 0);
+      const line = lines(editor)[13] ?? "";
+      const start = line.indexOf("the agent.");
+      editor.selection = new vscode.Selection(13, start, 13, start + "the agent".length);
+      const record = await run("makePhrase", ["agent", "no"]);
+      assert.equal(record.done, true, record.messages.join());
+      assert.ok(lines(editor)[13]?.includes("and restart {agent}. To install the agent"));
+      const model = await vscode.workspace.openTextDocument(uriOf("ascribe.toml"));
+      assert.ok(
+        model.getText().includes('\napi = "https://api.quill.dev/v3/"\nagent = "the agent"\n'),
+      );
+      await vscode.commands.executeCommand("undo");
+      assert.equal(lines(editor)[13], line);
+    });
+
+    it("renames a phrase picked from the palette, far from its key, after showing every change", async () => {
+      // A paragraph of the quickstart, with no phrase at the cursor.
+      await open("quickstart.md", 8, 4);
+      const record = await runThroughPreview(
+        "renamePhrase",
+        ["cloud", "hosted"],
+        "refactorPreview.apply",
+      );
+      assert.deepEqual(record, {
+        action: "renamePhrase",
+        edits: 0,
+        done: true,
+        messages: [],
+        previewed: true,
+      });
+      const keys = await vscode.workspace.openTextDocument(uriOf("docs", "keys.md"));
+      assert.ok(keys.getText().includes("Sign in to {hosted} and open"), keys.getText());
+      const model = await vscode.workspace.openTextDocument(uriOf("ascribe.toml"));
+      assert.ok(model.getText().includes('\nhosted = "Quill Cloud"\n'), model.getText());
+    });
+
+    it("changes nothing when the rename's preview is discarded", async () => {
+      // In "{cloud}" of "Sign in to {cloud} and open …".
+      await open("keys.md", 8, 13);
+      const record = await runThroughPreview("renamePhrase", ["hosted"], "refactorPreview.discard");
+      assert.equal(record.previewed, true);
+      assert.equal(record.done, false);
+      for (const document of vscode.workspace.textDocuments) {
+        assert.equal(document.isDirty, false, document.uri.toString());
+      }
+    });
+  });
+
   it("offers its rewrites in the lightbulb once the cursor's context is known", async () => {
     const editor = await open("quickstart.md", 8, 4);
     const titles = await waitFor("the lightbulb's actions", async () => {

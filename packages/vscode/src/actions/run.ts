@@ -1,6 +1,7 @@
 // Runs an action from its command: the context at the selection, the
 // wizard, then the action's own function or the server's edit, applied as
-// one undo step.
+// one undo step. A rename that changes files other than the page is shown
+// in VS Code's refactor preview before anything is written.
 
 import * as vscode from "vscode";
 import type { ProjectRegistry } from "../registry.js";
@@ -18,6 +19,8 @@ export interface RunRecord {
   done: boolean;
   /** What it told the writer, if anything. */
   messages: string[];
+  /** For a rename: whether it asked first, in the refactor preview, since it changes other files. */
+  previewed?: boolean;
 }
 
 /** What a run needs from the extension. */
@@ -74,6 +77,7 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
       ? ((await server.request("ascribe/targets", {
           textDocument: { uri: where.uri },
           kinds: action.needs,
+          range: where.range,
         })) as TargetsResult)
       : {};
     let args: Args | undefined;
@@ -91,9 +95,26 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
       const effects: Effects = {
         copy: (text) => Promise.resolve(vscode.env.clipboard.writeText(text)),
         say: (message) => say(message),
+        rename: async (position, newName, uri) => {
+          const result = await server.requestEdit(
+            "textDocument/rename",
+            { textDocument: { uri: uri ?? where.uri }, position, newName },
+            `Can't rename it to ${newName}: the name breaks the content model's rules, or is taken.`,
+          );
+          if ("error" in result) {
+            say(result.error, true);
+            return false;
+          }
+          // Other files change: show every change in the refactor preview first.
+          const page = document.uri.toString();
+          const elsewhere = result.edit.entries().some(([file]) => file.toString() !== page);
+          record.previewed = elsewhere;
+          return elsewhere
+            ? vscode.workspace.applyEdit(confirmEach(result.edit), { isRefactoring: true })
+            : vscode.workspace.applyEdit(result.edit);
+        },
       };
-      await action.does.run(context, targets, args, effects);
-      record.done = true;
+      record.done = await action.does.run(context, targets, args, effects);
       return record;
     }
 
@@ -137,4 +158,14 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
     if (!isCancellation(error)) server.reportFeatureError(`"${action.title}"`, error);
     return record;
   }
+}
+
+/** An edit with every change marked as needing confirmation, so VS Code previews it. */
+function confirmEach(edit: vscode.WorkspaceEdit): vscode.WorkspaceEdit {
+  const confirmed = new vscode.WorkspaceEdit();
+  const metadata: vscode.WorkspaceEditEntryMetadata = { needsConfirmation: true, label: "Rename" };
+  for (const [uri, edits] of edit.entries()) {
+    for (const change of edits) confirmed.replace(uri, change.range, change.newText, metadata);
+  }
+  return confirmed;
 }

@@ -10,13 +10,16 @@
 // clause, since VS Code reads them from there; test/unit/actions.test.ts
 // fails when the two differ.
 
-import type { ContextNode, ContextResult, TargetsResult } from "../shapes.js";
+import type { ContextNode, ContextResult, LspPosition, TargetsResult } from "../shapes.js";
 import {
   availabilitySpec,
   availabilitySteps,
   chosenDimension,
+  destinationOf,
   destinationStep,
   dimensionStep,
+  everywhereSteps,
+  glossaryLinkStep,
   imageStep,
   includePath,
   includeSteps,
@@ -27,13 +30,17 @@ import {
   positiveNumber,
   snippetAddress,
   snippetSteps,
+  suggestKey,
   text,
   validId,
+  validKey,
+  validValue,
   valueStep,
   widgetArgs,
   widgetSteps,
   wholeNumber,
   type Args,
+  type Step,
   type Wizard,
 } from "./steps.js";
 
@@ -46,6 +53,12 @@ export interface Effects {
   copy(text: string): Promise<void>;
   /** Tells the writer something, briefly. */
   say(message: string): void;
+  /**
+   * Renames what's at a position, as F2 there would, everywhere it's used:
+   * in `uri`, or the page when it's left out. Asks first when the rename
+   * changes other files. Resolves to whether the rename was made.
+   */
+  rename(position: LspPosition, newName: string, uri?: string): Promise<boolean>;
 }
 
 export interface Action {
@@ -59,7 +72,7 @@ export interface Action {
   where: string;
   /** What to say when it's run where it doesn't apply. */
   hint: string;
-  group: "fix" | "write" | "structure" | "link" | "media";
+  group: "fix" | "write" | "structure" | "link" | "media" | "model";
   /** Whether it applies to the context, from `ascribe/context`. */
   applies(context: ContextResult): boolean;
   /**
@@ -82,12 +95,13 @@ export interface Action {
   does:
     | { operation: string }
     | {
+        /** Resolves to whether it did what it's for. */
         run(
           context: ContextResult,
           targets: TargetsResult,
           args: Args | undefined,
           effects: Effects,
-        ): Promise<void>;
+        ): Promise<boolean>;
       };
 }
 
@@ -192,26 +206,13 @@ const key = (name: string) => (c: ContextResult) => CONTEXT_KEYS[name]?.(c) ?? f
 
 // Building a link from the content root.
 
-/** A content path written as a destination: each segment percent-encoded where it needs to be. */
-function destinationOf(path: string): string {
-  return path
-    .split("/")
-    .map((segment) =>
-      encodeURI(segment).replace(
-        /[#?()]/g,
-        (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
-      ),
-    )
-    .join("/");
-}
-
 /** `/guides/install.md#install-cli`: the heading's destination from the content root. */
 export async function copyLinkToSection(
   context: ContextResult,
   targets: TargetsResult,
   _args: Args | undefined,
   effects: Effects,
-): Promise<void> {
+): Promise<boolean> {
   const id = innermost(context, "heading")?.id ?? "";
   // A heading on the requesting page is listed with a link of `#id`.
   const heading = targets.headings?.find((h) => h.id === id && h.link === `#${id}`);
@@ -219,11 +220,95 @@ export async function copyLinkToSection(
     effects.say(
       "This heading isn't on a page a link can name: copy the link from a page that includes this file.",
     );
-    return;
+    return false;
   }
   const link = `/${destinationOf(heading.page)}#${id}`;
   await effects.copy(link);
   effects.say(`Copied ${link}`);
+  return true;
+}
+
+// Renaming a phrase or a dimension value.
+
+/** A wizard's answer as text; empty when it gave none. */
+const arg = (args: Args | undefined, name: string): string => {
+  const value = args?.[name];
+  return typeof value === "string" ? value : "";
+};
+
+/** The declared phrase whose `{key}` is under the cursor. */
+function phraseAtCursor(context: ContextResult): string | undefined {
+  const token = context.token;
+  return token?.kind === "phrase" && token.declared ? token.key : undefined;
+}
+
+/** The dimension and values of the `@variant` attribute under the cursor. */
+function variantAtCursor(
+  context: ContextResult,
+): { dimension: string; values: string[] } | undefined {
+  const token = context.token;
+  if (token?.kind !== "attribute" || token.directive !== "variant" || !token.value) return;
+  const values = token.value
+    .split("|")
+    .map((value) => value.trim())
+    .filter((value) => value !== "");
+  return { dimension: token.key, values };
+}
+
+/** The new name for a phrase or value, starting from its current one. */
+function newNameStep(
+  current: string | undefined,
+  validate: (value: string) => string | undefined,
+): Step {
+  return {
+    kind: "text",
+    key: "newName",
+    prompt: current ? `Rename ${current} to what?` : "Rename it to what?",
+    value: current,
+    validate,
+  };
+}
+
+/** Renames a phrase: at the cursor's `{key}`, or at its key in `ascribe.toml`. */
+export async function renamePhrase(
+  context: ContextResult,
+  targets: TargetsResult,
+  args: Args | undefined,
+  effects: Effects,
+): Promise<boolean> {
+  const key = arg(args, "key");
+  const newName = arg(args, "newName");
+  const token = context.token;
+  if (token?.kind === "phrase" && token.key === key) {
+    // Inside the braces.
+    const { line, character } = token.range.start;
+    return effects.rename({ line, character: character + 1 }, newName);
+  }
+  const range = targets.phrases?.find((phrase) => phrase.key === key)?.range;
+  if (!range || !targets.modelUri) {
+    effects.say(`Can't find the phrase ${key} in ascribe.toml.`);
+    return false;
+  }
+  return effects.rename(range.start, newName, targets.modelUri);
+}
+
+/** Renames a dimension value at its place in the dimension's `values` in `ascribe.toml`. */
+export async function renameDimensionValue(
+  _context: ContextResult,
+  targets: TargetsResult,
+  args: Args | undefined,
+  effects: Effects,
+): Promise<boolean> {
+  const dimension = arg(args, "dimension");
+  const value = arg(args, "value");
+  const range = targets.dimensions
+    ?.find((d) => d.name === dimension)
+    ?.values.find((v) => v.value === value)?.range;
+  if (!range || !targets.modelUri) {
+    effects.say(`Can't find the value ${value} of ${dimension} in ascribe.toml.`);
+    return false;
+  }
+  return effects.rename(range.start, arg(args, "newName"), targets.modelUri);
 }
 
 // The actions.
@@ -775,6 +860,215 @@ export const ACTIONS: Action[] = [
       args: (answers) => widgetArgs(targets, answers),
     }),
     does: { operation: "insertWidget" },
+  },
+  // The content model.
+  {
+    id: "makePhrase",
+    title: "Make this a phrase",
+    description:
+      "Declare the selected text in `[phrases]` and write `{key}` in its place, and in its other occurrences if you choose",
+    where: "Text selected in one paragraph or heading",
+    hint: "Select text in one paragraph or heading to make it a phrase.",
+    group: "model",
+    applies: key("ascribe.selection.prose"),
+    when: "ascribe.selection.prose",
+    lightbulb: "refactor",
+    needs: ["phrases", "occurrences"],
+    ask: (c, targets) => {
+      const taken = (targets.phrases ?? []).map((phrase) => phrase.key);
+      return {
+        steps: () => [
+          {
+            kind: "text",
+            key: "key",
+            prompt: "What key? Pages write {key} for the phrase.",
+            value: suggestKey(c.selection?.text ?? "") || undefined,
+            validate: validKey(taken),
+          },
+          ...everywhereSteps(targets),
+        ],
+        args: (answers) => ({
+          key: text(answers, "key")?.trim(),
+          everywhere: text(answers, "everywhere") === "yes",
+        }),
+      };
+    },
+    does: { operation: "makePhrase" },
+  },
+  {
+    id: "addGlossaryTerm",
+    title: "Add to the glossary",
+    description:
+      "Declare the selected text as a term in `[glossary.terms]`, with its aliases, definition, and link",
+    where: "Text selected in one paragraph or heading",
+    hint: "Select text in one paragraph or heading to add it to the glossary.",
+    group: "model",
+    applies: key("ascribe.selection.prose"),
+    when: "ascribe.selection.prose",
+    needs: ["pages", "headings"],
+    ask: (c, targets) => ({
+      steps: (answers) => [
+        {
+          kind: "text",
+          key: "term",
+          prompt: "What's the term?",
+          value: c.selection?.text.trim(),
+          validate: oneLine("the term"),
+        },
+        {
+          kind: "text",
+          key: "id",
+          prompt: "What id? It names the term in ascribe.toml.",
+          value: suggestKey(text(answers, "term") ?? c.selection?.text ?? "") || undefined,
+          validate: validKey(),
+        },
+        {
+          kind: "text",
+          key: "aliases",
+          prompt: "Other words for it, separated by commas? Leave it empty for none.",
+          validate: (value) => (/[\r\n]/.test(value) ? "Write them on one line." : undefined),
+        },
+        {
+          kind: "text",
+          key: "definition",
+          prompt: "What does it mean? Readers see this where the term is linked.",
+          validate: oneLine("a definition"),
+        },
+        glossaryLinkStep(targets),
+      ],
+      args: (answers) => {
+        const link = text(answers, "link");
+        return {
+          id: text(answers, "id")?.trim(),
+          term: text(answers, "term")?.trim(),
+          aliases: (text(answers, "aliases") ?? "")
+            .split(",")
+            .map((alias) => alias.trim())
+            .filter((alias) => alias !== ""),
+          definition: text(answers, "definition")?.trim(),
+          ...(link ? { link } : {}),
+        };
+      },
+    }),
+    does: { operation: "addGlossaryTerm" },
+  },
+  {
+    id: "promoteFeature",
+    title: "Change a feature's availability",
+    description: "Set where a feature in `[features]` is available, such as its state or version",
+    where: "Anywhere in a page",
+    hint: "Open a page of the project to change a feature's availability.",
+    group: "model",
+    applies: inPage,
+    when: "ascribe.inPage",
+    needs: ["features"],
+    ask: (_c, targets) => ({
+      steps: (answers) => {
+        const features = targets.features ?? [];
+        const pick: Step = {
+          kind: "pick",
+          key: "key",
+          prompt: "Which feature?",
+          choices: features.map((feature) => ({
+            label: `$(tag) ${feature.name}`,
+            description: feature.key,
+            detail: feature.availability,
+            value: feature.key,
+          })),
+          empty: "The content model declares no features.",
+        };
+        const chosen = features.find((feature) => feature.key === text(answers, "key"));
+        if (!chosen) return [pick];
+        return [
+          pick,
+          {
+            kind: "text",
+            key: "spec",
+            prompt: `Where is ${chosen.name} available? Targets, each with an optional state and version.`,
+            value: chosen.availability,
+            validate: oneLine("where it's available"),
+          },
+        ];
+      },
+      args: (answers) => ({ key: text(answers, "key"), spec: text(answers, "spec")?.trim() }),
+    }),
+    does: { operation: "promoteFeature" },
+  },
+  {
+    id: "renamePhrase",
+    title: "Rename this phrase everywhere",
+    description:
+      "Change a phrase's key in `[phrases]` and every `{key}` that uses it: the one at the cursor, or one you choose",
+    where: "Anywhere in a page; a phrase at the cursor is the one renamed",
+    hint: "Open a page of the project to rename a phrase.",
+    group: "model",
+    applies: inPage,
+    when: "ascribe.inPage",
+    needs: ["phrases"],
+    ask: (c, targets) => {
+      const keys = (targets.phrases ?? []).map((phrase) => phrase.key);
+      const here = phraseAtCursor(c);
+      return {
+        steps: (answers) => {
+          const current = here ?? text(answers, "key");
+          const rename = newNameStep(current, validKey(keys));
+          if (here) return [rename];
+          return current === undefined ? [phraseStep(targets)] : [phraseStep(targets), rename];
+        },
+        args: (answers) => ({
+          key: here ?? text(answers, "key"),
+          newName: text(answers, "newName")?.trim(),
+        }),
+      };
+    },
+    does: { run: renamePhrase },
+  },
+  {
+    id: "renameDimensionValue",
+    title: "Rename a dimension value everywhere",
+    description:
+      "Change a value in `[dimensions]` and everywhere it's used: `@variant` attributes, `variant:`, availability, and builds",
+    where: "Anywhere in a page; a `@variant` attribute's value at the cursor is the one renamed",
+    hint: "Open a page of the project to rename a dimension value.",
+    group: "model",
+    applies: inPage,
+    when: "ascribe.inPage",
+    needs: ["dimensions"],
+    ask: (c, targets) => {
+      const here = variantAtCursor(c);
+      return {
+        steps: (answers) => {
+          const steps: Step[] = [];
+          let dimension = here && targets.dimensions?.find((d) => d.name === here.dimension);
+          if (here) {
+            // Only the values the attribute names.
+            const others = (dimension?.values ?? [])
+              .map((v) => v.value)
+              .filter((v) => !here.values.includes(v));
+            if (here.values.length > 1 || !dimension) {
+              steps.push(valueStep(dimension, "pick", others));
+            }
+          } else {
+            dimension = chosenDimension(targets, answers);
+            steps.push(dimensionStep(targets));
+            if (!dimension) return steps;
+            steps.push(valueStep(dimension, "pick"));
+          }
+          const value =
+            here && here.values.length === 1 && dimension ? here.values[0] : text(answers, "value");
+          if (value === undefined) return steps;
+          const taken = (dimension?.values ?? []).map((v) => v.value);
+          steps.push(newNameStep(value, validValue(taken)));
+          return steps;
+        },
+        args: (answers) => ({
+          dimension: here?.dimension ?? text(answers, "dimension"),
+          value: here && here.values.length === 1 ? here.values[0] : text(answers, "value"),
+          newName: text(answers, "newName")?.trim(),
+        }),
+      };
+    },
+    does: { run: renameDimensionValue },
   },
 ];
 

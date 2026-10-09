@@ -33,6 +33,7 @@ const GROUPS: [Action["group"], string][] = [
   ["structure", "Structure"],
   ["link", "Link"],
   ["media", "Media"],
+  ["model", "Content model"],
 ];
 
 /** What the bar says when nothing applies. */

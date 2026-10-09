@@ -73,6 +73,10 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 
 - **Rename or move a file** in the Explorer, and the links and includes that point to it are updated.
 - **Rename** (`F2`) a heading's `@id` to update the links to it, or a phrase key to update its uses and its declaration.
+- **Rename** (`F2`) a dimension value, in a `@variant` attribute or in its dimension's `values` in `ascribe.toml`, to update it everywhere: the dimension's `labels` and `versionless`, every `@variant` attribute and `variant:` field, every availability spec in pages, table rows, frontmatter, and `[features]`, and the builds' `variants` and `filter`.
+- A phrase rename reaches every use: prose, link text and destinations, frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and the files a `@snippet {phrases=true}` shows.
+- `F2` on something that can't be renamed says why, and on something that can, selects what will be renamed. A new name the content model doesn't allow, or that's already taken, changes nothing.
+- **Change the content model from a page** with the actions: **Make this a phrase** declares the selected text in `[phrases]` and writes `{key}` in its place, and in its other occurrences if you choose; **Add to the glossary** declares it as a term; **Change a feature's availability** edits a feature's `available`. **Rename this phrase everywhere** and **Rename a dimension value everywhere** rename the one at the cursor, or one you pick from the project's, wherever the cursor is. These change `ascribe.toml` in place, keeping its comments, blank lines, and order, and an open `ascribe.toml` with unsaved changes is edited as it is. A rename from an action that changes other files shows them all in the refactor preview first: **Apply** writes them, **Discard** writes nothing.
 
 ### Actions
 @available: next
@@ -92,7 +96,7 @@ Every action is in four places:
 
 #### The actions bar
 
-Press `Ctrl+K A` (`Cmd+K A` on macOS), or run **Ascribe: Actions for the Cursor**, in a page of a project to see what you can do where the cursor is. The bar lists the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, and **Media**. Each shows what it does and the syntax it writes. Type to filter, and choose one: an action that needs something asks for it in the same box. When nothing applies, the bar says where to put the cursor.
+Press `Ctrl+K A` (`Cmd+K A` on macOS), or run **Ascribe: Actions for the Cursor**, in a page of a project to see what you can do where the cursor is. The bar lists the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, **Media**, and **Content model**. Each shows what it does and the syntax it writes. Type to filter, and choose one: an action that needs something asks for it in the same box. When nothing applies, the bar says where to put the cursor.
 
 The bar holds only what applies to the cursor or selection, so it never lists every action as the Command Palette does, and it has no searches or commands of its own. The context menu's **Ascribe** submenu lists the same actions without the fixes, and the lightbulb (`Ctrl+.` / `Cmd+.`) lists the fixes and the rewrites.
 

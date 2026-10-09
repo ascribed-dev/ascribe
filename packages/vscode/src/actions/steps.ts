@@ -8,6 +8,7 @@ import type {
   TargetDimension,
   TargetFeature,
   TargetNote,
+  TargetOccurrence,
   TargetsResult,
   TargetWidget,
 } from "../shapes.js";
@@ -180,6 +181,48 @@ export function validId(value: string): string | undefined {
     : "An id is one word: letters, digits, - and _.";
 }
 
+/** The rule for a key, as `ascribe-model`'s `KEY_RULE` words it; a test compares the two. */
+export const KEY_RULE = "use a lowercase letter, then lowercase letters, digits, or hyphens";
+
+/** The rule for a name-word, as `ascribe-model`'s `NAME_WORD_RULE` words it. */
+export const NAME_WORD_RULE = "use a letter, then letters, digits, underscores, or hyphens";
+
+/**
+ * A key the content model doesn't use yet for the same thing: a phrase's or
+ * a glossary term's. `taken` lists those it would clash with.
+ */
+export const validKey =
+  (taken: string[] = []) =>
+  (value: string): string | undefined => {
+    const key = value.trim();
+    if (key === "") return "Enter a key.";
+    if (!/^[a-z][a-z0-9-]*$/.test(key)) return `For a key, ${KEY_RULE}.`;
+    return taken.includes(key) ? `${key} is already taken.` : undefined;
+  };
+
+/** A dimension value the dimension doesn't have yet. */
+export const validValue =
+  (taken: string[] = []) =>
+  (value: string): string | undefined => {
+    const name = value.trim();
+    if (name === "") return "Enter a value.";
+    if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(name)) return `For a value, ${NAME_WORD_RULE}.`;
+    return taken.includes(name) ? `The dimension already has ${name}.` : undefined;
+  };
+
+/**
+ * A key suggested for some text: lowercase, its words joined by hyphens,
+ * starting with a letter. Empty when the text has no letters to start with.
+ */
+export function suggestKey(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^[^a-z]+/, "")
+    .replace(/-+$/, "");
+}
+
 /** A whole number from `min` to `max`. */
 export const wholeNumber =
   (min: number, max: number) =>
@@ -237,6 +280,74 @@ export function destinationStep(targets: TargetsResult): Step {
     choices: [...pages, ...headings],
     empty: "The project has no pages to link to.",
   };
+}
+
+/** Whether to replace the selection's other occurrences too, when it has any. */
+export function everywhereSteps(targets: TargetsResult): Step[] {
+  const count = targets.occurrences?.length ?? 0;
+  if (count === 0) return [];
+  return [
+    {
+      kind: "pick",
+      key: "everywhere",
+      prompt: "Replace other occurrences too?",
+      choices: [
+        {
+          label: count === 1 ? "Yes, and the other one" : `Yes, and the ${count} others`,
+          detail: occurrenceDetail(targets.occurrences ?? []),
+          value: "yes",
+        },
+        { label: "No, only the selection", value: "no" },
+      ],
+      empty: "",
+    },
+  ];
+}
+
+/** Where occurrences are: their pages, with how many in each. */
+function occurrenceDetail(occurrences: TargetOccurrence[]): string {
+  const counts = new Map<string, number>();
+  for (const o of occurrences) counts.set(o.path, (counts.get(o.path) ?? 0) + 1);
+  return [...counts].map(([path, count]) => (count === 1 ? path : `${path} (${count})`)).join(", ");
+}
+
+/** A link for a glossary term: none, or a page or heading, written from the content root. */
+export function glossaryLinkStep(targets: TargetsResult): Step {
+  const pages: Choice[] = (targets.pages ?? []).map((page) => ({
+    label: `$(file) ${page.title ?? page.path}`,
+    description: page.path,
+    value: `/${destinationOf(page.path)}`,
+    section: "Pages",
+  }));
+  const headings: Choice[] = (targets.headings ?? []).map((heading) => ({
+    label: heading.text,
+    description: `${heading.page}#${heading.id}`,
+    value: `/${destinationOf(heading.page)}#${heading.id}`,
+    section: "Headings",
+  }));
+  // A heading appears once per page that includes it: keep the first.
+  const seen = new Set<string>();
+  const unique = [...pages, ...headings].filter((c) => !seen.has(c.value) && seen.add(c.value));
+  return {
+    kind: "pick",
+    key: "link",
+    prompt: "Link the term to a page or heading?",
+    choices: [{ label: "No link", value: "" }, ...unique],
+    empty: "",
+  };
+}
+
+/** A content path written as a destination: each segment percent-encoded where it needs to be. */
+export function destinationOf(path: string): string {
+  return path
+    .split("/")
+    .map((segment) =>
+      encodeURI(segment).replace(
+        /[#?()]/g,
+        (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+      ),
+    )
+    .join("/");
 }
 
 /** Which phrase: each key with its value. */

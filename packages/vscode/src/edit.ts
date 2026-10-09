@@ -1,5 +1,5 @@
-// A server's edit (`ascribe/edit`'s `EditResult`, and the requests that answer
-// the same way) turned into the editor's types. `ProjectServer.requestEdit`
+// A server's edit (`ascribe/edit`'s `EditResult`, the requests that answer
+// the same way, and `textDocument/rename`'s `WorkspaceEdit`) turned into the editor's types. `ProjectServer.requestEdit`
 // converts with its language client's converter; this module checks the
 // answer's shape and routes its parts through that converter, so it can be
 // tested without VS Code.
@@ -17,13 +17,22 @@ export interface EditConverter<Edit, Range> {
 
 /**
  * Converts a server's answer. An `error` answer passes through; an edit is
- * converted, with its `select` (a `null` one is `undefined`). Anything else
- * is a broken server, and throws.
+ * converted, with its `select` (a `null` one is `undefined`). With `refused`,
+ * the answer may be a bare `WorkspaceEdit` too, as `textDocument/rename`'s
+ * is, and a `null` one is that error. Anything else is a broken server, and
+ * throws.
  */
 export async function convertEdit<Edit, Range>(
   value: unknown,
   converter: EditConverter<Edit, Range>,
+  refused?: string,
 ): Promise<ServerEdit<Edit, Range>> {
+  if (refused !== undefined) {
+    if (value === null) return { error: refused };
+    if (isWorkspaceEdit(value)) {
+      return { edit: await converter.asWorkspaceEdit(value), select: undefined };
+    }
+  }
   if (!isRecord(value)) throw new Error("the language server returned an invalid edit");
   if (typeof value.error === "string") return { error: value.error };
   const { edit, select } = value;
