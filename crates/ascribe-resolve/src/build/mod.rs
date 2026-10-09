@@ -77,8 +77,8 @@ pub use glossary::glossary_targets;
 pub use router::DefaultRouter;
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
-    LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind,
-    ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
+    LinkTarget, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem,
+    ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
 };
 
 use crate::index::FileKind;
@@ -118,6 +118,28 @@ impl Project {
         (index.kind == FileKind::Page)
             .then(|| modes::drop_reason(self.model(), index, build))
             .flatten()
+    }
+
+    /// What a build's modes take out of a page it publishes, and why: the
+    /// same decisions [`Project::resolve_page`] makes, in the order the passes
+    /// meet them.
+    /// Only the outermost removal is listed; nothing inside removed content
+    /// is. `None` if the file isn't a page, or the build doesn't publish it.
+    pub fn removed(&self, page: &RelPath, build: &Build) -> Option<Vec<Removed>> {
+        let index = self.file(page)?;
+        if index.kind != FileKind::Page || self.dropped(page, build).is_some() {
+            return None;
+        }
+        let model = self.model();
+        let expanded = self.expand(page)?;
+        let blocks = availability::annotate(
+            self,
+            &expanded.blocks,
+            availability::page_availability(model, index),
+            &mut Vec::new(),
+        );
+        let (_, removed) = modes::apply(blocks, build, model, &mut Vec::new());
+        Some(removed)
     }
 }
 
@@ -239,7 +261,7 @@ impl<'p> BuildResolver<'p> {
         );
         // Step 3: build modes.
         let mut mode_problems = Vec::new();
-        let mut blocks = modes::apply(blocks, self.build, model, &mut mode_problems);
+        let (mut blocks, _) = modes::apply(blocks, self.build, model, &mut mode_problems);
         // A problem is about what the build publishes: one in content the
         // build removed isn't recorded.
         let live = modes::live(&blocks);

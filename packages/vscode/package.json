@@ -87,6 +87,12 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.toggleBuildLens",
+        "title": "Dim What the Build Leaves Out",
+        "category": "Ascribe",
+        "icon": "$(eye)"
+      },
+      {
         "command": "ascribe.projects.refresh",
         "title": "Refresh",
         "category": "Ascribe",
@@ -145,6 +151,11 @@
       {
         "command": "ascribe.review.reopen",
         "title": "Reopen",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.actions",
+        "title": "Actions for the Cursor",
         "category": "Ascribe"
       },
       {
@@ -574,6 +585,10 @@
           "when": "ascribe.active && ascribe.inProject"
         },
         {
+          "command": "ascribe.toggleBuildLens",
+          "when": "ascribe.active && ascribe.inProject"
+        },
+        {
           "command": "ascribe.projects.refresh",
           "when": "false"
         },
@@ -616,6 +631,10 @@
         {
           "command": "ascribe.review.reopen",
           "when": "false"
+        },
+        {
+          "command": "ascribe.actions",
+          "when": "ascribe.inProject && editorLangId == markdown"
         },
         {
           "command": "ascribe.action.wrapNote",
@@ -817,6 +836,10 @@
       ],
       "ascribe.actions": [
         {
+          "command": "ascribe.actions",
+          "group": "0_bar@1"
+        },
+        {
           "command": "ascribe.action.wrapNote",
           "when": "ascribe.selection.blocks || ascribe.selection.proseOrNone && ascribe.at.paragraph",
           "group": "3_structure@1"
@@ -968,6 +991,14 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "ascribe.actions",
+        "key": "ctrl+k a",
+        "mac": "cmd+k a",
+        "when": "editorTextFocus && ascribe.inProject && editorLangId == markdown"
+      }
+    ],
     "submenus": [
       {
         "id": "ascribe.actions",

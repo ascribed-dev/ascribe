@@ -90,9 +90,9 @@ mod uses;
 pub use astro::AstroRouter;
 pub use build::{
     Annotation, Availability, BuildResolver, DefaultRouter, DropReason, DroppedPage,
-    FormattedField, GlossaryUse, HeadingIds, LinkTarget, ResolvedArm, ResolvedBlock, ResolvedBuild,
-    ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
-    glossary_targets,
+    FormattedField, GlossaryUse, HeadingIds, LinkTarget, Removal, Removed, ResolvedArm,
+    ResolvedBlock, ResolvedBuild, ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage,
+    ResolvedRow, Scope, Substitution, glossary_targets,
 };
 pub use expand::{
     ExpandedArm, ExpandedBlock, ExpandedItem, ExpandedKind, ExpandedPage, IncludeSite, PageProblem,

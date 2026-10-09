@@ -9,11 +9,13 @@
 | **Ascribe: Open Site Preview** {available=next} | Opens the active page on its project's dev server, in the browser. See [Site preview](../guides/editor.md#site-preview). |
 | **Ascribe: Select Preview Build** | Picks the build the preview shows, for the previewed page's project. |
 | **Ascribe: Switch Build** {available=next} | Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../guides/editor.md#the-status-bar). |
-| **Ascribe: Project Menu** {available=next} | Shows the menu of the active file's project, as clicking its status bar item does: switch the build, show the server's output, restart its server, or open the preview. |
+| **Ascribe: Project Menu** {available=next} | Shows the menu of the active file's project, as clicking its status bar item does: switch the build, show the server's output, restart its server, dim what the build leaves out, or open the preview. |
+| **Ascribe: Dim What the Build Leaves Out** {available=next} | Turns the build lens on or off for the active file's project: the editor dims what the build you're looking at leaves out of each page, with a hover that says why. See [The build lens](../guides/editor.md#the-build-lens). |
 | **Ascribe: Start Review** {available=next} | Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](../guides/editor.md#review-in-the-preview). |
 | **Ascribe: Stop Review** {available=next} | Turns review off for the active page's project, and frees its base. |
 | **Ascribe: Changed Pages** {available=next} | Lists the pages the change touches in the preview's build; choosing one opens it and its preview. |
 | **Ascribe: Refresh Comments** {available=next} | Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../guides/editor.md#comments-in-the-preview). |
+| **Ascribe: Actions for the Cursor** {available=next} | Opens the [actions bar](../guides/editor.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection. |
 | **Ascribe: Wrap in a note** {available=next} | Put the paragraph or the selected blocks in an `@note` callout. One of the [actions](../guides/editor.md#actions). |
 | **Ascribe: Change the note's kind** {available=next} | Set the `type` of the `@note` the cursor is in. One of the [actions](../guides/editor.md#actions). |
 | **Ascribe: Remove the note, keeping its text** {available=next} | Take the content out of its `@note`. One of the [actions](../guides/editor.md#actions). |

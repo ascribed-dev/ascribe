@@ -10,6 +10,7 @@
 // - TargetsResult (the language server, answering `ascribe/targets`)
 // - InventoryResult (the language server, answering `ascribe/inventory`)
 // - EditResult (the language server, answering `ascribe/edit`)
+// - BuildViewResult (the language server, answering `ascribe/buildView`)
 
 /**
  * Where a block's text is written: the README's anchor grammar, the same
@@ -61,6 +62,31 @@ export interface BaseInfo {
 
 /** What a line-form directive applies to. */
 export type BindingKind = "self" | "heading" | "block" | "headingOrBlock";
+
+/**
+ * The answer to `ascribe/buildView`. A document that isn't a source file of
+ * the project, or a build the content model doesn't have, gets an answer
+ * with an empty `build` and nothing left out.
+ */
+export interface BuildViewResult {
+  /** The build the answer is for; empty when there is none. */
+  build: string;
+  /**
+   * The version of the open document the answer was computed from, or
+   * `null` when the file isn't open.
+   */
+  documentVersion: number | null;
+  /**
+   * Whether the build publishes the page. `false` when it drops the whole
+   * page (its `variant` or `available` frontmatter); a fragment, which is
+   * part of the pages that include it, counts as published.
+   */
+  pageIncluded: boolean;
+  /** Why the build doesn't publish the page, when it doesn't. */
+  pageDetail: string | null;
+  /** What the build leaves out of the page's own text, in document order. */
+  excluded: Excluded[];
+}
 
 /** One block's change. */
 export interface Change {
@@ -456,6 +482,27 @@ export type EditResult =
       /** The message. */
       error: string;
     };
+
+/** Text a build leaves out of a page. */
+export interface Excluded {
+  /**
+   * What's left out: whole blocks, arms, or table rows, from the first
+   * directive line through the last line. Neighbors left out for the same
+   * reason are one range.
+   */
+  range: LspRange;
+  /** Why. */
+  reason: ExclusionReason;
+  /**
+   * The reason, for the author: `Shows only edition=self-hosted`, or
+   * `Scheduled rollouts: available on Lantern Cloud (preview), not
+   * Self-hosted 2.5`, with the content model's display labels.
+   */
+  detail: string;
+}
+
+/** Why a build leaves text out of a page. */
+export type ExclusionReason = "variant" | "availability";
 
 /** How a directive is written (SPEC §3.5, §3.6). */
 export type Form = "line" | "block" | "container" | "group";

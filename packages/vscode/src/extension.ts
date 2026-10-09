@@ -4,8 +4,10 @@ import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
 import { ActionsController, type ActionsApi } from "./actions/controller.js";
+import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { STATE_NAMES } from "./ui/describe.js";
+import { BuildLenses } from "./ui/lens.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
 import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
@@ -34,6 +36,7 @@ export interface AscribeApi {
   ui: {
     statusBar: StatusBarApi;
     projects: ProjectsViewApi;
+    lens: BuildLensApi;
     /** The Used by, Pages, and Content model views. */
     sidebar: SidebarApi;
     /** Settles when every request for a project's builds has been answered. */
@@ -51,10 +54,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const preview = new PreviewController(context, projects, chosen);
   preview.register();
 
-  const builds = new ProjectBuilds(projects, chosen);
+  const lenses = new BuildLenses();
+  const builds = new ProjectBuilds(projects, chosen, lenses);
   builds.register();
-  const statusBar = new StatusBar(projects, builds, chosen);
+  const statusBar = new StatusBar(projects, builds, chosen, lenses);
   statusBar.register();
+  const lens = new BuildLens(projects, builds, chosen, lenses);
+  lens.register();
   const projectsView = new ProjectsView(projects, builds);
   projectsView.register();
   const sidebar = new SidebarViews(projects);
@@ -100,8 +106,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     preview,
     actions,
     chosen,
+    lenses,
     builds,
     statusBar,
+    lens,
     projectsView,
     sidebar,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
@@ -157,6 +165,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     ui: {
       statusBar: statusBar.api,
       projects: projectsView.api,
+      lens: lens.api,
       sidebar: sidebar.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },

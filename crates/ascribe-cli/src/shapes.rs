@@ -130,6 +130,13 @@ const SHAPES: &[Shape] = &[
         command: false,
         schema: |g| g.root_schema_for::<ascribe_lsp::EditResult>(),
     },
+    Shape {
+        file: "lsp-build-view",
+        title: "BuildViewResult",
+        written_by: "the language server, answering `ascribe/buildView`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::BuildViewResult>(),
+    },
 ];
 
 /// The packages that read Ascribe's JSON, and the shapes each reads.
@@ -146,6 +153,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-targets",
             "lsp-inventory",
             "lsp-edit",
+            "lsp-build-view",
         ],
     ),
 ];

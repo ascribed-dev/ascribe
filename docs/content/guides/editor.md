@@ -80,8 +80,9 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 
 Actions write Ascribe for you: wrap a paragraph in a note, turn a numbered list into steps, link the selected text to a page, insert content that varies by a dimension, mark where a section is available. Each one asks what it needs in short steps, choosing from what the project has (its note types, pages and headings, phrases, dimensions and their values, features, images, fragments, sources, and widgets), so you never type a path, a key, or attribute syntax. What it writes is in canonical form, and one **Undo** takes it back.
 
-Every action is in three places:
+Every action is in four places:
 
+- The **actions bar** (`Ctrl+K A` / `Cmd+K A`), which lists only what applies where the cursor is. See [The actions bar](#the-actions-bar).
 - The **Command Palette**, as `Ascribe: <action>`, in a Markdown file of a project. Run where it doesn't apply, it says where it does: "Put the cursor in a note to change its kind."
 - The editor's context menu, under **Ascribe**, which lists the actions that apply where the cursor is.
 - The lightbulb (`Ctrl+.` / `Cmd+.`), for the actions that rewrite what's at the cursor, beside the quick fixes.
@@ -89,6 +90,14 @@ Every action is in three places:
 **Copy a link to this section** copies the heading's destination from the content root, such as `/guides/install.md#install-cli`, which works pasted into any page of the project.
 
 @include: ../_generated/editor-actions.md
+
+#### The actions bar
+
+Press `Ctrl+K A` (`Cmd+K A` on macOS), or run **Ascribe: Actions for the Cursor**, in a page of a project to see what you can do where the cursor is. The bar lists the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, and **Media**. Each shows what it does and the syntax it writes. Type to filter, and choose one: an action that needs something asks for it in the same box. When nothing applies, the bar says where to put the cursor.
+
+The bar holds only what applies to the cursor or selection, so it never lists every action as the Command Palette does, and it has no searches or commands of its own. The context menu's **Ascribe** submenu lists the same actions without the fixes, and the lightbulb (`Ctrl+.` / `Cmd+.`) lists the fixes and the rewrites.
+
+To use another key, open **Preferences: Open Keyboard Shortcuts**, search for `ascribe.actions`, and change its keybinding. The default is on only in a Markdown file of a project, with the editor focused.
 
 ### Formatting
 
@@ -116,7 +125,14 @@ A [`@snippet`](../reference/directives.md#snippet) is read again when its page c
 
 While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. A file that isn't in a project shows nothing.
 
-Click it for a menu of the project: **Switch build**, **Show output**, **Restart server**, and, for a page, **Open preview**. **Switch build** (also **Ascribe: Switch Build**) lists the project's builds and marks the editor build. The build you pick is the one the preview renders, for the rest of the session; the preview's **Build** picker changes the same choice. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
+Click it for a menu of the project: **Switch build**, **Show output**, **Restart server**, and, for a page, **Dim what the build leaves out** and **Open preview**. **Switch build** (also **Ascribe: Switch Build**) lists the project's builds and marks the editor build. The build you pick is the one the preview renders, for the rest of the session; the preview's **Build** picker changes the same choice. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
+
+### The build lens
+@available: next
+
+**Ascribe: Dim What the Build Leaves Out** (also in the [status bar](#the-status-bar) item's menu) turns the build lens on for the active file's project. The editor then dims what the build you're looking at leaves out of each page: the variant arms the build doesn't select, and the sections, blocks, and table rows its availability filter removes, from the directive line through `@end`. Hover over dimmed text for why, such as **Left out of self-hosted.** Shows only edition=self-hosted. When the build doesn't publish the page at all, a line at its top says so, and the whole page is dimmed. "What will self-hosted readers see?" is answered in the source, without opening the preview.
+
+The lens has no build of its own: it dims by the build the preview renders and the status bar names, so **Switch build** and the preview's **Build** picker change what's dimmed, and with the preview open the two always show the same build. While the lens is on, the status bar shows an eye, such as **docs · self-hosted**. It follows your edits, unsaved ones included, and changes to `ascribe.toml`. What's dimmed is what `ascribe build` leaves out, decided the same way. Content an `@include` brings in is in another file and isn't shown. Dimming changes nothing in the text, its folding, or its problems. Run the command again, or pick **Stop dimming what the build leaves out**, to turn it off; it stays on for the project until then, or until the window closes.
 
 ### The Projects view
 @available: next

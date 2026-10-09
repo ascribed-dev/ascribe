@@ -414,6 +414,40 @@ pub enum DropReason {
     Unavailable,
 }
 
+/// Content a build's modes take out of a page (SPEC §9.3): a block, a variant
+/// arm, a whole group, or a table row, where it's written.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Removed {
+    /// The file it's written in.
+    pub file: FileId,
+    /// Its span in that file: a block's, from its first line through its
+    /// `@end` for a container; an arm's, from its opener to the next arm; a
+    /// table row's line.
+    pub span: Span,
+    /// The includes it came through, outermost first. Empty for the page's
+    /// own content.
+    pub via: Arc<[IncludeSite]>,
+    /// Why.
+    pub cause: Removal,
+}
+
+/// Why a build's modes take content out of a page.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Removal {
+    /// A variant arm that names, for a dimension the build selects, none of
+    /// the selected values; or a group none of whose arms does.
+    Variant {
+        /// The dimensions it conflicts on, in the build's order.
+        dimensions: Vec<String>,
+    },
+    /// It isn't available for the build's target and version.
+    Availability(
+        /// The spec that rules it out: the innermost in its chain that
+        /// doesn't allow the build's target and version.
+        Arc<Availability>,
+    ),
+}
+
 /// A page a build doesn't publish.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DroppedPage {

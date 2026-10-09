@@ -279,7 +279,9 @@ describe("package.json", () => {
       expect(entry?.when, a.id).toBe(a.when);
       expect(entry?.group, a.id).toMatch(new RegExp(`^\\d_${a.group}@\\d+$`));
     }
-    expect(menus["ascribe.actions"]).toHaveLength(ACTIONS.length);
+    // And the actions bar, first.
+    expect(menus["ascribe.actions"]?.[0]).toEqual({ command: "ascribe.actions", group: "0_bar@1" });
+    expect(menus["ascribe.actions"]).toHaveLength(ACTIONS.length + 1);
   });
 });
 

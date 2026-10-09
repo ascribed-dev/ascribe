@@ -12,7 +12,7 @@ semantic tokens; completion, hover, go to definition, find references, document
 links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
 rename, and formatting; and the custom requests `ascribe/preview`,
 `ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/context`,
-`ascribe/targets`, `ascribe/edit`, and `ascribe/inventory`.
+`ascribe/targets`, `ascribe/edit`, `ascribe/buildView`, and `ascribe/inventory`.
 
 ## The project
 
@@ -453,6 +453,48 @@ thing ([Navigation](#navigation)): both come from
 pass over the snapshot (`Project::use_counts`). It answers from the current
 snapshot, so it includes unsaved edits. See [Performance](#performance) for
 its cost.
+
+## What a build leaves out: `ascribe/buildView`
+
+A custom request that says what a build leaves out of a page, for a client
+that dims it in the source (the editor's build lens). The client names the
+page and the build; without `build`, the editor's build (`[editor] build`):
+
+```jsonc
+{ "textDocument": { "uri": "file:///…/docs/guides/rollouts.md" }, "build": "self-hosted" }
+```
+
+The result's TypeScript type is `BuildViewResult` in
+`packages/vscode/src/shapes.ts` (`schemas/lsp-build-view.schema.json`):
+
+```jsonc
+{
+  "build": "self-hosted",
+  "documentVersion": 4,          // the open document's version, or null
+  "pageIncluded": true,          // false when the build drops the whole page
+  "pageDetail": null,            // why, when it does
+  "excluded": [
+    { "range": …, "reason": "variant", "detail": "Shows only edition=self-hosted" },
+    { "range": …, "reason": "availability",
+      "detail": "Scheduled rollouts: available on Lantern Cloud (preview), not Self-hosted 2.5" }
+  ]
+}
+```
+
+What's excluded is what `ascribe build` removes, from the resolver's own
+decisions (`Project::removed` and `Project::dropped` in `ascribe-resolve`),
+not worked out a second way: the variant arms the build's selection doesn't
+select (a group none of whose arms survives, whole), and the content its
+availability filter removes, a section from its heading through its last
+block, and a table row as its line. A range runs from a directive line
+through the last line, `@end` included, and neighbors left out for the same
+reason are one range. Only the page's own text is listed: what an
+`@include` brings in is in another file. The detail uses the content model's
+display labels. A `switch` and `badge` build leaves nothing out.
+
+The answer comes from the current snapshot, so it includes unsaved edits. A
+document that isn't a source file of the project, or a build the content
+model doesn't have, gets an empty `build` and nothing excluded.
 
 ## Capabilities
 
