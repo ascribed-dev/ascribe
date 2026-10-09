@@ -98,7 +98,15 @@ function code(markdown: string): string[] {
  * Paths the files name that are in a project, not in this repository: a
  * build's output, and the agent files `ascribe agents sync` writes.
  */
-const elsewhere = ["_ascribe/", ".ascribe/", ".agents/skills/ascribe/", ".claude/skills/ascribe/"];
+const elsewhere = [
+  "_ascribe/",
+  ".ascribe/",
+  ".agents/skills/ascribe/",
+  ".claude/skills/ascribe/",
+  ".claude/rules/ascribe-",
+  ".claude/settings.json",
+  ".github/instructions/ascribe-",
+];
 
 /**
  * Where a code span that reads as a path in this repository is, from `dir`:
