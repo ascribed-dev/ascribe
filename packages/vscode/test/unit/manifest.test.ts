@@ -52,6 +52,8 @@ describe("package.json", () => {
       // A review thread's buttons in the source editor act on that thread, so
       // the palette never shows them.
       if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
+      // So do the Projects view's buttons, which act on their project.
+      else if (entry.command.startsWith("ascribe.projects.")) expect(entry.when).toBe("false");
       // An action, and the actions bar, are for a page, so they're shown in a
       // Markdown file of a project.
       else if (entry.command === "ascribe.actions" || entry.command.startsWith("ascribe.action.")) {
@@ -115,6 +117,11 @@ describe("package.json", () => {
       "ascribe.openPreview",
       "ascribe.openSitePreview",
       "ascribe.selectPreviewBuild",
+      "ascribe.switchBuild",
+      "ascribe.projectMenu",
+      "ascribe.projects.refresh",
+      "ascribe.projects.showOutput",
+      "ascribe.projects.restart",
       "ascribe.startReview",
       "ascribe.stopReview",
       "ascribe.changedPages",

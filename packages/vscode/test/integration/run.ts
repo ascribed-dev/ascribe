@@ -347,7 +347,11 @@ async function main(): Promise<void> {
       rmSync(scratch, { recursive: true, force: true });
     }
   }
-  if (failed) process.exit(1);
+  // Not process.exit, which would cut off VS Code's output while it's still being written.
+  if (failed) {
+    process.exitCode = 1;
+    return;
+  }
   console.log(`\n${ran} integration suite(s) passed.`);
 }
 

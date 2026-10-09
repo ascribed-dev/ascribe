@@ -119,6 +119,12 @@ The registry feeds the Command Palette (`ascribe.action.<id>`), the editor's con
 - **The actions bar** (`src/actions/bar.ts` lists, `src/actions/barPick.ts` shows). A quick pick that shows at once, busy, and fills once the cached context and VS Code's quick fixes at the cursor (`vscode.executeCodeActionProvider`) are in: the fixes that edit the text first (not those that only run a command, such as a chat's **Fix** and **Explain**), leaving out the registry's own `quickfix.ascribe` actions, then the actions that apply, by group, each with what it writes when that's known before the wizard (`preview` in the registry). A chosen action runs through the runner; its wizard's first step is shown before the bar is disposed, so it takes the bar's place in the quick input instead of closing it and opening another. Escape before then cancels the wizard.
 - **Tests** answer a wizard from a script: `api.actions.answerNext([...])` before running the command, and `api.actions.runs` says what each run did. `api.actions.bars` says what each opening of the bar listed, and `api.actions.selectInBar(label)` makes a row active for `workbench.action.acceptSelectedQuickOpenItem` to choose.
 
+## The status bar and the Projects view
+
+`src/ui/` holds the editor's UI around projects. **The build you're looking at** is one value per project, `ChosenBuilds` in `src/ui/chosenBuild.ts`: the preview renders it, the status bar names it, and the preview's picker and **Switch Build** both set it, so either one changes the other. No choice means the editor build, and choosing the editor build clears the choice, so it follows `[editor] build`.
+
+`src/ui/projectBuilds.ts` asks each running server for its builds (`ascribe/targets`, through one of its pages: the active one, an open one, or one on disk), again when a server starts or its `ascribe.toml` changes, and never starts a server. `src/ui/describe.ts` works out what the status bar item and the view's items say from plain values, so `test/unit/ui.test.ts` checks it without VS Code; `src/ui/statusBar.ts` and `src/ui/projectsView.ts` show it. The view lists `ProjectRegistry.servers`, started or not, and redraws on the registry's `onDidChangeProjects` and `onDidChangeState` (each `ProjectServer`'s `onDidChangeState`, from `src/serverState.ts`). Its inline buttons are the commands `ascribe.projects.showOutput` and `ascribe.projects.restart`, which the palette doesn't show; a project's `contextValue`, `ascribe.project.<state>`, decides which it offers.
+
 ## Highlighting
 
 `syntaxes/` holds two TextMate injections into markdown (one for top level, one
@@ -157,6 +163,7 @@ for theme colors it can't read.
   | References, what uses a thing | `$(references)` |
   | Build | `$(package)` |
   | Problem | `$(error)`, `$(warning)`, `$(info)`, by severity |
+  | A project's server: running or not started, starting, failed | `$(book)`, `$(sync~spin)`, `$(warning)` |
   | Dimension | `$(symbol-enum)` |
   | Variant, one value of a dimension | `$(symbol-enum-member)` |
   | Phrase | `$(symbol-string)` |

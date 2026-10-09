@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { contentSecurityPolicy, shellHtml } from "../../src/preview/html.js";
 import type { PreviewResult } from "../../src/preview/protocol.js";
 import { canonicalReference, isExternal, splitFragment } from "../../src/preview/refs.js";
-import { BuildChoices, previewProblems, type PreviewSituation } from "../../src/preview/routing.js";
+import { previewProblems, type PreviewSituation } from "../../src/preview/routing.js";
 
 describe("asset references", () => {
   it("compares references however the encoding is spelled", () => {
@@ -85,33 +85,6 @@ describe("the webview's content security policy", () => {
       `<script src="${cspSource}/p.js">`,
     ]);
     expect(html).not.toMatch(/<script>|<style|\sstyle=|\son\w+=/);
-  });
-});
-
-describe("the build chosen in each project", () => {
-  it("keeps a choice to the project it was made in", () => {
-    const choices = new BuildChoices();
-    choices.set("/repo/examples/quill", "cloud");
-    expect(choices.get("/repo/examples/quill")).toBe("cloud");
-    expect(choices.get("/repo/examples/astro-site")).toBeUndefined();
-    choices.set("/repo/examples/astro-site", "site");
-    expect(choices.get("/repo/examples/quill")).toBe("cloud");
-    expect(choices.get("/repo/examples/astro-site")).toBe("site");
-  });
-
-  it("goes back to the editor's build when the choice is cleared", () => {
-    const choices = new BuildChoices();
-    choices.set("/repo/docs", "cloud");
-    choices.set("/repo/docs", undefined);
-    expect(choices.get("/repo/docs")).toBeUndefined();
-  });
-
-  it("finds a project's choice however its folder is spelled", () => {
-    const choices = new BuildChoices();
-    choices.set("/repo/docs/", "cloud");
-    expect(choices.get("/repo/docs")).toBe("cloud");
-    choices.set("C:\\Repo\\Docs", "site");
-    expect(choices.get("c:/repo/docs")).toBe("site");
   });
 });
 

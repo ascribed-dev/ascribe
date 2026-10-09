@@ -127,6 +127,27 @@ describe("with several projects, one nested in another", () => {
   const known = (folder: string): boolean =>
     api.projects().some((project) => samePath(project.folder, folder));
 
+  /** The Projects view's top level, by label: each project's state and its children's labels. */
+  async function viewed(): Promise<Map<string, { state: string; children: string[] }>> {
+    const items = await api.ui.projects.items();
+    return new Map(
+      items.map((item) => [
+        item.label,
+        {
+          state: item.contextValue.replace("ascribe.project.", ""),
+          children: item.children.map((child) => `${child.label} (${child.description})`),
+        },
+      ]),
+    );
+  }
+
+  /** The status bar item's text, once the item is shown and `check` accepts it. */
+  const statusText = (description: string, check: (text: string) => boolean) =>
+    waitFor(`the status bar to show ${description}`, () => {
+      const text = api.ui.statusBar.shown()?.text;
+      return text !== undefined && check(text) ? text : undefined;
+    });
+
   before(async () => {
     api = await activated();
     await api.whenSettled();
@@ -144,12 +165,59 @@ describe("with several projects, one nested in another", () => {
       assert.deepEqual(vscode.languages.getDiagnostics(nestedPage), []);
     });
 
+    it("lists every project in the Projects view, and showing or refreshing it starts none", async () => {
+      const started: string[] = [];
+      const listener = api.onDidStartServer((f) => started.push(f));
+      try {
+        await vscode.commands.executeCommand("workbench.view.extension.ascribe");
+        const shown = await viewed();
+        await api.ui.projects.refresh();
+        await api.whenSettled();
+        assert.deepEqual(await viewed(), shown);
+        assert.deepEqual(
+          shown,
+          new Map(
+            ["docs", "handbook", "handbook/pages/nested"].map((name) => [
+              name,
+              { state: "stopped", children: ["ascribe.toml (content model)"] },
+            ]),
+          ),
+        );
+      } finally {
+        listener.dispose();
+        await vscode.commands.executeCommand("workbench.action.closeSidebar");
+      }
+      // What the view caused: no server started while it was shown and refreshed.
+      assert.deepEqual(started, []);
+    });
+
     it("starts exactly the server of the project whose file is opened", async () => {
       await open(handbookPage);
       await waitFor("the handbook's server", () => api.state(folder.handbook()) === "running");
       await api.whenSettled();
       assertRunning([folder.handbook()]);
       assert.equal(api.binary(folder.handbook())?.source, "setting");
+    });
+
+    it("shows the started project running in the Projects view, and in the status bar", async () => {
+      await api.ui.whenBuildsKnown();
+      const shown = await waitFor("the handbook's editor build in the view", async () => {
+        const view = await viewed();
+        return view.get("handbook")?.children.length === 3 ? view : undefined;
+      });
+      assert.deepEqual(shown.get("handbook")?.state, "running");
+      assert.deepEqual(shown.get("handbook")?.children.slice(0, 2), [
+        "ascribe.toml (content model)",
+        "site (editor build)",
+      ]);
+      assert.match(shown.get("handbook")?.children[2] ?? "", /^ascribe \S+ \(setting\)$/);
+      assert.equal(shown.get("docs")?.state, "stopped");
+      assert.equal(shown.get("handbook/pages/nested")?.state, "stopped");
+
+      await statusText("the handbook", (text) => text === "$(book) handbook · site");
+      const tooltip = api.ui.statusBar.shown()?.tooltip ?? "";
+      assert.ok(tooltip.includes(path.join(folder.handbook(), "ascribe.toml")), tooltip);
+      assert.match(tooltip, /Server: running/);
     });
 
     it("diagnoses a file only through the project that owns it", async () => {
@@ -187,11 +255,29 @@ describe("with several projects, one nested in another", () => {
       await diagnosticsOf(docsPage, () => codes(docsPage).join() === "ASC036");
     });
 
+    it("restarts one project's server from the Projects view", async () => {
+      const started: string[] = [];
+      const listener = api.onDidStartServer((f) => started.push(comparable(f)));
+      try {
+        await api.ui.projects.run("restart", folder.docs());
+        await api.whenSettled();
+      } finally {
+        listener.dispose();
+      }
+      assert.deepEqual(started, [comparable(folder.docs())]);
+      assertRunning([folder.docs(), folder.handbook()]);
+      await diagnosticsOf(docsPage, () => codes(docsPage).join() === "ASC036");
+    });
+
     it("diagnoses a nested project's file through the nested project alone", async () => {
       await open(nestedPage);
       await diagnosticsOf(nestedPage, (all) => all.length > 0);
       await api.whenSettled();
       assertRunning([folder.docs(), folder.handbook(), folder.nested()]);
+      // The status bar names the nested project, not the one around it.
+      await statusText("the nested project", (text) =>
+        text.startsWith("$(book) handbook/pages/nested"),
+      );
       // `{edition}` is declared only in the nested project, so the page has no
       // ASC044, which the handbook's model would give it, and its ASC001 is
       // reported once. Once the handbook's server has answered an edit, it has
@@ -307,6 +393,43 @@ describe("with several projects, one nested in another", () => {
       );
     });
 
+    it("shares one build with the status bar", async () => {
+      // The choice made in the preview's picker above is the status bar's too.
+      let after = latestSeq();
+      await open(docsPage);
+      await drawnFor(
+        "the docs page in the cloud build",
+        (r) => r.seq > after && isOf(r, docsPage) && r.result.build === "cloud",
+      );
+      await statusText("the cloud build", (text) => text === "$(book) docs · cloud");
+
+      await preview.receive({ type: "build", name: "site" });
+      await statusText("the site build", (text) => text === "$(book) docs · site");
+
+      // Switch build, from the status bar's menu, changes what the preview renders.
+      after = latestSeq();
+      api.ui.statusBar.answerNext("Switch build");
+      api.ui.statusBar.answerNext("cloud");
+      await vscode.commands.executeCommand("ascribe.projectMenu");
+      const cloud = await drawnFor(
+        "the docs page in the cloud build again",
+        (r) => r.seq > after && isOf(r, docsPage) && r.result.build === "cloud",
+      );
+      assert.match(html(cloud), /Sign in to Quill Cloud/);
+      assert.equal(preview.build(), "cloud");
+      await statusText("the cloud build", (text) => text === "$(book) docs · cloud");
+
+      // And back to the editor's build, with the command.
+      after = latestSeq();
+      api.ui.statusBar.answerNext("site");
+      await vscode.commands.executeCommand("ascribe.switchBuild");
+      await drawnFor(
+        "the docs page in the site build",
+        (r) => r.seq > after && isOf(r, docsPage) && r.result.build === "site",
+      );
+      await statusText("the site build", (text) => text === "$(book) docs · site");
+    });
+
     it("says when a file isn't part of any project", async () => {
       const after = latestSeq();
       await open(codeReadme);
@@ -319,6 +442,8 @@ describe("with several projects, one nested in another", () => {
       );
       // No server checks it: its broken link has no diagnostic.
       assert.deepEqual(vscode.languages.getDiagnostics(codeReadme), []);
+      // And the status bar names no project.
+      await waitFor("the status bar to hide", () => api.ui.statusBar.shown() === undefined);
     });
 
     it("says when a file is in a project but outside its content root", async () => {
