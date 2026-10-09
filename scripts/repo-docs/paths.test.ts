@@ -106,6 +106,8 @@ const elsewhere = [
   ".claude/rules/ascribe-",
   ".claude/settings.json",
   ".github/instructions/ascribe-",
+  ".github/workflows/copilot-setup-steps.yml",
+  ".github/agents/ascribe-docs.md",
 ];
 
 /**
