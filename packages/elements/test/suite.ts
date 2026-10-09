@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser, BrowserContext, Page } from "playwright-core";
-import { ENGINES, launch, open, TABS } from "./harness.js";
+import { launch, open, TABS, type Engine } from "./harness.js";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
@@ -43,7 +43,12 @@ const AVAILABILITY = `
 const ALL = `<h1>Page</h1>${NOTE}${STEPS}${AVAILABILITY}${TABS}
 <ascribe-group widget="quill-thing"><p>Grouped.</p></ascribe-group>`;
 
-describe.each(ENGINES)("%s", (engine) => {
+/**
+ * Every test, for one engine. The engine files (`chromium.test.ts`,
+ * `firefox.test.ts`, `webkit.test.ts`) each call this, so vitest runs the
+ * engines in parallel workers, one file each.
+ */
+export function suiteFor(engine: Engine): void {
   let browser: Browser;
   let context: BrowserContext;
 
@@ -497,4 +502,4 @@ describe.each(ENGINES)("%s", (engine) => {
       await context.close();
     });
   });
-});
+}

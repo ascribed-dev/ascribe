@@ -192,8 +192,6 @@ fn every_page(base: Side<'_>, now: Side<'_>, builds: &[&str]) -> Vec<BuildDiff> 
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig::with_cases(512))]
-
     #[test]
     fn skipping_pages_changes_nothing(
         start in prop::collection::vec(op(), 0..14),

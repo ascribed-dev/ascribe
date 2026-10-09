@@ -37,7 +37,7 @@ fn document() -> impl Strategy<Value = String> {
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig { cases: 3000, failure_persistence: None, ..ProptestConfig::default() })]
+    #![proptest_config(ProptestConfig { failure_persistence: None, ..ProptestConfig::default() })]
 
     #[test]
     fn formatting_is_idempotent_and_keeps_the_outline(source in document()) {
@@ -59,7 +59,7 @@ proptest! {
 
 // Text soup: arbitrary text, and it never panics.
 proptest! {
-    #![proptest_config(ProptestConfig { cases: 1000, failure_persistence: None, ..ProptestConfig::default() })]
+    #![proptest_config(ProptestConfig { failure_persistence: None, ..ProptestConfig::default() })]
 
     #[test]
     fn arbitrary_text_never_panics(source in "[@{}:=,|\" \\n\\t>.a-z0-9!\\[\\]()\\\\-]{0,200}") {

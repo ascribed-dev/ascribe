@@ -1,5 +1,7 @@
 //! The Quill project (`examples/quill`) resolves under all three of its
-//! builds with no problems.
+//! builds with no problems (so it indexes and expands with none too), and
+//! its index says two things about the install page: it includes the
+//! prerequisites fragment, and its source ids are its headings'.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -8,7 +10,9 @@ mod build_support;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use ascribe_resolve::{DefaultRouter, DiskFs, Layout, LinkTarget, Project, ResolvedPage};
+use ascribe_resolve::{
+    DefaultRouter, DiskFs, FileKind, Layout, LinkTarget, Project, RefKind, ResolvedPage,
+};
 use build_support::{plain, summary};
 
 fn quill() -> Project {
@@ -153,4 +157,59 @@ fn included_headings_and_phrases_resolve_on_the_install_page() {
         "{text}"
     );
     assert!(!text.contains("{product}"), "{text}");
+}
+
+#[test]
+fn quills_install_page_includes_the_prerequisites_fragment() {
+    let project = quill();
+    let fragment = ascribe_core::RelPath::parse("_fragments/prerequisites.md").expect("path");
+    let page = ascribe_core::RelPath::parse("install-agent.md").expect("path");
+    assert_eq!(
+        project.file(&fragment).map(|f| f.kind),
+        Some(FileKind::Fragment)
+    );
+    assert_eq!(project.includers(&fragment).len(), 1);
+    assert_eq!(
+        project.including_pages(&fragment),
+        std::slice::from_ref(&page)
+    );
+
+    // The fragment's image is the one beside the fragment.
+    let assets: Vec<(String, RefKind, String)> = project
+        .assets(&page)
+        .iter()
+        .map(|a| (a.path.to_string(), a.kind, a.written_in.to_string()))
+        .collect();
+    assert!(
+        assets.contains(&(
+            "_fragments/prerequisites.png".to_owned(),
+            RefKind::Image,
+            "_fragments/prerequisites.md".to_owned()
+        )),
+        "{assets:?}"
+    );
+    // Across the project, the two assets the conformance case lists.
+    let mut all: Vec<String> = project
+        .pages()
+        .flat_map(|p| project.assets(&p.path))
+        .map(|a| a.path.to_string())
+        .collect();
+    all.sort();
+    all.dedup();
+    assert_eq!(all, ["_fragments/prerequisites.png", "playground.png"]);
+}
+
+#[test]
+fn quills_source_ids_match_the_headings() {
+    let project = quill();
+    let install = ascribe_core::RelPath::parse("install-agent.md").expect("path");
+    let ids: Vec<&str> = project
+        .file(&install)
+        .expect("install-agent.md")
+        .headings
+        .iter()
+        .map(|h| h.source_id.as_str())
+        .collect();
+    assert!(ids.contains(&"install-agent"), "{ids:?}");
+    assert!(ids.contains(&"prerequisites"), "{ids:?}");
 }

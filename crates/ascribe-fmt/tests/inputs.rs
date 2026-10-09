@@ -1,7 +1,8 @@
 //! Formatting is idempotent and preserves the outline over every input we
 //! have: every conformance case input, the example projects, the SPEC and
 //! project docs, and the CommonMark examples. Each input is also made ugly
-//! in several ways first, so the rules have something to do.
+//! in several ways first, so the rules have something to do. The inputs are
+//! checked on every core at once.
 
 #![allow(clippy::expect_used, clippy::panic)]
 
@@ -158,20 +159,42 @@ fn inputs_under(dir: &Path) -> Vec<PathBuf> {
     markdown_files(dir)
 }
 
+/// `f` over every item, on as many threads as there are cores, with the
+/// results in the items' order. A panic in one is the test's failure, with
+/// its message.
+fn parallel_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let threads = std::thread::available_parallelism().map_or(1, usize::from);
+    let per_thread = items.len().div_ceil(threads).max(1);
+    std::thread::scope(|s| {
+        let handles: Vec<_> = items
+            .chunks(per_thread)
+            .map(|chunk| s.spawn(|| chunk.iter().map(&f).collect::<Vec<R>>()))
+            .collect();
+        handles
+            .into_iter()
+            .flat_map(|handle| {
+                handle
+                    .join()
+                    .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
+            })
+            .collect()
+    })
+}
+
 #[test]
 fn every_conformance_input() {
     let cases = repo_root().join("tests/conformance/cases");
     let shared = shared_model();
     let inputs = inputs_under(&cases);
     assert!(inputs.len() > 200, "found only {} inputs", inputs.len());
-    let mut changed = 0;
-    let mut ugly_changed = 0;
-    for path in &inputs {
+    // How many an input changed by formatting (0 or 1), and how many of its
+    // ugly variants did.
+    let counts = parallel_map(&inputs, |path| {
         // `files/source-not-utf8` holds a file that isn't UTF-8 on purpose
         // (SPEC §2.1); it has no text to format.
         let source = match std::fs::read_to_string(path) {
             Ok(source) => source,
-            Err(e) if e.kind() == std::io::ErrorKind::InvalidData => continue,
+            Err(e) if e.kind() == std::io::ErrorKind::InvalidData => return (0, 0),
             Err(e) => panic!("{}: {e}", path.display()),
         };
         let model = model_for(path, &cases, &shared);
@@ -180,15 +203,17 @@ fn every_conformance_input() {
             .unwrap_or(path)
             .display()
             .to_string();
-        if check(&name, &source, &model) != source {
-            changed += 1;
-        }
+        let changed = usize::from(check(&name, &source, &model) != source);
+        let mut ugly_changed = 0;
         for (how, ugly) in uglify(&source) {
             if check(&format!("{name} ({how})"), &ugly, &model) != ugly {
                 ugly_changed += 1;
             }
         }
-    }
+        (changed, ugly_changed)
+    });
+    let changed: usize = counts.iter().map(|(c, _)| c).sum();
+    let ugly_changed: usize = counts.iter().map(|(_, u)| u).sum();
     println!(
         "{} inputs, {changed} changed by formatting, {ugly_changed} ugly variants changed",
         inputs.len()
@@ -204,20 +229,24 @@ fn every_conformance_input() {
 fn examples_and_docs() {
     let root = repo_root();
     let quill = model_at(&root.join("examples/content-models/quill.toml"));
-    let mut count = 0;
-    for dir in [root.join("examples")] {
-        for path in markdown_files(&dir) {
-            let source = std::fs::read_to_string(&path).expect("readable");
-            let name = path.display().to_string();
-            check(&name, &source, &quill);
-            for (how, ugly) in uglify(&source) {
-                check(&format!("{name} ({how})"), &ugly, &quill);
-            }
-            count += 1;
+    let mut inputs = markdown_files(&root.join("examples"));
+    let count = inputs.len();
+    inputs.push(root.join("SPEC.md"));
+    parallel_map(&inputs, |path| {
+        let source = std::fs::read_to_string(path).expect("readable");
+        let name = if path.ends_with("SPEC.md") {
+            "SPEC.md".to_owned()
+        } else {
+            path.display().to_string()
+        };
+        check(&name, &source, &quill);
+        if name == "SPEC.md" {
+            return;
         }
-    }
-    let spec = std::fs::read_to_string(root.join("SPEC.md")).expect("SPEC.md");
-    check("SPEC.md", &spec, &quill);
+        for (how, ugly) in uglify(&source) {
+            check(&format!("{name} ({how})"), &ugly, &quill);
+        }
+    });
     assert!(count > 3, "found only {count} files");
 }
 
@@ -225,22 +254,22 @@ fn examples_and_docs() {
 fn the_quill_example_is_already_canonical() {
     let root = repo_root();
     let quill = model_at(&root.join("examples/content-models/quill.toml"));
-    for path in markdown_files(&root.join("examples/quill")) {
-        let source = std::fs::read_to_string(&path).expect("readable");
+    parallel_map(&markdown_files(&root.join("examples/quill")), |path| {
+        let source = std::fs::read_to_string(path).expect("readable");
         assert_eq!(
             check(&path.display().to_string(), &source, &quill),
             source,
             "{} isn't canonical",
             path.display()
         );
-    }
+    });
 }
 
 #[test]
 fn commonmark_examples_with_directives_around_them() {
     let examples = ascribe_commonmark_suite::load_bundled_examples().expect("spec.json loads");
     let model = shared_model();
-    for ex in &examples {
+    parallel_map(&examples, |ex| {
         let md = &ex.markdown;
         let name = format!("commonmark example {}", ex.example);
         // Plain CommonMark has nothing to format.
@@ -253,5 +282,5 @@ fn commonmark_examples_with_directives_around_them() {
         ] {
             check(&name, &source, &model);
         }
-    }
+    });
 }

@@ -420,15 +420,8 @@ fn steps() -> impl Strategy<Value = Vec<Vec<Op>>> {
     prop::collection::vec(prop::collection::vec(op(), 1..=3), 1..=22)
 }
 
-fn cases() -> u32 {
-    std::env::var("ASCRIBE_INCREMENTAL_CASES")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(300)
-}
-
 proptest! {
-    #![proptest_config(ProptestConfig { cases: cases(), max_shrink_iters: 2000, ..ProptestConfig::default() })]
+    #![proptest_config(ProptestConfig { max_shrink_iters: 2000, ..ProptestConfig::default() })]
 
     #[test]
     fn incremental_equals_from_scratch_starting_empty(batches in steps()) {

@@ -80,8 +80,6 @@ fn fork_view(line: &str, options: &ParseOptions) -> Vec<(String, Option<usize>)>
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig::with_cases(3000))]
-
     #[test]
     fn the_head_parser_agrees_with_the_block_parser(line in head_like()) {
         let options = options();

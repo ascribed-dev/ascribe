@@ -9,7 +9,6 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests --exclude 'test/e2e/**'",
     "test:e2e": "vitest run test/e2e"
   },
   "dependencies": {

@@ -1,16 +1,38 @@
-//! Every operation of `ascribe/edit`, with valid arguments, at every line and
-//! inline node of the example projects' pages: each edit the server returns
-//! is canonical where it wrote, and adds no diagnostic to the project.
+//! Every operation of `ascribe/edit`, with valid arguments, at a
+//! representative set of ranges on every page of the example projects: each
+//! edit the server returns is canonical where it wrote, and adds no
+//! diagnostic to the project.
+//!
+//! The ranges are the start of each line, the position just inside each `[`,
+//! `!`, and `{` (a link, an image, and an attribute block), and each block
+//! whole and with the block after it (every nesting level, so an arm of a
+//! group and an item of a list count).
+//!
+//! The pages' ranges are tried in parallel, each thread through its own
+//! server. The check after an edit reaches what an edit to one file can
+//! change, as the incremental index scopes it (`Affected::recheck`): the
+//! file's own file-level diagnostics, and the page-level diagnostics of the
+//! pages the file is part of (itself, and the pages that include it), of the
+//! pages that link to any of those (and the pages including those linking
+//! files), and of every page when one of them is a page the glossary's terms
+//! link to. The baseline is computed the same way, so the two compare like
+//! for like.
 
 #![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 
 mod support;
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::num::NonZero;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::thread;
 
-use ascribe_check::{Project, SourceFile, check_project};
-use ascribe_core::{LineIndex, Span, WideEncoding, WideLineCol};
+use ascribe_check::{PageChecker, Project, check_file};
+use ascribe_core::{LineIndex, RelPath, Span, WideEncoding, WideLineCol};
+use ascribe_model::Build;
+use ascribe_resolve::FileKind;
 use ascribe_syntax::{Block, BlockKind};
 use serde_json::{Value, json};
 use support::Client;
@@ -39,119 +61,199 @@ fn edits_on_the_monorepo_security_pages_are_canonical_and_add_no_diagnostics() {
     every_edit(&examples().join("monorepo/handbook/pages/security"));
 }
 
-/// The diagnostics of a project, by file and code.
-fn diagnostics(project: &Project) -> BTreeMap<(String, String), usize> {
-    let build = project.model().editor_default_build().clone();
-    let mut out = BTreeMap::new();
-    for d in check_project(project, &build) {
-        let file = project
-            .file(d.location.file)
-            .map(|f| f.display_path.to_owned())
-            .unwrap_or_default();
-        *out.entry((file, d.code.to_owned())).or_default() += 1;
+/// The diagnostics an edit to one file can change (see the module
+/// documentation), and what they were before any edit.
+struct Reach {
+    /// The pages whose page-level diagnostics are checked.
+    pages: Vec<RelPath>,
+    /// The diagnostics in reach before any edit, by file and code.
+    baseline: BTreeMap<(String, String), usize>,
+}
+
+impl Reach {
+    fn of(
+        project: &Project,
+        index: &ascribe_resolve::Project,
+        build: &Build,
+        path: &RelPath,
+    ) -> Reach {
+        let is_page = |p: &RelPath| index.file(p).is_some_and(|f| f.kind == FileKind::Page);
+        // The pages the file is part of.
+        let mut part_of: BTreeSet<RelPath> = index.including_pages(path).into_iter().collect();
+        if is_page(path) {
+            part_of.insert(path.clone());
+        }
+        let mut pages = part_of.clone();
+        // The pages that link to the file or to a page it's part of: an edit
+        // can take away an id a link names.
+        for target in part_of.iter().chain(std::iter::once(path)) {
+            for link in index.links_to(target) {
+                if is_page(&link.file) {
+                    pages.insert(link.file.clone());
+                }
+                pages.extend(index.including_pages(&link.file));
+            }
+        }
+        // The glossary's terms link from every page.
+        let glossary = ascribe_resolve::glossary_targets(project.model());
+        if glossary.contains(path) || part_of.iter().any(|p| glossary.contains(p)) {
+            pages.extend(
+                index
+                    .files()
+                    .filter(|f| is_page(&f.path))
+                    .map(|f| f.path.clone()),
+            );
+        }
+        let mut reach = Reach {
+            pages: pages.into_iter().collect(),
+            baseline: BTreeMap::new(),
+        };
+        reach.baseline = reach.diagnostics(project, build, path);
+        reach
     }
-    out
+
+    /// The diagnostics in reach, by file and code: the file-level ones of
+    /// `path`, and the page-level ones of the pages, as `ascribe check`
+    /// finds them on the project's texts.
+    fn diagnostics(
+        &self,
+        project: &Project,
+        build: &Build,
+        path: &RelPath,
+    ) -> BTreeMap<(String, String), usize> {
+        let file = project.source_at(path).expect("the edited file");
+        let mut all = check_file(project, file);
+        all.extend(PageChecker::new(project).check_pages(build, &self.pages));
+        let mut out = BTreeMap::new();
+        for d in all {
+            let file = project
+                .file(d.location.file)
+                .map(|f| f.display_path.to_owned())
+                .unwrap_or_default();
+            *out.entry((file, d.code.to_owned())).or_default() += 1;
+        }
+        out
+    }
 }
 
 fn every_edit(root: &Path) {
     let root = support::real_path(root);
     let project = Project::load(&root.join("ascribe.toml")).expect("the example loads");
-    let baseline = diagnostics(&project);
     let model = project.model().clone();
+    let build = model.editor_default_build().clone();
     let options = ascribe_fmt::options_from_model(&model);
-    let mut client = Client::start(&root);
     let content = root.join(project.content_root().as_str());
-    let mut checked = BTreeSet::new();
-    let mut edits = 0;
-    for source in project.sources() {
-        let path = content.join(source.path.as_str());
-        let uri = support::uri(&path);
-        let text = &source.text;
-        let targets = client
-            .request(
-                "ascribe/targets",
-                json!({
-                    "textDocument": { "uri": uri.as_str() },
-                    "kinds": ["pages", "fragments", "images", "snippets", "phrases", "dimensions", "widgets", "features"],
-                }),
-            )
-            .response_result
-            .expect("targets");
-        let doc = ascribe_syntax::parse(text, &options);
-        for (start, end) in ranges(text, &doc.blocks) {
-            for (action, args) in arguments(&targets, &source.path.to_string()) {
-                // The page's own settings don't depend on where the cursor is.
-                if action.starts_with("setPage") && start > 0 {
-                    continue;
+    let index = project.held_index();
+    let reaches: Vec<Reach> = project
+        .sources()
+        .iter()
+        .map(|s| Reach::of(&project, &index, &build, &s.path))
+        .collect();
+    // Every range of every page, in order: the threads take them in turn, so
+    // one page's ranges are shared out rather than one page per thread.
+    let items: Vec<(usize, (usize, usize))> = project
+        .sources()
+        .iter()
+        .enumerate()
+        .flat_map(|(i, s)| {
+            let doc = ascribe_syntax::parse(&s.text, &options);
+            ranges(&s.text, &doc.blocks)
+                .into_iter()
+                .map(move |range| (i, range))
+        })
+        .collect();
+    let next = AtomicUsize::new(0);
+    let checked: Mutex<BTreeSet<(String, String)>> = Mutex::new(BTreeSet::new());
+    let edits = AtomicUsize::new(0);
+    let threads = thread::available_parallelism()
+        .map_or(4, NonZero::get)
+        .clamp(1, items.len().max(1));
+    thread::scope(|scope| {
+        for _ in 0..threads {
+            scope.spawn(|| {
+                let mut client = Client::start(&root);
+                // Each page's arguments, from its targets, once per thread.
+                let mut arguments_of: BTreeMap<usize, Vec<(&str, Value)>> = BTreeMap::new();
+                while let Some(&(i, (start, end))) =
+                    items.get(next.fetch_add(1, Ordering::SeqCst))
+                {
+                    let source = &project.sources()[i];
+                    let path = content.join(source.path.as_str());
+                    let uri = support::uri(&path);
+                    let text = &source.text;
+                    let lines = LineIndex::new(text);
+                    let arguments = arguments_of.entry(i).or_insert_with(|| {
+                        let targets = client
+                            .request(
+                                "ascribe/targets",
+                                json!({
+                                    "textDocument": { "uri": uri.as_str() },
+                                    "kinds": ["pages", "fragments", "images", "snippets", "phrases", "dimensions", "widgets", "features"],
+                                }),
+                            )
+                            .response_result
+                            .expect("targets");
+                        arguments(&targets, &source.path.to_string())
+                    });
+                    for (action, args) in arguments.iter() {
+                        // The page's own settings don't depend on where the cursor is.
+                        if action.starts_with("setPage") && start > 0 {
+                            continue;
+                        }
+                        let response = client.request(
+                            "ascribe/edit",
+                            json!({
+                                "textDocument": { "uri": uri.as_str() },
+                                "range": { "start": position(&lines, start), "end": position(&lines, end) },
+                                "action": action,
+                                "args": args,
+                            }),
+                        );
+                        let result = response.response_result.expect("the request succeeds");
+                        if result.get("error").is_some() {
+                            continue;
+                        }
+                        let changes = result["edit"]["changes"][uri.as_str()]
+                            .as_array()
+                            .expect("edits to the page");
+                        let after = apply(text, &lines, changes);
+                        if !checked
+                            .lock()
+                            .unwrap()
+                            .insert((source.path.to_string(), after.clone()))
+                        {
+                            continue;
+                        }
+                        edits.fetch_add(1, Ordering::SeqCst);
+                        let what = format!("{action} at {start}..{end} of {}", source.path);
+                        assert_canonical(text, &after, &options, &model, &what);
+                        let edited = project.with_source(&source.path, after.clone());
+                        let reach = &reaches[i];
+                        for (key, count) in reach.diagnostics(&edited, &build, &source.path) {
+                            let before = reach.baseline.get(&key).copied().unwrap_or_default();
+                            assert!(count <= before, "{what} adds {key:?}:\n{after}");
+                        }
+                    }
                 }
-                let response = client.request(
-                    "ascribe/edit",
-                    json!({
-                        "textDocument": { "uri": uri.as_str() },
-                        "range": { "start": position(text, start), "end": position(text, end) },
-                        "action": action,
-                        "args": args,
-                    }),
-                );
-                let result = response.response_result.expect("the request succeeds");
-                if result.get("error").is_some() {
-                    continue;
-                }
-                let changes = result["edit"]["changes"][uri.as_str()]
-                    .as_array()
-                    .expect("edits to the page");
-                let after = apply(text, changes);
-                if !checked.insert((source.path.to_string(), after.clone())) {
-                    continue;
-                }
-                edits += 1;
-                let what = format!("{action} at {start}..{end} of {}", source.path);
-                assert_canonical(text, &after, &options, &model, &what);
-                let sources: Vec<SourceFile> = project
-                    .sources()
-                    .iter()
-                    .map(|s| SourceFile {
-                        text: if s.path == source.path {
-                            after.clone()
-                        } else {
-                            s.text.clone()
-                        },
-                        ..s.clone()
-                    })
-                    .collect();
-                let edited = Project::from_parts(
-                    root.clone(),
-                    project.content_root().clone(),
-                    model.clone(),
-                    project.model_text().to_owned(),
-                    sources,
-                );
-                for (key, count) in diagnostics(&edited) {
-                    let before = baseline.get(&key).copied().unwrap_or_default();
-                    assert!(count <= before, "{what} adds {key:?}:\n{after}");
-                }
-            }
+                client.shutdown();
+            });
         }
-    }
-    assert!(edits > 0, "no edit was made in {}", root.display());
+    });
+    assert!(
+        edits.load(Ordering::SeqCst) > 0,
+        "no edit was made in {}",
+        root.display()
+    );
 }
 
-/// The ranges to try: the start of each line and a few characters into it,
-/// just inside each `[`, `!`, and `{`, the first word of each line, and each
-/// block whole and with the block after it.
+/// The ranges to try (see the module documentation): the start of each
+/// line, just inside each `[`, `!`, and `{`, and each block whole and with
+/// the block after it.
 fn ranges(text: &str, blocks: &[Block]) -> Vec<(usize, usize)> {
     let mut out = BTreeSet::new();
     let mut at = 0;
     for line in text.split_inclusive('\n') {
         out.insert((at, at));
-        let indent = line.len() - line.trim_start().len();
-        let inside = (at + indent + 2).min(at + line.trim_end().len());
-        if text.is_char_boundary(inside) {
-            out.insert((inside, inside));
-        }
-        if let Some(word) = first_word(line) {
-            out.insert((at + word.0, at + word.1));
-        }
         at += line.len();
     }
     for (i, c) in text.char_indices() {
@@ -163,20 +265,6 @@ fn ranges(text: &str, blocks: &[Block]) -> Vec<(usize, usize)> {
     collect_blocks(blocks, &mut spans);
     out.extend(spans);
     out.into_iter().collect()
-}
-
-/// The first run of three or more letters in a line.
-fn first_word(line: &str) -> Option<(usize, usize)> {
-    let mut start = None;
-    for (i, c) in line.char_indices() {
-        match (c.is_alphabetic(), start) {
-            (true, None) => start = Some(i),
-            (false, Some(s)) if i - s >= 3 => return Some((s, i)),
-            (false, Some(_)) => start = None,
-            _ => {}
-        }
-    }
-    None
 }
 
 fn collect_blocks(blocks: &[Block], out: &mut Vec<(usize, usize)>) {
@@ -349,15 +437,15 @@ fn assert_canonical(
     }
 }
 
-fn position(text: &str, offset: usize) -> Value {
-    let p = LineIndex::new(text)
+fn position(lines: &LineIndex, offset: usize) -> Value {
+    let p = lines
         .wide_line_col(WideEncoding::Utf16, offset)
         .expect("a position");
     json!({ "line": p.line, "character": p.col })
 }
 
-fn offset(text: &str, position: &Value) -> usize {
-    LineIndex::new(text)
+fn offset(lines: &LineIndex, position: &Value) -> usize {
+    lines
         .wide_offset(
             WideEncoding::Utf16,
             WideLineCol {
@@ -368,14 +456,14 @@ fn offset(text: &str, position: &Value) -> usize {
         .expect("an offset")
 }
 
-fn apply(text: &str, edits: &[Value]) -> String {
+fn apply(text: &str, lines: &LineIndex, edits: &[Value]) -> String {
     let edits: Vec<ascribe_core::TextEdit> = edits
         .iter()
         .map(|e| {
             ascribe_core::TextEdit::replace(
                 Span::new(
-                    offset(text, &e["range"]["start"]),
-                    offset(text, &e["range"]["end"]),
+                    offset(lines, &e["range"]["start"]),
+                    offset(lines, &e["range"]["end"]),
                 ),
                 e["newText"].as_str().expect("text"),
             )

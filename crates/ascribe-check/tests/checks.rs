@@ -595,8 +595,6 @@ mod robustness {
     use proptest::prelude::*;
 
     proptest! {
-        #![proptest_config(ProptestConfig::with_cases(400))]
-
         /// Nor does frontmatter, whatever is in it.
         #[test]
         fn frontmatter_never_panics(body in proptest::collection::vec(

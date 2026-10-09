@@ -49,7 +49,7 @@ It uses `ascribe-core`, `ascribe-syntax`, and `ascribe-model`, and no other crat
 - `tests/references.rs`: links, images, and assets: what each names, from which file, and what's wrong with it.
 - `tests/snippets.rs`: the code block a `@snippet` becomes, and which problem `snippet_issues` reports.
 - `tests/build_content.rs`, `tests/build_modes.rs`: build resolution: phrases, page ids, links, assets, the glossary, build modes, and availability.
-- `tests/quill.rs`, `tests/build_quill.rs`: `examples/quill` indexes, expands, and resolves under each of its builds with no problems.
+- `tests/build_quill.rs`: `examples/quill` resolves under each of its builds with no problems, and its install page's index is what it should be.
 - `tests/incremental.rs`: what each kind of change invalidates and caches.
 - `tests/file_reads.rs`: every read of the disk in the workspace's crates outside `FileSystem` says why, in a comment starting `Outside FileSystem:`.
 - `tests/incremental_differential.rs`: a property test that, after each step of random edits, the incremental project equals a load from scratch.

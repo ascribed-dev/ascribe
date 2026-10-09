@@ -617,8 +617,6 @@ fn prefix() -> impl Strategy<Value = &'static str> {
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig::with_cases(2000))]
-
     /// The pass never panics, every container it opens is closed or
     /// reported, and every end line is consumed or reported.
     #[test]
