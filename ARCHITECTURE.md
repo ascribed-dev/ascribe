@@ -83,7 +83,7 @@ Every surface reaches the same core.
 |---|---|---|
 | Command line | `ascribe-cli` | Each subcommand is a module in `crates/ascribe-cli/src/commands/`: its arguments, one call into a library ([Each command's entry](#each-commands-entry)), and the report. |
 | Language server | `ascribe-lsp` | Calls the crates, over an `IncrementalProject` it keeps current as the editor types. |
-| VS Code | `packages/vscode` | Starts `ascribe lsp`, one server per project (`packages/vscode/src/registry.ts`). The preview and review use custom requests: `ascribe/preview`, `ascribe/review/setBase`, and `ascribe/review/changes`. |
+| VS Code | `packages/vscode` | Starts `ascribe lsp`, one server per project (`packages/vscode/src/registry.ts`). The preview and review use custom requests: `ascribe/preview`, `ascribe/review/setBase`, and `ascribe/review/changes`. The editor's actions (`packages/vscode/src/actions/`) use `ascribe/context`, `ascribe/targets`, and `ascribe/edit`. |
 | Astro | `packages/astro` | Runs the binary: `ascribe build` (`packages/astro/src/run.ts`) and, for review, `ascribe diff` (`packages/astro/src/review/diff.ts`). Then reads the files it wrote. |
 | Review | `packages/review` | Reads `ascribe diff --format json`'s data, and GitHub through `gh` (`packages/review/src/github/`). |
 | Elements | `packages/elements` | The site output's markup. |
@@ -192,7 +192,7 @@ Some files are generated from a source, or copied from what the code writes, and
 | `crates/ascribe-core/tests/names.rs` | The names Ascribe puts on a page, `packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`, from `crates/ascribe-core/src/names.rs` |
 | `crates/ascribe-emit/tests/site_anchors.rs` | The site-render fixtures' inputs and corpus in `tests/render/` |
 | `crates/ascribe-emit/tests/zod.rs` | The generated schemas in `tests/zod/generated/` |
-| `packages/vscode/test/unit/docs.test.ts` | The extension's settings and commands in `docs/content/_generated/` |
+| `packages/vscode/test/unit/docs.test.ts` | The extension's settings, commands, and actions in `docs/content/_generated/` |
 | `scripts/design/specimen.test.ts` | The design specimen, `design/specimen.html`, from `design/candidates/` and the stylesheets it renders |
 | `scripts/design/tokens.test.ts` | The generated blocks of each stylesheet `design/tokens.toml` lists, from it. Then `pnpm --filter @ascribed/review embed` copies them into the report's stylesheet |
 

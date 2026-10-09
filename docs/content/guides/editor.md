@@ -74,6 +74,21 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 - **Rename or move a file** in the Explorer, and the links and includes that point to it are updated.
 - **Rename** (`F2`) a heading's `@id` to update the links to it, or a phrase key to update its uses and its declaration.
 
+### Actions
+@available: next
+
+Actions write Ascribe for you: wrap a paragraph in a note, turn a numbered list into steps, link the selected text to a page, insert content that varies by a dimension, mark where a section is available. Each one asks what it needs in short steps, choosing from what the project has (its note types, pages and headings, phrases, dimensions and their values, features, images, fragments, sources, and widgets), so you never type a path, a key, or attribute syntax. What it writes is in canonical form, and one **Undo** takes it back.
+
+Every action is in three places:
+
+- The **Command Palette**, as `Ascribe: <action>`, in a Markdown file of a project. Run where it doesn't apply, it says where it does: "Put the cursor in a note to change its kind."
+- The editor's context menu, under **Ascribe**, which lists the actions that apply where the cursor is.
+- The lightbulb (`Ctrl+.` / `Cmd+.`), for the actions that rewrite what's at the cursor, beside the quick fixes.
+
+**Copy a link to this section** copies the heading's destination from the content root, such as `/guides/install.md#install-cli`, which works pasted into any page of the project.
+
+@include: ../_generated/editor-actions.md
+
 ### Formatting
 
 **Format Document** rewrites Ascribe constructs into canonical form, as `ascribe fmt` does. Turn on `ascribe.formatOnSave` to do it on every save. It changes only Ascribe constructs, never how a page renders.

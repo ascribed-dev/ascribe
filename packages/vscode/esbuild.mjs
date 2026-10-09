@@ -97,6 +97,7 @@ if (process.argv.includes("--tests")) {
     entryPoints: {
       run: "test/integration/run.ts",
       "suite/index": "test/integration/suite/index.ts",
+      "suite/actions.it": "test/integration/suite/actions.it.ts",
       "suite/activation.it": "test/integration/suite/activation.it.ts",
       "suite/monorepo.it": "test/integration/suite/monorepo.it.ts",
       "suite/preview.it": "test/integration/suite/preview.it.ts",

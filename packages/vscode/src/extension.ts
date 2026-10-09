@@ -3,6 +3,7 @@ import type { ProjectServer, ServerState } from "./client.js";
 import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
+import { ActionsController, type ActionsApi } from "./actions/controller.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
@@ -21,6 +22,8 @@ export interface AscribeApi {
   whenSettled(): Promise<void>;
   /** The preview, for tests. */
   preview: PreviewApi;
+  /** The editor's actions, for tests. */
+  actions: ActionsApi;
 }
 
 let registry: ProjectRegistry | undefined;
@@ -31,6 +34,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
 
   const preview = new PreviewController(context, projects);
   preview.register();
+
+  const actions = new ActionsController(projects);
+  actions.register();
 
   context.subscriptions.push(
     vscode.workspace.onWillSaveTextDocument((event) => {
@@ -67,6 +73,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   context.subscriptions.push(
     projects,
     preview,
+    actions,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
       if (projects.projects.length === 0) {
@@ -116,6 +123,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
       ),
     whenSettled: () => projects.whenSettled(),
     preview: preview.api,
+    actions: actions.api,
   };
 }
 

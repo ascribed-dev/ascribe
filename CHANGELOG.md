@@ -124,6 +124,7 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 - `@ascribed/astro` declares `satteri` and `@types/hast` as optional peer dependencies. Its `@ascribed/astro/satteri` and `@ascribed/astro/rehype` declarations import types from them, so a project that type-checks those declarations (`skipLibCheck: false`) needs the one it imports, which a Sätteri or `unified()` processor already brings.
 - **The VS Code extension has an icon:** the Ascribe mark, in the Extensions view and on its Marketplace page, whose header takes the icon's dark tile color.
 - **Fixed:** in a high-contrast dark theme, the page preview's **Page | Site** switch shows which side is on, with the theme's active border, and the preview's buttons are in the theme's text color. They took a button background the theme doesn't set.
+- **Actions in VS Code.** Actions write Ascribe for you, such as **Wrap in a note**, **Make the list steps**, **Link the selected text**, **Insert content that varies**, and **Mark where it's available**. Each asks what it needs in short steps, choosing from the project's note types, pages, phrases, dimensions, and features, and writes canonical Ascribe that one Undo takes back. They're in the Command Palette, in an **Ascribe** submenu of the editor's context menu that lists those that apply at the cursor, and, for those that rewrite what's at the cursor, in the lightbulb. See [Actions](docs/content/guides/editor.md#actions).
 
 ## 0.2.0 (2026-10-06)
 
