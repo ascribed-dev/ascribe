@@ -50,6 +50,8 @@ pub struct Loaded {
     /// The project.
     pub project: Project,
     index: OnceCell<ascribe_resolve::Project>,
+    /// The index the page-level checks read, once a check asks for it.
+    page_index: OnceCell<ascribe_check::PageIndex>,
     /// Each check of the whole project so far: the builds asked for, the
     /// diagnostics, and the builds checked. A project kept between calls
     /// checks once for each set of builds.
@@ -69,6 +71,7 @@ impl Loaded {
         Loaded {
             project,
             index: OnceCell::new(),
+            page_index: OnceCell::new(),
             checks: RefCell::new(Vec::new()),
         }
     }
@@ -94,6 +97,13 @@ impl Loaded {
             builds: builds.clone(),
         });
         Ok((diagnostics, builds))
+    }
+
+    /// The index the page-level checks read ([`ascribe_check::PageIndex`]),
+    /// made on first use.
+    pub fn page_index(&self) -> &ascribe_check::PageIndex {
+        self.page_index
+            .get_or_init(|| ascribe_check::PageIndex::new(&self.project))
     }
 
     /// The project's source index ([`Project::index`]), made on first use.

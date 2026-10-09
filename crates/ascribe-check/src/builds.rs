@@ -7,7 +7,8 @@ use ascribe_core::RelPath;
 use ascribe_model::Build;
 
 use crate::{
-    Diagnostic, PageChecker, Project, check_all_builds, check_builds, check_file, check_files,
+    Diagnostic, PageChecker, PageIndex, Project, check_all_builds, check_builds, check_file,
+    check_files,
 };
 
 /// A build name that isn't a build of the content model.
@@ -109,11 +110,25 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
 /// file-level check makes. The content model's warnings and the checks of
 /// `ascribe.lock` aren't run then, since they're located in neither.
 pub fn diagnose_editor_build<'p>(project: &'p Project, files: Option<&[RelPath]>) -> Diagnosed<'p> {
+    diagnose_editor_build_in(project, None, files)
+}
+
+/// [`diagnose_editor_build`], over `index` when it's given: the project's,
+/// kept from an earlier check ([`PageIndex::new`]).
+pub fn diagnose_editor_build_in<'p>(
+    project: &'p Project,
+    index: Option<&'p PageIndex>,
+    files: Option<&[RelPath]>,
+) -> Diagnosed<'p> {
     let build = project.model().editor_default_build();
+    let checker = || match index {
+        Some(index) => PageChecker::with_page_index(project, index),
+        None => PageChecker::new(project),
+    };
     let diagnostics = match files {
         None => {
             let mut out = check_files(project);
-            out.extend(PageChecker::new(project).check(build));
+            out.extend(checker().check(build));
             out
         }
         Some(files) => {
@@ -122,7 +137,7 @@ pub fn diagnose_editor_build<'p>(project: &'p Project, files: Option<&[RelPath]>
                 .filter_map(|path| project.source_at(path))
                 .flat_map(|file| check_file(project, file))
                 .collect();
-            out.extend(PageChecker::new(project).check_reaching(build, files));
+            out.extend(checker().check_reaching(build, files));
             out
         }
     };
