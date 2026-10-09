@@ -185,21 +185,6 @@ export function contextKeys(context: ContextResult): Record<string, boolean> {
 
 const key = (name: string) => (c: ContextResult) => CONTEXT_KEYS[name]?.(c) ?? false;
 
-// Building a link from the content root.
-
-/** A content path written as a destination: each segment percent-encoded where it needs to be. */
-function destinationOf(path: string): string {
-  return path
-    .split("/")
-    .map((segment) =>
-      encodeURI(segment).replace(
-        /[#?()]/g,
-        (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
-      ),
-    )
-    .join("/");
-}
-
 /** `/guides/install.md#install-cli`: the heading's destination from the content root. */
 export async function copyLinkToSection(
   context: ContextResult,
@@ -216,7 +201,7 @@ export async function copyLinkToSection(
     );
     return;
   }
-  const link = `/${destinationOf(heading.page)}#${id}`;
+  const link = heading.rootLink;
   await effects.copy(link);
   effects.say(`Copied ${link}`);
 }

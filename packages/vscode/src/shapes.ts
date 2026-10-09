@@ -539,6 +539,11 @@ export interface InventoryResult {
    */
   model: InventoryEntry[];
   /**
+   * The `file:` URI of the content root, which content paths are
+   * relative to.
+   */
+  contentUri?: string;
+  /**
    * The `file:` URI of the project's `ascribe.toml`, which the ranges of
    * declarations are in.
    */

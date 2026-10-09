@@ -189,6 +189,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "The answer to `ascribe/inventory`. A document that isn't one of the\nproject's files gets empty lists.",
   "properties": {
+    "contentUri": {
+      "description": "The `file:` URI of the content root, which content paths are\nrelative to.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "fragments": {
       "description": "The fragments, by content path.",
       "items": {

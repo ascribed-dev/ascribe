@@ -37,6 +37,10 @@ pub struct InventoryResult {
     /// declarations are in.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_uri: Option<String>,
+    /// The `file:` URI of the content root, which content paths are
+    /// relative to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content_uri: Option<String>,
     /// The pages, by content path.
     pub pages: Vec<InventoryPage>,
     /// The fragments, by content path.
@@ -163,6 +167,7 @@ pub(crate) fn inventory(ctx: &Ctx) -> InventoryResult {
 
     InventoryResult {
         model_uri: crate::uri::path_to_uri(&ctx.config).map(|uri| uri.as_str().to_owned()),
+        content_uri: crate::uri::path_to_uri(&ctx.content_dir).map(|uri| uri.as_str().to_owned()),
         pages,
         fragments,
         orphans,

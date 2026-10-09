@@ -283,6 +283,13 @@ fn the_inventory_lists_pages_fragments_orphans_and_the_model() {
         r["fragments"],
         json!([{ "path": "_setup.md", "includedBy": ["guide.md", "other.md"] }])
     );
+    assert!(
+        r["contentUri"]
+            .as_str()
+            .is_some_and(|u| u.ends_with("/docs")),
+        "{}",
+        r["contentUri"]
+    );
     // An index page is never an orphan.
     assert_eq!(r["orphans"], json!(["other.md"]));
     let uses = |kind: &str, key: &str| {

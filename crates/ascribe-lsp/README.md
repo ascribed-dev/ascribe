@@ -424,6 +424,7 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 ```jsonc
 {
   "modelUri": "file:///…/ascribe.toml",
+  "contentUri": "file:///…/docs",
   "pages": [{ "path": "guide.md", "title": "Guide", "type": "page", "incoming": 3 }],
   "fragments": [{ "path": "_setup.md", "includedBy": ["guide.md"] }],
   "orphans": ["old.md"],
@@ -432,6 +433,7 @@ TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
 }
 ```
 
+- Paths are content paths, relative to `contentUri`, the content root.
 - `incoming` is how many links from other files, and includes, name the page.
 - `orphans` are the pages whose `incoming` is 0, other than index pages
   (`index.md`, in any folder). A reader may still reach one through a
