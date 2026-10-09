@@ -61,28 +61,63 @@ pub enum Install {
 }
 
 /// The command that installs a folder's dependencies, by its lockfile, in
-/// the order they're looked for.
+/// the order they're looked for. `yarn.lock` comes after them, and its
+/// command depends on its version ([`yarn_command`]).
 pub const LOCKFILES: &[(&str, &str)] = &[
     ("package-lock.json", "npm ci"),
     (
         "pnpm-lock.yaml",
         "corepack enable && pnpm install --frozen-lockfile",
     ),
-    ("yarn.lock", "corepack enable && yarn install"),
 ];
+
+/// Yarn's lockfile.
+pub const YARN_LOCK: &str = "yarn.lock";
+
+/// Yarn's settings, beside its lockfile.
+pub const YARNRC: &str = ".yarnrc.yml";
 
 /// The command that installs a folder's dependencies when it has no
 /// lockfile.
 pub const NO_LOCKFILE: &str = "npm install";
 
-/// Whether a `package.json`'s text pins `@ascribed/cli`.
-pub fn pins_ascribe(package_json: &str) -> bool {
-    let Ok(value) = serde_json::from_str::<Value>(package_json) else {
-        return false;
-    };
+/// The command that installs a Yarn project's dependencies without
+/// changing its lockfile, from the lockfile's text and `.yarnrc.yml`'s:
+/// Yarn 1's or a later Yarn's. `None` when a later Yarn uses Plug'n'Play,
+/// its default, which writes no `node_modules/.bin`.
+pub fn yarn_command(lock: &str, yarnrc: Option<&str>) -> Option<&'static str> {
+    // Yarn 2 and later start their lockfile with `__metadata`; Yarn 1's
+    // says `yarn lockfile v1`.
+    if !lock.lines().any(|line| line.starts_with("__metadata:")) {
+        return Some("corepack enable && yarn install --frozen-lockfile");
+    }
+    let linker = yarnrc
+        .unwrap_or_default()
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("nodeLinker:"))
+        .map(|value| value.trim().trim_matches(['"', '\'']));
+    matches!(linker, Some("node-modules" | "pnpm"))
+        .then_some("corepack enable && yarn install --immutable")
+}
+
+/// The version of `@ascribed/cli` a `package.json`'s text pins, as it's
+/// written there, when it pins one.
+pub fn pinned_spec(package_json: &str) -> Option<String> {
+    let value = serde_json::from_str::<Value>(package_json).ok()?;
     ["dependencies", "devDependencies", "optionalDependencies"]
         .iter()
-        .any(|key| value[key].get("@ascribed/cli").is_some())
+        .find_map(|key| value[key].get("@ascribed/cli"))
+        .map(|spec| spec.as_str().unwrap_or_default().to_owned())
+}
+
+/// Whether `npm install --global` can install `@ascribed/cli` at `spec`: a
+/// version or a range of them, not a workspace, a file, a link, or a tag
+/// another registry gives.
+pub fn installs_globally(spec: &str) -> bool {
+    !spec.trim().is_empty()
+        && spec
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || " .^~<>=*|-+".contains(c))
 }
 
 /// The steps that install `ascribe`, as YAML list items at no
@@ -100,7 +135,7 @@ fn steps(install: &Install, checkout: bool) -> String {
     ));
     match install {
         Install::Global { version } => out.push_str(&format!(
-            "- name: Install Ascribe\n  shell: bash\n  run: npm install --global @ascribed/cli@{version}\n"
+            "- name: Install Ascribe\n  shell: bash\n  run: npm install --global '@ascribed/cli@{version}'\n"
         )),
         Install::Pinned {
             install,
@@ -336,10 +371,30 @@ fn tools() -> Vec<String> {
         .collect()
 }
 
+/// How the cloud agent starts the MCP server, as a command and its
+/// arguments, each quoted. A pinned binary is run from the repository's
+/// root, found with `git` as the hooks find it, since nothing documents
+/// that the setup steps' path, or a folder to start in, carries over to the
+/// agent's servers.
+fn mcp_command(install: &Install) -> (String, String) {
+    let quoted = |text: &str| Value::from(text).to_string();
+    match install {
+        Install::Global { .. } => (quoted("ascribe"), format!("[{}]", quoted("mcp"))),
+        Install::Pinned { bin, .. } => {
+            let run = format!("exec \"$(git rev-parse --show-toplevel)/{bin}/ascribe\" mcp");
+            (
+                quoted("bash"),
+                format!("[{}, {}]", quoted("-c"), quoted(&run)),
+            )
+        }
+    }
+}
+
 /// The JSON for the repository's MCP settings: a local server running
 /// `ascribe mcp`, with each of its tools allowed. Written out by hand to
 /// keep its keys in the order the settings' documentation shows.
-pub fn mcp_settings() -> String {
+pub fn mcp_settings(install: &Install) -> String {
+    let (command, args) = mcp_command(install);
     let tools = tools()
         .iter()
         .map(|tool| format!("        {tool}"))
@@ -350,8 +405,8 @@ pub fn mcp_settings() -> String {
   \"mcpServers\": {{
     \"{SERVER}\": {{
       \"type\": \"local\",
-      \"command\": \"ascribe\",
-      \"args\": [\"mcp\"],
+      \"command\": {command},
+      \"args\": {args},
       \"tools\": [
 {tools}
       ]
@@ -369,7 +424,8 @@ pub const MCP_SETTINGS_PLACE: &str =
 /// `.github/agents/ascribe-docs.md`: a custom agent for documentation work
 /// that carries the MCP server, for the cloud agent only (VS Code reads the
 /// server from its own settings).
-pub fn agent_md() -> String {
+pub fn agent_md(install: &Install) -> String {
+    let (command, args) = mcp_command(install);
     format!(
         "---
 name: ascribe-docs
@@ -378,9 +434,9 @@ target: github-copilot
 mcp-servers:
   {SERVER}:
     type: local
-    command: ascribe
-    args: [\"mcp\"]
-    tools: [{}]
+    command: {command}
+    args: {args}
+    tools: [{tools}]
 ---
 
 <!-- Generated by `ascribe agents sync`. Run it again rather than editing this file. -->
@@ -391,7 +447,7 @@ Write and fix documentation in this repository's Ascribe projects.
 - Ask the `{SERVER}` MCP server's tools, or the `ascribe` commands, about the content model, a page's outline, links, and where a page is used, rather than guessing.
 - After each change, run `ascribe check` on the files you changed, and fix what it reports. Before you finish, run `ascribe check` on the whole project.
 ",
-        tools().join(", ")
+        tools = tools().join(", ")
     )
 }
 
@@ -425,7 +481,7 @@ mod tests {
         let text = setup_steps(None, &MARKERS, &global()).unwrap_or_default();
         assert!(parse_job(&text).is_ok(), "{text}");
         assert!(
-            text.contains("      - name: Install Ascribe\n        shell: bash\n        run: npm install --global @ascribed/cli@1.2.3\n"),
+            text.contains("      - name: Install Ascribe\n        shell: bash\n        run: npm install --global '@ascribed/cli@1.2.3'\n"),
             "{text}"
         );
         assert_eq!(
@@ -524,24 +580,67 @@ jobs:
 
     #[test]
     fn the_package_json_pins_ascribe() {
-        assert!(pins_ascribe(
-            r#"{"devDependencies": {"@ascribed/cli": "^1.0.0"}}"#
-        ));
-        assert!(!pins_ascribe(r#"{"dependencies": {"astro": "5"}}"#));
-        assert!(!pins_ascribe("not json"));
+        assert_eq!(
+            pinned_spec(r#"{"devDependencies": {"@ascribed/cli": "^1.0.0"}}"#).as_deref(),
+            Some("^1.0.0")
+        );
+        assert_eq!(pinned_spec(r#"{"dependencies": {"astro": "5"}}"#), None);
+        assert_eq!(pinned_spec("not json"), None);
+        assert!(installs_globally("^1.0.0") && installs_globally("1.2.3-rc.1"));
+        assert!(!installs_globally("workspace:*") && !installs_globally("file:../cli"));
+        assert!(!installs_globally(""));
+    }
+
+    #[test]
+    fn each_yarn_installs_without_changing_its_lockfile() {
+        let classic = "# THIS IS AN AUTOGENERATED FILE.\n# yarn lockfile v1\n";
+        let berry =
+            "# This file is generated by running \"yarn install\".\n\n__metadata:\n  version: 8\n";
+        assert_eq!(
+            yarn_command(classic, None),
+            Some("corepack enable && yarn install --frozen-lockfile")
+        );
+        assert_eq!(yarn_command(berry, None), None);
+        assert_eq!(yarn_command(berry, Some("nodeLinker: pnp\n")), None);
+        for linker in ["nodeLinker: node-modules", "nodeLinker: \"pnpm\""] {
+            assert_eq!(
+                yarn_command(berry, Some(linker)),
+                Some("corepack enable && yarn install --immutable"),
+                "{linker}"
+            );
+        }
     }
 
     #[test]
     fn the_settings_and_the_agent_list_every_tool() {
-        let settings: Value = serde_json::from_str(&mcp_settings()).unwrap_or_default();
-        let server = &settings["mcpServers"]["ascribe"];
-        assert_eq!(server["type"], "local");
-        assert_eq!(server["tools"].as_array().map(Vec::len), Some(TOOLS.len()));
-        let agent = agent_md();
-        let front = agent.split("---\n").nth(1).unwrap_or_default();
-        let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(front).unwrap_or_default();
-        let tools = &value["mcp-servers"]["ascribe"]["tools"];
-        assert_eq!(tools.as_sequence().map(Vec::len), Some(TOOLS.len()));
-        assert_eq!(value["mcp-servers"]["ascribe"]["args"][0], "mcp");
+        for install in [global(), pinned()] {
+            let settings: Value = serde_json::from_str(&mcp_settings(&install)).unwrap_or_default();
+            let server = &settings["mcpServers"]["ascribe"];
+            assert_eq!(server["type"], "local");
+            assert_eq!(server["tools"].as_array().map(Vec::len), Some(TOOLS.len()));
+            let agent = agent_md(&install);
+            let front = agent.split("---\n").nth(1).unwrap_or_default();
+            let value: serde_yaml_ng::Value = serde_yaml_ng::from_str(front).unwrap_or_default();
+            let ours = &value["mcp-servers"]["ascribe"];
+            assert_eq!(ours["tools"].as_sequence().map(Vec::len), Some(TOOLS.len()));
+            // The agent and the settings start the server the same way.
+            assert_eq!(
+                serde_json::to_value(&ours["command"]).unwrap_or_default(),
+                server["command"]
+            );
+            assert_eq!(
+                serde_json::to_value(&ours["args"]).unwrap_or_default(),
+                server["args"]
+            );
+        }
+        let global = serde_json::from_str::<Value>(&mcp_settings(&global())).unwrap_or_default();
+        assert_eq!(global["mcpServers"]["ascribe"]["command"], "ascribe");
+        assert_eq!(global["mcpServers"]["ascribe"]["args"][0], "mcp");
+        let pinned = serde_json::from_str::<Value>(&mcp_settings(&pinned())).unwrap_or_default();
+        assert_eq!(pinned["mcpServers"]["ascribe"]["command"], "bash");
+        assert_eq!(
+            pinned["mcpServers"]["ascribe"]["args"][1],
+            "exec \"$(git rev-parse --show-toplevel)/docs/node_modules/.bin/ascribe\" mcp"
+        );
     }
 }

@@ -787,7 +787,7 @@ fn cloud_installs_the_pinned_ascribe() {
     assert!(text.contains("      # ascribe:copilot start ("), "{text}");
     assert!(
         text.contains(&format!(
-            "run: npm install --global @ascribed/cli@{}\n",
+            "run: npm install --global '@ascribed/cli@{}'\n",
             env!("CARGO_PKG_VERSION")
         )),
         "{text}"
@@ -833,4 +833,94 @@ fn the_setup_steps_match_this_repositorys_versions() {
         engines,
         "the setup steps install Node.js {node}; @ascribed/cli needs {engines}"
     );
+}
+
+#[test]
+fn a_pinned_project_runs_its_own_mcp_server() {
+    let repo = repository("monorepo");
+    let root = repo.path();
+    write(
+        &root.join("docs/package.json"),
+        "{\"devDependencies\": {\"@ascribed/cli\": \"1.0.0\"}}\n",
+    );
+    write(&root.join("docs/package-lock.json"), "{}\n");
+    let out = sync(root, "docs", &["--cloud"]);
+    // Raw: `stdout` turns the JSON's escapes into slashes.
+    let text = String::from_utf8_lossy(&out.stdout).into_owned();
+    let json = text
+        .split_once("\n\n{")
+        .map(|(_, json)| format!("{{{json}"))
+        .unwrap_or_default();
+    let settings: serde_json::Value = serde_json::from_str(&json).unwrap();
+    let server = &settings["mcpServers"]["ascribe"];
+    assert_eq!(server["command"], "bash");
+    assert_eq!(
+        server["args"][1],
+        "exec \"$(git rev-parse --show-toplevel)/docs/node_modules/.bin/ascribe\" mcp"
+    );
+    let steps = read(&root.join(SETUP_STEPS));
+    assert!(steps.contains("          npm ci\n"), "{steps}");
+    assert!(
+        steps.contains("        working-directory: docs\n"),
+        "{steps}"
+    );
+    sync(root, "docs", &["--cloud", "--agent"]);
+    let agent = read(&root.join(".github/agents/ascribe-docs.md"));
+    assert!(
+        agent.contains("    command: \"bash\"\n    args: [\"-c\", \"exec \\\"$(git rev-parse --show-toplevel)/docs/node_modules/.bin/ascribe\\\" mcp\"]\n"),
+        "{agent}"
+    );
+}
+
+#[test]
+fn each_yarn_is_installed_its_own_way() {
+    const BERRY: &str = "__metadata:\n  version: 8\n";
+    let case = |lock: &str, yarnrc: Option<&str>, spec: &str| {
+        let repo = repository("quill");
+        let root = repo.path();
+        write(
+            &root.join("package.json"),
+            &format!("{{\"devDependencies\": {{\"@ascribed/cli\": \"{spec}\"}}}}\n"),
+        );
+        write(&root.join("yarn.lock"), lock);
+        if let Some(yarnrc) = yarnrc {
+            write(&root.join(".yarnrc.yml"), yarnrc);
+        }
+        let out = ascribe(root, &["agents", "sync", "--cloud"]);
+        let steps = fs::read_to_string(root.join(SETUP_STEPS)).unwrap_or_default();
+        (out, steps, repo)
+    };
+
+    let (_, steps, _) = case("# yarn lockfile v1\n", None, "1.0.0");
+    assert!(
+        steps.contains("          corepack enable && yarn install --frozen-lockfile\n          echo \"$GITHUB_WORKSPACE/node_modules/.bin\""),
+        "{steps}"
+    );
+    let (_, steps, _) = case(BERRY, Some("nodeLinker: node-modules\n"), "1.0.0");
+    assert!(
+        steps.contains("          corepack enable && yarn install --immutable\n"),
+        "{steps}"
+    );
+    // Plug'n'Play writes no node_modules/.bin: the pinned version is
+    // installed globally instead, and the MCP server runs from the path.
+    let (out, steps, _) = case(BERRY, None, "^1.2.0");
+    assert!(
+        steps.contains("run: npm install --global '@ascribed/cli@^1.2.0'\n"),
+        "{steps}"
+    );
+    assert!(!steps.contains("yarn install"), "{steps}");
+    assert!(
+        stdout(&out).contains("\"command\": \"ascribe\""),
+        "{}",
+        stdout(&out)
+    );
+    // A version npm can't install stops everything.
+    let (out, _, repo) = case(BERRY, Some("nodeLinker: pnp\n"), "workspace:*");
+    assert_eq!(out.status.code(), Some(2), "{}", stdout(&out));
+    assert!(
+        stderr(&out).contains("npm can't install `workspace:*`; pin a version in package.json, or set `nodeLinker: node-modules` in .yarnrc.yml"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(!repo.path().join("AGENTS.md").exists());
 }

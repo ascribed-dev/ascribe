@@ -5,7 +5,7 @@ target: github-copilot
 mcp-servers:
   ascribe:
     type: local
-    command: ascribe
+    command: "ascribe"
     args: ["mcp"]
     tools: ["ascribe_check", "ascribe_explain", "ascribe_model", "ascribe_outline", "ascribe_link", "ascribe_refs", "ascribe_render", "ascribe_format", "ascribe_changes"]
 ---

@@ -464,11 +464,11 @@ fn plan_cloud(
         files.push(Planned {
             path: agent,
             old,
-            new: copilot::agent_md(),
+            new: copilot::agent_md(&install),
         });
         return Ok(None);
     }
-    Ok(options.cloud.then(copilot::mcp_settings))
+    Ok(options.cloud.then(|| copilot::mcp_settings(&install)))
 }
 
 /// How the cloud agent's setup installs `ascribe`: the dependencies of the
@@ -484,7 +484,7 @@ fn install_of(here: &Path, root: &Path) -> Result<copilot::Install, SyncError> {
     };
     for dir in here.ancestors() {
         if let Some(text) = read(&dir.join("package.json"))?
-            && copilot::pins_ascribe(&text)
+            && let Some(spec) = copilot::pinned_spec(&text)
         {
             let package = from_root(dir);
             let bin = if package.is_empty() {
@@ -492,29 +492,32 @@ fn install_of(here: &Path, root: &Path) -> Result<copilot::Install, SyncError> {
             } else {
                 format!("{package}/node_modules/.bin")
             };
+            let pinned = |install: &Path, command| copilot::Install::Pinned {
+                package: package.clone(),
+                install: from_root(install),
+                command,
+                bin: bin.clone(),
+            };
             for lock_dir in dir.ancestors() {
                 for (file, command) in copilot::LOCKFILES {
                     // Outside FileSystem: the repository's lockfiles, which
                     // aren't the project's.
                     if lock_dir.join(file).is_file() {
-                        return Ok(copilot::Install::Pinned {
-                            package,
-                            install: from_root(lock_dir),
-                            command,
-                            bin,
-                        });
+                        return Ok(pinned(lock_dir, command));
                     }
+                }
+                if let Some(lock) = read(&lock_dir.join(copilot::YARN_LOCK))? {
+                    let yarnrc = read(&lock_dir.join(copilot::YARNRC))?;
+                    return match copilot::yarn_command(&lock, yarnrc.as_deref()) {
+                        Some(command) => Ok(pinned(lock_dir, command)),
+                        None => plug_n_play(&spec, root),
+                    };
                 }
                 if lock_dir == root {
                     break;
                 }
             }
-            return Ok(copilot::Install::Pinned {
-                install: package.clone(),
-                package,
-                command: copilot::NO_LOCKFILE,
-                bin,
-            });
+            return Ok(pinned(dir, copilot::NO_LOCKFILE));
         }
         if dir == root {
             break;
@@ -522,6 +525,26 @@ fn install_of(here: &Path, root: &Path) -> Result<copilot::Install, SyncError> {
     }
     Ok(copilot::Install::Global {
         version: env!("CARGO_PKG_VERSION").to_owned(),
+    })
+}
+
+/// How a project installs the `@ascribed/cli` it pins at `spec` when Yarn
+/// uses Plug'n'Play, which writes no `node_modules/.bin`: that version,
+/// globally, or an error when npm can't install it.
+fn plug_n_play(spec: &str, root: &Path) -> Result<copilot::Install, SyncError> {
+    if copilot::installs_globally(spec) {
+        return Ok(copilot::Install::Global {
+            version: spec.to_owned(),
+        });
+    }
+    Err(SyncError::Settings {
+        path: under(root, copilot::SETUP_STEPS).display().to_string(),
+        why: format!(
+            "Yarn's Plug'n'Play leaves no node_modules/.bin, so the steps would install \
+             @ascribed/cli globally, and npm can't install `{spec}`; pin a version in \
+             package.json, or set `nodeLinker: node-modules` in {}",
+            copilot::YARNRC
+        ),
     })
 }
 

@@ -27,7 +27,7 @@ jobs:
           node-version: 24
       - name: Install Ascribe
         shell: bash
-        run: npm install --global @ascribed/cli@VERSION
+        run: npm install --global '@ascribed/cli@VERSION'
       - name: Show Ascribe's version
         shell: bash
         run: ascribe --version
