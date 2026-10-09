@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import type { RunRecord } from "../../../src/actions/run.js";
 import type { Scripted } from "../../../src/actions/steps.js";
 import type { AscribeApi } from "../../../src/extension.js";
-import { activated, uriOf, waitFor } from "./helpers.js";
+import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
 
 // The editor's actions, run through their commands with scripted answers to
 // their wizards, on a copy of examples/quill against the real `ascribe lsp`.
@@ -52,6 +52,21 @@ describe("the editor's actions", () => {
   }
 
   const lines = (editor: vscode.TextEditor): string[] => editor.document.getText().split(/\r?\n/);
+
+  /** Opens the actions bar and gives the rows it lists, once they're in. */
+  async function openBar(): Promise<string[]> {
+    const before = api.actions.bars.length;
+    await vscode.commands.executeCommand("ascribe.actions");
+    const record = api.actions.bars[before];
+    assert.ok(record, "the bar didn't open");
+    return record.rows;
+  }
+
+  /** Chooses a row of the open bar, as Enter on it would. */
+  async function choose(label: string): Promise<void> {
+    assert.ok(api.actions.selectInBar(label), `the bar has no row ${label}`);
+    await vscode.commands.executeCommand("workbench.action.acceptSelectedQuickOpenItem");
+  }
 
   it("is in a project in a page of it", async () => {
     await open("keys.md", 8, 0);
@@ -137,6 +152,132 @@ describe("the editor's actions", () => {
       messages: ["Put the cursor in a note to take its text out of it."],
     });
     assert.equal(editor.document.isDirty, false);
+  });
+
+  describe("the actions bar", () => {
+    afterEach(async () => {
+      await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+    });
+
+    it("lists the actions for a note, by group", async () => {
+      // In the tip's paragraph, "You can run {product} in the browser …".
+      await open("install-agent.md", 10, 4);
+      assert.deepEqual(await openBar(), [
+        "-- Write",
+        "Insert a phrase",
+        "-- Structure",
+        "Wrap in a note",
+        "Change the note's kind",
+        "Remove the note, keeping its text",
+        "Turn the note into collapsible details",
+        "Wrap in collapsible details",
+        "Mark where it's available",
+        "Make the page one variant",
+        "Set where the page is available",
+        "-- Link",
+        "Insert a link",
+      ]);
+    });
+
+    it("lists the actions for a heading", async () => {
+      // In "## Rotate keys", which has an @id.
+      await open("keys.md", 10, 5);
+      assert.deepEqual(await openBar(), [
+        "-- Write",
+        "Insert a phrase",
+        "-- Structure",
+        "Mark where it's available",
+        "Make the page one variant",
+        "Set where the page is available",
+        "-- Link",
+        "Copy a link to this section",
+        "Insert a link",
+      ]);
+    });
+
+    it("lists the actions for a selection of prose", async () => {
+      // "the playground" in "Open the playground at play.quill.dev …".
+      await open("quickstart.md", 8, 5, 8, 19);
+      assert.deepEqual(await openBar(), [
+        "-- Structure",
+        "Wrap in a note",
+        "Wrap in collapsible details",
+        "Mark where it's available",
+        "Make the page one variant",
+        "Set where the page is available",
+        "-- Link",
+        "Link the selected text",
+      ]);
+    });
+
+    it("lists the inserts for a blank line", async () => {
+      // The blank line between "Sign in to {cloud} …" and "## Rotate keys".
+      await open("keys.md", 9, 0);
+      assert.deepEqual(await openBar(), [
+        "-- Write",
+        "Insert a note",
+        "Insert steps",
+        "Insert collapsible details",
+        "-- Structure",
+        "Insert content that varies",
+        "Make the page one variant",
+        "Set where the page is available",
+        "-- Media",
+        "Insert an image",
+        "Include a fragment",
+        "Insert a code snippet",
+        "Insert a widget",
+      ]);
+    });
+
+    it("lists the fixes for a problem at the cursor first", async () => {
+      const editor = await open("keys.md", 8, 0);
+      const end = editor.document.lineAt(editor.document.lineCount - 1).range.end;
+      assert.ok(await editor.edit((e) => e.insert(end, "\nA {flush} phrase.\n")));
+      const [problem] = await diagnosticsOf(editor.document.uri, (all) =>
+        all.some((d) => d.message.includes("flush")),
+      );
+      assert.ok(problem);
+      const inside = problem.range.start.translate(0, 2);
+      editor.selection = new vscode.Selection(inside, inside);
+      const rows = await openBar();
+      assert.equal(rows[0], "-- Fix");
+      assert.deepEqual(rows.slice(1, rows.indexOf("-- Structure")).sort(), [
+        "Declare phrase in ascribe.toml",
+        "Escape this phrase as literal text",
+      ]);
+      assert.equal(rows.filter((row) => row === "Mark where it's available").length, 1);
+    });
+
+    it("runs an action without a wizard", async () => {
+      const editor = await open("install-agent.md", 10, 4);
+      await openBar();
+      const before = api.actions.runs.length;
+      await choose("Remove the note, keeping its text");
+      const record = await waitFor("the action", () => api.actions.runs[before]);
+      assert.equal(record.done, true, record.messages.join());
+      const text = editor.document.getText();
+      assert.ok(!text.includes("@note {type=tip}"), text);
+      assert.ok(text.includes("\nYou can run {product} in the browser"), text);
+    });
+
+    it("asks an action's questions in the same quick input", async () => {
+      const editor = await open("quickstart.md", 8, 4);
+      await openBar();
+      const before = api.actions.runs.length;
+      const bar = api.actions.bars.at(-1);
+      await choose("Wrap in a note");
+      // The wizard's first step took the bar's place before the bar closed.
+      await waitFor("the wizard's first step", () => bar?.handedOver);
+      await vscode.commands.executeCommand("workbench.action.acceptSelectedQuickOpenItem");
+      const record = await waitFor("the action", () => api.actions.runs[before]);
+      assert.equal(record.done, true, record.messages.join());
+      assert.match(lines(editor)[8] ?? "", /^@note( \{type=[a-z-]+\})?$/);
+      assert.equal(
+        lines(editor)[9],
+        "Open the playground at play.quill.dev and paste a page of your docs.",
+      );
+    });
   });
 
   it("offers its rewrites in the lightbulb once the cursor's context is known", async () => {

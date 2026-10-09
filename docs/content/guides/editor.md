@@ -79,8 +79,9 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 
 Actions write Ascribe for you: wrap a paragraph in a note, turn a numbered list into steps, link the selected text to a page, insert content that varies by a dimension, mark where a section is available. Each one asks what it needs in short steps, choosing from what the project has (its note types, pages and headings, phrases, dimensions and their values, features, images, fragments, sources, and widgets), so you never type a path, a key, or attribute syntax. What it writes is in canonical form, and one **Undo** takes it back.
 
-Every action is in three places:
+Every action is in four places:
 
+- The **actions bar** (`Ctrl+K A` / `Cmd+K A`), which lists only what applies where the cursor is. See [The actions bar](#the-actions-bar).
 - The **Command Palette**, as `Ascribe: <action>`, in a Markdown file of a project. Run where it doesn't apply, it says where it does: "Put the cursor in a note to change its kind."
 - The editor's context menu, under **Ascribe**, which lists the actions that apply where the cursor is.
 - The lightbulb (`Ctrl+.` / `Cmd+.`), for the actions that rewrite what's at the cursor, beside the quick fixes.
@@ -88,6 +89,14 @@ Every action is in three places:
 **Copy a link to this section** copies the heading's destination from the content root, such as `/guides/install.md#install-cli`, which works pasted into any page of the project.
 
 @include: ../_generated/editor-actions.md
+
+#### The actions bar
+
+Press `Ctrl+K A` (`Cmd+K A` on macOS), or run **Ascribe: Actions for the Cursor**, in a page of a project to see what you can do where the cursor is. The bar lists the fixes for problems at the cursor first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, and **Media**. Each shows what it does and the syntax it writes. Type to filter, and choose one: an action that needs something asks for it in the same box. When nothing applies, the bar says where to put the cursor.
+
+The bar holds only what applies to the cursor or selection, so it never lists every action as the Command Palette does, and it has no searches or commands of its own. The context menu's **Ascribe** submenu lists the same actions without the fixes, and the lightbulb (`Ctrl+.` / `Cmd+.`) lists the fixes and the rewrites.
+
+To use another key, open **Preferences: Open Keyboard Shortcuts**, search for `ascribe.actions`, and change its keybinding. The default is on only in a Markdown file of a project, with the editor focused.
 
 ### Formatting
 

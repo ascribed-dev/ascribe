@@ -44,6 +44,8 @@ const commands: Record<string, string> = {
     "Lists the pages the change touches in the preview's build; choosing one opens it and its preview.",
   "ascribe.refreshComments":
     "Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../guides/editor.md#comments-in-the-preview).",
+  "ascribe.actions":
+    "Opens the [actions bar](../guides/editor.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection.",
   ...Object.fromEntries(
     ACTIONS.map((action) => [
       commandId(action),
@@ -63,6 +65,7 @@ const available: Record<string, string> = {
   "ascribe.preview.scrollPreviewWithEditor": "next",
   "ascribe.preview.scrollEditorWithPreview": "next",
   "ascribe.review.sourceComments": "next",
+  "ascribe.actions": "next",
   ...Object.fromEntries(ACTIONS.map((action) => [commandId(action), "next"])),
 };
 

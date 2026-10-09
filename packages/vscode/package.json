@@ -119,6 +119,11 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.actions",
+        "title": "Actions for the Cursor",
+        "category": "Ascribe"
+      },
+      {
         "command": "ascribe.action.wrapNote",
         "title": "Wrap in a note",
         "category": "Ascribe"
@@ -527,6 +532,10 @@
           "when": "false"
         },
         {
+          "command": "ascribe.actions",
+          "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
           "command": "ascribe.action.wrapNote",
           "when": "ascribe.inProject && editorLangId == markdown"
         },
@@ -707,6 +716,10 @@
       ],
       "ascribe.actions": [
         {
+          "command": "ascribe.actions",
+          "group": "0_bar@1"
+        },
+        {
           "command": "ascribe.action.wrapNote",
           "when": "ascribe.selection.blocks || ascribe.selection.proseOrNone && ascribe.at.paragraph",
           "group": "3_structure@1"
@@ -858,6 +871,14 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "ascribe.actions",
+        "key": "ctrl+k a",
+        "mac": "cmd+k a",
+        "when": "editorTextFocus && ascribe.inProject && editorLangId == markdown"
+      }
+    ],
     "submenus": [
       {
         "id": "ascribe.actions",

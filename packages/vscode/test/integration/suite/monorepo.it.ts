@@ -361,6 +361,43 @@ describe("with several projects, one nested in another", () => {
         await vscode.commands.executeCommand("workbench.action.files.revert");
       }
     });
+
+    it("open the bar in a page of a project, and nothing in a Markdown file outside every project", async () => {
+      const before = api.actions.bars.length;
+      await open(codeReadme);
+      await vscode.commands.executeCommand("ascribe.actions");
+      assert.equal(api.actions.bars.length, before);
+      await open(nestedPage);
+      await vscode.commands.executeCommand("ascribe.actions");
+      assert.equal(api.actions.bars.length, before + 1);
+      await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+    });
+
+    it("offer the nested project's note types and dimensions in its page, not the handbook's", async () => {
+      const editor = await open(nestedPage);
+      // The blank line between "@id: edition" and the note.
+      editor.selection = new vscode.Selection(7, 0, 7, 0);
+      /** The values the first step of the bar's action offers; the wizard is then cancelled. */
+      async function offered(label: string): Promise<string[]> {
+        let values: string[] = [];
+        api.actions.answerNext([
+          (step) => {
+            values = step.kind === "text" ? [] : step.choices.map((choice) => choice.value);
+            return Promise.resolve(null);
+          },
+        ]);
+        const before = api.actions.runs.length;
+        await vscode.commands.executeCommand("ascribe.actions");
+        assert.ok(api.actions.selectInBar(label), `the bar has no row ${label}`);
+        await vscode.commands.executeCommand("workbench.action.acceptSelectedQuickOpenItem");
+        await waitFor(label, () => api.actions.runs[before]);
+        return values;
+      }
+      const notes = await offered("Insert a note");
+      assert.ok(notes.includes("edition"), notes.join());
+      assert.ok(!notes.includes("policy"), notes.join());
+      assert.deepEqual(await offered("Make the page one variant"), ["tier"]);
+    });
   });
 
   describe("projects that come and go", () => {
