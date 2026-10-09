@@ -37,6 +37,12 @@ aliases = ["API keys"]
 definition = "A secret."
 link = "/reference.md#api-key"
 
+[glossary.terms.agent]
+term = "agent"
+definition = "The process that runs builds."
+link = "/reference.md#agent"
+match = "marked"
+
 [widgets.quill-lab]
 forms = ["line"]
 primary = "none"
@@ -226,6 +232,38 @@ fn a_glossary_term_is_used_where_its_text_is_in_prose() {
             ("index.md".into(), "API key".into(), UseKind::Term),
             ("index.md".into(), "API keys".into(), UseKind::Term),
         ]
+    );
+}
+
+#[test]
+fn a_marked_glossary_term_has_no_uses_in_prose() {
+    // A marked term isn't linked automatically: "agent" in prose is just a
+    // word, and an author's link to the term's page is a use of that page.
+    let p = project(&[
+        (
+            "docs/index.md",
+            "# Home\n\nThe agent runs. See [the agent](reference.md#agent).\n",
+        ),
+        (
+            "docs/reference.md",
+            "# Reference\n\n## Agent\n\nIt runs builds.\n",
+        ),
+    ]);
+    assert_eq!(uses(&p, &Usable::Term("agent".into())), []);
+    assert_eq!(p.use_counts().get(&Usable::Term("agent".into())), None);
+    assert_eq!(
+        uses(
+            &p,
+            &Usable::Heading {
+                file: path("reference.md"),
+                id: "agent".into()
+            }
+        ),
+        [(
+            "index.md".into(),
+            "[the agent](reference.md#agent)".into(),
+            UseKind::Link
+        )]
     );
 }
 

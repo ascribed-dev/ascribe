@@ -535,7 +535,11 @@ export interface InventoryEntry {
   key: string;
   /** Its label, name, or term, where it has one besides its key. */
   label: string | null;
-  /** How many places use it; `null` for a build, which pages don't name. */
+  /**
+   * How many places use it; `null` for a build, which pages don't name,
+   * and for a glossary term with `match = "marked"`, whose uses are links
+   * to its page.
+   */
   uses: number | null;
   /**
    * Where `ascribe.toml` declares it; `null` for a built-in note type,

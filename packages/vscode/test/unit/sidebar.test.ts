@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { InventoryResult } from "../../src/shapes.js";
 import {
-  isHeadingLine,
+  headingAt,
+  headingTitle,
   modelChildren,
   modelLook,
   modelRoots,
@@ -169,12 +170,27 @@ describe("the Used by view", () => {
     expect(usedByRoots([])).toEqual([]);
   });
 
-  it("asks about a heading only on a heading's line", () => {
-    expect(isHeadingLine("## Install")).toBe(true);
-    expect(isHeadingLine("   # Top")).toBe(true);
-    expect(isHeadingLine("#")).toBe(true);
-    expect(isHeadingLine("    # code")).toBe(false);
-    expect(isHeadingLine("#hashtag")).toBe(false);
-    expect(isHeadingLine("Text")).toBe(false);
+  it("asks about the heading the server says the cursor is in", () => {
+    const heading = {
+      kind: "heading" as const,
+      range: range(4),
+      level: 2,
+      id: "install",
+      explicitId: false,
+    };
+    const section = { kind: "section" as const, range: range(4), headingId: "install" };
+    expect(headingAt({ at: [heading, section] })).toBe(heading);
+    // A `# comment` in a code block is in a code block, not a heading.
+    const code = { kind: "codeBlock" as const, range: range(9), info: "sh", fenced: true };
+    expect(headingAt({ at: [code, section] })).toBe(undefined);
+    expect(headingAt(null)).toBe(undefined);
+  });
+
+  it("names a heading by its text", () => {
+    expect(headingTitle("## Install")).toBe("Install");
+    expect(headingTitle("   # Top #")).toBe("Top");
+    expect(headingTitle("## Rotating {product} keys")).toBe("Rotating {product} keys");
+    expect(headingTitle("Setext title\n============")).toBe("Setext title");
+    expect(headingTitle("## C# tips")).toBe("C# tips");
   });
 });

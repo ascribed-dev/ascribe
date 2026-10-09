@@ -305,6 +305,24 @@ describe("with several projects, one nested in another", () => {
       await statusText("the nested project", (text) =>
         text.startsWith("$(book) handbook/pages/nested"),
       );
+      // The sidebar lists the nested project's own pages and content model.
+      const pages = await waitFor("the nested project's pages", async () => {
+        await api.ui.sidebar.whenSettled();
+        return samePath(api.ui.sidebar.project() ?? "", folder.nested())
+          ? api.ui.sidebar.items("pages")
+          : undefined;
+      });
+      assert.deepEqual(
+        pages.map((group) => [group.label, group.children.map((page) => page.description)]),
+        [["page", ["index.md"]]],
+      );
+      const entries = (label: string) =>
+        api.ui.sidebar
+          .items("model")
+          .find((kind) => kind.label === label)
+          ?.children.map((entry) => entry.label);
+      assert.deepEqual(entries("Phrases"), ["product", "edition"]);
+      assert.deepEqual(entries("Dimensions"), ["tier"]);
       // `{edition}` is declared only in the nested project, so the page has no
       // ASC044, which the handbook's model would give it, and its ASC001 is
       // reported once. Once the handbook's server has answered an edit, it has

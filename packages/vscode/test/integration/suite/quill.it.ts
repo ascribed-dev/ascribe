@@ -203,6 +203,8 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
   });
 
   it("follows the active page and narrows to the heading at the cursor", async () => {
+    // Used by asks only while it's showing.
+    await vscode.commands.executeCommand("ascribe.usedBy.focus");
     await openAt(keys);
     assert.deepEqual(
       await waitFor("Used by for keys.md", async () => {

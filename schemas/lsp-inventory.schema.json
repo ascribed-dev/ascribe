@@ -30,7 +30,7 @@
           ]
         },
         "uses": {
-          "description": "How many places use it; `null` for a build, which pages don't name.",
+          "description": "How many places use it; `null` for a build, which pages don't name,\nand for a glossary term with `match = \"marked\"`, whose uses are links\nto its page.",
           "format": "uint",
           "minimum": 0,
           "type": [

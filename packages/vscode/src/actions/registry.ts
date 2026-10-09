@@ -206,7 +206,8 @@ export async function copyLinkToSection(
     );
     return;
   }
-  const link = heading.rootLink;
+  // A binary from before `rootLink` answers without it: its page-relative link is the next best.
+  const link = (heading.rootLink as string | undefined) ?? heading.link;
   await effects.copy(link);
   effects.say(`Copied ${link}`);
 }

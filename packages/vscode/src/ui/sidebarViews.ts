@@ -2,9 +2,10 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
 import type { ProjectRegistry } from "../registry.js";
-import type { InventoryResult } from "../shapes.js";
+import type { ContextResult, InventoryResult } from "../shapes.js";
 import {
-  isHeadingLine,
+  headingAt,
+  headingTitle,
   modelChildren,
   modelLook,
   modelRoots,
@@ -120,10 +121,18 @@ export class SidebarViews implements vscode.Disposable {
   /** The server of the active file's project, running or not. */
   private server: ProjectServer | undefined;
   private inventory: InventoryResult | undefined;
+  /** The server the inventory came from. */
+  private inventoryFrom: ProjectServer | undefined;
   private inventoryAsked = 0;
   private places: Place[] = [];
-  private usedByMessage: string | undefined;
+  /** Counts the cursor's stops, so an older stop's answer is dropped. */
+  private usedByLooked = 0;
+  /** Counts the questions asked, so an older question's answer is dropped. */
   private usedByAsked = 0;
+  /** What Used by last asked about: a page, and a heading's start or none. */
+  private usedByQuestion: string | undefined;
+  /** Whether Used by must ask again even about the same thing: a file was saved. */
+  private usedByStale = false;
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly pending = new Set<Promise<void>>();
   private readonly disposables: vscode.Disposable[] = [];
@@ -176,7 +185,7 @@ export class SidebarViews implements vscode.Disposable {
     return {
       items: (view) => tree(view).items(),
       message: (view) => tree(view).view?.message || undefined,
-      project: () => (this.inventory ? this.server?.project.folder : undefined),
+      project: () => this.inventoryFrom?.project.folder,
       whenSettled: async () => {
         while (this.timers.size > 0 || this.pending.size > 0) {
           await Promise.all(this.pending);
@@ -190,6 +199,12 @@ export class SidebarViews implements vscode.Disposable {
     this.usedBy.view = vscode.window.createTreeView("ascribe.usedBy", {
       treeDataProvider: this.usedBy,
     });
+    // A hidden or collapsed Used by asks nothing, and catches up when shown.
+    this.disposables.push(
+      this.usedBy.view.onDidChangeVisibility(({ visible }) => {
+        if (visible) this.soon("usedBy");
+      }),
+    );
     this.pages.view = vscode.window.createTreeView("ascribe.pages", {
       treeDataProvider: this.pages,
       showCollapseAll: true,
@@ -208,6 +223,7 @@ export class SidebarViews implements vscode.Disposable {
       }),
       vscode.workspace.onDidSaveTextDocument((document) => {
         if (this.server && this.projects.serverFor(document.uri) === this.server) {
+          this.usedByStale = true;
           this.soon("inventory");
           this.soon("usedBy");
         }
@@ -240,8 +256,10 @@ export class SidebarViews implements vscode.Disposable {
     if (force) {
       if (this.server?.state !== "running" || !this.projects.servers.includes(this.server)) {
         this.inventory = undefined;
+        this.inventoryFrom = undefined;
         this.inventoryAsked++;
       }
+      this.usedByStale = true;
       this.soon("inventory");
     }
     this.soon("usedBy");
@@ -279,6 +297,7 @@ export class SidebarViews implements vscode.Disposable {
     }
     if (asked !== this.inventoryAsked) return;
     this.inventory = result;
+    this.inventoryFrom = result ? server : undefined;
     const name = server && result ? this.projects.name(server.project) : undefined;
     for (const tree of [this.pages, this.model]) {
       if (tree.view) tree.view.description = name ?? "";
@@ -296,47 +315,79 @@ export class SidebarViews implements vscode.Disposable {
   }
 
   private async askUsedBy(): Promise<void> {
-    const asked = ++this.usedByAsked;
+    if (this.usedBy.view && !this.usedBy.view.visible) return;
+    const looked = ++this.usedByLooked;
     const editor = vscode.window.activeTextEditor;
     const document = editor?.document;
     const server = document && this.projects.serverFor(document.uri);
-    let places: Place[] = [];
-    let message: string | undefined;
     if (!editor || !document || document.languageId !== "markdown" || !server) {
-      message = "Open a page to see what links to it.";
-    } else if (server.state !== "running") {
-      message = "Waiting for the project's language server.";
-    } else {
-      const line = document.lineAt(editor.selection.active.line).text;
-      const heading = isHeadingLine(line);
-      const position = heading ? editor.selection.active : new vscode.Position(0, 0);
-      let answer: unknown;
-      try {
-        answer = await server.request("textDocument/references", {
-          textDocument: { uri: document.uri.toString() },
-          position: { line: position.line, character: position.character },
-          context: { includeDeclaration: false },
-        });
-      } catch {
-        answer = null;
-      }
-      if (asked !== this.usedByAsked) return;
-      places = await this.placesOf(server, answer);
-      if (asked !== this.usedByAsked) return;
-      const subject = heading
-        ? `“${line.replace(/^ {0,3}#{1,6}\s*/, "").trim()}”`
-        : path.basename(document.uri.fsPath);
-      message =
-        places.length === 0
-          ? `Nothing links to or includes ${subject}.`
-          : heading
-            ? `What links to ${subject}`
-            : undefined;
+      this.showUsedBy(undefined, [], "Open a page to see what links to it.");
+      return;
+    }
+    if (server.state !== "running") {
+      this.showUsedBy(undefined, [], "Waiting for the project's language server.");
+      return;
+    }
+    const uri = document.uri.toString();
+    const { line, character } = editor.selection.active;
+    let context: ContextResult | null = null;
+    try {
+      context = (await server.request("ascribe/context", {
+        textDocument: { uri },
+        range: { start: { line, character }, end: { line, character } },
+      })) as ContextResult | null;
+    } catch {
+      context = null;
+    }
+    if (looked !== this.usedByLooked) return;
+    // The server parses the page, so a `#` line in a code block isn't a
+    // heading and a setext heading is. Asking at the heading's start, not the
+    // cursor, asks about the heading and not a phrase written in it.
+    const heading = headingAt(context);
+    let position = heading ? heading.range.start : { line: 0, character: 0 };
+    // At the very start of the file, the server answers for the page.
+    if (heading && position.line === 0 && position.character === 0) {
+      position = { line: 0, character: 1 };
+    }
+    const question = `${uri}#${heading ? `${position.line}:${position.character}` : ""}`;
+    // Moving within the same heading, or the same page, asks nothing again.
+    if (question === this.usedByQuestion && !this.usedByStale) return;
+    const asked = ++this.usedByAsked;
+    this.usedByQuestion = question;
+    this.usedByStale = false;
+    let answer: unknown;
+    try {
+      answer = await server.request("textDocument/references", {
+        textDocument: { uri },
+        position,
+        context: { includeDeclaration: false },
+      });
+    } catch {
+      answer = null;
     }
     if (asked !== this.usedByAsked) return;
+    const places = await this.placesOf(server, answer);
+    if (asked !== this.usedByAsked) return;
+    const subject = heading
+      ? `“${headingTitle(document.getText(toRange(heading.range)))}”`
+      : path.basename(document.uri.fsPath);
+    this.showUsedBy(
+      question,
+      places,
+      places.length === 0
+        ? `Nothing links to or includes ${subject}.`
+        : heading
+          ? `What links to ${subject}`
+          : undefined,
+    );
+  }
+
+  /** Shows an answer in Used by; `question` is what it answers, if anything. */
+  private showUsedBy(question: string | undefined, places: Place[], message: string | undefined) {
+    if (question === undefined) this.usedByAsked++;
+    this.usedByQuestion = question;
     this.places = places;
-    this.usedByMessage = message;
-    if (this.usedBy.view) this.usedBy.view.message = this.usedByMessage ?? "";
+    if (this.usedBy.view) this.usedBy.view.message = message ?? "";
     this.usedBy.changed.fire();
   }
 
@@ -372,6 +423,10 @@ async function linesOf(uri: vscode.Uri): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+function toRange({ start, end }: Place["range"]): vscode.Range {
+  return new vscode.Range(start.line, start.character, end.line, end.character);
 }
 
 /** The URI of a content path under the content root. */

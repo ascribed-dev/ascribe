@@ -7,7 +7,7 @@
 use std::collections::{BTreeSet, HashMap};
 
 use ascribe_core::{LineIndex, RelPath};
-use ascribe_model::TypeMatch;
+use ascribe_model::{GlossaryMatch, TypeMatch};
 use ascribe_resolve::Usable;
 use lsp_types::{Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
@@ -93,7 +93,9 @@ pub struct InventoryEntry {
     pub key: String,
     /// Its label, name, or term, where it has one besides its key.
     pub label: Option<String>,
-    /// How many places use it; `null` for a build, which pages don't name.
+    /// How many places use it; `null` for a build, which pages don't name,
+    /// and for a glossary term with `match = "marked"`, whose uses are links
+    /// to its page.
     pub uses: Option<usize>,
     /// Where `ascribe.toml` declares it; `null` for a built-in note type,
     /// and for an entry that can't be found there.
@@ -217,7 +219,9 @@ fn model_entries(ctx: &Ctx, counts: &HashMap<Usable, usize>) -> Vec<InventoryEnt
             ModelKind::Term,
             &t.id,
             Some(&t.term),
-            Some(Usable::Term(t.id.clone())),
+            // A marked term's occurrences are only words until an author
+            // links one, and that link is a use of the page it names.
+            (t.match_mode != GlossaryMatch::Marked).then(|| Usable::Term(t.id.clone())),
             Entry::Term(&t.id),
         ));
     }

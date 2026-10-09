@@ -15,7 +15,9 @@
 //!   `@available`, a table row's `available`, or a page's frontmatter;
 //! - a **glossary term** by each occurrence of its text or an alias in prose,
 //!   matched as the build matches it (whole words, the term's case rule),
-//!   whatever its `match` setting;
+//!   whether it links them first or every time. A term with
+//!   `match = "marked"` has none: its occurrences are ordinary words until
+//!   an author links one, and that link is a use of the page it names;
 //! - a **dimension** by each `@variant` attribute and frontmatter `variant`
 //!   key that names it, and each availability spec entry that names it or
 //!   one of its values;
@@ -26,10 +28,10 @@ use std::collections::HashMap;
 
 use ascribe_core::schema::{Attributes, Builtin, DefaultValue};
 use ascribe_core::{RelPath, Span};
-use ascribe_model::ContentModel;
-use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind, PrimaryValue};
+use ascribe_model::{ContentModel, GlossaryMatch};
+use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind};
 
-use crate::build::Terms;
+use crate::build::{Terms, prose_lists};
 use crate::index::walk::walk_blocks;
 use crate::index::{FileIndex, RefKind};
 use crate::project::{Project, Resolution};
@@ -177,8 +179,15 @@ fn visit(
 ) {
     let wants = Wants::of(target);
     let model = project.model();
-    let terms = (wants.terms && !model.glossary.terms.is_empty())
-        .then(|| Terms::new(&model.glossary.terms));
+    let terms = (wants.terms && !model.glossary.terms.is_empty()).then(|| {
+        Terms::new(
+            model
+                .glossary
+                .terms
+                .iter()
+                .filter(|term| term.match_mode != GlossaryMatch::Marked),
+        )
+    });
     let default_note = default_note();
     let files: Box<dyn Iterator<Item = &FileIndex>> = match only {
         Some(path) => Box::new(project.file(path).into_iter()),
@@ -327,20 +336,7 @@ fn frontmatter_key(file: &FileIndex, key: &str) -> Option<Span> {
 /// images, and code, as the build links them.
 fn term_uses(terms: &Terms, file: &FileIndex, f: &mut dyn FnMut(&str, Span)) {
     walk_blocks(&file.document.blocks, &mut |block: &Block| {
-        let lists: Vec<&[Inline]> = match &block.kind {
-            BlockKind::Paragraph(p) => vec![&p.inlines],
-            BlockKind::Table(t) => t
-                .rows
-                .iter()
-                .flat_map(|r| r.cells.iter().map(|c| c.inlines.as_slice()))
-                .collect(),
-            BlockKind::Directive(line) => match &line.primary {
-                Some(PrimaryValue::Text(t)) => vec![&t.inlines],
-                _ => Vec::new(),
-            },
-            _ => Vec::new(),
-        };
-        for list in lists {
+        for list in prose_lists(&block.kind) {
             prose_terms(terms, list, &file.source, f);
         }
     });

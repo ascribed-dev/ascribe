@@ -2,6 +2,8 @@
 // plain values so the unit tests can check it without VS Code.
 
 import type {
+  ContextNode,
+  ContextResult,
   InventoryEntry,
   InventoryFragment,
   InventoryPage,
@@ -56,7 +58,8 @@ export function pagesRoots(inventory: InventoryResult): PagesNode[] {
   if (inventory.fragments.length > 0) {
     nodes.push({ kind: "fragments", fragments: inventory.fragments });
   }
-  const orphans = inventory.pages.filter((p) => inventory.orphans.includes(p.path));
+  const orphaned = new Set(inventory.orphans);
+  const orphans = inventory.pages.filter((p) => orphaned.has(p.path));
   if (orphans.length > 0) nodes.push({ kind: "orphans", pages: orphans });
   return nodes;
 }
@@ -191,6 +194,9 @@ export function modelLook(node: ModelNode): ItemLook {
   const tooltip = [entry.key];
   if (entry.label !== null) tooltip.push(entry.label);
   if (uses !== undefined) tooltip.push(unused ? "Unused: nothing uses it" : `${uses} in pages`);
+  if (entry.uses === null && entry.kind === "term") {
+    tooltip.push("Marked: the links to its page are its uses");
+  }
   if (entry.declaration === null) {
     tooltip.push(entry.kind === "note" ? "Built in" : "Not found in ascribe.toml");
   }
@@ -210,7 +216,7 @@ export function modelLook(node: ModelNode): ItemLook {
 export interface Place {
   /** The file's URI. */
   uri: string;
-  /** The file's path as people read it (relative to the content root). */
+  /** The file's path relative to the project's folder. */
   path: string;
   /** Where, as the server's range. */
   range: { start: { line: number; character: number }; end: { line: number; character: number } };
@@ -303,9 +309,25 @@ export function usedByLook(node: UsedByNode): ItemLook {
   }
 }
 
-/** What the Used by view asks about: a heading's line asks about the heading, any other the file. */
-export function isHeadingLine(text: string): boolean {
-  return /^ {0,3}#{1,6}(?:\s|$)/.test(text);
+/** A heading, as `ascribe/context` reports one. */
+export type HeadingAt = Extract<ContextNode, { kind: "heading" }>;
+
+/**
+ * What the Used by view asks about: the heading the cursor is in, as the
+ * server parsed it, or the page when it's in none. A `#` line in a code
+ * block or the frontmatter isn't a heading.
+ */
+export function headingAt(context: Pick<ContextResult, "at"> | null): HeadingAt | undefined {
+  return context?.at.find((node): node is HeadingAt => node.kind === "heading");
+}
+
+/** A heading's text as the view names it: its first line, without `#` markers. */
+export function headingTitle(source: string): string {
+  const line = source.split(/\r?\n/)[0] ?? "";
+  return line
+    .replace(/^ {0,3}#{1,6}(?=\s|$)/, "")
+    .replace(/\s#+\s*$/, "")
+    .trim();
 }
 
 // Shared.
