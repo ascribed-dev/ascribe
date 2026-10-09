@@ -414,6 +414,20 @@ pub enum DropReason {
     Unavailable,
 }
 
+impl DropReason {
+    /// Why a build doesn't publish a page, as the end of a sentence.
+    pub fn explanation(&self) -> &'static str {
+        match self {
+            DropReason::Variant => {
+                "its variant frontmatter names a dimension the build selects, and none of the selected values"
+            }
+            DropReason::Unavailable => {
+                "its available frontmatter makes it unavailable for the build's target and version"
+            }
+        }
+    }
+}
+
 /// Content a build's modes take out of a page (SPEC §9.3): a block, a variant
 /// arm, a whole group, or a table row, where it's written.
 #[derive(Clone, Debug, PartialEq)]

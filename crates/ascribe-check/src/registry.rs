@@ -38,6 +38,26 @@ pub struct Entry {
     pub message: String,
     /// Alternative templates, by variant name.
     pub messages: HashMap<String, String>,
+    /// How to fix the problem, in general: the registry's `fix`.
+    pub fix: Option<String>,
+    /// A short wrong-and-right example: the registry's `example`.
+    pub example: Option<Example>,
+}
+
+/// A diagnostic's example: a page that has the problem, and the same page
+/// without it. Each is checked under the explain model
+/// (`tests/conformance/explain-model.toml`), with `model` laid over it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Example {
+    /// A page, `page.md`, that has the problem.
+    pub wrong: String,
+    /// The same page, fixed.
+    pub right: String,
+    /// Content model text laid over the explain model, for an example that
+    /// needs something it doesn't declare.
+    pub model: Option<String>,
+    /// Other files of the project, by content path, in path order.
+    pub files: Vec<(String, String)>,
 }
 
 impl Entry {
@@ -108,6 +128,25 @@ impl Registry {
                     .collect()
             })
             .unwrap_or_default();
+        let example = t.get("example").and_then(toml::Value::as_table).map(|e| {
+            let text = |k: &str| e.get(k).and_then(toml::Value::as_str).map(str::to_owned);
+            let mut files: Vec<(String, String)> = e
+                .get("files")
+                .and_then(toml::Value::as_table)
+                .map(|f| {
+                    f.iter()
+                        .filter_map(|(k, v)| Some((k.clone(), v.as_str()?.to_owned())))
+                        .collect()
+                })
+                .unwrap_or_default();
+            files.sort();
+            Example {
+                wrong: text("wrong").unwrap_or_default(),
+                right: text("right").unwrap_or_default(),
+                model: text("model"),
+                files,
+            }
+        });
         Some(Entry {
             code: text("code")?,
             slug: text("slug")?,
@@ -115,12 +154,22 @@ impl Registry {
             level,
             message: text("message")?,
             messages,
+            fix: text("fix"),
+            example,
         })
     }
 
     /// The entry for a slug.
     pub fn get(&self, slug: DiagnosticSlug) -> Option<&Entry> {
         self.entries.get(slug.as_str())
+    }
+
+    /// The entry with this slug, or this code (`ASC036`, in any case).
+    pub fn find(&self, code_or_slug: &str) -> Option<&Entry> {
+        self.entries.get(code_or_slug).or_else(|| {
+            self.entries()
+                .find(|e| e.code.eq_ignore_ascii_case(code_or_slug))
+        })
     }
 
     /// Every entry, in registry order.

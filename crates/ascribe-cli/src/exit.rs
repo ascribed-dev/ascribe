@@ -46,6 +46,7 @@ mod tests {
     use ascribe_emit::{EmitError, StoreError};
     use ascribe_fmt::FormatFilesError;
     use ascribe_lsp::ServeError;
+    use ascribe_query::QueryError;
     use ascribe_sources::SourcesError;
 
     use crate::commands::fmt::FmtError;
@@ -116,6 +117,11 @@ mod tests {
             "lsp_initialize_params",
             "initialize's parameters aren't understood",
         ),
+        ("unknown_diagnostic", "no diagnostic has that code or name"),
+        ("not_a_source", "a path isn't a page or fragment"),
+        ("not_a_page", "a fragment, where only a page will do"),
+        ("build_required", "several builds, and none was named"),
+        ("bad_target", "refs can't read the target"),
     ];
 
     fn path() -> PathBuf {
@@ -207,7 +213,20 @@ mod tests {
                 ServeError::Protocol(_) | ServeError::Params(_) => {}
             }
         }
-        let _ = (locate, load, format, emit, store, diff, sources, serve);
+        fn query(e: &QueryError) {
+            match e {
+                QueryError::UnknownDiagnostic { .. }
+                | QueryError::NotASource { .. }
+                | QueryError::NotAPage { .. }
+                | QueryError::BuildRequired { .. }
+                | QueryError::UnknownBuild(_)
+                | QueryError::BadTarget { .. }
+                | QueryError::Render(_) => {}
+            }
+        }
+        let _ = (
+            locate, load, format, emit, store, diff, sources, serve, query,
+        );
 
         let store_errors = || {
             vec![
@@ -321,6 +340,21 @@ mod tests {
             Box::new(FmtError::Format(FormatFilesError::NotUtf8 { path: path() })),
             Box::new(PagesUnavailable::Load(Failure::Load(model_invalid()))),
             Box::new(PagesUnavailable::Drift(not_a_repository())),
+            Box::new(QueryError::UnknownDiagnostic {
+                given: text(),
+                closest: Vec::new(),
+            }),
+            Box::new(QueryError::NotASource { path: text() }),
+            Box::new(QueryError::NotAPage { path: text() }),
+            Box::new(QueryError::BuildRequired {
+                builds: vec![text()],
+            }),
+            Box::new(QueryError::UnknownBuild(unknown_build())),
+            Box::new(QueryError::BadTarget {
+                given: text(),
+                reason: text(),
+            }),
+            Box::new(QueryError::Render(EmitError::Invalid { message: text() })),
         ];
         for e in store_errors() {
             all.push(Box::new(EmitError::Store(e)));

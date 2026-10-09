@@ -48,7 +48,7 @@ pub use project::{
     FileEntry, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile, Project, ReadFailure,
     SourceFile,
 };
-pub use registry::{Entry, Level, Registry};
+pub use registry::{Entry, Example, Level, Registry};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content
 /// model's warnings, then each source file's diagnostics, in file order and,
