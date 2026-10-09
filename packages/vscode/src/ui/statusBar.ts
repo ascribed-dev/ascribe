@@ -1,8 +1,10 @@
 import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
 import type { ProjectRegistry } from "../registry.js";
+import { TOGGLE_LENS_COMMAND } from "./buildLens.js";
 import type { ChosenBuilds } from "./chosenBuild.js";
 import { statusFor, type StatusText } from "./describe.js";
+import type { BuildLenses } from "./lens.js";
 import type { ProjectBuilds } from "./projectBuilds.js";
 
 const MENU_COMMAND = "ascribe.projectMenu";
@@ -34,6 +36,7 @@ export class StatusBar implements vscode.Disposable {
     private readonly projects: ProjectRegistry,
     private readonly builds: ProjectBuilds,
     private readonly chosen: ChosenBuilds,
+    private readonly lenses: BuildLenses,
   ) {
     this.item.name = "Ascribe Project";
     this.item.command = MENU_COMMAND;
@@ -103,6 +106,17 @@ export class StatusBar implements vscode.Disposable {
       { label: "$(debug-restart) Restart server", run: () => server.restart() },
     ];
     if (page) {
+      items.push(
+        this.lenses.isOn(server.project.folder)
+          ? {
+              label: "$(eye-closed) Stop dimming what the build leaves out",
+              run: () => vscode.commands.executeCommand(TOGGLE_LENS_COMMAND),
+            }
+          : {
+              label: "$(eye) Dim what the build leaves out",
+              run: () => vscode.commands.executeCommand(TOGGLE_LENS_COMMAND),
+            },
+      );
       items.push({
         label: "$(open-preview) Open preview",
         run: () => vscode.commands.executeCommand("ascribe.openPreview"),

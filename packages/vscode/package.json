@@ -87,6 +87,12 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.toggleBuildLens",
+        "title": "Dim What the Build Leaves Out",
+        "category": "Ascribe",
+        "icon": "$(eye)"
+      },
+      {
         "command": "ascribe.projects.refresh",
         "title": "Refresh",
         "category": "Ascribe",
@@ -583,6 +589,10 @@
         },
         {
           "command": "ascribe.projectMenu",
+          "when": "ascribe.active && ascribe.inProject"
+        },
+        {
+          "command": "ascribe.toggleBuildLens",
           "when": "ascribe.active && ascribe.inProject"
         },
         {

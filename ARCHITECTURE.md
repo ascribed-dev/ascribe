@@ -83,7 +83,7 @@ Every surface reaches the same core.
 |---|---|---|
 | Command line | `ascribe-cli` | Each subcommand is a module in `crates/ascribe-cli/src/commands/`: its arguments, one call into a library ([Each command's entry](#each-commands-entry)), and the report. |
 | Language server | `ascribe-lsp` | Calls the crates, over an `IncrementalProject` it keeps current as the editor types. |
-| VS Code | `packages/vscode` | Starts `ascribe lsp`, one server per project (`packages/vscode/src/registry.ts`). The preview and review use custom requests: `ascribe/preview`, `ascribe/review/setBase`, and `ascribe/review/changes`. The editor's actions (`packages/vscode/src/actions/`) use `ascribe/context`, `ascribe/targets`, and `ascribe/edit`. |
+| VS Code | `packages/vscode` | Starts `ascribe lsp`, one server per project (`packages/vscode/src/registry.ts`). The preview and review use custom requests: `ascribe/preview`, `ascribe/review/setBase`, and `ascribe/review/changes`. The editor's actions (`packages/vscode/src/actions/`) use `ascribe/context`, `ascribe/targets`, and `ascribe/edit`, and the build lens (`packages/vscode/src/ui/buildLens.ts`) uses `ascribe/buildView`. |
 | Astro | `packages/astro` | Runs the binary: `ascribe build` (`packages/astro/src/run.ts`) and, for review, `ascribe diff` (`packages/astro/src/review/diff.ts`). Then reads the files it wrote. |
 | Review | `packages/review` | Reads `ascribe diff --format json`'s data, and GitHub through `gh` (`packages/review/src/github/`). |
 | Elements | `packages/elements` | The site output's markup. |

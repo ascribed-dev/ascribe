@@ -55,7 +55,8 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] What's at a position (`ascribe/context`; `crates/ascribe-lsp/src/context.rs`): a new block or inline construct is a node kind, and a new token is a token kind.
 - [ ] What actions can point at (`ascribe/targets`; `crates/ascribe-lsp/src/targets.rs`): a new kind of content model entry is a kind of target.
 - [ ] Page edits (`ascribe/edit`; `crates/ascribe-lsp/src/edit.rs`): an operation that writes a changed construct writes it the new way, and a new directive may need an operation.
-- [ ] The server's tests in `crates/ascribe-lsp/tests/`, and `lsp_parity` in `crates/ascribe-cli/tests/`, which compares the server's diagnostics with `ascribe check`'s.
+- [ ] What a build leaves out (`ascribe/buildView`; `crates/ascribe-lsp/src/build_view.rs`): a new way a build removes content is removed in `crates/ascribe-resolve/src/build/modes.rs`, which says why, and the build lens shows it.
+- [ ] The server's tests in `crates/ascribe-lsp/tests/`, and `lsp_parity` in `crates/ascribe-cli/tests/`, which compares the server's diagnostics with `ascribe check`'s, and `build_view_parity`, which compares what the build lens dims with what `ascribe build` leaves out.
 
 **The editor**
 

@@ -890,3 +890,193 @@ fn a_rows_spec_sits_in_its_tables() {
         )]
     );
 }
+
+// -- What a build removes ---------------------------------------------------
+
+/// What a build removes from a page: the source text of each removal, and
+/// why, `variant pm` or `available cloud` (the spec that rules it out).
+fn removed(project: &ascribe_resolve::Project, page: &str, build: &str) -> Vec<(String, String)> {
+    let b = project.model().build(build).expect("a build");
+    let mut removed = project
+        .removed(&build_support::path(page), b)
+        .unwrap_or_else(|| panic!("{page} isn't published by {build}"));
+    removed.sort_by_key(|r| r.span.start());
+    removed
+        .iter()
+        .map(|r| {
+            let file = project.file_by_id(r.file).expect("the file");
+            let text = file.source[r.span.start()..r.span.end()].to_owned();
+            let cause = match &r.cause {
+                ascribe_resolve::Removal::Variant { dimensions } => {
+                    format!("variant {}", dimensions.join(" "))
+                }
+                ascribe_resolve::Removal::Availability(spec) => {
+                    format!("available {}", spec.text)
+                }
+            };
+            (text, cause)
+        })
+        .collect()
+}
+
+#[test]
+fn a_selection_removes_the_arms_it_doesnt_select_and_says_on_which_dimension() {
+    let p = project(&[("index.md", &page(GROUPS))]);
+    assert_eq!(
+        removed(&p, "index.md", "cloud-only"),
+        [(
+            "@variant {deployment=self-managed}:\nSelf-managed text.".to_owned(),
+            "variant deployment".to_owned()
+        )]
+    );
+    assert_eq!(
+        removed(&p, "index.md", "npm-only"),
+        [(
+            "@variant {pm=yarn}:\nyarn text.".to_owned(),
+            "variant pm".to_owned()
+        )]
+    );
+    // `switch` removes nothing.
+    assert!(removed(&p, "index.md", "site").is_empty());
+}
+
+#[test]
+fn a_group_with_no_surviving_arm_is_removed_whole() {
+    let p = project(&[(
+        "index.md",
+        &page("@variant {pm=yarn}:\nyarn.\n@variant {pm=pnpm}:\npnpm.\n@end\n\nAfter.\n"),
+    )]);
+    assert_eq!(
+        removed(&p, "index.md", "npm-only"),
+        [(
+            "@variant {pm=yarn}:\nyarn.\n@variant {pm=pnpm}:\npnpm.\n@end".to_owned(),
+            "variant pm".to_owned()
+        )]
+    );
+}
+
+#[test]
+fn arms_nested_in_steps_are_removed_inside_the_list() {
+    let p = project(&[(
+        "index.md",
+        &page(
+            "@steps
+1. Install:
+
+   @variant {pm=npm}:
+   npm i quill
+   @variant {pm=yarn}:
+   yarn add quill
+   @end
+
+2. Run it.
+",
+        ),
+    )]);
+    let gone = removed(&p, "index.md", "npm-only");
+    assert_eq!(gone.len(), 1);
+    assert!(gone[0].0.contains("yarn add quill"), "{gone:?}");
+    assert!(!gone[0].0.contains("npm i quill"), "{gone:?}");
+}
+
+#[test]
+fn a_filter_removes_sections_blocks_and_rows_and_names_the_spec_that_rules_them_out() {
+    let p = project(&[(
+        "index.md",
+        &page(
+            "# Page
+
+## Parent
+@available: cloud
+
+Parent text.
+
+### Child
+
+Child text.
+
+## Sibling
+
+Sibling text.
+
+@available: streaming-sync
+Streaming block.
+
+After block.
+",
+        ),
+    )]);
+    let gone = removed(&p, "index.md", "sm-3.3");
+    let texts: Vec<&str> = gone.iter().map(|(t, _)| t.as_str()).collect();
+    assert!(
+        texts.iter().any(|t| t.starts_with("## Parent")),
+        "{texts:?}"
+    );
+    assert!(texts.contains(&"Child text."), "{texts:?}");
+    assert!(texts.contains(&"Streaming block."), "{texts:?}");
+    assert!(!texts.iter().any(|t| t.contains("Sibling")), "{texts:?}");
+    assert!(!texts.iter().any(|t| t.contains("After")), "{texts:?}");
+    for (text, cause) in &gone {
+        let want = if text.contains("Streaming") || text.starts_with("@available: streaming") {
+            "available cloud, self-managed preview 3.4"
+        } else {
+            "available cloud"
+        };
+        assert_eq!(cause, want, "{text}");
+    }
+    // 3.4 has the feature, so only the cloud section goes.
+    let texts: Vec<String> = removed(&p, "index.md", "sm-3.4")
+        .into_iter()
+        .map(|(t, _)| t)
+        .collect();
+    assert!(!texts.iter().any(|t| t.contains("Streaming")), "{texts:?}");
+
+    let p = project(&[("index.md", &page(ROWS))]);
+    assert_eq!(
+        removed(&p, "index.md", "sm-3.3"),
+        [
+            (
+                "| `b` {available=cloud} | Cloud only. |".to_owned(),
+                "available cloud".to_owned()
+            ),
+            (
+                "| `c` {available=\"self-managed preview 3.4\"} | Self-managed from 3.4. |"
+                    .to_owned(),
+                "available self-managed preview 3.4".to_owned()
+            ),
+            (
+                "| `d` {available=streaming-sync} | A feature. |".to_owned(),
+                "available cloud, self-managed preview 3.4".to_owned()
+            ),
+        ]
+    );
+}
+
+#[test]
+fn a_dropped_page_has_no_removals_and_content_inside_removed_content_isnt_listed() {
+    let p = project(&[
+        (
+            "index.md",
+            &page(
+                "@available: cloud
+@variant {pm=npm}:
+npm.
+@variant {pm=yarn}:
+yarn.
+@end
+",
+            ),
+        ),
+        (
+            "gone.md",
+            "---\ntitle: Gone\navailable: cloud\n---\n\nText.\n",
+        ),
+    ]);
+    let gone = removed(&p, "index.md", "sm-3.3");
+    assert!(
+        gone.iter().all(|(_, cause)| cause == "available cloud"),
+        "{gone:?}"
+    );
+    let b = p.model().build("sm-3.3").expect("a build");
+    assert!(p.removed(&build_support::path("gone.md"), b).is_none());
+}

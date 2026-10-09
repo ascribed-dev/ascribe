@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "Excluded": {
+      "description": "Text a build leaves out of a page.",
+      "properties": {
+        "detail": {
+          "description": "The reason, for the author: `Shows only edition=self-hosted`, or\n`Scheduled rollouts: available on Lantern Cloud (preview), not\nSelf-hosted 2.5`, with the content model's display labels.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "What's left out: whole blocks, arms, or table rows, from the first\ndirective line through the last line. Neighbors left out for the same\nreason are one range."
+        },
+        "reason": {
+          "$ref": "#/$defs/ExclusionReason",
+          "description": "Why."
+        }
+      },
+      "required": [
+        "range",
+        "reason",
+        "detail"
+      ],
+      "type": "object"
+    },
+    "ExclusionReason": {
+      "description": "Why a build leaves text out of a page.",
+      "oneOf": [
+        {
+          "const": "variant",
+          "description": "A variant arm the build's selection doesn't select.",
+          "type": "string"
+        },
+        {
+          "const": "availability",
+          "description": "Content the build's availability filter removes.",
+          "type": "string"
+        }
+      ]
+    },
+    "LspPosition": {
+      "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
+      "properties": {
+        "character": {
+          "description": "The column, from 0, in the negotiated position encoding.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "description": "The line, from 0.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "character"
+      ],
+      "type": "object"
+    },
+    "LspRange": {
+      "description": "A range in a document, from `start` up to (not including) `end`.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it ends."
+        },
+        "start": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it starts."
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/buildView`. A document that isn't a source file of\nthe project, or a build the content model doesn't have, gets an answer\nwith an empty `build` and nothing left out.",
+  "properties": {
+    "build": {
+      "description": "The build the answer is for; empty when there is none.",
+      "type": "string"
+    },
+    "documentVersion": {
+      "description": "The version of the open document the answer was computed from, or\n`null` when the file isn't open.",
+      "format": "int32",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "excluded": {
+      "description": "What the build leaves out of the page's own text, in document order.",
+      "items": {
+        "$ref": "#/$defs/Excluded"
+      },
+      "type": "array"
+    },
+    "pageDetail": {
+      "description": "Why the build doesn't publish the page, when it doesn't.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "pageIncluded": {
+      "description": "Whether the build publishes the page. `false` when it drops the whole\npage (its `variant` or `available` frontmatter); a fragment, which is\npart of the pages that include it, counts as published.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "build",
+    "documentVersion",
+    "pageIncluded",
+    "pageDetail",
+    "excluded"
+  ],
+  "title": "BuildViewResult",
+  "type": "object"
+}

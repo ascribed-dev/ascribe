@@ -125,6 +125,8 @@ The registry feeds the Command Palette (`ascribe.action.<id>`), the editor's con
 
 `src/ui/projectBuilds.ts` asks each running server for its builds (`ascribe/targets`, through one of its pages: the active one, an open one, or one on disk), again when a server starts or its `ascribe.toml` changes, and never starts a server. `src/ui/describe.ts` works out what the status bar item and the view's items say from plain values, so `test/unit/ui.test.ts` checks it without VS Code; `src/ui/statusBar.ts` and `src/ui/projectsView.ts` show it. The view lists `ProjectRegistry.servers`, started or not, and redraws on the registry's `onDidChangeProjects` and `onDidChangeState` (each `ProjectServer`'s `onDidChangeState`, from `src/serverState.ts`). Its inline buttons are the commands `ascribe.projects.showOutput` and `ascribe.projects.restart`, which the palette doesn't show; a project's `contextValue`, `ascribe.project.<state>`, decides which it offers.
 
+**The build lens** (`src/ui/buildLens.ts`) dims what the build you're looking at leaves out of each visible page of a project whose lens is on. Which projects have it on is `BuildLenses` in `src/ui/lens.ts`, beside `lensView`, which turns an `ascribe/buildView` answer into the ranges to dim, their hovers, and the line for a page the build drops, so `test/unit/lens.test.ts` checks them without VS Code. The lens has no build of its own: it asks for `ChosenBuilds`' choice, the preview's, and asks again on an edit (debounced), when an editor is shown, when the choice or the lens changes, and when `ProjectBuilds` fires (a server started or stopped, or the content model changed). An answer for an older version of the page, or for a request since replaced, is dropped. It asks only a running server, and the status bar item's menu toggles it through `ascribe.toggleBuildLens`.
+
 ## Highlighting
 
 `syntaxes/` holds two TextMate injections into markdown (one for top level, one
@@ -168,6 +170,7 @@ for theme colors it can't read.
   | Variant, one value of a dimension | `$(symbol-enum-member)` |
   | Phrase | `$(symbol-string)` |
   | Availability | `$(tag)` |
+  | The build lens, dimming what a build leaves out | `$(eye)` |
 
   An icon of Ascribe's own is added only for a concept no codicon reads right
   for. It's drawn as a one-color SVG on the codicon grid (16 pixels, 1 pixel
