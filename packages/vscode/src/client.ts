@@ -9,9 +9,11 @@ import {
   type ErrorHandler,
   type ErrorHandlerResult,
   type LanguageClientOptions,
+  type Message,
   type ServerOptions,
 } from "vscode-languageclient/node";
-import { ancestorsWithin, resolveBinary, type ResolvedBinary } from "./binary.js";
+import { PublishedDiagnostics } from "./agents/published.js";
+import { ancestorsWithin, resolveBinary, type Resolution, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
 import { convertEdit, type ServerEdit } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
@@ -49,6 +51,9 @@ export class ProjectServer implements vscode.Disposable {
   private starting: Promise<void> = Promise.resolve();
   private readonly started = new vscode.EventEmitter<void>();
   private disposed = false;
+  private runningSince: number | undefined;
+  /** The diagnostics the running server last published for each file, with their versions. */
+  readonly published: PublishedDiagnostics;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -56,6 +61,14 @@ export class ProjectServer implements vscode.Disposable {
     private readonly host: ProjectHost,
   ) {
     this.crashes = new CrashCounter(readMaxCrashes());
+    this.published = new PublishedDiagnostics(fileOfUri, (file) =>
+      host.ownedElsewhere(project, vscode.Uri.file(file)),
+    );
+  }
+
+  /** When the server last reached the running state, in milliseconds since the epoch. */
+  get since(): number | undefined {
+    return this.runningSince;
   }
 
   /** The output channel, created when first needed so its name reflects the workspace then. */
@@ -211,16 +224,8 @@ export class ProjectServer implements vscode.Disposable {
     if (this.client) return;
     this.status.set("starting");
 
-    const workspaceFolder =
-      vscode.workspace.getWorkspaceFolder(vscode.Uri.file(this.project.folder))?.uri.fsPath ??
-      this.project.folder;
-    const resolution = await resolveBinary({
-      setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
-      projectRoots: ancestorsWithin(this.project.folder, workspaceFolder),
-      extensionPath: this.context.extensionPath,
-      minVersion: minServerVersion(this.context),
-      env: nodeEnvironment,
-    });
+    const workspaceFolder = workspaceFolderOf(this.project);
+    const resolution = await resolveProjectBinary(this.context, this.project);
 
     if (resolution.kind === "missing") {
       this.status.set("failed");
@@ -258,12 +263,16 @@ export class ProjectServer implements vscode.Disposable {
           untilDisposed(this.output, () => this.disposed),
           (uri) => this.host.ownedElsewhere(this.project, uri),
           (error) => this.reportFeatureError("preparing workspace rename", error),
+          (message) => {
+            if (isPublication(message)) this.published.record(message.params);
+          },
         ),
         errorHandler: this.errorHandler(),
       },
     );
     client.onDidChangeState(({ newState }) => {
       if (newState === State.Running) {
+        this.runningSince = Date.now();
         this.status.set("running");
         this.started.fire();
       }
@@ -287,6 +296,8 @@ export class ProjectServer implements vscode.Disposable {
   private async stopNow(): Promise<void> {
     const client = this.client;
     this.client = undefined;
+    this.runningSince = undefined;
+    this.published.clear();
     this.status.set("stopped");
     if (!client) return;
     try {
@@ -386,6 +397,7 @@ function clientOptions(
   outputChannel: vscode.LogOutputChannel,
   ownedElsewhere: (uri: vscode.Uri) => boolean,
   reportRenameError: (error: unknown) => void,
+  observe: (message: Message) => void,
 ): LanguageClientOptions {
   const scope = scopeMiddleware(ownedElsewhere);
   const folder = globFolder(project.folder);
@@ -412,6 +424,17 @@ function clientOptions(
           ),
       },
     },
+    // Every message from the server passes here before the client handles
+    // it: the published diagnostics are kept with their document versions,
+    // which the client's own copy drops.
+    connectionOptions: {
+      messageStrategy: {
+        handleMessage: (message, next) => {
+          observe(message);
+          return next(message);
+        },
+      },
+    },
     // The server asks for the files it wants watched with dynamic
     // registrations (`workspace/didChangeWatchedFiles`), which the client
     // forwards, so files that aren't open are followed too. Watching them
@@ -419,9 +442,51 @@ function clientOptions(
   };
 }
 
+/** Whether a message is a `textDocument/publishDiagnostics` notification. */
+function isPublication(message: Message): message is Message & { params: unknown } {
+  return (
+    "method" in message &&
+    message.method === "textDocument/publishDiagnostics" &&
+    !("id" in message) &&
+    "params" in message
+  );
+}
+
+/** A `file:` URI's path; `undefined` for any other URI, or one that doesn't parse. */
+function fileOfUri(uri: string): string | undefined {
+  try {
+    const parsed = vscode.Uri.parse(uri, true);
+    return parsed.scheme === "file" ? parsed.fsPath : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function readMaxCrashes(): number {
   const value = vscode.workspace.getConfiguration("ascribe").get<number>("maxCrashes", 5);
   return Number.isInteger(value) && value >= 1 ? value : 5;
+}
+
+/** The workspace folder a project is in, or its own folder when it's in none. */
+export function workspaceFolderOf(project: Project): string {
+  return (
+    vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.folder))?.uri.fsPath ??
+    project.folder
+  );
+}
+
+/** Finds the binary a project runs: the `ascribe.path` setting, its own, or the bundled one. */
+export function resolveProjectBinary(
+  context: vscode.ExtensionContext,
+  project: Project,
+): Promise<Resolution> {
+  return resolveBinary({
+    setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
+    projectRoots: ancestorsWithin(project.folder, workspaceFolderOf(project)),
+    extensionPath: context.extensionPath,
+    minVersion: minServerVersion(context),
+    env: nodeEnvironment,
+  });
 }
 
 /** The oldest server this extension is written for (`ascribe.minServerVersion` in package.json). */

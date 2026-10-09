@@ -3,7 +3,12 @@
 // it, and where the project is. `../prompt` builds the prompt from them.
 import { existsSync, realpathSync } from "node:fs";
 import path from "node:path";
-import { openThreadsPrompt, threadPrompt, type PromptProject } from "../prompt/index.js";
+import {
+  openThreadsList,
+  openThreadsPrompt,
+  threadPrompt,
+  type PromptProject,
+} from "../prompt/index.js";
 import { ReviewError } from "../shared/errors.js";
 import type { PromptRequest } from "../shared/types.js";
 import { pagesShowing, type ChangedPageRef } from "./requests.js";
@@ -69,6 +74,25 @@ export async function buildThreadsPrompt(
     source,
     unsaved: file?.unsaved ?? false,
     shownOn,
+  });
+}
+
+/**
+ * The pull request's open threads, as an agent's tool lists them
+ * (`openThreadsList`), with the pages that show each.
+ */
+export async function buildThreadsList(
+  context: Omit<ThreadPromptContext, "readSource">,
+): Promise<string> {
+  const [threads, pages] = await Promise.all([
+    context.session.allThreads(),
+    context.changedPages().catch(() => []),
+  ]);
+  return openThreadsList({
+    project: context.project,
+    pullRequest: context.session.pullRequest.number,
+    threads,
+    shownOn: (file) => pagesShowing(file, pages).map((p) => p.path),
   });
 }
 

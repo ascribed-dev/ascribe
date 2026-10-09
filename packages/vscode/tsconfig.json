@@ -4,7 +4,8 @@
     // Review's parts from the workspace package's source, as the bundle has them.
     "paths": {
       "@ascribed/review/github": ["../review/src/github/index.ts"],
-      "@ascribed/review/place": ["../review/src/place/index.ts"]
+      "@ascribed/review/place": ["../review/src/place/index.ts"],
+      "@ascribed/review/prompt": ["../review/src/prompt/index.ts"]
     },
     "noEmit": true,
     "types": ["node", "mocha"]

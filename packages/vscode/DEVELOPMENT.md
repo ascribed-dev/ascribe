@@ -235,3 +235,9 @@ is in `test/parity/normalize.ts`.
 
 `test/fixtures/markdown.tmLanguage.json` is VS Code's markdown grammar (MIT,
 microsoft/vscode), so the grammar tests see the scopes it really produces.
+
+## Agents
+
+`src/agents/` is what agents running in VS Code get. `mcp.ts` registers one MCP server definition provider (`ascribe.mcp`): `ascribe mcp`, run with the binary the first project resolves (`resolveProjectBinary`, as a server's start does), in that project's workspace folder; `mcpServer.ts` works it out from plain values. `tools.ts` registers the language model tools `contributes.languageModelTools` declares, for what needs the running extension: `ascribe_editor_problems`, and, while review is on, `ascribe_review_threads` and `ascribe_review_changes`. Both registrations are skipped when `vscode.lm` lacks the API, and the rest of the extension works without them. No tool starts a server, turns review on, or writes.
+
+The problems tool answers from `ProjectServer.published` (`published.ts`): every `textDocument/publishDiagnostics` the server sends, kept with its document version, through the client's `connectionOptions.messageStrategy`, since the client's own copy drops the version, and the `data` that carries each diagnostic's slug, builds, advice, and fixes. When the file changed since the server last published for it (an open document of another version, or a file on disk written since), it waits for the next publication, up to `WAIT_MS`. `problems.ts` turns publications into `ascribe check --format json`'s shape, counting columns in characters and offsets in UTF-8 bytes from the text the server checked, so `test/unit/agents.test.ts` checks it without VS Code. The threads tool's text is `@ascribed/review`'s `openThreadsList`, through `ThreadsController.list`.

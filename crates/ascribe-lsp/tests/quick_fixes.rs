@@ -204,6 +204,33 @@ fn container_colon_action_removes_the_diagnostic() {
 }
 
 #[test]
+fn a_diagnostic_carries_its_advice_and_each_fix_its_safety() {
+    // What `ascribe check --format json` says that the protocol has no field
+    // for, so the extension can report problems to agents in that shape.
+    let f = quill();
+    let path = f.path("docs/keys.md");
+    let text = format!("{}\nInstall {{{{product}}}}.\n", read(&f, "docs/keys.md"));
+    write(&f, "docs/keys.md", &text);
+    let mut client = Client::start(&f.root());
+    client.settle();
+
+    let diag = diagnostic(&client, &path, "phrase-double-braces");
+    let help = ascribe_check::Registry::global()
+        .find("phrase-double-braces")
+        .and_then(|entry| entry.fix.clone())
+        .expect("the registry's advice");
+    assert_eq!(diag["data"]["help"], help);
+    let fixes = diag["data"]["fixes"].as_array().expect("fixes");
+    assert!(!fixes.is_empty());
+    for fix in fixes {
+        assert!(
+            matches!(fix["applicability"].as_str(), Some("safe" | "unsafe")),
+            "{fix}"
+        );
+    }
+}
+
+#[test]
 fn stray_container_colon_action_removes_the_diagnostic() {
     let f = quill();
     let path = f.path("docs/keys.md");

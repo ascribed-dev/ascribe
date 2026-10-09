@@ -387,13 +387,18 @@ pub(crate) fn to_lsp(
         message: d.message.clone(),
         related_information: (!related_information.is_empty()).then_some(related_information),
         tags: None,
+        // What `ascribe check --format json` says besides the protocol's
+        // fields, for the extension's tool that reports problems to agents
+        // in that shape.
         data: Some(serde_json::json!({
             "slug": d.slug.as_str(),
             "builds": d.builds,
             "unpublished": d.unpublished,
+            "help": Registry::global().get(d.slug).and_then(|entry| entry.fix.as_deref()).unwrap_or_default(),
             "fixes": d.fixes.iter().filter(|fix| fix.file == d.location.file).map(|fix| {
                 serde_json::json!({
                     "title": fix.title,
+                    "applicability": fix.applicability.as_str(),
                     "edits": fix.edits.iter().map(|edit| serde_json::json!({
                         "range": encoding.range(index, edit.span),
                         "newText": edit.new_text,
