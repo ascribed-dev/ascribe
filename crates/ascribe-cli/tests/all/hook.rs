@@ -505,10 +505,27 @@ fn the_check_server_stops_when_its_binary_is_replaced() {
             .unwrap(),
     );
     fs::copy(env!("CARGO_BIN_EXE_ascribe"), &exe).unwrap();
-    let input = edit_input("claude-code", dir.path(), "docs/guide.md");
+    // First contact through the stop event, which waits twenty seconds for
+    // an answer where an edit waits two. A hook that gets no answer in
+    // time starts another server, and a server that comes up after the
+    // binary is replaced below takes the new file for its own and runs on
+    // until idle, so the fewer starts the better. A stop reports what
+    // changed since the commit, so a change with an error gives it
+    // something to say.
+    fs::write(
+        dir.path().join("docs/guide.md"),
+        ERROR.replace("missing.md", "elsewhere.md"),
+    )
+    .unwrap();
+    let input = stop_input("claude-code", dir.path(), false);
     let mut answered = false;
     for _ in 0..20 {
-        let out = hook_of(&exe, &["claude-code"], &input, Some(cache.path()));
+        let out = hook_of(
+            &exe,
+            &["claude-code", "--event", "stop"],
+            &input,
+            Some(cache.path()),
+        );
         if !out.stdout.is_empty() {
             answered = true;
             break;
@@ -521,6 +538,31 @@ fn the_check_server_stops_when_its_binary_is_replaced() {
         .unwrap()
         .unwrap()
         .path();
+    // Then until the mailbox has named the same server for a while: a late
+    // starter takes it over as it comes up, and on a loaded runner one can
+    // take seconds to arrive.
+    let server = |project: &Path| -> Option<String> {
+        fs::read_dir(project)
+            .ok()?
+            .flatten()
+            .map(|v| v.path().join("server.json"))
+            .find(|p| p.exists())
+            .and_then(|p| fs::read_to_string(p).ok())
+    };
+    let mut named = server(&project);
+    let mut since = std::time::Instant::now();
+    for _ in 0..600 {
+        if named.is_some() && since.elapsed() >= std::time::Duration::from_secs(3) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        let now = server(&project);
+        if now != named {
+            named = now;
+            since = std::time::Instant::now();
+        }
+    }
+    assert!(named.is_some(), "no server named in {}", project.display());
     // Replaced as an installer does, which a running program would stop
     // on Windows.
     fs::remove_file(&exe).unwrap();
