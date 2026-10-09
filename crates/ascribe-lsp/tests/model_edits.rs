@@ -633,3 +633,306 @@ fn content_model_actions_on_the_monorepo_docs_add_no_diagnostics() {
         )
     );
 }
+
+// -- Renames ------------------------------------------------------------------
+
+const RENAME_MODEL: &str = r#"spec = "0.1"
+
+[project]
+content-root = "docs"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = { type = "string", phrases = true }
+
+[dimensions.deployment]
+values = ["cloud", # hosted
+  "self-managed"]
+labels = { self-managed = "Self-managed" }
+versionless = ["cloud"]
+
+[phrases]
+product = "Quill"
+api = "https://api.quill.dev/"
+
+[features.sso]
+name = "SSO"
+available = "cloud, self-managed beta 2.4"
+
+[sources.code]
+path = "code"
+
+[builds.site]
+
+[builds.sm]
+variants = { deployment = "self-managed" }
+availability = { filter = "self-managed 2.4" }
+
+[builds.both]
+variants.deployment = ["cloud", "self-managed"]
+
+[editor]
+build = "site"
+"#;
+
+const RENAME_PAGE: &str = "---\ntitle: Use {product}\nvariant:\n  deployment: self-managed\navailable: self-managed 2.4\n---\n# Home\n\nRun {product} from [{product} docs]({api}guide).\n\n```shell phrases=true\n{product} run\n```\n\n@snippet {phrases=true}: code:app.sh\n\n@variant {deployment=cloud|self-managed}:\nBoth.\n@variant {deployment=cloud}:\nCloud.\n@end\n\n@available: cloud, self-managed beta 2.4\nPara.\n\n| A | B |\n|---|---|\n| x {available=\"self-managed 2.4\"} | y |\n";
+
+fn rename_fixture() -> Fixture {
+    Fixture::new(
+        RENAME_MODEL,
+        &[
+            ("docs/index.md", RENAME_PAGE),
+            ("code/app.sh", "#!/bin/sh\necho {product}\n"),
+        ],
+    )
+}
+
+/// The offset of the `n`th (from 0) occurrence of `what` in `text`, plus
+/// `into`.
+fn at(text: &str, what: &str, n: usize, into: usize) -> usize {
+    text.match_indices(what).nth(n).expect("found").0 + into
+}
+
+fn prepare(
+    client: &mut Client,
+    path: &Path,
+    text: &str,
+    offset: usize,
+) -> Result<(String, String), String> {
+    let response = client.request(
+        "textDocument/prepareRename",
+        json!({
+            "textDocument": { "uri": support::uri(path).as_str() },
+            "position": position(text, offset),
+        }),
+    );
+    let result = response.response_result.map_err(|error| error.message)?;
+    let a = offset_of(text, &result["range"]["start"]);
+    let b = offset_of(text, &result["range"]["end"]);
+    Ok((
+        text[a..b].to_owned(),
+        result["placeholder"]
+            .as_str()
+            .expect("a placeholder")
+            .to_owned(),
+    ))
+}
+
+fn offset_of(text: &str, position: &Value) -> usize {
+    offset(text, position)
+}
+
+fn rename(client: &mut Client, path: &Path, text: &str, offset: usize, new: &str) -> Option<Done> {
+    let result = client
+        .request(
+            "textDocument/rename",
+            json!({
+                "textDocument": { "uri": support::uri(path).as_str() },
+                "position": position(text, offset),
+                "newName": new,
+            }),
+        )
+        .response_result
+        .expect("an answer");
+    if result.is_null() {
+        return None;
+    }
+    let mut texts = BTreeMap::new();
+    texts.insert(path.to_path_buf(), text.to_owned());
+    Some(apply_workspace_edit(&result, &texts))
+}
+
+#[test]
+fn prepare_rename_says_what_is_renamed_or_why_nothing_is() {
+    let f = rename_fixture();
+    let mut client = Client::start(&f.root());
+    let page = f.path("docs/index.md");
+    let text = RENAME_PAGE;
+    client.open(&page, 1, text);
+    let mut ask = |offset| prepare(&mut client, &page, text, offset);
+    assert_eq!(
+        ask(at(text, "{product}", 1, 3)),
+        Ok(("product".to_owned(), "product".to_owned()))
+    );
+    assert_eq!(
+        ask(at(text, "self-managed}", 0, 2)),
+        Ok(("self-managed".to_owned(), "self-managed".to_owned()))
+    );
+    assert_eq!(
+        ask(at(text, "# Home", 0, 4)),
+        Ok(("Home".to_owned(), "Home".to_owned()))
+    );
+    let e = ask(at(text, "Para.", 0, 1)).expect_err("nothing to rename");
+    assert!(e.contains("Put the cursor on a phrase"), "{e}");
+
+    let model = f.path("ascribe.toml");
+    client.open(&model, 1, RENAME_MODEL);
+    let mut ask = |offset| prepare(&mut client, &model, RENAME_MODEL, offset);
+    assert_eq!(
+        ask(at(RENAME_MODEL, "product =", 0, 2)),
+        Ok(("product".to_owned(), "product".to_owned()))
+    );
+    assert_eq!(
+        ask(at(RENAME_MODEL, "\"self-managed\"]", 0, 3)),
+        Ok(("self-managed".to_owned(), "self-managed".to_owned()))
+    );
+    assert!(ask(at(RENAME_MODEL, "spec", 0, 1)).is_err());
+}
+
+#[test]
+fn a_phrase_rename_reaches_every_kind_of_use() {
+    let f = rename_fixture();
+    let mut client = Client::start(&f.root());
+    let page = f.path("docs/index.md");
+    client.open(&page, 1, RENAME_PAGE);
+    let done = rename(
+        &mut client,
+        &page,
+        RENAME_PAGE,
+        at(RENAME_PAGE, "{product}", 1, 2),
+        "name",
+    )
+    .expect("renamed");
+    let after = done.after(&page);
+    assert_eq!(after.matches("{name}").count(), 4, "{after}");
+    assert!(!after.contains("{product}"), "{after}");
+    assert!(
+        after.contains("title: Use {name}\n"),
+        "the frontmatter: {after}"
+    );
+    assert!(
+        after.contains("({api}guide)"),
+        "other phrases stay: {after}"
+    );
+    assert_eq!(
+        done.after(&f.path("code/app.sh")),
+        "#!/bin/sh\necho {name}\n"
+    );
+    assert_eq!(
+        done.after(&f.path("ascribe.toml")),
+        RENAME_MODEL.replace("product = \"Quill\"", "name = \"Quill\"")
+    );
+}
+
+#[test]
+fn a_dimension_value_is_renamed_everywhere_from_a_page_or_the_model() {
+    let f = rename_fixture();
+    let mut client = Client::start(&f.root());
+    let page = f.path("docs/index.md");
+    client.open(&page, 1, RENAME_PAGE);
+    let expected_page = RENAME_PAGE.replace("self-managed", "on-prem");
+    let expected_model = RENAME_MODEL
+        .replace("\"self-managed\"", "\"on-prem\"")
+        .replace(
+            "self-managed = \"Self-managed\"",
+            "on-prem = \"Self-managed\"",
+        )
+        .replace("cloud, self-managed beta 2.4", "cloud, on-prem beta 2.4")
+        .replace("self-managed 2.4", "on-prem 2.4");
+    let from_page = rename(
+        &mut client,
+        &page,
+        RENAME_PAGE,
+        at(RENAME_PAGE, "self-managed}", 0, 3),
+        "on-prem",
+    )
+    .expect("renamed");
+    assert_eq!(from_page.after(&page), expected_page);
+    assert_eq!(from_page.after(&f.path("ascribe.toml")), expected_model);
+    assert_minimal(
+        from_page.edits(&f.path("ascribe.toml")),
+        RENAME_MODEL,
+        "\"cloud, self-managed beta 2.4\"".len(),
+    );
+
+    let model = f.path("ascribe.toml");
+    client.open(&model, 1, RENAME_MODEL);
+    let from_model = rename(
+        &mut client,
+        &model,
+        RENAME_MODEL,
+        at(RENAME_MODEL, "\"self-managed\"]", 0, 4),
+        "on-prem",
+    )
+    .expect("renamed");
+    assert_eq!(from_model.after(&page), expected_page);
+    assert_eq!(from_model.after(&model), expected_model);
+
+    // A name the model doesn't allow, or that's taken, renames nothing.
+    for taken in [
+        "cloud",
+        "beta",
+        "deployment",
+        "sso",
+        "on prem",
+        "self-managed",
+    ] {
+        assert!(
+            rename(
+                &mut client,
+                &page,
+                RENAME_PAGE,
+                at(RENAME_PAGE, "self-managed}", 0, 3),
+                taken
+            )
+            .is_none(),
+            "{taken}"
+        );
+    }
+}
+
+/// Renames at `find` in `page` of an example, and checks that nothing new
+/// is wrong after.
+fn rename_in_example(root: &Path, page: &str, find: &str, into: usize, new: &str) -> Done {
+    let root = support::real_path(root);
+    let mut client = Client::start(&root);
+    let path = root.join(page);
+    let text = std::fs::read_to_string(&path).unwrap();
+    client.open(&path, 1, &text);
+    client.settle();
+    let done = rename(&mut client, &path, &text, at(&text, find, 0, into), new)
+        .unwrap_or_else(|| panic!("no rename at {find} in {page}"));
+    assert_no_new_diagnostics(&root, &done, &format!("renaming {find} in {page}"));
+    done
+}
+
+#[test]
+fn renames_in_quill_add_no_diagnostics() {
+    let root = examples().join("quill");
+    let done = rename_in_example(&root, "docs/install-agent.md", "{cloud}", 1, "hosted");
+    assert!(done.files.len() >= 2);
+    let done = rename_in_example(
+        &root,
+        "docs/install-agent.md",
+        "deployment=self-managed",
+        "deployment=".len(),
+        "on-prem",
+    );
+    let model = std::fs::read_to_string(root.join("ascribe.toml")).unwrap();
+    assert!(
+        done.after(&support::real_path(&root).join("ascribe.toml"))
+            .contains("filter = \"on-prem 3.3\""),
+        "the build's filter"
+    );
+    assert!(model.contains("filter = \"self-managed 3.3\""));
+}
+
+#[test]
+fn renames_in_the_monorepo_docs_add_no_diagnostics() {
+    let root = examples().join("monorepo/docs");
+    let done = rename_in_example(&root, "content/getting-started.md", "{product}", 1, "name");
+    assert!(
+        done.after(&support::real_path(&root).join("content/getting-started.md"))
+            .contains("title: Get started with {name}"),
+        "the title takes phrases"
+    );
+    rename_in_example(
+        &root,
+        "content/getting-started.md",
+        "edition=self-hosted",
+        "edition=".len(),
+        "on-prem",
+    );
+}

@@ -70,7 +70,7 @@ fn the_initialize_result_advertises_only_what_is_implemented() {
     );
     assert_eq!(caps["codeActionProvider"], true);
     assert_eq!(caps["documentFormattingProvider"], true);
-    assert_eq!(caps["renameProvider"]["prepareProvider"], false);
+    assert_eq!(caps["renameProvider"]["prepareProvider"], true);
     assert_eq!(
         caps["workspace"]["fileOperations"]["willRename"]["filters"][0]["pattern"]["glob"],
         "**/*"

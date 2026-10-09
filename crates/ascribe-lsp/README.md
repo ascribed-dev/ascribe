@@ -427,8 +427,8 @@ the targets found as `ascribe/context` finds them.
 Advertised: incremental text document sync (open/close, no save), semantic
 tokens (full and range), the position encoding, and completion
 (triggered by `@ { ( # / = , |` and a space), hover, definition, document
-links, CodeLens, inlay hints, code actions, document formatting, rename, and one
-command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
+links, CodeLens, inlay hints, code actions, document formatting, rename (with
+`prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
 for files. Registered dynamically after `initialized`, when the client allows it:
 `workspace/didChangeWatchedFiles`.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
@@ -437,7 +437,19 @@ advertise pull diagnostics.
 Code actions carry the checker's existing diagnostic fixes (including the
 router's reverse route suggestion) and the Ascribe-specific repairs. Rename and
 file-move edits use the current project snapshot, including open buffers, its
-source index, and reverse references. Formatting returns only the minimal edits
+source index, and reverse references. A rename starts on a heading or an `@id`,
+a phrase (a `{key}` use or its key in `ascribe.toml`), or a dimension value (in
+a `@variant` attribute or a `[dimensions.<name>] values` item). A phrase rename
+reaches every use the source index records: prose, link text and destinations,
+frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and
+the files `@snippet {phrases=true}` reads (a remote source refuses the rename).
+A dimension value rename edits the dimension's `values`, `labels`, and
+`versionless`, every `@variant` attribute and `variant` frontmatter field, every
+availability spec (markers, frontmatter, `[features]`, and a build's `filter`),
+and a build's `variants`. `ascribe.toml` is edited in place, keeping its
+comments and layout. A new name that isn't valid or is already taken gets no
+edit. `prepareRename` answers with the range and the current name, or says why
+nothing at the cursor can be renamed. Formatting returns only the minimal edits
 from `ascribe-fmt`; the VS Code client applies those edits on save when
 `ascribe.formatOnSave` is enabled, and requests file-move edits before renaming.
 
