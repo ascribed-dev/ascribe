@@ -23,7 +23,7 @@ The mark, wordmark, and tagline are outlines from Inter (SIL Open Font License),
 To change the accent, or any color:
 
 1. Point the token at another palette entry in `tokens.toml`, or add the entry under `[palette]`. A palette entry's name is its hue and its step: 1000 × (1 − the color's OKLCH lightness), rounded, so a higher step is darker; a tie takes the next step.
-2. If the token is one of the shared ones, the top-level `[color]` tokens such as `color.accent` or `color.note`, make the same change in `candidates/chosen.toml`. A test holds the two to the same colors, and the mark's images are drawn from the second.
+2. If the token is one of the shared ones, the top-level `[color]` tokens such as `color.accent` or `color.note`, give it the same value in `candidates/chosen.toml`, whose palette names its steps 50 to 975 rather than by lightness. A test holds the two to the same colors, and the mark's images are drawn from the second.
 3. Rewrite everything generated from them, then read the diff:
 
    ```sh
