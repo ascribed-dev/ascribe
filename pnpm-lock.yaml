@@ -349,6 +349,9 @@ importers:
 
   packages/vscode:
     dependencies:
+      smol-toml:
+        specifier: ^1.9.0
+        version: 1.9.0
       vscode-languageclient:
         specifier: ^10.1.2
         version: 10.1.2

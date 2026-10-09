@@ -485,12 +485,12 @@
             "all"
           ],
           "enumDescriptions": [
-            "Start a project's language server the first time one of its files is opened.",
+            "Start a project's language server the first time one of its files is opened, or changes on disk while the window is open.",
             "Start every project's language server when the workspace opens."
           ],
           "default": "onDemand",
           "scope": "window",
-          "markdownDescription": "When to start the language server of each `ascribe.toml` project in the workspace. A project whose server hasn't started shows no problems in the Problems panel."
+          "markdownDescription": "When to start the language server of each `ascribe.toml` project in the workspace. A project whose server hasn't started shows no problems in the Problems panel. A running server reports pages for the editor's build only (`[editor] build`); `ascribe check` checks every build."
         },
         "ascribe.formatOnSave": {
           "type": "boolean",
@@ -1192,6 +1192,7 @@
     "test:parity": "vitest run --config vitest.parity.config.ts"
   },
   "dependencies": {
+    "smol-toml": "^1.9.0",
     "vscode-languageclient": "^10.1.2"
   },
   "devDependencies": {
