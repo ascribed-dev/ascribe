@@ -209,6 +209,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
     (
         "packages/vscode",
         &[
+            "check",
             "lsp-preview",
             "lsp-set-base",
             "lsp-changes",

@@ -56,6 +56,19 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 @available: next
 On a problem, the lightbulb also offers **Prompt agent: fix this problem**, after the problem's quick fixes. It builds a prompt for your AI agent about the problem, and copies it, or opens your agent with it filled in, as `ascribe.agents.promptTarget` says. **Ascribe: Prompt Agent to Fix This File** and **Ascribe: Prompt Agent to Fix This Project** do the same for every problem in the file or the project. Nothing is sent: you read the prompt and send it. See [Prompt your agent](agents.md#prompt-your-agent).
 
+### Agents in VS Code
+
+@available: next
+An agent in VS Code, such as GitHub Copilot in agent mode, gets Ascribe's tools with nothing to set up. In a workspace with an Ascribe project, the extension offers [`ascribe mcp`](agents.md#the-mcp-server) as an MCP server, named **Ascribe** in VS Code's list of MCP servers. It runs the binary the first project uses (see [Which `ascribe` it runs](#which-ascribe-it-runs)), in the workspace folder, and VS Code starts it when an agent first needs it. When the workspace's projects use different binaries, the project's output says which one the server runs.
+
+The extension also gives agents three tools of its own, for what only the editor knows: text that isn't saved, and the review that's open. Name one in chat with `#`, or let the agent pick it.
+
+@include: ../_generated/editor-tools.md
+
+`#ascribe_editor_problems` answers with the JSON `ascribe check --format json` writes, from the language server, so it includes unsaved edits. When a file changed since the server last checked it, the tool waits for the server, up to a second, and says which version of the document its answer is for. Like the Problems panel, it covers the [editor's build](#diagnostics) only; `ascribe check` checks every build. It never starts a language server: a project whose server isn't running gets a line saying so.
+
+The review tools answer while [review](#review-in-the-preview) is on, and say so in one line when it's off; they never turn it on. `#ascribe_review_threads` gives each open thread's comments as data, under the same sentence a [prompt](agents.md#what-a-prompt-says) puts over them, so the agent doesn't take them as instructions. None of the tools changes a file.
+
 ### Completion
 
 - After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.

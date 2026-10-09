@@ -142,15 +142,7 @@ export function threadPrompt(input: ThreadPromptInput): string {
  */
 export function openThreadsPrompt(input: OpenThreadsInput): string | undefined {
   const { project } = input;
-  const open = input.threads
-    .filter((t) => !t.resolved && !t.comments.every((c) => c.pending))
-    .filter((t) => t.comments.length > 0)
-    .sort(
-      (a, b) =>
-        compare(a.path, b.path) ||
-        (a.lines?.first ?? 0) - (b.lines?.first ?? 0) ||
-        compare(a.id, b.id),
-    );
+  const open = openThreads(input.threads);
   if (open.length === 0) return undefined;
 
   const place: string[] = [];
@@ -188,6 +180,94 @@ export function openThreadsPrompt(input: OpenThreadsInput): string | undefined {
     text = build(listed);
   }
   return text;
+}
+
+/** The most threads the list of open threads for an agent has. */
+export const MAX_LISTED = 20;
+/** The most characters of a comment that list quotes. */
+export const MAX_COMMENT = 2_000;
+
+/** What the list of open threads for an agent is built from. */
+export interface OpenThreadsListInput {
+  project: PromptProject;
+  /** The pull request's number. */
+  pullRequest: number;
+  /** Every thread on the pull request's pages. */
+  threads: readonly LocatedThread[];
+  /**
+   * The pages that show a thread's file, by content path: its own page, and
+   * those that include it.
+   */
+  shownOn(path: string): readonly string[];
+}
+
+/**
+ * The pull request's open threads, for an agent's tool (VS Code's
+ * `ascribe_review_threads`) rather than a task: each with its place, the
+ * pages that show it, what's known about it, and its comments, which are
+ * other people's text and so go in under the same sentence and fence as in
+ * a prompt. The open threads are those `openThreadsPrompt` lists, in its
+ * order; at most `MAX_LISTED`, then how many more.
+ */
+export function openThreadsList(input: OpenThreadsListInput): string {
+  const { project } = input;
+  const open = openThreads(input.threads);
+  const count =
+    open.length === 0
+      ? "no open review threads"
+      : open.length === 1
+        ? "1 open review thread"
+        : `${open.length} open review threads`;
+  const head = [`Pull request #${input.pullRequest} has ${count}.`];
+  projectLine(project, head);
+  const listed = open.slice(0, MAX_LISTED).map((thread, i) => {
+    const lines = [`Thread ${i + 1}: ${whereOf(project, thread)}`];
+    const shownOn = [...new Set(input.shownOn(thread.path))].map((p) => shown(project, p)).sort();
+    if (shownOn.length > 0) lines.push(`Shown on: ${shownOn.join(", ")}`);
+    if (thread.detached === "file") lines.push("The comment is on the file as a whole.");
+    else if (thread.detached === "no-block") {
+      lines.push("No block of the page holds the comment's lines.");
+    } else if (thread.outdated && !onRemovedText(thread) && thread.detached === undefined) {
+      lines.push("Outdated: the text has changed since the comment.");
+    }
+    const url = thread.comments[0]?.url;
+    if (url && /^https?:\/\//i.test(url)) lines.push(`On GitHub: ${url}`);
+    const comments = thread.comments;
+    const body = comments
+      .map((c) => {
+        const text = stripComments(c.body);
+        const cut =
+          length(text) > MAX_COMMENT
+            ? `${Array.from(text).slice(0, MAX_COMMENT).join("")}… (cut: read the rest on GitHub)`
+            : text;
+        return `${handle(c.author)}${c.pending ? " (unsent)" : ""}:\n${cut}`;
+      })
+      .join("\n\n");
+    const authors = comments.map((c) => handle(c.author));
+    return `${lines.join("\n")}\n\n${dataSentence(authors, "It's a request about this block.")}\n\n${fenced(body, "text")}`;
+  });
+  const more = open.length - listed.length;
+  return assemble([
+    head.join("\n"),
+    ...listed,
+    more > 0 ? `And ${more} more, in the pull request's comments.` : "",
+  ]);
+}
+
+/**
+ * The threads a reviewer would act on, by file and line: not resolved, and
+ * with a comment that isn't only the viewer's unsent one.
+ */
+function openThreads(threads: readonly LocatedThread[]): LocatedThread[] {
+  return threads
+    .filter((t) => !t.resolved && !t.comments.every((c) => c.pending))
+    .filter((t) => t.comments.length > 0)
+    .sort(
+      (a, b) =>
+        compare(a.path, b.path) ||
+        (a.lines?.first ?? 0) - (b.lines?.first ?? 0) ||
+        compare(a.id, b.id),
+    );
 }
 
 /** Takes out HTML comments, where hidden text, and an instruction, would hide. */
@@ -274,7 +354,7 @@ function finishLines(project: PromptProject, targets: readonly string[]): string
 }
 
 /** A word as a POSIX shell reads it: as it is when it's plain, else in single quotes. */
-function shellWord(word: string): string {
+export function shellWord(word: string): string {
   if (word !== "" && /^[A-Za-z0-9_\-./:@%+=,]+$/.test(word)) return word;
   return `'${word.replace(/'/g, "'\\''")}'`;
 }

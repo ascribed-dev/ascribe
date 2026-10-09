@@ -157,6 +157,10 @@ It offers:
 
 See [`ascribe mcp`](../reference/cli.md#ascribe-mcp) for each tool and the command it runs.
 
+### The server in VS Code
+
+In VS Code, the Ascribe extension offers the server to VS Code's agents itself, so there's no file to write. It adds three tools of its own, for what only the editor knows: `ascribe_editor_problems`, the problems of files as the editor has them, saved or not; and, while review is on, `ascribe_review_threads`, the pull request's open threads, and `ascribe_review_changes`, the changed pages. See [Agents in VS Code](editor.md#agents-in-vs-code).
+
 ## Hooks
 
 A hook is a command your agent runs at a point in its work. Ascribe's checks an agent's work without the agent having to remember: each file it writes, as it writes it, and the whole project before it finishes. One command serves Claude Code, Codex, and GitHub Copilot, which share a hook format, with the agent's name as its argument:

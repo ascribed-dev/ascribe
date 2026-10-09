@@ -3,6 +3,7 @@
 // schemas/, by crates/ascribe-cli/src/shapes.rs. Change the Rust types, then
 // run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`. Don't edit it.
 //
+// - CheckReport (`ascribe check --format json` and `ascribe build --format json`)
 // - PreviewResult (the language server, answering `ascribe/preview`)
 // - SetBaseResult (the language server, answering `ascribe/review/setBase`)
 // - ChangesResult (the language server, answering `ascribe/review/changes`)
@@ -186,6 +187,74 @@ export interface ChangesResult {
    * changed.
    */
   problem: string | null;
+}
+
+/**
+ * What `ascribe check --format json` and `ascribe build --format json`
+ * write: one document, whatever the outcome. Fields can be added without a
+ * new `schema_version`, so a reader ignores fields it doesn't know.
+ */
+export interface CheckReport {
+  /**
+   * The version of this schema. It changes only when a field is removed
+   * or changes meaning.
+   */
+  schema_version: number;
+  /** The version of Ascribe that wrote it. */
+  ascribe_version: string;
+  /**
+   * Why the project couldn't be checked (exit code 2), or `null`. When it
+   * isn't `null`, `diagnostics` holds what was found first: the content
+   * model's problems.
+   */
+  error: string | null;
+  /** How many source files were checked: the project's. */
+  files_checked: number;
+  /**
+   * How many of them the report covers: the source files in the paths
+   * named, or every one when no path was.
+   */
+  files_reported: number;
+  /**
+   * The builds whose page-level checks ran, in `ascribe.toml`'s order:
+   * every build, the ones named with `--build`, or the editor's with
+   * `--editor-build`. Empty when the project couldn't be checked.
+   */
+  builds_checked: string[];
+  /**
+   * Every diagnostic, in file order, and in source order within a file.
+   * With paths, only those that count for them. With `--summary`, none:
+   * see `truncated`.
+   */
+  diagnostics: Entry[];
+  /**
+   * Whether `diagnostics` leaves some out. It does with `--summary`,
+   * which lists none.
+   */
+  truncated: boolean;
+  /** How many diagnostics `diagnostics` lists. */
+  shown: number;
+  /** How many diagnostics there are. */
+  total: number;
+  /**
+   * The command that lists the ones left out, when `truncated`; `null`
+   * otherwise.
+   */
+  next_command: string | null;
+  /** How many errors and warnings. */
+  summary: Summary;
+}
+
+/** How many diagnostics have one code. */
+export interface CodeCount {
+  /** The code, such as `ASC036`. */
+  code: string;
+  /** The diagnostic's name, such as `link-target-missing`. */
+  slug: string;
+  /** `error` or `warning`. */
+  severity: string;
+  /** How many. */
+  count: number;
 }
 
 /**
@@ -477,6 +546,14 @@ export interface Counts {
   moved: number;
 }
 
+/** One edit of a fix. */
+export interface Edit {
+  /** The text it replaces. */
+  range: Range;
+  /** The text that replaces it. */
+  new_text: string;
+}
+
 /** The answer to `ascribe/edit`: the edit, or why there is none. */
 export type EditResult =
   | {
@@ -498,6 +575,51 @@ export type EditResult =
       error: string;
     };
 
+/** A diagnostic. */
+export interface Entry {
+  /** The code, such as `ASC036`. */
+  code: string;
+  /** The diagnostic's name, such as `link-target-missing`. */
+  slug: string;
+  /** `error` or `warning`. */
+  severity: string;
+  /** What's wrong, and what to do about it. */
+  message: string;
+  /**
+   * The file, relative to the project root (the directory of
+   * `ascribe.toml`), with `/` separators. `ascribe.toml` for a
+   * content-model problem.
+   */
+  file: string;
+  /** Where in the file. */
+  range: Range;
+  /** Other places that explain it. */
+  related: Related[];
+  /** Edits that would fix it. */
+  fixes: Fix[];
+  /**
+   * The builds a page-level diagnostic appears in, in `ascribe.toml`'s
+   * order. Empty for a file-level diagnostic, and for one in content no
+   * build publishes. With `--build`, only that build.
+   */
+  builds: string[];
+  /** Whether it's in content that no build publishes. */
+  unpublished: boolean;
+  /**
+   * How to fix it, in general: the diagnostics reference's advice for its
+   * code.
+   */
+  help: string;
+  /** The address of its entry in the diagnostics reference. */
+  docs: string;
+  /**
+   * For a problem in included content reported because one of its related
+   * places is in a path named: at how many other includes it's reported
+   * too, collapsed into this one. `0` otherwise.
+   */
+  repeats: number;
+}
+
 /** Text a build leaves out of a page. */
 export interface Excluded {
   /**
@@ -518,6 +640,31 @@ export interface Excluded {
 
 /** Why a build leaves text out of a page. */
 export type ExclusionReason = "variant" | "availability";
+
+/** How many diagnostics are in one file. */
+export interface FileCount {
+  /** The file, as a diagnostic's `file` is. */
+  file: string;
+  /** How many errors. */
+  errors: number;
+  /** How many warnings. */
+  warnings: number;
+}
+
+/** Edits that would fix a diagnostic. */
+export interface Fix {
+  /** What the fix does. */
+  title: string;
+  /** The file the edits are in, as a diagnostic's `file` is. */
+  file: string;
+  /** The edits, each replacing the text of its range. */
+  edits: Edit[];
+  /**
+   * `safe` when applying the edits as they are can't change what the page
+   * says and leaves nothing to decide; `unsafe` otherwise.
+   */
+  applicability: string;
+}
 
 /** How a directive is written (SPEC §3.5, §3.6). */
 export type Form = "line" | "block" | "container" | "group";
@@ -695,6 +842,19 @@ export type PageStatus = "added" | "removed" | "changed";
 /** What a piece of a formatted value is. */
 export type PieceKind = "text" | "code";
 
+/** A position in a file. */
+export interface Pos {
+  /** The line, from 1. */
+  line: number;
+  /**
+   * The column, from 1, in Unicode characters (not bytes or UTF-16
+   * units).
+   */
+  column: number;
+  /** The byte offset from the start of the file. */
+  offset: number;
+}
+
 /** An asset the page uses. */
 export interface PreviewAsset {
   /**
@@ -866,6 +1026,27 @@ export type PrimaryKind = "none" | "identifier" | "text" | "availability";
 /** How much a problem with showing a page matters. */
 export type ProblemSeverity = "error" | "warning" | "info";
 
+/**
+ * A span of a file. `end` is just past its last character; an empty range
+ * (an insertion) has equal positions.
+ */
+export interface Range {
+  /** Its first character. */
+  start: Pos;
+  /** Just past its last character. */
+  end: Pos;
+}
+
+/** Another place that explains a diagnostic. */
+export interface Related {
+  /** The file, as a diagnostic's `file` is. */
+  file: string;
+  /** Where in the file. */
+  range: Range;
+  /** What it has to do with the diagnostic. */
+  message: string;
+}
+
 /** What a selection is. */
 export interface Selection {
   /** Its kind. */
@@ -891,6 +1072,18 @@ export interface SetBaseResult {
    * unknown revision, `git` missing. The base set before, if any, stays.
    */
   problem: string | null;
+}
+
+/** How many diagnostics of each severity. */
+export interface Summary {
+  /** How many errors. */
+  errors: number;
+  /** How many warnings. */
+  warnings: number;
+  /** With `--summary`: how many diagnostics have each code, most first. */
+  by_code?: CodeCount[];
+  /** With `--summary`: how many diagnostics are in each file, most first. */
+  by_file?: FileCount[];
 }
 
 /** An attribute a widget accepts. */

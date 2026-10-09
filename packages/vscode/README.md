@@ -19,6 +19,7 @@ The extension activates in a workspace that contains an `ascribe.toml`. A worksp
 - **The Ascribe sidebar**: every project in the workspace, what links to the page you're on, the project's pages and the ones nothing links to, and its content model with how much each entry is used.
 - **The build you're looking at**, in the status bar: switch it, and the preview renders it and **the build lens** dims what it leaves out of the page.
 - **Review**: the preview marks what changed against a git revision, lists the pages a change touches, and shows the pull request's review comments beside the blocks they're about, where you can reply, resolve, comment, and submit your review. [Reviewing a pull request](https://ascribed-dev.com/guides/review/) walks through it.
+- **Agents**: an agent in VS Code gets Ascribe's MCP server with nothing to set up, and tools that see what's in the editor before it's saved and the review that's open. **Prompt agent** builds a prompt about a problem or a review comment for your agent. See [Agents in VS Code](https://ascribed-dev.com/guides/editor/#agents-in-vs-code).
 
 After you install it, the **Get Started with Ascribe** walkthrough goes through the first steps. It's under **Help → Welcome** whenever you want it again.
 

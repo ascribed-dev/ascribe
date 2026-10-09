@@ -23,6 +23,7 @@ const review = fileURLToPath(new URL("../review/", import.meta.url));
 const reviewAlias = {
   "@ascribed/review/github": `${review}src/github/index.ts`,
   "@ascribed/review/place": `${review}src/place/index.ts`,
+  "@ascribed/review/prompt": `${review}src/prompt/index.ts`,
   "@ascribed/review/overlay": `${review}src/overlay/index.ts`,
   "@ascribed/review/marks.css": `${review}src/marks/marks.css`,
   "@ascribed/review/marks": `${review}src/marks/index.ts`,

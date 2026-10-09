@@ -8,7 +8,9 @@
 //! headings, an include of a fragment, links to other pages, an image, and one
 //! page in ten has an availability marker), starts the server in-process over a memory
 //! connection, opens a page, types into it, and prints the load time and the
-//! min, median, and 95th percentile of the keystroke latency. A plain `main`
+//! min, median, and 95th percentile of the keystroke latency. Then it writes
+//! a page that isn't open on disk, as an agent's edit tool does, and times
+//! `workspace/didChangeWatchedFiles` to that page's diagnostics. A plain `main`
 //! rather than a benchmark framework: nothing here needs more statistics than
 //! that.
 
@@ -29,8 +31,9 @@ use ascribe_synthetic::{
 };
 use lsp_server::{Connection, Message, Notification, Request, RequestId, Response};
 use lsp_types::{
-    DidChangeTextDocumentParams, DidOpenTextDocumentParams, Position, PublishDiagnosticsParams,
-    Range, TextDocumentContentChangeEvent, TextDocumentItem, Uri, VersionedTextDocumentIdentifier,
+    DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidOpenTextDocumentParams,
+    FileChangeType, FileEvent, Position, PublishDiagnosticsParams, Range,
+    TextDocumentContentChangeEvent, TextDocumentItem, Uri, VersionedTextDocumentIdentifier,
 };
 use serde_json::json;
 mod synthetic;
@@ -276,6 +279,49 @@ fn run(pages: usize) {
     }
     fragment_times.sort();
     let f = |x: f64| fragment_times[((fragment_times.len() as f64 - 1.0) * x).round() as usize];
+
+    // Write a page that isn't open, as an agent's edit tool does, and tell
+    // the server as the editor's file watcher would. Every other write adds a
+    // link to a page that doesn't exist, so each one changes the page's
+    // diagnostics, and the server publishes them.
+    let written = pages / 3;
+    let written_path = root.join(format!("{CONTENT_ROOT}/{}", project.page_path(written)));
+    let written_uri = Uri::from_str(&format!("file://{}", written_path.display())).unwrap();
+    let mut disk_times = Vec::new();
+    for k in 0..KEYSTROKES {
+        let tail = if k % 2 == 0 {
+            format!("see [nothing](/missing-{k}.md).")
+        } else {
+            format!("revision {k}.")
+        };
+        std::fs::write(&written_path, project.page_text(written, &tail)).unwrap();
+        let began = Instant::now();
+        client
+            .conn
+            .sender
+            .send(
+                Notification::new(
+                    "workspace/didChangeWatchedFiles".into(),
+                    DidChangeWatchedFilesParams {
+                        changes: vec![FileEvent {
+                            uri: written_uri.clone(),
+                            typ: FileChangeType::CHANGED,
+                        }],
+                    },
+                )
+                .into(),
+            )
+            .unwrap();
+        let published = client.wait_publish(&written_uri, None);
+        assert_eq!(
+            published.diagnostics.is_empty(),
+            k % 2 == 1,
+            "{published:?}"
+        );
+        disk_times.push(began.elapsed());
+    }
+    disk_times.sort();
+    let d = |x: f64| disk_times[((disk_times.len() as f64 - 1.0) * x).round() as usize];
     println!(
         "{pages:>5} pages: load+first diagnostics {load:>10.3?}   page keystroke: median {:>9.3?} p95 {:>9.3?}   fragment keystroke ({} includers): median {:>9.3?} p95 {:>9.3?}",
         q(0.5),
@@ -290,6 +336,11 @@ fn run(pages: usize) {
         pv(0.95),
         wp(0.5),
         wp(0.95)
+    );
+    println!(
+        "        a page written on disk: change to diagnostics median {:>9.3?} p95 {:>9.3?}",
+        d(0.5),
+        d(0.95)
     );
     client.request("shutdown", json!(null));
     client

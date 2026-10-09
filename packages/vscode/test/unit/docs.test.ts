@@ -1,6 +1,6 @@
-// The editor guide, docs/content/guides/editor.md, includes three fragments
+// The editor guide, docs/content/guides/editor.md, includes four fragments
 // generated from package.json and the action registry: the settings, the
-// commands in the command palette, and the actions. This test renders them
+// commands in the command palette, the actions, and the tools for agents. This test renders them
 // and fails when one is out of date; run it with ASCRIBE_BLESS=1 to rewrite
 // them. To change what a setting's row says, change its description in
 // package.json. VS Code's manifest has no field for what a command does, so
@@ -85,6 +85,9 @@ const available: Record<string, string> = {
   "ascribe.promptAgentFile": "next",
   "ascribe.promptAgentProject": "next",
   "ascribe.agents.promptTarget": "next",
+  ascribe_editor_problems: "next",
+  ascribe_review_threads: "next",
+  ascribe_review_changes: "next",
   [ACTIONS_ROW]: "next",
 };
 
@@ -108,6 +111,7 @@ interface Manifest {
     commands: { command: string; title: string; category: string }[];
     menus: { commandPalette: { command: string; when: string }[] };
     configuration: { properties: Record<string, Setting> };
+    languageModelTools: { name: string; toolReferenceName: string; userDescription: string }[];
   };
 }
 
@@ -177,10 +181,20 @@ function actionTable(): string {
   return out;
 }
 
+/** The tools for agents, in the manifest's order, by the name chat references them with. */
+function toolTable(): string {
+  let out = `${HEADER}\n| Tool | What it gives |\n|---|---|\n`;
+  for (const tool of manifest.contributes.languageModelTools) {
+    out += `| \`#${tool.toolReferenceName}\`${availability(tool.name)} | ${cell(tool.userDescription)} |\n`;
+  }
+  return out;
+}
+
 const fragments: [string, string][] = [
   ["editor-settings.md", settings()],
   ["editor-commands.md", commandTable()],
   ["editor-actions.md", actionTable()],
+  ["editor-tools.md", toolTable()],
 ];
 
 describe("the editor guide", () => {
@@ -200,6 +214,7 @@ describe("the editor guide", () => {
     const ids = [
       ...Object.keys(manifest.contributes.configuration.properties),
       ...Object.keys(commands),
+      ...manifest.contributes.languageModelTools.map((tool) => tool.name),
       ACTIONS_ROW,
     ];
     expect(Object.keys(available).filter((id) => !ids.includes(id))).toEqual([]);

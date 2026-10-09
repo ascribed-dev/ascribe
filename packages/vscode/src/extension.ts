@@ -5,6 +5,8 @@ import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
 import { ActionsController, type ActionsApi } from "./actions/controller.js";
 import { PromptAgent, type PromptAgentApi } from "./actions/promptAgent.js";
+import { McpRegistration, type McpApi } from "./agents/mcp.js";
+import { AgentTools, type ToolsApi } from "./agents/tools.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { STATE_NAMES } from "./ui/describe.js";
@@ -36,6 +38,8 @@ export interface AscribeApi {
   actions: ActionsApi;
   /** Prompt agent, for tests. */
   promptAgent: PromptAgentApi;
+  /** What agents in VS Code get: the MCP server and the tools, for tests. */
+  agents: { mcp: McpApi; tools: ToolsApi };
   /** The status bar item and the sidebar's views, for tests. */
   ui: {
     statusBar: StatusBarApi;
@@ -59,6 +63,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   promptAgent.register();
   const preview = new PreviewController(context, projects, chosen, promptAgent);
   preview.register();
+  const mcp = new McpRegistration(context, projects);
+  mcp.register();
+  const tools = new AgentTools(projects, preview.review);
+  tools.register();
 
   const lenses = new BuildLenses();
   const builds = new ProjectBuilds(projects, chosen, lenses);
@@ -112,6 +120,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   context.subscriptions.push(
     projects,
     preview,
+    mcp,
+    tools,
     actions,
     promptAgent,
     chosen,
@@ -173,6 +183,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     preview: preview.api,
     actions: actions.api,
     promptAgent: promptAgent.api,
+    agents: { mcp: mcp.api, tools: tools.api },
     ui: {
       statusBar: statusBar.api,
       projects: projectsView.api,

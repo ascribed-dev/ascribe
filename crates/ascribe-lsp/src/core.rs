@@ -5,7 +5,7 @@
 //! computes without the lock, and comes back to publish under it, so a change
 //! and the check that a result is still current are never interleaved.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -141,6 +141,10 @@ pub(crate) struct Core {
     pub(crate) review: Option<Arc<crate::review::ReviewBase>>,
     epoch: u64,
     published: HashMap<PathBuf, Published>,
+    /// Closed files changed on disk, published at their next diagnostics
+    /// even when those didn't change, so a client waiting on the change
+    /// learns the server has caught up.
+    forced: HashSet<PathBuf>,
     next_id: i32,
 }
 
@@ -160,6 +164,7 @@ impl Core {
             review: None,
             epoch: 0,
             published: HashMap::new(),
+            forced: HashSet::new(),
             next_id: 0,
         }
     }
@@ -467,7 +472,23 @@ impl Core {
             }
         }
         if !changes.is_empty() {
+            let written: Vec<RelPath> = changes
+                .iter()
+                .filter_map(|change| match change {
+                    Change::Edited { path, .. } | Change::Unreadable { path, .. } => {
+                        Some(path.clone())
+                    }
+                    _ => None,
+                })
+                .collect();
             self.apply(changes, &mirror);
+            if let Some(loaded) = self.loaded.as_mut() {
+                for path in written {
+                    self.forced.insert(loaded.source_path(&path));
+                    // Checked again even when its text is what it was.
+                    loaded.dirty.insert(path);
+                }
+            }
         }
         if sync_model {
             self.sync_model();
@@ -721,7 +742,8 @@ impl Core {
 
     // A closed file keeps its diagnostics.
     /// Publishes a file's diagnostics when they, or the version of the document
-    /// they're for, changed since the last time.
+    /// they're for, changed since the last time, or when the file was changed
+    /// on disk since.
     pub(crate) fn publish(&mut self, path: &Path, diagnostics: Vec<lsp_types::Diagnostic>) {
         let doc = self.docs.get(path);
         let version = doc.map(|d| d.version);
@@ -730,7 +752,8 @@ impl Core {
             None => !diagnostics.is_empty() || is_open,
             Some(last) => last.diagnostics != diagnostics || last.version != version,
         };
-        if !changed {
+        let forced = self.forced.remove(path);
+        if !changed && !forced {
             return;
         }
         let uri = match doc {
