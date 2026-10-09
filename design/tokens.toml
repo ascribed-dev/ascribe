@@ -8,9 +8,10 @@
 # stylesheet.
 #
 # [color]: what a color is for, with a light and a dark value, each a
-# palette name. The element library, review, the HTML report, and the Astro
-# toolbar share the top-level ones (`color.text`, `color.note`); the docs site
-# and the VS Code preview have their own (`color.site.text`).
+# palette name. The element library, review, the HTML report, the Astro
+# toolbar, and the docs site share the top-level ones (`color.text`,
+# `color.note`); a color only one surface uses is under its name
+# (`color.preview.error`).
 #
 # [font], [space], [radius], [type]: values the stylesheets use as they are.
 #

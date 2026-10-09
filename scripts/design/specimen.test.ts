@@ -32,8 +32,8 @@ test("red and green move closer for a reader without red or green cones", () => 
   expect(difference(green, green, "deutan")).toBe(0);
 });
 
-test("there's a baseline, and the chosen palette", () => {
-  expect(inputs.candidates.map((c) => c.id)).toEqual(["baseline", "chosen"]);
+test("the chosen palette is the only one", () => {
+  expect(inputs.candidates.map((c) => c.id)).toEqual(["chosen"]);
 });
 
 test("the full-color mark is the one-color mark in the chosen palette's light colors", () => {
@@ -50,7 +50,7 @@ test("the full-color mark is the one-color mark in the chosen palette's light co
 });
 
 test("every candidate palette passes every pairing, in light and dark", () => {
-  for (const candidate of inputs.candidates.filter((c) => !c.baseline)) {
+  for (const candidate of inputs.candidates) {
     const failing = checkPairs(candidate, inputs.pairs)
       .filter((c) => !c.pass)
       .map((c) => `${c.scheme}: ${c.pair.fg} on ${c.pair.bg}, ${c.ratio.toFixed(2)}:1`);
@@ -65,17 +65,17 @@ test("the pairs use every semantic color but the border, which carries no meanin
 
 test("a candidate names the key it got wrong", () => {
   const good = readFileSync(
-    new URL("../../design/candidates/baseline.toml", import.meta.url),
+    new URL("../../design/candidates/chosen.toml", import.meta.url),
     "utf8",
   );
-  expect(() => readCandidate("x", good.replace('"blue.600"', '"blue.601"'))).toThrow(
-    'x.toml color.accent.light: no palette entry "blue.601"',
+  expect(() => readCandidate("x", good.replace('"indigo.600"', '"indigo.601"'))).toThrow(
+    'x.toml color.accent.light: no palette entry "indigo.601"',
   );
   expect(() => readCandidate("x", good.replace(/^focus = .*$/m, ""))).toThrow(
     "x.toml color.focus: expected a table",
   );
   expect(() => readCandidate("x", good.replace('"#ffffff"', '"#FFF"'))).toThrow(
-    'x.toml palette.gray.0: "#FFF" isn\'t a lowercase #rrggbb',
+    'x.toml palette.neutral.0: "#FFF" isn\'t a lowercase #rrggbb',
   );
 });
 
