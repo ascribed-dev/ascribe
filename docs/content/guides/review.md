@@ -10,7 +10,7 @@ Ascribe shows a pull request the way readers will see it: each page it changes, 
 
 You can review in three places, and they show the same changes and the same comments:
 
-- the **page preview** in VS Code, which renders the page by itself and needs nothing but the extension;
+- the **page preview** in VS Code, which renders the page by itself and needs nothing but the extension and a checkout;
 - the **site preview**, the page in your real site, from `astro dev` with [`@ascribed/astro`](astro.md);
 - the **report**, one HTML file that CI can attach to every pull request, for anyone who wants to read the change without a checkout.
 

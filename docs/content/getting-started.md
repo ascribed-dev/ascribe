@@ -18,7 +18,7 @@ npx ascribe --version
 ```
 @variant {pm=pnpm}:
 ```sh
-pnpm add --save-dev @ascribed/cli
+pnpm add -D @ascribed/cli
 pnpm exec ascribe --version
 ```
 @end
@@ -35,7 +35,9 @@ Install the **Ascribe** extension for VS Code from the Marketplace:
 code --install-extension Ascribe.ascribe-vscode
 ```
 
-It checks your pages as you type, completes directives, [phrases](reference/directives.md#phrases), and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](guides/editor.md).
+It checks your pages as you type, completes directives, [phrases](reference/directives.md#phrases), and links, previews pages as the site shows them, and shows a pull request's changes and comments on the page. It uses the project's `ascribe` when there is one. See [Editing](guides/editor.md).
+
+@note {type=tip}: Open a page and run **Ascribe: Open Page Preview to the Side** to see it rendered beside its source.
 
 ## Create `ascribe.toml`
 
@@ -83,6 +85,14 @@ The link to `configure.md` is reported, since that page doesn't exist yet:
 
 Every diagnostic has a code, and the [diagnostics reference](reference/diagnostics.md) says how to fix each. `ascribe check` exits with 1 when there are errors, so it can gate CI; add `--deny-warnings` to fail on warnings too. Create `docs/configure.md` with a `title`, and check again.
 
+## Format it
+
+```sh
+npx ascribe fmt
+```
+
+rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
+
 ## Build it
 
 ```sh
@@ -95,22 +105,12 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 - `plain/`: plain Markdown with everything resolved, for search indexes and LLMs;
 - `json/`: the resolved pages as JSON, for your own tools.
 
-See the [command reference](reference/cli.md#ascribe-build).
-
-## Format it
-
-```sh
-npx ascribe fmt
-```
-
-rewrites directives and attribute blocks into their canonical spelling, and changes nothing else. `ascribe fmt --check` reports what would change, for CI.
-
 ## Publish it with Astro
 
 In an [Astro](https://astro.build) project (`npm create astro@latest` makes one), with `ascribe.toml` beside `astro.config.mjs`:
 
 @steps
-1. Install the integration:
+1. Install the integration beside the command:
 
    ```sh
    npm install @ascribed/astro
@@ -156,7 +156,7 @@ jobs:
 
 - [Directive reference](reference/directives.md): the language.
 - [`ascribe.toml` reference](reference/content-model.md): the content model.
-- [Command reference](reference/cli.md): `check`, `build`, `fmt`, and `lsp`.
+- [Command reference](reference/cli.md): `check`, `build`, `fmt`, `diff`, and `lsp`.
 - [Diagnostics](reference/diagnostics.md): every problem Ascribe reports, and its fix.
 - [Editing](guides/editor.md): the VS Code extension.
 - [Astro](guides/astro.md): publishing a site.
