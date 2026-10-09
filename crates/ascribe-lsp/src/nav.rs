@@ -335,6 +335,27 @@ pub(crate) fn identifier_primary(d: &DirectiveLine) -> Option<(&str, Span)> {
     }
 }
 
+/// The headings a link to `file` can name, in document order: a page's own
+/// and those of the fragments it includes (SPEC §4.2); a fragment's own. Each
+/// id once, the first heading with it winning, and none without an id.
+pub(crate) fn link_headings<'a>(snapshot: &'a Snapshot, file: &'a FileIndex) -> Vec<&'a Heading> {
+    match snapshot.expansion(&file.path) {
+        Some(page) => named_headings(page.headings(snapshot).into_iter().map(|(_, h)| h)),
+        None => named_headings(&file.headings),
+    }
+}
+
+/// The headings with an id, each id once, the first with it winning.
+pub(crate) fn named_headings<'a>(
+    headings: impl IntoIterator<Item = &'a Heading>,
+) -> Vec<&'a Heading> {
+    let mut seen = std::collections::HashSet::new();
+    headings
+        .into_iter()
+        .filter(|h| !h.source_id.is_empty() && seen.insert(h.source_id.as_str()))
+        .collect()
+}
+
 /// Percent-encodes what would end a link destination or an include path early
 /// (whitespace, parentheses, angle brackets) or would be read as an escape.
 pub(crate) fn encode_destination(path: &str) -> String {

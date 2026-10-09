@@ -915,7 +915,7 @@
       "oneOf": [
         {
           "const": "prose",
-          "description": "Prose: inside one paragraph's or heading's text (`inline`), or\nacross paragraphs and headings and covering only part of one.",
+          "description": "Inside one paragraph's or heading's text; `inline` is always true.",
           "type": "string"
         },
         {
@@ -930,7 +930,7 @@
         },
         {
           "const": "mixed",
-          "description": "Across blocks and covering part of one that isn't prose.",
+          "description": "Anything else that spans blocks: part of one of several blocks, or\na directive's own lines (an opener, its title, an `@end`) with some of\nthe blocks it holds, or some of a list's items or a group's arms.",
           "type": "string"
         },
         {

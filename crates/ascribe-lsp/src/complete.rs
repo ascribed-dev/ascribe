@@ -14,7 +14,7 @@
 use ascribe_core::schema::{AttributeSchema, AttributeType, Attributes, Origin, SetMember};
 use ascribe_core::{LineIndex, RelPath, percent_decode};
 use ascribe_resolve::references::{include_target, reference_target};
-use ascribe_resolve::{FileIndex, Heading, RefKind, Target};
+use ascribe_resolve::{FileIndex, RefKind, Target};
 use ascribe_syntax::{Block, BlockKind, CodeBlock, Inline, InlineKind};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionList,
@@ -23,7 +23,9 @@ use lsp_types::{
 };
 
 use crate::hover::{attribute_line, describe_directive, type_name};
-use crate::nav::{Ctx, encode_destination, line_prefix, relative_path};
+use crate::nav::{
+    Ctx, encode_destination, line_prefix, link_headings, named_headings, relative_path,
+};
 
 /// The most items a search returns.
 pub(crate) const LIMIT: usize = 100;
@@ -481,18 +483,13 @@ impl Cx<'_> {
         }
         let wanted = percent_decode(typed).to_lowercase();
         let snapshot = &self.ctx.snapshot;
-        let headings: Vec<&Heading> = match snapshot.expansion(target) {
-            Some(page) if !include => page
-                .headings(snapshot)
-                .into_iter()
-                .map(|(_, h)| h)
-                .collect(),
-            _ => file.headings.iter().collect(),
+        let headings = if include {
+            named_headings(&file.headings)
+        } else {
+            link_headings(snapshot, file)
         };
-        let mut seen = std::collections::HashSet::new();
         let mut matches: Vec<_> = headings
             .into_iter()
-            .filter(|h| !h.source_id.is_empty() && seen.insert(h.source_id.as_str()))
             .filter(|h| {
                 wanted.is_empty()
                     || h.source_id.to_lowercase().contains(&wanted)

@@ -248,10 +248,10 @@ cursor in the block has the directive in its chain.
 
 | Kind | When |
 |---|---|
-| `prose` | Inside one paragraph's or heading's text (`inline: true`), or across paragraphs and headings and covering only part of one (`inline: false`) |
-| `blocks` | Whole blocks of any kind, side by side |
+| `prose` | Inside one paragraph's or heading's text, or all of it (`inline` is `true` only for this kind) |
+| `blocks` | Whole blocks of any kind, side by side: whole lists, whole containers, whole groups |
 | `code` | Inside one code block |
-| `mixed` | Across blocks and covering part of one that isn't prose |
+| `mixed` | Anything else that spans blocks: part of one of them, a directive's own lines (an opener, its title, an `@end`) with some of what it holds, or some of a list's items or a group's arms |
 | `other` | Part of one table or directive line, or the frontmatter |
 
 `token.kind` is `link` (`destination`, `textEmpty`), `image` (`src`),

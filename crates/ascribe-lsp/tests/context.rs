@@ -466,8 +466,51 @@ fn selections_are_prose_blocks_code_or_mixed() {
     assert_eq!(r["selection"]["text"], "Para one.\n\nPara two.");
     // Across parts of two paragraphs.
     let r = select(&mut client, ("Para one.", 5), ("Para two.", 4));
-    assert_eq!(r["selection"]["kind"], "prose");
+    assert_eq!(r["selection"]["kind"], "mixed");
     assert_eq!(r["selection"]["inline"], false);
+    // A directive's own lines with the blocks it holds aren't whole blocks:
+    // an arm with its opener,
+    let r = select(&mut client, ("@variant {pm=npm}", 0), ("Run npm.", 8));
+    assert_eq!(r["selection"]["kind"], "mixed");
+    // both arms of a group without its `@end`,
+    let r = select(&mut client, ("@variant {pm=npm}", 0), ("Run pnpm.", 9));
+    assert_eq!(r["selection"]["kind"], "mixed");
+    // part of a container's opener through its content.
+    let r = select(
+        &mut client,
+        ("@note {type=extra}:", 6),
+        ("Inside a container.", 19),
+    );
+    assert_eq!(r["selection"]["kind"], "mixed");
+    // The blocks inside an arm or a container are blocks.
+    let r = select(&mut client, ("Run npm.", 0), ("Run npm.", 8));
+    assert_eq!(r["selection"]["kind"], "prose");
+    let r = select(
+        &mut client,
+        ("Inside a container.", 0),
+        ("Inside a container.", 19),
+    );
+    assert_eq!(r["selection"]["kind"], "prose");
+    // A whole group or container is a block.
+    let r = select(
+        &mut client,
+        ("@variant {pm=npm}", 0),
+        ("Run pnpm.\n   @end", 18),
+    );
+    assert_eq!(r["selection"]["kind"], "blocks");
+    let r = select(
+        &mut client,
+        ("@note {type=extra}:", 0),
+        ("container.\n\n@end", 16),
+    );
+    assert_eq!(r["selection"]["kind"], "blocks");
+    // Some of a list's items aren't blocks; the whole list is.
+    let r = select(&mut client, ("1. First", 0), ("2. Second.", 5));
+    assert_eq!(r["selection"]["kind"], "mixed");
+    let r = select(&mut client, ("1. First", 0), ("2. Second.", 10));
+    assert_eq!(r["selection"]["kind"], "blocks");
+    let r = select(&mut client, ("1. First", 0), ("1. First step.", 14));
+    assert_eq!(r["selection"]["kind"], "mixed");
     // From a paragraph into the middle of a code block.
     let r = select(&mut client, ("A line note", 2), ("const a", 5));
     assert_eq!(r["selection"]["kind"], "mixed");

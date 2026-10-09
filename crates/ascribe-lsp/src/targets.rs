@@ -9,8 +9,6 @@
 //! [`FileSystem`], and a snippet's regions are read by the code that resolves
 //! `@snippet` ([`source_files`]), so every address listed resolves.
 
-use std::collections::HashSet;
-
 use ascribe_core::schema::{AttributeType, Attributes, DefaultValue, SetMember};
 use ascribe_core::{Binding, LineIndex, Primary, RelPath, image_media_type};
 use ascribe_model::TypeMatch;
@@ -20,7 +18,7 @@ use lsp_types::{Range, TextDocumentIdentifier};
 use serde::{Deserialize, Serialize};
 
 use crate::definition::{Entry, find_entry};
-use crate::nav::{Ctx, encode_destination, relative_path};
+use crate::nav::{Ctx, encode_destination, link_headings, relative_path};
 
 /// The request's method name.
 pub const METHOD: &str = "ascribe/targets";
@@ -509,24 +507,12 @@ fn headings(ctx: &Ctx) -> Vec<TargetHeading> {
     pages.sort_by(|a, b| a.path.cmp(&b.path));
     let mut out = Vec::new();
     for file in pages {
-        let headings: Vec<_> = match snapshot.expansion(&file.path) {
-            Some(page) => page
-                .headings(snapshot)
-                .into_iter()
-                .map(|(_, h)| h)
-                .collect(),
-            None => file.headings.iter().collect(),
-        };
         let page_link = if file.path == ctx.path {
             String::new()
         } else {
             link_to(ctx, &file.path)
         };
-        let mut seen = HashSet::new();
-        for h in headings {
-            if h.source_id.is_empty() || !seen.insert(h.source_id.as_str()) {
-                continue;
-            }
+        for h in link_headings(snapshot, file) {
             out.push(TargetHeading {
                 page: file.path.to_string(),
                 text: h.text.clone(),

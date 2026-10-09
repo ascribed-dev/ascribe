@@ -348,14 +348,15 @@ pub struct Selection {
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum SelectionKind {
-    /// Prose: inside one paragraph's or heading's text (`inline`), or
-    /// across paragraphs and headings and covering only part of one.
+    /// Inside one paragraph's or heading's text; `inline` is always true.
     Prose,
     /// Whole blocks of any kind, side by side.
     Blocks,
     /// Inside one code block.
     Code,
-    /// Across blocks and covering part of one that isn't prose.
+    /// Anything else that spans blocks: part of one of several blocks, or
+    /// a directive's own lines (an opener, its title, an `@end`) with some of
+    /// the blocks it holds, or some of a list's items or a group's arms.
     Mixed,
     /// Anything else: part of one table, directive line, or the frontmatter.
     Other,
@@ -1066,75 +1067,64 @@ fn within(blocks: &[Block], s: usize, e: usize) -> (SelectionKind, bool) {
         .iter()
         .find(|b| b.span.start() <= s && e <= b.span.end())
     else {
-        return across(blocks.iter().map(|b| (b.span, is_prose(b))), s, e);
+        return across(blocks, s, e);
     };
     let whole = s <= block.span.start() && block.span.end() <= e;
-    let nested = |children: &[Block]| {
-        if whole {
-            (SelectionKind::Blocks, false)
-        } else {
-            within(children, s, e)
-        }
-    };
     match &block.kind {
         BlockKind::Paragraph(_) | BlockKind::Heading(_) => (SelectionKind::Prose, true),
-        BlockKind::CodeBlock(_) if whole => (SelectionKind::Blocks, false),
-        BlockKind::CodeBlock(_) => (SelectionKind::Code, false),
-        BlockKind::BlockQuote(q) => nested(&q.children),
-        BlockKind::Container(c) => nested(&c.children),
-        BlockKind::List(list) => {
-            if whole {
-                return (SelectionKind::Blocks, false);
-            }
-            match list
-                .items
-                .iter()
-                .find(|i| i.span.start() <= s && e <= i.span.end())
-            {
-                Some(item) => within(&item.children, s, e),
-                None => across(list.items.iter().map(|i| (i.span, false)), s, e),
-            }
-        }
-        BlockKind::Group(group) => {
-            if whole {
-                return (SelectionKind::Blocks, false);
-            }
-            match group
-                .arms
-                .iter()
-                .find(|a| a.span.start() <= s && e <= a.span.end())
-            {
-                Some(arm) => within(&arm.children, s, e),
-                None => across(group.arms.iter().map(|a| (a.span, false)), s, e),
-            }
-        }
         _ if whole => (SelectionKind::Blocks, false),
+        BlockKind::CodeBlock(_) => (SelectionKind::Code, false),
+        BlockKind::BlockQuote(q) => inside(&q.children, s, e),
+        BlockKind::Container(c) => inside(&c.children, s, e),
+        BlockKind::List(list) => match list
+            .items
+            .iter()
+            .find(|i| i.span.start() <= s && e <= i.span.end())
+        {
+            Some(item) => inside(&item.children, s, e),
+            None => (SelectionKind::Mixed, false),
+        },
+        BlockKind::Group(group) => match group
+            .arms
+            .iter()
+            .find(|a| a.span.start() <= s && e <= a.span.end())
+        {
+            Some(arm) => inside(&arm.children, s, e),
+            None => (SelectionKind::Mixed, false),
+        },
         _ => (SelectionKind::Other, false),
     }
 }
 
-/// A selection across sibling blocks, each given as its span and whether it
-/// is prose.
-fn across(blocks: impl Iterator<Item = (Span, bool)>, s: usize, e: usize) -> (SelectionKind, bool) {
-    let mut touched = false;
-    let mut all_whole = true;
-    let mut partial_prose_only = true;
-    for (span, prose) in blocks.filter(|(span, _)| span.start() < e && s < span.end()) {
-        touched = true;
-        if !(s <= span.start() && span.end() <= e) {
-            all_whole = false;
-            partial_prose_only &= prose;
+/// The selection `s..e` inside a construct that holds `children`: a block
+/// quote, a container, a list item, or an arm. Taking in any of its own lines
+/// (a marker, an opener or its title, an `@end`) makes it `mixed`, since no
+/// whole blocks can be cut out of it there; and items and arms aren't blocks,
+/// so a selection across some of them is `mixed` too.
+fn inside(children: &[Block], s: usize, e: usize) -> (SelectionKind, bool) {
+    match (children.first(), children.last()) {
+        (Some(first), Some(last)) if first.span.start() <= s && e <= last.span.end() => {
+            within(children, s, e)
         }
+        _ => (SelectionKind::Mixed, false),
     }
-    let kind = match (touched, all_whole, partial_prose_only) {
-        (false, ..) => SelectionKind::Other,
-        (true, true, _) => SelectionKind::Blocks,
-        (true, false, true) => SelectionKind::Prose,
-        (true, false, false) => SelectionKind::Mixed,
-    };
-    (kind, false)
 }
 
-fn is_prose(block: &Block) -> bool {
-    matches!(block.kind, BlockKind::Paragraph(_) | BlockKind::Heading(_))
+/// A selection across sibling blocks, none of which holds it all: `blocks`
+/// when it covers each block it touches whole, else `mixed`.
+fn across(blocks: &[Block], s: usize, e: usize) -> (SelectionKind, bool) {
+    let mut touched = blocks
+        .iter()
+        .filter(|b| b.span.start() < e && s < b.span.end())
+        .peekable();
+    if touched.peek().is_none() {
+        return (SelectionKind::Other, false);
+    }
+    let whole = touched.all(|b| s <= b.span.start() && b.span.end() <= e);
+    let kind = if whole {
+        SelectionKind::Blocks
+    } else {
+        SelectionKind::Mixed
+    };
+    (kind, false)
 }
