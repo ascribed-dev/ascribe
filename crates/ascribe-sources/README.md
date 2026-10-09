@@ -32,4 +32,4 @@ Each test makes a code repository and a docs project in temporary folders, and r
 
 - `tests/fetch.rs`: a first fetch pins and copies; a second reads the cache and never moves a pin; files that can't be copied; copies no snippet uses are removed; several sources; no access; a link out of the folder.
 - `tests/update.rs`: a moved pin copies again and lists the commits; nothing to move; counting commits from history; `--to` back and forward.
-- `crates/ascribe-cli/tests/sources.rs` tests the command line.
+- `crates/ascribe-cli/tests/all/sources.rs` tests the command line.

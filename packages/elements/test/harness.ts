@@ -27,15 +27,20 @@ function executablePath(): string | undefined {
 
 const ALL_ENGINES = ["chromium", "firefox", "webkit"] as const;
 export type Engine = (typeof ALL_ENGINES)[number];
-const wanted = process.env["ASCRIBE_ENGINES"]?.split(",").map((name) => name.trim());
-export const ENGINES: readonly Engine[] = ALL_ENGINES.filter(
-  (name) => wanted === undefined || wanted.includes(name),
-);
 
 /**
- * Launch one engine. The suite runs all three; ASCRIBE_ENGINES (a
- * comma-separated subset) narrows it on machines that can't install them all.
+ * The engines to run. ASCRIBE_ENGINES (a comma-separated subset) chooses them;
+ * without it, CI (`CI` set, as Actions does) runs all three, and a local run
+ * Chromium alone, since Firefox and WebKit triple the time and an engine
+ * difference is rare. One test file per engine (`test/<engine>.test.ts`)
+ * skips itself when its engine isn't here.
  */
+const wanted: readonly string[] =
+  process.env["ASCRIBE_ENGINES"]?.split(",").map((name) => name.trim()) ??
+  (process.env["CI"] ? ALL_ENGINES : ["chromium"]);
+export const ENGINES: readonly Engine[] = ALL_ENGINES.filter((name) => wanted.includes(name));
+
+/** Launch one engine. */
 export async function launch(engine: Engine): Promise<Browser> {
   if (engine === "firefox") return firefox.launch();
   if (engine === "webkit") return webkit.launch();

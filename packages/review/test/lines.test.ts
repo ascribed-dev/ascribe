@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { lineHunks, lineMap, linesAt, parseHunks, shiftLine } from "../src/place/lines.js";
 import { locateThreads } from "../src/place/place.js";
 import type { Thread } from "../src/shared/types.js";
@@ -141,15 +141,29 @@ describe("telling a deleted line from a reworded one in the same hunk", () => {
 });
 
 describe("line maps between a commit and the working tree", () => {
+  // One repository and one commit for every test: each maps a file of its
+  // own, and edits only that file in the working tree.
   let repo: TempRepo;
-  afterEach(() => repo.remove());
-
-  test("follow local edits both ways, and know an unchanged file", async () => {
+  let head: string;
+  const lines = numbered(30);
+  beforeAll(() => {
     repo = tempRepo();
-    const lines = numbered(30);
     repo.write("docs/a b.md", `${lines.join("\n")}\n`);
     repo.write("docs/same.md", "same\n");
-    const head = repo.commit("head");
+    repo.write(
+      "Options.md",
+      "# Options\n\nretries sets how many times a request is tried again.\n\ntimeout sets how long to wait, in seconds.\n",
+    );
+    repo.write(
+      "wrapped.md",
+      "# A\n\nThis paragraph wraps\nacross four lines and\nthen ends with the\ncaller.\n",
+    );
+    repo.write("removed.md", "a\n");
+    head = repo.commit("head");
+  });
+  afterAll(() => repo.remove());
+
+  test("follow local edits both ways, and know an unchanged file", async () => {
     const edited = [...lines];
     edited.splice(19, 1);
     edited.splice(1, 0, "new a", "new b");
@@ -176,12 +190,6 @@ describe("line maps between a commit and the working tree", () => {
   });
 
   test("leave a line deleted beside a reworded one off the rewording", async () => {
-    repo = tempRepo();
-    repo.write(
-      "Options.md",
-      "# Options\n\nretries sets how many times a request is tried again.\n\ntimeout sets how long to wait, in seconds.\n",
-    );
-    const head = repo.commit("head");
     repo.write("Options.md", "# Options\n\ntimeout sets how many seconds to wait.\n");
     const forward = await lineMap(repo.root, head, "Options.md", "to-worktree");
     expect(forward.map(3)).toBeUndefined();
@@ -192,20 +200,14 @@ describe("line maps between a commit and the working tree", () => {
   });
 
   test("a thread whose last line went keeps the lines that stayed", async () => {
-    repo = tempRepo();
     repo.write(
-      "a.md",
-      "# A\n\nThis paragraph wraps\nacross four lines and\nthen ends with the\ncaller.\n",
-    );
-    const head = repo.commit("head");
-    repo.write(
-      "a.md",
+      "wrapped.md",
       "# A\n\nThis paragraph wraps across\nfour lines and then ends\nwith the caller.\n",
     );
     const thread: Thread = {
       id: "T",
       kind: "review",
-      repositoryPath: "a.md",
+      repositoryPath: "wrapped.md",
       subject: "line",
       side: "RIGHT",
       line: 6,
@@ -234,14 +236,11 @@ describe("line maps between a commit and the working tree", () => {
   });
 
   test("map nothing for a missing commit or a file missing on either side", async () => {
-    repo = tempRepo();
-    repo.write("a.md", "a\n");
-    const head = repo.commit("head");
     repo.write("new.md", "n\n");
-    const missingCommit = await lineMap(repo.root, "0".repeat(40), "a.md", "to-worktree");
+    const missingCommit = await lineMap(repo.root, "0".repeat(40), "removed.md", "to-worktree");
     expect(missingCommit.map(1)).toBeUndefined();
     expect((await lineMap(repo.root, head, "new.md", "to-commit")).map(1)).toBeUndefined();
-    repo.git("rm", "--quiet", "a.md");
-    expect((await lineMap(repo.root, head, "a.md", "to-worktree")).map(1)).toBeUndefined();
+    repo.git("rm", "--quiet", "removed.md");
+    expect((await lineMap(repo.root, head, "removed.md", "to-worktree")).map(1)).toBeUndefined();
   });
 });

@@ -1,10 +1,13 @@
 // The update pull request's recipe is one file,
 // examples/docs-repository/.github/workflows/update-sources.yml: the drift
 // guide shows it, and the sources fixture runs it. These tests check that
-// both use that file, and, when there's an `ascribe` to run it with, run the
-// fixture's pass on this machine (rust.yml runs it too, after its build).
+// both use that file, and, when asked, run the fixture's pass on this machine:
+// with ASCRIBE_BIN naming the binary, or ASCRIBE_SOURCES_FIXTURE=1 for this
+// repository's debug build. A plain `pnpm test` skips the pass, whether or not
+// that build exists: it takes ten seconds, and rust.yml runs it after its
+// build (`node scripts/sources-fixture/setup.ts --local`).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,7 +27,9 @@ const built = path.join(
   "debug",
   process.platform === "win32" ? "ascribe.exe" : "ascribe",
 );
-const ascribe = process.env["ASCRIBE_BIN"] ?? (existsSync(built) ? built : undefined);
+const ascribe =
+  process.env["ASCRIBE_BIN"] ??
+  (process.env["ASCRIBE_SOURCES_FIXTURE"] === "1" ? built : undefined);
 
 test("the drift guide shows the workflow the fixture runs", () => {
   const guide = readFileSync(path.join(root, "docs", "content", "guides", "drift.md"), "utf8");

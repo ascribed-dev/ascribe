@@ -1,0 +1,7 @@
+# The budget for the property tests: how many cases each `proptest!` block
+# runs. proptest reads `PROPTEST_CASES` wherever a block's config doesn't set
+# `cases` itself, so one number sets every property test in the workspace.
+# Cargo sets it for the test binaries it runs, and a value already in the
+# environment wins, so a soak is `PROPTEST_CASES=5000 cargo test ...`.
+[env]
+PROPTEST_CASES = "256"

@@ -19,7 +19,7 @@ tests/render/
   corpus/quill/<build>/  examples/quill's pages, with anchors (<page>.md) and without (<page>.unanchored.md)
 ```
 
-The source-anchor fixtures' `input.md` and `unanchored.md`, and the corpus, are the site emitter's output, which `crates/ascribe-emit/tests/site_anchors.rs` checks. After a change to the emitter, run it with `ASCRIBE_BLESS=1` to rewrite them, and check the diff.
+The source-anchor fixtures' `input.md` and `unanchored.md`, and the corpus, are the site emitter's output, which `crates/ascribe-emit/tests/all/site_anchors.rs` checks. After a change to the emitter, run it with `ASCRIBE_BLESS=1` to rewrite them, and check the diff.
 
 `fixtures.toml` lists each fixture's `covers`: the constructs it checks. `tests/conformance/tests/render_fixtures.rs` checks that every directory is listed, and every listed fixture has a description, at least one construct, and both files.
 
