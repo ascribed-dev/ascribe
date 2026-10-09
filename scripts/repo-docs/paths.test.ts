@@ -3,15 +3,39 @@
 // must exist: a map that points at a moved file sends its reader nowhere.
 //
 // A path is a relative link, or a code span whose first segment is a file or
-// folder next to the file or at the repository's root; it must exist there. A
-// command is a `pnpm` or `cargo` line in a code span or a shell block; the
-// script, package, crate, test, or benchmark it names must exist.
+// folder next to the file or at the repository's root; it must be a file git
+// tracks, or a folder holding one. What's on disk but untracked (a tool's
+// folder, a build's output) isn't part of the map, so it can neither make a
+// code span read as a path nor satisfy one: the verdict is the same on every
+// machine, and a new file counts once it's added. A command is a `pnpm` or `cargo` line in a code span or a shell
+// block; the script, package, crate, test, or benchmark it names must exist.
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
+
+/** Every path git tracks, relative to the root with `/`, and every folder above one. */
+const tracked: ReadonlySet<string> = (() => {
+  const out = new Set<string>();
+  const list = execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8" });
+  for (const file of list.split("\0")) {
+    if (file === "") continue;
+    out.add(file);
+    for (let at = file.lastIndexOf("/"); at > 0; at = file.lastIndexOf("/", at - 1)) {
+      out.add(file.slice(0, at));
+    }
+  }
+  return out;
+})();
+
+/** Whether an absolute path under the root is a tracked file, or a folder holding one. */
+function isTracked(absolute: string): boolean {
+  const rel = path.relative(root, absolute).split(path.sep).join("/").replace(/\/$/, "");
+  return rel === "" || tracked.has(rel);
+}
 
 /** The files checked, relative to the root. */
 function files(): string[] {
@@ -83,7 +107,7 @@ function pathIn(span: string, dir: string): string | undefined {
   if (span.startsWith("./")) return undefined;
   if (!/^[\w.@-]+(\/[\w.@-]+)*\/?$/.test(span) || !span.includes("/")) return undefined;
   const first = span.split("/")[0] ?? "";
-  const bases = [dir, root].filter((at) => existsSync(path.join(at, first)));
+  const bases = [dir, root].filter((at) => isTracked(path.join(at, first)));
   // A span that names a file, with an extension, under a folder that's
   // nowhere is a typo, unless it's in a project's output. (A first segment
   // with a dot, such as `example.com`, is a host, not a folder.)
@@ -93,9 +117,7 @@ function pathIn(span: string, dir: string): string | undefined {
       ? path.join(dir, span)
       : undefined;
   }
-  return (
-    bases.map((at) => path.join(at, span)).find((at) => existsSync(at)) ?? path.join(dir, span)
-  );
+  return bases.map((at) => path.join(at, span)).find((at) => isTracked(at)) ?? path.join(dir, span);
 }
 
 /** Each crate's directory, by its package name. */
@@ -181,7 +203,7 @@ test("every path the map names exists", () => {
     ];
     for (const target of named) {
       checked++;
-      if (!existsSync(target)) missing.push(`${file}: ${path.relative(root, target)}`);
+      if (!isTracked(target)) missing.push(`${file}: ${path.relative(root, target)}`);
     }
   }
   expect(missing).toEqual([]);
