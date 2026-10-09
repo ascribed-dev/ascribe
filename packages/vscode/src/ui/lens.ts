@@ -44,7 +44,7 @@ export class BuildLenses {
 }
 
 /** A range the lens dims, with what its hover says. */
-export interface Dimmed {
+interface Dimmed {
   range: LspRange;
   /** Markdown. */
   hover: string;
