@@ -49,6 +49,8 @@ mod tests {
     use ascribe_query::QueryError;
     use ascribe_sources::SourcesError;
 
+    use crate::agents::markers::Damage;
+    use crate::agents::sync::SyncError;
     use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
     use crate::commands::sources::PagesUnavailable;
@@ -132,6 +134,26 @@ mod tests {
         ("not_a_page", "a fragment, where only a page will do"),
         ("build_required", "several builds, and none was named"),
         ("bad_target", "refs can't read the target"),
+        (
+            "markers_damaged",
+            "a file's generated block has damaged markers",
+        ),
+        (
+            "instructions_in_content",
+            "an instruction file would be a page",
+        ),
+        (
+            "copilot_needs_repository",
+            "Copilot's files outside a repository",
+        ),
+        (
+            "instructions_unreadable",
+            "an instruction file can't be read",
+        ),
+        (
+            "instructions_unwritable",
+            "an instruction file can't be written",
+        ),
     ];
 
     fn path() -> PathBuf {
@@ -249,8 +271,18 @@ mod tests {
                 | QueryError::Render(_) => {}
             }
         }
+        fn agents(e: &SyncError) {
+            match e {
+                SyncError::Damaged { .. }
+                | SyncError::InContent { .. }
+                | SyncError::NoRepository
+                | SyncError::Git(_)
+                | SyncError::Read { .. }
+                | SyncError::Write { .. } => {}
+            }
+        }
         let _ = (
-            locate, load, scope, check, format, emit, store, diff, sources, serve, query,
+            locate, load, scope, check, format, emit, store, diff, sources, serve, query, agents,
         );
 
         let store_errors = || {
@@ -398,6 +430,22 @@ mod tests {
                 reason: text(),
             }),
             Box::new(QueryError::Render(EmitError::Invalid { message: text() })),
+            Box::new(SyncError::Damaged {
+                path: text(),
+                name: text(),
+                damage: Damage::NoEnd,
+            }),
+            Box::new(SyncError::InContent { path: text() }),
+            Box::new(SyncError::NoRepository),
+            Box::new(SyncError::Git(DiffError::GitNotFound)),
+            Box::new(SyncError::Read {
+                path: text(),
+                source: io_error(),
+            }),
+            Box::new(SyncError::Write {
+                path: text(),
+                source: io_error(),
+            }),
         ];
         for e in store_errors() {
             all.push(Box::new(EmitError::Store(e)));

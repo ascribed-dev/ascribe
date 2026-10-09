@@ -36,6 +36,8 @@ import {
   readJson,
   relockWorkspace,
   root,
+  SKILL_VERSION,
+  skill,
   writeJson,
 } from "./manifests.ts";
 
@@ -90,7 +92,8 @@ if (first === "--check") {
 }
 
 /**
- * Sets the version in Cargo.toml and every package.json, and, given the commit
+ * Sets the version in Cargo.toml, every package.json, and the skill
+ * `@ascribed/cli` ships, and, given the commit
  * a canary is built from, each npm package's `gitHead`.
  */
 function setVersion(version: string, commit?: string): void {
@@ -109,4 +112,9 @@ function setVersion(version: string, commit?: string): void {
     else if (commit !== undefined) manifest.gitHead = commit;
     writeJson(file, manifest);
   }
+  const skillFile = join(root, skill);
+  writeFileSync(
+    skillFile,
+    readFileSync(skillFile, "utf8").replace(SKILL_VERSION, `  ascribe-version: "${version}"`),
+  );
 }

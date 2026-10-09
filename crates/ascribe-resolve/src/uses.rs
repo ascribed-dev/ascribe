@@ -24,7 +24,7 @@
 //! - a **note type** by each `@note` of that type (`note` when it gives none);
 //! - a **widget** by each directive line, container, or arm that opens it.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 use ascribe_core::schema::{Attributes, Builtin, DefaultValue};
 use ascribe_core::{RelPath, Span};
@@ -131,6 +131,25 @@ impl Project {
             out.push((used.clone(), place));
         });
         out
+    }
+
+    /// The name of every directive the project's files write, without `@`:
+    /// built-in directives and widgets, and names that are neither, each
+    /// once. A group's arms count as its directive.
+    pub fn directive_names(&self) -> BTreeSet<String> {
+        let mut names = BTreeSet::new();
+        for file in self.files() {
+            walk_blocks(&file.document.blocks, &mut |block: &Block| {
+                let lines: Vec<&DirectiveLine> = match &block.kind {
+                    BlockKind::Directive(d) => vec![d],
+                    BlockKind::Container(c) => vec![&c.opener],
+                    BlockKind::Group(g) => g.arms.iter().map(|arm| &arm.opener).collect(),
+                    _ => Vec::new(),
+                };
+                names.extend(lines.into_iter().map(|line| line.name.clone()));
+            });
+        }
+        names
     }
 }
 

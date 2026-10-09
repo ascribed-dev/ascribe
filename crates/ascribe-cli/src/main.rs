@@ -10,6 +10,7 @@
 // `docs_page!`, for the help of subcommands defined in their own modules.
 #[macro_use]
 mod cli;
+mod agents;
 mod answer;
 mod commands;
 mod context;

@@ -1,6 +1,8 @@
 <!-- Generated from the help text in crates/ascribe-cli/src/ by crates/ascribe-cli/src/docs.rs. Edit the help text, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->
 
 ```text
+ascribe agents sync    [--check] [--target agents-md|skills|claude|claude-rules|copilot]...
+ascribe agents skill
 ascribe build          [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors]
 ascribe check          [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--summary] [--format text|concise|json|prompt] [--deny-warnings]
 ascribe diff           [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html] [--exit-code]
