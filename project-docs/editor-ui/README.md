@@ -76,9 +76,9 @@ The [agents plan](../agents/README.md) overlaps this one in three places. Whiche
 - **What a project has.** `ascribe/targets` (phase 1) and the agents plan's `ascribe model` and `ascribe outline` list the same pages, headings, and model entries. They share the functions that build those lists, in the same crate, and differ only in what they print.
 - **When servers start.** The agents plan's phase 3 starts a project's server when one of its files changes on disk. That doesn't break decision 7, which is about views. Phases 6 and 7 test decision 7 as "showing or refreshing a view starts no server", not as "no server runs until a file is opened", so the tests hold with either plan first.
 
-## The visual design plan
+## The mark, icons, and colors
 
-The [visual design plan](../visual-design/README.md) makes the mark, the activity bar icon, and the rules for icons and colors in the extension (codicons and theme colors first). Phases 1 to 5 here need nothing from it. Phase 6 needs its activity bar icon, phase 7's views follow its icon rules, and phase 9's walkthrough uses its mark.
+The visual design plan, now finished, made the mark, the activity bar icon (`packages/vscode/media/activity.svg`), and the rules for icons and colors in the extension: codicons and theme colors first (decisions 47 and 50 in [decisions.md](../decisions.md#the-look)), with the codicon for each concept in `packages/vscode/DEVELOPMENT.md`, under "Icons and colors". Phase 6 here uses the activity bar icon, phase 7's views follow the icon rules, and phase 9's walkthrough uses the mark, as [design/README.md](../../design/README.md#using-the-mark) says.
 
 ## Later, not in this plan
 

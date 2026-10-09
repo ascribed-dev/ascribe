@@ -1,6 +1,6 @@
 # The color pairings the stylesheets use, each checked in light and in dark
-# by scripts/design/specimen.ts and its test (README decision 5 of
-# project-docs/visual-design): 4.5:1 for `text` on its background, 3:1 for a
+# by scripts/design/specimen.ts and its test (decision 46 in
+# project-docs/decisions.md): 4.5:1 for `text` on its background, 3:1 for a
 # `graphic` (a border, bar, or fill that carries meaning). `fg` and `bg` are
 # semantic colors, the `[color]` names every candidate defines.
 #

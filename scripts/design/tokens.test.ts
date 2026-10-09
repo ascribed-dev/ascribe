@@ -213,8 +213,8 @@ describe("the shared colors", () => {
 });
 
 // The public custom properties: a site themes the elements and review's marks
-// with these names, so none is renamed or removed (README decision 4 of
-// project-docs/visual-design). Their default values may change.
+// with these names, so none is renamed or removed (decision 44 in
+// project-docs/decisions.md). Their default values may change.
 test("the public custom properties keep their names", () => {
   const declared = (file: string): string[] =>
     [

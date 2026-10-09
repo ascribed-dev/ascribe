@@ -12,7 +12,7 @@ Part of [Editor UI](README.md). Requires phase 3 (for the registry pattern), not
 - `packages/vscode/src/registry.ts`: `ProjectRegistry` (`projects`, `servers`, `serverFor`, `name`, `onDidChangeProjects`, `onDidStart`). `packages/vscode/src/client.ts`: `ProjectServer` (`state`, `binary`, `showOutput`, `restart`, `start`).
 - `packages/vscode/src/extension.ts`: the existing commands (`ascribe.restartServer`, `ascribe.showOutput`, `ascribe.openPreview`, `ascribe.selectPreviewBuild`).
 - `packages/vscode/src/preview/controller.ts`: the preview already keeps a chosen build per project folder (`builds`, `chooseBuild`, `pickBuild`), where choosing the editor build means "follow `[editor] build`". That choice becomes the shared one (README decision 10).
-- [The visual design plan](../visual-design/README.md#the-editor-ui-plan): its phase 3 makes the activity bar icon. If it hasn't, stop and report; don't draw a placeholder.
+- `packages/vscode/media/activity.svg`: the activity bar icon, generated from the mark ([design/README.md](../../design/README.md#the-assets)). Don't draw another.
 - [The agents plan](README.md#the-agents-plan): its phase 3 may start a server when a file changes on disk, which shapes how decision 7 is tested here.
 - Phase 1's `ascribe/targets` (`builds`, with the editor build).
 - VS Code: `window.createStatusBarItem`, `contributes.viewsContainers.activitybar`, `contributes.views`, `window.createTreeView` with a `TreeDataProvider`, `contributes.viewsWelcome`, `menus["view/item/context"]` for inline buttons.
