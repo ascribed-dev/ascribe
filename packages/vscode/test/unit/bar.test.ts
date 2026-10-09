@@ -59,6 +59,29 @@ describe("the actions bar", () => {
       "Set where the page is available",
       "-- Link",
       "Insert a link",
+      "-- Content model",
+      "Change a feature's availability",
+      "Rename this phrase everywhere",
+      "Rename a dimension value everywhere",
+    ]);
+  });
+
+  it("offers to make selected text a phrase or a glossary term, under Content model", () => {
+    const list = rows(
+      entries(
+        context([paragraph, section], {
+          selection: { kind: "prose", text: "the agent", inline: true },
+        }),
+        [],
+      ),
+    );
+    expect(list.slice(list.indexOf("-- Content model"))).toEqual([
+      "-- Content model",
+      "Make this a phrase",
+      "Add to the glossary",
+      "Change a feature's availability",
+      "Rename this phrase everywhere",
+      "Rename a dimension value everywhere",
     ]);
   });
 
@@ -161,6 +184,10 @@ describe("the actions bar", () => {
       "Include a fragment",
       "Insert a code snippet",
       "Insert a widget",
+      "-- Content model",
+      "Change a feature's availability",
+      "Rename this phrase everywhere",
+      "Rename a dimension value everywhere",
     ]);
   });
 });

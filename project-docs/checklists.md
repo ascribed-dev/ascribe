@@ -48,7 +48,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] Document links (`DocumentLinkRequest`), CodeLens (`CodeLensRequest`), and inlay hints (`InlayHintRequest`), all in `crates/ascribe-lsp/src/links.rs`.
 - [ ] Quick fixes and other code actions (`CodeActionRequest`; `crates/ascribe-lsp/src/code_action.rs`).
 - [ ] Formatting (`Formatting`; `crates/ascribe-lsp/src/formatting.rs`), which calls `ascribe-fmt`.
-- [ ] Rename (`Rename`), and the edits when a file is moved (`WillRenameFiles`), both in `crates/ascribe-lsp/src/refactor.rs`.
+- [ ] Rename (`Rename`), what can be renamed at a position (`PrepareRenameRequest`), and the edits when a file is moved (`WillRenameFiles`), all in `crates/ascribe-lsp/src/refactor.rs`.
 - [ ] The command a CodeLens runs (`ExecuteCommand`, `ascribe.openFile`).
 - [ ] The page preview (`ascribe/preview`; `crates/ascribe-lsp/src/preview.rs`).
 - [ ] Review's changes (`ascribe/review/setBase` and `ascribe/review/changes`; `crates/ascribe-lsp/src/review.rs`).

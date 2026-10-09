@@ -275,9 +275,12 @@ client asks for the kinds it needs:
 {
   "textDocument": { "uri": "file:///…/docs/guide/install.md" },
   "kinds": ["pages", "headings", "fragments", "images", "snippets", "phrases",
-            "notes", "dimensions", "widgets", "features", "builds"]
+            "notes", "dimensions", "widgets", "features", "builds", "occurrences"],
+  "range": { "start": { "line": 8, "character": 4 }, "end": { "line": 8, "character": 15 } }
 }
 ```
+
+`range`, the cursor or selection, is optional; only `occurrences` reads it.
 
 The result has a list for each kind asked for and no others, and `modelUri`,
 the `file:` URI of `ascribe.toml`, which declaration ranges are in. Its
@@ -299,6 +302,7 @@ destination needs it):
 | `widgets` | `name`, `description`, `line`, `container`, `groupable`, `primary` (`none`, `identifier`, `text`), `binding`, `attributes` (`{ key, type, values, required, default, description }`) |
 | `features` | `key`, `name`, `availability` (the spec as written), `range` (its table header) |
 | `builds` | `name`, `editor` (whether it's `[editor] build`) |
+| `occurrences` | `path` (content path), `range`: each other whole-word occurrence, in the project's prose, of the text `range` selects, which `makePhrase` with `everywhere` replaces. Empty when the selection isn't text a phrase can take the place of |
 
 Images and the files of sources are listed through the project's
 `FileSystem`. A source's files are those its `include` and `ignore` take in,
@@ -338,7 +342,7 @@ TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
 
 | Result | Meaning |
 |---|---|
-| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
+| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document, and, for the content model's actions, to `ascribe.toml` and any other page they change. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
 | `{ error }` | A plain-language sentence for the client to show: the document's version isn't `version` (the page changed after the action was chosen), the action doesn't apply at the range, an argument is invalid (naming the valid choices), or the edit would make a problem the page didn't have. |
 
 The operations, where each applies, and its arguments (`?` is optional):
@@ -374,6 +378,9 @@ The operations, where each applies, and its arguments (`?` is optional):
 | `useTargetTitle` | A link to a page | | Empty link text, so the target's title fills it |
 | `setImageWidth` | An image | `width` | The image's `width` attribute, when the model declares one |
 | `setImageAlt` | An image | `alt` | The image's alt text |
+| `makePhrase` | Plain text selected in prose, on one line | `key`, `everywhere?` (default `false`) | `key = "<the text>"` in `[phrases]`, and `{key}` in place of the selection; with `everywhere`, in place of each of its `occurrences` too |
+| `addGlossaryTerm` | Anywhere in a page | `id`, `term`, `definition`, `aliases?` (a list), `link?` (a page from the content root, with `#id`) | A `[glossary.terms.<id>]` table with those keys |
+| `promoteFeature` | Anywhere in a page | `key`, `spec` | The feature's `available` in `[features.<key>]` |
 
 An insertable line is where `ascribe/context` says `insertable`: a blank
 line between blocks. `attributes` is an object of key to value (a string,
@@ -396,6 +403,17 @@ What every edit holds to:
   build, to the page, to a page that includes it, or to a page that links
   to either, is refused with an error instead, naming the other page when
   the problem is there.
+- **The content model in place.** The content model's actions edit
+  `ascribe.toml` as text (`src/model_file.rs`), as it is in the editor when
+  it's open: an entry goes after the last one of its table, a new table after
+  the last of its section, and a value is replaced where it's written, so
+  comments, blank lines, and order stay. `toml_edit` finds the place from
+  its spans and renders the new text, and the edited file is checked to hold
+  what `toml_edit`'s own API would have made of it. A key or value the model
+  doesn't allow (a key's syntax, a key that's taken, a spec that names
+  nothing) is an error before any edit, and so is a model that doesn't load
+  as it is. The edits are checked as the whole project, with the model as it
+  would be: an action that would add a diagnostic anywhere is refused.
 - **Every wrap has an unwrap.** `wrapNote` and `unwrapNote`, `wrapDetails`
   and `unwrapDetails`, `makeSteps` and `removeSteps` undo each other: one
   and then the other gives back the original text.
@@ -451,8 +469,8 @@ model doesn't have, gets an empty `build` and nothing excluded.
 Advertised: incremental text document sync (open/close, no save), semantic
 tokens (full and range), the position encoding, and completion
 (triggered by `@ { ( # / = , |` and a space), hover, definition, document
-links, CodeLens, inlay hints, code actions, document formatting, rename, and one
-command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
+links, CodeLens, inlay hints, code actions, document formatting, rename (with
+`prepareRename`), and one command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
 for files. Registered dynamically after `initialized`, when the client allows it:
 `workspace/didChangeWatchedFiles`.
 Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
@@ -461,7 +479,19 @@ advertise pull diagnostics.
 Code actions carry the checker's existing diagnostic fixes (including the
 router's reverse route suggestion) and the Ascribe-specific repairs. Rename and
 file-move edits use the current project snapshot, including open buffers, its
-source index, and reverse references. Formatting returns only the minimal edits
+source index, and reverse references. A rename starts on a heading or an `@id`,
+a phrase (a `{key}` use or its key in `ascribe.toml`), or a dimension value (in
+a `@variant` attribute or a `[dimensions.<name>] values` item). A phrase rename
+reaches every use the source index records: prose, link text and destinations,
+frontmatter fields with `phrases = true`, code blocks with `phrases=true`, and
+the files `@snippet {phrases=true}` reads (a remote source refuses the rename).
+A dimension value rename edits the dimension's `values`, `labels`, and
+`versionless`, every `@variant` attribute and `variant` frontmatter field, every
+availability spec (markers, frontmatter, `[features]`, and a build's `filter`),
+and a build's `variants`. `ascribe.toml` is edited in place, keeping its
+comments and layout. A new name that isn't valid or is already taken gets no
+edit. `prepareRename` answers with the range and the current name, or says why
+nothing at the cursor can be renamed. Formatting returns only the minimal edits
 from `ascribe-fmt`; the VS Code client applies those edits on save when
 `ascribe.formatOnSave` is enabled, and requests file-move edits before renaming.
 

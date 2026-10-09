@@ -20,6 +20,7 @@ mod fsx;
 mod hover;
 mod links;
 mod log;
+mod model_file;
 mod nav;
 mod position;
 mod preview;

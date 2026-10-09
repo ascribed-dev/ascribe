@@ -9,20 +9,29 @@ import {
   copyLinkToSection,
   lightbulbActions,
   plain,
+  renameDimensionValue,
+  renamePhrase,
   type Action,
+  type Effects,
 } from "../../src/actions/registry.js";
 import {
   availabilitySpec,
   availabilitySteps,
   destinationStep,
+  glossaryLinkStep,
   includePath,
   includeSteps,
+  KEY_RULE,
+  NAME_WORD_RULE,
   noteTypeStep,
   runWizard,
   ScriptedPrompter,
   snippetAddress,
   snippetSteps,
+  suggestKey,
   validId,
+  validKey,
+  validValue,
   valueStep,
   widgetArgs,
   widgetSteps,
@@ -179,19 +188,37 @@ const EXPECTED: Record<string, string[]> = {
     "insertVariantGroup",
     "setPageVariant",
     "setPageAvailable",
+    "promoteFeature",
+    "renamePhrase",
+    "renameDimensionValue",
     "insertImage",
     "insertInclude",
     "insertSnippet",
     "insertWidget",
   ],
-  "a blank line, selected": ["setPageVariant", "setPageAvailable"],
-  "the frontmatter": ["setPageVariant", "setPageAvailable"],
+  "a blank line, selected": [
+    "setPageVariant",
+    "setPageAvailable",
+    "promoteFeature",
+    "renamePhrase",
+    "renameDimensionValue",
+  ],
+  "the frontmatter": [
+    "setPageVariant",
+    "setPageAvailable",
+    "promoteFeature",
+    "renamePhrase",
+    "renameDimensionValue",
+  ],
   "a paragraph": [
     "wrapNote",
     "wrapDetails",
     "markAvailable",
     "setPageVariant",
     "setPageAvailable",
+    "promoteFeature",
+    "renamePhrase",
+    "renameDimensionValue",
     "insertLink",
     "insertPhrase",
   ],
@@ -201,7 +228,12 @@ const EXPECTED: Record<string, string[]> = {
     "markAvailable",
     "setPageVariant",
     "setPageAvailable",
+    "promoteFeature",
+    "renamePhrase",
+    "renameDimensionValue",
     "linkSelection",
+    "makePhrase",
+    "addGlossaryTerm",
   ],
   "blocks selected": [
     "wrapNote",
@@ -209,8 +241,18 @@ const EXPECTED: Record<string, string[]> = {
     "markAvailable",
     "setPageVariant",
     "setPageAvailable",
+    "promoteFeature",
+    "renamePhrase",
+    "renameDimensionValue",
   ],
-  "a mixed selection": ["markAvailable", "setPageVariant", "setPageAvailable"],
+  "a mixed selection": [
+    "markAvailable",
+    "setPageVariant",
+    "setPageAvailable",
+    "promoteFeature",
+    "renamePhrase",
+    "renameDimensionValue",
+  ],
 };
 
 describe("the registry", () => {
@@ -681,6 +723,7 @@ describe("Copy a link to this section", () => {
         return Promise.resolve();
       },
       say: (message) => said.push(message),
+      rename: () => Promise.resolve(false),
     });
     return { copied, said };
   }
@@ -711,6 +754,7 @@ describe("Copy a link to this section", () => {
         return Promise.resolve();
       },
       say: () => undefined,
+      rename: () => Promise.resolve(false),
     });
     expect(copied).toEqual(["/guides/my%20page%20%28old%29.md#set-up"]);
   });
@@ -822,5 +866,265 @@ describe("the cached context", () => {
     cache.clear();
     expect(cache.get(where(1))).toBeUndefined();
     expect(answers).toEqual([answer, undefined]);
+  });
+});
+
+// The content model's actions.
+
+const at = (line: number, character: number) => ({ line, character });
+const span = (line: number, from: number, to: number): LspRange => ({
+  start: at(line, from),
+  end: at(line, to),
+});
+
+/** Targets with declarations in `ascribe.toml`, as a rename from the palette needs. */
+const declared: TargetsResult = {
+  ...targets,
+  modelUri: "file:///quill/ascribe.toml",
+  phrases: [
+    { key: "product", value: "Quill", range: span(20, 0, 7) },
+    { key: "cloud", value: "Quill Cloud", range: span(21, 0, 5) },
+  ],
+  dimensions: [
+    {
+      name: "deployment",
+      label: "Deployment",
+      values: [
+        { value: "cloud", label: "Quill Cloud", versionless: true, range: span(8, 10, 15) },
+        {
+          value: "self-managed",
+          label: "Self-managed",
+          versionless: false,
+          range: span(8, 19, 31),
+        },
+      ],
+    },
+  ],
+  occurrences: [
+    { path: "keys.md", range: span(3, 0, 9) },
+    { path: "keys.md", range: span(9, 4, 13) },
+    { path: "install.md", range: span(1, 0, 9) },
+  ],
+};
+
+async function askWith(id: string, here: ContextResult, given: TargetsResult, script: Scripted[]) {
+  const a = action(id);
+  if (!a.ask) throw new Error(`${id} asks nothing`);
+  return runWizard(a.title, a.ask(here, given), new ScriptedPrompter(script));
+}
+
+/** Effects that record what a `run` action asks for. */
+function recording(): Effects & { renames: unknown[][]; said: string[] } {
+  const renames: unknown[][] = [];
+  const said: string[] = [];
+  return {
+    renames,
+    said,
+    copy: () => Promise.resolve(),
+    say: (message) => said.push(message),
+    rename: (...args) => {
+      renames.push(args);
+      return Promise.resolve(true);
+    },
+  };
+}
+
+const proseSelected = SAMPLES["prose selected"] as ContextResult;
+const phraseHere = context([paragraph, section], {
+  token: { kind: "phrase", range: span(4, 10, 19), key: "product", declared: true },
+});
+const variantHere = (value: string) =>
+  context([paragraph, group("deployment", 2, 0), section], {
+    token: {
+      kind: "attribute",
+      range: span(5, 10, 40),
+      directive: "variant",
+      key: "deployment",
+      value,
+    },
+  });
+
+describe("the content model's actions", () => {
+  it("suggests a key from the text", () => {
+    expect(suggestKey("API key")).toBe("api-key");
+    expect(suggestKey("  Quill Cloud! ")).toBe("quill-cloud");
+    expect(suggestKey("2FA codes")).toBe("fa-codes");
+    expect(suggestKey("Café")).toBe("cafe");
+    expect(suggestKey("…")).toBe("");
+  });
+
+  it("checks a key or a value as the content model does", () => {
+    expect(validKey(["product"])("agent")).toBeUndefined();
+    expect(validKey(["product"])("product")).toBe("product is already taken.");
+    expect(validKey()("Agent")).toBe(`For a key, ${KEY_RULE}.`);
+    expect(validValue(["cloud"])("on-prem")).toBeUndefined();
+    expect(validValue(["cloud"])("cloud")).toBe("The dimension already has cloud.");
+    expect(validValue()("on prem")).toBe(`For a value, ${NAME_WORD_RULE}.`);
+  });
+
+  it("words the rules as ascribe-model does", () => {
+    const names = readFileSync(
+      new URL("../../../../crates/ascribe-model/src/names.rs", import.meta.url),
+      "utf8",
+    );
+    const rule = (name: string) =>
+      new RegExp(`pub const ${name}: &str = "([^"]*)";`).exec(names)?.[1];
+    expect(rule("KEY_RULE")).toBe(KEY_RULE);
+    expect(rule("NAME_WORD_RULE")).toBe(NAME_WORD_RULE);
+  });
+
+  it("makes a phrase, suggesting its key, and asks about the other occurrences", async () => {
+    const steps = action("makePhrase").ask?.(proseSelected, declared).steps({}) ?? [];
+    const first = steps[0];
+    expect(first?.kind === "text" && first.value).toBe("the-agent");
+    expect(first?.kind === "text" && first.validate("cloud")).toBe("cloud is already taken.");
+    const everywhere = steps[1];
+    expect(everywhere?.kind === "pick" && everywhere.choices.map((c) => c.label)).toEqual([
+      "Yes, and the 3 others",
+      "No, only the selection",
+    ]);
+    expect(everywhere?.kind === "pick" && everywhere.choices[0]?.detail).toBe(
+      "keys.md (2), install.md",
+    );
+    expect(await askWith("makePhrase", proseSelected, declared, ["agent", "yes"])).toEqual({
+      args: { key: "agent", everywhere: true },
+    });
+    // With no other occurrences, it doesn't ask.
+    expect(
+      await askWith("makePhrase", proseSelected, { ...declared, occurrences: [] }, ["agent"]),
+    ).toEqual({ args: { key: "agent", everywhere: false } });
+  });
+
+  it("adds a glossary term, linked to a page or heading from the content root, or not", async () => {
+    expect(values(glossaryLinkStep(targets))).toEqual([
+      "",
+      "/keys.md",
+      "/guides/my%20page.md",
+      "/keys.md#rotate-keys",
+      "/install.md#install",
+      "/guides/my%20page.md#set-up",
+    ]);
+    const steps = action("addGlossaryTerm").ask?.(proseSelected, targets).steps({}) ?? [];
+    expect(steps.map((step) => step.key)).toEqual(["term", "id", "aliases", "definition", "link"]);
+    expect(steps[0]?.kind === "text" && steps[0].value).toBe("the agent");
+    expect(
+      await askWith("addGlossaryTerm", proseSelected, targets, [
+        "Agent",
+        "agent",
+        " daemon, Quill agent ,",
+        "The process that syncs.",
+        "/keys.md#rotate-keys",
+      ]),
+    ).toEqual({
+      args: {
+        id: "agent",
+        term: "Agent",
+        aliases: ["daemon", "Quill agent"],
+        definition: "The process that syncs.",
+        link: "/keys.md#rotate-keys",
+      },
+    });
+    const unlinked = await askWith("addGlossaryTerm", proseSelected, targets, [
+      "Agent",
+      "agent",
+      "",
+      "The process that syncs.",
+      "",
+    ]);
+    expect(unlinked && "args" in unlinked && unlinked.args).toEqual({
+      id: "agent",
+      term: "Agent",
+      aliases: [],
+      definition: "The process that syncs.",
+    });
+  });
+
+  it("changes a feature's availability, starting from its current spec", async () => {
+    const steps = action("promoteFeature").ask?.(phraseHere, targets).steps({ key: "streaming" });
+    const spec = steps?.[1];
+    expect(spec?.kind === "text" && spec.value).toBe("cloud");
+    expect(
+      await askWith("promoteFeature", phraseHere, targets, [
+        "streaming",
+        "cloud, self-managed 3.0",
+      ]),
+    ).toEqual({ args: { key: "streaming", spec: "cloud, self-managed 3.0" } });
+  });
+
+  it("renames the phrase at the cursor, or the one picked", async () => {
+    const here = action("renamePhrase").ask?.(phraseHere, declared).steps({}) ?? [];
+    expect(here.map((step) => step.key)).toEqual(["newName"]);
+    expect(here[0]?.kind === "text" && here[0].value).toBe("product");
+    expect(await askWith("renamePhrase", phraseHere, declared, ["name"])).toEqual({
+      args: { key: "product", newName: "name" },
+    });
+    expect(await askWith("renamePhrase", proseSelected, declared, ["cloud", "hosted"])).toEqual({
+      args: { key: "cloud", newName: "hosted" },
+    });
+    const rename = here[0];
+    expect(rename?.kind === "text" && rename.validate("product")).toBe(
+      "That's its name now: enter a new one.",
+    );
+    await expect(askWith("renamePhrase", phraseHere, declared, ["cloud"])).rejects.toThrow(
+      /already taken/,
+    );
+  });
+
+  it("renames a phrase at the cursor's {key}, or at its key in ascribe.toml", async () => {
+    const effects = recording();
+    await renamePhrase(phraseHere, declared, { key: "product", newName: "name" }, effects);
+    await renamePhrase(proseSelected, declared, { key: "cloud", newName: "hosted" }, effects);
+    expect(effects.renames).toEqual([
+      [at(4, 11), "name"],
+      [at(21, 0), "hosted", "file:///quill/ascribe.toml"],
+    ]);
+    expect(
+      await renamePhrase(proseSelected, targets, { key: "product", newName: "x" }, effects),
+    ).toBe(false);
+    expect(effects.said).toEqual(["Can't find the phrase product in ascribe.toml."]);
+  });
+
+  it("renames a value of the @variant attribute at the cursor, or the one picked", async () => {
+    // One value: only the new name.
+    const one = action("renameDimensionValue").ask?.(variantHere("cloud"), declared).steps({});
+    expect(one?.map((step) => step.key)).toEqual(["newName"]);
+    expect(
+      await askWith("renameDimensionValue", variantHere("cloud"), declared, ["hosted"]),
+    ).toEqual({ args: { dimension: "deployment", value: "cloud", newName: "hosted" } });
+    // Several: which of them.
+    const several = variantHere("cloud|self-managed");
+    expect(values(action("renameDimensionValue").ask?.(several, declared).steps({})[0])).toEqual([
+      "cloud",
+      "self-managed",
+    ]);
+    expect(
+      await askWith("renameDimensionValue", several, declared, ["self-managed", "on-prem"]),
+    ).toEqual({ args: { dimension: "deployment", value: "self-managed", newName: "on-prem" } });
+    // Anywhere else: the dimension, then the value.
+    expect(
+      await askWith("renameDimensionValue", proseSelected, declared, [
+        "deployment",
+        "self-managed",
+        "on-prem",
+      ]),
+    ).toEqual({ args: { dimension: "deployment", value: "self-managed", newName: "on-prem" } });
+    await expect(
+      askWith("renameDimensionValue", proseSelected, declared, [
+        "deployment",
+        "cloud",
+        "self-managed",
+      ]),
+    ).rejects.toThrow(/already has/);
+  });
+
+  it("renames a dimension value at its place in ascribe.toml", async () => {
+    const effects = recording();
+    const args = { dimension: "deployment", value: "self-managed", newName: "on-prem" };
+    expect(await renameDimensionValue(proseSelected, declared, args, effects)).toBe(true);
+    expect(effects.renames).toEqual([[at(8, 19), "on-prem", "file:///quill/ascribe.toml"]]);
+    expect(await renameDimensionValue(proseSelected, targets, args, effects)).toBe(false);
+    expect(effects.said).toEqual([
+      "Can't find the value self-managed of deployment in ascribe.toml.",
+    ]);
   });
 });

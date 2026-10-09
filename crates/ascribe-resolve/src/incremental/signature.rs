@@ -96,6 +96,24 @@ fn blocks(list: &[Block], source: &str, h: &mut DefaultHasher) {
     }
 }
 
+/// The paths of the fields that take phrases, each with whether it's read
+/// with inline markup.
+fn phrase_fields(fields: &[ascribe_model::Field], prefix: &str, out: &mut Vec<(String, bool)>) {
+    for field in fields {
+        let path = format!("{prefix}{}", field.name);
+        if field.phrases {
+            out.push((path.clone(), field.inline.is_some()));
+        }
+        let mut ty = &field.ty;
+        while let ascribe_model::FieldType::List(inner) = ty {
+            ty = inner;
+        }
+        if let ascribe_model::FieldType::Object(inner) = ty {
+            phrase_fields(inner, &format!("{path}."), out);
+        }
+    }
+}
+
 /// How much of the pipeline a change to the content model reaches.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ModelImpact {
@@ -156,12 +174,21 @@ impl Fingerprints {
         let note_names: Vec<&str> = notes.iter().map(|n| n.name.as_str()).collect();
         let parse = hash_of(&format!("{:?}", (model.directive_schemas(), note_names)));
         // `index` adds what indexing reads: phrases (heading text, destinations),
-        // fragment patterns (page or fragment), the slugger, and the sources
+        // fragment patterns (page or fragment), the slugger, the sources
         // snippets are read through (a snippet's code is part of the
-        // expansion). Where each is declared changes nothing a file reads.
+        // expansion), and which frontmatter fields of which types take
+        // phrases. Where each is declared changes nothing a file reads.
         let read_through: Vec<_> = sources
             .iter()
             .map(|s| (&s.name, &s.path, &s.include, &s.ignore, &s.git))
+            .collect();
+        let phrase_fields: Vec<_> = types
+            .iter()
+            .map(|t| {
+                let mut fields = Vec::new();
+                phrase_fields(&t.frontmatter.fields, "", &mut fields);
+                (&t.name, &t.files, t.default, fields)
+            })
             .collect();
         let index = hash_of(&format!(
             "{parse}{:?}",
@@ -169,7 +196,8 @@ impl Fingerprints {
                 phrases,
                 &fragments.patterns,
                 &consumer.slugger,
-                &read_through
+                &read_through,
+                phrase_fields
             )
         ));
         let whole = hash_of(&format!(

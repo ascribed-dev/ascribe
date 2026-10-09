@@ -176,6 +176,10 @@ describe("the editor's actions", () => {
         "Set where the page is available",
         "-- Link",
         "Insert a link",
+        "-- Content model",
+        "Change a feature's availability",
+        "Rename this phrase everywhere",
+        "Rename a dimension value everywhere",
       ]);
     });
 
@@ -192,6 +196,10 @@ describe("the editor's actions", () => {
         "-- Link",
         "Copy a link to this section",
         "Insert a link",
+        "-- Content model",
+        "Change a feature's availability",
+        "Rename this phrase everywhere",
+        "Rename a dimension value everywhere",
       ]);
     });
 
@@ -207,6 +215,12 @@ describe("the editor's actions", () => {
         "Set where the page is available",
         "-- Link",
         "Link the selected text",
+        "-- Content model",
+        "Make this a phrase",
+        "Add to the glossary",
+        "Change a feature's availability",
+        "Rename this phrase everywhere",
+        "Rename a dimension value everywhere",
       ]);
     });
 
@@ -227,6 +241,10 @@ describe("the editor's actions", () => {
         "Include a fragment",
         "Insert a code snippet",
         "Insert a widget",
+        "-- Content model",
+        "Change a feature's availability",
+        "Rename this phrase everywhere",
+        "Rename a dimension value everywhere",
       ]);
     });
 
@@ -277,6 +295,71 @@ describe("the editor's actions", () => {
         lines(editor)[9],
         "Open the playground at play.quill.dev and paste a page of your docs.",
       );
+    });
+  });
+
+  describe("the content model", () => {
+    /**
+     * Runs an action's command with answers for its wizard and, once VS
+     * Code's refactor preview lists the changes, discards them there.
+     */
+    async function runAndDiscard(id: string, answers: Scripted[]): Promise<RunRecord> {
+      const before = api.actions.runs.length;
+      api.actions.answerNext(answers);
+      const running = vscode.commands.executeCommand(`ascribe.action.${id}`);
+      // Until the preview is open, the command does nothing.
+      const record = await waitFor("the refactor preview", async () => {
+        await vscode.commands
+          .executeCommand("refactorPreview.discard")
+          .then(undefined, () => undefined);
+        return api.actions.runs[before];
+      });
+      await running;
+      return record;
+    }
+
+    it("makes the selected text a phrase, in ascribe.toml and the page", async () => {
+      // "the agent" in "… and restart the agent. To install …".
+      const editor = await open("keys.md", 13, 0);
+      const line = lines(editor)[13] ?? "";
+      const start = line.indexOf("the agent.");
+      editor.selection = new vscode.Selection(13, start, 13, start + "the agent".length);
+      // A refactoring saves the files it changes: put them back afterwards.
+      const files = [uriOf("docs", "keys.md"), uriOf("ascribe.toml")];
+      const saved = await Promise.all(files.map((uri) => vscode.workspace.fs.readFile(uri)));
+      const record = await run("makePhrase", ["agent", "no"]);
+      assert.equal(record.done, true, record.messages.join());
+      assert.ok(lines(editor)[13]?.includes("and restart {agent}. To install the agent"));
+      const model = await vscode.workspace.openTextDocument(uriOf("ascribe.toml"));
+      assert.ok(
+        model.getText().includes('\napi = "https://api.quill.dev/v3/"\nagent = "the agent"\n'),
+      );
+      await vscode.commands.executeCommand("undo");
+      assert.equal(lines(editor)[13], line);
+      for (const [i, uri] of files.entries()) {
+        const bytes = saved[i];
+        if (bytes) await vscode.workspace.fs.writeFile(uri, bytes);
+      }
+    });
+
+    it("renames a phrase picked from the palette, far from its key, asking first", async () => {
+      // A paragraph of the quickstart, with no phrase at the cursor.
+      await open("quickstart.md", 8, 4);
+      const record = await runAndDiscard("renamePhrase", ["cloud", "hosted"]);
+      // The preview listed the key in ascribe.toml and the pages that use it.
+      assert.equal(record.previewed, true, record.messages.join());
+      assert.deepEqual(record.files, ["ascribe.toml", "docs/install-agent.md", "docs/keys.md"]);
+    });
+
+    it("changes nothing when the rename's preview is discarded", async () => {
+      // In "{cloud}" of "Sign in to {cloud} and open …".
+      await open("keys.md", 8, 13);
+      const record = await runAndDiscard("renamePhrase", ["hosted"]);
+      assert.equal(record.previewed, true);
+      assert.equal(record.done, false);
+      for (const document of vscode.workspace.textDocuments) {
+        assert.equal(document.isDirty, false, document.uri.toString());
+      }
     });
   });
 

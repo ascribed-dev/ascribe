@@ -54,6 +54,16 @@ describe("converting a server's edit", () => {
     expect(c.calls).toEqual([]);
   });
 
+  it("takes a rename's bare edit, and its null as the error given", async () => {
+    const c = converter();
+    expect(await convertEdit(edit, c, "Can't rename it.")).toEqual({
+      edit: { converted: edit },
+      select: undefined,
+    });
+    expect(await convertEdit(null, c, "Can't rename it.")).toEqual({ error: "Can't rename it." });
+    await expect(convertEdit(edit, c)).rejects.toThrow(/invalid edit/);
+  });
+
   it.each([
     ["nothing", null],
     ["a list", []],

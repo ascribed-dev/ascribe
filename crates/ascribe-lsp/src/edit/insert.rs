@@ -113,6 +113,7 @@ fn insert(page: &Page<'_>, lines: Lines) -> Outcome {
     Ok(Plan {
         edits: vec![TextEdit::replace(Span::new(start, end), text)],
         select,
+        ..Plan::new(Vec::new())
     })
 }
 

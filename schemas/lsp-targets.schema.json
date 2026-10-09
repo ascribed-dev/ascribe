@@ -381,6 +381,24 @@
       ],
       "type": "object"
     },
+    "TargetOccurrence": {
+      "description": "Where some text occurs.",
+      "properties": {
+        "path": {
+          "description": "The file's content path.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The text, in that file."
+        }
+      },
+      "required": [
+        "path",
+        "range"
+      ],
+      "type": "object"
+    },
     "TargetPage": {
       "description": "A page.",
       "properties": {
@@ -646,6 +664,16 @@
       "description": "Note types: the built-ins, then the declared ones.",
       "items": {
         "$ref": "#/$defs/TargetNote"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "occurrences": {
+      "description": "The other whole-word occurrences, in the project's prose, of the text\nthe range selects, by content path: those making the selection a\nphrase everywhere (`makePhrase` with `everywhere`) replaces. Empty\nwhen the selection isn't text a phrase can take the place of.",
+      "items": {
+        "$ref": "#/$defs/TargetOccurrence"
       },
       "type": [
         "array",

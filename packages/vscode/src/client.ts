@@ -100,19 +100,26 @@ export class ProjectServer implements vscode.Disposable {
   /**
    * Sends a request that answers with an edit, as `ascribe/edit` does, and
    * converts the edit and the range to select into the editor's types.
-   * Rejects when the server isn't running or the answer isn't an edit.
+   * With `refused`, a request that answers with a bare edit or `null`, as
+   * `textDocument/rename` does; `null` is that error. Rejects when the
+   * server isn't running or the answer isn't an edit.
    */
   async requestEdit(
     method: string,
     params: unknown,
+    refused?: string,
   ): Promise<ServerEdit<vscode.WorkspaceEdit, vscode.Range>> {
     const value = await this.request(method, params);
     const converter = this.client?.protocol2CodeConverter;
     if (!converter) throw new Error("the Ascribe language server isn't running");
-    return convertEdit(value, {
-      asWorkspaceEdit: (edit) => converter.asWorkspaceEdit(edit),
-      asRange: (range) => converter.asRange(range),
-    });
+    return convertEdit(
+      value,
+      {
+        asWorkspaceEdit: (edit) => converter.asWorkspaceEdit(edit),
+        asRange: (range) => converter.asRange(range),
+      },
+      refused,
+    );
   }
 
   /** How many errors the server reports for the project, as the Problems panel lists them. */

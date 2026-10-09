@@ -295,28 +295,29 @@ fn check_project_of(job: &Job) -> Project {
         &job.model,
         &job.model_text,
         &job.fs,
-        None,
+        &[],
     )
 }
 
-/// The checked project of `snapshot`, with `replaced`'s file holding the text
-/// given instead of its own: what `ascribe/edit` checks an edit's result in.
+/// The checked project of `snapshot`, with each of `replaced`'s files holding
+/// the text given instead of its own: what `ascribe/edit` checks an edit's
+/// result in.
 pub(crate) fn checked_project(
     snapshot: &Snapshot,
     root: PathBuf,
     model: &ContentModel,
     model_text: &str,
     fs: &Arc<LayerFs>,
-    replaced: Option<(&RelPath, &str)>,
+    replaced: &[(&RelPath, &str)],
 ) -> Project {
     let mut sources: Vec<SourceFile> = snapshot
         .files()
         .map(|f| SourceFile {
             id: f.file,
             path: f.path.clone(),
-            text: match replaced {
-                Some((path, text)) if *path == f.path => text.to_owned(),
-                _ => f.source.to_string(),
+            text: match replaced.iter().find(|(path, _)| **path == f.path) {
+                Some((_, text)) => (*text).to_owned(),
+                None => f.source.to_string(),
             },
             unreadable: None,
         })
