@@ -112,6 +112,6 @@ pub use references::{
     reference_issue, reference_target, resolve_reference,
 };
 pub use snippet::{
-    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, resolve_snippet,
-    snippet_issues,
+    Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, SourceFile, resolve_snippet,
+    snippet_issues, source_files,
 };

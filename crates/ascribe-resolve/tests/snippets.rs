@@ -10,7 +10,9 @@ mod links;
 
 use ascribe_core::{FileId, RelPath};
 use ascribe_model::load_str;
-use ascribe_resolve::{CodeFiles, ExpandedKind, Layout, MemoryFs, Project, snippet_issues};
+use ascribe_resolve::{
+    CodeFiles, ExpandedKind, Layout, MemoryFs, Project, snippet_issues, source_files,
+};
 use ascribe_syntax::BlockKind;
 
 const MODEL: &str = r#"
@@ -338,5 +340,53 @@ fn a_link_above_a_source_at_the_parent_is_refused() {
             is("snippet-file-missing", Some("link")),
             "{include:?}"
         );
+    }
+}
+
+#[test]
+fn a_sources_files_are_listed_with_their_regions_and_each_address_resolves() {
+    let (project, fs) = load(
+        "",
+        &[
+            APP,
+            ("../code/notes/read me.txt", "plain\n"),
+            ("../code/private/secret.py", "x = 1\n"),
+            ("../code/skipped.rs", "fn main() {}\n"),
+            ("../code/broken.py", "# :snippet-start: a\nx = 1\n"),
+            ("../code/binary.py", "\0"),
+        ],
+    );
+    let source = project.model().source("code").expect("the source");
+    let code = CodeFiles::new();
+    let files = source_files(source, &fs, &code);
+    let listed: Vec<(&str, &str, Vec<&str>)> = files
+        .iter()
+        .map(|f| {
+            (
+                f.path.as_str(),
+                f.address.as_str(),
+                f.regions.iter().map(String::as_str).collect(),
+            )
+        })
+        .collect();
+    // Only what `include` and `ignore` take in, and what gives a snippet.
+    assert_eq!(
+        listed,
+        [
+            ("app.py", "code:app.py", vec!["main"]),
+            ("notes/read me.txt", "code:notes/read%20me.txt", vec![]),
+        ]
+    );
+    for file in &files {
+        let addresses = std::iter::once(file.address.clone())
+            .chain(file.regions.iter().map(|r| format!("{}#{r}", file.address)));
+        for address in addresses {
+            let page = format!("@snippet: {address}\n");
+            assert_eq!(
+                problem(&page, &[APP, ("../code/notes/read me.txt", "plain\n")]),
+                None,
+                "{address}"
+            );
+        }
     }
 }
