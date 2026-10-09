@@ -24,9 +24,9 @@ mod inline;
 mod insert;
 mod page;
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use ascribe_core::{LineIndex, Span, TextEdit, apply_edits};
+use ascribe_core::{LineIndex, RelPath, Span, TextEdit, apply_edits};
 use ascribe_resolve::FileIndex;
 use ascribe_syntax::{Block, BlockKind, Inline, InlineKind, PrimaryValue};
 use lsp_types::{Range, TextDocumentIdentifier, Uri, WorkspaceEdit};
@@ -335,10 +335,26 @@ fn check_diagnostics(page: &Page<'_>, after: &str) -> Result<(), String> {
         .map(std::path::Path::to_path_buf)
         .unwrap_or_default();
     let build = ctx.model.editor_default_build();
-    let mut pages = snapshot.including_pages(&ctx.path);
+    let index = snapshot.project();
+    // The pages this file is part of, and the pages that link to them or
+    // to it: an edit can break a link written elsewhere.
+    let mut targets = index.including_pages(&ctx.path);
     if page.file.kind == ascribe_resolve::FileKind::Page {
-        pages.push(ctx.path.clone());
+        targets.push(ctx.path.clone());
     }
+    let mut pages: BTreeSet<RelPath> = targets.iter().cloned().collect();
+    for target in targets.iter().chain(std::iter::once(&ctx.path)) {
+        for link in index.links_to(target) {
+            if index
+                .file(&link.file)
+                .is_some_and(|f| f.kind == ascribe_resolve::FileKind::Page)
+            {
+                pages.insert(link.file.clone());
+            }
+            pages.extend(index.including_pages(&link.file));
+        }
+    }
+    let pages: Vec<RelPath> = pages.into_iter().collect();
     let project = |text: Option<&str>| {
         crate::compute::checked_project(
             snapshot,
@@ -355,19 +371,38 @@ fn check_diagnostics(page: &Page<'_>, after: &str) -> Result<(), String> {
             .map(|file| ascribe_check::check_file(project, file))
             .unwrap_or_default()
     };
+    // Where a diagnostic is, by the file's display path.
+    let file_of = |project: &ascribe_check::Project, d: &ascribe_check::Diagnostic| {
+        project
+            .file(d.location.file)
+            .map(|f| f.display_path.to_owned())
+            .unwrap_or_default()
+    };
     let before_project = project(None);
-    let mut before: BTreeMap<String, usize> = BTreeMap::new();
-    let before_page = ascribe_check::PageChecker::with_index(&before_project, snapshot.project())
-        .check_pages(build, &pages);
+    let mut before: BTreeMap<(String, String), usize> = BTreeMap::new();
+    let before_page =
+        ascribe_check::PageChecker::with_index(&before_project, index).check_pages(build, &pages);
     for d in file_level(&before_project).iter().chain(&before_page) {
-        *before.entry(d.code.to_owned()).or_default() += 1;
+        let key = (file_of(&before_project, d), d.code.to_owned());
+        *before.entry(key).or_default() += 1;
     }
     let after_project = project(Some(after));
+    let own = after_project
+        .source_at(&ctx.path)
+        .and_then(|f| after_project.file(f.id))
+        .map(|f| f.display_path.to_owned());
     let after_page = ascribe_check::PageChecker::new(&after_project).check_pages(build, &pages);
     for d in file_level(&after_project).iter().chain(&after_page) {
-        let count = before.entry(d.code.to_owned()).or_default();
+        let file = file_of(&after_project, d);
+        let count = before.entry((file.clone(), d.code.to_owned())).or_default();
         if *count == 0 {
-            return Err(format!("The edit would make a problem: {}", d.message));
+            return Err(
+                if own.as_deref() == Some(file.as_str()) || file.is_empty() {
+                    format!("The edit would make a problem: {}", d.message)
+                } else {
+                    format!("The edit would make a problem in `{file}`: {}", d.message)
+                },
+            );
         }
         *count -= 1;
     }

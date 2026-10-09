@@ -474,6 +474,61 @@ fn headings_get_an_id() {
     );
 }
 
+#[test]
+fn an_edit_that_breaks_a_link_from_another_page_is_refused() {
+    let mut h = Harness::new();
+    for (name, text) in [
+        ("docs/target.md", "# Install\n"),
+        (
+            "docs/arms.md",
+            "@variant {pm=npm}:\n## Npm only\n@variant {pm=yarn}:\nY.\n@end\n",
+        ),
+        (
+            "docs/linker.md",
+            "# Links\n\n[install](target.md#install) and [npm](arms.md#npm-only).\n",
+        ),
+    ] {
+        h.fixture.write(name, text);
+        h.client.open(&h.fixture.path(name), 1, text);
+    }
+    let error = h
+        .run_as(
+            "docs/target.md",
+            "# ‸Install\n",
+            "addHeadingId",
+            json!({ "id": "setup" }),
+        )
+        .unwrap_err();
+    assert!(
+        error.starts_with("The edit would make a problem in `docs/linker.md`:"),
+        "{error}"
+    );
+    let error = h
+        .run_as(
+            "docs/arms.md",
+            "@variant {pm=npm}:\n## ‸Npm only\n@variant {pm=yarn}:\nY.\n@end\n",
+            "removeVariantArm",
+            json!({}),
+        )
+        .unwrap_err();
+    assert!(
+        error.starts_with("The edit would make a problem in `docs/linker.md`:"),
+        "{error}"
+    );
+    // The id the link already names is fine.
+    assert_eq!(
+        h.run_as(
+            "docs/target.md",
+            "# ‸Install\n",
+            "addHeadingId",
+            json!({ "id": "install" }),
+        )
+        .unwrap()
+        .after,
+        "# Install\n@id: install\n"
+    );
+}
+
 // -- Inserting blocks ---------------------------------------------------------
 
 #[test]

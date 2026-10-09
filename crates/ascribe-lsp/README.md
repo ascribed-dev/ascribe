@@ -392,9 +392,10 @@ What every edit holds to:
 - **In place.** Inside a list item or a block quote, what's written is
   indented or prefixed to match, and a blank line is added where the blocks
   around it need one.
-- **No new problems.** An edit that would add a diagnostic to the page, or
-  to a page that includes it, in the editor build is refused with an error
-  instead.
+- **No new problems.** An edit that would add a diagnostic in the editor
+  build, to the page, to a page that includes it, or to a page that links
+  to either, is refused with an error instead, naming the other page when
+  the problem is there.
 - **Every wrap has an unwrap.** `wrapNote` and `unwrapNote`, `wrapDetails`
   and `unwrapDetails`, `makeSteps` and `removeSteps` undo each other: one
   and then the other gives back the original text.
