@@ -52,6 +52,8 @@ The pull request's comments sit beside the blocks they're about, each thread wit
 
 The same threads show on their lines in the source editor, where you can reply and comment too (see [Comments in the preview](editor.md#comments-in-the-preview)).
 
+To hand a comment to your agent, choose **Prompt agent** on its thread. **More review actions** (**⋯**) in the header prompts your agent to review the page, or the pages a changed fragment reaches. [In review](agents.md#in-review) has what each prompt says.
+
 ### 5. Submit
 
 While you have unsent comments, a bar at the bottom of the preview counts them: "2 unsent comments. Only you can see them until you submit." **Submit review…** lists them, takes an optional summary, and sends them as a comment, an approval, or a request for changes. **Discard…**, in the same dialog, deletes them instead, after asking.
@@ -67,7 +69,7 @@ gh auth login   # once
 npx astro dev
 ```
 
-Open the site in your browser and choose the **Ascribe review** app in Astro's dev toolbar, at the bottom of the page: opening it starts review. Its panel has the same controls as the page preview's header: the pull request and its base, the changes on the page, **Changes / As it will be / As it was**, next and previous change, **Comments**, and **Refresh**. Comments, replies, resolving, and submitting work as in the page preview, and go into the same review on GitHub. Close the panel to read the page; review stays on, on every page, until **Stop Review** or until `astro dev` stops.
+Open the site in your browser and choose the **Ascribe review** app in Astro's dev toolbar, at the bottom of the page: opening it starts review. Its panel has the same controls as the page preview's header: the pull request and its base, the changes on the page, **Changes / As it will be / As it was**, next and previous change, **Comments**, **Refresh**, and **More review actions** (**⋯**). **Prompt agent** copies its prompt to the clipboard. Comments, replies, resolving, and submitting work as in the page preview, and go into the same review on GitHub. Close the panel to read the page; review stays on, on every page, until **Stop Review** or until `astro dev` stops.
 
 In VS Code, **Ascribe: Open Site Preview** opens the page you're editing on the dev server, and the page preview's **Page | Site** switch shows the dev server's page in the preview panel. From a mark or a thread in either preview, **Open source** opens the file at its lines. [Review in the site preview](astro.md#review-in-the-site-preview) has the details.
 
@@ -96,7 +98,7 @@ Every comment is an ordinary GitHub review comment. Ascribe keeps none of its ow
 
 ## The report in CI
 
-`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same marks as the previews and **Show: Changes / As it will be / As it was**. It shows the changes only, not comments. The [command reference](../reference/cli.md#the-html-report) describes it in full.
+`ascribe diff --format html` writes one HTML file showing every changed page rendered, with the same marks as the previews and **Show: Changes / As it will be / As it was**, and **Copy prompt** for an agent that reviews the page. It shows the changes only, not comments. The [command reference](../reference/cli.md#the-html-report) describes it in full.
 
 ```sh
 ascribe diff --format html > review.html
