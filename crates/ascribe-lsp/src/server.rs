@@ -424,6 +424,13 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             WillRenameFiles::METHOD => will_rename_request(shared, &request),
             ExecuteCommand::METHOD => execute_command(shared, &request),
             crate::preview::METHOD => preview_request(shared, &request),
+            crate::build_view::METHOD => {
+                answer(shared, &request, |p: crate::build_view::BuildViewParams| {
+                    (p.text_document.uri, move |ctx: &Ctx| {
+                        crate::build_view::build_view(ctx, p.build.as_deref())
+                    })
+                })
+            }
             crate::context::METHOD => {
                 answer(shared, &request, |p: crate::context::ContextParams| {
                     (p.text_document.uri, move |ctx: &Ctx| {

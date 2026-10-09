@@ -18,6 +18,8 @@ export interface ProjectInfo extends Project {
   builds: readonly { name: string; editor: boolean }[];
   /** The build you're looking at (`ChosenBuilds.shown`). */
   build: string | undefined;
+  /** Whether the build lens is on: the editor dims what `build` leaves out. */
+  lens: boolean;
 }
 
 /** A server's state in words. */
@@ -72,13 +74,16 @@ export function statusFor(
   const project = projects.find((p) => p.config === owner?.config);
   if (!project) return undefined;
   const build = project.state === "running" ? project.build : undefined;
-  const text = `$(${STATE_ICONS[project.state]}) ${project.name}${build ? ` · ${build}` : ""}`;
+  // While the lens dims by the build, the eye says so.
+  const lens = build !== undefined && project.lens;
+  const icon = lens ? "eye" : STATE_ICONS[project.state];
+  const text = `$(${icon}) ${project.name}${build ? ` · ${build}` : ""}`;
   const state = STATE_NAMES[project.state];
   return {
     project,
     text,
     tooltip: tooltipLines(project).join("\n"),
-    label: `Ascribe project ${project.name}, server ${state}${build ? `, build ${build}` : ""}`,
+    label: `Ascribe project ${project.name}, server ${state}${build ? `, build ${build}` : ""}${lens ? ", dimming what it leaves out" : ""}`,
   };
 }
 
@@ -96,6 +101,7 @@ function tooltipLines(project: ProjectInfo): string[] {
     lines.push(
       `Build: ${project.build}${editor === project.build ? " (the editor build)" : editor ? ` (the editor build is ${editor})` : ""}`,
     );
+    if (project.lens) lines.push(`Dimming what ${project.build} leaves out`);
   }
   return lines;
 }

@@ -33,6 +33,7 @@ function project(folder: string, name: string, extra: Partial<ProjectInfo> = {})
     binary: undefined,
     builds: [],
     build: undefined,
+    lens: false,
     ...extra,
   };
 }
@@ -60,6 +61,19 @@ describe("the status bar item", () => {
     expect(statusFor(file("handbook/pages/index.md"), registry())?.text).toBe(
       "$(book) handbook · site",
     );
+  });
+
+  it("shows an eye while the build lens dims by the build", () => {
+    const projects = [project("docs", "docs", { ...running, build: "cloud", lens: true })];
+    const status = statusFor(file("docs/docs/index.md"), projects);
+    expect(status?.text).toBe("$(eye) docs · cloud");
+    expect(status?.tooltip).toContain("Dimming what cloud leaves out");
+    expect(status?.label).toBe(
+      "Ascribe project docs, server running, build cloud, dimming what it leaves out",
+    );
+    // A server that isn't running shows its state: there's nothing to dim by.
+    const stopped = [project("docs", "docs", { build: "cloud", lens: true })];
+    expect(statusFor(file("docs/docs/index.md"), stopped)?.text).toBe("$(book) docs");
   });
 
   it("names a nested project for its own files, and its state", () => {

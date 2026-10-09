@@ -119,6 +119,7 @@ describe("package.json", () => {
       "ascribe.selectPreviewBuild",
       "ascribe.switchBuild",
       "ascribe.projectMenu",
+      "ascribe.toggleBuildLens",
       "ascribe.projects.refresh",
       "ascribe.projects.showOutput",
       "ascribe.projects.restart",

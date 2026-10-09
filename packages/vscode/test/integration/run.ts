@@ -28,6 +28,9 @@
 //   site        a copy of examples/quill, Open Site Preview and the preview
 //               panel's Site view, against a fake dev server, with the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
+//   lens        a copy of examples/monorepo/docs, the build lens with the
+//               preview and the status bar, against the real `ascribe lsp`.
+//               Needs ASCRIBE_BIN as well.
 //   monorepo    test/fixtures/monorepo, several projects (one nested in
 //               another) with servers started on demand, against the real
 //               `ascribe lsp`. Needs ASCRIBE_BIN as well.
@@ -195,6 +198,11 @@ const suites: Suite[] = [
     prepare: () => ({ "ascribe.path": realServer, ...startAll }),
   },
   {
+    name: "lens",
+    fixture: path.join(repositoryRoot, "examples/monorepo/docs"),
+    prepare: () => ({ "ascribe.path": realServer, ...startAll }),
+  },
+  {
     name: "monorepo",
     fixture: path.join(packageRoot, "test/fixtures/monorepo"),
     // The file watcher's trace, to see why it missed a file if it does (#56).
@@ -225,6 +233,7 @@ const needsServer = new Set([
   "threads",
   "actions",
   "site",
+  "lens",
   "monorepo",
 ]);
 
