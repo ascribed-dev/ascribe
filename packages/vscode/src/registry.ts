@@ -2,6 +2,7 @@ import { stat } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { ProjectServer, type ProjectHost } from "./client.js";
+import { ChangeBatch, readLayout, startsServer } from "./diskChanges.js";
 import {
   channelName,
   comparable,
@@ -27,7 +28,8 @@ const LOOK_AGAIN_DELAY_MS = 300;
 /**
  * Finds every `ascribe.toml` in the workspace and runs one language server
  * for each. Discovery starts nothing: a server starts the first time one of
- * its files is needed (or at discovery, with `ascribe.startServers: "all"`).
+ * its files is needed or changes on disk (or at discovery, with
+ * `ascribe.startServers: "all"`).
  */
 export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private readonly byConfig = new Map<string, ProjectServer>();
@@ -40,6 +42,9 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   /** Those a refresh didn't pick up (under `node_modules`, or past the cap), so they aren't asked for again. */
   private readonly passedOver = new Set<string>();
   private lookAgainTimer: ReturnType<typeof setTimeout> | undefined;
+  /** One watcher per workspace folder for changes on disk, by the folder's URI. */
+  private readonly folderWatchers = new Map<string, vscode.Disposable>();
+  private readonly diskChanges = new ChangeBatch((files) => void this.startForDiskChanges(files));
   private readonly projectsChanged = new vscode.EventEmitter<void>();
   private readonly started = new vscode.EventEmitter<ProjectServer>();
   private readonly stateChanged = new vscode.EventEmitter<ProjectServer>();
@@ -71,14 +76,21 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     return this.stateChanged.event;
   }
 
-  /** Starts following the workspace: its `ascribe.toml` files, open documents, and the settings. */
+  /**
+   * Starts following the workspace: its `ascribe.toml` files, open documents,
+   * the settings, and changes on disk to the files of projects not yet started.
+   */
   register(): void {
     const watcher = vscode.workspace.createFileSystemWatcher("**/ascribe.toml");
+    this.watchFolders();
     this.disposables.push(
       watcher,
       watcher.onDidCreate(() => void this.refresh()),
       watcher.onDidDelete(() => void this.refresh()),
-      vscode.workspace.onDidChangeWorkspaceFolders(() => void this.refresh()),
+      vscode.workspace.onDidChangeWorkspaceFolders(() => {
+        this.watchFolders();
+        void this.refresh();
+      }),
       vscode.workspace.onDidOpenTextDocument((document) => void this.startFor(document)),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor) void this.startFor(editor.document);
@@ -178,6 +190,9 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   async dispose(): Promise<void> {
     clearTimeout(this.lookAgainTimer);
     this.lookAgainTimer = undefined;
+    this.diskChanges.dispose();
+    for (const watcher of this.folderWatchers.values()) watcher.dispose();
+    this.folderWatchers.clear();
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
     await this.refreshing.catch(() => undefined);
     await Promise.all(this.servers.map((server) => server.dispose()));
@@ -289,6 +304,67 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
       }
     }
     await this.ensureStartedFor(document.uri);
+  }
+
+  /**
+   * Watches each workspace folder for files created, changed, or deleted on
+   * disk. One glob per folder, which VS Code serves from the watcher it
+   * already runs on the folder.
+   */
+  private watchFolders(): void {
+    const folders = vscode.workspace.workspaceFolders ?? [];
+    const current = new Set(folders.map((folder) => folder.uri.toString()));
+    for (const [key, watcher] of this.folderWatchers) {
+      if (current.has(key)) continue;
+      watcher.dispose();
+      this.folderWatchers.delete(key);
+    }
+    for (const folder of folders) {
+      const key = folder.uri.toString();
+      if (this.folderWatchers.has(key)) continue;
+      const watcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(folder, "**/*"),
+      );
+      const changed = (uri: vscode.Uri) => {
+        if (uri.scheme === "file") this.diskChanges.add(uri.fsPath);
+      };
+      // An `ascribe.toml` created or deleted is a project coming or going,
+      // which starts nothing; one that changes is a project's model.
+      const createdOrDeleted = (uri: vscode.Uri) => {
+        if (!/[\\/]ascribe\.toml$/.test(uri.fsPath)) changed(uri);
+      };
+      this.folderWatchers.set(
+        key,
+        vscode.Disposable.from(
+          watcher,
+          watcher.onDidCreate(createdOrDeleted),
+          watcher.onDidChange(changed),
+          watcher.onDidDelete(createdOrDeleted),
+        ),
+      );
+    }
+  }
+
+  /**
+   * Starts the server of each project that hasn't started and has a file
+   * among those changed on disk, so an agent that edits files without
+   * opening them still gets their problems. A running server follows the
+   * disk itself.
+   */
+  private async startForDiskChanges(files: string[]): Promise<void> {
+    const projects = this.projects;
+    const idle = this.servers.filter((server) => server.state === "stopped");
+    await Promise.all(
+      idle.map(async (server) => {
+        const layout = await readLayout(server.project);
+        const file = files.find((f) => startsServer(f, server.project, layout, projects));
+        if (file === undefined || server.state !== "stopped") return;
+        server.log(
+          `${path.relative(server.project.folder, file)} changed on disk; starting the server.`,
+        );
+        await server.start();
+      }),
+    );
   }
 
   /** Whether a project has this `ascribe.toml`. */
