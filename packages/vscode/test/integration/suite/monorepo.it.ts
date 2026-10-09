@@ -274,16 +274,16 @@ describe("with several projects, one nested in another", () => {
       await diagnosticsOf(nestedPage, (all) => all.length > 0);
       await api.whenSettled();
       assertRunning([folder.docs(), folder.handbook(), folder.nested()]);
+      // The status bar names the nested project, not the one around it.
+      await statusText("the nested project", (text) =>
+        text.startsWith("$(book) handbook/pages/nested"),
+      );
       // `{edition}` is declared only in the nested project, so the page has no
       // ASC044, which the handbook's model would give it, and its ASC001 is
       // reported once. Once the handbook's server has answered an edit, it has
       // published whatever it would for the page.
       await throughHandbook();
       assert.deepEqual(codes(nestedPage), ["ASC001"]);
-      // The status bar names the nested project, not the one around it.
-      await statusText("the nested project", (text) =>
-        text.startsWith("$(book) handbook/pages/nested"),
-      );
 
       // The open document goes to the nested project's server as it's edited.
       await edit(nestedPage, (text) => text.replace("{colour=red}", "{type=tip}"));
