@@ -8,6 +8,7 @@ import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { STATE_NAMES } from "./ui/describe.js";
 import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
+import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
 import { StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
@@ -29,10 +30,12 @@ export interface AscribeApi {
   preview: PreviewApi;
   /** The editor's actions, for tests. */
   actions: ActionsApi;
-  /** The status bar item and the Projects view, for tests. */
+  /** The status bar item and the sidebar's views, for tests. */
   ui: {
     statusBar: StatusBarApi;
     projects: ProjectsViewApi;
+    /** The Used by, Pages, and Content model views. */
+    sidebar: SidebarApi;
     /** Settles when every request for a project's builds has been answered. */
     whenBuildsKnown(): Promise<void>;
   };
@@ -54,6 +57,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   statusBar.register();
   const projectsView = new ProjectsView(projects, builds);
   projectsView.register();
+  const sidebar = new SidebarViews(projects);
+  sidebar.register();
 
   const actions = new ActionsController(projects);
   actions.register();
@@ -98,6 +103,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     builds,
     statusBar,
     projectsView,
+    sidebar,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
       if (projects.projects.length === 0) {
@@ -151,6 +157,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     ui: {
       statusBar: statusBar.api,
       projects: projectsView.api,
+      sidebar: sidebar.api,
       whenBuildsKnown: () => builds.whenSettled(),
     },
   };

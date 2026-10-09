@@ -65,6 +65,7 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 ### Navigation
 
 - **Go to definition** on a link or include opens the target file at its heading. On an `@id`, it goes to the heading; on a phrase or feature key, to its entry in `ascribe.toml`.
+- **Find All References** (`Shift+F12`, or **Go to References**) lists every place that uses what's under the cursor: on a heading or its `@id`, the links to it, including links through a page that includes it, and the includes of its section; at the start of a page, or on its frontmatter or title, the links and includes from other files; on a link or include, those of what it names; on a phrase, a feature key, a glossary term, a note's type, a widget, or a `@variant` attribute, every use of that phrase, feature, term, note type, widget, or dimension. A glossary term counts where its text, or an alias, is in prose, whether or not the build links it there.
 - **Document links**: links, images, and includes are clickable.
 - **CodeLens** above each `@include` names the included file and section, and opens it.
 - **Inline hints** show the title an empty-text link, `[](keys.md#rotate-keys)`, will get.
@@ -121,6 +122,17 @@ Click it for a menu of the project: **Switch build**, **Show output**, **Restart
 @available: next
 
 The Ascribe icon in the activity bar opens the Ascribe sidebar. Its **Projects** view lists every project in the workspace, started or not, by name, with its folder and an icon for its server's state. Under each is its `ascribe.toml`, which opens it, and, while its server runs, its editor build and the `ascribe` binary in use. Each project's buttons show its server's output, and restart its server when it's running or failed. The view updates as projects come and go and servers start and stop, and opening it starts no server. In a workspace with no project, it says how to start one.
+
+### Used by, Pages, and Content model
+@available: next
+
+Three more views in the Ascribe sidebar show the active file's project. They follow the active editor, and show nothing for a project whose server hasn't started: filling them never starts one.
+
+- **Used by** lists what links to the active page, grouped by page, then what includes it. For a fragment, that's the files that include it. With the cursor on a heading, it narrows to the links to that heading, whichever page they reach it through. Each item opens the link or include.
+- **Pages** lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error.
+- **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.
+
+Pages and Content model update when you save a file of the project and when you switch to another project's file; Used by updates as you move between pages and headings.
 
 ### Site preview
 @available: next

@@ -174,6 +174,10 @@ describe("with several projects, one nested in another", () => {
         await api.ui.projects.refresh();
         await api.whenSettled();
         assert.deepEqual(await viewed(), shown);
+        // Used by, Pages, and Content model have no running project to show.
+        await api.ui.sidebar.whenSettled();
+        assert.deepEqual(api.ui.sidebar.items("pages"), []);
+        assert.deepEqual(api.ui.sidebar.items("model"), []);
         assert.deepEqual(
           shown,
           new Map(
@@ -218,6 +222,29 @@ describe("with several projects, one nested in another", () => {
       const tooltip = api.ui.statusBar.shown()?.tooltip ?? "";
       assert.ok(tooltip.includes(path.join(folder.handbook(), "ascribe.toml")), tooltip);
       assert.match(tooltip, /Server: running/);
+    });
+
+    it("lists only the active project's own pages and content model in the sidebar", async () => {
+      await open(handbookPage);
+      const pages = await waitFor("the handbook's pages", async () => {
+        await api.ui.sidebar.whenSettled();
+        return samePath(api.ui.sidebar.project() ?? "", folder.handbook())
+          ? api.ui.sidebar.items("pages")
+          : undefined;
+      });
+      // The nested project's page is in the handbook's content root, but it's
+      // the nested project's.
+      assert.deepEqual(
+        pages.map((group) => [group.label, group.children.map((page) => page.description)]),
+        [["page", ["index.md"]]],
+      );
+      const phrases = api.ui.sidebar
+        .items("model")
+        .find((kind) => kind.label === "Phrases")
+        ?.children.map((entry) => `${entry.label} (${entry.description})`);
+      assert.deepEqual(phrases, ["product (1 use)"]);
+      // Filling the views started no other server.
+      assertRunning([folder.handbook()]);
     });
 
     it("diagnoses a file only through the project that owns it", async () => {

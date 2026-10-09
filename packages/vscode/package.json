@@ -313,6 +313,24 @@
           "id": "ascribe.projects",
           "name": "Projects",
           "contextualTitle": "Ascribe"
+        },
+        {
+          "id": "ascribe.usedBy",
+          "name": "Used by",
+          "contextualTitle": "Ascribe",
+          "when": "ascribe.active"
+        },
+        {
+          "id": "ascribe.pages",
+          "name": "Pages",
+          "contextualTitle": "Ascribe",
+          "when": "ascribe.active"
+        },
+        {
+          "id": "ascribe.model",
+          "name": "Content model",
+          "contextualTitle": "Ascribe",
+          "when": "ascribe.active"
         }
       ]
     },
