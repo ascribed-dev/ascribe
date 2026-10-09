@@ -54,6 +54,16 @@ Each crate's `tests/support/` builds projects in memory; reach for it before a t
 
 Nothing in a test reaches the network: code repositories are reached by `file://` URLs, and `crates/ascribe-cli/tests/all/network.rs` fails on a crate that could.
 
+## Reproduce before you test
+
+A reported behavior is a claim; check it before deciding what to prove, since the test you'd write for a bug that isn't there is a test of nothing. The quickest routes, in order:
+
+- **The library, from a test's support module:** `support::fmt(source)` and `support::outline(source, options)` in `ascribe-fmt`, `ascribe_syntax::parse` with `support::check_tree` in `ascribe-syntax`, `build_support::resolve` and `summary` in `ascribe-resolve`, `support::plain` and `site` in `ascribe-emit`. A temporary `#[test]` with `eprintln!`, run with `-- --nocapture`, and deleted once you've seen the answer.
+- **The binary on a scratch copy:** `cargo build -p ascribe-cli`, then `target/debug/ascribe check`, `fmt --check`, `render`, or `outline` on a copy of an example under `examples/`; `ascribe render --build <name> <page>` shows a page as a build publishes it.
+- **The conformance cases:** `tests/conformance/cases/<area>/` often already holds the exact input; `cargo test -p ascribe-conformance --test conformance -- <case id>` runs one.
+
+Then say in your report what the behavior is, where it's already held, and what was missing, before what you added.
+
 ## Writing one well
 
 - **Name the fact.** `a_link_to_a_page_the_build_drops_is_recorded_and_left_unresolved`, not `test_links`. If you can't write the name as a sentence, you don't yet know what the test holds.
