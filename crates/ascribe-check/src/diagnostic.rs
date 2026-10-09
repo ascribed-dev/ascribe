@@ -66,6 +66,10 @@ pub struct Diagnostic {
     /// Whether the diagnostic is in content that no build publishes, and so
     /// belongs to none of them.
     pub unpublished: bool,
+    /// The values the content model allows, as the message lists them, when
+    /// the problem is a value that isn't one of them; for an agent prompt.
+    #[serde(skip)]
+    pub allowed: Option<String>,
 }
 
 impl Diagnostic {
@@ -94,6 +98,7 @@ impl Diagnostic {
             fixes: issue.fixes.clone(),
             builds: Vec::new(),
             unpublished: false,
+            allowed: allowed(issue),
         }
     }
 
@@ -132,4 +137,19 @@ impl Diagnostic {
     pub fn is_error(&self) -> bool {
         self.severity == Severity::Error
     }
+}
+
+/// The values an issue says are allowed: its `values` placeholder, which every
+/// diagnostic about a value outside a list fills with the list. One
+/// diagnostic uses the name for the values a build keeps, which aren't a
+/// choice to make.
+fn allowed(issue: &Issue) -> Option<String> {
+    if issue.slug == ascribe_core::diagnostics::MODEL_BUILD_FILTER_EXCLUDED {
+        return None;
+    }
+    issue
+        .args
+        .iter()
+        .find(|a| a.name == "values")
+        .map(|a| a.value.clone())
 }

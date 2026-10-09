@@ -36,6 +36,7 @@ mod checks;
 mod diagnostic;
 pub mod page;
 mod project;
+pub mod prompt;
 pub mod registry;
 mod scope;
 mod yaml;

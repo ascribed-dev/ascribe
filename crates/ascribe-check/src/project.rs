@@ -450,6 +450,15 @@ impl Project {
         )
     }
 
+    /// The source index over the texts this project holds, which can differ
+    /// from the files on disk: text laid over it with
+    /// [`Project::with_source`], or a project built in memory. Only its
+    /// sources are what's held; images and other files are read as
+    /// [`Project::index`] reads them.
+    pub fn held_index(&self) -> ascribe_resolve::Project {
+        crate::page::held_index(self)
+    }
+
     /// The content model's text.
     pub fn model_text(&self) -> &str {
         &self.model_text
