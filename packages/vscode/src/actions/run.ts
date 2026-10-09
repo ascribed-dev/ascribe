@@ -21,6 +21,8 @@ export interface RunRecord {
   messages: string[];
   /** For a rename: whether it asked first, in the refactor preview, since it changes other files. */
   previewed?: boolean;
+  /** For a rename: the files it changes, relative to the workspace, sorted. */
+  files?: string[];
 }
 
 /** What a run needs from the extension. */
@@ -107,8 +109,10 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
           }
           // Other files change: show every change in the refactor preview first.
           const page = document.uri.toString();
-          const elsewhere = result.edit.entries().some(([file]) => file.toString() !== page);
+          const files = result.edit.entries().map(([file]) => file);
+          const elsewhere = files.some((file) => file.toString() !== page);
           record.previewed = elsewhere;
+          record.files = files.map((file) => vscode.workspace.asRelativePath(file, false)).sort();
           return elsewhere
             ? vscode.workspace.applyEdit(confirmEach(result.edit), { isRefactoring: true })
             : vscode.workspace.applyEdit(result.edit);

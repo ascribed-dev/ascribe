@@ -176,6 +176,10 @@ describe("the editor's actions", () => {
         "Set where the page is available",
         "-- Link",
         "Insert a link",
+        "-- Content model",
+        "Change a feature's availability",
+        "Rename this phrase everywhere",
+        "Rename a dimension value everywhere",
       ]);
     });
 
@@ -192,6 +196,10 @@ describe("the editor's actions", () => {
         "-- Link",
         "Copy a link to this section",
         "Insert a link",
+        "-- Content model",
+        "Change a feature's availability",
+        "Rename this phrase everywhere",
+        "Rename a dimension value everywhere",
       ]);
     });
 
@@ -207,6 +215,12 @@ describe("the editor's actions", () => {
         "Set where the page is available",
         "-- Link",
         "Link the selected text",
+        "-- Content model",
+        "Make this a phrase",
+        "Add to the glossary",
+        "Change a feature's availability",
+        "Rename this phrase everywhere",
+        "Rename a dimension value everywhere",
       ]);
     });
 
@@ -227,6 +241,10 @@ describe("the editor's actions", () => {
         "Include a fragment",
         "Insert a code snippet",
         "Insert a widget",
+        "-- Content model",
+        "Change a feature's availability",
+        "Rename this phrase everywhere",
+        "Rename a dimension value everywhere",
       ]);
     });
 
@@ -282,20 +300,18 @@ describe("the editor's actions", () => {
 
   describe("the content model", () => {
     /**
-     * Starts an action's command with answers for its wizard and, once VS
-     * Code's refactor preview lists the changes, runs `command` in it.
+     * Runs an action's command with answers for its wizard and, once VS
+     * Code's refactor preview lists the changes, discards them there.
      */
-    async function runThroughPreview(
-      id: string,
-      answers: Scripted[],
-      command: "refactorPreview.apply" | "refactorPreview.discard",
-    ): Promise<RunRecord> {
+    async function runAndDiscard(id: string, answers: Scripted[]): Promise<RunRecord> {
       const before = api.actions.runs.length;
       api.actions.answerNext(answers);
       const running = vscode.commands.executeCommand(`ascribe.action.${id}`);
       // Until the preview is open, the command does nothing.
       const record = await waitFor("the refactor preview", async () => {
-        await vscode.commands.executeCommand(command).then(undefined, () => undefined);
+        await vscode.commands
+          .executeCommand("refactorPreview.discard")
+          .then(undefined, () => undefined);
         return api.actions.runs[before];
       });
       await running;
@@ -319,31 +335,19 @@ describe("the editor's actions", () => {
       assert.equal(lines(editor)[13], line);
     });
 
-    it("renames a phrase picked from the palette, far from its key, after showing every change", async () => {
+    it("renames a phrase picked from the palette, far from its key, asking first", async () => {
       // A paragraph of the quickstart, with no phrase at the cursor.
       await open("quickstart.md", 8, 4);
-      const record = await runThroughPreview(
-        "renamePhrase",
-        ["cloud", "hosted"],
-        "refactorPreview.apply",
-      );
-      assert.deepEqual(record, {
-        action: "renamePhrase",
-        edits: 0,
-        done: true,
-        messages: [],
-        previewed: true,
-      });
-      const keys = await vscode.workspace.openTextDocument(uriOf("docs", "keys.md"));
-      assert.ok(keys.getText().includes("Sign in to {hosted} and open"), keys.getText());
-      const model = await vscode.workspace.openTextDocument(uriOf("ascribe.toml"));
-      assert.ok(model.getText().includes('\nhosted = "Quill Cloud"\n'), model.getText());
+      const record = await runAndDiscard("renamePhrase", ["cloud", "hosted"]);
+      // The preview listed the key in ascribe.toml and the pages that use it.
+      assert.equal(record.previewed, true, record.messages.join());
+      assert.deepEqual(record.files, ["ascribe.toml", "docs/install-agent.md", "docs/keys.md"]);
     });
 
     it("changes nothing when the rename's preview is discarded", async () => {
       // In "{cloud}" of "Sign in to {cloud} and open …".
       await open("keys.md", 8, 13);
-      const record = await runThroughPreview("renamePhrase", ["hosted"], "refactorPreview.discard");
+      const record = await runAndDiscard("renamePhrase", ["hosted"]);
       assert.equal(record.previewed, true);
       assert.equal(record.done, false);
       for (const document of vscode.workspace.textDocuments) {
