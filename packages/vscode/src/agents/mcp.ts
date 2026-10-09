@@ -4,7 +4,7 @@ import type { ProjectRegistry } from "../registry.js";
 import { mcpServerSpec, type McpServerSpec } from "./mcpServer.js";
 
 /** The id of the provider, as `contributes.mcpServerDefinitionProviders` declares it. */
-export const MCP_PROVIDER = "ascribe.mcp";
+const MCP_PROVIDER = "ascribe.mcp";
 
 /** What the extension returns for tests. */
 export interface McpApi {

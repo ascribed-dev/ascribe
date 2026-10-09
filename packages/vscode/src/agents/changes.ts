@@ -9,7 +9,7 @@ import { relativePath, shellWord } from "./problems.js";
 export const MAX_PAGES = 100;
 
 /** A changed page, for an agent. */
-export interface AgentChangedPage {
+interface AgentChangedPage {
   /** The page's file, relative to the project's folder, with `/`. */
   file: string;
   /** Its content path, as `because` names files. */

@@ -232,7 +232,7 @@ describe("semantic tokens and the server's legend", () => {
     expect(manifest.contributes.mcpServerDefinitionProviders).toEqual([
       { id: "ascribe.mcp", label: MCP_LABEL },
     ]);
-    expect(mcp).toContain('export const MCP_PROVIDER = "ascribe.mcp";');
+    expect(mcp).toContain('const MCP_PROVIDER = "ascribe.mcp";');
   });
 
   it("declares the tools the extension registers, each one chat can name", () => {

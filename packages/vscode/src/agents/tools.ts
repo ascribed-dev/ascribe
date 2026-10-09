@@ -16,7 +16,7 @@ import type { Publication } from "./published.js";
  * agent can learn from the files on disk is `ascribe mcp`'s; these need the
  * running extension.
  */
-export const TOOLS = {
+const TOOLS = {
   problems: "ascribe_editor_problems",
   threads: "ascribe_review_threads",
   changes: "ascribe_review_changes",
@@ -27,7 +27,7 @@ export const TOOLS = {
  * changed since it last did. The server takes a few milliseconds; the rest is
  * the editor's file watcher, for a file written on disk.
  */
-export const WAIT_MS = 1_000;
+const WAIT_MS = 1_000;
 
 /** What every tool takes: a file or a project's folder, or neither. */
 interface ToolInput {
