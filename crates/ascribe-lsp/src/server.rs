@@ -440,7 +440,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             crate::targets::METHOD => {
                 answer(shared, &request, |p: crate::targets::TargetsParams| {
                     (p.text_document.uri, move |ctx: &Ctx| {
-                        crate::targets::targets(ctx, &p.kinds)
+                        crate::targets::targets(ctx, &p.kinds, p.range)
                     })
                 })
             }

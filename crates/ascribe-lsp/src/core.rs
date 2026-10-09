@@ -843,6 +843,7 @@ impl Core {
             version: self.docs.get(&path).map(|d| d.version),
             model: loaded.model.clone(),
             model_text: loaded.model_text.clone(),
+            model_problem: self.model_problem.is_some(),
             config: self.config.clone()?,
             content_dir: normalize(&loaded.root.join(loaded.layout.content_root.as_str())),
             encoding: self.encoding,

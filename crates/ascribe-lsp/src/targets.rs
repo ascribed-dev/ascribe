@@ -31,6 +31,10 @@ pub struct TargetsParams {
     pub text_document: TextDocumentIdentifier,
     /// The kinds of target to list.
     pub kinds: Vec<TargetKind>,
+    /// The cursor or selection, for the kinds that depend on it
+    /// (`occurrences`).
+    #[serde(default)]
+    pub range: Option<Range>,
 }
 
 /// A kind of target.
@@ -59,6 +63,8 @@ pub enum TargetKind {
     Features,
     /// Builds.
     Builds,
+    /// The other occurrences of the selected text.
+    Occurrences,
 }
 
 /// The answer to `ascribe/targets`: a list for each kind asked for, and no
@@ -108,6 +114,12 @@ pub struct TargetsResult {
     /// Builds, in declaration order.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub builds: Option<Vec<TargetBuild>>,
+    /// The other whole-word occurrences, in the project's prose, of the text
+    /// the range selects, by content path: those making the selection a
+    /// phrase everywhere (`makePhrase` with `everywhere`) replaces. Empty
+    /// when the selection isn't text a phrase can take the place of.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub occurrences: Option<Vec<TargetOccurrence>>,
 }
 
 /// A page.
@@ -392,8 +404,20 @@ pub struct TargetBuild {
     pub editor: bool,
 }
 
-/// The targets of the requested kinds, for the requested page.
-pub(crate) fn targets(ctx: &Ctx, kinds: &[TargetKind]) -> TargetsResult {
+/// Where some text occurs.
+#[derive(Debug, Serialize, PartialEq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct TargetOccurrence {
+    /// The file's content path.
+    pub path: String,
+    /// The text, in that file.
+    #[cfg_attr(feature = "json-schema", schemars(with = "crate::schema::LspRange"))]
+    pub range: Range,
+}
+
+/// The targets of the requested kinds, for the requested page and range.
+pub(crate) fn targets(ctx: &Ctx, kinds: &[TargetKind], range: Option<Range>) -> TargetsResult {
     let wants = |kind| kinds.contains(&kind).then_some(());
     let model_index = LineIndex::new(&ctx.model_text);
     let declared = |entry: Entry<'_>| {
@@ -473,7 +497,32 @@ pub(crate) fn targets(ctx: &Ctx, kinds: &[TargetKind]) -> TargetsResult {
                 })
                 .collect()
         }),
+        occurrences: wants(TargetKind::Occurrences).map(|()| occurrences(ctx, range)),
     }
+}
+
+fn occurrences(ctx: &Ctx, range: Option<Range>) -> Vec<TargetOccurrence> {
+    let (Some(range), Some(file)) = (range, ctx.file()) else {
+        return Vec::new();
+    };
+    let index = LineIndex::new(&file.source);
+    let (Some(start), Some(end)) = (
+        ctx.encoding.offset(&index, range.start),
+        ctx.encoding.offset(&index, range.end),
+    ) else {
+        return Vec::new();
+    };
+    let mut lines = crate::nav::Lines::new(ctx);
+    crate::edit::selection_occurrences(ctx, start, end.max(start))
+        .into_iter()
+        .flat_map(|(path, spans)| spans.into_iter().map(move |span| (path.clone(), span)))
+        .filter_map(|(path, span)| {
+            Some(TargetOccurrence {
+                range: lines.range(&path, span)?,
+                path: path.to_string(),
+            })
+        })
+        .collect()
 }
 
 /// The destination of a link to `target` from the requesting page.

@@ -85,7 +85,7 @@
       "properties": {
         "edit": {
           "$ref": "#/$defs/LspWorkspaceEdit",
-          "description": "Plain text edits to the requested document, under `changes`,\nin canonical form."
+          "description": "Plain text edits under `changes`, in canonical form: to the\nrequested document, and, for an action on the content model, to\n`ascribe.toml` and any other pages it changes."
         },
         "select": {
           "anyOf": [

@@ -16,13 +16,20 @@
 //!
 //! The operations are in `edit/blocks.rs` (notes, details, steps, ids,
 //! variant arms), `edit/insert.rs` (blocks inserted on a blank line),
-//! `edit/inline.rs` (links, phrases, images), and `edit/page.rs`
-//! (availability and the frontmatter).
+//! `edit/inline.rs` (links, phrases, images), `edit/page.rs`
+//! (availability and the frontmatter), and `edit/model.rs` (the content
+//! model: phrases, glossary terms, and features). An operation on the content
+//! model edits `ascribe.toml` in place ([`crate::model_file`]), and may edit
+//! other pages too; it's checked as the whole project, with the model as it
+//! would be.
 
 mod blocks;
 mod inline;
 mod insert;
+mod model;
 mod page;
+
+pub(crate) use model::selection_occurrences;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -119,11 +126,17 @@ pub enum EditAction {
     SetImageWidth,
     /// Changes an image's alt text.
     SetImageAlt,
+    /// Declares the selected text a phrase and puts the phrase in its place.
+    MakePhrase,
+    /// Declares a glossary term.
+    AddGlossaryTerm,
+    /// Changes a feature's availability.
+    PromoteFeature,
 }
 
 impl EditAction {
     /// Every action, in the order the README documents them.
-    pub const ALL: [EditAction; 29] = [
+    pub const ALL: [EditAction; 32] = [
         EditAction::WrapNote,
         EditAction::SetNoteType,
         EditAction::UnwrapNote,
@@ -153,6 +166,9 @@ impl EditAction {
         EditAction::UseTargetTitle,
         EditAction::SetImageWidth,
         EditAction::SetImageAlt,
+        EditAction::MakePhrase,
+        EditAction::AddGlossaryTerm,
+        EditAction::PromoteFeature,
     ];
 }
 
@@ -163,8 +179,9 @@ impl EditAction {
 pub enum EditResult {
     /// The edit that performs the action.
     Edit {
-        /// Plain text edits to the requested document, under `changes`,
-        /// in canonical form.
+        /// Plain text edits under `changes`, in canonical form: to the
+        /// requested document, and, for an action on the content model, to
+        /// `ascribe.toml` and any other pages it changes.
         #[cfg_attr(
             feature = "json-schema",
             schemars(with = "crate::schema::LspWorkspaceEdit")
@@ -271,6 +288,9 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
         EditAction::UseTargetTitle => inline::use_target_title(&page),
         EditAction::SetImageWidth => inline::set_image_width(&page),
         EditAction::SetImageAlt => inline::set_image_alt(&page),
+        EditAction::MakePhrase => model::make_phrase(&page),
+        EditAction::AddGlossaryTerm => model::add_glossary_term(&page),
+        EditAction::PromoteFeature => model::promote_feature(&page),
     }?;
     finish(&page, uri, plan)
 }
@@ -280,7 +300,12 @@ fn plan_edit(ctx: &Ctx, uri: &Uri, params: &EditParams) -> Result<EditResult, St
 // a key.
 #[allow(clippy::mutable_key_type)]
 fn finish(page: &Page<'_>, uri: &Uri, plan: Plan) -> Result<EditResult, String> {
-    let Plan { mut edits, select } = plan;
+    if !plan.model.is_empty() || !plan.files.is_empty() {
+        return model::finish(page, uri, plan);
+    }
+    let Plan {
+        mut edits, select, ..
+    } = plan;
     // Keep the placeholder's edit findable once the edits are sorted.
     let marked = select.map(|s| (edits[s.edit].span, edits[s.edit].new_text.clone(), s));
     edits.sort_by_key(|e| (e.span.start(), e.span.end()));
@@ -362,7 +387,7 @@ fn check_diagnostics(page: &Page<'_>, after: &str) -> Result<(), String> {
             &ctx.model,
             &ctx.model_text,
             &ctx.fs,
-            text.map(|t| (&ctx.path, t)),
+            &text.map(|t| (&ctx.path, t)).into_iter().collect::<Vec<_>>(),
         )
     };
     let file_level = |project: &ascribe_check::Project| {
@@ -371,6 +396,41 @@ fn check_diagnostics(page: &Page<'_>, after: &str) -> Result<(), String> {
             .map(|file| ascribe_check::check_file(project, file))
             .unwrap_or_default()
     };
+    let before_project = project(None);
+    let mut before = file_level(&before_project);
+    before.extend(
+        ascribe_check::PageChecker::with_index(&before_project, index).check_pages(build, &pages),
+    );
+    let after_project = project(Some(after));
+    let own = after_project
+        .source_at(&ctx.path)
+        .and_then(|f| after_project.file(f.id))
+        .map(|f| f.display_path.to_owned());
+    let mut after = file_level(&after_project);
+    after.extend(ascribe_check::PageChecker::new(&after_project).check_pages(build, &pages));
+    match new_problem(
+        &before_project,
+        &before,
+        &after_project,
+        &after,
+        own.as_deref(),
+    ) {
+        Some(problem) => Err(problem),
+        None => Ok(()),
+    }
+}
+
+/// The first diagnostic of `after` that `before` doesn't have, as the
+/// message refusing the edit. What's added is compared by file and code, so
+/// a diagnostic that only moves isn't counted. `own` is the display path of
+/// the page the edit was asked for, whose problems don't name it.
+pub(crate) fn new_problem(
+    before_project: &ascribe_check::Project,
+    before: &[ascribe_check::Diagnostic],
+    after_project: &ascribe_check::Project,
+    after: &[ascribe_check::Diagnostic],
+    own: Option<&str>,
+) -> Option<String> {
     // Where a diagnostic is, by the file's display path.
     let file_of = |project: &ascribe_check::Project, d: &ascribe_check::Diagnostic| {
         project
@@ -378,35 +438,24 @@ fn check_diagnostics(page: &Page<'_>, after: &str) -> Result<(), String> {
             .map(|f| f.display_path.to_owned())
             .unwrap_or_default()
     };
-    let before_project = project(None);
-    let mut before: BTreeMap<(String, String), usize> = BTreeMap::new();
-    let before_page =
-        ascribe_check::PageChecker::with_index(&before_project, index).check_pages(build, &pages);
-    for d in file_level(&before_project).iter().chain(&before_page) {
-        let key = (file_of(&before_project, d), d.code.to_owned());
-        *before.entry(key).or_default() += 1;
+    let mut counts: BTreeMap<(String, String), usize> = BTreeMap::new();
+    for d in before {
+        let key = (file_of(before_project, d), d.code.to_owned());
+        *counts.entry(key).or_default() += 1;
     }
-    let after_project = project(Some(after));
-    let own = after_project
-        .source_at(&ctx.path)
-        .and_then(|f| after_project.file(f.id))
-        .map(|f| f.display_path.to_owned());
-    let after_page = ascribe_check::PageChecker::new(&after_project).check_pages(build, &pages);
-    for d in file_level(&after_project).iter().chain(&after_page) {
-        let file = file_of(&after_project, d);
-        let count = before.entry((file.clone(), d.code.to_owned())).or_default();
+    for d in after {
+        let file = file_of(after_project, d);
+        let count = counts.entry((file.clone(), d.code.to_owned())).or_default();
         if *count == 0 {
-            return Err(
-                if own.as_deref() == Some(file.as_str()) || file.is_empty() {
-                    format!("The edit would make a problem: {}", d.message)
-                } else {
-                    format!("The edit would make a problem in `{file}`: {}", d.message)
-                },
-            );
+            return Some(if own == Some(file.as_str()) || file.is_empty() {
+                format!("The edit would make a problem: {}", d.message)
+            } else {
+                format!("The edit would make a problem in `{file}`: {}", d.message)
+            });
         }
         *count -= 1;
     }
-    Ok(())
+    None
 }
 
 /// What an operation works from.
@@ -428,8 +477,13 @@ pub(crate) struct Page<'a> {
 
 /// The edits an operation makes.
 pub(crate) struct Plan {
+    /// To the page.
     pub edits: Vec<TextEdit>,
     pub select: Option<Placeholder>,
+    /// To `ascribe.toml`.
+    pub model: Vec<crate::model_file::Edit>,
+    /// To other source files, by content path.
+    pub files: BTreeMap<RelPath, Vec<TextEdit>>,
 }
 
 impl Plan {
@@ -437,6 +491,8 @@ impl Plan {
         Plan {
             edits,
             select: None,
+            model: Vec::new(),
+            files: BTreeMap::new(),
         }
     }
 }

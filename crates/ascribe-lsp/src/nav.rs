@@ -34,6 +34,9 @@ pub(crate) struct Ctx {
     pub model: Arc<ContentModel>,
     /// The text of `ascribe.toml`, for going to a phrase's or feature's entry.
     pub model_text: String,
+    /// Whether `ascribe.toml` as it is now doesn't load, so `model` and
+    /// `model_text` are the last that did.
+    pub model_problem: bool,
     /// The project's `ascribe.toml`.
     pub config: PathBuf,
     /// The content root, absolute.
