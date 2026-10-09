@@ -22,16 +22,18 @@ The JSON report's `schema_version` changes only when a field is removed or chang
 
 ## Tests
 
-- `tests/check.rs`: every exit code, the text and JSON output, `--config`, and finding the model in a parent directory.
-- `tests/build.rs`: the outputs, replacing a previous build, and reporting what `ascribe check` reports.
-- `tests/diff.rs`: comparing with a base revision in a temporary git repository: the text, JSON, and HTML output (a snapshot of the HTML report's data, and that it loads nothing from the network), merge bases, changes through a fragment or the content model, and the failures that exit with 2.
-- `tests/drift.rs`: the drift report in a temporary git repository: the groups in text, JSON, and the summary, an example that no longer resolves, nothing to report, `--exit-code`, and the failures that exit with 2, a shallow clone among them (where `check` behaves as in the full repository).
-- `tests/fmt.rs`: exit statuses, `--check`, and which files it visits.
-- `tests/sources.rs`: `ascribe sources`, and every other command over a project with sources in other repositories, in temporary repositories reached by `file://` URLs.
-- `tests/answers.rs`: the commands that answer questions, on a project in a subfolder: their JSON, exit codes, `model`'s budget on `examples/quill` and on a long model, and `refs`'s cut list.
-- `tests/agents.rs`: `ascribe agents sync` in temporary repositories: what it writes for `examples/quill` and each project of `examples/monorepo` (in `tests/output/agents/`, as `.snap` files, which `ASCRIBE_BLESS=1` rewrites), a second run, `--check`, the team's text around the markers, damaged markers, `CLAUDE.md` and `CLAUDE.local.md`, two projects in one repository, a project outside a repository, and a file that would be a page. `src/agents/skill.rs` checks the skill against the copy `@ascribed/cli` ships.
-- `tests/output.rs`: the command output the docs show, in `tests/output/` (`ASCRIBE_BLESS=1` rewrites it).
+`tests/all.rs` compiles every file below but `determinism.rs` into one program; `cargo test -p ascribe-cli --test all check::` runs one file's tests.
+
+- `tests/all/check.rs`: every exit code, the text and JSON output, `--config`, and finding the model in a parent directory.
+- `tests/all/build.rs`: the outputs, replacing a previous build, and reporting what `ascribe check` reports.
+- `tests/all/diff.rs`: comparing with a base revision in a temporary git repository: the text, JSON, and HTML output (a snapshot of the HTML report's data, and that it loads nothing from the network), merge bases, changes through a fragment or the content model, and the failures that exit with 2.
+- `tests/all/drift.rs`: the drift report in a temporary git repository: the groups in text, JSON, and the summary, an example that no longer resolves, nothing to report, `--exit-code`, and the failures that exit with 2, a shallow clone among them (where `check` behaves as in the full repository).
+- `tests/all/fmt.rs`: exit statuses, `--check`, and which files it visits.
+- `tests/all/sources.rs`: `ascribe sources`, and every other command over a project with sources in other repositories, in temporary repositories reached by `file://` URLs.
+- `tests/all/answers.rs`: the commands that answer questions, on a project in a subfolder: their JSON, exit codes, `model`'s budget on `examples/quill` and on a long model, and `refs`'s cut list.
+- `tests/all/agents.rs`: `ascribe agents sync` in temporary repositories: what it writes for `examples/quill` and each project of `examples/monorepo` (in `tests/output/agents/`, as `.snap` files, which `ASCRIBE_BLESS=1` rewrites), a second run, `--check`, the team's text around the markers, damaged markers, `CLAUDE.md` and `CLAUDE.local.md`, two projects in one repository, a project outside a repository, and a file that would be a page. `src/agents/skill.rs` checks the skill against the copy `@ascribed/cli` ships.
+- `tests/all/output.rs`: the command output the docs show, in `tests/output/` (`ASCRIBE_BLESS=1` rewrites it).
 - `tests/determinism.rs`: every output is the same from one run to the next, over the example projects and the docs.
-- `tests/network.rs`: only `sources fetch` and `sources update` can reach another repository.
-- `tests/lsp_project_log.rs`: `ascribe lsp` names the project it loaded.
-- `tests/lsp_parity.rs`: for every build of `examples/quill` and of a fixture with problems, the language server, run as a real process, publishes what `ascribe check --build` reports.
+- `tests/all/network.rs`: only `sources fetch` and `sources update` can reach another repository.
+- `tests/all/lsp_project_log.rs`: `ascribe lsp` names the project it loaded.
+- `tests/all/lsp_parity.rs`: for every build of `examples/quill` and of a fixture with problems, the language server, run as a real process, publishes what `ascribe check --build` reports.

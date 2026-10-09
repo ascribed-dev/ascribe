@@ -24,4 +24,4 @@ A client that sends `initialize` gets the older handshake, for 2025-11-25 and 20
 - **A panic in a handler doesn't stop the server.** It's answered as an internal error, and logged.
 - **Nothing is printed.** The log is a writer the caller gives, standard error in the binary.
 
-`tests/protocol.rs` drives it as a client does, over both revisions. The binary's `crates/ascribe-cli/tests/mcp.rs` drives `ascribe mcp` itself.
+`tests/protocol.rs` drives it as a client does, over both revisions. The binary's `crates/ascribe-cli/tests/all/mcp.rs` drives `ascribe mcp` itself.

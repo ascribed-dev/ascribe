@@ -23,8 +23,12 @@ describe("remotes", () => {
 });
 
 describe("the checkout", () => {
-  let repo: TempRepo;
-  afterEach(() => repo.remove());
+  // Each test checks out a branch or a commit, so each makes its own.
+  let repo: TempRepo | undefined;
+  afterEach(() => {
+    repo?.remove();
+    repo = undefined;
+  });
 
   test("names the branch, its remote name, and where to look", async () => {
     repo = tempRepo();
@@ -51,7 +55,6 @@ describe("the checkout", () => {
   });
 
   test("rejects a directory that isn't a repository", async () => {
-    repo = tempRepo();
     const outside = mkdtempSync(path.join(tmpdir(), "not-a-repo-"));
     try {
       await expect(readCheckout(outside)).rejects.toMatchObject({ code: "git" });

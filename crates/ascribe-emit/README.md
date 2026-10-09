@@ -61,15 +61,15 @@ Markdown plus web components, for a consumer that renders CommonMark with raw HT
 | Glossary term | A link to the term's route, with its definition as the title |
 | Raw HTML | Unchanged |
 
-Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its order, and a wrapping element has a blank line after its opening tag and before its closing tag (SPEC §9.4). `tests/site.rs`, `tests/site_quill.rs` (with the snapshots), and `tests/site_assets.rs` check them.
+Elements and attributes are exactly `packages/elements/CONTRACT.md`'s, in its order, and a wrapping element has a blank line after its opening tag and before its closing tag (SPEC §9.4). `tests/all/site.rs`, `tests/all/site_quill.rs` (with the snapshots), and `tests/all/site_assets.rs` check them.
 
 ### `render_site_html`
 
-`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark (the fork in `crates/comrak-ascribe`, with Ascribe's option off) with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview uses it; the Astro plugin must pass the same fixtures.
+`render_site_html(markdown) -> String` renders site markdown as HTML: comrak's CommonMark (the fork in `crates/comrak-ascribe`, with Ascribe's option off) with raw HTML passed through, GFM's tables, strikethrough, bare links, and task lists, and the site-render contract's markers applied (`render/`). It passes every fixture in `tests/render/` (`tests/all/render_fixtures.rs` compares parsed HTML with `html5ever`). The editor preview uses it; the Astro plugin must pass the same fixtures.
 
 ### Zod
 
-`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys (and `formatted`, for a type whose fields set `inline = "code"`), and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema`. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test zod`.
+`zod::generate(model)` writes the TypeScript module `_ascribe/schema.ts`: a `z.strictObject` per content type (imported from `astro/zod`), with the reserved `available` (the list of targets the site output writes) and `variant` keys (and `formatted`, for a type whose fields set `inline = "code"`), and the exports `<type>Schema`, `schemas`, `contentTypes`, and `schema`. `tests/zod/` is a pnpm workspace package that type-checks the generated files with `tsc` under the workspace's strict settings and validates the Quill pages' frontmatter with them (`pnpm --filter @ascribed/zod-check test`). Regenerate its fixtures after a change with `ASCRIBE_BLESS=1 cargo test -p ascribe-emit --test all zod`.
 
 ## JSON
 
@@ -158,7 +158,7 @@ A `target` has a `type`:
 }
 ```
 
-The full documents for Quill are the snapshots in `tests/snapshots/`.
+The full documents for Quill are the snapshots in `tests/all/snapshots/`.
 
 ## Output ownership
 
@@ -166,4 +166,4 @@ See the [output-layout contract](https://ascribed-dev.com/contracts/output-layou
 
 ## Tests
 
-`tests/plain.rs` (each construct), `tests/store.rs` (the output-layout contract), `tests/write.rs` (`write_outputs`), `tests/assets.rs` (the output works with the source removed), `tests/formatted.rs` (fields read with `inline = "code"`), and `tests/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/site.rs`, `tests/site_quill.rs`, `tests/site_assets.rs`, `tests/site_anchors.rs` (source anchors), `tests/render_fixtures.rs`, and `tests/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.
+`tests/all/plain.rs` (each construct), `tests/all/store.rs` (the output-layout contract), `tests/all/write.rs` (`write_outputs`), `tests/all/assets.rs` (the output works with the source removed), `tests/all/formatted.rs` (fields read with `inline = "code"`), and `tests/all/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/all/site.rs`, `tests/all/site_quill.rs`, `tests/all/site_assets.rs`, `tests/all/site_anchors.rs` (source anchors), `tests/all/render_fixtures.rs`, and `tests/all/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.
