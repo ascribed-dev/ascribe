@@ -6,7 +6,7 @@ Ascribe's mark and design tokens, and the images made from them. Everything Ascr
 
 | File | What it is |
 |---|---|
-| `tokens.toml` | Every color, font stack, step of the type scale, space, and radius of Ascribe's stylesheets. The only place one is written |
+| `tokens.toml` | Every color of Ascribe's stylesheets, the only place one is written, and their font stacks, type scale, spaces, and radii. Some sizes and spaces are still written in the stylesheets by hand; a new one goes here |
 | `mark.svg` | The mark in one color, from `currentColor`. Its asterisk carries `class="second"`, the part a second color goes on |
 | `mark-color.svg` | The mark in the light text and accent colors, for a light background |
 | `wordmark.svg`, `tagline.svg` | "ascribe", and the line on the social card |

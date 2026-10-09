@@ -1,5 +1,5 @@
 # Ascribe's colors, font stacks, type scale, spaces, and radii: the only place
-# one is written. The stylesheets' variables are generated from this file by
+# a color is written, and the home of a new font stack, size, or space. The stylesheets' variables are generated from this file by
 # scripts/design/tokens.ts; design/README.md says how.
 #
 # [palette]: every color value, named by hue and step. The step is
