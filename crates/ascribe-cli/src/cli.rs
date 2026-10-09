@@ -94,6 +94,10 @@ pub enum Color {
 /// The subcommands.
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Write the files agents read on their own: the project's rules, and
+    /// the Ascribe skill.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-agents"))]
+    Agents(commands::agents::Args),
     /// Build the documentation set's outputs.
     #[command(after_help = docs_page!("reference/cli/#ascribe-build"))]
     Build(commands::build::Args),
@@ -144,6 +148,7 @@ pub enum Command {
 impl Command {
     fn run(self, global: &Global) -> ExitCode {
         match self {
+            Command::Agents(args) => commands::agents::run(global, args),
             Command::Build(args) => commands::build::run(global, args),
             Command::Check(args) => commands::check::run(global, args),
             Command::Diff(args) => commands::diff::run(global, args),

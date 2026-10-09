@@ -8,7 +8,8 @@
 //! - [`link`]: whether a link target exists as seen from a page, and the
 //!   link to write;
 //! - [`render`]: a page as a reader of one build sees it, as plain Markdown;
-//! - [`refs`]: where a page, a heading, or a content model entry is used.
+//! - [`refs`]: where a page, a heading, or a content model entry is used;
+//! - [`rules`]: a project's rules, for the instruction files an agent reads.
 //!
 //! The `ascribe` commands of the same names call these and print what they
 //! return; each answer is the command's JSON. Every answer carries
@@ -23,6 +24,7 @@ pub mod model;
 pub mod outline;
 pub mod refs;
 pub mod render;
+pub mod rules;
 
 pub use error::QueryError;
 pub use explain::{DiagnosticList, ExampleText, Explanation, ListedDiagnostic, explain, list};
@@ -31,6 +33,7 @@ pub use model::{ModelReport, Section, model, summary};
 pub use outline::{Outline, OutlineHeading, outline};
 pub use refs::{Asked, Place, Refs, TargetKind, refs};
 pub use render::{Rendered, render};
+pub use rules::{pointer, rules};
 
 /// The version of every answer's JSON schema.
 pub const SCHEMA_VERSION: u32 = 1;

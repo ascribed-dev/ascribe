@@ -54,7 +54,7 @@ impl Section {
         }
     }
 
-    fn heading(self) -> &'static str {
+    pub(crate) fn heading(self) -> &'static str {
         match self {
             Section::Types => "Page types",
             Section::Dimensions => "Dimensions",
@@ -450,18 +450,26 @@ pub fn summary(model: &ContentModel, section: Option<Section>, budget: usize) ->
     if section.is_some() || render(&sections, &all).chars().count() <= budget {
         return render(&sections, &all);
     }
-    // Take entries a round at a time, one from each section in turn, while
-    // the result fits: every section keeps its first entries, and a long one
-    // gives up its tail.
-    let mut taken = vec![0; sections.len()];
+    let taken = fit(&all, |taken| {
+        render(&sections, taken).chars().count() <= budget
+    });
+    render(&sections, &taken)
+}
+
+/// How many entries of each list to keep, given each list's length (`all`)
+/// and whether a choice `fits`. Entries are taken a round at a time, one
+/// from each list in turn, while the result fits: every list keeps its first
+/// entries, and a long one gives up its tail.
+pub(crate) fn fit(all: &[usize], fits: impl Fn(&[usize]) -> bool) -> Vec<usize> {
+    let mut taken = vec![0; all.len()];
     loop {
         let mut grew = false;
-        for i in 0..sections.len() {
+        for i in 0..all.len() {
             if taken[i] == all[i] {
                 continue;
             }
             taken[i] += 1;
-            if render(&sections, &taken).chars().count() <= budget {
+            if fits(&taken) {
                 grew = true;
             } else {
                 taken[i] -= 1;
@@ -471,7 +479,13 @@ pub fn summary(model: &ContentModel, section: Option<Section>, budget: usize) ->
             break;
         }
     }
-    render(&sections, &taken)
+    taken
+}
+
+/// A line of Markdown for each entry of a section, as the summary lists
+/// them.
+pub(crate) fn entries(model: &ContentModel, section: Section) -> Vec<String> {
+    lines(&self::model(model, Some(section)), section)
 }
 
 /// The summary with the first `taken[i]` lines of section `i`.
