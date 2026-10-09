@@ -1,0 +1,29 @@
+[package]
+name = "ascribe-query"
+description = "Answers to the questions an author or an agent asks about an Ascribe project: what a diagnostic means, what the content model allows, a page's headings, a link, a page as a build renders it, and where something is used."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ascribe-core.workspace = true
+ascribe-model.workspace = true
+ascribe-resolve.workspace = true
+ascribe-check.workspace = true
+ascribe-emit.workspace = true
+serde.workspace = true
+serde_yaml_ng.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+schemars = { workspace = true, optional = true }
+
+[features]
+# Derives a JSON Schema for each answer. Only ascribe-cli's tests turn it on,
+# to generate the schemas (crates/ascribe-cli/src/shapes.rs).
+json-schema = ["dep:schemars"]
+
+[lints]
+workspace = true

@@ -594,14 +594,7 @@ pub(crate) fn preview(target: &Target, build_name: Option<&str>, review: bool) -
 
 /// Why a build doesn't publish a page, as the end of a sentence.
 pub(crate) fn drop_explanation(reason: &DropReason) -> &'static str {
-    match reason {
-        DropReason::Variant => {
-            "its variant frontmatter names a dimension the build selects, and none of the selected values"
-        }
-        DropReason::Unavailable => {
-            "its available frontmatter makes it unavailable for the build's target and version"
-        }
-    }
+    reason.explanation()
 }
 
 /// What changed on the page at `path` against `base`, as `ascribe diff`

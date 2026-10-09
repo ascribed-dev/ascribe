@@ -81,6 +81,7 @@ pub mod fs;
 pub mod incremental;
 mod index;
 mod layout;
+mod links;
 mod project;
 pub mod references;
 pub mod slug;
@@ -107,6 +108,7 @@ pub use index::{
     PhraseUse, RefKind, Reference, Target, heading_text, index_file,
 };
 pub use layout::Layout;
+pub use links::{encode_destination, link_path, named_headings};
 pub use project::{
     AssetSite, IncludeEdge, LinkSite, Missing, PageAsset, Project, Resolution, Unreadable,
 };

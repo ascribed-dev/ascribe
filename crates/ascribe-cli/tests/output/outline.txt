@@ -1,0 +1,7 @@
+API keys
+docs/keys.md, type page
+
+docs/keys.md:6: ## Create a key  #create-key
+docs/keys.md:11: ## Rotate keys  #rotate-keys
+
+Link to a heading as `keys.md#<id>`.

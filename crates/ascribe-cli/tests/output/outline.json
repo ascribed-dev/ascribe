@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "ascribe_version": "{version}",
+  "page": "keys.md",
+  "file": "docs/keys.md",
+  "fragment": false,
+  "title": "API keys",
+  "type": "page",
+  "build": null,
+  "not_published": null,
+  "headings": [
+    {
+      "level": 2,
+      "text": "Create a key",
+      "id": "create-key",
+      "explicit_id": true,
+      "file": "docs/keys.md",
+      "line": 6,
+      "fragment": null
+    },
+    {
+      "level": 2,
+      "text": "Rotate keys",
+      "id": "rotate-keys",
+      "explicit_id": true,
+      "file": "docs/keys.md",
+      "line": 11,
+      "fragment": null
+    }
+  ]
+}

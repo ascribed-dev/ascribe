@@ -10,6 +10,7 @@
 // `docs_page!`, for the help of subcommands defined in their own modules.
 #[macro_use]
 mod cli;
+mod answer;
 mod commands;
 mod context;
 #[cfg(test)]
@@ -18,6 +19,7 @@ mod exit;
 mod report;
 #[cfg(test)]
 mod shapes;
+mod shell;
 
 use std::process::ExitCode;
 

@@ -1,0 +1,415 @@
+{
+  "$defs": {
+    "ModelAttribute": {
+      "description": "An attribute a widget accepts.",
+      "properties": {
+        "default": {
+          "description": "The value used when it's left out, as written (a set's members joined\nby `|`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "description": "What it's for.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "key": {
+          "description": "The key.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether every use must give it.",
+          "type": "boolean"
+        },
+        "type": {
+          "description": "The value's type: `string`, `number`, `boolean`, `enum`, `set`, or\n`note-type`.",
+          "type": "string"
+        },
+        "values": {
+          "description": "The values it allows, for `enum` and a `set` of named values; empty\notherwise.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "type",
+        "values",
+        "required",
+        "default",
+        "description"
+      ],
+      "type": "object"
+    },
+    "ModelBuild": {
+      "description": "A build.",
+      "properties": {
+        "availability": {
+          "description": "How it treats availability: `badge`, or the target it filters for,\nsuch as `filter self-managed 3.3`.",
+          "type": "string"
+        },
+        "editor": {
+          "description": "Whether it's the build the editor checks (`[editor] build`).",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "variants": {
+          "description": "Which variant arms it keeps: `switch` for all of them, or the\nselection, such as `deployment=cloud`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "variants",
+        "availability",
+        "editor"
+      ],
+      "type": "object"
+    },
+    "ModelDimension": {
+      "description": "A dimension.",
+      "properties": {
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "values": {
+          "description": "Its values, in display order.",
+          "items": {
+            "$ref": "#/$defs/ModelDimensionValue"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "values"
+      ],
+      "type": "object"
+    },
+    "ModelDimensionValue": {
+      "description": "A value of a dimension.",
+      "properties": {
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value.",
+          "type": "string"
+        },
+        "versionless": {
+          "description": "Whether it has no versions, so an availability spec gives it a state\nbut no version.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value",
+        "label",
+        "versionless"
+      ],
+      "type": "object"
+    },
+    "ModelFeature": {
+      "description": "A feature.",
+      "properties": {
+        "availability": {
+          "description": "Its availability spec, as written.",
+          "type": "string"
+        },
+        "key": {
+          "description": "Its key, which an availability spec can name.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "availability"
+      ],
+      "type": "object"
+    },
+    "ModelField": {
+      "description": "A frontmatter field.",
+      "properties": {
+        "description": {
+          "description": "What it's for, as the content model describes it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fields": {
+          "description": "An object's fields; empty for any other type.",
+          "items": {
+            "$ref": "#/$defs/ModelField"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether every page of the type must give it.",
+          "type": "boolean"
+        },
+        "type": {
+          "description": "Its type in short form: `string`, `list(string)`, `enum(a, b)`.",
+          "type": "string"
+        },
+        "values": {
+          "description": "The values it allows, for an enumeration or a list of one; empty\notherwise.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "required",
+        "values",
+        "description",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "ModelPhrase": {
+      "description": "A phrase.",
+      "properties": {
+        "key": {
+          "description": "Its key, written `{key}` in a page.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Its value.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ModelTerm": {
+      "description": "A glossary term.",
+      "properties": {
+        "aliases": {
+          "description": "Other ways it's written.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "definition": {
+          "description": "Its definition.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Its id.",
+          "type": "string"
+        },
+        "match": {
+          "description": "Which occurrences are linked: `first` on each page, `every` one, or\nonly those an author links (`marked`).",
+          "type": "string"
+        },
+        "term": {
+          "description": "The term.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "term",
+        "aliases",
+        "definition",
+        "match"
+      ],
+      "type": "object"
+    },
+    "ModelType": {
+      "description": "A page type.",
+      "properties": {
+        "default": {
+          "description": "Whether it applies to pages no type's `files` match.",
+          "type": "boolean"
+        },
+        "fields": {
+          "description": "Its frontmatter fields, in declaration order.",
+          "items": {
+            "$ref": "#/$defs/ModelField"
+          },
+          "type": "array"
+        },
+        "files": {
+          "description": "The patterns of the pages it applies to, relative to the content root.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "files",
+        "default",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "ModelWidget": {
+      "description": "A project widget.",
+      "properties": {
+        "attributes": {
+          "description": "Its attributes, in canonical order.",
+          "items": {
+            "$ref": "#/$defs/ModelAttribute"
+          },
+          "type": "array"
+        },
+        "container": {
+          "description": "Whether it may be a container, closed by `@end`.",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "What it's for, as the content model describes it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "description": "Whether it may be one line.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Its name, written `@name`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "line",
+        "container",
+        "attributes"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "What `ascribe model --format json` answers: the content model's sections,\nor the one asked for.",
+  "properties": {
+    "ascribe_version": {
+      "description": "The version of Ascribe that wrote it.",
+      "type": "string"
+    },
+    "builds": {
+      "description": "Builds, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelBuild"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "dimensions": {
+      "description": "Dimensions, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelDimension"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "features": {
+      "description": "Features, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelFeature"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "glossary": {
+      "description": "Glossary terms, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelTerm"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "phrases": {
+      "description": "Phrases, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelPhrase"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "schema_version": {
+      "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "types": {
+      "description": "Page types, in declaration order: the implicit `page` type when none\nis declared.",
+      "items": {
+        "$ref": "#/$defs/ModelType"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "widgets": {
+      "description": "Project widgets, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/ModelWidget"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "ascribe_version"
+  ],
+  "title": "ModelReport",
+  "type": "object"
+}

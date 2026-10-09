@@ -21,8 +21,9 @@ All in `crates/`. Each depends only on the crates listed for it in [How the crat
 | [`ascribe-diff`](crates/ascribe-diff) | What changed between a git revision and the working tree (`diff`), which pages' examples changed while their words didn't (`drift`), and the static HTML report. |
 | [`ascribe-sources`](crates/ascribe-sources) | Sources in other repositories: `fetch`, `update`, and `status` of the copies and their pins. The only code that reaches another repository. |
 | [`ascribe-fmt`](crates/ascribe-fmt) | The formatter: minimal edits that put Ascribe constructs in canonical form, leaving prose alone. |
+| [`ascribe-query`](crates/ascribe-query) | Answers about a project that change nothing: a diagnostic explained, the content model, a page's outline, a link, a page rendered for one build, and where something is used. |
 | [`ascribe-lsp`](crates/ascribe-lsp) | The language server, run as `ascribe lsp`. |
-| [`ascribe-cli`](crates/ascribe-cli) | The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, and `lsp`. |
+| [`ascribe-cli`](crates/ascribe-cli) | The `ascribe` binary: `check`, `build`, `diff`, `drift`, `fmt`, `sources`, `lsp`, and the commands that answer questions (`explain`, `model`, `outline`, `link`, `refs`, `render`). |
 | [`comrak-ascribe`](crates/comrak-ascribe) | A fork of the comrak CommonMark parser, with Ascribe's block-level changes. Each change is marked `// ASCRIBE:` and listed in [FORK.md](crates/comrak-ascribe/FORK.md). It doesn't use the workspace lints. |
 
 ### npm packages
@@ -67,8 +68,9 @@ ascribe-check      core, syntax, model, resolve
 ascribe-sources    core, model, resolve
 ascribe-emit       core, syntax, model, resolve, comrak-ascribe
 ascribe-diff       core, syntax, model, resolve, check, emit
+ascribe-query      core, model, resolve, check, emit
 ascribe-lsp        core, syntax, model, resolve, check, emit, diff, fmt
-ascribe-cli        core, model, resolve, check, emit, diff, sources, fmt, lsp
+ascribe-cli        core, model, resolve, check, emit, diff, sources, fmt, query, lsp
 ```
 
 There are no cycles. Every crate's `Cargo.toml` takes our crates from `[workspace.dependencies]` in the root [Cargo.toml](Cargo.toml).
@@ -104,7 +106,7 @@ The steps every surface shares, in order:
 ## Loading a project, and reading files
 
 - **Finding `ascribe.toml`.** The commands look in `--config` or the nearest parent (`ascribe_check::Project::locate`, called from `crates/ascribe-cli/src/context.rs`). The language server looks from its workspace folders (`find_config` in `crates/ascribe-lsp/src/core.rs`).
-- **Loading.** `ascribe_check::Project::load` reads the content model (`Project::load_model`) and the sources, and is what `check` reports on; every command loads its project with it, through `load_project` in `crates/ascribe-cli/src/context.rs`, except `fmt`, which takes only the content model (`Project::load_model`) so that a project whose pages have errors can still be formatted. The page-level checks index it again as an `ascribe_resolve::Project` (`crates/ascribe-check/src/page/bridge.rs`), unless the caller passes its own index (`PageChecker::with_index`). The commands that resolve builds (`build`, `diff`, `drift`, `sources`) take their own `ascribe_resolve::Project` over the same files from `Project::index`, so they index the project twice. The language server loads with `ascribe_model::load_str_in` and `ascribe_resolve::IncrementalProject::load`, since it holds unsaved text and updates in place.
+- **Loading.** `ascribe_check::Project::load` reads the content model (`Project::load_model`) and the sources, and is what `check` reports on; every command loads its project with it, through `load_project` in `crates/ascribe-cli/src/context.rs` (or `load` in `crates/ascribe-cli/src/answer.rs`, which finds `ascribe.toml` from a path on the command line), except `fmt`, which takes only the content model (`Project::load_model`) so that a project whose pages have errors can still be formatted, `model`, which needs nothing else, and `explain`, which needs no project. The page-level checks index it again as an `ascribe_resolve::Project` (`crates/ascribe-check/src/page/bridge.rs`), unless the caller passes its own index (`PageChecker::with_index`). The commands that resolve builds or the source index (`build`, `diff`, `drift`, `sources`, `outline`, `link`, `refs`, `render`) take their own `ascribe_resolve::Project` over the same files from `Project::index`, so they index the project twice. The language server loads with `ascribe_model::load_str_in` and `ascribe_resolve::IncrementalProject::load`, since it holds unsaved text and updates in place.
 - **Reading.** `ascribe_resolve::FileSystem` (`crates/ascribe-resolve/src/fs.rs`) is where a project's files are read: it knows the content root, which files are sources, the boundary a file must stay inside, exact-case names, and symbolic links. `DiskFs` reads a real project, `MemoryFs` holds one for tests, and `ascribe_diff::GitFs` reads one at a commit. A read anywhere else says why it isn't a project read, in a comment starting `Outside FileSystem:`, and `crates/ascribe-resolve/tests/file_reads.rs` fails on one that doesn't. The ones left: the content model's (`crates/ascribe-model/src/lib.rs`, and its checks that the folders it names exist), finding and reading `ascribe.toml` (`Project::locate` and `Project::load_model` in `crates/ascribe-check/src/project.rs`), the output directory's (`crates/ascribe-emit/src/store.rs`), writing the copies of sources in other repositories (`crates/ascribe-sources/src/copies.rs`), `fmt`'s (`crates/ascribe-fmt/src/files.rs`, which takes the link rule from `DiskFs` through `ascribe_core::SourceBoundary`), the language server's walk when files change (`crates/ascribe-lsp/src/core.rs`), and assets: the build copies them from `EmitContext::asset_source`, and the HTML report inlines them from the same place (`DiskAssets` in `crates/ascribe-diff/src/html/mod.rs`), both skipping the boundary, case, and link rules.
 - **Paths.** `ascribe_core::path` holds the path helpers every crate shares: `RelPath::relative_to` (a path inside a folder), `relative_path` (from one directory on disk to another, with a leading drive letter matched in either case), and `normalize`.
 - **Git.** `ascribe-diff` (`crates/ascribe-diff/src/git.rs`) and `ascribe-sources` (`crates/ascribe-sources/src/remote.rs`) run the `git` executable with a fixed argument list. No git or HTTP library is linked.
@@ -122,6 +124,12 @@ Each command is one call into a library, after the project is loaded. The call t
 | `fmt` | `ascribe_fmt::format_files` | Takes the content model from `Project::load_model`, and reports each file changed through a callback. |
 | `sources` | `ascribe_sources::fetch`, `status`, `update` | Over an `ascribe_sources::Workspace`. `update` then calls `drift_project` against `HEAD` for the pages whose examples changed. |
 | `lsp` | `ascribe_lsp::run_stdio` | |
+| `explain` | `ascribe_query::explain`, `list` | Needs no project. |
+| `model` | `ascribe_query::model`, `summary` | Takes the content model from `Project::load_model`. |
+| `outline` | `ascribe_query::outline` | Over `Project::index`, as the rest below. |
+| `link` | `ascribe_query::link` | |
+| `refs` | `ascribe_query::refs` | The CLI adds `next_command` when the list is cut. |
+| `render` | `ascribe_query::render` | |
 
 The language server calls the same code where it does the same job: `ascribe_fmt::format` for formatting, and `ascribe_diff::compare_builds`, which `diff_project` calls, for review. It checks incrementally, so it calls `check_file` and `PageChecker` instead of `diagnose`, and `crates/ascribe-cli/tests/lsp_parity.rs` holds the two to the same diagnostics.
 

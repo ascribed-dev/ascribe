@@ -679,3 +679,84 @@ fn sources_update() {
         &stdout(&sources(&["sources", "update"])),
     );
 }
+
+/// The commands that answer questions, on `examples/quill`, run from the
+/// repository's root with paths into it: the command reference's examples.
+#[test]
+fn answers() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let quill = "examples/quill";
+    let keys = "examples/quill/docs/keys.md";
+    let install = "examples/quill/docs/install-agent.md";
+
+    expect(
+        "explain.txt",
+        &stdout(&run(&root, &["explain", "link-target-missing"], 0)),
+    );
+    expect("model.txt", &stdout(&run(&root, &["model", quill], 0)));
+    expect("outline.txt", &stdout(&run(&root, &["outline", keys], 0)));
+    expect(
+        "outline.json",
+        &json(&run(&root, &["outline", keys, "--format", "json"], 0)),
+    );
+    expect(
+        "link.txt",
+        &stdout(&run(
+            &root,
+            &["link", "keys.md#rotate-keys", "--from", install],
+            0,
+        )),
+    );
+    expect(
+        "link-missing.txt",
+        &stdout(&run(
+            &root,
+            &["link", "keys.md#rotate", "--from", install],
+            1,
+        )),
+    );
+    expect(
+        "link.json",
+        &json(&run(
+            &root,
+            &[
+                "link",
+                "keys.md#rotate-keys",
+                "--from",
+                install,
+                "--format",
+                "json",
+            ],
+            0,
+        )),
+    );
+    expect(
+        "refs.txt",
+        &stdout(&run(
+            &root,
+            &["refs", "phrase:cloud", "--project", quill, "--limit", "3"],
+            0,
+        )),
+    );
+    expect(
+        "refs.json",
+        &json(&run(
+            &root,
+            &[
+                "refs",
+                "phrase:cloud",
+                "--project",
+                quill,
+                "--limit",
+                "3",
+                "--format",
+                "json",
+            ],
+            0,
+        )),
+    );
+    expect(
+        "render.txt",
+        &stdout(&run(&root, &["render", keys, "--build", "cloud"], 0)),
+    );
+}

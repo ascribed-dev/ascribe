@@ -1,0 +1,23 @@
+# Content model
+
+## Page types
+
+- `page` (the default): frontmatter `title` (string, required), `description` (string)
+
+## Dimensions
+
+- `pm` (Package manager): `npm`, `pnpm`, `yarn`
+- `deployment` (Deployment): `cloud` (versionless), `self-managed`
+
+## Phrases
+
+- `{product}`: Quill
+- `{cloud}`: Quill Cloud
+- `{version}`: 3.4.1
+- `{api}`: https://api.quill.dev/v3/
+
+## Builds
+
+- `site`, the editor's build: variants switch, availability badge
+- `cloud`: variants deployment=cloud, availability filter cloud
+- `self-managed-3.3`: variants switch, availability filter self-managed 3.3

@@ -24,6 +24,7 @@ ascribe-emit.workspace = true
 ascribe-fmt.workspace = true
 ascribe-lsp.workspace = true
 ascribe-model.workspace = true
+ascribe-query.workspace = true
 ascribe-resolve.workspace = true
 ascribe-sources.workspace = true
 thiserror.workspace = true
@@ -34,6 +35,7 @@ thiserror.workspace = true
 schemars.workspace = true
 ascribe-diff = { workspace = true, features = ["json-schema"] }
 ascribe-lsp = { workspace = true, features = ["json-schema"] }
+ascribe-query = { workspace = true, features = ["json-schema"] }
 ascribe-sources = { workspace = true, features = ["json-schema"] }
 insta.workspace = true
 # Integration tests copy example projects to a temporary directory.
