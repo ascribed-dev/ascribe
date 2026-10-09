@@ -342,78 +342,21 @@ pub(crate) fn identifier_primary(d: &DirectiveLine) -> Option<(&str, Span)> {
     }
 }
 
-/// The headings a link to `file` can name, in document order: a page's own
-/// and those of the fragments it includes (SPEC §4.2); a fragment's own. Each
-/// id once, the first heading with it winning, and none without an id.
+/// The headings a link to `file` can name, in document order
+/// ([`Snapshot::link_headings`], without the files they're written in).
 pub(crate) fn link_headings<'a>(snapshot: &'a Snapshot, file: &'a FileIndex) -> Vec<&'a Heading> {
-    match snapshot.expansion(&file.path) {
-        Some(page) => named_headings(page.headings(snapshot).into_iter().map(|(_, h)| h)),
-        None => named_headings(&file.headings),
-    }
-}
-
-/// The headings with an id, each id once, the first with it winning.
-pub(crate) fn named_headings<'a>(
-    headings: impl IntoIterator<Item = &'a Heading>,
-) -> Vec<&'a Heading> {
-    let mut seen = std::collections::HashSet::new();
-    headings
+    snapshot
+        .link_headings(file)
         .into_iter()
-        .filter(|h| !h.source_id.is_empty() && seen.insert(h.source_id.as_str()))
+        .map(|(_, h)| h)
         .collect()
 }
 
-/// Percent-encodes what would end a link destination or an include path early
-/// (whitespace, parentheses, angle brackets) or would be read as an escape.
-pub(crate) fn encode_destination(path: &str) -> String {
-    let mut out = String::with_capacity(path.len());
-    for c in path.chars() {
-        match c {
-            ' ' => out.push_str("%20"),
-            '(' => out.push_str("%28"),
-            ')' => out.push_str("%29"),
-            '<' => out.push_str("%3C"),
-            '>' => out.push_str("%3E"),
-            '%' => out.push_str("%25"),
-            '#' => out.push_str("%23"),
-            c => out.push(c),
-        }
-    }
-    out
-}
-
-/// The path from the directory of `from` to `target`, as it is written in a
-/// link or an include: `keys.md`, `../keys.md`, `sub/page.md`.
-pub(crate) fn relative_path(target: &RelPath, from: &RelPath) -> String {
-    let dir = from.parent().unwrap_or_default();
-    match target.relative_from(&dir) {
-        Some(text) => text.strip_prefix("./").map_or(text.clone(), str::to_owned),
-        None => format!("/{target}"),
-    }
-}
+pub(crate) use ascribe_resolve::{encode_destination, link_path as relative_path, named_headings};
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn destinations_are_encoded() {
-        assert_eq!(
-            encode_destination("My Setup (1).md"),
-            "My%20Setup%20%281%29.md"
-        );
-        assert_eq!(encode_destination("a/b.md"), "a/b.md");
-        assert_eq!(encode_destination("hash#name.md"), "hash%23name.md");
-    }
-
-    #[test]
-    fn relative_paths_have_no_dot_prefix() {
-        let p = |s: &str| RelPath::parse(s).expect("a path");
-        assert_eq!(relative_path(&p("a/b.md"), &p("a/c.md")), "b.md");
-        assert_eq!(relative_path(&p("keys.md"), &p("a/c.md")), "../keys.md");
-        assert_eq!(relative_path(&p("a/b/x.md"), &p("a/c.md")), "b/x.md");
-        assert_eq!(relative_path(&p("keys.md"), &p("index.md")), "keys.md");
-    }
 
     #[test]
     fn truncation_is_on_a_character_boundary() {
