@@ -1,5 +1,6 @@
 //! One module per subcommand.
 
+pub mod agents;
 pub mod build;
 pub mod check;
 pub mod diff;

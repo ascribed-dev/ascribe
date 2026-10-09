@@ -11,6 +11,10 @@ npx ascribe fmt --check
 
 The [command reference](https://ascribed-dev.com/reference/cli/) covers every command, option, output, and exit code, and [Getting started](https://ascribed-dev.com/getting-started/) sets up a project.
 
+## The skill
+
+The package ships the Ascribe skill, in the [Agent Skills](https://agentskills.io) format, as `skills/ascribe/`, for tools that install skills from packages. It teaches an AI coding agent to check and fix Ascribe pages. In a project, `npx ascribe agents sync` writes it where agents look, with the project's own rules: see [Agents](https://ascribed-dev.com/guides/agents/).
+
 ## Platforms
 
 The package is a small launcher, plus one optional dependency per platform that holds the native binary: macOS on Apple silicon, Linux (arm64 and x64, glibc 2.28 or later), and Windows (x64). Your package manager installs only your platform's. There's no install script. Intel Macs aren't supported.

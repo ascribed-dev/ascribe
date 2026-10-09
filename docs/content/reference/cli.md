@@ -509,3 +509,26 @@ Writes a page as a reader of one build sees it: the plain Markdown the build's `
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, a path that isn't a page, more than one build and no `--build`, an unknown build, or a page that can't be rendered |
 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `page`, `build`, `not_published` (why the build doesn't publish it, or null), `route` (its route in the build's site, or null), and `text`, the page as text output writes it.
+
+## `ascribe agents`
+@available: next
+
+Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill. See [Agents](../guides/agents.md).
+
+### `ascribe agents sync`
+
+Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. It also keeps up to date each other target whose files exist already, and writes those `--target` names. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
+
+@include: ../_generated/cli-agents-sync-options.md
+
+It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
+
+| Code | Meaning |
+|---|---|
+| `0` | The files are written, or with `--check`, up to date |
+| `1` | With `--check`: a file is out of date. Run `ascribe agents sync`. |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, a file whose markers are damaged, a file that would be under the content root (so one of the project's pages), `--target copilot` outside a git repository, or a file it can't read or write. Nothing is written. |
+
+### `ascribe agents skill`
+
+Prints the Ascribe skill's `SKILL.md`, the same for every project. It needs no project, and exits with `0`.
