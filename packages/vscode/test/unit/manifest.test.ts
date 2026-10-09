@@ -138,6 +138,7 @@ describe("package.json", () => {
       "ascribe.review.addToReview",
       "ascribe.review.resolve",
       "ascribe.review.reopen",
+      "ascribe.review.promptAgent",
       "ascribe.walkthrough.preview",
       "ascribe.walkthrough.actions",
       "ascribe.walkthrough.lens",

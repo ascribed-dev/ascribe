@@ -1,6 +1,7 @@
 // **Prompt agent**: a code action on each Ascribe problem, after its quick
 // fixes, and palette commands for the active file's problems and the
-// project's. Each asks the project's server for the prompt
+// project's. Review's prompts, from the preview and the source editor's
+// comments, are delivered here too (`ask`, `deliver`). Each asks the project's server for the prompt
 // (`ascribe/agentPrompt`) and delivers it as `ascribe.agents.promptTarget`
 // says (`deliverPrompt`). The palette commands show only when there are
 // problems: `ascribe.problems.file` and `ascribe.problems.project` say so.
@@ -36,6 +37,9 @@ export interface PromptAgentApi {
   /** What each delivery did, oldest first. */
   readonly deliveries: readonly Delivery[];
 }
+
+/** What review's Prompt agent needs: the server's prompts, and delivering any prompt. */
+export type Prompts = Pick<PromptAgent, "ask" | "deliver">;
 
 export class PromptAgent implements vscode.Disposable {
   private readonly deliveries: Delivery[] = [];
@@ -142,15 +146,9 @@ export class PromptAgent implements vscode.Disposable {
 
   /** Asks the server for the prompt and delivers it; says so when there's no problem. */
   private async prompt(server: ProjectServer, request: PromptRequest): Promise<void> {
-    const unsaved = vscode.workspace.textDocuments
-      .filter((d) => d.isDirty && d.uri.scheme === "file")
-      .map((d) => d.uri.toString());
-    let answer: AgentPromptResult | null;
+    let answer: { prompt: string; aboutUnsaved: boolean } | undefined;
     try {
-      answer = (await server.request("ascribe/agentPrompt", {
-        ...request,
-        unsaved,
-      })) as AgentPromptResult | null;
+      answer = await this.ask(server, request);
     } catch (error) {
       server.log(`Building the agent prompt failed: ${String(error)}`);
       void vscode.window.showErrorMessage(
@@ -162,11 +160,41 @@ export class PromptAgent implements vscode.Disposable {
       void vscode.window.showInformationMessage("Ascribe: there's no problem to prompt about.");
       return;
     }
-    const target = asTarget(vscode.workspace.getConfiguration("ascribe").get(SETTING));
+    await this.deliver(answer.prompt, answer.aboutUnsaved);
+  }
+
+  /**
+   * The server's prompt for `request`, and whether it's about one file with
+   * unsaved changes; `undefined` when there's nothing to prompt about.
+   * Rejects when the server couldn't build it.
+   */
+  async ask(
+    server: ProjectServer,
+    request: PromptRequest,
+  ): Promise<{ prompt: string; aboutUnsaved: boolean } | undefined> {
+    const unsaved = vscode.workspace.textDocuments
+      .filter((d) => d.isDirty && d.uri.scheme === "file")
+      .map((d) => d.uri.toString());
+    const answer = (await server.request("ascribe/agentPrompt", {
+      ...request,
+      unsaved,
+    })) as AgentPromptResult | null;
+    if (!answer) return undefined;
     // Only a file's prompt is about one file; a project's names its unsaved files itself.
     const aboutUnsaved =
-      request.textDocument !== undefined && unsaved.includes(request.textDocument.uri);
-    const delivery = await deliverPrompt(answer.prompt, target, this.host, aboutUnsaved);
+      request.kind !== "fragmentReach" &&
+      request.textDocument !== undefined &&
+      unsaved.includes(request.textDocument.uri);
+    return { prompt: answer.prompt, aboutUnsaved };
+  }
+
+  /**
+   * Delivers a prompt as `ascribe.agents.promptTarget` says. `aboutUnsaved`:
+   * it's about one file, which has unsaved changes.
+   */
+  async deliver(prompt: string, aboutUnsaved: boolean): Promise<void> {
+    const target = asTarget(vscode.workspace.getConfiguration("ascribe").get(SETTING));
+    const delivery = await deliverPrompt(prompt, target, this.host, aboutUnsaved);
     this.deliveries.push(delivery);
     void this.offerTargets(target);
   }

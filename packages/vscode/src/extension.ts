@@ -55,7 +55,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   registry = projects;
 
   const chosen = new ChosenBuilds();
-  const preview = new PreviewController(context, projects, chosen);
+  const promptAgent = new PromptAgent(context, projects);
+  promptAgent.register();
+  const preview = new PreviewController(context, projects, chosen, promptAgent);
   preview.register();
 
   const lenses = new BuildLenses();
@@ -72,9 +74,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
 
   const actions = new ActionsController(projects);
   actions.register();
-  const promptAgent = new PromptAgent(context, projects);
-  promptAgent.register();
-
   const walkthrough = new Walkthrough(projects);
   walkthrough.register();
 

@@ -1,6 +1,8 @@
 import * as path from "node:path";
 import { statSync } from "node:fs";
 import * as vscode from "vscode";
+import type { PromptRequest } from "@ascribed/review/github";
+import type { Prompts } from "../actions/promptAgent.js";
 import type { ProjectServer } from "../client.js";
 import { samePath } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
@@ -167,6 +169,8 @@ export class PreviewController implements vscode.Disposable {
     private readonly projects: ProjectRegistry,
     /** The build each project is looking at, which the status bar shows and sets too. */
     private readonly builds: ChosenBuilds,
+    /** Prompt agent: where review's prompts are built and delivered. */
+    private readonly prompts: Prompts,
   ) {
     this.review = new ReviewController(
       projects,
@@ -181,7 +185,7 @@ export class PreviewController implements vscode.Disposable {
       },
       context.workspaceState,
     );
-    this.sourceComments = new SourceComments(projects, this.review.threads);
+    this.sourceComments = new SourceComments(projects, this.review.threads, prompts);
   }
 
   /** Registers the commands, the listeners, and the panel serializer. */
@@ -793,13 +797,16 @@ export class PreviewController implements vscode.Disposable {
     let reply: ToWebview;
     try {
       if (!server) throw new Error("There's no project for this page.");
-      const result = await this.review.threads.handle(
-        server,
-        page,
-        message.method,
-        message.params,
-        "preview",
-      );
+      const result =
+        message.method === "promptAgent"
+          ? await this.promptAgent(server, page, message.params["request"] as PromptRequest)
+          : await this.review.threads.handle(
+              server,
+              page,
+              message.method,
+              message.params,
+              "preview",
+            );
       reply = { type: "threadsResult", id: message.id, result };
     } catch (error) {
       const code =
@@ -816,6 +823,58 @@ export class PreviewController implements vscode.Disposable {
       };
     }
     this.post(reply);
+  }
+
+  /**
+   * Builds the prompt the overlay or the review header asked for and delivers
+   * it: a thread's from the pull request, a page's changes or a fragment's
+   * reach from the server.
+   */
+  private async promptAgent(
+    server: ProjectServer,
+    page: { build: string; path: string } | undefined,
+    request: PromptRequest,
+  ): Promise<null> {
+    let answer: { prompt: string; aboutUnsaved: boolean } | undefined;
+    if (request.kind === "thread" || request.kind === "open-threads") {
+      answer = await this.review.threads.prompt(server, request);
+    } else {
+      const document = this.document;
+      if (!document || !page) throw new Error("There's no page in the preview.");
+      try {
+        answer = await this.prompts.ask(
+          server,
+          request.kind === "page-changes"
+            ? {
+                kind: "pageChanges",
+                textDocument: { uri: document.uri.toString() },
+                build: page.build,
+                unsaved: [],
+              }
+            : {
+                kind: "fragmentReach",
+                textDocument: { uri: document.uri.toString() },
+                build: page.build,
+                fragment: request.fragment,
+                unsaved: [],
+              },
+        );
+      } catch (error) {
+        server.log(`Building the agent prompt failed: ${String(error)}`);
+        throw new Error("The project's server couldn't build it. Its output has the details.");
+      }
+    }
+    if (!answer) {
+      throw new Error(
+        request.kind === "page-changes"
+          ? "Nothing on this page changed."
+          : request.kind === "fragment-reach"
+            ? "No page changed through that file."
+            : "No review comment is open.",
+      );
+    }
+    await this.prompts.deliver(answer.prompt, answer.aboutUnsaved);
+    return null;
   }
 
   private post(message: ToWebview): void {

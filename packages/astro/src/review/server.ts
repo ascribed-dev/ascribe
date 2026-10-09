@@ -10,7 +10,8 @@
 // build with the pull request's base (or the default branch), and compares
 // again after each rebuild.
 import path from "node:path";
-import type { OverlayMethod, ReviewSession } from "@ascribed/review/github";
+import { readFile } from "node:fs/promises";
+import type { OverlayMethod, PromptRequest, ReviewSession } from "@ascribed/review/github";
 import type { PageRef } from "@ascribed/review/place";
 import type { DiffResult } from "./diff.js";
 import { messageOf, type Connection } from "./github.js";
@@ -53,6 +54,13 @@ export interface ReviewServerOptions {
   channelProblem: string | undefined;
   /** Compares the build with `base` (the default branch when `undefined`). */
   diff(base: string | undefined): Promise<DiffResult>;
+  /**
+   * `ascribe diff`'s agent prompt about the page or fragment at a content
+   * path, against `base`; `undefined` when it didn't change.
+   */
+  prompt(path: string, base: string | undefined): Promise<string | undefined>;
+  /** The project's folder: where its `ascribe.toml` is. */
+  projectDir: string;
   /** Opens the pull request's review. */
   connect(): Promise<Connection>;
   /** Writes the build's JSON output, in turn with the dev server's builds: it has the routes. */
@@ -169,6 +177,8 @@ export class ReviewServer {
         await this.refresh();
         this.changed(tab);
         return null;
+      case "prompt":
+        return (await this.prompt(params)) ?? null;
     }
     if (!OVERLAY.has(method)) throw new Error(`Unknown request: ${method}.`);
     const connection = this.on ? await this.connected() : undefined;
@@ -192,6 +202,52 @@ export class ReviewServer {
     if (answer.page) this.pages.set(answer.page.path, answer.page);
     if (answer.changed) this.changed(tab);
     return answer.result;
+  }
+
+  /**
+   * The agent prompt the page asked for: a thread's, or every open one's,
+   * from the pull request; the page's changes, or a fragment's reach, from
+   * `ascribe diff`. `undefined` when there's nothing to prompt about.
+   */
+  private async prompt(params: Record<string, unknown>): Promise<string | undefined> {
+    if (!this.on) throw new Error("Review is off.");
+    const request = params["request"] as PromptRequest | undefined;
+    const pagePath = typeof params["path"] === "string" ? params["path"] : undefined;
+    const connection = await this.connected();
+    switch (request?.kind) {
+      case "thread":
+      case "open-threads": {
+        if (connection.state !== "on") throw new Error("Review comments aren't on.");
+        const github = await import("@ascribed/review/github");
+        const contentRoot = this.options.contentRoot;
+        return github.buildThreadsPrompt(
+          {
+            session: connection.session,
+            project: github.promptProject(this.options.projectDir),
+            changedPages: async () => {
+              const changes = await this.changes();
+              return "result" in changes ? changes.result.pages : [];
+            },
+            // The agent reads the files on disk, as the dev server does: no editor here.
+            readSource: (file) =>
+              readFile(path.join(contentRoot, ...file.split("/")), "utf8").then(
+                (text) => ({ text, unsaved: false }),
+                () => undefined,
+              ),
+          },
+          request,
+        );
+      }
+      case "page-changes":
+      case "fragment-reach": {
+        const target = request.kind === "page-changes" ? pagePath : request.fragment;
+        if (target === undefined) throw new Error("That isn't a page of the project.");
+        const base = connection.state === "on" ? connection.base : undefined;
+        return this.options.prompt(target, base);
+      }
+      default:
+        throw new Error("Unknown prompt.");
+    }
   }
 
   private async start(): Promise<void> {

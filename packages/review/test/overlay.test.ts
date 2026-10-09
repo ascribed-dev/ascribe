@@ -5,6 +5,7 @@ import type {
   CommentTarget,
   OverlayData,
   OverlayHost,
+  PromptRequest,
   ThreadSummary,
 } from "../src/overlay/types.js";
 import type { Anchor } from "../src/place/anchor.js";
@@ -162,6 +163,16 @@ class FakeHost implements OverlayHost {
   }
   changed() {
     for (const listener of this.listeners) listener();
+  }
+}
+
+/** A host that builds prompts: it records what it's asked for. */
+class PromptingHost extends FakeHost {
+  prompts: PromptRequest[] = [];
+  failPrompt: { message: string } | undefined;
+  async promptAgent(request: PromptRequest): Promise<void> {
+    this.prompts.push(request);
+    if (this.failPrompt) throw this.failPrompt;
   }
 }
 
@@ -641,6 +652,60 @@ describe("the overlay", () => {
     one(".thread-list button", "other.md:4").click();
     expect(host.calls).toContain("openThread E other.md");
     expect(all(".dialog")).toHaveLength(0);
+  });
+
+  it("offers Prompt agent on each card and for every open thread, with a host that builds prompts", async () => {
+    const prompting = new PromptingHost();
+    host = prompting;
+    host.blocks = [
+      { anchor: anchor("guide.md:3-3"), threads: [thread("A", 3)] },
+      { anchor: anchor("guide.md:5-5"), threads: [thread("R", 5, { resolved: true })] },
+    ];
+    host.detached = [thread("D", 20, { lines: undefined, detached: "line-gone" })];
+    const o = await open();
+    one("button", "Prompt agent");
+    const prompt = (id: string) =>
+      Array.from(card(id).querySelectorAll("button")).find((b) => b.textContent === "Prompt agent");
+    expect(prompt("A")?.title).toBe("Prompt agent: address this comment");
+    expect(prompt("D")).toBeDefined();
+    prompt("A")?.click();
+    await settle();
+    expect(prompting.prompts).toEqual([{ kind: "thread", threadId: "A" }]);
+
+    o.showAllComments();
+    await settle();
+    one(".dialog button", "Prompt agent: all open").click();
+    await settle();
+    expect(prompting.prompts.at(-1)).toEqual({ kind: "open-threads" });
+
+    // A prompt that can't be built says why, as the host shows notices.
+    prompting.failPrompt = { message: "That comment isn't on the pull request any more." };
+    prompt("A")?.click();
+    await settle();
+    expect(host.calls.at(-1)).toBe(
+      "notify The prompt couldn't be built: That comment isn't on the pull request any more.",
+    );
+  });
+
+  it("offers no Prompt agent without a host that builds prompts, or with nothing open", async () => {
+    host.blocks = [{ anchor: anchor("guide.md:3-3"), threads: [thread("A", 3)] }];
+    const o = await open();
+    expect(all("button").some((b) => b.textContent?.startsWith("Prompt agent"))).toBe(false);
+    o.dispose();
+    host = new PromptingHost();
+    host.blocks = [
+      { anchor: anchor("guide.md:3-3"), threads: [thread("R", 3, { resolved: true })] },
+      {
+        anchor: anchor("guide.md:5-5"),
+        threads: [thread("U", 5, { comments: [comment("Mine", { pending: true })] })],
+      },
+    ];
+    const again = await open();
+    again.showAllComments();
+    await settle();
+    expect(all(".dialog button").some((b) => b.textContent === "Prompt agent: all open")).toBe(
+      false,
+    );
   });
 
   it("goes to a thread on this page from the list", async () => {

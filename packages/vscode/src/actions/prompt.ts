@@ -187,9 +187,13 @@ export const targetsToOffer = (
 
 /** What `ascribe/agentPrompt` is asked, from the editor. */
 export interface PromptRequest {
-  kind: "problem" | "file" | "project";
+  kind: "problem" | "file" | "project" | "pageChanges" | "fragmentReach";
   textDocument?: { uri: string };
   diagnostic?: unknown;
+  /** For `pageChanges` and `fragmentReach`: the build whose pages are compared. */
+  build?: string;
+  /** For `fragmentReach`: the fragment's content path. */
+  fragment?: string;
   unsaved: string[];
 }
 

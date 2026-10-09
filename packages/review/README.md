@@ -36,7 +36,7 @@ The colors are the `--ascribe-review-*` custom properties at the top of `marks.c
 
 ## The static report
 
-`src/report/` is the script of `ascribe diff --format html`'s report, which draws the list of changed pages and each page with its marks. It isn't an entry point: `pnpm --filter @ascribed/review embed` bundles it with the marks and `@ascribed/elements` into `crates/ascribe-diff/src/html/`, where the binary embeds it, along with one stylesheet made of the element library's, `marks.css`, and `src/report/report.css`. It also writes the script's SHA-256 beside it, which the report's content security policy names as the one script allowed to run. Run it after changing any of them; `test/embedded.test.ts` fails until you do.
+`src/report/` is the script of `ascribe diff --format html`'s report, which draws the list of changed pages and each page with its marks. It isn't an entry point: `pnpm --filter @ascribed/review embed` bundles it with the marks and `@ascribed/elements` into `crates/ascribe-diff/src/html/`, where the binary embeds it, along with one stylesheet made of the element library's, `marks.css`, and `src/report/report.css`. It also writes the script's SHA-256 beside it, which the report's content security policy names as the one script allowed to run. Run it after changing any of them; `test/embedded.test.ts` fails until you do. A page with a `prompt` in the report's data gets **Copy prompt**, which copies it and opens nothing.
 
 ## `@ascribed/review/overlay`
 
@@ -48,11 +48,21 @@ const overlay = createOverlay({ root: article, host });
 
 Draws a pull request's threads beside the blocks of `root`, a rendered page with source anchors: in a column beside the page when its container is at least `columnAt` pixels wide (default 600), else as a count on each block that opens its threads. Threads with no block on the page are listed above it, and a bar below it counts unsent comments, with the submit dialog. A reviewer can reply (at once, or with the review), resolve and reopen, comment on any block, and submit or discard the review, all from the keyboard. It draws in shadow roots, so its styles and the page's stay apart; theme it with the `--ascribe-review-*` custom properties `marks.css` declares.
 
-The host (`OverlayHost`) supplies the data and does the work: `load()` for the page's threads (`ReviewSession.threads`), its pending review, and the viewer; `commentTarget`, `comment`, `reply`, `resolve`, `submit`, `discard`, and `allThreads`, as `ReviewSession` has them; and `openSource`, `openThread` (a thread on another page), and optionally `openLink` and `notify`. `onDidChange` tells the overlay to read the threads again. The overlay never talks to GitHub itself, so a host can keep the token out of the page.
+The host (`OverlayHost`) supplies the data and does the work: `load()` for the page's threads (`ReviewSession.threads`), its pending review, and the viewer; `commentTarget`, `comment`, `reply`, `resolve`, `submit`, `discard`, and `allThreads`, as `ReviewSession` has them; and `openSource`, `openThread` (a thread on another page), and optionally `openLink`, `notify`, and `promptAgent`. With `promptAgent`, each thread's card has **Prompt agent** and the list of every thread **Prompt agent: all open**; the overlay passes the host a `PromptRequest` (`{ kind: "thread", threadId }` or `{ kind: "open-threads" }`, and the hosts' own headers ask for `page-changes` and `fragment-reach`) and builds nothing. A rejection's message is shown as why the prompt couldn't be built. `onDidChange` tells the overlay to read the threads again. The overlay never talks to GitHub itself, so a host can keep the token out of the page.
 
 `overlay.refresh()` reads the threads again, `layout()` places them again after the page changed size, `goToThread(id)` goes to one, `showAllComments()` opens the list of every thread, and `dispose()` takes everything away.
 
 Comment bodies are other people's Markdown: `renderMarkdown(document, text)` builds a safe subset (paragraphs, emphasis, code, links that open apart from the page, lists, block quotes) as DOM nodes. Raw HTML stays text, links other than web and email ones are dropped, and an image is a link to it, so nothing loads without a click.
+
+## `@ascribed/review/prompt`
+
+```ts
+import { threadPrompt, openThreadsPrompt } from "@ascribed/review/prompt";
+```
+
+Builds the agent prompts about review threads, in the agents plan's prompt format: `threadPrompt` asks an agent to address one thread, with its place, the block's source lines, and its comments; `openThreadsPrompt` lists every open thread in two lines each. A comment is other people's text, so it goes in only inside a fence longer than any backtick run in it, under a sentence saying it's data, with its HTML comments taken out first (`stripComments`). A prompt is at most `LIMIT` (5,000) characters, the binary's limit, which a test holds.
+
+The builders read nothing. On a host's Node side, `buildThreadsPrompt(context, request)` from `@ascribed/review/github` gathers what they need from a `ReviewSession`, the changed pages, and a `readSource` callback, and `promptProject(projectDir)` finds the project's folder, content root, and `AGENTS.md` as the binary does. The prompts about changes come from the binary: `ascribe diff --format prompt`, or the language server's `ascribe/agentPrompt`.
 
 ## `@ascribed/review/github`
 

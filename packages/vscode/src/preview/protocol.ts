@@ -85,9 +85,21 @@ export interface ThreadsView {
   goTo: string | null;
 }
 
-/** The overlay's requests to its host, over the webview's messages (`OverlayHost`). */
+/**
+ * The overlay's requests to its host, over the webview's messages
+ * (`OverlayHost`), and the review header's: `promptAgent`, whose `request` is
+ * a `PromptRequest`, the preview answers itself.
+ */
 export type ThreadsMethod =
-  "load" | "commentTarget" | "comment" | "reply" | "allThreads" | "resolve" | "submit" | "discard";
+  | "load"
+  | "commentTarget"
+  | "comment"
+  | "reply"
+  | "allThreads"
+  | "resolve"
+  | "submit"
+  | "discard"
+  | "promptAgent";
 
 /**
  * A problem as the preview shows it: one from the server, or one of the

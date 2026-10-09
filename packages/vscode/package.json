@@ -349,6 +349,12 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.review.promptAgent",
+        "title": "Prompt Agent",
+        "category": "Ascribe",
+        "icon": "$(sparkle)"
+      },
+      {
         "command": "ascribe.walkthrough.preview",
         "title": "Preview the Last Page",
         "category": "Ascribe"
@@ -940,6 +946,10 @@
           "when": "false"
         },
         {
+          "command": "ascribe.review.promptAgent",
+          "when": "false"
+        },
+        {
           "command": "ascribe.walkthrough.preview",
           "when": "false"
         },
@@ -1015,6 +1025,11 @@
           "command": "ascribe.review.resolve",
           "when": "commentController == ascribe.review && commentThread =~ /\\bcanResolve\\b/",
           "group": "inline"
+        },
+        {
+          "command": "ascribe.review.promptAgent",
+          "when": "commentController == ascribe.review && !commentThreadIsEmpty",
+          "group": "inline@0"
         },
         {
           "command": "ascribe.review.reopen",
