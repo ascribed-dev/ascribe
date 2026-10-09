@@ -1,0 +1,1030 @@
+{
+  "$defs": {
+    "AttributePair": {
+      "description": "An attribute, as written.",
+      "properties": {
+        "key": {
+          "description": "The key.",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value, without quotes (a value set's members joined by `|`);\n`null` for a key with no value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ContextNode": {
+      "description": "Something that contains a position: a block, a construct that groups\nblocks, or an inline node. Every range is in the negotiated position\nencoding.",
+      "oneOf": [
+        {
+          "description": "The YAML frontmatter.",
+          "properties": {
+            "available": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FrontmatterValue"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Its `available` key's value, when it has one."
+            },
+            "kind": {
+              "const": "frontmatter",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The frontmatter, delimiters included."
+            },
+            "variant": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FrontmatterValue"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Its `variant` key's value, when it has one."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "variant",
+            "available"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A heading's section: the heading and what follows it up to the next\nheading of the same or a higher level.",
+          "properties": {
+            "headingId": {
+              "description": "The id of its heading; empty when the heading has none.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "section",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The section."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "headingId"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A heading.",
+          "properties": {
+            "explicitId": {
+              "description": "Whether the id is an `@id`.",
+              "type": "boolean"
+            },
+            "id": {
+              "description": "Its id: its `@id`, or its slug; empty when it has none.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "heading",
+              "type": "string"
+            },
+            "level": {
+              "description": "1 to 6.",
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The heading."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "level",
+            "id",
+            "explicitId"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A paragraph.",
+          "properties": {
+            "kind": {
+              "const": "paragraph",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The paragraph."
+            }
+          },
+          "required": [
+            "kind",
+            "range"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A list.",
+          "properties": {
+            "kind": {
+              "const": "list",
+              "type": "string"
+            },
+            "ordered": {
+              "description": "Whether it's ordered.",
+              "type": "boolean"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The list."
+            },
+            "steps": {
+              "description": "Whether a `@steps` binds it.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "ordered",
+            "steps"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An item of a list.",
+          "properties": {
+            "kind": {
+              "const": "listItem",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The item, from its marker."
+            }
+          },
+          "required": [
+            "kind",
+            "range"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A block quote.",
+          "properties": {
+            "kind": {
+              "const": "blockQuote",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The block quote."
+            }
+          },
+          "required": [
+            "kind",
+            "range"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A `@note`.",
+          "properties": {
+            "form": {
+              "$ref": "#/$defs/Form",
+              "description": "Its form."
+            },
+            "kind": {
+              "const": "note",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The note: its line, the block it binds, or the container, with\nits title line."
+            },
+            "type": {
+              "description": "Its type (`note` when it gives none).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "type",
+            "form"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A `@details`.",
+          "properties": {
+            "form": {
+              "$ref": "#/$defs/Form",
+              "description": "Its form."
+            },
+            "kind": {
+              "const": "details",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The details: the block it binds, or the container, with its title\nline."
+            },
+            "title": {
+              "description": "Its title's text, as written.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "title",
+            "form"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A `@steps` and the list it binds.",
+          "properties": {
+            "kind": {
+              "const": "steps",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "From the `@steps` through the list."
+            }
+          },
+          "required": [
+            "kind",
+            "range"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A group of `@variant` arms.",
+          "properties": {
+            "arm": {
+              "description": "The index of the arm the position is in; `null` on the group's\n`@end`.",
+              "format": "uint",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "arms": {
+              "description": "The arms, in order.",
+              "items": {
+                "$ref": "#/$defs/VariantArm"
+              },
+              "type": "array"
+            },
+            "dimension": {
+              "description": "The dimension every arm names; `null` for labeled arms.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "variantGroup",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The group, through its `@end`."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "dimension",
+            "arms",
+            "arm"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An `@available` line: on a heading's section, just the line; binding\na block, the line and the block.",
+          "properties": {
+            "kind": {
+              "const": "availability",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The line, or the line and the block it binds."
+            },
+            "spec": {
+              "description": "The spec or feature key, as written.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "spec"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An `@include`.",
+          "properties": {
+            "kind": {
+              "const": "include",
+              "type": "string"
+            },
+            "path": {
+              "description": "The path as written, without the `#id`.",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The directive line."
+            },
+            "section": {
+              "description": "The id after `#`, when it includes one section.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "path",
+            "section"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A `@snippet`.",
+          "properties": {
+            "address": {
+              "description": "Its address as written: `<source>:<path>#<region>`.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "snippet",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The directive line."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "address"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A project widget.",
+          "properties": {
+            "attributes": {
+              "description": "Its attributes, as written: of the group's arm the position is in,\nfor a group.",
+              "items": {
+                "$ref": "#/$defs/AttributePair"
+              },
+              "type": "array"
+            },
+            "form": {
+              "$ref": "#/$defs/Form",
+              "description": "Its form."
+            },
+            "kind": {
+              "const": "widget",
+              "type": "string"
+            },
+            "name": {
+              "description": "Its name.",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The widget: its line, the block it binds, its container, or its\ngroup of arms."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "name",
+            "attributes",
+            "form"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A code block, fenced or indented.",
+          "properties": {
+            "fenced": {
+              "description": "Whether it's fenced.",
+              "type": "boolean"
+            },
+            "info": {
+              "description": "The fence's info string; empty when it has none.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "codeBlock",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The block, fences included."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "info",
+            "fenced"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A table.",
+          "properties": {
+            "kind": {
+              "const": "table",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The table."
+            }
+          },
+          "required": [
+            "kind",
+            "range"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A row of a table.",
+          "properties": {
+            "available": {
+              "description": "Its `available` attribute's value, when it has one.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "header": {
+              "description": "Whether it's the header row.",
+              "type": "boolean"
+            },
+            "kind": {
+              "const": "tableRow",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The row."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "header",
+            "available"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A link.",
+          "properties": {
+            "destination": {
+              "description": "Its destination, escapes decoded.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "link",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The link, brackets included."
+            },
+            "textEmpty": {
+              "description": "Whether it has no text, so it takes its target's title.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "destination",
+            "textEmpty"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An image.",
+          "properties": {
+            "alt": {
+              "description": "Its alt text, as written.",
+              "type": "string"
+            },
+            "attributes": {
+              "description": "Its attributes (`{width=600}`), as written.",
+              "items": {
+                "$ref": "#/$defs/AttributePair"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "image",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The image, its attribute block included."
+            },
+            "src": {
+              "description": "Its source, escapes decoded.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "src",
+            "alt",
+            "attributes"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A phrase candidate, `{key}`.",
+          "properties": {
+            "declared": {
+              "description": "Whether the content model declares it.",
+              "type": "boolean"
+            },
+            "key": {
+              "description": "The key.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "phrase",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The candidate, braces included."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "key",
+            "declared"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ContextProject": {
+      "description": "The project a page is in.",
+      "properties": {
+        "editorBuild": {
+          "description": "The editor's build (`[editor] build`), which decides the diagnostics.",
+          "type": "string"
+        },
+        "root": {
+          "description": "The directory of its `ascribe.toml`, as a path.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "root",
+        "editorBuild"
+      ],
+      "type": "object"
+    },
+    "ContextToken": {
+      "description": "The token under a position.",
+      "oneOf": [
+        {
+          "description": "A link.",
+          "properties": {
+            "destination": {
+              "description": "Its destination, escapes decoded.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "link",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The link, brackets included."
+            },
+            "textEmpty": {
+              "description": "Whether it has no text.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "destination",
+            "textEmpty"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An image.",
+          "properties": {
+            "kind": {
+              "const": "image",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The image, its attribute block included."
+            },
+            "src": {
+              "description": "Its source, escapes decoded.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "src"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "The path of an `@include`.",
+          "properties": {
+            "kind": {
+              "const": "include",
+              "type": "string"
+            },
+            "path": {
+              "description": "The path as written, without the `#id`.",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The path, and the `#id` if it has one."
+            },
+            "section": {
+              "description": "The id after `#`.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "path",
+            "section"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A phrase candidate.",
+          "properties": {
+            "declared": {
+              "description": "Whether the content model declares it.",
+              "type": "boolean"
+            },
+            "key": {
+              "description": "The key.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "phrase",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The candidate, braces included."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "key",
+            "declared"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A directive's `@` and name.",
+          "properties": {
+            "kind": {
+              "const": "directiveName",
+              "type": "string"
+            },
+            "name": {
+              "description": "The name, without `@`.",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "The `@` and the name."
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An attribute of a directive.",
+          "properties": {
+            "directive": {
+              "description": "The directive's name.",
+              "type": "string"
+            },
+            "key": {
+              "description": "The key.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "attribute",
+              "type": "string"
+            },
+            "range": {
+              "$ref": "#/$defs/LspRange",
+              "description": "From the key through the value."
+            },
+            "value": {
+              "description": "The value, without quotes; `null` for a key with no value.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "range",
+            "directive",
+            "key",
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Form": {
+      "description": "How a directive is written (SPEC §3.5, §3.6).",
+      "oneOf": [
+        {
+          "const": "line",
+          "description": "One line, whose primary is its content, or that stands alone.",
+          "type": "string"
+        },
+        {
+          "const": "block",
+          "description": "One line that binds the block below it.",
+          "type": "string"
+        },
+        {
+          "const": "container",
+          "description": "A container, through its `@end`.",
+          "type": "string"
+        },
+        {
+          "const": "group",
+          "description": "A group of arms.",
+          "type": "string"
+        }
+      ]
+    },
+    "FrontmatterValue": {
+      "description": "A frontmatter key's value.",
+      "properties": {
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The value, after the key's colon, through its last line."
+        },
+        "value": {
+          "description": "The value's YAML, as written; a one-line value without its quotes.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "range",
+        "value"
+      ],
+      "type": "object"
+    },
+    "LspPosition": {
+      "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
+      "properties": {
+        "character": {
+          "description": "The column, from 0, in the negotiated position encoding.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "description": "The line, from 0.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "character"
+      ],
+      "type": "object"
+    },
+    "LspRange": {
+      "description": "A range in a document, from `start` up to (not including) `end`.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it ends."
+        },
+        "start": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it starts."
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "Selection": {
+      "description": "What a selection is.",
+      "properties": {
+        "inline": {
+          "description": "Whether it's inside one paragraph's or heading's text.",
+          "type": "boolean"
+        },
+        "kind": {
+          "$ref": "#/$defs/SelectionKind",
+          "description": "Its kind."
+        },
+        "text": {
+          "description": "The selected text.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "inline"
+      ],
+      "type": "object"
+    },
+    "SelectionKind": {
+      "description": "The kinds of selection. Whitespace at either end doesn't count.",
+      "oneOf": [
+        {
+          "const": "prose",
+          "description": "Prose: inside one paragraph's or heading's text (`inline`), or\nacross paragraphs and headings and covering only part of one.",
+          "type": "string"
+        },
+        {
+          "const": "blocks",
+          "description": "Whole blocks of any kind, side by side.",
+          "type": "string"
+        },
+        {
+          "const": "code",
+          "description": "Inside one code block.",
+          "type": "string"
+        },
+        {
+          "const": "mixed",
+          "description": "Across blocks and covering part of one that isn't prose.",
+          "type": "string"
+        },
+        {
+          "const": "other",
+          "description": "Anything else: part of one table, directive line, or the frontmatter.",
+          "type": "string"
+        }
+      ]
+    },
+    "VariantArm": {
+      "description": "An arm of a `@variant` group.",
+      "properties": {
+        "label": {
+          "description": "The arm's title, for a labeled arm.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The arm, from its title line or opener through its last block."
+        },
+        "value": {
+          "description": "The arm's values of the group's dimension, as written\n(`cloud|self-managed`); `null` for a labeled arm.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "value",
+        "label",
+        "range"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/context`. A document that isn't a source file of\nthe project gets an empty answer: no project, nothing at the range.",
+  "properties": {
+    "at": {
+      "description": "What contains the start of the range, innermost first.",
+      "items": {
+        "$ref": "#/$defs/ContextNode"
+      },
+      "type": "array"
+    },
+    "insertable": {
+      "description": "Whether the line at the start of the range is blank and between\nblocks, where a block can be inserted: not in a code block or the\nfrontmatter.",
+      "type": "boolean"
+    },
+    "project": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContextProject"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The project the page is in; `null` when it's in none."
+    },
+    "selection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Selection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "What the selection is; `null` for an empty range."
+    },
+    "token": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContextToken"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The token under the start of the range, if there is one."
+    }
+  },
+  "required": [
+    "project",
+    "at",
+    "selection",
+    "token",
+    "insertable"
+  ],
+  "title": "ContextResult",
+  "type": "object"
+}

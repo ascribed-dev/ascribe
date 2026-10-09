@@ -10,7 +10,8 @@ disagree (SPEC §8, §10).
 It provides initialization, document and file synchronization, diagnostics, and
 semantic tokens; completion, hover, go to definition, document links, CodeLens,
 and inlay hints (see [Navigation](#navigation)); code actions, rename, and
-formatting; and the custom `ascribe/preview` request.
+formatting; and the custom requests `ascribe/preview`, `ascribe/review/setBase`,
+`ascribe/review/changes`, `ascribe/context`, and `ascribe/targets`.
 
 ## The project
 
@@ -187,6 +188,129 @@ edit is free, and the pages as they were, rendered once each.
 A base costs about as much memory as the project: on the synthetic
 3,000-page project, the project's source index is 67 MB and the base adds
 another 67 MB, all freed when it's dropped. Reading it takes about a second.
+
+## What's at a position: `ascribe/context`
+
+A custom request that says what is at a position or a selection of a page,
+so a client knows which actions apply there: the editor's actions are built
+on it, and any client can use it. It answers from the current snapshot, so it
+includes unsaved edits, and holds nothing about the rest of the project (that's
+`ascribe/targets`). No capability is advertised: a client that wants it sends
+the request.
+
+```jsonc
+{
+  "textDocument": { "uri": "file:///…/docs/install.md" },
+  "range": { "start": { "line": 20, "character": 5 }, "end": { "line": 20, "character": 5 } }
+}
+```
+
+An empty range is the cursor. Every range in the answer is in the negotiated
+position encoding. The result, whose TypeScript type is `ContextResult` in
+`packages/vscode/src/shapes.ts` (`schemas/lsp-context.schema.json`):
+
+| Field | Meaning |
+|---|---|
+| `project` | `{ root, editorBuild }`: the directory of `ascribe.toml`, and `[editor] build`. |
+| `at` | What contains the start of the range, innermost first, each `{ kind, range, … }`. |
+| `selection` | For a non-empty range, `{ kind, text, inline }`; `null` for the cursor. |
+| `token` | The token under the start of the range, `{ kind, range, … }`, or `null`. |
+| `insertable` | Whether the cursor's line is blank and between blocks, where a block can go: not in a code block or the frontmatter. |
+
+The kinds in `at`, and what each adds to `range`:
+
+| Kind | Adds |
+|---|---|
+| `frontmatter` | `variant` and `available`: each `{ range, value }` of the key's value, or `null` |
+| `section` | `headingId` |
+| `heading` | `level`, `id` (its source id), `explicitId` (written with `@id`) |
+| `paragraph`, `listItem`, `blockQuote`, `table` | |
+| `list` | `ordered`, and `steps` when a `@steps` binds it |
+| `note` | `type`, `form`: `line` (a primary), `block` (binds the next block), or `container` |
+| `details` | `title` as written, `form`: `block` or `container` |
+| `steps` | The `@steps` line and its list |
+| `variantGroup` | `dimension` (the key every arm has; `null` for labeled arms), `arms` (`{ value, label, range }`), `arm` (the index the position is in) |
+| `availability` | `spec`. At the top of a section, the line; binding a block, the line and the block |
+| `include` | `path` as written, `section` |
+| `snippet` | `address` as written |
+| `widget` | `name`, `attributes` (`{ key, value }`; of the arm the position is in, for a group), `form`: `line`, `block`, `container`, or `group` |
+| `codeBlock` | `info`, `fenced` |
+| `tableRow` | `header`, `available` (its `available` attribute) |
+| `link` | `destination`, `textEmpty` |
+| `image` | `src`, `alt` as written, `attributes` |
+| `phrase` | `key`, `declared` |
+
+A directive that binds the block below it (`@note` without a colon,
+`@details`, `@steps`, `@available`, a widget) contains that block: the
+cursor in the block has the directive in its chain.
+
+`selection.kind` is decided with whitespace at either end left out:
+
+| Kind | When |
+|---|---|
+| `prose` | Inside one paragraph's or heading's text (`inline: true`), or across paragraphs and headings and covering only part of one (`inline: false`) |
+| `blocks` | Whole blocks of any kind, side by side |
+| `code` | Inside one code block |
+| `mixed` | Across blocks and covering part of one that isn't prose |
+| `other` | Part of one table or directive line, or the frontmatter |
+
+`token.kind` is `link` (`destination`, `textEmpty`), `image` (`src`),
+`include` (the path and its `#id`: `path`, `section`), `phrase` (`key`,
+`declared`), `directiveName` (`name`), or `attribute` (`directive`, `key`,
+`value`; on any part of `key=value`).
+
+A document that isn't a source file of the project (outside the content
+root, or in a nested project's folder) gets the empty answer: `project` is
+`null` and `at` is empty. The request is answered in `src/context.rs`, from
+the syntax tree and the file's index, as navigation is (`nav.rs`).
+
+## What actions can point at: `ascribe/targets`
+
+A custom request that lists what an action can point at or use in the page's
+project, so a client can offer choices instead of asking for syntax. The
+client asks for the kinds it needs:
+
+```jsonc
+{
+  "textDocument": { "uri": "file:///…/docs/guide/install.md" },
+  "kinds": ["pages", "headings", "fragments", "images", "snippets", "phrases",
+            "notes", "dimensions", "widgets", "features", "builds"]
+}
+```
+
+The result has a list for each kind asked for and no others, and `modelUri`,
+the `file:` URI of `ascribe.toml`, which declaration ranges are in. Its
+TypeScript type is `TargetsResult` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-targets.schema.json`). Paths are written from the requesting
+page, as completion writes them (`relative_path`, percent-encoded where a
+destination needs it):
+
+| Kind | Each entry |
+|---|---|
+| `pages` | `path` (content path), `title`, `type` (content type), `link` (the destination from the requesting page) |
+| `headings` | `page`, `text`, `id`, `level`, `link` (`page.md#id`, or `#id` on the requesting page). A page's headings include those of the fragments it includes, each id once |
+| `fragments` | `path`, `include` (the `@include` path from the requesting page), `startsWithHeading` |
+| `images` | `path` (from the project root), `link`. Image files under the content root, not in a folder whose name starts with `.`, `node_modules`, a nested project's folder, or the output directory |
+| `snippets` | One entry per `[sources.<name>]`: `name`, `files` (`{ path, address, regions }`, each region `{ name, address }`) |
+| `phrases` | `key`, `value`, `range` (its key in `ascribe.toml`) |
+| `notes` | `type`, `label` |
+| `dimensions` | `name`, `label`, `values` (`{ value, label, versionless, range }`, `range` inside the value's quotes in `values`) |
+| `widgets` | `name`, `description`, `line`, `container`, `groupable`, `primary` (`none`, `identifier`, `text`), `binding`, `attributes` (`{ key, type, values, required, default, description }`) |
+| `features` | `key`, `name`, `availability` (the spec as written), `range` (its table header) |
+| `builds` | `name`, `editor` (whether it's `[editor] build`) |
+
+Images and the files of sources are listed through the project's
+`FileSystem`. A source's files are those its `include` and `ignore` take in,
+read by the code that resolves `@snippet` (`ascribe_resolve::source_files`),
+so every address listed resolves; a file that isn't text, or whose tags have
+problems, isn't listed. A source in another repository lists its copies under
+`sources/<name>/`; nothing reaches the network. A declaration's `range` is
+found by reading `ascribe.toml`'s text (`find_entry` in `src/definition.rs`),
+since the model keeps no spans; it's `null` when the entry isn't written as
+a table and key there.
+
+Everything comes from the current snapshot and model, so it includes unsaved
+edits. A document that isn't a source file of the project gets `{}`.
 
 ## Capabilities
 

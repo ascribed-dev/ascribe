@@ -1,0 +1,698 @@
+{
+  "$defs": {
+    "AttributeKind": {
+      "description": "An attribute's type.",
+      "oneOf": [
+        {
+          "const": "string",
+          "description": "Any text.",
+          "type": "string"
+        },
+        {
+          "const": "number",
+          "description": "A number.",
+          "type": "string"
+        },
+        {
+          "const": "boolean",
+          "description": "`true` or `false`.",
+          "type": "string"
+        },
+        {
+          "const": "enum",
+          "description": "One of `values`.",
+          "type": "string"
+        },
+        {
+          "const": "set",
+          "description": "One or more values joined by `|`: any of `values`, or anything when\n`values` is empty.",
+          "type": "string"
+        },
+        {
+          "const": "noteType",
+          "description": "A note type.",
+          "type": "string"
+        }
+      ]
+    },
+    "BindingKind": {
+      "description": "What a line-form directive applies to.",
+      "oneOf": [
+        {
+          "const": "self",
+          "description": "Its own primary, or nothing.",
+          "type": "string"
+        },
+        {
+          "const": "heading",
+          "description": "The heading at the start of its section.",
+          "type": "string"
+        },
+        {
+          "const": "block",
+          "description": "The block below it.",
+          "type": "string"
+        },
+        {
+          "const": "headingOrBlock",
+          "description": "The section at the top of one, else the block below it.",
+          "type": "string"
+        }
+      ]
+    },
+    "LspPosition": {
+      "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
+      "properties": {
+        "character": {
+          "description": "The column, from 0, in the negotiated position encoding.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "description": "The line, from 0.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "character"
+      ],
+      "type": "object"
+    },
+    "LspRange": {
+      "description": "A range in a document, from `start` up to (not including) `end`.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it ends."
+        },
+        "start": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it starts."
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "PrimaryKind": {
+      "description": "What a directive takes after its colon.",
+      "oneOf": [
+        {
+          "const": "none",
+          "description": "Nothing.",
+          "type": "string"
+        },
+        {
+          "const": "identifier",
+          "description": "One token: a path, id, or key.",
+          "type": "string"
+        },
+        {
+          "const": "text",
+          "description": "Inline text.",
+          "type": "string"
+        },
+        {
+          "const": "availability",
+          "description": "An availability spec.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAttribute": {
+      "description": "An attribute a widget accepts.",
+      "properties": {
+        "default": {
+          "description": "The value used when it's left out, as written (a set's members joined\nby `|`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "description": "What it's for.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "key": {
+          "description": "The key.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether every use must give it.",
+          "type": "boolean"
+        },
+        "type": {
+          "$ref": "#/$defs/AttributeKind",
+          "description": "The value's type."
+        },
+        "values": {
+          "description": "The values it allows, for `enum` and a `set` of named values; empty\notherwise.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "type",
+        "values",
+        "required",
+        "default",
+        "description"
+      ],
+      "type": "object"
+    },
+    "TargetBuild": {
+      "description": "A build.",
+      "properties": {
+        "editor": {
+          "description": "Whether it's the editor's build (`[editor] build`).",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "editor"
+      ],
+      "type": "object"
+    },
+    "TargetDimension": {
+      "description": "A dimension.",
+      "properties": {
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "values": {
+          "description": "Its values, in display order.",
+          "items": {
+            "$ref": "#/$defs/TargetDimensionValue"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "values"
+      ],
+      "type": "object"
+    },
+    "TargetDimensionValue": {
+      "description": "A value of a dimension.",
+      "properties": {
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LspRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The value in its dimension's `values` in `ascribe.toml`, inside its\nquotes; `null` when it can't be found there."
+        },
+        "value": {
+          "description": "The value.",
+          "type": "string"
+        },
+        "versionless": {
+          "description": "Whether it's versionless.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value",
+        "label",
+        "versionless",
+        "range"
+      ],
+      "type": "object"
+    },
+    "TargetFeature": {
+      "description": "A feature.",
+      "properties": {
+        "availability": {
+          "description": "Its availability spec, as written.",
+          "type": "string"
+        },
+        "key": {
+          "description": "Its key.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LspRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its `[features.<key>]` table header in `ascribe.toml`; `null` when it\ncan't be found there."
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "availability",
+        "range"
+      ],
+      "type": "object"
+    },
+    "TargetFragment": {
+      "description": "A fragment.",
+      "properties": {
+        "include": {
+          "description": "The path an `@include` on the requesting page writes for it.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Its content path.",
+          "type": "string"
+        },
+        "startsWithHeading": {
+          "description": "Whether its first block is a heading.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "include",
+        "startsWithHeading"
+      ],
+      "type": "object"
+    },
+    "TargetHeading": {
+      "description": "A heading a link can name.",
+      "properties": {
+        "id": {
+          "description": "Its id.",
+          "type": "string"
+        },
+        "level": {
+          "description": "1 to 6.",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "link": {
+          "description": "The destination of a link to it from the requesting page: `page.md#id`,\nor `#id` on the requesting page itself.",
+          "type": "string"
+        },
+        "page": {
+          "description": "The content path of the page a link names it on.",
+          "type": "string"
+        },
+        "text": {
+          "description": "The heading's text, phrases replaced by their values.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "text",
+        "id",
+        "level",
+        "link"
+      ],
+      "type": "object"
+    },
+    "TargetImage": {
+      "description": "An image file.",
+      "properties": {
+        "link": {
+          "description": "The source of an image of it on the requesting page.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Its path from the project root.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "link"
+      ],
+      "type": "object"
+    },
+    "TargetNote": {
+      "description": "A note type.",
+      "properties": {
+        "label": {
+          "description": "Its label.",
+          "type": "string"
+        },
+        "type": {
+          "description": "The type, as `@note {type=…}` writes it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "label"
+      ],
+      "type": "object"
+    },
+    "TargetPage": {
+      "description": "A page.",
+      "properties": {
+        "link": {
+          "description": "The destination of a link to it from the requesting page.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Its content path.",
+          "type": "string"
+        },
+        "title": {
+          "description": "Its title (frontmatter `title`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "description": "Its content type; `null` when no one type applies.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "title",
+        "type",
+        "link"
+      ],
+      "type": "object"
+    },
+    "TargetPhrase": {
+      "description": "A phrase.",
+      "properties": {
+        "key": {
+          "description": "The key.",
+          "type": "string"
+        },
+        "range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LspRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Its key in `ascribe.toml`; `null` when it can't be found there."
+        },
+        "value": {
+          "description": "The value.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "value",
+        "range"
+      ],
+      "type": "object"
+    },
+    "TargetRegion": {
+      "description": "A region of a source file.",
+      "properties": {
+        "address": {
+          "description": "The address a `@snippet` writes for it.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "address"
+      ],
+      "type": "object"
+    },
+    "TargetSource": {
+      "description": "A source of the content model and its files.",
+      "properties": {
+        "files": {
+          "description": "The files a snippet can take code from, by path.",
+          "items": {
+            "$ref": "#/$defs/TargetSourceFile"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "The source's name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "files"
+      ],
+      "type": "object"
+    },
+    "TargetSourceFile": {
+      "description": "A file a snippet can take code from.",
+      "properties": {
+        "address": {
+          "description": "The address a `@snippet` writes for the whole file.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Its path relative to the source's folder.",
+          "type": "string"
+        },
+        "regions": {
+          "description": "Its regions, in the order they start.",
+          "items": {
+            "$ref": "#/$defs/TargetRegion"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "path",
+        "address",
+        "regions"
+      ],
+      "type": "object"
+    },
+    "TargetWidget": {
+      "description": "A project widget.",
+      "properties": {
+        "attributes": {
+          "description": "Its attributes, in canonical order.",
+          "items": {
+            "$ref": "#/$defs/TargetAttribute"
+          },
+          "type": "array"
+        },
+        "binding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BindingKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What its line form applies to; `null` when it has no line form."
+        },
+        "container": {
+          "description": "Whether it may be a container.",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "What it's for, as the content model describes it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "groupable": {
+          "description": "Whether its openers form groups of arms.",
+          "type": "boolean"
+        },
+        "line": {
+          "description": "Whether it may be one line.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Its name.",
+          "type": "string"
+        },
+        "primary": {
+          "$ref": "#/$defs/PrimaryKind",
+          "description": "What its line form takes after the colon."
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "line",
+        "container",
+        "groupable",
+        "primary",
+        "binding",
+        "attributes"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/targets`: a list for each kind asked for, and no\nothers. A document that isn't a source file of the project gets no\nlists.",
+  "properties": {
+    "builds": {
+      "description": "Builds, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/TargetBuild"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "dimensions": {
+      "description": "Dimensions, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/TargetDimension"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "features": {
+      "description": "Features, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/TargetFeature"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "fragments": {
+      "description": "Fragments, by content path.",
+      "items": {
+        "$ref": "#/$defs/TargetFragment"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "headings": {
+      "description": "The headings a link can name, page by page in content path order,\neach page's in document order: a page's own, and those of the\nfragments it includes.",
+      "items": {
+        "$ref": "#/$defs/TargetHeading"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "images": {
+      "description": "The image files under the content root, by path.",
+      "items": {
+        "$ref": "#/$defs/TargetImage"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "modelUri": {
+      "description": "The `file:` URI of the project's `ascribe.toml`, which the ranges of\ndeclarations are in.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "description": "Note types: the built-ins, then the declared ones.",
+      "items": {
+        "$ref": "#/$defs/TargetNote"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "pages": {
+      "description": "Pages, by content path.",
+      "items": {
+        "$ref": "#/$defs/TargetPage"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "phrases": {
+      "description": "Phrases, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/TargetPhrase"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "snippets": {
+      "description": "The content model's sources, in the order it declares them, with the\nfiles a snippet can take code from.",
+      "items": {
+        "$ref": "#/$defs/TargetSource"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "widgets": {
+      "description": "Project widgets, in declaration order.",
+      "items": {
+        "$ref": "#/$defs/TargetWidget"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "title": "TargetsResult",
+  "type": "object"
+}

@@ -18,6 +18,7 @@ use ascribe_resolve::{FileIndex, Heading, Include, PhraseUse, Reference, Snapsho
 use ascribe_syntax::{Block, BlockKind, DirectiveLine, PrimaryValue};
 use lsp_types::{Location, Position, Range, Uri};
 
+use crate::fsx::LayerFs;
 use crate::position::Encoding;
 use crate::uri::path_to_uri;
 
@@ -37,6 +38,9 @@ pub(crate) struct Ctx {
     pub content_dir: PathBuf,
     /// How the client counts columns.
     pub encoding: Encoding,
+    /// The project's files that aren't sources, as the file-level checks
+    /// read them: images, and the files of the content model's sources.
+    pub fs: Arc<LayerFs>,
 }
 
 impl Ctx {

@@ -52,6 +52,8 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] The command a CodeLens runs (`ExecuteCommand`, `ascribe.openFile`).
 - [ ] The page preview (`ascribe/preview`; `crates/ascribe-lsp/src/preview.rs`).
 - [ ] Review's changes (`ascribe/review/setBase` and `ascribe/review/changes`; `crates/ascribe-lsp/src/review.rs`).
+- [ ] What's at a position (`ascribe/context`; `crates/ascribe-lsp/src/context.rs`): a new block or inline construct is a node kind, and a new token is a token kind.
+- [ ] What actions can point at (`ascribe/targets`; `crates/ascribe-lsp/src/targets.rs`): a new kind of content model entry is a kind of target.
 - [ ] The server's tests in `crates/ascribe-lsp/tests/`, and `lsp_parity` in `crates/ascribe-cli/tests/`, which compares the server's diagnostics with `ascribe check`'s.
 
 **The editor**
