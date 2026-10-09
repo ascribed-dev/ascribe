@@ -25,7 +25,7 @@ export type Entry<F extends Fix = Fix> =
   | { kind: "empty"; label: string };
 
 /** The bar's groups, in its order, with their separators' labels. */
-export const GROUPS: [Action["group"], string][] = [
+const GROUPS: [Action["group"], string][] = [
   ["fix", "Fix"],
   ["write", "Write"],
   ["structure", "Structure"],
