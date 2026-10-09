@@ -251,6 +251,7 @@ dependencies = [
  "serde_yaml_ng",
  "tempfile",
  "thiserror",
+ "toml_edit",
 ]
 
 [[package]]
@@ -1583,6 +1584,7 @@ dependencies = [
  "indexmap",
  "toml_datetime",
  "toml_parser",
+ "toml_writer",
  "winnow",
 ]
 

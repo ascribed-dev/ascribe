@@ -467,8 +467,9 @@ export interface Counts {
 export type EditResult =
   | {
       /**
-       * Plain text edits to the requested document, under `changes`,
-       * in canonical form.
+       * Plain text edits under `changes`, in canonical form: to the
+       * requested document, and, for an action on the content model, to
+       * `ascribe.toml` and any other pages it changes.
        */
       edit: LspWorkspaceEdit;
       /**
@@ -995,6 +996,14 @@ export interface TargetNote {
   label: string;
 }
 
+/** Where some text occurs. */
+export interface TargetOccurrence {
+  /** The file's content path. */
+  path: string;
+  /** The text, in that file. */
+  range: LspRange;
+}
+
 /** A page. */
 export interface TargetPage {
   /** Its content path. */
@@ -1005,6 +1014,11 @@ export interface TargetPage {
   type: string | null;
   /** The destination of a link to it from the requesting page. */
   link: string;
+  /**
+   * The destination of a link to it from the content root, `/page.md`,
+   * which any page of the project can use.
+   */
+  rootLink: string;
 }
 
 /** A phrase. */
@@ -1091,6 +1105,13 @@ export interface TargetsResult {
   modelUri?: string;
   /** Note types: the built-ins, then the declared ones. */
   notes?: TargetNote[];
+  /**
+   * The other whole-word occurrences, in the project's prose, of the text
+   * the range selects, by content path: those making the selection a
+   * phrase everywhere (`makePhrase` with `everywhere`) replaces. Empty
+   * when the selection isn't text a phrase can take the place of.
+   */
+  occurrences?: TargetOccurrence[];
   /** Pages, by content path. */
   pages?: TargetPage[];
   /** Phrases, in declaration order. */

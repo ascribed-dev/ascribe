@@ -47,7 +47,7 @@ pub use ascribe_core::Issue;
 pub use inline::{InlineMarkup, Segment};
 pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_hash, short_commit};
 pub use model::*;
-pub use names::suggest;
+pub use names::{KEY_RULE, NAME_WORD_RULE, is_key, is_name_word, suggest};
 pub use pattern::{Pattern, PatternError};
 pub use types::{Field, FieldType, FrontmatterSchema, SchemaOwner, validate_frontmatter};
 

@@ -1,6 +1,7 @@
 // Runs an action from its command: the context at the selection, the
 // wizard, then the action's own function or the server's edit, applied as
-// one undo step.
+// one undo step. A rename that changes files other than the page is shown
+// in VS Code's refactor preview before anything is written.
 
 import * as vscode from "vscode";
 import type { ProjectRegistry } from "../registry.js";
@@ -18,6 +19,10 @@ export interface RunRecord {
   done: boolean;
   /** What it told the writer, if anything. */
   messages: string[];
+  /** For a rename: whether it asked first, in the refactor preview, since it changes other files. */
+  previewed?: boolean;
+  /** For a rename: the files it changes, relative to the workspace, sorted. */
+  files?: string[];
 }
 
 /** What a run needs from the extension. */
@@ -74,6 +79,7 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
       ? ((await server.request("ascribe/targets", {
           textDocument: { uri: where.uri },
           kinds: action.needs,
+          range: where.range,
         })) as TargetsResult)
       : {};
     let args: Args | undefined;
@@ -91,9 +97,32 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
       const effects: Effects = {
         copy: (text) => Promise.resolve(vscode.env.clipboard.writeText(text)),
         say: (message) => say(message),
+        rename: async (position, newName, uri) => {
+          const result = await server.requestEdit(
+            "textDocument/rename",
+            { textDocument: { uri: uri ?? where.uri }, position, newName },
+            `Nothing renamed: there's nothing to rename there, or ${newName} breaks the content model's rules or is taken.`,
+          );
+          if ("error" in result) {
+            say(result.error, true);
+            return false;
+          }
+          // Other files change: show every change in the refactor preview first.
+          const page = document.uri.toString();
+          const files = result.edit.entries().map(([file]) => file);
+          const elsewhere = files.some((file) => file.toString() !== page);
+          record.previewed = elsewhere;
+          record.files = files.map((file) => vscode.workspace.asRelativePath(file, false)).sort();
+          if (!elsewhere) return vscode.workspace.applyEdit(result.edit, { isRefactoring: true });
+          const applied = await vscode.workspace.applyEdit(confirmEach(result.edit, newName), {
+            isRefactoring: true,
+          });
+          if (!applied)
+            say("Nothing renamed: check the changes to make in the preview, then Apply.");
+          return applied;
+        },
       };
-      await action.does.run(context, targets, args, effects);
-      record.done = true;
+      record.done = await action.does.run(context, targets, args, effects);
       return record;
     }
 
@@ -121,7 +150,9 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
         say(result.error, true);
         return record;
       }
-      if (!(await vscode.workspace.applyEdit(result.edit))) {
+      // As a refactoring, so `files.refactoring.autoSave` saves the other
+      // files it changes, such as `ascribe.toml`.
+      if (!(await vscode.workspace.applyEdit(result.edit, { isRefactoring: true }))) {
         say("The edit couldn't be applied: the page changed. Try again.", true);
         return record;
       }
@@ -137,4 +168,17 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
     if (!isCancellation(error)) server.reportFeatureError(`"${action.title}"`, error);
     return record;
   }
+}
+
+/** An edit with every change marked as needing confirmation, so VS Code previews it. */
+function confirmEach(edit: vscode.WorkspaceEdit, newName: string): vscode.WorkspaceEdit {
+  const confirmed = new vscode.WorkspaceEdit();
+  const metadata: vscode.WorkspaceEditEntryMetadata = {
+    needsConfirmation: true,
+    label: `Rename to ${newName}`,
+  };
+  for (const [uri, edits] of edit.entries()) {
+    for (const change of edits) confirmed.replace(uri, change.range, change.newText, metadata);
+  }
+  return confirmed;
 }

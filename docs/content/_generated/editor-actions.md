@@ -32,3 +32,8 @@
 | **Include a fragment** | Add `@include:` for a fragment, a page, or one of its sections. | A blank line between blocks |
 | **Insert a code snippet** | Add `@snippet:` with code from one of the project's sources. | A blank line between blocks |
 | **Insert a widget** | Add one of the project's widgets, `@name`, with the attributes it needs. | A blank line between blocks |
+| **Make this a phrase** | Declare the selected text in `[phrases]` and write `{key}` in its place, and in its other occurrences if you choose. Also in the lightbulb. | Text selected in one paragraph or heading |
+| **Add to the glossary** | Declare the selected text as a term in `[glossary.terms]`, with its aliases, definition, and link. | Text selected in one paragraph or heading |
+| **Change a feature's availability** | Set where a feature in `[features]` is available, such as its state or version. | Anywhere in a page |
+| **Rename this phrase everywhere** | Change a phrase's key in `[phrases]` and every `{key}` that uses it: the one at the cursor, or one you choose. | Anywhere in a page; a phrase at the cursor is the one renamed |
+| **Rename a dimension value everywhere** | Change a value in `[dimensions]` and everywhere it's used: `@variant` attributes, `variant:`, availability, and builds. | Anywhere in a page; a `@variant` attribute's value at the cursor is the one renamed |

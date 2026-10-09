@@ -537,6 +537,7 @@ pub(crate) fn add_variant_arm(page: &Page<'_>) -> Outcome {
             from,
             len: placeholder.len(),
         }),
+        ..Plan::new(Vec::new())
     })
 }
 

@@ -664,8 +664,8 @@ fn targets_write_paths_from_the_requesting_page() {
     assert_eq!(
         r["pages"],
         json!([
-            { "path": "guide/setup.md", "title": "Setup", "type": "page", "link": "setup.md" },
-            { "path": "index.md", "title": "Install", "type": "page", "link": "../index.md" },
+            { "path": "guide/setup.md", "title": "Setup", "type": "page", "link": "setup.md", "rootLink": "/guide/setup.md" },
+            { "path": "index.md", "title": "Install", "type": "page", "link": "../index.md", "rootLink": "/index.md" },
         ])
     );
     let headings = r["headings"].as_array().unwrap();
@@ -776,7 +776,7 @@ fn targets_include_unsaved_edits() {
     client.replace(&page, 2, "---\ntitle: Renamed\n---\n# New heading\n");
     let r = targets(&mut client, &page, &["pages", "headings"]);
     assert!(r["pages"].as_array().unwrap().contains(
-        &json!({ "path": "index.md", "title": "Renamed", "type": "page", "link": "index.md" })
+        &json!({ "path": "index.md", "title": "Renamed", "type": "page", "link": "index.md", "rootLink": "/index.md" })
     ));
     assert!(
         r["headings"]

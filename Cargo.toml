@@ -61,6 +61,9 @@ serde_yaml_ng = "0.10"
 sha2 = "0.10"
 thiserror = "2"
 toml = "1.1"
+# Edits `ascribe.toml` in place, keeping its comments: the language server
+# finds where a change goes and renders it, never rewriting the file.
+toml_edit = "0.25"
 
 [workspace.lints.rust]
 missing_docs = "warn"

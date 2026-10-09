@@ -15,8 +15,8 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand,
-    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, References, Rename, Request as _,
-    SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, PrepareRenameRequest, References,
+    Rename, Request as _, SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
 };
 use lsp_types::{
     CodeActionProviderCapability, CodeLensOptions, CompletionOptions, DocumentFormattingParams,
@@ -153,7 +153,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
             document_formatting_provider: Some(OneOf::Left(true)),
             rename_provider: Some(OneOf::Right(RenameOptions {
-                prepare_provider: Some(false),
+                prepare_provider: Some(true),
                 work_done_progress_options: Default::default(),
             })),
             workspace: Some(WorkspaceServerCapabilities {
@@ -428,6 +428,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                 })
             }),
             Rename::METHOD => rename_request(shared, &request),
+            PrepareRenameRequest::METHOD => prepare_rename_request(shared, &request),
             WillRenameFiles::METHOD => will_rename_request(shared, &request),
             ExecuteCommand::METHOD => execute_command(shared, &request),
             crate::preview::METHOD => preview_request(shared, &request),
@@ -454,7 +455,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
             crate::targets::METHOD => {
                 project_answer(shared, &request, |p: crate::targets::TargetsParams| {
                     (p.text_document.uri, move |ctx: &Ctx| {
-                        crate::targets::targets(ctx, &p.kinds)
+                        crate::targets::targets(ctx, &p.kinds, p.range)
                     })
                 })
             }
@@ -600,6 +601,48 @@ fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Valu
             )
         }),
         None => Ok(serde_json::Value::Null),
+    }
+}
+
+/// What a rename at a position would rename, or, as an error the client
+/// shows, why nothing there can be renamed.
+fn prepare_rename_request(
+    shared: &Shared,
+    request: &Request,
+) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::TextDocumentPositionParams =
+        serde_json::from_value(request.params.clone())
+            .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let uri = params.text_document.uri;
+    let answer = {
+        let core = shared.lock();
+        let is_model = core
+            .config
+            .as_ref()
+            .zip(crate::uri::uri_to_path(&uri))
+            .is_some_and(|(config, path)| normalize(config) == normalize(&path));
+        if is_model {
+            core.project_nav_target()
+                .map(|ctx| crate::refactor::prepare_model(&ctx, params.position))
+        } else {
+            core.nav_target(&uri)
+                .map(|ctx| crate::refactor::prepare(&ctx, params.position))
+        }
+    };
+    match answer {
+        None => Ok(serde_json::Value::Null),
+        Some(Err(message)) => Err(Response::new_err(
+            request.id.clone(),
+            ErrorCode::RequestFailed as i32,
+            message,
+        )),
+        Some(Ok(answer)) => serde_json::to_value(answer).map_err(|e| {
+            Response::new_err(
+                request.id.clone(),
+                ErrorCode::InternalError as i32,
+                e.to_string(),
+            )
+        }),
     }
 }
 

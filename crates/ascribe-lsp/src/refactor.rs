@@ -1,4 +1,13 @@
 //! Project-wide source refactorings and file-operation edits.
+//!
+//! `textDocument/rename` renames a phrase key (from a `{key}` in a page or
+//! its entry in `ascribe.toml`), an `@id`, a heading's text, and a
+//! dimension's value (from a `@variant` attribute or the dimension's
+//! `values`, in `refactor/values.rs`), each everywhere it's used.
+//! `textDocument/prepareRename` says what's renamed at a position, or why
+//! nothing is.
+
+mod values;
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -9,8 +18,8 @@ use ascribe_resolve::{FileIndex, PhrasePlace, Target, Usable};
 use ascribe_syntax::{Block, BlockKind, InlineKind};
 use lsp_types::{
     FileOperationFilter, FileOperationPattern, FileOperationPatternKind,
-    FileOperationRegistrationOptions, RenameFilesParams, RenameParams, TextEdit, Uri,
-    WorkspaceEdit,
+    FileOperationRegistrationOptions, Position, PrepareRenameResponse, RenameFilesParams,
+    RenameParams, TextEdit, Uri, WorkspaceEdit,
 };
 
 use crate::nav::{Ctx, Lines, directive_at, encode_destination, hit_at, identifier_primary};
@@ -220,7 +229,91 @@ pub(crate) fn rename(ctx: &Ctx, params: RenameParams) -> Option<WorkspaceEdit> {
         )?;
         return workspace_edit_with_config(ctx, workspace_edit(ctx, edits), phrase_edits);
     }
+    if let Some(value) = values::in_page(file, offset) {
+        return values::rename(ctx, &value, &params.new_name);
+    }
     rename_heading(ctx, offset, &params.new_name)
+}
+
+/// What a rename at `position` of a page renames: its range and its text,
+/// or why nothing there can be renamed.
+pub(crate) fn prepare(ctx: &Ctx, position: Position) -> Result<PrepareRenameResponse, String> {
+    let file = ctx.file().ok_or_else(nothing_here)?;
+    let index = LineIndex::new(&file.source);
+    let offset = ctx.encoding.offset_lenient(&index, &file.source, position);
+    let answer = |span: Span, placeholder: &str| PrepareRenameResponse::RangeWithPlaceholder {
+        range: ctx.encoding.range(&index, span),
+        placeholder: placeholder.to_owned(),
+    };
+    if let Some(crate::nav::Hit::Phrase(phrase)) = hit_at(file, offset) {
+        let key = &phrase.phrase.key;
+        if !ctx.model.has_phrase(key) {
+            return Err(format!(
+                "`{{{key}}}` isn't a phrase: the content model doesn't declare `{key}`."
+            ));
+        }
+        snippet_phrase_edits(ctx, key, key)?;
+        return Ok(answer(phrase.phrase.key_span, key));
+    }
+    if let Some(directive) = directive_at(&file.document.blocks, offset)
+        && directive.name == "id"
+        && let Some((id, span)) = identifier_primary(directive)
+        && span.start() <= offset
+        && offset <= span.end()
+    {
+        return Ok(answer(span, id));
+    }
+    if let Some(value) = values::in_page(file, offset) {
+        if !ctx
+            .model
+            .dimension_values(&value.dimension)
+            .is_some_and(|values| values.iter().any(|v| v.value == value.value))
+        {
+            return Err(format!(
+                "`{}` isn't a value of the dimension `{}`.",
+                value.value, value.dimension
+            ));
+        }
+        return Ok(answer(value.span, &value.value));
+    }
+    if let Some((_, span)) = heading_text_at(&file.document.blocks, offset, &file.source) {
+        return Ok(answer(
+            span,
+            file.source.get(span.range()).unwrap_or_default(),
+        ));
+    }
+    Err(nothing_here())
+}
+
+/// What a rename at `position` of `ascribe.toml` renames.
+pub(crate) fn prepare_model(
+    ctx: &Ctx,
+    position: Position,
+) -> Result<PrepareRenameResponse, String> {
+    let index = LineIndex::new(&ctx.model_text);
+    let offset = ctx
+        .encoding
+        .offset_lenient(&index, &ctx.model_text, position);
+    let answer = |span: Span, placeholder: &str| PrepareRenameResponse::RangeWithPlaceholder {
+        range: ctx.encoding.range(&index, span),
+        placeholder: placeholder.to_owned(),
+    };
+    if let Some((key, span)) = phrase_entry_at(&ctx.model_text, offset) {
+        snippet_phrase_edits(ctx, &key, &key)?;
+        return Ok(answer(span, &key));
+    }
+    if let Some(value) = values::in_model(ctx, offset) {
+        return Ok(answer(value.span, &value.value));
+    }
+    Err(
+        "Put the cursor on a phrase's key under `[phrases]`, or a value in a dimension's `values`, to rename it."
+            .to_owned(),
+    )
+}
+
+fn nothing_here() -> String {
+    "Put the cursor on a phrase, a heading, an `@id`, or a value in a `@variant` attribute to rename it."
+        .to_owned()
 }
 
 pub(crate) fn rename_model_key(
@@ -228,15 +321,18 @@ pub(crate) fn rename_model_key(
     position: lsp_types::Position,
     new_name: &str,
 ) -> Option<WorkspaceEdit> {
-    if !valid_phrase_key(new_name) {
-        return None;
-    }
     let index = LineIndex::new(&ctx.model_text);
     let offset = ctx
         .encoding
         .offset_lenient(&index, &ctx.model_text, position);
-    let (old, span) = phrase_entry_at(&ctx.model_text, offset)?;
-    rename_phrase(ctx, &old, new_name, Some(span))
+    if let Some((old, span)) = phrase_entry_at(&ctx.model_text, offset) {
+        if !valid_phrase_key(new_name) {
+            return None;
+        }
+        return rename_phrase(ctx, &old, new_name, Some(span));
+    }
+    let value = values::in_model(ctx, offset)?;
+    values::rename(ctx, &value, new_name)
 }
 
 #[allow(clippy::mutable_key_type)]
@@ -264,8 +360,10 @@ fn rename_phrase(
             }
         }
     }
+    let code = snippet_phrase_edits(ctx, old, new).ok()?;
     let mut result = workspace_edit(ctx, edits);
     let mut changes = result.changes.take().unwrap_or_default();
+    changes.extend(code);
     let model_span = config_key.or_else(|| phrase_entry_span(&ctx.model_text, old))?;
     let model_edit = TextEdit {
         range: ctx
@@ -276,6 +374,93 @@ fn rename_phrase(
     changes.insert(crate::uri::path_to_uri(&ctx.config)?, vec![model_edit]);
     result.changes = Some(changes);
     Some(result)
+}
+
+/// The edits that rename the phrase `old` to `new` in the code `@snippet`s
+/// with `phrases=true` take, by file: the lines each snippet covers. A
+/// source in another repository can't be edited here, so a use there is an
+/// error.
+#[allow(clippy::mutable_key_type)]
+fn snippet_phrase_edits(
+    ctx: &Ctx,
+    old: &str,
+    new: &str,
+) -> Result<HashMap<Uri, Vec<TextEdit>>, String> {
+    let mut found: HashMap<RelPath, Vec<Span>> = HashMap::new();
+    let mut texts: HashMap<RelPath, String> = HashMap::new();
+    for file in ctx.snapshot.files() {
+        for use_ in file.snippets.iter().filter(|u| u.phrases) {
+            let Some(snippet) = ctx.snapshot.snippet_at(&file.path, use_.span) else {
+                continue;
+            };
+            let Some((first, last)) = snippet.lines else {
+                continue;
+            };
+            if !texts.contains_key(&snippet.path) {
+                let Some(text) = ascribe_resolve::FileSystem::read_file(&*ctx.fs, &snippet.path)
+                    .ok()
+                    .and_then(|bytes| String::from_utf8(bytes).ok())
+                else {
+                    continue;
+                };
+                texts.insert(snippet.path.clone(), text);
+            }
+            let text = &texts[&snippet.path];
+            let mut at = 0;
+            for (n, line) in text.split_inclusive('\n').enumerate() {
+                let start = at;
+                at += line.len();
+                let n = u32::try_from(n + 1).unwrap_or(u32::MAX);
+                if n < first || n > last {
+                    continue;
+                }
+                for phrase in ascribe_syntax::code_phrases(line) {
+                    if phrase.key != old {
+                        continue;
+                    }
+                    let remote = use_
+                        .address
+                        .as_ref()
+                        .and_then(|a| a.as_ref().ok())
+                        .and_then(|a| ctx.model.source(&a.source))
+                        .is_some_and(|s| s.git.is_some());
+                    if remote {
+                        return Err(format!(
+                            "`{{{old}}}` is used in `{}`, a copy of code in another repository, which a rename can't change.",
+                            snippet.path
+                        ));
+                    }
+                    found
+                        .entry(snippet.path.clone())
+                        .or_default()
+                        .push(Span::new(
+                            start + phrase.key_span.start(),
+                            start + phrase.key_span.end(),
+                        ));
+                }
+            }
+        }
+    }
+    let root = ctx.config.parent().unwrap_or(std::path::Path::new("."));
+    let mut out = HashMap::new();
+    for (path, mut spans) in found {
+        spans.sort_by_key(|s| (s.start(), s.end()));
+        spans.dedup();
+        let index = LineIndex::new(&texts[&path]);
+        let uri = crate::uri::path_to_uri(&normalize(&root.join(path.as_str())))
+            .ok_or_else(|| format!("`{path}` can't be named as a URI."))?;
+        out.insert(
+            uri,
+            spans
+                .into_iter()
+                .map(|span| TextEdit {
+                    range: ctx.encoding.range(&index, span),
+                    new_text: new.to_owned(),
+                })
+                .collect(),
+        );
+    }
+    Ok(out)
 }
 
 fn rename_heading(ctx: &Ctx, offset: usize, new_text: &str) -> Option<WorkspaceEdit> {

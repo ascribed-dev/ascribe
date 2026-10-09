@@ -46,3 +46,8 @@
 | **Ascribe: Include a fragment** {available=next} | Add `@include:` for a fragment, a page, or one of its sections. One of the [actions](../guides/editor.md#actions). |
 | **Ascribe: Insert a code snippet** {available=next} | Add `@snippet:` with code from one of the project's sources. One of the [actions](../guides/editor.md#actions). |
 | **Ascribe: Insert a widget** {available=next} | Add one of the project's widgets, `@name`, with the attributes it needs. One of the [actions](../guides/editor.md#actions). |
+| **Ascribe: Make this a phrase** {available=next} | Declare the selected text in `[phrases]` and write `{key}` in its place, and in its other occurrences if you choose. One of the [actions](../guides/editor.md#actions). |
+| **Ascribe: Add to the glossary** {available=next} | Declare the selected text as a term in `[glossary.terms]`, with its aliases, definition, and link. One of the [actions](../guides/editor.md#actions). |
+| **Ascribe: Change a feature's availability** {available=next} | Set where a feature in `[features]` is available, such as its state or version. One of the [actions](../guides/editor.md#actions). |
+| **Ascribe: Rename this phrase everywhere** {available=next} | Change a phrase's key in `[phrases]` and every `{key}` that uses it: the one at the cursor, or one you choose. One of the [actions](../guides/editor.md#actions). |
+| **Ascribe: Rename a dimension value everywhere** {available=next} | Change a value in `[dimensions]` and everywhere it's used: `@variant` attributes, `variant:`, availability, and builds. One of the [actions](../guides/editor.md#actions). |
