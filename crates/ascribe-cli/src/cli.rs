@@ -13,26 +13,17 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::{commands, exit};
 
-/// The docs site's address, with no trailing slash. It's `[consumer] site` in
-/// `docs/ascribe.toml`, and a test checks that they agree. Help links to the
-/// site's pages from here, through [`docs_page!`].
-macro_rules! docs_site {
-    () => {
-        "https://ascribed-dev.com"
-    };
-}
-
 /// A line for the end of a command's help, linking to its page on the docs
-/// site: `docs_page!("reference/cli/#ascribe-check")`.
+/// site (`ascribe_core::docs_site!`): `docs_page!("reference/cli/#ascribe-check")`.
 macro_rules! docs_page {
     ($path:literal) => {
-        concat!("Documentation: ", docs_site!(), "/", $path)
+        concat!("Documentation: ", ascribe_core::docs_site!(), "/", $path)
     };
 }
 
-/// [`docs_site!`], for the test that checks it.
+/// `ascribe_core::docs_site!`, for the test that checks it.
 #[cfg(test)]
-pub(crate) const DOCS_SITE: &str = docs_site!();
+pub(crate) const DOCS_SITE: &str = ascribe_core::docs_site!();
 
 /// What `ascribe --help` shows before the commands and options: examples,
 /// and the commands an agent needs first, since agents read `--help` before

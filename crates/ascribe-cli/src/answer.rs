@@ -17,9 +17,6 @@ use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
 
-/// The docs site's address, for the links answers give.
-pub const DOCS_SITE: &str = docs_site!();
-
 /// How to show an answer.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum Format {

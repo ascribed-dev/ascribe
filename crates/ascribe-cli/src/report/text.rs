@@ -4,9 +4,9 @@ use std::io::{self, Write};
 use std::ops::Range;
 
 use ariadne::{Cache, Config, FnCache, Label, Report, ReportKind};
-use ascribe_check::{Diagnostic, Severity};
+use ascribe_check::{Diagnostic, Reported, Severity};
 
-use super::{Counts, FileTable};
+use super::{ByCode, ByFile, Counts, FileTable};
 
 /// Writes every diagnostic, then a one-line summary.
 ///
@@ -39,20 +39,119 @@ pub fn write_diagnostics(
             .ok_or_else(|| format!("no file {path} in the report"))
     });
     for d in diagnostics {
-        write_diagnostic(out, files, &mut cache, d, color)?;
+        write_diagnostic(out, files, &mut cache, d, 0, color)?;
     }
     Ok(())
 }
 
+/// Writes each diagnostic of a report with its snippet, then `summary`.
+pub fn write_reported(
+    out: &mut dyn Write,
+    files: &FileTable,
+    reported: &[Reported],
+    summary: &str,
+    color: bool,
+) -> io::Result<()> {
+    let mut cache = FnCache::new(|path: &String| {
+        files
+            .text_at(path)
+            .ok_or_else(|| format!("no file {path} in the report"))
+    });
+    for r in reported {
+        write_diagnostic(out, files, &mut cache, &r.diagnostic, r.repeats, color)?;
+    }
+    writeln!(out, "{summary}")
+}
+
+/// Writes the counts by code and by file, most first, for `--summary`; the
+/// summary line follows.
+pub fn write_tally(out: &mut dyn Write, codes: &[ByCode], by_file: &[ByFile]) -> io::Result<()> {
+    if codes.is_empty() {
+        return Ok(());
+    }
+    let width = codes
+        .iter()
+        .map(|c| c.count)
+        .chain(by_file.iter().map(|f| f.counts.total()))
+        .max()
+        .unwrap_or_default()
+        .to_string()
+        .len();
+    writeln!(out, "By code:")?;
+    for c in codes {
+        writeln!(
+            out,
+            "  {:>width$}  {} {} ({})",
+            c.count,
+            c.code,
+            c.slug,
+            c.severity.as_str()
+        )?;
+    }
+    writeln!(out, "By file:")?;
+    for f in by_file {
+        writeln!(
+            out,
+            "  {:>width$}  {} ({})",
+            f.counts.total(),
+            f.file,
+            counted(f.counts)
+        )?;
+    }
+    Ok(())
+}
+
+/// `1 error, 2 warnings`.
+fn counted(counts: Counts) -> String {
+    format!(
+        "{}, {}",
+        plural(counts.errors, "error"),
+        plural(counts.warnings, "warning")
+    )
+}
+
+fn plural(n: usize, word: &str) -> String {
+    format!("{n} {word}{}", if n == 1 { "" } else { "s" })
+}
+
+/// What a diagnostic reported at several includes adds to its message: at
+/// how many others it's reported too.
+pub fn repeats_note(repeats: usize) -> Option<String> {
+    (repeats > 0).then(|| {
+        format!(
+            "also at {repeats} other include{}",
+            if repeats == 1 { "" } else { "s" }
+        )
+    })
+}
+
 /// The summary line: `checked 12 files: 1 error, 2 warnings`.
 pub fn summary(counts: Counts, files_checked: usize) -> String {
-    let plural = |n: usize, word: &str| format!("{n} {word}{}", if n == 1 { "" } else { "s" });
     format!(
-        "checked {}: {}, {}",
+        "checked {}: {}",
         plural(files_checked, "file"),
-        plural(counts.errors, "error"),
-        plural(counts.warnings, "warning"),
+        counted(counts)
     )
+}
+
+/// The summary line of `ascribe check`: [`summary`]'s, plus how many files the
+/// paths named, when paths were named (`checked 12 files, reported on 1`), and
+/// the one build whose page-level checks ran, with `--editor-build`
+/// (`, build site only`).
+pub fn check_summary(
+    counts: Counts,
+    files_checked: usize,
+    files_reported: Option<usize>,
+    only_build: Option<&str>,
+) -> String {
+    let mut line = format!("checked {}", plural(files_checked, "file"));
+    if let Some(n) = files_reported {
+        line.push_str(&format!(", reported on {n}"));
+    }
+    if let Some(build) = only_build {
+        line.push_str(&format!(", page-level checks of build `{build}` only"));
+    }
+    format!("{line}: {}", counted(counts))
 }
 
 /// Writes one diagnostic with its snippet, from the report's source cache.
@@ -61,8 +160,13 @@ fn write_diagnostic(
     files: &FileTable,
     cache: &mut impl Cache<String>,
     d: &Diagnostic,
+    repeats: usize,
     color: bool,
 ) -> io::Result<()> {
+    let message = match repeats_note(repeats) {
+        Some(note) => format!("{} ({note})", d.message),
+        None => d.message.clone(),
+    };
     let kind = match d.severity {
         Severity::Error => ReportKind::Error,
         Severity::Warning => ReportKind::Warning,
@@ -70,7 +174,7 @@ fn write_diagnostic(
     let primary = (files.path(d.location.file), char_range(files, d.location));
     let mut report = Report::build(kind, primary.clone())
         .with_code(d.code)
-        .with_message(&d.message)
+        .with_message(&message)
         .with_config(Config::default().with_color(color))
         .with_label(Label::new(primary).with_message(d.slug));
     for related in &d.related {

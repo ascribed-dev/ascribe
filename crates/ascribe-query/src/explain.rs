@@ -121,12 +121,11 @@ pub struct ListedDiagnostic {
 }
 
 /// The diagnostic with this code (`ASC036`, in any case) or slug, explained.
-/// `docs_site` is the docs site's address, with no trailing slash.
 ///
 /// # Errors
 ///
 /// No diagnostic has that code or slug; the error names the closest.
-pub fn explain(code_or_slug: &str, docs_site: &str) -> Result<Explanation, QueryError> {
+pub fn explain(code_or_slug: &str) -> Result<Explanation, QueryError> {
     let registry = Registry::global();
     let given = code_or_slug.trim();
     let Some(entry) = registry.find(given) else {
@@ -157,7 +156,7 @@ pub fn explain(code_or_slug: &str, docs_site: &str) -> Result<Explanation, Query
         message: entry.message.clone(),
         variants,
         fix: entry.fix.clone(),
-        docs: docs_url(entry, docs_site),
+        docs: entry.docs(),
         example: entry.example.as_ref().map(|e| example_text(entry, e)),
     })
 }
@@ -183,16 +182,6 @@ fn severity(severity: Severity) -> &'static str {
         Severity::Error => "error",
         Severity::Warning => "warning",
     }
-}
-
-/// The address of a diagnostic's entry in the diagnostics reference, whose
-/// headings are `ASC036: link-target-missing`.
-fn docs_url(entry: &Entry, docs_site: &str) -> String {
-    format!(
-        "{docs_site}/reference/diagnostics/#{}-{}",
-        entry.code.to_lowercase(),
-        entry.slug
-    )
 }
 
 /// The codes whose code or slug is closest to `given`, with their slugs, at

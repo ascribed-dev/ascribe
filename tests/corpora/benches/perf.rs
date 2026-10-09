@@ -15,6 +15,10 @@
 //!   project, the file-level checks, and the page-level checks of every build;
 //!   and, for a build, resolving and emitting plain markdown.
 //!
+//! Then `ascribe check` of one file on both projects: a clean page, a page with
+//! an error, and a fragment 100 pages include, each with every build and with
+//! `--editor-build`, the check an agent's hook runs after each edit.
+//!
 //! Then the peak memory of `ascribe check`, `ascribe build` (first),
 //! `ascribe diff`, and the language server on the synthetic project (see
 //! `memory/mod.rs`).
@@ -243,6 +247,80 @@ fn diff(bin: &Path, dir: &Path) {
     println!();
 }
 
+/// `ascribe check <one file>` on the project at `root`, a copy the bench may
+/// change: a clean page, a page with an error, and a fragment that 100 pages
+/// include, added to `pages`' first 100, each checked with every build and
+/// with `--editor-build`. `pages` are content paths of pages, in the order to
+/// try them. Metrics are `check-one/<name>-<case>[-editor]`.
+fn one_file(name: &str, bin: &Path, root: &Path, content_root: &str, pages: &[String]) {
+    let docs = root.join(content_root);
+    std::fs::create_dir_all(docs.join("_bench")).expect("creates");
+    std::fs::write(
+        docs.join("_bench").join("wide.md"),
+        "Shared by a hundred pages.\n",
+    )
+    .expect("writes");
+    for page in pages.iter().take(100) {
+        let path = docs.join(page);
+        let text = std::fs::read_to_string(&path).expect("reads");
+        std::fs::write(&path, format!("{text}\n@include: /_bench/wide.md\n")).expect("writes");
+    }
+    // Which pages have problems, from one whole check.
+    let out = Command::new(bin)
+        .args(["check", "--format", "json"])
+        .current_dir(root)
+        .output()
+        .expect("runs ascribe");
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).expect("JSON");
+    let with = |severity: Option<&str>| -> Vec<String> {
+        report["diagnostics"]
+            .as_array()
+            .expect("a list")
+            .iter()
+            .filter(|d| severity.is_none_or(|s| d["severity"] == s))
+            .filter_map(|d| d["file"].as_str().map(str::to_owned))
+            .collect()
+    };
+    let (any, errors) = (with(None), with(Some("error")));
+    let at = |page: &String| format!("{content_root}/{page}");
+    let clean = pages[100..]
+        .iter()
+        .map(at)
+        .find(|p| !any.contains(p))
+        .expect("a clean page");
+    let broken = match pages[100..].iter().map(at).find(|p| errors.contains(p)) {
+        Some(page) => page,
+        None => {
+            // No page has an error of its own: give one a broken link.
+            let page = at(&pages[100]);
+            let path = root.join(&page);
+            let text = std::fs::read_to_string(&path).expect("reads");
+            std::fs::write(&path, format!("{text}\n[Gone](/no-such-page.md)\n")).expect("writes");
+            page
+        }
+    };
+    let fragment = format!("{content_root}/_bench/wide.md");
+    println!("{name}: ascribe check <one file> --format json");
+    for (case, file) in [
+        ("clean", &clean),
+        ("error", &broken),
+        ("fragment", &fragment),
+    ] {
+        for (editor, label) in [(false, "every build"), (true, "--editor-build")] {
+            let mut args = vec!["check", file.as_str(), "--format", "json"];
+            if editor {
+                args.push("--editor-build");
+            }
+            let metric = format!(
+                "check-one/{name}-{case}{}",
+                if editor { "-editor" } else { "" }
+            );
+            time_cli(&format!("  {case} ({label})"), &metric, bin, root, &args, 5);
+        }
+    }
+    println!();
+}
+
 /// `ascribe diff` and `ascribe drift` on the synthetic project with
 /// snippets, in a git repository: with nothing changed, and with one code
 /// file changed in the region ten pages show. Skipped when `git` isn't there.
@@ -466,6 +544,12 @@ fn main() {
 
     diff(&bin, dir.path());
     diff_snippets(&bin, dir.path());
+    let one = dir.path().join("synthetic-one-file");
+    std::fs::create_dir_all(&one).expect("creates");
+    let project = Synthetic::standard();
+    project.write_to(&one).expect("writes");
+    let pages: Vec<String> = (0..project.pages).map(|i| project.page_path(i)).collect();
+    one_file("synthetic-3000", &bin, &one, CONTENT_ROOT, &pages);
     memory(&bin, dir.path(), &root, &dir.path().join("synthetic-git"));
 
     // The same command on a project with a diagnostic on every page: the text
@@ -522,5 +606,22 @@ fn main() {
         &root,
         &["check", "--format", "json"],
         3,
+    );
+    println!();
+    let model = Project::load_model(&root.join("ascribe.toml"))
+        .expect("the converted model loads")
+        .model;
+    let pages: Vec<String> = converted
+        .files
+        .keys()
+        .filter(|path| !model.is_fragment(path))
+        .cloned()
+        .collect();
+    one_file(
+        "elastic-converted",
+        &bin,
+        &root,
+        convert::CONTENT_ROOT,
+        &pages,
     );
 }

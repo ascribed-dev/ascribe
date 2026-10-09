@@ -174,6 +174,14 @@ fn check() {
         "check.json",
         &json(&run(dir.path(), &["check", "--format", "json"], 0)),
     );
+    expect(
+        "check-concise.txt",
+        &stdout(&run(
+            dir.path(),
+            &["check", "docs/keys.md", "--format", "concise"],
+            0,
+        )),
+    );
 }
 
 /// The project `ascribe diff` is shown on: a product's docs in `docs/`, with a

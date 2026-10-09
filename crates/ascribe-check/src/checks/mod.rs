@@ -20,7 +20,9 @@ mod refs;
 mod sources;
 mod text;
 
-use ascribe_core::{DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics};
+use ascribe_core::{
+    Applicability, DirectiveSchema, FileId, Fix, Issue, Location, Span, TextEdit, diagnostics,
+};
 use ascribe_model::ContentModel;
 use ascribe_syntax::{
     Block, BlockKind, DirectiveLine, Heading, Inline, InlineKind, ParseOptions, PrimaryValue, parse,
@@ -126,6 +128,8 @@ impl Ctx<'_> {
                     title: format!("Replace with `{suggestion}`"),
                     file: id,
                     edits: vec![TextEdit::replace(Span::new(span.start(), end), suggestion)],
+                    // The nearest name, which may not be the one meant.
+                    applicability: Applicability::Unsafe,
                 }
             } else if issue.slug == diagnostics::DIRECTIVE_EXTRA_TEXT {
                 let before = &text[..span.start()];
@@ -134,6 +138,8 @@ impl Ctx<'_> {
                     title: format!("Remove `{}`", issue.arg("extra").unwrap_or_default()),
                     file: id,
                     edits: vec![TextEdit::delete(Span::new(start, span.end()))],
+                    // The text may be meant for the primary or the content.
+                    applicability: Applicability::Unsafe,
                 }
             } else {
                 continue;
@@ -344,6 +350,8 @@ impl Ctx<'_> {
                     TextEdit::delete(Span::new(start - 1, start)),
                     TextEdit::delete(Span::new(end, end + 1)),
                 ],
+                // The page shows the braces now, and one may be meant.
+                applicability: Applicability::Unsafe,
             });
         self.report(issue);
     }

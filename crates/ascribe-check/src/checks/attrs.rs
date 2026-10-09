@@ -6,8 +6,8 @@
 //! required attributes that are missing.
 
 use ascribe_core::{
-    Attribute, AttributeBlock, AttributeSchema, AttributeType, AttributeValue, Attributes,
-    DirectiveSchema, Fix, Issue, Location, SetMember, Span, TextEdit, diagnostics,
+    Applicability, Attribute, AttributeBlock, AttributeSchema, AttributeType, AttributeValue,
+    Attributes, DirectiveSchema, Fix, Issue, Location, SetMember, Span, TextEdit, diagnostics,
 };
 
 use super::Ctx;
@@ -112,6 +112,8 @@ impl Ctx<'_> {
                         title: format!("Rename the attribute to `{s}`"),
                         file: self.id,
                         edits: vec![TextEdit::replace(attribute.key_span, s.to_owned())],
+                        // The nearest key, which may not be the one meant.
+                        applicability: Applicability::Unsafe,
                     };
                     issue
                         .with_variant("suggestion")

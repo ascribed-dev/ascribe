@@ -18,7 +18,9 @@
 //! Page-level problems, such as a link to an id the target page lacks, are
 //! the source index's ([`crate::Project::problems`]).
 
-use ascribe_core::{Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics, percent_decode};
+use ascribe_core::{
+    Applicability, Fix, Issue, Location, RelPath, Span, TextEdit, diagnostics, percent_decode,
+};
 use ascribe_model::ContentModel;
 use ascribe_syntax::{Inline, LinkDefinition, LinkForm, Phrase};
 
@@ -419,6 +421,8 @@ pub fn reference_issue(
                     title: "Link to the page's file instead of its route".into(),
                     file: at.file,
                     edits: vec![TextEdit::replace(span, new_text)],
+                    // The same page, named by its file instead of its route.
+                    applicability: Applicability::Safe,
                 });
             }
             Some(issue)

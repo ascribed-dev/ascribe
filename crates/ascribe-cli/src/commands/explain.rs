@@ -7,7 +7,7 @@ use std::process::ExitCode;
 use ascribe_query::{ExampleText, Explanation};
 use clap::Args as ClapArgs;
 
-use crate::answer::{self, DOCS_SITE, Format, fence};
+use crate::answer::{self, Format, fence};
 use crate::cli::Global;
 use crate::exit;
 
@@ -51,7 +51,7 @@ fn explain(args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
         }
     } else {
         let given = args.code.as_deref().unwrap_or_default();
-        let explanation = match ascribe_query::explain(given, DOCS_SITE) {
+        let explanation = match ascribe_query::explain(given) {
             Ok(explanation) => explanation,
             Err(e) => return answer::fail(err, &e),
         };

@@ -37,9 +37,10 @@ mod diagnostic;
 pub mod page;
 mod project;
 pub mod registry;
+mod scope;
 mod yaml;
 
-pub use builds::{Diagnosed, UnknownBuild, diagnose, select_builds};
+pub use builds::{Diagnosed, UnknownBuild, diagnose, diagnose_editor_build, select_builds};
 pub use checks::check_file;
 use checks::check_sources;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
@@ -49,6 +50,7 @@ pub use project::{
     SourceFile,
 };
 pub use registry::{Entry, Example, Level, Registry};
+pub use scope::{Reported, Scope, ScopeError, locate_for};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content
 /// model's warnings, then each source file's diagnostics, in file order and,
