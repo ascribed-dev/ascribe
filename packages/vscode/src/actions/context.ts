@@ -17,7 +17,7 @@ export interface Where {
 export type Send = (where: Where, signal: AbortSignal) => Promise<ContextResult>;
 
 /** How long a selection must stay put before its context is asked for. */
-export const CONTEXT_DELAY_MS = 150;
+const CONTEXT_DELAY_MS = 150;
 
 const keyOf = ({ uri, version, range: { start, end } }: Where): string =>
   `${uri}@${version}:${start.line}:${start.character}-${end.line}:${end.character}`;

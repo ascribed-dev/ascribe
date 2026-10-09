@@ -46,7 +46,7 @@ export type Step =
     };
 
 /** A pick step's answer is the chosen value or values; a text step's, the text. */
-export type Answer = string | string[];
+type Answer = string | string[];
 export type Answers = Record<string, Answer>;
 
 /** What an action sends `ascribe/edit` (or its own `run`) as `args`. */
@@ -162,7 +162,7 @@ export function list(answers: Answers, key: string): string[] {
 
 // Text checks.
 
-export const required =
+const required =
   (what: string) =>
   (value: string): string | undefined =>
     value.trim() === "" ? `Enter ${what}.` : undefined;
@@ -529,7 +529,7 @@ function aNumber(value: string): string | undefined {
 }
 
 /** The widget a `name` answer names. */
-export function chosenWidget(targets: TargetsResult, answers: Answers): TargetWidget | undefined {
+function chosenWidget(targets: TargetsResult, answers: Answers): TargetWidget | undefined {
   return targets.widgets?.find((widget) => widget.name === text(answers, "name"));
 }
 

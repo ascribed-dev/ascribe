@@ -38,7 +38,7 @@ import {
 } from "./steps.js";
 
 /** What an `ascribe/targets` request can ask for. */
-export type TargetKind = Exclude<keyof TargetsResult, "modelUri">;
+type TargetKind = Exclude<keyof TargetsResult, "modelUri">;
 
 /** What a `run` action may do besides reading: the runner's side of it. */
 export interface Effects {
