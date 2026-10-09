@@ -94,8 +94,11 @@ function code(markdown: string): string[] {
   return [...Array.from(prose.matchAll(/`([^`\n]+)`/g), (m) => m[1] ?? ""), ...shell];
 }
 
-/** Paths the files name that aren't in this repository: a project's output. */
-const elsewhere = ["_ascribe/", ".ascribe/"];
+/**
+ * Paths the files name that are in a project, not in this repository: a
+ * build's output, and the agent files `ascribe agents sync` writes.
+ */
+const elsewhere = ["_ascribe/", ".ascribe/", ".agents/skills/ascribe/", ".claude/skills/ascribe/"];
 
 /**
  * Where a code span that reads as a path in this repository is, from `dir`:
@@ -106,6 +109,7 @@ function pathIn(span: string, dir: string): string | undefined {
   // `./x` is a reference as a page writes it, not a path in this repository.
   if (span.startsWith("./")) return undefined;
   if (!/^[\w.@-]+(\/[\w.@-]+)*\/?$/.test(span) || !span.includes("/")) return undefined;
+  if (elsewhere.some((prefix) => span.startsWith(prefix))) return undefined;
   const first = span.split("/")[0] ?? "";
   const bases = [dir, root].filter((at) => isTracked(path.join(at, first)));
   // A span that names a file, with an extension, under a folder that's
@@ -113,9 +117,7 @@ function pathIn(span: string, dir: string): string | undefined {
   // with a dot, such as `example.com`, is a host, not a folder.)
   if (bases.length === 0) {
     const file = /\.\w+$/.test(span) && !first.includes(".");
-    return file && !elsewhere.some((prefix) => span.startsWith(prefix))
-      ? path.join(dir, span)
-      : undefined;
+    return file ? path.join(dir, span) : undefined;
   }
   return bases.map((at) => path.join(at, span)).find((at) => isTracked(at)) ?? path.join(dir, span);
 }
