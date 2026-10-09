@@ -259,6 +259,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ascribe-mcp"
+version = "0.2.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ascribe-model"
 version = "0.2.0"
 dependencies = [
