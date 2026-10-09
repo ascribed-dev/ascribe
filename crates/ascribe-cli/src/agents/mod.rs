@@ -4,7 +4,12 @@
 //! agents; the rules themselves come from `ascribe_query::rules`, which
 //! knows none.
 
+pub mod checker;
+pub mod hook;
 pub mod markers;
+#[cfg(test)]
+mod plugin;
 pub mod prompts;
+pub mod settings;
 pub mod skill;
 pub mod sync;

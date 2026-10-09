@@ -486,9 +486,9 @@ fn parse_size(header: &str, object: &str) -> io::Result<usize> {
     }
 }
 
-/// The folder the cache is in: `ASCRIBE_CACHE_DIR`, or `ascribe` in the
-/// user's cache folder.
-pub(crate) fn cache_root() -> Option<PathBuf> {
+/// The folder Ascribe's caches are in: `ASCRIBE_CACHE_DIR`, or `ascribe`
+/// in the user's cache folder. `None` when neither can be found.
+pub fn cache_root() -> Option<PathBuf> {
     let var = |name: &str| std::env::var_os(name).filter(|v| !v.is_empty());
     if let Some(dir) = var("ASCRIBE_CACHE_DIR") {
         return Some(PathBuf::from(dir));

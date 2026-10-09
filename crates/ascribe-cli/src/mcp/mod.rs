@@ -9,7 +9,7 @@
 //! for the next call ([`cache`]), so one server serves every project in a
 //! repository. No tool writes a file.
 
-mod cache;
+pub(crate) mod cache;
 mod tools;
 
 use std::path::{Path, PathBuf};

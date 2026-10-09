@@ -62,9 +62,10 @@ fn help_links_to_the_docs_site() {
     // Rendering builds the command, which adds clap's own `help` subcommand.
     for command in cli.get_subcommands_mut().filter(|c| c.get_name() != "help") {
         helps.push(command.render_long_help().to_string());
+        // A hidden command, run only by Ascribe itself, isn't documented.
         for sub in command
             .get_subcommands_mut()
-            .filter(|c| c.get_name() != "help")
+            .filter(|c| c.get_name() != "help" && !c.is_hide_set())
         {
             helps.push(sub.render_long_help().to_string());
         }
@@ -214,7 +215,7 @@ fn leaves(cli: &Command) -> Vec<(String, &Command)> {
     for command in cli.get_subcommands() {
         let subcommands: Vec<&Command> = command
             .get_subcommands()
-            .filter(|c| c.get_name() != "help")
+            .filter(|c| c.get_name() != "help" && !c.is_hide_set())
             .collect();
         if subcommands.is_empty() {
             out.push((command.get_name().to_owned(), command));
