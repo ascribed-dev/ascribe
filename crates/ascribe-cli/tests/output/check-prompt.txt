@@ -1,0 +1,7 @@
+Fix the problem `ascribe check` reports in `docs/keys.md`.
+
+Where: docs/keys.md
+
+- 7: [ASC041] this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
+
+When you're done, run `ascribe check docs/keys.md` and fix what it reports.

@@ -50,6 +50,10 @@ const commands: Record<string, string> = {
     "Lists the pages the change touches in the preview's build; choosing one opens it and its preview.",
   "ascribe.refreshComments":
     "Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../guides/editor.md#comments-in-the-preview).",
+  "ascribe.promptAgentFile":
+    "Builds a prompt for your agent about the active file's problems, and puts it where `ascribe.agents.promptTarget` says, without sending it. Shown when the file has problems. See [Prompt your agent](../guides/agents.md#prompt-your-agent).",
+  "ascribe.promptAgentProject":
+    "Builds a prompt for your agent about the problems of the active file's project, as Prompt Agent to Fix This File does. Shown when the project has problems.",
   "ascribe.actions":
     "Opens the [actions bar](../guides/editor.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection.",
 };
@@ -78,6 +82,9 @@ const available: Record<string, string> = {
   "ascribe.preview.scrollEditorWithPreview": "next",
   "ascribe.review.sourceComments": "next",
   "ascribe.actions": "next",
+  "ascribe.promptAgentFile": "next",
+  "ascribe.promptAgentProject": "next",
+  "ascribe.agents.promptTarget": "next",
   [ACTIONS_ROW]: "next",
 };
 

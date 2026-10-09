@@ -1,0 +1,19 @@
+---
+source: crates/ascribe-check/tests/prompt.rs
+expression: "one_problem(&project, &plain(), \"docs/_fragments/prereqs.md\")"
+---
+Fix this problem in `docs/_fragments/prereqs.md`.
+
+Where: docs/_fragments/prereqs.md:1
+Shown on: docs/install.md, docs/upgrade.md
+
+Problem: ASC036 `link-target-missing`, an error
+Message: `setup.md` doesn't exist
+How to fix it: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
+Reference: https://ascribed-dev.com/reference/diagnostics/#asc036-link-target-missing
+Line 1:
+```markdown
+See [the setup](setup.md).
+```
+
+When you're done, run `ascribe check docs/_fragments/prereqs.md` and fix what it reports.

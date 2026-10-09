@@ -506,3 +506,64 @@ fn the_fixture_differs_between_builds() {
     let cloud = cli_entries(&fixture, "cloud");
     assert_ne!(site, cloud);
 }
+
+/// `ascribe check --editor-build --format prompt` with `args`, in `root`.
+fn cli_prompt(root: &Path, args: &[&str]) -> String {
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(root)
+        .arg("check")
+        .args(args)
+        .args(["--editor-build", "--format", "prompt"])
+        .output()
+        .expect("run ascribe check");
+    String::from_utf8(out.stdout).expect("UTF-8")
+}
+
+#[test]
+fn agent_prompts_are_the_command_lines_for_the_editors_build() {
+    let fixture = manifest_dir().join("tests/fixtures/lsp/problems");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let root = dir.path().canonicalize().expect("real path");
+    copy_dir(&fixture, &root);
+    let build = builds_of(&root).remove(0);
+    set_editor_build(&root, &build);
+    let expected = cli_entries(&root, &build);
+
+    let mut server = Server::start(&root, false);
+    assert!(server.pump_until(TIMEOUT, |s| s.entries(&root) == expected));
+    let files: Vec<String> = server
+        .published
+        .iter()
+        .filter(|(_, list)| !list.is_empty())
+        .map(|(uri, _)| uri.clone())
+        .collect();
+    assert!(files.len() >= 3, "files with problems: {files:?}");
+    let mut id = 100;
+    let mut ask = |server: &mut Server, params: Value| {
+        id += 1;
+        server.send(&json!({
+            "jsonrpc": "2.0", "id": id, "method": "ascribe/agentPrompt", "params": params,
+        }));
+        server.wait_response(id)["result"].clone()
+    };
+    for uri in &files {
+        let file = rel(&root, uri);
+        let answer = ask(
+            &mut server,
+            json!({ "kind": "file", "textDocument": { "uri": uri } }),
+        );
+        let prompt = answer["prompt"].as_str().unwrap_or_default();
+        assert_eq!(
+            prompt,
+            cli_prompt(&root, &[&file]),
+            "the prompt about {file}"
+        );
+    }
+    let answer = ask(&mut server, json!({ "kind": "project" }));
+    assert_eq!(
+        answer["prompt"].as_str().unwrap_or_default(),
+        cli_prompt(&root, &[]),
+        "the project's prompt"
+    );
+    server.shutdown();
+}

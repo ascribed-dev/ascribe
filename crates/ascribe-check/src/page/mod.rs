@@ -56,6 +56,7 @@ use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage};
 use crate::{Diagnostic, Project, check_files};
 
 use bridge::Indexed;
+pub(crate) use bridge::held_index;
 use collect::{Found, Identity, LinkProblems, check_page, identity};
 
 /// The name of the build that keeps everything, used to look for content no

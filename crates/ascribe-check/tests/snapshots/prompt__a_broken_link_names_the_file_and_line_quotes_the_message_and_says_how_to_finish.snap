@@ -1,0 +1,19 @@
+---
+source: crates/ascribe-check/tests/prompt.rs
+expression: text
+---
+Fix this problem in `docs/guides/install.md`.
+
+Where: docs/guides/install.md:5
+
+Problem: ASC036 `link-target-missing`, an error
+Message: `overview.md` doesn't exist
+How to fix it: Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
+Reference: https://ascribed-dev.com/reference/diagnostics/#asc036-link-target-missing
+Line 5:
+```markdown
+Read [the overview](overview.md) first.
+```
+
+Follow the project's rules in `AGENTS.md`.
+When you're done, run `ascribe check docs/guides/install.md` and fix what it reports.

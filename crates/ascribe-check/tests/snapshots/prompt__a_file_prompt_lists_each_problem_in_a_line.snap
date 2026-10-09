@@ -1,0 +1,12 @@
+---
+source: crates/ascribe-check/tests/prompt.rs
+expression: text
+---
+Fix the 2 problems `ascribe check` reports in `docs/install.md`.
+
+Where: docs/install.md
+
+- 5: [ASC036] `overview.md` doesn't exist
+- 7: [ASC025] `bun` isn't a value of `pm`; its values are: `npm`, `pnpm`, `yarn`
+
+When you're done, run `ascribe check docs/install.md` and fix what it reports.

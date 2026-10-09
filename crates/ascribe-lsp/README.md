@@ -516,6 +516,32 @@ The answer comes from the current snapshot, so it includes unsaved edits. A
 document that isn't a source file of the project, or a build the content
 model doesn't have, gets an empty `build` and nothing excluded.
 
+## A prompt for an agent: `ascribe/agentPrompt`
+
+A custom request for **Prompt agent**: a prompt for the user's agent about one
+problem, a file's problems, or the project's. The client says which, and lists
+the documents with unsaved changes, so a prompt about one says to save it:
+
+```jsonc
+{ "kind": "problem",                  // or "file", or "project"
+  "textDocument": { "uri": "file:///…/docs/guides/install.md" },  // optional for "project"
+  "diagnostic": { "range": …, "code": "ASC036", "message": "…" },  // for "problem", as published
+  "unsaved": ["file:///…/docs/guides/install.md"] }
+```
+
+The result's TypeScript type is `AgentPromptResult` in
+`packages/vscode/src/shapes.ts` (`schemas/lsp-agent-prompt.schema.json`):
+`{ "prompt": "Fix this problem in …" }`, or `null` when there's no problem: the
+file has none, or the diagnostic isn't reported any more.
+
+The answer comes from the current snapshot, so it includes unsaved edits, and
+from what `ascribe check --editor-build` checks: the file-level checks and the
+editor's build (`ascribe_check::diagnose_editor_build`). The prompt is built
+by `ascribe_check::prompt`, which `ascribe check --format prompt` calls too,
+so for a saved file the two give the same prompt; `lsp_parity` in
+`crates/ascribe-cli/tests/` holds them to it. A diagnostic is found by its
+code and range, and its message when two share a place.
+
 ## Capabilities
 
 Advertised: incremental text document sync (open/close, no save), semantic
