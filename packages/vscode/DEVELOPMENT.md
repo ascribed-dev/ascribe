@@ -129,6 +129,12 @@ The sidebar's other views, **Used by**, **Pages**, and **Content model**, are `s
 
 **The build lens** (`src/ui/buildLens.ts`) dims what the build you're looking at leaves out of each visible page of a project whose lens is on. Which projects have it on is `BuildLenses` in `src/ui/lens.ts`, beside `lensView`, which turns an `ascribe/buildView` answer into the ranges to dim, their hovers, and the line for a page the build drops, so `test/unit/lens.test.ts` checks them without VS Code. The lens has no build of its own: it asks for `ChosenBuilds`' choice, the preview's, and asks again on an edit (debounced), when an editor is shown, when the choice or the lens changes, and when `ProjectBuilds` fires (a server started or stopped, or the content model changed). An answer for an older version of the page, or for a request since replaced, is dropped. It asks only a running server, and the status bar item's menu toggles it through `ascribe.toggleBuildLens`.
 
+## The walkthrough
+
+**Get Started with Ascribe** is `contributes.walkthroughs` in `package.json`, with each step's media, a short Markdown file, in `media/walkthrough/`. VS Code checks none of what a step names, so `test/unit/walkthrough.test.ts` does: every command a button runs exists, every step has a completion event, each `onCommand`, `onView`, and `onContext` names a command, view, or context key the extension has, each `onLink` is a link the step shows, every media file exists, and each link to the docs site names a page and heading of `docs/content/`.
+
+A button runs from the Welcome page, where no text editor is active, so a step that acts on a page runs one of the hidden commands in `src/ui/walkthroughSteps.ts`. `src/ui/walkthrough.ts` shows the page the writer last had open (or one open in a tab since the window opened), then runs the command the step is about. VS Code completes a step on the id of a command it ran, not on a command an extension runs, so such a step completes on either id: its button's, and the command's when the writer uses it another way.
+
 ## Highlighting
 
 `syntaxes/` holds two TextMate injections into markdown (one for top level, one

@@ -363,6 +363,24 @@ describe("the editor's actions", () => {
     });
   });
 
+  it("opens the bar on the last page from the walkthrough, where no text editor is active", async () => {
+    await open("keys.md", 8, 0);
+    await vscode.commands.executeCommand(
+      "workbench.action.openWalkthrough",
+      "Ascribe.ascribe-vscode#start",
+      false,
+    );
+    await waitFor("the walkthrough", () => vscode.window.activeTextEditor === undefined);
+    const before = api.actions.bars.length;
+    await vscode.commands.executeCommand("ascribe.walkthrough.actions");
+    assert.ok(api.actions.bars[before], "the bar didn't open");
+    assert.equal(
+      vscode.window.activeTextEditor?.document.uri.toString(),
+      uriOf("docs", "keys.md").toString(),
+    );
+    await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+  });
+
   it("offers its rewrites in the lightbulb once the cursor's context is known", async () => {
     const editor = await open("quickstart.md", 8, 4);
     const titles = await waitFor("the lightbulb's actions", async () => {
