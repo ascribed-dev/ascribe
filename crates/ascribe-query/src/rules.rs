@@ -5,8 +5,8 @@
 //! [`RULES_BUDGET`] characters.
 //!
 //! [`rules`] gives the whole text, and [`pointer`] a short one for a file
-//! above the project's folder that sends an agent to it. Both say which
-//! commands to run from the folder of the file they're written in.
+//! above the project's folder that sends an agent to it. Both write their
+//! commands to run from the repository's root, where agents run them.
 
 use ascribe_check::prompt::shell_word;
 use ascribe_core::RelPath;
@@ -24,10 +24,12 @@ pub const MODEL_BUDGET: usize = 2_000;
 
 /// A project's rules, as Markdown, for a file in the folder `dir` is relative
 /// to: `dir` is the project's folder (the one holding `ascribe.toml`) as seen
-/// from there, and empty when the file is beside `ascribe.toml`.
-pub fn rules(project: &Project, dir: &RelPath) -> String {
+/// from there, and empty when the file is beside `ascribe.toml`. `root` is
+/// the project's folder as seen from the repository's root, where the
+/// commands are run from.
+pub fn rules(project: &Project, dir: &RelPath, root: &RelPath) -> String {
     let model = project.model();
-    let at = At::new(project, dir);
+    let at = At::new(project, dir, root);
     let mut head = String::from("## Ascribe documentation\n\n");
     head.push_str(&at.about());
     head.push_str("\n\n");
@@ -71,9 +73,10 @@ pub fn rules(project: &Project, dir: &RelPath) -> String {
 /// A short text for a file above a project's folder (the repository's root
 /// `AGENTS.md`, for an agent that reads no file below where it starts): where
 /// the project's pages and its full rules are, and the check to run. `dir`
-/// is as for [`rules`], and isn't empty.
+/// is as for [`rules`], and isn't empty; the file is at the repository's
+/// root.
 pub fn pointer(project: &Project, dir: &RelPath) -> String {
-    let at = At::new(project, dir);
+    let at = At::new(project, dir, dir);
     format!(
         "## Ascribe documentation in `{}`\n\n{} Its rules are in `{}`: read them before \
          editing a page there.\n\n{}\n",
@@ -87,7 +90,7 @@ pub fn pointer(project: &Project, dir: &RelPath) -> String {
 /// The glob of the project's pages, as seen from the folder `dir` is
 /// relative to, as for [`rules`]: `docs/**/*.md`.
 pub fn content_glob(project: &Project, dir: &RelPath) -> String {
-    let content = At::new(project, dir).content;
+    let content = At::new(project, dir, dir).content;
     if content.is_root() {
         "**/*.md".to_owned()
     } else {
@@ -112,16 +115,19 @@ struct At {
     dir: RelPath,
     /// The content root.
     content: RelPath,
+    /// The project's folder from the repository's root, where commands run.
+    root: RelPath,
 }
 
 impl At {
-    fn new(project: &Project, dir: &RelPath) -> At {
+    fn new(project: &Project, dir: &RelPath, root: &RelPath) -> At {
         let layout: &Layout = project.layout();
         At {
             dir: dir.clone(),
             content: dir
                 .join(layout.content_root.as_str())
                 .unwrap_or_else(|_| dir.clone()),
+            root: root.clone(),
         }
     }
 
@@ -148,12 +154,12 @@ impl At {
     }
 
     /// The project's folder as a command's argument, with a leading space,
-    /// or nothing for the reader's own.
+    /// or nothing when it's the repository's root.
     fn path_arg(&self) -> String {
-        if self.dir.is_root() {
+        if self.root.is_root() {
             String::new()
         } else {
-            format!(" {}", shell_word(self.dir.as_str()))
+            format!(" {}", shell_word(self.root.as_str()))
         }
     }
 
@@ -174,10 +180,10 @@ impl At {
 
     /// The loop, as a check to run.
     fn check(&self) -> String {
-        let whole = if self.dir.is_root() {
+        let whole = if self.root.is_root() {
             "ascribe check".to_owned()
         } else {
-            format!("ascribe check --config {}", shell_word(self.dir.as_str()))
+            format!("ascribe check --config {}", shell_word(self.root.as_str()))
         };
         format!(
             "Programmatic check: after editing a page, run `ascribe check <file> --format \

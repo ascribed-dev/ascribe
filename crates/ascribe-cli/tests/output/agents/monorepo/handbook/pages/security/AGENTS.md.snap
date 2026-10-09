@@ -3,7 +3,7 @@
 
 The Markdown pages under `content/` are Ascribe documentation: pages with YAML frontmatter, `@` directives, and `{key}` phrases, checked against the content model in `ascribe.toml`.
 
-Programmatic check: after editing a page, run `ascribe check <file> --format concise` and fix every error. Before you finish, run `ascribe check`. `ascribe explain <code>` says what a problem means and how to fix it.
+Programmatic check: after editing a page, run `ascribe check <file> --format concise` and fix every error. Before you finish, run `ascribe check --config handbook/pages/security`. `ascribe explain <code>` says what a problem means and how to fix it.
 
 ### Page types
 
@@ -34,5 +34,5 @@ Link to the source file, with a relative path such as `../guides/install.md#conf
 
 ### More
 
-`ascribe model` shows everything the content model allows. Every directive: https://ascribed-dev.com/reference/directives/
+`ascribe model handbook/pages/security` shows everything the content model allows. Every directive: https://ascribed-dev.com/reference/directives/
 <!-- ascribe:agents end -->
