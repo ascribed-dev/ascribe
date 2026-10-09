@@ -12,7 +12,7 @@ use crate::tree::{Anchor, Node, PageTree, TreeBuilder, lf};
 use crate::words::diff_words;
 
 /// The name `because` gives the content model.
-const MODEL_FILE: &str = "ascribe.toml";
+pub(crate) const MODEL_FILE: &str = "ascribe.toml";
 
 /// One version of a project.
 #[derive(Clone, Copy)]
@@ -62,6 +62,61 @@ pub struct PageDiff {
     /// The block-level changes, in the page's order, a removed block where
     /// it was. Empty for an added or removed page.
     pub changes: Vec<Change>,
+}
+
+impl PageDiff {
+    /// What changed on the page, in a few words: "2 changed, 1 added", or
+    /// "added", and the files the change comes through, each written by
+    /// `cause`: "(through _fragments/prereqs.md)".
+    pub fn describe(&self, cause: impl Fn(&str) -> String) -> String {
+        let mut text = self.summary();
+        if !self.because.is_empty() {
+            let lead = if self.own_file_changed {
+                "also through"
+            } else {
+                "through"
+            };
+            let causes: Vec<String> = self.because.iter().map(|c| cause(c)).collect();
+            text.push_str(&format!(" ({lead} {})", causes.join(", ")));
+        }
+        text
+    }
+
+    /// What changed on the page, without where from: "2 changed, 1 added,
+    /// title changed", or "added".
+    pub fn summary(&self) -> String {
+        match self.status {
+            PageStatus::Added => "added".to_owned(),
+            PageStatus::Removed => "removed".to_owned(),
+            PageStatus::Changed => {
+                let c = self.counts;
+                let mut parts: Vec<String> = [
+                    (c.changed, "changed"),
+                    (c.added, "added"),
+                    (c.removed, "removed"),
+                    (c.moved, "moved"),
+                ]
+                .iter()
+                .filter(|(n, _)| *n > 0)
+                .map(|(n, kind)| format!("{n} {kind}"))
+                .collect();
+                if !self.page_changed.is_empty() {
+                    parts.push(format!("{} changed", and_list(&self.page_changed)));
+                }
+                parts.join(", ")
+            }
+        }
+    }
+}
+
+/// `a`, `a and b`, `a, b, and c`.
+fn and_list(items: &[&str]) -> String {
+    match items {
+        [] => String::new(),
+        [one] => (*one).to_owned(),
+        [a, b] => format!("{a} and {b}"),
+        [rest @ .., last] => format!("{}, and {last}", rest.join(", ")),
+    }
 }
 
 /// Whether a page is new, gone, or different.

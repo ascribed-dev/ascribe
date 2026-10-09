@@ -567,3 +567,113 @@ fn agent_prompts_are_the_command_lines_for_the_editors_build() {
     );
     server.shutdown();
 }
+
+fn git(root: &Path, args: &[&str]) {
+    let out = Command::new("git")
+        .current_dir(root)
+        .args([
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.com",
+            "-c",
+            "commit.gpgsign=false",
+            "-c",
+            "core.autocrlf=false",
+        ])
+        .args(args)
+        .output()
+        .expect("run git");
+    assert!(out.status.success(), "git {args:?} failed");
+}
+
+/// `ascribe diff --format prompt` about `page`, for `build`, in `root`.
+fn cli_review_prompt(root: &Path, page: &str, build: &str) -> String {
+    let out = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(root)
+        .args(["diff", "--format", "prompt", page, "--build", build])
+        .output()
+        .expect("run ascribe diff");
+    String::from_utf8(out.stdout).expect("UTF-8")
+}
+
+#[test]
+fn review_prompts_are_the_command_lines() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let root = dir.path().canonicalize().expect("real path");
+    let write = |rel: &str, text: &str| {
+        let path = rel.split('/').fold(root.clone(), |p, s| p.join(s));
+        fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
+        fs::write(path, text).expect("write");
+    };
+    write(
+        "ascribe.toml",
+        "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[builds.site]\n\n[builds.cloud]\n\n[editor]\nbuild = \"cloud\"\n",
+    );
+    write(
+        "docs/install.md",
+        "---\ntitle: Install\n---\n\nRun the installer.\n\n@include: _fragments/check.md\n\nThe end.\n",
+    );
+    write(
+        "docs/upgrade.md",
+        "---\ntitle: Upgrade\n---\n\n@include: _fragments/check.md\n",
+    );
+    write("docs/_fragments/check.md", "Check the version.\n");
+    git(&root, &["init", "-q", "-b", "main"]);
+    git(&root, &["add", "-A"]);
+    git(&root, &["commit", "-q", "-m", "First"]);
+    write(
+        "docs/install.md",
+        "---\ntitle: Install\n---\n\nRun the new installer.\n\n@include: _fragments/check.md\n\nThe end.\n\nOne more thing.\n",
+    );
+    write("docs/_fragments/check.md", "Check the version first.\n");
+
+    let mut server = Server::start(&root, false);
+    server.send(&json!({
+        "jsonrpc": "2.0", "id": 2, "method": "ascribe/review/setBase", "params": {},
+    }));
+    assert_eq!(server.wait_response(2)["result"]["problem"], Value::Null);
+    let mut id = 100;
+    let mut ask = |server: &mut Server, params: Value| {
+        id += 1;
+        server.send(&json!({
+            "jsonrpc": "2.0", "id": id, "method": "ascribe/agentPrompt", "params": params,
+        }));
+        server.wait_response(id)["result"].clone()
+    };
+    for page in ["install.md", "upgrade.md"] {
+        let uri = file_uri(&root.join("docs").join(page));
+        // Without a build, the editor's.
+        let answer = ask(
+            &mut server,
+            json!({ "kind": "pageChanges", "textDocument": { "uri": uri } }),
+        );
+        let expected = cli_review_prompt(&root, &format!("docs/{page}"), "cloud");
+        assert!(
+            expected.starts_with("Review what this change does to"),
+            "{expected}"
+        );
+        assert_eq!(
+            answer["prompt"].as_str().unwrap_or_default(),
+            expected,
+            "{page}"
+        );
+        let answer = ask(
+            &mut server,
+            json!({ "kind": "pageChanges", "textDocument": { "uri": uri }, "build": "site" }),
+        );
+        assert_eq!(
+            answer["prompt"].as_str().unwrap_or_default(),
+            cli_review_prompt(&root, &format!("docs/{page}"), "site"),
+            "{page} in site"
+        );
+    }
+    let answer = ask(
+        &mut server,
+        json!({ "kind": "fragmentReach", "fragment": "_fragments/check.md", "build": "site" }),
+    );
+    let expected = cli_review_prompt(&root, "docs/_fragments/check.md", "site");
+    assert!(expected.contains("and 2 pages show it"), "{expected}");
+    assert_eq!(answer["prompt"].as_str().unwrap_or_default(), expected);
+    server.shutdown();
+}

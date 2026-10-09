@@ -65,9 +65,18 @@ pub fn report_failure(err: &mut dyn Write, failure: &Failure) -> u8 {
 /// the current directory into the content root, or else a content path. It
 /// must be one of the project's source files.
 pub fn source_path(project: &Project, given: &Path) -> Result<RelPath, QueryError> {
-    let not_found = || QueryError::NotASource {
-        path: given.display().to_string(),
-    };
+    content_paths(project, given)
+        .into_iter()
+        .find(|path| project.source_at(path).is_some())
+        .ok_or_else(|| QueryError::NotASource {
+            path: given.display().to_string(),
+        })
+}
+
+/// What a path named on the command line can be as a content path: a path
+/// from the current directory into the content root, then the path itself.
+/// The file needn't exist: a page `ascribe diff` reports as removed doesn't.
+pub fn content_paths(project: &Project, given: &Path) -> Vec<RelPath> {
     let content = normalize(&project.root().join(project.content_root().as_str()));
     let from_cwd = std::env::current_dir()
         .ok()
@@ -77,11 +86,7 @@ pub fn source_path(project: &Project, given: &Path) -> Result<RelPath, QueryErro
         .to_str()
         .map(|s| s.replace('\\', "/"))
         .and_then(|s| RelPath::parse(s.trim_start_matches("./")).ok());
-    [from_cwd, as_content]
-        .into_iter()
-        .flatten()
-        .find(|path| project.source_at(path).is_some())
-        .ok_or_else(not_found)
+    [from_cwd, as_content].into_iter().flatten().collect()
 }
 
 /// Writes an answer as one JSON document and a newline.

@@ -29,7 +29,7 @@ import { copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
 import rehypeAscribeAttributes from "./rehype.js";
 import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
-import { runDiff } from "./review/diff.js";
+import { runDiff, runPrompt } from "./review/diff.js";
 import { APP_ID } from "./review/protocol.js";
 import { readRoutes } from "./review/routes.js";
 import { channelProblem, ReviewServer, type ToolbarChannel } from "./review/server.js";
@@ -245,6 +245,8 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               contentRoot: project.contentRoot,
               channelProblem: channelProblem(server.config),
               diff: (base) => runDiff({ ...run, build: options.build, base }),
+              prompt: (page, base) => runPrompt({ ...run, build: options.build, base, path: page }),
+              projectDir: project.dir,
               connect: async () => (await import("./review/github.js")).connect(project.dir),
               writeRoutes: () =>
                 builds.inTurn(async () => {

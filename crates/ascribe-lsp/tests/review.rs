@@ -349,3 +349,71 @@ fn git_finds_a_repository(dir: &Path) -> bool {
 fn path_ends_with(path: &Value, suffix: &str) -> bool {
     path.as_str().unwrap().replace('\\', "/").ends_with(suffix)
 }
+
+fn agent_prompt(client: &mut Client, params: Value) -> Value {
+    client
+        .request("ascribe/agentPrompt", params)
+        .response_result
+        .expect("the request succeeds")
+}
+
+#[test]
+fn prompts_about_changes_need_the_base_and_count_unsaved_text() {
+    let f = repository();
+    let page = f.path("docs/install.md");
+    let uri = support::uri(&page);
+    let mut client = Client::start(&f.root());
+    client.open(&page, 1, PAGE);
+    client.settle();
+    let about_page = json!({ "kind": "pageChanges", "textDocument": { "uri": uri.as_str() } });
+    // Without a base, there's nothing to compare.
+    assert_eq!(agent_prompt(&mut client, about_page.clone()), Value::Null);
+    set_base(&mut client, json!({}));
+    // Nothing changed yet.
+    assert_eq!(agent_prompt(&mut client, about_page.clone()), Value::Null);
+
+    // An unsaved edit counts, and the prompt says to save it.
+    client.replace(&page, 2, &PAGE.replace("new settings", "new key"));
+    client.settle();
+    let answer = agent_prompt(
+        &mut client,
+        json!({ "kind": "pageChanges", "textDocument": { "uri": uri.as_str() }, "unsaved": [uri.as_str()] }),
+    );
+    let text = answer["prompt"].as_str().expect("a prompt");
+    assert!(
+        text.starts_with("Review what this change does to `docs/install.md`, as a reader of build `site` sees it.\n\nWhere: docs/install.md\nThe file has unsaved changes; save it before you start.\nBuild: `site`\n"),
+        "{text}"
+    );
+    assert!(text.contains("\n- changed: docs/install.md:11\n"), "{text}");
+
+    // A fragment's reach: the pages that changed through it.
+    f.write("docs/_fragments/check.md", "Check the version first.\n");
+    client.settle();
+    client.open(
+        &f.path("docs/_fragments/check.md"),
+        1,
+        "Check the version first.\n",
+    );
+    client.settle();
+    let answer = agent_prompt(
+        &mut client,
+        json!({ "kind": "fragmentReach", "fragment": "_fragments/check.md" }),
+    );
+    let text = answer["prompt"].as_str().expect("a prompt");
+    assert!(
+        text.starts_with("`docs/_fragments/check.md` changed, and 1 page shows it."),
+        "{text}"
+    );
+    assert!(text.contains("\n- docs/install.md\n"), "{text}");
+    // A fragment no page changed through, and a build there isn't.
+    let answer = agent_prompt(
+        &mut client,
+        json!({ "kind": "fragmentReach", "fragment": "other.md" }),
+    );
+    assert_eq!(answer, Value::Null);
+    let answer = agent_prompt(
+        &mut client,
+        json!({ "kind": "pageChanges", "textDocument": { "uri": uri.as_str() }, "build": "nope" }),
+    );
+    assert_eq!(answer, Value::Null);
+}

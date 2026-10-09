@@ -7,8 +7,13 @@ use ascribe_core::RelPath;
 use ascribe_resolve::Project;
 
 use crate::drift::{BaseProject, drift_with, read_base};
-use crate::html::{AssetFiles, DiskAssets, GitAssets, Version, write_html};
+use crate::html::{
+    AssetFiles, DiskAssets, GitAssets, MAX_PAGES, ReportOptions, Version, write_report,
+};
+use crate::prompt::{self, Review};
 use crate::{Base, DiffError, DriftReport, Report, Repository, Side, compare_builds};
+use crate::{BuildDiff, PageDiff};
+use ascribe_check::prompt::{Builds, Context};
 
 /// What [`diff_project`] compares.
 #[derive(Clone, Copy, Debug, Default)]
@@ -65,7 +70,58 @@ impl ProjectDiff {
             project: &self.now,
             files: &now_files,
         };
-        write_html(&self.report, base, now)
+        let page_prompt = |build: &str, page: &PageDiff| self.page_prompt(build, page);
+        write_report(
+            &self.report,
+            base,
+            now,
+            &ReportOptions {
+                max_pages: MAX_PAGES,
+                prompt: Some(&page_prompt),
+            },
+        )
+    }
+
+    /// What the prompts are compared with, and where the content is.
+    fn review(&self) -> Review<'_> {
+        Review {
+            base: &self.report.base,
+            content_root: &self.now.layout().content_root,
+        }
+    }
+
+    /// The agent prompt about a changed page of `build`, as the report's Copy
+    /// prompt button and `ascribe diff --format prompt <PAGE>` give it.
+    pub fn page_prompt(&self, build: &str, page: &PageDiff) -> String {
+        let context = Context::of_project(&self.root, Builds::Named(vec![build.to_owned()]));
+        prompt::page(&context, &self.review(), build, page)
+    }
+
+    /// The agent prompt about the page or fragment at a content path: the
+    /// page's, in the first build it changed in; else the fragment's reach,
+    /// in the first build with a page that changed through it. `None` when
+    /// neither changed.
+    pub fn prompt_about(&self, path: &RelPath) -> Option<String> {
+        let builds = &self.report.builds;
+        if let Some((build, page)) = builds.iter().find_map(|b| {
+            b.pages
+                .iter()
+                .find(|p| p.path == path.as_str())
+                .map(|p| (b, p))
+        }) {
+            return Some(self.page_prompt(&build.build, page));
+        }
+        builds.iter().find_map(|build: &BuildDiff| {
+            let context = Context::of_project(&self.root, Builds::Named(vec![build.build.clone()]));
+            prompt::fragment_reach(&context, &self.review(), build, path)
+        })
+    }
+
+    /// The agent prompt about every changed page; `builds` are the builds
+    /// compared, as the prompt names them. `None` when nothing changed.
+    pub fn pages_prompt(&self, builds: Builds) -> Option<String> {
+        let context = Context::of_project(&self.root, builds);
+        prompt::pages(&context, &self.review(), &self.report.builds)
     }
 }
 

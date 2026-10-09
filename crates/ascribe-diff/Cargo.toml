@@ -28,6 +28,7 @@ schemars = { workspace = true, optional = true }
 json-schema = ["dep:schemars", "ascribe-emit/json-schema"]
 
 [dev-dependencies]
+insta.workspace = true
 proptest.workspace = true
 tempfile = "3"
 

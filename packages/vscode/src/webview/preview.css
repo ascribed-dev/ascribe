@@ -363,6 +363,45 @@ main pre code {
   background: var(--vscode-button-background, ButtonFace);
 }
 
+/* More review actions: a menu below its button, at the header's end. */
+.review .more {
+  position: relative;
+  /* At the row's end, even when it wraps: the menu opens toward the start. */
+  margin-inline-start: auto;
+}
+
+.review .menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: max-content;
+  padding: 0.25rem;
+  color: var(--vscode-menu-foreground, var(--vscode-foreground, inherit));
+  background: var(--vscode-menu-background, var(--ascribe-review-surface));
+  border: 1px solid var(--vscode-menu-border, var(--ascribe-review-border));
+  border-radius: 4px;
+  box-shadow: 0 2px 8px
+    var(--vscode-widget-shadow, color-mix(in srgb, currentColor 25%, transparent));
+}
+
+.review .menu button {
+  text-align: start;
+  padding: 0.25rem 0.75rem;
+  color: inherit;
+}
+
+.review .menu button:hover,
+.review .menu button:focus-visible {
+  color: var(--vscode-menu-selectionForeground, inherit);
+  background: var(
+    --vscode-menu-selectionBackground,
+    color-mix(in srgb, currentColor 10%, transparent)
+  );
+}
+
 /* A mark's label opens the block's source. */
 .ascribe-marks .ascribe-label[role="link"] {
   cursor: pointer;

@@ -11,14 +11,17 @@ import * as vscode from "vscode";
 import {
   answerRequest,
   baseRevision,
+  buildThreadsPrompt,
   contentPrefixOf,
   findPullRequest,
   ghTransport,
   openReview,
+  promptProject,
   readCheckout,
   ReviewError,
   tokenTransport,
   type GitHubTransport,
+  type PromptRequest,
   type ReviewSession,
 } from "@ascribed/review/github";
 import type { PageRef } from "@ascribed/review/place";
@@ -244,7 +247,7 @@ export class ThreadsController implements vscode.Disposable {
   async handle(
     server: ProjectServer,
     page: { build: string; path: string } | undefined,
-    method: ThreadsMethod,
+    method: Exclude<ThreadsMethod, "promptAgent">,
     params: Record<string, unknown>,
     origin: ChangeOrigin,
   ): Promise<unknown> {
@@ -269,6 +272,43 @@ export class ThreadsController implements vscode.Disposable {
     if (answer.page) this.pages.set(id, answer.page);
     if (answer.changed) this.changed.fire({ server, origin });
     return answer.result;
+  }
+
+  /**
+   * The prompt about one thread, or every open one, and whether its file has
+   * unsaved changes; `undefined` when no thread is open. Rejects with a
+   * `ReviewError` when review comments aren't on, or the thread is gone.
+   */
+  async prompt(
+    server: ProjectServer,
+    request: Extract<PromptRequest, { kind: "thread" | "open-threads" }>,
+  ): Promise<{ prompt: string; aboutUnsaved: boolean } | undefined> {
+    const connection = this.connection(server);
+    if (connection?.state !== "on") {
+      throw new ReviewError("not-found", "Review comments aren't on for this project.");
+    }
+    let aboutUnsaved = false;
+    const prompt = await buildThreadsPrompt(
+      {
+        session: connection.session,
+        project: promptProject(server.project.folder),
+        changedPages: () => this.host.changedPages(server),
+        // GitHub's lines are the file's on disk, which is what the agent reads.
+        readSource: async (file) => {
+          const full = path.join(connection.contentRoot, ...file.split("/"));
+          try {
+            const text = await readFile(full, "utf8");
+            const unsaved = (await unsavedText(full)) !== undefined;
+            aboutUnsaved = unsaved;
+            return { text, unsaved };
+          } catch {
+            return undefined;
+          }
+        },
+      },
+      request,
+    );
+    return prompt === undefined ? undefined : { prompt, aboutUnsaved };
   }
 
   private async open(server: ProjectServer, interactive: boolean): Promise<Connection> {

@@ -104,12 +104,12 @@ impl Context {
     }
 
     /// A path relative to the project root, from the repository's root.
-    fn in_repository(&self, path: &str) -> String {
+    pub fn in_repository(&self, path: &str) -> String {
         within(self.folder.as_deref(), path)
     }
 
     /// The `Project:` and `Build:` lines.
-    fn project_lines(&self, lines: &mut Vec<String>) {
+    pub fn project_lines(&self, lines: &mut Vec<String>) {
         if let Some(folder) = &self.folder {
             lines.push(format!("Project: {folder}/"));
         }
@@ -137,6 +137,17 @@ impl Context {
             "When you're done, run `{}` and fix what it reports.",
             check_command(targets, &[])
         ));
+        lines
+    }
+
+    /// The lines that end a prompt that asks for a report, not edits: the
+    /// agent's instructions, and what to do instead of editing.
+    pub fn report_finish(&self) -> Vec<String> {
+        let mut lines = Vec::new();
+        if let Some(agents) = &self.agents {
+            lines.push(format!("Follow the project's rules in `{agents}`."));
+        }
+        lines.push("Report what reads wrongly; don't edit.".to_owned());
         lines
     }
 }
@@ -394,7 +405,7 @@ fn the_problems(n: usize) -> String {
 }
 
 /// `a`, `b`, as code.
-fn code_list(items: &[String]) -> String {
+pub fn code_list(items: &[String]) -> String {
     items
         .iter()
         .map(|i| format!("`{i}`"))
@@ -617,7 +628,7 @@ fn files_of(project: &Project, reported: &[Reported]) -> Vec<(String, Counts)> {
 /// where, what Ascribe knows (each item a line, or lines that go together),
 /// and how to finish. When it would pass [`LIMIT`], items are left out from
 /// the end of what Ascribe knows, and `cut` says so.
-fn assemble(
+pub fn assemble(
     task: &str,
     place: &[String],
     known: &[String],

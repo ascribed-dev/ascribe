@@ -88,6 +88,33 @@ describe("review threads, with a fake GitHub", () => {
     assert.deepEqual(thread.bodies, ["Which changes does it sync?"]);
   });
 
+  it("puts a prompt about the thread, with its block's source, on the clipboard", async () => {
+    await vscode.env.clipboard.writeText("");
+    await request("promptAgent", { request: { kind: "thread", threadId: github.threads[0]?.id } });
+    const prompt = await waitFor("the thread's prompt", async () => {
+      const text = await vscode.env.clipboard.readText();
+      return text === "" ? undefined : text;
+    });
+    assert.ok(
+      prompt.startsWith(
+        "Address this review comment on `docs/install-agent.md`.\n\nWhere: docs/install-agent.md:7",
+      ),
+      prompt,
+    );
+    assert.match(prompt, /\nLines? 7[^\n]*:\n```markdown\n/);
+    assert.match(prompt, /\n```text\n@[^\n]+:\nWhich changes does it sync\?\n```\n/);
+  });
+
+  it("puts a prompt about the page's changes on the clipboard", async () => {
+    await vscode.env.clipboard.writeText("");
+    await request("promptAgent", { request: { kind: "page-changes" } });
+    const prompt = await waitFor("the page's prompt", async () => {
+      const text = await vscode.env.clipboard.readText();
+      return text === "" ? undefined : text;
+    });
+    assert.ok(prompt.startsWith("Review what this change does to `docs/install-agent.md`"), prompt);
+  });
+
   it("holds a comment in the pending review, and sends it on submit", async () => {
     const before = github.calls.length;
     await request("comment", {

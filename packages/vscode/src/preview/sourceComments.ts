@@ -10,6 +10,7 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { formatSource, type LocatedThread } from "@ascribed/review/place";
+import type { Prompts } from "../actions/promptAgent.js";
 import type { ProjectServer } from "../client.js";
 import { comparable, within } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
@@ -48,6 +49,7 @@ export class SourceComments implements vscode.Disposable {
   constructor(
     private readonly projects: ProjectRegistry,
     private readonly threads: ThreadsController,
+    private readonly prompts: Prompts,
   ) {}
 
   register(): void {
@@ -63,6 +65,10 @@ export class SourceComments implements vscode.Disposable {
       ),
       vscode.commands.registerCommand("ascribe.review.reopen", (thread: vscode.CommentThread) =>
         this.resolve(thread, false),
+      ),
+      vscode.commands.registerCommand(
+        "ascribe.review.promptAgent",
+        (thread: vscode.CommentThread) => this.promptAgent(thread),
       ),
       this.threads.onDidChange(({ server }) => void this.reload(server)),
       vscode.workspace.onDidChangeConfiguration((event) => {
@@ -281,6 +287,21 @@ export class SourceComments implements vscode.Disposable {
           : "$(issue-reopened) Reopened on GitHub.",
         8000,
       );
+    } catch (error) {
+      void vscode.window.showWarningMessage(`Ascribe: ${messageOf(error)}`);
+    }
+  }
+
+  /** Delivers the prompt about the thread, as Prompt agent does. */
+  private async promptAgent(thread: vscode.CommentThread): Promise<void> {
+    const entry = this.byThread.get(thread);
+    if (!entry) return;
+    try {
+      const answer = await this.threads.prompt(entry.server, {
+        kind: "thread",
+        threadId: entry.data.id,
+      });
+      if (answer) await this.prompts.deliver(answer.prompt, answer.aboutUnsaved);
     } catch (error) {
       void vscode.window.showWarningMessage(`Ascribe: ${messageOf(error)}`);
     }

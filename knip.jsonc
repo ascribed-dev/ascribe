@@ -42,6 +42,7 @@
         "src/marks/index.ts",
         "src/overlay/index.ts",
         "src/place/index.ts",
+        "src/prompt/index.ts",
       ],
     },
     "packages/vscode": {

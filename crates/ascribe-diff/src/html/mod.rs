@@ -179,6 +179,11 @@ struct PageData<'a> {
     was: Option<String>,
     /// Whether it's beyond the limit, so not rendered.
     omitted: bool,
+    /// The agent prompt about the page, which its Copy prompt button copies:
+    /// what `ascribe diff --format prompt` writes for it. Absent when the
+    /// report was written without prompts.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    prompt: Option<String>,
 }
 
 /// A page rendered: its HTML, and what each image reference in it is.
@@ -251,6 +256,38 @@ pub fn write_html_with(
     now: Version<'_>,
     max_pages: usize,
 ) -> String {
+    write_report(
+        report,
+        base,
+        now,
+        &ReportOptions {
+            max_pages,
+            prompt: None,
+        },
+    )
+}
+
+/// The agent prompt about a changed page of a build, by the build's name.
+pub type PagePrompt<'a> = &'a dyn Fn(&str, &PageDiff) -> String;
+
+/// How [`write_report`] writes a report.
+#[derive(Clone, Copy)]
+pub struct ReportOptions<'a> {
+    /// The most pages it renders.
+    pub max_pages: usize,
+    /// Each page's agent prompt, for its Copy prompt button; without it, the
+    /// report has no prompts.
+    pub prompt: Option<PagePrompt<'a>>,
+}
+
+/// [`write_html`], as `options` say.
+pub fn write_report(
+    report: &Report,
+    base: Option<Version<'_>>,
+    now: Version<'_>,
+    options: &ReportOptions<'_>,
+) -> String {
+    let max_pages = options.max_pages;
     let mut store = Store::default();
     let mut rendered_pages = 0;
     let mut omitted = 0;
@@ -265,6 +302,7 @@ pub fn write_html_with(
                 now: None,
                 was: None,
                 omitted: false,
+                prompt: options.prompt.map(|prompt| prompt(&build.build, diff)),
             };
             if rendered_pages >= max_pages {
                 data.omitted = true;

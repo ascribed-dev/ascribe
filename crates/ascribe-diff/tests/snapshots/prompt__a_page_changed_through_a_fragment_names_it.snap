@@ -1,0 +1,19 @@
+---
+source: crates/ascribe-diff/tests/prompt.rs
+expression: "page_prompt(&context(), find(&builds, \"install.md\"))"
+---
+Review what this change does to `content/install.md`, as a reader of build `site` sees it.
+
+Where: content/install.md
+Project: site/
+Build: `site`
+
+Base: `origin/main`, from where this branch left it (9f8e7d6)
+What changed: 1 changed
+Changed through: `content/_fragments/prereqs.md`
+To read it: `ascribe render site/content/install.md --build site`
+Changes:
+- changed: content/_fragments/prereqs.md:1, shown through content/install.md:9
+
+Follow the project's rules in `AGENTS.md`.
+Report what reads wrongly; don't edit.

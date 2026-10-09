@@ -542,6 +542,25 @@ so for a saved file the two give the same prompt; `lsp_parity` in
 `crates/ascribe-cli/tests/` holds them to it. A diagnostic is found by its
 code and range, and its message when two share a place.
 
+While review is on (`ascribe/review/setBase`), two more kinds prompt about
+changes, against the base the server holds:
+
+```jsonc
+{ "kind": "pageChanges",              // what changed on this page
+  "textDocument": { "uri": "file:///…/docs/guides/install.md" },
+  "build": "site",                    // optional: the editor's build
+  "unsaved": [] }
+{ "kind": "fragmentReach",            // the pages that changed through a fragment
+  "fragment": "_fragments/prereqs.md", // a content path, as a page's `because` names it
+  "build": "site",
+  "unsaved": [] }
+```
+
+They answer `null` when review is off, or the page or fragment didn't change
+in the build. The prompts are built by `ascribe_diff::prompt`, as `ascribe diff
+--format prompt [PAGE]` builds them, so for saved files the two give the same
+prompt.
+
 ## Capabilities
 
 Advertised: incremental text document sync (open/close, no save), semantic

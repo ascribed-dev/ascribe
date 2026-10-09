@@ -812,6 +812,24 @@
     el.addEventListener("click", onClick);
     return el;
   }
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const area = h("textarea", { readonly: "", class: "r-offscreen" }, [text]);
+      document.body.append(area);
+      area.select();
+      let copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } catch {
+        copied = false;
+      }
+      area.remove();
+      return copied;
+    }
+  }
   function describeCounts(counts) {
     const parts = [];
     for (const kind of ["changed", "added", "removed", "moved"]) {
@@ -1048,6 +1066,7 @@
         );
       }
     };
+    const status = h("div", { class: "r-status", role: "status" });
     const renderControls = () => {
       controls.replaceChildren();
       const build = builds[state.build];
@@ -1109,7 +1128,17 @@
           button("↓", "r-ghost r-sq", () => step(1), { "aria-label": "Next change" })
         );
       }
-      controls.append(row);
+      if (page.prompt) {
+        const prompt = page.prompt;
+        const copy = button("Copy prompt", "r-ghost r-copy", () => {
+          void copyText(prompt).then((copied) => {
+            status.textContent = copied ? "Prompt copied. Paste it into your agent." : "The prompt couldn't be copied: the browser didn't allow it.";
+          });
+        });
+        copy.title = "Copy a prompt that asks an agent to review this page's changes";
+        row.append(copy);
+      }
+      controls.append(row, status);
       if (state.breakdown)
         controls.append(h("div", { class: "r-legend" }, [describeCounts(page.counts)]));
       if (page.page_changed.length > 0) {
@@ -1148,6 +1177,7 @@
       const build = builds[state.build];
       const page = build?.pages[state.page];
       main.replaceChildren(controls);
+      status.textContent = "";
       article.replaceChildren();
       article.removeAttribute(DATA_SHOW);
       article.className = "r-page";

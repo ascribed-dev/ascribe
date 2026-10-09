@@ -203,7 +203,17 @@ A tab's label and a `details`' summary say what changed in what they can hide: "
 
 **Show: Changes / As it will be / As it was** switches between the marks, the page as it will be with none, and the page as it was at the base. The arrows step through the changes ("3 of 10 on this page"), and after the last one offer the next changed page. Hovering over a block shows the source file and line it came from (`guides/install.md:12`). The colors work in light and dark, and every mark has a label as well as a color.
 
+**Copy prompt** copies the page's [agent prompt](#the-agent-prompt), the one `ascribe diff --format prompt <page>` writes, to paste into your agent. The report has no link that opens an agent: a file opened from a disk or a CI artifact can't tell which editor you use, so it only copies.
+
 A report renders at most 300 changed pages; the rest are listed by name, and the report says so at the top. Each rendered page and image is stored once, however many builds or pages share it. [The report in CI](../guides/review.md#the-report-in-ci) has a GitHub Actions job that uploads the report on every pull request.
+
+### The agent prompt
+
+`--format prompt` writes a prompt that asks your agent to review the change as readers will see it, in the [agent prompt format](../guides/agents.md#what-a-prompt-says), and writes nothing when nothing changed. Without a PAGE, it's about every changed page, grouped by build when more than one changed. With a PAGE, it's about that page in the first build it changed in, listing each change with its source lines; for a fragment, or any other file pages changed through, it's about the pages that show it, and asks the agent to check that the new text fits each. A PAGE that isn't a file of the project, at the base or now, is a usage error.
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/diff-prompt.txt
+
+The prompt asks for a report, not edits: a review reads the change, and its author decides what to do. Its commands (`ascribe render`, `git diff`, `ascribe diff`) are written from the repository's root, with the base, the build, and `--config` as this run had them. The review report's **Copy prompt** and the editor's **Prompt agent** give the same prompt.
 
 ### Diff JSON
 

@@ -119,7 +119,7 @@ Each command is one call into a library, after the project is loaded. The call t
 |---|---|---|
 | `check` | `ascribe_check::diagnose`, or `diagnose_editor_build` | Chooses the builds (`select_builds`) and returns their diagnostics. With paths, `ascribe_check::Scope` keeps those that count for them (`Scope::of_paths`, `Scope::report`); with `--stdin`, `Project::with_source` lays the text over the project first. With `--format prompt`, `ascribe_check::prompt` writes what's reported as a prompt for an agent, as the language server's `ascribe/agentPrompt` does. |
 | `build` | `ascribe_check::diagnose`, then `ascribe_emit::write_outputs` | The report is printed between the two, and a build with errors stops there. `write_outputs` reports each output as it's written through a callback. |
-| `diff` | `ascribe_diff::diff_project` | Returns the report, with the working tree's error count; `ProjectDiff::html` renders it for `--format html`. |
+| `diff` | `ascribe_diff::diff_project` | Returns the report, with the working tree's error count; `ProjectDiff::html` renders it for `--format html`, and `ProjectDiff::pages_prompt` and `prompt_about` write `--format prompt` (`ascribe_diff::prompt`), as the language server's `ascribe/agentPrompt` does for `pageChanges` and `fragmentReach`. |
 | `drift` | `ascribe_diff::drift_project` | |
 | `fmt` | `ascribe_fmt::format_files` | Takes the content model from `Project::load_model`, and reports each file changed through a callback. |
 | `sources` | `ascribe_sources::fetch`, `status`, `update` | Over an `ascribe_sources::Workspace`. `update` then calls `drift_project` against `HEAD` for the pages whose examples changed. |

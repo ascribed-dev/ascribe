@@ -15,6 +15,7 @@
 //!   around them did.
 //! - [`html`]: the report as one self-contained HTML file, every changed
 //!   page rendered with its changes marked.
+//! - [`prompt`]: agent prompts about a change, for a reviewer's agent.
 //! - [`diff_project`] and [`drift_project`]: `ascribe diff` and `ascribe
 //!   drift` on a project loaded from disk, from choosing the builds to the
 //!   finished report.
@@ -47,6 +48,7 @@ mod drift;
 pub mod git;
 mod gitfs;
 pub mod html;
+pub mod prompt;
 mod tree;
 mod words;
 
