@@ -253,6 +253,24 @@ interface Sources {
 }
 
 /** An output: where it goes, its size, which sources make it, and how. */
+/**
+ * The wordmark `height` pixels tall on a rounded plate of `background`, with
+ * `pad` around it: a header that reads on a light or a dark page, where an
+ * image can't follow the reader's scheme.
+ */
+function plate(wordmark: Drawing, color: string, background: string, height: number, pad: number) {
+  const [, , w, h] = wordmark.box;
+  const scale = height / h;
+  const [W, H] = [Math.ceil(w * scale) + 2 * pad, height + 2 * pad];
+  return svg(
+    W,
+    H,
+    title("Ascribe") +
+      `<rect width="${W}" height="${H}" rx="${num(pad / 2)}" fill="${background}"/>` +
+      paths(wordmark, { first: color, second: color }, pad, pad, scale),
+  );
+}
+
 export interface Asset {
   path: string;
   width: number;
@@ -340,6 +358,14 @@ export const ASSETS: Asset[] = [
     from: [WORDMARK, PALETTE],
     form: "svg",
     draw: (s) => header(s.wordmark, s.colors.text.dark, 48),
+  },
+  {
+    path: "design/out/header-vscode.png",
+    width: 532,
+    height: 192,
+    from: [WORDMARK, PALETTE],
+    form: "png",
+    draw: (s) => plate(s.wordmark, s.colors.text.dark, s.colors.surface.dark, 96, 48),
   },
   {
     path: "design/out/avatar.png",

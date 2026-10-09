@@ -824,6 +824,33 @@ describe("review threads in the preview webview", () => {
 describe("the Page | Site switch", () => {
   const frame = (preview: Preview) => preview.page.locator('iframe[title="Site preview"]');
 
+  it("marks the pressed side with the active border in a high-contrast dark theme, which gives buttons no background", async () => {
+    const preview = await open();
+    await preview.send(render(1, "<p>Hello</p>"));
+    await preview.next("rendered");
+    // What VS Code sets for its high-contrast dark theme: no button background.
+    await preview.page.evaluate(() => {
+      document.body.classList.add("vscode-high-contrast");
+      const root = document.documentElement.style;
+      root.setProperty("--vscode-foreground", "rgb(255, 255, 255)");
+      root.setProperty("--vscode-button-foreground", "rgb(255, 255, 255)");
+      root.setProperty("--vscode-contrastActiveBorder", "rgb(243, 133, 24)");
+    });
+    const pressed = preview.page
+      .getByRole("group", { name: "Preview" })
+      .getByRole("button", { name: "Page" });
+    const style = await pressed.evaluate((e) => {
+      const { color, backgroundColor, boxShadow } = getComputedStyle(e);
+      return { color, backgroundColor, boxShadow };
+    });
+    expect(style).toEqual({
+      color: "rgb(255, 255, 255)",
+      backgroundColor: "rgba(0, 0, 0, 0)",
+      boxShadow: "rgb(243, 133, 24) 0px 0px 0px 1px inset",
+    });
+    await preview.page.close();
+  });
+
   it("asks for the site, then shows the dev server's page in a frame", async () => {
     const preview = await open({ frameOrigin: SITE });
     await preview.send(render(1, "<p>Hello</p>"));

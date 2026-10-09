@@ -66,8 +66,8 @@ Phase 1 needs nothing and can start now. Phase 2 needs nothing either, and is th
 ## The editor UI plan
 
 - Its phases 1 to 5 need nothing from this plan.
-- Its phase 6 (the activity bar icon) needs this plan's phase 3. If it gets there first, it stops and reports rather than drawing a placeholder.
-- Its phase 7 (the views' icons) follows decision 10 and this plan's phase 6 list.
+- Its phase 6 (the activity bar icon) needs this plan's phase 3, which made it: `packages/vscode/media/activity.svg`, for its view container's `icon`.
+- Its phase 7 (the views' icons) follows decision 10 and the codicons this plan's phase 6 chose, listed in `packages/vscode/DEVELOPMENT.md` under "Icons and colors".
 - Its phase 9 (walkthrough images) uses the mark and screenshots of the finished UI. This plan's phase 6 doesn't make them.
 - Whichever plan adds `contributes.viewsContainers` first owns that entry; this plan's phase 6 only supplies and names the icon file.
 
