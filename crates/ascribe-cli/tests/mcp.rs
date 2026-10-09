@@ -678,6 +678,49 @@ fn one_server_serves_two_projects_and_says_when_a_path_is_in_neither() {
     );
 }
 
+/// Rewrites `path` with `text`, the same length as what's there, and gives
+/// it back its modification time: a change the server's listing can't
+/// see, so the answers show whether it loaded the project again.
+fn change_unseen(path: &Path, text: &str) {
+    let modified = fs::metadata(path).unwrap().modified().unwrap();
+    assert_eq!(fs::read(path).unwrap().len(), text.len());
+    fs::write(path, text).unwrap();
+    fs::File::options()
+        .write(true)
+        .open(path)
+        .unwrap()
+        .set_modified(modified)
+        .unwrap();
+}
+
+#[test]
+fn files_outside_the_content_root_dont_load_the_project_again() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write_project(root);
+    let mut server = Server::start(root);
+    let heading = |server: &mut Server| {
+        let (_, outline) = server.call_ok("ascribe_outline", json!({ "page": "docs/keys.md" }));
+        outline["headings"][0]["id"].as_str().unwrap().to_owned()
+    };
+    assert_eq!(heading(&mut server), "rotate-keys");
+    change_unseen(
+        &root.join("docs/keys.md"),
+        &KEYS.replace("Rotate keys", "Rotate keyz"),
+    );
+
+    // A build's output, and anything else beside ascribe.toml, isn't the
+    // project's.
+    write(&root.join("target/x.txt"), "built\n");
+    write(&root.join("target/debug/y.txt"), "built\n");
+    write(&root.join("notes.md"), "# Notes\n");
+    assert_eq!(heading(&mut server), "rotate-keys");
+
+    // A file in the content root is.
+    write(&root.join("docs/tokens.md"), "---\ntitle: Tokens\n---\n");
+    assert_eq!(heading(&mut server), "rotate-keyz");
+}
+
 #[test]
 fn a_project_is_loaded_again_when_its_files_change() {
     let dir = tempfile::tempdir().unwrap();

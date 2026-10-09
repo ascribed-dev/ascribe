@@ -2,10 +2,14 @@
 //!
 //! A project is loaded once and kept, with its source index once a tool asks
 //! for it. Before each call the server lists the project's files again
-//! (paths, sizes, and modification times, `ascribe.toml` and `ascribe.lock`
-//! among them) and compares the listing with the one it loaded from; any
-//! difference, a new or a deleted file included, loads the project again.
-//! Listing is cheap beside loading: no file is read.
+//! (paths, sizes, and modification times) and compares the listing with the
+//! one it loaded from; any difference, a new or a deleted file included,
+//! loads the project again. The project's files are what loading reads:
+//! `ascribe.toml`, `ascribe.lock`, and the content root, and whether each
+//! local source's folder is there. The code files snippets read are checked
+//! as they're read. Nothing else in the project's folder is listed, so a
+//! build's output beside `ascribe.toml` costs nothing. Listing is cheap
+//! beside loading: no file is read.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -13,8 +17,9 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::SystemTime;
 
-use ascribe_check::{LoadError, Project};
+use ascribe_check::{LoadError, MODEL_FILE, Project};
 use ascribe_core::path::normalize;
+use ascribe_model::LOCK_FILE;
 
 use crate::answer::{Loaded, Projects};
 
@@ -84,18 +89,19 @@ impl Entry {
     }
 }
 
-/// Every file under the project's folder, and under its content root when
-/// that's outside the folder, in path order. Folders whose names start with
-/// `.`, `node_modules`, and the output directory are left out, and a
-/// symbolic link to a folder isn't followed.
+/// The project's files, in path order: `ascribe.toml`, `ascribe.lock`
+/// (there or not), every file under the content root, and each local
+/// source's folder (there or not). In the content root, folders whose names
+/// start with `.`, `node_modules`, and the output directory are left out,
+/// and a symbolic link to a folder isn't followed.
 fn list(root: &Path, project: &Project) -> Vec<Stamp> {
     let output = normalize(&root.join(project.layout().output_dir.as_str()));
-    let skip = |dir: &Path| dir != root && dir == output;
     let content = normalize(&root.join(project.content_root().as_str()));
-    let mut files = Vec::new();
-    walk(root, &skip, &mut files);
-    if !content.starts_with(root) {
-        walk(&content, &skip, &mut files);
+    let skip = |dir: &Path| dir != content && dir == output;
+    let mut files = vec![stamp(&root.join(MODEL_FILE)), stamp(&root.join(LOCK_FILE))];
+    walk(&content, &skip, &mut files);
+    for source in &project.model().sources {
+        files.push(presence(&normalize(&root.join(&source.path))));
     }
     files.sort();
     files.dedup();
@@ -135,6 +141,19 @@ fn stamp(path: &Path) -> Stamp {
         Ok(meta) => (path.to_owned(), meta.len(), meta.modified().ok()),
         Err(_) => (path.to_owned(), 0, None),
     }
+}
+
+/// Whether a folder is there: its path, and 2 for a folder, 1 for anything
+/// else, 0 for nothing. Its time isn't kept: what's in it is checked as
+/// it's read.
+fn presence(path: &Path) -> Stamp {
+    // Outside FileSystem: as in `walk`.
+    let kind = match std::fs::metadata(path) {
+        Ok(meta) if meta.is_dir() => 2,
+        Ok(_) => 1,
+        Err(_) => 0,
+    };
+    (path.to_owned(), kind, None)
 }
 
 /// `path` made absolute from the current directory, and normalized.
