@@ -21,8 +21,10 @@
 //! one keeps its order: it is still respaced and unquoted.
 
 use ascribe_core::attributes::parse_attribute_block;
+use ascribe_core::schema::AttributeType;
 use ascribe_core::{Attribute, AttributeBlock, AttributeValue, Attributes, FileId, TextEdit};
-use ascribe_syntax::DirectiveLine;
+use ascribe_model::ContentModel;
+use ascribe_syntax::{DirectiveLine, ParseOptions};
 
 use crate::Ctx;
 
@@ -74,6 +76,104 @@ fn declared_keys(ctx: &Ctx<'_>, name: &str) -> Option<Vec<String>> {
             .map(|d| d.name.clone())
             .collect(),
     })
+}
+
+/// The canonical attribute block of the directive `name` with `pairs`,
+/// each a key and its value as text: the pairs in the order its schema
+/// declares (a `@variant`'s in the model's dimension order), each value
+/// quoted only when it has to be. A value with `|` is written as a value set
+/// when the key takes one (a set-typed attribute, or a dimension of
+/// `@variant`), and quoted otherwise.
+///
+/// Returns `None` for no pairs, which canonical form writes as no block, and
+/// when a pair can't be written: a key twice, an empty key, or a value set
+/// with a member that isn't a token.
+pub fn directive_block(
+    name: &str,
+    pairs: &[(String, String)],
+    options: &ParseOptions,
+    model: &ContentModel,
+) -> Option<String> {
+    let schema = options.schemas.iter().find(|s| s.name == name);
+    let keys: Option<Vec<String>> = schema.map(|schema| match &schema.attributes {
+        Attributes::Declared(attributes) => attributes.iter().map(|a| a.key.clone()).collect(),
+        Attributes::Dimensions => model.dimensions.iter().map(|d| d.name.clone()).collect(),
+    });
+    let takes_set = |key: &str| {
+        schema.is_some_and(|schema| match &schema.attributes {
+            Attributes::Declared(attributes) => attributes
+                .iter()
+                .any(|a| a.key == key && matches!(a.ty, AttributeType::Set(_))),
+            Attributes::Dimensions => true,
+        })
+    };
+    block_of(pairs, keys.as_deref(), &takes_set)
+}
+
+/// The canonical attribute block after an image with `pairs`, in the order
+/// of the model's image attributes: [`directive_block`] for images.
+pub fn image_block(pairs: &[(String, String)], model: &ContentModel) -> Option<String> {
+    let keys: Vec<String> = model
+        .image_attributes
+        .iter()
+        .map(|a| a.key.clone())
+        .collect();
+    let takes_set = |key: &str| {
+        model
+            .image_attributes
+            .iter()
+            .any(|a| a.key == key && matches!(a.ty, AttributeType::Set(_)))
+    };
+    block_of(pairs, Some(&keys), &takes_set)
+}
+
+/// A value written as canonical form writes it: as is when it's a token,
+/// and otherwise quoted, with `"` and `\` escaped.
+pub fn written_value(text: &str) -> String {
+    if is_token(text) {
+        text.to_owned()
+    } else {
+        format!("\"{}\"", text.replace('\\', "\\\\").replace('"', "\\\""))
+    }
+}
+
+fn block_of(
+    pairs: &[(String, String)],
+    keys: Option<&[String]>,
+    takes_set: &dyn Fn(&str) -> bool,
+) -> Option<String> {
+    if pairs.is_empty() {
+        return None;
+    }
+    let mut written = Vec::with_capacity(pairs.len());
+    for (i, (key, value)) in pairs.iter().enumerate() {
+        if key.is_empty() || pairs[..i].iter().any(|(k, _)| k == key) {
+            return None;
+        }
+        let value = if value.contains('|') && takes_set(key) {
+            let members: Vec<&str> = value.split('|').collect();
+            if !members.iter().all(|m| is_token(m)) {
+                return None;
+            }
+            members.join("|")
+        } else {
+            written_value(value)
+        };
+        written.push((key.as_str(), value));
+    }
+    if let Some(keys) = keys {
+        let position = |key: &str| keys.iter().position(|k| k == key);
+        if written.iter().all(|(key, _)| position(key).is_some()) {
+            written.sort_by_key(|(key, _)| position(key));
+        }
+    }
+    let rendered: Vec<String> = written
+        .iter()
+        .map(|(key, value)| format!("{key}={value}"))
+        .collect();
+    let text = render(&rendered);
+    let parsed = parse_attribute_block(&text, 0, FileId::new(0))?;
+    (parsed.closed && parsed.issues.is_empty() && parsed.len == text.len()).then_some(text)
 }
 
 // A block with an undeclared key keeps its order; a bare

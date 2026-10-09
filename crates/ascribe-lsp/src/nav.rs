@@ -28,6 +28,8 @@ pub(crate) struct Ctx {
     pub snapshot: Snapshot,
     /// The requested file's content path.
     pub path: RelPath,
+    /// The requested document's version, when it's open in the editor.
+    pub version: Option<i32>,
     /// The content model.
     pub model: Arc<ContentModel>,
     /// The text of `ascribe.toml`, for going to a phrase's or feature's entry.

@@ -1,0 +1,124 @@
+{
+  "$defs": {
+    "LspPosition": {
+      "description": "A position in a document: a zero-based line, and a zero-based column in\nthe position encoding the client and server agreed on.",
+      "properties": {
+        "character": {
+          "description": "The column, from 0, in the negotiated position encoding.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "description": "The line, from 0.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "character"
+      ],
+      "type": "object"
+    },
+    "LspRange": {
+      "description": "A range in a document, from `start` up to (not including) `end`.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it ends."
+        },
+        "start": {
+          "$ref": "#/$defs/LspPosition",
+          "description": "Where it starts."
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "LspTextEdit": {
+      "description": "A text edit: replace `range` with `newText`.",
+      "properties": {
+        "newText": {
+          "description": "The text that replaces it.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/LspRange",
+          "description": "The range to replace, in the document as it is before the edit."
+        }
+      },
+      "required": [
+        "range",
+        "newText"
+      ],
+      "type": "object"
+    },
+    "LspWorkspaceEdit": {
+      "description": "Changes to documents.",
+      "properties": {
+        "changes": {
+          "additionalProperties": {
+            "items": {
+              "$ref": "#/$defs/LspTextEdit"
+            },
+            "type": "array"
+          },
+          "description": "The edits to each document, by its URI.",
+          "type": "object"
+        }
+      },
+      "required": [
+        "changes"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "description": "The edit that performs the action.",
+      "properties": {
+        "edit": {
+          "$ref": "#/$defs/LspWorkspaceEdit",
+          "description": "Plain text edits to the requested document, under `changes`,\nin canonical form."
+        },
+        "select": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LspRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The placeholder text the edit wrote, in the document as it is\nafter the edit, for the client to leave selected; `null` when it\nwrote none."
+        }
+      },
+      "required": [
+        "edit",
+        "select"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Why the action can't be performed: the document changed under it, it\ndoesn't apply where it was invoked, or an argument is invalid. A\nplain-language sentence, for the client to show.",
+      "properties": {
+        "error": {
+          "description": "The message.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "type": "object"
+    }
+  ],
+  "description": "The answer to `ascribe/edit`: the edit, or why there is none.",
+  "title": "EditResult"
+}

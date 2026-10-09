@@ -13,6 +13,7 @@ mod context;
 mod core;
 mod definition;
 mod docs;
+mod edit;
 mod formatting;
 mod fsx;
 mod hover;
@@ -39,6 +40,7 @@ pub use context::{
     AttributePair, ContextNode, ContextParams, ContextProject, ContextResult, ContextToken, Form,
     FrontmatterValue, METHOD as CONTEXT_METHOD, Selection, SelectionKind, VariantArm,
 };
+pub use edit::{EditAction, EditParams, EditResult, METHOD as EDIT_METHOD};
 pub use position::Encoding;
 pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,

@@ -289,13 +289,35 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
 /// The checked project of a snapshot: its sources with the snapshot's ids, and
 /// the files the editor and the watcher reported over the disk.
 fn check_project_of(job: &Job) -> Project {
-    let snapshot = &job.snapshot;
+    checked_project(
+        &job.snapshot,
+        job.root.clone(),
+        &job.model,
+        &job.model_text,
+        &job.fs,
+        None,
+    )
+}
+
+/// The checked project of `snapshot`, with `replaced`'s file holding the text
+/// given instead of its own: what `ascribe/edit` checks an edit's result in.
+pub(crate) fn checked_project(
+    snapshot: &Snapshot,
+    root: PathBuf,
+    model: &ContentModel,
+    model_text: &str,
+    fs: &Arc<LayerFs>,
+    replaced: Option<(&RelPath, &str)>,
+) -> Project {
     let mut sources: Vec<SourceFile> = snapshot
         .files()
         .map(|f| SourceFile {
             id: f.file,
             path: f.path.clone(),
-            text: f.source.to_string(),
+            text: match replaced {
+                Some((path, text)) if *path == f.path => text.to_owned(),
+                _ => f.source.to_string(),
+            },
             unreadable: None,
         })
         .collect();
@@ -319,12 +341,12 @@ fn check_project_of(job: &Job) -> Project {
     }
     sources.sort_by(|a, b| a.path.cmp(&b.path));
     Project::from_parts_with_fs(
-        job.root.clone(),
+        root,
         snapshot.layout().content_root.clone(),
-        (*job.model).clone(),
-        job.model_text.clone(),
+        model.clone(),
+        model_text.to_owned(),
         sources,
-        job.fs.clone(),
+        fs.clone(),
     )
 }
 

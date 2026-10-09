@@ -840,6 +840,7 @@ impl Core {
         Some(Ctx {
             snapshot,
             path: content,
+            version: self.docs.get(&path).map(|d| d.version),
             model: loaded.model.clone(),
             model_text: loaded.model_text.clone(),
             config: self.config.clone()?,

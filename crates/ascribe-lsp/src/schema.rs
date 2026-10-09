@@ -22,3 +22,20 @@ pub(crate) struct LspRange {
     /// Where it ends.
     end: LspPosition,
 }
+
+/// A text edit: replace `range` with `newText`.
+#[derive(schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct LspTextEdit {
+    /// The range to replace, in the document as it is before the edit.
+    range: LspRange,
+    /// The text that replaces it.
+    new_text: String,
+}
+
+/// Changes to documents.
+#[derive(schemars::JsonSchema)]
+pub(crate) struct LspWorkspaceEdit {
+    /// The edits to each document, by its URI.
+    changes: std::collections::BTreeMap<String, Vec<LspTextEdit>>,
+}
