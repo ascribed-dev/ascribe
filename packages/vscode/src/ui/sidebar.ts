@@ -225,7 +225,7 @@ export type UsedByNode =
   | { kind: "place"; place: Place };
 
 /** The places in one file. */
-export interface UsedByFile {
+interface UsedByFile {
   uri: string;
   path: string;
   places: readonly Place[];
