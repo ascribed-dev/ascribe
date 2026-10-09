@@ -15,7 +15,7 @@ use ascribe_core::{FileId, LineIndex, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{
     Affected, ApplyError, Change, DiskFs, FileSystem, IncrementalProject, Layout, ResolvedCache,
-    is_source_path,
+    in_nested_project, is_source_path,
 };
 use crossbeam_channel::Sender;
 use lsp_server::{Message, Notification, Request};
@@ -837,10 +837,46 @@ impl Core {
         };
         let snapshot = loaded.inc.snapshot();
         snapshot.file(&content)?;
+        self.ctx(loaded, snapshot, content, &path)
+    }
+
+    /// What a request about the whole project works from, asked through any
+    /// of the project's files: a source file, `ascribe.toml`, or any other
+    /// file in its folder. For a file that isn't a source, the context's path
+    /// is [`Ctx::PROJECT`], so paths are written from the content root.
+    pub(crate) fn project_target(&self, uri: &Uri) -> Option<Ctx> {
+        let path = Core::doc_path(uri)?;
+        let loaded = self.loaded.as_ref()?;
+        let content = match loaded.classify(&path)? {
+            Kind::Source(content, _) => content,
+            Kind::Model => RelPath::parse(Ctx::PROJECT).ok()?,
+            Kind::Asset(project_rel) => {
+                let content_dir = normalize(&loaded.root.join(loaded.layout.content_root.as_str()));
+                // A file in a nested project's folder is that project's.
+                let nested = relative_path(&content_dir, &path).is_some_and(|content| {
+                    content.is_inside()
+                        && in_nested_project(&content, loaded.inc.snapshot().nested_projects())
+                });
+                if !project_rel.is_inside() || nested {
+                    return None;
+                }
+                RelPath::parse(Ctx::PROJECT).ok()?
+            }
+        };
+        self.ctx(loaded, loaded.inc.snapshot(), content, &path)
+    }
+
+    fn ctx(
+        &self,
+        loaded: &Loaded,
+        snapshot: ascribe_resolve::Snapshot,
+        content: RelPath,
+        path: &Path,
+    ) -> Option<Ctx> {
         Some(Ctx {
             snapshot,
             path: content,
-            version: self.docs.get(&path).map(|d| d.version),
+            version: self.docs.get(path).map(|d| d.version),
             model: loaded.model.clone(),
             model_text: loaded.model_text.clone(),
             model_problem: self.model_problem.is_some(),

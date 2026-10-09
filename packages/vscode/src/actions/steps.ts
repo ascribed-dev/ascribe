@@ -316,13 +316,13 @@ export function glossaryLinkStep(targets: TargetsResult): Step {
   const pages: Choice[] = (targets.pages ?? []).map((page) => ({
     label: `$(file) ${page.title ?? page.path}`,
     description: page.path,
-    value: `/${destinationOf(page.path)}`,
+    value: page.rootLink,
     section: "Pages",
   }));
   const headings: Choice[] = (targets.headings ?? []).map((heading) => ({
     label: heading.text,
     description: `${heading.page}#${heading.id}`,
-    value: `/${destinationOf(heading.page)}#${heading.id}`,
+    value: heading.rootLink,
     section: "Headings",
   }));
   // A heading appears once per page that includes it: keep the first.
@@ -335,19 +335,6 @@ export function glossaryLinkStep(targets: TargetsResult): Step {
     choices: [{ label: "No link", value: "" }, ...unique],
     empty: "",
   };
-}
-
-/** A content path written as a destination: each segment percent-encoded where it needs to be. */
-export function destinationOf(path: string): string {
-  return path
-    .split("/")
-    .map((segment) =>
-      encodeURI(segment).replace(
-        /[#?()]/g,
-        (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
-      ),
-    )
-    .join("/");
 }
 
 /** Which phrase: each key with its value. */

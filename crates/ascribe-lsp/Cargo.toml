@@ -45,5 +45,9 @@ harness = false
 name = "completion"
 harness = false
 
+[[bench]]
+name = "inventory"
+harness = false
+
 [lints]
 workspace = true

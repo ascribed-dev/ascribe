@@ -98,6 +98,16 @@ pub(crate) enum Entry<'a> {
     Phrase(&'a str),
     /// A feature, by key.
     Feature(&'a str),
+    /// A glossary term, by id.
+    Term(&'a str),
+    /// A dimension, by name.
+    Dimension(&'a str),
+    /// A declared note type.
+    Note(&'a str),
+    /// A project widget, by name.
+    Widget(&'a str),
+    /// A build, by name.
+    Build(&'a str),
     /// A value of a dimension, as `values` of `[dimensions.<name>]` lists it.
     DimensionValue {
         /// The dimension's name.
@@ -118,11 +128,29 @@ fn model_entry(ctx: &Ctx, entry: Entry<'_>) -> Option<Location> {
     })
 }
 
-/// The span of an entry in the model's text: a phrase's key, a feature's
-/// table header, or a dimension value's text inside its quotes. The model
-/// keeps no spans, so this reads the text; it finds entries written as
+impl Entry<'_> {
+    /// The header of the entry's own table, without brackets or quotes, for
+    /// an entry declared as one.
+    fn table(&self) -> Option<String> {
+        match self {
+            Entry::Feature(key) => Some(format!("features.{key}")),
+            Entry::Term(id) => Some(format!("glossary.terms.{id}")),
+            Entry::Dimension(name) => Some(format!("dimensions.{name}")),
+            Entry::Note(name) => Some(format!("notes.{name}")),
+            Entry::Widget(name) => Some(format!("widgets.{name}")),
+            Entry::Build(name) => Some(format!("builds.{name}")),
+            Entry::Phrase(_) | Entry::DimensionValue { .. } => None,
+        }
+    }
+}
+
+/// The span of an entry in the model's text: a phrase's key, the header of
+/// the table that declares a feature, glossary term, dimension, note type,
+/// widget, or build, or a dimension value's text inside its quotes. The
+/// model keeps no spans, so this reads the text; it finds entries written as
 /// tables and keys, which is how `ascribe.toml` declares them.
 pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
+    let own_table = entry.table();
     let mut table = String::new();
     let mut at = 0;
     for line in text.split_inclusive('\n') {
@@ -141,9 +169,7 @@ pub(crate) fn find_entry(text: &str, entry: &Entry<'_>) -> Option<Span> {
                 .chars()
                 .filter(|c| !c.is_whitespace() && *c != '"' && *c != '\'')
                 .collect();
-            if let Entry::Feature(key) = entry
-                && table == format!("features.{key}")
-            {
+            if own_table.as_ref() == Some(&table) {
                 let lead = line.len() - line.trim_start().len();
                 return Some(Span::new(start + lead, start + lead + trimmed.len()));
             }
@@ -227,6 +253,27 @@ mod tests {
         let p = find_entry(text, &Entry::Feature("sso")).expect("found");
         assert_eq!(&text[p.range()], "[features.sso]");
         assert!(find_entry(text, &Entry::Phrase("name")).is_none());
+    }
+
+    #[test]
+    fn tables_are_found_by_their_header() {
+        let text = "[glossary.terms.api-key]\nterm = \"API key\"\n\n[widgets.quill-lab]\nforms = [\"line\"]\n\n[widgets.quill-lab.attributes]\nlab = \"string\"\n\n[builds.\"self-managed-3.3\"]\nvariants = \"switch\"\n\n[notes.security]\n[dimensions.pm]\n";
+        let find = |entry| find_entry(text, &entry).map(|span| &text[span.range()]);
+        assert_eq!(
+            find(Entry::Term("api-key")),
+            Some("[glossary.terms.api-key]")
+        );
+        assert_eq!(
+            find(Entry::Widget("quill-lab")),
+            Some("[widgets.quill-lab]")
+        );
+        assert_eq!(
+            find(Entry::Build("self-managed-3.3")),
+            Some("[builds.\"self-managed-3.3\"]")
+        );
+        assert_eq!(find(Entry::Note("security")), Some("[notes.security]"));
+        assert_eq!(find(Entry::Dimension("pm")), Some("[dimensions.pm]"));
+        assert_eq!(find(Entry::Note("tip")), None);
     }
 
     #[test]

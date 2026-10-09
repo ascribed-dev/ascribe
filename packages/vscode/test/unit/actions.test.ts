@@ -446,8 +446,14 @@ const targets: TargetsResult = {
     { type: "warning", label: "Warning" },
   ],
   pages: [
-    { path: "keys.md", title: "API keys", type: "page", link: "keys.md" },
-    { path: "guides/my page.md", title: null, type: null, link: "guides/my%20page.md" },
+    { path: "keys.md", title: "API keys", type: "page", link: "keys.md", rootLink: "/keys.md" },
+    {
+      path: "guides/my page.md",
+      title: null,
+      type: null,
+      link: "guides/my%20page.md",
+      rootLink: "/guides/my%20page.md",
+    },
   ],
   headings: [
     {
@@ -456,14 +462,23 @@ const targets: TargetsResult = {
       id: "rotate-keys",
       level: 2,
       link: "keys.md#rotate-keys",
+      rootLink: "/keys.md#rotate-keys",
     },
-    { page: "install.md", text: "Install", id: "install", level: 2, link: "#install" },
+    {
+      page: "install.md",
+      text: "Install",
+      id: "install",
+      level: 2,
+      link: "#install",
+      rootLink: "/install.md#install",
+    },
     {
       page: "guides/my page.md",
       text: "Set up (once)",
       id: "set-up",
       level: 2,
       link: "guides/my%20page.md#set-up",
+      rootLink: "/guides/my%20page.md#set-up",
     },
   ],
   fragments: [
@@ -734,16 +749,17 @@ describe("Copy a link to this section", () => {
     ]);
   });
 
-  it("encodes the page's path as a destination", async () => {
+  it("copies the link the server writes, so it's encoded as completion encodes it", async () => {
     const at = context([heading("set-up", true), section]);
     const own: TargetsResult = {
       headings: [
         {
-          page: "guides/my page (old).md",
+          page: "guides/café (old).md",
           text: "Set up",
           id: "set-up",
           level: 2,
           link: "#set-up",
+          rootLink: "/guides/café%20%28old%29.md#set-up",
         },
       ],
     };
@@ -756,7 +772,7 @@ describe("Copy a link to this section", () => {
       say: () => undefined,
       rename: () => Promise.resolve(false),
     });
-    expect(copied).toEqual(["/guides/my%20page%20%28old%29.md#set-up"]);
+    expect(copied).toEqual(["/guides/café%20%28old%29.md#set-up"]);
   });
 
   it("says so for a heading no page of its own lists", async () => {

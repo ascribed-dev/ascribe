@@ -7,9 +7,6 @@ import type { ChosenBuilds } from "./chosenBuild.js";
 import type { ProjectInfo } from "./describe.js";
 import type { BuildLenses } from "./lens.js";
 
-/** How many of a project's Markdown files are tried for one that's a page. */
-const CANDIDATES = 20;
-
 /** How long after the last change to an `ascribe.toml` its builds are asked for again. */
 const MODEL_DEBOUNCE_MS = 300;
 
@@ -135,58 +132,27 @@ export class ProjectBuilds implements vscode.Disposable {
     );
   }
 
-  /**
-   * Asks for the builds through one of the project's pages: `ascribe/targets`
-   * answers for a page, and with nothing for any other file. The active
-   * editor's file is tried first, then the project's open files, then its
-   * files on disk.
-   */
+  /** Asks for the builds through the project's `ascribe.toml`: `ascribe/targets` answers for any of its files. */
   private async ask(server: ProjectServer): Promise<void> {
     if (server.state !== "running") return;
-    for await (const uri of this.candidates(server)) {
-      if (server.state !== "running") return;
-      let result: TargetsResult;
-      try {
-        result = (await server.request("ascribe/targets", {
-          textDocument: { uri: uri.toString() },
-          kinds: ["builds"],
-        })) as TargetsResult;
-      } catch {
-        return;
-      }
-      if (result.builds === undefined) continue;
-      if (!this.projects.servers.includes(server)) return;
-      this.known.set(server, result.builds);
-      // A build the content model no longer has: back to the editor's.
-      const folder = server.project.folder;
-      const chosen = this.chosen.get(folder);
-      if (chosen !== undefined && !result.builds.some((b) => b.name === chosen)) {
-        this.chosen.set(folder, undefined);
-      }
-      this.changed.fire();
+    let result: TargetsResult;
+    try {
+      result = (await server.request("ascribe/targets", {
+        textDocument: { uri: vscode.Uri.file(server.project.config).toString() },
+        kinds: ["builds"],
+      })) as TargetsResult;
+    } catch {
       return;
     }
-  }
-
-  private async *candidates(server: ProjectServer): AsyncGenerator<vscode.Uri> {
-    const owned = (uri: vscode.Uri) =>
-      uri.scheme === "file" && this.projects.serverFor(uri) === server;
-    const seen = new Set<string>();
-    const fresh = (uri: vscode.Uri) => {
-      if (seen.has(uri.toString()) || !owned(uri)) return false;
-      seen.add(uri.toString());
-      return true;
-    };
-    const active = vscode.window.activeTextEditor?.document;
-    if (active?.languageId === "markdown" && fresh(active.uri)) yield active.uri;
-    for (const document of vscode.workspace.textDocuments) {
-      if (document.languageId === "markdown" && fresh(document.uri)) yield document.uri;
+    if (result.builds === undefined) return;
+    if (!this.projects.servers.includes(server)) return;
+    this.known.set(server, result.builds);
+    // A build the content model no longer has: back to the editor's.
+    const folder = server.project.folder;
+    const chosen = this.chosen.get(folder);
+    if (chosen !== undefined && !result.builds.some((b) => b.name === chosen)) {
+      this.chosen.set(folder, undefined);
     }
-    const files = await vscode.workspace.findFiles(
-      new vscode.RelativePattern(vscode.Uri.file(server.project.folder), "**/*.md"),
-      "**/node_modules/**",
-      CANDIDATES,
-    );
-    for (const uri of files) if (fresh(uri)) yield uri;
+    this.changed.fire();
   }
 }

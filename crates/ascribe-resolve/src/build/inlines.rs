@@ -31,23 +31,38 @@ pub(crate) fn own_lists_mut(block: &mut ResolvedBlock) -> Vec<&mut Vec<Inline>> 
     }
 }
 
+/// The lists of inlines that are prose (SPEC §5.4) in a block of `kind`:
+/// paragraphs, table cells, and the text primary of a directive. Not headings
+/// or titles. Written once for [`prose_lists`] and [`prose_lists_mut`]; pass
+/// `mut` for the second.
+macro_rules! prose_lists {
+    ($kind:expr $(, $mut:ident)?) => {
+        match $kind {
+            BlockKind::Paragraph(p) => vec![&$($mut)? p.inlines],
+            BlockKind::Table(t) => (&$($mut)? t.rows)
+                .into_iter()
+                .flat_map(|r| (&$($mut)? r.cells).into_iter().map(|c| &$($mut)? c.inlines))
+                .collect(),
+            BlockKind::Directive(line) => match &$($mut)? line.primary {
+                Some(PrimaryValue::Text(t)) => vec![&$($mut)? t.inlines],
+                _ => Vec::new(),
+            },
+            _ => Vec::new(),
+        }
+    };
+}
+
+/// The lists of inlines that are prose in a source block, as the build finds
+/// them in a resolved one.
+pub(crate) fn prose_lists(kind: &BlockKind) -> Vec<&Vec<Inline>> {
+    prose_lists!(kind)
+}
+
 /// The lists of inlines that are prose (SPEC §5.4): paragraphs, table cells,
 /// and the text primary of a directive. Not headings or titles.
 pub(crate) fn prose_lists_mut(block: &mut ResolvedBlock) -> Vec<&mut Vec<Inline>> {
     match &mut block.kind {
-        ResolvedKind::Leaf(b) => match &mut b.kind {
-            BlockKind::Paragraph(p) => vec![&mut p.inlines],
-            BlockKind::Table(t) => t
-                .rows
-                .iter_mut()
-                .flat_map(|r| r.cells.iter_mut().map(|c| &mut c.inlines))
-                .collect(),
-            BlockKind::Directive(line) => match &mut line.primary {
-                Some(PrimaryValue::Text(t)) => vec![&mut t.inlines],
-                _ => Vec::new(),
-            },
-            _ => Vec::new(),
-        },
+        ResolvedKind::Leaf(b) => prose_lists!(&mut b.kind, mut),
         _ => Vec::new(),
     }
 }

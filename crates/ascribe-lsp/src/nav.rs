@@ -26,7 +26,7 @@ use crate::uri::path_to_uri;
 pub(crate) struct Ctx {
     /// The project as of the request.
     pub snapshot: Snapshot,
-    /// The requested file's content path.
+    /// The requested file's content path, or [`Ctx::PROJECT`].
     pub path: RelPath,
     /// The requested document's version, when it's open in the editor.
     pub version: Option<i32>,
@@ -49,6 +49,11 @@ pub(crate) struct Ctx {
 }
 
 impl Ctx {
+    /// The path of a request about the whole project asked through a file
+    /// that isn't a source ([`crate::core::Core::project_target`]): a name at
+    /// the content root that no source file can have.
+    pub(crate) const PROJECT: &'static str = "ascribe.toml";
+
     /// The requested file's index.
     pub(crate) fn file(&self) -> Option<&FileIndex> {
         self.snapshot.file(&self.path)

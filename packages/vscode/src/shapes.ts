@@ -8,6 +8,7 @@
 // - ChangesResult (the language server, answering `ascribe/review/changes`)
 // - ContextResult (the language server, answering `ascribe/context`)
 // - TargetsResult (the language server, answering `ascribe/targets`)
+// - InventoryResult (the language server, answering `ascribe/inventory`)
 // - EditResult (the language server, answering `ascribe/edit`)
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
 
@@ -527,6 +528,80 @@ export interface FrontmatterValue {
   value: string;
 }
 
+/** An entry of the content model. */
+export interface InventoryEntry {
+  /** What kind of entry it is. */
+  kind: ModelKind;
+  /** Its key, id, or name, as pages write it. */
+  key: string;
+  /** Its label, name, or term, where it has one besides its key. */
+  label: string | null;
+  /**
+   * How many places use it; `null` for a build, which pages don't name,
+   * and for a glossary term with `match = "marked"`, whose uses are links
+   * to its page.
+   */
+  uses: number | null;
+  /**
+   * Where `ascribe.toml` declares it; `null` for a built-in note type,
+   * and for an entry that can't be found there.
+   */
+  declaration: LspRange | null;
+}
+
+/** A fragment. */
+export interface InventoryFragment {
+  /** Its content path. */
+  path: string;
+  /** The content paths of the files that include it, in order. */
+  includedBy: string[];
+}
+
+/** A page. */
+export interface InventoryPage {
+  /** Its content path. */
+  path: string;
+  /** Its title (frontmatter `title`). */
+  title: string | null;
+  /** Its content type; `null` when no one type applies. */
+  type: string | null;
+  /** How many links from other files, and includes, name it. */
+  incoming: number;
+}
+
+/**
+ * The answer to `ascribe/inventory`. A document that isn't one of the
+ * project's files gets empty lists.
+ */
+export interface InventoryResult {
+  /** The pages, by content path. */
+  pages: InventoryPage[];
+  /** The fragments, by content path. */
+  fragments: InventoryFragment[];
+  /**
+   * The content paths of the pages no other file links to or includes,
+   * other than index pages (`index.md`, in any folder). Without a
+   * navigation file a reader may still reach them, so this is a hint.
+   */
+  orphans: string[];
+  /**
+   * The content model's entries: phrases, features, glossary terms,
+   * dimensions, note types, widgets, then builds, each kind in
+   * declaration order.
+   */
+  model: InventoryEntry[];
+  /**
+   * The `file:` URI of the content root, which content paths are
+   * relative to.
+   */
+  contentUri?: string;
+  /**
+   * The `file:` URI of the project's `ascribe.toml`, which the ranges of
+   * declarations are in.
+   */
+  modelUri?: string;
+}
+
 /**
  * A position in a document: a zero-based line, and a zero-based column in
  * the position encoding the client and server agreed on.
@@ -559,6 +634,9 @@ export interface LspWorkspaceEdit {
   /** The edits to each document, by its URI. */
   changes: Record<string, LspTextEdit[]>;
 }
+
+/** A kind of content model entry. */
+export type ModelKind = "phrase" | "feature" | "term" | "dimension" | "note" | "widget" | "build";
 
 /** What changed on one page of a build. */
 export interface PageDiff {
@@ -895,6 +973,11 @@ export interface TargetHeading {
    * or `#id` on the requesting page itself.
    */
   link: string;
+  /**
+   * The destination of a link to it from the content root,
+   * `/page.md#id`, which any page of the project can use.
+   */
+  rootLink: string;
 }
 
 /** An image file. */
@@ -931,6 +1014,11 @@ export interface TargetPage {
   type: string | null;
   /** The destination of a link to it from the requesting page. */
   link: string;
+  /**
+   * The destination of a link to it from the content root, `/page.md`,
+   * which any page of the project can use.
+   */
+  rootLink: string;
 }
 
 /** A phrase. */
@@ -991,8 +1079,7 @@ export interface TargetWidget {
 
 /**
  * The answer to `ascribe/targets`: a list for each kind asked for, and no
- * others. A document that isn't a source file of the project gets no
- * lists.
+ * others. A document that isn't one of the project's files gets no lists.
  */
 export interface TargetsResult {
   /** Builds, in declaration order. */

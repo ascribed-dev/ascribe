@@ -117,6 +117,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<ascribe_lsp::TargetsResult>(),
     },
     Shape {
+        file: "lsp-inventory",
+        title: "InventoryResult",
+        written_by: "the language server, answering `ascribe/inventory`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::InventoryResult>(),
+    },
+    Shape {
         file: "lsp-edit",
         title: "EditResult",
         written_by: "the language server, answering `ascribe/edit`",
@@ -144,6 +151,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-changes",
             "lsp-context",
             "lsp-targets",
+            "lsp-inventory",
             "lsp-edit",
             "lsp-build-view",
         ],

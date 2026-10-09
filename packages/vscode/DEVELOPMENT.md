@@ -119,11 +119,13 @@ The registry feeds the Command Palette (`ascribe.action.<id>`), the editor's con
 - **The actions bar** (`src/actions/bar.ts` lists, `src/actions/barPick.ts` shows). A quick pick that shows at once, busy, and fills once the cached context and VS Code's quick fixes at the cursor (`vscode.executeCodeActionProvider`) are in: the fixes that edit the text first (not those that only run a command, such as a chat's **Fix** and **Explain**), leaving out the registry's own `quickfix.ascribe` actions, then the actions that apply, by group, each with what it writes when that's known before the wizard (`preview` in the registry). A chosen action runs through the runner; its wizard's first step is shown before the bar is disposed, so it takes the bar's place in the quick input instead of closing it and opening another. Escape before then cancels the wizard.
 - **Tests** answer a wizard from a script: `api.actions.answerNext([...])` before running the command, and `api.actions.runs` says what each run did. `api.actions.bars` says what each opening of the bar listed, and `api.actions.selectInBar(label)` makes a row active for `workbench.action.acceptSelectedQuickOpenItem` to choose.
 
-## The status bar and the Projects view
+## The status bar and the sidebar
 
 `src/ui/` holds the editor's UI around projects. **The build you're looking at** is one value per project, `ChosenBuilds` in `src/ui/chosenBuild.ts`: the preview renders it, the status bar names it, and the preview's picker and **Switch Build** both set it, so either one changes the other. No choice means the editor build, and choosing the editor build clears the choice, so it follows `[editor] build`.
 
-`src/ui/projectBuilds.ts` asks each running server for its builds (`ascribe/targets`, through one of its pages: the active one, an open one, or one on disk), again when a server starts or its `ascribe.toml` changes, and never starts a server. `src/ui/describe.ts` works out what the status bar item and the view's items say from plain values, so `test/unit/ui.test.ts` checks it without VS Code; `src/ui/statusBar.ts` and `src/ui/projectsView.ts` show it. The view lists `ProjectRegistry.servers`, started or not, and redraws on the registry's `onDidChangeProjects` and `onDidChangeState` (each `ProjectServer`'s `onDidChangeState`, from `src/serverState.ts`). Its inline buttons are the commands `ascribe.projects.showOutput` and `ascribe.projects.restart`, which the palette doesn't show; a project's `contextValue`, `ascribe.project.<state>`, decides which it offers.
+`src/ui/projectBuilds.ts` asks each running server for its builds (`ascribe/targets`, through its `ascribe.toml`, which the server answers for as it does for a page), again when a server starts or its `ascribe.toml` changes, and never starts a server. `src/ui/describe.ts` works out what the status bar item and the view's items say from plain values, so `test/unit/ui.test.ts` checks it without VS Code; `src/ui/statusBar.ts` and `src/ui/projectsView.ts` show it. The view lists `ProjectRegistry.servers`, started or not, and redraws on the registry's `onDidChangeProjects` and `onDidChangeState` (each `ProjectServer`'s `onDidChangeState`, from `src/serverState.ts`). Its inline buttons are the commands `ascribe.projects.showOutput` and `ascribe.projects.restart`, which the palette doesn't show; a project's `contextValue`, `ascribe.project.<state>`, decides which it offers.
+
+The sidebar's other views, **Used by**, **Pages**, and **Content model**, are `src/ui/sidebarViews.ts`, with what their items say worked out from plain values in `src/ui/sidebar.ts` (`test/unit/sidebar.test.ts`). They show the active file's project, and ask only its server, only while it runs. Pages and Content model draw `ascribe/inventory`, asked through the project's `ascribe.toml` on a save of one of its files and when the active project changes, debounced. Used by asks `textDocument/references` for the active page as the cursor moves: at the cursor on a heading's line, else at the start of the file, which the server reads as the file itself. It sorts the places into links and includes by the text of their lines, read from the open document or the disk.
 
 **The build lens** (`src/ui/buildLens.ts`) dims what the build you're looking at leaves out of each visible page of a project whose lens is on. Which projects have it on is `BuildLenses` in `src/ui/lens.ts`, beside `lensView`, which turns an `ascribe/buildView` answer into the ranges to dim, their hovers, and the line for a page the build drops, so `test/unit/lens.test.ts` checks them without VS Code. The lens has no build of its own: it asks for `ChosenBuilds`' choice, the preview's, and asks again on an edit (debounced), when an editor is shown, when the choice or the lens changes, and when `ProjectBuilds` fires (a server started or stopped, or the content model changed). An answer for an older version of the page, or for a request since replaced, is dropped. It asks only a running server, and the status bar item's menu toggles it through `ascribe.toggleBuildLens`.
 
@@ -169,7 +171,12 @@ for theme colors it can't read.
   | Dimension | `$(symbol-enum)` |
   | Variant, one value of a dimension | `$(symbol-enum-member)` |
   | Phrase | `$(symbol-string)` |
-  | Availability | `$(tag)` |
+  | Availability, feature | `$(tag)` |
+  | Glossary term | `$(symbol-key)` |
+  | Note type | `$(note)` |
+  | Widget | `$(symbol-class)` |
+  | Orphan pages | `$(warning)` |
+  | Unused, not included | the concept's icon in `disabledForeground` |
   | The build lens, dimming what a build leaves out | `$(eye)` |
 
   An icon of Ascribe's own is added only for a concept no codicon reads right

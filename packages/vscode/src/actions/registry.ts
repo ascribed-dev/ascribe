@@ -15,7 +15,6 @@ import {
   availabilitySpec,
   availabilitySteps,
   chosenDimension,
-  destinationOf,
   destinationStep,
   dimensionStep,
   everywhereSteps,
@@ -222,7 +221,8 @@ export async function copyLinkToSection(
     );
     return false;
   }
-  const link = `/${destinationOf(heading.page)}#${id}`;
+  // A binary from before `rootLink` answers without it: its page-relative link is the next best.
+  const link = (heading.rootLink as string | undefined) ?? heading.link;
   await effects.copy(link);
   effects.say(`Copied ${link}`);
   return true;

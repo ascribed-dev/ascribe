@@ -27,7 +27,9 @@ pub const METHOD: &str = "ascribe/targets";
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TargetsParams {
-    /// The page the targets are for: paths are written from it.
+    /// The page the targets are for: paths are written from it. Any other of
+    /// the project's files (`ascribe.toml`, or another file in its folder)
+    /// gets the same lists, with paths written from the content root.
     pub text_document: TextDocumentIdentifier,
     /// The kinds of target to list.
     pub kinds: Vec<TargetKind>,
@@ -68,8 +70,7 @@ pub enum TargetKind {
 }
 
 /// The answer to `ascribe/targets`: a list for each kind asked for, and no
-/// others. A document that isn't a source file of the project gets no
-/// lists.
+/// others. A document that isn't one of the project's files gets no lists.
 #[derive(Debug, Default, Serialize, PartialEq)]
 #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
@@ -136,6 +137,9 @@ pub struct TargetPage {
     pub content_type: Option<String>,
     /// The destination of a link to it from the requesting page.
     pub link: String,
+    /// The destination of a link to it from the content root, `/page.md`,
+    /// which any page of the project can use.
+    pub root_link: String,
 }
 
 /// A heading a link can name.
@@ -154,6 +158,9 @@ pub struct TargetHeading {
     /// The destination of a link to it from the requesting page: `page.md#id`,
     /// or `#id` on the requesting page itself.
     pub link: String,
+    /// The destination of a link to it from the content root,
+    /// `/page.md#id`, which any page of the project can use.
+    pub root_link: String,
 }
 
 /// A fragment.
@@ -542,6 +549,7 @@ fn pages(ctx: &Ctx) -> Vec<TargetPage> {
                 TypeMatch::Ambiguous(_) | TypeMatch::None => None,
             },
             link: link_to(ctx, &file.path),
+            root_link: encode_destination(&format!("/{}", file.path)),
         })
         .collect();
     pages.sort_by(|a, b| a.path.cmp(&b.path));
@@ -561,13 +569,16 @@ fn headings(ctx: &Ctx) -> Vec<TargetHeading> {
         } else {
             link_to(ctx, &file.path)
         };
+        let root_link = encode_destination(&format!("/{}", file.path));
         for h in link_headings(snapshot, file) {
+            let id = encode_destination(&h.source_id);
             out.push(TargetHeading {
                 page: file.path.to_string(),
                 text: h.text.clone(),
                 id: h.source_id.clone(),
                 level: h.level,
-                link: format!("{page_link}#{}", encode_destination(&h.source_id)),
+                link: format!("{page_link}#{id}"),
+                root_link: format!("{root_link}#{id}"),
             });
         }
     }
