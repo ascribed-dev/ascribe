@@ -92,3 +92,18 @@ An element, an attribute, a class, or the order of what the `site` output writes
 - [ ] The Astro example's end-to-end tests, in `examples/astro-site/test/e2e/`.
 - [ ] The docs site's own styles, in `site/src/styles/site.css`, if they style the changed markup.
 - [ ] A line in the unreleased section of `CHANGELOG.md`.
+
+## A change to how something looks
+
+A color, a font, the type scale, a space or radius, the mark, or one of its images, on any surface: the docs site, the element library, review, the HTML report, the Astro toolbar, or the extension. [design/README.md](../design/README.md) has the steps.
+
+- [ ] The value is in `design/tokens.toml`, and a stylesheet takes it through its `[emit]` block; no stylesheet writes a color of its own. A changed shared color is changed in `design/candidates/chosen.toml` too.
+- [ ] The generated blocks rewritten (`ASCRIBE_BLESS=1 pnpm exec vitest run scripts/design/tokens.test.ts`), and the diff read.
+- [ ] The report's embedded stylesheet rebuilt (`pnpm --filter @ascribed/review embed`).
+- [ ] The mark's images rewritten (`node scripts/design/assets.ts`) if a shared color or a source SVG changed, and looked at.
+- [ ] Contrast: a new text or meaningful graphic color has its pairings in `design/candidates/pairs.toml`, and `pnpm exec vitest run scripts/design` passes.
+- [ ] The specimen rewritten (`node scripts/design/specimen.ts`) and looked at.
+- [ ] Screenshots in light and dark of each surface it reaches, in the pull request.
+- [ ] `node scripts/compare/outputs.ts --base main`: only the HTML report's files differ, accepted by name, with the label `outputs changed`.
+- [ ] A changed default of an `--ascribe-*` or `--ascribe-review-*` property: a **Behavior change** in the unreleased section of `CHANGELOG.md`, with the previous values (decision 44). A new property is a contract addition, recorded as a decision.
+- [ ] In the extension: a codicon and a theme color first (`packages/vscode/DEVELOPMENT.md`, "Icons and colors").
