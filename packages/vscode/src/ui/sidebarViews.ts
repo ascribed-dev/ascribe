@@ -26,6 +26,13 @@ import {
 /** How long after the last save, or switch of project, the inventory is asked for again. */
 const INVENTORY_DEBOUNCE_MS = 300;
 
+/**
+ * How long after a page is created or deleted on disk the views ask again:
+ * longer than the language client waits (250ms) before it tells the server,
+ * so the server has the change when it's asked.
+ */
+const FILES_DEBOUNCE_MS = 600;
+
 /** How long after the cursor stops moving Used by asks again. */
 const USED_BY_DEBOUNCE_MS = 250;
 
@@ -114,8 +121,9 @@ class Tree<N> implements vscode.TreeDataProvider<N> {
  * The Used by, Pages, and Content model views in the Ascribe sidebar, for the
  * active file's project. They ask only a server that is already running, and
  * never start one: a page being active means its project's server runs.
- * Pages and Content model refresh when a file of the project is saved and when
- * the active project changes; Used by follows the active editor and its cursor.
+ * Pages and Content model refresh when a file of the project is saved, when a
+ * page is created or deleted, and when the active project changes; Used by
+ * follows the active editor and its cursor, while it's showing.
  */
 export class SidebarViews implements vscode.Disposable {
   /** The server of the active file's project, running or not. */
@@ -221,6 +229,7 @@ export class SidebarViews implements vscode.Disposable {
       vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
         if (textEditor === vscode.window.activeTextEditor) this.soon("usedBy");
       }),
+      ...this.watchPages(),
       vscode.workspace.onDidSaveTextDocument((document) => {
         if (this.server && this.projects.serverFor(document.uri) === this.server) {
           this.usedByStale = true;
@@ -265,7 +274,20 @@ export class SidebarViews implements vscode.Disposable {
     this.soon("usedBy");
   }
 
-  private soon(what: "inventory" | "usedBy"): void {
+  /** Pages created or deleted outside the editor change the lists too. */
+  private watchPages(): vscode.Disposable[] {
+    const watcher = vscode.workspace.createFileSystemWatcher("**/*.md", false, true, false);
+    const changed = (uri: vscode.Uri): void => {
+      if (this.server && this.projects.serverFor(uri) === this.server) {
+        this.usedByStale = true;
+        this.soon("inventory", FILES_DEBOUNCE_MS);
+        this.soon("usedBy", FILES_DEBOUNCE_MS);
+      }
+    };
+    return [watcher, watcher.onDidCreate(changed), watcher.onDidDelete(changed)];
+  }
+
+  private soon(what: "inventory" | "usedBy", delay?: number): void {
     clearTimeout(this.timers.get(what));
     this.timers.set(
       what,
@@ -277,7 +299,7 @@ export class SidebarViews implements vscode.Disposable {
           );
           this.pending.add(done);
         },
-        what === "inventory" ? INVENTORY_DEBOUNCE_MS : USED_BY_DEBOUNCE_MS,
+        delay ?? (what === "inventory" ? INVENTORY_DEBOUNCE_MS : USED_BY_DEBOUNCE_MS),
       ),
     );
   }

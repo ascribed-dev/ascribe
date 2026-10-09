@@ -148,7 +148,7 @@ Three more views in the Ascribe sidebar show the active file's project. They fol
 - **Pages** lists the project's pages by content type, each by its title with its path beside it, then its fragments, each with the files that include it, then its **orphans**: pages that no other file links to or includes, apart from index pages (`index.md`). Ascribe doesn't know your site's navigation, so an orphan may still be reachable from a menu: it's a hint, not an error.
 - **Content model** lists the project's phrases, features, glossary terms, dimensions, note types, widgets, and builds, each with how many places use it, apart from builds, which pages don't name, and glossary terms with `match = "marked"`. An entry nothing uses is marked **unused**, a candidate to remove. Clicking an entry opens its declaration in `ascribe.toml`. The counts are what **Find All References** lists for the same entry.
 
-Pages and Content model update when you save a file of the project and when you switch to another project's file; Used by updates as you move between pages and headings.
+Pages and Content model update when you save a file of the project, when a page is added or deleted, and when you switch to another project's file; Used by updates as you move between pages and headings, while it's open.
 
 ### Site preview
 @available: next

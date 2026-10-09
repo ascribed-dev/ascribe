@@ -164,12 +164,7 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
   it("lists the project's pages by type, its fragments, and what includes each", async () => {
     const api = await activated();
     await openAt(keys);
-    const pages = await waitFor("the Pages view", async () => {
-      await api.ui.sidebar.whenSettled();
-      const items = flat(api.ui.sidebar.items("pages"));
-      return items.length > 0 ? items : undefined;
-    });
-    assert.deepEqual(pages, [
+    const expected = [
       "page (4)",
       "  Broken (broken.md)",
       "  Install the Quill agent (install-agent.md)",
@@ -180,7 +175,14 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
       "    install-agent.md (includes it)",
       "Orphans (1)",
       "  Broken (broken.md)",
-    ]);
+    ];
+    // The tests before this one add and remove pages; the view catches up.
+    const pages = await waitFor("the Pages view", async () => {
+      await api.ui.sidebar.whenSettled();
+      const items = flat(api.ui.sidebar.items("pages"));
+      return items.join("\n") === expected.join("\n") ? items : undefined;
+    }).catch(() => flat(api.ui.sidebar.items("pages")));
+    assert.deepEqual(pages, expected);
     const page = api.ui.sidebar.items("pages")[0]?.children[2];
     assert.ok(page?.opens?.endsWith("/docs/keys.md"), page?.opens);
   });
@@ -217,13 +219,17 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
         "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 93)",
       ],
     );
-    await openAt(keys, "## Rotate keys");
-    assert.equal((await settled()).length, 3);
     const api = await activated();
-    assert.equal(api.ui.sidebar.message("usedBy"), "What links to “Rotate keys”");
+    /** Waits for Used by's message, which says what it answered. */
+    const answered = (message: string) =>
+      waitFor(message, async () => {
+        const items = await settled();
+        return api.ui.sidebar.message("usedBy") === message ? items : undefined;
+      });
+    await openAt(keys, "## Rotate keys");
+    assert.equal((await answered("What links to “Rotate keys”")).length, 3);
     await openAt(keys, "## Create a key");
-    assert.deepEqual(await settled(), []);
-    assert.equal(api.ui.sidebar.message("usedBy"), "Nothing links to or includes “Create a key”.");
+    assert.deepEqual(await answered("Nothing links to or includes “Create a key”."), []);
   });
 
   it("counts again when a page of the project is saved", async () => {
@@ -240,7 +246,9 @@ describe("the sidebar's Used by, Pages, and Content model views on examples/quil
       assert.ok(await document.save());
       await waitFor("the new link counted", async () => {
         await api.ui.sidebar.whenSettled();
-        const page = api.ui.sidebar.items("pages")[0]?.children.find((p) => p.label === "API keys");
+        const page = api.ui.sidebar
+          .items("pages")[0]
+          ?.children.find((p) => p.description === "keys.md");
         return page?.tooltip.includes("2 links and includes") ? page : undefined;
       });
       assert.ok(incoming());
