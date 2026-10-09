@@ -11,6 +11,19 @@
 // - InventoryResult (the language server, answering `ascribe/inventory`)
 // - EditResult (the language server, answering `ascribe/edit`)
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
+// - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
+
+/**
+ * The answer to `ascribe/agentPrompt`, or `null` when there's no problem to
+ * prompt about: the file has none, or the diagnostic is no longer reported.
+ */
+export interface AgentPromptResult {
+  /**
+   * The prompt: plain text with Markdown, short enough for an agent's
+   * link to carry.
+   */
+  prompt: string;
+}
 
 /**
  * Where a block's text is written: the README's anchor grammar, the same

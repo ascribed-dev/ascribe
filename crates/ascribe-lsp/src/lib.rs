@@ -6,6 +6,7 @@
 //! the editor's build, as the author types. See the README for the design, the
 //! semantic token legend, and how stale results are kept from the editor.
 
+mod agent_prompt;
 mod build_view;
 mod code_action;
 mod complete;
@@ -40,6 +41,9 @@ use std::sync::atomic::AtomicBool;
 
 use lsp_server::Connection;
 
+pub use agent_prompt::{
+    AgentPromptParams, AgentPromptResult, METHOD as AGENT_PROMPT_METHOD, PromptKind,
+};
 pub use build_view::{
     BuildViewParams, BuildViewResult, Excluded, ExclusionReason, METHOD as BUILD_VIEW_METHOD,
 };

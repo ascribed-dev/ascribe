@@ -15,4 +15,5 @@
   - `text` (the default): Diagnostics with source snippets, for people.
   - `concise`: One line per diagnostic, `file:line: [code] message`, grouped by file: for an agent. At most 50, then how many more and the command that narrows the check.
   - `json`: One JSON document, for tools.
+  - `prompt`: A prompt for an agent that fixes the problems: about the file, when the paths name one file, else about the project or the paths. Nothing when there are no problems.
 - `--deny-warnings`: Make warnings fail the command too (exit code 1), for CI.

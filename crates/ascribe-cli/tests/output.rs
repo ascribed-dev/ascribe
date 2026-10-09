@@ -151,7 +151,8 @@ fn copy_tree(from: &Path, to: &Path) {
 }
 
 /// `ascribe check` on `examples/quill`, with a link to a page's route on line
-/// 7 of `keys.md`: the command reference's text and JSON output.
+/// 7 of `keys.md`: the command reference's text, JSON, concise, and prompt
+/// output.
 #[test]
 fn check() {
     let dir = tempfile::tempdir().unwrap();
@@ -179,6 +180,14 @@ fn check() {
         &stdout(&run(
             dir.path(),
             &["check", "docs/keys.md", "--format", "concise"],
+            0,
+        )),
+    );
+    expect(
+        "check-prompt.txt",
+        &stdout(&run(
+            dir.path(),
+            &["check", "docs/keys.md", "--format", "prompt"],
             0,
         )),
     );

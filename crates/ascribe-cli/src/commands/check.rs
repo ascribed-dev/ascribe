@@ -5,6 +5,7 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+use ascribe_check::prompt::{self, Builds, shell_word as quote};
 use ascribe_check::{
     Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, diagnose,
     diagnose_editor_build, locate_for,
@@ -91,6 +92,10 @@ pub enum Format {
     Concise,
     /// One JSON document, for tools.
     Json,
+    /// A prompt for an agent that fixes the problems: about the file, when
+    /// the paths name one file, else about the project or the paths. Nothing
+    /// when there are no problems.
+    Prompt,
 }
 
 /// Why the paths, or standard input, can't be checked.
@@ -189,6 +194,7 @@ fn check(
                 summary_only: summary_only.then(|| command.listing()),
             },
         ),
+        (Format::Prompt, _) => write_prompt(out, &project, args, scope.as_ref(), &reported),
         (Format::Text | Format::Concise, true) => {
             let (codes, by_file) = tally(&files, &reported);
             text::write_tally(out, &codes, &by_file).and_then(|()| writeln!(out, "{summary}"))
@@ -212,6 +218,55 @@ fn check(
         exit::PROBLEMS
     } else {
         exit::OK
+    }
+}
+
+/// Writes the prompt for an agent about what's reported: about one file
+/// when the paths name one source file (or with `--stdin`, whose text isn't
+/// saved there), else about the paths or the project. Nothing when nothing
+/// is reported.
+fn write_prompt(
+    out: &mut dyn Write,
+    project: &Project,
+    args: &Args,
+    scope: Option<&Scope>,
+    reported: &[Reported],
+) -> io::Result<()> {
+    let builds = if args.editor_build {
+        Builds::Editor(project.model().editor_default_build().name.clone())
+    } else if args.build.is_empty() {
+        Builds::All
+    } else {
+        Builds::Named(args.build.clone())
+    };
+    let mut context = prompt::Context::of_project(project.root(), builds);
+    let named = scope.and_then(|s| s.named_sources(project));
+    let one = named.as_deref().and_then(|files| match files {
+        [file] => project.source_at(file),
+        _ => None,
+    });
+    let index = std::cell::OnceCell::new();
+    let shown_on = |fragment: &ascribe_core::RelPath| {
+        index
+            .get_or_init(|| project.held_index())
+            .including_pages(fragment)
+    };
+    let text = match one {
+        Some(file) => {
+            if args.stdin {
+                let path = project.display_path(file.id).unwrap_or_default();
+                context = context.with_unsaved(vec![path]);
+            }
+            prompt::file(project, &context, file.id, reported, &shown_on)
+        }
+        None => {
+            let paths = scope.map(Scope::paths).unwrap_or_default();
+            prompt::project(project, &context, paths, reported)
+        }
+    };
+    match text {
+        Some(text) => out.write_all(text.as_bytes()),
+        None => Ok(()),
     }
 }
 
@@ -346,20 +401,6 @@ fn from_here(root: &Path, file: &str) -> String {
         )
 }
 
-/// A word as a POSIX shell reads it: as it is when it's plain, else in
-/// single quotes.
-fn quote(word: &str) -> String {
-    let plain = !word.is_empty()
-        && word
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || "_-./:@%+=,".contains(c));
-    if plain {
-        word.to_owned()
-    } else {
-        format!("'{}'", word.replace('\'', r"'\''"))
-    }
-}
-
 /// Reports a project that couldn't be checked, and returns the exit code.
 ///
 /// A content model with errors is a configuration
@@ -392,6 +433,7 @@ fn report_failure(
         ),
     };
     let _ = match args.format {
+        Format::Prompt => writeln!(err, "error: {message}"),
         Format::Text => {
             let _ = text::write_diagnostics(out, &files, &diagnostics, color);
             writeln!(err, "error: {message}")
@@ -410,17 +452,4 @@ fn report_failure(
         ),
     };
     exit::FAILURE
-}
-
-#[cfg(test)]
-mod tests {
-    use super::quote;
-
-    #[test]
-    fn words_are_quoted_only_when_a_shell_would_split_or_expand_them() {
-        assert_eq!(quote("docs/guides/install.md"), "docs/guides/install.md");
-        assert_eq!(quote("my guide.md"), "'my guide.md'");
-        assert_eq!(quote("it's.md"), r"'it'\''s.md'");
-        assert_eq!(quote(""), "''");
-    }
 }

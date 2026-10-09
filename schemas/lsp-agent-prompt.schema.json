@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The answer to `ascribe/agentPrompt`, or `null` when there's no problem to\nprompt about: the file has none, or the diagnostic is no longer reported.",
+  "properties": {
+    "prompt": {
+      "description": "The prompt: plain text with Markdown, short enough for an agent's\nlink to carry.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "prompt"
+  ],
+  "title": "AgentPromptResult",
+  "type": "object"
+}

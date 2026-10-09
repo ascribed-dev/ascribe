@@ -464,6 +464,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     (p.text_document.uri, crate::inventory::inventory)
                 })
             }
+            crate::agent_prompt::METHOD => agent_prompt_request(shared, &request),
             crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
             crate::review::CHANGES_METHOD => changes_request(shared, &request),
             method => Err(Response::new_err(
@@ -762,6 +763,31 @@ fn preview_request(shared: &Shared, request: &Request) -> Result<serde_json::Val
             e.to_string(),
         )
     })
+}
+
+/// Answers `ascribe/agentPrompt`. A prompt about a problem or a file needs a
+/// source file of the project; one about the project takes any of its
+/// files, or none.
+fn agent_prompt_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    use crate::agent_prompt::{AgentPromptParams, PromptKind, agent_prompt};
+    let params: AgentPromptParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let target = {
+        let core = shared.lock();
+        // Any file of the project: a source the index can't read is still
+        // one whose problems a prompt is about.
+        match (&params.text_document, params.kind) {
+            (Some(document), _) => core.project_target(&document.uri),
+            (None, PromptKind::Project) => core
+                .config
+                .as_deref()
+                .and_then(crate::uri::path_to_uri)
+                .and_then(|uri| core.project_target(&uri)),
+            (None, _) => None,
+        }
+    };
+    let result = target.and_then(|ctx| agent_prompt(&ctx, &params));
+    to_json(request, result)
 }
 
 fn set_base_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
