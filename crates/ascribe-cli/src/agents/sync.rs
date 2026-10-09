@@ -357,6 +357,8 @@ pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, Sy
         add(copilot, &|_| Ok(text.clone()), BLOCK)?;
     }
 
+    // Outside FileSystem: whether the repository has a `.codex` folder,
+    // which isn't the project's.
     let wants_hooks = Hooks {
         asked: hooks,
         claude,
@@ -427,6 +429,8 @@ fn plan_hooks(
 /// project pins it, in a `node_modules` from the project's folder up to the
 /// repository's root, else `ascribe` on the path.
 fn ascribe_command(here: &Path, root: &Path) -> settings::Ascribe {
+    // Outside FileSystem: the folders around the project, for an installed
+    // `@ascribed/cli`.
     for dir in here.ancestors() {
         if dir
             .join("node_modules")

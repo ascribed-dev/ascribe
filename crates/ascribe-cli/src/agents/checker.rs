@@ -8,19 +8,17 @@
 //! project loaded and answers each hook in milliseconds: for the files an
 //! edit wrote, as the language server does (`ascribe_lsp::Watched`), which
 //! redoes only what the edit affects; for the whole project, as the MCP
-//! server does (`crate::mcp::cache`). It listens on a port of `127.0.0.1` and writes
-//! the port, with a token every request must carry, to a file in the user's
-//! cache folder named for the project. It stops after [`IDLE`] without a
-//! request, when the project's `ascribe.toml` is gone, or when another
-//! server has taken its place. `ASCRIBE_HOOK_SERVER=off` checks in the
-//! hook's own process instead.
+//! server does (`crate::mcp::cache`). Hook and server talk through files
+//! in a folder of the user's cache folder named for the project
+//! ([`Mailbox`]), not a socket: the binary opens none. It stops after
+//! [`IDLE`] without a request, when the project's `ascribe.toml` is gone,
+//! or when another server has taken its place. `ASCRIBE_HOOK_SERVER=off`
+//! checks in the hook's own process instead.
 
 use std::collections::HashSet;
 use std::hash::{BuildHasher, Hash, Hasher};
-use std::io::{self, BufRead, BufReader, Cursor, Write};
-use std::net::{Ipv4Addr, TcpListener, TcpStream};
+use std::io::{self, Cursor, Write};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use ascribe_check::{Project, Reported, Severity};
@@ -73,6 +71,8 @@ pub fn sources_of(config: &Path, files: &[PathBuf]) -> Vec<PathBuf> {
     let Some(content) = content_dir(config) else {
         return Vec::new();
     };
+    // Outside FileSystem: whether a file the agent wrote is there, before
+    // the check reads it through the project.
     files
         .iter()
         .filter(|file| in_content(config, &content, file) && file.is_file())
@@ -161,8 +161,8 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
     })
 }
 
-/// No check server can be started: there's no cache folder for its file,
-/// or the binary can't be run again.
+/// No check server can be started: there's no cache folder for its
+/// files, or the binary can't be run again.
 #[derive(Debug)]
 pub struct NoServer;
 
@@ -178,54 +178,39 @@ pub fn ask_server(
     ask: &Ask,
     deadline: Instant,
 ) -> Result<Option<Result<Found, String>>, NoServer> {
-    let place = Rendezvous::of(config).ok_or(NoServer)?;
-    let mut stale = None;
+    let mailbox = Mailbox::of(config).ok_or(NoServer)?;
     let mut started = false;
+    let mut start = || -> Result<(), NoServer> {
+        if !started {
+            start_server(config).ok_or(NoServer)?;
+            started = true;
+        }
+        Ok(())
+    };
+    if !mailbox.served() {
+        start()?;
+    }
+    // A request waits in the folder for a server to answer it, one
+    // starting included.
+    let name = mailbox.post(ask).map_err(|_| NoServer)?;
+    let mut looked = Instant::now();
     loop {
-        match place.read() {
-            Some(found) if found.version == VERSION && Some(&found) != stale.as_ref() => {
-                match request(&found, ask, deadline) {
-                    Some(answer) => return Ok(Some(answer)),
-                    None if Instant::now() >= deadline => return Ok(None),
-                    // Not listening: a server that has stopped.
-                    None => stale = Some(found),
-                }
-            }
-            found => {
-                if !started {
-                    stale = found;
-                    start_server(config).ok_or(NoServer)?;
-                    started = true;
-                }
-            }
+        if let Some(answer) = mailbox.take_answer(&name) {
+            return Ok(Some(answer));
         }
         if Instant::now() >= deadline {
+            mailbox.withdraw(&name);
             return Ok(None);
         }
-        std::thread::sleep(Duration::from_millis(10));
+        // A server that stopped after the request was written.
+        if looked.elapsed() >= Duration::from_millis(250) {
+            if !mailbox.served() {
+                start()?;
+            }
+            looked = Instant::now();
+        }
+        std::thread::sleep(Duration::from_millis(2));
     }
-}
-
-/// Sends `ask` to the server `at` and reads its answer, by `deadline`.
-fn request(at: &Listening, ask: &Ask, deadline: Instant) -> Option<Result<Found, String>> {
-    let left = |deadline: Instant| {
-        deadline
-            .checked_duration_since(Instant::now())
-            .filter(|d| !d.is_zero())
-    };
-    let address = (Ipv4Addr::LOCALHOST, at.port).into();
-    let mut stream = TcpStream::connect_timeout(&address, left(deadline)?).ok()?;
-    stream.set_read_timeout(Some(left(deadline)?)).ok()?;
-    stream.set_write_timeout(Some(left(deadline)?)).ok()?;
-    let line = serde_json::to_string(&Request {
-        token: at.token.clone(),
-        ask: ask.clone(),
-    })
-    .ok()?;
-    writeln!(stream, "{line}").ok()?;
-    let mut answer = String::new();
-    BufReader::new(stream).read_line(&mut answer).ok()?;
-    serde_json::from_str::<Answer>(&answer).ok().map(|a| a.0)
 }
 
 /// Starts the project's check server in the background, detached from
@@ -265,62 +250,79 @@ fn detach(command: &mut std::process::Command) {
 #[cfg(not(any(unix, windows)))]
 fn detach(_command: &mut std::process::Command) {}
 
-/// The binary's version: a server of another version isn't asked.
+/// The binary's version: each version has a folder, and a server, of its
+/// own.
 const VERSION: &str = env!("ASCRIBE_VERSION");
 
-/// A request: the server's token, and what to check.
-#[derive(Serialize, Deserialize)]
-struct Request {
-    token: String,
-    ask: Ask,
-}
+/// How often a server says it's running, by touching its file.
+const HEARTBEAT: Duration = Duration::from_secs(1);
 
-/// A server's answer.
-#[derive(Serialize, Deserialize)]
-struct Answer(Result<Found, String>);
+/// How long after its last heartbeat a server is taken to have stopped.
+const STALE: Duration = Duration::from_secs(5);
 
-/// Where a server listens, as its file says.
+/// How long a request or an answer nobody took is kept.
+const ABANDONED: Duration = Duration::from_secs(60);
+
+/// How long after a request the server looks for the next one often.
+const BUSY: Duration = Duration::from_secs(30);
+
+/// A server, as its `server.json` names it.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct Listening {
-    version: String,
+struct Server {
     pid: u32,
-    port: u16,
-    token: String,
+    // Tells it from a later process given the same id.
+    nonce: String,
 }
 
-/// The file a project's server writes where it listens to.
-struct Rendezvous {
-    path: PathBuf,
+/// A project's folder in the user's cache folder, through which hooks
+/// and its check server talk: the server's `server.json`, the requests,
+/// `req-*.json`, and the answers, `res-*.json`. Each file is written
+/// whole or not at all, through a file beside it renamed into place.
+/// Nothing else can reach it: the folder is the user's own.
+struct Mailbox {
+    dir: PathBuf,
 }
 
-impl Rendezvous {
-    /// The file for the project of `config`, in the user's cache folder.
-    fn of(config: &Path) -> Option<Rendezvous> {
+impl Mailbox {
+    /// The folder for the project of `config`, and this binary's version.
+    fn of(config: &Path) -> Option<Mailbox> {
         let config = normalize(&std::path::absolute(config).ok()?);
         // The same binary hashes it the same way, which is all a name
         // needs; `DefaultHasher::new()` has fixed keys.
         let mut hasher = std::hash::DefaultHasher::new();
         config.hash(&mut hasher);
-        let dir = ascribe_sources::cache_root()?.join("hooks");
-        Some(Rendezvous {
-            path: dir.join(format!("{:016x}.json", hasher.finish())),
-        })
+        let dir = ascribe_sources::cache_root()?
+            .join("hooks")
+            .join(format!("{:016x}", hasher.finish()))
+            .join(VERSION);
+        Some(Mailbox { dir })
     }
 
-    fn read(&self) -> Option<Listening> {
+    fn server_file(&self) -> PathBuf {
+        self.dir.join("server.json")
+    }
+
+    /// The server its file names.
+    fn server(&self) -> Option<Server> {
         // Outside FileSystem: the check server's own file, in the user's
         // cache folder.
-        let text = std::fs::read_to_string(&self.path).ok()?;
+        let text = std::fs::read_to_string(self.server_file()).ok()?;
         serde_json::from_str(&text).ok()
     }
 
-    /// Writes `listening`, whole or not at all: through a file beside it,
-    /// renamed into place.
-    fn write(&self, listening: &Listening) -> io::Result<()> {
-        let dir = self.path.parent().unwrap_or(Path::new("."));
-        std::fs::create_dir_all(dir)?;
-        let partial = self.path.with_extension(format!("{}.tmp", listening.pid));
-        let text = serde_json::to_string(listening).map_err(io::Error::other)?;
+    /// Whether a server is running: its file was touched lately.
+    fn served(&self) -> bool {
+        // Outside FileSystem: the check server's own file, in the user's
+        // cache folder.
+        std::fs::metadata(self.server_file())
+            .and_then(|m| m.modified())
+            .is_ok_and(|touched| touched.elapsed().map_or(true, |since| since < STALE))
+    }
+
+    /// Writes `text` to `name` in the folder, whole or not at all.
+    fn write(&self, name: &str, text: &str) -> io::Result<()> {
+        std::fs::create_dir_all(&self.dir)?;
+        let partial = self.dir.join(format!("{name}.tmp"));
         let mut options = std::fs::OpenOptions::new();
         options.write(true).create(true).truncate(true);
         #[cfg(unix)]
@@ -329,21 +331,81 @@ impl Rendezvous {
             options.mode(0o600);
         }
         options.open(&partial)?.write_all(text.as_bytes())?;
-        std::fs::rename(&partial, &self.path)
+        std::fs::rename(&partial, self.dir.join(name))
     }
-}
 
-/// A token no other process can guess: the hasher's keys come from the
-/// operating system's randomness.
-fn token() -> String {
-    let random = |n: u32| {
-        std::collections::hash_map::RandomState::new().hash_one((
-            n,
-            std::process::id(),
-            Instant::now(),
-        ))
-    };
-    format!("{:016x}{:016x}", random(1), random(2))
+    /// Writes a request for `ask`, and returns its name.
+    fn post(&self, ask: &Ask) -> io::Result<String> {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_nanos());
+        let name = format!("{}-{nanos}.json", std::process::id());
+        let text = serde_json::to_string(ask).map_err(io::Error::other)?;
+        self.write(&format!("req-{name}"), &text)?;
+        Ok(name)
+    }
+
+    /// The answer to the request `name`, once it's there; taken from the
+    /// folder.
+    fn take_answer(&self, name: &str) -> Option<Result<Found, String>> {
+        let path = self.dir.join(format!("res-{name}"));
+        // Outside FileSystem: the check server's answer, in the user's
+        // cache folder.
+        let text = std::fs::read_to_string(&path).ok()?;
+        let _ = std::fs::remove_file(&path);
+        serde_json::from_str(&text).ok()
+    }
+
+    /// Removes the request `name`, unanswered, and an answer that came
+    /// too late.
+    fn withdraw(&self, name: &str) {
+        let _ = std::fs::remove_file(self.dir.join(format!("req-{name}")));
+        let _ = std::fs::remove_file(self.dir.join(format!("res-{name}")));
+    }
+
+    /// Takes the requests waiting, oldest first: each one's name and what
+    /// it asks. A request nobody took for [`ABANDONED`] is removed
+    /// instead, and so is an answer.
+    fn take_requests(&self) -> Vec<(String, Ask)> {
+        // Outside FileSystem: the requests and answers, in the user's cache
+        // folder.
+        let Ok(entries) = std::fs::read_dir(&self.dir) else {
+            return Vec::new();
+        };
+        let mut requests = Vec::new();
+        for entry in entries.flatten() {
+            let file = entry.file_name();
+            let Some(file) = file.to_str() else { continue };
+            let old = entry
+                .metadata()
+                .and_then(|m| m.modified())
+                .ok()
+                .and_then(|t| t.elapsed().ok())
+                .is_some_and(|age| age >= ABANDONED);
+            if let Some(name) = file.strip_prefix("req-") {
+                // Outside FileSystem: a hook's request, in the user's
+                // cache folder.
+                let text = std::fs::read_to_string(entry.path());
+                if std::fs::remove_file(entry.path()).is_err() || old {
+                    continue;
+                }
+                if let Some(ask) = text.ok().and_then(|t| serde_json::from_str(&t).ok()) {
+                    requests.push((name.to_owned(), ask));
+                }
+            } else if old && (file.starts_with("res-") || file.ends_with(".tmp")) {
+                let _ = std::fs::remove_file(entry.path());
+            }
+        }
+        requests.sort_by(|a, b| a.0.cmp(&b.0));
+        requests
+    }
+
+    /// Answers the request `name`.
+    fn answer(&self, name: &str, found: &Result<Found, String>) {
+        if let Ok(text) = serde_json::to_string(found) {
+            let _ = self.write(&format!("res-{name}"), &text);
+        }
+    }
 }
 
 /// Runs the check server for the project of `config` until it's idle for
@@ -352,48 +414,75 @@ fn token() -> String {
 ///
 /// # Errors
 ///
-/// It can't listen, or can't write where it listens.
+/// It can't write its file.
 pub fn serve(config: &Path, idle: Duration) -> io::Result<()> {
     let config = normalize(&std::path::absolute(config)?);
-    let place = Rendezvous::of(&config).ok_or_else(|| io::Error::other("no cache folder"))?;
-    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
-    let me = Listening {
-        version: VERSION.to_owned(),
+    let mailbox = Mailbox::of(&config).ok_or_else(|| io::Error::other("no cache folder"))?;
+    let me = Server {
         pid: std::process::id(),
-        port: listener.local_addr()?.port(),
-        token: token(),
+        nonce: format!(
+            "{:016x}",
+            std::collections::hash_map::RandomState::new().hash_one(Instant::now())
+        ),
     };
-    place.write(&me)?;
-    // Connections are accepted on a thread of their own, and answered on
-    // this one, which keeps the projects: they aren't `Send`.
-    let (send, receive) = mpsc::channel();
-    std::thread::spawn(move || {
-        for stream in listener.incoming().flatten() {
-            if send.send(stream).is_err() {
-                break;
+    let text = serde_json::to_string(&me).map_err(io::Error::other)?;
+    mailbox.write("server.json", &text)?;
+    // The heartbeat goes on while a check runs, which can take longer
+    // than `STALE` on a large project.
+    let beating = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let heart = {
+        let beating = beating.clone();
+        let file = mailbox.server_file();
+        let me = me.clone();
+        let server = Mailbox {
+            dir: mailbox.dir.clone(),
+        };
+        std::thread::spawn(move || {
+            while beating.load(std::sync::atomic::Ordering::Relaxed) {
+                std::thread::sleep(HEARTBEAT);
+                if server.server().as_ref() != Some(&me) {
+                    break;
+                }
+                let _ = std::fs::OpenOptions::new()
+                    .write(true)
+                    .open(&file)
+                    .and_then(|f| f.set_modified(std::time::SystemTime::now()));
             }
-        }
-    });
+        })
+    };
     let mut kept = Kept {
         cache: crate::mcp::Cache::default(),
         watched: None,
     };
     let mut last = Instant::now();
+    let mut looked = Instant::now();
     loop {
-        match receive.recv_timeout(Duration::from_secs(1)) {
-            Ok(stream) => {
-                answer(&mut kept, &config, &me.token, stream);
-                last = Instant::now();
+        for (name, ask) in mailbox.take_requests() {
+            let found = kept.check(&config, &ask);
+            mailbox.answer(&name, &found);
+            last = Instant::now();
+        }
+        // Outside FileSystem: whether the project's `ascribe.toml` is still
+        // there.
+        if looked.elapsed() >= HEARTBEAT {
+            if last.elapsed() >= idle || !config.is_file() || mailbox.server().as_ref() != Some(&me)
+            {
+                break;
             }
-            Err(mpsc::RecvTimeoutError::Timeout) => {}
-            Err(mpsc::RecvTimeoutError::Disconnected) => break,
+            looked = Instant::now();
         }
-        if last.elapsed() >= idle || !config.is_file() || place.read().as_ref() != Some(&me) {
-            break;
-        }
+        let wait = if last.elapsed() < BUSY { 2 } else { 25 };
+        std::thread::sleep(Duration::from_millis(wait));
     }
-    if place.read().as_ref() == Some(&me) {
-        let _ = std::fs::remove_file(&place.path);
+    beating.store(false, std::sync::atomic::Ordering::Relaxed);
+    let _ = heart.join();
+    if mailbox.server().as_ref() == Some(&me) {
+        let _ = std::fs::remove_file(mailbox.server_file());
+        // Only when nothing is waiting in them.
+        let _ = std::fs::remove_dir(&mailbox.dir);
+        if let Some(project) = mailbox.dir.parent() {
+            let _ = std::fs::remove_dir(project);
+        }
     }
     Ok(())
 }
@@ -478,25 +567,4 @@ fn listing(config: &Path) -> Vec<Stamp> {
     let mut files = content_listing(&root, &layout.content_root, &layout.output_dir);
     files.sort();
     files
-}
-
-/// Reads one request from `stream` and writes the answer.
-fn answer(kept: &mut Kept, config: &Path, token: &str, stream: TcpStream) {
-    let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
-    let mut reader = BufReader::new(&stream);
-    let mut line = String::new();
-    if reader.read_line(&mut line).is_err() {
-        return;
-    }
-    let Ok(request) = serde_json::from_str::<Request>(&line) else {
-        return;
-    };
-    if request.token != token {
-        return;
-    }
-    let found = kept.check(config, &request.ask);
-    if let Ok(text) = serde_json::to_string(&Answer(found)) {
-        let mut stream = &stream;
-        let _ = writeln!(stream, "{text}");
-    }
 }

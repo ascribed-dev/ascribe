@@ -96,7 +96,10 @@ export const skill = "packages/cli/skills/ascribe/SKILL.md";
  * `crates/ascribe-cli/src/agents/plugin.rs` fails when they differ.
  */
 export const pluginSkill = "plugins/ascribe/skills/ascribe/SKILL.md";
-export const pluginManifests = ["plugins/ascribe/.claude-plugin/plugin.json", "plugins/ascribe/plugin.json"];
+export const pluginManifests = [
+  "plugins/ascribe/.claude-plugin/plugin.json",
+  "plugins/ascribe/plugin.json",
+];
 
 /** The skill's version line, with the version as its one group. */
 export const SKILL_VERSION = /^ {2}ascribe-version: "([^"]+)"$/m;

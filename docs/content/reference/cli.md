@@ -620,6 +620,6 @@ With `--event edit`, it checks the Markdown files the tool wrote that are pages 
 
 It never writes a project's file, and never stops an edit: the file is written by then. A check that takes longer than 2 seconds after an edit, or 20 before the agent finishes, is given up, and the agent goes on.
 
-The first hook in a project starts a check server in the background, the same `ascribe` binary, which keeps the project loaded so each later check takes milliseconds. It listens only on `127.0.0.1`, answers only requests with the token it writes to a file in your cache folder (`ASCRIBE_CACHE_DIR`, or `ascribe` in your user's cache folder), and stops after 10 minutes with no request. Set `ASCRIBE_HOOK_SERVER=off` to check in the hook's own process every time.
+The first hook in a project starts a check server in the background, the same `ascribe` binary, which keeps the project loaded so each later check takes milliseconds. It opens no port: the hook and the server pass requests and answers as files in a folder of your cache folder (`ASCRIBE_CACHE_DIR`, or `ascribe` in your user's cache folder), and it stops after 10 minutes with no request. Set `ASCRIBE_HOOK_SERVER=off` to check in the hook's own process every time.
 
 It exits with `0`, whatever it found, or with `1` when its input isn't JSON, which agents show you and not the model.

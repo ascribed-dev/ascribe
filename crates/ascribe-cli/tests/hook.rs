@@ -358,11 +358,19 @@ fn the_check_server_answers_and_stops_with_its_project() {
     }
     let out = answered.expect("the check server answered");
     assert!(context("claude-code", &out).contains("[ASC036] `missing.md` doesn't exist"));
-    let files: Vec<PathBuf> = fs::read_dir(cache.path().join("hooks"))
-        .unwrap()
-        .map(|e| e.unwrap().path())
-        .collect();
-    assert_eq!(files.len(), 1, "{files:?}");
+    // One folder for the project, one for the binary's version.
+    let folders = |dir: &Path| -> Vec<PathBuf> {
+        fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect()
+    };
+    let projects = folders(&cache.path().join("hooks"));
+    assert_eq!(projects.len(), 1, "{projects:?}");
+    let versions = folders(&projects[0]);
+    assert_eq!(versions.len(), 1, "{versions:?}");
+    let server = versions[0].join("server.json");
+    assert!(server.is_file());
     // An edit the server sees: fixed, nothing to say.
     fs::write(
         dir.path().join("docs/guide.md"),
@@ -374,10 +382,10 @@ fn the_check_server_answers_and_stops_with_its_project() {
         "edit",
         &hook(&["claude-code"], &input, Some(cache.path())),
     );
-    // With its project gone, it stops and removes its file.
+    // With its project gone, it stops and removes its files.
     drop(dir);
     for _ in 0..100 {
-        if !files[0].exists() {
+        if !projects[0].exists() {
             return;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
