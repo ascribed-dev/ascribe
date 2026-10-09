@@ -5,6 +5,7 @@ import type { ProjectRegistry } from "../registry.js";
 import type { TargetBuild, TargetsResult } from "../shapes.js";
 import type { ChosenBuilds } from "./chosenBuild.js";
 import type { ProjectInfo } from "./describe.js";
+import type { BuildLenses } from "./lens.js";
 
 /** How many of a project's Markdown files are tried for one that's a page. */
 const CANDIDATES = 20;
@@ -28,9 +29,13 @@ export class ProjectBuilds implements vscode.Disposable {
   constructor(
     private readonly projects: ProjectRegistry,
     private readonly chosen: ChosenBuilds,
+    private readonly lenses: BuildLenses,
   ) {}
 
-  /** Fires when what `info` says may have changed: a project, a state, its builds, or the choice. */
+  /**
+   * Fires when what `info` says may have changed: a project, a state, its
+   * builds, the choice, or the lens.
+   */
   get onDidChange(): vscode.Event<void> {
     return this.changed.event;
   }
@@ -49,6 +54,7 @@ export class ProjectBuilds implements vscode.Disposable {
         this.changed.fire();
       }),
       this.chosen.onDidChange(() => this.changed.fire()),
+      this.lenses.onDidChange(() => this.changed.fire()),
       // The server reads an open `ascribe.toml` as it's edited.
       vscode.workspace.onDidChangeTextDocument(({ document }) => {
         if (path.basename(document.uri.fsPath) !== "ascribe.toml") return;
@@ -76,6 +82,7 @@ export class ProjectBuilds implements vscode.Disposable {
       binary: server.binary,
       builds,
       build: this.chosen.shown(server.project.folder, builds),
+      lens: this.lenses.isOn(server.project.folder),
     };
   }
 

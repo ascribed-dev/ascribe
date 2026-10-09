@@ -40,7 +40,9 @@ const commands: Record<string, string> = {
   "ascribe.switchBuild":
     "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../guides/editor.md#the-status-bar).",
   "ascribe.projectMenu":
-    "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, show the server's output, restart its server, or open the preview.",
+    "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, show the server's output, restart its server, dim what the build leaves out, or open the preview.",
+  "ascribe.toggleBuildLens":
+    "Turns the build lens on or off for the active file's project: the editor dims what the build you're looking at leaves out of each page, with a hover that says why. See [The build lens](../guides/editor.md#the-build-lens).",
   "ascribe.startReview":
     "Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](../guides/editor.md#review-in-the-preview).",
   "ascribe.stopReview": "Turns review off for the active page's project, and frees its base.",
@@ -66,6 +68,7 @@ const available: Record<string, string> = {
   "ascribe.refreshComments": "next",
   "ascribe.switchBuild": "next",
   "ascribe.projectMenu": "next",
+  "ascribe.toggleBuildLens": "next",
   "ascribe.preview.scrollPreviewWithEditor": "next",
   "ascribe.preview.scrollEditorWithPreview": "next",
   "ascribe.review.sourceComments": "next",
