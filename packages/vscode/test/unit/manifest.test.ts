@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { PROMPT_COMMANDS, PROMPT_TARGETS } from "../../src/actions/prompt.js";
 
 const read = (relative: string) => readFileSync(new URL(relative, import.meta.url), "utf8");
 
@@ -56,6 +57,8 @@ describe("package.json", () => {
       else if (entry.command.startsWith("ascribe.projects.")) expect(entry.when).toBe("false");
       // So do the walkthrough's buttons, which bring back a page first.
       else if (entry.command.startsWith("ascribe.walkthrough.")) expect(entry.when).toBe("false");
+      // Prompt agent on one problem is a code action on that problem.
+      else if (entry.command === "ascribe.promptAgent") expect(entry.when).toBe("false");
       // An action, and the actions bar, are for a page, so they're shown in a
       // Markdown file of a project.
       else if (entry.command === "ascribe.actions" || entry.command.startsWith("ascribe.action.")) {
@@ -117,6 +120,7 @@ describe("package.json", () => {
       "ascribe.openPagePreview",
       "ascribe.openSitePreview",
       "ascribe.selectPreviewBuild",
+      ...Object.values(PROMPT_COMMANDS),
       "ascribe.actions",
       "ascribe.switchBuild",
       "ascribe.projectMenu",
@@ -140,6 +144,7 @@ describe("package.json", () => {
     ]);
     const properties = manifest.contributes.configuration.properties;
     expect(Object.keys(properties).sort()).toEqual([
+      "ascribe.agents.promptTarget",
       "ascribe.formatOnSave",
       "ascribe.maxCrashes",
       "ascribe.path",
@@ -154,6 +159,8 @@ describe("package.json", () => {
     expect(properties["ascribe.startServers"]?.default).toBe("onDemand");
     expect(properties["ascribe.review.sourceComments"]?.default).toBe("auto");
     expect(properties["ascribe.review.sourceComments"]?.enum).toEqual(["auto", "on", "off"]);
+    expect(properties["ascribe.agents.promptTarget"]?.default).toBe("clipboard");
+    expect(properties["ascribe.agents.promptTarget"]?.enum).toEqual([...PROMPT_TARGETS]);
   });
 
   it("lets startServers be on demand or all, per window", () => {

@@ -8,6 +8,7 @@
 //! above the project's folder that sends an agent to it. Both say which
 //! commands to run from the folder of the file they're written in.
 
+use ascribe_check::prompt::shell_word;
 use ascribe_core::RelPath;
 use ascribe_core::schema::{Attributes, Builtin, DirectiveSchema, Primary};
 use ascribe_model::ContentModel;
@@ -152,7 +153,7 @@ impl At {
         if self.dir.is_root() {
             String::new()
         } else {
-            format!(" {}", quote(self.dir.as_str()))
+            format!(" {}", shell_word(self.dir.as_str()))
         }
     }
 
@@ -176,7 +177,7 @@ impl At {
         let whole = if self.dir.is_root() {
             "ascribe check".to_owned()
         } else {
-            format!("ascribe check --config {}", quote(self.dir.as_str()))
+            format!("ascribe check --config {}", shell_word(self.dir.as_str()))
         };
         format!(
             "Programmatic check: after editing a page, run `ascribe check <file> --format \
@@ -335,17 +336,4 @@ fn widget_line(schema: &DirectiveSchema) -> String {
         line.push_str(&format!(": {}", description.trim_end_matches('.')));
     }
     line
-}
-
-/// A path as a shell reads it: as it is when that's safe, else in single
-/// quotes.
-fn quote(path: &str) -> String {
-    let plain = path
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '.' | '_' | '-'));
-    if plain {
-        path.to_owned()
-    } else {
-        format!("'{}'", path.replace('\'', r"'\''"))
-    }
 }

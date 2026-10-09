@@ -1,0 +1,19 @@
+---
+source: crates/ascribe-check/tests/prompt.rs
+expression: "one_problem(&project, &plain(), \"docs/install.md\")"
+---
+Fix this problem in `docs/install.md`.
+
+Where: docs/install.md:5
+
+Problem: ASC025 `variant-unknown`, an error
+Message: `bun` isn't a value of `pm`; its values are: `npm`, `pnpm`, `yarn`
+Allowed values: `npm`, `pnpm`, `yarn`
+How to fix it: Use a dimension and value declared in `[dimensions]`, or declare them there.
+Reference: https://ascribed-dev.com/reference/diagnostics/#asc025-variant-unknown
+Line 5:
+```markdown
+@variant {pm=bun}:
+```
+
+When you're done, run `ascribe check docs/install.md` and fix what it reports.

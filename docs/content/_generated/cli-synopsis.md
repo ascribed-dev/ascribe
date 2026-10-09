@@ -4,7 +4,7 @@
 ascribe agents sync    [--check] [--target agents-md|skills|claude|claude-rules|copilot]...
 ascribe agents skill
 ascribe build          [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors]
-ascribe check          [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--summary] [--format text|concise|json] [--deny-warnings]
+ascribe check          [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--summary] [--format text|concise|json|prompt] [--deny-warnings]
 ascribe diff           [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html] [--exit-code]
 ascribe drift          [--base <REV>] [--build <NAME>]... [--format text|json|summary] [--exit-code]
 ascribe explain        [CODE] [--list] [--format text|json]

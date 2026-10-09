@@ -85,7 +85,7 @@ Every surface reaches the same core.
 |---|---|---|
 | Command line | `ascribe-cli` | Each subcommand is a module in `crates/ascribe-cli/src/commands/`: its arguments, one call into a library ([Each command's entry](#each-commands-entry)), and the report. |
 | Language server | `ascribe-lsp` | Calls the crates, over an `IncrementalProject` it keeps current as the editor types. |
-| VS Code | `packages/vscode` | Starts `ascribe lsp`, one server per project (`packages/vscode/src/registry.ts`). The preview and review use custom requests: `ascribe/preview`, `ascribe/review/setBase`, and `ascribe/review/changes`. The editor's actions (`packages/vscode/src/actions/`) use `ascribe/context`, `ascribe/targets`, and `ascribe/edit`, and the build lens (`packages/vscode/src/ui/buildLens.ts`) uses `ascribe/buildView`. |
+| VS Code | `packages/vscode` | Starts `ascribe lsp`, one server per project (`packages/vscode/src/registry.ts`). The preview and review use custom requests: `ascribe/preview`, `ascribe/review/setBase`, and `ascribe/review/changes`. The editor's actions (`packages/vscode/src/actions/`) use `ascribe/context`, `ascribe/targets`, and `ascribe/edit`, Prompt agent (`packages/vscode/src/actions/promptAgent.ts`) uses `ascribe/agentPrompt`, and the build lens (`packages/vscode/src/ui/buildLens.ts`) uses `ascribe/buildView`. |
 | Astro | `packages/astro` | Runs the binary: `ascribe build` (`packages/astro/src/run.ts`) and, for review, `ascribe diff` (`packages/astro/src/review/diff.ts`). Then reads the files it wrote. |
 | Review | `packages/review` | Reads `ascribe diff --format json`'s data, and GitHub through `gh` (`packages/review/src/github/`). |
 | Elements | `packages/elements` | The site output's markup. |
@@ -117,7 +117,7 @@ Each command is one call into a library, after the project is loaded. The call t
 
 | Command | Entry | Notes |
 |---|---|---|
-| `check` | `ascribe_check::diagnose`, or `diagnose_editor_build` | Chooses the builds (`select_builds`) and returns their diagnostics. With paths, `ascribe_check::Scope` keeps those that count for them (`Scope::of_paths`, `Scope::report`); with `--stdin`, `Project::with_source` lays the text over the project first. |
+| `check` | `ascribe_check::diagnose`, or `diagnose_editor_build` | Chooses the builds (`select_builds`) and returns their diagnostics. With paths, `ascribe_check::Scope` keeps those that count for them (`Scope::of_paths`, `Scope::report`); with `--stdin`, `Project::with_source` lays the text over the project first. With `--format prompt`, `ascribe_check::prompt` writes what's reported as a prompt for an agent, as the language server's `ascribe/agentPrompt` does. |
 | `build` | `ascribe_check::diagnose`, then `ascribe_emit::write_outputs` | The report is printed between the two, and a build with errors stops there. `write_outputs` reports each output as it's written through a callback. |
 | `diff` | `ascribe_diff::diff_project` | Returns the report, with the working tree's error count; `ProjectDiff::html` renders it for `--format html`. |
 | `drift` | `ascribe_diff::drift_project` | |

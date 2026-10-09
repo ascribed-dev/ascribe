@@ -20,6 +20,7 @@ yaml-rust2 = "0.13"
 thiserror.workspace = true
 
 [dev-dependencies]
+insta.workspace = true
 proptest.workspace = true
 tempfile = "3"
 

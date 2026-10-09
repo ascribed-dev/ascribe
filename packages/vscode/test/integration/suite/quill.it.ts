@@ -184,6 +184,37 @@ describe("with the real language server on examples/quill", () => {
     }
   });
 
+  it("offers Prompt agent on a problem after its quick fixes, and copies the prompt", async () => {
+    const api = await activated();
+    const [problem] = await diagnosticsOf(broken, (all) => all.length > 0);
+    assert.ok(problem);
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(broken));
+    const actions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+      "vscode.executeCodeActionProvider",
+      broken,
+      problem.range,
+    );
+    const titles = actions.map((action) => action.title);
+    const at = titles.indexOf("Prompt agent: fix this problem");
+    assert.ok(at >= 0, `the actions: ${titles.join(", ")}`);
+    const lastFix = actions.findLastIndex((action) => (action.diagnostics?.length ?? 0) > 0);
+    assert.ok(lastFix < at, `after the quick fixes: ${titles.join(", ")}`);
+    const command = actions[at]?.command;
+    assert.ok(command);
+    await vscode.env.clipboard.writeText("");
+    const before = api.promptAgent.deliveries.length;
+    await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
+    await waitFor("the delivery", () => api.promptAgent.deliveries.length > before);
+    assert.equal(api.promptAgent.deliveries[before]?.delivered, "clipboard");
+    const prompt = await vscode.env.clipboard.readText();
+    assert.ok(
+      prompt.startsWith("Fix this problem in `docs/broken.md`.\n\nWhere: docs/broken.md:8\n"),
+      prompt,
+    );
+    assert.ok(prompt.includes("When you're done, run `ascribe check docs/broken.md`"), prompt);
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
   it("updates diagnostics after the file changes on disk", async () => {
     const text = original();
     try {

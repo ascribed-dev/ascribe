@@ -60,6 +60,9 @@ npx ascribe check --stdin --path docs/guides/new.md < draft.md
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-concise.txt
 
 @available: next
+`--format prompt` writes a prompt for an agent that fixes the problems: about the file, when the paths name one file, and otherwise about the paths or the whole project. It lists at most 20 problems, or 20 files, then names the command that lists the rest, and ends with how to check the result. It writes nothing when there are no problems, and the exit codes are the same. With `--stdin`, it says the file has unsaved changes. See [Prompt your agent](../guides/agents.md#prompt-your-agent).
+
+@available: next
 `--summary` replaces the list with how many diagnostics each code and each file has, most first, in any format. On a project with hundreds of warnings, it shows which rule or file to work through first.
 
 ### Exit codes

@@ -1077,3 +1077,114 @@ title: Keys
         ]
     );
 }
+
+#[test]
+fn prompt_format_writes_a_files_prompt_and_keeps_the_exit_code() {
+    let dir = project(&[("index.md", WITH_ERROR), ("other.md", WITH_WARNING)]);
+    let out = ascribe(
+        dir.path(),
+        &["check", "docs/index.md", "--format", "prompt"],
+    );
+    assert_eq!(code(&out), 1, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.starts_with(
+            "Fix the problem `ascribe check` reports in `docs/index.md`.\n\nWhere: docs/index.md\n"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("- 5: [ASC036] `gone.md` doesn't exist\n"),
+        "{text}"
+    );
+    assert!(
+        text.ends_with(
+            "When you're done, run `ascribe check docs/index.md` and fix what it reports.\n"
+        ),
+        "{text}"
+    );
+}
+
+#[test]
+fn prompt_format_without_paths_writes_the_projects_prompt() {
+    let dir = project(&[("index.md", WITH_ERROR), ("other.md", WITH_WARNING)]);
+    let out = ascribe(dir.path(), &["check", "--format", "prompt"]);
+    assert_eq!(code(&out), 1);
+    let text = stdout(&out);
+    assert!(
+        text.starts_with("Fix the 2 problems `ascribe check` reports in this project.\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains("- docs/index.md: 1 error\n- docs/other.md: 1 warning\n"),
+        "{text}"
+    );
+}
+
+#[test]
+fn prompt_format_writes_nothing_without_problems() {
+    let dir = project(&[("index.md", CLEAN)]);
+    let out = ascribe(dir.path(), &["check", "--format", "prompt"]);
+    assert_eq!(code(&out), 0);
+    assert_eq!(stdout(&out), "");
+}
+
+#[test]
+fn prompt_format_on_standard_input_says_to_save_the_file() {
+    use std::io::Write as _;
+    use std::process::Stdio;
+    let dir = project(&[("index.md", CLEAN)]);
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir.path())
+        .args([
+            "check",
+            "--stdin",
+            "--path",
+            "docs/index.md",
+            "--format",
+            "prompt",
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("run ascribe");
+    child
+        .stdin
+        .take()
+        .expect("stdin")
+        .write_all(WITH_ERROR.as_bytes())
+        .expect("write stdin");
+    let out = child.wait_with_output().expect("ascribe ends");
+    assert_eq!(code(&out), 1);
+    assert!(
+        stdout(&out).contains(
+            "Where: docs/index.md\nThe file has unsaved changes; save it before you start.\n"
+        ),
+        "{}",
+        stdout(&out)
+    );
+}
+
+#[test]
+fn prompt_format_in_a_repository_names_the_projects_folder_and_agents_md() {
+    let repo = tempfile::tempdir().expect("a temporary directory");
+    fs::create_dir(repo.path().join(".git")).expect("a .git folder");
+    write(&repo.path().join("AGENTS.md"), "# Rules\n");
+    write(&repo.path().join("site/ascribe.toml"), MODEL);
+    write(&repo.path().join("site/docs/index.md"), WITH_ERROR);
+    let out = ascribe(
+        repo.path(),
+        &["check", "site/docs/index.md", "--format", "prompt"],
+    );
+    let text = stdout(&out);
+    assert!(
+        text.contains("Where: docs/index.md\nProject: site/\n"),
+        "{text}"
+    );
+    assert!(
+        text.ends_with(
+            "Follow the project's rules in `AGENTS.md`.\nWhen you're done, run `ascribe check site/docs/index.md` and fix what it reports.\n"
+        ),
+        "{text}"
+    );
+}

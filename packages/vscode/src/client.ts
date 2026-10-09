@@ -131,6 +131,23 @@ export class ProjectServer implements vscode.Disposable {
     return count;
   }
 
+  /** Whether the server reports a problem: in `uri`, or in any file of the project. */
+  hasProblems(uri?: vscode.Uri): boolean {
+    const diagnostics = this.client?.diagnostics;
+    if (!diagnostics) return false;
+    if (uri) return (diagnostics.get(uri)?.length ?? 0) > 0;
+    let found = false;
+    diagnostics.forEach((_uri, list) => {
+      if (list.length > 0) found = true;
+    });
+    return found;
+  }
+
+  /** A diagnostic the server published, as the protocol has it: what `ascribe/agentPrompt` takes. */
+  protocolDiagnostic(diagnostic: vscode.Diagnostic): unknown {
+    return this.client?.code2ProtocolConverter.asDiagnostic(diagnostic);
+  }
+
   /** Settles when the current start or restart has finished, successfully or not. */
   whenSettled(): Promise<void> {
     return this.starting;
