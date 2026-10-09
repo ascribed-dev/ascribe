@@ -827,15 +827,17 @@ scaffold and the protocol types), over `tower-lsp-server`.
 
 ## Testing
 
-- `tests/` drives the server in-process over `Connection::memory()`: the
+- `tests/all/` drives the server in-process over `Connection::memory()`, as one
+  program (`tests/all.rs`; `cargo test -p ascribe-lsp --test all scenarios::`
+  runs one file's tests): the
   scripted scenarios of the acceptance criteria, multi-byte positions, stale
   computations (a hook holds a computation until a newer edit lands), file
   watching, model changes, and which project a workspace folder gets.
-- `crates/ascribe-cli/tests/lsp_parity.rs` starts the real `ascribe lsp` binary
+- `crates/ascribe-cli/tests/all/lsp_parity.rs` starts the real `ascribe lsp` binary
   over stdio and compares its published diagnostics with
   `ascribe check --build <name> --format json`, for every build of
   `examples/quill` and fixture projects with known problems.
-- `tests/navigation.rs` scripts every navigation feature over a copy of
+- `tests/all/navigation.rs` scripts every navigation feature over a copy of
   `examples/quill` (with a features registry added): each completion context,
   hover, definition, document links, CodeLens and its command, inlay hints,
   answers after an edit or a deletion, the negotiated encodings, files outside

@@ -25,7 +25,7 @@ let found = ascribe_check::diagnose(&project, &[])?;
 
 ## Rules
 
-- **One entry point per job.** A tool that checks a project calls `check_project` or `check_all_builds`; it doesn't put the checks together itself. `tests/conformance`'s `page-check` adapter and `crates/ascribe-cli/tests/lsp_parity.rs` hold every tool to them.
+- **One entry point per job.** A tool that checks a project calls `check_project` or `check_all_builds`; it doesn't put the checks together itself. `tests/conformance`'s `page-check` adapter and `crates/ascribe-cli/tests/all/lsp_parity.rs` hold every tool to them.
 - **The rules for references and snippets aren't here.** Whether a link, image, include, or snippet resolves is decided by `ascribe_resolve::references` and `ascribe_resolve::snippet`, which the source index uses too. This crate words and reports what they find.
 - **Every message comes from the registry.** A check reports an `Issue` with a slug from `ascribe_core::diagnostics`; `Registry` gives it its code, severity, and text.
 - **A problem is reported once, where it's caused.** Inside included content, that's the outermost include, with the place in the fragment as related information.
@@ -33,12 +33,12 @@ let found = ascribe_check::diagnose(&project, &[])?;
 
 ## Tests
 
-- `tests/commands.rs`: what the commands call, each with a typed result: `locate`, `load_model`, `select_builds`, and `diagnose`.
-- `tests/checks.rs`: the file-level checks, on small projects in memory or in a temporary folder.
-- `tests/page.rs`: the page-level checks.
-- `tests/page_index.rs`: checking resolved pages over an index the caller already has reports what `check` reports.
-- `tests/snippets.rs`: where `@snippet` problems are reported.
-- `tests/file_system.rs`: the checks probe the `FileSystem` they're given, not the disk.
-- `tests/parity.rs`: `ascribe check` and the source index report the same reference problems, at the same places, for one tree with every kind of problem.
-- `tests/ids.rs`: this crate's `Project` and `ascribe_resolve::IncrementalProject` number files the same way.
+- `tests/all/commands.rs`: what the commands call, each with a typed result: `locate`, `load_model`, `select_builds`, and `diagnose`.
+- `tests/all/checks.rs`: the file-level checks, on small projects in memory or in a temporary folder.
+- `tests/all/page.rs`: the page-level checks.
+- `tests/all/page_index.rs`: checking resolved pages over an index the caller already has reports what `check` reports.
+- `tests/all/snippets.rs`: where `@snippet` problems are reported.
+- `tests/all/file_system.rs`: the checks probe the `FileSystem` they're given, not the disk.
+- `tests/all/parity.rs`: `ascribe check` and the source index report the same reference problems, at the same places, for one tree with every kind of problem.
+- `tests/all/ids.rs`: this crate's `Project` and `ascribe_resolve::IncrementalProject` number files the same way.
 - The conformance suite (`tests/conformance`) runs every case's expected diagnostics through these checks.

@@ -79,7 +79,7 @@ The features `crates/ascribe-lsp/src/server.rs` handles. Each new form is consid
 - [ ] With `--format json`: the shape's fields documented in the command's section of `docs/content/reference/cli.md`, keys in snake_case, and a schema version that rises when a field is removed or changes meaning.
 - [ ] The shape's schema and TypeScript, generated from its Rust types by `crates/ascribe-cli/src/shapes.rs` (`ASCRIBE_BLESS=1 cargo test -p ascribe-cli shapes`): a doc comment on every field, a new shape added to `SHAPES` (and to `PACKAGES` when a package reads it), and a new command's schema included in `docs/content/contracts/json-reports.md`. The packages read the generated `packages/astro/src/shapes.ts`, `packages/review/src/shapes.ts`, and `packages/vscode/src/shapes.ts`, never a type of their own.
 - [ ] The TypeScript that runs the command, if it passes the new option: `packages/astro/src/run.ts`.
-- [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/output.rs`.
+- [ ] Tests in `crates/ascribe-cli/tests/`. Output the docs show is written to `crates/ascribe-cli/tests/output/` by `crates/ascribe-cli/tests/all/output.rs`.
 - [ ] A line in the unreleased section of `CHANGELOG.md`.
 - [ ] The agents plan's table of tools, once that plan has started (see [agents](agents/README.md)).
 
@@ -91,7 +91,7 @@ An element, an attribute, a class, or the order of what the `site` output writes
 - [ ] A new or renamed element, attribute, class, or id: in `crates/ascribe-core/src/names.rs`, its one home, then each package's generated `names.ts` (`packages/astro/src/names.ts`, `packages/elements/src/names.ts`, `packages/review/src/names.ts`, and `packages/vscode/src/names.ts`), rewritten by `ASCRIBE_BLESS=1 cargo test -p ascribe-core --test names`. Code uses the constant, never the literal; that test fails on a literal elsewhere, and on a stylesheet selecting a name that isn't declared.
 - [ ] Ascribe's own renderer, `render_site_html` in `crates/ascribe-emit/src/render/`, which the page preview and the HTML report use.
 - [ ] The fixtures in `tests/render/`, which both renderers must pass: ours, and the site's through `@ascribed/astro`.
-- [ ] Source anchors in review mode (`crates/ascribe-emit/src/site/anchor.rs`, tested by `crates/ascribe-emit/tests/site_anchors.rs`): the page with anchors is the page without them, plus the anchors.
+- [ ] Source anchors in review mode (`crates/ascribe-emit/src/site/anchor.rs`, tested by `crates/ascribe-emit/tests/all/site_anchors.rs`): the page with anchors is the page without them, plus the anchors.
 - [ ] `@ascribed/elements`: `packages/elements/src/`, `packages/elements/css/style.css`, and its contract, `packages/elements/CONTRACT.md`.
 - [ ] `@ascribed/astro`: `packages/astro/src/rehype.ts`, `packages/astro/src/attributes.ts`, `packages/astro/src/code-titles.ts`, and the components `packages/astro/src/Elements.astro` and `packages/astro/src/Availability.astro`.
 - [ ] `@ascribed/review`'s marks and placement, in `packages/review/src/marks/` and `packages/review/src/place/`.

@@ -9,7 +9,7 @@
 //! It doesn't call `ascribe_check::diagnose`, the entry `ascribe check`
 //! uses: that checks every build of a whole project at once, and the server
 //! checks only the files an edit affects, in the editor's one build, over the
-//! index it keeps current. `crates/ascribe-cli/tests/lsp_parity.rs` holds
+//! index it keeps current. `crates/ascribe-cli/tests/all/lsp_parity.rs` holds
 //! the two to the same diagnostics.
 
 use std::collections::{BTreeMap, BTreeSet};

@@ -221,7 +221,7 @@ What changed, in pull request order:
    only those pages; any other page resolves the same on both sides. A
    change to the content model, or to a page the glossary links to, still
    compares every page. Nothing is taken from `git`'s listing.
-   `crates/ascribe-diff/tests/reach.rs` checks, on random pairs of
+   `crates/ascribe-diff/tests/all/reach.rs` checks, on random pairs of
    versions, that the result is exactly what comparing every page gives.
    The comparison went from 475 ms to 13 ms.
 2. **Each code file once, through one `git` process,** kept open for the

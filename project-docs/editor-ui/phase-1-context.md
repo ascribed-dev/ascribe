@@ -84,7 +84,7 @@ All of it comes from the current snapshot and model, so it includes unsaved edit
    - unsaved edits: change the buffer, then ask;
    - `ascribe/targets` link paths from a page in a subfolder, and fragments' include paths;
    - UTF-16 positions on a line with non-ASCII text.
-   - `images` and `snippets` listed with `crates/ascribe-resolve/tests/file_reads.rs` still passing, and a snippet file's regions.
+   - `images` and `snippets` listed with `crates/ascribe-resolve/tests/all/file_reads.rs` still passing, and a snippet file's regions.
 4. Derive `JsonSchema` on both results behind the `json-schema` feature, add them to `SHAPES`, and bless. Phase 3 imports `ContextResult` and `TargetsResult` from `packages/vscode/src/shapes.ts`.
 5. Document both requests in `crates/ascribe-lsp/README.md`: params, result, and that other clients can use them.
 

@@ -1,0 +1,15 @@
+---
+source: crates/ascribe-check/tests/all/prompt.rs
+expression: text
+---
+Fix the 3 problems `ascribe check` reports in this project.
+
+Some files have unsaved changes; save them before you start: `docs/upgrade.md`
+Project: docs/
+
+Problems by file:
+- docs/install.md: 2 errors
+- docs/upgrade.md: 1 error
+To list each problem: `ascribe check docs --format concise`
+
+When you're done, run `ascribe check docs` and fix what it reports.
