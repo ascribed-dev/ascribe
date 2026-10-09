@@ -6,6 +6,7 @@
 //! the editor's build, as the author types. See the README for the design, the
 //! semantic token legend, and how stale results are kept from the editor.
 
+mod build_view;
 mod code_action;
 mod complete;
 mod compute;
@@ -36,6 +37,9 @@ use std::sync::atomic::AtomicBool;
 
 use lsp_server::Connection;
 
+pub use build_view::{
+    BuildViewParams, BuildViewResult, Excluded, ExclusionReason, METHOD as BUILD_VIEW_METHOD,
+};
 pub use context::{
     AttributePair, ContextNode, ContextParams, ContextProject, ContextResult, ContextToken, Form,
     FrontmatterValue, METHOD as CONTEXT_METHOD, Selection, SelectionKind, VariantArm,

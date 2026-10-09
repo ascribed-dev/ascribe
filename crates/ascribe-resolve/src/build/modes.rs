@@ -8,6 +8,9 @@
 //! - **Filter** removes content that isn't available for the build's target
 //!   and version, and a page whose frontmatter `available` makes it
 //!   unavailable. What remains keeps its availability annotations.
+//!
+//! Each pass also says what it removed and why ([`Removed`]), so the editor
+//! shows what a build leaves out from the same decisions the build makes.
 
 use ascribe_core::{Issue, Location, diagnostics};
 use ascribe_model::{AvailabilityMode, Build, ContentModel, VariantMode};
@@ -16,8 +19,10 @@ use std::sync::Arc;
 
 use ascribe_syntax::{Block, BlockKind, DirectiveLine};
 
-use super::availability::page_availability;
-use super::tree::{Availability, DropReason, ResolvedArm, ResolvedBlock, ResolvedKind};
+use super::availability::{page_availability, spec_allows};
+use super::tree::{
+    Availability, DropReason, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedKind,
+};
 use crate::expand::PageProblem;
 use crate::index::FileIndex;
 
@@ -74,24 +79,29 @@ fn page_conflicts(index: &FileIndex, selection: &[(String, Vec<String>)]) -> boo
 /// Applies the build's modes to a page's blocks: content that isn't available
 /// is removed, conflicting arms are removed, and a group is reduced.
 /// `problems` gets a warning for each group whose every arm is removed.
+/// Returns what stays, and what was removed, outermost only: nothing inside
+/// removed content is listed.
 pub(crate) fn apply(
     blocks: Vec<ResolvedBlock>,
     build: &Build,
     model: &ContentModel,
     problems: &mut Vec<PageProblem>,
-) -> Vec<ResolvedBlock> {
-    Modes {
+) -> (Vec<ResolvedBlock>, Vec<Removed>) {
+    let mut modes = Modes {
         build,
         model,
         problems,
-    }
-    .list(blocks)
+        removed: Vec::new(),
+    };
+    let blocks = modes.list(blocks);
+    (blocks, modes.removed)
 }
 
 struct Modes<'a> {
     build: &'a Build,
     model: &'a ContentModel,
     problems: &'a mut Vec<PageProblem>,
+    removed: Vec<Removed>,
 }
 
 impl Modes<'_> {
@@ -106,12 +116,40 @@ impl Modes<'_> {
             .is_none_or(|a| a.is_available(self.model, target, version.as_ref()))
     }
 
+    /// The spec that rules out content with this effective availability:
+    /// the innermost in its chain that doesn't allow the build's target and
+    /// version.
+    fn ruling_out(&self, spec: &Arc<Availability>) -> Arc<Availability> {
+        let AvailabilityMode::Filter { target, version } = &self.build.availability else {
+            return spec.clone();
+        };
+        let mut at = spec;
+        loop {
+            if !spec_allows(self.model, &at.spec, target, version.as_ref()) {
+                return at.clone();
+            }
+            match &at.enclosing {
+                Some(enclosing) => at = enclosing,
+                None => return spec.clone(),
+            }
+        }
+    }
+
     fn list(&mut self, blocks: Vec<ResolvedBlock>) -> Vec<ResolvedBlock> {
         let mut out = Vec::with_capacity(blocks.len());
         for mut block in blocks {
             // Content removed by the filter is gone, and so is anything that
             // would have been reported inside it.
             if !self.available(&block) {
+                if let Some(spec) = &block.availability {
+                    let spec = self.ruling_out(spec);
+                    self.removed.push(Removed {
+                        file: block.file,
+                        span: block.span,
+                        via: block.via.clone(),
+                        cause: Removal::Availability(spec),
+                    });
+                }
                 continue;
             }
             if matches!(block.kind, ResolvedKind::Group { .. }) {
@@ -130,7 +168,7 @@ impl Modes<'_> {
 
     /// Removes a table's rows that aren't available (SPEC §4.4). The header
     /// row has no availability of its own, so a table always keeps it.
-    fn rows(&self, block: &mut ResolvedBlock) {
+    fn rows(&mut self, block: &mut ResolvedBlock) {
         let AvailabilityMode::Filter { target, version } = &self.build.availability else {
             return;
         };
@@ -150,6 +188,15 @@ impl Modes<'_> {
             .rows
             .retain(|row| !removed.iter().any(|r| r.span == row.span));
         block.rows = kept;
+        for row in removed {
+            let spec = self.ruling_out(&row.availability);
+            self.removed.push(Removed {
+                file: block.file,
+                span: row.span,
+                via: block.via.clone(),
+                cause: Removal::Availability(spec),
+            });
+        }
     }
 
     /// A group under the build's selection: conflicting arms are removed; one
@@ -171,7 +218,38 @@ impl Modes<'_> {
             return self.arms_recursed(block);
         }
         let first = arms.first().map(|a| a.opener.span);
-        arms.retain(|arm| !conflicts(&arm.opener, selection));
+        let (kept, gone): (Vec<ResolvedArm>, Vec<ResolvedArm>) = std::mem::take(arms)
+            .into_iter()
+            .partition(|arm| conflicting(&arm.opener, selection).is_empty());
+        *arms = kept;
+        if arms.is_empty() {
+            // The whole group goes, its end line too.
+            let mut dimensions: Vec<String> = Vec::new();
+            for arm in &gone {
+                for dimension in conflicting(&arm.opener, selection) {
+                    if !dimensions.contains(&dimension) {
+                        dimensions.push(dimension);
+                    }
+                }
+            }
+            self.removed.push(Removed {
+                file: block.file,
+                span: block.span,
+                via: block.via.clone(),
+                cause: Removal::Variant { dimensions },
+            });
+        } else {
+            for arm in &gone {
+                self.removed.push(Removed {
+                    file: block.file,
+                    span: arm.span,
+                    via: block.via.clone(),
+                    cause: Removal::Variant {
+                        dimensions: conflicting(&arm.opener, selection),
+                    },
+                });
+            }
+        }
         match arms.len() {
             0 => {
                 if let Some(span) = first {
@@ -231,27 +309,31 @@ fn names_selected(opener: &DirectiveLine, selection: &[(String, Vec<String>)]) -
     })
 }
 
-/// Whether the arm conflicts with the selection (SPEC §9.3): for some
-/// dimension the selection names, the arm names that dimension and none of
-/// the selected values.
-fn conflicts(opener: &DirectiveLine, selection: &[(String, Vec<String>)]) -> bool {
+/// The dimensions on which the arm conflicts with the selection (SPEC §9.3):
+/// those the selection names where the arm names the dimension and none of
+/// the selected values. The arm conflicts when there is one.
+fn conflicting(opener: &DirectiveLine, selection: &[(String, Vec<String>)]) -> Vec<String> {
     let Some(block) = &opener.attributes else {
-        return false;
+        return Vec::new();
     };
-    selection.iter().any(|(dimension, selected)| {
-        block
-            .attributes
-            .iter()
-            .filter(|a| a.key == *dimension)
-            .any(|a| {
-                let Some(value) = &a.value else {
-                    return false;
-                };
-                !values(value)
-                    .iter()
-                    .any(|v| selected.iter().any(|s| s == v))
-            })
-    })
+    selection
+        .iter()
+        .filter(|(dimension, selected)| {
+            block
+                .attributes
+                .iter()
+                .filter(|a| a.key == *dimension)
+                .any(|a| {
+                    let Some(value) = &a.value else {
+                        return false;
+                    };
+                    !values(value)
+                        .iter()
+                        .any(|v| selected.iter().any(|s| s == v))
+                })
+        })
+        .map(|(dimension, _)| dimension.clone())
+        .collect()
 }
 
 /// The availability specs that content in `blocks` is under: each block's
