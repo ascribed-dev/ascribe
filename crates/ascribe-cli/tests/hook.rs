@@ -66,7 +66,15 @@ fn hook(args: &[&str], input: &str, cache: Option<&Path>) -> Output {
 /// hook starts the server, which may not answer in time.
 fn served(args: &[&str], input: &str, cache: &Path) -> Output {
     for _ in 0..20 {
+        let started = std::time::Instant::now();
         let out = hook(args, input, Some(cache));
+        // The harness reads the hook's answer until its output closes: a
+        // server that kept it open would hold the agent up.
+        assert!(
+            started.elapsed() < std::time::Duration::from_secs(15),
+            "the hook took {:?}",
+            started.elapsed()
+        );
         assert_eq!(out.status.code(), Some(0));
         if !out.stdout.is_empty() {
             return out;
@@ -389,10 +397,11 @@ fn the_check_server_answers_and_stops_with_its_project() {
     let said = context("claude-code", &out);
     assert!(said.contains("`elsewhere.md` doesn't exist"), "{said}");
     assert!(!said.contains("`missing.md`"), "{said}");
-    // With its project gone, it stops and removes its files.
+    // With its project gone, it stops and removes its file (and its
+    // folders, but on Windows the copy of the binary it ran from stays).
     drop(dir);
     for _ in 0..100 {
-        if !projects[0].exists() {
+        if !server.exists() {
             return;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));

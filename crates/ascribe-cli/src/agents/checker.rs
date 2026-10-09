@@ -220,20 +220,82 @@ pub fn ask_server(
 /// binary it's run from, and stops when that changes.
 fn start_server(config: &Path, mailbox: &Mailbox) -> Option<()> {
     let binary = std::env::current_exe().ok()?;
-    let mut command = std::process::Command::new(runnable(&binary, mailbox)?);
+    let program = runnable(&binary, mailbox)?;
+    let config = std::path::absolute(config).ok()?;
+    let mut command = launch(&program, &config, &binary);
     command
-        .args(["agents", "hook-server", "--config"])
-        .arg(config)
-        .arg("--binary")
-        .arg(&binary)
         // Not the project's folder, which a running process would keep
         // from being removed on Windows.
         .current_dir(std::env::temp_dir())
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
-    detach(&mut command);
     command.spawn().ok().map(|_| ())
+}
+
+/// The command that starts the server, detached from this process.
+#[cfg(unix)]
+fn launch(program: &Path, config: &Path, binary: &Path) -> std::process::Command {
+    use std::os::unix::process::CommandExt;
+    let mut command = std::process::Command::new(program);
+    command
+        .args(["agents", "hook-server", "--config"])
+        .arg(config)
+        .arg("--binary")
+        .arg(binary);
+    // Its own process group, so a harness that stops the hook's group
+    // leaves the server running.
+    command.process_group(0);
+    command
+}
+
+#[cfg(not(any(unix, windows)))]
+fn launch(program: &Path, config: &Path, binary: &Path) -> std::process::Command {
+    let mut command = std::process::Command::new(program);
+    command
+        .args(["agents", "hook-server", "--config"])
+        .arg(config)
+        .arg("--binary")
+        .arg(binary);
+    command
+}
+
+/// The command that starts the server, detached from this process. A
+/// process Windows starts from this one inherits its handles, among them
+/// the pipe the harness reads the hook's answer from, which the harness
+/// would then wait on until the server stopped. So PowerShell's
+/// `Start-Process` starts it, which passes no handles on, and PowerShell
+/// itself exits at once.
+#[cfg(windows)]
+fn launch(program: &Path, config: &Path, binary: &Path) -> std::process::Command {
+    use std::os::windows::process::CommandExt;
+    // A Windows path can't hold `"`; PowerShell's single quotes double
+    // their own.
+    let quoted = |p: &Path| format!("\"{}\"", p.display()).replace('\'', "''");
+    let arguments = format!(
+        "agents hook-server --config {} --binary {}",
+        quoted(config),
+        quoted(binary)
+    );
+    let script = format!(
+        "Start-Process -WindowStyle Hidden -WorkingDirectory '{}' -FilePath '{}' -ArgumentList '{arguments}'",
+        std::env::temp_dir()
+            .display()
+            .to_string()
+            .replace('\'', "''"),
+        program.display().to_string().replace('\'', "''"),
+    );
+    let mut command = std::process::Command::new("powershell.exe");
+    command.args([
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        &script,
+    ]);
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    command.creation_flags(CREATE_NO_WINDOW);
+    command
 }
 
 /// The binary to run the server from. On Windows a running program can't
@@ -273,25 +335,6 @@ fn runnable(binary: &Path, mailbox: &Mailbox) -> Option<PathBuf> {
 fn runnable(binary: &Path, _mailbox: &Mailbox) -> Option<PathBuf> {
     Some(binary.to_owned())
 }
-
-#[cfg(unix)]
-fn detach(command: &mut std::process::Command) {
-    use std::os::unix::process::CommandExt;
-    // Its own process group, so a harness that stops the hook's group
-    // leaves the server running.
-    command.process_group(0);
-}
-
-#[cfg(windows)]
-fn detach(command: &mut std::process::Command) {
-    use std::os::windows::process::CommandExt;
-    const DETACHED_PROCESS: u32 = 0x0000_0008;
-    const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
-    command.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP);
-}
-
-#[cfg(not(any(unix, windows)))]
-fn detach(_command: &mut std::process::Command) {}
 
 /// The binary's version: each version has a folder, and a server, of its
 /// own.

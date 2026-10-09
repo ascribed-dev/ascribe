@@ -418,9 +418,18 @@ fn check_by(
         .ok()
 }
 
-/// `path` as seen from `cwd`, `/`-separated; `.` for `cwd` itself.
+/// `path` as seen from `cwd`, `/`-separated; `.` for `cwd` itself. Both
+/// are resolved first where they exist, so two spellings of one folder
+/// (on Windows, a short `RUNNER~1` and its long name) meet.
 fn from(cwd: &Path, path: &Path) -> String {
-    match relative_path(cwd, path) {
+    // Outside FileSystem: resolving the agent's folder and a project's,
+    // only to name one from the other.
+    let real = |p: &Path| std::fs::canonicalize(p).ok();
+    let resolved = match (real(cwd), real(path)) {
+        (Some(cwd), Some(path)) => relative_path(&cwd, &path),
+        _ => None,
+    };
+    match resolved.or_else(|| relative_path(cwd, path)) {
         Some(rel) if rel.is_root() => ".".to_owned(),
         Some(rel) => rel.to_string(),
         None => path.to_string_lossy().replace('\\', "/"),
