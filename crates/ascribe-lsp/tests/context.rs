@@ -673,14 +673,14 @@ fn targets_write_paths_from_the_requesting_page() {
     // ones as the page's.
     assert_eq!(
         headings[0],
-        json!({ "page": "guide/setup.md", "text": "Set up", "id": "set-up", "level": 1, "link": "#set-up" })
+        json!({ "page": "guide/setup.md", "text": "Set up", "id": "set-up", "level": 1, "link": "#set-up", "rootLink": "/guide/setup.md#set-up" })
     );
     assert_eq!(
         headings[1],
-        json!({ "page": "guide/setup.md", "text": "From a fragment", "id": "from-a-fragment", "level": 2, "link": "#from-a-fragment" })
+        json!({ "page": "guide/setup.md", "text": "From a fragment", "id": "from-a-fragment", "level": 2, "link": "#from-a-fragment", "rootLink": "/guide/setup.md#from-a-fragment" })
     );
     assert!(headings.contains(&json!({
-        "page": "index.md", "text": "Steps", "id": "steps", "level": 2, "link": "../index.md#steps"
+        "page": "index.md", "text": "Steps", "id": "steps", "level": 2, "link": "../index.md#steps", "rootLink": "/index.md#steps"
     })));
     assert_eq!(
         r["fragments"],

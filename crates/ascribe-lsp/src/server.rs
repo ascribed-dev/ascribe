@@ -15,7 +15,7 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentLinkRequest, ExecuteCommand,
-    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, Rename, Request as _,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, References, Rename, Request as _,
     SemanticTokensFullRequest, SemanticTokensRangeRequest, WillRenameFiles,
 };
 use lsp_types::{
@@ -141,6 +141,7 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
             }),
             hover_provider: Some(HoverProviderCapability::Simple(true)),
             definition_provider: Some(OneOf::Left(true)),
+            references_provider: Some(OneOf::Left(true)),
             document_link_provider: Some(DocumentLinkOptions {
                 resolve_provider: Some(false),
                 work_done_progress_options: Default::default(),
@@ -387,6 +388,12 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
+            References::METHOD => navigation(shared, &request, |p: lsp_types::ReferenceParams| {
+                let at = p.text_document_position;
+                (at.text_document.uri, move |ctx: &Ctx| {
+                    crate::references::references(ctx, at.position, p.context.include_declaration)
+                })
+            }),
             DocumentLinkRequest::METHOD => {
                 navigation(shared, &request, |p: lsp_types::DocumentLinkParams| {
                     (p.text_document.uri, |ctx: &Ctx| {
@@ -438,10 +445,15 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                 })
             }),
             crate::targets::METHOD => {
-                answer(shared, &request, |p: crate::targets::TargetsParams| {
+                project_answer(shared, &request, |p: crate::targets::TargetsParams| {
                     (p.text_document.uri, move |ctx: &Ctx| {
                         crate::targets::targets(ctx, &p.kinds)
                     })
+                })
+            }
+            crate::inventory::METHOD => {
+                project_answer(shared, &request, |p: crate::inventory::InventoryParams| {
+                    (p.text_document.uri, crate::inventory::inventory)
                 })
             }
             crate::review::SET_BASE_METHOD => set_base_request(shared, &request),
@@ -524,6 +536,26 @@ where
         .map_err(|e| invalid(&request.id, e.to_string()))?;
     let (uri, compute) = read(params);
     let target = shared.lock().nav_target(&uri);
+    let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
+    to_json(request, result)
+}
+
+/// Answers a custom request about the whole project as [`answer`] does,
+/// asked through any of the project's files ([`Core::project_target`]).
+fn project_answer<P, R, F>(
+    shared: &Shared,
+    request: &Request,
+    read: impl FnOnce(P) -> (Uri, F),
+) -> Result<serde_json::Value, Response>
+where
+    P: serde::de::DeserializeOwned,
+    R: serde::Serialize + Default,
+    F: FnOnce(&Ctx) -> R,
+{
+    let params: P = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let (uri, compute) = read(params);
+    let target = shared.lock().project_target(&uri);
     let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
     to_json(request, result)
 }

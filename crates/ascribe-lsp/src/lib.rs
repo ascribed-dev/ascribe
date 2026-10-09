@@ -17,12 +17,14 @@ mod edit;
 mod formatting;
 mod fsx;
 mod hover;
+mod inventory;
 mod links;
 mod log;
 mod nav;
 mod position;
 mod preview;
 mod refactor;
+mod references;
 mod review;
 #[cfg(feature = "json-schema")]
 mod schema;
@@ -41,6 +43,10 @@ pub use context::{
     FrontmatterValue, METHOD as CONTEXT_METHOD, Selection, SelectionKind, VariantArm,
 };
 pub use edit::{EditAction, EditParams, EditResult, METHOD as EDIT_METHOD};
+pub use inventory::{
+    InventoryEntry, InventoryFragment, InventoryPage, InventoryParams, InventoryResult,
+    METHOD as INVENTORY_METHOD, ModelKind,
+};
 pub use position::Encoding;
 pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,

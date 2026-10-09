@@ -331,6 +331,10 @@
           "description": "The content path of the page a link names it on.",
           "type": "string"
         },
+        "rootLink": {
+          "description": "The destination of a link to it from the content root,\n`/page.md#id`, which any page of the project can use.",
+          "type": "string"
+        },
         "text": {
           "description": "The heading's text, phrases replaced by their values.",
           "type": "string"
@@ -341,7 +345,8 @@
         "text",
         "id",
         "level",
-        "link"
+        "link",
+        "rootLink"
       ],
       "type": "object"
     },
@@ -573,7 +578,7 @@
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "The answer to `ascribe/targets`: a list for each kind asked for, and no\nothers. A document that isn't a source file of the project gets no\nlists.",
+  "description": "The answer to `ascribe/targets`: a list for each kind asked for, and no\nothers. A document that isn't one of the project's files gets no lists.",
   "properties": {
     "builds": {
       "description": "Builds, in declaration order.",

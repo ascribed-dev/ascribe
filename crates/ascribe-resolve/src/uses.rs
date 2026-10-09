@@ -98,7 +98,7 @@ impl Project {
     /// in document order within a file.
     pub fn uses(&self, target: &Usable) -> Vec<Use> {
         let mut out = Vec::new();
-        visit(self, Some(target), &mut |used, place| {
+        visit(self, Some(target), None, &mut |used, place| {
             if used == target {
                 out.push(place);
             }
@@ -110,7 +110,7 @@ impl Project {
     /// `target`, the length of [`Project::uses`].
     pub fn use_counts(&self) -> HashMap<Usable, usize> {
         let mut counts = HashMap::new();
-        visit(self, None, &mut |used, _| {
+        visit(self, None, None, &mut |used, _| {
             if let Some(count) = counts.get_mut(used) {
                 *count += 1;
             } else {
@@ -118,6 +118,17 @@ impl Project {
             }
         });
         counts
+    }
+
+    /// Every use written in one file, with what it uses, in no set order. A
+    /// link that names a heading is listed twice: as a use of the heading,
+    /// and (unless it's on the heading's own page) of the page.
+    pub fn uses_in(&self, path: &RelPath) -> Vec<(Usable, Use)> {
+        let mut out = Vec::new();
+        visit(self, None, Some(path), &mut |used, place| {
+            out.push((used.clone(), place));
+        });
+        out
     }
 }
 
@@ -156,15 +167,24 @@ impl Wants {
 }
 
 /// Calls `f` with every use the search for `target` (every use, for `None`)
-/// needs to see, and what each one uses. It may report uses of other things
-/// too; the caller keeps the ones it wants.
-fn visit(project: &Project, target: Option<&Usable>, f: &mut dyn FnMut(&Usable, Use)) {
+/// needs to see, in every file or in `only`, and what each one uses. It may
+/// report uses of other things too; the caller keeps the ones it wants.
+fn visit(
+    project: &Project,
+    target: Option<&Usable>,
+    only: Option<&RelPath>,
+    f: &mut dyn FnMut(&Usable, Use),
+) {
     let wants = Wants::of(target);
     let model = project.model();
     let terms = (wants.terms && !model.glossary.terms.is_empty())
         .then(|| Terms::new(&model.glossary.terms));
     let default_note = default_note();
-    for file in project.files() {
+    let files: Box<dyn Iterator<Item = &FileIndex>> = match only {
+        Some(path) => Box::new(project.file(path).into_iter()),
+        None => Box::new(project.files()),
+    };
+    for file in files {
         let place = |span, kind| Use {
             file: file.path.clone(),
             span,
@@ -284,7 +304,8 @@ fn availability_uses(model: &ContentModel, file: &FileIndex, f: &mut dyn FnMut(&
     }
 }
 
-/// The span of a top-level key of the frontmatter, `key` itself.
+/// The line of a top-level key of the frontmatter, from the key to the end
+/// of its value on that line.
 fn frontmatter_key(file: &FileIndex, key: &str) -> Option<Span> {
     let content = file.document.frontmatter.as_ref()?.content;
     let text = file.source.get(content.range())?;
@@ -294,7 +315,7 @@ fn frontmatter_key(file: &FileIndex, key: &str) -> Option<Span> {
             .strip_prefix(key)
             .is_some_and(|rest| rest.trim_start().starts_with(':'))
         {
-            return Some(Span::new(at, at + key.len()));
+            return Some(Span::new(at, at + line.trim_end().len()));
         }
         at += line.len();
     }

@@ -8,11 +8,11 @@ computes nothing itself: every diagnostic comes from `ascribe_check`, over a
 disagree (SPEC §8, §10).
 
 It provides initialization, document and file synchronization, diagnostics, and
-semantic tokens; completion, hover, go to definition, document links, CodeLens,
-and inlay hints (see [Navigation](#navigation)); code actions, rename, and
-formatting; and the custom requests `ascribe/preview`, `ascribe/review/setBase`,
-`ascribe/review/changes`, `ascribe/context`, `ascribe/targets`, and
-`ascribe/edit`.
+semantic tokens; completion, hover, go to definition, find references, document
+links, CodeLens, and inlay hints (see [Navigation](#navigation)); code actions,
+rename, and formatting; and the custom requests `ascribe/preview`,
+`ascribe/review/setBase`, `ascribe/review/changes`, `ascribe/context`,
+`ascribe/targets`, `ascribe/edit`, and `ascribe/inventory`.
 
 ## The project
 
@@ -289,7 +289,7 @@ destination needs it):
 | Kind | Each entry |
 |---|---|
 | `pages` | `path` (content path), `title`, `type` (content type), `link` (the destination from the requesting page) |
-| `headings` | `page`, `text`, `id`, `level`, `link` (`page.md#id`, or `#id` on the requesting page). A page's headings include those of the fragments it includes, each id once |
+| `headings` | `page`, `text`, `id`, `level`, `link` (`page.md#id`, or `#id` on the requesting page), `rootLink` (`/page.md#id`, from the content root). A page's headings include those of the fragments it includes, each id once |
 | `fragments` | `path`, `include` (the `@include` path from the requesting page), `startsWithHeading` |
 | `images` | `path` (from the project root), `link`. Image files under the content root, not in a folder whose name starts with `.`, `node_modules`, a nested project's folder, or the output directory |
 | `snippets` | One entry per `[sources.<name>]`: `name`, `files` (`{ path, address, regions }`, each region `{ name, address }`) |
@@ -311,7 +311,11 @@ since the model keeps no spans; it's `null` when the entry isn't written as
 a table and key there.
 
 Everything comes from the current snapshot and model, so it includes unsaved
-edits. A document that isn't a source file of the project gets `{}`.
+edits. The request can be sent for any of the project's files: for
+`ascribe.toml`, or another file in the project's folder that isn't a source
+(not in a nested project's folder), the lists are the same, with paths written
+from the content root. A document that isn't one of the project's files gets
+`{}`.
 
 ## Page edits: `ascribe/edit`
 
@@ -404,12 +408,56 @@ A document that isn't a source file of the project gets an error. The
 request is answered in `src/edit.rs` and the files under `src/edit/`, with
 the targets found as `ascribe/context` finds them.
 
+## The project's inventory: `ascribe/inventory`
+
+A custom request that answers what the project has and how much each part is
+used, for the editor's Pages and Content model views:
+
+```jsonc
+{ "textDocument": { "uri": "file:///…/ascribe.toml" } }
+```
+
+Like `ascribe/targets`, it can be sent for any of the project's files. Its
+TypeScript type is `InventoryResult` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-inventory.schema.json`):
+
+```jsonc
+{
+  "modelUri": "file:///…/ascribe.toml",
+  "pages": [{ "path": "guide.md", "title": "Guide", "type": "page", "incoming": 3 }],
+  "fragments": [{ "path": "_setup.md", "includedBy": ["guide.md"] }],
+  "orphans": ["old.md"],
+  "model": [{ "kind": "phrase", "key": "product", "label": "Quill", "uses": 14,
+              "declaration": { "start": …, "end": … } }]
+}
+```
+
+- `incoming` is how many links from other files, and includes, name the page.
+- `orphans` are the pages whose `incoming` is 0, other than index pages
+  (`index.md`, in any folder). A reader may still reach one through a
+  navigation the project doesn't know about, so it's a hint, not an error.
+- `model` lists the phrases, features, glossary terms, dimensions, note types,
+  widgets, and builds, each kind in declaration order. `kind` is `phrase`,
+  `feature`, `term`, `dimension`, `note`, `widget`, or `build`; `label` is the
+  phrase's value, the feature's name, the term, the dimension's label (when it
+  isn't its name), the note type's label, or the widget's description.
+  `uses` is `null` for a build, which pages don't name. `declaration` is the
+  entry's table header in `ascribe.toml` (a phrase's key), in `modelUri`, found
+  as `ascribe/targets` finds ranges; it's `null` for a built-in note type.
+
+Every count is the length of the list Find All References returns for the same
+thing ([Navigation](#navigation)): both come from
+`ascribe_resolve::Project::uses`, and the inventory counts every kind in one
+pass over the snapshot (`Project::use_counts`). It answers from the current
+snapshot, so it includes unsaved edits. See [Performance](#performance) for
+its cost.
+
 ## Capabilities
 
 Advertised: incremental text document sync (open/close, no save), semantic
 tokens (full and range), the position encoding, and completion
-(triggered by `@ { ( # / = , |` and a space), hover, definition, document
-links, CodeLens, inlay hints, code actions, document formatting, rename, and one
+(triggered by `@ { ( # / = , |` and a space), hover, definition, references,
+document links, CodeLens, inlay hints, code actions, document formatting, rename, and one
 command (`ascribe.openFile`, below). Workspace file-rename handling is advertised
 for files. Registered dynamically after `initialized`, when the client allows it:
 `workspace/didChangeWatchedFiles`.
@@ -481,6 +529,7 @@ text and labels come from `ascribe_emit::labels`, the code the emitter builds
 | `complete.rs` | Completion |
 | `hover.rs` | Hover |
 | `definition.rs` | Go to definition |
+| `references.rs` | Find all references |
 | `links.rs` | Document links, CodeLens, inlay hints, and the `ascribe.openFile` command |
 | `nav.rs` | What they share: the request's state (`Ctx`), what is under the cursor (`hit_at`), previews, relative paths |
 
@@ -509,6 +558,24 @@ says so), a phrase (its value), an availability spec or feature key (SPEC
 **Go to definition**: links and includes to the file or heading;
 `@id`'s primary to its heading; phrases and feature keys to their entries in
 `ascribe.toml`.
+
+**Find all references** lists every place that uses what's under the cursor,
+from `ascribe_resolve::Project::uses`, the search the inventory counts with:
+
+| Cursor | Lists |
+|---|---|
+| A link or an `@include` | What it names: the links and includes of the heading after `#`, else of the file |
+| A heading, or its `@id`'s primary | The links whose `#id` names it, on its page or on a page that includes its file, and the includes of its section |
+| The start of the file, its frontmatter, or its title | The links from other files to the file, and its includes |
+| A `{key}` | Every declared `{key}` |
+| An availability spec that is a feature key | The specs that are that key (`@available`, a row's `available`, frontmatter `available`); a spec of targets lists the uses of its dimension |
+| A glossary term in prose | Its occurrences in prose, and its aliases', matched as the build matches them (whole words, its case rule), whatever its `match` setting |
+| A `@note`, or its `type` | The notes of that type (`note` when none is given) |
+| A widget's name | Its directives |
+| A `@variant` or its attribute | The dimension's `@variant` attributes, frontmatter `variant` keys, and the availability specs that name it or its values |
+
+With `includeDeclaration`, the declaration comes first: the file's start, the
+heading, or the entry in `ascribe.toml`.
 
 **Document links** make every link, image, and include destination
 clickable, with `#L<line>` for a heading. **CodeLens** puts
@@ -591,6 +658,29 @@ percentile is 8 ms). Link and include completion scan the snapshot's pages and
 headings (no cache, so it can't be stale), rank the matches, and cut the list at
 100; the cost grows linearly with the project and the ranking is a sort of the
 matches.
+
+### Inventory
+
+`cargo bench -p ascribe-lsp --bench inventory` (release build) changes a page
+of the same generated projects, with a glossary term added that is in every
+page's prose, and times `ascribe/inventory` after each change, with the server
+checking the edit in the background. 100 requests, median / 95th percentile;
+one run on a 4-core 2.1 GHz Xeon container:
+
+| Pages | Inventory, median (p95) |
+|---|---|
+| 20 | 0.8 ms (1.1) |
+| 100 | 1.1 ms (1.6) |
+| 300 | 1.9 ms (2.3) |
+| 1,000 | 5.5 ms (7.4) |
+| 3,000 | 24 ms (29) |
+
+The target is a median under 50 ms at 3,000 pages, since the views ask on
+every save. It counts from the snapshot's index in one pass, with no cache to
+go stale: the links and includes the project resolved, the phrases and
+availability markers it indexed, each directive line, and the glossary's terms
+in each page's prose. Without the glossary term, the 3,000-page median is
+15 ms.
 
 ## Library choice
 

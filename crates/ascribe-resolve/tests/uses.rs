@@ -182,7 +182,11 @@ fn model_entries_are_used_where_pages_name_them() {
     );
     assert_eq!(
         uses(&p, &Usable::Feature("sso".into())),
-        [("guide.md".into(), "available".into(), UseKind::Availability)]
+        [(
+            "guide.md".into(),
+            "available: sso".into(),
+            UseKind::Availability
+        )]
     );
     assert_eq!(
         uses(&p, &Usable::Dimension("pm".into())),
@@ -195,7 +199,7 @@ fn model_entries_are_used_where_pages_name_them() {
         uses(&p, &Usable::Dimension("deployment".into())),
         [
             ("_setup.md".into(), "cloud".into(), UseKind::Availability),
-            ("reference.md".into(), "variant".into(), UseKind::Variant),
+            ("reference.md".into(), "variant:".into(), UseKind::Variant),
         ]
     );
     assert_eq!(
@@ -234,5 +238,10 @@ fn counts_are_the_lengths_of_the_lists() {
         assert_eq!(p.uses(target).len(), *count, "{target:?}");
     }
     assert_eq!(counts.get(&Usable::File(path("index.md"))), Some(&1));
+    let mut total = 0;
+    for file in p.files() {
+        total += p.uses_in(&file.path).len();
+    }
+    assert_eq!(total, counts.values().sum::<usize>());
     assert_eq!(counts.get(&Usable::Phrase("missing".into())), None);
 }
