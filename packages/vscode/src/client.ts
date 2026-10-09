@@ -11,7 +11,7 @@ import {
   type LanguageClientOptions,
   type ServerOptions,
 } from "vscode-languageclient/node";
-import { ancestorsWithin, resolveBinary, type ResolvedBinary } from "./binary.js";
+import { ancestorsWithin, resolveBinary, type Resolution, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
 import { convertEdit, type ServerEdit } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
@@ -211,16 +211,8 @@ export class ProjectServer implements vscode.Disposable {
     if (this.client) return;
     this.status.set("starting");
 
-    const workspaceFolder =
-      vscode.workspace.getWorkspaceFolder(vscode.Uri.file(this.project.folder))?.uri.fsPath ??
-      this.project.folder;
-    const resolution = await resolveBinary({
-      setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
-      projectRoots: ancestorsWithin(this.project.folder, workspaceFolder),
-      extensionPath: this.context.extensionPath,
-      minVersion: minServerVersion(this.context),
-      env: nodeEnvironment,
-    });
+    const workspaceFolder = workspaceFolderOf(this.project);
+    const resolution = await resolveProjectBinary(this.context, this.project);
 
     if (resolution.kind === "missing") {
       this.status.set("failed");
@@ -422,6 +414,28 @@ function clientOptions(
 function readMaxCrashes(): number {
   const value = vscode.workspace.getConfiguration("ascribe").get<number>("maxCrashes", 5);
   return Number.isInteger(value) && value >= 1 ? value : 5;
+}
+
+/** The workspace folder a project is in, or its own folder when it's in none. */
+export function workspaceFolderOf(project: Project): string {
+  return (
+    vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.folder))?.uri.fsPath ??
+    project.folder
+  );
+}
+
+/** Finds the binary a project runs: the `ascribe.path` setting, its own, or the bundled one. */
+export function resolveProjectBinary(
+  context: vscode.ExtensionContext,
+  project: Project,
+): Promise<Resolution> {
+  return resolveBinary({
+    setting: vscode.workspace.getConfiguration("ascribe").get<string>("path", ""),
+    projectRoots: ancestorsWithin(project.folder, workspaceFolderOf(project)),
+    extensionPath: context.extensionPath,
+    minVersion: minServerVersion(context),
+    env: nodeEnvironment,
+  });
 }
 
 /** The oldest server this extension is written for (`ascribe.minServerVersion` in package.json). */

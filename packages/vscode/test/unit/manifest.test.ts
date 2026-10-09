@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PROMPT_COMMANDS, PROMPT_TARGETS } from "../../src/actions/prompt.js";
+import { MCP_LABEL } from "../../src/agents/mcpServer.js";
 
 const read = (relative: string) => readFileSync(new URL(relative, import.meta.url), "utf8");
 
@@ -23,6 +24,7 @@ interface Manifest {
     semanticTokenModifiers: { id: string }[];
     semanticTokenScopes: { language: string; scopes: Record<string, string[]> }[];
     keybindings: { command: string; key: string; mac?: string; when: string }[];
+    mcpServerDefinitionProviders: { id: string; label: string }[];
   };
 }
 
@@ -214,5 +216,14 @@ describe("semantic tokens and the server's legend", () => {
   it.skipIf(modifiers.length === 0)("declares every token modifier", () => {
     const declared = manifest.contributes.semanticTokenModifiers.map((modifier) => modifier.id);
     expect(declared.sort()).toEqual([...modifiers].sort());
+  });
+
+  it("offers ascribe mcp to VS Code's agents, through one provider", () => {
+    // The id is the one src/agents/mcp.ts registers.
+    const mcp = read("../../src/agents/mcp.ts");
+    expect(manifest.contributes.mcpServerDefinitionProviders).toEqual([
+      { id: "ascribe.mcp", label: MCP_LABEL },
+    ]);
+    expect(mcp).toContain('export const MCP_PROVIDER = "ascribe.mcp";');
   });
 });

@@ -490,6 +490,12 @@
         ]
       }
     ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "ascribe.mcp",
+        "label": "Ascribe"
+      }
+    ],
     "configuration": {
       "title": "Ascribe",
       "properties": {
