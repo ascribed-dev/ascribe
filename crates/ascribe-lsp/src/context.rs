@@ -443,25 +443,9 @@ pub(crate) fn context(ctx: &Ctx, range: Range) -> ContextResult {
         .encoding
         .offset_lenient(&index, source, range.end)
         .max(start);
-    let mut walk = Walk {
-        ctx,
-        file,
-        index: &index,
-        offset: start,
-        found: Vec::new(),
-    };
-    walk.frontmatter();
-    walk.blocks(&file.document.blocks);
-    let found = walk.found;
+    let found = found_at(ctx, file, &index, start);
     let token = token(ctx, file, &index, start, &found);
-    let insertable = start == end
-        && is_blank_line(source, start)
-        && !found.iter().any(|(_, node)| {
-            matches!(
-                node,
-                ContextNode::CodeBlock { .. } | ContextNode::Frontmatter { .. }
-            )
-        });
+    let insertable = start == end && is_insertable(source, start, &found);
     let selection = (start < end).then(|| {
         let (kind, inline) = selection(file, start, end);
         Selection {
@@ -484,6 +468,38 @@ pub(crate) fn context(ctx: &Ctx, range: Range) -> ContextResult {
         token,
         insertable,
     }
+}
+
+/// What contains `offset`, outermost first, each with its span: the nodes of
+/// `at`, which `ascribe/edit` finds its targets among too.
+pub(crate) fn found_at(
+    ctx: &Ctx,
+    file: &FileIndex,
+    index: &LineIndex,
+    offset: usize,
+) -> Vec<(Span, ContextNode)> {
+    let mut walk = Walk {
+        ctx,
+        file,
+        index,
+        offset,
+        found: Vec::new(),
+    };
+    walk.frontmatter();
+    walk.blocks(&file.document.blocks);
+    walk.found
+}
+
+/// Whether a block can be inserted at `offset`, given what contains it: its
+/// line is blank, and not in a code block or the frontmatter.
+pub(crate) fn is_insertable(source: &str, offset: usize, found: &[(Span, ContextNode)]) -> bool {
+    is_blank_line(source, offset)
+        && !found.iter().any(|(_, node)| {
+            matches!(
+                node,
+                ContextNode::CodeBlock { .. } | ContextNode::Frontmatter { .. }
+            )
+        })
 }
 
 fn touches(span: Span, offset: usize) -> bool {
@@ -879,7 +895,7 @@ impl Walk<'_> {
 }
 
 /// A `@note`'s type: its `type` attribute, or `note`.
-fn note_type(line: &DirectiveLine) -> String {
+pub(crate) fn note_type(line: &DirectiveLine) -> String {
     line.attributes
         .as_ref()
         .and_then(|a| a.get("type"))
@@ -913,7 +929,7 @@ fn attributes(block: Option<&AttributeBlock>) -> Vec<AttributePair> {
 
 /// The dimension a group's arms vary by: the first key of its first arm that
 /// every arm has. `None` for labeled arms.
-fn group_dimension(group: &ascribe_syntax::Group) -> Option<String> {
+pub(crate) fn group_dimension(group: &ascribe_syntax::Group) -> Option<String> {
     let keys = |line: &DirectiveLine| -> Vec<String> {
         line.attributes
             .as_ref()
@@ -1043,7 +1059,7 @@ fn directive_token(
 }
 
 /// What a selection from `start` to `end` is.
-fn selection(file: &FileIndex, start: usize, end: usize) -> (SelectionKind, bool) {
+pub(crate) fn selection(file: &FileIndex, start: usize, end: usize) -> (SelectionKind, bool) {
     let text = &file.source[start..end];
     let s = start + (text.len() - text.trim_start().len());
     let e = end - (text.len() - text.trim_end().len());

@@ -431,6 +431,12 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
+            crate::edit::METHOD => answer(shared, &request, |p: crate::edit::EditParams| {
+                let uri = p.text_document.uri.clone();
+                (uri.clone(), move |ctx: &Ctx| {
+                    crate::edit::edit(ctx, &uri, &p)
+                })
+            }),
             crate::targets::METHOD => {
                 answer(shared, &request, |p: crate::targets::TargetsParams| {
                     (p.text_document.uri, move |ctx: &Ctx| {

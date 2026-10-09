@@ -116,6 +116,13 @@ const SHAPES: &[Shape] = &[
         command: false,
         schema: |g| g.root_schema_for::<ascribe_lsp::TargetsResult>(),
     },
+    Shape {
+        file: "lsp-edit",
+        title: "EditResult",
+        written_by: "the language server, answering `ascribe/edit`",
+        command: false,
+        schema: |g| g.root_schema_for::<ascribe_lsp::EditResult>(),
+    },
 ];
 
 /// The packages that read Ascribe's JSON, and the shapes each reads.
@@ -130,6 +137,7 @@ const PACKAGES: &[(&str, &[&str])] = &[
             "lsp-changes",
             "lsp-context",
             "lsp-targets",
+            "lsp-edit",
         ],
     ),
 ];

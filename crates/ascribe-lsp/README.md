@@ -11,7 +11,8 @@ It provides initialization, document and file synchronization, diagnostics, and
 semantic tokens; completion, hover, go to definition, document links, CodeLens,
 and inlay hints (see [Navigation](#navigation)); code actions, rename, and
 formatting; and the custom requests `ascribe/preview`, `ascribe/review/setBase`,
-`ascribe/review/changes`, `ascribe/context`, and `ascribe/targets`.
+`ascribe/review/changes`, `ascribe/context`, `ascribe/targets`, and
+`ascribe/edit`.
 
 ## The project
 
@@ -311,6 +312,97 @@ a table and key there.
 
 Everything comes from the current snapshot and model, so it includes unsaved
 edits. A document that isn't a source file of the project gets `{}`.
+
+## Page edits: `ascribe/edit`
+
+A custom request that performs one action on a page and returns the edit,
+so a client can offer actions without writing syntax itself. It answers
+from the current snapshot, so it sees unsaved edits. No capability is
+advertised: a client that wants it sends the request.
+
+```jsonc
+{
+  "textDocument": { "uri": "file:///…/docs/install.md" },
+  "range": { "start": { "line": 20, "character": 0 }, "end": { "line": 20, "character": 0 } },
+  "action": "wrapNote",
+  "args": { "type": "tip" },
+  "version": 12
+}
+```
+
+`range` is the cursor or selection the action was invoked on, `args` what
+the action needs (each operation's are below; missing means `{}`), and
+`version`, optional, the document version the client saw. The result, whose
+TypeScript type is `EditResult` in `packages/vscode/src/shapes.ts`
+(`schemas/lsp-edit.schema.json`), is one of:
+
+| Result | Meaning |
+|---|---|
+| `{ edit, select }` | `edit` is a `WorkspaceEdit` whose `changes` hold plain text edits to the requested document. `select` is the placeholder text the edit wrote, as a range in the document after the edit, for the client to leave selected; `null` when it wrote none. |
+| `{ error }` | A plain-language sentence for the client to show: the document's version isn't `version` (the page changed after the action was chosen), the action doesn't apply at the range, an argument is invalid (naming the valid choices), or the edit would make a problem the page didn't have. |
+
+The operations, where each applies, and its arguments (`?` is optional):
+
+| Action | Applies to | Args | Writes |
+|---|---|---|---|
+| `wrapNote` | One paragraph, or whole blocks | `type?` (default `note`) | `@note` before one paragraph, or a container (`@note:` … `@end`) around several blocks; `{type=…}` unless the type is `note` |
+| `setNoteType` | A note | `type` | The note's `type` attribute, or none for `note` |
+| `unwrapNote` | A note | | The note's content, without the directive |
+| `noteToDetails` | A note | `title` | `.Title` and `@details`, keeping the content and the form |
+| `wrapDetails` | One block, or whole blocks | `title` | `.Title` and `@details` (or `@details:` … `@end`) |
+| `unwrapDetails` | A details block | | Its content, without the title and the directive |
+| `makeSteps` | An ordered list | | `@steps` above it |
+| `removeSteps` | Steps | | The ordered list, without `@steps` |
+| `addHeadingId` | A heading without `@id` | `id?` (default its slug) | `@id: …` after the heading |
+| `insertNote` | An insertable line | `type?`, `text?` | A note; without `text`, a placeholder |
+| `insertSteps` | An insertable line | `count?` (1 to 50, default 3) | `@steps` and a numbered list of placeholders |
+| `insertVariantGroup` | An insertable line | `dimension`, `values` | One `@variant {dimension=value}:` arm per value, each with a placeholder, and `@end` |
+| `addVariantArm` | A group of one dimension's arms | `value` | A new arm, in the dimension's declared order |
+| `removeVariantArm` | An arm of a group with others | | The group without it |
+| `insertDetails` | An insertable line | `title` | `.Title`, `@details:`, a placeholder, `@end` |
+| `insertInclude` | An insertable line | `path` (with `#id` for a section) | `@include: …` |
+| `insertSnippet` | An insertable line | `address`, `lang?`, `title?` | `@snippet: …`, with the attributes given |
+| `insertImage` | An insertable line | `path`, `alt`, `attributes?` | An image of `path`, with `alt` as its text and the attributes after it |
+| `insertWidget` | An insertable line | `name`, `primary?`, `attributes?` | The widget, attributes in declared order; the container form with a placeholder when it takes one, and a `.Title` placeholder when its title is required |
+| `markAvailable` | A heading (its section), a block, or a table's body row | `spec` (a spec or a feature key) | `@available: …` under the heading or before the block; for a row, `{available=…}` at the end of its first cell |
+| `setPageVariant` | Anywhere in a page | `dimension`, `value` | That dimension's value under `variant:` in the frontmatter, keeping the rest |
+| `setPageAvailable` | Anywhere in a page | `spec` | `available:` in the frontmatter |
+| `linkSelection` | Prose selected in one paragraph or heading | `destination` | A link to `destination`, with the selection as its text |
+| `insertLink` | A cursor in prose | `destination` | A link to `destination` with empty text, so the target's title fills it |
+| `insertPhrase` | A cursor in prose | `key` | `{key}` |
+| `setLinkTarget` | A link | `destination` | The link's destination |
+| `useTargetTitle` | A link to a page | | Empty link text, so the target's title fills it |
+| `setImageWidth` | An image | `width` | The image's `width` attribute, when the model declares one |
+| `setImageAlt` | An image | `alt` | The image's alt text |
+
+An insertable line is where `ascribe/context` says `insertable`: a blank
+line between blocks. `attributes` is an object of key to value (a string,
+number, boolean, or a list for a set). Names, types, dimensions, values,
+specs, keys, pages, fragments, images, snippet addresses, and widget
+attributes are checked against the project and its model; the valid choices
+are what `ascribe/targets` lists.
+
+What every edit holds to:
+
+- **Canonical.** `ascribe fmt` changes nothing the edit wrote: directives,
+  attributes, and images are written by `ascribe-fmt`'s own functions.
+- **Minimal.** The edit touches only what the action changes, and keeps the
+  rest of the page, the frontmatter's other fields and comments included, as
+  written.
+- **In place.** Inside a list item or a block quote, what's written is
+  indented or prefixed to match, and a blank line is added where the blocks
+  around it need one.
+- **No new problems.** An edit that would add a diagnostic in the editor
+  build, to the page, to a page that includes it, or to a page that links
+  to either, is refused with an error instead, naming the other page when
+  the problem is there.
+- **Every wrap has an unwrap.** `wrapNote` and `unwrapNote`, `wrapDetails`
+  and `unwrapDetails`, `makeSteps` and `removeSteps` undo each other: one
+  and then the other gives back the original text.
+
+A document that isn't a source file of the project gets an error. The
+request is answered in `src/edit.rs` and the files under `src/edit/`, with
+the targets found as `ascribe/context` finds them.
 
 ## Capabilities
 

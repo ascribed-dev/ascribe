@@ -8,6 +8,7 @@
 // - ChangesResult (the language server, answering `ascribe/review/changes`)
 // - ContextResult (the language server, answering `ascribe/context`)
 // - TargetsResult (the language server, answering `ascribe/targets`)
+// - EditResult (the language server, answering `ascribe/edit`)
 
 /**
  * Where a block's text is written: the README's anchor grammar, the same
@@ -435,6 +436,26 @@ export interface Counts {
   moved: number;
 }
 
+/** The answer to `ascribe/edit`: the edit, or why there is none. */
+export type EditResult =
+  | {
+      /**
+       * Plain text edits to the requested document, under `changes`,
+       * in canonical form.
+       */
+      edit: LspWorkspaceEdit;
+      /**
+       * The placeholder text the edit wrote, in the document as it is
+       * after the edit, for the client to leave selected; `null` when it
+       * wrote none.
+       */
+      select: LspRange | null;
+    }
+  | {
+      /** The message. */
+      error: string;
+    };
+
 /** How a directive is written (SPEC §3.5, §3.6). */
 export type Form = "line" | "block" | "container" | "group";
 
@@ -475,6 +496,20 @@ export interface LspRange {
   start: LspPosition;
   /** Where it ends. */
   end: LspPosition;
+}
+
+/** A text edit: replace `range` with `newText`. */
+export interface LspTextEdit {
+  /** The range to replace, in the document as it is before the edit. */
+  range: LspRange;
+  /** The text that replaces it. */
+  newText: string;
+}
+
+/** Changes to documents. */
+export interface LspWorkspaceEdit {
+  /** The edits to each document, by its URI. */
+  changes: Record<string, LspTextEdit[]>;
 }
 
 /** What changed on one page of a build. */

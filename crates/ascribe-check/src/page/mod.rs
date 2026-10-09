@@ -147,6 +147,20 @@ impl<'p> PageChecker<'p> {
         self.finish(vec![(Some(build.name.as_str()), found)])
     }
 
+    /// The page-level diagnostics of `build` for these pages alone, each
+    /// resolved from the checker's index: what [`PageChecker::check`]
+    /// reports for them. A path that isn't a page, or that the build drops,
+    /// has none.
+    pub fn check_pages(&self, build: &Build, pages: &[RelPath]) -> Vec<Diagnostic> {
+        let router = DefaultRouter::from_consumer(&self.project.model().consumer);
+        let found = pages
+            .iter()
+            .filter_map(|path| self.indexed.index.resolve_page(path, build, &router))
+            .flat_map(|page| check_page(&self.indexed.index, &page, &self.links))
+            .collect();
+        self.finish(vec![(Some(build.name.as_str()), found)])
+    }
+
     /// The page-level diagnostics of one build.
     pub fn check(&self, build: &Build) -> Vec<Diagnostic> {
         let found = self.found(build, &mut |_| {});
