@@ -354,7 +354,7 @@ function finishLines(project: PromptProject, targets: readonly string[]): string
 }
 
 /** A word as a POSIX shell reads it: as it is when it's plain, else in single quotes. */
-function shellWord(word: string): string {
+export function shellWord(word: string): string {
   if (word !== "" && /^[A-Za-z0-9_\-./:@%+=,]+$/.test(word)) return word;
   return `'${word.replace(/'/g, "'\\''")}'`;
 }

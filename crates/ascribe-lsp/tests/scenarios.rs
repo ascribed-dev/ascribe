@@ -176,6 +176,33 @@ fn a_file_that_stops_being_readable_reports_source_unreadable() {
 }
 
 #[test]
+fn a_closed_file_written_on_disk_is_published_even_when_it_stays_clean() {
+    // A client waiting on the write learns the server has caught up with it,
+    // whether the text changed or not.
+    let f = project();
+    let (page, fragment) = (f.path("docs/index.md"), f.path("docs/_setup.md"));
+    let mut client = Client::start(&f.root());
+    client.settle();
+    assert!(client.publications(&fragment).is_empty());
+
+    let text = format!("{FRAGMENT}\nMore.\n");
+    f.write("docs/_setup.md", &text);
+    client.watched(&[(&fragment, FileChangeType::CHANGED)]);
+    client.settle();
+    assert_eq!(client.publications(&fragment).len(), 1);
+    assert!(client.codes(&fragment).is_empty());
+
+    // The same text again.
+    f.write("docs/_setup.md", &text);
+    client.watched(&[(&fragment, FileChangeType::CHANGED)]);
+    client.settle();
+    assert_eq!(client.publications(&fragment).len(), 2);
+    assert!(client.codes(&fragment).is_empty());
+    // A file that wasn't written isn't published again for it.
+    assert!(client.publications(&page).is_empty());
+}
+
+#[test]
 fn an_open_buffer_wins_over_the_file_on_disk() {
     let f = project();
     let (page, fragment) = (f.path("docs/index.md"), f.path("docs/_setup.md"));

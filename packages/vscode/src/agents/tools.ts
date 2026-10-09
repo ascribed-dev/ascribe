@@ -8,7 +8,8 @@ import type { ReviewController } from "../preview/review.js";
 import type { TargetsResult } from "../shapes.js";
 import { formatVersion } from "../version.js";
 import { changesReport } from "./changes.js";
-import { problemsReport, relativePath, shellWord } from "./problems.js";
+import { shellWord } from "@ascribed/review/prompt";
+import { problemsReport, relativePath } from "./problems.js";
 import type { Publication } from "./published.js";
 
 /**

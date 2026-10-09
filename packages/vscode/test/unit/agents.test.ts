@@ -300,13 +300,17 @@ describe("the problems report", () => {
     expect(report.summary).toEqual({ errors: 29, warnings: 27 });
   });
 
-  it("is written in the schema version `ascribe check` writes", () => {
-    const rust = readFileSync(
-      new URL("../../../../crates/ascribe-cli/src/report/json.rs", import.meta.url),
-      "utf8",
-    );
-    expect(/pub const SCHEMA_VERSION: u32 = (\d+);/.exec(rust)?.[1]).toBe(
+  it("is written in the schema version `ascribe check` writes, cut where it cuts", () => {
+    const read = (file: string) =>
+      readFileSync(
+        new URL(`../../../../crates/ascribe-cli/src/report/${file}`, import.meta.url),
+        "utf8",
+      );
+    expect(/pub const SCHEMA_VERSION: u32 = (\d+);/.exec(read("json.rs"))?.[1]).toBe(
       String(CHECK_SCHEMA_VERSION),
+    );
+    expect(/pub const LIMIT: usize = (\d+);/.exec(read("concise.rs"))?.[1]).toBe(
+      String(MAX_PROBLEMS),
     );
   });
 

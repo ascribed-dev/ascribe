@@ -13,7 +13,11 @@ import type { ProtocolDiagnostic, Publication } from "./published.js";
  */
 export const CHECK_SCHEMA_VERSION = 1;
 
-/** The most diagnostics a report lists, as `ascribe check --format concise` does. */
+/**
+ * The most diagnostics a report lists, as `ascribe check --format concise`
+ * does: `LIMIT` in `crates/ascribe-cli/src/report/concise.rs`, which a test
+ * compares.
+ */
 export const MAX_PROBLEMS = 50;
 
 /** The report: `ascribe check`'s, and what the editor adds to it. */
@@ -158,12 +162,6 @@ export function relativePath(root: string, file: string): string {
   const windows = /^[a-zA-Z]:|^\\\\/.test(root);
   const relative = windows ? path.win32.relative(root, file) : path.posix.relative(root, file);
   return relative.split(windows ? "\\" : "/").join("/");
-}
-
-/** A word as a POSIX shell reads it: as it is when it's plain, else in single quotes. */
-export function shellWord(word: string): string {
-  if (word !== "" && /^[A-Za-z0-9_\-./:@%+=,]+$/.test(word)) return word;
-  return `'${word.replace(/'/g, "'\\''")}'`;
 }
 
 /**

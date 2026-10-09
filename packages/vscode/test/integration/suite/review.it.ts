@@ -210,6 +210,27 @@ describe("agents' tools, with the real language server on a quill repository", (
     }
   });
 
+  it("answers at once for a file written on disk that stays clean", async () => {
+    // The usual case for an agent's edit: the server publishes for the file
+    // even though its diagnostics didn't change, so the tool needn't wait out
+    // its second.
+    const original = readFileSync(keys.fsPath, "utf8");
+    try {
+      writeFileSync(keys.fsPath, `${original}\nOne more sentence.\n`);
+      const began = Date.now();
+      const answer = JSON.parse(await invoke("ascribe_editor_problems", { path: keys.fsPath })) as {
+        diagnostics: unknown[];
+        current: boolean;
+      };
+      const took = Date.now() - began;
+      assert.equal(answer.current, true);
+      assert.deepEqual(answer.diagnostics, []);
+      assert.ok(took < 900, `answered in ${took} ms`);
+    } finally {
+      writeFileSync(keys.fsPath, original);
+    }
+  });
+
   it("publishes a change's diagnostics well under a second, typed or written on disk", async () => {
     // Copilot reads the Problems panel a second after its own edit.
     const editor = await vscode.window.showTextDocument(install);

@@ -3,7 +3,8 @@
 
 import * as path from "node:path";
 import type { BaseInfo, ChangedPage, ChangesResult, Counts } from "../shapes.js";
-import { relativePath, shellWord } from "./problems.js";
+import { shellWord } from "@ascribed/review/prompt";
+import { relativePath } from "./problems.js";
 
 /** The most pages the tool lists. */
 export const MAX_PAGES = 100;
