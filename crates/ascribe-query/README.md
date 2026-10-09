@@ -9,7 +9,8 @@ Each answer wraps something the checks or the language server already compute, s
 | Module | Main types and functions | What it does |
 |---|---|---|
 | `src/explain.rs` | `explain`, `list`, `Explanation`, `example_slugs` | A diagnostic from the registry (`ascribe_check::Registry`), by code or name, with its fix and its example. `example_slugs` checks an example against its model, for `tests/explain_examples.rs`. |
-| `src/model.rs` | `model`, `summary`, `Section`, `ModelReport` | The content model as `ascribe model` shows it. `summary` is its Markdown, cut to a character budget, which agent instructions will use too. |
+| `src/model.rs` | `model`, `summary`, `Section`, `ModelReport` | The content model as `ascribe model` shows it. `summary` is its Markdown, cut to a character budget. |
+| `src/rules.rs` | `rules`, `pointer`, `content_glob` | A project's rules for an agent, as Markdown in at most 4,000 characters: the check to run, the page types and phrases (cut as `summary` cuts them), and the directives its pages use (`ascribe_resolve::Project::directive_names`). `ascribe agents sync` writes them into `AGENTS.md` and the other instruction files. `pointer` is the short text for the repository root's `AGENTS.md`. |
 | `src/outline.rs` | `outline`, `Outline` | A page's title, type, and the headings a link can name, with a build's or without. |
 | `src/link.rs` | `link`, `LinkAnswer` | Whether a link target works from a page, the link to write, and the closest targets when it doesn't. |
 | `src/refs.rs` | `refs`, `Asked`, `Refs` | Where a page, a heading, a fragment, or a content model entry is used. |

@@ -283,3 +283,19 @@ fn counts_are_the_lengths_of_the_lists() {
     assert_eq!(total, counts.values().sum::<usize>());
     assert_eq!(counts.get(&Usable::Phrase("missing".into())), None);
 }
+
+#[test]
+fn directive_names_are_every_directive_written_once() {
+    let project = project(&[
+        (
+            "docs/a.md",
+            "# A\n@id: a\n\n@note {type=security}: Careful.\n\n- item\n\n  @quill-lab\n",
+        ),
+        (
+            "docs/b.md",
+            "# B\n\n@variant {pm=npm}:\nnpm\n@variant {pm=pnpm}:\npnpm\n@end\n\n@note: Again.\n",
+        ),
+    ]);
+    let names: Vec<String> = project.directive_names().into_iter().collect();
+    assert_eq!(names, ["id", "note", "quill-lab", "variant"]);
+}
