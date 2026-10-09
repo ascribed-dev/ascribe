@@ -17,10 +17,10 @@ import { convertEdit, type ServerEdit } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { globFolder, type Project } from "./projects.js";
 import { scopeMiddleware } from "./scope.js";
+import { ServerStatus, type ServerState } from "./serverState.js";
 import { parseVersion } from "./version.js";
 
-/** Where the server is in its life. */
-export type ServerState = "stopped" | "starting" | "running" | "failed";
+export type { ServerState } from "./serverState.js";
 
 const OPEN_SETTINGS = "Open Settings";
 const SHOW_OUTPUT = "Show Output";
@@ -42,7 +42,7 @@ export interface ProjectHost {
 export class ProjectServer implements vscode.Disposable {
   private client: LanguageClient | undefined;
   private current: ResolvedBinary | undefined;
-  private status: ServerState = "stopped";
+  private readonly status = new ServerStatus();
   private channel: vscode.LogOutputChannel | undefined;
   private readonly crashes: CrashCounter;
   private requested = false;
@@ -72,7 +72,12 @@ export class ProjectServer implements vscode.Disposable {
   }
 
   get state(): ServerState {
-    return this.status;
+    return this.status.state;
+  }
+
+  /** Fires with the new state each time the server's state changes. */
+  get onDidChangeState(): vscode.Event<ServerState> {
+    return this.status.onDidChange;
   }
 
   /** Fires each time the server reaches the running state, at the first start and after a restart. */
@@ -86,7 +91,7 @@ export class ProjectServer implements vscode.Disposable {
    */
   request(method: string, params: unknown, token?: vscode.CancellationToken): Promise<unknown> {
     const client = this.client;
-    if (!client || this.status !== "running") {
+    if (!client || this.status.state !== "running") {
       return Promise.reject(new Error("the Ascribe language server isn't running"));
     }
     return token ? client.sendRequest(method, params, token) : client.sendRequest(method, params);
@@ -175,11 +180,12 @@ export class ProjectServer implements vscode.Disposable {
     this.disposed = true;
     this.channel?.dispose();
     this.started.dispose();
+    this.status.dispose();
   }
 
   private async startNow(): Promise<void> {
     if (this.client) return;
-    this.status = "starting";
+    this.status.set("starting");
 
     const workspaceFolder =
       vscode.workspace.getWorkspaceFolder(vscode.Uri.file(this.project.folder))?.uri.fsPath ??
@@ -193,7 +199,7 @@ export class ProjectServer implements vscode.Disposable {
     });
 
     if (resolution.kind === "missing") {
-      this.status = "failed";
+      this.status.set("failed");
       this.current = undefined;
       const { message, tried } = resolution.error;
       this.output.appendLine(message);
@@ -234,7 +240,7 @@ export class ProjectServer implements vscode.Disposable {
     );
     client.onDidChangeState(({ newState }) => {
       if (newState === State.Running) {
-        this.status = "running";
+        this.status.set("running");
         this.started.fire();
       }
     });
@@ -243,7 +249,7 @@ export class ProjectServer implements vscode.Disposable {
       await client.start();
     } catch (error) {
       this.client = undefined;
-      this.status = "failed";
+      this.status.set("failed");
       const message = error instanceof Error ? error.message : String(error);
       this.output.appendLine(`The language server didn't start: ${message}`);
       void vscode.window
@@ -257,7 +263,7 @@ export class ProjectServer implements vscode.Disposable {
   private async stopNow(): Promise<void> {
     const client = this.client;
     this.client = undefined;
-    this.status = "stopped";
+    this.status.set("stopped");
     if (!client) return;
     try {
       await client.dispose();
@@ -277,7 +283,7 @@ export class ProjectServer implements vscode.Disposable {
           );
           return { action: CloseAction.Restart, handled: true };
         }
-        this.status = "failed";
+        this.status.set("failed");
         const message =
           `The Ascribe language server crashed ${this.crashes.count} times, so it won't be ` +
           `restarted again. See the output for details, then restart it when you've fixed the cause.`;

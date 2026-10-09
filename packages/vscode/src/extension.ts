@@ -4,6 +4,11 @@ import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
 import { ActionsController, type ActionsApi } from "./actions/controller.js";
+import { ChosenBuilds } from "./ui/chosenBuild.js";
+import { STATE_NAMES } from "./ui/describe.js";
+import { ProjectBuilds } from "./ui/projectBuilds.js";
+import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
+import { StatusBar, type StatusBarApi } from "./ui/statusBar.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
@@ -24,6 +29,13 @@ export interface AscribeApi {
   preview: PreviewApi;
   /** The editor's actions, for tests. */
   actions: ActionsApi;
+  /** The status bar item and the Projects view, for tests. */
+  ui: {
+    statusBar: StatusBarApi;
+    projects: ProjectsViewApi;
+    /** Settles when every request for a project's builds has been answered. */
+    whenBuildsKnown(): Promise<void>;
+  };
 }
 
 let registry: ProjectRegistry | undefined;
@@ -32,8 +44,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const projects = new ProjectRegistry(context);
   registry = projects;
 
-  const preview = new PreviewController(context, projects);
+  const chosen = new ChosenBuilds();
+  const preview = new PreviewController(context, projects, chosen);
   preview.register();
+
+  const builds = new ProjectBuilds(projects, chosen);
+  builds.register();
+  const statusBar = new StatusBar(projects, builds, chosen);
+  statusBar.register();
+  const projectsView = new ProjectsView(projects, builds);
+  projectsView.register();
 
   const actions = new ActionsController(projects);
   actions.register();
@@ -74,6 +94,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     projects,
     preview,
     actions,
+    chosen,
+    builds,
+    statusBar,
+    projectsView,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
       if (projects.projects.length === 0) {
@@ -124,6 +148,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     whenSettled: () => projects.whenSettled(),
     preview: preview.api,
     actions: actions.api,
+    ui: {
+      statusBar: statusBar.api,
+      projects: projectsView.api,
+      whenBuildsKnown: () => builds.whenSettled(),
+    },
   };
 }
 
@@ -144,13 +173,6 @@ async function pickServer(projects: ProjectRegistry): Promise<ProjectServer | un
   );
   return picked?.server;
 }
-
-const STATE_NAMES: Record<ServerState, string> = {
-  stopped: "not started",
-  starting: "starting",
-  running: "running",
-  failed: "failed",
-};
 
 /** Tells VS Code whether the workspace has a project, for the `ascribe.active` conditions. */
 function updateActive(projects: ProjectRegistry): Thenable<unknown> {

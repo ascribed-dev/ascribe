@@ -76,6 +76,35 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.switchBuild",
+        "title": "Switch Build",
+        "category": "Ascribe",
+        "icon": "$(package)"
+      },
+      {
+        "command": "ascribe.projectMenu",
+        "title": "Project Menu",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.projects.refresh",
+        "title": "Refresh",
+        "category": "Ascribe",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ascribe.projects.showOutput",
+        "title": "Show Output",
+        "category": "Ascribe",
+        "icon": "$(output)"
+      },
+      {
+        "command": "ascribe.projects.restart",
+        "title": "Restart Server",
+        "category": "Ascribe",
+        "icon": "$(debug-restart)"
+      },
+      {
         "command": "ascribe.startReview",
         "title": "Start Review",
         "category": "Ascribe",
@@ -267,6 +296,30 @@
         "command": "ascribe.action.insertWidget",
         "title": "Insert a widget",
         "category": "Ascribe"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ascribe",
+          "title": "Ascribe",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "ascribe": [
+        {
+          "id": "ascribe.projects",
+          "name": "Projects",
+          "contextualTitle": "Ascribe"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "ascribe.projects",
+        "contents": "This workspace has no Ascribe project yet. A project is a folder with an ascribe.toml, which describes its pages and builds.\n[Get started with Ascribe](https://ascribed-dev.com/getting-started/)"
       }
     ],
     "configuration": {
@@ -495,6 +548,26 @@
           "when": "ascribe.active && ascribe.previewOpen"
         },
         {
+          "command": "ascribe.switchBuild",
+          "when": "ascribe.active && ascribe.inProject"
+        },
+        {
+          "command": "ascribe.projectMenu",
+          "when": "ascribe.active && ascribe.inProject"
+        },
+        {
+          "command": "ascribe.projects.refresh",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.projects.showOutput",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.projects.restart",
+          "when": "false"
+        },
+        {
           "command": "ascribe.startReview",
           "when": "ascribe.active"
         },
@@ -672,6 +745,25 @@
           "command": "ascribe.refreshComments",
           "when": "activeWebviewPanelId == 'ascribe.preview' && ascribe.reviewOn",
           "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "ascribe.projects.refresh",
+          "when": "view == ascribe.projects",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "ascribe.projects.showOutput",
+          "when": "view == ascribe.projects && viewItem =~ /^ascribe\\.project\\./",
+          "group": "inline@1"
+        },
+        {
+          "command": "ascribe.projects.restart",
+          "when": "view == ascribe.projects && viewItem =~ /^ascribe\\.project\\.(running|failed)$/",
+          "group": "inline@2"
         }
       ],
       "comments/commentThread/context": [

@@ -99,7 +99,7 @@ Directive lines, attribute blocks, `@end`, and phrases are highlighted as soon a
 
 ### Preview
 
-**Ascribe: Open Page Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, and opens a page or file you click in the editor. It scrolls with the editor by block, both ways: scrolling the editor brings the block at its top to the top of the preview, moving the cursor into a block the preview doesn't show brings it into view, scrolling the preview scrolls the editor to the block at its top, and double-clicking a block puts the cursor on its first line. A block from a fragment follows the line of its `@include`. Turn off `ascribe.preview.scrollPreviewWithEditor` or `ascribe.preview.scrollEditorWithPreview` to stop one direction. Its **Build** picker shows the page as any build publishes it, starting with the editor's build. In a workspace with several projects, each project keeps its own choice of build.
+**Ascribe: Open Page Preview to the Side** (also the preview button in a Markdown editor's title bar) shows the current page as the published site shows it, with the same elements, including unsaved changes. It follows the editor: it updates as you type, keeps its scroll position, and opens a page or file you click in the editor. It scrolls with the editor by block, both ways: scrolling the editor brings the block at its top to the top of the preview, moving the cursor into a block the preview doesn't show brings it into view, scrolling the preview scrolls the editor to the block at its top, and double-clicking a block puts the cursor on its first line. A block from a fragment follows the line of its `@include`. Turn off `ascribe.preview.scrollPreviewWithEditor` or `ascribe.preview.scrollEditorWithPreview` to stop one direction. Its **Build** picker shows the page as any build publishes it, starting with the editor's build. In a workspace with several projects, each project keeps its own choice of build. It's the same choice the [status bar](#the-status-bar) names and switches: change it in one, and the other follows.
 
 A fragment isn't a page, so the preview names the pages that include it instead. A page a build doesn't publish says which build drops it, and why.
 
@@ -109,6 +109,18 @@ The preview shows images and files from the content root, and from directories e
 
 @available: next
 A [`@snippet`](../reference/directives.md#snippet) is read again when its page changes, not when its code file does, so the preview and the page's problems don't follow edits to the code. To see them, change the page, or run **Ascribe: Restart Language Server**.
+
+### The status bar
+@available: next
+
+While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. A file that isn't in a project shows nothing.
+
+Click it for a menu of the project: **Switch build**, **Show output**, **Restart server**, and, for a page, **Open preview**. **Switch build** (also **Ascribe: Switch Build**) lists the project's builds and marks the editor build. The build you pick is the one the preview renders, for the rest of the session; the preview's **Build** picker changes the same choice. Picking the editor build follows `[editor] build`, even when you change it. The editor build still decides the diagnostics: to change it, change `[editor] build` in `ascribe.toml`.
+
+### The Projects view
+@available: next
+
+The Ascribe icon in the activity bar opens the Ascribe sidebar. Its **Projects** view lists every project in the workspace, started or not, by name, with its folder and an icon for its server's state. Under each is its `ascribe.toml`, which opens it, and, while its server runs, its editor build and the `ascribe` binary in use. Each project's buttons show its server's output, and restart its server when it's running or failed. The view updates as projects come and go and servers start and stop, and opening it starts no server. In a workspace with no project, it says how to start one.
 
 ### Site preview
 @available: next
@@ -177,7 +189,7 @@ npx ascribe check --config handbook
 
 ### Commands and output
 
-Commands act on the project that owns the active file: the preview, its **Build** picker, review, and **Show Server Output**. **Restart Language Server** restarts every project's server that has started. [Commands](#commands) has the details.
+Commands act on the project that owns the active file: the preview, its **Build** picker, **Switch Build**, review, and **Show Server Output**. The [status bar](#the-status-bar) names that project, and the [Projects view](#the-projects-view) lists them all. **Restart Language Server** restarts every project's server that has started. [Commands](#commands) has the details.
 
 Each project's server logs to its own output channel, `Ascribe (<project>)`. The project's name is its folder relative to the workspace folder, such as `Ascribe (handbook/internal)`, or the workspace folder's name for a project at its root. In a workspace with one project, the channel is just `Ascribe`.
 

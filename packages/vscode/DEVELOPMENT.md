@@ -118,6 +118,12 @@ The registry feeds the Command Palette (`ascribe.action.<id>`), the editor's con
 - **Running an action** (`src/actions/run.ts`): the context for the selection, then the wizard (`src/actions/steps.ts` builds and runs the steps, `src/actions/ask.ts` shows them in the quick input with a step counter and Back), then `ascribe/edit` with the document's version through `ProjectServer.requestEdit`, which converts the server's `WorkspaceEdit` with the language client's converter. The edit is applied with `workspace.applyEdit`, one undo step, and its `select` range is selected. When the page changed after the context was asked for, the server refuses the stale version; the run asks for the context again and tries once more with the same answers.
 - **Tests** answer a wizard from a script: `api.actions.answerNext([...])` before running the command, and `api.actions.runs` says what each run did.
 
+## The status bar and the Projects view
+
+`src/ui/` holds the editor's UI around projects. **The build you're looking at** is one value per project, `ChosenBuilds` in `src/ui/chosenBuild.ts`: the preview renders it, the status bar names it, and the preview's picker and **Switch Build** both set it, so either one changes the other. No choice means the editor build, and choosing the editor build clears the choice, so it follows `[editor] build`.
+
+`src/ui/projectBuilds.ts` asks each running server for its builds (`ascribe/targets`, through one of its pages: the active one, an open one, or one on disk), again when a server starts or its `ascribe.toml` changes, and never starts a server. `src/ui/describe.ts` works out what the status bar item and the view's items say from plain values, so `test/unit/ui.test.ts` checks it without VS Code; `src/ui/statusBar.ts` and `src/ui/projectsView.ts` show it. The view lists `ProjectRegistry.servers`, started or not, and redraws on the registry's `onDidChangeProjects` and `onDidChangeState` (each `ProjectServer`'s `onDidChangeState`, from `src/serverState.ts`). Its inline buttons are the commands `ascribe.projects.showOutput` and `ascribe.projects.restart`, which the palette doesn't show; a project's `contextValue`, `ascribe.project.<state>`, decides which it offers.
+
 ## Highlighting
 
 `syntaxes/` holds two TextMate injections into markdown (one for top level, one
@@ -156,6 +162,7 @@ for theme colors it can't read.
   | References, what uses a thing | `$(references)` |
   | Build | `$(package)` |
   | Problem | `$(error)`, `$(warning)`, `$(info)`, by severity |
+  | A project's server: running or not started, starting, failed | `$(book)`, `$(sync~spin)`, `$(warning)` |
   | Dimension | `$(symbol-enum)` |
   | Variant, one value of a dimension | `$(symbol-enum-member)` |
   | Phrase | `$(symbol-string)` |

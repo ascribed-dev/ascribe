@@ -37,6 +37,10 @@ const commands: Record<string, string> = {
     "Opens the active page on its project's dev server, in the browser. See [Site preview](../guides/editor.md#site-preview).",
   "ascribe.selectPreviewBuild":
     "Picks the build the preview shows, for the previewed page's project.",
+  "ascribe.switchBuild":
+    "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../guides/editor.md#the-status-bar).",
+  "ascribe.projectMenu":
+    "Shows the menu of the active file's project, as clicking its status bar item does: switch the build, show the server's output, restart its server, or open the preview.",
   "ascribe.startReview":
     "Marks what changed in the preview, against a base it asks for, for the active page's project. Its server must be running: open one of its pages first. See [Review in the preview](../guides/editor.md#review-in-the-preview).",
   "ascribe.stopReview": "Turns review off for the active page's project, and frees its base.",
@@ -60,6 +64,8 @@ const available: Record<string, string> = {
   "ascribe.stopReview": "next",
   "ascribe.changedPages": "next",
   "ascribe.refreshComments": "next",
+  "ascribe.switchBuild": "next",
+  "ascribe.projectMenu": "next",
   "ascribe.preview.scrollPreviewWithEditor": "next",
   "ascribe.preview.scrollEditorWithPreview": "next",
   "ascribe.review.sourceComments": "next",

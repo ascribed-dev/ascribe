@@ -2,7 +2,9 @@ import * as path from "node:path";
 import { statSync } from "node:fs";
 import * as vscode from "vscode";
 import type { ProjectServer } from "../client.js";
+import { samePath } from "../projects.js";
 import type { ProjectRegistry } from "../registry.js";
+import type { ChosenBuilds } from "../ui/chosenBuild.js";
 import { shellHtml } from "./html.js";
 import type {
   FromWebview,
@@ -20,7 +22,7 @@ import { canonicalReference, isExternal, splitFragment } from "./refs.js";
 import { ReviewController, type ReviewApi } from "./review.js";
 import { SourceComments, type SourceThreadRecord } from "./sourceComments.js";
 import { baseCommit, baseName, causes, fromContentPath, parseSource } from "./reviewText.js";
-import { BuildChoices, previewProblems } from "./routing.js";
+import { previewProblems } from "./routing.js";
 import { findDevServer, noDevServerMessage, pageUrl, sectionAt } from "./site.js";
 
 /** The custom request the language server answers (`crates/ascribe-lsp/README.md`). */
@@ -117,7 +119,6 @@ export class PreviewController implements vscode.Disposable {
   private panelDisposables: vscode.Disposable[] = [];
   private ready = false;
   private document: vscode.TextDocument | undefined;
-  private readonly builds = new BuildChoices();
   private timer: NodeJS.Timeout | undefined;
   private refreshing = false;
   private again = false;
@@ -164,6 +165,8 @@ export class PreviewController implements vscode.Disposable {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly projects: ProjectRegistry,
+    /** The build each project is looking at, which the status bar shows and sets too. */
+    private readonly builds: ChosenBuilds,
   ) {
     this.review = new ReviewController(
       projects,
@@ -235,6 +238,11 @@ export class PreviewController implements vscode.Disposable {
         const server = this.server();
         if (this.panel && review && server && server.errorCount() !== review.errors)
           this.schedule(DEBOUNCE_MS);
+      }),
+      // The previewed project's build was chosen here or elsewhere.
+      this.builds.onDidChange((folder) => {
+        const server = this.server();
+        if (this.panel && server && samePath(server.project.folder, folder)) this.schedule(0);
       }),
       // A project appeared or went away: the file may have another owner.
       this.projects.onDidChangeProjects(() => {
@@ -818,9 +826,7 @@ export class PreviewController implements vscode.Disposable {
   private chooseBuild(name: string): void {
     const folder = this.latest?.folder;
     if (folder === undefined) return;
-    // Choosing the editor's build is choosing the default, so a later change
-    // of `[editor] build` is followed.
-    this.builds.set(folder, name === this.editorBuild() ? undefined : name);
+    this.builds.choose(folder, name, this.editorBuild());
     this.schedule(0);
   }
 
