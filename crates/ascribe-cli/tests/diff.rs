@@ -296,6 +296,8 @@ fn report_data(html: &str, commits: &[&str]) -> serde_json::Value {
     let mut text = html[start..end].to_owned();
     for commit in commits {
         text = text.replace(commit, "<commit>");
+        // As a prompt writes it.
+        text = text.replace(&commit[..7], "<commit>");
     }
     let version = format!("\"ascribe_version\":\"{}\"", env!("CARGO_PKG_VERSION"));
     assert!(text.contains(&version), "{text}");
@@ -460,4 +462,115 @@ fn html_report_formats_a_title_with_code() {
             { "type": "text", "value": " keys" },
         ])
     );
+}
+
+#[test]
+fn prompt_output_is_about_every_page_or_the_one_named() {
+    let dir = repo();
+    let out = ascribe(&site(&dir), &["diff", "--format", "prompt"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    assert_eq!(stdout(&out), "", "nothing changed, so nothing is written");
+
+    write(
+        dir.path(),
+        "site/docs/_fragments/prereqs.md",
+        "You need agent 2.4 or later.\n",
+    );
+    write(
+        dir.path(),
+        "site/docs/about.md",
+        "# About\n\nAbout us, now.\n",
+    );
+    let out = ascribe(
+        &site(&dir),
+        &["diff", "--format", "prompt", "--build", "site"],
+    );
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let text = stdout(&out);
+    assert!(
+        text.starts_with("Review what this change does to the 2 pages it changes.\n\nProject: site/\nBuild: `site`\n"),
+        "{text}"
+    );
+    assert!(
+        text.contains("- docs/install.md: 1 changed (through docs/_fragments/prereqs.md)\n"),
+        "{text}"
+    );
+
+    // A page, by its path from the current directory or the content root.
+    for named in ["docs/install.md", "install.md"] {
+        let out = ascribe(
+            &site(&dir),
+            &["diff", "--format", "prompt", named, "--build", "site"],
+        );
+        assert_eq!(code(&out), 0, "{}", stderr(&out));
+        let text = stdout(&out);
+        assert!(
+            text.starts_with("Review what this change does to `docs/install.md`, as a reader of build `site` sees it.\n"),
+            "{text}"
+        );
+        assert!(
+            text.contains("\nTo read it: `ascribe render site/docs/install.md --build site`\n"),
+            "{text}"
+        );
+    }
+    // A fragment: the pages that changed through it.
+    let out = ascribe(
+        &site(&dir),
+        &["diff", "--format", "prompt", "docs/_fragments/prereqs.md"],
+    );
+    assert!(
+        stdout(&out).starts_with("`docs/_fragments/prereqs.md` changed, and 1 page shows it. Check that the new text fits it.\n"),
+        "{}",
+        stdout(&out)
+    );
+    // An unchanged page: nothing. A path that's no file of the project: an error.
+    write(dir.path(), "site/docs/about.md", "# About\n\nAbout us.\n");
+    let out = ascribe(
+        &site(&dir),
+        &["diff", "--format", "prompt", "docs/about.md"],
+    );
+    assert_eq!((code(&out), stdout(&out).as_str()), (0, ""));
+    let out = ascribe(&site(&dir), &["diff", "--format", "prompt", "docs/nope.md"]);
+    assert_eq!(code(&out), 2);
+    assert!(stderr(&out).contains("docs/nope.md isn't a file of the project"));
+    // A page with another format.
+    let out = ascribe(&site(&dir), &["diff", "docs/install.md"]);
+    assert_eq!(code(&out), 2);
+    assert!(stderr(&out).contains("a PAGE is named only with --format prompt"));
+}
+
+#[test]
+fn html_report_has_each_pages_prompt_as_the_command_writes_it() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "site/docs/_fragments/prereqs.md",
+        "You need agent 2.4 or later.\n",
+    );
+    write(
+        dir.path(),
+        "site/docs/about.md",
+        "# About\n\nAbout us, now.\n",
+    );
+    let out = ascribe(&site(&dir), &["diff", "--format", "html"]);
+    assert_eq!(code(&out), 0, "{}", stderr(&out));
+    let data = report_data(&stdout(&out), &[]);
+    let mut seen = 0;
+    for build in data["builds"].as_array().expect("builds") {
+        let name = build["build"].as_str().expect("a name");
+        for page in build["pages"].as_array().expect("pages") {
+            let path = page["path"].as_str().expect("a path");
+            let out = ascribe(
+                &site(&dir),
+                &["diff", "--format", "prompt", path, "--build", name],
+            );
+            assert_eq!(
+                page["prompt"].as_str().expect("a prompt"),
+                stdout(&out),
+                "{name}: {path}"
+            );
+            seen += 1;
+        }
+    }
+    assert_eq!(seen, 4, "two pages in each of two builds");
 }

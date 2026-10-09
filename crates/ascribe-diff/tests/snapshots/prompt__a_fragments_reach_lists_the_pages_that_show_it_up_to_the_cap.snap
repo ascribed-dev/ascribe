@@ -1,0 +1,38 @@
+---
+source: crates/ascribe-diff/tests/prompt.rs
+expression: text
+---
+`content/_fragments/prereqs.md` changed, and 23 pages show it. Check that the new text fits each.
+
+Where: content/_fragments/prereqs.md
+Project: site/
+Build: `site`
+
+Base: `origin/main`, from where this branch left it (9f8e7d6)
+To see what changed in it: `git diff 9f8e7d6 -- site/content/_fragments/prereqs.md`
+To read a page: `ascribe render <page> --build site`
+Pages:
+- content/page-00.md
+- content/page-01.md
+- content/page-02.md
+- content/page-03.md
+- content/page-04.md
+- content/page-05.md
+- content/page-06.md
+- content/page-07.md
+- content/page-08.md
+- content/page-09.md
+- content/page-10.md
+- content/page-11.md
+- content/page-12.md
+- content/page-13.md
+- content/page-14.md
+- content/page-15.md
+- content/page-16.md
+- content/page-17.md
+- content/page-18.md
+- content/page-19.md
+and 3 more: `ascribe refs site/content/_fragments/prereqs.md`
+
+Follow the project's rules in `AGENTS.md`.
+Report what reads wrongly; don't edit.

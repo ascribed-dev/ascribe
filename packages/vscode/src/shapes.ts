@@ -14,8 +14,9 @@
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
 
 /**
- * The answer to `ascribe/agentPrompt`, or `null` when there's no problem to
- * prompt about: the file has none, or the diagnostic is no longer reported.
+ * The answer to `ascribe/agentPrompt`, or `null` when there's nothing to
+ * prompt about: the file has no problem, the diagnostic is no longer
+ * reported, review is off, or the page or fragment didn't change.
  */
 export interface AgentPromptResult {
   /**

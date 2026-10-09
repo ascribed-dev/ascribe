@@ -383,6 +383,34 @@ fn diff_json() {
     );
 }
 
+/// `ascribe diff --format prompt` about a page that changed through a
+/// fragment: what the review guide and the agents guide show.
+#[test]
+fn diff_prompt() {
+    let dir = lantern();
+    let root = dir.path();
+    new_agent(root);
+    commit(root, "Require the new agent");
+    let docs = root.join("docs");
+    expect(
+        "diff-prompt.txt",
+        &stdout(&run(
+            &docs,
+            &[
+                "diff",
+                "docs/getting-started.md",
+                "--base",
+                "main",
+                "--build",
+                "site",
+                "--format",
+                "prompt",
+            ],
+            0,
+        )),
+    );
+}
+
 /// Code with tagged regions, as a page takes it.
 const CLIENT: &str = "from lantern import Client, load_token
 

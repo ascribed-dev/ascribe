@@ -194,6 +194,12 @@ export interface PageData {
   was: string | null;
   /** Whether it's beyond the limit, so not rendered. */
   omitted: boolean;
+  /**
+   * The agent prompt about the page, which its Copy prompt button copies:
+   * what `ascribe diff --format prompt` writes for it. Absent when the
+   * report was written without prompts.
+   */
+  prompt?: string;
 }
 
 /** What changed on one page of a build. */

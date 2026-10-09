@@ -765,28 +765,29 @@ fn preview_request(shared: &Shared, request: &Request) -> Result<serde_json::Val
     })
 }
 
-/// Answers `ascribe/agentPrompt`. A prompt about a problem or a file needs a
-/// source file of the project; one about the project takes any of its
-/// files, or none.
+/// Answers `ascribe/agentPrompt`. A prompt about a problem, a file, or a
+/// page's changes needs a source file of the project; one about the project
+/// or a fragment's reach takes any of its files, or none.
 fn agent_prompt_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
     use crate::agent_prompt::{AgentPromptParams, PromptKind, agent_prompt};
     let params: AgentPromptParams = serde_json::from_value(request.params.clone())
         .map_err(|e| invalid(&request.id, e.to_string()))?;
-    let target = {
+    let (target, review) = {
         let core = shared.lock();
         // Any file of the project: a source the index can't read is still
         // one whose problems a prompt is about.
-        match (&params.text_document, params.kind) {
+        let target = match (&params.text_document, params.kind) {
             (Some(document), _) => core.project_target(&document.uri),
-            (None, PromptKind::Project) => core
+            (None, PromptKind::Project | PromptKind::FragmentReach) => core
                 .config
                 .as_deref()
                 .and_then(crate::uri::path_to_uri)
                 .and_then(|uri| core.project_target(&uri)),
             (None, _) => None,
-        }
+        };
+        (target, core.review.clone())
     };
-    let result = target.and_then(|ctx| agent_prompt(&ctx, &params));
+    let result = target.and_then(|ctx| agent_prompt(&ctx, &params, review));
     to_json(request, result)
 }
 

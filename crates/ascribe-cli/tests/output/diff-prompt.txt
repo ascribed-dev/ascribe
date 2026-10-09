@@ -1,0 +1,14 @@
+Review what this change does to `docs/getting-started.md`, as a reader of build `site` sees it.
+
+Where: docs/getting-started.md
+Project: docs/
+Build: `site`
+
+Base: `main`, from where this branch left it (e49444a)
+What changed: 1 changed
+Changed through: `docs/_fragments/prereqs.md`
+To read it: `ascribe render docs/docs/getting-started.md --build site`
+Changes:
+- changed: docs/_fragments/prereqs.md:3, shown through docs/getting-started.md:11
+
+Report what reads wrongly; don't edit.

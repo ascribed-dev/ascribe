@@ -6,12 +6,15 @@
 //! both sides and compared.
 
 use std::io::{self, Write};
+use std::path::PathBuf;
 use std::process::ExitCode;
 
+use ascribe_check::prompt::Builds;
 use ascribe_check::{Diagnostic, LoadError};
-use ascribe_diff::{BuildDiff, DiffError, DiffOptions, PageDiff, PageStatus, Report, diff_project};
+use ascribe_diff::{BuildDiff, DiffError, DiffOptions, ProjectDiff, Report, diff_project};
 use clap::{Args as ClapArgs, ValueEnum};
 
+use crate::answer;
 use crate::cli::Global;
 use crate::context::{Failure, load_project};
 use crate::exit;
@@ -19,6 +22,12 @@ use crate::exit;
 /// Arguments of `ascribe diff`.
 #[derive(Debug, ClapArgs)]
 pub struct Args {
+    /// With `--format prompt`, the prompt about this page alone, or, for a
+    /// fragment, about the pages that changed through it: a path from the
+    /// current directory, or from the content root.
+    #[arg(value_name = "PAGE")]
+    pub page: Option<PathBuf>,
+
     /// The revision to compare with, anything git accepts (a branch, a tag, a
     /// commit).
     ///
@@ -63,6 +72,10 @@ pub enum Format {
     /// One self-contained HTML file that shows every changed page rendered,
     /// with its changes marked, for reviewers.
     Html,
+    /// A prompt for an agent that reviews the changes as readers will see
+    /// them: about every changed page, or about the PAGE named. Nothing when
+    /// nothing changed.
+    Prompt,
 }
 
 /// Runs the command. Exit codes: 0 whether or not anything changed (1 when
@@ -81,7 +94,14 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let project = match load_project(global) {
+    if args.page.is_some() && args.format != Format::Prompt {
+        return fail(err, "a PAGE is named only with --format prompt");
+    }
+    let loaded = match &args.page {
+        Some(page) => answer::load(global, Some(page)),
+        None => load_project(global),
+    };
+    let project = match loaded {
         Ok(project) => project,
         Err(failure) => return fail(err, &failure_message(failure)),
     };
@@ -109,6 +129,11 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
             .map_err(io::Error::from)
             .and_then(|()| writeln!(out)),
         Format::Html => out.write_all(diff.html().as_bytes()),
+        Format::Prompt => match prompt(&project, &diff, args) {
+            Ok(Some(text)) => out.write_all(text.as_bytes()),
+            Ok(None) => Ok(()),
+            Err(message) => return fail(err, &message),
+        },
     };
     if let Err(e) = written
         && e.kind() != io::ErrorKind::BrokenPipe
@@ -120,6 +145,38 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     } else {
         exit::OK
     }
+}
+
+/// The prompt `--format prompt` writes: about the PAGE named, or every
+/// changed page. `None` when nothing it's about changed; an error when the
+/// PAGE isn't one of the project's files, then or now.
+fn prompt(
+    project: &ascribe_check::Project,
+    diff: &ProjectDiff,
+    args: &Args,
+) -> Result<Option<String>, String> {
+    let Some(given) = &args.page else {
+        let builds = if args.build.is_empty() {
+            Builds::All
+        } else {
+            Builds::Named(args.build.clone())
+        };
+        return Ok(diff.pages_prompt(builds));
+    };
+    let candidates = answer::content_paths(project, given);
+    if let Some(text) = candidates.iter().find_map(|path| diff.prompt_about(path)) {
+        return Ok(Some(text));
+    }
+    if candidates
+        .iter()
+        .any(|path| project.source_at(path).is_some())
+    {
+        return Ok(None);
+    }
+    Err(format!(
+        "{} isn't a file of the project, now or at the base",
+        given.display()
+    ))
 }
 
 /// The warning about the working tree's errors, naming the `ascribe check`
@@ -167,54 +224,9 @@ fn write_build(out: &mut dyn Write, build: &BuildDiff) -> io::Result<()> {
         n => writeln!(out, "{}: {n} pages changed", build.build)?,
     }
     for page in &build.pages {
-        writeln!(out, "  {}: {}", page.path, describe(page))?;
+        writeln!(out, "  {}: {}", page.path, page.describe(str::to_owned))?;
     }
     Ok(())
-}
-
-/// A page's line: what changed, and where the change comes from when it
-/// isn't only the page's own file.
-fn describe(page: &PageDiff) -> String {
-    let mut text = match page.status {
-        PageStatus::Added => "added".to_owned(),
-        PageStatus::Removed => "removed".to_owned(),
-        PageStatus::Changed => {
-            let c = page.counts;
-            let mut parts: Vec<String> = [
-                (c.changed, "changed"),
-                (c.added, "added"),
-                (c.removed, "removed"),
-                (c.moved, "moved"),
-            ]
-            .iter()
-            .filter(|(n, _)| *n > 0)
-            .map(|(n, kind)| format!("{n} {kind}"))
-            .collect();
-            if !page.page_changed.is_empty() {
-                parts.push(format!("{} changed", and_list(&page.page_changed)));
-            }
-            parts.join(", ")
-        }
-    };
-    if !page.because.is_empty() {
-        let lead = if page.own_file_changed {
-            "also through"
-        } else {
-            "through"
-        };
-        text.push_str(&format!(" ({lead} {})", page.because.join(", ")));
-    }
-    text
-}
-
-/// `a`, `a and b`, `a, b, and c`.
-fn and_list(items: &[&str]) -> String {
-    match items {
-        [] => String::new(),
-        [one] => (*one).to_owned(),
-        [a, b] => format!("{a} and {b}"),
-        [rest @ .., last] => format!("{}, and {last}", rest.join(", ")),
-    }
 }
 
 pub(crate) fn failure_message(failure: Failure) -> String {

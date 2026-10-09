@@ -330,6 +330,13 @@
           "description": "The page's content path.",
           "type": "string"
         },
+        "prompt": {
+          "description": "The agent prompt about the page, which its Copy prompt button copies:\nwhat `ascribe diff --format prompt` writes for it. Absent when the\nreport was written without prompts.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "route": {
           "description": "Its route: the new one, or for a removed page the old one.",
           "type": "string"
