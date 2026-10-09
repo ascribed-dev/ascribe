@@ -42,6 +42,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   private lookAgainTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly projectsChanged = new vscode.EventEmitter<void>();
   private readonly started = new vscode.EventEmitter<ProjectServer>();
+  private readonly stateChanged = new vscode.EventEmitter<ProjectServer>();
   private readonly disposables: vscode.Disposable[] = [];
 
   constructor(private readonly context: vscode.ExtensionContext) {}
@@ -63,6 +64,11 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
   /** Fires with a server each time it reaches the running state. */
   get onDidStart(): vscode.Event<ProjectServer> {
     return this.started.event;
+  }
+
+  /** Fires with a server each time its state changes. */
+  get onDidChangeState(): vscode.Event<ProjectServer> {
+    return this.stateChanged.event;
   }
 
   /** Starts following the workspace: its `ascribe.toml` files, open documents, and the settings. */
@@ -178,6 +184,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
     this.byConfig.clear();
     this.projectsChanged.dispose();
     this.started.dispose();
+    this.stateChanged.dispose();
   }
 
   private async refreshNow(): Promise<void> {
@@ -210,6 +217,7 @@ export class ProjectRegistry implements vscode.Disposable, ProjectHost {
           this,
         );
         created.onDidStart(() => this.started.fire(created));
+        created.onDidChangeState(() => this.stateChanged.fire(created));
         server = created;
         changed = true;
       }
