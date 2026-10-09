@@ -110,9 +110,9 @@ export async function runWizard(title: string, wizard: Wizard, prompter: Prompte
 
 /**
  * An answer a test gives a step: what to choose or type, `"back"` for Back,
- * `null` to cancel, or a function that gives one.
+ * `null` to cancel, or a function of the step that gives one.
  */
-export type Scripted = Answer | null | (() => Promise<Answer | null>);
+export type Scripted = Answer | null | ((step: Step) => Promise<Answer | null>);
 
 /**
  * Answers steps from a script, for tests. A pick step's answer must be one of
@@ -127,7 +127,7 @@ export class ScriptedPrompter implements Prompter {
       throw new Error(`The script has no answer for step ${position.step} (${step.prompt})`);
     }
     const next = this.answers.shift();
-    const scripted = typeof next === "function" ? await next() : next;
+    const scripted = typeof next === "function" ? await next(step) : next;
     if (scripted === null || scripted === undefined) return undefined;
     if (scripted === "back") return "back";
     if (step.kind === "text") {

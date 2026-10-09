@@ -15,6 +15,7 @@
 | **Ascribe: Stop Review** {available=next} | Turns review off for the active page's project, and frees its base. |
 | **Ascribe: Changed Pages** {available=next} | Lists the pages the change touches in the preview's build; choosing one opens it and its preview. |
 | **Ascribe: Refresh Comments** {available=next} | Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../guides/editor.md#comments-in-the-preview). |
+| **Ascribe: Actions for the Cursor** {available=next} | Opens the [actions bar](../guides/editor.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection. |
 | **Ascribe: Wrap in a note** {available=next} | Put the paragraph or the selected blocks in an `@note` callout. One of the [actions](../guides/editor.md#actions). |
 | **Ascribe: Change the note's kind** {available=next} | Set the `type` of the `@note` the cursor is in. One of the [actions](../guides/editor.md#actions). |
 | **Ascribe: Remove the note, keeping its text** {available=next} | Take the content out of its `@note`. One of the [actions](../guides/editor.md#actions). |

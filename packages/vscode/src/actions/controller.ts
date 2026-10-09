@@ -1,14 +1,15 @@
 // Offers the registry's actions: a command for each, the context keys the
-// context menu's `when` clauses read, and the lightbulb. Follows the active
-// editor: `ascribe.inProject` says whether its file belongs to a project, and
-// its selection's `ascribe/context` (asked for once the selection settles)
-// sets the other keys.
+// context menu's `when` clauses read, the lightbulb, and the actions bar.
+// Follows the active editor: `ascribe.inProject` says whether its file
+// belongs to a project, and its selection's `ascribe/context` (asked for once
+// the selection settles) sets the other keys.
 
 import * as vscode from "vscode";
 import type { ProjectRegistry } from "../registry.js";
 import type { ContextResult } from "../shapes.js";
 import { QuickInputPrompter } from "./ask.js";
-import { ContextCache, type Where } from "./context.js";
+import { ActionsBar, type BarRecord } from "./barPick.js";
+import { ContextCache, isCancellation, type Where } from "./context.js";
 import { ACTIONS, commandId, contextKeys, lightbulbActions, type Action } from "./registry.js";
 import { runAction, whereOf, type RunRecord } from "./run.js";
 import { ScriptedPrompter, type Prompter, type Scripted } from "./steps.js";
@@ -21,6 +22,10 @@ export interface ActionsApi {
   answerNext(answers: Scripted[]): void;
   /** What each action run did, oldest first. */
   readonly runs: readonly RunRecord[];
+  /** What each opening of the actions bar did, oldest first. */
+  readonly bars: readonly BarRecord[];
+  /** Makes the open bar's row with this label the active one; false when there's none. */
+  selectInBar(label: string): boolean;
 }
 
 /** The answer for a file that isn't a page: every key false. */
@@ -44,6 +49,11 @@ export class ActionsController implements vscode.Disposable {
   private followed: string | undefined;
   private script: Scripted[] | undefined;
   private readonly runs: RunRecord[] = [];
+  private readonly bar = new ActionsBar({
+    context: (editor) => this.contextFor(editor),
+    run: (action, wrap) => this.run(action, wrap),
+    showOutput: (uri) => this.projects.serverFor(uri)?.showOutput(),
+  });
   private readonly disposables: vscode.Disposable[] = [];
 
   constructor(private readonly projects: ProjectRegistry) {
@@ -63,6 +73,8 @@ export class ActionsController implements vscode.Disposable {
       this.script = [...answers];
     },
     runs: this.runs,
+    bars: this.bar.records,
+    selectInBar: (label) => this.bar.select(label),
   };
 
   register(): void {
@@ -72,6 +84,7 @@ export class ActionsController implements vscode.Disposable {
       );
     }
     this.disposables.push(
+      vscode.commands.registerCommand("ascribe.actions", () => this.openBar()),
       vscode.languages.registerCodeActionsProvider(
         { language: "markdown", scheme: "file" },
         {
@@ -99,10 +112,11 @@ export class ActionsController implements vscode.Disposable {
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
   }
 
-  private async run(action: Action): Promise<void> {
+  /** Runs an action, its wizard shown by the prompter `wrap` makes of the usual one. */
+  private async run(action: Action, wrap = (prompter: Prompter) => prompter): Promise<void> {
     const script = this.script;
     this.script = undefined;
-    const prompter: Prompter = script ? new ScriptedPrompter(script) : new QuickInputPrompter();
+    const prompter = wrap(script ? new ScriptedPrompter(script) : new QuickInputPrompter());
     this.runs.push(
       await runAction(action, {
         projects: this.projects,
@@ -110,6 +124,40 @@ export class ActionsController implements vscode.Disposable {
         prompter: () => prompter,
       }),
     );
+  }
+
+  /** Opens the actions bar in a Markdown file of a project; does nothing anywhere else. */
+  private async openBar(): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    const document = editor?.document;
+    if (
+      !editor ||
+      document?.languageId !== "markdown" ||
+      document.uri.scheme !== "file" ||
+      !this.projects.serverFor(document.uri)
+    ) {
+      return;
+    }
+    await this.bar.show(editor);
+  }
+
+  /**
+   * The context at the editor's selection, starting the project's server if
+   * it hasn't started. Asks again once if the request is cancelled: the
+   * cache cancels one for an older selection when the editor changes.
+   */
+  private async contextFor(editor: vscode.TextEditor): Promise<ContextResult> {
+    const server = await this.projects.ensureStartedFor(editor.document.uri);
+    if (server?.state !== "running") throw new Error("the project's server isn't running");
+    try {
+      return await this.cache.request(whereOf(editor)).catch((error: unknown) => {
+        if (!isCancellation(error)) throw error;
+        return this.cache.request(whereOf(editor));
+      });
+    } catch (error) {
+      server.log(`Asking for the context at the cursor failed: ${String(error)}`);
+      throw error;
+    }
   }
 
   /** Follows the active editor: whether it's in a project, and its selection's context. */

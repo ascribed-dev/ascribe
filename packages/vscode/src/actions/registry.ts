@@ -67,6 +67,11 @@ export interface Action {
    * `contextKeys` sets. A test holds the two to the same answer.
    */
   when: string;
+  /**
+   * What it writes, for the actions bar's detail line, when that's short and
+   * known before the wizard asks anything.
+   */
+  preview?(context: ContextResult): string | undefined;
   /** Offered by the lightbulb (`Cmd+.`) too, as this kind of code action. */
   lightbulb?: "refactor" | "quickfix";
   /** What `ascribe/targets` lists the wizard (or `run`) needs. */
@@ -343,6 +348,7 @@ export const ACTIONS: Action[] = [
     group: "structure",
     applies: key("ascribe.at.numberedList"),
     when: "ascribe.at.numberedList",
+    preview: () => "@steps",
     lightbulb: "refactor",
     does: { operation: "makeSteps" },
   },
@@ -368,6 +374,10 @@ export const ACTIONS: Action[] = [
     group: "link",
     applies: key("ascribe.at.headingWithoutAtId"),
     when: "ascribe.at.headingWithoutAtId",
+    preview: (c) => {
+      const id = innermost(c, "heading")?.id;
+      return id ? `@id: ${id}` : undefined;
+    },
     lightbulb: "refactor",
     ask: (c) => ({
       steps: () => [
@@ -422,6 +432,7 @@ export const ACTIONS: Action[] = [
     group: "write",
     applies: insertable,
     when: "ascribe.insertable",
+    preview: () => "@steps",
     ask: () => ({
       steps: () => [
         {

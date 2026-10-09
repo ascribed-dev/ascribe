@@ -4,6 +4,7 @@ Every Ascribe release: the `ascribe` binary, the npm packages (`@ascribed/cli`, 
 
 ## Unreleased
 
+- **The actions bar in VS Code.** `Ctrl+K A` (`Cmd+K A` on macOS), or **Ascribe: Actions for the Cursor**, lists what you can do where the cursor is in a page: the fixes for problems there first, then the actions that apply to the cursor or the selection, grouped as **Write**, **Structure**, **Link**, and **Media**. An action that needs something asks for it in the same box. See [The actions bar](docs/content/guides/editor.md#the-actions-bar).
 - **A faster `ascribe diff` and `ascribe drift`.** `diff` compares only the pages a change can reach, and reads the two versions side by side: on 3,000 pages it takes a third less time than it did, and a third less memory. `drift` takes a third less time when an example changed. The reports are the same.
 - **JSON Schemas for the commands' JSON.** What `ascribe check`, `build`, `diff`, `drift`, `sources status`, and `sources update` write with `--format json` is described by a JSON Schema, generated from the code that writes it. See the [JSON report contract](docs/content/contracts/json-reports.md).
 - **The `json` output's page `format` is `"ascribe-page"`,** where it was `"tessera-page"`, the project's working name. Its `schemaVersion` stays `1`. A tool that checks the value needs the new one. See [the JSON output](crates/ascribe-emit/README.md#json).

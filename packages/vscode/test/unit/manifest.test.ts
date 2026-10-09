@@ -21,6 +21,7 @@ interface Manifest {
     semanticTokenTypes: { id: string }[];
     semanticTokenModifiers: { id: string }[];
     semanticTokenScopes: { language: string; scopes: Record<string, string[]> }[];
+    keybindings: { command: string; key: string; mac?: string; when: string }[];
   };
 }
 
@@ -53,11 +54,25 @@ describe("package.json", () => {
       if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
       // So do the Projects view's buttons, which act on their project.
       else if (entry.command.startsWith("ascribe.projects.")) expect(entry.when).toBe("false");
-      // An action is for a page, so it's shown in a Markdown file of a project.
-      else if (entry.command.startsWith("ascribe.action.")) {
+      // An action, and the actions bar, are for a page, so they're shown in a
+      // Markdown file of a project.
+      else if (entry.command === "ascribe.actions" || entry.command.startsWith("ascribe.action.")) {
         expect(entry.when).toBe("ascribe.inProject && editorLangId == markdown");
       } else expect(entry.when).toMatch(/^ascribe\.active\b/);
     }
+  });
+
+  it("binds the actions bar's key only in a page of a project, with the editor focused", () => {
+    // Ctrl+K A is unbound in VS Code's default keymaps on every platform;
+    // Ctrl+Alt+A would be AltGr+A, which types a letter in some layouts.
+    expect(manifest.contributes.keybindings).toEqual([
+      {
+        command: "ascribe.actions",
+        key: "ctrl+k a",
+        mac: "cmd+k a",
+        when: "editorTextFocus && ascribe.inProject && editorLangId == markdown",
+      },
+    ]);
   });
 
   it("shows Start Review on the preview's title bar while review is off, then Changed Pages and Refresh Comments", () => {
@@ -116,6 +131,7 @@ describe("package.json", () => {
       "ascribe.review.addToReview",
       "ascribe.review.resolve",
       "ascribe.review.reopen",
+      "ascribe.actions",
     ]);
     const properties = manifest.contributes.configuration.properties;
     expect(Object.keys(properties).sort()).toEqual([
