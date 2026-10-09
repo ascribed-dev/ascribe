@@ -19,6 +19,7 @@ mod exit;
 mod report;
 #[cfg(test)]
 mod shapes;
+mod shell;
 
 use std::process::ExitCode;
 

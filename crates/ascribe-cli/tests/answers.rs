@@ -398,6 +398,26 @@ fn refs_cuts_the_list_and_says_how_to_see_it_all() {
     );
     let text = stdout(&run(dir.path(), &args, 0));
     assert!(text.contains("Showing 1 of them"), "{text}");
+
+    // A word a shell would split is quoted, so the command runs as given.
+    write(
+        &dir.path().join("site/docs/api keys.md"),
+        "---\ntitle: API keys\n---\n\nSee [rotating](keys.md) and [them](keys.md#rotate-keys).\n",
+    );
+    write(
+        &dir.path().join("site/docs/more.md"),
+        "---\ntitle: More\n---\n\nSee [keys](api%20keys.md) and [again](<api keys.md>).\n",
+    );
+    let spaced = json(
+        dir.path(),
+        &["refs", "site/docs/api keys.md", "--limit", "1"],
+        0,
+    );
+    assert_eq!(spaced["total"], 2, "{spaced}");
+    assert_eq!(
+        spaced["next_command"],
+        "ascribe refs 'site/docs/api keys.md' --limit 2 --format json"
+    );
 }
 
 #[test]

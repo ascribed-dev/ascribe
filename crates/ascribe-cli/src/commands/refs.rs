@@ -11,6 +11,7 @@ use clap::Args as ClapArgs;
 use crate::answer::{self, Format};
 use crate::cli::Global;
 use crate::exit;
+use crate::shell::quote;
 
 /// How many places text output lists, unless `--limit` says otherwise.
 const TEXT_LIMIT: usize = 50;
@@ -89,17 +90,21 @@ fn refs(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
     });
     let mut refs = ascribe_query::refs(&project.index(), &asked, &args.target, limit);
     if refs.truncated {
-        // The same command, with the limit that lists them all.
-        let mut next = format!("ascribe refs {} --limit {}", args.target, refs.total);
+        // The same command, with the limit that lists them all, each word
+        // quoted as a shell needs it.
+        let total = refs.total.to_string();
+        let mut words = vec!["ascribe".to_owned(), "refs".to_owned(), quote(&args.target)];
+        words.extend(["--limit".to_owned(), total]);
         if let Some(project) = &args.project {
-            next.push_str(&format!(" --project {}", project.display()));
+            words.extend(["--project".to_owned(), quote(&project.to_string_lossy())]);
         }
         if let Some(config) = &global.config {
-            next.push_str(&format!(" --config {}", config.display()));
+            words.extend(["--config".to_owned(), quote(&config.to_string_lossy())]);
         }
         if args.format == Format::Json {
-            next.push_str(" --format json");
+            words.extend(["--format".to_owned(), "json".to_owned()]);
         }
+        let next = words.join(" ");
         refs.next_command = Some(next);
     }
     let result = match args.format {

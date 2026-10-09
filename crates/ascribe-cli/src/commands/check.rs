@@ -18,6 +18,7 @@ use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::json::About;
 use crate::report::{Counts, FileTable, concise, json, tally, text};
+use crate::shell::quote;
 
 /// Arguments of `ascribe check`.
 #[derive(Debug, ClapArgs)]
@@ -346,20 +347,6 @@ fn from_here(root: &Path, file: &str) -> String {
         )
 }
 
-/// A word as a POSIX shell reads it: as it is when it's plain, else in
-/// single quotes.
-fn quote(word: &str) -> String {
-    let plain = !word.is_empty()
-        && word
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || "_-./:@%+=,".contains(c));
-    if plain {
-        word.to_owned()
-    } else {
-        format!("'{}'", word.replace('\'', r"'\''"))
-    }
-}
-
 /// Reports a project that couldn't be checked, and returns the exit code.
 ///
 /// A content model with errors is a configuration
@@ -410,17 +397,4 @@ fn report_failure(
         ),
     };
     exit::FAILURE
-}
-
-#[cfg(test)]
-mod tests {
-    use super::quote;
-
-    #[test]
-    fn words_are_quoted_only_when_a_shell_would_split_or_expand_them() {
-        assert_eq!(quote("docs/guides/install.md"), "docs/guides/install.md");
-        assert_eq!(quote("my guide.md"), "'my guide.md'");
-        assert_eq!(quote("it's.md"), r"'it'\''s.md'");
-        assert_eq!(quote(""), "''");
-    }
 }
