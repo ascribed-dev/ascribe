@@ -400,7 +400,9 @@ fn the_check_server_answers_and_stops_with_its_project() {
     // With its project gone, it stops and removes its file (and its
     // folders, but on Windows the copy of the binary it ran from stays).
     drop(dir);
-    for _ in 0..100 {
+    // As below: the server looks once a second, and a loaded runner has
+    // needed more than ten seconds for the look, the exit, and the removal.
+    for _ in 0..600 {
         if !server.exists() {
             return;
         }
@@ -529,7 +531,11 @@ fn the_check_server_stops_when_its_binary_is_replaced() {
         .unwrap()
         .set_modified(std::time::SystemTime::now() + std::time::Duration::from_secs(60))
         .unwrap();
-    for _ in 0..100 {
+    // The server looks once a second; on a loaded runner (Windows in CI,
+    // with the crate's other tests in the same process) the look, the exit,
+    // and the file's removal have taken longer than ten seconds together.
+    // The wait ends as soon as the server has stopped.
+    for _ in 0..600 {
         // Gone with its folder, or its file gone.
         let servers = fs::read_dir(&project)
             .into_iter()
