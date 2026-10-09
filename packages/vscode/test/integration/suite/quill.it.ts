@@ -4,6 +4,138 @@ import * as vscode from "vscode";
 import type { SidebarItem } from "../../../src/ui/sidebarViews.js";
 import { activated, diagnosticsOf, uriOf, waitFor } from "./helpers.js";
 
+// The sidebar's views run first, while the project's pages are the example's own.
+describe("the sidebar's Used by, Pages, and Content model views on examples/quill", () => {
+  const keys = uriOf("docs", "keys.md");
+  const quickstart = uriOf("docs", "quickstart.md");
+
+  /** A view's items as `label (description)`, with their children, depth first. */
+  function flat(items: SidebarItem[], depth = 0): string[] {
+    return items.flatMap((item) => [
+      `${"  ".repeat(depth)}${item.label}${item.description ? ` (${item.description})` : ""}`,
+      ...flat(item.children, depth + 1),
+    ]);
+  }
+
+  async function settled(): Promise<ReturnType<typeof flat>> {
+    const api = await activated();
+    await api.ui.sidebar.whenSettled();
+    return flat(api.ui.sidebar.items("usedBy"));
+  }
+
+  /** Opens a page with the cursor at the start of the line that starts with `line`. */
+  async function openAt(uri: vscode.Uri, line?: string): Promise<void> {
+    const editor = await vscode.window.showTextDocument(
+      await vscode.workspace.openTextDocument(uri),
+    );
+    const at = line === undefined ? 0 : editor.document.getText().split("\n").indexOf(line);
+    assert.ok(at >= 0, `no line ${line}`);
+    editor.selection = new vscode.Selection(at, 0, at, 0);
+  }
+
+  after(async () => {
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("lists the project's pages by type, its fragments, and what includes each", async () => {
+    const api = await activated();
+    await openAt(keys);
+    const expected = [
+      "page (4)",
+      "  Broken (broken.md)",
+      "  Install the Quill agent (install-agent.md)",
+      "  API keys (keys.md)",
+      "  Try Quill in the browser (quickstart.md)",
+      "Fragments (1)",
+      "  _fragments/prerequisites.md (1 file)",
+      "    install-agent.md (includes it)",
+      "Orphans (1)",
+      "  Broken (broken.md)",
+    ];
+    // These run before the tests that add and rename pages: a page that's
+    // still open in the editor stays in the project after it's deleted.
+    const pages = await waitFor("the Pages view", async () => {
+      await api.ui.sidebar.whenSettled();
+      const items = flat(api.ui.sidebar.items("pages"));
+      return items.join("\n") === expected.join("\n") ? items : undefined;
+    }).catch(() => flat(api.ui.sidebar.items("pages")));
+    assert.deepEqual(pages, expected);
+    const page = api.ui.sidebar.items("pages")[0]?.children[2];
+    assert.ok(page?.opens?.endsWith("/docs/keys.md"), page?.opens);
+  });
+
+  it("lists the content model with each entry's uses, and opens its declaration", async () => {
+    const api = await activated();
+    await api.ui.sidebar.whenSettled();
+    const items = api.ui.sidebar.items("model");
+    const model = flat(items);
+    assert.ok(model.includes("Phrases (4)"), model.join("\n"));
+    assert.ok(
+      model.some((line) => /^  product \(\d+ uses\)$/.test(line)),
+      model.join("\n"),
+    );
+    assert.ok(model.includes("  api (1 use)"), model.join("\n"));
+    assert.ok(model.includes("Dimensions (2)"), model.join("\n"));
+    assert.ok(model.includes("Builds (3)"), model.join("\n"));
+    const product = items[0]?.children.find((item) => item.label === "product");
+    assert.match(product?.opens ?? "", /ascribe\.toml:\d+$/);
+  });
+
+  it("follows the active page and narrows to the heading at the cursor", async () => {
+    // Used by asks only while it's showing.
+    await vscode.commands.executeCommand("ascribe.usedBy.focus");
+    await openAt(keys);
+    assert.deepEqual(
+      await waitFor("Used by for keys.md", async () => {
+        const items = await settled();
+        return items.length > 0 ? items : undefined;
+      }),
+      [
+        "Linked from (1)",
+        "  install-agent.md (docs/install-agent.md)",
+        "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 93)",
+      ],
+    );
+    const api = await activated();
+    /** Waits for Used by's message, which says what it answered. */
+    const answered = (message: string) =>
+      waitFor(message, async () => {
+        const items = await settled();
+        return api.ui.sidebar.message("usedBy") === message ? items : undefined;
+      });
+    await openAt(keys, "## Rotate keys");
+    assert.equal((await answered("What links to “Rotate keys”")).length, 3);
+    await openAt(keys, "## Create a key");
+    assert.deepEqual(await answered("Nothing links to or includes “Create a key”."), []);
+  });
+
+  it("counts again when a page of the project is saved", async () => {
+    const api = await activated();
+    const original = readFileSync(quickstart.fsPath, "utf8");
+    const incoming = (): string | undefined =>
+      flat(api.ui.sidebar.items("pages")).find((line) => line.includes("(keys.md)"));
+    try {
+      await openAt(quickstart);
+      const document = await vscode.workspace.openTextDocument(quickstart);
+      const edit = new vscode.WorkspaceEdit();
+      edit.insert(quickstart, document.positionAt(original.length), "\nSee [keys](keys.md).\n");
+      assert.ok(await vscode.workspace.applyEdit(edit));
+      assert.ok(await document.save());
+      await waitFor("the new link counted", async () => {
+        await api.ui.sidebar.whenSettled();
+        const page = api.ui.sidebar
+          .items("pages")[0]
+          ?.children.find((p) => p.description === "keys.md");
+        return page?.tooltip.includes("2 links and includes") ? page : undefined;
+      });
+      assert.ok(incoming());
+    } finally {
+      writeFileSync(quickstart.fsPath, original);
+      await vscode.commands.executeCommand("workbench.action.revertAndCloseActiveEditor");
+    }
+  });
+});
+
 // The real `ascribe lsp` on a copy of examples/quill with a broken
 // page, `docs/broken.md`, added (its unknown attribute key is a §8.2 error).
 describe("with the real language server on examples/quill", () => {
@@ -125,136 +257,6 @@ describe("with the real language server on examples/quill", () => {
       rmSync(moved.fsPath, { force: true });
       writeFileSync(target.fsPath, originalTarget);
       writeFileSync(linking.fsPath, originalLinking);
-    }
-  });
-});
-
-describe("the sidebar's Used by, Pages, and Content model views on examples/quill", () => {
-  const keys = uriOf("docs", "keys.md");
-  const quickstart = uriOf("docs", "quickstart.md");
-
-  /** A view's items as `label (description)`, with their children, depth first. */
-  function flat(items: SidebarItem[], depth = 0): string[] {
-    return items.flatMap((item) => [
-      `${"  ".repeat(depth)}${item.label}${item.description ? ` (${item.description})` : ""}`,
-      ...flat(item.children, depth + 1),
-    ]);
-  }
-
-  async function settled(): Promise<ReturnType<typeof flat>> {
-    const api = await activated();
-    await api.ui.sidebar.whenSettled();
-    return flat(api.ui.sidebar.items("usedBy"));
-  }
-
-  /** Opens a page with the cursor at the start of the line that starts with `line`. */
-  async function openAt(uri: vscode.Uri, line?: string): Promise<void> {
-    const editor = await vscode.window.showTextDocument(
-      await vscode.workspace.openTextDocument(uri),
-    );
-    const at = line === undefined ? 0 : editor.document.getText().split("\n").indexOf(line);
-    assert.ok(at >= 0, `no line ${line}`);
-    editor.selection = new vscode.Selection(at, 0, at, 0);
-  }
-
-  after(async () => {
-    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-  });
-
-  it("lists the project's pages by type, its fragments, and what includes each", async () => {
-    const api = await activated();
-    await openAt(keys);
-    const expected = [
-      "page (4)",
-      "  Broken (broken.md)",
-      "  Install the Quill agent (install-agent.md)",
-      "  API keys (keys.md)",
-      "  Try Quill in the browser (quickstart.md)",
-      "Fragments (1)",
-      "  _fragments/prerequisites.md (1 file)",
-      "    install-agent.md (includes it)",
-      "Orphans (1)",
-      "  Broken (broken.md)",
-    ];
-    // The tests before this one add and remove pages; the view catches up.
-    const pages = await waitFor("the Pages view", async () => {
-      await api.ui.sidebar.whenSettled();
-      const items = flat(api.ui.sidebar.items("pages"));
-      return items.join("\n") === expected.join("\n") ? items : undefined;
-    }).catch(() => flat(api.ui.sidebar.items("pages")));
-    assert.deepEqual(pages, expected);
-    const page = api.ui.sidebar.items("pages")[0]?.children[2];
-    assert.ok(page?.opens?.endsWith("/docs/keys.md"), page?.opens);
-  });
-
-  it("lists the content model with each entry's uses, and opens its declaration", async () => {
-    const api = await activated();
-    await api.ui.sidebar.whenSettled();
-    const items = api.ui.sidebar.items("model");
-    const model = flat(items);
-    assert.ok(model.includes("Phrases (4)"), model.join("\n"));
-    assert.ok(
-      model.some((line) => /^  product \(\d+ uses\)$/.test(line)),
-      model.join("\n"),
-    );
-    assert.ok(model.includes("  api (1 use)"), model.join("\n"));
-    assert.ok(model.includes("Dimensions (2)"), model.join("\n"));
-    assert.ok(model.includes("Builds (3)"), model.join("\n"));
-    const product = items[0]?.children.find((item) => item.label === "product");
-    assert.match(product?.opens ?? "", /ascribe\.toml:\d+$/);
-  });
-
-  it("follows the active page and narrows to the heading at the cursor", async () => {
-    // Used by asks only while it's showing.
-    await vscode.commands.executeCommand("ascribe.usedBy.focus");
-    await openAt(keys);
-    assert.deepEqual(
-      await waitFor("Used by for keys.md", async () => {
-        const items = await settled();
-        return items.length > 0 ? items : undefined;
-      }),
-      [
-        "Linked from (1)",
-        "  install-agent.md (docs/install-agent.md)",
-        "    A common cause is an expired API key. Generate a new key, then restart the agent. See [](keys.md#rotate-keys). (line 93)",
-      ],
-    );
-    const api = await activated();
-    /** Waits for Used by's message, which says what it answered. */
-    const answered = (message: string) =>
-      waitFor(message, async () => {
-        const items = await settled();
-        return api.ui.sidebar.message("usedBy") === message ? items : undefined;
-      });
-    await openAt(keys, "## Rotate keys");
-    assert.equal((await answered("What links to “Rotate keys”")).length, 3);
-    await openAt(keys, "## Create a key");
-    assert.deepEqual(await answered("Nothing links to or includes “Create a key”."), []);
-  });
-
-  it("counts again when a page of the project is saved", async () => {
-    const api = await activated();
-    const original = readFileSync(quickstart.fsPath, "utf8");
-    const incoming = (): string | undefined =>
-      flat(api.ui.sidebar.items("pages")).find((line) => line.includes("(keys.md)"));
-    try {
-      await openAt(quickstart);
-      const document = await vscode.workspace.openTextDocument(quickstart);
-      const edit = new vscode.WorkspaceEdit();
-      edit.insert(quickstart, document.positionAt(original.length), "\nSee [keys](keys.md).\n");
-      assert.ok(await vscode.workspace.applyEdit(edit));
-      assert.ok(await document.save());
-      await waitFor("the new link counted", async () => {
-        await api.ui.sidebar.whenSettled();
-        const page = api.ui.sidebar
-          .items("pages")[0]
-          ?.children.find((p) => p.description === "keys.md");
-        return page?.tooltip.includes("2 links and includes") ? page : undefined;
-      });
-      assert.ok(incoming());
-    } finally {
-      writeFileSync(quickstart.fsPath, original);
-      await vscode.commands.executeCommand("workbench.action.revertAndCloseActiveEditor");
     }
   });
 });
