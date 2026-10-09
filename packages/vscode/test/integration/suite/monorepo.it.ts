@@ -1,5 +1,5 @@
 import * as assert from "node:assert/strict";
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import type { ServerState } from "../../../src/client.js";
@@ -131,6 +131,43 @@ describe("with several projects, one nested in another", () => {
    * as soon as the project is found.
    */
   const afterDiskChanges = () => sleep(MAX_WAIT_MS + 1_000);
+
+  /**
+   * Makes a folder and those above it one at a time, each once the file
+   * watcher has reported the one before. The watcher never reports anything
+   * in a folder made before it took in the folder's parent (#56), so a file
+   * written there would start nothing. A folder that isn't reported is made
+   * again every two seconds.
+   */
+  async function mkdirWatched(folder: string): Promise<void> {
+    const missing: string[] = [];
+    for (let f = folder; !existsSync(f); f = path.dirname(f)) missing.unshift(f);
+    // Served by the workspace's own watcher, as the extension's is.
+    const watcher = vscode.workspace.createFileSystemWatcher("**/*");
+    const reported = new Set<string>();
+    watcher.onDidCreate((uri) => reported.add(comparable(uri.fsPath)));
+    try {
+      for (const dir of missing) {
+        const deadline = Date.now() + 30_000;
+        for (;;) {
+          rmSync(dir, { recursive: true, force: true });
+          mkdirSync(dir);
+          try {
+            await waitFor(
+              `the watcher to report ${dir}`,
+              () => reported.has(comparable(dir)),
+              2_000,
+            );
+            break;
+          } catch (error) {
+            if (Date.now() > deadline) throw error;
+          }
+        }
+      }
+    } finally {
+      watcher.dispose();
+    }
+  }
 
   const known = (folder: string): boolean =>
     api.projects().some((project) => samePath(project.folder, folder));
@@ -586,7 +623,7 @@ describe("with several projects, one nested in another", () => {
 
     before(async () => {
       await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-      mkdirSync(path.join(agent(), "docs"), { recursive: true });
+      await mkdirWatched(path.join(agent(), "docs"));
       writeFileSync(page("index.md").fsPath, "---\ntitle: Agent\n---\n\nAgent.\n");
       await afterDiskChanges();
       await createProject(agent());
@@ -602,7 +639,7 @@ describe("with several projects, one nested in another", () => {
 
     it("starts nothing for a file written into the project's output directory", async () => {
       const output = path.join(agent(), ".ascribe", "build", "site", "plain");
-      mkdirSync(output, { recursive: true });
+      await mkdirWatched(output);
       writeFileSync(path.join(output, "index.md"), "# Agent\n\nSee [](missing.md).\n");
       await afterDiskChanges();
       assert.equal(api.state(agent()), "stopped");
