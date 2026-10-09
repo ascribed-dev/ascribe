@@ -8,7 +8,7 @@ use std::io::{self, Write};
 use ascribe_check::{Diagnostic, Registry, Reported};
 use serde::Serialize;
 
-use super::{Counts, FileTable, Position, tally};
+use super::{Counts, FileTable, Position, position_in, tally};
 
 /// The version of the JSON schema.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -140,7 +140,7 @@ struct Entry {
 /// (an insertion) has equal positions.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Range {
+pub(crate) struct Range {
     /// Its first character.
     start: Pos,
     /// Just past its last character.
@@ -150,7 +150,7 @@ struct Range {
 /// A position in a file.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Pos {
+pub(crate) struct Pos {
     /// The line, from 1.
     line: u32,
     /// The column, from 1, in Unicode characters (not bytes or UTF-16
@@ -190,11 +190,25 @@ struct Fix {
 /// One edit of a fix.
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
-struct Edit {
+pub(crate) struct Edit {
     /// The text it replaces.
     range: Range,
     /// The text that replaces it.
     new_text: String,
+}
+
+impl Edit {
+    /// An edit of the text `index` indexes, with its positions worked out as
+    /// a diagnostic's are.
+    pub(crate) fn in_text(index: &ascribe_core::LineIndex, edit: &ascribe_core::TextEdit) -> Edit {
+        Edit {
+            range: Range {
+                start: position_in(index, edit.span.start()).into(),
+                end: position_in(index, edit.span.end()).into(),
+            },
+            new_text: edit.new_text.clone(),
+        }
+    }
 }
 
 impl From<Position> for Pos {

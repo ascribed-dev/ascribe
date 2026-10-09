@@ -106,6 +106,7 @@ dependencies = [
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-lsp",
+ "ascribe-mcp",
  "ascribe-model",
  "ascribe-query",
  "ascribe-resolve",

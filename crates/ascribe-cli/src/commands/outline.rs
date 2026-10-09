@@ -8,7 +8,7 @@ use std::process::ExitCode;
 use ascribe_query::Outline;
 use clap::Args as ClapArgs;
 
-use crate::answer::{self, Format};
+use crate::answer::{self, Format, FromDisk, Projects, Stop};
 use crate::cli::Global;
 use crate::exit;
 
@@ -42,18 +42,23 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
+/// The outline the command shows: what `--format json` writes.
+///
+/// # Errors
+///
+/// No project, or a page or build that isn't one of its own.
+pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Outline, Stop> {
+    let loaded = answer::load(projects, global, Some(&args.page))?;
+    let project = &loaded.project;
+    let path = answer::source_path(project, &args.page)?;
+    let build = answer::build(project.model(), args.build.as_deref())?;
+    Ok(ascribe_query::outline(loaded.index(), &path, build)?)
+}
+
 fn outline(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let project = match answer::load(global, Some(&args.page)) {
-        Ok(project) => project,
-        Err(failure) => return answer::report_failure(err, &failure),
-    };
-    let answered = answer::source_path(&project, &args.page).and_then(|path| {
-        let build = answer::build(project.model(), args.build.as_deref())?;
-        ascribe_query::outline(&project.index(), &path, build)
-    });
-    let outline = match answered {
+    let outline = match answer(&FromDisk, global, args) {
         Ok(outline) => outline,
-        Err(e) => return answer::fail(err, &e),
+        Err(stop) => return stop.report(err),
     };
     let result = match args.format {
         Format::Json => answer::write_json(out, &outline),

@@ -215,7 +215,7 @@
           "type": "array"
         },
         "changes": {
-          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page.",
+          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page, and for every page when\nthe report's `blocks_omitted` is `true`.",
           "items": {
             "$ref": "#/$defs/Change"
           },
@@ -358,6 +358,10 @@
     "base": {
       "$ref": "#/$defs/BaseInfo",
       "description": "What was compared with."
+    },
+    "blocks_omitted": {
+      "description": "Whether every page's `changes` was left empty, as `ascribe diff\n--pages-only` leaves them: its `counts` still count them. Only there\nwhen it's `true`.",
+      "type": "boolean"
     },
     "builds": {
       "description": "What changed, per build, in the order asked for.",

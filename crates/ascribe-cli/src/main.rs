@@ -17,6 +17,7 @@ mod context;
 #[cfg(test)]
 mod docs;
 mod exit;
+mod mcp;
 mod report;
 #[cfg(test)]
 mod shapes;

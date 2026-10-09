@@ -125,6 +125,10 @@ pub enum Command {
     /// Run the language server, speaking LSP over standard input and output.
     #[command(after_help = docs_page!("reference/cli/#ascribe-lsp"))]
     Lsp(commands::lsp::Args),
+    /// Run the MCP server, speaking the Model Context Protocol over standard
+    /// input and output: the commands that answer questions, as tools.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-mcp"))]
+    Mcp(commands::mcp::Args),
     /// Show what the content model allows: page types and their
     /// frontmatter, dimensions, phrases, features, glossary terms, widgets,
     /// and builds.
@@ -157,6 +161,7 @@ impl Command {
             Command::Fmt(args) => commands::fmt::run(global, args),
             Command::Link(args) => commands::link::run(global, args),
             Command::Lsp(args) => commands::lsp::run(global, args),
+            Command::Mcp(args) => commands::mcp::run(global, args),
             Command::Model(args) => commands::model::run(global, args),
             Command::Outline(args) => commands::outline::run(global, args),
             Command::Refs(args) => commands::refs::run(global, args),

@@ -173,6 +173,11 @@ pub struct Report {
     /// error may not render as it will once it's fixed, so a reviewer should
     /// know. [`diff_project`] sets it; [`Report::new`] leaves it zero.
     pub working_tree_errors: usize,
+    /// Whether every page's `changes` was left empty, as `ascribe diff
+    /// --pages-only` leaves them: its `counts` still count them. Only there
+    /// when it's `true`.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub blocks_omitted: bool,
     /// What changed, per build, in the order asked for.
     pub builds: Vec<BuildDiff>,
 }
@@ -233,8 +238,18 @@ impl Report {
             base: BaseInfo::of(base),
             repository: RepositoryInfo::of(repo),
             working_tree_errors: 0,
+            blocks_omitted: false,
             builds,
         }
+    }
+
+    /// Leaves out every page's block-level changes, keeping their counts,
+    /// for a report of which pages changed.
+    pub fn omit_blocks(&mut self) {
+        for page in self.builds.iter_mut().flat_map(|b| b.pages.iter_mut()) {
+            page.changes.clear();
+        }
+        self.blocks_omitted = true;
     }
 
     /// Whether anything changed in any build.

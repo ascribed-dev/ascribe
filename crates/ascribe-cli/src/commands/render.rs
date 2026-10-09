@@ -7,7 +7,9 @@ use std::process::ExitCode;
 
 use clap::Args as ClapArgs;
 
-use crate::answer::{self, Format};
+use ascribe_query::Rendered;
+
+use crate::answer::{self, Format, FromDisk, Projects, Stop};
 use crate::cli::Global;
 use crate::exit;
 
@@ -48,24 +50,30 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
+/// The page as the command shows it: what `--format json` writes.
+///
+/// # Errors
+///
+/// No project, a path that isn't one of its pages, or no build named where
+/// one is needed.
+pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Rendered, Stop> {
+    let loaded = answer::load(projects, global, Some(&args.page))?;
+    let project = &loaded.project;
+    let path = answer::source_path(project, &args.page)?;
+    let build = answer::one_build(project.model(), args.build.as_deref())?;
+    Ok(ascribe_query::render(
+        loaded.index(),
+        project.root(),
+        &path,
+        build,
+        args.frontmatter,
+    )?)
+}
+
 fn render(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let project = match answer::load(global, Some(&args.page)) {
-        Ok(project) => project,
-        Err(failure) => return answer::report_failure(err, &failure),
-    };
-    let answered = answer::source_path(&project, &args.page).and_then(|path| {
-        let build = answer::one_build(project.model(), args.build.as_deref())?;
-        ascribe_query::render(
-            &project.index(),
-            project.root(),
-            &path,
-            build,
-            args.frontmatter,
-        )
-    });
-    let rendered = match answered {
+    let rendered = match answer(&FromDisk, global, args) {
         Ok(rendered) => rendered,
-        Err(e) => return answer::fail(err, &e),
+        Err(stop) => return stop.report(err),
     };
     let result = match args.format {
         Format::Json => answer::write_json(out, &rendered),

@@ -32,7 +32,7 @@ impl SourceBoundary for Boundary {
 fn run(config: &Path, paths: &[PathBuf], check: bool) -> Result<Vec<PathBuf>, FormatFilesError> {
     let model = ascribe_model::load(config).expect("the model loads");
     let mut listed = Vec::new();
-    let result = format_files(config, &model, paths, check, &Boundary, &mut |p| {
+    let result = format_files(config, &model, paths, check, &Boundary, &mut |p, _, _| {
         listed.push(p.to_owned())
     });
     if let Ok(done) = &result {
@@ -53,7 +53,7 @@ fn a_file_the_boundary_refuses_is_returned_and_left_alone() {
 
     let model = ascribe_model::load(&config).expect("the model loads");
     let done =
-        format_files(&config, &model, &[], false, &Boundary, &mut |_| {}).expect("formatted");
+        format_files(&config, &model, &[], false, &Boundary, &mut |_, _, _| {}).expect("formatted");
     assert_eq!(done.changed, [root.join("docs").join("a.md")]);
     let refused: Vec<_> = done
         .refused

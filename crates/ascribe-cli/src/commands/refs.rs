@@ -8,7 +8,7 @@ use std::process::ExitCode;
 use ascribe_query::{Asked, QueryError, Refs};
 use clap::Args as ClapArgs;
 
-use crate::answer::{self, Format};
+use crate::answer::{self, Format, FromDisk, Projects, Stop};
 use crate::cli::Global;
 use crate::exit;
 use crate::shell::quote;
@@ -60,6 +60,31 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 }
 
 fn refs(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    let refs = match answer(&FromDisk, global, args) {
+        Ok(refs) => refs,
+        Err(stop) => return stop.report(err),
+    };
+    let result = match args.format {
+        Format::Json => answer::write_json(out, &refs),
+        Format::Text => write_text(out, &refs),
+    };
+    if let Some(code) = answer::written(result, err) {
+        return code;
+    }
+    if refs.exists {
+        exit::OK
+    } else {
+        exit::PROBLEMS
+    }
+}
+
+/// The places the command shows, at most as many as `--limit` (or the
+/// format's default) allows: what `--format json` writes.
+///
+/// # Errors
+///
+/// No project, or a target that can't be read.
+pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<Refs, Stop> {
     let entry = Asked::entry(&args.target);
     // A path target finds its project from the path; an entry from
     // `--project`, or the current directory.
@@ -72,23 +97,16 @@ fn refs(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         (None, None) if !path_part.is_empty() => Some(Path::new(path_part)),
         _ => None,
     };
-    let project = match answer::load(global, near) {
-        Ok(project) => project,
-        Err(failure) => return answer::report_failure(err, &failure),
-    };
+    let loaded = answer::load(projects, global, near)?;
     let asked = match entry {
         Some(asked) => asked,
-        None => path_target(&project, &args.target),
-    };
-    let asked = match asked {
-        Ok(asked) => asked,
-        Err(e) => return answer::fail(err, &e),
-    };
+        None => path_target(&loaded.project, &args.target),
+    }?;
     let limit = args.limit.unwrap_or(match args.format {
         Format::Text => TEXT_LIMIT,
         Format::Json => JSON_LIMIT,
     });
-    let mut refs = ascribe_query::refs(&project.index(), &asked, &args.target, limit);
+    let mut refs = ascribe_query::refs(loaded.index(), &asked, &args.target, limit);
     if refs.truncated {
         // The same command, with the limit that lists them all, each word
         // quoted as a shell needs it.
@@ -107,18 +125,7 @@ fn refs(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
         let next = words.join(" ");
         refs.next_command = Some(next);
     }
-    let result = match args.format {
-        Format::Json => answer::write_json(out, &refs),
-        Format::Text => write_text(out, &refs),
-    };
-    if let Some(code) = answer::written(result, err) {
-        return code;
-    }
-    if refs.exists {
-        exit::OK
-    } else {
-        exit::PROBLEMS
-    }
+    Ok(refs)
 }
 
 /// A path target, `page.md` or `page.md#id`, with the path read as a page
@@ -139,7 +146,8 @@ fn path_target(project: &ascribe_check::Project, given: &str) -> Result<Asked, Q
     Asked::path(&content)
 }
 
-fn write_text(out: &mut dyn Write, r: &Refs) -> io::Result<()> {
+/// Writes the places as text, as the command does without `--format json`.
+pub fn write_text(out: &mut dyn Write, r: &Refs) -> io::Result<()> {
     if !r.exists {
         return writeln!(out, "{} doesn't exist.", r.target);
     }

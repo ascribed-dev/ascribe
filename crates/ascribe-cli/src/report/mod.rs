@@ -86,22 +86,14 @@ impl FileTable {
 
     /// The position of a byte offset in a file.
     pub fn position(&self, id: FileId, offset: usize) -> Position {
-        let unknown = Position {
-            line: 1,
-            column: 1,
-            offset,
-        };
-        let Some(entry) = self.entry(id) else {
-            return unknown;
-        };
-        entry
-            .index
-            .wide_line_col(WideEncoding::Utf32, offset)
-            .map_or(unknown, |p| Position {
-                line: p.line + 1,
-                column: p.col + 1,
+        match self.entry(id) {
+            Some(entry) => position_in(&entry.index, offset),
+            None => Position {
+                line: 1,
+                column: 1,
                 offset,
-            })
+            },
+        }
     }
 
     /// The start and end positions of a location.
@@ -111,6 +103,22 @@ impl FileTable {
             self.position(at.file, at.span.end()),
         )
     }
+}
+
+/// The position of a byte offset in the text `index` indexes.
+pub fn position_in(index: &LineIndex, offset: usize) -> Position {
+    index.wide_line_col(WideEncoding::Utf32, offset).map_or(
+        Position {
+            line: 1,
+            column: 1,
+            offset,
+        },
+        |p| Position {
+            line: p.line + 1,
+            column: p.col + 1,
+            offset,
+        },
+    )
 }
 
 /// How many errors and warnings a list of diagnostics has.
