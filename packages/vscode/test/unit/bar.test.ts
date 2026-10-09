@@ -35,6 +35,7 @@ const fix = (title: string, more: Partial<Fix> = {}): Fix => ({
   kind: "quickfix",
   problem: undefined,
   disabled: false,
+  edits: true,
   ...more,
 });
 
@@ -87,6 +88,15 @@ describe("the actions bar", () => {
     expect(rows(list).slice(0, 2)).toEqual(["-- Fix", "Remove the stray colon"]);
     const titles = list.flatMap((entry) => (entry.kind === "action" ? [entry.action.id] : []));
     expect(new Set(titles).size).toBe(titles.length);
+  });
+
+  it("leaves out a fix that only runs a command, such as asking a chat", () => {
+    const list = entries(context([paragraph, section]), [
+      fix("Fix", { edits: false }),
+      fix("Explain", { edits: false }),
+      fix("Remove the stray colon"),
+    ]);
+    expect(rows(list).slice(0, 3)).toEqual(["-- Fix", "Remove the stray colon", "-- Write"]);
   });
 
   it("leaves out a fix its provider disabled", () => {

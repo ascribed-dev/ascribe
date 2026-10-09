@@ -15,6 +15,8 @@ export interface Fix {
   problem: string | undefined;
   /** Whether its provider marked it as not applicable. */
   disabled: boolean;
+  /** Whether it edits the text, rather than only running a command. */
+  edits: boolean;
 }
 
 /** One row of the bar. */
@@ -38,10 +40,12 @@ export const NOTHING =
   "Nothing here: select some text, or put the cursor on a heading, note, link, or image";
 
 /**
- * The lightbulb's quick fixes from the registry come back as
+ * Whether the bar lists a quick fix: one that edits the text, so not one
+ * that only runs a command, such as asking a chat to fix or explain the
+ * problem. The lightbulb's quick fixes from the registry come back as
  * `quickfix.ascribe`: the bar lists those actions in their groups instead.
  */
-const ours = (fix: Fix): boolean => fix.kind === "quickfix.ascribe";
+const listed = (fix: Fix): boolean => fix.edits && !fix.disabled && fix.kind !== "quickfix.ascribe";
 
 /**
  * The bar's rows: the fixes, then each group of the registry's actions that
@@ -59,7 +63,7 @@ export function entries<F extends Fix>(
     const rows: Entry<F>[] = [];
     if (group === "fix") {
       for (const fix of fixes) {
-        if (!fix.disabled && !ours(fix)) rows.push({ kind: "fix", fix });
+        if (listed(fix)) rows.push({ kind: "fix", fix });
       }
     }
     for (const action of applying) {

@@ -32,7 +32,7 @@ export interface BarHost {
 
 /** A code action at the cursor, with what the bar shows of it. */
 interface CodeFix extends Fix {
-  action: vscode.CodeAction | vscode.Command;
+  action: vscode.CodeAction;
   severity: vscode.DiagnosticSeverity | undefined;
 }
 
@@ -71,35 +71,27 @@ async function quickFixes(uri: vscode.Uri, range: vscode.Range): Promise<CodeFix
   } catch {
     return [];
   }
-  return (found ?? []).map((action) => {
-    if (isCommand(action)) {
-      return {
+  return (found ?? []).flatMap((action) => {
+    if (isCommand(action)) return [];
+    const diagnostic = action.diagnostics?.[0];
+    return [
+      {
         action,
         title: action.title,
-        kind: undefined,
-        problem: undefined,
-        disabled: false,
-        severity: undefined,
-      };
-    }
-    const diagnostic = action.diagnostics?.[0];
-    return {
-      action,
-      title: action.title,
-      kind: action.kind?.value,
-      problem: diagnostic?.message,
-      disabled: action.disabled !== undefined,
-      severity: diagnostic?.severity,
-    };
+        kind: action.kind?.value,
+        problem: diagnostic?.message,
+        disabled: action.disabled !== undefined,
+        edits: action.edit !== undefined,
+        severity: diagnostic?.severity,
+      },
+    ];
   });
 }
 
 /** Applies a code action as the lightbulb would: its edit, then its command. */
-async function applyFix(action: vscode.CodeAction | vscode.Command): Promise<void> {
-  const command = isCommand(action) ? action : action.command;
-  if (!isCommand(action) && action.edit && !(await vscode.workspace.applyEdit(action.edit))) {
-    return;
-  }
+async function applyFix(action: vscode.CodeAction): Promise<void> {
+  if (action.edit && !(await vscode.workspace.applyEdit(action.edit))) return;
+  const command = action.command;
   if (command) await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
 }
 
