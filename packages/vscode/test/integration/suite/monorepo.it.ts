@@ -5,8 +5,9 @@ import * as vscode from "vscode";
 import type { ServerState } from "../../../src/client.js";
 import type { AscribeApi } from "../../../src/extension.js";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
+import { MAX_WAIT_MS } from "../../../src/diskChanges.js";
 import { comparable, samePath } from "../../../src/projects.js";
-import { activated, diagnosticsOf, uriOf, waitFor, workspace } from "./helpers.js";
+import { activated, diagnosticsOf, sleep, uriOf, waitFor, workspace } from "./helpers.js";
 
 // The real `ascribe lsp` on test/fixtures/monorepo: a folder with no project
 // (code/), a project (docs/), and a project (handbook/) with another nested
@@ -123,6 +124,13 @@ describe("with several projects, one nested in another", () => {
       watcher.dispose();
     }
   }
+
+  /**
+   * Waits until changes just made on disk have been acted on: a project's
+   * files written before its ascribe.toml would otherwise start its server
+   * as soon as the project is found.
+   */
+  const afterDiskChanges = () => sleep(MAX_WAIT_MS + 1_000);
 
   const known = (folder: string): boolean =>
     api.projects().some((project) => samePath(project.folder, folder));
@@ -570,6 +578,62 @@ describe("with several projects, one nested in another", () => {
     });
   });
 
+  describe("files changed on disk", () => {
+    // A project none of whose files is open, as an agent that edits files
+    // without opening them leaves it.
+    const agent = () => path.join(workspace(), "agent");
+    const page = (name: string) => vscode.Uri.file(path.join(agent(), "docs", name));
+
+    before(async () => {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      mkdirSync(path.join(agent(), "docs"), { recursive: true });
+      writeFileSync(page("index.md").fsPath, "---\ntitle: Agent\n---\n\nAgent.\n");
+      await afterDiskChanges();
+      await createProject(agent());
+      assert.equal(api.state(agent()), "stopped");
+    });
+
+    after(async () => {
+      rmSync(path.join(agent(), "ascribe.toml"), { force: true });
+      await waitFor("the agent project to go", () => !known(agent()));
+      await api.whenSettled();
+      rmSync(agent(), { recursive: true, force: true });
+    });
+
+    it("starts nothing for a file written into the project's output directory", async () => {
+      const output = path.join(agent(), ".ascribe", "build", "site", "plain");
+      mkdirSync(output, { recursive: true });
+      writeFileSync(path.join(output, "index.md"), "# Agent\n\nSee [](missing.md).\n");
+      await afterDiskChanges();
+      assert.equal(api.state(agent()), "stopped");
+    });
+
+    it("starts the project's server once for a burst of files, and shows their problems", async () => {
+      const started: string[] = [];
+      const listener = api.onDidStartServer((folder) => started.push(comparable(folder)));
+      try {
+        const broken = page("broken.md");
+        writeFileSync(broken.fsPath, "---\ntitle: Broken\n---\n\nSee [](missing.md).\n");
+        for (let i = 0; i < 30; i++) {
+          writeFileSync(page(`page-${i}.md`).fsPath, `---\ntitle: Page ${i}\n---\n\nPage.\n`);
+        }
+        await diagnosticsOf(broken, () => codes(broken).join() === "ASC036");
+        assert.equal(api.state(agent()), "running");
+        // Nothing opened the file.
+        assert.ok(
+          !vscode.workspace.textDocuments.some((document) =>
+            samePath(document.uri.fsPath, broken.fsPath),
+          ),
+        );
+        await afterDiskChanges();
+        await api.whenSettled();
+        assert.deepEqual(started, [comparable(agent())]);
+      } finally {
+        listener.dispose();
+      }
+    });
+  });
+
   describe("projects that come and go", () => {
     it("adds a project when its ascribe.toml appears, and stops its server when it goes", async () => {
       const guides = path.join(workspace(), "guides");
@@ -577,6 +641,7 @@ describe("with several projects, one nested in another", () => {
       mkdirSync(path.dirname(page.fsPath), { recursive: true });
       writeFileSync(page.fsPath, "---\ntitle: Guides\n---\n\nSee [](missing.md).\n");
       try {
+        await afterDiskChanges();
         await createProject(guides);
         assert.equal(api.state(guides), "stopped");
 
@@ -604,6 +669,7 @@ describe("with several projects, one nested in another", () => {
       mkdirSync(path.join(idle, "docs"), { recursive: true });
       writeFileSync(path.join(idle, "docs", "index.md"), "---\ntitle: Idle\n---\n\nIdle.\n");
       try {
+        await afterDiskChanges();
         await createProject(idle);
         assert.equal(api.state(idle), "stopped");
         await settings.update("startServers", "all", vscode.ConfigurationTarget.Workspace);
