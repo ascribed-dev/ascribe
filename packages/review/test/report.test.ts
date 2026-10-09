@@ -211,6 +211,46 @@ describe("the report", () => {
     );
   });
 
+  it("copies a page's prompt, and offers none when the page has none", async () => {
+    const report = data();
+    const prompt = "Review what this change does to `docs/guide.md`.\n";
+    report.builds[0] = { build: "site", pages: [page("guide.md", { prompt })] };
+    report.limit = { pages: 300, omitted: 0 };
+    const copied: string[] = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async (text: string) => void copied.push(text) },
+    });
+    try {
+      const root = document.createElement("div");
+      document.body.append(root);
+      start(root, report);
+      // Let the hash the report set settle first: a page change clears what it says.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const copy = Array.from(root.querySelectorAll("button")).find(
+        (b) => b.textContent === "Copy prompt",
+      );
+      copy?.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(copied).toEqual([prompt]);
+      expect(root.querySelector(".r-status")?.textContent).toBe(
+        "Prompt copied. Paste it into your agent.",
+      );
+      // It only copies: nothing in the report opens an agent.
+      expect(root.querySelector('a[href^="vscode:"], a[href^="cursor:"], a[href*="claude"]')).toBeNull();
+
+      document.body.innerHTML = "";
+      const without = document.createElement("div");
+      document.body.append(without);
+      start(without, data());
+      expect(
+        Array.from(without.querySelectorAll("button")).some((b) => b.textContent === "Copy prompt"),
+      ).toBe(false);
+    } finally {
+      Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+
   it("counts pages once across builds", () => {
     const d = data();
     expect(

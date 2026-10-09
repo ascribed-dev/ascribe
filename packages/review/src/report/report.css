@@ -110,7 +110,24 @@ body {
   font-weight: 400;
 }
 
-.r-head .r-notice {
+.r-head .r-status {
+  font: var(--r-caption) var(--r-ui);
+  font-weight: 400;
+  color: var(--r-muted);
+  margin-top: 6px;
+}
+
+.r-status:empty {
+  margin: 0;
+}
+
+.r-offscreen {
+  position: fixed;
+  top: 0;
+  left: -9999px;
+}
+
+.r-notice {
   margin-top: 8px;
 }
 
