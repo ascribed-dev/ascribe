@@ -5,7 +5,7 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use ascribe_check::prompt::{self, Builds, shell_word as quote};
+use ascribe_check::prompt::{self, Builds};
 use ascribe_check::{
     Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, diagnose,
     diagnose_editor_build, locate_for,

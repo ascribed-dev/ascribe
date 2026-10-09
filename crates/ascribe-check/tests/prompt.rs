@@ -143,7 +143,7 @@ fn a_problem_in_a_fragment_names_the_pages_that_show_it() {
 }
 
 #[test]
-fn a_fragment_shown_on_many_pages_names_ten() {
+fn a_fragment_shown_on_many_pages_names_ten_and_the_command_for_the_rest() {
     let mut files: Vec<(String, String)> = (1..=17)
         .map(|n| {
             (
@@ -162,7 +162,10 @@ fn a_fragment_shown_on_many_pages_names_ten() {
         .collect();
     let project = project(&borrowed);
     let text = one_problem(&project, &plain(), "docs/_fragments/prereqs.md");
-    assert!(text.contains("page-10.md, and 7 more\n"), "{text}");
+    assert!(
+        text.contains("page-10.md, and 7 more: `ascribe refs docs/_fragments/prereqs.md`\n"),
+        "{text}"
+    );
 }
 
 #[test]

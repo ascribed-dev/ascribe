@@ -206,7 +206,7 @@ pub fn problem(
     let mut place = vec![format!("Where: {file}:{}", line_range(lines.as_ref()))];
     unsaved_line(context, &file, &mut place);
     context.project_lines(&mut place);
-    shown_on_line(project, d.location.file, shown_on, &mut place);
+    shown_on_line(project, context, d.location.file, shown_on, &mut place);
 
     let mut known = vec![
         format!(
@@ -283,7 +283,7 @@ pub fn file(
     let mut place = vec![format!("Where: {path}")];
     unsaved_line(context, &path, &mut place);
     context.project_lines(&mut place);
-    shown_on_line(project, file, shown_on, &mut place);
+    shown_on_line(project, context, file, shown_on, &mut place);
 
     let target = context.in_repository(&path);
     let rest = check_command(std::slice::from_ref(&target), &["--format", "concise"]);
@@ -408,9 +408,11 @@ fn unsaved_line(context: &Context, file: &str, lines: &mut Vec<String>) {
     }
 }
 
-/// `Shown on:` with the pages that include `file`, when it's a fragment.
+/// `Shown on:` with the pages that include `file`, when it's a fragment;
+/// past [`MAX_SHOWN_ON`], the `ascribe refs` command that lists them all.
 fn shown_on_line(
     project: &Project,
+    context: &Context,
     file: FileId,
     shown_on: &dyn Fn(&RelPath) -> Vec<RelPath>,
     lines: &mut Vec<String>,
@@ -440,7 +442,11 @@ fn shown_on_line(
     pages.truncate(MAX_SHOWN_ON);
     let mut line = format!("Shown on: {}", pages.join(", "));
     if more > 0 {
-        line.push_str(&format!(", and {more} more"));
+        let refs = format!(
+            "ascribe refs {}",
+            shell_word(&context.in_repository(&path_of(project, file)))
+        );
+        line.push_str(&format!(", and {more} more: `{refs}`"));
     }
     lines.push(line);
 }
