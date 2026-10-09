@@ -12,6 +12,7 @@ It's the largest of our crates, and the one the others reach the file system thr
 | `src/layout.rs` | `Layout` | Where the content root and the output directory are, and the boundary a local file must stay inside (`Layout::is_allowed`). |
 | `src/index/` | `index_file`, `FileIndex`, `Heading`, `Reference`, `Include` | What's true of one file alone: its tree, frontmatter, title, headings and their source ids (SPEC §5.5), includes, links, images, phrases, snippets, and availability markers. A pure function of the file's text, path, and the content model; it never touches the file system. |
 | `src/project.rs` | `Project`, `Resolution` | Every file's index, what each reference names, and the edges between files, forward and back (`includers`, `links_to`, `asset_users`). `Project::load` builds it from a `FileSystem`. |
+| `src/uses.rs` | `Usable`, `Use`, `Project::uses`, `Project::use_counts` | Where each page, fragment, heading, and content model entry is used. The language server's Find All References and its inventory both ask it, so a count is the length of the list. |
 | `src/references.rs` | `reference_target`, `include_target`, `resolve_reference` | The one implementation of the rules for links, images, and includes: what a destination names, whether it's inside the boundary, and whether it's there. The index and `ascribe-check`'s file-level checks both call it. |
 | `src/snippet/` | `Address`, `resolve_snippet`, `snippet_issues`, `CodeFiles` | The one implementation of the rules for `@snippet` (SPEC §4.8): reading an address, finding its file through a source, and taking a region out by its tags (`src/snippet/tags.rs`). |
 | `src/expand.rs` | `Project::expand`, `ExpandedPage` | Includes replaced by their targets, and snippets by their code, recursively. Every block keeps the file and span it was written in, and the includes it came through. |
@@ -44,6 +45,7 @@ It uses `ascribe-core`, `ascribe-syntax`, and `ascribe-model`, and no other crat
 
 - `tests/headings.rs`: source ids, titles, and the rest of the per-file index.
 - `tests/includes.rs`: include expansion.
+- `tests/uses.rs`: where pages, headings, and the content model's entries are used.
 - `tests/references.rs`: links, images, and assets: what each names, from which file, and what's wrong with it.
 - `tests/snippets.rs`: the code block a `@snippet` becomes, and which problem `snippet_issues` reports.
 - `tests/build_content.rs`, `tests/build_modes.rs`: build resolution: phrases, page ids, links, assets, the glossary, build modes, and availability.

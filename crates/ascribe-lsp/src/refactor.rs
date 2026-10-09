@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Destination, LineIndex, RelPath, Span, TextEdit as ByteEdit};
-use ascribe_resolve::{FileIndex, PhrasePlace, Target};
+use ascribe_resolve::{FileIndex, PhrasePlace, Target, Usable};
 use ascribe_syntax::{Block, BlockKind, InlineKind};
 use lsp_types::{
     FileOperationFilter, FileOperationPattern, FileOperationPatternKind,
@@ -561,11 +561,7 @@ fn destination_path(root_relative: bool, from: &RelPath, target: &RelPath) -> St
 }
 
 fn phrase_uses(ctx: &Ctx, key: &str) -> usize {
-    ctx.snapshot
-        .files()
-        .flat_map(|file| file.phrases.iter())
-        .filter(|phrase| phrase.phrase.key == key)
-        .count()
+    ctx.snapshot.uses(&Usable::Phrase(key.to_owned())).len()
 }
 
 fn phrase_value_span(source: &str, key: &str) -> Option<Span> {

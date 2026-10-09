@@ -72,6 +72,7 @@ use std::sync::Arc;
 use ascribe_core::{FileId, RelPath, Router, Slugger, Span};
 use ascribe_model::{Build, Segment};
 
+pub(crate) use glossary::Terms;
 pub use glossary::glossary_targets;
 pub use router::DefaultRouter;
 pub use tree::{

@@ -14,6 +14,8 @@
 //! - the edges between files, forward and back: [`Project::includers`],
 //!   [`Project::including_pages`], [`Project::links_to`],
 //!   [`Project::links_to_id`], and [`Project::asset_users`];
+//! - where each page, fragment, heading, and content model entry is used
+//!   ([`Project::uses`], [`Project::use_counts`]);
 //! - the problems that follow from the source ([`Project::problems`]), by
 //!   registry slug, for the checks to report.
 //!
@@ -83,6 +85,7 @@ mod project;
 pub mod references;
 pub mod slug;
 pub mod snippet;
+mod uses;
 
 pub use astro::AstroRouter;
 pub use build::{
@@ -115,3 +118,4 @@ pub use snippet::{
     Address, AddressError, CodeFile, CodeFiles, Snippet, SnippetUse, SourceFile, resolve_snippet,
     snippet_issues, source_files,
 };
+pub use uses::{Usable, Use, UseKind};
