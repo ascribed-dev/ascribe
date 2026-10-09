@@ -8,7 +8,7 @@ use std::process::ExitCode;
 use ascribe_query::LinkAnswer;
 use clap::Args as ClapArgs;
 
-use crate::answer::{self, Format};
+use crate::answer::{self, Format, FromDisk, Projects, Stop};
 use crate::cli::Global;
 use crate::exit;
 
@@ -43,17 +43,27 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
+/// The answer the command shows: what `--format json` writes.
+///
+/// # Errors
+///
+/// No project, or a page that isn't one of its own.
+pub fn answer(projects: &dyn Projects, global: &Global, args: &Args) -> Result<LinkAnswer, Stop> {
+    let loaded = answer::load(projects, global, Some(&args.from))?;
+    let project = &loaded.project;
+    let from = answer::source_path(project, &args.from)?;
+    Ok(ascribe_query::link(
+        loaded.index(),
+        project.file_system(),
+        &from,
+        &args.target,
+    )?)
+}
+
 fn link(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    let project = match answer::load(global, Some(&args.from)) {
-        Ok(project) => project,
-        Err(failure) => return answer::report_failure(err, &failure),
-    };
-    let answered = answer::source_path(&project, &args.from).and_then(|from| {
-        ascribe_query::link(&project.index(), project.file_system(), &from, &args.target)
-    });
-    let link = match answered {
+    let link = match answer(&FromDisk, global, args) {
         Ok(link) => link,
-        Err(e) => return answer::fail(err, &e),
+        Err(stop) => return stop.report(err),
     };
     let result = match args.format {
         Format::Json => answer::write_json(out, &link),

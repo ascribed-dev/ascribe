@@ -284,7 +284,7 @@
           "type": "array"
         },
         "changes": {
-          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page.",
+          "description": "The block-level changes, in the page's order, a removed block where\nit was. Empty for an added or removed page, and for every page when\nthe report's `blocks_omitted` is `true`.",
           "items": {
             "$ref": "#/$defs/Change"
           },

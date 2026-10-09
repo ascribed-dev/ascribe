@@ -58,6 +58,7 @@ fn report(before: &Project, after: &Project) -> Report {
         },
         working_tree_errors: 0,
         builds,
+        blocks_omitted: false,
     }
 }
 

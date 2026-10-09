@@ -6,10 +6,11 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use ascribe_check::Project;
-use ascribe_query::Section as QuerySection;
+use ascribe_model::ContentModel;
+use ascribe_query::{ModelReport, Section as QuerySection};
 use clap::{Args as ClapArgs, ValueEnum};
 
-use crate::answer::{self, Format};
+use crate::answer::{self, Format, Stop};
 use crate::cli::Global;
 use crate::context::Failure;
 use crate::exit;
@@ -80,14 +81,29 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
+/// The content model `args` names. Only the content model: a project whose
+/// pages have errors still has one to show.
+fn load(global: &Global, args: &Args) -> Result<ContentModel, Failure> {
+    let config = answer::locate(global, args.path.as_deref()).map_err(Failure::Config)?;
+    Ok(Project::load_model(&config).map_err(Failure::Load)?.model)
+}
+
+/// What `--format json` writes.
+///
+/// # Errors
+///
+/// No content model, or one with errors.
+pub fn answer(global: &Global, args: &Args) -> Result<ModelReport, Stop> {
+    let model = load(global, args)?;
+    Ok(ascribe_query::model(
+        &model,
+        args.section.map(Section::query),
+    ))
+}
+
 fn model(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    // Only the content model: a project whose pages have errors still has
-    // one to show.
-    let loaded = answer::locate(global, args.path.as_deref())
-        .map_err(Failure::Config)
-        .and_then(|config| Project::load_model(&config).map_err(Failure::Load));
-    let model = match loaded {
-        Ok(file) => file.model,
+    let model = match load(global, args) {
+        Ok(model) => model,
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let section = args.section.map(Section::query);

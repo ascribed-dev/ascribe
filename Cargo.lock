@@ -106,6 +106,7 @@ dependencies = [
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-lsp",
+ "ascribe-mcp",
  "ascribe-model",
  "ascribe-query",
  "ascribe-resolve",
@@ -256,6 +257,14 @@ dependencies = [
  "tempfile",
  "thiserror",
  "toml_edit",
+]
+
+[[package]]
+name = "ascribe-mcp"
+version = "0.2.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

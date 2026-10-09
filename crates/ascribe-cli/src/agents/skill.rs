@@ -96,7 +96,7 @@ pub fn skill_md(paths: Option<&[String]>) -> String {
 }
 
 /// The directive reference: each built-in directive's syntax.
-fn directives_md() -> String {
+pub fn directives_md() -> String {
     let mut out = String::from(
         "# Directives\n\nA directive is a line that starts with `@`. Each built-in one, with its syntax:\n\n",
     );

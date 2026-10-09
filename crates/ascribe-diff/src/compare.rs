@@ -60,7 +60,8 @@ pub struct PageDiff {
     /// How many changes of each kind.
     pub counts: Counts,
     /// The block-level changes, in the page's order, a removed block where
-    /// it was. Empty for an added or removed page.
+    /// it was. Empty for an added or removed page, and for every page when
+    /// the report's `blocks_omitted` is `true`.
     pub changes: Vec<Change>,
 }
 

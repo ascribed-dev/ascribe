@@ -35,6 +35,11 @@ Every document follows these rules:
 
 @include: ../_generated/json-sources-update.md
 
+## `ascribe fmt`
+@available: next
+
+@include: ../_generated/json-fmt.md
+
 ## `ascribe explain`
 @available: next
 

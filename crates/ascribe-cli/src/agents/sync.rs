@@ -153,25 +153,45 @@ impl Plan {
 /// The marker name of the block in a project's own files.
 const BLOCK: &str = "ascribe:agents";
 
+/// The project's folder in its repository, and a note when there's no
+/// repository and the folder is taken as its root.
+fn prefix_of(here: &Path) -> Result<(RelPath, Option<String>), SyncError> {
+    match Repository::discover(here) {
+        Ok(repository) => Ok((repository.project_dir(), None)),
+        Err(DiffError::NotARepository { .. }) => Ok((
+            RelPath::root(),
+            Some(format!(
+                "{} isn't in a git repository, so its folder is treated as the repository's root",
+                here.display()
+            )),
+        )),
+        Err(e) => Err(SyncError::Git(e)),
+    }
+}
+
+/// The project's rules as `sync` writes them into the `AGENTS.md` beside
+/// `ascribe.toml`: what `ascribe agents rules` prints. `index` is the
+/// project's source index.
+pub fn rules_beside(
+    project: &Project,
+    index: &ascribe_resolve::Project,
+) -> Result<String, SyncError> {
+    let (prefix, _) = prefix_of(&absolute(project.root()))?;
+    Ok(rules(index, &RelPath::root(), &prefix))
+}
+
 /// Works out the files for `targets` (with `agents-md` and `skills` always,
 /// and each other target whose files exist already), without writing.
 pub fn plan(project: &Project, asked: &[Target]) -> Result<Plan, SyncError> {
     let mut notes = Vec::new();
     let here = absolute(project.root());
-    let prefix = match Repository::discover(&here) {
-        Ok(repository) => repository.project_dir(),
-        Err(DiffError::NotARepository { .. }) => {
-            if asked.contains(&Target::Copilot) {
-                return Err(SyncError::NoRepository);
-            }
-            notes.push(format!(
-                "{} isn't in a git repository, so its folder is treated as the repository's root",
-                here.display()
-            ));
-            RelPath::root()
+    let (prefix, note) = prefix_of(&here)?;
+    if let Some(note) = note {
+        if asked.contains(&Target::Copilot) {
+            return Err(SyncError::NoRepository);
         }
-        Err(e) => return Err(SyncError::Git(e)),
-    };
+        notes.push(note);
+    }
     // The root above the project's folder as written, not as `git` prints
     // it, so a symbolic link on the way doesn't change the paths shown.
     let mut root = here.clone();

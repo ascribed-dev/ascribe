@@ -75,6 +75,13 @@ const SHAPES: &[Shape] = &[
         schema: |g| g.root_schema_for::<crate::commands::sources::UpdateJson<'static>>(),
     },
     Shape {
+        file: "fmt",
+        title: "FmtReport",
+        written_by: "`ascribe fmt --format json`",
+        command: true,
+        schema: |g| g.root_schema_for::<crate::commands::fmt::FmtReport>(),
+    },
+    Shape {
         file: "explain",
         title: "ExplainReport",
         written_by: "`ascribe explain --format json`",

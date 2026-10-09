@@ -9,6 +9,7 @@ pub mod explain;
 pub mod fmt;
 pub mod link;
 pub mod lsp;
+pub mod mcp;
 pub mod model;
 pub mod outline;
 pub mod refs;

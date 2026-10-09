@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use ascribe_core::{SourceBoundary, apply_edits};
+use ascribe_core::{SourceBoundary, TextEdit, apply_edits};
 use ascribe_model::{ContentModel, MODEL_FILE};
 
 use crate::{format, options_from_model};
@@ -68,8 +68,8 @@ pub struct Refused {
 /// Formats every `.md` file under `paths` (each a file, or a directory
 /// searched recursively) or, with no path, under the content root of the
 /// project whose content model, `model`, is at `config`. Each file that
-/// changes is passed to `on_changed` as it's done, and all of them are
-/// returned.
+/// changes is passed to `on_changed` as it's done, with its text before and
+/// the edits that format it, and all of them are returned.
 ///
 /// With `check`, nothing is written: the files returned are the ones that
 /// would change.
@@ -92,7 +92,7 @@ pub fn format_files(
     paths: &[PathBuf],
     check: bool,
     boundary: &dyn SourceBoundary,
-    on_changed: &mut dyn FnMut(&Path),
+    on_changed: &mut dyn FnMut(&Path, &str, &[TextEdit]),
 ) -> Result<Formatted, FormatFilesError> {
     let project = config
         .parent()
@@ -142,7 +142,7 @@ pub fn format_files(
                 source,
             })?;
         }
-        on_changed(&file);
+        on_changed(&file, &source, &edits);
         done.changed.push(file);
     }
     Ok(done)

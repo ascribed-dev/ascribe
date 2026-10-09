@@ -395,6 +395,24 @@ pub fn project(
     ))
 }
 
+/// A prompt of another kind in the same format, for the named prompts of
+/// `ascribe agents prompt`: `task`; then `place`, followed by the
+/// `Project:` and `Build:` lines; then what Ascribe knows, `known`, cut from
+/// the end with the line `cut` when the prompt would be too long; then the
+/// two lines that end every prompt, checking `targets` (relative to the
+/// repository's root).
+pub fn compose(
+    context: &Context,
+    task: &str,
+    mut place: Vec<String>,
+    known: &[String],
+    cut: &str,
+    targets: &[String],
+) -> String {
+    context.project_lines(&mut place);
+    assemble(task, &place, known, cut, &context.finish(targets))
+}
+
 /// "the problem" or "the N problems".
 fn the_problems(n: usize) -> String {
     if n == 1 {

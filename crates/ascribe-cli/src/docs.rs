@@ -33,6 +33,8 @@ const UNRELEASED: &[(&str, &str)] = &[
     ("check", "editor_build"),
     ("check", "summary"),
     ("diff", "page"),
+    ("diff", "pages_only"),
+    ("fmt", "format"),
 ];
 
 fn repo() -> PathBuf {

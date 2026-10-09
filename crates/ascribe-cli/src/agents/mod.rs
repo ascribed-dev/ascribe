@@ -5,5 +5,6 @@
 //! knows none.
 
 pub mod markers;
+pub mod prompts;
 pub mod skill;
 pub mod sync;

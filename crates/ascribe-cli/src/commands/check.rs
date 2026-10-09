@@ -4,6 +4,7 @@
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::rc::Rc;
 
 use ascribe_check::prompt::{self, Builds};
 use ascribe_check::{
@@ -14,6 +15,7 @@ use ascribe_core::Coded;
 use ascribe_core::path::relative_path;
 use clap::{Args as ClapArgs, ValueEnum};
 
+use crate::answer::{FromDisk, Loaded, Projects};
 use crate::cli::Global;
 use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
@@ -135,8 +137,28 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
 
 /// The project, and the scope of the paths named, if any.
 struct Checked {
-    project: Project,
+    loaded: Rc<Loaded>,
     scope: Option<Scope>,
+}
+
+/// What a check found, ready to write in any format.
+pub struct Outcome {
+    loaded: Rc<Loaded>,
+    scope: Option<Scope>,
+    reported: Vec<Reported>,
+    builds_checked: Vec<String>,
+    files: FileTable,
+    /// How many errors and warnings are reported.
+    pub counts: Counts,
+}
+
+/// Why a check couldn't be made.
+pub enum Stopped {
+    /// The project couldn't be found or loaded, or the paths can't be
+    /// checked.
+    Failure(Failure),
+    /// A build named isn't the content model's.
+    Build(ascribe_check::UnknownBuild),
 }
 
 fn check(
@@ -147,34 +169,97 @@ fn check(
     err: &mut dyn Write,
 ) -> u8 {
     let color = use_color(global, stdout_is_terminal());
-    let Checked { project, scope } = match load(global, args, stdin) {
-        Ok(checked) => checked,
-        Err(failure) => return report_failure(failure, args, color, out, err),
+    let outcome = match run_check(&FromDisk, global, args, stdin) {
+        Ok(outcome) => outcome,
+        Err(stopped) => return report_stopped(stopped, args, color, out, err),
     };
-    let diagnosed = if args.editor_build {
-        let files = scope.as_ref().and_then(|s| s.named_sources(&project));
-        Ok(diagnose_editor_build(&project, files.as_deref()))
+    if let Err(e) = write(&outcome, global, args, color, out) {
+        // A closed pipe (`| head`) isn't a problem with the project.
+        if e.kind() != io::ErrorKind::BrokenPipe {
+            let _ = writeln!(err, "error: can't write the report: {e}");
+            return exit::FAILURE;
+        }
+    }
+    let counts = outcome.counts;
+    if counts.errors > 0 || (args.deny_warnings && counts.warnings > 0) {
+        exit::PROBLEMS
     } else {
-        diagnose(&project, &args.build)
+        exit::OK
+    }
+}
+
+/// Checks the project, and keeps what counts for the paths named: what
+/// `ascribe check` reports, before it's written. `stdin` is read with
+/// `--stdin`.
+///
+/// # Errors
+///
+/// The project can't be found or loaded, the paths can't be checked, or a
+/// build named isn't the content model's.
+pub fn run_check(
+    projects: &dyn Projects,
+    global: &Global,
+    args: &Args,
+    stdin: &mut dyn Read,
+) -> Result<Outcome, Stopped> {
+    let Checked { loaded, scope } =
+        load(projects, global, args, stdin).map_err(Stopped::Failure)?;
+    let project = &loaded.project;
+    let names = |d: Diagnosed<'_>| {
+        let builds = d.builds.iter().map(|b| b.name.clone()).collect();
+        (d.diagnostics, builds)
     };
-    let Diagnosed {
-        diagnostics,
-        builds,
-    } = match diagnosed {
-        Ok(found) => found,
-        Err(e) => return exit::fail(err, &e),
+    let (diagnostics, builds_checked) = if args.editor_build {
+        let files = scope.as_ref().and_then(|s| s.named_sources(project));
+        names(diagnose_editor_build(project, files.as_deref()))
+    } else {
+        loaded
+            .diagnosed(&args.build, |project| {
+                diagnose(project, &args.build).map(names)
+            })
+            .map_err(Stopped::Build)?
     };
-    let builds_checked: Vec<String> = builds.iter().map(|b| b.name.clone()).collect();
     let reported = match &scope {
-        Some(scope) => scope.report(&project, diagnostics),
+        Some(scope) => scope.report(project, diagnostics),
         None => Reported::all(diagnostics),
     };
-    let files = FileTable::of_project(&project);
-    let checked = project.sources().len();
-    let files_reported = scope.as_ref().map(|s| s.sources(&project).len());
+    let files = FileTable::of_project(project);
     let counts = Counts::of_reported(&reported);
-    let summary = text::check_summary(
+    Ok(Outcome {
+        loaded: Rc::clone(&loaded),
+        scope,
+        reported,
+        builds_checked,
+        files,
         counts,
+    })
+}
+
+/// Writes what a check found in `args.format`, as `ascribe check` does.
+///
+/// # Errors
+///
+/// Writing to `out` failed.
+pub fn write(
+    outcome: &Outcome,
+    global: &Global,
+    args: &Args,
+    color: bool,
+    out: &mut dyn Write,
+) -> io::Result<()> {
+    let Outcome {
+        loaded,
+        scope,
+        reported,
+        builds_checked,
+        files,
+        counts,
+    } = outcome;
+    let project = &loaded.project;
+    let checked = project.sources().len();
+    let files_reported = scope.as_ref().map(|s| s.sources(project).len());
+    let summary = text::check_summary(
+        *counts,
         checked,
         files_reported,
         args.editor_build
@@ -182,43 +267,31 @@ fn check(
             .flatten(),
     );
     let command = Command::new(global, args);
-    let written = match (args.format, args.summary) {
+    match (args.format, args.summary) {
         (Format::Json, summary_only) => json::write(
             out,
-            &files,
-            &reported,
+            files,
+            reported,
             &About {
                 error: None,
                 files_checked: checked,
                 files_reported: files_reported.unwrap_or(checked),
-                builds_checked,
+                builds_checked: builds_checked.clone(),
                 summary_only: summary_only.then(|| command.listing()),
             },
         ),
-        (Format::Prompt, _) => write_prompt(out, &project, args, scope.as_ref(), &reported),
+        (Format::Prompt, _) => write_prompt(out, project, args, scope.as_ref(), reported),
         (Format::Text | Format::Concise, true) => {
-            let (codes, by_file) = tally(&files, &reported);
+            let (codes, by_file) = tally(files, reported);
             text::write_tally(out, &codes, &by_file).and_then(|()| writeln!(out, "{summary}"))
         }
-        (Format::Text, false) => text::write_reported(out, &files, &reported, &summary, color),
+        (Format::Text, false) => text::write_reported(out, files, reported, &summary, color),
         (Format::Concise, false) => {
             let more = |next: &Reported| {
-                command.narrowed(&project, &files.path(next.diagnostic.location.file), &scope)
+                command.narrowed(project, &files.path(next.diagnostic.location.file), scope)
             };
-            concise::write(out, &files, &reported, &summary, &more)
+            concise::write(out, files, reported, &summary, &more)
         }
-    };
-    if let Err(e) = written {
-        // A closed pipe (`| head`) isn't a problem with the project.
-        if e.kind() != io::ErrorKind::BrokenPipe {
-            let _ = writeln!(err, "error: can't write the report: {e}");
-            return exit::FAILURE;
-        }
-    }
-    if counts.errors > 0 || (args.deny_warnings && counts.warnings > 0) {
-        exit::PROBLEMS
-    } else {
-        exit::OK
     }
 }
 
@@ -272,7 +345,7 @@ fn write_prompt(
 }
 
 /// Why nothing could be checked.
-enum Failure {
+pub enum Failure {
     /// The paths, standard input, or finding the content model.
     Check(CheckError),
     /// Loading the project.
@@ -281,17 +354,23 @@ enum Failure {
 
 /// Finds the content model, loads the project, lays standard input over it
 /// with `--stdin`, and works out the scope of the paths named.
-fn load(global: &Global, args: &Args, stdin: &mut dyn Read) -> Result<Checked, Failure> {
+fn load(
+    projects: &dyn Projects,
+    global: &Global,
+    args: &Args,
+    stdin: &mut dyn Read,
+) -> Result<Checked, Failure> {
     let named: Vec<PathBuf> = match &args.path {
         Some(path) if args.stdin => vec![path.clone()],
         _ => args.paths.clone(),
     };
     let check = |e: ScopeError| Failure::Check(CheckError::Scope(e));
     let config = locate_for(global.config.as_deref(), &named).map_err(check)?;
-    let project = Project::load(&config).map_err(Failure::Load)?;
+    let loaded = projects.load(&config).map_err(Failure::Load)?;
+    let project = &loaded.project;
     match &args.path {
         Some(path) if args.stdin => {
-            let content_path = Scope::source_path(&project, &config, path).map_err(check)?;
+            let content_path = Scope::source_path(project, &config, path).map_err(check)?;
             let mut text = String::new();
             stdin
                 .read_to_string(&mut text)
@@ -302,16 +381,19 @@ fn load(global: &Global, args: &Args, stdin: &mut dyn Read) -> Result<Checked, F
                 .join(content_path.as_str())
                 .map(|p| Scope::new([p]))
                 .ok();
-            Ok(Checked { project, scope })
+            Ok(Checked {
+                loaded: Rc::new(Loaded::new(project)),
+                scope,
+            })
         }
         _ if named.is_empty() => Ok(Checked {
-            project,
+            loaded,
             scope: None,
         }),
         _ => {
-            let scope = Scope::of_paths(&project, &config, &named, true).map_err(check)?;
+            let scope = Scope::of_paths(project, &config, &named, true).map_err(check)?;
             Ok(Checked {
-                project,
+                loaded,
                 scope: Some(scope),
             })
         }
@@ -400,6 +482,21 @@ fn from_here(root: &Path, file: &str) -> String {
                 }
             },
         )
+}
+
+/// Reports a check that couldn't be made, and returns the exit code: as
+/// [`report_failure`] does, or for an unknown build its message.
+pub fn report_stopped(
+    stopped: Stopped,
+    args: &Args,
+    color: bool,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> u8 {
+    match stopped {
+        Stopped::Failure(failure) => report_failure(failure, args, color, out, err),
+        Stopped::Build(e) => exit::fail(err, &e),
+    }
 }
 
 /// Reports a project that couldn't be checked, and returns the exit code.

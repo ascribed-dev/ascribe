@@ -96,6 +96,12 @@ Each one fills the prompt in and leaves it for you to send. When the one you cho
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-prompt.txt
 
+`ascribe agents prompt` prints the other prompts: `new-page` to write a page of a type, with the frontmatter it requires and where its file goes; `fix` to check the project and fix what's reported; and `review` to review what a branch does to its pages, the prompt `ascribe diff --format prompt` writes. `ascribe agents prompt --list` lists them with their arguments:
+
+```shell
+ascribe agents prompt new-page --arg type=guide --arg title="Rotate your keys"
+```
+
 ### In review
 
 While you [review](review.md) a pull request, **Prompt agent** hands your agent a review comment, or the change itself:
@@ -122,3 +128,30 @@ Every prompt has the same parts, in order:
 5. **How to finish**: "Follow the project's rules in `AGENTS.md`", when the project's folder or the repository's root has one, and "When you're done, run `ascribe check <file>` and fix what it reports." A prompt about a change ends with "Report what reads wrongly; don't edit." instead.
 
 Commands in a prompt are written from the repository's root, so an agent started there can run them. A prompt is at most 5,000 characters, the most an agent's link takes. When it would be longer, what Ascribe knows is cut between parts, and the prompt says where to read the rest.
+
+## The MCP server
+
+`ascribe mcp` is a server for the [Model Context Protocol](https://modelcontextprotocol.io), which most agents' hosts speak. It offers the commands that answer questions as tools an agent calls, for an agent with no shell, or a host that asks you to approve each command it runs. An agent with a shell needs no server: the commands give the same answers.
+
+Your agent's host starts it. Most hosts read a JSON file listing the servers to start, such as `.mcp.json` at the repository's root for Claude Code, or `.cursor/mcp.json` for Cursor; add Ascribe to it:
+
+```json
+{
+  "mcpServers": {
+    "ascribe": {
+      "command": "npx",
+      "args": ["ascribe", "mcp"]
+    }
+  }
+}
+```
+
+Hosts start the server in the repository's root. It serves every project in it: each call names a file or folder, and the server uses the nearest `ascribe.toml` at or above it. A project is loaded once and kept, and loaded again when its files change.
+
+It offers:
+
+- **Tools:** `ascribe_check`, `ascribe_explain`, `ascribe_model`, `ascribe_outline`, `ascribe_link`, `ascribe_refs`, `ascribe_render`, `ascribe_format`, and `ascribe_changes`. Each returns the JSON its command writes. None writes a file: `ascribe_format` returns the edits that would format the files, and the agent makes them.
+- **Resources:** each directive's syntax, and for each project, what its content model allows and its rules, the text `ascribe agents sync` writes into `AGENTS.md`.
+- **Prompts:** `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them. Many hosts show them as slash commands.
+
+See [`ascribe mcp`](../reference/cli.md#ascribe-mcp) for each tool and the command it runs.

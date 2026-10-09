@@ -8,15 +8,16 @@
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::rc::Rc;
 
 use ascribe_check::prompt::Builds;
 use ascribe_check::{Diagnostic, LoadError};
 use ascribe_diff::{BuildDiff, DiffError, DiffOptions, ProjectDiff, Report, diff_project};
 use clap::{Args as ClapArgs, ValueEnum};
 
-use crate::answer;
+use crate::answer::{self, FromDisk, Loaded, Projects};
 use crate::cli::Global;
-use crate::context::{Failure, load_project};
+use crate::context::Failure;
 use crate::exit;
 
 /// Arguments of `ascribe diff`.
@@ -60,6 +61,14 @@ pub struct Args {
     /// Exit with 1 when anything changed, as `git diff --exit-code` does.
     #[arg(long)]
     pub exit_code: bool,
+
+    /// List the changed pages without their block-level changes.
+    ///
+    /// With `--format json`, each page's `changes` is empty and its `counts`
+    /// still count them, so the report stays short on a large change. Text
+    /// lists only pages anyway, and HTML needs the blocks.
+    #[arg(long)]
+    pub pages_only: bool,
 }
 
 /// The output format.
@@ -93,27 +102,40 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
     exit::code(code)
 }
 
-fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
-    if args.page.is_some() && args.format != Format::Prompt {
-        return fail(err, "a PAGE is named only with --format prompt");
-    }
-    let loaded = match &args.page {
-        Some(page) => answer::load(global, Some(page)),
-        None => load_project(global),
-    };
-    let project = match loaded {
-        Ok(project) => project,
-        Err(failure) => return fail(err, &failure_message(failure)),
-    };
+/// Compares the project with the base: what the command reports, before
+/// it's written, and the project. With `--pages-only`, the JSON report's
+/// blocks are left out.
+///
+/// # Errors
+///
+/// The comparison couldn't be made; the message says why.
+pub fn answer(
+    projects: &dyn Projects,
+    global: &Global,
+    args: &Args,
+) -> Result<(Rc<Loaded>, ProjectDiff), String> {
+    let loaded = answer::load(projects, global, args.page.as_deref()).map_err(failure_message)?;
     let options = DiffOptions {
         base: args.base.as_deref(),
         base_exact: args.base_exact,
         builds: &args.build,
     };
-    let diff = match diff_project(&project, &options) {
-        Ok(diff) => diff,
-        Err(e) => return fail_diff(err, e),
+    let mut diff = diff_project(&loaded.project, &options).map_err(diff_message)?;
+    if args.pages_only && args.format == Format::Json {
+        diff.report.omit_blocks();
+    }
+    Ok((loaded, diff))
+}
+
+fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) -> u8 {
+    if args.page.is_some() && args.format != Format::Prompt {
+        return fail(err, "a PAGE is named only with --format prompt");
+    }
+    let (loaded, diff) = match answer(&FromDisk, global, args) {
+        Ok(answer) => answer,
+        Err(message) => return fail(err, &message),
     };
+    let project = &loaded.project;
     let report = &diff.report;
     if report.working_tree_errors > 0 {
         let _ = writeln!(
@@ -129,7 +151,7 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
             .map_err(io::Error::from)
             .and_then(|()| writeln!(out)),
         Format::Html => out.write_all(diff.html().as_bytes()),
-        Format::Prompt => match prompt(&project, &diff, args) {
+        Format::Prompt => match prompt(project, &diff, args) {
             Ok(Some(text)) => out.write_all(text.as_bytes()),
             Ok(None) => Ok(()),
             Err(message) => return fail(err, &message),
@@ -150,7 +172,7 @@ fn diff(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write) 
 /// The prompt `--format prompt` writes: about the PAGE named, or every
 /// changed page. `None` when nothing it's about changed; an error when the
 /// PAGE isn't one of the project's files, then or now.
-fn prompt(
+pub(crate) fn prompt(
     project: &ascribe_check::Project,
     diff: &ProjectDiff,
     args: &Args,
@@ -241,14 +263,18 @@ pub(crate) fn failure_message(failure: Failure) -> String {
 }
 
 pub(crate) fn fail_diff(err: &mut dyn Write, e: DiffError) -> u8 {
-    let message = match &e {
+    fail(err, &diff_message(e))
+}
+
+/// What a comparison that couldn't be made says.
+fn diff_message(e: DiffError) -> String {
+    match &e {
         DiffError::BaseModel { issues, .. } => model_errors(
             &e.to_string(),
             issues.iter().map(|i| Diagnostic::from_issue(i).message),
         ),
         _ => e.to_string(),
-    };
-    fail(err, &message)
+    }
 }
 
 /// A content model's problems under one line saying whose they are.
