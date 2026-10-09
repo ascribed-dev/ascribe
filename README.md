@@ -56,7 +56,7 @@ The compiler is a Rust workspace; the npm packages and the extension are a pnpm 
 
 | Directory | Contents |
 |---|---|
-| `crates/` | The compiler: `ascribe-syntax` (parsing), `ascribe-model` (`ascribe.toml`), `ascribe-resolve` (includes, builds, links), `ascribe-check`, `ascribe-emit` (outputs), `ascribe-diff` (what changed since a git revision), `ascribe-sources` (sources in other repositories), `ascribe-fmt`, `ascribe-lsp`, `ascribe-cli` (the `ascribe` binary), and `comrak-ascribe`, a fork of the CommonMark parser |
+| `crates/` | The compiler: `ascribe-syntax` (parsing), `ascribe-model` (`ascribe.toml`), `ascribe-resolve` (includes, builds, links), `ascribe-check`, `ascribe-emit` (outputs), `ascribe-diff` (what changed since a git revision), `ascribe-sources` (sources in other repositories), `ascribe-fmt`, `ascribe-query` (answers about a project, for the commands agents use), `ascribe-lsp`, `ascribe-cli` (the `ascribe` binary), and `comrak-ascribe`, a fork of the CommonMark parser |
 | `packages/` | `cli`, `astro`, `elements`, `review`, and `vscode` |
 | `tests/` | The conformance suite and its diagnostics registry, the CommonMark suite, real-world corpora, and cross-implementation fixtures |
 | `examples/` | Example projects and content models |

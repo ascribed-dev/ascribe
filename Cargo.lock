@@ -107,6 +107,7 @@ dependencies = [
  "ascribe-fmt",
  "ascribe-lsp",
  "ascribe-model",
+ "ascribe-query",
  "ascribe-resolve",
  "ascribe-sources",
  "clap",
@@ -240,6 +241,7 @@ dependencies = [
  "ascribe-emit",
  "ascribe-fmt",
  "ascribe-model",
+ "ascribe-query",
  "ascribe-resolve",
  "ascribe-syntax",
  "ascribe-synthetic",
@@ -262,6 +264,22 @@ dependencies = [
  "ascribe-core",
  "serde_yaml_ng",
  "sha2",
+ "toml",
+]
+
+[[package]]
+name = "ascribe-query"
+version = "0.2.0"
+dependencies = [
+ "ascribe-check",
+ "ascribe-core",
+ "ascribe-emit",
+ "ascribe-model",
+ "ascribe-resolve",
+ "schemars",
+ "serde",
+ "serde_yaml_ng",
+ "thiserror",
  "toml",
 ]
 

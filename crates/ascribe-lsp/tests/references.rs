@@ -449,3 +449,79 @@ fn counts_agree_with_the_resolver_for_every_example() {
         assert_eq!(client.shutdown(), ascribe_lsp::Exit::Clean);
     }
 }
+
+/// What Find All References answers at `position`, as `(file, line,
+/// column)`: the file from the project root, the line and column from 1.
+fn places(
+    client: &mut Client,
+    f: &Fixture,
+    file: &str,
+    position: Value,
+) -> Vec<(String, u32, u32)> {
+    let result = client
+        .request(
+            "textDocument/references",
+            json!({
+                "textDocument": { "uri": support::uri(&f.path(&format!("docs/{file}"))).as_str() },
+                "position": position,
+                "context": { "includeDeclaration": false },
+            }),
+        )
+        .response_result
+        .expect("the request succeeds");
+    result
+        .as_array()
+        .expect("a list")
+        .iter()
+        .map(|location| {
+            let uri = location["uri"].as_str().expect("a URI");
+            let file = FILES
+                .iter()
+                .find(|file| support::uri(&f.path(file)).as_str() == uri)
+                .unwrap_or_else(|| panic!("an unknown file: {uri}"));
+            let range: lsp_types::Range =
+                serde_json::from_value(location["range"].clone()).expect("a range");
+            // The text is ASCII, so a UTF-16 column is a character column.
+            (
+                (*file).to_owned(),
+                range.start.line + 1,
+                range.start.character + 1,
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn ascribe_refs_agrees_with_find_all_references() {
+    let f = project();
+    let mut client = started(&f);
+    let project = ascribe_check::Project::load(&f.root().join("ascribe.toml"))
+        .expect("the project loads")
+        .index();
+    let cases: &[(&str, Value, &str)] = &[
+        // A heading in a fragment, named through the page that includes it.
+        ("_setup.md", at(SETUP, "Setup", 2), "guide.md#setup"),
+        ("_setup.md", at(SETUP, "Install", 0), "_setup.md#install"),
+        ("index.md", at(INDEX, "the guide", 1), "guide.md"),
+        ("guide.md", at(GUIDE, "_setup", 1), "_setup.md"),
+        ("index.md", at(INDEX, "{product}", 1), "phrase:product"),
+        ("other.md", at(OTHER, "sso", 0), "feature:sso"),
+        ("index.md", at(INDEX, "API key", 0), "term:api-key"),
+        ("other.md", at(OTHER, "security", 0), "note:security"),
+    ];
+    for (file, position, target) in cases {
+        let editor = places(&mut client, &f, file, position.clone());
+        let asked = ascribe_query::refs::Asked::entry(target)
+            .unwrap_or_else(|| ascribe_query::refs::Asked::path(target))
+            .expect("a target");
+        let refs = ascribe_query::refs(&project, &asked, target, usize::MAX);
+        let command: Vec<(String, u32, u32)> = refs
+            .places
+            .iter()
+            .map(|p| (p.file.clone(), p.line, p.column))
+            .collect();
+        assert!(refs.exists, "{target}");
+        assert!(!command.is_empty(), "{target}: nothing uses it");
+        assert_eq!(command, editor, "{target}");
+    }
+}

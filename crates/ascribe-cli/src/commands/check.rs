@@ -19,6 +19,7 @@ use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
 use crate::report::json::About;
 use crate::report::{Counts, FileTable, concise, json, tally, text};
+use crate::shell::quote;
 
 /// Arguments of `ascribe check`.
 #[derive(Debug, ClapArgs)]

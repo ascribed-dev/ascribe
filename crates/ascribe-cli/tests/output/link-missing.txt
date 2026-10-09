@@ -1,0 +1,4 @@
+keys.md#rotate doesn't work from install-agent.md: `keys.md` has no heading with the id `rotate`.
+Closest:
+  [Rotate keys](keys.md#rotate-keys)
+  [Create a key](keys.md#create-key)

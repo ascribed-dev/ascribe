@@ -42,6 +42,14 @@
 #                stay reserved.
 #   fix          How to fix the problem, for docs/content/reference/diagnostics.md, which is
 #                generated from this file. Every entry that isn't retired has one.
+#   example      A short wrong-and-right example, which `ascribe explain` shows:
+#                `example.wrong` is a page, `page.md`, with the problem, and
+#                `example.right` the same page fixed. Both are checked under the
+#                content model in tests/conformance/explain-model.toml, with
+#                `example.model` (a fragment of a content model) laid over it, and
+#                with the files `example.files` maps by content path beside them.
+#                The wrong page must report this diagnostic and nothing else; the
+#                right page, nothing (crates/ascribe-query/tests/explain_examples.rs).
 
 ###############################################################################
 # SPEC §8.2, in table order.
@@ -61,6 +69,20 @@ messages.image = "images have no attribute `{key}`; the accepted attributes are:
 messages.image-none = "images take no attributes in this project; declare `{key}` in [images.attributes] to allow it"
 messages.row = "table rows have no attribute `{key}`; a row's only attribute is `available`"
 fix = "Fix the key's spelling, or remove it. To accept a new image attribute, declare it in `[images.attributes]`; for a project widget, in its `attributes`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {kind=tip}: Run the installer as an administrator.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}: Run the installer as an administrator.
+'''
 
 [[diagnostic]]
 code = "ASC002"
@@ -74,6 +96,20 @@ messages.enum = "`{key}` can't be \"{value}\"; use one of: {values}"
 messages.boolean = "`{key}` must be true or false, but it's \"{value}\""
 messages.set = "`{key}` takes a single value, so it can't be a value set"
 fix = "Give a value of the key's declared type: one of the enumeration's values, `true` or `false` for a boolean, or a plain number such as `600` for a number."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=hint}: Run the installer as an administrator.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}: Run the installer as an administrator.
+'''
 
 [[diagnostic]]
 code = "ASC003"
@@ -84,6 +120,25 @@ spec = "3.3"
 row = "Attributes | Bare key without a value"
 message = "`{key}` needs a value, such as `{key}=<value>`; booleans are written out too: `{key}=true`"
 fix = "Give the key a value: `key=value`. Booleans are written out too: `open=true`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@include {heading}: _setup.md#install
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@include {heading=true}: _setup.md#install
+'''
+example.files."_setup.md" = '''
+## Install
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC004"
@@ -94,6 +149,26 @@ spec = "3.3"
 row = "Attributes | Unquoted value containing a reserved character"
 message = "the value of `{key}` contains `{character}`, so it must be quoted: `{key}=\"{value}\"`"
 fix = "Quote the value: `label=\"Using other images\"`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+![The installer](installer.png){caption=The first screen}
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+![The installer](installer.png){caption="The first screen"}
+'''
+example.model = '''
+[images.attributes]
+caption = "string?"
+'''
+example.files."installer.png" = '''
+PNG'''
 
 [[diagnostic]]
 code = "ASC005"
@@ -105,6 +180,20 @@ row = "Directives | Directive-shaped line (`@word` followed by `{`, `:`, or end 
 message = "`@{name}` isn't a known directive, so this line is text; write `\\@{name}` if that's what you mean"
 messages.suggestion = "`@{name}` isn't a known directive, so this line is text; did you mean `{suggestion}`?"
 fix = "Correct the directive's name, or declare a project widget with that name in `ascribe.toml`. If the line is meant as text, write `\\@` at its start."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@warning: Back up your data first.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}: Back up your data first.
+'''
 
 [[diagnostic]]
 code = "ASC006"
@@ -116,6 +205,24 @@ row = "Directives | Primary given to a directive that takes none, or a required 
 message = "`@{name}` doesn't take a primary; remove the text after its colon"
 messages.missing = "`@{name}` needs {kind} after its colon, such as `@{name}: {example}`"
 fix = "Remove the text after the colon, or add the primary the directive needs, such as the path in `@include: setup.md`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@steps: Install
+1. Download the installer.
+2. Run it.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@steps
+1. Download the installer.
+2. Run it.
+'''
 
 [[diagnostic]]
 code = "ASC007"
@@ -126,6 +233,27 @@ spec = "3.5"
 row = "Container | Container not closed before its enclosing block ends"
 message = "the `@{name}` container opened here isn't closed before {end}; add `@end` where it should end"
 fix = "Add an `@end` line where the container's content ends, indented like its opener."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}:
+Back up your data first.
+
+Then run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}:
+Back up your data first.
+@end
+
+Then run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC008"
@@ -146,6 +274,28 @@ spec = "3.5"
 row = "Container | Container-only directive without a trailing `:`"
 message = "`@{name}` is always a container; end its line with a colon to open it"
 fix = "End the opener's line with a colon, and close the container with `@end`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}
+Run `npm install quill`.
+@variant {pm=pnpm}
+Run `pnpm add quill`.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC010"
@@ -166,6 +316,24 @@ spec = "3.5"
 row = "Container | End line with no open container"
 message = "this `@end` has no open container to close; if a directive above should be a container, end its line with a colon"
 fix = "Remove the `@end`, or make the directive it should close a container by ending that directive's line with a colon."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}
+Back up your data first.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}:
+Back up your data first.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC012"
@@ -206,6 +374,26 @@ spec = "3.8"
 row = "Binding | Following-block directive bound to a heading"
 message = "`@{name}` applies to the next block, and the next block here is a heading; a directive can't be bound to a heading"
 fix = "Move the directive below the heading, directly above the block it describes."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}
+## Install
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install
+
+@note {type=tip}
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC016"
@@ -216,6 +404,23 @@ spec = "3.8"
 row = "Binding | Blank line between a following-block directive and its block"
 message = "a blank line separates `@{name}` from the block it applies to; remove it so the directive touches its block"
 fix = "Remove the blank line, so the directive touches its block. `ascribe fmt` does this."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}
+
+Run the installer as an administrator.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}
+Run the installer as an administrator.
+'''
 
 [[diagnostic]]
 code = "ASC017"
@@ -257,6 +462,36 @@ row = "`@id` | Duplicate id on a page, including ids from included content (page
 message = "the id `{id}` is used more than once on this page; every id on a page must be unique"
 messages.include = "including `{path}` here puts the id `{id}` on this page twice; every id on a page must be unique"
 fix = "Give one of the headings a different `@id`. When the second id comes from an included fragment, change it in the page or in the fragment, or include the fragment once."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Install
+@id: setup
+
+Run the installer.
+
+## Configure
+@id: setup
+
+Edit `quill.yaml`.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install
+@id: install
+
+Run the installer.
+
+## Configure
+@id: configure
+
+Edit `quill.yaml`.
+'''
 
 [[diagnostic]]
 code = "ASC021"
@@ -269,6 +504,23 @@ message = "the included file `{path}` doesn't exist"
 messages.case = "the included file `{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.not-source = "`{path}` isn't an Ascribe source file, so it can't be included: only `.md` files under the content root can"
 fix = "Fix the path. It's relative to the including file, or to the content root when it starts with `/`, and the file must be a Markdown source file inside the content root."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@include: _prerequisites.md
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@include: _fragments/prerequisites.md
+'''
+example.files."_fragments/prerequisites.md" = '''
+You need Node 20 or later.
+'''
 
 [[diagnostic]]
 code = "ASC022"
@@ -279,6 +531,25 @@ spec = "4.2"
 row = "`@include` | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
 fix = "Fix the `#id`, or give the heading you want to include that id with `@id`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@include: _setup.md#configure
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@include: _setup.md#install
+'''
+example.files."_setup.md" = '''
+## Install
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC023"
@@ -311,6 +582,28 @@ row = "`@variant` | Unknown dimension or value"
 message = "`{dimension}` isn't a declared dimension; the dimensions are: {dimensions}"
 messages.value = "`{value}` isn't a value of `{dimension}`; its values are: {values}"
 fix = "Use a dimension and value declared in `[dimensions]`, or declare them there."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@variant {os=linux}:
+Run `apt install quill`.
+@variant {os=macos}:
+Run `brew install quill`.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC026"
@@ -321,6 +614,29 @@ spec = "4.3"
 row = "`@variant` | Group mixes labeled and dimensional arms"
 message = "this group mixes labeled and dimensional arms; give every arm attributes, or every arm a title"
 fix = "Make every arm of the group dimensional (attributes, such as `{pm=npm}`) or every arm labeled (a title line)."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+.With npm
+@variant:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC027"
@@ -332,6 +648,30 @@ row = "`@variant` | Arm has both a title and attributes, or neither"
 message = "this `@variant` arm has both a title and attributes; use one or the other"
 messages.neither = "this `@variant` arm has neither attributes nor a title; add dimension attributes, or a title line above it"
 fix = "Give the arm either attributes or a title line: one, not both and not neither."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+.With npm
+@variant {pm=npm}:
+Run `npm install quill`.
+.With pnpm
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@variant {pm=npm}:
+Run `npm install quill`.
+@variant {pm=pnpm}:
+Run `pnpm add quill`.
+@end
+'''
 
 [[diagnostic]]
 code = "ASC028"
@@ -353,6 +693,26 @@ row = "`@available` | Unknown target or state"
 message = "`{name}` isn't a declared dimension value, dimension, or feature key"
 messages.state = "`{name}` isn't a declared lifecycle state; the states are: {states}"
 fix = "Use a declared dimension value, dimension, feature key, or lifecycle state, or declare the name in `ascribe.toml`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: enterprise
+
+Sign in with your company's identity provider.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: sso
+
+Sign in with your company's identity provider.
+'''
 
 [[diagnostic]]
 code = "ASC030"
@@ -374,6 +734,26 @@ row = "`@available` | Versions given for a versionless target"
 message = "`{target}` is versionless, so it takes a state but no version"
 messages.dimension = "`{target}` is a dimension name, so it takes a state but no version; name one of its values, such as `{example}`, to give a version"
 fix = "Remove the version. A versionless target, or a dimension name, takes a state but no version: `cloud beta`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: cloud 3.2
+
+Sign in with your company's identity provider.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: cloud, self-managed 3.2
+
+Sign in with your company's identity provider.
+'''
 
 [[diagnostic]]
 code = "ASC032"
@@ -395,6 +775,24 @@ spec = "4.6"
 row = "`@steps` | Bound block isn't an ordered list"
 message = "`@steps` must be followed by an ordered list (`1.`, `2.`, …), but the next block is {found}"
 fix = "Put an ordered list directly below `@steps`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@steps
+- Download the installer.
+- Run it.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@steps
+1. Download the installer.
+2. Run it.
+'''
 
 [[diagnostic]]
 code = "ASC034"
@@ -405,6 +803,29 @@ spec = "4.7"
 row = "`@details` | Missing title"
 message = "`@details` needs a title line directly above it: the text readers see while the content is collapsed"
 fix = "Add a title line directly above `@details`: `.Show the full configuration`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@details
+```yaml
+agent:
+  watch: docs/
+```
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+.Show the full configuration
+@details
+```yaml
+agent:
+  watch: docs/
+```
+'''
 
 # Widgets are validated exactly like built-in directives (SPEC §6), so the
 # generic rows above apply to them. This entry covers what only a widget
@@ -431,6 +852,27 @@ message = "`{path}` doesn't exist"
 messages.case = "`{path}` doesn't exist; `{actual}` differs only in case, and paths are case-sensitive"
 messages.outside = "`{path}` is outside the project, so it can't be copied into the output"
 fix = "Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](api-key.md).
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](keys.md).
+'''
+example.files."keys.md" = '''
+---
+title: API keys
+---
+
+Create a key in **Settings**.
+'''
 
 [[diagnostic]]
 code = "ASC037"
@@ -441,6 +883,29 @@ spec = "5.2"
 row = "Links | Target id doesn't exist in the target file (page level)"
 message = "`{path}` has no heading with the id `{id}`"
 fix = "Fix the `#id`, or give the heading you mean that id with `@id`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+See [Rotate keys](keys.md#rotate).
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+See [Rotate keys](keys.md#rotate-keys).
+'''
+example.files."keys.md" = '''
+---
+title: API keys
+---
+
+## Rotate keys
+
+Generate a new key.
+'''
 
 [[diagnostic]]
 code = "ASC038"
@@ -451,6 +916,23 @@ spec = "4.2"
 row = "Links | Target is a fragment"
 message = "`{path}` is a fragment, which isn't published on its own; link to a page that includes it"
 fix = "Link to a page that includes the fragment."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+Check the [prerequisites](_prerequisites.md) first.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@include: _prerequisites.md
+'''
+example.files."_prerequisites.md" = '''
+You need Node 20 or later.
+'''
 
 [[diagnostic]]
 code = "ASC039"
@@ -481,6 +963,27 @@ spec = "5.2"
 row = "Links | Destination is a route rather than a file path"
 message = "this looks like the published route of `{page}`; link to the file instead: `{suggestion}`"
 fix = "Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](/keys/).
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+To get a key, see [API keys](keys.md).
+'''
+example.files."keys.md" = '''
+---
+title: API keys
+---
+
+Create a key in **Settings**.
+'''
 
 [[diagnostic]]
 code = "ASC042"
@@ -494,6 +997,22 @@ messages.case = "the image `{path}` doesn't exist; `{actual}` differs only in ca
 messages.outside = "the image `{path}` is outside the project, so it can't be copied into the output"
 messages.empty = "this image has no source; put the image's path between the parentheses"
 fix = "Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+![The installer's first screen](installer.png)
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+![The installer's first screen](images/installer.png)
+'''
+example.files."images/installer.png" = '''
+PNG'''
 
 [[diagnostic]]
 code = "ASC043"
@@ -504,6 +1023,22 @@ spec = "5.3"
 row = "Images | Missing alt text"
 message = "this image has no alt text; describe it between the brackets for readers who can't see it"
 fix = "Describe the image between the brackets: `![The settings page](settings.png)`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+![](installer.png)
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+![The installer's first screen](installer.png)
+'''
+example.files."installer.png" = '''
+PNG'''
 
 [[diagnostic]]
 code = "ASC044"
@@ -514,6 +1049,20 @@ spec = "5.1"
 row = "Phrases | `{key}` in prose whose key isn't declared"
 message = "`{key}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{{` to keep it literal"
 fix = "Declare the key in `[phrases]` if it's meant as a phrase. Otherwise write `\\{` to keep the braces as text."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+Install {app} with your package manager.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+Install {product} with your package manager.
+'''
 
 [[diagnostic]]
 code = "ASC045"
@@ -524,6 +1073,25 @@ spec = "5.5"
 row = "Headings | No `@id`, and the heading contains a phrase"
 message = "this heading contains a phrase, so its id changes whenever the phrase's value does; give it a stable id with `@id`"
 fix = "Give the heading a stable id: an `@id` line directly under it."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Install {product}
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install {product}
+@id: install
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC046"
@@ -546,6 +1114,21 @@ message = "`{key}` isn't a field of the content type `{type}`"
 messages.suggestion = "`{key}` isn't a field of the content type `{type}`; did you mean `{suggestion}`?"
 messages.fragment = "`{key}` isn't a field of the fragment schema, [fragments.frontmatter]"
 fix = "Fix the key's spelling or remove it, or declare the field in the content type's `frontmatter` (`[fragments.frontmatter]` for a fragment)."
+example.wrong = '''
+---
+title: Install Quill
+author: Mira
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC048"
@@ -556,6 +1139,21 @@ spec = "7.2"
 row = "Frontmatter | Required field missing"
 message = "the required field `{field}` is missing; the content type `{type}` needs it"
 fix = "Add the field to the page's frontmatter, or give it a default in the content type."
+example.wrong = '''
+---
+description: Install the Quill agent.
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+description: Install the Quill agent.
+---
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC049"
@@ -567,6 +1165,22 @@ row = "Frontmatter | Value doesn't match the field's declared type"
 message = "`{field}` must be {expected}, but it's {found}"
 messages.quote = "`{field}` must be a string, but YAML reads {value} as {found}; quote it: {field}: \"{value}\""
 fix = "Give a value of the field's type. Quote a string that YAML would read as something else: `version: \"3.10\"`."
+example.wrong = '''
+---
+title: Install Quill
+audience: everyone
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+audience: admin
+---
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC050"
@@ -633,6 +1247,20 @@ spec = "3.3"
 row = "Attributes | Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value)"
 message = "this attribute block isn't valid: {detail}"
 fix = "Fix the attribute block: close every quote and brace, give every `=` a value, and separate pairs with commas."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=tip: Run the installer as an administrator.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=tip}: Run the installer as an administrator.
+'''
 
 [[diagnostic]]
 code = "ASC056"
@@ -643,6 +1271,20 @@ spec = "3.3"
 row = "Attributes | The same key given more than once"
 message = "`{key}` is given more than once; give each attribute once"
 fix = "Give the key once. For several values of a set-valued key, write a value set: `platform=cloud|on-prem`."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+@note {type=tip, type=warning}: Back up your data first.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+@note {type=warning}: Back up your data first.
+'''
 
 [[diagnostic]]
 code = "ASC057"
@@ -653,6 +1295,26 @@ spec = "4.4"
 row = "`@available` | Spec that doesn't parse, in a directive or in `available` frontmatter"
 message = "\"{spec}\" isn't a valid availability spec: {detail}"
 fix = "Fix the availability spec. Its syntax is in the [directive reference](directives.md#availability-specs)."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: cloud,, self-managed 3.2
+
+Sign in with your company's identity provider.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Single sign-on
+@available: cloud, self-managed 3.2
+
+Sign in with your company's identity provider.
+'''
 
 [[diagnostic]]
 code = "ASC058"
@@ -663,6 +1325,26 @@ spec = "4.1"
 row = "`@id` | Id containing characters other than letters, digits, hyphens, underscores, and periods"
 message = "`{id}` isn't a valid id: use only letters, digits, hyphens, underscores, and periods"
 fix = "Use only letters, digits, hyphens, underscores, and periods in the id."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+## Install
+@id: install/quill
+
+Run the installer.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+## Install
+@id: install-quill
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC059"
@@ -1349,6 +2031,20 @@ spec = "2.1"
 row = "Frontmatter | Frontmatter that isn't valid YAML"
 message = "the frontmatter isn't valid YAML: {detail}"
 fix = "Fix the YAML between the `---` lines."
+example.wrong = '''
+---
+title: Install Quill: the agent
+---
+
+Run the installer.
+'''
+example.right = '''
+---
+title: "Install Quill: the agent"
+---
+
+Run the installer.
+'''
 
 [[diagnostic]]
 code = "ASC123"
@@ -1390,6 +2086,20 @@ spec = "5.1"
 row = "Phrases | A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool"
 message = "`{key}` is a declared phrase between two more braces, so its value appears between literal braces; remove the outer braces, or write `\\{{` to keep them"
 fix = "Remove the outer braces, or write `\\{` for a brace that's meant."
+example.wrong = '''
+---
+title: Install Quill
+---
+
+The command prints {{product}}.
+'''
+example.right = '''
+---
+title: Install Quill
+---
+
+The command prints {product}.
+'''
 
 [[diagnostic]]
 code = "ASC127"

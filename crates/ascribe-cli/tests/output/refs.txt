@@ -1,0 +1,6 @@
+docs/install-agent.md:7:181: phrase
+docs/install-agent.md:61:12: phrase
+docs/install-agent.md:83:1: phrase
+
+5 places use phrase:cloud.
+Showing 3 of them; for all: `ascribe refs phrase:cloud --limit 5 --project examples/quill`
