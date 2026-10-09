@@ -163,7 +163,7 @@ describe("the prompt about a thread", () => {
       }),
       source: SOURCE,
     });
-    expect([...text].length).toBeLessThanOrEqual(LIMIT);
+    expect(Array.from(text).length).toBeLessThanOrEqual(LIMIT);
     expect(text).toContain("@ana:\n");
     expect(text).toContain(
       "(cut: read the rest of the thread at https://github.com/acme/lantern/pull/128#discussion_r1)",
@@ -173,7 +173,7 @@ describe("the prompt about a thread", () => {
       thread: thread({ comments: [comment("ana", "x".repeat(LIMIT * 2))] }),
       source: SOURCE,
     });
-    expect([...huge].length).toBeLessThanOrEqual(LIMIT);
+    expect(Array.from(huge).length).toBeLessThanOrEqual(LIMIT);
     expect(huge).toMatch(/When you're done, run `ascribe check site\/docs\/guides\/install\.md`/);
   });
 });
@@ -215,12 +215,16 @@ describe("the prompt about every open thread", () => {
     const text = openThreadsPrompt({ project: PROJECT, pullRequest: 128, threads }) ?? "";
     expect(text.startsWith(`Address the ${MAX_OPEN + 4} open review comments`)).toBe(true);
     expect(text).toContain("\nand 4 more, in the pull request's comments.\n");
-    expect([...text].length).toBeLessThanOrEqual(LIMIT);
+    expect(Array.from(text).length).toBeLessThanOrEqual(LIMIT);
   });
 
   it("is nothing when nothing is open", () => {
     expect(
-      openThreadsPrompt({ project: PROJECT, pullRequest: 128, threads: [thread({ resolved: true })] }),
+      openThreadsPrompt({
+        project: PROJECT,
+        pullRequest: 128,
+        threads: [thread({ resolved: true })],
+      }),
     ).toBeUndefined();
   });
 });
@@ -232,7 +236,9 @@ describe("the format's numbers", () => {
       "utf8",
     );
     const constant = (name: string) =>
-      Number(new RegExp(`pub const ${name}: usize = ([\\d_]+);`).exec(rust)?.[1]?.replace(/_/g, ""));
+      Number(
+        new RegExp(`pub const ${name}: usize = ([\\d_]+);`).exec(rust)?.[1]?.replace(/_/g, ""),
+      );
     expect(constant("LIMIT")).toBe(LIMIT);
     expect(constant("MAX_SHOWN_ON")).toBe(MAX_SHOWN_ON);
   });
@@ -277,8 +283,16 @@ describe("gathering a thread prompt on the host's side", () => {
       session,
       project: PROJECT,
       changedPages: async () => [
-        { path: "guides/install.md", status: "changed" as const, because: ["_fragments/prereqs.md"] },
-        { path: "guides/upgrade.md", status: "changed" as const, because: ["_fragments/prereqs.md"] },
+        {
+          path: "guides/install.md",
+          status: "changed" as const,
+          because: ["_fragments/prereqs.md"],
+        },
+        {
+          path: "guides/upgrade.md",
+          status: "changed" as const,
+          because: ["_fragments/prereqs.md"],
+        },
       ],
       readSource: async (path: string) =>
         path === "_fragments/prereqs.md"

@@ -37,10 +37,4 @@ export {
 } from "./transport.js";
 export { formatSection, marker, parseSections, type MarkedSection } from "./marker.js";
 export { ReviewError, type ReviewErrorCode } from "../shared/errors.js";
-export type {
-  Author,
-  PromptRequest,
-  Side,
-  Thread,
-  ThreadComment,
-} from "../shared/types.js";
+export type { Author, PromptRequest, Side, Thread, ThreadComment } from "../shared/types.js";

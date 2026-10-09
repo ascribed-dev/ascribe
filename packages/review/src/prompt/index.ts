@@ -70,7 +70,8 @@ export function threadPrompt(input: ThreadPromptInput): string {
   if (shownOn.length > 0) {
     const more = shownOn.length - MAX_SHOWN_ON;
     let line = `Shown on: ${shownOn.slice(0, MAX_SHOWN_ON).join(", ")}`;
-    if (more > 0) line += `, and ${more} more: \`ascribe refs ${shellWord(repoPath(project, file))}\``;
+    if (more > 0)
+      line += `, and ${more} more: \`ascribe refs ${shellWord(repoPath(project, file))}\``;
     place.push(line);
   }
 
@@ -126,7 +127,9 @@ export function threadPrompt(input: ThreadPromptInput): string {
   if (length(text) > LIMIT && kept[0]) {
     const over = length(build(knownNow, kept, true)) - LIMIT;
     const first = kept[0];
-    const body = [...first.body].slice(0, Math.max(0, length(first.body) - over - 1)).join("");
+    const body = Array.from(first.body)
+      .slice(0, Math.max(0, length(first.body) - over - 1))
+      .join("");
     text = build(knownNow, [{ ...first, body: `${body}…` }], true);
   }
   return text;
@@ -144,7 +147,9 @@ export function openThreadsPrompt(input: OpenThreadsInput): string | undefined {
     .filter((t) => t.comments.length > 0)
     .sort(
       (a, b) =>
-        compare(a.path, b.path) || (a.lines?.first ?? 0) - (b.lines?.first ?? 0) || compare(a.id, b.id),
+        compare(a.path, b.path) ||
+        (a.lines?.first ?? 0) - (b.lines?.first ?? 0) ||
+        compare(a.id, b.id),
     );
   if (open.length === 0) return undefined;
 
@@ -160,7 +165,8 @@ export function openThreadsPrompt(input: OpenThreadsInput): string | undefined {
       const first = thread.comments[0];
       const where = whereOf(project, thread);
       const said = oneLine(stripComments(first?.body ?? ""));
-      const cut = length(said) > MAX_FIRST ? `${[...said].slice(0, MAX_FIRST).join("")}…` : said;
+      const cut =
+        length(said) > MAX_FIRST ? `${Array.from(said).slice(0, MAX_FIRST).join("")}…` : said;
       return `${where}\n${handle(first?.author ?? null)}: ${cut}`;
     });
     const authors = listed.map((t) => handle(t.comments[0]?.author ?? null));
@@ -260,7 +266,8 @@ function andList(items: readonly string[]): string {
 /** The lines that end every prompt about threads. */
 function finishLines(project: PromptProject, targets: readonly string[]): string[] {
   const lines: string[] = [];
-  if (project.agents !== undefined) lines.push(`Follow the project's rules in \`${project.agents}\`.`);
+  if (project.agents !== undefined)
+    lines.push(`Follow the project's rules in \`${project.agents}\`.`);
   const check = ["ascribe", "check", ...targets.map(shellWord)].join(" ");
   lines.push(`When you're done, run \`${check}\` and fix what it reports.`);
   return lines;
@@ -284,7 +291,7 @@ function assemble(parts: readonly string[]): string {
 
 /** Characters, as the binary counts them: Unicode scalar values. */
 function length(text: string): number {
-  return [...text].length;
+  return Array.from(text).length;
 }
 
 function compare(a: string, b: string): number {

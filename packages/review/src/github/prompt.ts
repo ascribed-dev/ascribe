@@ -3,11 +3,7 @@
 // it, and where the project is. `../prompt` builds the prompt from them.
 import { existsSync, realpathSync } from "node:fs";
 import path from "node:path";
-import {
-  openThreadsPrompt,
-  threadPrompt,
-  type PromptProject,
-} from "../prompt/index.js";
+import { openThreadsPrompt, threadPrompt, type PromptProject } from "../prompt/index.js";
 import { ReviewError } from "../shared/errors.js";
 import type { PromptRequest } from "../shared/types.js";
 import { pagesShowing, type ChangedPageRef } from "./requests.js";

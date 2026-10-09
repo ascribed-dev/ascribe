@@ -237,7 +237,9 @@ describe("the report", () => {
         "Prompt copied. Paste it into your agent.",
       );
       // It only copies: nothing in the report opens an agent.
-      expect(root.querySelector('a[href^="vscode:"], a[href^="cursor:"], a[href*="claude"]')).toBeNull();
+      expect(
+        root.querySelector('a[href^="vscode:"], a[href^="cursor:"], a[href*="claude"]'),
+      ).toBeNull();
 
       document.body.innerHTML = "";
       const without = document.createElement("div");
