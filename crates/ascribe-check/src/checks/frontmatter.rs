@@ -7,7 +7,7 @@
 //! key or value that causes it. A problem with no place of its own, such as a
 //! missing field, is reported at the file's first line (SPEC §8.1).
 
-use ascribe_core::{Fix, Issue, Location, Span, TextEdit, diagnostics};
+use ascribe_core::{Applicability, Fix, Issue, Location, Span, TextEdit, diagnostics};
 use ascribe_model::{FrontmatterSchema, TypeMatch, validate_frontmatter};
 use ascribe_syntax::Frontmatter;
 use serde_yaml_ng::Value;
@@ -133,6 +133,8 @@ impl Ctx<'_> {
                 title: format!("Rename the key to `{suggestion}`"),
                 file: self.id,
                 edits: vec![TextEdit::replace(key, suggestion.to_owned())],
+                // The nearest key, which may not be the one meant.
+                applicability: Applicability::Unsafe,
             };
             issue = issue.with_fix(fix);
         }

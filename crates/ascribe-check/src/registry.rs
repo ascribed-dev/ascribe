@@ -38,9 +38,24 @@ pub struct Entry {
     pub message: String,
     /// Alternative templates, by variant name.
     pub messages: HashMap<String, String>,
+    /// How to fix the problem, in general: the entry's `fix` paragraph,
+    /// which every entry that isn't retired has.
+    pub fix: Option<String>,
 }
 
+/// The diagnostics reference on the docs site: each code has an entry
+/// there, [`Entry::docs`].
+pub const REFERENCE: &str = concat!(ascribe_core::docs_site!(), "/reference/diagnostics/");
+
 impl Entry {
+    /// The address of the entry's section in the diagnostics reference,
+    /// such as `…/reference/diagnostics/#asc036-link-target-missing`: its
+    /// heading, `ASC036 link-target-missing`, as the site makes an anchor of
+    /// it.
+    pub fn docs(&self) -> String {
+        format!("{REFERENCE}#{}-{}", self.code.to_lowercase(), self.slug)
+    }
+
     /// Whether the message names the build: its template, or one of its
     /// variants, has a `{build}` placeholder. Such a message already says
     /// which builds it's about.
@@ -115,6 +130,7 @@ impl Registry {
             level,
             message: text("message")?,
             messages,
+            fix: text("fix"),
         })
     }
 

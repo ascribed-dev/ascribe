@@ -17,13 +17,15 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::{
-    Diagnostic, PageChecker, Project, ReadFailure, Severity, SourceFile, check_file,
+    Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity, SourceFile, check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
 use ascribe_model::ContentModel;
 use ascribe_resolve::{Affected, DefaultRouter, FileKind, ResolvedCache, ResolvedPage, Snapshot};
-use lsp_types::{DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString};
+use lsp_types::{
+    CodeDescription, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString,
+};
 
 use crate::core::Core;
 use crate::fsx::LayerFs;
@@ -376,7 +378,11 @@ pub(crate) fn to_lsp(
             Severity::Warning => DiagnosticSeverity::WARNING,
         }),
         code: Some(NumberOrString::String(d.code.to_owned())),
-        code_description: None,
+        // The code links to its entry in the diagnostics reference.
+        code_description: Registry::global()
+            .get(d.slug)
+            .and_then(|entry| entry.docs().parse().ok())
+            .map(|href| CodeDescription { href }),
         source: Some("ascribe".to_owned()),
         message: d.message.clone(),
         related_information: (!related_information.is_empty()).then_some(related_information),

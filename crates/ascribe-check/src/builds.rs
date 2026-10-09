@@ -3,9 +3,12 @@
 //! report the same diagnostics, and `diff`, `drift`, and any other tool that
 //! takes `--build` names choose builds the same way.
 
+use ascribe_core::RelPath;
 use ascribe_model::Build;
 
-use crate::{Diagnostic, Project, check_all_builds, check_builds};
+use crate::{
+    Diagnostic, PageChecker, Project, check_all_builds, check_builds, check_file, check_files,
+};
 
 /// A build name that isn't a build of the content model.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
@@ -90,4 +93,41 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
         diagnostics,
         builds,
     })
+}
+
+/// What the language server reports as you type, for `ascribe check
+/// --editor-build`: the file-level diagnostics, and the page-level ones of
+/// the editor's build alone (`[editor] build`;
+/// `ContentModel::editor_default_build`), without the pass over content no
+/// build publishes.
+///
+/// With `files` (content paths of source files), only what can count for
+/// them is checked, for speed: the file-level checks of those files, and the
+/// page-level checks of the pages that are them or include them. That's every
+/// diagnostic located in them or with a related place in them, apart from a
+/// file-level one of another file whose related place is in them, which no
+/// file-level check makes. The content model's warnings and the checks of
+/// `ascribe.lock` aren't run then, since they're located in neither.
+pub fn diagnose_editor_build<'p>(project: &'p Project, files: Option<&[RelPath]>) -> Diagnosed<'p> {
+    let build = project.model().editor_default_build();
+    let diagnostics = match files {
+        None => {
+            let mut out = check_files(project);
+            out.extend(PageChecker::new(project).check(build));
+            out
+        }
+        Some(files) => {
+            let mut out: Vec<Diagnostic> = files
+                .iter()
+                .filter_map(|path| project.source_at(path))
+                .flat_map(|file| check_file(project, file))
+                .collect();
+            out.extend(PageChecker::new(project).check_reaching(build, files));
+            out
+        }
+    };
+    Diagnosed {
+        diagnostics,
+        builds: vec![build],
+    }
 }

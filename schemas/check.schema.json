@@ -1,5 +1,35 @@
 {
   "$defs": {
+    "CodeCount": {
+      "description": "How many diagnostics have one code.",
+      "properties": {
+        "code": {
+          "description": "The code, such as `ASC036`.",
+          "type": "string"
+        },
+        "count": {
+          "description": "How many.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "severity": {
+          "description": "`error` or `warning`.",
+          "type": "string"
+        },
+        "slug": {
+          "description": "The diagnostic's name, such as `link-target-missing`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "slug",
+        "severity",
+        "count"
+      ],
+      "type": "object"
+    },
     "Edit": {
       "description": "One edit of a fix.",
       "properties": {
@@ -32,6 +62,10 @@
           "description": "The code, such as `ASC036`.",
           "type": "string"
         },
+        "docs": {
+          "description": "The address of its entry in the diagnostics reference.",
+          "type": "string"
+        },
         "file": {
           "description": "The file, relative to the project root (the directory of\n`ascribe.toml`), with `/` separators. `ascribe.toml` for a\ncontent-model problem.",
           "type": "string"
@@ -42,6 +76,10 @@
             "$ref": "#/$defs/Fix"
           },
           "type": "array"
+        },
+        "help": {
+          "description": "How to fix it, in general: the diagnostics reference's advice for its\ncode.",
+          "type": "string"
         },
         "message": {
           "description": "What's wrong, and what to do about it.",
@@ -57,6 +95,12 @@
             "$ref": "#/$defs/Related"
           },
           "type": "array"
+        },
+        "repeats": {
+          "description": "For a problem in included content reported because one of its related\nplaces is in a path named: at how many other includes it's reported\ntoo, collapsed into this one. `0` otherwise.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
         },
         "severity": {
           "description": "`error` or `warning`.",
@@ -81,13 +125,47 @@
         "related",
         "fixes",
         "builds",
-        "unpublished"
+        "unpublished",
+        "help",
+        "docs",
+        "repeats"
+      ],
+      "type": "object"
+    },
+    "FileCount": {
+      "description": "How many diagnostics are in one file.",
+      "properties": {
+        "errors": {
+          "description": "How many errors.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "file": {
+          "description": "The file, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "warnings": {
+          "description": "How many warnings.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "file",
+        "errors",
+        "warnings"
       ],
       "type": "object"
     },
     "Fix": {
       "description": "Edits that would fix a diagnostic.",
       "properties": {
+        "applicability": {
+          "description": "`safe` when applying the edits as they are can't change what the page\nsays and leaves nothing to decide; `unsafe` otherwise.",
+          "type": "string"
+        },
         "edits": {
           "description": "The edits, each replacing the text of its range.",
           "items": {
@@ -107,7 +185,8 @@
       "required": [
         "title",
         "file",
-        "edits"
+        "edits",
+        "applicability"
       ],
       "type": "object"
     },
@@ -184,6 +263,26 @@
     "Summary": {
       "description": "How many diagnostics of each severity.",
       "properties": {
+        "by_code": {
+          "description": "With `--summary`: how many diagnostics have each code, most first.",
+          "items": {
+            "$ref": "#/$defs/CodeCount"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "by_file": {
+          "description": "With `--summary`: how many diagnostics are in each file, most first.",
+          "items": {
+            "$ref": "#/$defs/FileCount"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "errors": {
           "description": "How many errors.",
           "format": "uint",
@@ -211,8 +310,15 @@
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
     },
+    "builds_checked": {
+      "description": "The builds whose page-level checks ran, in `ascribe.toml`'s order:\nevery build, the ones named with `--build`, or the editor's with\n`--editor-build`. Empty when the project couldn't be checked.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
     "diagnostics": {
-      "description": "Every diagnostic, in file order, and in source order within a file.",
+      "description": "Every diagnostic, in file order, and in source order within a file.\nWith paths, only those that count for them. With `--summary`, none:\nsee `truncated`.",
       "items": {
         "$ref": "#/$defs/Entry"
       },
@@ -226,10 +332,23 @@
       ]
     },
     "files_checked": {
-      "description": "How many source files were checked.",
+      "description": "How many source files were checked: the project's.",
       "format": "uint",
       "minimum": 0,
       "type": "integer"
+    },
+    "files_reported": {
+      "description": "How many of them the report covers: the source files in the paths\nnamed, or every one when no path was.",
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "next_command": {
+      "description": "The command that lists the ones left out, when `truncated`; `null`\notherwise.",
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
@@ -237,9 +356,25 @@
       "minimum": 0,
       "type": "integer"
     },
+    "shown": {
+      "description": "How many diagnostics `diagnostics` lists.",
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
     "summary": {
       "$ref": "#/$defs/Summary",
       "description": "How many errors and warnings."
+    },
+    "total": {
+      "description": "How many diagnostics there are.",
+      "format": "uint",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "truncated": {
+      "description": "Whether `diagnostics` leaves some out. It does with `--summary`,\nwhich lists none.",
+      "type": "boolean"
     }
   },
   "required": [
@@ -247,7 +382,13 @@
     "ascribe_version",
     "error",
     "files_checked",
+    "files_reported",
+    "builds_checked",
     "diagnostics",
+    "truncated",
+    "shown",
+    "total",
+    "next_command",
     "summary"
   ],
   "title": "CheckReport",
