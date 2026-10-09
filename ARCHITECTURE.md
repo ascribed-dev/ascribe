@@ -115,7 +115,7 @@ Each command is one call into a library, after the project is loaded. The call t
 
 | Command | Entry | Notes |
 |---|---|---|
-| `check` | `ascribe_check::diagnose` | Chooses the builds (`select_builds`) and returns their diagnostics. |
+| `check` | `ascribe_check::diagnose`, or `diagnose_editor_build` | Chooses the builds (`select_builds`) and returns their diagnostics. With paths, `ascribe_check::Scope` keeps those that count for them (`Scope::of_paths`, `Scope::report`); with `--stdin`, `Project::with_source` lays the text over the project first. |
 | `build` | `ascribe_check::diagnose`, then `ascribe_emit::write_outputs` | The report is printed between the two, and a build with errors stops there. `write_outputs` reports each output as it's written through a callback. |
 | `diff` | `ascribe_diff::diff_project` | Returns the report, with the working tree's error count; `ProjectDiff::html` renders it for `--format html`. |
 | `drift` | `ascribe_diff::drift_project` | |

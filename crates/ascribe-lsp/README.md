@@ -566,8 +566,10 @@ from `ascribe-fmt`; the VS Code client applies those edits on save when
 - **Diagnostics** are `ascribe_check::check_file` for each file in
   `Affected::recheck`, plus the page-level diagnostics of the editor's build
   (`[editor] build`; `ContentModel::editor_default_build`) located in those
-  files, published for every affected file, open or not. A deleted file's
-  diagnostics are cleared. The file-level checks probe the disk with the files
+  files, published for every affected file, open or not. Each one's code links
+  to its entry in the diagnostics reference (`codeDescription.href`, the same
+  address as `docs` in `ascribe check`'s JSON), so the code is a link in the
+  Problems panel. A deleted file's diagnostics are cleared. The file-level checks probe the disk with the files
   the editor and the watcher have reported layered over it
   (`Project::from_parts_with_fs`), as the source index does.
 - **Stale results.** A worker thread computes from a `Snapshot`. Before it

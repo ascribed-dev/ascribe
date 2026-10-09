@@ -104,7 +104,10 @@ impl ascribe_core::Coded for ScopeError {
 pub fn locate_for(config: Option<&Path>, paths: &[PathBuf]) -> Result<PathBuf, ScopeError> {
     match (config, paths.first()) {
         (None, Some(first)) => {
-            Project::find_config(&real(first)).ok_or_else(|| ScopeError::NoProject {
+            // Made absolute, not canonical: the project's paths are joined to
+            // its root, and a canonical path on Windows takes no `/`.
+            let first_absolute = std::path::absolute(first).unwrap_or_else(|_| first.clone());
+            Project::find_config(&first_absolute).ok_or_else(|| ScopeError::NoProject {
                 path: first.clone(),
             })
         }
@@ -114,7 +117,8 @@ pub fn locate_for(config: Option<&Path>, paths: &[PathBuf]) -> Result<PathBuf, S
 
 /// `path` made absolute and, as far as it exists, with its symbolic links and
 /// `.` and `..` resolved, so two spellings of one place compare equal. What
-/// doesn't exist yet is kept as written, after the part that does.
+/// doesn't exist yet is kept as written, after the part that does. For
+/// comparing only: on Windows it's a `\\?\` path.
 fn real(path: &Path) -> PathBuf {
     let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_owned());
     let mut existing = absolute.as_path();
