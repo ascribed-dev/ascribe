@@ -323,6 +323,30 @@ fn a_phrase_can_replace_every_occurrence_in_prose() {
 }
 
 #[test]
+fn a_phrase_leaves_link_labels_and_urls_alone() {
+    let page_text = "---\ntitle: Links\n---\n# Links\n\nQuill is here. See [Quill] and [Quill][] and [the Quill docs][ref], <https://quill.dev/Quill>, and https://example.org/Quill/x.\n\n[quill]: https://quill.dev/\n[ref]: https://quill.dev/docs\n";
+    let f = Fixture::new(MODEL, &[("docs/links.md", page_text)]);
+    let mut client = Client::start(&f.root());
+    let page = f.path("docs/links.md");
+    let marked = page_text.replacen("Quill is", "«Quill» is", 1);
+    let done = run(
+        &mut client,
+        &page,
+        &marked,
+        "makePhrase",
+        json!({ "key": "q", "everywhere": true }),
+    )
+    .unwrap();
+    assert_eq!(
+        done.after(&page),
+        page_text
+            .replacen("Quill is", "{q} is", 1)
+            .replacen("the Quill docs", "the {q} docs", 1),
+        "a reference link's label and a URL stay as they are"
+    );
+}
+
+#[test]
 fn a_phrase_needs_a_good_key_and_plain_text() {
     let f = fixture();
     let mut client = Client::start(&f.root());
@@ -813,6 +837,48 @@ fn a_phrase_rename_reaches_every_kind_of_use() {
     assert_eq!(
         done.after(&f.path("ascribe.toml")),
         RENAME_MODEL.replace("product = \"Quill\"", "name = \"Quill\"")
+    );
+}
+
+#[test]
+fn renames_leave_frontmatter_comments_and_read_block_scalars() {
+    let page_text = "---\ntitle: |\n  Note: {product} # {product}\nvariant:\n  deployment: [self-managed] # self-managed\navailable: self-managed 2.4 # self-managed\n---\n# Home\n";
+    let f = Fixture::new(
+        RENAME_MODEL,
+        &[("docs/index.md", page_text), ("code/app.sh", "echo\n")],
+    );
+    let mut client = Client::start(&f.root());
+    let model = f.path("ascribe.toml");
+    let page = f.path("docs/index.md");
+    client.open(&page, 1, page_text);
+    client.open(&model, 1, RENAME_MODEL);
+    let phrase = rename(
+        &mut client,
+        &model,
+        RENAME_MODEL,
+        at(RENAME_MODEL, "product =", 0, 1),
+        "name",
+    )
+    .expect("renamed");
+    assert_eq!(
+        phrase.after(&page),
+        page_text.replace("{product}", "{name}"),
+        "a block scalar's lines are the field's text, `#` and all"
+    );
+    let value = rename(
+        &mut client,
+        &model,
+        RENAME_MODEL,
+        at(RENAME_MODEL, "\"self-managed\"]", 0, 4),
+        "on-prem",
+    )
+    .expect("renamed");
+    assert_eq!(
+        value.after(&page),
+        page_text
+            .replacen("[self-managed]", "[on-prem]", 1)
+            .replacen("available: self-managed", "available: on-prem", 1),
+        "comments stay as they are"
     );
 }
 

@@ -295,45 +295,44 @@ fn page_edits(file: &FileIndex, value: &DimensionValue, new: &str) -> Vec<ByteEd
 }
 
 /// The value in the frontmatter: in the spec of `available`, and in
-/// `variant`, wherever it's written as a value and not a key.
+/// `variant`, wherever it's written as a value and not a key. Comments are
+/// left alone.
 fn frontmatter(file: &FileIndex, old: &str) -> Vec<Span> {
     let Some(fm) = &file.document.frontmatter else {
         return Vec::new();
     };
     let source: &str = &file.source;
-    let content = fm.content;
+    let base = fm.content.start();
+    let text = source.get(fm.content.range()).unwrap_or_default();
+    let word = |c: char| c.is_ascii_alphanumeric() || c == '_' || c == '-';
     let mut out = Vec::new();
     let mut in_variant = false;
-    let mut at = content.start();
-    let text = source.get(content.range()).unwrap_or_default();
-    for line in text.split_inclusive('\n') {
-        let start = at;
-        at += line.len();
-        let top = !line.starts_with([' ', '\t', '-']) && !line.trim().is_empty();
-        if top {
-            in_variant = line.starts_with("variant:");
-            if line.starts_with("available:")
-                && let Some((spec, span)) = crate::nav::frontmatter_available(file, start)
+    for line in ascribe_syntax::frontmatter_lines(text) {
+        if line.indent == 0 && line.item.is_none() && !line.block {
+            in_variant = line.key == Some("variant");
+            if line.key == Some("available")
+                && let Some((spec, span)) =
+                    crate::nav::frontmatter_available(file, base + line.start)
             {
                 out.extend(spec_targets(&spec, span.start(), old));
             }
         }
-        if !in_variant {
+        if !in_variant || line.block {
             continue;
         }
-        let from = if top { "variant:".len() } else { 0 };
-        let word = |c: char| c.is_ascii_alphanumeric() || c == '_' || c == '-';
-        for (i, _) in line.match_indices(old).filter(|(i, _)| *i >= from) {
+        let value = line.value;
+        for (i, _) in value.match_indices(old) {
             let end = i + old.len();
-            let before = line[..i].chars().next_back();
-            let after = line[end..].trim_start().chars().next();
+            let before = value[..i].chars().next_back();
+            let after = value[end..].trim_start().chars().next();
             if before.is_some_and(word)
-                || line[end..].chars().next().is_some_and(word)
+                || value[end..].chars().next().is_some_and(word)
                 || after == Some(':')
             {
                 continue;
             }
-            out.push(Span::new(start + i, start + end));
+            let at = base + line.value_start + i;
+            out.push(Span::new(at, at + old.len()));
         }
     }
     out

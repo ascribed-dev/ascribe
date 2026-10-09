@@ -2,10 +2,12 @@
 //! §5.1): those the build substitutes (`build/phrases.rs`), found in the
 //! frontmatter's text so that the editor can find, show, and rename them.
 //!
-//! The text is read line by line, by indentation: a field's value is what
-//! follows its key on its line, and the lines indented under it (or, for a
-//! list, its `-` items). That's how frontmatter is written; a value in a
-//! form this doesn't follow has no candidates listed.
+//! The text is read line by line, by indentation
+//! ([`ascribe_syntax::frontmatter_lines`]): a field's value is what follows
+//! its key on its line, and the lines indented under it (or, for a list, its
+//! `-` items, or a block scalar's lines), comments left out. That's how
+//! frontmatter is written; a value in a form this doesn't follow has no
+//! candidates listed.
 
 use ascribe_core::Span;
 use ascribe_model::{ContentModel, Field, FieldType, TypeMatch};
@@ -33,26 +35,10 @@ pub(crate) fn phrases(
     let mut out = Vec::new();
     // The keys the current line is under, each with its indentation.
     let mut stack: Vec<(usize, Option<&Field>)> = Vec::new();
-    let mut at = content.start();
-    for line in text.split_inclusive('\n') {
-        let start = at;
-        at += line.len();
-        let line = line.trim_end_matches(['\n', '\r']);
-        let rest = line.trim_start();
-        if rest.is_empty() || rest.starts_with('#') {
-            continue;
-        }
-        let indent = line.len() - rest.len();
-        let (indent, rest, item) = match rest.strip_prefix('-') {
-            Some(after) if after.is_empty() || after.starts_with(' ') => {
-                let after = after.trim_start();
-                (line.len() - after.len(), after, Some(indent))
-            }
-            _ => (indent, rest, None),
-        };
-        let value_at = |value: &str| start + (line.len() - value.len());
-        if let Some((key, value)) = key_value(rest) {
-            while stack.last().is_some_and(|(i, _)| *i >= indent) {
+    for line in ascribe_syntax::frontmatter_lines(text) {
+        let value_at = content.start() + line.value_start;
+        if let Some(key) = line.key {
+            while stack.last().is_some_and(|(i, _)| *i >= line.indent) {
                 stack.pop();
             }
             let candidates: &[Field] = match stack.last() {
@@ -62,24 +48,24 @@ pub(crate) fn phrases(
             };
             let field = candidates.iter().find(|f| f.name == key);
             if let Some(field) = field.filter(|f| f.phrases) {
-                scan(value, value_at(value), field, model, &mut out);
+                scan(line.value, value_at, field, model, &mut out);
             }
-            stack.push((indent, field));
+            stack.push((line.indent, field));
             continue;
         }
         // A list's item belongs to the key at or above its `-`; any other
-        // line, to the key it's indented under.
-        let owner = item.unwrap_or(indent);
+        // line, a block scalar's included, to the key it's indented under.
+        let owner = line.item.unwrap_or(line.indent);
         while stack
             .last()
-            .is_some_and(|(i, _)| *i > owner || (item.is_none() && *i >= owner))
+            .is_some_and(|(i, _)| *i > owner || (line.item.is_none() && *i >= owner))
         {
             stack.pop();
         }
         if let Some((_, Some(field))) = stack.last()
             && field.phrases
         {
-            scan(rest, value_at(rest), field, model, &mut out);
+            scan(line.value, value_at, field, model, &mut out);
         }
     }
     out
@@ -97,17 +83,6 @@ fn subfields(ty: &FieldType) -> &[Field] {
         FieldType::List(inner) => subfields(inner),
         _ => &[],
     }
-}
-
-/// `key: value`, with the key unquoted.
-fn key_value(line: &str) -> Option<(&str, &str)> {
-    let colon = line.find(':')?;
-    let after = &line[colon + 1..];
-    if !(after.is_empty() || after.starts_with(' ')) {
-        return None;
-    }
-    let key = line[..colon].trim().trim_matches(['"', '\'']);
-    Some((key, after.trim_start()))
 }
 
 /// The declared candidates in `value`, which starts at `offset`: outside
@@ -173,5 +148,15 @@ mod tests {
         assert_eq!(found("keywords:\n  - a\n  - {product}\n"), ["product@24"]);
         assert_eq!(found("title: >\n  Use {product}\n"), ["product@19"]);
         assert_eq!(found("code: \"`{product}` {product}\"\n"), ["product@23"]);
+        assert_eq!(
+            found("title: |\n  Note: {product}\n"),
+            ["product@21"],
+            "a block scalar's line is text, not a key"
+        );
+        assert_eq!(
+            found("title: Use {product} # not {product}\n"),
+            ["product@15"],
+            "not in a comment"
+        );
     }
 }

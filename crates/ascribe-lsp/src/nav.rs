@@ -181,15 +181,12 @@ pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(
         return None;
     }
     let source: &str = &file.source;
-    let start = line_start(source, offset).max(content.start());
-    let end = source[offset..]
-        .find('\n')
-        .map_or(source.len(), |i| offset + i)
-        .min(content.end());
-    let line = source.get(start..end)?;
-    let value = line.strip_prefix("available:")?;
-    let lead = value.len() - value.trim_start().len();
-    let text = value.trim();
+    let start = line_start(source, offset).max(content.start()) - content.start();
+    let line = ascribe_syntax::frontmatter_lines(source.get(content.range())?)
+        .into_iter()
+        .find(|l| l.start == start && l.indent == 0 && l.item.is_none())
+        .filter(|l| l.key == Some("available") && !l.block)?;
+    let text = line.value;
     let unquoted = text
         .strip_prefix('"')
         .and_then(|t| t.strip_suffix('"'))
@@ -198,7 +195,7 @@ pub(crate) fn frontmatter_available(file: &FileIndex, offset: usize) -> Option<(
         Some(inner) => (inner, 1),
         None => (text, 0),
     };
-    let from = start + "available:".len() + lead + quote;
+    let from = content.start() + line.value_start + quote;
     Some((text.to_owned(), Span::new(from, from + text.len())))
 }
 

@@ -1061,6 +1061,10 @@ describe("the content model's actions", () => {
     expect(await askWith("renamePhrase", proseSelected, declared, ["cloud", "hosted"])).toEqual({
       args: { key: "cloud", newName: "hosted" },
     });
+    const rename = here[0];
+    expect(rename?.kind === "text" && rename.validate("product")).toBe(
+      "That's its name now: enter a new one.",
+    );
     await expect(askWith("renamePhrase", phraseHere, declared, ["cloud"])).rejects.toThrow(
       /already taken/,
     );

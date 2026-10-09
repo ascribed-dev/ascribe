@@ -265,7 +265,8 @@ function newNameStep(
     key: "newName",
     prompt: current ? `Rename ${current} to what?` : "Rename it to what?",
     value: current,
-    validate,
+    validate: (value) =>
+      value.trim() === current ? "That's its name now: enter a new one." : validate(value),
   };
 }
 

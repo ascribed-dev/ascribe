@@ -58,6 +58,7 @@
 //! ```
 
 mod convert;
+mod frontmatter_lines;
 mod head;
 mod inline;
 mod options;
@@ -66,6 +67,7 @@ mod unknown;
 
 pub mod tree;
 
+pub use frontmatter_lines::{FrontmatterLine, frontmatter_lines};
 pub use options::ParseOptions;
 pub use structure::{bound_block, bound_heading};
 pub use tree::*;

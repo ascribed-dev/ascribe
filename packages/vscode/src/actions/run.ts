@@ -101,7 +101,7 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
           const result = await server.requestEdit(
             "textDocument/rename",
             { textDocument: { uri: uri ?? where.uri }, position, newName },
-            `Can't rename it to ${newName}: the name breaks the content model's rules, or is taken.`,
+            `Nothing renamed: there's nothing to rename there, or ${newName} breaks the content model's rules or is taken.`,
           );
           if ("error" in result) {
             say(result.error, true);
@@ -113,9 +113,13 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
           const elsewhere = files.some((file) => file.toString() !== page);
           record.previewed = elsewhere;
           record.files = files.map((file) => vscode.workspace.asRelativePath(file, false)).sort();
-          return elsewhere
-            ? vscode.workspace.applyEdit(confirmEach(result.edit), { isRefactoring: true })
-            : vscode.workspace.applyEdit(result.edit);
+          if (!elsewhere) return vscode.workspace.applyEdit(result.edit, { isRefactoring: true });
+          const applied = await vscode.workspace.applyEdit(confirmEach(result.edit, newName), {
+            isRefactoring: true,
+          });
+          if (!applied)
+            say("Nothing renamed: check the changes to make in the preview, then Apply.");
+          return applied;
         },
       };
       record.done = await action.does.run(context, targets, args, effects);
@@ -146,7 +150,9 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
         say(result.error, true);
         return record;
       }
-      if (!(await vscode.workspace.applyEdit(result.edit))) {
+      // As a refactoring, so `files.refactoring.autoSave` saves the other
+      // files it changes, such as `ascribe.toml`.
+      if (!(await vscode.workspace.applyEdit(result.edit, { isRefactoring: true }))) {
         say("The edit couldn't be applied: the page changed. Try again.", true);
         return record;
       }
@@ -165,9 +171,12 @@ export async function runAction(action: Action, runner: Runner): Promise<RunReco
 }
 
 /** An edit with every change marked as needing confirmation, so VS Code previews it. */
-function confirmEach(edit: vscode.WorkspaceEdit): vscode.WorkspaceEdit {
+function confirmEach(edit: vscode.WorkspaceEdit, newName: string): vscode.WorkspaceEdit {
   const confirmed = new vscode.WorkspaceEdit();
-  const metadata: vscode.WorkspaceEditEntryMetadata = { needsConfirmation: true, label: "Rename" };
+  const metadata: vscode.WorkspaceEditEntryMetadata = {
+    needsConfirmation: true,
+    label: `Rename to ${newName}`,
+  };
   for (const [uri, edits] of edit.entries()) {
     for (const change of edits) confirmed.replace(uri, change.range, change.newText, metadata);
   }

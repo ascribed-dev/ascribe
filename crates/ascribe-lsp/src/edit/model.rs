@@ -11,7 +11,7 @@ use std::collections::{BTreeMap, HashMap};
 use ascribe_core::availability::parse_availability;
 use ascribe_core::{FileId, LineIndex, RelPath, Span, TextEdit, apply_edits};
 use ascribe_resolve::FileIndex;
-use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind, PrimaryValue};
+use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind, LinkForm, PrimaryValue};
 use lsp_types::{Uri, WorkspaceEdit};
 use serde_json::Value as Json;
 use toml_edit::Value;
@@ -217,7 +217,7 @@ pub(crate) fn phrase_selection(
 /// headings that have an `@id` (another heading's id could change); never
 /// code, destinations, or alt text. An occurrence right after a backslash or
 /// between braces is left alone, since the phrase would read differently
-/// there.
+/// there, and so is one in a URL written as text.
 pub(crate) fn occurrences(
     ctx: &Ctx,
     text: &str,
@@ -248,6 +248,7 @@ pub(crate) fn occurrences(
                     || cut(after, text.chars().next_back())
                     || matches!(before, Some('\\' | '{'))
                     || after == Some('}')
+                    || in_url(run, i, i + text.len())
                 {
                     continue;
                 }
@@ -263,46 +264,67 @@ pub(crate) fn occurrences(
     out
 }
 
+/// Whether `run[start..end]` is part of a URL written as plain text, such as
+/// `https://example.com/Quill`: the run of non-space characters around it
+/// has `://` in it.
+fn in_url(run: &str, start: usize, end: usize) -> bool {
+    let from = run[..start].rfind(char::is_whitespace).map_or(0, |i| i + 1);
+    let to = run[end..]
+        .find(char::is_whitespace)
+        .map_or(run.len(), |i| end + i);
+    run[from..to].contains("://")
+}
+
 /// Calls `f` with the span of each run of plain text in a file's prose, and
-/// whether it's in a heading with no `@id`.
+/// whether it's in a heading with no `@id`. A link's text counts only when
+/// it's just text: not the label a shortcut or collapsed reference link is
+/// looked up by, and not the destination an autolink or a bare URL shows.
 fn prose_text(_ctx: &Ctx, file: &FileIndex, f: &mut dyn FnMut(Span, bool)) {
-    fn inlines(list: &[Inline], heading: bool, f: &mut dyn FnMut(Span, bool)) {
+    fn inlines(source: &str, list: &[Inline], heading: bool, f: &mut dyn FnMut(Span, bool)) {
         for inline in list {
             match &inline.kind {
                 InlineKind::Text(_) => f(inline.span, heading),
                 InlineKind::Emphasis(children) | InlineKind::Strong(children) => {
-                    inlines(children, heading, f);
+                    inlines(source, children, heading, f);
                 }
-                InlineKind::Link(link) => inlines(&link.children, heading, f),
+                InlineKind::Link(link) => {
+                    let bracketed = source
+                        .get(inline.span.range())
+                        .is_some_and(|text| text.starts_with('['));
+                    if bracketed && matches!(link.form, LinkForm::Inline | LinkForm::Full) {
+                        inlines(source, &link.children, heading, f);
+                    }
+                }
                 _ => {}
             }
         }
     }
-    fn line(line: &DirectiveLine, f: &mut dyn FnMut(Span, bool)) {
+    fn line(source: &str, line: &DirectiveLine, f: &mut dyn FnMut(Span, bool)) {
         if let Some(title) = &line.title {
-            inlines(&title.inlines, false, f);
+            inlines(source, &title.inlines, false, f);
         }
         if let Some(PrimaryValue::Text(text)) = &line.primary {
-            inlines(&text.inlines, false, f);
+            inlines(source, &text.inlines, false, f);
         }
     }
     fn blocks(file: &FileIndex, list: &[Block], f: &mut dyn FnMut(Span, bool)) {
+        let source: &str = &file.source;
         for block in list {
             match &block.kind {
-                BlockKind::Paragraph(p) => inlines(&p.inlines, false, f),
+                BlockKind::Paragraph(p) => inlines(source, &p.inlines, false, f),
                 BlockKind::Heading(h) => {
                     let has_id = file
                         .headings
                         .iter()
                         .any(|x| x.span == block.span && x.explicit_id.is_some());
-                    inlines(&h.inlines, !has_id, f);
+                    inlines(source, &h.inlines, !has_id, f);
                 }
                 BlockKind::Table(t) => {
                     for cell in t.rows.iter().flat_map(|r| &r.cells) {
-                        inlines(&cell.inlines, false, f);
+                        inlines(source, &cell.inlines, false, f);
                     }
                 }
-                BlockKind::Directive(l) => line(l, f),
+                BlockKind::Directive(l) => line(source, l, f),
                 BlockKind::BlockQuote(q) => blocks(file, &q.children, f),
                 BlockKind::List(l) => {
                     for item in &l.items {
@@ -310,12 +332,12 @@ fn prose_text(_ctx: &Ctx, file: &FileIndex, f: &mut dyn FnMut(Span, bool)) {
                     }
                 }
                 BlockKind::Container(c) => {
-                    line(&c.opener, f);
+                    line(source, &c.opener, f);
                     blocks(file, &c.children, f);
                 }
                 BlockKind::Group(g) => {
                     for arm in &g.arms {
-                        line(&arm.opener, f);
+                        line(source, &arm.opener, f);
                         blocks(file, &arm.children, f);
                     }
                 }

@@ -324,6 +324,9 @@ describe("the editor's actions", () => {
       const line = lines(editor)[13] ?? "";
       const start = line.indexOf("the agent.");
       editor.selection = new vscode.Selection(13, start, 13, start + "the agent".length);
+      // A refactoring saves the files it changes: put them back afterwards.
+      const files = [uriOf("docs", "keys.md"), uriOf("ascribe.toml")];
+      const saved = await Promise.all(files.map((uri) => vscode.workspace.fs.readFile(uri)));
       const record = await run("makePhrase", ["agent", "no"]);
       assert.equal(record.done, true, record.messages.join());
       assert.ok(lines(editor)[13]?.includes("and restart {agent}. To install the agent"));
@@ -333,6 +336,10 @@ describe("the editor's actions", () => {
       );
       await vscode.commands.executeCommand("undo");
       assert.equal(lines(editor)[13], line);
+      for (const [i, uri] of files.entries()) {
+        const bytes = saved[i];
+        if (bytes) await vscode.workspace.fs.writeFile(uri, bytes);
+      }
     });
 
     it("renames a phrase picked from the palette, far from its key, asking first", async () => {
