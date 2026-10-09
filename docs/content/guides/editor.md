@@ -51,6 +51,11 @@ Many diagnostics offer a fix (the light bulb, or `Ctrl+.` / `Cmd+.`):
 - Did-you-mean corrections for misspelled directives, attributes, and frontmatter keys.
 - **Remove** text on a directive line that isn't part of the directive.
 
+### Prompt agent
+
+@available: next
+On a problem, the lightbulb also offers **Prompt agent: fix this problem**, after the problem's quick fixes. It builds a prompt for your AI agent about the problem, and copies it, or opens your agent with it filled in, as `ascribe.agents.promptTarget` says. **Ascribe: Prompt Agent to Fix This File** and **Ascribe: Prompt Agent to Fix This Project** do the same for every problem in the file or the project. Nothing is sent: you read the prompt and send it. See [Prompt your agent](agents.md#prompt-your-agent).
+
 ### Completion
 
 - After `@` at the start of a line: the built-in directives and the project's widgets, with their descriptions.

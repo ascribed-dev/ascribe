@@ -66,6 +66,21 @@
         "category": "Ascribe"
       },
       {
+        "command": "ascribe.promptAgent",
+        "title": "Prompt Agent: Fix This Problem",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.promptAgentFile",
+        "title": "Prompt Agent to Fix This File",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.promptAgentProject",
+        "title": "Prompt Agent to Fix This Project",
+        "category": "Ascribe"
+      },
+      {
         "command": "ascribe.actions",
         "title": "Actions for the Cursor",
         "category": "Ascribe"
@@ -497,6 +512,24 @@
           "default": false,
           "markdownDescription": "Format Ascribe constructs into canonical form when saving."
         },
+        "ascribe.agents.promptTarget": {
+          "type": "string",
+          "enum": [
+            "clipboard",
+            "chat",
+            "claude-code",
+            "cursor"
+          ],
+          "enumDescriptions": [
+            "Copy the prompt, to paste into any agent.",
+            "Open VS Code's chat with the prompt in its input.",
+            "Open a Claude Code tab with the prompt in its input, through the Claude Code extension.",
+            "Open Cursor's chat with the prompt in its input, through its `cursor://` link. Only in Cursor."
+          ],
+          "default": "clipboard",
+          "scope": "window",
+          "markdownDescription": "Where **Prompt agent** puts the prompt it builds for your agent. Every choice fills the prompt in and none sends it: you read it and send it. When the choice isn't available, the prompt is copied instead."
+        },
         "ascribe.preview.scrollPreviewWithEditor": {
           "type": "boolean",
           "default": true,
@@ -685,6 +718,18 @@
         {
           "command": "ascribe.selectPreviewBuild",
           "when": "ascribe.active && ascribe.previewOpen"
+        },
+        {
+          "command": "ascribe.promptAgent",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.promptAgentFile",
+          "when": "ascribe.active && ascribe.problems.file"
+        },
+        {
+          "command": "ascribe.promptAgentProject",
+          "when": "ascribe.active && ascribe.problems.project"
         },
         {
           "command": "ascribe.actions",

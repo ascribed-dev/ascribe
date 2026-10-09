@@ -4,6 +4,7 @@ import { ProjectRegistry } from "./registry.js";
 import type { ResolvedBinary } from "./binary.js";
 import { PreviewController, type PreviewApi } from "./preview/controller.js";
 import { ActionsController, type ActionsApi } from "./actions/controller.js";
+import { PromptAgent, type PromptAgentApi } from "./actions/promptAgent.js";
 import { BuildLens, type BuildLensApi } from "./ui/buildLens.js";
 import { ChosenBuilds } from "./ui/chosenBuild.js";
 import { STATE_NAMES } from "./ui/describe.js";
@@ -33,6 +34,8 @@ export interface AscribeApi {
   preview: PreviewApi;
   /** The editor's actions, for tests. */
   actions: ActionsApi;
+  /** Prompt agent, for tests. */
+  promptAgent: PromptAgentApi;
   /** The status bar item and the sidebar's views, for tests. */
   ui: {
     statusBar: StatusBarApi;
@@ -69,6 +72,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
 
   const actions = new ActionsController(projects);
   actions.register();
+  const promptAgent = new PromptAgent(context, projects);
+  promptAgent.register();
 
   const walkthrough = new Walkthrough(projects);
   walkthrough.register();
@@ -109,6 +114,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     projects,
     preview,
     actions,
+    promptAgent,
     chosen,
     lenses,
     builds,
@@ -167,6 +173,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     whenSettled: () => projects.whenSettled(),
     preview: preview.api,
     actions: actions.api,
+    promptAgent: promptAgent.api,
     ui: {
       statusBar: statusBar.api,
       projects: projectsView.api,
