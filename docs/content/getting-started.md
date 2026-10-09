@@ -37,6 +37,9 @@ code --install-extension Ascribe.ascribe-vscode
 
 It checks your pages as you type, completes directives, [phrases](reference/directives.md#phrases), and links, and previews pages as the site shows them. It uses the project's `ascribe` when there is one. See [Editing](guides/editor.md).
 
+@available: next
+After you install it, its walkthrough, **Get Started with Ascribe**, shows the preview, the actions bar that writes directives for you, and the Ascribe sidebar. It's under **Help → Welcome** whenever you want it again.
+
 ## Create `ascribe.toml`
 
 `ascribe.toml` is the content model: the project's schema. It marks the project root, and the smallest one is a single line:

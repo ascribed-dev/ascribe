@@ -12,6 +12,7 @@ import { ProjectBuilds } from "./ui/projectBuilds.js";
 import { ProjectsView, type ProjectsViewApi } from "./ui/projectsView.js";
 import { SidebarViews, type SidebarApi } from "./ui/sidebarViews.js";
 import { StatusBar, type StatusBarApi } from "./ui/statusBar.js";
+import { Walkthrough } from "./ui/walkthrough.js";
 
 /** What the extension returns from `activate`, for tests and other extensions. */
 export interface AscribeApi {
@@ -69,6 +70,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
   const actions = new ActionsController(projects);
   actions.register();
 
+  const walkthrough = new Walkthrough(projects);
+  walkthrough.register();
+
   context.subscriptions.push(
     vscode.workspace.onWillSaveTextDocument((event) => {
       if (
@@ -112,6 +116,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Ascrib
     lens,
     projectsView,
     sidebar,
+    walkthrough,
     vscode.commands.registerCommand("ascribe.restartServer", async () => {
       await projects.refresh();
       if (projects.projects.length === 0) {

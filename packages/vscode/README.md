@@ -11,38 +11,24 @@ The extension activates in a workspace that contains an `ascribe.toml`. A worksp
 - **Diagnostics as you type**, across the whole project, the same ones `ascribe check` reports in CI. Many come with a quick fix.
 - **Completion** for directives, attributes and their values, phrases, availability, include paths, and links, which you search by page and heading title rather than by path.
 - **Hover** for links and includes (the target's title and first paragraph), phrases (their values), and availability (what it means on the published site).
-- **Navigation**: go to definition, clickable links, a CodeLens on each include, and hints that show the title an empty-text link will get.
-- **Refactoring**: renaming or moving a file updates the links and includes that point to it; renaming a heading's `@id` or a phrase updates its uses.
-- **Formatting** into canonical form, on request or on save.
-- **Highlighting** of directives, phrases, and title lines.
+- **Navigation**: go to definition, Find All References for pages, headings, phrases, and the rest of the content model, clickable links, a CodeLens on each include, and hints that show the title an empty-text link will get.
+- **Refactoring**: renaming or moving a file updates the links and includes that point to it; renaming a heading's `@id`, a phrase, or a dimension value updates its uses.
+- **Formatting** into canonical form, on request or on save, and **highlighting** of directives, phrases, and title lines.
 - **A live page preview** that renders the page as the published site does, as you type, for any build, and a **site preview** that opens it on the site's dev server.
+- **Actions** that write Ascribe for you: wrap a paragraph in a note, turn a list into steps, link to a page by its title, insert content that varies, mark where a section is available, or make the selected text a phrase. **The actions bar** (`Ctrl+K A`, `Cmd+K A` on macOS) lists the ones that apply where the cursor is; each asks what it needs, so you never type the syntax.
+- **The Ascribe sidebar**: every project in the workspace, what links to the page you're on, the project's pages and the ones nothing links to, and its content model with how much each entry is used.
+- **The build you're looking at**, in the status bar: switch it, and the preview renders it and **the build lens** dims what it leaves out of the page.
 - **Review**: the preview marks what changed against a git revision, lists the pages a change touches, and shows the pull request's review comments beside the blocks they're about, where you can reply, resolve, comment, and submit your review. [Reviewing a pull request](https://ascribed-dev.com/guides/review/) walks through it.
+
+After you install it, the **Get Started with Ascribe** walkthrough goes through the first steps. It's under **Help → Welcome** whenever you want it again.
 
 ## The `ascribe` binary
 
 The extension includes `ascribe` for your platform, so it works immediately. When a project installs its own (`npm install --save-dev @ascribed/cli`), the extension uses that one for it instead, so the editor matches the version the project pins for CI. The `ascribe.path` setting overrides both.
 
-## Settings
+## Settings and commands
 
-| Setting | What it does |
-|---|---|
-| `ascribe.path` | The `ascribe` binary to run, for every project. When empty, each project's own, then the included one. |
-| `ascribe.startServers` | When each project's language server starts: `onDemand` (default), the first time one of its files is opened, or `all`, when the workspace opens. |
-| `ascribe.formatOnSave` | Format Ascribe constructs when saving. |
-| `ascribe.preview.scrollPreviewWithEditor` | Scroll the preview with the editor. Default on. |
-| `ascribe.preview.scrollEditorWithPreview` | Scroll the editor with the preview. Default on. |
-| `ascribe.review.sourceComments` | Show the pull request's review threads in the source editor: `on`, `off`, or `auto` (default), which leaves them to the GitHub Pull Requests extension when it's active. |
-| `ascribe.maxCrashes` | How many crashes of the language server make the extension stop restarting it. Default 5. |
-| `ascribe.trace.server` | Log the conversation with the language server: `off`, `messages`, or `verbose`. |
-
-## Commands
-
-- **Ascribe: Open Page Preview** and **Ascribe: Open Page Preview to the Side**, also the preview button in a Markdown editor's title bar.
-- **Ascribe: Open Site Preview**: the page on the site's dev server (`astro dev` with `@ascribed/astro`), in the browser. The page preview's **Page | Site** switch shows it in the preview panel.
-- **Ascribe: Select Preview Build**
-- **Ascribe: Start Review**, **Ascribe: Stop Review**, **Ascribe: Changed Pages**, and **Ascribe: Refresh Comments**
-- **Ascribe: Restart Language Server**
-- **Ascribe: Show Server Output**
+The extension's **Feature Contributions** tab lists them, and [Editing with Ascribe](https://ascribed-dev.com/guides/editor/#settings) describes each one.
 
 ## Learn more
 

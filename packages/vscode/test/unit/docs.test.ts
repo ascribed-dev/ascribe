@@ -4,10 +4,10 @@
 // and fails when one is out of date; run it with ASCRIBE_BLESS=1 to rewrite
 // them. To change what a setting's row says, change its description in
 // package.json. VS Code's manifest has no field for what a command does, so
-// each command's description is here, in `commands`, except an action's,
-// which is its description in src/actions/registry.ts. A setting or command
-// no release has yet is listed in `available`, which gives its row an
-// availability.
+// each command's description is here, in `commands`. The actions' commands
+// share one row of the commands table, since the actions table describes
+// each from src/actions/registry.ts. A setting or command no release has yet
+// is listed in `available`, which gives its row an availability.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -36,7 +36,7 @@ const commands: Record<string, string> = {
   "ascribe.openSitePreview":
     "Opens the active page on its project's dev server, in the browser. See [Site preview](../guides/editor.md#site-preview).",
   "ascribe.selectPreviewBuild":
-    "Picks the build the preview shows, for the previewed page's project.",
+    "Picks the build the preview shows, for the previewed page's project, as the preview's **Build** picker does. It's the same choice as **Switch Build**.",
   "ascribe.switchBuild":
     "Picks the build you're looking at in the active file's project: the one the preview renders and the status bar names. Choosing the editor build follows `[editor] build`. See [The status bar](../guides/editor.md#the-status-bar).",
   "ascribe.projectMenu":
@@ -52,13 +52,16 @@ const commands: Record<string, string> = {
     "Reads the pull request's review threads from GitHub again, for the active page's project. See [Comments in the preview](../guides/editor.md#comments-in-the-preview).",
   "ascribe.actions":
     "Opens the [actions bar](../guides/editor.md#the-actions-bar): the fixes for problems at the cursor, then the actions that apply to the cursor or selection.",
-  ...Object.fromEntries(
-    ACTIONS.map((action) => [
-      commandId(action),
-      `${action.description}. One of the [actions](../guides/editor.md#actions).`,
-    ]),
-  ),
 };
+
+/** The actions' commands, which share one row. */
+const actionCommands = new Set(ACTIONS.map(commandId));
+
+/** The row that stands for every action's command. */
+const ACTIONS_ROW = "ascribe.action.*";
+
+/** What the actions' row says. */
+const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? ""}**, in a Markdown file of a project. Each of the [actions](../guides/editor.md#actions) is a command.`;
 
 /** The availability of each setting or command no release has yet, by id. */
 const available: Record<string, string> = {
@@ -75,7 +78,7 @@ const available: Record<string, string> = {
   "ascribe.preview.scrollEditorWithPreview": "next",
   "ascribe.review.sourceComments": "next",
   "ascribe.actions": "next",
-  ...Object.fromEntries(ACTIONS.map((action) => [commandId(action), "next"])),
+  [ACTIONS_ROW]: "next",
 };
 
 /** The attribute block that ends a row's first cell, for an id in `available`. */
@@ -133,7 +136,7 @@ function settings(): string {
   return out;
 }
 
-/** The commands table: those the palette shows, in the manifest's order. */
+/** The commands table: those the palette shows, in the manifest's order, the actions as one row. */
 function commandTable(): string {
   const hidden = new Set(
     manifest.contributes.menus.commandPalette
@@ -141,8 +144,16 @@ function commandTable(): string {
       .map((entry) => entry.command),
   );
   let out = `${HEADER}\n| Command | What it does |\n|---|---|\n`;
+  let actionsListed = false;
   for (const command of manifest.contributes.commands) {
     if (hidden.has(command.command)) continue;
+    if (actionCommands.has(command.command)) {
+      if (!actionsListed) {
+        out += `| **${command.category}:** *an action*${availability(ACTIONS_ROW)} | ${cell(actionsRow)} |\n`;
+      }
+      actionsListed = true;
+      continue;
+    }
     const what = commands[command.command] ?? "";
     out += `| **${command.category}: ${command.title}**${availability(command.command)} | ${cell(what)} |\n`;
   }
@@ -166,9 +177,10 @@ const fragments: [string, string][] = [
 ];
 
 describe("the editor guide", () => {
-  it("describes every command in the palette, and nothing else", () => {
+  it("describes every command in the palette but the actions', and nothing else", () => {
     const shown = manifest.contributes.commands
       .map((command) => command.command)
+      .filter((id) => !actionCommands.has(id))
       .filter((id) =>
         manifest.contributes.menus.commandPalette.some(
           (entry) => entry.command === id && entry.when !== "false",
@@ -181,6 +193,7 @@ describe("the editor guide", () => {
     const ids = [
       ...Object.keys(manifest.contributes.configuration.properties),
       ...Object.keys(commands),
+      ACTIONS_ROW,
     ];
     expect(Object.keys(available).filter((id) => !ids.includes(id))).toEqual([]);
   });

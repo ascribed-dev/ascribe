@@ -44,25 +44,15 @@
   "contributes": {
     "commands": [
       {
-        "command": "ascribe.restartServer",
-        "title": "Restart Language Server",
-        "category": "Ascribe"
-      },
-      {
-        "command": "ascribe.showOutput",
-        "title": "Show Server Output",
-        "category": "Ascribe"
+        "command": "ascribe.openPreview",
+        "title": "Open Page Preview to the Side",
+        "category": "Ascribe",
+        "icon": "$(open-preview)"
       },
       {
         "command": "ascribe.openPagePreview",
         "title": "Open Page Preview",
         "category": "Ascribe"
-      },
-      {
-        "command": "ascribe.openPreview",
-        "title": "Open Page Preview to the Side",
-        "category": "Ascribe",
-        "icon": "$(open-preview)"
       },
       {
         "command": "ascribe.openSitePreview",
@@ -73,84 +63,6 @@
       {
         "command": "ascribe.selectPreviewBuild",
         "title": "Select Preview Build",
-        "category": "Ascribe"
-      },
-      {
-        "command": "ascribe.switchBuild",
-        "title": "Switch Build",
-        "category": "Ascribe",
-        "icon": "$(package)"
-      },
-      {
-        "command": "ascribe.projectMenu",
-        "title": "Project Menu",
-        "category": "Ascribe"
-      },
-      {
-        "command": "ascribe.toggleBuildLens",
-        "title": "Dim What the Build Leaves Out",
-        "category": "Ascribe",
-        "icon": "$(eye)"
-      },
-      {
-        "command": "ascribe.projects.refresh",
-        "title": "Refresh",
-        "category": "Ascribe",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "ascribe.projects.showOutput",
-        "title": "Show Output",
-        "category": "Ascribe",
-        "icon": "$(output)"
-      },
-      {
-        "command": "ascribe.projects.restart",
-        "title": "Restart Server",
-        "category": "Ascribe",
-        "icon": "$(debug-restart)"
-      },
-      {
-        "command": "ascribe.startReview",
-        "title": "Start Review",
-        "category": "Ascribe",
-        "icon": "$(git-compare)"
-      },
-      {
-        "command": "ascribe.stopReview",
-        "title": "Stop Review",
-        "category": "Ascribe"
-      },
-      {
-        "command": "ascribe.changedPages",
-        "title": "Changed Pages",
-        "category": "Ascribe",
-        "icon": "$(list-unordered)"
-      },
-      {
-        "command": "ascribe.refreshComments",
-        "title": "Refresh Comments",
-        "category": "Ascribe",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "ascribe.review.replyNow",
-        "title": "Reply Now",
-        "category": "Ascribe"
-      },
-      {
-        "command": "ascribe.review.addToReview",
-        "title": "Add to Review",
-        "category": "Ascribe"
-      },
-      {
-        "command": "ascribe.review.resolve",
-        "title": "Resolve",
-        "category": "Ascribe"
-      },
-      {
-        "command": "ascribe.review.reopen",
-        "title": "Reopen",
         "category": "Ascribe"
       },
       {
@@ -332,6 +244,109 @@
         "command": "ascribe.action.renameDimensionValue",
         "title": "Rename a dimension value everywhere",
         "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.switchBuild",
+        "title": "Switch Build",
+        "category": "Ascribe",
+        "icon": "$(package)"
+      },
+      {
+        "command": "ascribe.projectMenu",
+        "title": "Project Menu",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.toggleBuildLens",
+        "title": "Dim What the Build Leaves Out",
+        "category": "Ascribe",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "ascribe.startReview",
+        "title": "Start Review",
+        "category": "Ascribe",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "ascribe.stopReview",
+        "title": "Stop Review",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.changedPages",
+        "title": "Changed Pages",
+        "category": "Ascribe",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "ascribe.refreshComments",
+        "title": "Refresh Comments",
+        "category": "Ascribe",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ascribe.showOutput",
+        "title": "Show Server Output",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.restartServer",
+        "title": "Restart Language Server",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.projects.refresh",
+        "title": "Refresh",
+        "category": "Ascribe",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ascribe.projects.showOutput",
+        "title": "Show Output",
+        "category": "Ascribe",
+        "icon": "$(output)"
+      },
+      {
+        "command": "ascribe.projects.restart",
+        "title": "Restart Server",
+        "category": "Ascribe",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "ascribe.review.replyNow",
+        "title": "Reply Now",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.review.addToReview",
+        "title": "Add to Review",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.review.resolve",
+        "title": "Resolve",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.review.reopen",
+        "title": "Reopen",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.walkthrough.preview",
+        "title": "Preview the Last Page",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.walkthrough.actions",
+        "title": "Open the Actions Bar on the Last Page",
+        "category": "Ascribe"
+      },
+      {
+        "command": "ascribe.walkthrough.lens",
+        "title": "Dim What the Build Leaves Out of the Last Page",
+        "category": "Ascribe"
       }
     ],
     "viewsContainers": {
@@ -374,6 +389,84 @@
       {
         "view": "ascribe.projects",
         "contents": "This workspace has no Ascribe project yet. A project is a folder with an ascribe.toml, which describes its pages and builds.\n[Get started with Ascribe](https://ascribed-dev.com/getting-started/)"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "start",
+        "title": "Get Started with Ascribe",
+        "description": "Preview pages as the site shows them, write directives without remembering their syntax, and see what each build publishes.",
+        "steps": [
+          {
+            "id": "project",
+            "title": "Open a project",
+            "description": "An Ascribe project is a folder with an `ascribe.toml`, the content model that says where its pages are and what they can use. Open the folder that holds yours, or create one with [Getting started](https://ascribed-dev.com/getting-started/#create-ascribetoml).\n[Open Folder](command:workbench.action.files.openFolder)",
+            "media": {
+              "markdown": "media/walkthrough/project.md"
+            },
+            "completionEvents": [
+              "onContext:ascribe.active"
+            ]
+          },
+          {
+            "id": "preview",
+            "title": "Preview a page",
+            "description": "Open a page, then open its preview beside it. The preview shows the page as the published site does, and follows your edits as you type, saved or not.\n[Open Page Preview to the Side](command:ascribe.walkthrough.preview)",
+            "media": {
+              "markdown": "media/walkthrough/preview.md"
+            },
+            "completionEvents": [
+              "onCommand:ascribe.openPreview",
+              "onCommand:ascribe.walkthrough.preview"
+            ]
+          },
+          {
+            "id": "actions",
+            "title": "Write with the actions bar",
+            "description": "Press `Ctrl+K A` (`Cmd+K A` on macOS) in a page to see what you can do where the cursor is: fix a problem, wrap a paragraph in a note, turn a list into steps, link to a page by its title, or mark where a section is available. Each action asks what it needs and writes the Ascribe for you.\n[Open the Actions Bar](command:ascribe.walkthrough.actions)",
+            "media": {
+              "markdown": "media/walkthrough/actions.md"
+            },
+            "completionEvents": [
+              "onCommand:ascribe.actions",
+              "onCommand:ascribe.walkthrough.actions"
+            ]
+          },
+          {
+            "id": "sidebar",
+            "title": "See your projects",
+            "description": "The Ascribe sidebar lists the workspace's projects, the pages of the one you're in, what links to the page you're on, and how much each entry of the content model is used.\n[Open the Ascribe Sidebar](command:workbench.view.extension.ascribe)",
+            "media": {
+              "markdown": "media/walkthrough/sidebar.md"
+            },
+            "completionEvents": [
+              "onView:ascribe.projects"
+            ]
+          },
+          {
+            "id": "lens",
+            "title": "See what a build leaves out",
+            "description": "A project can publish several builds from the same pages, such as one for each edition of a product. The build lens dims what the build you're looking at leaves out of the page, so you can see what its readers get without leaving the editor.\n[Dim What the Build Leaves Out](command:ascribe.walkthrough.lens)",
+            "media": {
+              "markdown": "media/walkthrough/lens.md"
+            },
+            "completionEvents": [
+              "onCommand:ascribe.toggleBuildLens",
+              "onCommand:ascribe.walkthrough.lens"
+            ]
+          },
+          {
+            "id": "check",
+            "title": "Check in CI",
+            "description": "Run `npx ascribe check` in CI, and a pull request fails on the same problems the editor shows you.\n[Read About ascribe check](https://ascribed-dev.com/reference/cli/#ascribe-check)",
+            "media": {
+              "markdown": "media/walkthrough/check.md"
+            },
+            "completionEvents": [
+              "onLink:https://ascribed-dev.com/reference/cli/#ascribe-check"
+            ]
+          }
+        ]
       }
     ],
     "configuration": {
@@ -578,19 +671,11 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "ascribe.restartServer",
-          "when": "ascribe.active"
-        },
-        {
-          "command": "ascribe.showOutput",
+          "command": "ascribe.openPreview",
           "when": "ascribe.active"
         },
         {
           "command": "ascribe.openPagePreview",
-          "when": "ascribe.active"
-        },
-        {
-          "command": "ascribe.openPreview",
           "when": "ascribe.active"
         },
         {
@@ -600,62 +685,6 @@
         {
           "command": "ascribe.selectPreviewBuild",
           "when": "ascribe.active && ascribe.previewOpen"
-        },
-        {
-          "command": "ascribe.switchBuild",
-          "when": "ascribe.active && ascribe.inProject"
-        },
-        {
-          "command": "ascribe.projectMenu",
-          "when": "ascribe.active && ascribe.inProject"
-        },
-        {
-          "command": "ascribe.toggleBuildLens",
-          "when": "ascribe.active && ascribe.inProject"
-        },
-        {
-          "command": "ascribe.projects.refresh",
-          "when": "false"
-        },
-        {
-          "command": "ascribe.projects.showOutput",
-          "when": "false"
-        },
-        {
-          "command": "ascribe.projects.restart",
-          "when": "false"
-        },
-        {
-          "command": "ascribe.startReview",
-          "when": "ascribe.active"
-        },
-        {
-          "command": "ascribe.stopReview",
-          "when": "ascribe.active && ascribe.reviewOn"
-        },
-        {
-          "command": "ascribe.changedPages",
-          "when": "ascribe.active"
-        },
-        {
-          "command": "ascribe.refreshComments",
-          "when": "ascribe.active && ascribe.reviewOn"
-        },
-        {
-          "command": "ascribe.review.replyNow",
-          "when": "false"
-        },
-        {
-          "command": "ascribe.review.addToReview",
-          "when": "false"
-        },
-        {
-          "command": "ascribe.review.resolve",
-          "when": "false"
-        },
-        {
-          "command": "ascribe.review.reopen",
-          "when": "false"
         },
         {
           "command": "ascribe.actions",
@@ -800,6 +829,82 @@
         {
           "command": "ascribe.action.renameDimensionValue",
           "when": "ascribe.inProject && editorLangId == markdown"
+        },
+        {
+          "command": "ascribe.switchBuild",
+          "when": "ascribe.active && ascribe.inProject"
+        },
+        {
+          "command": "ascribe.projectMenu",
+          "when": "ascribe.active && ascribe.inProject"
+        },
+        {
+          "command": "ascribe.toggleBuildLens",
+          "when": "ascribe.active && ascribe.inProject"
+        },
+        {
+          "command": "ascribe.startReview",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.stopReview",
+          "when": "ascribe.active && ascribe.reviewOn"
+        },
+        {
+          "command": "ascribe.changedPages",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.refreshComments",
+          "when": "ascribe.active && ascribe.reviewOn"
+        },
+        {
+          "command": "ascribe.showOutput",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.restartServer",
+          "when": "ascribe.active"
+        },
+        {
+          "command": "ascribe.projects.refresh",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.projects.showOutput",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.projects.restart",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.replyNow",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.addToReview",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.resolve",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.review.reopen",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.walkthrough.preview",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.walkthrough.actions",
+          "when": "false"
+        },
+        {
+          "command": "ascribe.walkthrough.lens",
+          "when": "false"
         }
       ],
       "editor/title": [

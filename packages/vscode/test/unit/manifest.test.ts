@@ -54,6 +54,8 @@ describe("package.json", () => {
       if (entry.command.startsWith("ascribe.review.")) expect(entry.when).toBe("false");
       // So do the Projects view's buttons, which act on their project.
       else if (entry.command.startsWith("ascribe.projects.")) expect(entry.when).toBe("false");
+      // So do the walkthrough's buttons, which bring back a page first.
+      else if (entry.command.startsWith("ascribe.walkthrough.")) expect(entry.when).toBe("false");
       // An action, and the actions bar, are for a page, so they're shown in a
       // Markdown file of a project.
       else if (entry.command === "ascribe.actions" || entry.command.startsWith("ascribe.action.")) {
@@ -111,27 +113,30 @@ describe("package.json", () => {
       .map((command) => command.command)
       .filter((id) => !id.startsWith("ascribe.action."));
     expect(commands).toEqual([
-      "ascribe.restartServer",
-      "ascribe.showOutput",
-      "ascribe.openPagePreview",
       "ascribe.openPreview",
+      "ascribe.openPagePreview",
       "ascribe.openSitePreview",
       "ascribe.selectPreviewBuild",
+      "ascribe.actions",
       "ascribe.switchBuild",
       "ascribe.projectMenu",
       "ascribe.toggleBuildLens",
-      "ascribe.projects.refresh",
-      "ascribe.projects.showOutput",
-      "ascribe.projects.restart",
       "ascribe.startReview",
       "ascribe.stopReview",
       "ascribe.changedPages",
       "ascribe.refreshComments",
+      "ascribe.showOutput",
+      "ascribe.restartServer",
+      "ascribe.projects.refresh",
+      "ascribe.projects.showOutput",
+      "ascribe.projects.restart",
       "ascribe.review.replyNow",
       "ascribe.review.addToReview",
       "ascribe.review.resolve",
       "ascribe.review.reopen",
-      "ascribe.actions",
+      "ascribe.walkthrough.preview",
+      "ascribe.walkthrough.actions",
+      "ascribe.walkthrough.lens",
     ]);
     const properties = manifest.contributes.configuration.properties;
     expect(Object.keys(properties).sort()).toEqual([
