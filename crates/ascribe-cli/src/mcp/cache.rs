@@ -24,7 +24,7 @@ use ascribe_model::LOCK_FILE;
 use crate::answer::{Loaded, Projects};
 
 /// A file as the listing sees it: its path, size, and modification time.
-type Stamp = (PathBuf, u64, Option<SystemTime>);
+pub(crate) type Stamp = (PathBuf, u64, Option<SystemTime>);
 
 /// A project kept loaded.
 struct Entry {
@@ -95,16 +95,27 @@ impl Entry {
 /// start with `.`, `node_modules`, and the output directory are left out,
 /// and a symbolic link to a folder isn't followed.
 fn list(root: &Path, project: &Project) -> Vec<Stamp> {
-    let output = normalize(&root.join(project.layout().output_dir.as_str()));
-    let content = normalize(&root.join(project.content_root().as_str()));
-    let skip = |dir: &Path| dir != content && dir == output;
-    let mut files = vec![stamp(&root.join(MODEL_FILE)), stamp(&root.join(LOCK_FILE))];
-    walk(&content, &skip, &mut files);
+    let mut files = content_listing(root, project.content_root(), &project.layout().output_dir);
     for source in &project.model().sources {
         files.push(presence(&normalize(&root.join(&source.path))));
     }
     files.sort();
     files.dedup();
+    files
+}
+
+/// `ascribe.toml`, `ascribe.lock` (there or not), and every file under the
+/// content root, as [`list`] lists them, unsorted.
+pub(crate) fn content_listing(
+    root: &Path,
+    content_root: &ascribe_core::RelPath,
+    output_dir: &ascribe_core::RelPath,
+) -> Vec<Stamp> {
+    let output = normalize(&root.join(output_dir.as_str()));
+    let content = normalize(&root.join(content_root.as_str()));
+    let skip = |dir: &Path| dir != content && dir == output;
+    let mut files = vec![stamp(&root.join(MODEL_FILE)), stamp(&root.join(LOCK_FILE))];
+    walk(&content, &skip, &mut files);
     files
 }
 

@@ -1,0 +1,19 @@
+{
+  "author": {
+    "name": "Ascribe",
+    "url": "https://github.com/ascribed-dev"
+  },
+  "description": "Check Ascribe docs as an agent edits them: the language server's diagnostics after each edit, a full check before the agent finishes, the MCP server, the Ascribe skill, and commands for the named prompts.",
+  "displayName": "Ascribe",
+  "homepage": "https://ascribed-dev.com/guides/agents/",
+  "keywords": [
+    "ascribe",
+    "documentation",
+    "markdown",
+    "docs-as-code"
+  ],
+  "license": "MPL-2.0",
+  "name": "ascribe",
+  "repository": "https://github.com/ascribed-dev/ascribe",
+  "version": "0.2.0"
+}

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "ascribe agents hook claude-code --event stop",
+            "timeout": 60,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

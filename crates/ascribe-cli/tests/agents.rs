@@ -459,3 +459,156 @@ fn skill_prints_the_packaged_skill() {
     .replace("\r\n", "\n");
     assert_eq!(String::from_utf8_lossy(&out.stdout), packaged);
 }
+
+#[test]
+fn with_hook_writes_each_agents_hooks() {
+    let repo = repository("quill");
+    let root = repo.path();
+    write(
+        &root.join(".claude/settings.json"),
+        "{\n  \"model\": \"opus\",\n  \"hooks\": {\n    \"PostToolUse\": [\n      { \"matcher\": \"Write\", \"hooks\": [ { \"type\": \"command\", \"command\": \"prettier --write\" } ] }\n    ]\n  }\n}\n",
+    );
+    write(
+        &root.join(".mcp.json"),
+        "{\"mcpServers\": {\"other\": {\"command\": \"other\"}}}\n",
+    );
+    let mut args = EVERY_TARGET.to_vec();
+    args.extend(["--target", "codex", "--with-hook"]);
+    let out = sync(root, ".", &args);
+    let text = stdout(&out);
+    for file in [
+        ".claude/settings.json",
+        ".mcp.json",
+        ".codex/hooks.json",
+        ".github/hooks/ascribe.json",
+    ] {
+        assert!(text.contains(&format!("wrote     {file}")), "{text}");
+    }
+    let json = |file: &str| -> serde_json::Value {
+        serde_json::from_str(&read(&root.join(file))).unwrap()
+    };
+    let claude = json(".claude/settings.json");
+    assert_eq!(claude["model"], "opus");
+    let post = &claude["hooks"]["PostToolUse"];
+    assert_eq!(post[0]["hooks"][0]["command"], "prettier --write");
+    assert_eq!(post[1]["matcher"], "Write|Edit|MultiEdit");
+    assert_eq!(
+        post[1]["hooks"][0]["command"],
+        "ascribe agents hook claude-code --event edit"
+    );
+    assert_eq!(
+        claude["hooks"]["Stop"][0]["hooks"][0]["command"],
+        "ascribe agents hook claude-code --event stop"
+    );
+    // The team's keys keep their order.
+    let settings = read(&root.join(".claude/settings.json"));
+    assert!(
+        settings.find("\"model\"") < settings.find("\"hooks\""),
+        "{settings}"
+    );
+    let mcp = json(".mcp.json");
+    assert_eq!(mcp["mcpServers"]["other"]["command"], "other");
+    assert_eq!(mcp["mcpServers"]["ascribe"]["args"][0], "mcp");
+    let codex = json(".codex/hooks.json");
+    assert_eq!(
+        codex["hooks"]["Stop"][0]["hooks"][0]["command"],
+        "ascribe agents hook codex --event stop"
+    );
+    let copilot = json(".github/hooks/ascribe.json");
+    assert_eq!(copilot["version"], 1);
+    assert_eq!(
+        copilot["hooks"]["postToolUse"][0]["bash"],
+        "ascribe agents hook copilot --event edit"
+    );
+    assert_eq!(
+        copilot["hooks"]["agentStop"][0]["powershell"],
+        "ascribe agents hook copilot --event stop"
+    );
+
+    // Kept up to date without --with-hook, and covered by --check.
+    let out = sync(root, ".", &[]);
+    assert!(!stdout(&out).contains("wrote"), "{}", stdout(&out));
+    assert!(
+        stdout(&out).contains("unchanged .codex/hooks.json"),
+        "{}",
+        stdout(&out)
+    );
+    run(root, &["agents", "sync", "--check"], 0);
+    fs::remove_file(root.join(".github/hooks/ascribe.json")).unwrap();
+    write(&root.join(".github/hooks/ascribe.json"), "{}\n");
+    let out = run(root, &["agents", "sync", "--check"], 1);
+    assert!(
+        stdout(&out).contains("stale      .github/hooks/ascribe.json"),
+        "{}",
+        stdout(&out)
+    );
+}
+
+#[test]
+fn with_hook_keeps_what_the_user_changed() {
+    let repo = repository("quill");
+    let root = repo.path();
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    // Laid out by another formatter, with a longer timeout on Ascribe's
+    // stop hook, an `env` on its MCP server, and nothing else changed.
+    let settings = root.join(".claude/settings.json");
+    let mut value: serde_json::Value = serde_json::from_str(&read(&settings)).unwrap();
+    value["hooks"]["Stop"][0]["hooks"][0]["timeout"] = 300.into();
+    let mut four = Vec::new();
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+    let mut serializer = serde_json::Serializer::with_formatter(&mut four, formatter);
+    serde::Serialize::serialize(&value, &mut serializer).unwrap();
+    let four = String::from_utf8(four).unwrap();
+    write(&settings, &four);
+    let mcp = root.join(".mcp.json");
+    let mut servers: serde_json::Value = serde_json::from_str(&read(&mcp)).unwrap();
+    servers["mcpServers"]["ascribe"]["env"] = serde_json::json!({ "A": "1" });
+    write(&mcp, &serde_json::to_string(&servers).unwrap());
+    let before = read(&mcp);
+    run(root, &["agents", "sync", "--check"], 0);
+    sync(root, ".", &[]);
+    assert_eq!(read(&settings), four);
+    assert_eq!(read(&mcp), before);
+    // A server the user removed stays removed.
+    write(&mcp, "{\"mcpServers\": {}}\n");
+    sync(root, ".", &[]);
+    assert_eq!(read(&mcp), "{\"mcpServers\": {}}\n");
+    run(root, &["agents", "sync", "--check"], 0);
+}
+
+#[test]
+fn with_hook_runs_the_pinned_ascribe() {
+    let repo = repository("quill");
+    let root = repo.path();
+    fs::create_dir_all(root.join("node_modules/@ascribed/cli")).unwrap();
+    sync(root, ".", &["--target", "claude", "--with-hook"]);
+    let settings = read(&root.join(".claude/settings.json"));
+    assert!(
+        settings.contains(
+            r#""command": "\"$CLAUDE_PROJECT_DIR\"/node_modules/.bin/ascribe agents hook claude-code --event edit""#
+        ),
+        "{settings}"
+    );
+    // `.mcp.json` has no way to name the repository's root on every
+    // system, so it runs `ascribe` from the path.
+    let mcp = read(&root.join(".mcp.json"));
+    assert!(mcp.contains(r#""command": "ascribe""#), "{mcp}");
+}
+
+#[test]
+fn a_settings_file_that_isnt_json_stops_everything() {
+    let repo = repository("quill");
+    let root = repo.path();
+    write(&root.join(".claude/settings.json"), "{ not json\n");
+    let out = run(
+        root,
+        &["agents", "sync", "--target", "claude", "--with-hook"],
+        2,
+    );
+    assert!(
+        stderr(&out).contains("settings.json: it isn't JSON"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(!root.join("AGENTS.md").exists());
+}

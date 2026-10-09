@@ -15,6 +15,13 @@
 //!   the skill in `.claude/skills/ascribe/`, where Claude Code looks.
 //! - `claude-rules`: the rules in `.claude/rules/`, loaded only for pages.
 //! - `copilot`: the rules in `.github/instructions/`, loaded only for pages.
+//! - `codex`: nothing of its own, since Codex reads `AGENTS.md` and the
+//!   skill; it's there for its hooks.
+//!
+//! With hooks (`--with-hook`, or once a file holds them), the hook entries
+//! and the MCP server too (`super::settings`): `.claude/settings.json` and
+//! `.mcp.json` for `claude`, `.codex/hooks.json` for `codex`, and
+//! `.github/hooks/ascribe.json` for `copilot`, all at the root.
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -27,7 +34,7 @@ use ascribe_query::rules::{content_glob, pointer, rules};
 use ascribe_resolve::is_source_path;
 
 use super::markers::{Damage, Markers};
-use super::skill;
+use super::{settings, skill};
 
 /// What `sync` can write.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -42,6 +49,8 @@ pub enum Target {
     ClaudeRules,
     /// `.github/instructions/`.
     Copilot,
+    /// Codex's hooks.
+    Codex,
 }
 
 /// Why `sync` can't write a project's files.
@@ -83,6 +92,14 @@ pub enum SyncError {
         /// Why.
         source: io::Error,
     },
+    /// A settings file `sync` merges its entries into can't be read as one.
+    #[error("can't update {path}: {why}; fix it by hand")]
+    Settings {
+        /// The file.
+        path: String,
+        /// What's wrong.
+        why: String,
+    },
     /// A file couldn't be written.
     #[error("can't write {path}: {source}")]
     Write {
@@ -101,6 +118,7 @@ impl Coded for SyncError {
             SyncError::NoRepository => "copilot_needs_repository",
             SyncError::Git(e) => e.code(),
             SyncError::Read { .. } => "instructions_unreadable",
+            SyncError::Settings { .. } => "settings_unreadable",
             SyncError::Write { .. } => "instructions_unwritable",
         }
     }
@@ -182,7 +200,9 @@ pub fn rules_beside(
 
 /// Works out the files for `targets` (with `agents-md` and `skills` always,
 /// and each other target whose files exist already), without writing.
-pub fn plan(project: &Project, asked: &[Target]) -> Result<Plan, SyncError> {
+/// With `hooks`, the hook entries of each of them too; without, those
+/// already written are kept up to date.
+pub fn plan(project: &Project, asked: &[Target], hooks: bool) -> Result<Plan, SyncError> {
     let mut notes = Vec::new();
     let here = absolute(project.root());
     let (prefix, note) = prefix_of(&here)?;
@@ -337,7 +357,115 @@ pub fn plan(project: &Project, asked: &[Target]) -> Result<Plan, SyncError> {
         add(copilot, &|_| Ok(text.clone()), BLOCK)?;
     }
 
+    // Outside FileSystem: whether the repository has a `.codex` folder,
+    // which isn't the project's.
+    let wants_hooks = Hooks {
+        asked: hooks,
+        claude,
+        codex: asked.contains(&Target::Codex) || under(&root, ".codex").is_dir(),
+        copilot: with_copilot,
+    };
+    plan_hooks(&wants_hooks, &here, &root, &mut files, &mut notes)?;
+
     Ok(Plan { files, notes })
+}
+
+/// Which agents' hooks `sync` may write, and whether they were asked for.
+struct Hooks {
+    asked: bool,
+    claude: bool,
+    codex: bool,
+    copilot: bool,
+}
+
+/// The hook entries and the MCP server, for each agent of `hooks` that has
+/// them already, or all of them when they're asked for.
+/// A settings file merged from its text now: `None` when it's left out.
+type Merge<'a> = dyn Fn(Option<&str>) -> Result<Option<String>, String> + 'a;
+
+fn plan_hooks(
+    hooks: &Hooks,
+    here: &Path,
+    root: &Path,
+    files: &mut Vec<Planned>,
+    notes: &mut Vec<String>,
+) -> Result<(), SyncError> {
+    let claude_settings = under(root, ".claude/settings.json");
+    let mcp = root.join(".mcp.json");
+    let codex_hooks = under(root, ".codex/hooks.json");
+    let copilot_hooks = under(root, ".github/hooks/ascribe.json");
+    let ascribe = ascribe_command(here, root);
+    let has_hook = |path: &Path| -> Result<bool, SyncError> {
+        Ok(read(path)?.is_some_and(|text| text.contains("agents hook")))
+    };
+    // A file whose meaning wouldn't change is left as it is, however it's
+    // laid out.
+    let mut merge = |path: PathBuf, merged: &Merge<'_>| {
+        let old = read(&path)?;
+        let new = merged(old.as_deref()).map_err(|why| SyncError::Settings {
+            path: path.display().to_string(),
+            why,
+        })?;
+        if let Some(mut new) = new {
+            if let Some(old) = &old
+                && settings::same_meaning(old, &new)
+            {
+                new.clone_from(old);
+            }
+            files.push(Planned { path, old, new });
+        }
+        Ok::<(), SyncError>(())
+    };
+    if hooks.claude && (hooks.asked || has_hook(&claude_settings)?) {
+        merge(claude_settings, &|old| {
+            settings::claude_settings(old, &ascribe).map(Some)
+        })?;
+        merge(mcp, &|old| settings::mcp_json(old, &ascribe, hooks.asked))?;
+    }
+    if hooks.codex && (hooks.asked || has_hook(&codex_hooks)?) {
+        merge(codex_hooks, &|old| {
+            settings::codex_hooks(old, &ascribe).map(Some)
+        })?;
+    }
+    if (hooks.copilot && hooks.asked) || read(&copilot_hooks)?.is_some() {
+        merge(copilot_hooks, &|_| {
+            Ok(Some(settings::copilot_hooks(&ascribe)))
+        })?;
+    }
+    if hooks.asked && !hooks.claude && !hooks.codex && !hooks.copilot {
+        notes.push(
+            "--with-hook writes hooks for `claude`, `codex`, and `copilot`; name one with --target"
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
+/// How the hooks run `ascribe`: the binary of `@ascribed/cli` when the
+/// project pins it, in a `node_modules` from the project's folder up to the
+/// repository's root, else `ascribe` on the path.
+fn ascribe_command(here: &Path, root: &Path) -> settings::Ascribe {
+    // Outside FileSystem: the folders around the project, for an installed
+    // `@ascribed/cli`.
+    for dir in here.ancestors() {
+        if dir
+            .join("node_modules")
+            .join("@ascribed")
+            .join("cli")
+            .is_dir()
+            && let Some(rel) = relative_path(root, dir)
+        {
+            let bin = rel
+                .join("node_modules/.bin/ascribe")
+                .map(|p| p.as_str().to_owned())
+                .unwrap_or_else(|_| "node_modules/.bin/ascribe".to_owned());
+            return settings::Ascribe::pinned(&bin);
+        }
+        if dir == root {
+            break;
+        }
+    }
+    settings::Ascribe::on_path()
 }
 
 /// The `CLAUDE.md` in `dir` to import `AGENTS.md` into, and the import:
