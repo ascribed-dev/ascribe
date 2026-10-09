@@ -3,7 +3,7 @@ title: Command reference
 description: "The ascribe commands: their options, outputs, and exit codes."
 ---
 
-The `ascribe` command checks, builds, and formats an Ascribe project, and runs the language server the editor uses. Its `explain`, `model`, `outline`, `link`, `refs`, and `render` commands answer questions about a project, for writers and for agents, without changing anything.
+The `ascribe` command checks, builds, and formats an Ascribe project, and runs the language server the editor uses. Its `explain`, `model`, `outline`, `link`, `refs`, and `render` commands answer questions about a project, for writers and for agents, without changing anything, and `ascribe mcp` offers them to agents as the tools of an MCP server.
 
 @include: ../_generated/cli-synopsis.md
 
@@ -226,6 +226,7 @@ The prompt asks for a report, not edits: a review reads the change, and its auth
 | `base` | object | `requested`: the revision asked for, or the default branch used. `commit`: the commit it names. `merge_base`: the merge base with `HEAD` that was compared with, or `null` with `--base-exact`. |
 | `repository` | object | `root`: the repository's top-level directory. `project_prefix`: the project's folder in it, with a trailing `/`, or `""` at the root. |
 | `working_tree_errors` | number | How many errors `ascribe check` finds in the working tree for the builds compared (with the same `--build` options). The comparison runs either way. |
+| `blocks_omitted` | boolean | Only with `--pages-only`, and then `true`: each page's `changes` is empty, and its `counts` still count them. |
 | `builds` | array | One entry per build compared: `build`, its name, and `pages`, the pages that changed, in path order |
 
 Each page:
@@ -333,6 +334,8 @@ It lists each file it changed.
 
 @include: ../_generated/cli-fmt-options.md
 
+With `--format json`, it writes one JSON document instead: each file that changed, relative to the project's folder, with the edits that format it, each a `range` and its `new_text`, the shape of a fix's edits in [`ascribe check`'s JSON](#json-output). The ranges are in the file as it was. With `--check` too, it writes no file, and the edits are the ones it would make: what a tool that applies edits itself needs. `written` says whether the files were rewritten, and `refused` lists the files left alone, each with its `reason`. The [schema](../contracts/json-reports.md#ascribe-fmt) has every field.
+
 It formats only what `ascribe check` reads: a file in the content root that's a symbolic link, or is in a linked folder, is formatted only when the link leads to a source file of the content root. One that leads anywhere else is left alone and reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics.md#asc123-source-unreadable)), and the other files are still formatted.
 
 | Code | Meaning |
@@ -346,6 +349,29 @@ It formats only what `ascribe check` reads: a file in the content root that's a 
 Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error, starting with the project it uses.
 
 The VS Code extension runs it for you, one server for each project in the workspace. See [Editing](../guides/editor.md). Any editor with an LSP client can run `ascribe lsp` too; for several projects, start one per project ([Other editors](../guides/editor.md#other-editors)).
+
+## `ascribe mcp`
+@available: next
+
+Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](#ascribe-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](../guides/agents.md#the-mcp-server) to set it up.
+
+| Tool | The command it runs |
+|---|---|
+| `ascribe_check` | `ascribe check`, on `paths`, or on unsaved `text` as the file `path` names. `response_format` is `concise` (the default, `--format concise`) or `detailed` (`--format json`). |
+| `ascribe_explain` | `ascribe explain` |
+| `ascribe_model` | `ascribe model` |
+| `ascribe_outline` | `ascribe outline` |
+| `ascribe_link` | `ascribe link` |
+| `ascribe_refs` | `ascribe refs`, with `response_format` as for `ascribe_check` |
+| `ascribe_render` | `ascribe render` |
+| `ascribe_format` | `ascribe fmt --check --format json`: the edits, and nothing written |
+| `ascribe_changes` | `ascribe diff --format json --pages-only`, or with `blocks` each changed block too |
+
+Every tool is read-only: none writes a file, and each is marked read-only, idempotent, and closed-world. Paths are from the folder the server runs in, and each call finds the nearest `ascribe.toml` at or above its paths, so one server serves every project in a repository. A project is loaded once and kept: before each call the server lists the project's files again, names, sizes, and modification times, and loads it again when anything changed, a new or deleted file included. A call with bad arguments, or a path in no project, is a result marked as an error, with a sentence on what to call instead.
+
+The resources are `ascribe://directives`, each built-in directive's syntax (`ascribe agents skill references/directives.md`); `ascribe://model/<project>`, what a project's content model allows (`ascribe model <project>`); and `ascribe://instructions/<project>`, its rules (`ascribe agents rules <project>`). `<project>` is a file or folder in it, from the folder the server runs in. The prompts are `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them.
+
+The server speaks the protocol's 2026-07-28 revision, which has no handshake, and answers `initialize` for a client on 2025-11-25 or 2025-06-18. It takes no options, and refuses `--config` (exit code `2`). Its logs go to standard error; it exits with `0` when standard input ends.
 
 ## `ascribe sources`
 @available: next
@@ -526,7 +552,7 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 ## `ascribe agents`
 @available: next
 
-Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill. See [Agents](../guides/agents.md).
+Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Agents](../guides/agents.md).
 
 ### `ascribe agents sync`
 
@@ -542,6 +568,36 @@ It writes only between its markers in a file it shares with your team, and whole
 | `1` | With `--check`: a file is out of date. Run `ascribe agents sync`. |
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, a file whose markers are damaged, a file that would be under the content root (so one of the project's pages), `--target copilot` outside a git repository, or a file it can't read or write. Nothing is written. |
 
+### `ascribe agents rules`
+
+Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. It writes no file. The MCP server's `ascribe://instructions/<project>` resource is the same text.
+
+@include: ../_generated/cli-agents-rules-options.md
+
+It exits with `0`, or with `2` when there's no `ascribe.toml`, it has errors, or `git` can't say where the repository is.
+
 ### `ascribe agents skill`
 
-Prints the Ascribe skill's `SKILL.md`, the same for every project. It needs no project, and exits with `0`.
+Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. It needs no project, and exits with `0`.
+
+@include: ../_generated/cli-agents-skill-options.md
+
+### `ascribe agents prompt`
+
+Prints a named prompt for an agent, in the same form as [Prompt agent](../guides/agents.md#what-a-prompt-says)'s. The MCP server offers the same prompts, which some hosts show as slash commands.
+
+@include: ../_generated/cli-agents-prompt-options.md
+
+| Prompt | Arguments | What it asks |
+|---|---|---|
+| `new-page` | `type`, `title`, and `path` | Write a new page of that type: where its file goes, the frontmatter to start it with, and the type's fields |
+| `fix` | `path` | Fix what `ascribe check` reports: the prompt `ascribe check --format prompt` writes when there are problems, else the loop of checking and fixing |
+| `review` | `path` and `base` | Review what the branch does to its pages, as readers see them: the prompt [`ascribe diff --format prompt`](#ascribe-diff) writes, or a line saying no page changed |
+
+`path` is a file or folder in the project, by default the current directory; `fix` reports on it. `--list` lists the prompts and their arguments.
+
+```shell
+ascribe agents prompt new-page --arg type=guide --arg title="Rotate your keys"
+```
+
+It exits with `0`, or with `2` for a prompt or an argument it doesn't know, a required argument missing, an unknown page type, a project it can't load, or, for `review`, a comparison `ascribe diff` can't make.

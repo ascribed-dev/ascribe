@@ -2,15 +2,18 @@
 
 ```text
 ascribe agents sync    [--check] [--target agents-md|skills|claude|claude-rules|copilot]...
-ascribe agents skill
+ascribe agents rules   [PATH]
+ascribe agents skill   [FILE]
+ascribe agents prompt  [NAME] [--arg <KEY=VALUE>]... [--list]
 ascribe build          [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors]
 ascribe check          [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--summary] [--format text|concise|json|prompt] [--deny-warnings]
-ascribe diff           [PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html|prompt] [--exit-code]
+ascribe diff           [PAGE] [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html|prompt] [--exit-code] [--pages-only]
 ascribe drift          [--base <REV>] [--build <NAME>]... [--format text|json|summary] [--exit-code]
 ascribe explain        [CODE] [--list] [--format text|json]
-ascribe fmt            [--check] [PATHS]...
+ascribe fmt            [--check] [PATHS]... [--format text|json]
 ascribe link           TARGET --from <PAGE> [--format text|json]
 ascribe lsp
+ascribe mcp
 ascribe model          [PATH] [--section types|dimensions|phrases|features|glossary|widgets|builds] [--format text|json]
 ascribe outline        PAGE [--build <NAME>] [--format text|json]
 ascribe refs           TARGET [--limit <N>] [--project <PATH>] [--format text|json]

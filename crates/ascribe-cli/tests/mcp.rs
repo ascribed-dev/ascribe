@@ -204,6 +204,10 @@ impl Server {
         result["content"][0]["text"].as_str().unwrap().to_owned()
     }
 
+    fn read_resource(&mut self, uri: &str) -> String {
+        let result = self.result("resources/read", json!({ "uri": uri }));
+        result["contents"][0]["text"].as_str().unwrap().to_owned()
+    }
 }
 
 impl Drop for Server {
@@ -654,6 +658,24 @@ fn one_server_serves_two_projects_and_says_when_a_path_is_in_neither() {
         message.contains("Paths are read from the server's working directory"),
         "{message}"
     );
+
+    let resources = server.result("resources/list", json!({}));
+    let uris: Vec<&str> = resources["resources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["uri"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        uris,
+        [
+            "ascribe://directives",
+            "ascribe://model/api",
+            "ascribe://instructions/api",
+            "ascribe://model/guides",
+            "ascribe://instructions/guides",
+        ]
+    );
 }
 
 #[test]
@@ -713,6 +735,200 @@ fn a_project_is_loaded_again_when_its_files_change() {
     assert_eq!(model["phrases"].as_array().unwrap().len(), 2, "{model}");
     let (text, _) = server.call_ok("ascribe_refs", json!({ "target": "phrase:company" }));
     assert!(text.contains("0 places") || text.contains("No "), "{text}");
+}
+
+#[test]
+fn resources_and_prompts_are_what_their_commands_print() {
+    let repo = repository();
+    let root = repo.path();
+    let before = contents(root);
+    let mut server = Server::start(root);
+
+    assert_eq!(
+        server.read_resource("ascribe://directives"),
+        stdout(root, &["agents", "skill", "references/directives.md"])
+    );
+    assert_eq!(
+        server.read_resource("ascribe://model/site"),
+        stdout(root, &["model", "site"])
+    );
+    assert_eq!(
+        server.read_resource("ascribe://instructions/site"),
+        stdout(root, &["agents", "rules", "site"])
+    );
+    let reply = server.request("resources/read", json!({ "uri": "ascribe://nothing" }));
+    assert_eq!(reply["error"]["code"], -32602, "{reply}");
+
+    let prompts = server.result("prompts/list", json!({}));
+    let names: Vec<&str> = prompts["prompts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["new-page", "fix", "review"]);
+
+    let calls: &[(&str, Value, &[&str])] = &[
+        (
+            "new-page",
+            json!({ "type": "guide", "title": "Rotate your keys", "path": "site" }),
+            &[
+                "agents",
+                "prompt",
+                "new-page",
+                "--arg",
+                "type=guide",
+                "--arg",
+                "title=Rotate your keys",
+                "--arg",
+                "path=site",
+            ],
+        ),
+        (
+            "fix",
+            json!({ "path": "site/docs/install.md" }),
+            &[
+                "agents",
+                "prompt",
+                "fix",
+                "--arg",
+                "path=site/docs/install.md",
+            ],
+        ),
+        (
+            "fix",
+            json!({ "path": "site/docs/keys.md" }),
+            &["agents", "prompt", "fix", "--arg", "path=site/docs/keys.md"],
+        ),
+        (
+            "review",
+            json!({ "path": "site", "base": "main" }),
+            &[
+                "agents",
+                "prompt",
+                "review",
+                "--arg",
+                "path=site",
+                "--arg",
+                "base=main",
+            ],
+        ),
+    ];
+    for (name, arguments, command) in calls {
+        let result = server.result(
+            "prompts/get",
+            json!({ "name": name, "arguments": arguments }),
+        );
+        let text = result["messages"][0]["content"]["text"].as_str().unwrap();
+        assert_eq!(text, stdout(root, command), "{name} {arguments}");
+    }
+    assert_eq!(contents(root), before);
+
+    let reply = server.request(
+        "prompts/get",
+        json!({ "name": "new-page", "arguments": { "type": "guide" } }),
+    );
+    assert!(
+        reply["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("needs `title`"),
+        "{reply}"
+    );
+}
+
+#[test]
+fn the_new_page_prompt_says_where_the_page_goes_and_what_it_needs() {
+    let repo = repository();
+    let text = stdout(
+        repo.path(),
+        &[
+            "agents",
+            "prompt",
+            "new-page",
+            "--arg",
+            "type=guide",
+            "--arg",
+            "title=Rotate your keys",
+            "--arg",
+            "path=site",
+        ],
+    );
+    assert!(text.contains("Write a new page of type `guide`"), "{text}");
+    assert!(text.contains("`guides/**`"), "{text}");
+    assert!(text.contains("title: \"Rotate your keys\""), "{text}");
+    assert!(text.contains("audience: …"), "{text}");
+}
+
+#[test]
+fn agents_prompt_lists_its_prompts_and_refuses_what_it_doesnt_know() {
+    let repo = repository();
+    let root = repo.path().join("site");
+    let list = stdout(&root, &["agents", "prompt", "--list"]);
+    for name in ["new-page", "fix", "review"] {
+        assert!(list.contains(name), "{list}");
+    }
+    for args in [
+        &["agents", "prompt", "nothing"][..],
+        &["agents", "prompt", "new-page", "--arg", "title=X"],
+        &[
+            "agents",
+            "prompt",
+            "new-page",
+            "--arg",
+            "type=nope",
+            "--arg",
+            "title=X",
+        ],
+        &["agents", "prompt", "fix", "--arg", "depth=2"],
+    ] {
+        let out = ascribe(&root, args);
+        assert_eq!(out.status.code(), Some(2), "{args:?}");
+        assert!(out.stdout.is_empty(), "{args:?}");
+    }
+}
+
+/// The command a description names, as words: "The command: `...`."
+fn named_command(description: &str) -> Vec<String> {
+    let (_, rest) = description
+        .rsplit_once("The command: `")
+        .unwrap_or_else(|| panic!("names no command: {description}"));
+    let command = rest.trim_end_matches("`.");
+    command
+        .split(' ')
+        .filter(|word| !word.starts_with('<'))
+        .map(str::to_owned)
+        .collect()
+}
+
+#[test]
+fn every_tool_resource_and_prompt_names_a_command_that_exists() {
+    let repo = repository();
+    let root = repo.path();
+    let mut server = Server::start(root);
+    let mut descriptions = Vec::new();
+    let mut collect = |result: Value, list: &str| {
+        for item in result[list].as_array().unwrap() {
+            descriptions.push(item["description"].as_str().unwrap().to_owned());
+        }
+    };
+    collect(server.result("tools/list", json!({})), "tools");
+    collect(server.result("resources/list", json!({})), "resources");
+    collect(
+        server.result("resources/templates/list", json!({})),
+        "resourceTemplates",
+    );
+    collect(server.result("prompts/list", json!({})), "prompts");
+    assert_eq!(descriptions.len(), 9 + 3 + 2 + 3);
+    for description in descriptions {
+        let words = named_command(&description);
+        assert_eq!(words[0], "ascribe", "{description}");
+        let mut args: Vec<&str> = words[1..].iter().map(String::as_str).collect();
+        args.push("--help");
+        // A subcommand that doesn't exist is an error, even with `--help`.
+        let out = ascribe(root, &args);
+        assert_eq!(out.status.code(), Some(0), "{description}: {args:?}");
+    }
 }
 
 /// The arguments a tool's description gives as its example are ones its

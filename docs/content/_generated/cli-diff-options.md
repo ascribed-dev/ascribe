@@ -11,3 +11,5 @@
   - `html`: One self-contained HTML file that shows every changed page rendered, with its changes marked, for reviewers.
   - `prompt`: A prompt for an agent that reviews the changes as readers will see them: about every changed page, or about the PAGE named. Nothing when nothing changed.
 - `--exit-code`: Exit with 1 when anything changed, as `git diff --exit-code` does.
+- @available: next
+  `--pages-only`: List the changed pages without their block-level changes. With `--format json`, each page's `changes` is empty and its `counts` still count them, so the report stays short on a large change. Text lists only pages anyway, and HTML needs the blocks.
