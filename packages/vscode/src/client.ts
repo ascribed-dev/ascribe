@@ -9,8 +9,10 @@ import {
   type ErrorHandler,
   type ErrorHandlerResult,
   type LanguageClientOptions,
+  type Message,
   type ServerOptions,
 } from "vscode-languageclient/node";
+import { PublishedDiagnostics } from "./agents/published.js";
 import { ancestorsWithin, resolveBinary, type Resolution, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
 import { convertEdit, type ServerEdit } from "./edit.js";
@@ -49,6 +51,9 @@ export class ProjectServer implements vscode.Disposable {
   private starting: Promise<void> = Promise.resolve();
   private readonly started = new vscode.EventEmitter<void>();
   private disposed = false;
+  private runningSince: number | undefined;
+  /** The diagnostics the running server last published for each file, with their versions. */
+  readonly published: PublishedDiagnostics;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -56,6 +61,14 @@ export class ProjectServer implements vscode.Disposable {
     private readonly host: ProjectHost,
   ) {
     this.crashes = new CrashCounter(readMaxCrashes());
+    this.published = new PublishedDiagnostics(fileOfUri, (file) =>
+      host.ownedElsewhere(project, vscode.Uri.file(file)),
+    );
+  }
+
+  /** When the server last reached the running state, in milliseconds since the epoch. */
+  get since(): number | undefined {
+    return this.runningSince;
   }
 
   /** The output channel, created when first needed so its name reflects the workspace then. */
@@ -250,12 +263,16 @@ export class ProjectServer implements vscode.Disposable {
           untilDisposed(this.output, () => this.disposed),
           (uri) => this.host.ownedElsewhere(this.project, uri),
           (error) => this.reportFeatureError("preparing workspace rename", error),
+          (message) => {
+            if (isPublication(message)) this.published.record(message.params);
+          },
         ),
         errorHandler: this.errorHandler(),
       },
     );
     client.onDidChangeState(({ newState }) => {
       if (newState === State.Running) {
+        this.runningSince = Date.now();
         this.status.set("running");
         this.started.fire();
       }
@@ -279,6 +296,8 @@ export class ProjectServer implements vscode.Disposable {
   private async stopNow(): Promise<void> {
     const client = this.client;
     this.client = undefined;
+    this.runningSince = undefined;
+    this.published.clear();
     this.status.set("stopped");
     if (!client) return;
     try {
@@ -378,6 +397,7 @@ function clientOptions(
   outputChannel: vscode.LogOutputChannel,
   ownedElsewhere: (uri: vscode.Uri) => boolean,
   reportRenameError: (error: unknown) => void,
+  observe: (message: Message) => void,
 ): LanguageClientOptions {
   const scope = scopeMiddleware(ownedElsewhere);
   const folder = globFolder(project.folder);
@@ -404,11 +424,42 @@ function clientOptions(
           ),
       },
     },
+    // Every message from the server passes here before the client handles
+    // it: the published diagnostics are kept with their document versions,
+    // which the client's own copy drops.
+    connectionOptions: {
+      messageStrategy: {
+        handleMessage: (message, next) => {
+          observe(message);
+          return next(message);
+        },
+      },
+    },
     // The server asks for the files it wants watched with dynamic
     // registrations (`workspace/didChangeWatchedFiles`), which the client
     // forwards, so files that aren't open are followed too. Watching them
     // here as well would deliver every event twice.
   };
+}
+
+/** Whether a message is a `textDocument/publishDiagnostics` notification. */
+function isPublication(message: Message): message is Message & { params: unknown } {
+  return (
+    "method" in message &&
+    message.method === "textDocument/publishDiagnostics" &&
+    !("id" in message) &&
+    "params" in message
+  );
+}
+
+/** A `file:` URI's path; `undefined` for any other URI, or one that doesn't parse. */
+function fileOfUri(uri: string): string | undefined {
+  try {
+    const parsed = vscode.Uri.parse(uri, true);
+    return parsed.scheme === "file" ? parsed.fsPath : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function readMaxCrashes(): number {

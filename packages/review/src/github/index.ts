@@ -24,7 +24,12 @@ export {
   type OverlayMethod,
   type RequestContext,
 } from "./requests.js";
-export { buildThreadsPrompt, promptProject, type ThreadPromptContext } from "./prompt.js";
+export {
+  buildThreadsList,
+  buildThreadsPrompt,
+  promptProject,
+  type ThreadPromptContext,
+} from "./prompt.js";
 export { parseRemote, readCheckout, type CheckoutInfo, type RepositoryRef } from "./repository.js";
 export {
   ghTransport,

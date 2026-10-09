@@ -25,6 +25,14 @@ interface Manifest {
     semanticTokenScopes: { language: string; scopes: Record<string, string[]> }[];
     keybindings: { command: string; key: string; mac?: string; when: string }[];
     mcpServerDefinitionProviders: { id: string; label: string }[];
+    languageModelTools: {
+      name: string;
+      toolReferenceName: string;
+      canBeReferencedInPrompt: boolean;
+      when: string;
+      modelDescription: string;
+      inputSchema: { type: string; properties: Record<string, unknown>; required?: string[] };
+    }[];
   };
 }
 
@@ -225,5 +233,24 @@ describe("semantic tokens and the server's legend", () => {
       { id: "ascribe.mcp", label: MCP_LABEL },
     ]);
     expect(mcp).toContain('export const MCP_PROVIDER = "ascribe.mcp";');
+  });
+
+  it("declares the tools the extension registers, each one chat can name", () => {
+    const tools = read("../../src/agents/tools.ts");
+    const registered = [...tools.matchAll(/^ {2}\w+: "(ascribe_\w+)",$/gm)].map((m) => m[1]);
+    const declared = manifest.contributes.languageModelTools;
+    expect(declared.map((t) => t.name)).toEqual(registered);
+    for (const tool of declared) {
+      expect(tool.toolReferenceName).toBe(tool.name);
+      expect(tool.canBeReferencedInPrompt).toBe(true);
+      expect(tool.when).toBe("ascribe.active");
+      // Optional input only: a tool with none acts on the active editor's project.
+      expect(tool.inputSchema).toMatchObject({ type: "object", properties: { path: {} } });
+      expect(tool.inputSchema.required).toBeUndefined();
+    }
+    // The problems tool says what it doesn't cover, and what does.
+    const problems = declared.find((t) => t.name === "ascribe_editor_problems");
+    expect(problems?.modelDescription).toContain("editor's build only");
+    expect(problems?.modelDescription).toContain("ascribe_check");
   });
 });

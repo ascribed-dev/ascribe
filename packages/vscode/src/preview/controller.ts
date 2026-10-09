@@ -161,7 +161,8 @@ export class PreviewController implements vscode.Disposable {
   private siteShownFor: string | undefined;
   private siteLog: ({ url: string } | { problem: string })[] = [];
   private framedLog: string[] = [];
-  private readonly review: ReviewController;
+  /** Review: its base, its changed pages, and the pull request's threads. */
+  readonly review: ReviewController;
   private readonly sourceComments: SourceComments;
 
   constructor(

@@ -11,6 +11,7 @@ import * as vscode from "vscode";
 import {
   answerRequest,
   baseRevision,
+  buildThreadsList,
   buildThreadsPrompt,
   contentPrefixOf,
   findPullRequest,
@@ -309,6 +310,22 @@ export class ThreadsController implements vscode.Disposable {
       request,
     );
     return prompt === undefined ? undefined : { prompt, aboutUnsaved };
+  }
+
+  /**
+   * The open threads, as an agent's tool lists them, each with the pages
+   * that show it. Rejects with a `ReviewError` when review comments aren't on.
+   */
+  async list(server: ProjectServer): Promise<string> {
+    const connection = this.connection(server);
+    if (connection?.state !== "on") {
+      throw new ReviewError("not-found", "Review comments aren't on for this project.");
+    }
+    return buildThreadsList({
+      session: connection.session,
+      project: promptProject(server.project.folder),
+      changedPages: () => this.host.changedPages(server),
+    });
   }
 
   private async open(server: ProjectServer, interactive: boolean): Promise<Connection> {

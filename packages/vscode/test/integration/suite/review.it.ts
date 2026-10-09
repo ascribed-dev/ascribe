@@ -1,9 +1,11 @@
 import * as assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import * as vscode from "vscode";
+import type { AscribeApi } from "../../../src/extension.js";
 import type { PreviewApi, RenderRecord } from "../../../src/preview/controller.js";
 import type { PageDiff } from "../../../src/preview/protocol.js";
-import { activated, uriOf, waitFor, workspace } from "./helpers.js";
+import { activated, diagnosticsOf, sleep, uriOf, waitFor, workspace } from "./helpers.js";
 
 // Review in the preview with the real `ascribe lsp`, on a copy of
 // examples/quill made into a git repository with one commit and a change in
@@ -100,5 +102,159 @@ describe("review, with the real language server on a quill repository", () => {
       "`no-such-branch` isn't a branch, tag, or commit of this repository.",
     );
     await waitFor("review to stay off", () => preview.review.base(workspace()) === undefined);
+  });
+});
+
+// What agents in VS Code get, on the same repository: the MCP server the
+// extension offers, and its tools, called through VS Code's API as an agent's
+// host calls them.
+describe("agents' tools, with the real language server on a quill repository", () => {
+  const install = uriOf("docs", "install-agent.md");
+  const keys = uriOf("docs", "keys.md");
+  let api: AscribeApi;
+
+  /** Calls a tool through VS Code, as an agent's host does, and returns its text. */
+  const invoke = async (name: string, input: Record<string, unknown> = {}): Promise<string> => {
+    const call = vscode.lm.invokeTool(name, { input, toolInvocationToken: undefined });
+    const result = await Promise.race([
+      call,
+      sleep(20_000).then(() => assert.fail(`${name} didn't answer: a confirmation, or a hang`)),
+    ]);
+    return result.content
+      .map((part) => (part instanceof vscode.LanguageModelTextPart ? part.value : ""))
+      .join("");
+  };
+
+  before(async () => {
+    api = await activated();
+    await api.whenSettled();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(install));
+  });
+
+  after(async () => {
+    await api.preview.review.stop(workspace());
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  it("offers `ascribe mcp` with the project's binary, in the workspace folder", async () => {
+    assert.equal(api.agents.mcp.registered(), true);
+    const spec = await api.agents.mcp.spec();
+    assert.equal(spec?.label, "Ascribe");
+    assert.equal(spec?.command, api.binary()?.path);
+    assert.deepEqual(spec?.args, ["mcp"]);
+    assert.equal(spec?.cwd, workspace());
+  });
+
+  it("registers its three tools with VS Code", () => {
+    const names = vscode.lm.tools.map((tool) => tool.name).filter((n) => n.startsWith("ascribe_"));
+    assert.deepEqual(names.sort(), [
+      "ascribe_editor_problems",
+      "ascribe_review_changes",
+      "ascribe_review_threads",
+    ]);
+  });
+
+  it("says in a line that review is off, and doesn't turn it on", async () => {
+    assert.equal(api.preview.review.base(workspace()), undefined);
+    const threads = await invoke("ascribe_review_threads");
+    const changes = await invoke("ascribe_review_changes");
+    assert.match(threads, /^Review is off for [^\n]+\.$/);
+    assert.equal(changes, threads);
+    assert.equal(api.preview.review.base(workspace()), undefined);
+  });
+
+  it("reports a problem typed a moment before, unsaved, for that version", async () => {
+    const editor = await vscode.window.showTextDocument(install);
+    const end = editor.document.lineCount;
+    await editor.edit((edit) =>
+      edit.insert(new vscode.Position(end, 0), "\nSee [nothing](no-such-page.md).\n"),
+    );
+    // No wait: the tool waits for the server.
+    const answer = JSON.parse(
+      await invoke("ascribe_editor_problems", { path: "docs/install-agent.md" }),
+    ) as {
+      diagnostics: { slug: string; file: string; range: { start: { line: number } } }[];
+      document_version: number;
+      current: boolean;
+      unsaved: string[];
+      builds_checked: string[];
+      schema_version: number;
+    };
+    assert.equal(answer.schema_version, 1);
+    assert.equal(answer.current, true);
+    assert.equal(answer.document_version, editor.document.version);
+    assert.deepEqual(answer.unsaved, ["docs/install-agent.md"]);
+    assert.equal(answer.builds_checked.length, 1);
+    const broken = answer.diagnostics.find((d) => d.slug === "link-target-missing");
+    assert.ok(broken, JSON.stringify(answer.diagnostics));
+    assert.equal(broken.file, "docs/install-agent.md");
+    assert.ok(broken.range.start.line > end - 1, JSON.stringify(broken.range));
+    await vscode.commands.executeCommand("undo");
+  });
+
+  it("reports a problem written on disk a moment before, in a file that isn't open", async () => {
+    const original = readFileSync(keys.fsPath, "utf8");
+    try {
+      writeFileSync(keys.fsPath, `${original}\nSee [nothing](no-such-page.md).\n`);
+      const answer = JSON.parse(await invoke("ascribe_editor_problems", { path: keys.fsPath })) as {
+        diagnostics: { slug: string }[];
+        document_version: number | null;
+        current: boolean;
+      };
+      assert.equal(answer.document_version, null);
+      assert.equal(answer.current, true);
+      assert.ok(answer.diagnostics.some((d) => d.slug === "link-target-missing"));
+    } finally {
+      writeFileSync(keys.fsPath, original);
+      await diagnosticsOf(keys, (d) => d.length === 0);
+    }
+  });
+
+  it("publishes a change's diagnostics well under a second, typed or written on disk", async () => {
+    // Copilot reads the Problems panel a second after its own edit.
+    const editor = await vscode.window.showTextDocument(install);
+    const end = editor.document.lineCount;
+    let began = Date.now();
+    await editor.edit((edit) =>
+      edit.insert(new vscode.Position(end, 0), "\nSee [typed](typed-missing.md).\n"),
+    );
+    await diagnosticsOf(install, (d) => d.some((x) => x.message.includes("typed-missing")), 5_000);
+    const typed = Date.now() - began;
+    await vscode.commands.executeCommand("undo");
+
+    const original = readFileSync(keys.fsPath, "utf8");
+    began = Date.now();
+    writeFileSync(keys.fsPath, `${original}\nSee [written](written-missing.md).\n`);
+    try {
+      await diagnosticsOf(keys, (d) => d.some((x) => x.message.includes("written-missing")), 5_000);
+    } finally {
+      const written = Date.now() - began;
+      writeFileSync(keys.fsPath, original);
+      console.log(`      change to diagnostics: typed ${typed} ms, written on disk ${written} ms`);
+      assert.ok(typed < 500, `typed: ${typed} ms`);
+      assert.ok(written < 1_000, `written on disk: ${written} ms`);
+    }
+    await diagnosticsOf(keys, (d) => d.length === 0);
+  });
+
+  it("lists the changed pages review shows, with their causes, once review is on", async () => {
+    const started = await api.preview.review.start(workspace());
+    assert.equal(started.problem, null);
+    const answer = JSON.parse(await invoke("ascribe_review_changes")) as {
+      base: { requested: string };
+      pages: { file: string; path: string; because: string[]; counts: Record<string, number> }[];
+    };
+    assert.equal(answer.base.requested, "main");
+    const listed = await api.preview.review.changedPages(workspace());
+    assert.deepEqual(
+      answer.pages.map((p) => [p.path, p.because]),
+      listed.map((p) => [p.path, p.because]),
+    );
+    assert.equal(answer.pages[0]?.file, "docs/install-agent.md");
+    // Without a pull request on GitHub, the threads tool says so.
+    assert.match(
+      await invoke("ascribe_review_threads"),
+      /no open pull request|isn't signed in|hasn't been read/,
+    );
   });
 });

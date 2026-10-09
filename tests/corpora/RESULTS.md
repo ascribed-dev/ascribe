@@ -58,6 +58,7 @@ Synthetic project (3,000 pages, 100 fragments, 60 images), median of the runs:
 | in process: index 194 ms; resolve `site` 144 ms; emit plain 56 ms | |
 | language server: load and first diagnostics | 755 ms |
 | language server: page keystroke, fragment keystroke | 3.0 ms, 9.0 ms |
+| language server: a page written on disk, to its diagnostics (2026-10-09) | 3.3 ms |
 | incremental: edit one page (`apply`) | 85 µs median; with a snapshot held 3.0 ms |
 | incremental: edit a fragment 30 pages include, rename its heading | 108 µs, 195 µs |
 | incremental: a model change re-indexes all 3,100 files | 163 ms |
