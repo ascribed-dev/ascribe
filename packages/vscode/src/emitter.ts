@@ -1,5 +1,5 @@
 /** Something that can be let go of, as `vscode.Disposable` is. */
-export interface Disposable {
+interface Disposable {
   dispose(): unknown;
 }
 

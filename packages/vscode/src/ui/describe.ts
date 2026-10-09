@@ -29,7 +29,7 @@ export const STATE_NAMES: Record<ServerState, string> = {
 };
 
 /** The codicon for a server's state, as the status bar and the Projects view show it. */
-export const STATE_ICONS: Record<ServerState, string> = {
+const STATE_ICONS: Record<ServerState, string> = {
   stopped: "book",
   starting: "sync~spin",
   running: "book",
@@ -83,7 +83,7 @@ export function statusFor(
 }
 
 /** The tooltip's lines: where the project is, the binary, the state, and the build. */
-export function tooltipLines(project: ProjectInfo): string[] {
+function tooltipLines(project: ProjectInfo): string[] {
   const lines = [
     `Ascribe project ${project.name}`,
     `Folder: ${project.folder}`,
@@ -101,7 +101,7 @@ export function tooltipLines(project: ProjectInfo): string[] {
 }
 
 /** A binary as people read it: its path, where it was found, and its version. */
-export function binaryText(binary: ResolvedBinary): string {
+function binaryText(binary: ResolvedBinary): string {
   return `${binary.path} (${binary.source}, ${formatVersion(binary.version)})`;
 }
 

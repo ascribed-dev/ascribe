@@ -15,7 +15,7 @@ import type { ProjectBuilds } from "./projectBuilds.js";
 const VIEW_ID = "ascribe.projects";
 
 /** An item of the view, as the tests see it. */
-export interface ProjectsItem extends NodeLook {
+interface ProjectsItem extends NodeLook {
   children: ProjectsItem[];
 }
 
