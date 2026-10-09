@@ -13,6 +13,7 @@ import {
 } from "vscode-languageclient/node";
 import { ancestorsWithin, resolveBinary, type ResolvedBinary } from "./binary.js";
 import { CrashCounter } from "./crash.js";
+import { convertEdit, type ServerEdit } from "./edit.js";
 import { nodeEnvironment, shellCommand, usesShell } from "./environment.js";
 import { globFolder, type Project } from "./projects.js";
 import { scopeMiddleware } from "./scope.js";
@@ -83,12 +84,30 @@ export class ProjectServer implements vscode.Disposable {
    * Sends a custom request to the running server (the preview's
    * `ascribe/preview`). Rejects when the server isn't running.
    */
-  request(method: string, params: unknown): Promise<unknown> {
+  request(method: string, params: unknown, token?: vscode.CancellationToken): Promise<unknown> {
     const client = this.client;
     if (!client || this.status !== "running") {
       return Promise.reject(new Error("the Ascribe language server isn't running"));
     }
-    return client.sendRequest(method, params);
+    return token ? client.sendRequest(method, params, token) : client.sendRequest(method, params);
+  }
+
+  /**
+   * Sends a request that answers with an edit, as `ascribe/edit` does, and
+   * converts the edit and the range to select into the editor's types.
+   * Rejects when the server isn't running or the answer isn't an edit.
+   */
+  async requestEdit(
+    method: string,
+    params: unknown,
+  ): Promise<ServerEdit<vscode.WorkspaceEdit, vscode.Range>> {
+    const value = await this.request(method, params);
+    const converter = this.client?.protocol2CodeConverter;
+    if (!converter) throw new Error("the Ascribe language server isn't running");
+    return convertEdit(value, {
+      asWorkspaceEdit: (edit) => converter.asWorkspaceEdit(edit),
+      asRange: (range) => converter.asRange(range),
+    });
   }
 
   /** How many errors the server reports for the project, as the Problems panel lists them. */
