@@ -29,7 +29,7 @@ export const CHAT_COMMAND = "workbench.action.chat.open";
 /** Claude Code's VS Code extension, whose URI handler opens a tab with a prompt filled in. */
 export const CLAUDE_CODE_EXTENSION = "anthropic.claude-code";
 /** The longest link Cursor's deeplinks take, URL-encoded. */
-export const CURSOR_LINK_LIMIT = 10_000;
+const CURSOR_LINK_LIMIT = 10_000;
 
 /** A link to another program on the machine, as `vscode.Uri.from` takes it. */
 export interface PromptLink {
@@ -87,7 +87,7 @@ export function cursorLink(prompt: string): PromptLink {
 }
 
 /** A link's length as it's written. */
-export const linkLength = (link: PromptLink): number =>
+const linkLength = (link: PromptLink): number =>
   `${link.scheme}://${link.authority}${link.path}?${link.query}`.length;
 
 /** The targets this editor has: the clipboard always. */
