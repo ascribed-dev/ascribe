@@ -39,6 +39,7 @@ Beyond `AGENTS.md` and the skill, `sync` keeps up to date the files of each targ
 | `claude` | An import of `AGENTS.md` (`@AGENTS.md`) in `CLAUDE.md`, and the skill in `.claude/skills/ascribe/`, loaded for your pages |
 | `claude-rules` | The rules in `.claude/rules/ascribe-<project>.md`, loaded only when Claude Code works on your pages |
 | `copilot` | The rules in `.github/instructions/ascribe-<project>.instructions.md`, applied only to your pages |
+| `codex` | Nothing of its own, since Codex reads `AGENTS.md` and the skill; it's there for [its hooks](#hooks) |
 
 **Claude Code** reads `AGENTS.md` by itself only while there's no `CLAUDE.md` at or above the folder it works in. So `sync` never creates a `CLAUDE.md` unless you ask with `--target claude`, and when there is one, it adds the import to it rather than copying the rules. A personal `CLAUDE.local.md` also stops Claude Code reading `AGENTS.md`; `sync` doesn't edit it, but says so, and you can add `@AGENTS.md` to it yourself.
 
@@ -159,3 +160,49 @@ See [`ascribe mcp`](../reference/cli.md#ascribe-mcp) for each tool and the comma
 ### The server in VS Code
 
 In VS Code, the Ascribe extension offers the server to VS Code's agents itself, so there's no file to write. It adds three tools of its own, for what only the editor knows: `ascribe_editor_problems`, the problems of files as the editor has them, saved or not; and, while review is on, `ascribe_review_threads`, the pull request's open threads, and `ascribe_review_changes`, the changed pages. See [Agents in VS Code](editor.md#agents-in-vs-code).
+
+## Hooks
+
+A hook is a command your agent runs at a point in its work. Ascribe's checks an agent's work without the agent having to remember: each file it writes, as it writes it, and the whole project before it finishes. One command serves Claude Code, Codex, and GitHub Copilot, which share a hook format, with the agent's name as its argument:
+
+- **After an edit**, `ascribe agents hook <agent>` checks the files the agent wrote, as `ascribe check <file> --editor-build` does, and adds their errors to what the agent reads next, at most 10, with the build it checked. It says nothing when there are none, and leaves warnings out, which would interrupt every edit.
+- **Before the agent finishes**, `ascribe agents hook <agent> --event stop` checks every build of each project whose pages or `ascribe.toml` the working tree changes, anywhere in the repository. While there are errors, or a project can't be checked at all, it keeps the agent working, and tells it why. It asks once: when the agent is already continuing because of it, it lets the agent stop. Changes the agent has committed before it stops aren't in the working tree, so they aren't checked; check them in CI.
+
+Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. The first hook in a project starts a check server in the background, which keeps the project loaded, so a check after an edit takes milliseconds on a project of thousands of pages, and stops itself after 10 idle minutes. See [`ascribe agents hook`](../reference/cli.md#ascribe-agents-hook).
+
+`ascribe agents sync --with-hook` writes the entries that run them, with the targets you name or already have:
+
+```shell
+ascribe agents sync --target claude --with-hook
+```
+
+| Target | File | Entries |
+|---|---|---|
+| `claude` | `.claude/settings.json` and `.mcp.json` | The edit hook (after `Write`, `Edit`, and `MultiEdit`), the stop hook, and [the MCP server](#the-mcp-server) |
+| `codex` | `.codex/hooks.json` | The edit hook and the stop hook |
+| `copilot` | `.github/hooks/ascribe.json` | The edit hook and the stop hook, for Copilot's CLI and its cloud agent |
+
+It merges its entries into a file it shares: it updates the entries it wrote before in place, keeping what you set on them, such as a longer `timeout` or an `env` on the MCP server, and leaves every other entry and setting as it was. A file whose meaning wouldn't change is left alone, however it's formatted. `.github/hooks/ascribe.json` is wholly Ascribe's. `--check` covers them, and once a file has Ascribe's hooks, `sync` keeps them up to date without `--with-hook`; it adds the MCP server back to `.mcp.json` only with `--with-hook`, so one you removed stays removed.
+
+The entries run `ascribe` from your path. Install it with `npm install -g @ascribed/cli`, or put the release's binary on your path; the npm package's launcher adds about 60 ms to each run, more than a check after an edit takes, so prefer the binary for hooks. When your project pins `@ascribed/cli` in its `node_modules`, the hooks run that binary instead, found from the repository's root (`$CLAUDE_PROJECT_DIR` for Claude Code, `git rev-parse --show-toplevel` for Codex and Copilot), so an agent started in a subfolder finds it too. Two entries still run `ascribe` from your path, because neither can find the root on every system: the MCP server in `.mcp.json`, and Codex's hooks on Windows. Codex asks you to trust a project's hooks before it runs them.
+
+For Claude Code, use the plugin or the project's entries, not both: with both, it hears about each problem twice.
+
+## The plugin
+
+The Ascribe plugin, in `plugins/ascribe/` in Ascribe's repository, gives Claude Code everything in one install:
+
+- **The language server**, which Claude Code starts for `.md` files and whose diagnostics it reads after each edit: the check after each edit, with no hook. It reports the editor's build, as the edit hook does.
+- **The stop hook.**
+- **The MCP server.**
+- **The skill.**
+- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](../reference/cli.md#ascribe-agents-prompt).
+
+Add it from a copy of the repository:
+
+```shell
+/plugin marketplace add ./plugins/ascribe
+/plugin install ascribe@ascribe
+```
+
+The plugin has both kinds of manifest: `.claude-plugin/plugin.json`, which Copilot's CLI reads too, and the Agent Plugins `plugin.json`, which VS Code and Cursor read. Claude Code doesn't start a plugin's language server in a cloud session; there, use the project's entries from `--with-hook`, which Claude Code reads from the repository. To keep the language server's diagnostics out of the conversation on a project with many problems, see [the plugin's README](https://github.com/ascribed-dev/ascribe/tree/main/plugins/ascribe#readme); the stop hook still checks before Claude finishes.

@@ -18,6 +18,7 @@ mod docs;
 mod edit;
 mod formatting;
 mod fsx;
+mod headless;
 mod hover;
 mod inventory;
 mod links;
@@ -52,6 +53,7 @@ pub use context::{
     FrontmatterValue, METHOD as CONTEXT_METHOD, Selection, SelectionKind, VariantArm,
 };
 pub use edit::{EditAction, EditParams, EditResult, METHOD as EDIT_METHOD};
+pub use headless::{Problem, Watched};
 pub use inventory::{
     InventoryEntry, InventoryFragment, InventoryPage, InventoryParams, InventoryResult,
     METHOD as INVENTORY_METHOD, ModelKind,

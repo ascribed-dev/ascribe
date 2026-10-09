@@ -30,7 +30,7 @@ use serde::Serialize;
 
 pub use ascribe_model::short_commit as short;
 pub use copies::SIZE_LIMIT;
-pub use remote::{CommitLine, Commits, NEWEST};
+pub use remote::{CommitLine, Commits, NEWEST, cache_root};
 
 use copies::{Folder, not_text};
 use remote::{Cache, History, Remote};

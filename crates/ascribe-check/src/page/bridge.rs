@@ -124,6 +124,14 @@ impl<'p> Indexed<'p> {
         }
     }
 
+    /// The same index, borrowed, for another checker.
+    pub fn borrowed(&self) -> Indexed<'_> {
+        Indexed {
+            index: IndexRef::Borrowed(&self.index),
+            ids: self.ids.clone(),
+        }
+    }
+
     /// The checked project's id for a file of the index.
     pub fn file(&self, id: FileId) -> FileId {
         self.ids.get(&id).copied().unwrap_or(id)

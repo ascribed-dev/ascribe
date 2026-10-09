@@ -1,0 +1,14 @@
+{
+  "name": "ascribe",
+  "owner": {
+    "name": "Ascribe",
+    "url": "https://github.com/ascribed-dev"
+  },
+  "plugins": [
+    {
+      "description": "Check Ascribe docs as an agent edits them: the language server's diagnostics after each edit, a full check before the agent finishes, the MCP server, the Ascribe skill, and commands for the named prompts.",
+      "name": "ascribe",
+      "source": "./"
+    }
+  ]
+}

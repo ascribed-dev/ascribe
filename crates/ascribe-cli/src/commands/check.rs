@@ -9,7 +9,7 @@ use std::rc::Rc;
 use ascribe_check::prompt::{self, Builds};
 use ascribe_check::{
     Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, diagnose,
-    diagnose_editor_build, locate_for,
+    diagnose_editor_build_in, locate_for,
 };
 use ascribe_core::Coded;
 use ascribe_core::path::relative_path;
@@ -152,6 +152,17 @@ pub struct Outcome {
     pub counts: Counts,
 }
 
+impl Outcome {
+    /// What's reported, the files it's in, and the first build checked.
+    pub fn parts(&self) -> (&[Reported], &FileTable, Option<&str>) {
+        (
+            &self.reported,
+            &self.files,
+            self.builds_checked.first().map(String::as_str),
+        )
+    }
+}
+
 /// Why a check couldn't be made.
 pub enum Stopped {
     /// The project couldn't be found or loaded, or the paths can't be
@@ -211,7 +222,11 @@ pub fn run_check(
     };
     let (diagnostics, builds_checked) = if args.editor_build {
         let files = scope.as_ref().and_then(|s| s.named_sources(project));
-        names(diagnose_editor_build(project, files.as_deref()))
+        names(diagnose_editor_build_in(
+            project,
+            Some(loaded.page_index()),
+            files.as_deref(),
+        ))
     } else {
         loaded
             .diagnosed(&args.build, |project| {

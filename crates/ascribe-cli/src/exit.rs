@@ -154,6 +154,10 @@ mod tests {
             "instructions_unwritable",
             "an instruction file can't be written",
         ),
+        (
+            "settings_unreadable",
+            "an agent's settings file can't be merged into",
+        ),
     ];
 
     fn path() -> PathBuf {
@@ -278,6 +282,7 @@ mod tests {
                 | SyncError::NoRepository
                 | SyncError::Git(_)
                 | SyncError::Read { .. }
+                | SyncError::Settings { .. }
                 | SyncError::Write { .. } => {}
             }
         }
@@ -441,6 +446,10 @@ mod tests {
             Box::new(SyncError::Read {
                 path: text(),
                 source: io_error(),
+            }),
+            Box::new(SyncError::Settings {
+                path: text(),
+                why: text(),
             }),
             Box::new(SyncError::Write {
                 path: text(),

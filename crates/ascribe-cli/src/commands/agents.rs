@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use clap::{Args as ClapArgs, Subcommand, ValueEnum};
 
 use crate::agents::sync::{self, Plan};
-use crate::agents::{prompts, skill};
+use crate::agents::{checker, hook, prompts, skill};
 use crate::answer::{self, FromDisk};
 use crate::cli::Global;
 use crate::context::load_project;
@@ -41,6 +41,33 @@ pub enum Command {
     /// Print a named prompt for an agent: `new-page`, `fix`, or `review`.
     #[command(after_help = docs_page!("reference/cli/#ascribe-agents-prompt"))]
     Prompt(PromptArgs),
+    /// Check an agent's edits, as its hook: after it writes a file, or
+    /// before it finishes. Reads the hook's input on standard input.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-agents-hook"))]
+    Hook(HookArgs),
+    /// Keep a project loaded for its hooks: run by the first hook in a
+    /// project, in the background.
+    #[command(hide = true)]
+    HookServer {
+        /// The program the hook ran, which the server stops when it
+        /// changes.
+        #[arg(long, value_name = "PATH")]
+        binary: Option<std::path::PathBuf>,
+    },
+}
+
+/// Arguments of `ascribe agents hook`.
+#[derive(Debug, ClapArgs)]
+pub struct HookArgs {
+    /// The agent whose hook runs it: how its input is read and its answer
+    /// written.
+    #[arg(value_enum, value_name = "HARNESS")]
+    pub harness: hook::Harness,
+
+    /// When the hook runs: after the agent writes a file (`edit`), or when
+    /// it's about to finish (`stop`).
+    #[arg(long, value_enum, default_value_t = hook::Event::Edit, value_name = "EVENT")]
+    pub event: hook::Event,
 }
 
 /// Arguments of `ascribe agents rules`.
@@ -100,6 +127,13 @@ pub struct SyncArgs {
     /// and each other target whose files already exist is kept up to date.
     #[arg(long, value_enum, value_name = "TARGET")]
     pub target: Vec<Target>,
+
+    /// Also write the hooks that check each edit and the whole project
+    /// before an agent finishes, for `claude`, `codex`, and `copilot`; and
+    /// for `claude` the MCP server. Hooks written before are kept up to date
+    /// without it.
+    #[arg(long)]
+    pub with_hook: bool,
 }
 
 /// What `sync` can write.
@@ -111,13 +145,18 @@ pub enum Target {
     /// The skill, in the repository root's .agents/skills/ascribe/.
     Skills,
     /// An import of AGENTS.md in CLAUDE.md, creating one beside
-    /// ascribe.toml, and the skill in .claude/skills/ascribe/.
+    /// ascribe.toml, and the skill in .claude/skills/ascribe/; with
+    /// --with-hook, the hooks in .claude/settings.json and the MCP server in
+    /// .mcp.json.
     Claude,
     /// The rules in .claude/rules/, loaded only for the project's pages.
     ClaudeRules,
     /// The rules in .github/instructions/, loaded only for the project's
-    /// pages.
+    /// pages; with --with-hook, the hooks in .github/hooks/ascribe.json.
     Copilot,
+    /// Nothing of its own, since Codex reads AGENTS.md and the skill; with
+    /// --with-hook, the hooks in .codex/hooks.json.
+    Codex,
 }
 
 impl Target {
@@ -128,6 +167,7 @@ impl Target {
             Target::Claude => sync::Target::Claude,
             Target::ClaudeRules => sync::Target::ClaudeRules,
             Target::Copilot => sync::Target::Copilot,
+            Target::Codex => sync::Target::Codex,
         }
     }
 }
@@ -153,6 +193,27 @@ pub fn run(global: &Global, args: Args) -> ExitCode {
             answer::written(result, &mut err).unwrap_or(exit::OK)
         }
         Command::Prompt(args) => prompt(&args, &mut out, &mut err),
+        Command::Hook(args) => {
+            let mut input = String::new();
+            let read = io::Read::read_to_string(&mut io::stdin(), &mut input).map(|_| input);
+            let answer = hook::run(args.harness, args.event, read, hook::Limits::default());
+            let _ = out.write_all(answer.stdout.as_bytes());
+            let _ = err.write_all(answer.stderr.as_bytes());
+            answer.code
+        }
+        Command::HookServer { binary } => match global.config.as_deref() {
+            Some(config) => match checker::serve(config, checker::IDLE, binary.as_deref()) {
+                Ok(()) => exit::OK,
+                Err(e) => {
+                    let _ = writeln!(err, "error: the check server stopped: {e}");
+                    exit::FAILURE
+                }
+            },
+            None => {
+                let _ = writeln!(err, "error: the check server needs --config");
+                exit::FAILURE
+            }
+        },
     };
     let _ = out.flush();
     exit::code(code)
@@ -164,7 +225,7 @@ fn sync(global: &Global, args: &SyncArgs, out: &mut dyn Write, err: &mut dyn Wri
         Err(failure) => return answer::report_failure(err, &failure),
     };
     let targets: Vec<sync::Target> = args.target.iter().map(|t| t.sync()).collect();
-    let plan = match sync::plan(&project, &targets) {
+    let plan = match sync::plan(&project, &targets, args.with_hook) {
         Ok(plan) => plan,
         Err(e) => return exit::fail(err, &e),
     };

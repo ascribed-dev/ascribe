@@ -107,7 +107,29 @@ pub struct PageChecker<'p> {
     links: LinkProblems,
 }
 
+/// A project's source index as a [`PageChecker`] reads it, made once and
+/// kept, so the checks of a project kept loaded don't index it each time.
+/// It's of the project it was made from, which mustn't change.
+pub struct PageIndex(Indexed<'static>);
+
+impl PageIndex {
+    /// Indexes the project, as [`PageChecker::new`] does.
+    pub fn new(project: &Project) -> PageIndex {
+        PageIndex(Indexed::new(project))
+    }
+}
+
 impl<'p> PageChecker<'p> {
+    /// A checker over `index`, made from `project` by [`PageIndex::new`]:
+    /// the same checks as [`PageChecker::new`]'s, without indexing again.
+    pub fn with_page_index(project: &'p Project, index: &'p PageIndex) -> PageChecker<'p> {
+        PageChecker {
+            project,
+            indexed: index.0.borrowed(),
+            links: RefCell::new(HashMap::new()),
+        }
+    }
+
     /// Indexes the project.
     pub fn new(project: &'p Project) -> PageChecker<'p> {
         PageChecker {

@@ -558,6 +558,8 @@ Writes the files AI coding agents read on their own: your project's rules, from 
 
 Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. It also keeps up to date each other target whose files exist already, and writes those `--target` names. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
 
+With `--with-hook`, it also writes the [hooks](../guides/agents.md#hooks) for `claude`, `codex`, and `copilot`, and for `claude` the MCP server, merging them into the agents' settings files at the root. Hooks it wrote before are kept up to date without it.
+
 @include: ../_generated/cli-agents-sync-options.md
 
 It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
@@ -566,7 +568,7 @@ It writes only between its markers in a file it shares with your team, and whole
 |---|---|
 | `0` | The files are written, or with `--check`, up to date |
 | `1` | With `--check`: a file is out of date. Run `ascribe agents sync`. |
-| `2` | It couldn't run: no `ascribe.toml`, one with errors, a file whose markers are damaged, a file that would be under the content root (so one of the project's pages), `--target copilot` outside a git repository, or a file it can't read or write. Nothing is written. |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, a file whose markers are damaged, a file that would be under the content root (so one of the project's pages), `--target copilot` outside a git repository, a settings file that isn't a JSON object, or a file it can't read or write. Nothing is written. |
 
 ### `ascribe agents rules`
 
@@ -601,3 +603,23 @@ ascribe agents prompt new-page --arg type=guide --arg title="Rotate your keys"
 ```
 
 It exits with `0`, or with `2` for a prompt or an argument it doesn't know, a required argument missing, an unknown page type, a project it can't load, or, for `review`, a comparison `ascribe diff` can't make.
+
+### `ascribe agents hook`
+
+Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. It reads the hook's JSON input on standard input and answers in the agent's own format. See [Hooks](../guides/agents.md#hooks) for the entries that run it.
+
+@include: ../_generated/cli-agents-hook-options.md
+
+With `--event edit`, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent their errors: at most 10 lines in the concise form, then the build it checked. Warnings aren't reported. With `--event stop`, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository (outside a repository, the project at or above the folder the agent works in), and keeps the agent working while there are errors, with the counts, the first 10 errors, and the command to run, or while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
+
+| Harness | After an edit | Before the agent finishes |
+|---|---|---|
+| `claude-code` | `PostToolUse`: `hookSpecificOutput.additionalContext` | `Stop`: `decision: "block"` with a `reason` |
+| `codex` | `PostToolUse`: `hookSpecificOutput.additionalContext` | `Stop`: `decision: "block"` with a `reason` |
+| `copilot` | `postToolUse`: `additionalContext` | `agentStop`: `decision: "block"` with a `reason` |
+
+It never writes a project's file, and never stops an edit: the file is written by then. A check that takes longer than 2 seconds after an edit, or 20 before the agent finishes, is given up, and the agent goes on.
+
+The first hook in a project starts a check server in the background, the same `ascribe` binary, which keeps the project loaded so each later check takes milliseconds. It opens no port: the hook and the server pass requests and answers as files in a folder of your cache folder (`ASCRIBE_CACHE_DIR`, or `ascribe` in your user's cache folder), and it stops after 10 minutes with no request, or when the `ascribe` it was started from is replaced. On Windows it runs from a copy in that folder, so it never holds up installing or building a new `ascribe`. Set `ASCRIBE_HOOK_SERVER=off` to check in the hook's own process every time.
+
+It exits with `0`, whatever it found, or with `1` when its input isn't JSON, which agents show you and not the model.
