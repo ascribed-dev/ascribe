@@ -1,0 +1,2 @@
+docs/keys.md:7: [ASC041] this looks like the published route of `install-agent.md`; link to the file instead: `/install-agent.md`
+checked 4 files, reported on 1: 0 errors, 1 warning

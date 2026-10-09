@@ -40,7 +40,7 @@ mod tests {
     use std::io;
     use std::path::PathBuf;
 
-    use ascribe_check::{LoadError, LocateError, UnknownBuild};
+    use ascribe_check::{LoadError, LocateError, ScopeError, UnknownBuild};
     use ascribe_core::Coded;
     use ascribe_diff::DiffError;
     use ascribe_emit::{EmitError, StoreError};
@@ -48,6 +48,7 @@ mod tests {
     use ascribe_lsp::ServeError;
     use ascribe_sources::SourcesError;
 
+    use crate::commands::check::CheckError;
     use crate::commands::fmt::FmtError;
     use crate::commands::sources::PagesUnavailable;
     use crate::context::Failure;
@@ -67,6 +68,15 @@ mod tests {
         ),
         ("model_invalid", "the content model has errors"),
         ("unknown_build", "a build name isn't one of the model's"),
+        ("path_missing", "a path to check doesn't exist"),
+        (
+            "path_not_in_a_project",
+            "no ascribe.toml at or above a path",
+        ),
+        ("paths_in_two_projects", "a path is in another project"),
+        ("path_outside_project", "a path isn't in the project"),
+        ("path_not_a_source", "--path names no possible source file"),
+        ("stdin_unreadable", "standard input can't be read as text"),
         ("format_io", "fmt can't read or write a path"),
         ("not_utf8", "a file to format isn't UTF-8"),
         ("format_bad_edits", "the formatter's edits don't apply"),
@@ -202,12 +212,29 @@ mod tests {
                 | SourcesError::Write { .. } => {}
             }
         }
+        fn scope(e: &ScopeError) {
+            match e {
+                ScopeError::Locate(_)
+                | ScopeError::Missing { .. }
+                | ScopeError::NoProject { .. }
+                | ScopeError::OtherProject { .. }
+                | ScopeError::Outside { .. }
+                | ScopeError::NotASource { .. } => {}
+            }
+        }
+        fn check(e: &CheckError) {
+            match e {
+                CheckError::Scope(_) | CheckError::Stdin(_) => {}
+            }
+        }
         fn serve(e: &ServeError) {
             match e {
                 ServeError::Protocol(_) | ServeError::Params(_) => {}
             }
         }
-        let _ = (locate, load, format, emit, store, diff, sources, serve);
+        let _ = (
+            locate, load, scope, check, format, emit, store, diff, sources, serve,
+        );
 
         let store_errors = || {
             vec![
@@ -310,7 +337,25 @@ mod tests {
             Box::new(ServeError::Params(
                 serde_json::from_str::<u8>("x").unwrap_err(),
             )),
+            Box::new(ScopeError::Locate(LocateError::NotFound { dir: path() })),
+            Box::new(ScopeError::Missing { path: path() }),
+            Box::new(ScopeError::NoProject { path: path() }),
+            Box::new(ScopeError::OtherProject {
+                path: path(),
+                its: path(),
+                config: path(),
+            }),
+            Box::new(ScopeError::Outside {
+                path: path(),
+                config: path(),
+            }),
+            Box::new(ScopeError::NotASource {
+                path: path(),
+                content_root: text(),
+            }),
             // The CLI's own errors wrap these.
+            Box::new(CheckError::Scope(ScopeError::Missing { path: path() })),
+            Box::new(CheckError::Stdin(io_error())),
             Box::new(Failure::Config(LocateError::NotFound { dir: path() })),
             Box::new(Failure::Load(model_invalid())),
             Box::new(FmtError::Locate(LocateError::NotAFile { path: path() })),

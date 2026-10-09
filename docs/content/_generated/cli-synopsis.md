@@ -2,7 +2,7 @@
 
 ```text
 ascribe build          [--build <NAME>]... [--emit site,plain,json] [--format text|json] [--anchors]
-ascribe check          [--build <NAME>]... [--format text|json] [--deny-warnings]
+ascribe check          [PATHS]... [--stdin] [--path <PATH>] [--build <NAME>]... [--editor-build] [--summary] [--format text|concise|json] [--deny-warnings]
 ascribe diff           [--base <REV>] [--base-exact] [--build <NAME>]... [--format text|json|html] [--exit-code]
 ascribe drift          [--base <REV>] [--build <NAME>]... [--format text|json|summary] [--exit-code]
 ascribe fmt            [--check] [PATHS]...

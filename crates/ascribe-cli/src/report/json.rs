@@ -5,10 +5,10 @@
 
 use std::io::{self, Write};
 
-use ascribe_check::Diagnostic;
+use ascribe_check::{Diagnostic, Registry, Reported};
 use serde::Serialize;
 
-use super::{Counts, FileTable, Position};
+use super::{Counts, FileTable, Position, tally};
 
 /// The version of the JSON schema.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -28,10 +28,29 @@ pub(crate) struct Report<'a> {
     /// isn't `null`, `diagnostics` holds what was found first: the content
     /// model's problems.
     error: Option<&'a str>,
-    /// How many source files were checked.
+    /// How many source files were checked: the project's.
     files_checked: usize,
+    /// How many of them the report covers: the source files in the paths
+    /// named, or every one when no path was.
+    files_reported: usize,
+    /// The builds whose page-level checks ran, in `ascribe.toml`'s order:
+    /// every build, the ones named with `--build`, or the editor's with
+    /// `--editor-build`. Empty when the project couldn't be checked.
+    builds_checked: Vec<String>,
     /// Every diagnostic, in file order, and in source order within a file.
+    /// With paths, only those that count for them. With `--summary`, none:
+    /// see `truncated`.
     diagnostics: Vec<Entry>,
+    /// Whether `diagnostics` leaves some out. It does with `--summary`,
+    /// which lists none.
+    truncated: bool,
+    /// How many diagnostics `diagnostics` lists.
+    shown: usize,
+    /// How many diagnostics there are.
+    total: usize,
+    /// The command that lists the ones left out, when `truncated`; `null`
+    /// otherwise.
+    next_command: Option<String>,
     /// How many errors and warnings.
     summary: Summary,
 }
@@ -40,6 +59,38 @@ pub(crate) struct Report<'a> {
 #[derive(Serialize)]
 #[cfg_attr(test, derive(schemars::JsonSchema))]
 struct Summary {
+    /// How many errors.
+    errors: usize,
+    /// How many warnings.
+    warnings: usize,
+    /// With `--summary`: how many diagnostics have each code, most first.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    by_code: Option<Vec<CodeCount>>,
+    /// With `--summary`: how many diagnostics are in each file, most first.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    by_file: Option<Vec<FileCount>>,
+}
+
+/// How many diagnostics have one code.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct CodeCount {
+    /// The code, such as `ASC036`.
+    code: &'static str,
+    /// The diagnostic's name, such as `link-target-missing`.
+    slug: String,
+    /// `error` or `warning`.
+    severity: &'static str,
+    /// How many.
+    count: usize,
+}
+
+/// How many diagnostics are in one file.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct FileCount {
+    /// The file, as a diagnostic's `file` is.
+    file: String,
     /// How many errors.
     errors: usize,
     /// How many warnings.
@@ -74,6 +125,15 @@ struct Entry {
     builds: Vec<String>,
     /// Whether it's in content that no build publishes.
     unpublished: bool,
+    /// How to fix it, in general: the diagnostics reference's advice for its
+    /// code.
+    help: String,
+    /// The address of its entry in the diagnostics reference.
+    docs: String,
+    /// For a problem in included content reported because one of its related
+    /// places is in a path named: at how many other includes it's reported
+    /// too, collapsed into this one. `0` otherwise.
+    repeats: usize,
 }
 
 /// A span of a file. `end` is just past its last character; an empty range
@@ -122,6 +182,9 @@ struct Fix {
     file: String,
     /// The edits, each replacing the text of its range.
     edits: Vec<Edit>,
+    /// `safe` when applying the edits as they are can't change what the page
+    /// says and leaves nothing to decide; `unsafe` otherwise.
+    applicability: &'static str,
 }
 
 /// One edit of a fix.
@@ -152,7 +215,8 @@ fn range(files: &FileTable, at: ascribe_core::Location) -> Range {
     }
 }
 
-fn entry(files: &FileTable, d: &Diagnostic) -> Entry {
+fn entry(files: &FileTable, d: &Diagnostic, repeats: usize) -> Entry {
+    let registered = Registry::global().get(d.slug);
     Entry {
         code: d.code,
         slug: d.slug.to_string(),
@@ -183,35 +247,104 @@ fn entry(files: &FileTable, d: &Diagnostic) -> Entry {
                         new_text: e.new_text.clone(),
                     })
                     .collect(),
+                applicability: f.applicability.as_str(),
             })
             .collect(),
         builds: d.builds.clone(),
         unpublished: d.unpublished,
+        help: registered.and_then(|e| e.fix.clone()).unwrap_or_default(),
+        docs: registered
+            .map(ascribe_check::Entry::docs)
+            .unwrap_or_default(),
+        repeats,
+    }
+}
+
+/// What a report is about, besides its diagnostics.
+pub struct About<'a> {
+    /// Why the command couldn't run to the end, when it couldn't; the
+    /// diagnostics are whatever was found before that (a content model's
+    /// problems, for example).
+    pub error: Option<&'a str>,
+    /// How many source files were checked.
+    pub files_checked: usize,
+    /// How many of them the report covers.
+    pub files_reported: usize,
+    /// The builds whose page-level checks ran.
+    pub builds_checked: Vec<String>,
+    /// With `--summary`, the command that lists the diagnostics: the list is
+    /// left out, and counted instead.
+    pub summary_only: Option<String>,
+}
+
+impl About<'_> {
+    /// A command that stopped before checking anything, because of `error`.
+    pub fn failed(error: &str) -> About<'_> {
+        About {
+            error: Some(error),
+            files_checked: 0,
+            files_reported: 0,
+            builds_checked: Vec::new(),
+            summary_only: None,
+        }
     }
 }
 
 /// Writes the report as one JSON document and a newline.
-///
-/// `error` is why the command couldn't run to the end, when it couldn't; the
-/// diagnostics are whatever was found before that (a content model's
-/// problems, for example).
 pub fn write(
     out: &mut dyn Write,
     files: &FileTable,
-    diagnostics: &[Diagnostic],
-    files_checked: usize,
-    error: Option<&str>,
+    reported: &[Reported],
+    about: &About<'_>,
 ) -> io::Result<()> {
-    let counts = Counts::of(diagnostics);
+    let counts = Counts::of_reported(reported);
+    let total = reported.len();
+    let (diagnostics, by_code, by_file) = if about.summary_only.is_some() {
+        let (codes, by_file) = tally(files, reported);
+        let codes = codes
+            .into_iter()
+            .map(|c| CodeCount {
+                code: c.code,
+                slug: c.slug,
+                severity: c.severity.as_str(),
+                count: c.count,
+            })
+            .collect();
+        let by_file = by_file
+            .into_iter()
+            .map(|f| FileCount {
+                file: f.file,
+                errors: f.counts.errors,
+                warnings: f.counts.warnings,
+            })
+            .collect();
+        (Vec::new(), Some(codes), Some(by_file))
+    } else {
+        let list = reported
+            .iter()
+            .map(|r| entry(files, &r.diagnostic, r.repeats))
+            .collect();
+        (list, None, None)
+    };
+    let shown = diagnostics.len();
+    let truncated = shown < total;
     let report = Report {
         schema_version: SCHEMA_VERSION,
         ascribe_version: env!("CARGO_PKG_VERSION"),
-        error,
-        files_checked,
-        diagnostics: diagnostics.iter().map(|d| entry(files, d)).collect(),
+        error: about.error,
+        files_checked: about.files_checked,
+        files_reported: about.files_reported,
+        builds_checked: about.builds_checked.clone(),
+        diagnostics,
+        truncated,
+        shown,
+        total,
+        next_command: about.summary_only.clone().filter(|_| truncated),
         summary: Summary {
             errors: counts.errors,
             warnings: counts.warnings,
+            by_code,
+            by_file,
         },
     };
     serde_json::to_writer_pretty(&mut *out, &report).map_err(io::Error::other)?;

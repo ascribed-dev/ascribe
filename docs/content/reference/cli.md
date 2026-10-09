@@ -27,17 +27,52 @@ How diagnostics are reported:
 
 Every diagnostic, with its fix, is in the [diagnostics reference](diagnostics.md).
 
+### Checking some files
+
+@available: next
+`ascribe check docs/guides/install.md` reports on that file alone. Paths are relative to the current directory, and each is a file or a directory. Without `--config`, the project is the nearest `ascribe.toml` at or above the first path, so the command works from a repository's root as well as from inside the project.
+
+@available: next
+The whole project is still checked, since links, includes, and ids need it, and only the diagnostics that count for the paths are shown. **A diagnostic counts for a path when its file, or the file of one of its related places, is in that path.** So checking a page shows the problems its fragments cause on it, and checking a fragment shows the problems in it. A fragment's problem is reported at every page that includes it; checking the fragment shows it once, at the first include, and its `repeats` says at how many other includes it appears too. The diagnostics are the whole check's, filtered this way, in the same order.
+
+@available: next
+A path that doesn't exist, isn't in an Ascribe project, or is in another project than the first path's (a project nested in the content root, say) is exit code `2`, with a message naming it.
+
+### Checking text before it's saved
+
+@available: next
+`--stdin --path docs/guides/new.md` checks standard input as that file's text, laid over the project on disk. Nothing is written, and the file doesn't have to exist, but it has to be where a source file could be: a `.md` file in the content root. Only the diagnostics that count for that file are shown, so a link from another page that the new text breaks isn't. `--stdin` without `--path`, or with other paths, is a usage error.
+
+```sh
+npx ascribe check --stdin --path docs/guides/new.md < draft.md
+```
+
+### A quick check after each edit
+
+@available: next
+`--editor-build` runs what the editor runs as you type: the file-level checks and the page-level checks of the editor's build only (`[editor] build`, or the first build), without the pass over content no build publishes. With paths that name files, only those files and the pages that include them are checked, which is quick enough to run after every edit; the timings are in [`tests/corpora/RESULTS.md`]({repo}/blob/main/tests/corpora/RESULTS.md#one-file). It can't be combined with `--build`. The summary line, and `builds_checked` in the JSON, name the build, so a clean result says what it covers. A full `ascribe check` before you finish still covers every build.
+
+### Output for agents
+
+@available: next
+`--format concise` writes one line per diagnostic, `file:line: [code] message`, grouped by file in file order and by line within a file, then the summary line. It shows at most 50 diagnostics, then `and N more:` with the command that narrows the check to the next file:
+
+@snippet {lang=text}: code:crates/ascribe-cli/tests/output/check-concise.txt
+
+@available: next
+`--summary` replaces the list with how many diagnostics each code and each file has, most first, in any format. On a project with hundreds of warnings, it shows which rule or file to work through first.
+
 ### Exit codes
 
 | Code | Meaning |
 |---|---|
 | `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`. |
 | `1` | There are errors, or warnings with `--deny-warnings`. |
-| `2` | The project couldn't be checked: a usage error, no `ascribe.toml`, or a content model with errors (they're shown, and nothing else is checked). A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
+| `2` | The project couldn't be checked: a usage error, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), or a path that doesn't exist or isn't in the project. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
 
 ### Text output
 
-Each diagnostic shows its code, message, and source, and the output ends with a summary:
+Each diagnostic shows its code, message, and source, and the output ends with a summary. With paths, the summary says how many files it reported on (`checked 12 files, reported on 1`):
 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
 
@@ -52,9 +87,15 @@ Diagnostics go to standard output. A failure that stops the command (exit code 2
 | `schema_version` | number | `1` |
 | `ascribe_version` | string | The version of `ascribe` that wrote the report |
 | `error` | string or null | Why the project couldn't be checked (exit code 2), or `null`. When it isn't `null`, `diagnostics` holds what was found first: the content model's problems. |
-| `files_checked` | number | How many source files were checked |
-| `diagnostics` | array | Every diagnostic, in file order, and in source order within a file |
-| `summary` | object | `errors` and `warnings`: how many of each |
+| `files_checked` | number | How many source files were checked: the project's |
+| `files_reported` | number | How many of them the report covers: the source files in the paths named, or every one |
+| `builds_checked` | array of strings | The builds whose page-level checks ran: every build, those named with `--build`, or the editor's with `--editor-build` |
+| `diagnostics` | array | Every diagnostic, in file order, and in source order within a file. With paths, those that count for them. With `--summary`, none. |
+| `truncated` | boolean | Whether `diagnostics` leaves some out, as it does with `--summary` |
+| `shown` | number | How many diagnostics `diagnostics` lists |
+| `total` | number | How many there are |
+| `next_command` | string or null | When `truncated`, the command that lists the rest |
+| `summary` | object | `errors` and `warnings`: how many of each. With `--summary`, also `by_code` (`{code, slug, severity, count}`) and `by_file` (`{file, errors, warnings}`), most first. |
 
 Each diagnostic:
 
@@ -67,9 +108,12 @@ Each diagnostic:
 | `file` | string | The file, relative to the project root (the directory of `ascribe.toml`), with `/` separators. `ascribe.toml` for a content-model problem. |
 | `range` | object | Where: `start` and `end` positions |
 | `related` | array | Other places that explain it: `{file, range, message}` |
-| `fixes` | array | Edits that would fix it: `{title, file, edits}`, where each edit is `{range, new_text}` and replaces the text in `range` |
+| `fixes` | array | Edits that would fix it: `{title, file, edits, applicability}`, where each edit is `{range, new_text}` and replaces the text in `range`. `applicability` is `"safe"` when applying the edits can't change what the page says and leaves nothing to decide, such as linking to a page's file instead of its route, and `"unsafe"` otherwise, such as the nearest spelling of a misspelled name. |
 | `builds` | array of strings | The builds a page-level diagnostic appears in, in `ascribe.toml`'s order. Empty for a file-level diagnostic, and for one in content no build publishes. With `--build`, only that build. |
 | `unpublished` | boolean | `true` for a problem in content that no build publishes |
+| `help` | string | How to fix it, in general: the advice in the [diagnostics reference](diagnostics.md) |
+| `docs` | string | The address of its entry in the diagnostics reference |
+| `repeats` | number | For a problem in a fragment, when checking the fragment: at how many other includes it's reported too. `0` otherwise. |
 
 A position is `{line, column, offset}`: `line` and `column` start at 1, `column` counts Unicode characters (not bytes or UTF-16 units), and `offset` is the byte offset from the start of the file. A range's `end` is just past its last character; an edit that inserts text has equal positions.
 

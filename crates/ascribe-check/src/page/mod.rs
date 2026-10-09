@@ -46,7 +46,7 @@ mod bridge;
 mod collect;
 
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use ascribe_core::{FileId, RelPath, Span};
@@ -159,6 +159,20 @@ impl<'p> PageChecker<'p> {
             .flat_map(|page| check_page(&self.indexed.index, &page, &self.links))
             .collect();
         self.finish(vec![(Some(build.name.as_str()), found)])
+    }
+
+    /// The page-level diagnostics of `build` for the pages that are one of
+    /// `files` or include one, transitively: every page-level diagnostic
+    /// located in those files or with a related place in them.
+    pub fn check_reaching(&self, build: &Build, files: &[RelPath]) -> Vec<Diagnostic> {
+        let index = &self.indexed.index;
+        let mut pages: BTreeSet<RelPath> = BTreeSet::new();
+        for file in files {
+            pages.insert(file.clone());
+            pages.extend(index.including_pages(file));
+        }
+        let pages: Vec<RelPath> = pages.into_iter().collect();
+        self.check_pages(build, &pages)
     }
 
     /// The page-level diagnostics of one build.

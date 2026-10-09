@@ -452,3 +452,628 @@ fn json_names_the_builds_of_a_problem_and_leaves_file_level_ones_empty() {
     assert_eq!(missing["builds"], serde_json::json!([]));
     assert_eq!(missing["unpublished"], false);
 }
+
+// ---------------------------------------------------------------------------
+// Checking some files: paths, standard input, the editor's build
+
+/// A fragment with a broken link, included by three pages; `b.md` also has a
+/// warning of its own, and `index.md` an error of its own.
+fn paths_project() -> TempDir {
+    project(&[
+        ("_f.md", "See [it](index.md#gone).\n"),
+        (
+            "index.md",
+            "---\ntitle: Home\n---\n\n@include: _f.md\n\n[Gone](gone.md)\n",
+        ),
+        ("guides/a.md", "---\ntitle: A\n---\n\n@include: ../_f.md\n"),
+        (
+            "guides/b.md",
+            "---\ntitle: B\n---\n\n@include: ../_f.md\n\nSee {nope}.\n",
+        ),
+    ])
+}
+
+fn json_of(output: &Output) -> serde_json::Value {
+    serde_json::from_str(&stdout(output))
+        .unwrap_or_else(|e| panic!("{e}: {}{}", stdout(output), stderr(output)))
+}
+
+fn diagnostics_of(report: &serde_json::Value) -> Vec<serde_json::Value> {
+    report["diagnostics"].as_array().expect("a list").clone()
+}
+
+/// `(file, slug)` of each diagnostic, in order.
+fn places(report: &serde_json::Value) -> Vec<(String, String)> {
+    diagnostics_of(report)
+        .iter()
+        .map(|d| {
+            (
+                d["file"].as_str().expect("a file").to_owned(),
+                d["slug"].as_str().expect("a slug").to_owned(),
+            )
+        })
+        .collect()
+}
+
+fn place(file: &str, slug: &str) -> (String, String) {
+    (file.to_owned(), slug.to_owned())
+}
+
+/// The diagnostics of a whole-project report that count for `paths`: those
+/// whose file, or a related place's, is one of them or under one.
+fn counting_for(report: &serde_json::Value, paths: &[&str]) -> Vec<serde_json::Value> {
+    let under = |file: &serde_json::Value| {
+        let file = file.as_str().expect("a file");
+        paths
+            .iter()
+            .any(|p| file == *p || file.starts_with(&format!("{p}/")))
+    };
+    diagnostics_of(report)
+        .into_iter()
+        .filter(|d| {
+            under(&d["file"])
+                || d["related"]
+                    .as_array()
+                    .expect("a list")
+                    .iter()
+                    .any(|r| under(&r["file"]))
+        })
+        .collect()
+}
+
+#[test]
+fn a_page_shows_its_own_problems_and_those_its_fragments_cause_on_it() {
+    let dir = paths_project();
+    let out = ascribe(
+        dir.path(),
+        &["check", "docs/guides/b.md", "--format", "json"],
+    );
+    assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
+    let report = json_of(&out);
+    assert_eq!(
+        places(&report),
+        [
+            place("docs/guides/b.md", "phrase-undeclared"),
+            place("docs/guides/b.md", "link-id-missing"),
+        ]
+    );
+    let broken = &diagnostics_of(&report)[1];
+    assert_eq!(broken["related"][0]["file"], "docs/_f.md");
+    assert_eq!(broken["repeats"], 0);
+    assert_eq!(report["files_checked"], 4);
+    assert_eq!(report["files_reported"], 1);
+    assert_eq!(report["summary"]["errors"], 1);
+    assert_eq!(report["summary"]["warnings"], 1);
+}
+
+#[test]
+fn the_diagnostics_are_the_whole_checks_that_count_for_the_paths_in_its_order() {
+    let dir = paths_project();
+    let whole = json_of(&ascribe(dir.path(), &["check", "--format", "json"]));
+    for paths in [
+        &["docs/guides/b.md"][..],
+        &["docs/guides"],
+        &["docs/index.md", "docs/guides/a.md"],
+        &["docs"],
+        &["."],
+    ] {
+        let mut args = vec!["check"];
+        args.extend(paths);
+        args.extend(["--format", "json"]);
+        let report = json_of(&ascribe(dir.path(), &args));
+        let wanted: Vec<&str> = paths
+            .iter()
+            .map(|p| if *p == "." { "" } else { p })
+            .collect();
+        let expected = if wanted == [""] {
+            diagnostics_of(&whole)
+        } else {
+            counting_for(&whole, &wanted)
+        };
+        assert_eq!(diagnostics_of(&report), expected, "{paths:?}");
+    }
+}
+
+#[test]
+fn a_directory_and_two_files_report_on_every_file_in_them() {
+    let dir = paths_project();
+    let report = json_of(&ascribe(
+        dir.path(),
+        &["check", "docs/guides", "--format", "json"],
+    ));
+    assert_eq!(
+        places(&report),
+        [
+            place("docs/guides/b.md", "phrase-undeclared"),
+            place("docs/guides/a.md", "link-id-missing"),
+            place("docs/guides/b.md", "link-id-missing"),
+        ]
+    );
+    assert_eq!(report["files_reported"], 2);
+
+    let report = json_of(&ascribe(
+        dir.path(),
+        &[
+            "check",
+            "docs/index.md",
+            "docs/guides/a.md",
+            "--format",
+            "json",
+        ],
+    ));
+    assert_eq!(
+        places(&report),
+        [
+            place("docs/index.md", "link-target-missing"),
+            place("docs/guides/a.md", "link-id-missing"),
+            place("docs/index.md", "link-id-missing"),
+        ]
+    );
+    assert_eq!(report["files_reported"], 2);
+}
+
+#[test]
+fn a_problem_in_a_fragment_is_shown_once_with_how_many_more_includes_have_it() {
+    let dir = paths_project();
+    let out = ascribe(dir.path(), &["check", "docs/_f.md", "--format", "json"]);
+    assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
+    let report = json_of(&out);
+    assert_eq!(
+        places(&report),
+        [place("docs/guides/a.md", "link-id-missing")]
+    );
+    let d = &diagnostics_of(&report)[0];
+    assert_eq!(d["repeats"], 2, "at b.md and index.md too");
+    assert_eq!(d["related"][0]["file"], "docs/_f.md");
+
+    let text = stdout(&ascribe(dir.path(), &["check", "docs/_f.md"]));
+    assert!(text.contains("(also at 2 other includes)"), "{text}");
+    assert!(
+        text.contains("checked 4 files, reported on 1: 1 error, 0 warnings"),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_path_that_does_not_exist_or_is_in_no_project_exits_2_naming_it() {
+    let dir = paths_project();
+    let out = ascribe(dir.path(), &["check", "docs/nope.md"]);
+    assert_eq!(code(&out), 2);
+    assert!(
+        stderr(&out).contains("docs/nope.md doesn't exist"),
+        "{}",
+        stderr(&out)
+    );
+
+    let elsewhere = tempfile::tempdir().expect("a temporary directory");
+    write(&elsewhere.path().join("page.md"), CLEAN);
+    let page = elsewhere.path().join("page.md");
+    let page = page.to_str().expect("utf-8");
+    let out = ascribe(elsewhere.path(), &["check", page]);
+    assert_eq!(code(&out), 2);
+    assert!(
+        stderr(&out).contains("isn't in an Ascribe project"),
+        "{}",
+        stderr(&out)
+    );
+    let out = ascribe(
+        dir.path(),
+        &["check", "docs/index.md", page, "--format", "json"],
+    );
+    assert_eq!(code(&out), 2);
+    let report = json_of(&out);
+    assert!(
+        report["error"]
+            .as_str()
+            .expect("a message")
+            .contains("isn't in the project"),
+        "{report:#}"
+    );
+}
+
+#[test]
+fn a_path_from_the_repository_root_reports_what_the_projects_own_path_does() {
+    let repo = tempfile::tempdir().expect("a temporary directory");
+    let docs = repo.path().join("docs");
+    write(
+        &docs.join("ascribe.toml"),
+        &MODEL.replace(
+            "content-root = \"docs\"",
+            "content-root = \".\"\noutput-dir = \"../out\"",
+        ),
+    );
+    write(&docs.join("guides/install.md"), WITH_ERROR);
+    write(&docs.join("index.md"), WITH_WARNING);
+    let from_root = ascribe(
+        repo.path(),
+        &["check", "docs/guides/install.md", "--format", "json"],
+    );
+    let from_docs = ascribe(&docs, &["check", "guides/install.md", "--format", "json"]);
+    assert_eq!(
+        code(&from_root),
+        1,
+        "{}{}",
+        stdout(&from_root),
+        stderr(&from_root)
+    );
+    assert_eq!(stdout(&from_root), stdout(&from_docs));
+    let report = json_of(&from_root);
+    assert_eq!(
+        places(&report),
+        [place("guides/install.md", "link-target-missing")]
+    );
+    let d = &diagnostics_of(&report)[0];
+    assert!(d["help"].as_str().is_some_and(|h| !h.is_empty()), "{d:#}");
+    assert_eq!(
+        d["docs"],
+        "https://ascribed-dev.com/reference/diagnostics/#asc036-link-target-missing"
+    );
+    assert!(d["fixes"].is_array());
+}
+
+#[test]
+fn paths_in_two_projects_exit_2() {
+    let dir = project(&[
+        ("index.md", CLEAN),
+        ("nested/ascribe.toml", MODEL),
+        ("nested/docs/bad.md", WITH_ERROR),
+    ]);
+    let out = ascribe(
+        dir.path(),
+        &["check", "docs/index.md", "docs/nested/docs/bad.md"],
+    );
+    assert_eq!(code(&out), 2, "{}{}", stdout(&out), stderr(&out));
+    assert!(
+        stderr(&out).contains("check each project on its own"),
+        "{}",
+        stderr(&out)
+    );
+    // Its own project checks it.
+    let out = ascribe(dir.path(), &["check", "docs/nested/docs/bad.md"]);
+    assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
+}
+
+/// Runs `ascribe` with `input` on standard input.
+fn ascribe_with_input(dir: &Path, args: &[&str], input: &str) -> Output {
+    use std::io::Write as _;
+    let mut child = Command::new(env!("CARGO_BIN_EXE_ascribe"))
+        .current_dir(dir)
+        .args(args)
+        .env("NO_COLOR", "1")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("run ascribe");
+    // A usage error exits before reading it.
+    let _ = child
+        .stdin
+        .take()
+        .expect("standard input")
+        .write_all(input.as_bytes());
+    child.wait_with_output().expect("wait for ascribe")
+}
+
+#[test]
+fn standard_input_is_checked_as_a_new_file_without_writing_it() {
+    let dir = paths_project();
+    let out = ascribe_with_input(
+        dir.path(),
+        &[
+            "check",
+            "--stdin",
+            "--path",
+            "docs/guides/new.md",
+            "--format",
+            "json",
+        ],
+        "---
+title: New
+---
+
+[Home](../index.md) and [gone](../gone.md).
+",
+    );
+    assert_eq!(code(&out), 1, "{}{}", stdout(&out), stderr(&out));
+    let report = json_of(&out);
+    assert_eq!(
+        places(&report),
+        [place("docs/guides/new.md", "link-target-missing")]
+    );
+    assert_eq!(report["files_checked"], 5);
+    assert_eq!(report["files_reported"], 1);
+    assert!(!dir.path().join("docs/guides/new.md").exists());
+}
+
+#[test]
+fn standard_input_replaces_a_files_text_on_disk_without_changing_it() {
+    let dir = paths_project();
+    let page = dir.path().join("docs/index.md");
+    let before = fs::read_to_string(&page).expect("read");
+    let out = ascribe_with_input(
+        dir.path(),
+        &[
+            "check",
+            "--stdin",
+            "--path",
+            "docs/index.md",
+            "--format",
+            "json",
+        ],
+        CLEAN,
+    );
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    assert!(places(&json_of(&out)).is_empty());
+    assert_eq!(fs::read_to_string(&page).expect("read"), before);
+}
+
+#[test]
+fn standard_input_shows_only_its_files_problems_not_those_it_causes_elsewhere() {
+    let dir = project(&[
+        (
+            "index.md",
+            "---
+title: Home
+---
+
+## Keep
+@id: keep
+",
+        ),
+        (
+            "other.md",
+            "---
+title: Other
+---
+
+[Keep](index.md#keep)
+",
+        ),
+    ]);
+    let out = ascribe_with_input(
+        dir.path(),
+        &[
+            "check",
+            "--stdin",
+            "--path",
+            "docs/index.md",
+            "--format",
+            "json",
+        ],
+        CLEAN,
+    );
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    assert!(places(&json_of(&out)).is_empty());
+}
+
+#[test]
+fn standard_input_needs_one_path_to_a_source_file() {
+    let dir = paths_project();
+    for args in [
+        &["check", "--stdin"][..],
+        &["check", "--path", "docs/index.md"],
+        &[
+            "check",
+            "--stdin",
+            "--path",
+            "docs/index.md",
+            "docs/guides/a.md",
+        ],
+    ] {
+        let out = ascribe_with_input(dir.path(), args, CLEAN);
+        assert_eq!(code(&out), 2, "{args:?}: {}{}", stdout(&out), stderr(&out));
+    }
+    let out = ascribe_with_input(
+        dir.path(),
+        &["check", "--stdin", "--path", "notes.md"],
+        CLEAN,
+    );
+    assert_eq!(code(&out), 2, "{}{}", stdout(&out), stderr(&out));
+    assert!(
+        stderr(&out).contains("can't be a source file"),
+        "{}",
+        stderr(&out)
+    );
+}
+
+#[test]
+fn the_editor_build_checks_one_build_and_says_which() {
+    let dir = builds_project(&[("index.md", ONLY_SELF_MANAGED)]);
+    let whole = json_of(&ascribe(dir.path(), &["check", "--format", "json"]));
+    assert_eq!(
+        whole["builds_checked"],
+        serde_json::json!(["site", "cloud"])
+    );
+    assert_eq!(
+        places(&whole),
+        [place("docs/index.md", "variant-no-arm-survives")]
+    );
+
+    let out = ascribe(dir.path(), &["check", "--editor-build", "--format", "json"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    let report = json_of(&out);
+    assert_eq!(report["builds_checked"], serde_json::json!(["site"]));
+    assert!(places(&report).is_empty(), "the site build keeps every arm");
+
+    let text = stdout(&ascribe(dir.path(), &["check", "--editor-build"]));
+    assert!(
+        text.contains("page-level checks of build `site` only"),
+        "{text}"
+    );
+
+    let out = ascribe(dir.path(), &["check", "--editor-build", "--build", "cloud"]);
+    assert_eq!(code(&out), 2, "{}{}", stdout(&out), stderr(&out));
+}
+
+#[test]
+fn the_editor_build_for_some_files_reports_what_it_reports_for_the_project() {
+    let dir = paths_project();
+    let whole = json_of(&ascribe(
+        dir.path(),
+        &["check", "--editor-build", "--format", "json"],
+    ));
+    for path in ["docs/guides/b.md", "docs/_f.md", "docs/index.md"] {
+        let report = json_of(&ascribe(
+            dir.path(),
+            &["check", path, "--editor-build", "--format", "json"],
+        ));
+        let mut expected = counting_for(&whole, &[path]);
+        let mut got = diagnostics_of(&report);
+        // A fragment's problem is collapsed into its first include.
+        if path == "docs/_f.md" {
+            expected.truncate(1);
+            got[0]["repeats"] = serde_json::json!(0);
+        }
+        assert_eq!(got, expected, "{path}");
+    }
+}
+
+#[test]
+fn concise_output_is_a_line_per_diagnostic_grouped_by_file_and_cut_at_50() {
+    let dir = paths_project();
+    let out = ascribe(dir.path(), &["check", "--format", "concise"]);
+    assert_eq!(code(&out), 1);
+    assert_eq!(
+        stdout(&out),
+        concat!(
+            "docs/guides/a.md:5: [ASC037] `index.md` has no heading with the id `gone`\n",
+            "docs/guides/b.md:5: [ASC037] `index.md` has no heading with the id `gone`\n",
+            "docs/guides/b.md:7: [ASC044] `{nope}` isn't a declared phrase, so its braces are literal text; declare it in [phrases], or write `\\{` to keep it literal\n",
+            "docs/index.md:5: [ASC037] `index.md` has no heading with the id `gone`\n",
+            "docs/index.md:7: [ASC036] `gone.md` doesn't exist\n",
+            "checked 4 files: 4 errors, 1 warning\n",
+        )
+    );
+
+    let many: String = (0..30)
+        .map(|i| {
+            format!(
+                "See {{nope{i}}}.
+
+"
+            )
+        })
+        .collect();
+    let page = format!(
+        "---
+title: Many
+---
+
+{many}"
+    );
+    let dir = project(&[("a.md", &page), ("b.md", &page)]);
+    let out = ascribe(dir.path(), &["check", "--format", "concise"]);
+    assert_eq!(code(&out), 0, "{}{}", stdout(&out), stderr(&out));
+    let text = stdout(&out);
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), 52, "{text}");
+    assert!(lines[49].starts_with("docs/b.md:"), "{text}");
+    assert_eq!(
+        lines[50],
+        "and 10 more: ascribe check docs/b.md --format concise"
+    );
+    assert_eq!(lines[51], "checked 2 files: 0 errors, 60 warnings");
+    // Checking one file, the rest of it is in the JSON.
+    let dir = project(&[("a.md", &format!("{page}{many}"))]);
+    let text = stdout(&ascribe(
+        dir.path(),
+        &["check", "docs/a.md", "--format", "concise"],
+    ));
+    assert!(
+        text.contains("\nand 10 more: ascribe check docs/a.md --format json\n"),
+        "{text}"
+    );
+}
+
+#[test]
+fn summary_counts_by_code_and_by_file_instead_of_listing() {
+    let dir = paths_project();
+    let text = stdout(&ascribe(dir.path(), &["check", "--summary"]));
+    assert_eq!(
+        text,
+        concat!(
+            "By code:\n",
+            "  3  ASC037 link-id-missing (error)\n",
+            "  1  ASC044 phrase-undeclared (warning)\n",
+            "  1  ASC036 link-target-missing (error)\n",
+            "By file:\n",
+            "  2  docs/guides/b.md (1 error, 1 warning)\n",
+            "  2  docs/index.md (2 errors, 0 warnings)\n",
+            "  1  docs/guides/a.md (1 error, 0 warnings)\n",
+            "checked 4 files: 4 errors, 1 warning\n",
+        )
+    );
+
+    let report = json_of(&ascribe(
+        dir.path(),
+        &["check", "docs/guides", "--summary", "--format", "json"],
+    ));
+    assert!(places(&report).is_empty());
+    assert_eq!(report["truncated"], true);
+    assert_eq!(report["shown"], 0);
+    assert_eq!(report["total"], 3);
+    assert_eq!(
+        report["next_command"],
+        "ascribe check docs/guides --format json"
+    );
+    assert_eq!(report["summary"]["by_code"][0]["code"], "ASC037");
+    assert_eq!(report["summary"]["by_code"][0]["count"], 2);
+    assert_eq!(report["summary"]["by_file"][0]["file"], "docs/guides/b.md");
+    assert_eq!(report["summary"]["by_file"][0]["warnings"], 1);
+
+    let listed = json_of(&ascribe(dir.path(), &["check", "--format", "json"]));
+    assert_eq!(listed["truncated"], false);
+    assert_eq!(listed["shown"], 5);
+    assert_eq!(listed["total"], 5);
+    assert!(listed["next_command"].is_null());
+    assert!(listed["summary"].get("by_code").is_none());
+}
+
+#[test]
+fn every_fix_says_whether_it_is_safe() {
+    let dir = project(&[
+        (
+            "index.md",
+            "---
+title: Home
+---
+
+[Keys](/keys/)
+
+@notte: Hi.
+",
+        ),
+        (
+            "keys.md",
+            "---
+title: Keys
+---
+",
+        ),
+    ]);
+    let report = json_of(&ascribe(dir.path(), &["check", "--format", "json"]));
+    let fixes: Vec<(String, String)> = diagnostics_of(&report)
+        .iter()
+        .flat_map(|d| {
+            let slug = d["slug"].as_str().expect("a slug").to_owned();
+            d["fixes"]
+                .as_array()
+                .expect("a list")
+                .iter()
+                .map(move |f| {
+                    (
+                        slug.clone(),
+                        f["applicability"].as_str().expect("a label").to_owned(),
+                    )
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    assert_eq!(
+        fixes,
+        [
+            ("link-route".to_owned(), "safe".to_owned()),
+            ("directive-unknown".to_owned(), "unsafe".to_owned()),
+        ]
+    );
+}

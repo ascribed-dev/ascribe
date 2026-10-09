@@ -112,6 +112,27 @@ fn editing_an_open_fragment_updates_the_including_page() {
     assert_eq!(client.shutdown(), Exit::Clean);
 }
 
+#[test]
+fn a_diagnostic_s_code_links_to_its_entry_in_the_reference() {
+    let f = project();
+    let page = f.path("docs/index.md");
+    let mut client = Client::start(&f.root());
+    client.open(&page, 1, "---\ntitle: Home\n---\n[Gone](gone.md)\n");
+    client.settle();
+    let diagnostics = client.diagnostics(&page);
+    let d = diagnostics.first().expect("a diagnostic");
+    assert_eq!(slug(d), "link-target-missing");
+    assert_eq!(
+        d.code_description
+            .as_ref()
+            .expect("a link to the reference")
+            .href
+            .as_str(),
+        "https://ascribed-dev.com/reference/diagnostics/#asc036-link-target-missing"
+    );
+    assert_eq!(client.shutdown(), Exit::Clean);
+}
+
 // -- Acceptance: an unopened fragment changed on disk -----------------------
 
 #[test]

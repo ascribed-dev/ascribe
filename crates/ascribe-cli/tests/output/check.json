@@ -3,6 +3,12 @@
   "ascribe_version": "{version}",
   "error": null,
   "files_checked": 4,
+  "files_reported": 4,
+  "builds_checked": [
+    "site",
+    "cloud",
+    "self-managed-3.3"
+  ],
   "diagnostics": [
     {
       "code": "ASC041",
@@ -43,13 +49,21 @@
               },
               "new_text": "/install-agent.md"
             }
-          ]
+          ],
+          "applicability": "safe"
         }
       ],
       "builds": [],
-      "unpublished": false
+      "unpublished": false,
+      "help": "Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change.",
+      "docs": "https://ascribed-dev.com/reference/diagnostics/#asc041-link-route",
+      "repeats": 0
     }
   ],
+  "truncated": false,
+  "shown": 1,
+  "total": 1,
+  "next_command": null,
   "summary": {
     "errors": 0,
     "warnings": 1
