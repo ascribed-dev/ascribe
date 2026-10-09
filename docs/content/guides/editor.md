@@ -214,7 +214,7 @@ Each project runs its own `ascribe`, found as [Which `ascribe` it runs](#which-a
 
 ### When servers start
 
-A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It then runs until you close the window or delete its `ascribe.toml`. A project you never open costs nothing.
+A project's server starts the first time you open one of its Markdown files or its `ascribe.toml`, or preview one of its pages. It also starts when one of its files changes on disk while the window is open, so an agent or a script that writes the project's files without opening them still gets their problems in the Problems panel. A file counts if it's the project's `ascribe.toml`, is under its content root (not in a project nested there), or is in the folder of one of its [sources](../reference/content-model.md#18-sourcesname), and isn't in its output directory, `node_modules`, or `.git`. Changes are gathered for up to a second, so a `git checkout` that touches hundreds of files starts each project's server once. Opening the window starts nothing, and neither does adding an `ascribe.toml`. A server runs until you close the window or delete its `ascribe.toml`. A project nothing opens or changes costs nothing.
 
 To start every project's server when the workspace opens, set `ascribe.startServers` to `"all"`.
 
@@ -224,7 +224,9 @@ Each server uses about 6 MB of memory, plus about 70 KB per page of its project.
 
 ### The Problems panel
 
-The Problems panel lists diagnostics only for the projects whose server is running. A project whose files you haven't opened shows nothing there, even if it has problems. Open one of its files, or set `ascribe.startServers` to `"all"`, to see them.
+The Problems panel lists diagnostics only for the projects whose server is running. A project whose files you haven't opened or changed shows nothing there, even if it has problems. Open one of its files, or set `ascribe.startServers` to `"all"`, to see them.
+
+A running server reports the problems in each file, and the problems of its pages as the editor's build (`[editor] build`) has them. A problem only another build has, such as a link to a page that build leaves out, isn't in the Problems panel. An agent that reads the Problems panel sees the same: before calling a project clean, run `ascribe check`, which checks every build.
 
 `ascribe check` checks a project whether or not the editor has it open. Run it in the project's folder, or from anywhere with `--config` naming the project's folder or its `ascribe.toml`:
 
