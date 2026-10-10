@@ -383,7 +383,7 @@ fn two_projects_share_the_root_agents_md() {
         root.contains("\n\n<!-- ascribe:agents:handbook start"),
         "{root}"
     );
-    assert!(root.len() < 1_500, "the root's blocks are short: {root}");
+    assert!(root.len() < 1_700, "the root's blocks are short: {root}");
     // Syncing one again leaves the other alone.
     sync(repo.path(), "docs", &[]);
     assert_eq!(read(&repo.path().join("AGENTS.md")), root);

@@ -7,7 +7,7 @@ paths:
 
 ## Ascribe documentation
 
-The Markdown pages under `handbook/pages/` are Ascribe documentation: pages with YAML frontmatter, `@` directives, and `{key}` phrases, checked against the content model in `handbook/ascribe.toml`.
+The Markdown pages under `handbook/pages/` are Ascribe documentation: pages with YAML frontmatter, `@` directives, and `{key}` phrases, checked against the content model in `handbook/ascribe.toml`. The pages under `handbook/pages/security/` aren't: that folder is another project's, with its own `ascribe.toml` and rules.
 
 Programmatic check: after editing a page, run `ascribe check <file> --format concise` and fix every error. Before you finish, run `ascribe check --config handbook`. `ascribe explain <code>` says what a problem means and how to fix it.
 
