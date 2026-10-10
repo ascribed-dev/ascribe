@@ -227,8 +227,12 @@ mod tests {
         };
         let configs = prepare(dir.path(), &model, &settings).unwrap();
         let ini = dir.path().join(".ascribe/vale/quiet/.vale.ini");
-        assert_eq!(configs, [ini.clone()]);
-        assert!(std::fs::read_to_string(&ini).unwrap().contains("Vocab = Ascribe"));
+        assert_eq!(configs, std::slice::from_ref(&ini));
+        assert!(
+            std::fs::read_to_string(&ini)
+                .unwrap()
+                .contains("Vocab = Ascribe")
+        );
         let accept = dir
             .path()
             .join(".ascribe/vale/quiet/styles/config/vocabularies/Ascribe/accept.txt");

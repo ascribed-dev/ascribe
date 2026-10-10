@@ -103,10 +103,7 @@ impl Core {
         };
         if loaded.model.checks.vale.is_none()
             || !self.docs.contains_key(path)
-            || !matches!(
-                loaded.classify(path),
-                Some(crate::core::Kind::Source(..))
-            )
+            || !matches!(loaded.classify(path), Some(crate::core::Kind::Source(..)))
         {
             return;
         }
@@ -127,9 +124,11 @@ impl Core {
     /// Takes the next check to run, if there is one.
     pub(crate) fn take_prose(&mut self) -> Option<Job> {
         while let Some(path) = self.prose.queue.pop_front() {
-            let (Some(loaded), Some(config), Some(doc)) =
-                (self.loaded.as_ref(), self.config.as_ref(), self.docs.get(&path))
-            else {
+            let (Some(loaded), Some(config), Some(doc)) = (
+                self.loaded.as_ref(),
+                self.config.as_ref(),
+                self.docs.get(&path),
+            ) else {
                 continue;
             };
             let Some(crate::core::Kind::Source(content, project)) = loaded.classify(&path) else {

@@ -148,7 +148,13 @@ fn run(
             }
         }
     }
-    out.sort_by_key(|d| (d.location.file, d.location.span.start(), d.location.span.end()));
+    out.sort_by_key(|d| {
+        (
+            d.location.file,
+            d.location.span.start(),
+            d.location.span.end(),
+        )
+    });
     Ok(out)
 }
 

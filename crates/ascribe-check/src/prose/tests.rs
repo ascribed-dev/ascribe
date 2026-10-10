@@ -5,10 +5,13 @@ use std::sync::Mutex;
 
 use super::*;
 
+/// How a stand-in for Vale answers a file's text.
+type Answer = Box<dyn Fn(&str) -> Vec<Alert> + Send + Sync>;
+
 /// A stand-in for Vale: it answers with the alerts `answer` makes of each
 /// file's text, and keeps the requests it's given.
 struct Fake {
-    answer: Box<dyn Fn(&str) -> Vec<Alert> + Send + Sync>,
+    answer: Answer,
     seen: Mutex<Vec<Request>>,
 }
 
@@ -163,7 +166,9 @@ fn vale_that_can_t_run_is_one_advice() {
     assert_eq!(at[0].severity, Severity::Advice);
     assert_eq!(at[0].location.file, FileId::new(0));
     assert!(
-        at[0].message.contains("`ascribe-test-no-such-vale` couldn't be run"),
+        at[0]
+            .message
+            .contains("`ascribe-test-no-such-vale` couldn't be run"),
         "{}",
         at[0].message
     );
@@ -171,7 +176,8 @@ fn vale_that_can_t_run_is_one_advice() {
 
 #[test]
 fn the_advice_can_be_turned_off() {
-    let model = model("command = \"ascribe-test-no-such-vale\"\n[checks]\nprose-not-checked = \"off\"\n");
+    let model =
+        model("command = \"ascribe-test-no-such-vale\"\n[checks]\nprose-not-checked = \"off\"\n");
     assert!(lint_text(&model, "Some text.\n", &Program).is_empty());
 }
 

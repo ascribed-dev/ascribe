@@ -99,7 +99,9 @@ fn a_project_s_own_config_gets_the_project_s_words() {
     let (project, found) = checked(dir.path());
     let shown = shown(&project, &found);
     assert!(
-        shown.iter().any(|s| s.starts_with("docs/page.md: Quuxbar: Vale.Spelling")),
+        shown
+            .iter()
+            .any(|s| s.starts_with("docs/page.md: Quuxbar: Vale.Spelling")),
         "{shown:?}"
     );
     assert!(!shown.iter().any(|s| s.contains("Zorbtastic")), "{shown:?}");

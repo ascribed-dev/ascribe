@@ -2,7 +2,7 @@
 
 ### Prose, through Vale
 
-#### ASC143 `prose`
+#### ASC148 `prose`
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -10,7 +10,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 
 **Fix:** Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](../reference/../guides/vale.md).
 
-#### ASC144 `prose-not-checked`
+#### ASC149 `prose-not-checked`
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 

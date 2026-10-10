@@ -147,7 +147,10 @@ fn an_open_page_s_prose_is_published_with_its_other_diagnostics() {
         .find(|d| slug(d) == "prose")
         .unwrap();
     assert_eq!(alert.message, "Test.Typos: Use 'the' instead of 'teh'.");
-    assert_eq!((alert.range.start.character, alert.range.end.character), (0, 3));
+    assert_eq!(
+        (alert.range.start.character, alert.range.end.character),
+        (0, 3)
+    );
     let data = alert.data.unwrap();
     assert_eq!(data["next"], "fix");
     assert_eq!(data["rule"], "Test.Typos");
@@ -175,7 +178,11 @@ fn an_edit_drops_the_alerts_from_where_it_starts_and_a_save_checks_again() {
             .iter()
             .any(|d| slug(d) == "link-target-missing")
     );
-    assert_eq!(fake.runs.load(Ordering::SeqCst), 1, "typing doesn't run Vale");
+    assert_eq!(
+        fake.runs.load(Ordering::SeqCst),
+        1,
+        "typing doesn't run Vale"
+    );
 
     client.save(&a);
     client.settle();

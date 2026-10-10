@@ -553,3 +553,11 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 **Message:** an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image`
 
 **Fix:** Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes.
+
+#### ASC150 `model-checks-vale`
+
+Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
+
+**Message:** `[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini`
+
+**Fix:** Give `[checks.vale]` one of `preset = "quiet"` or `config = "<path to .vale.ini>"`. `off` lists rules of the preset to turn off, by their names in alerts (`Ascribe.Repeated`), and is only for a preset.

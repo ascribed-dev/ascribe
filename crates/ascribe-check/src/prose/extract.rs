@@ -68,7 +68,11 @@ pub struct Located {
 impl Prose {
     /// The prose of a parsed page. `phrase` gives a phrase's value by its
     /// key; an undeclared phrase is given as written.
-    pub fn of(source: &str, doc: &ParsedDocument, phrase: &dyn Fn(&str) -> Option<String>) -> Prose {
+    pub fn of(
+        source: &str,
+        doc: &ParsedDocument,
+        phrase: &dyn Fn(&str) -> Option<String>,
+    ) -> Prose {
         let mut w = Writer {
             source,
             phrase,
@@ -201,7 +205,11 @@ impl Writer<'_> {
     /// Ends a block: a blank line after it.
     fn end_block(&mut self, at: usize) {
         if !self.text.is_empty() && !self.text.ends_with("\n\n") {
-            let ending = if self.text.ends_with('\n') { "\n" } else { "\n\n" };
+            let ending = if self.text.ends_with('\n') {
+                "\n"
+            } else {
+                "\n\n"
+            };
             self.made(ending, Span::new(at, at));
         }
         self.indent = false;
@@ -217,7 +225,10 @@ impl Writer<'_> {
         match &block.kind {
             BlockKind::Heading(h) => {
                 let marker = "#".repeat(usize::from(h.level.clamp(1, 6)));
-                self.made(&format!("{marker} "), Span::new(block.span.start(), h.content.start()));
+                self.made(
+                    &format!("{marker} "),
+                    Span::new(block.span.start(), h.content.start()),
+                );
                 self.inlines(&h.inlines);
                 self.end_block(block.span.end());
             }
@@ -440,7 +451,10 @@ mod tests {
     /// Where the first match of `needle` in the prose is in the source.
     fn place(source: &str, needle: &str) -> Located {
         let p = prose(source);
-        let i = p.text.find(needle).unwrap_or_else(|| panic!("{needle:?} not in {:?}", p.text));
+        let i = p
+            .text
+            .find(needle)
+            .unwrap_or_else(|| panic!("{needle:?} not in {:?}", p.text));
         p.locate(i, i + needle.len(), source).unwrap()
     }
 
@@ -510,7 +524,13 @@ mod tests {
     fn containers_titles_and_arms_give_their_text() {
         let source = ".Before you start\n@details:\nInside the details.\n@end\n\n@variant {platform=linux}:\nOn Linux.\n@variant {platform=mac}:\nOn a Mac.\n@end\n\n<!-- vale off -->\n\n```sh\necho hi\n```\n";
         let p = prose(source);
-        for part in ["Before you start", "Inside the details.", "On Linux.", "On a Mac.", "<!-- vale off -->"] {
+        for part in [
+            "Before you start",
+            "Inside the details.",
+            "On Linux.",
+            "On a Mac.",
+            "<!-- vale off -->",
+        ] {
             assert!(p.text.contains(part), "{part:?} isn't in {:?}", p.text);
         }
         assert!(!p.text.contains("echo"), "{:?}", p.text);
@@ -542,15 +562,26 @@ mod tests {
 
     fn page() -> impl Strategy<Value = String> {
         let word = prop::sample::select(vec![
-            "word", "teh", "café", "{product}", "{pipe}", "*em*", "`code`", "[link](x.md)", "[](x.md)",
-            "ünï", "—", "a\\*b",
+            "word",
+            "teh",
+            "café",
+            "{product}",
+            "{pipe}",
+            "*em*",
+            "`code`",
+            "[link](x.md)",
+            "[](x.md)",
+            "ünï",
+            "—",
+            "a\\*b",
         ]);
         let line = prop::collection::vec(word, 1..6).prop_map(|w| w.join(" "));
         let block = prop_oneof![
             line.clone().prop_map(|l| format!("{l}\n")),
             line.clone().prop_map(|l| format!("## {l}\n")),
             (line.clone(), line.clone()).prop_map(|(a, b)| format!("- {a}\n  {b}\n")),
-            (line.clone(), line.clone()).prop_map(|(a, b)| format!("| {a} | {b} |\n|---|---|\n| {b} | {a} |\n")),
+            (line.clone(), line.clone())
+                .prop_map(|(a, b)| format!("| {a} | {b} |\n|---|---|\n| {b} | {a} |\n")),
             line.clone().prop_map(|l| format!("@note: {l}\n")),
             line.clone().prop_map(|l| format!("> {l}\n> {l}\n")),
             line.prop_map(|l| format!("- item\n\n  @note: {l}\n")),

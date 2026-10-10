@@ -165,7 +165,9 @@ fn switched(model_text: &str) -> Result<String, EjectError> {
         .and_then(Item::as_table_like_mut)
         .ok_or_else(|| EjectError::Model("there's no `[checks.vale]` table".to_owned()))?;
     if !vale.contains_key("preset") {
-        return Err(EjectError::Model("`[checks.vale]` has no `preset`".to_owned()));
+        return Err(EjectError::Model(
+            "`[checks.vale]` has no `preset`".to_owned(),
+        ));
     }
     rename(vale, "preset", "config");
     if let Some(item) = vale.get_mut("config") {

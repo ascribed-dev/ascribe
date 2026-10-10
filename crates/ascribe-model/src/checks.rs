@@ -76,7 +76,14 @@ impl Loader<'_> {
         self.check_keys(
             PATH,
             t,
-            &["preset", "config", "command", "in-check", "max-level", "off"],
+            &[
+                "preset",
+                "config",
+                "command",
+                "in-check",
+                "max-level",
+                "off",
+            ],
         );
         let preset = t.get("preset");
         let config = t.get("config");
@@ -109,11 +116,7 @@ impl Loader<'_> {
         };
         let max_level = match t.get("max-level") {
             Some(l) => {
-                let name = self.choice(
-                    &join(PATH, "max-level"),
-                    l,
-                    &CheckLevel::NAMES[1..],
-                )?;
+                let name = self.choice(&join(PATH, "max-level"), l, &CheckLevel::NAMES[1..])?;
                 CheckLevel::from_name(&name)?
             }
             None => CheckLevel::Error,
@@ -289,25 +292,35 @@ mod tests {
         let both = vale("[checks.vale]\npreset = \"quiet\"\nconfig = \"x\"\n").unwrap_err();
         assert_eq!(both, [(diagnostics::MODEL_CHECKS_VALE, "\"x\"".to_owned())]);
         let neither = vale("[checks.vale]\ncommand = \"vale\"\n").unwrap_err();
-        assert_eq!(neither, [(diagnostics::MODEL_CHECKS_VALE, "vale".to_owned())]);
+        assert_eq!(
+            neither,
+            [(diagnostics::MODEL_CHECKS_VALE, "vale".to_owned())]
+        );
         let unknown = vale("[checks.vale]\npreset = \"loud\"\n").unwrap_err();
         assert_eq!(
             unknown,
             [(diagnostics::MODEL_INVALID_VALUE, "\"loud\"".to_owned())]
         );
         let level = vale("[checks.vale]\npreset = \"quiet\"\nmax-level = \"off\"\n").unwrap_err();
-        assert_eq!(level, [(diagnostics::MODEL_INVALID_VALUE, "\"off\"".to_owned())]);
+        assert_eq!(
+            level,
+            [(diagnostics::MODEL_INVALID_VALUE, "\"off\"".to_owned())]
+        );
     }
 
     #[test]
     fn vale_off_names_rules_of_the_preset() {
-        let off = vale("[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Repeated\"]\n").unwrap();
+        let off =
+            vale("[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Repeated\"]\n").unwrap();
         assert_eq!(off.off, ["Ascribe.Repeated"]);
         let unknown =
             vale("[checks.vale]\npreset = \"quiet\"\noff = [\"Ascribe.Nope\"]\n").unwrap_err();
         assert_eq!(
             unknown,
-            [(diagnostics::MODEL_CHECKS_VALE, "\"Ascribe.Nope\"".to_owned())]
+            [(
+                diagnostics::MODEL_CHECKS_VALE,
+                "\"Ascribe.Nope\"".to_owned()
+            )]
         );
         let with_config =
             vale("[checks.vale]\nconfig = \".vale.ini\"\noff = [\"A.B\"]\n").unwrap_err();

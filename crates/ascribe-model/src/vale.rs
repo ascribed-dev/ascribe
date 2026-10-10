@@ -23,6 +23,14 @@ pub const PRESETS: &[Preset] = &[Preset {
             "styles/Ascribe/Repeated.yml",
             include_str!("../presets/quiet/styles/Ascribe/Repeated.yml"),
         ),
+        (
+            "styles/Ascribe/Terms.yml",
+            include_str!("../presets/quiet/styles/Ascribe/Terms.yml"),
+        ),
+        (
+            "styles/Ascribe/Typos.yml",
+            include_str!("../presets/quiet/styles/Ascribe/Typos.yml"),
+        ),
     ],
 }];
 

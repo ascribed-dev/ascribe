@@ -148,3 +148,6 @@
 | [ASC145](../reference/diagnostics.md#asc145-intended-unused) | `intended-unused` | Advice | Page | fix |
 | [ASC146](../reference/diagnostics.md#asc146-model-intended-check) | `model-intended-check` | Error | File | choose |
 | [ASC147](../reference/diagnostics.md#asc147-model-intended-entry) | `model-intended-entry` | Error | File | choose |
+| [ASC148](../reference/diagnostics.md#asc148-prose) | `prose` | Advice | File | write |
+| [ASC149](../reference/diagnostics.md#asc149-prose-not-checked) | `prose-not-checked` | Advice | File | outside |
+| [ASC150](../reference/diagnostics.md#asc150-model-checks-vale) | `model-checks-vale` | Error | File | write |

@@ -274,10 +274,7 @@ fn render(
     // Source-file diagnostics, grouped by the construct their SPEC row names,
     // in the order each construct first appears.
     let mut constructs: Vec<(&str, Vec<(&Entry, &str)>)> = Vec::new();
-    for entry in active
-        .iter()
-        .filter(|e| !is_model(e) && e.area.is_none())
-    {
+    for entry in active.iter().filter(|e| !is_model(e) && e.area.is_none()) {
         let row = entry.row.as_deref().unwrap_or_default();
         let (construct, condition) = row.split_once(" | ").unwrap_or((row, ""));
         match constructs.iter_mut().find(|(c, _)| *c == construct) {

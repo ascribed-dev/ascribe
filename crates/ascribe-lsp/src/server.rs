@@ -25,7 +25,8 @@ use lsp_types::{
     SemanticTokensFullOptions, SemanticTokensOptions, SemanticTokensParams,
     SemanticTokensRangeParams, SemanticTokensServerCapabilities, ServerCapabilities, ServerInfo,
     ShowDocumentParams, TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    TextDocumentSyncSaveOptions, Uri, WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
+    TextDocumentSyncSaveOptions, Uri, WorkspaceFileOperationsServerCapabilities,
+    WorkspaceServerCapabilities,
 };
 
 use crate::compute::{Outcome, compute};

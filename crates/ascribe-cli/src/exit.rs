@@ -81,11 +81,20 @@ mod tests {
         ("path_outside_project", "a path isn't in the project"),
         ("path_not_a_source", "--path names no possible source file"),
         ("stdin_unreadable", "standard input can't be read as text"),
-        ("vale_not_set_up", "--vale, and ascribe.toml has no [checks.vale]"),
+        (
+            "vale_not_set_up",
+            "--vale, and ascribe.toml has no [checks.vale]",
+        ),
         ("vale_no_preset", "[checks.vale] names no preset to eject"),
         ("vale_config_exists", ".vale.ini or .vale is there already"),
-        ("vale_unwritable", "a Vale file or ascribe.toml can't be written"),
-        ("vale_model_unchanged", "[checks.vale] can't be changed in ascribe.toml"),
+        (
+            "vale_unwritable",
+            "a Vale file or ascribe.toml can't be written",
+        ),
+        (
+            "vale_model_unchanged",
+            "[checks.vale] can't be changed in ascribe.toml",
+        ),
         ("format_io", "fmt can't read or write a path"),
         ("not_utf8", "a file to format isn't UTF-8"),
         ("format_bad_edits", "the formatter's edits don't apply"),
@@ -301,7 +310,8 @@ mod tests {
             }
         }
         let _ = (
-            locate, load, scope, check, eject, format, emit, store, diff, sources, serve, query, agents,
+            locate, load, scope, check, eject, format, emit, store, diff, sources, serve, query,
+            agents,
         );
 
         let store_errors = || {

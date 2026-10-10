@@ -4,7 +4,7 @@ description: Checking your pages' prose with Vale, from Ascribe's quiet preset o
 available: next
 ---
 
-[Vale](https://vale.sh) checks prose: a repeated word, a misspelling, a term written two ways. Ascribe runs it for you and reports what it finds as Ascribe diagnostics, at the right place in your source, beside the rest of your problems in the editor and in `ascribe check`.
+[Vale](https://vale.sh) checks prose: a word written twice, a misspelling, a term spelled two ways. Ascribe runs it for you and reports what it finds as Ascribe diagnostics, at the right place in your source, beside the rest of your problems in the editor and in `ascribe check`.
 
 Ascribe gives Vale your prose and nothing else. Frontmatter, directive lines, attribute blocks, and code never reach it, so Vale has nothing to say about Ascribe's syntax, and a phrase's text is checked where you wrote `{key}`. You install Vale; Ascribe never downloads it or anything for it.
 
@@ -26,9 +26,9 @@ The `quiet` preset has only rules that are almost never wrong. Each was run on A
 
 | Rule | What it finds |
 |---|---|
-| `Ascribe.Repeated` | A word written twice in a row: "the the". The editor offers to remove the second. |
-| `Ascribe.Typos` | A common misspelling, such as "recieve" or "seperate". The editor offers the correction. |
-| `Ascribe.Terms` | A term written two ways in one page, such as "email" and "e-mail", or "dataset" and "data set". |
+| `Ascribe.Repeated` | A word written twice in a row, such as `the the`. The editor offers to remove the second. |
+| `Ascribe.Typos` | A common misspelling, such as `recieve` or `seperate`. The editor offers the correction. |
+| `Ascribe.Terms` | A term written two ways in one page, such as `email` and `e-mail`, or `dataset` and `data set`. |
 
 Its alerts are advice: shown, and never failing `ascribe check`. Text in bold isn't checked, since in documentation it's usually a label from a user interface, which you don't choose.
 

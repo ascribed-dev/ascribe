@@ -1,0 +1,25 @@
+# A term written two ways in one file. Each pair means the same; which one
+# a project uses is its own choice, so either is accepted, but not both.
+extends: consistency
+message: "'%s' is written two ways in this file."
+level: suggestion
+ignorecase: true
+either:
+  email: e-mail
+  online: on-line
+  website: web site
+  dropdown: drop-down
+  checkbox: check box
+  backend: back-end
+  frontend: front-end
+  timestamp: time stamp
+  username: user name
+  dataset: data set
+  codebase: code base
+  plugin: plug-in
+  filename: file name
+  hostname: host name
+  namespace: name space
+  wildcard: wild card
+  lowercase: lower case
+  uppercase: upper case
