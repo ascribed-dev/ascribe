@@ -107,6 +107,14 @@ describe("hasWarnings", () => {
     expect(hasWarnings("checked 1 file: 0 errors, 0 warnings")).toBe(false);
   });
 
+  it("is false for a report with only advice", () => {
+    expect(
+      hasWarnings(
+        "[ASC999] Advice: this page is long\n   ╭─[ docs/keys.md:1:1 ]\n───╯\nchecked 4 files: 0 errors, 0 warnings, 1 advice",
+      ),
+    ).toBe(false);
+  });
+
   it("is true for a report with warnings, or anything else", () => {
     expect(
       hasWarnings(
@@ -114,6 +122,7 @@ describe("hasWarnings", () => {
       ),
     ).toBe(true);
     expect(hasWarnings("checked 4 files: 0 errors, 2 warnings")).toBe(true);
+    expect(hasWarnings("checked 4 files: 0 errors, 1 warning, 2 advice")).toBe(true);
     expect(hasWarnings("something unexpected")).toBe(true);
   });
 });
