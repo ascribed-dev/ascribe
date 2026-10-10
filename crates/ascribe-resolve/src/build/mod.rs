@@ -81,8 +81,8 @@ pub use permalinks::{Permalink, permalinks};
 pub use router::DefaultRouter;
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,
-    LinkTarget, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild, ResolvedItem,
-    ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
+    LinkTarget, PagePermalink, Removal, Removed, ResolvedArm, ResolvedBlock, ResolvedBuild,
+    ResolvedItem, ResolvedKind, ResolvedLink, ResolvedPage, ResolvedRow, Scope, Substitution,
 };
 
 use crate::index::FileKind;
@@ -302,6 +302,7 @@ impl<'p> BuildResolver<'p> {
         // them, so a page reads as it would without them.
         drop_acknowledgements(&mut blocks);
         let frontmatter = frontmatter.and_then(without_acknowledgements);
+        let permalink = permalinks::of_page(index);
         Some(ResolvedPage {
             path: path.clone(),
             file: index.file,
@@ -311,6 +312,7 @@ impl<'p> BuildResolver<'p> {
             title,
             formatted,
             availability: page_availability,
+            permalink,
             blocks,
             assets: Vec::new(),
             problems,

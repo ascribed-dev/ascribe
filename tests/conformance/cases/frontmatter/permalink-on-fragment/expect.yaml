@@ -1,0 +1,8 @@
+description: >-
+  A fragment can't use the reserved key `permalink` (SPEC §2.2): a fragment
+  isn't published on its own, so it has no address to name.
+spec: ["2.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: frontmatter-reserved-in-fragment, file: _f.md, line: 2}

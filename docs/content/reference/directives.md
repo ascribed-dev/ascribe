@@ -1,6 +1,7 @@
 ---
 title: Directive reference
 description: "The language: directives, attributes, titles, phrases, links, and images."
+permalink: directives
 ---
 
 Ascribe source is CommonMark with a few additions: **directives**, lines that start with `@` and annotate the content around them; **title lines**, which give a directive a title; and **phrases**, reusable strings written `{key}`. Everything else is ordinary Markdown, and an Ascribe page read by a plain Markdown renderer still reads sensibly.
@@ -231,8 +232,19 @@ Without `@id`, a heading's id is its slug, computed from its text. Add `@id` to 
 
 - **Each permalink has an address of its own,** `go/<id>` under the site's base path, or under [`permalink-path`](content-model.md#15-consumer), which forwards to the section wherever it is. With [`@ascribed/astro`](../guides/astro.md#permalinks), `/go/cli-check/` sends the reader to `/reference/cli/#cli-check`. A product links to the address, not to the page: `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
 - **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `cli.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
-- **A build can publish a permalink on one page only,** and `ascribe check` reports one it publishes twice (`permalink-duplicate`). A heading in a fragment is published on every page that includes it, so a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
-- **Only a heading can have a permalink for now,** not a whole page, and nothing reports a permalink that's removed: delete the id or the attribute, and the address stops working without a word. Keep a permalink's id as it is for as long as anything links to it.
+- **A build can publish a permalink in one place only,** and `ascribe check` reports one it publishes twice (`permalink-duplicate`). A heading in a fragment is published on every page that includes it, so a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
+- **Nothing reports a permalink that's removed yet:** delete the id or the attribute, and the address stops working without a word. Keep a permalink's id as it is for as long as anything links to it.
+
+A whole page can have a permalink too, in its frontmatter, and its address leads to the top of the page:
+
+```yaml
+---
+title: Command reference
+permalink: cli-reference
+---
+```
+
+A page's permalink follows the rules of an id, and shares one set of names with the headings': a page and a heading can't have the same one in a build. A fragment can't have one, since it isn't published on its own. The site output keeps `permalink` in the page's frontmatter, so a layout can show the page's permanent address.
 
 ### `@include`
 

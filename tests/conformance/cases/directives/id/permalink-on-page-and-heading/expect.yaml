@@ -1,0 +1,11 @@
+description: >-
+  A page's permalink and a heading's share one set of names (SPEC §2.1), so
+  a page and a heading with the same permalink in one build are reported
+  like two headings, at the second, naming the first.
+spec: ["2.1", "4.1", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: permalink-duplicate, file: b.md, line: 6}

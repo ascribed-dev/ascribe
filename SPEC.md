@@ -82,9 +82,17 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves three keys: `available` (§4.4), `variant` (§4.3), and `intended` (§4.9).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves four keys: `available` (§4.4), `variant` (§4.3), `intended` (§4.9), and `permalink` (below).
 
-- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, or a mapping of dimensions to values) is a frontmatter value of the wrong type (§8.2).
+- Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, a mapping of dimensions to values, or a name) is a frontmatter value of the wrong type (§8.2).
+- `permalink` gives a page a **permalink**: a name for the page that something outside the documentation can link to, which a build publishes at an address of its own that leads to the page wherever it is (§9.5). Its value is a name with the characters of an `@id` (§4.1), and it shares one set of names with the headings' permalinks: a build MUST publish each name once, whether on a page or a heading.
+
+  ```yaml
+  ---
+  title: Command reference
+  permalink: cli-reference
+  ---
+  ```
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A symbolic link on the way to a source file is followed, and the file it leads to MUST be a source file itself (under the content root, named as above, and not in another project's folder), so a link can't put any other file on disk in a page; one that leads elsewhere is an error on that file, and it isn't a source another file can include. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
 
 ### 2.2 Pages and fragments
@@ -96,7 +104,7 @@ A documentation set's source files live under a **content root**. Each file is e
 
 A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
 
-Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available` and `variant`; availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available`, `variant`, and `permalink`; availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
 
 ### 2.3 Escapes
 
@@ -355,7 +363,7 @@ Gives a heading an explicit, stable id.
   @id {permalink=true}: cli-check
   ```
 
-  A build MUST publish a permalink on one page only. A heading in a fragment is published on every page that includes it, so its permalink is published on each. Two pages that no build publishes together may share a permalink.
+  A build MUST publish a permalink in one place only, and a page's own permalink (§2.1) shares one set of names with the headings'. A heading in a fragment is published on every page that includes it, so its permalink is published on each. Two pages that no build publishes together may share a permalink.
 
 ### 4.2 `@include`
 
@@ -902,8 +910,8 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Title | Title given to a directive that doesn't accept one | Warning |
 | Title | A `. ` line (dot and space) directly above a directive that accepts a title | Warning |
 | `@id` | Duplicate id on a page, including ids from included content (page level) | Error |
-| `@id` | Permalink published by one build on more than one page (page level) | Error |
-| `@id` | Id containing characters other than letters, digits, hyphens, underscores, and periods | Error |
+| `@id` | Permalink published by one build in more than one place: on two pages, or as a page's own and a heading's (page level) | Error |
+| `@id` | Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods | Error |
 | `@include` | Target file doesn't exist | Error |
 | `@include` | Target id doesn't exist in the target file (page level) | Error |
 | `@include` | Include cycle | Error |
@@ -949,7 +957,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
-| Frontmatter | Reserved key (`available`, `variant`) on a fragment | Error |
+| Frontmatter | Reserved key (`available`, `variant`, `permalink`) on a fragment | Error |
 | Frontmatter | Page matches more than one content type, or matches none and there's no default type | Error |
 | Frontmatter | Frontmatter that isn't valid YAML | Error |
 | Files | Source file that can't be read, or isn't valid UTF-8 | Error |

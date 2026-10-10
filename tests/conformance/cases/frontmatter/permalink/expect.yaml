@@ -1,0 +1,8 @@
+description: >-
+  `permalink` is reserved frontmatter (SPEC §2.1): any page may set it to a
+  name, with the characters of an `@id`, without its content type declaring
+  it.
+spec: ["2.1"]
+tags: [check]
+
+diagnostics: []

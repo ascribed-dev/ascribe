@@ -33,7 +33,7 @@ use ascribe_syntax::{Block, BlockKind, DirectiveLine, Inline, InlineKind};
 
 use crate::build::{Terms, prose_lists};
 use crate::index::walk::walk_blocks;
-use crate::index::{FileIndex, RefKind};
+use crate::index::{FileIndex, RefKind, frontmatter_key};
 use crate::project::{Project, Resolution};
 
 /// Something a page can use.
@@ -330,24 +330,6 @@ fn availability_uses(model: &ContentModel, file: &FileIndex, f: &mut dyn FnMut(&
     {
         spec(&parsed, at);
     }
-}
-
-/// The line of a top-level key of the frontmatter, from the key to the end
-/// of its value on that line.
-fn frontmatter_key(file: &FileIndex, key: &str) -> Option<Span> {
-    let content = file.document.frontmatter.as_ref()?.content;
-    let text = file.source.get(content.range())?;
-    let mut at = content.start();
-    for line in text.split_inclusive('\n') {
-        if line
-            .strip_prefix(key)
-            .is_some_and(|rest| rest.trim_start().starts_with(':'))
-        {
-            return Some(Span::new(at, at + line.trim_end().len()));
-        }
-        at += line.len();
-    }
-    None
 }
 
 /// The occurrences of glossary terms in the prose of `file`: paragraphs,

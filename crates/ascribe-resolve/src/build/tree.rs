@@ -57,6 +57,9 @@ pub struct ResolvedPage {
     /// The page-level availability (the frontmatter `available`, after
     /// feature keys), which every node inherits unless it has its own.
     pub availability: Option<Arc<Availability>>,
+    /// The page's own permalink, its frontmatter `permalink` (SPEC §2.1),
+    /// when that's a string.
+    pub permalink: Option<PagePermalink>,
     /// The blocks that survived the build, includes expanded.
     pub blocks: Vec<ResolvedBlock>,
     /// The assets the surviving content references, in document order, each
@@ -69,6 +72,15 @@ pub struct ResolvedPage {
     /// `link-id-removed`, and `link-page-dropped`. Each is located where its
     /// cause is written, with the includes it came through.
     pub problems: Vec<PageProblem>,
+}
+
+/// A page's own permalink, from its frontmatter.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PagePermalink {
+    /// The name.
+    pub name: String,
+    /// The `permalink` line of the frontmatter.
+    pub at: Location,
 }
 
 /// A frontmatter field read with inline markup.

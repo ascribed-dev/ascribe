@@ -246,21 +246,21 @@ Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 
 Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
-**When:** Id containing characters other than letters, digits, hyphens, underscores, and periods.
+**When:** Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods.
 
 **Message:** `{id}` isn't a valid id: use only letters, digits, hyphens, underscores, and periods
 
-**Fix:** Use only letters, digits, hyphens, underscores, and periods in the id.
+**Fix:** Use only letters, digits, hyphens, underscores, and periods in the id, or in the page's `permalink`.
 
 #### ASC173 `permalink-duplicate`
 
 Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
-**When:** Permalink published by one build on more than one page.
+**When:** Permalink published by one build in more than one place: on two pages, or as a page's own and a heading's.
 
-**Message:** the permalink `{name}` is also on `{page}`; a build can publish each permalink on one page only
+**Message:** the permalink `{name}` is also on `{page}`; a build can publish each permalink in one place only
 
-**Fix:** Give one of the headings a different `@id`, or remove `{permalink=true}` from it. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages.
+**Fix:** Give one of them a different name (a heading's `@id`, or a page's `permalink`), or stop it being a permalink: remove `{permalink=true}` from the `@id`, or `permalink` from the frontmatter. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages.
 
 ### `@include`
 
@@ -628,7 +628,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
-**When:** Reserved key (`available`, `variant`) on a fragment.
+**When:** Reserved key (`available`, `variant`, `permalink`) on a fragment.
 
 **Message:** `{key}` is reserved for pages, and fragments can't use it
 
