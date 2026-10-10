@@ -35,7 +35,7 @@ In order:
 
 ### Why Ascribe
 
-The argument at length, for someone comparing tools: the problems docs-as-code teams report, what Ascribe does about each, and what it deliberately doesn't do. The research reports in `reports/` are the source for the problems, and `examples/comparison/` already holds the same content written for Astro, Docker's docs, and Elastic's, beside Ascribe's.
+The argument at length, for someone comparing tools: the problems docs-as-code teams report, what Ascribe does about each, and what it deliberately doesn't do. The research reports in `project-docs/reports/` are the source for the problems, and `examples/comparison/` already holds the same content written for Astro, Docker's docs, and Elastic's, beside Ascribe's.
 
 It names its limits: no hosting, no model, no navigation in the content model yet, one site generator supported.
 

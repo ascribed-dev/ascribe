@@ -288,7 +288,7 @@ What's missing is the join: an output keyed by permalink, holding each named sec
 
 # Agents
 
-Sections 8 to 13 are planned in the agents plan, in eleven phases, checked against a [research report](../reports/Agent%20first%20interfaces%20for%20docs%20tools.md), with one idea added on 2026-10-04: a **Prompt agent** action on problems, review comments, and changed pages, which builds a prompt for the user's own agent. Section 7 isn't in that plan.
+Sections 8 to 13 are planned in the agents plan, in eleven phases, checked against a [research report](reports/Agent%20first%20interfaces%20for%20docs%20tools.md), with one idea added on 2026-10-04: a **Prompt agent** action on problems, review comments, and changed pages, which builds a prompt for the user's own agent. Section 7 isn't in that plan.
 
 Agents meet documentation in two ways: they **read** published docs while they code, and they **write** docs in a repository. Ascribe can help with both, and it's unusually well placed for the first, because it already builds a resolved, plain-Markdown version of every page.
 
@@ -447,7 +447,7 @@ ascribe init --agents        # writes or updates AGENTS.md, CLAUDE.md, .github/i
 
 ## 14. Rendered changes and comments
 
-Added 2026-10-03, after two research reports: [Docs as code pain points](../reports/Docs%20as%20code%20pain%20points.md) and [Ascribe fit for docs pain points](../reports/Ascribe%20fit%20for%20docs%20pain%20points.md). Planned in [review/](review/README.md), in eight phases.
+Added 2026-10-03, after two research reports: [Docs as code pain points](reports/Docs%20as%20code%20pain%20points.md) and [Ascribe fit for docs pain points](reports/Ascribe%20fit%20for%20docs%20pain%20points.md). Planned in [review/](review/README.md), in eight phases.
 
 ### The problem
 
@@ -590,7 +590,7 @@ These are the reasons a server might one day be worth having, and they're about 
 
 ## 16. What could be charged for
 
-Added 2026-10-09. A place to collect ideas, so they're on record if the question is ever opened. Nothing here is planned, and the research is against starting now: [Ascribe fit for docs pain points](../reports/Ascribe%20fit%20for%20docs%20pain%20points.md) concludes that a paid tier is premature and its price ceiling low.
+Added 2026-10-09. A place to collect ideas, so they're on record if the question is ever opened. Nothing here is planned, and the research is against starting now: [Ascribe fit for docs pain points](reports/Ascribe%20fit%20for%20docs%20pain%20points.md) concludes that a paid tier is premature and its price ceiling low.
 
 ### What an idea is judged against
 

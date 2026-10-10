@@ -7,8 +7,8 @@ name: CI
 #
 # What runs depends on what changed and where:
 #
-# - A change to plans and reports alone (project-docs/, reports/,
-#   research_notes/) runs the formatter and nothing else.
+# - A change to plans and reports alone (project-docs/) runs the formatter
+#   and nothing else.
 # - A pull request runs Linux and Windows. `main` runs Linux and macOS. The
 #   rest of the platforms (the Astro end-to-end on arm64, macOS, and Windows)
 #   run every night and by hand, here, and the canary's smoke test installs
@@ -76,7 +76,7 @@ jobs:
           # The decision log and the change checklists are the exception: a test checks them.
           code=true
           if [ "$files" != all ] && [ -n "$files" ] &&
-            ! printf '%s\n' "$files" | grep -qvE '^(project-docs|reports|research_notes)/' &&
+            ! printf '%s\n' "$files" | grep -qvE '^project-docs/' &&
             ! printf '%s\n' "$files" | grep -qE '^project-docs/(decisions|checklists)\.md$'; then
             code=false
           fi

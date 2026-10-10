@@ -12,7 +12,7 @@ Part of [Content checks](README.md). Requires phases 1, 4, and 6; uses phase 2's
 - `crates/ascribe-cli/src/commands/`: how a command is declared and documented, and `drift.rs`, the closest in shape (`--format summary` writes Markdown for a CI job's summary; `--exit-code` decides whether findings fail).
 - `crates/ascribe-cli/src/shapes.rs`: a command's JSON gets a schema, TypeScript types, and a docs fragment.
 - The agents plan's decision 3 (compact, versioned, capped output) and its prompt format.
-- `reports/Ascribe fit for docs pain points.md`, "Three cost classes": external links take minutes and are flaky, so they belong on a schedule, not on a pull request.
+- `project-docs/reports/Ascribe fit for docs pain points.md`, "Three cost classes": external links take minutes and are flaky, so they belong on a schedule, not on a pull request.
 - [lychee](https://lychee.cli.rs) and `afdocs`, each read at its current version before designing around its output.
 
 ## Design
