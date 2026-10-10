@@ -11,6 +11,7 @@
 //!
 //! The link checker's stand-in answers by host: `gone.test` and its subdomains are a 404,
 //! `moved.test` redirects permanently to the same path on `new.test`,
+//! `landing.test` sends its root to `/docs/intro`,
 //! `slow.test` doesn't answer in time, `down.test` can't be reached, and
 //! every other host answers. A `[checks.links] command` of `not-installed`
 //! is a checker that can't be run.
@@ -129,6 +130,12 @@ impl LinkChecker for StandInLinks {
                         to: url.replacen("moved.test", "new.test", 1),
                         code: 301,
                     },
+                    "landing.test" if url.trim_end_matches('/').ends_with("landing.test") => {
+                        Answer::Moved {
+                            to: "https://landing.test/docs/intro".to_owned(),
+                            code: 301,
+                        }
+                    }
                     "slow.test" => Answer::TimedOut {
                         said: "Timeout".to_owned(),
                     },

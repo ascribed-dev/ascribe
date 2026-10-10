@@ -186,7 +186,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
-**When:** `ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers.
+**When:** `ascribe report links`: an external link's address redirects permanently (`301` or `308`) to another one that answers. A site's root that redirects to another of its own pages, a landing page, hasn't moved.
 
 **Message:** `{url}` moved permanently to `{to}`; link to the new address
 
@@ -198,7 +198,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
-**When:** `ascribe report agents`: the published site fails a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
+**When:** `ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that its hosting decides, such as status codes, caching, or content negotiation.
 
 **Message:** the site fails the delivery spec's `{check}` check: \{result}. \{setting}
 
@@ -208,7 +208,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
-**When:** `ascribe report agents`: the published site fails a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
+**When:** `ascribe report agents`: the published site fails, or warns on, a check of the Web Documentation Delivery Spec that `llms.txt`, the Markdown pages, or the pointer on each page should pass, which Ascribe writes with `[consumer] agents = true`.
 
 **Message:** the site fails the delivery spec's `{check}` check, which what Ascribe writes should pass: \{result}. Report it at \{issues}
 

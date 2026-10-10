@@ -134,12 +134,10 @@ pub const CHECKS: &[(&str, Owner)] = &[
             "Put each page's content earlier in its HTML than the navigation, or in `<main>`: the site's page template",
         ),
     ),
-    (
-        "page-size-html",
-        Owner::Hosting(
-            "Trim what the site's page template adds around the content, such as navigation repeated on every page",
-        ),
-    ),
+    // It measures a page's HTML converted to Markdown, navigation and all.
+    // A page too large in it is most often too large in Markdown, which
+    // `page-size` reports; the guide says what's left is the template's.
+    ("page-size-html", Owner::Pages(diagnostics::PAGE_SIZE)),
     (
         "page-size-transfer",
         Owner::Hosting(
@@ -277,11 +275,7 @@ pub fn check(
         .iter()
         .filter(|r| r.status.is_finding())
         .filter_map(|r| {
-            let result = if r.status == Status::Warn {
-                format!("{} (a warning)", r.message.trim_end_matches('.'))
-            } else {
-                r.message.trim_end_matches('.').to_owned()
-            };
+            let result = r.message.trim_end_matches('.').to_owned();
             let issue = match owner(&r.id) {
                 Owner::Ascribe if !off(diagnostics::DELIVERY_OUTPUT) => {
                     Issue::new(diagnostics::DELIVERY_OUTPUT, at)
@@ -302,6 +296,11 @@ pub fn check(
                         .with_arg("setting", format!("{setting}."))
                 }
                 _ => return None,
+            };
+            let issue = if r.status == Status::Warn {
+                issue.with_variant("warning")
+            } else {
+                issue
             };
             Some(Diagnostic::from_issue(&issue))
         })

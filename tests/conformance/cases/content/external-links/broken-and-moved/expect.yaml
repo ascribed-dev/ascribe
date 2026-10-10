@@ -1,8 +1,10 @@
 description: >-
   `ascribe report links` reports each external link the checker finds
   broken, slow, unreachable, or moved permanently, at the link, at its
-  `[checks]` level. A link to a host `[checks.links] ignore` names isn't
-  checked, nor is an address that isn't `http` or `https`.
+  `[checks]` level. A site's root that redirects to another of its own
+  pages, a landing page, hasn't moved. A link to a host `[checks.links]
+  ignore` names isn't checked, nor is an address that isn't `http` or
+  `https`.
 spec: ["5.2"]
 tags: [links]
 

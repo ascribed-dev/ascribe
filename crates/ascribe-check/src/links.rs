@@ -198,6 +198,7 @@ fn diagnostic(project: &Project, link: &Link, answer: &Answer) -> Option<Diagnos
     let sentence = || sentence_around(project, link.location);
     let issue = match answer {
         Answer::Fine => return None,
+        Answer::Moved { to, .. } if is_landing_page(&link.url, to) => return None,
         Answer::Moved { to, .. } => {
             let mut issue = Issue::new(diagnostics::LINK_EXTERNAL_MOVED, link.location)
                 .with_arg("url", link.url.clone())
@@ -231,6 +232,21 @@ fn diagnostic(project: &Project, link: &Link, answer: &Answer) -> Option<Diagnos
         }
     };
     Some(Diagnostic::from_issue(&issue))
+}
+
+/// Whether `to` is where the site at `from` sends a visitor to its home
+/// page: `from` is a site's root, and `to` another page of the same site,
+/// `www.` and the scheme aside. A site that does this, such as to its latest version's
+/// introduction, still answers at its root, and linking to the landing page
+/// would pin what the site may change.
+fn is_landing_page(from: &str, to: &str) -> bool {
+    let site =
+        |url: &str| host(url).map(|h| h.strip_prefix("www.").unwrap_or(h).to_ascii_lowercase());
+    fn path(url: &str) -> &str {
+        let after = url.split_once("://").map_or("", |(_, rest)| rest);
+        after.find(['/', '?', '#']).map_or("", |i| &after[i..])
+    }
+    matches!(path(from), "" | "/") && !matches!(path(to), "" | "/") && site(from) == site(to)
 }
 
 /// An address as a link's destination: in angle brackets when it has a
@@ -566,5 +582,28 @@ mod tests {
             error.to_string(),
             "`lychee` failed: error: unexpected argument '--verbose'"
         );
+    }
+
+    #[test]
+    fn a_site_s_root_sending_readers_to_a_landing_page_hasn_t_moved() {
+        let landing = |from, to| is_landing_page(from, to);
+        assert!(landing(
+            "https://modelcontextprotocol.io",
+            "https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro"
+        ));
+        assert!(landing(
+            "https://example.com/",
+            "https://www.example.com/en/"
+        ));
+        // The scheme aside too: the root still answers, upgraded.
+        assert!(landing("http://example.com", "https://example.com/docs"));
+        // To another site, to the root, or from a page: it moved.
+        assert!(!landing("https://example.com/", "https://example.org/docs"));
+        assert!(!landing("http://example.com", "https://example.com/"));
+        assert!(!landing("https://example.com/a", "https://example.com/b"));
+        assert!(!landing(
+            "https://example.com/?q=1",
+            "https://example.com/docs"
+        ));
     }
 }
