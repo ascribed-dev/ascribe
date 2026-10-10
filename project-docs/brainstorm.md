@@ -4,7 +4,7 @@ Ideas for Ascribe after 0.1.1 (written 2026-10-02). This is exploration, not a p
 
 Five groups:
 
-- [Product features](#product-features): code snippets from tested code, editable previews, OpenAPI, editor UI (an actions bar, a sidebar, and more), prose linting with Vale, and other CMS features.
+- [Product features](#product-features): code snippets from tested code, editable previews, OpenAPI, editor UI (an actions bar, a sidebar, and more), prose linting with Vale, other CMS features, and embedded help.
 - [Agents](#agents): publishing docs that agents can read (the Web Documentation Delivery Spec), and helping agents that write docs (diagnostics, the CLI, an MCP server, GitHub Copilot, and Claude Code).
 - [Review](#review): seeing what a pull request changes as readers will see it, and commenting on it there.
 - [Beyond the pages](#beyond-the-pages): what a project knows that isn't in its pages: a cache and a search index Ascribe can rebuild, and notes that people write.
@@ -249,6 +249,40 @@ Per-page translation status from a hash of the source: a translation is marked s
 ### Others worth noting
 
 External link checking (opt-in, for CI); a PDF or print output; image checks (unused images, large files).
+
+## 17. Embedded help
+
+Added 2026-10-09. Not planned. It builds on [permalinks](permalinks.md), which come first.
+
+### The idea
+
+A permalink lets a product link to a section of its docs by a name that doesn't change. Embedded help goes one step further: the product shows the section's text itself, in a tooltip, a side panel, or beside an error, without sending anyone to a browser.
+
+Help-authoring tools have had this for years. MadCap Flare calls it micro content: short answers written once and shown in the product, in search results, and in the docs.
+
+### How it fits Ascribe
+
+Most of the parts exist or are proposed:
+
+- **A stable name for the content:** a permalink.
+- **The content, resolved and structured:** the JSON output has every page as blocks, and the plain output has it as Markdown, per build, with phrases, variants, and availability already applied.
+- **The right version of it:** a build filters for a target and version, so a product at 3.4 can be given the 3.4 text.
+
+What's missing is the join: an output keyed by permalink, holding each named section's text in a form a product can show. A product would bundle that file at build time, or fetch it from the docs site.
+
+### What Ascribe adds that a help-authoring tool can't
+
+- **It's the same source as the docs,** so the tooltip and the page can't disagree.
+- **It's checked.** A product asking for an id that doesn't exist fails `ascribe permalinks verify` in its own CI.
+- **It's per version and per variant** without a second copy.
+
+### Hard parts and questions
+
+- **Size.** A section written for a docs page is usually too long for a tooltip. Either authors mark a short form (the section's first paragraph, or a summary of its own), or the product truncates, which reads badly. Does this need a construct in the language, or is "the first paragraph" enough?
+- **Format.** A product can't render Ascribe's custom elements. The plain Markdown output is the safe form, and loses notes' styling and tabs.
+- **Bundled or fetched?** Bundled text is as old as the product's build, and works offline. Fetched text is current, and needs the docs site to be reachable and to allow the request. Ascribe hosts nothing, so fetching means a static file on the docs' own host.
+- **Links inside the text** point at docs pages. In a product they'd need to be absolute, as the plain output's already are when `[consumer] site` is set.
+- **Who is it for?** A product team has to build the part that shows the text. Ascribe can supply the file and a small example of reading it, and no more.
 
 ---
 
