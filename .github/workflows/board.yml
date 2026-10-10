@@ -1,0 +1,114 @@
+name: Board
+
+# Reads the project board (github.com/orgs/ascribed-dev/projects/1) and, when
+# asked, moves one issue or pull request on it, for agents that can't reach the
+# board themselves. A Claude cloud session can use this repository's REST API
+# but not GitHub's GraphQL API or the organization's, and the board is only
+# reachable through those; a workflow can, with a token that has the board.
+#
+# Run it from Actions → Board → Run workflow, or with
+# `gh workflow run board.yml -f issue=123 -f status="In progress"`. With no
+# issue it only reads. Either way it writes the board, its fields, and its
+# items to `board.json` on the branch `board`, one commit per change, which an
+# agent reads through the repository's contents API; the branch's history is
+# the board's. Nothing else runs on a push to `board`.
+#
+# The token is the secret PROJECT_BOARD_TOKEN: a fine-grained token owned by
+# `ascribed-dev` with Organization → Projects: read and write. The job's own
+# token can't reach an organization's projects. project-docs/outside.md lists
+# it.
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: An issue or pull request number in this repository to move, added to the board if it isn't there; empty to only read
+        type: string
+        default: ""
+      status:
+        description: The Status to give it, by the option's name, as the board shows it
+        type: string
+        default: ""
+
+permissions:
+  # To push `board`, and to find an issue's URL.
+  contents: write
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: board
+  cancel-in-progress: false
+
+env:
+  OWNER: ascribed-dev
+  NUMBER: "1"
+
+jobs:
+  board:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Move the issue
+        if: inputs.issue != ''
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_BOARD_TOKEN }}
+          ISSUE: ${{ inputs.issue }}
+          STATUS: ${{ inputs.status }}
+          REPO_TOKEN: ${{ github.token }}
+        run: |
+          [[ $ISSUE =~ ^[0-9]+$ ]] || { echo "::error::'$ISSUE' isn't an issue number."; exit 1; }
+          [ -n "$STATUS" ] || { echo "::error::No status to give #$ISSUE."; exit 1; }
+          project=$(gh project view "$NUMBER" --owner "$OWNER" --format json --jq .id)
+          gh project field-list "$NUMBER" --owner "$OWNER" --format json > fields.json
+          field=$(jq -r '.fields[] | select(.name == "Status") | .id' fields.json)
+          option=$(jq -r --arg s "$STATUS" '.fields[] | select(.name == "Status") | .options[] | select(.name == $s) | .id' fields.json)
+          if [ -z "$option" ]; then
+            echo "::error::The board has no Status '$STATUS'. It has: $(jq -r '[.fields[] | select(.name == "Status") | .options[].name] | join(", ")' fields.json)."
+            exit 1
+          fi
+          # Its own URL, /issues/ or /pull/; item-add returns the existing item
+          # when it's on the board already.
+          url=$(GH_TOKEN=$REPO_TOKEN gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE" --jq .html_url)
+          item=$(gh project item-add "$NUMBER" --owner "$OWNER" --url "$url" --format json --jq .id)
+          gh project item-edit --project-id "$project" --id "$item" \
+            --field-id "$field" --single-select-option-id "$option"
+          echo "Moved #$ISSUE to $STATUS." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Read the board
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_BOARD_TOKEN }}
+        run: |
+          gh project view "$NUMBER" --owner "$OWNER" --format json > project.json
+          gh project field-list "$NUMBER" --owner "$OWNER" --format json --limit 100 > fields.json
+          gh project item-list "$NUMBER" --owner "$OWNER" --format json --limit 1000 > items.json
+          # Sorted, so the branch's diffs show what moved and nothing else.
+          jq -n --slurpfile p project.json --slurpfile f fields.json --slurpfile i items.json '{
+            project: ($p[0] | {id, number, title, url, shortDescription}),
+            fields: ($f[0].fields | sort_by(.name)),
+            items: ($i[0].items | sort_by(.content.repository // "", .content.number // 0, .id))
+          }' > board.json
+          echo "$(jq '.items | length' board.json) items on the board." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Write board.json to the branch
+        env:
+          TOKEN: ${{ github.token }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          git init -q -b board snapshot
+          cd snapshot
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          # The branch starts with the first run; after that, each run builds on it.
+          if git -c http.extraheader="$auth" fetch -q --depth 1 origin board; then
+            git checkout -q -B board FETCH_HEAD
+          fi
+          cp ../board.json .
+          git add board.json
+          if git diff --cached --quiet && git rev-parse -q --verify HEAD > /dev/null; then
+            echo "The board hasn't changed since the last run." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "The board, from $RUN"
+          git -c http.extraheader="$auth" push -q origin board
