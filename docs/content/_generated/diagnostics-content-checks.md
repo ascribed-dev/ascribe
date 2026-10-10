@@ -123,3 +123,21 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 **Message:** `{title}` is also the title of \{others}, so readers can't tell the pages apart in search results or a list of pages
 
 **Fix:** Give each page a title that says what sets it apart. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`.
+
+### Outputs
+
+#### ASC163 `description-too-long`
+
+Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**Message:** this description is \{length} characters, and its line in llms.txt reads best under \{limit}; shorten it to one sentence
+
+**Fix:** Shorten the description to one sentence that says what the page is for. It's the page's line in `llms.txt`, which an agent reads to choose a page, so the whole index should stay short.
+
+#### ASC164 `llms-section-large`
+
+Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+
+**Message:** \{file} is \{size} characters in build `{build}`, over the \{limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions
+
+**Fix:** Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions.

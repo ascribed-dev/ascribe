@@ -42,7 +42,11 @@ pub(super) fn page_size(
     limit: u64,
 ) -> Option<Found> {
     let cx = EmitContext::new(index, root, build);
-    let text = emit_page(&PlainEmitter, &cx, page).ok()?.text;
+    // As the build writes it: with the outputs for agents on, the pointer
+    // to llms.txt is part of the page.
+    let text = emit_page(&PlainEmitter::new(index.model()), &cx, page)
+        .ok()?
+        .text;
     let size = text.chars().count() as u64;
     if size < limit {
         return None;

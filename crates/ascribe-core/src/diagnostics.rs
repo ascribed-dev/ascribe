@@ -517,6 +517,15 @@ pub const IMAGE_LARGE: DiagnosticSlug = DiagnosticSlug("image-large");
 /// `ASC161`, advice, page level: a content check (area `project`).
 pub const TITLE_DUPLICATE: DiagnosticSlug = DiagnosticSlug("title-duplicate");
 
+/// `ASC162`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CONSUMER_AGENTS_SITE: DiagnosticSlug = DiagnosticSlug("model-consumer-agents-site");
+
+/// `ASC163`, advice, file level: a content check (area `outputs`).
+pub const DESCRIPTION_TOO_LONG: DiagnosticSlug = DiagnosticSlug("description-too-long");
+
+/// `ASC164`, advice, page level: a content check (area `outputs`).
+pub const LLMS_SECTION_LARGE: DiagnosticSlug = DiagnosticSlug("llms-section-large");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -680,6 +689,9 @@ pub const ALL: &[DiagnosticSlug] = &[
     IMAGE_UNUSED,
     IMAGE_LARGE,
     TITLE_DUPLICATE,
+    MODEL_CONSUMER_AGENTS_SITE,
+    DESCRIPTION_TOO_LONG,
+    LLMS_SECTION_LARGE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
@@ -699,6 +711,8 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     IMAGE_UNUSED,
     IMAGE_LARGE,
     TITLE_DUPLICATE,
+    DESCRIPTION_TOO_LONG,
+    LLMS_SECTION_LARGE,
 ];
 
 /// The checks an author can acknowledge (SPEC §4.9): the registry's entries

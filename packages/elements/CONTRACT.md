@@ -11,6 +11,7 @@ The site output (SPEC §9.4) is markdown plus custom elements. This contract is 
 | `@details` | [`<details>`](#5-details) with `<summary>` | Optional CSS |
 | Project widget | [An element named after the widget](#6-project-widgets), and `<ascribe-group>` for groups | The project's own; `<ascribe-group>` is the library's |
 | Glossary term | [An ordinary link](#7-glossary-terms), marked with `data-ascribe-term` | Optional CSS |
+| The pointer to `llms.txt`, with `[consumer] agents = true` | [`<ascribe-for-agents>`](#8-ascribe-for-agents) | CSS only |
 
 A change to this contract changes the site emitter (`crates/ascribe-emit`), the element library, and the site-render fixtures (`tests/render/`) together.
 
@@ -236,3 +237,19 @@ There's no element for glossary terms. In the site output, an occurrence the glo
 Terms without a `link` stay plain text (content-model.md Q7).
 
 **Rendering:** a link, which the library's CSS underlines with dots (`a[data-ascribe-term]`). A site restyles it, or shows the definition as a popover, by selecting on the attribute.
+
+## 8. `<ascribe-for-agents>`
+
+With `[consumer] agents = true` (docs/content/contracts/content-model.md §16), each page of the site output opens with a pointer for AI agents: where the index of every page, `llms.txt`, is, and where this page's Markdown version is (SPEC §9.4). It has no attributes, and wraps one paragraph of markdown with two links, both root-relative like every link in the site output:
+
+```markdown
+<ascribe-for-agents>
+
+For AI agents: the documentation index is at [llms.txt](/docs/llms.txt), and this page is available as [Markdown](/docs/guides/my-setup.md).
+
+</ascribe-for-agents>
+```
+
+It's the first block of the page's body, before any other content, so an agent that reads only the start of a page still finds it. Without `agents = true` the emitter writes no `<ascribe-for-agents>`.
+
+**Rendering:** visually hidden: in the page, and read by an agent or a screen reader, but out of sight, as a site's "skip to content" link is (a clipped 1-pixel box, not `display: none`, which some readers skip). A site that wants readers to see it too restyles it.

@@ -26,9 +26,10 @@
 //! # fn demo(project: &ascribe_resolve::Project, build: &ascribe_model::Build, resolved: &ascribe_resolve::ResolvedBuild) -> Result<(), Box<dyn std::error::Error>> {
 //! let root = Path::new(".");
 //! let cx = EmitContext::new(project, root, build);
-//! let emission = emit(&PlainEmitter, &cx, resolved)?;
+//! let plain = PlainEmitter::new(project.model());
+//! let emission = emit(&plain, &cx, resolved)?;
 //! let output = OutputDir::lock(&root.join(".ascribe/build"))?;
-//! output.replace(&build.name, PlainEmitter.name(), &emission.files)?;
+//! output.replace(&build.name, plain.name(), &emission.files)?;
 //! # Ok(()) }
 //! ```
 //!

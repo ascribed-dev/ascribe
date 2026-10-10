@@ -2886,3 +2886,65 @@ spec = "2.2"
 when = "Two pages the build publishes have the same title, ignoring case"
 message = "`{title}` is also the title of {others}, so readers can't tell the pages apart in search results or a list of pages"
 fix = "Give each page a title that says what sets it apart. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`."
+[[diagnostic]]
+code = "ASC162"
+slug = "model-consumer-agents-site"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.5"
+group = "consumer"
+message = "agents = true needs `site`: every link in llms.txt and the Markdown pages is an absolute URL"
+fix = "Set `site` in `[consumer]` to the published site's origin, such as `\"https://docs.example.com\"`, or remove `agents`."
+
+[[diagnostic]]
+code = "ASC163"
+slug = "description-too-long"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.4"
+configurable = true
+area = "outputs"
+message = "this description is {length} characters, and its line in llms.txt reads best under {limit}; shorten it to one sentence"
+fix = "Shorten the description to one sentence that says what the page is for. It's the page's line in `llms.txt`, which an agent reads to choose a page, so the whole index should stay short."
+example.wrong = '''
+---
+title: Install
+description: This page walks you through everything you need to know about installing the product, from checking that your machine meets the requirements and downloading the right package for your platform, to running the installer, answering each of its prompts, and confirming afterward that everything works as it should before you go on.
+---
+
+Install the product.
+'''
+example.right = '''
+---
+title: Install
+description: Install the product on your machine and confirm that it works.
+---
+
+Install the product.
+'''
+example.model = '''
+[consumer]
+site = "https://docs.example.com"
+agents = true
+
+[types.page.frontmatter]
+description = { type = "string?", role = "description" }
+'''
+
+[[diagnostic]]
+code = "ASC164"
+slug = "llms-section-large"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = []
+spec = "9.4"
+configurable = true
+area = "outputs"
+message = "{file} is {size} characters in build `{build}`, over the {limit} an agent reads in one fetch; move some of its pages into folders of their own, or shorten their descriptions"
+messages.builds = "{file} is over the {limit} characters an agent reads in one fetch in builds {builds}; move some of its pages into folders of their own, or shorten their descriptions"
+fix = "Each folder of pages gets its own `llms.txt` once the index is too long for one file, so a file this long is one folder, or the pages outside any folder, with more pages than an agent reads in one fetch. Move some of them into subfolders of their own, or shorten their descriptions."

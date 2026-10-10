@@ -52,9 +52,9 @@ use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
-use ascribe_core::{FileId, RelPath, Span, diagnostics};
+use ascribe_core::{FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{AvailabilityMode, Build, CheckLevel, VariantMode};
-use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage};
+use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage, llms};
 
 use crate::{Diagnostic, Project, check_files_with};
 
@@ -277,6 +277,17 @@ impl<'p> PageChecker<'p> {
             &pages,
             self.errors_only,
         ));
+        // Like `page-size`, measured for errors only when raised to one.
+        if !self.errors_only
+            || self
+                .project
+                .model()
+                .checks
+                .level(diagnostics::LLMS_SECTION_LARGE)
+                == Some(CheckLevel::Error)
+        {
+            found.extend(llms_sizes(&self.indexed.index, build, &resolved.pages));
+        }
         found
     }
 
@@ -473,6 +484,49 @@ fn largest_page_sizes(
         }
     }
     per_build
+}
+
+/// The `llms.txt` files of a build that are over the limit even when the
+/// index is split, each reported at the page its file is about
+/// (`llms-section-large`), when the project publishes them.
+fn llms_sizes(
+    index: &ascribe_resolve::Project,
+    build: &Build,
+    pages: &[ResolvedPage],
+) -> Vec<Found> {
+    let model = index.model();
+    if !model.consumer.agents {
+        return Vec::new();
+    }
+    let mut found = Vec::new();
+    for file in llms::llms_files(model, pages) {
+        let size = file.chars();
+        if size <= llms::LLMS_TXT_LIMIT {
+            continue;
+        }
+        let Some(page) = file
+            .page
+            .and_then(|p| pages.iter().find(|page| page.path == p))
+        else {
+            continue;
+        };
+        // The page's first line: the problem is with the page as a whole.
+        let source = index.file_by_id(page.file).map_or("", |f| &*f.source);
+        let at = Span::new(0, source.find(['\n', '\r']).unwrap_or(source.len()));
+        let issue = Issue::new(
+            diagnostics::LLMS_SECTION_LARGE,
+            Location::new(page.file, at),
+        )
+        .with_arg("file", file.url)
+        .with_arg("size", size.to_string())
+        .with_arg("limit", llms::LLMS_TXT_LIMIT.to_string())
+        .with_arg("build", build.name.as_str());
+        found.push(Found {
+            issue,
+            cause: (page.file, at, Arc::from([])),
+        });
+    }
+    found
 }
 
 /// A block of a page as one build publishes it: the page, the file and span

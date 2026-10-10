@@ -60,6 +60,9 @@ names! {
     ELEMENT_AVAILABILITY_TARGET = "ascribe-availability-target";
     /// `<ascribe-group>`: a project widget's group (packages/elements/CONTRACT.md §6).
     ELEMENT_GROUP = "ascribe-group";
+    /// `<ascribe-for-agents>`: the visually hidden pointer to `llms.txt` at the top
+    /// of a page, for agents (packages/elements/CONTRACT.md §8).
+    ELEMENT_FOR_AGENTS = "ascribe-for-agents";
 
     // The site output's markers: docs/content/contracts/site-render.md.
 

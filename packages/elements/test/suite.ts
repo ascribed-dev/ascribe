@@ -291,6 +291,23 @@ export function suiteFor(engine: Engine): void {
     });
   });
 
+  describe("the pointer for agents", () => {
+    it("keeps the pointer in the page, out of sight", async () => {
+      const page = await fresh(
+        '<ascribe-for-agents id="pointer"><p>For AI agents: see <a href="/llms.txt">llms.txt</a>.</p></ascribe-for-agents><p id="after">Text.</p>',
+        { script: false },
+      );
+      const pointer = page.locator("#pointer");
+      const box = await pointer.boundingBox();
+      expect(box?.width).toBeLessThanOrEqual(1);
+      expect(box?.height).toBeLessThanOrEqual(1);
+      // Still in the page's text, not removed from it as display: none would.
+      expect(await pointer.evaluate((e) => getComputedStyle(e).display)).not.toBe("none");
+      expect(await pointer.textContent()).toContain("llms.txt");
+      await context.close();
+    });
+  });
+
   describe("with the script", () => {
     it("registers exactly tabs, tab, and group", async () => {
       const page = await fresh(ALL);

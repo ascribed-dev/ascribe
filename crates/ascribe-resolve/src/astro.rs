@@ -96,6 +96,30 @@ impl AstroRouter {
         }
     }
 
+    /// Where a page's Markdown version is published, relative to the base
+    /// path: its entry id with `.md` (`guides/my-setup.md`), and `index.md`
+    /// for the page at the base path. The URL is [`AstroRouter::markdown_url`].
+    pub fn markdown_path(&self, page: &RelPath) -> String {
+        format!("{}.md", AstroRouter::entry_id(page))
+    }
+
+    /// The URL path of a page's Markdown version: the base path, then
+    /// [`AstroRouter::markdown_path`], each segment percent-encoded. It's the
+    /// page's route with `.md` in place of a trailing slash, which is where
+    /// agents look for it (`/docs/guides/my-setup/` has
+    /// `/docs/guides/my-setup.md`), except that the page at the base path
+    /// has `<base>index.md`, which stays under the base path.
+    pub fn markdown_url(&self, page: &RelPath) -> String {
+        self.url_of(&self.markdown_path(page))
+    }
+
+    /// The URL path of a file at `path` under the base path, each segment
+    /// percent-encoded.
+    pub fn url_of(&self, path: &str) -> String {
+        let encoded: Vec<String> = path.split('/').map(encode_segment).collect();
+        format!("{}{}", self.base, encoded.join("/"))
+    }
+
     /// The page in `pages` that has this route, if any. `route` is a URL
     /// path: with the base path or without it, with or without a trailing
     /// slash, and any `#fragment` or `?query` is ignored. Percent-encoding is
@@ -219,6 +243,21 @@ mod tests {
             route(&AstroRouter::with_base("/", true), "keys.md"),
             "/keys/"
         );
+    }
+
+    #[test]
+    fn a_pages_markdown_is_its_route_with_md() {
+        let router = AstroRouter::with_base("/docs/", false);
+        let url = |p: &str| router.markdown_url(&page(p));
+        assert_eq!(url("Guides/My Setup.md"), "/docs/guides/my-setup.md");
+        assert_eq!(url("guides/index.md"), "/docs/guides.md");
+        // The root page's stays under the base path.
+        assert_eq!(url("index.md"), "/docs/index.md");
+        assert_eq!(url("café.md"), "/docs/caf%C3%A9.md");
+        assert_eq!(router.markdown_path(&page("café.md")), "café.md");
+        let root = AstroRouter::with_base("/", true);
+        assert_eq!(root.markdown_url(&page("index.md")), "/index.md");
+        assert_eq!(root.markdown_url(&page("keys.md")), "/keys.md");
     }
 
     #[test]

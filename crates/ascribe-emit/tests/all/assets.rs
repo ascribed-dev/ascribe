@@ -94,7 +94,7 @@ fn build_into(dir: &Path, emitter: &dyn Emitter) -> PathBuf {
 #[test]
 fn the_plain_output_works_with_the_source_removed() {
     let dir = project_dir();
-    let root = build_into(dir.path(), &PlainEmitter);
+    let root = build_into(dir.path(), &PlainEmitter::default());
     // Move the output out of the project, and delete everything else.
     let kept = tempfile::tempdir().expect("a temporary directory");
     let moved = kept.path().join("plain");
@@ -177,7 +177,7 @@ fn the_json_output_works_with_the_source_removed() {
 #[test]
 fn each_asset_is_copied_once_however_often_it_is_used() {
     let dir = project_dir();
-    let root = build_into(dir.path(), &PlainEmitter);
+    let root = build_into(dir.path(), &PlainEmitter::default());
     let manifest: serde_json::Value = serde_json::from_str(
         &fs::read_to_string(dir.path().join(".ascribe/build/site/plain.manifest.json"))
             .expect("manifest"),

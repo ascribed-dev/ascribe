@@ -261,7 +261,11 @@ const RULE_GROUPS: &[(&str, &str)] = &[
 
 /// The areas content checks are listed in, as they're titled in the
 /// diagnostics reference.
-const AREAS: &[(&str, &str)] = &[("pages", "Pages"), ("project", "Across the project")];
+const AREAS: &[(&str, &str)] = &[
+    ("pages", "Pages"),
+    ("project", "Across the project"),
+    ("outputs", "Outputs"),
+];
 
 /// What each fragment starts with: what generates it, and how.
 const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by \

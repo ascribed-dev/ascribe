@@ -19,7 +19,7 @@ Emitters for Ascribe's outputs. An emitter renders the **resolved tree** (`ascri
 
 ```rust,ignore
 let cx = EmitContext::new(&project, project_root, build);
-let emission = emit(&PlainEmitter, &cx, &resolved)?;
+let emission = emit(&PlainEmitter::new(project.model()), &cx, &resolved)?;
 let output = OutputDir::lock(&project_root.join(".ascribe/build"))?;
 output.replace(&build.name, "plain", &emission.files)?;
 ```
@@ -32,7 +32,7 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 |---|---|
 | `@note {type=tip}` with a title | `> **Tip: Title**`, a blank quoted line, then the content; without a title, `> **Tip**` |
 | `@steps` | The ordered list |
-| A group | One section per surviving arm: the arm's bold label, then its content |
+| A group | One section per surviving arm: the arm's bold label, then its content, each of its headings ending with the label in parentheses (`## Install (pnpm)`) |
 | `@details` | The title in bold, then the content |
 | `@available` | `Available: Quill Cloud (GA); self-managed (preview, 3.4+)` |
 | A project widget | Its `plain-fallback` (phrases substituted), then its wrapped content unless `plain-content = "drop"` |
@@ -43,9 +43,11 @@ Fully resolved CommonMark with no HTML. A page is its title as a level-1 heading
 
 Code blocks are always fenced (the fence is longer than any backtick run in the code, and a `phrases=true` info word is dropped), and text is escaped so that an unmodified CommonMark parser reads back the same text.
 
+`PlainEmitter::new(model)` reads `[consumer] agents`; `PlainEmitter::default()` is the output without it. With `agents = true` the output is what a site publishes for agents, laid out by URL (output-layout contract §1.1): each page at its Astro entry id with `.md`, opening with a blockquote linking to `llms.txt`; every asset under `_ascribe/files/`, written as an absolute URL and listed with its `url` in the manifest; and `generated` adds `llms.txt`, and a file per section when it's split, from `ascribe_resolve::llms`. `prepare` then refuses a build whose pages share a route, as the site emitter's does.
+
 ## Site
 
-Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`. `prepare` refuses a build whose pages share a route.
+Markdown plus web components, for a consumer that renders CommonMark with raw HTML: spec 0.1's is Astro (`AstroProfile`, written against Astro 7.3). `SiteEmitter::new(model)` implements `Emitter`; with `agents = true`, each page opens with `<ascribe-for-agents>` (element contract §8); `place_asset` follows the profile (images mirrored beside their page with a relative reference; other linked files under `_ascribe/files/`, referenced by URL and listed with it in the manifest), and `generated` adds `_ascribe/schema.ts`. `prepare` refuses a build whose pages share a route.
 
 | Source | Output |
 |---|---|
@@ -166,4 +168,4 @@ See the [output-layout contract](https://ascribed-dev.com/contracts/output-layou
 
 ## Tests
 
-`tests/all/plain.rs` (each construct), `tests/all/store.rs` (the output-layout contract), `tests/all/write.rs` (`write_outputs`), `tests/all/assets.rs` (the output works with the source removed), `tests/all/formatted.rs` (fields read with `inline = "code"`), and `tests/all/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/all/site.rs`, `tests/all/site_quill.rs`, `tests/all/site_assets.rs`, `tests/all/site_anchors.rs` (source anchors), `tests/all/render_fixtures.rs`, and `tests/all/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.
+`tests/all/plain.rs` (each construct), `tests/all/agents.rs` (the outputs for agents), `tests/all/store.rs` (the output-layout contract), `tests/all/write.rs` (`write_outputs`), `tests/all/assets.rs` (the output works with the source removed), `tests/all/formatted.rs` (fields read with `inline = "code"`), and `tests/all/quill.rs` (`insta` snapshots of every page of `examples/quill` under each build, with both emitters), and, for the site output, `tests/all/site.rs`, `tests/all/site_quill.rs`, `tests/all/site_assets.rs`, `tests/all/site_anchors.rs` (source anchors), `tests/all/render_fixtures.rs`, and `tests/all/zod.rs`. Review snapshot changes with `cargo insta review`; never accept them blindly.

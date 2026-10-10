@@ -79,7 +79,7 @@ pub fn plain(project: &Project, build: &str, page: &str) -> String {
         Path::new("/nowhere"),
         project,
         build,
-        &ascribe_emit::PlainEmitter,
+        &ascribe_emit::PlainEmitter::default(),
     )
     .remove(page)
     .unwrap_or_else(|| panic!("the build has no page {page}"))

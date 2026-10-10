@@ -25,7 +25,7 @@ import type { AstroIntegration } from "astro";
 import { findBinary } from "./binary.js";
 import { codeTitles } from "./code-titles.js";
 import { SeenFiles, watchDev } from "./dev.js";
-import { copyPublishedFiles, filesMiddleware } from "./files.js";
+import { agentsMiddleware, copyAgentFiles, copyPublishedFiles, filesMiddleware } from "./files.js";
 import { consumerMismatches, readProject } from "./project.js";
 import rehypeAscribeAttributes from "./rehype.js";
 import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
@@ -79,9 +79,14 @@ export interface AscribeOptions {
 const ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v6"/><path d="M14 3v4h4"/><path d="M6 3v15"/><path d="M11 14h10v6h-6l-3 2v-2h-1z"/></svg>';
 
-/** Runs `ascribe build`, checks the site's routing, adds the markdown plugin, and serves published files. */
+/**
+ * Runs `ascribe build`, checks the site's routing, adds the markdown plugin, and serves published
+ * files, and, with `[consumer] agents = true`, `llms.txt` and each page's Markdown.
+ */
 export default function ascribe(options: AscribeOptions): AstroIntegration {
   let siteRoot = "";
+  /** The plain output's root, when the project publishes it for agents. */
+  let agentsRoot: string | undefined;
   let devProject: ReturnType<typeof readProject> | undefined;
   let devConfig:
     | {
@@ -112,6 +117,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         const project = readProject(path.resolve(root, options.project ?? "."));
         // An unknown build is `ascribe build`'s to report: it knows the implicit `site` build.
         siteRoot = project.siteRoot(options.build);
+        if (project.consumer.agents) agentsRoot = project.plainRoot(options.build);
 
         // `ascribe.toml`'s routing must be Astro's, or every link Ascribe writes is wrong.
         const problems = consumerMismatches(project, {
@@ -171,8 +177,13 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               build: options.build,
               cwd: project.dir,
               anchors: anchorsFor(options.anchors, command, reviewing),
-              // While review is on, the JSON output says which page is at each route.
-              outputs: review?.active ? ["site", "json"] : ["site"],
+              outputs: [
+                "site",
+                // `llms.txt` and each page's Markdown, which agents read.
+                ...(agentsRoot === undefined ? [] : (["plain"] as const)),
+                // While review is on, the JSON output says which page is at each route.
+                ...(review?.active ? (["json"] as const) : []),
+              ],
             });
             if (hasWarnings(result.diagnostics)) logger.warn(result.diagnostics);
             else if (result.diagnostics !== "") logger.info(result.diagnostics);
@@ -185,7 +196,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           if (command === "dev") devProject = project;
         }
 
-        // Dev serving of `_ascribe/files/`; the build copies them in `astro:build:done`.
+        // Dev serving of `_ascribe/files/`, and of the plain output for agents; the build copies them in `astro:build:done`.
         updateConfig({
           ...(options.codeTitles === false
             ? {}
@@ -205,12 +216,10 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
               {
                 name: "@ascribed/astro:files",
                 configureServer(server) {
-                  server.middlewares.use(
-                    filesMiddleware(
-                      siteRoot,
-                      config.base.endsWith("/") ? config.base : `${config.base}/`,
-                    ),
-                  );
+                  const base = config.base.endsWith("/") ? config.base : `${config.base}/`;
+                  server.middlewares.use(filesMiddleware(siteRoot, base));
+                  if (agentsRoot !== undefined)
+                    server.middlewares.use(agentsMiddleware(agentsRoot, base));
                 },
               },
             ],
@@ -282,6 +291,8 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
       },
       "astro:build:done": async ({ dir, logger }) => {
         if (await copyPublishedFiles(siteRoot, dir)) logger.info("copied _ascribe/files/");
+        if (agentsRoot !== undefined && (await copyAgentFiles(agentsRoot, dir)))
+          logger.info("copied llms.txt and each page's Markdown");
       },
     },
   };

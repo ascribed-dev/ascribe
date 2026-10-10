@@ -26,6 +26,12 @@ export const ELEMENT_AVAILABILITY_TARGET = "ascribe-availability-target";
 /** `<ascribe-group>`: a project widget's group (packages/elements/CONTRACT.md §6). */
 export const ELEMENT_GROUP = "ascribe-group";
 
+/**
+ * `<ascribe-for-agents>`: the visually hidden pointer to `llms.txt` at the top
+ * of a page, for agents (packages/elements/CONTRACT.md §8).
+ */
+export const ELEMENT_FOR_AGENTS = "ascribe-for-agents";
+
 /** `<ascribe-attributes>`: the attribute marker (site-render contract §1). */
 export const ELEMENT_ATTRIBUTES = "ascribe-attributes";
 

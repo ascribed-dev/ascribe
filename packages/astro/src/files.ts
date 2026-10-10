@@ -2,6 +2,10 @@
 // images. Astro doesn't copy them, so the integration
 // does: into the build's output directory, and in dev through a middleware.
 // Both put them at `<base>_ascribe/files/`, the URL the site output links to.
+//
+// With `[consumer] agents = true`, the same for the plain output, which is
+// laid out by URL: `llms.txt`, each page's Markdown, and their files, all at
+// `<base>` and below.
 import { createReadStream } from "node:fs";
 import { cp, stat } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -13,9 +17,20 @@ function publishedDir(siteRoot: string): string {
   return path.join(siteRoot, "_ascribe", "files");
 }
 
-/** Copies the published files to `<outDir>/_ascribe/files/`. Returns how many top-level entries were there. */
+/** Copies the published files to `<outDir>/_ascribe/files/`. Returns whether there were any. */
 export async function copyPublishedFiles(siteRoot: string, outDir: URL): Promise<boolean> {
-  const from = publishedDir(siteRoot);
+  return copyDirectory(
+    publishedDir(siteRoot),
+    path.join(fileURLToPath(outDir), "_ascribe", "files"),
+  );
+}
+
+/** Copies the plain output for agents to the build output's root, the base path. Returns whether there was one. */
+export async function copyAgentFiles(plainRoot: string, outDir: URL): Promise<boolean> {
+  return copyDirectory(plainRoot, fileURLToPath(outDir));
+}
+
+async function copyDirectory(from: string, to: string): Promise<boolean> {
   if (
     !(await stat(from).then(
       (s) => s.isDirectory(),
@@ -23,7 +38,7 @@ export async function copyPublishedFiles(siteRoot: string, outDir: URL): Promise
     ))
   )
     return false;
-  await cp(from, path.join(fileURLToPath(outDir), "_ascribe", "files"), { recursive: true });
+  await cp(from, to, { recursive: true });
   return true;
 }
 
@@ -47,15 +62,22 @@ const TYPES: Record<string, string> = {
   ".svg": "image/svg+xml",
 };
 
+type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
+
 /** A dev-server middleware serving the published files at `<base>_ascribe/files/`. */
-export function filesMiddleware(
-  siteRoot: string,
-  base: string,
-): (req: IncomingMessage, res: ServerResponse, next: () => void) => void {
-  const root = publishedDir(siteRoot);
+export function filesMiddleware(siteRoot: string, base: string): Middleware {
+  return directoryMiddleware(publishedDir(siteRoot), `${base}_ascribe/files/`);
+}
+
+/** A dev-server middleware serving the plain output for agents at `<base>`: `llms.txt`, each page's `.md`, and their files. */
+export function agentsMiddleware(plainRoot: string, base: string): Middleware {
+  return directoryMiddleware(plainRoot, base);
+}
+
+/** A middleware serving the files in `root` at the URL path `prefix`, which ends in `/`. */
+function directoryMiddleware(root: string, prefix: string): Middleware {
   // Only under the base path, as in the build. Vite strips the base from
   // `req.url` before a plugin's middleware runs, but connect keeps the original in `originalUrl`.
-  const prefix = `${base}_ascribe/files/`;
   return (req, res, next) => {
     const pathname =
       ((req as { originalUrl?: string }).originalUrl ?? req.url ?? "").split(/[?#]/, 1)[0] ?? "";

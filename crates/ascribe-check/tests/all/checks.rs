@@ -650,3 +650,46 @@ mod robustness {
         }
     }
 }
+
+/// A project of in-memory pages under the model `MODEL` with a description
+/// field, and the outputs for agents on or off.
+fn described(agents: bool, files: &[(&str, &str)]) -> Project {
+    let text = format!(
+        "{MODEL}\n[consumer]\nsite = \"https://docs.example.com\"\nagents = {agents}\n"
+    )
+    .replace(
+        "title = \"string\"\n",
+        "title = \"string\"\ndescription = { type = \"string?\", role = \"description\" }\n",
+    );
+    let model = ascribe_model::load_str(&text, FileId::new(0)).expect("the model loads");
+    let sources = Project::from_sources(files.iter().map(|(path, text)| {
+        (
+            RelPath::parse(path).expect("a relative path"),
+            (*text).to_owned(),
+        )
+    }));
+    Project::from_parts(
+        PathBuf::from("/nonexistent-ascribe-project"),
+        RelPath::parse("docs").expect("a relative path"),
+        model,
+        text,
+        sources,
+    )
+}
+
+#[test]
+fn a_description_is_measured_as_its_line_in_llms_txt_with_agents_on() {
+    let long = format!("---\ntitle: T\ndescription: {}\n---\n", "word ".repeat(70));
+    assert_eq!(
+        found(&described(true, &[("a.md", &long)])),
+        [("description-too-long".to_owned(), 3)]
+    );
+    // Without llms.txt there's no line to keep short.
+    assert!(found(&described(false, &[("a.md", &long)])).is_empty());
+    // A link counts as its text, which is all llms.txt shows of it.
+    let linked = format!(
+        "---\ntitle: T\ndescription: See [the guide](https://example.com/{}).\n---\n",
+        "x".repeat(400)
+    );
+    assert!(found(&described(true, &[("a.md", &linked)])).is_empty());
+}

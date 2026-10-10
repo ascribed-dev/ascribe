@@ -410,6 +410,11 @@ pub struct Consumer {
     pub slugger: String,
     /// Whether the consumer renders raw HTML.
     pub html: bool,
+    /// Whether each build publishes what agents read (`agents = true`): an
+    /// `llms.txt`, a Markdown version of every page, and a pointer to the
+    /// index on each page. Only with a `site`, since every link they hold is
+    /// absolute.
+    pub agents: bool,
 }
 
 /// A build's variant mode.

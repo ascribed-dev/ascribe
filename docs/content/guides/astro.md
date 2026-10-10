@@ -99,6 +99,8 @@ npx astro build
 - **Adds its Markdown plugin** to Astro's Markdown processor, to apply heading ids, image attributes, glossary terms' `data-ascribe-term`, and source anchors: to the default Sätteri processor's `hastPlugins`, or to a `unified()` processor's `rehypePlugins`. Both plugins are exported, as `@ascribed/astro/satteri` and `@ascribed/astro/rehype`, for a processor you configure yourself. Their types come from `satteri` and `@types/hast`, optional peer dependencies: a Sätteri processor already has the first, and a `unified()` one the second.
 - **Serves the files pages link to** (other than pages and images) at `<base>_ascribe/files/`, in `astro dev` and in the built site.
 - @available: next
+  **Publishes the outputs for agents** with `[consumer] agents = true`: `llms.txt` and each page's Markdown, in `astro dev` and in the built site ([Publish for AI agents](#publish-for-ai-agents)).
+- @available: next
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](#code-block-titles)).
 - @available: next
   **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([step 4](#4-define-the-collection)).
@@ -111,6 +113,30 @@ npx astro build
 - A change to `[project] output-dir` needs a restart of `astro dev`, and says so.
 - @available: next
   It writes where it's running (`url` and `build`) to `.ascribe/dev.json` in the project, for the editor's [Open Site Preview](editor.md#site-preview), and removes the file when it stops.
+
+## Publish for AI agents
+@available: next
+
+An AI agent reading your docs does better with Markdown than with HTML, and with an index to choose pages from. Turn on the outputs for agents in `ascribe.toml`'s `[consumer]`, beside `site`, and each build publishes them with the site, as the [Web Documentation Delivery Spec](https://agentdocsspec.com/spec/web/) lays them out:
+
+@snippet: code:examples/astro-site/ascribe.toml#agents
+
+- **`llms.txt`** at the base path: every page, by folder, as its title, a link to its Markdown, and its description (the field its type marks `role = "description"`). Past 50,000 characters it's split into one `llms.txt` per folder, which the root file links to.
+- **Each page's Markdown** at its URL with `.md`: `/docs/guides/setup` is also `/docs/guides/setup.md`.
+- **A pointer** at the top of each page to both, which the elements' stylesheet hides from sight but not from an agent reading the page.
+
+`site` is required, because everything an agent reads links by absolute URL. The integration builds the plain output too, copies it into the built site, and serves it in `astro dev`. The [`ascribe.toml` reference](../reference/content-model.md#15-consumer) says how `llms.txt` is put together.
+
+`ascribe check` then adds two pieces of advice: a page whose description is too long for its line in `llms.txt`, and an `llms.txt` that's still too long when split. Write each page's `description` as one sentence saying what the page is for; it's what an agent picks a page by.
+
+### What your host does
+
+The files are static, so any host serves them. A few things the spec asks are the server's, not the build's:
+
+- **The `.md` files' type.** Serve them as `text/markdown; charset=utf-8`, and `llms.txt` as `text/plain; charset=utf-8`, as `astro dev` does. Check what your host sends (`curl -I` a page's `.md`), and set the header in its configuration if it's something else.
+- **Content negotiation.** An agent may ask for a page with `Accept: text/markdown`; answering it with the page's `.md` needs a rule on the server, such as an edge function or middleware that rewrites to `<path>.md` when that header asks for Markdown. Without it, agents still find the `.md` URLs through `llms.txt` and the pointer.
+- **Status codes and caching.** A missing page should answer 404, not 200 with a page saying so, and the `.md` files and `llms.txt` should be cached no longer than the pages.
+- **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
 
 ## Review in the site preview
 @available: next
