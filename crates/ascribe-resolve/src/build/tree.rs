@@ -277,6 +277,8 @@ pub struct HeadingIds {
     pub explicit: bool,
     /// Where the `@id` directive is, when the heading has one.
     pub explicit_at: Option<Location>,
+    /// Whether the `@id` marks the id as a permalink (SPEC §4.1).
+    pub permalink: bool,
 }
 
 /// A phrase replaced in the source text.

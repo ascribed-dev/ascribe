@@ -1,0 +1,7 @@
+description: >-
+  `@id` takes one attribute, `permalink`, a boolean that's false when
+  absent. Marked, unmarked, and `permalink=false` are all valid.
+spec: ["4.1"]
+tags: [check]
+
+diagnostics: []

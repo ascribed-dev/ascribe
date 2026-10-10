@@ -40,6 +40,7 @@ fn walk(project: &Project, blocks: &mut [ResolvedBlock], scope: &mut dyn SlugSco
                     .explicit_id
                     .as_ref()
                     .map(|e| Location::new(block.file, e.span)),
+                permalink: heading.explicit_id.as_ref().is_some_and(|e| e.permalink),
             });
         }
         for children in block.child_lists_mut() {
