@@ -172,3 +172,4 @@
 | [ASC169](../reference/diagnostics.md#asc169-link-external-moved) | `link-external-moved` | Advice | File | choose |
 | [ASC170](../reference/diagnostics.md#asc170-delivery-hosting) | `delivery-hosting` | Advice | File | outside |
 | [ASC171](../reference/diagnostics.md#asc171-delivery-output) | `delivery-output` | Advice | File | outside |
+| [ASC172](../reference/diagnostics.md#asc172-availability-left-behind) | `availability-left-behind` | Advice | File | review |

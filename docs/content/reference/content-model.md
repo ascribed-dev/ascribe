@@ -329,17 +329,20 @@ A **dimension** is an axis content varies along ([SPEC §4.3]({repo}/blob/main/S
 
 ## 7. `[versions]`
 
-How versions in availability specs are compared ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)).
+How versions in availability specs are compared ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), and which release is current.
 
 @snippet: code:examples/content-models/full.toml#versions
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `scheme` | string | `"numeric"` | The version scheme. Spec 0.1 defines one: `"numeric"`. |
+| `current` {available=next} | string (version) | none | The latest release, such as `"0.2.0"`. With it, the [`availability-left-behind`](diagnostics.md#content-checks) check reports a feature whose versions are all at or before it. Set it to each release as it ships. |
 
 **The `numeric` scheme.** A version is any string matching SPEC Appendix A's `version` rule: numbers separated by dots (`3`, `3.4`, `3.4.1`). Versions compare component by component, numerically, from the left, with missing trailing components treated as `0`: `3.4` equals `3.4.0`, `3.10` is later than `3.9`, and `4` is later than `3.99.1`. Leading zeros don't matter (`3.04` equals `3.4`). This is semantic versioning's `major.minor.patch` ordering. It has no pre-release or build suffixes, because the spec's grammar doesn't allow them; express a pre-release with a lifecycle state (`preview 3.4`) instead.
 
 No other scheme is defined. The table exists so a later spec version can add one without changing the file's shape.
+
+**Rules.** `scheme` is one of the schemes (`model-invalid-value`), and `current` is a version, quoted (`model-wrong-type`).
 
 ---
 

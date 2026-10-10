@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use ascribe_core::availability::{AvailabilitySpec, parse_availability};
+use ascribe_core::availability::{AvailabilitySpec, Version, parse_availability, parse_version};
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Place, Span, diagnostics};
 use toml::de::{DeTable, DeValue};
 
@@ -338,7 +338,7 @@ impl<'s> Loader<'s> {
         let consumer = self.consumer(root.get("consumer"));
         let builds = self.builds(root.get("builds"), &dimensions);
         let editor_build = self.editor(root.get("editor"), root.get("builds"), &builds);
-        self.version_scheme(root.get("versions"));
+        let current_version = self.versions(root.get("versions"));
         self.project_paths(&project, root.get("project"));
         let sources = self.sources(root.get("sources"), &project.value.content_root);
         let checks = self.checks(root.get("checks"));
@@ -351,6 +351,7 @@ impl<'s> Loader<'s> {
             fragments,
             dimensions,
             version_scheme: VersionScheme::Numeric,
+            current_version,
             lifecycle,
             features,
             notes,
@@ -393,14 +394,29 @@ impl<'s> Loader<'s> {
         }
     }
 
-    fn version_scheme(&mut self, v: Option<&V<'_>>) {
-        let Some(v) = v else { return };
-        let Some(t) = self.as_table("versions", v) else {
-            return;
-        };
-        self.check_keys("versions", t, &["scheme"]);
+    /// `[versions]`: checks `scheme`, and returns `current`.
+    fn versions(&mut self, v: Option<&V<'_>>) -> Option<Version> {
+        let t = self.as_table("versions", v?)?;
+        self.check_keys("versions", t, &["scheme", "current"]);
         if let Some(s) = t.get("scheme") {
             self.choice("versions.scheme", s, &["numeric"]);
+        }
+        let current = t.get("current")?;
+        let text = self.string("versions.current", current, false)?;
+        // After the opening quote; a version has nothing to escape.
+        let offset = sp(current).start() + 1;
+        match parse_version(&text, offset) {
+            Ok(version) => Some(version),
+            Err(_) => {
+                let found = format!("`{}`", self.text_of(sp(current)));
+                self.push(
+                    self.issue(diagnostics::MODEL_WRONG_TYPE, sp(current))
+                        .with_arg("key", "versions.current")
+                        .with_arg("expected", "a version, such as \"3.4\"")
+                        .with_arg("found", found),
+                );
+                None
+            }
         }
     }
 

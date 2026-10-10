@@ -355,13 +355,14 @@ A **dimension** is an axis content varies along (SPEC §4.3), and whose values a
 
 ## 8. `[versions]`
 
-How versions in availability specs are compared (SPEC §4.4).
+How versions in availability specs are compared (SPEC §4.4), and which release is current.
 
 @snippet: code:examples/content-models/full.toml#versions
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `scheme` | string | `"numeric"` | The version scheme. Spec 0.1 defines one: `"numeric"`. |
+| `current` | string | none | The latest release: a version (SPEC Appendix A rule `version`), compared under `scheme`. Nothing in an output depends on it. The content check `availability-left-behind` reports a feature whose spec names a version for every target, none of them later than `current`; without `current` it reports nothing. |
 
 **The `numeric` scheme.** A version is any string matching SPEC Appendix A's `version` rule: numbers separated by dots (`3`, `3.4`, `3.4.1`). Versions compare component by component, numerically, from the left, with missing trailing components treated as `0`: `3.4` equals `3.4.0`, `3.10` is later than `3.9`, and `4` is later than `3.99.1`. Leading zeros don't matter (`3.04` equals `3.4`). This is semantic versioning's `major.minor.patch` ordering. It has no pre-release or build suffixes, because the spec's grammar doesn't allow them; express a pre-release with a lifecycle state (`preview 3.4`) instead.
 
@@ -892,7 +893,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-glossary-duplicate-term` | No two terms or aliases are the same text, ignoring case when either is case-insensitive. | `` "{text}" is declared by both glossary terms `{a}` and `{b}` `` |
 | `model-glossary-link` | A term's `link` file exists under the content root and isn't a fragment. | `` glossary term `{id}` links to {path}, which doesn't exist ``<br>`` glossary term `{id}` links to {path}, which is a fragment; link to a page that includes it `` |
 
-`[versions] scheme` is covered by `model-invalid-value`. Image attribute types are covered by the rules in §22.3.
+`[versions] scheme` is covered by `model-invalid-value`, and `[versions] current`, which MUST be a version, by `model-wrong-type`. Image attribute types are covered by the rules in §22.3.
 
 ### 22.6 Widgets
 

@@ -184,7 +184,7 @@ Review the draft, then publish it.
 
 ### 10. Check the docs site
 
-The [docs site](#the-docs-site) follows `main`, not the release, so a release doesn't change it by itself. In the pull request after the release, set `version` in `docs/ascribe.toml`'s `[phrases]` to the release, and change `[features.next]` to name it, as the comment above `[dimensions.release]` says. Once that's merged and Netlify has built it, open <https://ascribed-dev.com>: **Check:** getting-started installs the new version, and a page the release shipped reads "since" the release, not "in main, not yet released".
+The [docs site](#the-docs-site) follows `main`, not the release, so a release doesn't change it by itself. In the pull request after the release, set `version` in `docs/ascribe.toml`'s `[phrases]` and `[versions] current` to the release, and change `[features.next]` to name it, as the comment above `[dimensions.release]` says. Once that's merged and Netlify has built it, open <https://ascribed-dev.com>: **Check:** getting-started installs the new version, and a page the release shipped reads "since" the release, not "in main, not yet released".
 
 ## When something goes wrong
 

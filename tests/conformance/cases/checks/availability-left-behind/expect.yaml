@@ -1,0 +1,12 @@
+description: >-
+  With `[versions] current`, a feature whose availability names a version
+  for every target, none later than the current release, is reported at its
+  key, whether its spec is a version or a history. A feature with a later
+  version, or a target with no version, isn't; nor is one acknowledged in
+  `[[intended]]`.
+spec: ["4.4", "4.9"]
+tags: [check]
+
+diagnostics:
+  - {slug: availability-left-behind, file: ascribe.toml, line: 19}
+  - {slug: availability-left-behind, file: ascribe.toml, line: 23}
