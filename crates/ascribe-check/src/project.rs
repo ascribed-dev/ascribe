@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use ascribe_core::{Date, FileId, Issue, LineIndex, RelPath};
 use ascribe_model::{ContentModel, LOCK_FILE, Lock, LockedSource};
@@ -17,6 +17,11 @@ pub use ascribe_model::MODEL_FILE;
 /// The id of `ascribe.lock` (SPEC §7.4), for locations in it: past any
 /// source file's, and before the code files'.
 pub const LOCK_FILE_ID: FileId = FileId::new(0x7FFF_FFFF);
+
+/// The id of the first image file under the content root, for locations
+/// in image files: the image checks list them in path order, and number them
+/// from here ([`Project::images`]).
+pub const IMAGE_FILE_IDS: u32 = 0x4000_0000;
 
 /// One source file: a Markdown file under the content root.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,8 +56,8 @@ pub struct FileEntry<'a> {
     pub display_path: String,
     /// The text.
     pub text: &'a str,
-    /// The path relative to the content root, for a source file; `None` for
-    /// the content model.
+    /// The path relative to the content root, for a source file or an image
+    /// file under it; `None` for the content model and the lock.
     pub content_path: Option<&'a RelPath>,
 }
 
@@ -167,6 +172,10 @@ pub struct Project {
     lock_text: Option<String>,
     /// `ascribe.lock` read, or its problems, when there's one.
     lock: Option<Result<Lock, Vec<Issue>>>,
+    /// The image files under the content root, by path from the project
+    /// root and from the content root, once the image checks have listed
+    /// them.
+    images: OnceLock<Vec<(RelPath, RelPath)>>,
     /// The day the checks run on, which `review-overdue` compares with.
     today: Option<Date>,
 }
@@ -406,6 +415,7 @@ impl Project {
             code: Arc::default(),
             lock_text,
             lock,
+            images: OnceLock::new(),
             today: None,
         }
     }
@@ -525,8 +535,36 @@ impl Project {
         lock.source(name).filter(|l| &l.git == url)
     }
 
+    /// The image files under the content root, by path from the project
+    /// root and from the content root, in path order, listed by `list` the
+    /// first time they're asked for. The image at position `i` has the id
+    /// `IMAGE_FILE_IDS + i`.
+    pub(crate) fn images_or(
+        &self,
+        list: impl FnOnce() -> Vec<(RelPath, RelPath)>,
+    ) -> &[(RelPath, RelPath)] {
+        self.images.get_or_init(list)
+    }
+
+    /// The ids of the image files the image checks listed; none when they
+    /// haven't run.
+    pub fn image_ids(&self) -> impl Iterator<Item = FileId> + '_ {
+        (0..self.images.get().map_or(0, Vec::len)).map(image_id)
+    }
+
     /// What a file id names.
     pub fn file(&self, id: FileId) -> Option<FileEntry<'_>> {
+        if let Some(i) = id.index().checked_sub(IMAGE_FILE_IDS)
+            && id.index() < LOCK_FILE_ID.index()
+        {
+            let (path, content) = self.images.get()?.get(i as usize)?;
+            return Some(FileEntry {
+                id,
+                display_path: path.to_string(),
+                text: "",
+                content_path: Some(content),
+            });
+        }
         if id == FileId::new(0) {
             return Some(FileEntry {
                 id,
@@ -637,6 +675,14 @@ impl SourceSet for Project {
         pages.sort();
         pages
     }
+}
+
+/// The id of the image at position `i` of [`Project::images`].
+pub(crate) fn image_id(i: usize) -> FileId {
+    // A project has far fewer images than the ids from IMAGE_FILE_IDS to the
+    // lock's.
+    #[allow(clippy::cast_possible_truncation)]
+    FileId::new(IMAGE_FILE_IDS + i as u32)
 }
 
 fn read_error(path: &Path, e: std::io::Error) -> LoadError {

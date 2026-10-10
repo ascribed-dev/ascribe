@@ -536,6 +536,12 @@ fn diagnostics(project: &Project) -> BTreeMap<(String, String), usize> {
     let build = project.model().editor_default_build().clone();
     let mut out = BTreeMap::new();
     for d in check_project(project, &build) {
+        // Making a phrase of a glossary term's only occurrence leaves the
+        // term in the phrase's value, which the search for uses doesn't
+        // read, so the term reads as unused.
+        if d.slug == ascribe_core::diagnostics::GLOSSARY_TERM_UNUSED {
+            continue;
+        }
         let file = project
             .file(d.location.file)
             .map(|f| f.display_path.to_owned())

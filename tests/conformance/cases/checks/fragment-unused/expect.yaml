@@ -1,0 +1,7 @@
+description: >-
+  A fragment no file includes is reported on its first line.
+spec: ["4.2", "2.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: fragment-unused, file: _unused.md, line: 1}

@@ -1,0 +1,20 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+
+[phrases]
+product = "Quill"
+kept = "Kept for the next release"
+spare = "Nothing uses this"
+
+[[intended]]
+check = "phrase-unused"
+phrase = "kept"
+reason = "The release notes will use it."

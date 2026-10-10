@@ -154,3 +154,11 @@
 | [ASC151](../reference/diagnostics.md#asc151-heading-level-skipped) | `heading-level-skipped` | Advice | Page | fix |
 | [ASC152](../reference/diagnostics.md#asc152-code-language-missing) | `code-language-missing` | Advice | File | choose |
 | [ASC153](../reference/diagnostics.md#asc153-review-overdue) | `review-overdue` | Advice | File | review |
+| [ASC154](../reference/diagnostics.md#asc154-page-orphan) | `page-orphan` | Advice | Page | review |
+| [ASC155](../reference/diagnostics.md#asc155-fragment-unused) | `fragment-unused` | Advice | File | review |
+| [ASC156](../reference/diagnostics.md#asc156-phrase-unused) | `phrase-unused` | Advice | File | review |
+| [ASC157](../reference/diagnostics.md#asc157-feature-unused) | `feature-unused` | Advice | File | review |
+| [ASC158](../reference/diagnostics.md#asc158-glossary-term-unused) | `glossary-term-unused` | Advice | File | review |
+| [ASC159](../reference/diagnostics.md#asc159-image-unused) | `image-unused` | Advice | File | review |
+| [ASC160](../reference/diagnostics.md#asc160-image-large) | `image-large` | Advice | File | review |
+| [ASC161](../reference/diagnostics.md#asc161-title-duplicate) | `title-duplicate` | Advice | Page | write |

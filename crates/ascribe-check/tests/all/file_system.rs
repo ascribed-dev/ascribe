@@ -11,7 +11,7 @@ use ascribe_check::{Project, check_files};
 use ascribe_core::{FileId, RelPath};
 use ascribe_resolve::{Layout, MemoryFs};
 
-const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n";
+const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[checks]\npage-orphan = \"off\"\nfragment-unused = \"off\"\nphrase-unused = \"off\"\nfeature-unused = \"off\"\nglossary-term-unused = \"off\"\nimage-unused = \"off\"\nimage-large = \"off\"\ntitle-duplicate = \"off\"\n";
 const PAGE: &str = "---\ntitle: T\n---\n![A logo](logo.png)\n";
 
 fn project(fs: Option<MemoryFs>) -> Project {

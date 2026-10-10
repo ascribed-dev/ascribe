@@ -35,9 +35,13 @@
 #             "review" when it may be fine as it is. A retired entry has
 #             neither `next` nor `evidence`.
 #   evidence  The named pieces of context an agent prompt about it carries,
-#             beyond the message and the line; may be empty. The one name so
-#             far is "allowed-values": the values the content model allows,
-#             from the `values` placeholder.
+#             beyond the message and the line; may be empty. The names
+#             (`ascribe_check::prompt::EVIDENCE`): "allowed-values", the
+#             values the content model allows, from the `values` placeholder;
+#             "mentions", the pages that mention a page's title or share its
+#             folder; "image-size", an image's size and dimensions; and
+#             "descriptions", the descriptions of the pages a diagnostic
+#             names.
 #   message   The message template. `{name}` is a placeholder, filled from the
 #             issue's arguments; `{{` and `}}` are literal braces. A message
 #             says what's wrong and, when there's a likely fix, what to do.
@@ -60,6 +64,14 @@
 #                (`Issue::variant`); otherwise `message` is used.
 #   row          The SPEC §8.2 row, as "<construct> | <condition>", copied
 #                exactly. Every row has exactly one entry.
+#   area         For a quality check, which is neither a SPEC §8.2 row nor a
+#                loader rule: what it checks, one of `AREAS` in
+#                tests/conformance/tests/docs.rs. Only a configurable entry has one; its `severity`
+#                is its default level, and its `spec` is the SPEC section of
+#                the construct it checks. The diagnostics reference lists it
+#                under "Content checks", in its area's section.
+#   when         For a quality check: when it's reported, as a sentence
+#                without its full stop.
 #   group        The group of docs/content/reference/diagnostics.md a loader rule is listed in:
 #                file, project, sources, content-types, names, phrases, widgets, or
 #                consumer. Every loader rule has one.
@@ -2750,3 +2762,127 @@ area = "pages"
 place = "page"
 message = "this page was due for review on {date}; check it still holds, then move `{field}` to the next review"
 fix = "Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project."
+
+###############################################################################
+# Content checks across the project (area "project"): about the content's
+# quality, not whether it's valid. Each says when it's reported in `when`.
+###############################################################################
+
+[[diagnostic]]
+code = "ASC154"
+slug = "page-orphan"
+severity = "advice"
+level = "page"
+next = "review"
+evidence = ["mentions"]
+configurable = true
+place = "page"
+area = "project"
+spec = "5.2"
+when = "No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported"
+message = "no other page links to this page or includes it, so readers reach it only through the site's own navigation or search, if those list it"
+fix = "Link to the page from a page about its topic, or include it in one. A site whose own navigation, such as a sidebar, lists the page still reaches it, so this is a hint: acknowledge one such page in its `intended` frontmatter, or turn the check off in [`[checks]`](content-model.md#19-checks) (`page-orphan = \"off\"`) when your navigation lists every page."
+
+[[diagnostic]]
+code = "ASC155"
+slug = "fragment-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "page"
+area = "project"
+spec = "4.2"
+when = "No file includes the fragment"
+message = "no file includes this fragment, so nothing publishes it"
+fix = "Include the fragment where it belongs with `@include`, or delete it when nothing needs it any more."
+
+[[diagnostic]]
+code = "ASC156"
+slug = "phrase-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "5.1"
+when = "No file writes the phrase, in its text or in a frontmatter field that takes phrases"
+message = "no file uses the phrase `{key}`"
+fix = "Write the phrase where its value belongs, or remove it from `[phrases]`. A phrase is used wherever a page or a fragment writes its key in braces, in the text or in a frontmatter field that takes phrases."
+
+[[diagnostic]]
+code = "ASC157"
+slug = "feature-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "4.4"
+when = "No availability spec names the feature: no `@available`, table row's `available`, or page's `available`"
+message = "no file uses the feature `{key}`"
+fix = "Mark the content the feature covers with its key (`@available: <key>`, or `available: <key>` in a page's frontmatter), or remove the feature from `[features]` once nothing needs it."
+
+[[diagnostic]]
+code = "ASC158"
+slug = "glossary-term-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "5.4"
+when = "The term, and each of its aliases, appears in no file's prose. A term with `match = \"marked\"` isn't reported"
+message = "the glossary term `{term}` appears in no file's prose, so it's never linked"
+fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` isn't reported, since its uses are links to its page. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](content-model.md#intended-acknowledgements)."
+
+[[diagnostic]]
+code = "ASC159"
+slug = "image-unused"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+configurable = true
+place = "entry"
+area = "project"
+spec = "5.3"
+when = "An image file under the content root that no file shows or links to: no Markdown image or link, no `src`, `srcset`, `href`, or `poster` in raw HTML, and no frontmatter string names it"
+message = "no file shows or links to `{path}`"
+fix = "Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](content-model.md#19-checks) when your site uses images that way."
+
+[[diagnostic]]
+code = "ASC160"
+slug = "image-large"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = ["image-size"]
+configurable = true
+place = "entry"
+area = "project"
+spec = "5.3"
+when = "An image file under the content root is larger than the limit: 500 KB, or `[checks.image-large] limit`"
+message = "`{path}` is {size}, over the {limit} limit for an image"
+fix = "Make the image smaller: save it at the size it's shown, or compress it (a screenshot as an optimized PNG, a photo as JPEG or WebP). The limit is 500 KB; set another in `ascribe.toml`, such as `[checks.image-large] limit = \"1 MB\"`."
+
+[[diagnostic]]
+code = "ASC161"
+slug = "title-duplicate"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = ["descriptions"]
+configurable = true
+area = "project"
+spec = "2.2"
+when = "Two pages the build publishes have the same title, ignoring case"
+message = "`{title}` is also the title of {others}, so readers can't tell the pages apart in search results or a list of pages"
+fix = "Give each page a title that says what sets it apart. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`."

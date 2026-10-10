@@ -1,0 +1,13 @@
+description: >-
+  Two pages a build publishes with the same title, ignoring case, are each
+  reported at their title. A build that drops one of them has no duplicate.
+spec: ["2.2", "9.3"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: title-duplicate, file: install.md, line: 2}
+      - {slug: title-duplicate, file: server.md, line: 2}
+  cloud:
+    diagnostics: []

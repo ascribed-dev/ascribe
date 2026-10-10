@@ -540,7 +540,9 @@ editor's build (`ascribe_check::diagnose_editor_build`). The prompt is built
 by `ascribe_check::prompt`, which `ascribe check --format prompt` calls too,
 so for a saved file the two give the same prompt; `lsp_parity` in
 `crates/ascribe-cli/tests/` holds them to it. A diagnostic is found by its
-code and range, and its message when two share a place.
+code and range, and its message when two share a place. A diagnostic of the content checks across the
+project, which the checks of one file don't run, is found among the whole
+project's.
 
 While review is on (`ascribe/review/setBase`), two more kinds prompt about
 changes, against the base the server holds:
@@ -563,7 +565,7 @@ prompt.
 
 ## Capabilities
 
-Advertised: incremental text document sync (open/close, no save), semantic
+Advertised: incremental text document sync (open/close, and save, without the text), semantic
 tokens (full and range), the position encoding, and completion
 (triggered by `@ { ( # / = , |` and a space), hover, definition, references,
 document links, CodeLens, inlay hints, code actions, document formatting, rename (with
@@ -574,7 +576,11 @@ Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
 advertise pull diagnostics.
 
 Code actions carry the checker's existing diagnostic fixes (including the
-router's reverse route suggestion) and the Ascribe-specific repairs. Rename and
+router's reverse route suggestion) and the Ascribe-specific repairs. A review
+check's problem offers **Mark as intended, and write why**, which writes an
+acknowledgement where the check's `place` says; on `ascribe.toml`, the only
+actions are those for a problem about a content model entry or an image,
+written in `[[intended]]`. Rename and
 file-move edits use the current project snapshot, including open buffers, its
 source index, and reverse references. A rename starts on a heading or an `@id`,
 a phrase (a `{key}` use or its key in `ascribe.toml`), or a dimension value (in
@@ -628,6 +634,16 @@ from `ascribe-fmt`; the VS Code client applies those edits on save when
   diagnostics are cleared. The file-level checks probe the disk with the files
   the editor and the watcher have reported layered over it
   (`Project::from_parts_with_fs`), as the source index does.
+- **The content checks across the project** (`page-orphan`,
+  `title-duplicate`, `fragment-unused`, and the unused phrases, features, and
+  glossary terms; `PageChecker::check_across`) need every page of the build,
+  so a round runs them only when the project loads, when a document is saved
+  (`didSave`), when the watcher reports a change, and when the content model
+  changes (`compute::Across`). What they found is added to a file's
+  diagnostics while the file's text is the one they ran on, so an edit hides
+  them on that file until the next save. Those in `ascribe.toml` are
+  published with the model's warnings, at the levels `[checks]` sets. The
+  image checks aren't run.
 - **Stale results.** A worker thread computes from a `Snapshot`. Before it
   publishes a file's diagnostics it checks, under the lock that serializes
   every change, that `IncrementalProject::is_file_current` holds for the file
