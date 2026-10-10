@@ -49,6 +49,22 @@ export async function publishedPages(): Promise<string[]> {
 }
 
 /**
+ * The addresses of the site output's permalinks, `_ascribe/permalinks.json`
+ * (output-layout contract §1.2): pages that send the reader on to a heading,
+ * with no content of their own.
+ */
+export async function forwardingPages(): Promise<string[]> {
+  let text: string;
+  try {
+    text = await readFile(path.join(outputDir, "_ascribe", "permalinks.json"), "utf8");
+  } catch {
+    return [];
+  }
+  const list = JSON.parse(text) as { path: string; permalinks: Record<string, unknown> };
+  return Object.keys(list.permalinks).map((id) => `${list.path}${id}/`);
+}
+
+/**
  * The file dist/ serves for a URL path, as a static host does: `/a/b/` is
  * `a/b/index.html`, and a path to a file is that file. Undefined if none.
  */
