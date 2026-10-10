@@ -422,8 +422,10 @@ fn check_diagnostics(page: &Page<'_>, after: &str) -> Result<(), String> {
 
 /// The first diagnostic of `after` that `before` doesn't have, as the
 /// message refusing the edit. What's added is compared by file and code, so
-/// a diagnostic that only moves isn't counted. `own` is the display path of
-/// the page the edit was asked for, whose problems don't name it.
+/// a diagnostic that only moves isn't counted. Both lists are taken at the
+/// levels their project's `[checks]` sets, and advice never refuses an edit,
+/// as it never fails `ascribe check`. `own` is the display path of the page
+/// the edit was asked for, whose problems don't name it.
 pub(crate) fn new_problem(
     before_project: &ascribe_check::Project,
     before: &[ascribe_check::Diagnostic],
@@ -438,12 +440,17 @@ pub(crate) fn new_problem(
             .map(|f| f.display_path.to_owned())
             .unwrap_or_default()
     };
+    let before = ascribe_check::apply_levels(&before_project.model().checks, before.to_vec());
+    let after = ascribe_check::apply_levels(&after_project.model().checks, after.to_vec());
     let mut counts: BTreeMap<(String, String), usize> = BTreeMap::new();
-    for d in before {
+    for d in &before {
         let key = (file_of(before_project, d), d.code.to_owned());
         *counts.entry(key).or_default() += 1;
     }
-    for d in after {
+    for d in after
+        .iter()
+        .filter(|d| d.severity != ascribe_check::Severity::Advice)
+    {
         let file = file_of(after_project, d);
         let count = counts.entry((file.clone(), d.code.to_owned())).or_default();
         if *count == 0 {
@@ -766,5 +773,57 @@ mod tests {
         assert_eq!(line_end(text, 1), 3);
         assert_eq!(line_end(text, 6), text.len());
         assert_eq!(line_start(text, 6), 5);
+    }
+
+    /// A project of one page, `a.md`, with `[checks]` set as given. No check
+    /// is configurable yet, so the levels are set on the loaded model, as
+    /// the loader would refuse them.
+    fn project(
+        levels: &[(ascribe_core::DiagnosticSlug, ascribe_model::CheckLevel)],
+    ) -> ascribe_check::Project {
+        #[allow(clippy::expect_used)] // A test's own content model and path, which are valid.
+        let (mut model, page) = (
+            ascribe_model::load_str("spec = \"0.1\"\n", ascribe_core::FileId::new(0))
+                .expect("a minimal content model loads"),
+            RelPath::parse("a.md").expect("a valid path"),
+        );
+        model.checks.settings = levels
+            .iter()
+            .map(|&(slug, level)| ascribe_model::CheckSetting {
+                slug,
+                level: Some(level),
+            })
+            .collect();
+        let sources = ascribe_check::Project::from_sources([(page, "# A\n".to_owned())]);
+        ascribe_check::Project::from_parts(
+            std::path::PathBuf::from("/nonexistent"),
+            RelPath::root(),
+            model,
+            String::new(),
+            sources,
+        )
+    }
+
+    fn found(slug: ascribe_core::DiagnosticSlug) -> ascribe_check::Diagnostic {
+        let at = ascribe_core::Location::new(ascribe_core::FileId::new(1), 0..1);
+        let issue = ascribe_core::Issue::new(slug, at).with_arg("name", "note");
+        ascribe_check::Diagnostic::from_issue(&issue)
+    }
+
+    #[test]
+    fn advice_and_checks_set_off_never_refuse_an_edit() {
+        use ascribe_core::diagnostics::BINDING_BLANK_LINE as SLUG;
+        use ascribe_model::CheckLevel;
+        let refused = |levels: &[_], after: ascribe_check::Diagnostic| {
+            let p = project(levels);
+            new_problem(&p, &[], &p, &[after], Some("a.md")).is_some()
+        };
+        assert!(refused(&[], found(SLUG)));
+        assert!(refused(&[(SLUG, CheckLevel::Error)], found(SLUG)));
+        assert!(!refused(&[(SLUG, CheckLevel::Advice)], found(SLUG)));
+        assert!(!refused(&[(SLUG, CheckLevel::Off)], found(SLUG)));
+        let mut advice = found(SLUG);
+        advice.severity = ascribe_check::Severity::Advice;
+        assert!(!refused(&[], advice));
     }
 }

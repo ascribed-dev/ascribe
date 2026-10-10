@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use ascribe_check::prompt::{self, Builds};
 use ascribe_check::{
-    Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, diagnose,
+    Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, Severity, diagnose,
     diagnose_editor_build_in, locate_for,
 };
 use ascribe_core::Coded;
@@ -123,6 +123,7 @@ impl Coded for CheckError {
 
 /// Runs the command. Exit codes: 0 with no errors, 1 with errors (or with
 /// warnings under `--deny-warnings`), 2 when the project can't be checked.
+/// Advice never changes the exit code.
 pub fn run(global: &Global, args: Args) -> ExitCode {
     // Buffered: a report is many small writes, and a locked stdout flushes
     // at every line.
@@ -148,7 +149,7 @@ pub struct Outcome {
     reported: Vec<Reported>,
     builds_checked: Vec<String>,
     files: FileTable,
-    /// How many errors and warnings are reported.
+    /// How many errors, warnings, and advice are reported.
     pub counts: Counts,
 }
 
@@ -191,8 +192,13 @@ fn check(
             return exit::FAILURE;
         }
     }
-    let counts = outcome.counts;
-    if counts.errors > 0 || (args.deny_warnings && counts.warnings > 0) {
+    exit_code(outcome.counts, args.deny_warnings)
+}
+
+/// The exit code for what a check reports: 1 with errors, or with warnings
+/// under `--deny-warnings`; 0 otherwise. Advice never fails the check.
+fn exit_code(counts: Counts, deny_warnings: bool) -> u8 {
+    if counts.errors > 0 || (deny_warnings && counts.warnings > 0) {
         exit::PROBLEMS
     } else {
         exit::OK
@@ -234,10 +240,12 @@ pub fn run_check(
             })
             .map_err(Stopped::Build)?
     };
-    let reported = match &scope {
+    let mut reported = match &scope {
         Some(scope) => scope.report(project, diagnostics),
         None => Reported::all(diagnostics),
     };
+    // Advice after errors and warnings; stable, so each keeps its order.
+    reported.sort_by_key(|r| r.diagnostic.severity == Severity::Advice);
     let files = FileTable::of_project(project);
     let counts = Counts::of_reported(&reported);
     Ok(Outcome {
@@ -580,4 +588,78 @@ fn report_failure(
         ),
     };
     exit::FAILURE
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use super::*;
+    use ascribe_core::{FileId, Issue, Location, diagnostics};
+
+    // No diagnostic is advice yet, so these are made advice here.
+    fn reported() -> Vec<Reported> {
+        let model = "spec = \"0.1\"\n[x]\n";
+        let at = |start: usize| Location::new(FileId::new(0), start..start + 1);
+        let issue = |start| {
+            Issue::new(diagnostics::MODEL_UNKNOWN_KEY, at(start))
+                .with_arg("key", "x")
+                .with_arg("table", "ascribe.toml")
+        };
+        let mut advice = Diagnostic::from_issue(&issue(0));
+        advice.severity = Severity::Advice;
+        let mut warning = Diagnostic::from_issue(&issue(model.len() - 2));
+        warning.severity = Severity::Warning;
+        Reported::all(vec![advice, warning])
+    }
+
+    #[test]
+    fn advice_never_fails_the_check() {
+        let advice = Counts {
+            advice: 3,
+            ..Counts::default()
+        };
+        assert_eq!(exit_code(advice, false), exit::OK);
+        assert_eq!(exit_code(advice, true), exit::OK);
+        let warning = Counts {
+            warnings: 1,
+            ..advice
+        };
+        assert_eq!(exit_code(warning, false), exit::OK);
+        assert_eq!(exit_code(warning, true), exit::PROBLEMS);
+    }
+
+    #[test]
+    fn advice_is_counted_apart_and_listed_last() {
+        let files = FileTable::of_model("spec = \"0.1\"\n[x]\n".to_owned());
+        let reported = reported();
+        let counts = Counts::of_reported(&reported);
+        assert_eq!(
+            text::check_summary(counts, 1, None, None),
+            "checked 1 file: 0 errors, 1 warning, 1 advice"
+        );
+        assert_eq!(
+            text::check_summary(Counts::default(), 1, None, None),
+            "checked 1 file: 0 errors, 0 warnings",
+            "the summary names advice only when there is some"
+        );
+
+        let order = concise::order(&files, &reported);
+        assert_eq!(order, [1, 0], "advice comes after the warning");
+
+        let mut out = Vec::new();
+        let about = json::About {
+            error: None,
+            files_checked: 1,
+            files_reported: 1,
+            builds_checked: Vec::new(),
+            summary_only: None,
+        };
+        json::write(&mut out, &files, &reported, &about).unwrap();
+        let report: serde_json::Value = serde_json::from_slice(&out).unwrap();
+        assert_eq!(report["summary"]["advice"], 1);
+        assert_eq!(report["summary"]["warnings"], 1);
+        assert_eq!(report["diagnostics"][0]["severity"], "advice");
+        assert_eq!(report["diagnostics"][0]["next"], "choose");
+    }
 }

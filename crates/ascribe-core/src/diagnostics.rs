@@ -456,6 +456,10 @@ pub const SOURCE_COPY_UNUSED: DiagnosticSlug = DiagnosticSlug("source-copy-unuse
 /// `ASC141`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-field");
 
+/// `ASC142`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CHECK_NOT_CONFIGURABLE: DiagnosticSlug =
+    DiagnosticSlug("model-check-not-configurable");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -599,4 +603,10 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_UNLOCKED,
     SOURCE_COPY_UNUSED,
     MODEL_INLINE_FIELD,
+    MODEL_CHECK_NOT_CONFIGURABLE,
 ];
+
+/// The diagnostics a project may set the level of in `[checks]`: the
+/// registry's entries with `configurable = true`, in registry order. A test
+/// keeps it equal to the registry.
+pub const CONFIGURABLE: &[DiagnosticSlug] = &[];

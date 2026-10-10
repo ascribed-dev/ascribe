@@ -7,8 +7,8 @@ use ascribe_core::RelPath;
 use ascribe_model::Build;
 
 use crate::{
-    Diagnostic, PageChecker, PageIndex, Project, check_all_builds, check_builds, check_file,
-    check_files,
+    Diagnostic, PageChecker, PageIndex, Project, apply_levels, check_all_builds, check_builds,
+    check_file, check_files,
 };
 
 /// A build name that isn't a build of the content model.
@@ -80,11 +80,12 @@ pub struct Diagnosed<'p> {
 /// The first name that isn't a build of the content model.
 pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<'p>, UnknownBuild> {
     let builds = select_builds(project, names)?;
-    let mut diagnostics = if names.is_empty() {
+    let diagnostics = if names.is_empty() {
         check_all_builds(project)
     } else {
         check_builds(project, &builds)
     };
+    let mut diagnostics = apply_levels(&project.model().checks, diagnostics);
     for d in &mut diagnostics {
         if let Some(note) = d.builds_note(builds.len()) {
             d.message = format!("{} ({note})", d.message);
@@ -142,7 +143,7 @@ pub fn diagnose_editor_build_in<'p>(
         }
     };
     Diagnosed {
-        diagnostics,
+        diagnostics: apply_levels(&project.model().checks, diagnostics),
         builds: vec![build],
     }
 }

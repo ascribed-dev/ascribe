@@ -4,21 +4,27 @@ import { execFile } from "node:child_process";
 
 /** What a successful build printed. */
 export interface BuildResult {
-  /** The checks' report, which is more than a summary line when there are warnings. */
+  /** The checks' report, which is more than a summary line when there is anything to report. */
   diagnostics: string;
   /** The `built <build>/site: …` lines. */
   summary: string;
 }
 
-/** A check summary with nothing to report: `checked 14 files: 0 errors, 0 warnings`. */
-const CLEAN = /^checked [^:\n]*: 0 errors, 0 warnings$/;
+/**
+ * A check's summary line, the report's last: `checked 14 files: 0 errors, 0 warnings`,
+ * with `, 3 advice` after when there is advice.
+ */
+const SUMMARY = /^checked [^:\n]*: (\d+) errors?, (\d+) warnings?(?:, \d+ advice)?$/;
 
 /**
- * Whether a build's report is worth a warning: anything but a clean check's
- * summary line, which is logged at info level.
+ * Whether a build's report is worth a warning: anything but a report whose
+ * summary line counts no errors and no warnings, which is logged at info
+ * level, advice and all.
  */
 export function hasWarnings(diagnostics: string): boolean {
-  return diagnostics !== "" && !CLEAN.test(diagnostics);
+  if (diagnostics === "") return false;
+  const summary = SUMMARY.exec(diagnostics.trimEnd().split("\n").at(-1) ?? "");
+  return summary === null || summary[1] !== "0" || summary[2] !== "0";
 }
 
 /**

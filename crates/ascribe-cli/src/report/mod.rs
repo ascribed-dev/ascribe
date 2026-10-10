@@ -121,11 +121,12 @@ pub fn position_in(index: &LineIndex, offset: usize) -> Position {
     )
 }
 
-/// How many errors and warnings a list of diagnostics has.
+/// How many errors, warnings, and advice a list of diagnostics has.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Counts {
     pub errors: usize,
     pub warnings: usize,
+    pub advice: usize,
 }
 
 impl Counts {
@@ -151,12 +152,13 @@ impl Counts {
         match severity {
             Severity::Error => self.errors += 1,
             Severity::Warning => self.warnings += 1,
+            Severity::Advice => self.advice += 1,
         }
     }
 
-    /// Errors and warnings together.
+    /// Errors, warnings, and advice together.
     pub fn total(self) -> usize {
-        self.errors + self.warnings
+        self.errors + self.warnings + self.advice
     }
 }
 

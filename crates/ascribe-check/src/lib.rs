@@ -34,6 +34,7 @@
 mod builds;
 mod checks;
 mod diagnostic;
+mod levels;
 pub mod page;
 mod project;
 pub mod prompt;
@@ -48,6 +49,7 @@ pub use builds::{
 pub use checks::check_file;
 use checks::check_sources;
 pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
+pub use levels::apply_levels;
 pub use page::{
     PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,
 };
@@ -55,7 +57,7 @@ pub use project::{
     FileEntry, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile, Project, ReadFailure,
     SourceFile,
 };
-pub use registry::{Entry, Example, Level, Registry};
+pub use registry::{Entry, Example, Level, Next, Registry};
 pub use scope::{Reported, Scope, ScopeError, locate_for};
 
 /// Checks every file of the project at file level (SPEC §8.1): the content

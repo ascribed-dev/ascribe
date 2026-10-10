@@ -220,6 +220,7 @@ fn a_diagnostic_carries_its_advice_and_each_fix_its_safety() {
         .and_then(|entry| entry.fix.clone())
         .expect("the registry's advice");
     assert_eq!(diag["data"]["help"], help);
+    assert_eq!(diag["data"]["next"], "fix");
     let fixes = diag["data"]["fixes"].as_array().expect("fixes");
     assert!(!fixes.is_empty());
     for fix in fixes {
@@ -1036,5 +1037,85 @@ fn id_rename_rejects_invalid_and_conflicting_ids() {
             }),
         );
         assert!(result.response_result.expect("rename result").is_null());
+    }
+}
+
+/// Every diagnostic whose kind of next step is `fix` has a quick fix that
+/// removes it: one sample of each, fixed by its first action. A diagnostic
+/// classified `fix` without a sample here fails the test.
+#[test]
+fn every_fix_diagnostic_has_a_quick_fix() {
+    let widget = "\n[widgets.quill-labspace]\nforms = [\"line\"]\nprimary = \"none\"\nbinding = \"self\"\n\n[widgets.quill-labspace.attributes]\nlab = \"string\"\n";
+    // The slug, what's added to a page, and what's added to the model.
+    let samples: &[(&str, &str, &str)] = &[
+        (
+            "attribute-unquoted-reserved",
+            "\n@quill-labspace {lab=Using other images}\n",
+            widget,
+        ),
+        (
+            "container-colon-unexpected",
+            "\n@steps:\n1. Keep this step.\n",
+            "",
+        ),
+        (
+            "container-colon-missing",
+            "\n@variant {deployment=cloud}\nThis stays in the cloud build.\n@end\n",
+            "",
+        ),
+        ("binding-blank-line", "\n@note\n\nA bound block.\n", ""),
+        (
+            "heading-phrase-without-id",
+            "\n## Install {product}\n\nText.\n",
+            "",
+        ),
+        (
+            "heading-duplicate-without-id",
+            "\n## Twice\n\nText.\n\n## Twice\n\nMore.\n",
+            "",
+        ),
+        ("directive-extra-text", "\n@steps foo\n1. One.\n", ""),
+        ("phrase-double-braces", "\nInstall {{product}}.\n", ""),
+    ];
+    let fixable: Vec<&str> = ascribe_check::Registry::global()
+        .entries()
+        .filter(|e| e.next == Some(ascribe_check::Next::Fix))
+        .map(|e| e.slug.as_str())
+        .collect();
+    let sampled: Vec<&str> = samples.iter().map(|(slug, _, _)| *slug).collect();
+    assert_eq!(
+        sampled, fixable,
+        "every diagnostic of kind `fix`, in registry order, needs a sample"
+    );
+    for (slug, page, model) in samples {
+        let f = quill();
+        let path = f.path("docs/keys.md");
+        write(
+            &f,
+            "ascribe.toml",
+            &format!("{}{model}", read(&f, "ascribe.toml")),
+        );
+        write(
+            &f,
+            "docs/keys.md",
+            &format!("{}{page}", read(&f, "docs/keys.md")),
+        );
+        let mut client = Client::start(&f.root());
+        client.settle();
+        let diag = diagnostic(&client, &path, slug);
+        let action = actions(&mut client, &path, diag)
+            .into_iter()
+            .find(|action| action.get("edit").is_some())
+            .unwrap_or_else(|| panic!("{slug}: no quick fix"));
+        let changed = apply_workspace_edit(&f, &action["edit"]);
+        notify_changed(&mut client, &changed);
+        assert!(
+            !client
+                .diagnostics(&path)
+                .iter()
+                .any(|d| support::slug(d) == *slug),
+            "{slug}: `{}` doesn't remove it",
+            action["title"]
+        );
     }
 }

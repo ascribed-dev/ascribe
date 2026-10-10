@@ -13,6 +13,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
+use ascribe_conformance::registry::{Next, placeholders};
 use ascribe_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
 
 fn repo() -> PathBuf {
@@ -21,16 +22,78 @@ fn repo() -> PathBuf {
 
 const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs";
 
+/// The evidence an agent prompt can carry: what an entry's `evidence` may
+/// name.
+const EVIDENCE: &[&str] = &["allowed-values"];
+
+/// The tables of `[checks]` that aren't a check's: the tools' settings. No
+/// diagnostic can have their names.
+const CHECK_TOOLS: &[&str] = &["vale", "links"];
+
+/// No check ships without its next step: every diagnostic that isn't retired
+/// has a kind of next step, a `fix` paragraph, an entry in the reference, and
+/// the list of what its prompt carries. A `review` diagnostic can be
+/// acknowledged and set in `[checks]`, so it's configurable. That every `fix`
+/// diagnostic has a fix in the code is tested with the quick fixes, in
+/// `crates/ascribe-lsp/tests/all/quick_fixes.rs`.
 #[test]
-fn every_diagnostic_says_how_to_fix_it() {
+fn every_diagnostic_has_its_next_step() {
     let registry = DiagnosticsRegistry::load(&Suite::bundled().diagnostics_path()).unwrap();
-    let missing: Vec<&str> = registry
-        .entries
-        .iter()
-        .filter(|e| e.retired.is_none() && e.fix.as_deref().is_none_or(str::is_empty))
-        .map(|e| e.code.as_str())
-        .collect();
-    assert!(missing.is_empty(), "entries without a `fix`: {missing:?}");
+    let reference = render(&registry, &BTreeMap::new())
+        .into_iter()
+        .map(|(_, text)| text)
+        .collect::<String>();
+    let mut wrong = Vec::new();
+    for e in &registry.entries {
+        if CHECK_TOOLS.contains(&e.slug.as_str()) {
+            wrong.push(format!("{}: `[checks.{}]` is for a tool", e.code, e.slug));
+        }
+        if e.retired.is_some() {
+            if e.next.is_some() || e.evidence.is_some() || e.configurable {
+                wrong.push(format!(
+                    "{}: a retired entry has no `next`, `evidence`, or `configurable`",
+                    e.code
+                ));
+            }
+            continue;
+        }
+        if e.fix.as_deref().is_none_or(str::is_empty) {
+            wrong.push(format!("{}: no `fix`", e.code));
+        }
+        if !reference.contains(&format!("#### {} `{}`", e.code, e.slug)) {
+            wrong.push(format!("{}: no entry in the reference", e.code));
+        }
+        match e.next {
+            None => wrong.push(format!("{}: no `next`", e.code)),
+            Some(Next::Review) if !e.configurable => {
+                wrong.push(format!(
+                    "{}: a `review` diagnostic must be configurable",
+                    e.code
+                ));
+            }
+            Some(_) => {}
+        }
+        match &e.evidence {
+            None => wrong.push(format!("{}: no `evidence` (it may be empty)", e.code)),
+            Some(list) => {
+                for name in list {
+                    if !EVIDENCE.contains(&name.as_str()) {
+                        wrong.push(format!("{}: unknown evidence `{name}`", e.code));
+                    }
+                }
+                let values = std::iter::once(&e.message)
+                    .chain(e.messages.values())
+                    .any(|m| placeholders(m).is_ok_and(|p| p.contains(&"values")));
+                if list.iter().any(|n| n == "allowed-values") && !values {
+                    wrong.push(format!(
+                        "{}: `allowed-values` needs a `{{values}}` placeholder",
+                        e.code
+                    ));
+                }
+            }
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
 }
 
 #[test]
@@ -170,6 +233,7 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("phrases", "Phrases and the glossary"),
     ("widgets", "Widgets"),
     ("consumer", "The consumer, builds, and the editor"),
+    ("checks", "`[checks]`"),
 ];
 
 /// What each fragment starts with: what generates it, and how.
@@ -254,16 +318,19 @@ fn render(
 /// The index: a table of the diagnostics, in code order, each linked to its
 /// entry on the reference page.
 fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
-    let mut out = format!("{HEADER}\n| Code | Name | Severity | Level |\n|---|---|---|---|\n");
+    let mut out = format!(
+        "{HEADER}\n| Code | Name | Severity | Level | Next step |\n|---|---|---|---|---|\n"
+    );
     for entry in entries {
         let _ = writeln!(
             out,
-            "| [{code}](../reference/diagnostics.md#{anchor}) | `{slug}` | {severity} | {level} |",
+            "| [{code}](../reference/diagnostics.md#{anchor}) | `{slug}` | {severity} | {level} | {next} |",
             code = entry.code,
             anchor = heading_anchor(entry),
             slug = entry.slug,
             severity = severity(entry.severity),
             level = level(entry.level),
+            next = next(entry),
         );
     }
     out
@@ -293,13 +360,19 @@ fn write_entry(
         ),
         None => format!("SPEC §{}", entry.spec),
     };
+    let configurable = if entry.configurable {
+        " · configurable in `[checks]`"
+    } else {
+        ""
+    };
     let _ = write!(
         out,
-        "\n#### {} `{}`\n\n{} · {} level · {section}\n\n",
+        "\n#### {} `{}`\n\n{} · {} level · next step: {}{configurable} · {section}\n\n",
         entry.code,
         entry.slug,
         severity(entry.severity),
         level(entry.level).to_lowercase(),
+        next(entry),
     );
     if let Some(condition) = condition {
         let _ = write!(
@@ -324,7 +397,13 @@ fn severity(severity: Severity) -> &'static str {
     match severity {
         Severity::Error => "Error",
         Severity::Warning => "Warning",
+        Severity::Advice => "Advice",
     }
+}
+
+/// An entry's kind of next step, as the reference names it.
+fn next(entry: &Entry) -> String {
+    entry.next.map(|n| n.to_string()).unwrap_or_default()
 }
 
 fn level(level: Level) -> &'static str {

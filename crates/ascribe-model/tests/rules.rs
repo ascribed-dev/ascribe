@@ -39,7 +39,7 @@ fn line_of(text: &str, offset: usize) -> usize {
 
 fn cases() -> Vec<Case> {
     vec![
-        // 21.1 File and structure
+        // 22.1 File and structure
         case("model-toml-syntax", None, "spec = \"0.1\"\nx = = 1 #!\n"),
         case(
             "model-unknown-key",
@@ -52,6 +52,11 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[project]\ncontent-rot = \"docs\" #!\n",
         ),
         case("model-unknown-key", None, "spec = \"0.1\"\nbogus = 1 #!\n"),
+        case(
+            "model-unknown-key",
+            Some("suggestion"),
+            "spec = \"0.1\"\n[checks]\nlink-target-mising = \"off\" #!\n",
+        ),
         case("model-missing-key", None, "[project]\n"),
         case(
             "model-missing-key",
@@ -80,7 +85,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[notes.tip]\nlabel = \"\" #!\n",
         ),
-        // 21.2 Project
+        // 22.2 Project
         case(
             "model-path-absolute",
             None,
@@ -101,7 +106,7 @@ fn cases() -> Vec<Case> {
             Some("same"),
             "spec = \"0.1\"\n[project]\ncontent-root = \"x\"\noutput-dir = \"./x\" #!\n",
         ),
-        // 21.8 Sources
+        // 22.8 Sources
         case(
             "model-source-remote",
             None,
@@ -137,7 +142,7 @@ fn cases() -> Vec<Case> {
             Some("inside-content"),
             "spec = \"0.1\"\n[project]\ncontent-root = \".\"\n[sources.code] #!\ngit = \"https://example.com/x.git\"\n",
         ),
-        // 21.3 Content types, fragments, and fields
+        // 22.3 Content types, fragments, and fields
         case(
             "model-type-multiple-defaults",
             None,
@@ -303,7 +308,7 @@ fn cases() -> Vec<Case> {
             Some("widget"),
             "spec = \"0.1\"\n[widgets.quill-lab]\nforms = [\"line\"]\nbinding = \"self\"\n[widgets.quill-lab.attributes]\nheading = \"string?\" #!\n",
         ),
-        // 21.4 Dimensions, names, lifecycle, notes, and features
+        // 22.4 Dimensions, names, lifecycle, notes, and features
         case(
             "model-name-multiple-roles",
             None,
@@ -399,7 +404,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[features.x]\nname = \"X\"\navailable = \"y\" #!\n[features.y]\nname = \"Y\"\navailable = \"y\"\n",
         ),
-        // 21.5 Versions, phrases, glossary, and images
+        // 22.5 Versions, phrases, glossary, and images
         case(
             "model-phrase-value-type",
             None,
@@ -415,7 +420,7 @@ fn cases() -> Vec<Case> {
             Some("fragment"),
             "spec = \"0.1\"\n[glossary.terms.a]\nterm = \"A\"\ndefinition = \"x\"\nlink = \"/_shared/a.md\" #!\n",
         ),
-        // 21.6 Widgets
+        // 22.6 Widgets
         case(
             "model-widget-reserved-name",
             None,
@@ -461,7 +466,7 @@ fn cases() -> Vec<Case> {
             None,
             "spec = \"0.1\"\n[widgets.quill-lab]\nforms = [\"line\"]\nbinding = \"self\"\nplain-content = \"drop\" #!\n",
         ),
-        // 21.7 Consumer, builds, and editor
+        // 22.7 Consumer, builds, and editor
         case(
             "model-consumer-unsupported",
             None,
@@ -546,6 +551,12 @@ fn cases() -> Vec<Case> {
             "model-editor-build-required",
             None,
             "spec = \"0.1\"\n[builds.a] #!\n[builds.b]\n",
+        ),
+        // 22.9 Checks
+        case(
+            "model-check-not-configurable",
+            None,
+            "spec = \"0.1\"\n[checks]\nlink-target-missing = \"warning\" #!\n",
         ),
     ]
 }

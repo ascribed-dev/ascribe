@@ -1,0 +1,8 @@
+description: >-
+  A key of `[checks]` that isn't a check is an unknown key, with the closest
+  check suggested.
+spec: ["8.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-unknown-key, file: ascribe.toml, line: 5}

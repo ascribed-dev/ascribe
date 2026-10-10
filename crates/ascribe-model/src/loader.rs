@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use ascribe_core::availability::{AvailabilitySpec, parse_availability};
-use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
+use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Span, diagnostics};
 use toml::de::{DeTable, DeValue};
 
 use crate::model::*;
@@ -18,6 +18,8 @@ pub(crate) struct Loader<'s> {
     pub src: &'s str,
     pub file: FileId,
     pub project_dir: Option<&'s Path>,
+    /// The checks `[checks]` may name: the registry's configurable ones.
+    pub configurable: &'s [DiagnosticSlug],
     pub issues: Vec<Issue>,
     pub warnings: Vec<Issue>,
 }
@@ -27,10 +29,21 @@ pub(crate) fn load(
     file: FileId,
     project_dir: Option<&Path>,
 ) -> Result<ContentModel, Vec<Issue>> {
+    load_configurable(src, file, project_dir, diagnostics::CONFIGURABLE)
+}
+
+/// [`load`], with `configurable` as the checks `[checks]` may name.
+pub(crate) fn load_configurable(
+    src: &str,
+    file: FileId,
+    project_dir: Option<&Path>,
+    configurable: &[DiagnosticSlug],
+) -> Result<ContentModel, Vec<Issue>> {
     let mut l = Loader {
         src,
         file,
         project_dir,
+        configurable,
         issues: Vec::new(),
         warnings: Vec::new(),
     };
@@ -266,6 +279,7 @@ impl<'s> Loader<'s> {
                 "builds",
                 "editor",
                 "sources",
+                "checks",
             ],
         );
 
@@ -296,6 +310,7 @@ impl<'s> Loader<'s> {
         self.version_scheme(root.get("versions"));
         self.project_paths(&project, root.get("project"));
         let sources = self.sources(root.get("sources"), &project.value.content_root);
+        let checks = self.checks(root.get("checks"));
 
         Some(ContentModel {
             spec: spec?,
@@ -315,6 +330,7 @@ impl<'s> Loader<'s> {
             builds,
             sources,
             editor_build,
+            checks,
             warnings: Vec::new(),
         })
     }

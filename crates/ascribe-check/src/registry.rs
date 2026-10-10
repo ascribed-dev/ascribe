@@ -23,6 +23,52 @@ pub enum Level {
     Page,
 }
 
+/// The kind of next step a diagnostic has: what the author, or their agent,
+/// does about it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Next {
+    /// Every instance has a fix Ascribe can apply: a diagnostic's fix, or
+    /// the editor's quick fix.
+    Fix,
+    /// The author picks among things Ascribe can list: a link's target, a
+    /// key's allowed values, a declared phrase.
+    Choose,
+    /// It needs writing or judgment.
+    Write,
+    /// Nothing in the source can fix it: it's set somewhere else, such as
+    /// the hosting.
+    Outside,
+    /// It may be fine as it is.
+    Review,
+}
+
+impl Next {
+    /// Every kind, in the order the docs list them.
+    pub const ALL: [Next; 5] = [
+        Next::Fix,
+        Next::Choose,
+        Next::Write,
+        Next::Outside,
+        Next::Review,
+    ];
+
+    /// `"fix"`, `"choose"`, `"write"`, `"outside"`, or `"review"`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Next::Fix => "fix",
+            Next::Choose => "choose",
+            Next::Write => "write",
+            Next::Outside => "outside",
+            Next::Review => "review",
+        }
+    }
+
+    /// The kind with this name.
+    pub fn from_name(name: &str) -> Option<Next> {
+        Next::ALL.into_iter().find(|n| n.as_str() == name)
+    }
+}
+
 /// One registry entry.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Entry {
@@ -43,6 +89,15 @@ pub struct Entry {
     pub fix: Option<String>,
     /// A short wrong-and-right example: the registry's `example`.
     pub example: Option<Example>,
+    /// The kind of next step, which every entry that isn't retired has.
+    pub next: Option<Next>,
+    /// The named pieces of context an agent prompt about it carries, beyond
+    /// the message and the line, such as `allowed-values`.
+    pub evidence: Vec<String>,
+    /// Whether a project may set its level in `[checks]`.
+    pub configurable: bool,
+    /// Whether it's retired: no longer reported.
+    pub retired: bool,
 }
 
 /// A diagnostic's example: a page that has the problem, and the same page
@@ -122,11 +177,7 @@ impl Registry {
 
     fn entry(t: &toml::Table) -> Option<Entry> {
         let text = |k: &str| t.get(k).and_then(toml::Value::as_str).map(str::to_owned);
-        let severity = match text("severity")?.as_str() {
-            "error" => Severity::Error,
-            "warning" => Severity::Warning,
-            _ => return None,
-        };
+        let severity = Severity::from_name(&text("severity")?)?;
         let level = match text("level")?.as_str() {
             "file" => Level::File,
             "page" => Level::Page,
@@ -169,6 +220,21 @@ impl Registry {
             messages,
             fix: text("fix"),
             example,
+            next: text("next").and_then(|n| Next::from_name(&n)),
+            evidence: t
+                .get("evidence")
+                .and_then(toml::Value::as_array)
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            configurable: t
+                .get("configurable")
+                .and_then(toml::Value::as_bool)
+                .unwrap_or(false),
+            retired: t.contains_key("retired"),
         })
     }
 

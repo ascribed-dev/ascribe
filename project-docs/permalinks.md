@@ -1,6 +1,6 @@
 # Proposal: permalinks
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail.
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. The plan that builds it is in [permalinks/](permalinks/README.md).
 
 ## The goal
 

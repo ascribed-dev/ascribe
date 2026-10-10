@@ -18,7 +18,7 @@
           "type": "integer"
         },
         "severity": {
-          "description": "`error` or `warning`.",
+          "description": "`error`, `warning`, or `advice`.",
           "type": "string"
         },
         "slug": {
@@ -89,6 +89,10 @@
           "description": "What's wrong, and what to do about it.",
           "type": "string"
         },
+        "next": {
+          "description": "The kind of next step: `fix` when Ascribe can make the edit,\n`choose` when the author picks among things Ascribe can list,\n`write` when it needs writing or judgment, `outside` when nothing in\nthe source can fix it, and `review` when it may be fine as it is.",
+          "type": "string"
+        },
         "range": {
           "$ref": "#/$defs/Range",
           "description": "Where in the file."
@@ -107,7 +111,7 @@
           "type": "integer"
         },
         "severity": {
-          "description": "`error` or `warning`.",
+          "description": "`error`, `warning`, or `advice`. Advice never fails the command.\nMore severities may be added; a reader treats one it doesn't know as\nit treats advice.",
           "type": "string"
         },
         "slug": {
@@ -123,6 +127,7 @@
         "code",
         "slug",
         "severity",
+        "next",
         "message",
         "file",
         "range",
@@ -139,6 +144,12 @@
     "FileCount": {
       "description": "How many diagnostics are in one file.",
       "properties": {
+        "advice": {
+          "description": "How many advice.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
         "errors": {
           "description": "How many errors.",
           "format": "uint",
@@ -159,7 +170,8 @@
       "required": [
         "file",
         "errors",
-        "warnings"
+        "warnings",
+        "advice"
       ],
       "type": "object"
     },
@@ -267,6 +279,12 @@
     "Summary": {
       "description": "How many diagnostics of each severity.",
       "properties": {
+        "advice": {
+          "description": "How many advice.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
         "by_code": {
           "description": "With `--summary`: how many diagnostics have each code, most first.",
           "items": {
@@ -302,7 +320,8 @@
       },
       "required": [
         "errors",
-        "warnings"
+        "warnings",
+        "advice"
       ],
       "type": "object"
     }
@@ -322,7 +341,7 @@
       "type": "array"
     },
     "diagnostics": {
-      "description": "Every diagnostic, in file order, and in source order within a file.\nWith paths, only those that count for them. With `--summary`, none:\nsee `truncated`.",
+      "description": "Every diagnostic, in file order, and in source order within a file;\nadvice after the errors and warnings, in the same order.\nWith paths, only those that count for them. With `--summary`, none:\nsee `truncated`.",
       "items": {
         "$ref": "#/$defs/Entry"
       },
@@ -368,7 +387,7 @@
     },
     "summary": {
       "$ref": "#/$defs/Summary",
-      "description": "How many errors and warnings."
+      "description": "How many errors, warnings, and advice."
     },
     "total": {
       "description": "How many diagnostics there are.",

@@ -222,7 +222,8 @@ export interface CheckReport {
    */
   builds_checked: string[];
   /**
-   * Every diagnostic, in file order, and in source order within a file.
+   * Every diagnostic, in file order, and in source order within a file;
+   * advice after the errors and warnings, in the same order.
    * With paths, only those that count for them. With `--summary`, none:
    * see `truncated`.
    */
@@ -241,7 +242,7 @@ export interface CheckReport {
    * otherwise.
    */
   next_command: string | null;
-  /** How many errors and warnings. */
+  /** How many errors, warnings, and advice. */
   summary: Summary;
 }
 
@@ -251,7 +252,7 @@ export interface CodeCount {
   code: string;
   /** The diagnostic's name, such as `link-target-missing`. */
   slug: string;
-  /** `error` or `warning`. */
+  /** `error`, `warning`, or `advice`. */
   severity: string;
   /** How many. */
   count: number;
@@ -581,8 +582,19 @@ export interface Entry {
   code: string;
   /** The diagnostic's name, such as `link-target-missing`. */
   slug: string;
-  /** `error` or `warning`. */
+  /**
+   * `error`, `warning`, or `advice`. Advice never fails the command.
+   * More severities may be added; a reader treats one it doesn't know as
+   * it treats advice.
+   */
   severity: string;
+  /**
+   * The kind of next step: `fix` when Ascribe can make the edit,
+   * `choose` when the author picks among things Ascribe can list,
+   * `write` when it needs writing or judgment, `outside` when nothing in
+   * the source can fix it, and `review` when it may be fine as it is.
+   */
+  next: string;
   /** What's wrong, and what to do about it. */
   message: string;
   /**
@@ -649,6 +661,8 @@ export interface FileCount {
   errors: number;
   /** How many warnings. */
   warnings: number;
+  /** How many advice. */
+  advice: number;
 }
 
 /** Edits that would fix a diagnostic. */
@@ -1080,6 +1094,8 @@ export interface Summary {
   errors: number;
   /** How many warnings. */
   warnings: number;
+  /** How many advice. */
+  advice: number;
   /** With `--summary`: how many diagnostics have each code, most first. */
   by_code?: CodeCount[];
   /** With `--summary`: how many diagnostics are in each file, most first. */

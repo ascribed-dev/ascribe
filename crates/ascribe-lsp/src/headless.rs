@@ -13,6 +13,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+use ascribe_check::Severity;
 use ascribe_core::path::normalize;
 use crossbeam_channel::Receiver;
 use lsp_server::Message;
@@ -34,8 +35,8 @@ pub struct Problem {
     pub code: String,
     /// Its message.
     pub message: String,
-    /// Whether it's an error; otherwise a warning.
-    pub error: bool,
+    /// How serious it is.
+    pub severity: Severity,
 }
 
 /// One project, loaded and kept current.
@@ -153,6 +154,10 @@ fn problem(file: &Path, d: &Diagnostic) -> Problem {
             None => String::new(),
         },
         message: d.message.clone(),
-        error: d.severity != Some(DiagnosticSeverity::WARNING),
+        severity: match d.severity {
+            Some(DiagnosticSeverity::WARNING) => Severity::Warning,
+            Some(DiagnosticSeverity::INFORMATION | DiagnosticSeverity::HINT) => Severity::Advice,
+            _ => Severity::Error,
+        },
     }
 }

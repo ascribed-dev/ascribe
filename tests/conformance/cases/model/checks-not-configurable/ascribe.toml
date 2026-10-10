@@ -1,0 +1,6 @@
+spec = "0.1"
+
+# A diagnostic about validity can't be lowered or turned off.
+[checks]
+link-target-missing = "warning"
+binding-blank-line = { level = "off" }

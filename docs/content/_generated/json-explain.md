@@ -116,6 +116,13 @@
       "description": "The message, with its placeholders (`{path}`) as written.",
       "type": "string"
     },
+    "next": {
+      "description": "The kind of next step: `fix`, `choose`, `write`, `outside`, or\n`review`. `null` for a diagnostic that's no longer reported.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "schema_version": {
       "description": "The version of this schema. It changes only when a field is removed\nor changes meaning.",
       "format": "uint32",
@@ -123,7 +130,7 @@
       "type": "integer"
     },
     "severity": {
-      "description": "`error` or `warning`.",
+      "description": "`error`, `warning`, or `advice`.",
       "type": "string"
     },
     "slug": {
@@ -144,6 +151,7 @@
     "code",
     "slug",
     "severity",
+    "next",
     "level",
     "message",
     "variants",

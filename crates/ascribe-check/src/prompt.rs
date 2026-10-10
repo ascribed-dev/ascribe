@@ -227,6 +227,7 @@ pub fn problem(
             match d.severity {
                 Severity::Error => "an error",
                 Severity::Warning => "a warning",
+                Severity::Advice => "advice",
             }
         ),
         format!("Message: {}", d.message),
@@ -587,11 +588,12 @@ fn in_order(reported: &[Reported]) -> Vec<&Reported> {
     order
 }
 
-/// How many errors and warnings.
+/// How many errors, warnings, and advice.
 #[derive(Clone, Copy, Default)]
 struct Counts {
     errors: usize,
     warnings: usize,
+    advice: usize,
 }
 
 impl Counts {
@@ -599,14 +601,15 @@ impl Counts {
         match d.severity {
             Severity::Error => self.errors += 1,
             Severity::Warning => self.warnings += 1,
+            Severity::Advice => self.advice += 1,
         }
     }
 
     fn total(self) -> usize {
-        self.errors + self.warnings
+        self.errors + self.warnings + self.advice
     }
 
-    /// "3 errors, 1 warning".
+    /// "3 errors, 1 warning, 2 advice".
     fn words(self) -> String {
         let plural =
             |n: usize, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
@@ -616,6 +619,9 @@ impl Counts {
         }
         if self.warnings > 0 {
             parts.push(plural(self.warnings, "warning", "warnings"));
+        }
+        if self.advice > 0 {
+            parts.push(plural(self.advice, "advice", "advice"));
         }
         parts.join(", ")
     }

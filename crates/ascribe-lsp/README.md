@@ -614,7 +614,12 @@ from `ascribe-fmt`; the VS Code client applies those edits on save when
   files, published for every affected file, open or not. Each one's code links
   to its entry in the diagnostics reference (`codeDescription.href`, the same
   address as `docs` in `ascribe check`'s JSON), so the code is a link in the
-  Problems panel. A deleted file's diagnostics are cleared. The file-level checks probe the disk with the files
+  Problems panel. An error is published as `Error`, a warning as `Warning`,
+  and advice as `Information`, after the levels `[checks]` sets
+  (`ascribe_check::apply_levels`). Each one's `data` has its `slug`, its kind
+  of next step (`next`), its `builds`, `unpublished`, its fix advice (`help`),
+  and its `fixes`, as `ascribe check`'s JSON has them. A deleted file's
+  diagnostics are cleared. The file-level checks probe the disk with the files
   the editor and the watcher have reported layered over it
   (`Project::from_parts_with_fs`), as the source index does.
 - **Stale results.** A worker thread computes from a `Snapshot`. Before it

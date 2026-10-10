@@ -4,7 +4,7 @@
 
 use std::io::{self, Write};
 
-use ascribe_check::Reported;
+use ascribe_check::{Reported, Severity};
 
 use super::FileTable;
 use super::text::repeats_note;
@@ -15,13 +15,19 @@ pub const LIMIT: usize = 50;
 
 /// The order the concise report lists a report in: grouped by file, in file
 /// order (the content model, then the source files in path order), and in
-/// line order within a file. Indexes into `reported`.
+/// line order within a file; advice after everything else, in the same
+/// order. Indexes into `reported`.
 pub fn order(files: &FileTable, reported: &[Reported]) -> Vec<usize> {
     let mut order: Vec<usize> = (0..reported.len()).collect();
     // Stable: diagnostics at one place keep the report's order.
     order.sort_by_key(|&i| {
-        let at = reported[i].diagnostic.location;
-        (at.file, files.position(at.file, at.span.start()).offset)
+        let d = &reported[i].diagnostic;
+        let at = d.location;
+        (
+            d.severity == Severity::Advice,
+            at.file,
+            files.position(at.file, at.span.start()).offset,
+        )
     });
     order
 }

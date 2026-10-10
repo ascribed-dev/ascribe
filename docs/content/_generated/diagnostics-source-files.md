@@ -4,7 +4,7 @@
 
 #### ASC001 `attribute-unknown-key`
 
-Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Unknown key for the directive, image, or table row.
 
@@ -14,7 +14,7 @@ Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 #### ASC002 `attribute-type-mismatch`
 
-Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Value doesn't match the key's declared type.
 
@@ -24,7 +24,7 @@ Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 #### ASC003 `attribute-bare-key`
 
-Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Bare key without a value.
 
@@ -34,7 +34,7 @@ Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 #### ASC004 `attribute-unquoted-reserved`
 
-Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+Error · file level · next step: fix · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Unquoted value containing a reserved character.
 
@@ -44,7 +44,7 @@ Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 #### ASC055 `attribute-syntax`
 
-Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** Attribute block that doesn't parse (such as an unclosed quote or brace, or `=` with no value).
 
@@ -54,7 +54,7 @@ Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 #### ASC056 `attribute-duplicate-key`
 
-Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **When:** The same key given more than once.
 
@@ -66,7 +66,7 @@ Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 #### ASC005 `directive-unknown`
 
-Warning · file level · [SPEC §3.2]({repo}/blob/main/SPEC.md#32-recognition)
+Warning · file level · next step: choose · [SPEC §3.2]({repo}/blob/main/SPEC.md#32-recognition)
 
 **When:** Directive-shaped line (`@word` followed by `{`, `:`, or end of line) with an unknown name.
 
@@ -76,7 +76,7 @@ Warning · file level · [SPEC §3.2]({repo}/blob/main/SPEC.md#32-recognition)
 
 #### ASC006 `directive-primary`
 
-Error · file level · [SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)
+Error · file level · next step: write · [SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)
 
 **When:** Primary given to a directive that takes none, or a required primary missing.
 
@@ -86,7 +86,7 @@ Error · file level · [SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)
 
 #### ASC120 `directive-extra-text`
 
-Error · file level · [SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax)
+Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax)
 
 **When:** Text on a directive line that fits no part of it: after the name or attributes, after `@end`, or after an identifier primary.
 
@@ -98,7 +98,7 @@ Error · file level · [SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax)
 
 #### ASC007 `container-unclosed`
 
-Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
+Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Container not closed before its enclosing block ends.
 
@@ -108,7 +108,7 @@ Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 #### ASC008 `container-colon-unexpected`
 
-Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
+Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Trailing `:` on a directive with no container form.
 
@@ -118,7 +118,7 @@ Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 #### ASC009 `container-colon-missing`
 
-Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
+Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** Container-only directive without a trailing `:`.
 
@@ -128,7 +128,7 @@ Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 #### ASC010 `container-open-at-arm`
 
-Error · file level · [SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)
+Error · file level · next step: write · [SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)
 
 **When:** Container still open when the next arm of its group begins (reported at that arm's opener).
 
@@ -138,7 +138,7 @@ Error · file level · [SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)
 
 #### ASC011 `end-unmatched`
 
-Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
+Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 **When:** End line with no open container.
 
@@ -148,7 +148,7 @@ Error · file level · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
 #### ASC012 `end-indent-mismatch`
 
-Error · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
+Error · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
 **When:** End line indented differently from its opener.
 
@@ -158,7 +158,7 @@ Error · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-insid
 
 #### ASC013 `container-nesting-deep`
 
-Warning · file level · [SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)
+Warning · file level · next step: write · [SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)
 
 **When:** Nesting deeper than two levels.
 
@@ -170,7 +170,7 @@ Warning · file level · [SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)
 
 #### ASC014 `binding-no-block`
 
-Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
+Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Following-block directive with no following block in its container.
 
@@ -180,7 +180,7 @@ Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 #### ASC015 `binding-heading`
 
-Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
+Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Following-block directive bound to a heading.
 
@@ -190,7 +190,7 @@ Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 #### ASC016 `binding-blank-line`
 
-Warning · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
+Warning · file level · next step: fix · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Blank line between a following-block directive and its block.
 
@@ -200,7 +200,7 @@ Warning · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 #### ASC017 `binding-not-section-top`
 
-Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
+Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 **When:** Heading-bound directive that isn't at the top of its section.
 
@@ -212,7 +212,7 @@ Error · file level · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
 #### ASC018 `title-not-accepted`
 
-Warning · file level · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
+Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
 **When:** Title given to a directive that doesn't accept one.
 
@@ -222,7 +222,7 @@ Warning · file level · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
 #### ASC019 `title-dot-space`
 
-Warning · file level · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
+Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
 **When:** A `. ` line (dot and space) directly above a directive that accepts a title.
 
@@ -234,7 +234,7 @@ Warning · file level · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
 #### ASC020 `id-duplicate`
 
-Error · page level · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
+Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 **When:** Duplicate id on a page, including ids from included content.
 
@@ -244,7 +244,7 @@ Error · page level · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 #### ASC058 `id-invalid`
 
-Error · file level · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
+Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 **When:** Id containing characters other than letters, digits, hyphens, underscores, and periods.
 
@@ -256,7 +256,7 @@ Error · file level · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
 #### ASC021 `include-target-missing`
 
-Error · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target file doesn't exist.
 
@@ -266,7 +266,7 @@ Error · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 #### ASC022 `include-id-missing`
 
-Error · page level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+Error · page level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target id doesn't exist in the target file.
 
@@ -276,7 +276,7 @@ Error · page level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 #### ASC023 `include-cycle`
 
-Error · page level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Include cycle.
 
@@ -286,7 +286,7 @@ Error · page level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 #### ASC125 `include-heading-without-id`
 
-Warning · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** `{heading=false}` without an `#id`, which has no effect.
 
@@ -298,7 +298,7 @@ Warning · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 #### ASC024 `variant-no-arm-survives`
 
-Warning · page level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Warning · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** No arm of a group survives a build's selection.
 
@@ -308,7 +308,7 @@ Warning · page level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC025 `variant-unknown`
 
-Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
+Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Unknown dimension or value.
 
@@ -318,7 +318,7 @@ Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 #### ASC026 `variant-mixed-arms`
 
-Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
+Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Group mixes labeled and dimensional arms.
 
@@ -328,7 +328,7 @@ Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 #### ASC027 `variant-arm-kind`
 
-Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
+Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Arm has both a title and attributes, or neither.
 
@@ -338,7 +338,7 @@ Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 #### ASC028 `variant-no-shared-dimension`
 
-Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
+Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 **When:** Dimensional arms share no dimension key.
 
@@ -350,7 +350,7 @@ Error · file level · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
 #### ASC029 `available-unknown`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Unknown target or state.
 
@@ -360,7 +360,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC030 `available-history-order`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** History out of chronological order.
 
@@ -370,7 +370,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC031 `available-versionless`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Versions given for a versionless target.
 
@@ -380,7 +380,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC032 `available-exceeds-scope`
 
-Error · page level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · page level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Spec exceeds its enclosing scope.
 
@@ -390,7 +390,7 @@ Error · page level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC057 `available-syntax`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **When:** Spec that doesn't parse, in a directive or in `available` frontmatter.
 
@@ -402,7 +402,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC033 `steps-not-ordered-list`
 
-Error · file level · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
+Error · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
 **When:** Bound block isn't an ordered list.
 
@@ -414,7 +414,7 @@ Error · file level · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
 #### ASC034 `details-title-missing`
 
-Error · file level · [SPEC §4.7]({repo}/blob/main/SPEC.md#47-details)
+Error · file level · next step: write · [SPEC §4.7]({repo}/blob/main/SPEC.md#47-details)
 
 **When:** Missing title.
 
@@ -426,7 +426,7 @@ Error · file level · [SPEC §4.7]({repo}/blob/main/SPEC.md#47-details)
 
 #### ASC035 `widget-schema`
 
-Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **When:** Violates its declared schema.
 
@@ -438,7 +438,7 @@ Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 #### ASC036 `link-target-missing`
 
-Error · file level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** Target file doesn't exist.
 
@@ -448,7 +448,7 @@ Error · file level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 #### ASC037 `link-id-missing`
 
-Error · page level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+Error · page level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** Target id doesn't exist in the target file.
 
@@ -458,7 +458,7 @@ Error · page level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 #### ASC038 `link-to-fragment`
 
-Error · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
+Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 **When:** Target is a fragment.
 
@@ -468,7 +468,7 @@ Error · file level · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
 #### ASC040 `link-id-removed`
 
-Error · page level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **When:** Target id is removed by a build.
 
@@ -478,7 +478,7 @@ Error · page level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC041 `link-route`
 
-Warning · file level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+Warning · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** Destination is a route rather than a file path.
 
@@ -488,7 +488,7 @@ Warning · file level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 #### ASC121 `link-page-dropped`
 
-Error · page level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
+Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 **When:** Target page isn't published by a build.
 
@@ -500,7 +500,7 @@ Error · page level · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
 #### ASC042 `image-source-missing`
 
-Error · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
+Error · file level · next step: choose · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 **When:** Local source doesn't exist.
 
@@ -510,7 +510,7 @@ Error · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 #### ASC043 `image-alt-missing`
 
-Warning · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
+Warning · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 **When:** Missing alt text.
 
@@ -520,7 +520,7 @@ Warning · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 #### ASC059 `image-attribute-missing`
 
-Error · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
+Error · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 **When:** Required image attribute missing.
 
@@ -532,7 +532,7 @@ Error · file level · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
 #### ASC044 `phrase-undeclared`
 
-Warning · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+Warning · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 **When:** `{key}` in prose whose key isn't declared.
 
@@ -542,7 +542,7 @@ Warning · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 #### ASC126 `phrase-double-braces`
 
-Warning · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+Warning · file level · next step: fix · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 **When:** A declared `{key}` directly between two more braces (`{{key}}`), usually a substitution left over from another tool.
 
@@ -554,7 +554,7 @@ Warning · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 #### ASC045 `heading-phrase-without-id`
 
-Warning · file level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
+Warning · file level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 **When:** No `@id`, and the heading contains a phrase.
 
@@ -564,7 +564,7 @@ Warning · file level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 #### ASC046 `heading-duplicate-without-id`
 
-Warning · page level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
+Warning · page level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 **When:** No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered.
 
@@ -574,7 +574,7 @@ Warning · page level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 #### ASC124 `heading-empty-slug`
 
-Warning · file level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
+Warning · file level · next step: write · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 **When:** No `@id`, and the heading's slug is empty (its text is only punctuation or emoji).
 
@@ -586,7 +586,7 @@ Warning · file level · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
 #### ASC047 `frontmatter-unknown-key`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page.
 
@@ -596,7 +596,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC048 `frontmatter-missing-field`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Required field missing.
 
@@ -606,7 +606,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC049 `frontmatter-type-mismatch`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Value doesn't match the field's declared type.
 
@@ -616,7 +616,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC050 `frontmatter-reserved-in-fragment`
 
-Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
+Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **When:** Reserved key (`available`, `variant`) on a fragment.
 
@@ -626,7 +626,7 @@ Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragme
 
 #### ASC051 `content-type-unresolved`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **When:** Page matches more than one content type, or matches none and there's no default type.
 
@@ -636,7 +636,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC122 `frontmatter-syntax`
 
-Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 **When:** Frontmatter that isn't valid YAML.
 
@@ -648,7 +648,7 @@ Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 #### ASC052 `list-ended-by-directive`
 
-Warning · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
+Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
 **When:** Unindented directive line ends a list.
 
@@ -658,7 +658,7 @@ Warning · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-ins
 
 #### ASC053 `directive-indented-code`
 
-Warning · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
+Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
 **When:** Directive line over-indented into an indented code block.
 
@@ -668,7 +668,7 @@ Warning · file level · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-ins
 
 #### ASC054 `steps-numbering-continued`
 
-Warning · file level · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
+Warning · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
 **When:** An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list).
 
@@ -680,7 +680,7 @@ Warning · file level · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
 #### ASC123 `source-unreadable`
 
-Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 **When:** Source file that can't be read, or isn't valid UTF-8.
 
@@ -692,7 +692,7 @@ Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 #### ASC127 `snippet-address`
 
-Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** Address that isn't `<source>:<path>`, optionally with `#<region>`.
 
@@ -702,7 +702,7 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 #### ASC128 `snippet-source-unknown`
 
-Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** Source the content model doesn't declare.
 
@@ -712,7 +712,7 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 #### ASC129 `snippet-file-missing`
 
-Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** File doesn't exist, or its source doesn't include it.
 
@@ -722,7 +722,7 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 #### ASC130 `snippet-file-not-text`
 
-Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** File isn't text.
 
@@ -732,7 +732,7 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 #### ASC131 `snippet-region-missing`
 
-Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** Region doesn't exist in the file.
 
@@ -742,7 +742,7 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 #### ASC132 `snippet-tags`
 
-Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
+Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 **When:** The file's tags are unbalanced, name a region twice, or use a reserved tag.
 
@@ -754,7 +754,7 @@ Error · file level · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
 #### ASC136 `lock-invalid`
 
-Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
 **When:** `ascribe.lock` isn't valid TOML, or doesn't have the shape §7.4 gives it.
 
@@ -764,7 +764,7 @@ Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-anoth
 
 #### ASC137 `lock-source-unknown`
 
-Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
 **When:** `ascribe.lock` pins a source the content model doesn't declare with `git`, or pins it with another `git`.
 
@@ -774,7 +774,7 @@ Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-anoth
 
 #### ASC138 `source-copy-changed`
 
-Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
 **When:** A file `ascribe.lock` lists is missing from the source's folder, or its hash differs.
 
@@ -784,7 +784,7 @@ Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-anoth
 
 #### ASC139 `source-copy-unlocked`
 
-Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
 **When:** A file in a source's copies folder that `ascribe.lock` doesn't list.
 
@@ -794,7 +794,7 @@ Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-anoth
 
 #### ASC140 `source-copy-unused`
 
-Warning · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+Warning · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
 **When:** A copy that no snippet uses.
 
