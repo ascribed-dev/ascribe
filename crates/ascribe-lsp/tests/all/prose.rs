@@ -87,6 +87,7 @@ impl Linter for Fake {
                             span: (first, first + 2),
                             action: Action {
                                 name: "replace".to_owned(),
+                                ..Action::default()
                             },
                             suggestions: vec!["the".to_owned()],
                             ..Alert::default()

@@ -8,7 +8,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use ascribe_check::prose::{PROJECT_TIMEOUT, Program, lint};
+use ascribe_check::prose::{MIN_VERSION, PROJECT_TIMEOUT, Program, lint};
 use ascribe_check::{Diagnostic, MODEL_FILE, Project, Severity};
 use ascribe_core::diagnostics;
 
@@ -119,4 +119,20 @@ fn a_broken_config_is_one_advice() {
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0].slug, diagnostics::PROSE_NOT_CHECKED);
     assert!(found[0].message.contains("failed"), "{}", found[0].message);
+}
+
+#[test]
+fn the_docs_name_the_oldest_vale_that_works() {
+    let (major, minor, _) = MIN_VERSION;
+    let wanted = format!("Vale](https://vale.sh) {major}.{minor} or later");
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let registry =
+        fs::read_to_string(repo.join("tests/conformance/diagnostics.toml")).expect("the registry");
+    assert!(
+        registry.contains(&wanted),
+        "the prose-not-checked fix says {wanted}"
+    );
+    let guide = fs::read_to_string(repo.join("docs/content/guides/vale.md")).expect("the guide");
+    let wanted = format!("Install Vale {major}.{minor} or later");
+    assert!(guide.contains(&wanted), "the Vale guide says {wanted}");
 }

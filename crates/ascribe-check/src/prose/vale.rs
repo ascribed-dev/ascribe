@@ -7,7 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
@@ -61,6 +61,10 @@ pub struct Alert {
 pub struct Action {
     /// `replace`, `remove`, `edit`, `suggest`, or empty.
     pub name: String,
+    /// What the action works with: for `replace`, the replacements; for
+    /// `edit`, how to edit the match (`["truncate", " "]`). Vale before 3.21
+    /// gives no `Suggestions`, only this.
+    pub params: Vec<String>,
 }
 
 /// Vale couldn't say anything about the prose: it couldn't be run, failed,
@@ -86,6 +90,8 @@ impl Linter for Program {
         if request.files.is_empty() {
             return Ok(BTreeMap::new());
         }
+        let program = tool::program(&request.command, &request.root);
+        check_version(request, &program)?;
         let folder = Scratch::new().map_err(|e| failed(request, &e))?;
         let text = folder.path.join("text");
         for (path, contents) in &request.files {
@@ -111,7 +117,7 @@ impl Linter for Program {
         args.push(".".to_owned());
         let output = tool::run(
             &request.command,
-            &tool::program(&request.command, &request.root),
+            &program,
             &args,
             &text,
             b"",
@@ -119,6 +125,46 @@ impl Linter for Program {
         )?;
         read(request, &output.stdout, &output.stderr)
     }
+}
+
+/// The oldest Vale that works: before it, a vocabulary didn't exempt its
+/// words from `repetition` rules, and a second configuration given with
+/// `--sources` had to have its own styles folder.
+pub const MIN_VERSION: (u32, u32, u32) = (3, 16, 0);
+
+/// Fails when `vale --version` names a Vale older than [`MIN_VERSION`]. A
+/// version it can't read, such as a build from source, is let through.
+fn check_version(request: &Request, program: &Path) -> Result<(), ValeError> {
+    let output = tool::run(
+        &request.command,
+        program,
+        &["--version".to_owned()],
+        &request.root,
+        b"",
+        request.timeout,
+    )?;
+    let said = String::from_utf8_lossy(&output.stdout);
+    match version(&said) {
+        Some(found) if found < MIN_VERSION => {
+            let (major, minor, _) = MIN_VERSION;
+            let (a, b, c) = found;
+            Err(ValeError::Failed {
+                command: request.command.clone(),
+                reason: format!(
+                    "it's Vale {a}.{b}.{c}, and Ascribe needs Vale {major}.{minor} or later"
+                ),
+            })
+        }
+        _ => Ok(()),
+    }
+}
+
+/// The version in what `vale --version` says (`vale version 3.24.0`).
+fn version(said: &str) -> Option<(u32, u32, u32)> {
+    let word = said.split_whitespace().last()?;
+    let mut parts = word.trim_start_matches('v').split('.');
+    let mut next = || parts.next()?.parse::<u32>().ok();
+    Some((next()?, next()?, next().unwrap_or(0)))
 }
 
 /// What Vale said: its alerts by file, or why it couldn't lint. Vale exits
@@ -258,18 +304,34 @@ mod tests {
         assert!(error.to_string().contains("isn't installed"), "{error}");
     }
 
+    /// What `Program` says of a shell script with `body`, run as Vale with
+    /// `timeout`. Another test's fork can hold the new script open for
+    /// writing for a moment, which Linux reports as a busy text file, so a
+    /// run that meets one is tried again.
+    #[cfg(unix)]
+    fn lint_script(body: &str, timeout: Duration) -> ValeError {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("vale");
+        std::fs::write(&script, format!("#!/bin/sh\n{body}\n")).unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let mut request = request(&script.display().to_string());
+        request.timeout = timeout;
+        for _ in 0..50 {
+            let error = Program.lint(&request).unwrap_err();
+            if !error.to_string().contains("Text file busy") {
+                return error;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        Program.lint(&request).unwrap_err()
+    }
+
     #[cfg(unix)]
     #[test]
     fn a_slow_program_is_stopped() {
-        let dir = tempfile::tempdir().unwrap();
-        let script = dir.path().join("slow-vale");
-        std::fs::write(&script, "#!/bin/sh\nsleep 10\n").unwrap();
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
-        let mut slow = request(&script.display().to_string());
-        slow.timeout = Duration::from_millis(200);
         let started = std::time::Instant::now();
-        let error = Program.lint(&slow).unwrap_err();
+        let error = lint_script("sleep 10", Duration::from_millis(200));
         assert!(matches!(error, ValeError::TimedOut { .. }), "{error:?}");
         assert!(started.elapsed() < Duration::from_secs(5));
     }
@@ -277,16 +339,32 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn a_program_that_writes_without_end_is_a_failure() {
-        let dir = tempfile::tempdir().unwrap();
-        let script = dir.path().join("loud-vale");
         let bytes = (64 << 20) + 1;
-        std::fs::write(&script, format!("#!/bin/sh\nhead -c {bytes} /dev/zero\n")).unwrap();
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
-        let error = Program
-            .lint(&request(&script.display().to_string()))
-            .unwrap_err();
+        let error = lint_script(
+            &format!("head -c {bytes} /dev/zero"),
+            Duration::from_secs(5),
+        );
         assert!(matches!(error, ValeError::Failed { .. }), "{error:?}");
         assert!(error.to_string().contains("64 MiB"), "{error}");
+    }
+
+    #[test]
+    fn reads_vale_s_version() {
+        assert_eq!(version("vale version 3.24.0\n"), Some((3, 24, 0)));
+        assert_eq!(version("vale version v3.12.1"), Some((3, 12, 1)));
+        assert_eq!(version("vale version master"), None);
+        assert!(version("vale version 3.12.0").unwrap() < MIN_VERSION);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn an_old_vale_isn_t_run() {
+        let error = lint_script("echo vale version 3.12.0", Duration::from_secs(5));
+        assert!(
+            error
+                .to_string()
+                .contains("it's Vale 3.12.0, and Ascribe needs Vale 3.16 or later"),
+            "{error}"
+        );
     }
 }

@@ -10,7 +10,7 @@ Ascribe gives Vale your prose and nothing else. Frontmatter, directive lines, at
 
 ## Start from the quiet preset
 
-1. Install Vale 3 or later: see [Vale's installation page](https://vale.sh/docs/install). Check that `vale --version` works in the shell you run `ascribe` from.
+1. Install Vale 3.16 or later: see [Vale's installation page](https://vale.sh/docs/install). Check that `vale --version` works in the shell you run `ascribe` from.
 2. Turn it on in `ascribe.toml`:
 
    ```toml
