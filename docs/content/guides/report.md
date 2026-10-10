@@ -75,7 +75,7 @@ Install lychee from [its releases](https://github.com/lycheeverse/lychee/release
 
 A failing check is reported by who changes what it checks, and none of it asks you to edit a page:
 
-- **The hosting** (`delivery-hosting`): status codes, caching, the type a `.md` file is served as, content negotiation, bot protection. The finding names the setting; [what your host does](astro.md#what-your-host-does) says how on the hosts the Astro guide covers.
+- **The hosting** (`delivery-hosting`): status codes, caching, the type a `.md` file is served as, content negotiation, bot protection. The finding names the setting; [what your host does](astro.md#what-your-host-does) says how on the hosts the Astro guide covers. A check the checker added after the version Ascribe knows is counted here until Ascribe lists it.
 - **Ascribe** (`delivery-output`): `llms.txt`, the Markdown pages, and the pointer on each page, which Ascribe writes with `[consumer] agents = true`. Check first that the site publishes what the build wrote; when it does, it's a bug in Ascribe, and the finding says where to report it.
 - **The pages**, such as a page too long for an agent to read in one fetch: `ascribe check` reports these on the page itself, so the report names the check and doesn't repeat it.
 

@@ -359,7 +359,8 @@ mod tests {
     use super::*;
 
     /// The version is written where the checker is installed too: the Astro
-    /// example's end-to-end job, and the weekly report on the docs.
+    /// example's end-to-end job, the weekly report on the docs, and the two
+    /// pages that say how to install it.
     #[test]
     fn the_checker_s_version_is_the_one_installed() {
         let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -373,6 +374,15 @@ mod tests {
             read(".github/workflows/report.yml").contains(&format!("AFDOCS: \"{VERSION}\"")),
             ".github/workflows/report.yml installs another afdocs than {VERSION}"
         );
+        for page in [
+            "docs/content/guides/report.md",
+            "docs/content/reference/cli.md",
+        ] {
+            assert!(
+                read(page).contains(&format!("npm install -g afdocs@{VERSION}`")),
+                "{page} installs another afdocs than {VERSION}"
+            );
+        }
     }
 
     #[test]
