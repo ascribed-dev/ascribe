@@ -167,6 +167,7 @@ impl Fingerprints {
             builds,
             sources,
             editor_build,
+            checks,
             warnings,
         } = model;
         // `parse` reads the directive schemas (built-ins and widgets) and the
@@ -212,7 +213,8 @@ impl Fingerprints {
                     consumer,
                     builds,
                     editor_build,
-                    &read_through
+                    &read_through,
+                    checks
                 ),
             )
         ));

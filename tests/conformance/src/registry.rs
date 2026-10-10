@@ -35,6 +35,36 @@ pub enum Severity {
     Error,
     /// Worth fixing; doesn't fail a build.
     Warning,
+    /// Shown, and never fails `ascribe check`; not a SPEC §8.2 severity.
+    Advice,
+}
+
+/// The kind of next step a diagnostic has.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Next {
+    /// Every instance has a fix Ascribe can apply.
+    Fix,
+    /// The author picks among things Ascribe can list.
+    Choose,
+    /// It needs writing or judgment.
+    Write,
+    /// Nothing in the source can fix it.
+    Outside,
+    /// It may be fine as it is.
+    Review,
+}
+
+impl fmt::Display for Next {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Next::Fix => "fix",
+            Next::Choose => "choose",
+            Next::Write => "write",
+            Next::Outside => "outside",
+            Next::Review => "review",
+        })
+    }
 }
 
 /// When a diagnostic is checked (SPEC §8.1).
@@ -68,6 +98,17 @@ pub struct Entry {
     pub severity: Severity,
     /// File or page.
     pub level: Level,
+    /// The kind of next step; every entry that isn't retired has one.
+    #[serde(default)]
+    pub next: Option<Next>,
+    /// The named pieces of context an agent prompt about it carries, beyond
+    /// the message and the line. Every entry that isn't retired has the
+    /// list, which may be empty.
+    #[serde(default)]
+    pub evidence: Option<Vec<String>>,
+    /// Whether a project may set its level in `[checks]`.
+    #[serde(default)]
+    pub configurable: bool,
     /// The SPEC.md section the rule comes from.
     pub spec: String,
     /// The main message template.

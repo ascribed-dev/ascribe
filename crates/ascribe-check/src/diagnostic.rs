@@ -7,9 +7,13 @@ use crate::registry::{Entry, Registry};
 
 /// How serious a diagnostic is. An error means the document isn't
 /// conforming and a build fails; a warning doesn't fail a build (SPEC §8.2).
+/// Advice is below a warning: it's shown, and never fails `ascribe check`,
+/// even with `--deny-warnings`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Severity {
+    /// Advice.
+    Advice,
     /// A warning.
     Warning,
     /// An error.
@@ -17,11 +21,22 @@ pub enum Severity {
 }
 
 impl Severity {
-    /// `"error"` or `"warning"`.
+    /// `"error"`, `"warning"`, or `"advice"`.
     pub fn as_str(self) -> &'static str {
         match self {
             Severity::Error => "error",
             Severity::Warning => "warning",
+            Severity::Advice => "advice",
+        }
+    }
+
+    /// The severity named `"error"`, `"warning"`, or `"advice"`.
+    pub fn from_name(name: &str) -> Option<Severity> {
+        match name {
+            "error" => Some(Severity::Error),
+            "warning" => Some(Severity::Warning),
+            "advice" => Some(Severity::Advice),
+            _ => None,
         }
     }
 }
@@ -98,7 +113,7 @@ impl Diagnostic {
             fixes: issue.fixes.clone(),
             builds: Vec::new(),
             unpublished: false,
-            allowed: allowed(issue),
+            allowed: allowed(entry, issue),
         }
     }
 
@@ -139,12 +154,11 @@ impl Diagnostic {
     }
 }
 
-/// The values an issue says are allowed: its `values` placeholder, which every
-/// diagnostic about a value outside a list fills with the list. One
-/// diagnostic uses the name for the values a build keeps, which aren't a
-/// choice to make.
-fn allowed(issue: &Issue) -> Option<String> {
-    if issue.slug == ascribe_core::diagnostics::MODEL_BUILD_FILTER_EXCLUDED {
+/// The values an issue says are allowed, when its registry entry's prompt
+/// carries them (`evidence` has `allowed-values`): its `values` placeholder,
+/// which every such diagnostic fills with the list.
+fn allowed(entry: Option<&Entry>, issue: &Issue) -> Option<String> {
+    if !entry.is_some_and(|e| e.evidence.iter().any(|name| name == ALLOWED_VALUES)) {
         return None;
     }
     issue
@@ -153,3 +167,6 @@ fn allowed(issue: &Issue) -> Option<String> {
         .find(|a| a.name == "values")
         .map(|a| a.value.clone())
 }
+
+/// The evidence that names the values the content model allows.
+pub const ALLOWED_VALUES: &str = "allowed-values";

@@ -9,7 +9,7 @@ import type { LspRange } from "../shapes.js";
 /** A diagnostic as the server publishes it, with Ascribe's `data` (`crates/ascribe-lsp/src/compute.rs`). */
 export interface ProtocolDiagnostic {
   range: LspRange;
-  /** 1 for an error, 2 for a warning. */
+  /** 1 for an error, 2 for a warning, 3 for advice. */
   severity?: number;
   code?: string | number;
   codeDescription?: { href: string };

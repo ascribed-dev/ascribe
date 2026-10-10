@@ -1,0 +1,10 @@
+description: >-
+  `[checks]` can name only the checks the registry marks configurable; a
+  diagnostic about whether the project is valid isn't one, whatever its
+  severity, and in either form of the value.
+spec: ["8.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-check-not-configurable, file: ascribe.toml, line: 5}
+  - {slug: model-check-not-configurable, file: ascribe.toml, line: 6}

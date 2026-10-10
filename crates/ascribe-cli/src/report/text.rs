@@ -118,13 +118,17 @@ pub fn write_tally(
     Ok(())
 }
 
-/// `1 error, 2 warnings`.
+/// `1 error, 2 warnings`, and `, 3 advice` when there's any.
 fn counted(counts: Counts) -> String {
-    format!(
+    let mut text = format!(
         "{}, {}",
         plural(counts.errors, "error"),
         plural(counts.warnings, "warning")
-    )
+    );
+    if counts.advice > 0 {
+        text.push_str(&format!(", {} advice", counts.advice));
+    }
+    text
 }
 
 fn plural(n: usize, word: &str) -> String {
@@ -187,6 +191,7 @@ fn write_diagnostic(
     let kind = match d.severity {
         Severity::Error => ReportKind::Error,
         Severity::Warning => ReportKind::Warning,
+        Severity::Advice => ReportKind::Advice,
     };
     let primary = (files.path(d.location.file), char_range(files, d.location));
     let mut report = Report::build(kind, primary.clone())

@@ -69,7 +69,7 @@ npx ascribe check --stdin --path docs/guides/new.md < draft.md
 
 | Code | Meaning |
 |---|---|
-| `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`. |
+| `0` | No errors. Warnings don't fail the command unless you pass `--deny-warnings`, and advice never does. |
 | `1` | There are errors, or warnings with `--deny-warnings`. |
 | `2` | The project couldn't be checked: a usage error, no `ascribe.toml`, a content model with errors (they're shown, and nothing else is checked), or a path that doesn't exist or isn't in the project. A source file that can't be read, or isn't UTF-8, is a `source-unreadable` error in the list instead, and the rest of the project is still checked. |
 
@@ -80,6 +80,9 @@ Each diagnostic shows its code, message, and source, and the output ends with a 
 @snippet {lang=text}: code:crates/ascribe-cli/tests/output/check.txt
 
 Diagnostics go to standard output. A failure that stops the command (exit code 2) goes to standard error.
+
+@available: next
+Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart when there is some: `checked 12 files: 0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](content-model.md#19-checks).
 
 ### JSON output
 
@@ -93,12 +96,12 @@ Diagnostics go to standard output. A failure that stops the command (exit code 2
 | `files_checked` | number | How many source files were checked: the project's |
 | `files_reported` | number | How many of them the report covers: the source files in the paths named, or every one |
 | `builds_checked` | array of strings | The builds whose page-level checks ran: every build, those named with `--build`, or the editor's with `--editor-build` |
-| `diagnostics` | array | Every diagnostic, in file order, and in source order within a file. With paths, those that count for them. With `--summary`, none. |
+| `diagnostics` | array | Every diagnostic, in file order, and in source order within a file; advice after the errors and warnings, in the same order. With paths, those that count for them. With `--summary`, none. |
 | `truncated` | boolean | Whether `diagnostics` leaves some out, as it does with `--summary` |
 | `shown` | number | How many diagnostics `diagnostics` lists |
 | `total` | number | How many there are |
 | `next_command` | string or null | When `truncated`, the command that lists the rest |
-| `summary` | object | `errors` and `warnings`: how many of each. With `--summary`, also `by_code` (`{code, slug, severity, count}`) and `by_file` (`{file, errors, warnings}`), most first. |
+| `summary` | object | `errors`, `warnings`, and `advice`: how many of each. With `--summary`, also `by_code` (`{code, slug, severity, count}`) and `by_file` (`{file, errors, warnings, advice}`), most first. |
 
 Each diagnostic:
 
@@ -106,7 +109,8 @@ Each diagnostic:
 |---|---|---|
 | `code` | string | The code, such as `ASC036` |
 | `slug` | string | The diagnostic's name, such as `link-target-missing` |
-| `severity` | string | `"error"` or `"warning"` |
+| `severity` | string | `"error"`, `"warning"`, or `"advice"`. More severities may be added: treat one you don't know as advice. |
+| `next` | string | The kind of next step: `"fix"` when Ascribe can make the edit, `"choose"` when you pick among things Ascribe can list, `"write"` when it needs writing or judgment, `"outside"` when nothing in the source can fix it, `"review"` when it may be fine as it is. See [What to do next](diagnostics.md#what-to-do-next). |
 | `message` | string | What's wrong, and what to do about it |
 | `file` | string | The file, relative to the project root (the directory of `ascribe.toml`), with `/` separators. `ascribe.toml` for a content-model problem. |
 | `range` | object | Where: `start` and `end` positions |
@@ -437,7 +441,7 @@ An example that needs something in `ascribe.toml` to go wrong shows that too: a 
 | `0` | It explained the diagnostic, or listed them |
 | `2` | No diagnostic has that code or name, and it names the closest; or a usage error |
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `code`, `slug`, `severity`, `level` (`file` or `page`), `message`, `variants` (the other messages it can give, each with `name` and `message`), `fix`, `docs` (the link), and `example`, null or with `wrong`, `right`, `model` (the model it was checked against, when it matters, or null), and `files` (other files the right page needs, each with `path` and `text`). With `--list`, it has `diagnostics`, each with `code`, `slug`, and `severity`.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `code`, `slug`, `severity`, `next` (the [kind of next step](diagnostics.md#what-to-do-next), or null for a retired diagnostic), `level` (`file` or `page`), `message`, `variants` (the other messages it can give, each with `name` and `message`), `fix`, `docs` (the link), and `example`, null or with `wrong`, `right`, `model` (the model it was checked against, when it matters, or null), and `files` (other files the right page needs, each with `path` and `text`). With `--list`, it has `diagnostics`, each with `code`, `slug`, and `severity`.
 
 ## `ascribe model`
 @available: next
@@ -612,7 +616,7 @@ Checks an agent's work as its hook runs it: after the agent writes a file, or be
 
 @include: ../_generated/cli-agents-hook-options.md
 
-With `--event edit`, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent their errors: at most 10 lines in the concise form, then the build it checked. Warnings aren't reported. With `--event stop`, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository (outside a repository, the project at or above the folder the agent works in), and keeps the agent working while there are errors, with the counts, the first 10 errors, and the command to run, or while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
+With `--event edit`, it checks the Markdown files the tool wrote that are pages or fragments of a project, as `ascribe check <file> --editor-build` does, and tells the agent their errors: at most 10 lines in the concise form, then the build it checked. Warnings and advice aren't reported, and advice is never counted. With `--event stop`, it checks every build of each project whose pages or `ascribe.toml` the working tree changes, as `git status` lists them for the whole repository (outside a repository, the project at or above the folder the agent works in), and keeps the agent working while there are errors, with the counts, the first 10 errors, and the command to run, or while a project can't be checked at all, with what `ascribe check` would say. It says nothing when the agent is already continuing because of a stop hook, so it asks at most once for each stop.
 
 | Harness | After an edit | Before the agent finishes |
 |---|---|---|

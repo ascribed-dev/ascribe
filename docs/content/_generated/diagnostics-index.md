@@ -1,144 +1,145 @@
 <!-- Generated from tests/conformance/diagnostics.toml by tests/conformance/tests/docs.rs. Edit the registry, then run `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->
 
-| Code | Name | Severity | Level |
-|---|---|---|---|
-| [ASC001](../reference/diagnostics.md#asc001-attribute-unknown-key) | `attribute-unknown-key` | Error | File |
-| [ASC002](../reference/diagnostics.md#asc002-attribute-type-mismatch) | `attribute-type-mismatch` | Error | File |
-| [ASC003](../reference/diagnostics.md#asc003-attribute-bare-key) | `attribute-bare-key` | Error | File |
-| [ASC004](../reference/diagnostics.md#asc004-attribute-unquoted-reserved) | `attribute-unquoted-reserved` | Error | File |
-| [ASC005](../reference/diagnostics.md#asc005-directive-unknown) | `directive-unknown` | Warning | File |
-| [ASC006](../reference/diagnostics.md#asc006-directive-primary) | `directive-primary` | Error | File |
-| [ASC007](../reference/diagnostics.md#asc007-container-unclosed) | `container-unclosed` | Error | File |
-| [ASC008](../reference/diagnostics.md#asc008-container-colon-unexpected) | `container-colon-unexpected` | Error | File |
-| [ASC009](../reference/diagnostics.md#asc009-container-colon-missing) | `container-colon-missing` | Error | File |
-| [ASC010](../reference/diagnostics.md#asc010-container-open-at-arm) | `container-open-at-arm` | Error | File |
-| [ASC011](../reference/diagnostics.md#asc011-end-unmatched) | `end-unmatched` | Error | File |
-| [ASC012](../reference/diagnostics.md#asc012-end-indent-mismatch) | `end-indent-mismatch` | Error | File |
-| [ASC013](../reference/diagnostics.md#asc013-container-nesting-deep) | `container-nesting-deep` | Warning | File |
-| [ASC014](../reference/diagnostics.md#asc014-binding-no-block) | `binding-no-block` | Error | File |
-| [ASC015](../reference/diagnostics.md#asc015-binding-heading) | `binding-heading` | Error | File |
-| [ASC016](../reference/diagnostics.md#asc016-binding-blank-line) | `binding-blank-line` | Warning | File |
-| [ASC017](../reference/diagnostics.md#asc017-binding-not-section-top) | `binding-not-section-top` | Error | File |
-| [ASC018](../reference/diagnostics.md#asc018-title-not-accepted) | `title-not-accepted` | Warning | File |
-| [ASC019](../reference/diagnostics.md#asc019-title-dot-space) | `title-dot-space` | Warning | File |
-| [ASC020](../reference/diagnostics.md#asc020-id-duplicate) | `id-duplicate` | Error | Page |
-| [ASC021](../reference/diagnostics.md#asc021-include-target-missing) | `include-target-missing` | Error | File |
-| [ASC022](../reference/diagnostics.md#asc022-include-id-missing) | `include-id-missing` | Error | Page |
-| [ASC023](../reference/diagnostics.md#asc023-include-cycle) | `include-cycle` | Error | Page |
-| [ASC024](../reference/diagnostics.md#asc024-variant-no-arm-survives) | `variant-no-arm-survives` | Warning | Page |
-| [ASC025](../reference/diagnostics.md#asc025-variant-unknown) | `variant-unknown` | Error | File |
-| [ASC026](../reference/diagnostics.md#asc026-variant-mixed-arms) | `variant-mixed-arms` | Error | File |
-| [ASC027](../reference/diagnostics.md#asc027-variant-arm-kind) | `variant-arm-kind` | Error | File |
-| [ASC028](../reference/diagnostics.md#asc028-variant-no-shared-dimension) | `variant-no-shared-dimension` | Error | File |
-| [ASC029](../reference/diagnostics.md#asc029-available-unknown) | `available-unknown` | Error | File |
-| [ASC030](../reference/diagnostics.md#asc030-available-history-order) | `available-history-order` | Error | File |
-| [ASC031](../reference/diagnostics.md#asc031-available-versionless) | `available-versionless` | Error | File |
-| [ASC032](../reference/diagnostics.md#asc032-available-exceeds-scope) | `available-exceeds-scope` | Error | Page |
-| [ASC033](../reference/diagnostics.md#asc033-steps-not-ordered-list) | `steps-not-ordered-list` | Error | File |
-| [ASC034](../reference/diagnostics.md#asc034-details-title-missing) | `details-title-missing` | Error | File |
-| [ASC035](../reference/diagnostics.md#asc035-widget-schema) | `widget-schema` | Error | File |
-| [ASC036](../reference/diagnostics.md#asc036-link-target-missing) | `link-target-missing` | Error | File |
-| [ASC037](../reference/diagnostics.md#asc037-link-id-missing) | `link-id-missing` | Error | Page |
-| [ASC038](../reference/diagnostics.md#asc038-link-to-fragment) | `link-to-fragment` | Error | File |
-| [ASC040](../reference/diagnostics.md#asc040-link-id-removed) | `link-id-removed` | Error | Page |
-| [ASC041](../reference/diagnostics.md#asc041-link-route) | `link-route` | Warning | File |
-| [ASC042](../reference/diagnostics.md#asc042-image-source-missing) | `image-source-missing` | Error | File |
-| [ASC043](../reference/diagnostics.md#asc043-image-alt-missing) | `image-alt-missing` | Warning | File |
-| [ASC044](../reference/diagnostics.md#asc044-phrase-undeclared) | `phrase-undeclared` | Warning | File |
-| [ASC045](../reference/diagnostics.md#asc045-heading-phrase-without-id) | `heading-phrase-without-id` | Warning | File |
-| [ASC046](../reference/diagnostics.md#asc046-heading-duplicate-without-id) | `heading-duplicate-without-id` | Warning | Page |
-| [ASC047](../reference/diagnostics.md#asc047-frontmatter-unknown-key) | `frontmatter-unknown-key` | Error | File |
-| [ASC048](../reference/diagnostics.md#asc048-frontmatter-missing-field) | `frontmatter-missing-field` | Error | File |
-| [ASC049](../reference/diagnostics.md#asc049-frontmatter-type-mismatch) | `frontmatter-type-mismatch` | Error | File |
-| [ASC050](../reference/diagnostics.md#asc050-frontmatter-reserved-in-fragment) | `frontmatter-reserved-in-fragment` | Error | File |
-| [ASC051](../reference/diagnostics.md#asc051-content-type-unresolved) | `content-type-unresolved` | Error | File |
-| [ASC052](../reference/diagnostics.md#asc052-list-ended-by-directive) | `list-ended-by-directive` | Warning | File |
-| [ASC053](../reference/diagnostics.md#asc053-directive-indented-code) | `directive-indented-code` | Warning | File |
-| [ASC054](../reference/diagnostics.md#asc054-steps-numbering-continued) | `steps-numbering-continued` | Warning | File |
-| [ASC055](../reference/diagnostics.md#asc055-attribute-syntax) | `attribute-syntax` | Error | File |
-| [ASC056](../reference/diagnostics.md#asc056-attribute-duplicate-key) | `attribute-duplicate-key` | Error | File |
-| [ASC057](../reference/diagnostics.md#asc057-available-syntax) | `available-syntax` | Error | File |
-| [ASC058](../reference/diagnostics.md#asc058-id-invalid) | `id-invalid` | Error | File |
-| [ASC059](../reference/diagnostics.md#asc059-image-attribute-missing) | `image-attribute-missing` | Error | File |
-| [ASC060](../reference/diagnostics.md#asc060-model-toml-syntax) | `model-toml-syntax` | Error | File |
-| [ASC061](../reference/diagnostics.md#asc061-model-unknown-key) | `model-unknown-key` | Error | File |
-| [ASC062](../reference/diagnostics.md#asc062-model-missing-key) | `model-missing-key` | Error | File |
-| [ASC063](../reference/diagnostics.md#asc063-model-wrong-type) | `model-wrong-type` | Error | File |
-| [ASC064](../reference/diagnostics.md#asc064-model-invalid-value) | `model-invalid-value` | Error | File |
-| [ASC065](../reference/diagnostics.md#asc065-model-spec-unsupported) | `model-spec-unsupported` | Error | File |
-| [ASC066](../reference/diagnostics.md#asc066-model-invalid-name) | `model-invalid-name` | Error | File |
-| [ASC067](../reference/diagnostics.md#asc067-model-empty-text) | `model-empty-text` | Error | File |
-| [ASC068](../reference/diagnostics.md#asc068-model-path-absolute) | `model-path-absolute` | Error | File |
-| [ASC069](../reference/diagnostics.md#asc069-model-content-root-missing) | `model-content-root-missing` | Error | File |
-| [ASC070](../reference/diagnostics.md#asc070-model-output-overlaps-content) | `model-output-overlaps-content` | Error | File |
-| [ASC071](../reference/diagnostics.md#asc071-model-type-multiple-defaults) | `model-type-multiple-defaults` | Error | File |
-| [ASC072](../reference/diagnostics.md#asc072-model-type-unreachable) | `model-type-unreachable` | Error | File |
-| [ASC073](../reference/diagnostics.md#asc073-model-type-title) | `model-type-title` | Error | File |
-| [ASC074](../reference/diagnostics.md#asc074-model-field-reserved) | `model-field-reserved` | Error | File |
-| [ASC075](../reference/diagnostics.md#asc075-model-type-syntax) | `model-type-syntax` | Error | File |
-| [ASC076](../reference/diagnostics.md#asc076-model-type-fields) | `model-type-fields` | Error | File |
-| [ASC077](../reference/diagnostics.md#asc077-model-enum-values) | `model-enum-values` | Error | File |
-| [ASC078](../reference/diagnostics.md#asc078-model-set-token) | `model-set-token` | Error | File |
-| [ASC079](../reference/diagnostics.md#asc079-model-default-type) | `model-default-type` | Error | File |
-| [ASC080](../reference/diagnostics.md#asc080-model-phrases-field-type) | `model-phrases-field-type` | Error | File |
-| [ASC081](../reference/diagnostics.md#asc081-model-pattern-syntax) | `model-pattern-syntax` | Error | File |
-| [ASC082](../reference/diagnostics.md#asc082-model-name-multiple-roles) | `model-name-multiple-roles` | Error | File |
-| [ASC083](../reference/diagnostics.md#asc083-model-name-case) | `model-name-case` | Warning | File |
-| [ASC084](../reference/diagnostics.md#asc084-model-dimension-empty) | `model-dimension-empty` | Error | File |
-| [ASC085](../reference/diagnostics.md#asc085-model-dimension-value-duplicate) | `model-dimension-value-duplicate` | Error | File |
-| [ASC086](../reference/diagnostics.md#asc086-model-dimension-value-shared) | `model-dimension-value-shared` | Error | File |
-| [ASC087](../reference/diagnostics.md#asc087-model-label-undeclared) | `model-label-undeclared` | Error | File |
-| [ASC088](../reference/diagnostics.md#asc088-model-versionless-undeclared) | `model-versionless-undeclared` | Error | File |
-| [ASC089](../reference/diagnostics.md#asc089-model-lifecycle-available-required) | `model-lifecycle-available-required` | Error | File |
-| [ASC090](../reference/diagnostics.md#asc090-model-lifecycle-ga-unavailable) | `model-lifecycle-ga-unavailable` | Error | File |
-| [ASC091](../reference/diagnostics.md#asc091-model-note-label-required) | `model-note-label-required` | Error | File |
-| [ASC092](../reference/diagnostics.md#asc092-model-availability-syntax) | `model-availability-syntax` | Error | File |
-| [ASC093](../reference/diagnostics.md#asc093-model-availability-unknown-name) | `model-availability-unknown-name` | Error | File |
-| [ASC094](../reference/diagnostics.md#asc094-model-availability-versionless) | `model-availability-versionless` | Error | File |
-| [ASC095](../reference/diagnostics.md#asc095-model-availability-history-order) | `model-availability-history-order` | Error | File |
-| [ASC096](../reference/diagnostics.md#asc096-model-feature-nested) | `model-feature-nested` | Error | File |
-| [ASC097](../reference/diagnostics.md#asc097-model-phrase-value-type) | `model-phrase-value-type` | Error | File |
-| [ASC098](../reference/diagnostics.md#asc098-model-glossary-duplicate-term) | `model-glossary-duplicate-term` | Error | File |
-| [ASC099](../reference/diagnostics.md#asc099-model-glossary-link) | `model-glossary-link` | Error | File |
-| [ASC100](../reference/diagnostics.md#asc100-model-widget-reserved-name) | `model-widget-reserved-name` | Error | File |
-| [ASC101](../reference/diagnostics.md#asc101-model-widget-forms) | `model-widget-forms` | Error | File |
-| [ASC102](../reference/diagnostics.md#asc102-model-widget-binding) | `model-widget-binding` | Error | File |
-| [ASC103](../reference/diagnostics.md#asc103-model-widget-container-primary) | `model-widget-container-primary` | Error | File |
-| [ASC104](../reference/diagnostics.md#asc104-model-widget-groupable-form) | `model-widget-groupable-form` | Error | File |
-| [ASC105](../reference/diagnostics.md#asc105-model-widget-plain-content) | `model-widget-plain-content` | Error | File |
-| [ASC106](../reference/diagnostics.md#asc106-model-consumer-unsupported) | `model-consumer-unsupported` | Error | File |
-| [ASC107](../reference/diagnostics.md#asc107-model-consumer-site) | `model-consumer-site` | Error | File |
-| [ASC108](../reference/diagnostics.md#asc108-model-consumer-base-path) | `model-consumer-base-path` | Error | File |
-| [ASC109](../reference/diagnostics.md#asc109-model-build-name-case) | `model-build-name-case` | Error | File |
-| [ASC110](../reference/diagnostics.md#asc110-model-build-variants) | `model-build-variants` | Error | File |
-| [ASC111](../reference/diagnostics.md#asc111-model-build-unknown-dimension) | `model-build-unknown-dimension` | Error | File |
-| [ASC112](../reference/diagnostics.md#asc112-model-build-unknown-value) | `model-build-unknown-value` | Error | File |
-| [ASC113](../reference/diagnostics.md#asc113-model-build-availability) | `model-build-availability` | Error | File |
-| [ASC114](../reference/diagnostics.md#asc114-model-build-filter-target) | `model-build-filter-target` | Error | File |
-| [ASC115](../reference/diagnostics.md#asc115-model-build-filter-version) | `model-build-filter-version` | Error | File |
-| [ASC116](../reference/diagnostics.md#asc116-model-build-filter-excluded) | `model-build-filter-excluded` | Warning | File |
-| [ASC117](../reference/diagnostics.md#asc117-model-editor-build-unknown) | `model-editor-build-unknown` | Error | File |
-| [ASC118](../reference/diagnostics.md#asc118-model-editor-build-required) | `model-editor-build-required` | Error | File |
-| [ASC119](../reference/diagnostics.md#asc119-model-attribute-reserved) | `model-attribute-reserved` | Error | File |
-| [ASC120](../reference/diagnostics.md#asc120-directive-extra-text) | `directive-extra-text` | Error | File |
-| [ASC121](../reference/diagnostics.md#asc121-link-page-dropped) | `link-page-dropped` | Error | Page |
-| [ASC122](../reference/diagnostics.md#asc122-frontmatter-syntax) | `frontmatter-syntax` | Error | File |
-| [ASC123](../reference/diagnostics.md#asc123-source-unreadable) | `source-unreadable` | Error | File |
-| [ASC124](../reference/diagnostics.md#asc124-heading-empty-slug) | `heading-empty-slug` | Warning | File |
-| [ASC125](../reference/diagnostics.md#asc125-include-heading-without-id) | `include-heading-without-id` | Warning | File |
-| [ASC126](../reference/diagnostics.md#asc126-phrase-double-braces) | `phrase-double-braces` | Warning | File |
-| [ASC127](../reference/diagnostics.md#asc127-snippet-address) | `snippet-address` | Error | File |
-| [ASC128](../reference/diagnostics.md#asc128-snippet-source-unknown) | `snippet-source-unknown` | Error | File |
-| [ASC129](../reference/diagnostics.md#asc129-snippet-file-missing) | `snippet-file-missing` | Error | File |
-| [ASC130](../reference/diagnostics.md#asc130-snippet-file-not-text) | `snippet-file-not-text` | Error | File |
-| [ASC131](../reference/diagnostics.md#asc131-snippet-region-missing) | `snippet-region-missing` | Error | File |
-| [ASC132](../reference/diagnostics.md#asc132-snippet-tags) | `snippet-tags` | Error | File |
-| [ASC133](../reference/diagnostics.md#asc133-model-source-path-missing) | `model-source-path-missing` | Error | File |
-| [ASC134](../reference/diagnostics.md#asc134-model-source-outside-repository) | `model-source-outside-repository` | Error | File |
-| [ASC135](../reference/diagnostics.md#asc135-model-source-remote) | `model-source-remote` | Error | File |
-| [ASC136](../reference/diagnostics.md#asc136-lock-invalid) | `lock-invalid` | Error | File |
-| [ASC137](../reference/diagnostics.md#asc137-lock-source-unknown) | `lock-source-unknown` | Error | File |
-| [ASC138](../reference/diagnostics.md#asc138-source-copy-changed) | `source-copy-changed` | Error | File |
-| [ASC139](../reference/diagnostics.md#asc139-source-copy-unlocked) | `source-copy-unlocked` | Error | File |
-| [ASC140](../reference/diagnostics.md#asc140-source-copy-unused) | `source-copy-unused` | Warning | File |
-| [ASC141](../reference/diagnostics.md#asc141-model-inline-field) | `model-inline-field` | Error | File |
+| Code | Name | Severity | Level | Next step |
+|---|---|---|---|---|
+| [ASC001](../reference/diagnostics.md#asc001-attribute-unknown-key) | `attribute-unknown-key` | Error | File | choose |
+| [ASC002](../reference/diagnostics.md#asc002-attribute-type-mismatch) | `attribute-type-mismatch` | Error | File | choose |
+| [ASC003](../reference/diagnostics.md#asc003-attribute-bare-key) | `attribute-bare-key` | Error | File | write |
+| [ASC004](../reference/diagnostics.md#asc004-attribute-unquoted-reserved) | `attribute-unquoted-reserved` | Error | File | fix |
+| [ASC005](../reference/diagnostics.md#asc005-directive-unknown) | `directive-unknown` | Warning | File | choose |
+| [ASC006](../reference/diagnostics.md#asc006-directive-primary) | `directive-primary` | Error | File | write |
+| [ASC007](../reference/diagnostics.md#asc007-container-unclosed) | `container-unclosed` | Error | File | write |
+| [ASC008](../reference/diagnostics.md#asc008-container-colon-unexpected) | `container-colon-unexpected` | Error | File | fix |
+| [ASC009](../reference/diagnostics.md#asc009-container-colon-missing) | `container-colon-missing` | Error | File | fix |
+| [ASC010](../reference/diagnostics.md#asc010-container-open-at-arm) | `container-open-at-arm` | Error | File | write |
+| [ASC011](../reference/diagnostics.md#asc011-end-unmatched) | `end-unmatched` | Error | File | write |
+| [ASC012](../reference/diagnostics.md#asc012-end-indent-mismatch) | `end-indent-mismatch` | Error | File | write |
+| [ASC013](../reference/diagnostics.md#asc013-container-nesting-deep) | `container-nesting-deep` | Warning | File | write |
+| [ASC014](../reference/diagnostics.md#asc014-binding-no-block) | `binding-no-block` | Error | File | write |
+| [ASC015](../reference/diagnostics.md#asc015-binding-heading) | `binding-heading` | Error | File | write |
+| [ASC016](../reference/diagnostics.md#asc016-binding-blank-line) | `binding-blank-line` | Warning | File | fix |
+| [ASC017](../reference/diagnostics.md#asc017-binding-not-section-top) | `binding-not-section-top` | Error | File | write |
+| [ASC018](../reference/diagnostics.md#asc018-title-not-accepted) | `title-not-accepted` | Warning | File | write |
+| [ASC019](../reference/diagnostics.md#asc019-title-dot-space) | `title-dot-space` | Warning | File | write |
+| [ASC020](../reference/diagnostics.md#asc020-id-duplicate) | `id-duplicate` | Error | Page | write |
+| [ASC021](../reference/diagnostics.md#asc021-include-target-missing) | `include-target-missing` | Error | File | choose |
+| [ASC022](../reference/diagnostics.md#asc022-include-id-missing) | `include-id-missing` | Error | Page | choose |
+| [ASC023](../reference/diagnostics.md#asc023-include-cycle) | `include-cycle` | Error | Page | write |
+| [ASC024](../reference/diagnostics.md#asc024-variant-no-arm-survives) | `variant-no-arm-survives` | Warning | Page | write |
+| [ASC025](../reference/diagnostics.md#asc025-variant-unknown) | `variant-unknown` | Error | File | choose |
+| [ASC026](../reference/diagnostics.md#asc026-variant-mixed-arms) | `variant-mixed-arms` | Error | File | write |
+| [ASC027](../reference/diagnostics.md#asc027-variant-arm-kind) | `variant-arm-kind` | Error | File | write |
+| [ASC028](../reference/diagnostics.md#asc028-variant-no-shared-dimension) | `variant-no-shared-dimension` | Error | File | write |
+| [ASC029](../reference/diagnostics.md#asc029-available-unknown) | `available-unknown` | Error | File | choose |
+| [ASC030](../reference/diagnostics.md#asc030-available-history-order) | `available-history-order` | Error | File | write |
+| [ASC031](../reference/diagnostics.md#asc031-available-versionless) | `available-versionless` | Error | File | write |
+| [ASC032](../reference/diagnostics.md#asc032-available-exceeds-scope) | `available-exceeds-scope` | Error | Page | write |
+| [ASC033](../reference/diagnostics.md#asc033-steps-not-ordered-list) | `steps-not-ordered-list` | Error | File | write |
+| [ASC034](../reference/diagnostics.md#asc034-details-title-missing) | `details-title-missing` | Error | File | write |
+| [ASC035](../reference/diagnostics.md#asc035-widget-schema) | `widget-schema` | Error | File | write |
+| [ASC036](../reference/diagnostics.md#asc036-link-target-missing) | `link-target-missing` | Error | File | choose |
+| [ASC037](../reference/diagnostics.md#asc037-link-id-missing) | `link-id-missing` | Error | Page | choose |
+| [ASC038](../reference/diagnostics.md#asc038-link-to-fragment) | `link-to-fragment` | Error | File | choose |
+| [ASC040](../reference/diagnostics.md#asc040-link-id-removed) | `link-id-removed` | Error | Page | write |
+| [ASC041](../reference/diagnostics.md#asc041-link-route) | `link-route` | Warning | File | choose |
+| [ASC042](../reference/diagnostics.md#asc042-image-source-missing) | `image-source-missing` | Error | File | choose |
+| [ASC043](../reference/diagnostics.md#asc043-image-alt-missing) | `image-alt-missing` | Warning | File | write |
+| [ASC044](../reference/diagnostics.md#asc044-phrase-undeclared) | `phrase-undeclared` | Warning | File | choose |
+| [ASC045](../reference/diagnostics.md#asc045-heading-phrase-without-id) | `heading-phrase-without-id` | Warning | File | fix |
+| [ASC046](../reference/diagnostics.md#asc046-heading-duplicate-without-id) | `heading-duplicate-without-id` | Warning | Page | fix |
+| [ASC047](../reference/diagnostics.md#asc047-frontmatter-unknown-key) | `frontmatter-unknown-key` | Error | File | choose |
+| [ASC048](../reference/diagnostics.md#asc048-frontmatter-missing-field) | `frontmatter-missing-field` | Error | File | write |
+| [ASC049](../reference/diagnostics.md#asc049-frontmatter-type-mismatch) | `frontmatter-type-mismatch` | Error | File | choose |
+| [ASC050](../reference/diagnostics.md#asc050-frontmatter-reserved-in-fragment) | `frontmatter-reserved-in-fragment` | Error | File | write |
+| [ASC051](../reference/diagnostics.md#asc051-content-type-unresolved) | `content-type-unresolved` | Error | File | write |
+| [ASC052](../reference/diagnostics.md#asc052-list-ended-by-directive) | `list-ended-by-directive` | Warning | File | write |
+| [ASC053](../reference/diagnostics.md#asc053-directive-indented-code) | `directive-indented-code` | Warning | File | write |
+| [ASC054](../reference/diagnostics.md#asc054-steps-numbering-continued) | `steps-numbering-continued` | Warning | File | write |
+| [ASC055](../reference/diagnostics.md#asc055-attribute-syntax) | `attribute-syntax` | Error | File | write |
+| [ASC056](../reference/diagnostics.md#asc056-attribute-duplicate-key) | `attribute-duplicate-key` | Error | File | write |
+| [ASC057](../reference/diagnostics.md#asc057-available-syntax) | `available-syntax` | Error | File | write |
+| [ASC058](../reference/diagnostics.md#asc058-id-invalid) | `id-invalid` | Error | File | write |
+| [ASC059](../reference/diagnostics.md#asc059-image-attribute-missing) | `image-attribute-missing` | Error | File | write |
+| [ASC060](../reference/diagnostics.md#asc060-model-toml-syntax) | `model-toml-syntax` | Error | File | write |
+| [ASC061](../reference/diagnostics.md#asc061-model-unknown-key) | `model-unknown-key` | Error | File | choose |
+| [ASC062](../reference/diagnostics.md#asc062-model-missing-key) | `model-missing-key` | Error | File | write |
+| [ASC063](../reference/diagnostics.md#asc063-model-wrong-type) | `model-wrong-type` | Error | File | write |
+| [ASC064](../reference/diagnostics.md#asc064-model-invalid-value) | `model-invalid-value` | Error | File | choose |
+| [ASC065](../reference/diagnostics.md#asc065-model-spec-unsupported) | `model-spec-unsupported` | Error | File | choose |
+| [ASC066](../reference/diagnostics.md#asc066-model-invalid-name) | `model-invalid-name` | Error | File | write |
+| [ASC067](../reference/diagnostics.md#asc067-model-empty-text) | `model-empty-text` | Error | File | write |
+| [ASC068](../reference/diagnostics.md#asc068-model-path-absolute) | `model-path-absolute` | Error | File | write |
+| [ASC069](../reference/diagnostics.md#asc069-model-content-root-missing) | `model-content-root-missing` | Error | File | write |
+| [ASC070](../reference/diagnostics.md#asc070-model-output-overlaps-content) | `model-output-overlaps-content` | Error | File | write |
+| [ASC071](../reference/diagnostics.md#asc071-model-type-multiple-defaults) | `model-type-multiple-defaults` | Error | File | choose |
+| [ASC072](../reference/diagnostics.md#asc072-model-type-unreachable) | `model-type-unreachable` | Error | File | write |
+| [ASC073](../reference/diagnostics.md#asc073-model-type-title) | `model-type-title` | Error | File | write |
+| [ASC074](../reference/diagnostics.md#asc074-model-field-reserved) | `model-field-reserved` | Error | File | write |
+| [ASC075](../reference/diagnostics.md#asc075-model-type-syntax) | `model-type-syntax` | Error | File | write |
+| [ASC076](../reference/diagnostics.md#asc076-model-type-fields) | `model-type-fields` | Error | File | write |
+| [ASC077](../reference/diagnostics.md#asc077-model-enum-values) | `model-enum-values` | Error | File | write |
+| [ASC078](../reference/diagnostics.md#asc078-model-set-token) | `model-set-token` | Error | File | write |
+| [ASC079](../reference/diagnostics.md#asc079-model-default-type) | `model-default-type` | Error | File | write |
+| [ASC080](../reference/diagnostics.md#asc080-model-phrases-field-type) | `model-phrases-field-type` | Error | File | write |
+| [ASC081](../reference/diagnostics.md#asc081-model-pattern-syntax) | `model-pattern-syntax` | Error | File | write |
+| [ASC082](../reference/diagnostics.md#asc082-model-name-multiple-roles) | `model-name-multiple-roles` | Error | File | write |
+| [ASC083](../reference/diagnostics.md#asc083-model-name-case) | `model-name-case` | Warning | File | write |
+| [ASC084](../reference/diagnostics.md#asc084-model-dimension-empty) | `model-dimension-empty` | Error | File | write |
+| [ASC085](../reference/diagnostics.md#asc085-model-dimension-value-duplicate) | `model-dimension-value-duplicate` | Error | File | write |
+| [ASC086](../reference/diagnostics.md#asc086-model-dimension-value-shared) | `model-dimension-value-shared` | Error | File | write |
+| [ASC087](../reference/diagnostics.md#asc087-model-label-undeclared) | `model-label-undeclared` | Error | File | choose |
+| [ASC088](../reference/diagnostics.md#asc088-model-versionless-undeclared) | `model-versionless-undeclared` | Error | File | choose |
+| [ASC089](../reference/diagnostics.md#asc089-model-lifecycle-available-required) | `model-lifecycle-available-required` | Error | File | choose |
+| [ASC090](../reference/diagnostics.md#asc090-model-lifecycle-ga-unavailable) | `model-lifecycle-ga-unavailable` | Error | File | write |
+| [ASC091](../reference/diagnostics.md#asc091-model-note-label-required) | `model-note-label-required` | Error | File | write |
+| [ASC092](../reference/diagnostics.md#asc092-model-availability-syntax) | `model-availability-syntax` | Error | File | write |
+| [ASC093](../reference/diagnostics.md#asc093-model-availability-unknown-name) | `model-availability-unknown-name` | Error | File | choose |
+| [ASC094](../reference/diagnostics.md#asc094-model-availability-versionless) | `model-availability-versionless` | Error | File | write |
+| [ASC095](../reference/diagnostics.md#asc095-model-availability-history-order) | `model-availability-history-order` | Error | File | write |
+| [ASC096](../reference/diagnostics.md#asc096-model-feature-nested) | `model-feature-nested` | Error | File | write |
+| [ASC097](../reference/diagnostics.md#asc097-model-phrase-value-type) | `model-phrase-value-type` | Error | File | write |
+| [ASC098](../reference/diagnostics.md#asc098-model-glossary-duplicate-term) | `model-glossary-duplicate-term` | Error | File | write |
+| [ASC099](../reference/diagnostics.md#asc099-model-glossary-link) | `model-glossary-link` | Error | File | choose |
+| [ASC100](../reference/diagnostics.md#asc100-model-widget-reserved-name) | `model-widget-reserved-name` | Error | File | write |
+| [ASC101](../reference/diagnostics.md#asc101-model-widget-forms) | `model-widget-forms` | Error | File | choose |
+| [ASC102](../reference/diagnostics.md#asc102-model-widget-binding) | `model-widget-binding` | Error | File | choose |
+| [ASC103](../reference/diagnostics.md#asc103-model-widget-container-primary) | `model-widget-container-primary` | Error | File | write |
+| [ASC104](../reference/diagnostics.md#asc104-model-widget-groupable-form) | `model-widget-groupable-form` | Error | File | write |
+| [ASC105](../reference/diagnostics.md#asc105-model-widget-plain-content) | `model-widget-plain-content` | Error | File | write |
+| [ASC106](../reference/diagnostics.md#asc106-model-consumer-unsupported) | `model-consumer-unsupported` | Error | File | choose |
+| [ASC107](../reference/diagnostics.md#asc107-model-consumer-site) | `model-consumer-site` | Error | File | write |
+| [ASC108](../reference/diagnostics.md#asc108-model-consumer-base-path) | `model-consumer-base-path` | Error | File | write |
+| [ASC109](../reference/diagnostics.md#asc109-model-build-name-case) | `model-build-name-case` | Error | File | write |
+| [ASC110](../reference/diagnostics.md#asc110-model-build-variants) | `model-build-variants` | Error | File | write |
+| [ASC111](../reference/diagnostics.md#asc111-model-build-unknown-dimension) | `model-build-unknown-dimension` | Error | File | choose |
+| [ASC112](../reference/diagnostics.md#asc112-model-build-unknown-value) | `model-build-unknown-value` | Error | File | choose |
+| [ASC113](../reference/diagnostics.md#asc113-model-build-availability) | `model-build-availability` | Error | File | write |
+| [ASC114](../reference/diagnostics.md#asc114-model-build-filter-target) | `model-build-filter-target` | Error | File | choose |
+| [ASC115](../reference/diagnostics.md#asc115-model-build-filter-version) | `model-build-filter-version` | Error | File | write |
+| [ASC116](../reference/diagnostics.md#asc116-model-build-filter-excluded) | `model-build-filter-excluded` | Warning | File | write |
+| [ASC117](../reference/diagnostics.md#asc117-model-editor-build-unknown) | `model-editor-build-unknown` | Error | File | choose |
+| [ASC118](../reference/diagnostics.md#asc118-model-editor-build-required) | `model-editor-build-required` | Error | File | choose |
+| [ASC119](../reference/diagnostics.md#asc119-model-attribute-reserved) | `model-attribute-reserved` | Error | File | write |
+| [ASC120](../reference/diagnostics.md#asc120-directive-extra-text) | `directive-extra-text` | Error | File | fix |
+| [ASC121](../reference/diagnostics.md#asc121-link-page-dropped) | `link-page-dropped` | Error | Page | write |
+| [ASC122](../reference/diagnostics.md#asc122-frontmatter-syntax) | `frontmatter-syntax` | Error | File | write |
+| [ASC123](../reference/diagnostics.md#asc123-source-unreadable) | `source-unreadable` | Error | File | write |
+| [ASC124](../reference/diagnostics.md#asc124-heading-empty-slug) | `heading-empty-slug` | Warning | File | write |
+| [ASC125](../reference/diagnostics.md#asc125-include-heading-without-id) | `include-heading-without-id` | Warning | File | write |
+| [ASC126](../reference/diagnostics.md#asc126-phrase-double-braces) | `phrase-double-braces` | Warning | File | fix |
+| [ASC127](../reference/diagnostics.md#asc127-snippet-address) | `snippet-address` | Error | File | write |
+| [ASC128](../reference/diagnostics.md#asc128-snippet-source-unknown) | `snippet-source-unknown` | Error | File | choose |
+| [ASC129](../reference/diagnostics.md#asc129-snippet-file-missing) | `snippet-file-missing` | Error | File | choose |
+| [ASC130](../reference/diagnostics.md#asc130-snippet-file-not-text) | `snippet-file-not-text` | Error | File | write |
+| [ASC131](../reference/diagnostics.md#asc131-snippet-region-missing) | `snippet-region-missing` | Error | File | choose |
+| [ASC132](../reference/diagnostics.md#asc132-snippet-tags) | `snippet-tags` | Error | File | write |
+| [ASC133](../reference/diagnostics.md#asc133-model-source-path-missing) | `model-source-path-missing` | Error | File | write |
+| [ASC134](../reference/diagnostics.md#asc134-model-source-outside-repository) | `model-source-outside-repository` | Error | File | write |
+| [ASC135](../reference/diagnostics.md#asc135-model-source-remote) | `model-source-remote` | Error | File | write |
+| [ASC136](../reference/diagnostics.md#asc136-lock-invalid) | `lock-invalid` | Error | File | write |
+| [ASC137](../reference/diagnostics.md#asc137-lock-source-unknown) | `lock-source-unknown` | Error | File | write |
+| [ASC138](../reference/diagnostics.md#asc138-source-copy-changed) | `source-copy-changed` | Error | File | write |
+| [ASC139](../reference/diagnostics.md#asc139-source-copy-unlocked) | `source-copy-unlocked` | Error | File | write |
+| [ASC140](../reference/diagnostics.md#asc140-source-copy-unused) | `source-copy-unused` | Warning | File | write |
+| [ASC141](../reference/diagnostics.md#asc141-model-inline-field) | `model-inline-field` | Error | File | write |
+| [ASC142](../reference/diagnostics.md#asc142-model-check-not-configurable) | `model-check-not-configurable` | Error | File | write |

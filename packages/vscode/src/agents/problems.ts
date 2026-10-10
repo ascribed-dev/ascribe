@@ -74,8 +74,11 @@ export function problemsReport(input: ProblemsInput): EditorProblemsReport {
       all.push({ entry, order: [entry.file, entry.range.start.offset] });
     }
   }
+  // Advice after errors and warnings, as `ascribe check` lists it.
+  const advice = (e: Entry) => (e.severity === "advice" ? 1 : 0);
   all.sort(
     (a, b) =>
+      advice(a.entry) - advice(b.entry) ||
       compare(a.order[0], b.order[0]) ||
       a.order[1] - b.order[1] ||
       compare(a.entry.code, b.entry.code),
@@ -96,7 +99,8 @@ export function problemsReport(input: ProblemsInput): EditorProblemsReport {
     next_command: truncated ? input.nextCommand : null,
     summary: {
       errors: all.filter((d) => d.entry.severity === "error").length,
-      warnings: all.filter((d) => d.entry.severity !== "error").length,
+      warnings: all.filter((d) => d.entry.severity === "warning").length,
+      advice: all.filter((d) => d.entry.severity === "advice").length,
     },
     document_version: input.documentVersion,
     current: input.current,
@@ -107,6 +111,7 @@ export function problemsReport(input: ProblemsInput): EditorProblemsReport {
 /** Ascribe's `data` on a published diagnostic. */
 interface DiagnosticData {
   slug?: string;
+  next?: string;
   builds?: string[];
   unpublished?: boolean;
   help?: string;
@@ -137,7 +142,8 @@ function toEntry(
   return {
     code: String(d.code ?? ""),
     slug: data.slug ?? "",
-    severity: d.severity === 1 ? "error" : "warning",
+    severity: severityName(d.severity),
+    next: data.next ?? "write",
     message: d.message,
     file: relative(file),
     range: positions.range(file, d.range),
@@ -155,6 +161,23 @@ function toEntry(
     docs: d.codeDescription?.href ?? "",
     repeats: 0,
   };
+}
+
+/**
+ * A protocol severity as `ascribe check` names it: the server publishes an
+ * error as 1, a warning as 2, and advice as 3 (information). A diagnostic
+ * with none is an error, as the protocol leaves it to the client.
+ */
+function severityName(severity: number | undefined): string {
+  switch (severity) {
+    case 2:
+      return "warning";
+    case 3:
+    case 4:
+      return "advice";
+    default:
+      return "error";
+  }
 }
 
 /** A path relative to the project's folder, with `/`, as `ascribe check` writes it. */

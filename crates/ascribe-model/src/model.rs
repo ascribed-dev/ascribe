@@ -1,7 +1,9 @@
 //! The typed content model and the queries other crates ask of it.
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Name, Version};
-use ascribe_core::{AttributeSchema, DirectiveSchema, Issue, Span, builtin_schemas};
+use ascribe_core::{
+    AttributeSchema, DiagnosticSlug, DirectiveSchema, Issue, Span, builtin_schemas,
+};
 
 use crate::pattern::Pattern;
 use crate::types::FrontmatterSchema;
@@ -53,10 +55,69 @@ pub struct ContentModel {
     pub sources: Vec<Source>,
     /// The build the editor checks by default (`[editor] build`).
     pub editor_build: String,
+    /// `[checks]`: the level the project sets for each check it names.
+    pub checks: Checks,
     /// Warnings found while loading (`model-name-case`,
     /// `model-build-filter-excluded`). A model with errors doesn't load, so
     /// these are the only issues a loaded model has.
     pub warnings: Vec<Issue>,
+}
+
+/// `[checks]`: how loudly each check the project names speaks. Only checks
+/// the diagnostics registry marks configurable can be named.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Checks {
+    /// Each check named, in declaration order.
+    pub settings: Vec<CheckSetting>,
+}
+
+impl Checks {
+    /// The level the project sets for a check, if it sets one.
+    pub fn level(&self, slug: DiagnosticSlug) -> Option<CheckLevel> {
+        self.settings
+            .iter()
+            .find(|s| s.slug == slug)
+            .and_then(|s| s.level)
+    }
+}
+
+/// One check named in `[checks]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CheckSetting {
+    /// The check.
+    pub slug: DiagnosticSlug,
+    /// The level it's set to; `None` for a table without `level`, which
+    /// keeps the check's own.
+    pub level: Option<CheckLevel>,
+}
+
+/// The level a project sets a check to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum CheckLevel {
+    /// Not reported.
+    Off,
+    /// Reported as advice, which never fails `ascribe check`.
+    Advice,
+    /// Reported as a warning.
+    Warning,
+    /// Reported as an error.
+    Error,
+}
+
+impl CheckLevel {
+    /// The names `[checks]` accepts, from quietest to loudest.
+    pub const NAMES: [&'static str; 4] = ["off", "advice", "warning", "error"];
+
+    /// The level with this name.
+    pub fn from_name(name: &str) -> Option<CheckLevel> {
+        match name {
+            "off" => Some(CheckLevel::Off),
+            "advice" => Some(CheckLevel::Advice),
+            "warning" => Some(CheckLevel::Warning),
+            "error" => Some(CheckLevel::Error),
+            _ => None,
+        }
+    }
 }
 
 /// `[project]`.

@@ -680,9 +680,14 @@ impl Kept {
                 if !seen.insert(line.clone()) {
                     continue;
                 }
-                if !problem.error {
-                    found.warnings += 1;
-                    continue;
+                match problem.severity {
+                    Severity::Error => {}
+                    Severity::Warning => {
+                        found.warnings += 1;
+                        continue;
+                    }
+                    // Advice never reaches the agent from the hook.
+                    Severity::Advice => continue,
                 }
                 found.errors += 1;
                 if found.lines.len() < LIMIT {

@@ -4,7 +4,7 @@
 
 #### ASC060 `model-toml-syntax`
 
-Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **Message:** ascribe.toml isn't valid TOML: \{detail}
 
@@ -12,7 +12,7 @@ Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 #### ASC061 `model-unknown-key`
 
-Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **Message:** unknown key `{key}` in `[{table}]`
 
@@ -20,7 +20,7 @@ Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 #### ASC062 `model-missing-key`
 
-Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **Message:** `[{table}]` is missing the required key `{key}`
 
@@ -28,7 +28,7 @@ Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 #### ASC063 `model-wrong-type`
 
-Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+Error · file level · next step: write · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **Message:** `{key}` must be \{expected}, but it's \{found}
 
@@ -36,7 +36,7 @@ Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 #### ASC064 `model-invalid-value`
 
-Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
+Error · file level · next step: choose · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 **Message:** `{key}` can't be "\{value}"; use one of: \{values}
 
@@ -44,7 +44,7 @@ Error · file level · [SPEC §7.1]({repo}/blob/main/SPEC.md#71-role)
 
 #### ASC065 `model-spec-unsupported`
 
-Error · file level · [SPEC §11]({repo}/blob/main/SPEC.md#11-versioning)
+Error · file level · next step: choose · [SPEC §11]({repo}/blob/main/SPEC.md#11-versioning)
 
 **Message:** ascribe.toml targets spec version "\{spec}", but this processor implements \{supported}
 
@@ -52,7 +52,7 @@ Error · file level · [SPEC §11]({repo}/blob/main/SPEC.md#11-versioning)
 
 #### ASC066 `model-invalid-name`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{name}` isn't a valid \{role} name: \{rule}
 
@@ -60,7 +60,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC067 `model-empty-text`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{key}` can't be empty
 
@@ -70,7 +70,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC068 `model-path-absolute`
 
-Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
+Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **Message:** `{key}` must be a path relative to ascribe.toml, not an absolute path
 
@@ -78,7 +78,7 @@ Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragme
 
 #### ASC069 `model-content-root-missing`
 
-Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
+Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **Message:** content root `{path}` doesn't exist
 
@@ -86,7 +86,7 @@ Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragme
 
 #### ASC070 `model-output-overlaps-content`
 
-Error · file level · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
+Error · file level · next step: write · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
 **Message:** output directory `{output}` is inside content root `{content}`; move it outside, or builds will read their own output as source
 
@@ -96,7 +96,7 @@ Error · file level · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
 #### ASC133 `model-source-path-missing`
 
-Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 **Message:** the folder of source `{source}`, `{path}`, doesn't exist
 
@@ -104,7 +104,7 @@ Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 #### ASC134 `model-source-outside-repository`
 
-Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
+Error · file level · next step: write · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 **Message:** the folder of source `{source}`, `{path}`, is outside the git repository the project is in
 
@@ -112,7 +112,7 @@ Error · file level · [SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)
 
 #### ASC135 `model-source-remote`
 
-Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
+Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
 **Message:** source `{source}` has both `path` and `git`: a source is a folder in this repository or another repository, not both
 
@@ -122,7 +122,7 @@ Error · file level · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-anoth
 
 #### ASC071 `model-type-multiple-defaults`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** only one content type can be the default, but `{a}` and `{b}` both set default = true
 
@@ -130,7 +130,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC072 `model-type-unreachable`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** content type `{type}` has no `files` and isn't the default, so no page can use it
 
@@ -138,7 +138,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC073 `model-type-title`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** content type `{type}` must declare title = "string": it's the page title, used for empty link text
 
@@ -146,7 +146,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC074 `model-field-reserved`
 
-Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
+Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 **Message:** `{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`
 
@@ -154,7 +154,7 @@ Error · file level · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
 #### ASC075 `model-type-syntax`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** "\{type}" isn't a valid \{kind} type: \{detail}
 
@@ -162,7 +162,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC076 `model-type-fields`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** field `{field}` is an object, so it needs `fields`
 
@@ -170,7 +170,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC077 `model-enum-values`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{field}` has an empty enumeration
 
@@ -178,7 +178,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC078 `model-set-token`
 
-Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
+Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 **Message:** "\{value}" can't be in a value set: members can't contain spaces or any of , | \{ } = "
 
@@ -186,7 +186,7 @@ Error · file level · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
 #### ASC079 `model-default-type`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** default for `{field}` must be \{type}, but it's \{found}
 
@@ -194,7 +194,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC080 `model-phrases-field-type`
 
-Error · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 **Message:** phrases = true only works on string and list(string) fields, and `{field}` is "\{type}"
 
@@ -202,7 +202,7 @@ Error · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 #### ASC081 `model-pattern-syntax`
 
-Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
+Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
 **Message:** "\{pattern}" isn't a valid pattern: \{detail}
 
@@ -210,7 +210,7 @@ Error · file level · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragme
 
 #### ASC119 `model-attribute-reserved`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{key}` can't be an image attribute: HTML already uses it on the \<img> element
 
@@ -218,7 +218,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC141 `model-inline-field`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** inline = "code" only works on string fields, and `{field}` is "\{type}"
 
@@ -228,7 +228,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC082 `model-name-multiple-roles`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{name}` is used as both \{role-a} and \{role-b}; a name can have only one role, so availability specs stay unambiguous
 
@@ -236,7 +236,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC083 `model-name-case`
 
-Warning · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Warning · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{a}` and `{b}` differ only in case; names are case-sensitive, so they're easy to confuse
 
@@ -244,7 +244,7 @@ Warning · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC084 `model-dimension-empty`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** dimension `{dimension}` has no values
 
@@ -252,7 +252,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC085 `model-dimension-value-duplicate`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{value}` appears twice in dimensions.\{dimension}.values
 
@@ -260,7 +260,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC086 `model-dimension-value-shared`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `{value}` is a value of both `{a}` and `{b}`; a value can belong to only one dimension
 
@@ -268,7 +268,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC087 `model-label-undeclared`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** dimensions.\{dimension}.labels has a label for `{value}`, which isn't one of its values: \{values}
 
@@ -276,7 +276,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC088 `model-versionless-undeclared`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** dimensions.\{dimension}.versionless lists `{value}`, which isn't one of its values: \{values}
 
@@ -284,7 +284,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC089 `model-lifecycle-available-required`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** new lifecycle state `{state}` must set available = true or available = false
 
@@ -292,7 +292,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC090 `model-lifecycle-ga-unavailable`
 
-Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 **Message:** `ga` must count as available: content with no lifecycle state is ga
 
@@ -300,7 +300,7 @@ Error · file level · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
 #### ASC091 `model-note-label-required`
 
-Error · file level · [SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)
+Error · file level · next step: write · [SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)
 
 **Message:** new note type `{type}` needs a label, such as label = "\{Type}"
 
@@ -308,7 +308,7 @@ Error · file level · [SPEC §4.5]({repo}/blob/main/SPEC.md#45-note)
 
 #### ASC092 `model-availability-syntax`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **Message:** feature `{key}`: "\{spec}" isn't a valid availability spec: \{detail}
 
@@ -316,7 +316,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC093 `model-availability-unknown-name`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **Message:** feature `{key}`: `{name}` isn't a declared dimension value or dimension name
 
@@ -324,7 +324,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC094 `model-availability-versionless`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **Message:** feature `{key}`: `{target}` is versionless, so it takes a state but no version
 
@@ -332,7 +332,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC095 `model-availability-history-order`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **Message:** feature `{key}`: the history for `{target}` must be in chronological order, but \{later} comes before \{earlier}
 
@@ -340,7 +340,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC096 `model-feature-nested`
 
-Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
+Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 **Message:** feature `{key}`: available must be an availability spec, not another feature (`{other}`)
 
@@ -350,7 +350,7 @@ Error · file level · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
 #### ASC097 `model-phrase-value-type`
 
-Error · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
+Error · file level · next step: write · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 **Message:** phrase `{key}` must be a quoted string, but it's \{found}; write \{key} = "\{value}"
 
@@ -358,7 +358,7 @@ Error · file level · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
 #### ASC098 `model-glossary-duplicate-term`
 
-Error · file level · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
+Error · file level · next step: write · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
 **Message:** "\{text}" is declared by both glossary terms `{a}` and `{b}`
 
@@ -366,7 +366,7 @@ Error · file level · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
 #### ASC099 `model-glossary-link`
 
-Error · file level · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
+Error · file level · next step: choose · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
 **Message:** glossary term `{id}` links to \{path}, which doesn't exist
 
@@ -376,7 +376,7 @@ Error · file level · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
 #### ASC100 `model-widget-reserved-name`
 
-Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget name `{name}` is reserved: names starting with ascribe- belong to Ascribe's element library
 
@@ -384,7 +384,7 @@ Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 #### ASC101 `model-widget-forms`
 
-Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** forms must be ["line"], ["container"], or ["line", "container"]
 
@@ -392,7 +392,7 @@ Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 #### ASC102 `model-widget-binding`
 
-Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+Error · file level · next step: choose · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget `{name}` has a line form, so it needs a binding: "self", "heading", "block", or "heading-or-block"
 
@@ -400,7 +400,7 @@ Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 #### ASC103 `model-widget-container-primary`
 
-Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget `{name}` has a container form, whose opener has no primary, so its primary can't be required; use "\{kind}?"
 
@@ -408,7 +408,7 @@ Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 #### ASC104 `model-widget-groupable-form`
 
-Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget `{name}` is groupable, so it must be container-only: forms = ["container"]
 
@@ -416,7 +416,7 @@ Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 #### ASC105 `model-widget-plain-content`
 
-Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
+Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 **Message:** widget `{name}` doesn't wrap content, so plain-content has no effect; remove it
 
@@ -426,7 +426,7 @@ Error · file level · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
 #### ASC106 `model-consumer-unsupported`
 
-Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+Error · file level · next step: choose · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **Message:** the \{profile} profile doesn't support \{key} = \{value}; use \{values}
 
@@ -434,7 +434,7 @@ Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile
 
 #### ASC107 `model-consumer-site`
 
-Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **Message:** site must be an origin such as "https://docs.example.com"; put any path in base-path
 
@@ -442,7 +442,7 @@ Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile
 
 #### ASC108 `model-consumer-base-path`
 
-Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
 **Message:** base-path must start with "/", such as "/docs/"
 
@@ -450,7 +450,7 @@ Error · file level · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile
 
 #### ASC109 `model-build-name-case`
 
-Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** builds `{a}` and `{b}` differ only in case, so they'd share an output directory on some file systems
 
@@ -458,7 +458,7 @@ Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC110 `model-build-variants`
 
-Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** variants must be "switch" or a selection such as \{ deployment = "cloud" }
 
@@ -466,7 +466,7 @@ Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC111 `model-build-unknown-dimension`
 
-Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** build `{build}` selects dimension `{dimension}`, which isn't declared
 
@@ -474,7 +474,7 @@ Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC112 `model-build-unknown-value`
 
-Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** build `{build}`: `{value}` isn't a value of `{dimension}`; values: \{values}
 
@@ -482,7 +482,7 @@ Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC113 `model-build-availability`
 
-Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** availability must be "badge" or \{ filter = "\<target> \<version>" }
 
@@ -490,7 +490,7 @@ Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC114 `model-build-filter-target`
 
-Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Error · file level · next step: choose · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** build `{build}` filters for `{target}`, which isn't a declared dimension value
 
@@ -498,7 +498,7 @@ Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC115 `model-build-filter-version`
 
-Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Error · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** build `{build}` filters for `{target}`, which is versioned, so it needs a version, such as "\{target} 3.3"
 
@@ -506,7 +506,7 @@ Error · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC116 `model-build-filter-excluded`
 
-Warning · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
+Warning · file level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 **Message:** build `{build}` filters for `{target}`, but its selection keeps only \{dimension} = \{values}, so pages marked for `{target}` are dropped
 
@@ -514,7 +514,7 @@ Warning · file level · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
 #### ASC117 `model-editor-build-unknown`
 
-Error · file level · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
+Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
 
 **Message:** editor.build is `{build}`, which isn't a declared build; builds: \{builds}
 
@@ -522,8 +522,18 @@ Error · file level · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environ
 
 #### ASC118 `model-editor-build-required`
 
-Error · file level · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
+Error · file level · next step: choose · [SPEC §10]({repo}/blob/main/SPEC.md#10-authoring-environment)
 
 **Message:** there are several builds and none is named site; set [editor] build to the one the editor should check
 
 **Fix:** Set `[editor] build` to the build the editor should check, or name one of the builds `site`.
+
+### `[checks]`
+
+#### ASC142 `model-check-not-configurable`
+
+Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
+
+**Message:** `{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off
+
+**Fix:** Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](../reference/diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity.
