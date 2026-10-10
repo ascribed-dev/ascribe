@@ -31,3 +31,7 @@ availability = { filter = "cloud" }
 
 [editor]
 build = "site"
+
+# The tests write pages that nothing links to.
+[checks]
+page-orphan = "off"
