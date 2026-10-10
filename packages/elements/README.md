@@ -24,6 +24,14 @@ import "@ascribed/elements/style.css";
 The CSS works with no script at all. A site can also link `css/style.css`
 directly.
 
+A script can make a reader's choice for a dimension, as selecting a tab does:
+
+```js
+import { choose } from "@ascribed/elements";
+// Remembered across pages, and selected in this page's `pm` groups.
+choose("pm", "pnpm");
+```
+
 ## Theming
 
 Set any of these custom properties on `:root`, or on any ancestor of the

@@ -15,6 +15,7 @@ const VERSION: u32 = 1;
 struct List<'a> {
     version: u32,
     path: String,
+    dimensions: BTreeMap<&'a str, Vec<&'a str>>,
     permalinks: BTreeMap<&'a str, Entry<'a>>,
 }
 
@@ -30,7 +31,8 @@ struct Entry<'a> {
 /// The list, as JSON. A build with no permalinks has an empty table, so a
 /// reader can tell "none" from an output without the file. A name the build
 /// publishes twice, which `permalink-duplicate` reports, is listed with its
-/// first page.
+/// first page. `dimensions` is the content model's dimensions, each with its
+/// values in declaration order: the parameters an address takes.
 pub(super) fn list(model: &ContentModel, build: &ResolvedBuild) -> String {
     let found = build.permalinks();
     let mut permalinks = BTreeMap::new();
@@ -46,6 +48,14 @@ pub(super) fn list(model: &ContentModel, build: &ResolvedBuild) -> String {
     let list = List {
         version: VERSION,
         path: model.consumer.permalink_path(),
+        dimensions: model
+            .dimensions
+            .iter()
+            .map(|dimension| {
+                let values = dimension.values.iter().map(|v| v.value.as_str()).collect();
+                (dimension.name.as_str(), values)
+            })
+            .collect(),
         permalinks,
     };
     // Serializing strings and maps of strings can't fail.

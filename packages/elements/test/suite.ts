@@ -65,6 +65,14 @@ export function suiteFor(engine: Engine): void {
     return open(context, body, options);
   }
 
+  /** Call the package's `choose` on the page, as a site's script would. */
+  async function choose(page: Page, dimension: string, value: string): Promise<void> {
+    // A string, so vitest doesn't rewrite the `import()`.
+    await page.evaluate(
+      `import("/dist/index.js").then((elements) => elements.choose(${JSON.stringify(dimension)}, ${JSON.stringify(value)}))`,
+    );
+  }
+
   async function pseudo(page: Page, selector: string, pseudoElement: string, property: string) {
     return page
       .locator(selector)
@@ -463,6 +471,28 @@ export function suiteFor(engine: Engine): void {
         document.querySelector("main")?.append(late);
       });
       await expect(page.locator("#late [aria-selected=true]").textContent()).resolves.toBe("pnpm");
+      await context.close();
+    });
+
+    it("takes a choice from a script as from a click: on this page, and remembered", async () => {
+      const page = await fresh(TABS);
+      await choose(page, "pm", "yarn");
+      await expect(page.locator("#a [aria-selected=true]").textContent()).resolves.toBe(
+        "pnpm / yarn",
+      );
+      // A group with no tab for the value keeps its selection.
+      await expect(page.locator("#b [aria-selected=true]").textContent()).resolves.toBe("pnpm");
+      expect(await page.evaluate(() => localStorage.getItem("ascribe-tabs:pm"))).toBe("yarn");
+      await context.close();
+    });
+
+    it("starts the next page's groups on a choice a page without tabs made", async () => {
+      // A permalink's address does this: it chooses, then forwards.
+      const before = await fresh("<p>Forwarding.</p>");
+      await choose(before, "os", "windows");
+      const page = await open(context, TABS);
+      await expect(page.locator("#c [aria-selected=true]").textContent()).resolves.toBe("Windows");
+      await expect(page.locator("#a [aria-selected=true]").textContent()).resolves.toBe("npm");
       await context.close();
     });
 

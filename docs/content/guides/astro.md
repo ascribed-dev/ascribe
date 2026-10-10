@@ -148,6 +148,7 @@ A heading marked as a [permalink](../reference/directives.md#permalinks), `@id {
 The integration adds the route itself, from the list each build writes (`_ascribe/permalinks.json` in the site output, [output-layout contract §1.2](../contracts/output-layout.md#12-the-permalinks-list)). Each address is a small page that:
 
 - forwards at once with a `<meta http-equiv="refresh">`, without a script, keeping a heading's anchor;
+- with a script, first takes the reader's choices from the address's parameters ([Linking from a product](#linking-from-a-product));
 - links to the same place, for a browser that doesn't follow;
 - is marked `noindex`, with a canonical link to where it leads, so search engines list the page and not the address.
 
@@ -155,7 +156,52 @@ So it works on any static host, in `astro build` and in `astro dev`, where a per
 
 [`permalink-path`](../reference/content-model.md#15-consumer) moves them, as a path from the site's root, such as `"/go/"` when the docs move under `/docs/` but the addresses your product prints shouldn't. It must be under Astro's `base`, since that's all an Astro site serves; the integration fails the build when it isn't.
 
-**With another generator,** read `_ascribe/permalinks.json` from the build's site output and publish a page like these at `path` and each name, forwarding to `route`, and `#` and `fragment` for a heading. A host's redirect rules can do the same, but a redirect drops nothing only if the host keeps the anchor.
+**With another generator,** read `_ascribe/permalinks.json` from the build's site output and publish a page like these at `path` and each name, forwarding to `route`, and `#` and `fragment` for a heading. For the parameters, its script calls `@ascribed/elements`' `choose` for each one that names a dimension in the list's `dimensions` with one of its values, then forwards. A host's redirect rules can do the same as the page without its script, but a redirect drops nothing only if the host keeps the anchor.
+
+### Linking from a product
+
+A product links to a permalink's address: the site, the permalinks' path, and the name, ending the way the site's routes do. It can add what it knows about its reader, as parameters named for the content model's [dimensions](../reference/content-model.md#6-dimensionsname):
+
+```ts
+// The docs' permalinks, as `[consumer]` publishes them.
+const permalinks = "https://docs.example.com/docs/go/";
+
+function docsLink(name: string, reader: Record<string, string> = {}): string {
+  const url = new URL(name, permalinks);
+  for (const [dimension, value] of Object.entries(reader)) url.searchParams.set(dimension, value);
+  return url.href;
+}
+
+// https://docs.example.com/docs/go/weave-config?pm=pnpm
+docsLink("weave-config", { pm: "pnpm" });
+```
+
+- **A parameter that names a dimension, with one of its values,** sets the reader's choice for that dimension, as if they'd picked the tab: the section opens with the `pnpm` tab showing, and the choice holds on the pages they read next.
+- **Anything else is ignored:** a name that isn't a dimension, or a value the dimension doesn't have. Send what the product knows, without checking what the docs accept; a link with only unknown parameters works as one with none.
+- **The choice needs a script and the browser's storage.** With scripts off, the address forwards to the section with the tabs as they were; with storage blocked, the choice doesn't reach the next page.
+- **A version isn't a parameter yet.** `self-managed=3.4` is ignored like any unknown one.
+
+### A permalink that isn't here
+
+A product released before a section was renamed, or after one was added, may link to a name these docs don't have. The host answers with the site's 404 page, as for any missing address, so put `MissingPermalink` on it:
+
+```astro
+---
+// src/pages/404.astro
+import MissingPermalink from "@ascribed/astro/MissingPermalink.astro";
+---
+
+<h1>Page not found</h1>
+<MissingPermalink />
+```
+
+On an address under the permalinks' path, it says the link came from a product that expected a section of the docs there, names it, and offers the site's home page and search. Anywhere else, and without a script, it shows nothing. `home` sets where it sends the reader, the site's root by default; children replace its last paragraph, such as to point at your search:
+
+```astro
+<MissingPermalink>
+  <p>Search the docs for what you need, or go back to the <a href="/docs">home page</a>.</p>
+</MissingPermalink>
+```
 
 ## Review in the site preview
 @available: ascribe 0.2.0

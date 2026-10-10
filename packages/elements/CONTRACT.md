@@ -131,6 +131,7 @@ pnpm add -g @quill/agent
 - **Initial selection:** for a group with `sync`, the first tab whose `value` contains the remembered value for that dimension; otherwise, and for labeled groups, the first tab.
 - **Syncing:** selecting a tab in a group with `sync` records the first value in the tab's `value` as the choice for that dimension, then selects, in every `<ascribe-tabs>` on the page with the same `sync`, the first tab whose `value` contains it. A group with no matching tab keeps its selection.
 - **Remembering:** the choice is stored in `localStorage` under the key `ascribe-tabs:<sync>`, such as `ascribe-tabs:pm`, and read when a group starts. Storage can be unavailable (private windows, blocked storage): every read and write is guarded, and without storage the choice lasts for the page only.
+- **Choosing from a script:** the script exports `choose(dimension, value)`, which does what selecting a tab whose first value is `value`, in a group whose `sync` is `dimension`, does: it records the choice and selects it in every group on the page with that `sync`, and a group with no matching tab keeps its selection. It doesn't check the value. A page with no groups can call it before sending the reader on, and the next page's groups start on the choice, as a permalink's address does with its parameters.
 
 ## 4. `<ascribe-availability>` and `<ascribe-availability-target>`
 

@@ -49,6 +49,7 @@ fn each_page_and_marked_heading_is_listed_with_its_route_and_anchor() {
         serde_json::json!({
             "version": 1,
             "path": "/docs/go/",
+            "dimensions": { "deployment": ["cloud", "self-managed"] },
             "permalinks": {
                 "cli-check": {
                     "route": "/docs/reference/cli/",
@@ -95,7 +96,28 @@ fn a_build_with_no_permalinks_has_an_empty_table_at_the_path_it_sets() {
     )];
     assert_eq!(
         list(&model, &files, "site"),
-        serde_json::json!({ "version": 1, "path": "/go/", "permalinks": {} })
+        serde_json::json!({
+            "version": 1,
+            "path": "/go/",
+            "dimensions": { "deployment": ["cloud", "self-managed"] },
+            "permalinks": {},
+        })
+    );
+}
+
+#[test]
+fn the_list_names_each_dimension_with_its_values_in_declaration_order() {
+    let model = MODEL.replace(
+        "[builds.site]",
+        "[dimensions.platform]\nvalues = [\"macos\", \"linux\", \"windows\"]\n[builds.site]",
+    );
+    let files = [("index.md", "---\ntitle: Home\n---\n\nHello.\n")];
+    assert_eq!(
+        list(&model, &files, "cloud")["dimensions"],
+        serde_json::json!({
+            "deployment": ["cloud", "self-managed"],
+            "platform": ["macos", "linux", "windows"],
+        })
     );
 }
 

@@ -82,6 +82,16 @@ export function normalizeBase(base: string): string {
 }
 
 /**
+ * The route of the site's root, Astro's `base`, ending the way `trailingSlash`
+ * says the site's routes do. (`import.meta.env.BASE_URL` isn't replaced in a
+ * package's components.)
+ */
+export function homeRoute(base: string, trailingSlash: "always" | "never" | "ignore"): string {
+  const root = normalizeBase(base);
+  return trailingSlash === "never" && root !== "/" ? root.slice(0, -1) : root;
+}
+
+/**
  * The ways `ascribe.toml`'s `[consumer]` disagrees with Astro's configuration,
  * as sentences. Ascribe writes every link with its own settings, so a site
  * whose routes differ would have broken links.
