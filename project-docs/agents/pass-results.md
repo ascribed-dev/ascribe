@@ -2,7 +2,7 @@
 
 Part of [Agents](README.md), [phase 11](phase-11-docs.md). What the full pass found, what was fixed, and what's still to run.
 
-The pass has two halves. The tool surface (every command, the MCP server, `ascribe agents sync`'s files, and the hooks, run on scratch copies of `examples/quill` and `examples/monorepo`) was run in a cloud session on 2026-10-10, against `main` at 3dcc625. The runs with real agents, listed in order in [hand-checks.md](hand-checks.md), were run on Kyle's machine on 2026-10-09 with Claude Code, the only agent he has access to. The checks and runs that need Codex, Cursor, VS Code with Copilot, or Copilot's cloud agent aren't run, for that reason.
+The pass has two halves. The tool surface (every command, the MCP server, `ascribe agents sync`'s files, and the hooks, run on scratch copies of `examples/quill` and `examples/monorepo`) was run in a cloud session on 2026-10-10 (UTC), against `main` at 3dcc625. The runs with real agents, listed in order in [hand-checks.md](hand-checks.md), came after it, also on 2026-10-10 (UTC), on Kyle's machine with Claude Code, the only agent he has access to. The checks and runs that need Codex, Cursor, VS Code with Copilot, or Copilot's cloud agent aren't run, for that reason.
 
 ## The tool surface
 
@@ -38,7 +38,7 @@ From [hand-checks.md](hand-checks.md), sections 1 to 4. Kyle ran 1.1, 1.2, and 1
 | Check | Result |
 |---|---|
 | 1.1 The plugin installs and `/ascribe:check` appears | Yes: in the terminal, `/plugin marketplace add` and `/plugin install` worked and the commands appeared. Loaded with `--plugin-dir`, `/ascribe:check`, `/ascribe:new-page`, `/ascribe:review`, the skill, and the MCP server all appeared too. |
-| 1.2 A broken link is reported once, after the edit | Yes with the project's hooks: one `ASC036` line after the edit, naming the build. **With the plugin, nothing reached the model after the edit** in a `claude -p` run; only the stop hook told it. See [The plugin's diagnostics after an edit](#the-plugins-diagnostics-after-an-edit). |
+| 1.2 A broken link is reported once, after the edit | Yes with the project's hooks: one `ASC036` line after the edit, naming the build. **With the plugin, nothing reached the model after the edit** in a `claude -p` run; only the stop hook told it. See [The plugin's diagnostics after an edit](#the-plugins-diagnostics-after-an-edit). With the plugin in the terminal: run by Kyle; result to record. |
 | 1.3 Sent back once, then allowed to stop | Yes, with the project's hooks and with the plugin. Claude Code shows the person "Stop hook error occurred" for the block. |
 | 1.4 The same in the VS Code extension | Run by Kyle; result to record |
 | 1.5 `ascribe` off the path | Yes: both hooks fail with `ascribe: command not found` (exit 127), shown to the person and not to the model. The model learned it from the skill and its own `which`, and said the check wasn't run. |
@@ -52,7 +52,7 @@ From [hand-checks.md](hand-checks.md), sections 1 to 4. Kyle ran 1.1, 1.2, and 1
 In the headless run, the plugin's language server told the model nothing after its edit. The server isn't the cause:
 
 - Started cold the way Claude Code starts it (`initialize` with `rootUri`, `rootPath`, and one workspace folder, all the working directory, then `didOpen` with the edited text), `ascribe lsp` publishes the broken link's diagnostic 23 ms after it starts, on quill.
-- Claude Code starts a plugin's server only at the first edit of a file it handles, and hands what the server publishes to the model with its *next* request, not as the edit's result (read in the client code of Claude Code 2.1.42, the version at hand; its documentation doesn't say, and 2.1.289 may differ). An edit that's the last thing an agent does before it stops has no next request but the stop hook's, which is what was seen.
+- Claude Code starts a plugin's server only at the first edit of a file it handles, and hands what the server publishes to the model with its *next* request, not as the edit's result (read in the client code of Claude Code 2.1.42, the version in the cloud session that read it; its documentation doesn't say, and 2.1.289, the version on Kyle's machine that made the runs, may differ). An edit that's the last thing an agent does before it stops has no next request but the stop hook's, which is what was seen.
 
 So it isn't a gap in the plugin, but the language server can't be counted on to report the last edit: the stop hook is what catches it, which is why the plugin has one.
 
@@ -60,7 +60,7 @@ So it isn't a gap in the plugin, but the language server can't be counted on to 
 
 "Passes" means `ascribe check --deny-warnings` exits `0` for every build. Each cell: passes (yes/no), times the person stepped in, whether the agent ran the check itself, and what it got wrong that a tool could have told it.
 
-The Claude Code columns were run on 2026-10-09 with Claude Code 2.1.289, without a person at the keyboard: `claude -p` with the task's sentence as the whole prompt, edits accepted, and Bash allowed, each in a fresh copy, with `ascribe` built from the phase 11 branch on the path, and Kyle's own Claude Code settings and plugins rather than a clean profile. Task 6 needs VS Code's review and isn't run that way. In the runs with everything set up, the edit hook never had an error to report and the stop hook never held the agent, and no run called an MCP tool: each used the command line. The seeded pages of task 7 were alike but for a number, so whether an agent works rule by rule on pages that differ is still open.
+The Claude Code columns were run on Kyle's machine on 2026-10-10 (UTC) with Claude Code 2.1.289, without a person at the keyboard: `claude -p` with the task's sentence as the whole prompt, edits accepted, and Bash allowed, each in a fresh copy, with `ascribe` built on the path from the phase 11 branch ([#202](https://github.com/ascribed-dev/ascribe/pull/202)), and Kyle's own Claude Code settings and plugins rather than a clean profile. Task 6 needs VS Code's review and isn't run that way. In the runs with everything set up, the edit hook never had an error to report and the stop hook never held the agent, and no run called an MCP tool: each used the command line. The seeded pages of task 7 were alike but for a number, so whether an agent works rule by rule on pages that differ is still open.
 
 | Task | Claude Code, nothing set up | Claude Code, everything | Copilot in VS Code, nothing set up | Copilot in VS Code, everything |
 |---|---|---|---|---|
