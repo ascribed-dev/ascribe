@@ -10,7 +10,7 @@ use ascribe_check::{PageChecker, Project};
 use ascribe_core::{FileId, RelPath};
 use ascribe_resolve::{DefaultRouter, Layout, MemoryFs};
 
-const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[dimensions.pm]\nvalues = [\"npm\", \"pnpm\"]\n[builds.site]\nvariants = \"switch\"\navailability = \"badge\"\n";
+const MODEL: &str = "spec = \"0.1\"\n[project]\ncontent-root = \"docs\"\n[dimensions.pm]\nvalues = [\"npm\", \"pnpm\"]\n[builds.site]\nvariants = \"switch\"\navailability = \"badge\"\n[checks]\npage-orphan = \"off\"\nfragment-unused = \"off\"\nphrase-unused = \"off\"\nfeature-unused = \"off\"\nglossary-term-unused = \"off\"\nimage-unused = \"off\"\nimage-large = \"off\"\ntitle-duplicate = \"off\"\n";
 
 const FILES: [(&str, &str); 6] = [
     (

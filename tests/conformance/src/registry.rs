@@ -86,6 +86,15 @@ impl fmt::Display for Level {
     }
 }
 
+/// The areas a quality check can be in, by name, with the title of their
+/// section in the diagnostics reference, in its order.
+pub const AREAS: &[(&str, &str)] = &[
+    ("pages", "Pages"),
+    ("project", "Across the project"),
+    ("prose", "Prose"),
+    ("outputs", "Outputs"),
+];
+
 /// One registry entry.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -119,6 +128,13 @@ pub struct Entry {
     /// The SPEC §8.2 row, as `<construct> | <condition>`.
     #[serde(default)]
     pub row: Option<String>,
+    /// What a quality check checks, one of [`AREAS`]: for an entry that is
+    /// neither a §8.2 row nor a loader rule.
+    #[serde(default)]
+    pub area: Option<String>,
+    /// When a quality check is reported, as a sentence without its full stop.
+    #[serde(default)]
+    pub when: Option<String>,
     /// The group of the diagnostics reference a loader rule is listed in.
     #[serde(default)]
     pub group: Option<String>,

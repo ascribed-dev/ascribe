@@ -923,6 +923,7 @@ impl<'s> Loader<'s> {
                 DeValue::String(s) => out.push(Phrase {
                     key: key.to_owned(),
                     value: s.to_string(),
+                    span: key_span,
                 }),
                 other => {
                     let raw = self.text_of(sp(item)).to_owned();
@@ -1129,6 +1130,7 @@ impl<'s> Loader<'s> {
                 name: f.name,
                 available_text: f.text,
                 available: spec,
+                span: f.key_span,
             });
         }
         out

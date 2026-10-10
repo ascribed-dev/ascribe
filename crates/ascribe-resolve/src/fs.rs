@@ -107,6 +107,15 @@ pub trait FileSystem {
     /// snippet reads a file only when this is inside its source (SPEC §4.8).
     fn real_path(&self, project_path: &RelPath) -> Option<RelPath>;
 
+    /// The size in bytes of a file at a path relative to the project root;
+    /// `None` when it isn't there. A file system that can't tell reads the
+    /// file.
+    fn size(&self, project_path: &RelPath) -> Option<u64> {
+        self.read_file(project_path)
+            .ok()
+            .map(|bytes| bytes.len() as u64)
+    }
+
     /// Every file in a folder and the folders in it, as paths relative to
     /// the project root, in path order: the copies of a source in another
     /// repository (SPEC §7.4). A symbolic link is listed, not followed.
@@ -328,6 +337,16 @@ impl FileSystem for DiskFs {
         let mut segments = vec![".."; ups];
         segments.extend(rest.segments());
         RelPath::parse(&segments.join("/")).ok()
+    }
+
+    fn size(&self, project_path: &RelPath) -> Option<u64> {
+        let path = project_path
+            .segments()
+            .fold(self.project_root.clone(), |p, s| p.join(s));
+        fs::metadata(path)
+            .ok()
+            .filter(|m| m.is_file())
+            .map(|m| m.len())
     }
 
     fn files_in(&self, project_dir: &RelPath) -> Vec<RelPath> {

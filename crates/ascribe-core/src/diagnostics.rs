@@ -460,6 +460,30 @@ pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-fiel
 pub const MODEL_CHECK_NOT_CONFIGURABLE: DiagnosticSlug =
     DiagnosticSlug("model-check-not-configurable");
 
+/// `ASC143`, advice, page level: a content check.
+pub const PAGE_ORPHAN: DiagnosticSlug = DiagnosticSlug("page-orphan");
+
+/// `ASC144`, advice, file level: a content check.
+pub const FRAGMENT_UNUSED: DiagnosticSlug = DiagnosticSlug("fragment-unused");
+
+/// `ASC145`, advice, file level: a content check.
+pub const PHRASE_UNUSED: DiagnosticSlug = DiagnosticSlug("phrase-unused");
+
+/// `ASC146`, advice, file level: a content check.
+pub const FEATURE_UNUSED: DiagnosticSlug = DiagnosticSlug("feature-unused");
+
+/// `ASC147`, advice, file level: a content check.
+pub const GLOSSARY_TERM_UNUSED: DiagnosticSlug = DiagnosticSlug("glossary-term-unused");
+
+/// `ASC148`, advice, file level: a content check.
+pub const IMAGE_UNUSED: DiagnosticSlug = DiagnosticSlug("image-unused");
+
+/// `ASC149`, advice, file level: a content check.
+pub const IMAGE_LARGE: DiagnosticSlug = DiagnosticSlug("image-large");
+
+/// `ASC150`, advice, page level: a content check.
+pub const TITLE_DUPLICATE: DiagnosticSlug = DiagnosticSlug("title-duplicate");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -604,9 +628,26 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_UNUSED,
     MODEL_INLINE_FIELD,
     MODEL_CHECK_NOT_CONFIGURABLE,
+    PAGE_ORPHAN,
+    FRAGMENT_UNUSED,
+    PHRASE_UNUSED,
+    FEATURE_UNUSED,
+    GLOSSARY_TERM_UNUSED,
+    IMAGE_UNUSED,
+    IMAGE_LARGE,
+    TITLE_DUPLICATE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
 /// registry's entries with `configurable = true`, in registry order. A test
 /// keeps it equal to the registry.
-pub const CONFIGURABLE: &[DiagnosticSlug] = &[];
+pub const CONFIGURABLE: &[DiagnosticSlug] = &[
+    PAGE_ORPHAN,
+    FRAGMENT_UNUSED,
+    PHRASE_UNUSED,
+    FEATURE_UNUSED,
+    GLOSSARY_TERM_UNUSED,
+    IMAGE_UNUSED,
+    IMAGE_LARGE,
+    TITLE_DUPLICATE,
+];

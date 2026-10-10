@@ -79,6 +79,19 @@ impl Checks {
             .find(|s| s.slug == slug)
             .and_then(|s| s.level)
     }
+
+    /// Whether the project turns a check off.
+    pub fn is_off(&self, slug: DiagnosticSlug) -> bool {
+        self.level(slug) == Some(CheckLevel::Off)
+    }
+
+    /// The `limit` the project sets for a check, in bytes, if it sets one.
+    pub fn limit(&self, slug: DiagnosticSlug) -> Option<u64> {
+        self.settings
+            .iter()
+            .find(|s| s.slug == slug)
+            .and_then(|s| s.limit)
+    }
 }
 
 /// One check named in `[checks]`.
@@ -89,6 +102,8 @@ pub struct CheckSetting {
     /// The level it's set to; `None` for a table without `level`, which
     /// keeps the check's own.
     pub level: Option<CheckLevel>,
+    /// Its `limit`, a size in bytes, for a check that takes one.
+    pub limit: Option<u64>,
 }
 
 /// The level a project sets a check to.
@@ -254,6 +269,8 @@ pub struct Feature {
     pub available_text: String,
     /// The parsed spec. Spans are offsets into `ascribe.toml`.
     pub available: AvailabilitySpec,
+    /// The `[features.<key>]` key in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// A note type.
@@ -274,6 +291,8 @@ pub struct Phrase {
     pub key: String,
     /// The literal replacement text.
     pub value: String,
+    /// The key in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// Which glossary occurrences are linked.
@@ -319,6 +338,8 @@ pub struct GlossaryTerm {
     /// Which occurrences of this term are linked (the term's setting, else
     /// the glossary's).
     pub match_mode: GlossaryMatch,
+    /// The term id's key in `ascribe.toml`.
+    pub span: Span,
 }
 
 /// A project widget.

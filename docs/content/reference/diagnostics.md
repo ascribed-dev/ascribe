@@ -26,7 +26,7 @@ Each diagnostic says what kind of next step it has. `ascribe check --format json
 
 ## Setting a check's level
 
-A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](content-model.md#19-checks) in `ascribe.toml`. Its entry below says it's configurable. No diagnostic is configurable yet: every one listed here is about whether the project is valid, which a project can't lower or turn off.
+A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](content-model.md#19-checks) in `ascribe.toml`. Its entry below says it's configurable. The [content checks](#content-checks) are; every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
 
 ## Index
 
@@ -39,5 +39,11 @@ A check about the content's quality, rather than whether the project is valid, c
 ## The content model
 
 @include: ../_generated/diagnostics-content-model.md
+
+## Content checks
+
+Checks about the content's quality: what nothing uses, what nothing links to, and what readers would trip on. Each is advice unless your project sets it louder in [`[checks]`](content-model.md#19-checks), and `ascribe check` runs it. The editor reports a page's orphan and duplicate title, and what's unused, when you save; the checks of image files run only in `ascribe check`.
+
+@include: ../_generated/diagnostics-content-checks.md
 
 @include: ../_generated/diagnostics-retired.md

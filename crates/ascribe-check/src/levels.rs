@@ -48,7 +48,11 @@ mod tests {
         Checks {
             settings: settings
                 .iter()
-                .map(|&(slug, level)| CheckSetting { slug, level })
+                .map(|&(slug, level)| CheckSetting {
+                    slug,
+                    level,
+                    limit: None,
+                })
                 .collect(),
         }
     }

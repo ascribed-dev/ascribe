@@ -143,3 +143,11 @@
 | [ASC140](../reference/diagnostics.md#asc140-source-copy-unused) | `source-copy-unused` | Warning | File | write |
 | [ASC141](../reference/diagnostics.md#asc141-model-inline-field) | `model-inline-field` | Error | File | write |
 | [ASC142](../reference/diagnostics.md#asc142-model-check-not-configurable) | `model-check-not-configurable` | Error | File | write |
+| [ASC143](../reference/diagnostics.md#asc143-page-orphan) | `page-orphan` | Advice | Page | review |
+| [ASC144](../reference/diagnostics.md#asc144-fragment-unused) | `fragment-unused` | Advice | File | review |
+| [ASC145](../reference/diagnostics.md#asc145-phrase-unused) | `phrase-unused` | Advice | File | review |
+| [ASC146](../reference/diagnostics.md#asc146-feature-unused) | `feature-unused` | Advice | File | review |
+| [ASC147](../reference/diagnostics.md#asc147-glossary-term-unused) | `glossary-term-unused` | Advice | File | review |
+| [ASC148](../reference/diagnostics.md#asc148-image-unused) | `image-unused` | Advice | File | review |
+| [ASC149](../reference/diagnostics.md#asc149-image-large) | `image-large` | Advice | File | review |
+| [ASC150](../reference/diagnostics.md#asc150-title-duplicate) | `title-duplicate` | Advice | Page | write |

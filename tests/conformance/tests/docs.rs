@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
-use ascribe_conformance::registry::{Next, placeholders};
+use ascribe_conformance::registry::{AREAS, Next, placeholders};
 use ascribe_conformance::{DiagnosticsRegistry, Entry, Level, Severity, Suite};
 
 fn repo() -> PathBuf {
@@ -24,7 +24,7 @@ const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test do
 
 /// The evidence an agent prompt can carry: what an entry's `evidence` may
 /// name.
-const EVIDENCE: &[&str] = &["allowed-values"];
+const EVIDENCE: &[&str] = ascribe_check::prompt::EVIDENCE;
 
 /// The tables of `[checks]` that aren't a check's: the tools' settings. No
 /// diagnostic can have their names.
@@ -242,7 +242,8 @@ const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by 
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
-/// source-file diagnostics, the content model's, and the retired ones (empty
+/// source-file diagnostics, the content model's, the content checks, and the
+/// retired ones (empty
 /// when there are none). The index links to entries in the other fragments
 /// through the page that includes them all (SPEC §4.2).
 fn render(
@@ -258,7 +259,7 @@ fn render(
     // Source-file diagnostics, grouped by the construct their SPEC row names,
     // in the order each construct first appears.
     let mut constructs: Vec<(&str, Vec<(&Entry, &str)>)> = Vec::new();
-    for entry in active.iter().filter(|e| !is_model(e)) {
+    for entry in active.iter().filter(|e| !is_model(e) && e.area.is_none()) {
         let row = entry.row.as_deref().unwrap_or_default();
         let (construct, condition) = row.split_once(" | ").unwrap_or((row, ""));
         match constructs.iter_mut().find(|(c, _)| *c == construct) {
@@ -283,6 +284,21 @@ fn render(
             .filter(|e| is_model(e) && model_group(e) == *group)
         {
             write_entry(&mut content_model, entry, None, anchors);
+        }
+    }
+
+    let mut content_checks = HEADER.to_owned();
+    for (area, title) in AREAS {
+        let entries: Vec<&&Entry> = active
+            .iter()
+            .filter(|e| e.area.as_deref() == Some(*area))
+            .collect();
+        if entries.is_empty() {
+            continue;
+        }
+        let _ = write!(content_checks, "\n### {title}\n");
+        for entry in entries {
+            write_entry(&mut content_checks, entry, entry.when.as_deref(), anchors);
         }
     }
 
@@ -311,6 +327,7 @@ fn render(
         ("diagnostics-index.md".to_owned(), all),
         ("diagnostics-source-files.md".to_owned(), source_files),
         ("diagnostics-content-model.md".to_owned(), content_model),
+        ("diagnostics-content-checks.md".to_owned(), content_checks),
         ("diagnostics-retired.md".to_owned(), retired),
     ]
 }

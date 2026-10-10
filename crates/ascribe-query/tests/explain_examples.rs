@@ -1,12 +1,19 @@
 //! Each example in the diagnostics registry shows what it says: its wrong
 //! page has the diagnostic, under the explain model with the example's own
 //! model laid over it, and nothing else; its right page has no diagnostic at
-//! all.
+//! all. Advice about the example's project as a whole (its one page is an
+//! orphan, the model's entries are unused) isn't part of either.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use ascribe_check::Registry;
 use ascribe_query::explain::{Base, example_slugs};
+
+fn is_advice(slug: &str) -> bool {
+    Registry::global()
+        .find(slug)
+        .is_some_and(|e| e.severity == ascribe_check::Severity::Advice)
+}
 
 #[test]
 fn every_example_shows_its_diagnostic() {
@@ -17,7 +24,14 @@ fn every_example_shows_its_diagnostic() {
             continue;
         };
         count += 1;
+        let shown = |slugs: Vec<String>| -> Vec<String> {
+            slugs
+                .into_iter()
+                .filter(|s| *s == entry.slug || !is_advice(s))
+                .collect()
+        };
         let wrong = example_slugs(example, &example.wrong, Base::Explain)
+            .map(shown)
             .unwrap_or_else(|e| panic!("{}: {e}", entry.slug));
         if !wrong.contains(&entry.slug) {
             failures.push(format!(
@@ -31,6 +45,7 @@ fn every_example_shows_its_diagnostic() {
             ));
         }
         let right = example_slugs(example, &example.right, Base::Explain)
+            .map(shown)
             .unwrap_or_else(|e| panic!("{}: {e}", entry.slug));
         if !right.is_empty() {
             failures.push(format!("{}: the right page has {right:?}", entry.slug));

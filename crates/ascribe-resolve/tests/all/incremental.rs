@@ -486,8 +486,10 @@ fn a_model_that_only_moves_its_own_warnings_changes_no_file() {
             .model(),
         )])
         .unwrap();
-    // The comment shifts no warning here, so nothing at all changed.
-    assert!(affected.is_empty());
+    // The comment moves where the phrases and the glossary term are
+    // declared, which only the diagnostics of `ascribe.toml` read.
+    assert_eq!(affected.model, Some(ModelImpact::Warnings));
+    assert!(affected.recheck.is_empty() && affected.re_resolve.is_empty());
     // An identical model is nothing either.
     let affected = inc
         .apply([Change::Model(ModelSpec::base().model())])

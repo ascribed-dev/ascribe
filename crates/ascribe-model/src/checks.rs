@@ -11,7 +11,7 @@ use toml::de::DeValue;
 use crate::loader::Loader;
 use crate::model::{CheckLevel, CheckSetting, Checks};
 use crate::names::suggest;
-use crate::toml_util::{V, entries, join};
+use crate::toml_util::{V, entries, join, sp};
 
 impl Loader<'_> {
     /// `[checks]`.
@@ -41,12 +41,16 @@ impl Loader<'_> {
                 continue;
             }
             let path = join("checks", key);
+            let mut limit = None;
             let level = match value.get_ref() {
                 DeValue::String(_) => self.level(&path, value),
                 DeValue::Table(table) => {
-                    // A check's own settings join `level` here as checks
-                    // gain them.
-                    self.check_keys(&path, table, &["level"]);
+                    let mut keys = vec!["level"];
+                    keys.extend(settings_of(slug));
+                    self.check_keys(&path, table, &keys);
+                    if let Some(v) = table.get("limit").filter(|_| keys.contains(&"limit")) {
+                        limit = self.size(&join(&path, "limit"), v);
+                    }
                     table
                         .get("level")
                         .and_then(|l| self.level(&join(&path, "level"), l))
@@ -56,9 +60,32 @@ impl Loader<'_> {
                     None
                 }
             };
-            settings.push(CheckSetting { slug, level });
+            settings.push(CheckSetting { slug, level, limit });
         }
         Checks { settings }
+    }
+
+    /// A size: a whole number of bytes, or a string with a unit, `B`, `KB`,
+    /// or `MB` (`"500 KB"`, `"1.5 MB"`); a kilobyte is 1,000 bytes.
+    fn size(&mut self, path: &str, v: &V<'_>) -> Option<u64> {
+        let parsed = match v.get_ref() {
+            DeValue::Integer(i) => i.as_str().parse::<u64>().ok(),
+            DeValue::String(s) => parse_size(s),
+            _ => {
+                self.wrong_type(path, v, SIZE);
+                return None;
+            }
+        };
+        if parsed.is_none() {
+            let found = format!("`{}`", self.text_of(sp(v)));
+            self.push(
+                self.issue(diagnostics::MODEL_WRONG_TYPE, sp(v))
+                    .with_arg("key", path)
+                    .with_arg("expected", SIZE)
+                    .with_arg("found", found),
+            );
+        }
+        parsed
     }
 
     /// A level: `off`, `advice`, `warning`, or `error`.
@@ -66,6 +93,39 @@ impl Loader<'_> {
         let name = self.choice(path, v, &CheckLevel::NAMES)?;
         CheckLevel::from_name(&name)
     }
+}
+
+/// What a size is, in a message.
+const SIZE: &str = "a size, such as \"500 KB\"";
+
+/// The settings a check takes in its table, besides `level`.
+fn settings_of(slug: DiagnosticSlug) -> &'static [&'static str] {
+    if slug == diagnostics::IMAGE_LARGE {
+        &["limit"]
+    } else {
+        &[]
+    }
+}
+
+/// A size in bytes, from a number and a unit: `B`, `KB` (1,000 bytes), or
+/// `MB` (1,000,000), in either case, with or without a space.
+fn parse_size(text: &str) -> Option<u64> {
+    let text = text.trim();
+    let split = text
+        .find(|c: char| !(c.is_ascii_digit() || c == '.'))
+        .unwrap_or(text.len());
+    let (number, unit) = text.split_at(split);
+    let scale: f64 = match unit.trim().to_ascii_uppercase().as_str() {
+        "B" => 1.0,
+        "KB" => 1_000.0,
+        "MB" => 1_000_000.0,
+        _ => return None,
+    };
+    let number: f64 = number.parse().ok()?;
+    let bytes = (number * scale).round();
+    // A size is finite and at most a few gigabytes, so it fits in a u64.
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    (bytes.is_finite() && (0.0..1e15).contains(&bytes)).then_some(bytes as u64)
 }
 
 #[cfg(test)]
@@ -77,10 +137,12 @@ mod tests {
 
     use crate::loader::load_configurable;
 
-    // No check is configurable yet, so these make two of them configurable.
+    // Two checks that aren't configurable are made configurable here, and
+    // one that is, with a setting of its own.
     const CONFIGURABLE: &[DiagnosticSlug] = &[
         diagnostics::BINDING_BLANK_LINE,
         diagnostics::CONTAINER_NESTING_DEEP,
+        diagnostics::IMAGE_LARGE,
     ];
 
     fn load(checks: &str) -> Result<Checks, Vec<(DiagnosticSlug, String)>> {
@@ -157,6 +219,33 @@ mod tests {
                     "binding-blank-lines".to_owned()
                 ),
             ]
+        );
+    }
+
+    #[test]
+    fn a_limit_is_a_size() {
+        let checks = load("[checks.image-large]\nlimit = \"1.5 MB\"\n").unwrap();
+        assert_eq!(checks.limit(diagnostics::IMAGE_LARGE), Some(1_500_000));
+        assert_eq!(checks.level(diagnostics::IMAGE_LARGE), None);
+        let checks = load("[checks.image-large]\nlimit = 2048\nlevel = \"warning\"\n").unwrap();
+        assert_eq!(checks.limit(diagnostics::IMAGE_LARGE), Some(2048));
+        assert_eq!(parse_size("500kb"), Some(500_000));
+        assert_eq!(parse_size("12 B"), Some(12));
+        assert_eq!(parse_size("1 GB"), None);
+        assert_eq!(parse_size("KB"), None);
+    }
+
+    #[test]
+    fn a_limit_that_isnt_a_size_is_reported() {
+        let found = load("[checks.image-large]\nlimit = \"big\"\n").unwrap_err();
+        assert_eq!(
+            found,
+            [(diagnostics::MODEL_WRONG_TYPE, "\"big\"".to_owned())]
+        );
+        let found = load("[checks.container-nesting-deep]\nlimit = \"1 MB\"\n").unwrap_err();
+        assert_eq!(
+            found,
+            [(diagnostics::MODEL_UNKNOWN_KEY, "limit".to_owned())]
         );
     }
 }

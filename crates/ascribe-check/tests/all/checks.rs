@@ -32,6 +32,17 @@ versionless = ["cloud"]
 [phrases]
 product = "Quill"
 api = "https://api.quill.dev/"
+
+# The content checks across the project are tested in across.rs.
+[checks]
+page-orphan = "off"
+fragment-unused = "off"
+phrase-unused = "off"
+feature-unused = "off"
+glossary-term-unused = "off"
+image-unused = "off"
+image-large = "off"
+title-duplicate = "off"
 "#;
 
 fn model() -> ascribe_model::ContentModel {

@@ -322,6 +322,7 @@ impl Loader<'_> {
                 link,
                 case_sensitive,
                 match_mode,
+                span: id_span,
             });
         }
         self.glossary_duplicates(&out, tt);

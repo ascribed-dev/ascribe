@@ -1,0 +1,12 @@
+description: >-
+  A phrase no file writes, a feature no availability spec names, and a
+  glossary term whose text and aliases appear in no prose are each reported
+  where `ascribe.toml` declares them. A phrase in a frontmatter field that
+  takes phrases is used; a term with `match = "marked"` isn't reported.
+spec: ["5.1", "4.4", "5.4"]
+tags: [check]
+
+diagnostics:
+  - {slug: feature-unused, file: ascribe.toml, line: 20}
+  - {slug: phrase-unused, file: ascribe.toml, line: 27}
+  - {slug: glossary-term-unused, file: ascribe.toml, line: 34}

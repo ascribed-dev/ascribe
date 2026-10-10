@@ -1,0 +1,5 @@
+---
+title: Install
+---
+
+On cloud.

@@ -115,6 +115,35 @@ fn loader_rules_are_file_level_and_grouped() {
     }
 }
 
+/// A quality check is about the content, not whether it's valid: a project
+/// can set its level, and the reference says when it's reported.
+#[test]
+fn quality_checks_are_configurable_and_in_an_area() {
+    for e in &registry().entries {
+        let Some(area) = &e.area else {
+            assert!(
+                e.when.is_none(),
+                "{}: only a quality check has `when`",
+                e.slug
+            );
+            continue;
+        };
+        assert!(
+            ascribe_conformance::registry::AREAS
+                .iter()
+                .any(|(a, _)| a == area),
+            "{}: `{area}` isn't one of the areas",
+            e.slug
+        );
+        assert!(
+            e.configurable,
+            "{}: a quality check is configurable",
+            e.slug
+        );
+        assert!(e.when.is_some(), "{}: a quality check says `when`", e.slug);
+    }
+}
+
 #[test]
 fn codes_are_sequential_and_slugs_unique() {
     let reg = registry();
@@ -133,8 +162,14 @@ fn codes_are_sequential_and_slugs_unique() {
         });
         assert!(kebab, "{} isn't kebab-case", e.slug);
         assert!(
-            e.row.is_some() || e.group.is_some() || e.retired.is_some(),
-            "{}: every entry comes from a §8.2 row or a loader rule, or is retired",
+            e.row.is_some() || e.group.is_some() || e.area.is_some() || e.retired.is_some(),
+            "{}: every entry comes from a §8.2 row, a loader rule, or a quality check's area, \
+             or is retired",
+            e.slug
+        );
+        assert!(
+            e.area.is_none() || (e.row.is_none() && e.group.is_none()),
+            "{}: a quality check is neither a §8.2 row nor a loader rule",
             e.slug
         );
     }

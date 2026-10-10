@@ -10,7 +10,7 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use ascribe_check::{Diagnosed, LoadError, Project, Reported, diagnose};
+use ascribe_check::{Diagnosed, LoadError, Project, Reported, Severity, diagnose};
 use ascribe_emit::{EmitError, Output, WriteEvent, WriteOptions};
 use ascribe_model::Build;
 use clap::{Args as ClapArgs, ValueEnum};
@@ -100,12 +100,14 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     };
     // The checks, for every build asked for, before anything is written.
     let Diagnosed {
-        diagnostics,
+        mut diagnostics,
         builds,
     } = match diagnose(&project, &args.build) {
         Ok(found) => found,
         Err(e) => return exit::fail(err, &e),
     };
+    // Advice after errors and warnings, as `ascribe check` lists it.
+    diagnostics.sort_by_key(|d| d.severity == Severity::Advice);
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
     let written = match args.format {
