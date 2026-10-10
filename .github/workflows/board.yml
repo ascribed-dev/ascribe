@@ -18,8 +18,6 @@ name: Board
 # token can't reach an organization's projects. project-docs/outside.md lists
 # it.
 on:
-  push:
-    branches: [claude/project-thread-mp4jt7] # TEMPORARY: a test run before the merge
   workflow_dispatch:
     inputs:
       issue:
