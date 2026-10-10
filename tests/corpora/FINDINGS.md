@@ -79,6 +79,25 @@ is the directive `@include` with text after its primary (`directive-extra-text`)
 per §3.2. None of the corpora has one (Sass documentation would). `\@include`
 or code silences it. Recorded in `tests/edge.rs`; no change proposed.
 
+### R6: a code block with no language: intended
+
+````
+```
+output
+```
+````
+
+`code-language-missing` (ASC152) is the one content check `check_file` runs
+on a loose page; the others are page or project checks, or need a field the
+empty project doesn't declare. It reports 39 blocks in Astro, 9 in Docker and
+832 in Elastic. Most are bare fences (291). Elastic's other 587 are MyST
+directives written as fences (`` ```{applies_to} ``, `` ```{note} ``,
+`` ```{include} path ``), which the converter turns into Ascribe. Docker's two
+`` ```yaml{hl_lines=["7-23"]} `` glue Hugo attributes to the language, so the
+info string's first word, which the renderer writes as the block's language,
+names none a highlighter knows. The advice is right for every one; its `text`
+fix is wrong for the Hugo two, and it's marked unsafe.
+
 ## Converting (the language)
 
 The converters (`src/convert/`) turn each corpus's constructs into Ascribe. What
