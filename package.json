@@ -6,6 +6,10 @@
   "engines": {
     "node": ">=24"
   },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "all"
+  },
   "scripts": {
     "build:all": "node scripts/build-all.ts",
     "check:packages": "node scripts/release/consumers.ts",

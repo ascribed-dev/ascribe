@@ -32,7 +32,7 @@ Clippy counts a function's lines without blanks or comments. With the threshold 
 | 150 | 9 |
 | 200 | 4 |
 
-The threshold is 150, set in `clippy.toml`. That flags the worst nine and no more, and there's no natural gap lower down to choose instead: below 150 the counts climb steadily. The nine allow the lint by name, with a comment saying they're split only while being changed for another reason:
+The threshold is 150, set in `.cargo/clippy.toml`. That flags the worst nine and no more, and there's no natural gap lower down to choose instead: below 150 the counts climb steadily. The nine allow the lint by name, with a comment saying they're split only while being changed for another reason:
 
 | Lines | Function |
 |--:|---|
