@@ -479,12 +479,12 @@
           {
             "id": "check",
             "title": "Check in CI",
-            "description": "Run `npx ascribe check` in CI, and a pull request fails on the same problems the editor shows you.\n[Read About ascribe check](https://ascribed-dev.com/reference/cli/#ascribe-check)",
+            "description": "Run `npx ascribe check` in CI, and a pull request fails on the same problems the editor shows you.\n[Read About ascribe check](https://ascribed-dev.com/reference/cli/#cli-check)",
             "media": {
               "markdown": "media/walkthrough/check.md"
             },
             "completionEvents": [
-              "onLink:https://ascribed-dev.com/reference/cli/#ascribe-check"
+              "onLink:https://ascribed-dev.com/reference/cli/#cli-check"
             ]
           }
         ]
