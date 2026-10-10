@@ -50,6 +50,7 @@ mod tests {
                 .iter()
                 .map(|&(slug, level)| CheckSetting { slug, level })
                 .collect(),
+            vale: None,
         }
     }
 

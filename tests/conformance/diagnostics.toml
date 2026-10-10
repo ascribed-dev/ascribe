@@ -1,7 +1,8 @@
 # The Ascribe diagnostics registry.
 #
 # One entry for every diagnostic an Ascribe processor reports: every row of
-# SPEC §8.2, and every rule for loading ascribe.toml. Crates report problems
+# SPEC §8.2, every rule for loading ascribe.toml, and the findings of the
+# programs Ascribe runs, such as Vale. Crates report problems
 # by slug (ascribe-core's `Issue`, whose slug constants mirror this file); the
 # checks map each slug to its code, severity, and message here; conformance
 # cases name diagnostics by slug.
@@ -35,9 +36,11 @@
 #             "review" when it may be fine as it is. A retired entry has
 #             neither `next` nor `evidence`.
 #   evidence  The named pieces of context an agent prompt about it carries,
-#             beyond the message and the line; may be empty. The one name so
-#             far is "allowed-values": the values the content model allows,
-#             from the `values` placeholder.
+#             beyond the message and the line; may be empty. The names:
+#             "allowed-values", the values the content model allows, from the
+#             `values` placeholder; "rule", the name of the tool's rule; and
+#             "rule-link", the address of the rule's own documentation, when
+#             the tool gives one.
 #   message   The message template. `{name}` is a placeholder, filled from the
 #             issue's arguments; `{{` and `}}` are literal braces. A message
 #             says what's wrong and, when there's a likely fix, what to do.
@@ -54,8 +57,12 @@
 #   row          The SPEC §8.2 row, as "<construct> | <condition>", copied
 #                exactly. Every row has exactly one entry.
 #   group        The group of docs/content/reference/diagnostics.md a loader rule is listed in:
-#                file, project, sources, content-types, names, phrases, widgets, or
-#                consumer. Every loader rule has one.
+#                file, project, sources, content-types, names, phrases, widgets,
+#                consumer, or checks. Every loader rule has one.
+#   area         The area of docs/content/reference/diagnostics.md a check of the
+#                content's quality is listed in: prose. A quality check isn't
+#                a SPEC §8.2 diagnostic, so it has no `row` or `group`; it's
+#                configurable, and its `severity` is its default level.
 #   retired      Why the diagnostic is no longer reported. Its code and slug
 #                stay reserved.
 #   fix          How to fix the problem, for docs/content/reference/diagnostics.md, which is
@@ -2586,3 +2593,47 @@ spec = "8.2"
 group = "checks"
 message = "`{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off"
 fix = "Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity."
+
+[[diagnostic]]
+code = "ASC143"
+slug = "prose"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = ["rule", "rule-link"]
+spec = "2.1"
+area = "prose"
+configurable = true
+message = "{rule}: {message}"
+messages.phrase = "{rule}: {message} (in the text of phrase `{key}`)"
+fix = "Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](../guides/vale.md)."
+
+[[diagnostic]]
+code = "ASC144"
+slug = "prose-not-checked"
+severity = "advice"
+level = "file"
+next = "outside"
+evidence = []
+spec = "2.1"
+area = "prose"
+configurable = true
+message = "the prose wasn't checked: `{command}` couldn't be run ({reason}). Install Vale, or set `[checks.vale] command` to where it is"
+messages.failed = "the prose wasn't checked: `{command}` failed: {reason}"
+messages.timeout = "the prose wasn't checked: `{command}` didn't finish within {seconds} seconds"
+fix = "Install [Vale](https://vale.sh) 3 or later so that the command `[checks.vale] command` names (`vale` by default) runs, or fix what Vale's own message says about its configuration. Nothing else is checked differently while it can't run. A project that checks prose only in CI can turn this off on other machines with `prose-not-checked = \"off\"` in `[checks]`."
+
+[[diagnostic]]
+code = "ASC145"
+slug = "model-checks-vale"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "8.2"
+group = "checks"
+message = "`[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini`"
+messages.neither = "`[checks.vale]` needs `preset`, one of Ascribe's presets, or `config`, the path of the project's own `.vale.ini`"
+messages.off = "`[checks.vale] off` turns off a preset's rules, so it goes with `preset`; with `config`, turn a rule off in the project's `.vale.ini`"
+messages.off-rule = "the `{preset}` preset has no rule `{rule}`; its rules are {rules}"
+fix = "Give `[checks.vale]` one of `preset = \"quiet\"` or `config = \"<path to .vale.ini>\"`. `off` lists rules of the preset to turn off, by their names in alerts (`Ascribe.Repeated`), and is only for a preset."

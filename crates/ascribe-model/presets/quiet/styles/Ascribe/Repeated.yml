@@ -1,0 +1,13 @@
+# A word written twice in a row: "the the".
+extends: repetition
+message: "'%s' is repeated."
+level: suggestion
+alpha: true
+ignorecase: true
+action:
+  name: edit
+  params:
+    - truncate
+    - " "
+tokens:
+  - '[^\s]+'

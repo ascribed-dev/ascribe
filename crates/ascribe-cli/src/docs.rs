@@ -32,6 +32,7 @@ const UNRELEASED: &[(&str, &str)] = &[
     ("check", "path"),
     ("check", "editor_build"),
     ("check", "summary"),
+    ("check", "vale"),
     ("diff", "page"),
     ("diff", "pages_only"),
     ("fmt", "format"),
@@ -105,7 +106,7 @@ fn diagnostics_link_to_their_entries_in_the_reference() {
     let page =
         std::fs::read_to_string(repo().join("docs/content/reference/diagnostics.md")).unwrap();
     let mut entries = String::new();
-    for part in ["source-files", "content-model"] {
+    for part in ["source-files", "content-checks", "content-model"] {
         assert!(page.contains(&format!("@include: ../_generated/diagnostics-{part}.md\n")));
         let path = repo().join(format!("docs/content/_generated/diagnostics-{part}.md"));
         entries.push_str(&std::fs::read_to_string(path).unwrap());

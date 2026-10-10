@@ -3,7 +3,7 @@
 use ascribe_core::{DiagnosticSlug, Fix, Issue, Location};
 use serde::Serialize;
 
-use crate::registry::{Entry, Registry};
+use crate::registry::{Entry, Next, Registry};
 
 /// How serious a diagnostic is. An error means the document isn't
 /// conforming and a build fails; a warning doesn't fail a build (SPEC §8.2).
@@ -85,6 +85,17 @@ pub struct Diagnostic {
     /// the problem is a value that isn't one of them; for an agent prompt.
     #[serde(skip)]
     pub allowed: Option<String>,
+    /// The kind of next step, when this diagnostic's isn't its registry
+    /// entry's: a `prose` alert that carries a replacement is `fix`.
+    #[serde(skip)]
+    pub next: Option<Next>,
+    /// For a finding of a tool Ascribe runs, such as Vale, the tool's rule
+    /// (`Microsoft.Contractions`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rule: Option<String>,
+    /// The address of the rule's own documentation, when the tool gives one.
+    #[serde(skip)]
+    pub rule_link: Option<String>,
 }
 
 impl Diagnostic {
@@ -114,6 +125,9 @@ impl Diagnostic {
             builds: Vec::new(),
             unpublished: false,
             allowed: allowed(entry, issue),
+            next: None,
+            rule: None,
+            rule_link: None,
         }
     }
 
@@ -146,6 +160,13 @@ impl Diagnostic {
             "builds"
         };
         Some(format!("only in {noun} {list}"))
+    }
+
+    /// The kind of next step: this diagnostic's own, or its registry
+    /// entry's.
+    pub fn next(&self) -> Option<Next> {
+        self.next
+            .or_else(|| Registry::global().get(self.slug).and_then(|e| e.next))
     }
 
     /// Whether this is an error.

@@ -460,6 +460,16 @@ pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-fiel
 pub const MODEL_CHECK_NOT_CONFIGURABLE: DiagnosticSlug =
     DiagnosticSlug("model-check-not-configurable");
 
+/// `ASC143`, advice, file level: an alert from Vale about the prose.
+pub const PROSE: DiagnosticSlug = DiagnosticSlug("prose");
+
+/// `ASC144`, advice, file level: Vale couldn't be run, so the prose wasn't
+/// checked.
+pub const PROSE_NOT_CHECKED: DiagnosticSlug = DiagnosticSlug("prose-not-checked");
+
+/// `ASC145`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CHECKS_VALE: DiagnosticSlug = DiagnosticSlug("model-checks-vale");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -604,9 +614,12 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_UNUSED,
     MODEL_INLINE_FIELD,
     MODEL_CHECK_NOT_CONFIGURABLE,
+    PROSE,
+    PROSE_NOT_CHECKED,
+    MODEL_CHECKS_VALE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
 /// registry's entries with `configurable = true`, in registry order. A test
 /// keeps it equal to the registry.
-pub const CONFIGURABLE: &[DiagnosticSlug] = &[];
+pub const CONFIGURABLE: &[DiagnosticSlug] = &[PROSE_NOT_CHECKED];

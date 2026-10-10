@@ -122,6 +122,11 @@ pub struct Entry {
     /// The group of the diagnostics reference a loader rule is listed in.
     #[serde(default)]
     pub group: Option<String>,
+    /// The area of the diagnostics reference a check of the content's
+    /// quality is listed in, such as `prose`. A quality check isn't a SPEC
+    /// §8.2 diagnostic: it has no `row` or `group`, and it's configurable.
+    #[serde(default)]
+    pub area: Option<String>,
     /// Why the diagnostic was retired, if it was.
     #[serde(default)]
     pub retired: Option<String>,

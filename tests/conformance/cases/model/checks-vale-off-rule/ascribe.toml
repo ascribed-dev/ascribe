@@ -1,0 +1,6 @@
+spec = "0.1"
+
+# `off` names rules of the preset, as alerts name them.
+[checks.vale]
+preset = "quiet"
+off = ["Ascribe.Repeated", "Ascribe.Nope"]

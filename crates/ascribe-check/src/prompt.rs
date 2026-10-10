@@ -246,6 +246,12 @@ pub fn problem(
     if let Some(allowed) = &d.allowed {
         known.push(format!("Allowed values: {allowed}"));
     }
+    if let Some(rule) = &d.rule {
+        known.push(format!("Vale rule: `{rule}`"));
+    }
+    if let Some(link) = &d.rule_link {
+        known.push(format!("The rule explained: {link}"));
+    }
     let registered = Registry::global().get(d.slug);
     if let Some(help) = registered.and_then(|e| e.fix.as_deref()) {
         known.push(format!("How to fix it: {help}"));

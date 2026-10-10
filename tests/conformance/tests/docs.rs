@@ -24,7 +24,7 @@ const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test do
 
 /// The evidence an agent prompt can carry: what an entry's `evidence` may
 /// name.
-const EVIDENCE: &[&str] = &["allowed-values"];
+const EVIDENCE: &[&str] = &["allowed-values", "rule", "rule-link"];
 
 /// The tables of `[checks]` that aren't a check's: the tools' settings. No
 /// diagnostic can have their names.
@@ -258,7 +258,10 @@ fn render(
     // Source-file diagnostics, grouped by the construct their SPEC row names,
     // in the order each construct first appears.
     let mut constructs: Vec<(&str, Vec<(&Entry, &str)>)> = Vec::new();
-    for entry in active.iter().filter(|e| !is_model(e)) {
+    for entry in active
+        .iter()
+        .filter(|e| !is_model(e) && e.area.is_none())
+    {
         let row = entry.row.as_deref().unwrap_or_default();
         let (construct, condition) = row.split_once(" | ").unwrap_or((row, ""));
         match constructs.iter_mut().find(|(c, _)| *c == construct) {
@@ -272,6 +275,31 @@ fn render(
         let _ = write!(source_files, "\n### {construct}\n");
         for (entry, condition) in entries {
             write_entry(&mut source_files, entry, Some(condition), anchors);
+        }
+    }
+
+    // Checks of the content's quality, by area, in `AREAS`' order.
+    let mut content_checks = HEADER.to_owned();
+    for entry in &active {
+        if let Some(area) = &entry.area {
+            assert!(
+                AREAS.iter().any(|(name, _)| name == area),
+                "{}: the area `{area}` isn't in AREAS",
+                entry.code
+            );
+        }
+    }
+    for (area, title) in AREAS {
+        let entries: Vec<&&Entry> = active
+            .iter()
+            .filter(|e| e.area.as_deref() == Some(*area))
+            .collect();
+        if entries.is_empty() {
+            continue;
+        }
+        let _ = write!(content_checks, "\n### {title}\n");
+        for entry in entries {
+            write_entry(&mut content_checks, entry, None, anchors);
         }
     }
 
@@ -310,6 +338,7 @@ fn render(
     vec![
         ("diagnostics-index.md".to_owned(), all),
         ("diagnostics-source-files.md".to_owned(), source_files),
+        ("diagnostics-content-checks.md".to_owned(), content_checks),
         ("diagnostics-content-model.md".to_owned(), content_model),
         ("diagnostics-retired.md".to_owned(), retired),
     ]
@@ -335,6 +364,10 @@ fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
     }
     out
 }
+
+/// The areas checks of the content's quality are listed in, as the
+/// diagnostics reference titles them.
+const AREAS: &[(&str, &str)] = &[("prose", "Prose, through Vale")];
 
 fn is_model(entry: &Entry) -> bool {
     entry.slug.starts_with("model-")

@@ -630,6 +630,11 @@ export interface Entry {
    * too, collapsed into this one. `0` otherwise.
    */
   repeats: number;
+  /**
+   * The rule of the program that found it, such as `Ascribe.Repeated`
+   * from Vale, for a `prose` diagnostic. Absent for Ascribe's own.
+   */
+  rule?: string;
 }
 
 /** Text a build leaves out of a page. */

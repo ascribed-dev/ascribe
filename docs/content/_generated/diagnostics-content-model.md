@@ -537,3 +537,11 @@ Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md
 **Message:** `{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off
 
 **Fix:** Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](../reference/diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity.
+
+#### ASC145 `model-checks-vale`
+
+Error · file level · next step: write · [SPEC §8.2]({repo}/blob/main/SPEC.md#82-diagnostics)
+
+**Message:** `[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini`
+
+**Fix:** Give `[checks.vale]` one of `preset = "quiet"` or `config = "<path to .vale.ini>"`. `off` lists rules of the preset to turn off, by their names in alerts (`Ascribe.Repeated`), and is only for a preset.

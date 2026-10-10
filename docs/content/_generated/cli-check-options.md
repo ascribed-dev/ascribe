@@ -17,3 +17,5 @@
   - `json`: One JSON document, for tools.
   - `prompt`: A prompt for an agent that fixes the problems: about the file, when the paths name one file, else about the project or the paths. Nothing when there are no problems.
 - `--deny-warnings`: Make warnings fail the command too (exit code 1), for CI.
+- @available: next
+  `--vale`: Check the prose with Vale too, as `[checks.vale]` in `ascribe.toml` sets it up. Vale runs once, on the files reported on. Its alerts are `prose` diagnostics, at their place in the source. A Vale that can't be run is one `prose-not-checked` advice, and the rest of the check is the same. `[checks.vale] in-check = true` checks the prose without this option. Without `[checks.vale]`, it's a usage error.

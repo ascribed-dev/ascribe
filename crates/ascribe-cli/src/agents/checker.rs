@@ -132,6 +132,7 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         summary: false,
         format: check::Format::Concise,
         deny_warnings: false,
+        vale: false,
     };
     let outcome = match check::run_check(projects, &global, &args, &mut Cursor::new("")) {
         Ok(outcome) => outcome,
