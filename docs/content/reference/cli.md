@@ -560,6 +560,8 @@ Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's
 
 With `--with-hook`, it also writes the [hooks](../guides/agents.md#hooks) for `claude`, `codex`, and `copilot`, and for `claude` the MCP server, merging them into the agents' settings files at the root. Hooks it wrote before are kept up to date without it.
 
+With `--cloud`, it also writes what [Copilot's cloud agent](../guides/agents.md#github-copilot) needs: steps that install Ascribe in `.github/workflows/copilot-setup-steps.yml`, creating the workflow or adding them between markers to its `copilot-setup-steps` job. It then prints the MCP server's JSON for the repository's settings, after the list of files; with `--agent`, it writes the custom agent `.github/agents/ascribe-docs.md`, which carries the server, instead. `--cloud` implies `--target copilot`. The steps and the custom agent are kept up to date without it.
+
 @include: ../_generated/cli-agents-sync-options.md
 
 It writes only between its markers in a file it shares with your team, and whole files where the file is its own; it lists each file, `wrote` or `unchanged`. With `--check`, it lists each file as `stale` or `up to date`, and writes nothing.
@@ -568,7 +570,7 @@ It writes only between its markers in a file it shares with your team, and whole
 |---|---|
 | `0` | The files are written, or with `--check`, up to date |
 | `1` | With `--check`: a file is out of date. Run `ascribe agents sync`. |
-| `2` | It couldn't run: no `ascribe.toml`, one with errors, a file whose markers are damaged, a file that would be under the content root (so one of the project's pages), `--target copilot` outside a git repository, a settings file that isn't a JSON object, or a file it can't read or write. Nothing is written. |
+| `2` | It couldn't run: no `ascribe.toml`, one with errors, a file whose markers are damaged, a file that would be under the content root (so one of the project's pages), `--target copilot` or `--cloud` outside a git repository, a settings file that isn't a JSON object, a setup steps workflow it can't add its steps to, or a file it can't read or write. Nothing is written. |
 
 ### `ascribe agents rules`
 
