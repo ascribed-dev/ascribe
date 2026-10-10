@@ -119,9 +119,13 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         config: Some(config.to_owned()),
         color: Color::Never,
     };
-    let (paths, editor_build) = match ask {
-        Ask::Files(files) => (files.clone(), true),
-        Ask::Project => (Vec::new(), false),
+    // Vale, which runs here only with `[checks.vale] in-check`, gets half of
+    // what the hook waits, so a slow one is a `prose-not-checked` advice
+    // rather than a hook that gives up on the whole check.
+    let limits = super::hook::Limits::default();
+    let (paths, editor_build, vale_timeout) = match ask {
+        Ask::Files(files) => (files.clone(), true, limits.edit / 2),
+        Ask::Project => (Vec::new(), false, limits.stop / 2),
     };
     let args = check::Args {
         paths,
@@ -133,6 +137,7 @@ pub fn check(projects: &dyn Projects, config: &Path, ask: &Ask) -> Result<Found,
         format: check::Format::Concise,
         deny_warnings: false,
         vale: false,
+        vale_timeout: Some(vale_timeout),
     };
     let outcome = match check::run_check(projects, &global, &args, &mut Cursor::new("")) {
         Ok(outcome) => outcome,

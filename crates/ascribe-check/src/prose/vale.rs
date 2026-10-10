@@ -169,6 +169,13 @@ fn program(command: &str, root: &Path) -> PathBuf {
     }
 }
 
+/// The most of Vale's standard output that's read: its JSON, far more
+/// than the alerts of any project's prose.
+const MAX_OUTPUT: u64 = 64 << 20;
+
+/// The most of Vale's standard error that's kept, for the reason it gives.
+const MAX_ERROR: u64 = 64 << 10;
+
 /// Runs `command` until it ends or the request's time runs out, and returns
 /// what it wrote to its standard output and error.
 fn run(mut command: Command, request: &Request) -> Result<(Vec<u8>, Vec<u8>), ValeError> {
@@ -180,13 +187,17 @@ fn run(mut command: Command, request: &Request) -> Result<(Vec<u8>, Vec<u8>), Va
             e.to_string()
         },
     })?;
-    let drain = |pipe: Option<Box<dyn Read + Send>>| {
+    // Each pipe is read to its end, so Vale never blocks on a full one, but
+    // only the first `limit` bytes are kept.
+    let drain = |pipe: Option<Box<dyn Read + Send>>, limit: u64| {
         std::thread::spawn(move || {
             let mut out = Vec::new();
+            let mut whole = true;
             if let Some(mut pipe) = pipe {
-                let _ = pipe.read_to_end(&mut out);
+                let _ = pipe.by_ref().take(limit).read_to_end(&mut out);
+                whole = matches!(io::copy(&mut pipe, &mut io::sink()), Ok(0));
             }
-            out
+            (out, whole)
         })
     };
     let stdout = drain(
@@ -194,12 +205,14 @@ fn run(mut command: Command, request: &Request) -> Result<(Vec<u8>, Vec<u8>), Va
             .stdout
             .take()
             .map(|p| Box::new(p) as Box<dyn Read + Send>),
+        MAX_OUTPUT,
     );
     let stderr = drain(
         child
             .stderr
             .take()
             .map(|p| Box::new(p) as Box<dyn Read + Send>),
+        MAX_ERROR,
     );
     let deadline = Instant::now() + request.timeout;
     loop {
@@ -217,8 +230,17 @@ fn run(mut command: Command, request: &Request) -> Result<(Vec<u8>, Vec<u8>), Va
             Err(e) => return Err(failed(request, &e)),
         }
     }
-    let stdout = stdout.join().unwrap_or_default();
-    let stderr = stderr.join().unwrap_or_default();
+    let (stdout, whole) = stdout.join().unwrap_or_default();
+    let (stderr, _) = stderr.join().unwrap_or_default();
+    if !whole {
+        return Err(ValeError::Failed {
+            command: request.command.clone(),
+            reason: format!(
+                "it wrote more than {} MiB, more than any check of prose needs",
+                MAX_OUTPUT >> 20
+            ),
+        });
+    }
     Ok((stdout, stderr))
 }
 
@@ -383,5 +405,21 @@ mod tests {
         let error = Program.lint(&slow).unwrap_err();
         assert!(matches!(error, ValeError::TimedOut { .. }), "{error:?}");
         assert!(started.elapsed() < Duration::from_secs(5));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_program_that_writes_without_end_is_a_failure() {
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("loud-vale");
+        let bytes = MAX_OUTPUT + 1;
+        std::fs::write(&script, format!("#!/bin/sh\nhead -c {bytes} /dev/zero\n")).unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let error = Program
+            .lint(&request(&script.display().to_string()))
+            .unwrap_err();
+        assert!(matches!(error, ValeError::Failed { .. }), "{error:?}");
+        assert!(error.to_string().contains("64 MiB"), "{error}");
     }
 }

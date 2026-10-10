@@ -94,6 +94,11 @@ pub struct Args {
     /// option. Without `[checks.vale]`, it's a usage error.
     #[arg(long)]
     pub vale: bool,
+
+    /// How long Vale may take, when it runs: the hooks give it less than
+    /// they wait. `None` is the time a check of the whole project has.
+    #[arg(skip)]
+    pub vale_timeout: Option<std::time::Duration>,
 }
 
 /// The output format.
@@ -314,7 +319,7 @@ fn with_prose(
         project,
         files.as_deref(),
         &prose::Program,
-        prose::PROJECT_TIMEOUT,
+        args.vale_timeout.unwrap_or(prose::PROJECT_TIMEOUT),
     );
     let (about_vale, found): (Vec<Diagnostic>, Vec<Diagnostic>) = found
         .into_iter()
