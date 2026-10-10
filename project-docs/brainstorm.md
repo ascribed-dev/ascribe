@@ -117,7 +117,7 @@ A general WYSIWYG editor that serializes back to Markdown tends to produce sourc
 
 ## 4. Editor UI: an actions bar, a sidebar, and more
 
-Planned in [editor-ui/](editor-ui/README.md), in nine phases.
+Planned in the editor UI plan, in nine phases.
 
 ### An actions bar for where the cursor is
 
@@ -288,7 +288,7 @@ What's missing is the join: an output keyed by permalink, holding each named sec
 
 # Agents
 
-Sections 8 to 13 are planned in [agents/](agents/README.md), in eleven phases, checked against a [research report](reports/Agent%20first%20interfaces%20for%20docs%20tools.md), with one idea added on 2026-10-04: a **Prompt agent** action on problems, review comments, and changed pages, which builds a prompt for the user's own agent. Section 7 isn't in that plan.
+Sections 8 to 13 are planned in the agents plan, in eleven phases, checked against a [research report](reports/Agent%20first%20interfaces%20for%20docs%20tools.md), with one idea added on 2026-10-04: a **Prompt agent** action on problems, review comments, and changed pages, which builds a prompt for the user's own agent. Section 7 isn't in that plan.
 
 Agents meet documentation in two ways: they **read** published docs while they code, and they **write** docs in a repository. Ascribe can help with both, and it's unusually well placed for the first, because it already builds a resolved, plain-Markdown version of every page.
 
@@ -354,7 +354,7 @@ How Ascribe would use it:
 
 ## 8. Diagnostics agents can use
 
-Planned in [agents/](agents/README.md) and built (phases 1 and 3).
+Planned in the agents plan and built (phases 1 and 3).
 
 The rest of this group is about agents that write documentation. The goal is one feedback loop agents can run themselves: **write, check, fix**, with Ascribe's knowledge of the content model, the ids, the phrases, and the diagnostics. Each harness gets that loop through its own channels.
 
@@ -374,7 +374,7 @@ With `ascribe.startServers: "onDemand"`, a project's server starts when someone 
 
 ## 9. A CLI for agents
 
-Planned in [agents/](agents/README.md) and built (phases 1 and 2), with `link` and `refs` added.
+Planned in the agents plan and built (phases 1 and 2), with `link` and `refs` added.
 
 Every harness can run shell commands, so this layer reaches all of them. `ascribe check --format json` exists; these are missing:
 
@@ -391,7 +391,7 @@ Each is a thin wrapper over something the server already computes. Output should
 
 ## 10. An MCP server: `ascribe mcp`
 
-Planned in [agents/](agents/README.md) and built (phase 7). `rename` was left out: tools stay read-only.
+Planned in the agents plan and built (phase 7). `rename` was left out: tools stay read-only.
 
 The same capabilities as typed tools, which both harnesses prefer to shell commands.
 
@@ -403,7 +403,7 @@ The same capabilities as typed tools, which both harnesses prefer to shell comma
 
 ## 11. GitHub Copilot
 
-Planned in [agents/](agents/README.md) and built (phases 8 and 10). Prompt files were left out: the cloud agent doesn't load them, and the MCP server's prompts do the same in VS Code.
+Planned in the agents plan and built (phases 8 and 10). Prompt files were left out: the cloud agent doesn't load them, and the MCP server's prompts do the same in VS Code.
 
 ### In VS Code
 
@@ -421,7 +421,7 @@ It runs on GitHub without VS Code. The MCP server (configured in the repository'
 
 ## 12. Claude Code (CLI and its VS Code extension)
 
-Planned in [agents/](agents/README.md) and built (phase 9). The hook command serves Codex and Copilot too, which share Claude Code's hook format.
+Planned in the agents plan and built (phase 9). The hook command serves Codex and Copilot too, which share Claude Code's hook format.
 
 - **A hook for automatic feedback.** A `PostToolUse` hook on `Edit|Write` for Markdown files runs `ascribe check <file> --format json` and returns any errors to Claude, so every edit is checked without Claude remembering to. The most effective single item for Claude Code, and it needs only the per-file check in [section 9](#9-a-cli-for-agents).
 - **A plugin** bundling a skill ("Writing Ascribe documentation", loaded only when relevant), the MCP server, the hook, and commands such as `/ascribe:new-page` and `/ascribe:check`. Installed in one step from a plugin marketplace; the same plugin works in the CLI and in the VS Code extension.
@@ -429,7 +429,7 @@ Planned in [agents/](agents/README.md) and built (phase 9). The hook command ser
 
 ## 13. One source for agent instructions
 
-Planned in [agents/](agents/README.md) and built (phase 4), as `ascribe agents sync` rather than `ascribe init --agents`.
+Planned in the agents plan and built (phase 4), as `ascribe agents sync` rather than `ascribe init --agents`.
 
 `AGENTS.md`, `CLAUDE.md`, Copilot's instruction files, and a skill all want the same guidance. Generate them from one source, the project's content model plus Ascribe's directive reference:
 
@@ -654,8 +654,8 @@ Harness and spec details change quickly: VS Code's MCP and language model APIs, 
 - **The actions bar's key:** one that's free on macOS, Windows, and Linux, and doesn't clash with VS Code's own (`Cmd+.` is the lightbulb).
 - **Navigation:** deliberately left to the site generator, or a gap? `llms.txt` sections and OpenAPI pages both want an answer.
 - **Variants for agents:** labeled sections in one Markdown page, or a page per variant value?
-- **Which agent harnesses come first:** Copilot, Claude Code, or both? *Answered: both, through what they share.* The commands, `AGENTS.md`, the skill, the hook format, and the MCP server each reach several harnesses from one file, so neither came first; a file for one harness is written only where no shared format reaches it ([agents decision 9](agents/README.md#decisions)).
-- **Should Ascribe ever apply edits for an agent** (`rename` applying its changes), or always return edits for the harness to apply with its own approvals? *Not yet.* Every tool returns edits, and each fix says whether it's safe to apply ([agents decision 4](agents/README.md#decisions)). The first likely exceptions are `ascribe check --fix` for safe fixes, and a `rename` that applies its changes with a dry run; the [agents pass](agents/pass-results.md) records whether agents left edits half done.
+- **Which agent harnesses come first:** Copilot, Claude Code, or both? *Answered: both, through what they share.* The commands, `AGENTS.md`, the skill, the hook format, and the MCP server each reach several harnesses from one file, so neither came first; a file for one harness is written only where no shared format reaches it (agents decision 9).
+- **Should Ascribe ever apply edits for an agent** (`rename` applying its changes), or always return edits for the harness to apply with its own approvals? *Not yet.* Every tool returns edits, and each fix says whether it's safe to apply (agents decision 4). The first likely exceptions are `ascribe check --fix` for safe fixes, and a `rename` that applies its changes with a dry run; the agents pass results record whether agents left edits half done.
 - **Review beyond a checkout:** is a hosted review service (guest reviewers, deployed previews) ever in scope, and would it be paid? Section 16 lists it with the other ideas.
 - **Notes:** one construct in the language for a note that's never published, or two (in the page, and a file)? And do they ever need more than git?
 - **A cache:** worth a database for search, or files only?
