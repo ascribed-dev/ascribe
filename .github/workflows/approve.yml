@@ -11,6 +11,8 @@ name: Approve
 # It needs the repository setting Actions → General → "Allow GitHub Actions to
 # create and approve pull requests".
 on:
+  push:
+    branches: [claude/project-thread-mp4jt7] # TEMPORARY: a test run before the merge
   workflow_dispatch:
     inputs:
       pr:
@@ -32,8 +34,8 @@ jobs:
     steps:
       - env:
           GH_TOKEN: ${{ github.token }}
-          PR: ${{ inputs.pr }}
-          SHA: ${{ inputs.sha }}
+          PR: ${{ inputs.pr || '240' }} # TEMPORARY
+          SHA: ${{ inputs.sha || github.sha }} # TEMPORARY
         run: |
           [[ $PR =~ ^[0-9]+$ ]] || { echo "::error::'$PR' isn't a pull request number."; exit 1; }
           read -r state head < <(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '"\(.state) \(.head.sha)"')
