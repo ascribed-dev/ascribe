@@ -7,6 +7,10 @@ updates:
     groups:
       rust-dependencies:
         patterns: ["*"]
+    # html5ever 0.40 needs markup5ever_rcdom 0.40, which upstream hasn't
+    # released (crates.io has only 0.39.0+unofficial). Revisit when it does.
+    ignore:
+      - dependency-name: html5ever
   - package-ecosystem: npm
     directory: /
     schedule:
