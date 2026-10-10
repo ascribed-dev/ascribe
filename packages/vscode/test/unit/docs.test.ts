@@ -67,20 +67,24 @@ const ACTIONS_ROW = "ascribe.action.*";
 /** What the actions' row says. */
 const actionsRow = `Runs the action, such as **Ascribe: ${ACTIONS[0]?.title ?? ""}**, in a Markdown file of a project. Each of the [actions](../guides/editor.md#actions) is a command.`;
 
-/** The availability of each setting or command no release has yet, by id. */
+/**
+ * The availability of each setting or command newer than the extension's
+ * first release, by id: `next` until a release ships it, then that release,
+ * as `ascribe 0.2.0`.
+ */
 const available: Record<string, string> = {
-  "ascribe.openPagePreview": "next",
-  "ascribe.openSitePreview": "next",
-  "ascribe.startReview": "next",
-  "ascribe.stopReview": "next",
-  "ascribe.changedPages": "next",
-  "ascribe.refreshComments": "next",
+  "ascribe.openPagePreview": "ascribe 0.2.0",
+  "ascribe.openSitePreview": "ascribe 0.2.0",
+  "ascribe.startReview": "ascribe 0.2.0",
+  "ascribe.stopReview": "ascribe 0.2.0",
+  "ascribe.changedPages": "ascribe 0.2.0",
+  "ascribe.refreshComments": "ascribe 0.2.0",
   "ascribe.switchBuild": "next",
   "ascribe.projectMenu": "next",
   "ascribe.toggleBuildLens": "next",
-  "ascribe.preview.scrollPreviewWithEditor": "next",
-  "ascribe.preview.scrollEditorWithPreview": "next",
-  "ascribe.review.sourceComments": "next",
+  "ascribe.preview.scrollPreviewWithEditor": "ascribe 0.2.0",
+  "ascribe.preview.scrollEditorWithPreview": "ascribe 0.2.0",
+  "ascribe.review.sourceComments": "ascribe 0.2.0",
   "ascribe.actions": "next",
   "ascribe.promptAgentFile": "next",
   "ascribe.promptAgentProject": "next",
