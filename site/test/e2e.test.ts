@@ -181,6 +181,17 @@ test("an unknown address gets the 404 page", async () => {
   const response = await page.goto(`${server.url}/no/such/page/`);
   expect(response?.status()).toBe(404);
   expect(await page.locator("h1").textContent()).toBe("Page not found");
+  expect(await page.getByText("This address is a permalink").isVisible()).toBe(false);
+  await page.close();
+});
+
+test("a permalink the docs don't have gets the 404 page, which says so", async () => {
+  const page = await browser.newPage();
+  const response = await page.goto(`${server.url}/go/no-such-name/`);
+  expect(response?.status()).toBe(404);
+  const note = page.getByText("This address is a permalink");
+  expect(await note.isVisible()).toBe(true);
+  expect(await note.locator("code").textContent()).toBe("no-such-name");
   await page.close();
 });
 

@@ -32,6 +32,7 @@ describe("forwardingPaths", () => {
     const root = siteRoot({
       version: 1,
       path: "/docs/go/",
+      dimensions: { pm: ["npm", "pnpm"] },
       permalinks: {
         "cli-check": {
           route: "/docs/reference/cli/",
@@ -41,9 +42,24 @@ describe("forwardingPaths", () => {
         overview: { route: "/docs/overview/", source: "overview.md" },
       },
     });
+    const dimensions = { pm: ["npm", "pnpm"] };
     expect(forwardingPaths(root)).toEqual([
-      { params: { id: "cli-check" }, props: { to: "/docs/reference/cli/#cli-check" } },
-      { params: { id: "overview" }, props: { to: "/docs/overview/" } },
+      {
+        params: { id: "cli-check" },
+        props: { to: "/docs/reference/cli/#cli-check", dimensions },
+      },
+      { params: { id: "overview" }, props: { to: "/docs/overview/", dimensions } },
+    ]);
+  });
+
+  it("takes no parameters from a list that names no dimensions", () => {
+    const root = siteRoot({
+      version: 1,
+      path: "/go/",
+      permalinks: { overview: { route: "/overview/", source: "overview.md" } },
+    });
+    expect(forwardingPaths(root)).toEqual([
+      { params: { id: "overview" }, props: { to: "/overview/", dimensions: {} } },
     ]);
   });
 

@@ -53,6 +53,7 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 {
   "version": 1,
   "path": "/go/",
+  "dimensions": { "pm": ["npm", "pnpm", "yarn"] },
   "permalinks": {
     "cli-check": { "route": "/reference/cli/", "fragment": "cli-check", "source": "reference/cli.md" }
   }
@@ -63,6 +64,7 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 |---|---|
 | `version` | The list's format version: `1`. A reader rejects versions it doesn't know. |
 | `path` | Where the addresses are published: `[consumer] permalink-path`, or `go/` under `base-path`, as a path from the site's root ending in `/` (content-model contract §16). A permalink's address is `path`, its name, and a final `/` when `trailing-slash` is `"always"`. |
+| `dimensions` | The content model's dimensions, keyed by name and sorted by name, each with its values in declaration order: the parameters an address takes, each setting the reader's choice for a dimension (`?pm=pnpm`). |
 | `permalinks` | One entry per permalink, keyed by its name, sorted by name. A name is unique in a build (`permalink-duplicate`). |
 | `permalinks.*.route` | The route of the page the permalink is on, as the site output's links write it. |
 | `permalinks.*.fragment` | The heading's anchor on that page, without `#`. |

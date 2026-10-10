@@ -3,7 +3,9 @@
 // names, wherever that is now. The integration adds it as a route at
 // `<path>[id]`, one page for each entry of the site output's
 // `_ascribe/permalinks.json`. It forwards without a script, links to the same
-// place for a browser that doesn't follow, and isn't indexed.
+// place for a browser that doesn't follow, and isn't indexed. Its script
+// first takes the reader's choices from the address's parameters
+// (`?platform=macos`), as if they'd picked those tabs, then forwards.
 import { siteRoot } from "virtual:ascribe/site";
 import { forwardingPaths, type Forwarding } from "@ascribed/astro/permalinks";
 
@@ -11,7 +13,7 @@ export function getStaticPaths() {
   return forwardingPaths(siteRoot);
 }
 
-const { to } = Astro.props as Forwarding;
+const { to, dimensions } = Astro.props as Forwarding;
 const canonical = Astro.site === undefined ? to : new URL(to, Astro.site).href;
 ---
 
@@ -25,6 +27,27 @@ const canonical = Astro.site === undefined ? to : new URL(to, Astro.site).href;
     <link rel="canonical" href={canonical} />
   </head>
   <body>
-    <p>This link leads to <a href={to}>{to}</a>.</p>
+    <p>This link leads to <a href={to} data-dimensions={JSON.stringify(dimensions)}>{to}</a>.</p>
+    <script>
+      import { choose } from "@ascribed/elements";
+
+      // A parameter that names one of the content model's dimensions, with one of
+      // its values, is the reader's choice for it. Anything else is ignored, so a
+      // product sends what it knows without asking what the docs accept.
+      const link = document.querySelector<HTMLAnchorElement>("a[data-dimensions]");
+      if (link !== null) {
+        const dimensions = JSON.parse(link.dataset["dimensions"] ?? "{}") as Record<string, string[]>;
+        const chosen = new Set<string>();
+        for (const [name, value] of new URLSearchParams(location.search)) {
+          if (chosen.has(name) || !Object.hasOwn(dimensions, name)) continue;
+          if (dimensions[name]?.includes(value)) {
+            chosen.add(name);
+            choose(name, value);
+          }
+        }
+        // Sooner than the refresh, which waits for the page to load.
+        location.replace(link.href);
+      }
+    </script>
   </body>
 </html>

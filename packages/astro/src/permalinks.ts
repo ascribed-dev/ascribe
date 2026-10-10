@@ -15,12 +15,15 @@ export interface PermalinkList {
   version: number;
   /** Where the addresses are published, from the site's root, ending in `/`. */
   path: string;
+  /** The content model's dimensions, each with its values: the parameters an address takes. */
+  dimensions?: Record<string, string[]>;
   permalinks: Record<string, { route: string; fragment?: string; source: string }>;
 }
 
-/** What a forwarding page needs: where it sends the reader. */
+/** What a forwarding page needs: where it sends the reader, and the parameters it takes. */
 export interface Forwarding {
   to: string;
+  dimensions: Record<string, string[]>;
 }
 
 /** The list in a build's site output, or `undefined` when there isn't one. */
@@ -66,8 +69,9 @@ function destination(entry: { route: string; fragment?: string }): string {
 export function forwardingPaths(siteRoot: string): { params: { id: string }; props: Forwarding }[] {
   const list = readPermalinks(siteRoot);
   if (list === undefined) return [];
+  const dimensions = list.dimensions ?? {};
   return Object.entries(list.permalinks).map(([id, entry]) => ({
     params: { id },
-    props: { to: destination(entry) },
+    props: { to: destination(entry), dimensions },
   }));
 }
