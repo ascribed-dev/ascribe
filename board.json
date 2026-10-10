@@ -1,0 +1,248 @@
+{
+  "project": {
+    "id": "PVT_kwDOFAMH984BmgbC",
+    "number": 1,
+    "title": "Ascribe Kanban",
+    "url": "https://github.com/orgs/ascribed-dev/projects/1",
+    "shortDescription": ""
+  },
+  "fields": [
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLhg",
+      "name": "Assignees",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLi0",
+      "name": "Closed",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLio",
+      "name": "Created",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLnA",
+      "name": "Estimate",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLhw",
+      "name": "Labels",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLh4",
+      "name": "Linked pull requests",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLiA",
+      "name": "Milestone",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLiY",
+      "name": "Parent issue",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTSSF_lADOFAMH984BmgbCzhlJLm4",
+      "name": "Priority",
+      "type": "ProjectV2SingleSelectField"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLiE",
+      "name": "Repository",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLiU",
+      "name": "Reviewers",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTSSF_lADOFAMH984BmgbCzhlJLm8",
+      "name": "Size",
+      "options": [
+        {
+          "id": "6c6483d2",
+          "name": "XS"
+        },
+        {
+          "id": "f784b110",
+          "name": "S"
+        },
+        {
+          "id": "7515a9f1",
+          "name": "M"
+        },
+        {
+          "id": "817d0097",
+          "name": "L"
+        },
+        {
+          "id": "db339eb2",
+          "name": "XL"
+        }
+      ],
+      "type": "ProjectV2SingleSelectField"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLnE",
+      "name": "Start date",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTSSF_lADOFAMH984BmgbCzhlJLho",
+      "name": "Status",
+      "options": [
+        {
+          "id": "f75ad846",
+          "name": "Backlog"
+        },
+        {
+          "id": "61e4505c",
+          "name": "Ready"
+        },
+        {
+          "id": "47fc9ee4",
+          "name": "In progress"
+        },
+        {
+          "id": "df73e18b",
+          "name": "In review"
+        },
+        {
+          "id": "98236657",
+          "name": "Done"
+        }
+      ],
+      "type": "ProjectV2SingleSelectField"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLig",
+      "name": "Sub-issues progress",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLnI",
+      "name": "Target date",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLhY",
+      "name": "Title",
+      "type": "ProjectV2Field"
+    },
+    {
+      "id": "PVTF_lADOFAMH984BmgbCzhlJLis",
+      "name": "Updated",
+      "type": "ProjectV2Field"
+    }
+  ],
+  "items": [
+    {
+      "content": {
+        "body": "Found in the review of #162 (finding 3 in https://github.com/ascribed-dev/ascribe/pull/162#issuecomment-6050269233), and older than that PR.\n\n`collect` in `crates/ascribe-fmt/src/files.rs` follows linked folders without remembering which folders it has already visited. A link back up the tree, such as `docs/loop -> .`, makes `fmt` walk the same folders again and again until the path gets too long. With such a link, `fmt --check` lists each file about 40 times, prints ASC123 about 40 times, and reports \"41 files would be reformatted\". For the same project, `ascribe check` reports each file once.\n\nWhat a fix needs: remember the canonical folders already visited, as `FileSystem::sources` does (`Walk` in `crates/ascribe-resolve/src/fs.rs`), so each folder is walked once. It changes behavior, so it comes with a test (in `crates/ascribe-cli/tests/fmt.rs`, using `tests/support/links.rs`, since a conformance case can't hold a link) and a changelog line.",
+        "number": 168,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe fmt` follows a linked folder that loops back into the content root",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/168"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_6NPI",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe fmt` follows a linked folder that loops back into the content root"
+    },
+    {
+      "content": {
+        "body": "`design/tokens.toml` names a palette step by its lightness: 1000 × (1 − OKLCH L). `design/candidates/chosen.toml` names steps 50 to 975 instead. So the same color has two names, for example `indigo.435` and `indigo.600` for `#5962e8`. A test holds the shared colors equal, so a contributor who changes a shared color has to find the same hex under a different name in each file. `design/README.md` explains this for now (#179).\n\nChoose one naming and use it in both files. Better still, generate one file from the other, since the assets and the specimen read `chosen.toml` and the stylesheets read `tokens.toml`.",
+        "number": 180,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Name palette steps the same way in chosen.toml and tokens.toml",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/180"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_6NPM",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Name palette steps the same way in chosen.toml and tokens.toml"
+    },
+    {
+      "content": {
+        "body": "Found in the agents pass (phase 11, #202; `project-docs/agents/pass-results.md`).\n\nOn a project with a few hundred warnings, `ascribe check --summary` shows which rules to work through, but nothing narrows `check` to one code. `--format concise` cuts at 50 lines, and its \"and N more:\" command narrows by file, not by rule. So an agent (or a person) can't fix one rule across the whole project from the concise output; it ends up working file by file.\n\nProposal to design: a `--code <code-or-slug>` filter on `ascribe check` (repeatable), applied after the check like the path filter, and the same argument on the MCP tool `ascribe_check`. When the concise list is cut, its \"next\" command would keep the filter. Open questions: whether `--summary` should suggest it, and how it interacts with `--format prompt`.",
+        "number": 203,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Let `ascribe check` narrow to one diagnostic code, for fixing one rule at a time",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/203"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_6NPQ",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Let `ascribe check` narrow to one diagnostic code, for fixing one rule at a time"
+    },
+    {
+      "content": {
+        "body": "Found in the agents pass (phase 11, #202; `project-docs/agents/pass-results.md`).\n\n`ascribe agents hook <agent> --event stop` holds an agent only while there are errors (agents decision 12, phase 9). A project whose CI runs `ascribe check --deny-warnings`, as Getting started suggests, can still have the agent finish with warnings, which then fail CI.\n\nTo design: how a project says its warnings count, so the stop hook holds on them too. Options: a setting in `ascribe.toml` (which `check` could also read), an option on the hook command that `agents sync --with-hook` writes, or leaving it as is. Worth deciding after the hand runs in `project-docs/agents/hand-checks.md` show whether agents leave warnings behind.",
+        "number": 204,
+        "repository": "ascribed-dev/ascribe",
+        "title": "The agents' stop hook lets an agent finish with warnings",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/204"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_6NPg",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "The agents' stop hook lets an agent finish with warnings"
+    },
+    {
+      "content": {
+        "body": "## What\n\n`packages/cli/src/binary.ts:56` exports `nativeBinaryPath`, described as a \"backwards-compatible name for resolveBinary\". At version 0.2.0 there is no installed base to be compatible with, so the alias is redundant.\n\n## Where\n\n- `packages/cli/src/binary.ts:56` — the alias itself\n- `packages/cli/src/index.ts:7` — re-exports it from the package\n- `packages/cli/test/cli.test.ts:2,40,53` — the only consumers, its own tests\n\n## Why remove it\n\nThe project is greenfield (0.x, `publish = false` workspace, first releases); nothing outside this repo can depend on the old name. `resolveBinary` already covers the use case, with an options object instead of two positional arguments.\n\n## Notes\n\nA sweep for legacy/migration code (legacy markers, fallbacks, shims, unused deps via `cargo machete`, unused workspace members) found no other candidates; the MCP `LEGACY` protocol versions and the retired `ASC039` slug are recorded decisions, not bloat. This alias was the only actionable item.",
+        "number": 208,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Remove the backwards-compat alias nativeBinaryPath in @ascribed/cli",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/208"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_6NPs",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Remove the backwards-compat alias nativeBinaryPath in @ascribed/cli"
+    },
+    {
+      "content": {
+        "body": "## Ascribe report\n\n0 errors, 0 warnings, 8 advice.\n\n### External links\n\nChecked 14 addresses.\n\n4 links to look at:\n\n- `content/guides/agents.md:110`: [ASC169] `https://agentskills.io` moved permanently to `https://agentskills.io/home`; link to the new address\n- `content/guides/agents.md:185`: [ASC169] `https://modelcontextprotocol.io` moved permanently to `https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro`; link to the new address\n- `content/guides/vale.md:13`: [ASC169] `https://vale.sh/docs/install` moved permanently to `https://docs.vale.sh/topics/installation`; link to the new address\n- `content/reference/cli.md:424`: [ASC169] `https://modelcontextprotocol.io` moved permanently to `https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro`; link to the new address\n\n### Agents\n\nThe delivery spec's checks on `https://ascribed-dev.com`: 20 pass, 4 fail, 2 warn, 2 skip.\n\nTo change:\n\n- [ASC170] the site fails the delivery spec's `content-negotiation` check: Server ignores Accept: text/markdown header (0/18 pages return markdown). Answer a request with `Accept: text/markdown` with the page's `.md`, with a rewrite rule or an edge function on the host.\n- [ASC170] the site fails the delivery spec's `page-size-html` check: 2 of 18 pages convert to over 100K chars (max 764K HTML → 130K markdown (59% boilerplate)). Trim what the site's page template adds around the content, such as navigation repeated on every page.\n- [ASC170] the site fails the delivery spec's `content-start-position` check: 2 of 18 pages have content starting at 10–50% (worst 21%) (a warning). Put each page's content earlier in its HTML than the navigation, or in `<main>`: the site's page template.\n- [ASC171] the site fails the delivery spec's `markdown-content-parity` check, which what Ascribe writes should pass: 2 of 18 pages have minor content differences between markdown and HTML (a warning). Report it at https://github.com/ascribed-dev/ascribe/issues\n\nAlso failing, about the pages: `page-size-markdown`, `embedded-data-serialization`. `ascribe check` reports what to change in them.\n[The run](https://github.com/ascribed-dev/ascribe/actions/runs/38057536963)\n",
+        "number": 227,
+        "repository": "ascribed-dev/ascribe",
+        "title": "Docs report: links and the published site",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/227"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_6NPw",
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "Docs report: links and the published site"
+    },
+    {
+      "content": {
+        "body": "## What happens\n\n`ascribe report links` runs lychee and reads its JSON. lychee also reads the project's own `lychee.toml`, which the [report guide](https://ascribed-dev.com/guides/report/) tells people they can use. When that file has `cache = true`:\n\n- **Every moved link (`link-external-moved`, ASC169) disappears from the second run on.** lychee's cache keeps an address, a status, and a time, and nothing about a redirect. A reused answer comes back as \"OK (cached)\" with no redirect listed, so Ascribe has nothing to report.\n- **lychee writes `.lycheecache` into the project's root,** a file the project didn't ask Ascribe for and probably doesn't ignore.\n\n## To reproduce\n\nWith lychee 0.24.2, in a folder holding `lychee.toml` with the one line `cache = true`, give lychee two addresses that redirect, using the arguments Ascribe uses:\n\n```sh\nprintf 'https://vale.sh/docs/install\\nhttps://agentskills.io\\n' > u.txt\nlychee --format json --verbose --no-progress - < u.txt   # first run\nlychee --format json --verbose --no-progress - < u.txt   # second run\n```\n\n| Run | `redirects` | `cached` | Entries in `redirect_map` |\n|---|---|---|---|\n| First | 2 | 0 | 2 |\n| Second | 0 | 2 | 0 |\n\n`.lycheecache` then holds `https://vale.sh/docs/install,200,…`: the status, and no sign that it moved.\n\n## Why\n\n`crates/ascribe-check/src/links.rs` starts lychee with `--format json --verbose --no-progress -` and nothing about the cache, so the project's `lychee.toml` decides.\n\n## Fix\n\nPass `--cache=false` to lychee. A flag on the command line overrides the setting in `lychee.toml` (checked: with it, the file's `cache = true` has no effect and no `.lycheecache` is written).\n\nAlso, in `docs/content/guides/report.md`, where it says lychee reads its own `lychee.toml`: say that Ascribe turns lychee's cache off, and why.\n\nA test with the stand-in checker can't show this, since it's about lychee's own behavior. The scheduled Report workflow, or the test that runs a real lychee if there is one, is where to hold it.\n\n## Related\n\nThe [cache proposal](https://github.com/ascribed-dev/ascribe/blob/main/project-docs/proposals/cache.md) (not yet on `main` when this was filed) is for Ascribe keeping link results itself, in a form that keeps redirects. This issue is the bug that exists without it.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+        "number": 239,
+        "repository": "ascribed-dev/ascribe",
+        "title": "`ascribe report links` loses every moved link when a project's lychee.toml turns lychee's cache on",
+        "type": "Issue",
+        "url": "https://github.com/ascribed-dev/ascribe/issues/239"
+      },
+      "id": "PVTI_lADOFAMH984BmgbCzg_6Zlg",
+      "labels": [
+        "bug"
+      ],
+      "repository": "https://github.com/ascribed-dev/ascribe",
+      "status": "Backlog",
+      "title": "`ascribe report links` loses every moved link when a project's lychee.toml turns lychee's cache on"
+    }
+  ]
+}
