@@ -43,6 +43,7 @@ fn each_build_lists_its_pages_assets_and_schema() {
         assert_eq!(
             files,
             [
+                "_ascribe/permalinks.json",
                 "_ascribe/schema.ts",
                 "_fragments/prerequisites.png",
                 "install-agent.md",

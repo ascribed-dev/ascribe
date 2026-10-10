@@ -668,6 +668,7 @@ impl Loader<'_> {
             slugger: "github".into(),
             html: true,
             agents: false,
+            permalink_path: None,
         };
         let Some(v) = v else { return c };
         let Some(t) = self.as_table("consumer", v) else {
@@ -684,6 +685,7 @@ impl Loader<'_> {
                 "slugger",
                 "html",
                 "agents",
+                "permalink-path",
             ],
         );
         if let Some(p) = t.get("profile")
@@ -707,6 +709,15 @@ impl Loader<'_> {
                 c.base_path = text;
             } else {
                 self.push(self.issue(diagnostics::MODEL_CONSUMER_BASE_PATH, sp(b)));
+            }
+        }
+        if let Some(p) = t.get("permalink-path")
+            && let Some(text) = self.string("consumer.permalink-path", p, true)
+        {
+            if text.starts_with('/') {
+                c.permalink_path = Some(text);
+            } else {
+                self.push(self.issue(diagnostics::MODEL_CONSUMER_PERMALINK_PATH, sp(p)));
             }
         }
         if let Some(s) = t.get("trailing-slash")

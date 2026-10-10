@@ -13,6 +13,8 @@ mod agents;
 mod assets;
 #[path = "all/formatted.rs"]
 mod formatted;
+#[path = "all/permalinks.rs"]
+mod permalinks;
 #[path = "all/plain.rs"]
 mod plain;
 #[path = "all/quill.rs"]

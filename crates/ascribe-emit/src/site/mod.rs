@@ -24,13 +24,16 @@
 //! profile says ([`AstroProfile`]).
 //!
 //! Alongside the pages the emitter writes `_ascribe/schema.ts`, the Zod
-//! schema of every content type ([`crate::zod`]).
+//! schema of every content type ([`crate::zod`]), and
+//! `_ascribe/permalinks.json`, the build's permalinks (output-layout
+//! contract §1.2).
 
 mod anchor;
 mod blocks;
 mod element;
 mod frontmatter;
 mod inline;
+mod permalinks;
 mod profile;
 
 pub(crate) use anchor::starts_anchor;
@@ -47,6 +50,9 @@ use crate::store::{Contents, EmittedFile, FileKind};
 
 /// The path of the generated Zod schema in the emitter root.
 pub const SCHEMA_PATH: &str = "_ascribe/schema.ts";
+
+/// The path of the list of the build's permalinks in the emitter root.
+pub const PERMALINKS_PATH: &str = "_ascribe/permalinks.json";
 
 /// The directory in the emitter root that holds link targets, which the
 /// consumer serves as static files.
@@ -147,18 +153,23 @@ impl Emitter for SiteEmitter {
     fn generated(
         &self,
         cx: &EmitContext<'_>,
-        _build: &ResolvedBuild,
+        build: &ResolvedBuild,
     ) -> Result<Vec<EmittedFile>, EmitError> {
-        let path = RelPath::parse(SCHEMA_PATH).map_err(|e| EmitError::Invalid {
-            message: format!("bad schema path: {e}"),
-        })?;
-        Ok(vec![EmittedFile {
-            path,
-            kind: FileKind::Generated,
-            source: None,
-            url: None,
-            contents: Contents::Text(crate::zod::generate(cx.model)),
-        }])
+        let generated = |path: &str, text: String| -> Result<EmittedFile, EmitError> {
+            Ok(EmittedFile {
+                path: RelPath::parse(path).map_err(|e| EmitError::Invalid {
+                    message: format!("bad path for a generated file: {e}"),
+                })?,
+                kind: FileKind::Generated,
+                source: None,
+                url: None,
+                contents: Contents::Text(text),
+            })
+        };
+        Ok(vec![
+            generated(PERMALINKS_PATH, permalinks::list(cx.model, build))?,
+            generated(SCHEMA_PATH, crate::zod::generate(cx.model))?,
+        ])
     }
 }
 

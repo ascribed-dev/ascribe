@@ -518,6 +518,11 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[consumer]\nbase-path = \"docs\" #!\n",
         ),
         case(
+            "model-consumer-permalink-path",
+            None,
+            "spec = \"0.1\"\n[consumer]\npermalink-path = \"go/\" #!\n",
+        ),
+        case(
             "model-build-name-case",
             None,
             "spec = \"0.1\"\n[builds.site]\n[builds.Site] #!\n",
