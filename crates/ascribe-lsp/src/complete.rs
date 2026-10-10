@@ -11,6 +11,7 @@
 //! was typed, ranked, and cut at [`LIMIT`], with the list marked incomplete so
 //! the client asks again as the author types.
 
+use ascribe_core::intended::Place;
 use ascribe_core::schema::{AttributeSchema, AttributeType, Attributes, Origin, SetMember};
 use ascribe_core::{LineIndex, RelPath, percent_decode};
 use ascribe_resolve::references::{include_target, reference_target};
@@ -131,6 +132,22 @@ impl Cx<'_> {
                 let schemas = self.ctx.model.directive_schemas();
                 let schema = schemas.iter().find(|s| s.name == name)?;
                 let items = match &schema.attributes {
+                    // `check` takes the name of a check whose problems may be
+                    // acknowledged above a block (SPEC §4.9), which isn't
+                    // an attribute type: offered as if it were an enum.
+                    Attributes::Declared(keys) if name == "intended" => {
+                        let keys: Vec<AttributeSchema> = keys
+                            .iter()
+                            .cloned()
+                            .map(|mut k| {
+                                if k.key == "check" {
+                                    k.ty = AttributeType::Enum(acknowledgeable(Place::Block));
+                                }
+                                k
+                            })
+                            .collect();
+                        self.attributes(Some(&keys), inner)
+                    }
                     Attributes::Declared(keys) => self.attributes(Some(keys), inner),
                     Attributes::Dimensions => self.attributes(None, inner),
                 };
@@ -986,6 +1003,15 @@ fn code_span_open(text: &str) -> bool {
         }
     }
     open_length.is_some()
+}
+
+/// The checks whose problems can be acknowledged at `place`, by name.
+fn acknowledgeable(place: Place) -> Vec<String> {
+    ascribe_core::diagnostics::ACKNOWLEDGEABLE
+        .iter()
+        .filter(|(_, p)| *p == place)
+        .map(|(slug, _)| slug.as_str().to_owned())
+        .collect()
 }
 
 #[cfg(test)]

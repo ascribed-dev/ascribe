@@ -5,7 +5,7 @@
 
 use std::io::{self, Write};
 
-use ascribe_check::{Diagnostic, Registry, Reported};
+use ascribe_check::{Acknowledged, Diagnostic, Registry, Reported};
 use serde::Serialize;
 
 use super::{Counts, FileTable, Position, position_in, tally};
@@ -52,6 +52,11 @@ pub(crate) struct Report<'a> {
     /// The command that lists the ones left out, when `truncated`; `null`
     /// otherwise.
     next_command: Option<String>,
+    /// The problems acknowledged as intended, which `diagnostics` leaves
+    /// out and which don't fail the command, in file order. Left out when
+    /// there are none, and with `--summary`.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    acknowledged: Vec<AcknowledgedEntry>,
     /// How many errors, warnings, and advice.
     summary: Summary,
 }
@@ -66,12 +71,72 @@ struct Summary {
     warnings: usize,
     /// How many advice.
     advice: usize,
+    /// How many problems are acknowledged as intended. Left out when there
+    /// are none.
+    #[serde(skip_serializing_if = "is_zero")]
+    acknowledged: usize,
     /// With `--summary`: how many diagnostics have each code, most first.
     #[serde(skip_serializing_if = "Option::is_none")]
     by_code: Option<Vec<CodeCount>>,
     /// With `--summary`: how many diagnostics are in each file, most first.
     #[serde(skip_serializing_if = "Option::is_none")]
     by_file: Option<Vec<FileCount>>,
+}
+
+/// A problem acknowledged as intended.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct AcknowledgedEntry {
+    /// The code of the check that found it, such as `ASC036`.
+    code: &'static str,
+    /// The check's name.
+    slug: String,
+    /// What the check found.
+    message: String,
+    /// The file, as a diagnostic's `file` is.
+    file: String,
+    /// Where in the file.
+    range: Range,
+    /// The builds it appears in, as a diagnostic's `builds` are.
+    builds: Vec<String>,
+    /// Why it's intended: the acknowledgement's reason.
+    reason: String,
+    /// Where the acknowledgement is written.
+    at: Place,
+}
+
+/// A place in a file.
+#[derive(Serialize)]
+#[cfg_attr(test, derive(schemars::JsonSchema))]
+struct Place {
+    /// The file, as a diagnostic's `file` is.
+    file: String,
+    /// Where in the file.
+    range: Range,
+}
+
+#[allow(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde passes a reference"
+)]
+fn is_zero(n: &usize) -> bool {
+    *n == 0
+}
+
+fn acknowledged(files: &FileTable, a: &Acknowledged) -> AcknowledgedEntry {
+    AcknowledgedEntry {
+        code: a.problem.code,
+        slug: a.problem.slug.to_string(),
+        message: a.problem.message.clone(),
+        file: files.path(a.problem.location.file),
+        range: range(files, a.problem.location),
+        builds: a.problem.builds.clone(),
+        reason: a.reason.clone(),
+        at: Place {
+            file: files.path(a.at.file),
+            range: range(files, a.at),
+        },
+    }
 }
 
 /// How many diagnostics have one code.
@@ -301,6 +366,8 @@ pub struct About<'a> {
     pub files_reported: usize,
     /// The builds whose page-level checks ran.
     pub builds_checked: Vec<String>,
+    /// The problems acknowledged as intended.
+    pub acknowledged: &'a [Acknowledged],
     /// With `--summary`, the command that lists the diagnostics: the list is
     /// left out, and counted instead.
     pub summary_only: Option<String>,
@@ -314,6 +381,7 @@ impl About<'_> {
             files_checked: 0,
             files_reported: 0,
             builds_checked: Vec::new(),
+            acknowledged: &[],
             summary_only: None,
         }
     }
@@ -370,10 +438,20 @@ pub fn write(
         shown,
         total,
         next_command: about.summary_only.clone().filter(|_| truncated),
+        acknowledged: if about.summary_only.is_some() {
+            Vec::new()
+        } else {
+            about
+                .acknowledged
+                .iter()
+                .map(|a| acknowledged(files, a))
+                .collect()
+        },
         summary: Summary {
             errors: counts.errors,
             warnings: counts.warnings,
             advice: counts.advice,
+            acknowledged: about.acknowledged.len(),
             by_code,
             by_file,
         },

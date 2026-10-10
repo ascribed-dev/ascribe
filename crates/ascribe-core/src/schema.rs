@@ -68,11 +68,13 @@ pub enum Builtin {
     Details,
     /// `@snippet` (§4.8).
     Snippet,
+    /// `@intended` (§4.9).
+    Intended,
 }
 
 impl Builtin {
     /// Every built-in directive, in SPEC §4 order.
-    pub const ALL: [Builtin; 8] = [
+    pub const ALL: [Builtin; 9] = [
         Builtin::Id,
         Builtin::Include,
         Builtin::Variant,
@@ -81,6 +83,7 @@ impl Builtin {
         Builtin::Steps,
         Builtin::Details,
         Builtin::Snippet,
+        Builtin::Intended,
     ];
 
     /// The keyword, without `@`.
@@ -94,6 +97,7 @@ impl Builtin {
             Builtin::Steps => "steps",
             Builtin::Details => "details",
             Builtin::Snippet => "snippet",
+            Builtin::Intended => "intended",
         }
     }
 
@@ -210,6 +214,22 @@ impl Builtin {
                 description: Some("Take a code example from a file.".into()),
                 ..base
             },
+            Builtin::Intended => DirectiveSchema {
+                // SPEC §3.4: a line primary, the rest of the line.
+                primary: Primary::Reason { required: true },
+                binding: Some(Binding::Block),
+                attributes: Attributes::Declared(vec![AttributeSchema {
+                    key: "check".into(),
+                    ty: AttributeType::String,
+                    // Required, but checked with the other rules about
+                    // what an acknowledgement names (`intended-check`).
+                    required: false,
+                    default: None,
+                    description: Some("The check the block's problem comes from.".into()),
+                }]),
+                description: Some("Acknowledge a check's problem in the next block.".into()),
+                ..base
+            },
         }
     }
 }
@@ -272,6 +292,13 @@ pub enum Primary {
         /// Whether the line form must have one.
         required: bool,
     },
+    /// A line primary (SPEC §3.4) that holds plain text: the reason an
+    /// acknowledgement gives (SPEC §4.9). Built-in `@intended` only; a
+    /// content model can't declare it.
+    Reason {
+        /// Whether the line form must have one.
+        required: bool,
+    },
 }
 
 impl Primary {
@@ -281,7 +308,8 @@ impl Primary {
             Primary::None => false,
             Primary::Identifier { required }
             | Primary::Text { required }
-            | Primary::Availability { required } => required,
+            | Primary::Availability { required }
+            | Primary::Reason { required } => required,
         }
     }
 }
@@ -388,7 +416,7 @@ mod tests {
     /// SPEC §4's table, row by row: name, forms, primary, binding.
     #[test]
     fn builtins_match_the_spec_table() {
-        let table: [(&str, Forms, Primary, Option<Binding>); 8] = [
+        let table: [(&str, Forms, Primary, Option<Binding>); 9] = [
             (
                 "id",
                 Forms::LINE,
@@ -421,6 +449,12 @@ mod tests {
                 Forms::LINE,
                 Primary::Identifier { required: true },
                 Some(Binding::SelfBound),
+            ),
+            (
+                "intended",
+                Forms::LINE,
+                Primary::Reason { required: true },
+                Some(Binding::Block),
             ),
         ];
         let schemas = builtin_schemas();

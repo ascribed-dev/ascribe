@@ -63,6 +63,22 @@ fn every_diagnostic_has_its_next_step() {
         if !reference.contains(&format!("#### {} `{}`", e.code, e.slug)) {
             wrong.push(format!("{}: no entry in the reference", e.code));
         }
+        let review = e.next == Some(Next::Review);
+        match (&e.place, review) {
+            (None, true) => wrong.push(format!(
+                "{}: a `review` diagnostic says where it's acknowledged, with `place`",
+                e.code
+            )),
+            (Some(_), false) => wrong.push(format!(
+                "{}: only a `review` diagnostic has a `place`",
+                e.code
+            )),
+            (Some(place), true) if place_words(place).is_none() => wrong.push(format!(
+                "{}: `place` is `page`, `block`, or `entry`, not `{place}`",
+                e.code
+            )),
+            _ => {}
+        }
         match e.next {
             None => wrong.push(format!("{}: no `next`", e.code)),
             Some(Next::Review) if !e.configurable => {
@@ -365,9 +381,15 @@ fn write_entry(
     } else {
         ""
     };
+    let acknowledged = entry
+        .place
+        .as_deref()
+        .and_then(place_words)
+        .map(|words| format!(" · acknowledged {words}"))
+        .unwrap_or_default();
     let _ = write!(
         out,
-        "\n#### {} `{}`\n\n{} · {} level · next step: {}{configurable} · {section}\n\n",
+        "\n#### {} `{}`\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
         severity(entry.severity),
@@ -391,6 +413,17 @@ fn write_entry(
         "**Fix:** {}",
         escape_braces(&rebase_links(entry.fix.as_deref().unwrap_or_default()))
     );
+}
+
+/// Where a `review` diagnostic's problem is acknowledged, for its entry in
+/// the reference.
+fn place_words(place: &str) -> Option<&'static str> {
+    match place {
+        "page" => Some("in the page's `intended` frontmatter"),
+        "block" => Some("with `@intended` above the block"),
+        "entry" => Some("in `[[intended]]`"),
+        _ => None,
+    }
 }
 
 fn severity(severity: Severity) -> &'static str {

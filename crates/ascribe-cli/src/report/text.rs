@@ -10,16 +10,23 @@ use super::{ByCode, ByFile, Counts, FileTable};
 
 /// Writes every diagnostic, then a one-line summary.
 ///
-/// `files_checked` is how many source files were checked.
+/// `files_checked` is how many source files were checked, and `acknowledged`
+/// how many problems were acknowledged as intended.
 pub fn write(
     out: &mut dyn Write,
     files: &FileTable,
     diagnostics: &[Diagnostic],
     files_checked: usize,
+    acknowledged: usize,
     color: bool,
 ) -> io::Result<()> {
     write_diagnostics(out, files, diagnostics, color)?;
-    writeln!(out, "{}", summary(Counts::of(diagnostics), files_checked))
+    writeln!(
+        out,
+        "{}{}",
+        summary(Counts::of(diagnostics), files_checked),
+        self::acknowledged(acknowledged)
+    )
 }
 
 /// Writes each diagnostic with its snippet.
@@ -173,6 +180,16 @@ pub fn check_summary(
         line.push_str(&format!(", page-level checks of build `{build}` only"));
     }
     format!("{line}: {}", counted(counts))
+}
+
+/// What a summary line adds for the problems acknowledged as intended:
+/// `, 2 acknowledged`, or nothing when there are none.
+pub fn acknowledged(count: usize) -> String {
+    if count == 0 {
+        String::new()
+    } else {
+        format!(", {count} acknowledged")
+    }
 }
 
 /// Writes one diagnostic with its snippet, from the report's source cache.

@@ -2,7 +2,7 @@
 
 use ascribe_core::availability::{AvailabilitySpec, Detail, Entry, Name, Version};
 use ascribe_core::{
-    AttributeSchema, DiagnosticSlug, DirectiveSchema, Issue, Span, builtin_schemas,
+    AttributeSchema, DiagnosticSlug, DirectiveSchema, EntryKind, Issue, Span, builtin_schemas,
 };
 
 use crate::pattern::Pattern;
@@ -57,6 +57,9 @@ pub struct ContentModel {
     pub editor_build: String,
     /// `[checks]`: the level the project sets for each check it names.
     pub checks: Checks,
+    /// `[[intended]]`: the acknowledged problems about an entry or an image
+    /// (SPEC §4.9), in declaration order.
+    pub intended: Vec<Intended>,
     /// Warnings found while loading (`model-name-case`,
     /// `model-build-filter-excluded`). A model with errors doesn't load, so
     /// these are the only issues a loaded model has.
@@ -79,6 +82,25 @@ impl Checks {
             .find(|s| s.slug == slug)
             .and_then(|s| s.level)
     }
+}
+
+/// One acknowledgement in `[[intended]]` (SPEC §4.9): a review check's
+/// problem about a content model entry or an image, which is intended.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Intended {
+    /// The check it acknowledges.
+    pub check: DiagnosticSlug,
+    /// What it's about: a phrase, feature, glossary term, or image.
+    pub kind: EntryKind,
+    /// Its key, id, or path.
+    pub name: String,
+    /// Why the problem is intended.
+    pub reason: String,
+    /// The table's `[[intended]]` header, in `ascribe.toml`, or the table
+    /// itself when it's written inline.
+    pub span: Span,
+    /// The `check` value.
+    pub check_span: Span,
 }
 
 /// One check named in `[checks]`.
