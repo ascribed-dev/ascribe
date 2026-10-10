@@ -2759,7 +2759,7 @@ area = "project"
 spec = "5.4"
 when = "The term, and each of its aliases, appears in no file's prose. A term with `match = \"marked\"` isn't reported"
 message = "the glossary term `{term}` appears in no file's prose, so it's never linked"
-fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` isn't reported, since its uses are links to its page."
+fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` isn't reported, since its uses are links to its page. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](content-model.md#intended-acknowledgements)."
 
 [[diagnostic]]
 code = "ASC153"
@@ -2772,9 +2772,9 @@ configurable = true
 place = "entry"
 area = "project"
 spec = "5.3"
-when = "An image file under the content root that no file shows or links to"
+when = "An image file under the content root that no file shows or links to: no Markdown image or link, no `src`, `srcset`, `href`, or `poster` in raw HTML, and no frontmatter string names it"
 message = "no file shows or links to `{path}`"
-fix = "Delete the image when nothing needs it. An image used only from raw HTML, or by the site's own code, is reported too, since Ascribe doesn't read either: turn the check off in [`[checks]`](content-model.md#19-checks) when your site uses images that way."
+fix = "Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](content-model.md#19-checks) when your site uses images that way."
 
 [[diagnostic]]
 code = "ASC154"

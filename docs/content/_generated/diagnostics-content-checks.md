@@ -50,17 +50,17 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 
 **Message:** the glossary term `{term}` appears in no file's prose, so it's never linked
 
-**Fix:** Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = "marked"` isn't reported, since its uses are links to its page.
+**Fix:** Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = "marked"` isn't reported, since its uses are links to its page. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](../reference/content-model.md#intended-acknowledgements).
 
 #### ASC153 `image-unused`
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
-**When:** An image file under the content root that no file shows or links to.
+**When:** An image file under the content root that no file shows or links to: no Markdown image or link, no `src`, `srcset`, `href`, or `poster` in raw HTML, and no frontmatter string names it.
 
 **Message:** no file shows or links to `{path}`
 
-**Fix:** Delete the image when nothing needs it. An image used only from raw HTML, or by the site's own code, is reported too, since Ascribe doesn't read either: turn the check off in [`[checks]`](../reference/content-model.md#19-checks) when your site uses images that way.
+**Fix:** Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](../reference/content-model.md#19-checks) when your site uses images that way.
 
 #### ASC154 `image-large`
 

@@ -19,7 +19,7 @@
 //! Each is advice, and a project can set its level or turn it off in
 //! `[checks]`; one turned off isn't run.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
@@ -179,11 +179,21 @@ fn images(project: &Project, index: &ascribe_resolve::Project, issues: &mut Vec<
     let limit = checks
         .limit(diagnostics::IMAGE_LARGE)
         .unwrap_or(IMAGE_LIMIT);
+    // An image raw HTML shows or a frontmatter field names is used too.
+    let mentioned: HashSet<RelPath> =
+        if listed.is_empty() || checks.is_off(diagnostics::IMAGE_UNUSED) {
+            HashSet::new()
+        } else {
+            index.files().flat_map(|f| f.mentioned_paths()).collect()
+        };
     for (i, (path, content)) in listed.iter().enumerate() {
         let at = Location::new(image_id(i), Span::new(0, 0));
         let shown = path.to_string();
         let entry = entry_arg(EntryKind::Image, content.as_str());
-        if !checks.is_off(diagnostics::IMAGE_UNUSED) && index.asset_users(content).is_empty() {
+        if !checks.is_off(diagnostics::IMAGE_UNUSED)
+            && index.asset_users(content).is_empty()
+            && !mentioned.contains(content)
+        {
             issues.push(
                 Issue::new(diagnostics::IMAGE_UNUSED, at)
                     .with_arg("path", shown.clone())

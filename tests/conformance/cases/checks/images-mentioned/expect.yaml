@@ -1,0 +1,9 @@
+description: >-
+  An image counts as used when raw HTML shows it (`src` or `srcset`, in an
+  HTML block or inline) or a frontmatter string names it, not only when a
+  Markdown image or link does.
+spec: ["5.3"]
+tags: [check]
+
+diagnostics:
+  - {slug: image-unused, file: img/unused.svg, line: 1}

@@ -659,6 +659,8 @@ reason = "Kept for the 2.x pages restored in the next release."
 | `reason` | string | required | Why the problem is intended. Not empty. |
 | `phrase`, `feature`, `term`, or `image` | string | required | The entry: a phrase's key, a feature's key, a glossary term's id, or an image's path under the content root. Exactly one. |
 
+A glossary term whose only occurrences are inside a phrase's value is reported by `glossary-term-unused`, since the search for uses doesn't read phrase values. Acknowledge it here with `term`.
+
 **Rules.** A check that doesn't exist, isn't a review check, or reports its problems somewhere other than an entry is an error (`model-intended-check`). A table without exactly one entry key, or naming an entry that isn't declared, is an error (`model-intended-entry`).
 
 ---
