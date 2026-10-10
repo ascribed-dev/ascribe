@@ -175,7 +175,7 @@ A type with neither `files` nor `default = true` could never apply, and is an er
 
 **The page title.** Every page type must declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field may accept phrases (§11), and code spans (§5.3).
 
-**Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)) and `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
+**Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)) and `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically. `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
 
 @available: next
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
@@ -197,7 +197,7 @@ Frontmatter is YAML. For type checking, processors parse it with the YAML 1.2 **
 
 Content types never apply to fragments, even when a type's `files` match a fragment's path.
 
-**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter must not use them (an error on the fragment), and `[fragments.frontmatter]` must not declare them (`model-field-reserved`). Use `@available` inside the fragment instead.
+**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter must not use them (an error on the fragment), and `[fragments.frontmatter]` must not declare them (`model-field-reserved`). Use `@available` inside the fragment instead. `intended` is for fragments too, and `[fragments.frontmatter]` must not declare it either.
 
 ---
 
@@ -297,8 +297,8 @@ review-by = { type = "date?", role = "review-date" }
 
 | Role | The field's type | What reads it |
 |---|---|---|
-| `description` | `string`, optional or not | [`page-description-missing`](diagnostics.md#asc145-page-description-missing) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report. |
-| `review-date` | `date`, optional or not | [`review-overdue`](diagnostics.md#asc148-review-overdue) reports a page whose date has passed. |
+| `description` | `string`, optional or not | [`page-description-missing`](diagnostics.md#asc150-page-description-missing) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report. |
+| `review-date` | `date`, optional or not | [`review-overdue`](diagnostics.md#asc153-review-overdue) reports a page whose date has passed. |
 
 Without a role, those checks don't look at the type's pages. A role changes nothing in the outputs.
 
@@ -647,6 +647,27 @@ Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) 
 Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`. A check set to `off` isn't reported at all.
 
 **Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`), and `limit` is a whole number above 0 (`model-wrong-type`).
+
+### `[[intended]]`: acknowledgements
+@id: intended-acknowledgements
+@available: next
+
+Says that a check's problem with a content model entry or an image is intended, as [`@intended`](directives.md#intended) does for a block and the `intended` frontmatter key for a page. Each table names one check, one entry, and why.
+
+```toml
+[[intended]]
+check = "phrase-unused"
+phrase = "old-product-name"
+reason = "Kept for the 2.x pages restored in the next release."
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `check` | string | required | The check, by its name. It must be a review check that reports its problems at an entry, as the [diagnostics reference](diagnostics.md) says. |
+| `reason` | string | required | Why the problem is intended. Not empty. |
+| `phrase`, `feature`, `term`, or `image` | string | required | The entry: a phrase's key, a feature's key, a glossary term's id, or an image's path under the content root. Exactly one. |
+
+**Rules.** A check that doesn't exist, isn't a review check, or reports its problems somewhere other than an entry is an error (`model-intended-check`). A table without exactly one entry key, or naming an entry that isn't declared, is an error (`model-intended-entry`).
 
 ---
 

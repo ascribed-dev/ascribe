@@ -1,0 +1,12 @@
+description: >-
+  Each entry of a page's `intended` frontmatter is a mapping with a `check`
+  and a reason, and nothing else.
+spec: ["4.9", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: intended-entry, line: 4}
+  - {slug: intended-check, line: 5}
+  - {slug: intended-entry, line: 7}
+  - {slug: intended-check, line: 8}
+  - {slug: intended-entry, line: 8}

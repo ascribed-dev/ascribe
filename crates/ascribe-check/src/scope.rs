@@ -255,7 +255,7 @@ impl Scope {
     }
 
     /// Whether the file with this id is in the scope.
-    fn contains_file(&self, project: &Project, id: FileId) -> bool {
+    pub fn contains_file(&self, project: &Project, id: FileId) -> bool {
         project
             .display_path(id)
             .and_then(|p| RelPath::parse(&p).ok())

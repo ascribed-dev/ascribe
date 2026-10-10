@@ -33,6 +33,7 @@
 mod checks;
 mod fields;
 pub mod inline;
+mod intended;
 mod loader;
 pub mod lock;
 pub mod model;

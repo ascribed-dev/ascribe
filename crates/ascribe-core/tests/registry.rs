@@ -67,3 +67,30 @@ fn configurable_matches_the_registry() {
          `configurable = true`, in registry order"
     );
 }
+
+#[test]
+fn acknowledgeable_matches_the_registry() {
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/conformance/diagnostics.toml");
+    let text = std::fs::read_to_string(&path).expect("read diagnostics.toml");
+    let doc: toml::Table = text.parse().expect("diagnostics.toml is TOML");
+    let registry: Vec<(&str, &str)> = doc["diagnostic"]
+        .as_array()
+        .expect("[[diagnostic]] entries")
+        .iter()
+        .filter(|e| e.get("next").and_then(toml::Value::as_str) == Some("review"))
+        .map(|e| {
+            let place = e.get("place").and_then(toml::Value::as_str).unwrap_or("");
+            (e["slug"].as_str().expect("slug"), place)
+        })
+        .collect();
+    let constants: Vec<(&str, &str)> = diagnostics::ACKNOWLEDGEABLE
+        .iter()
+        .map(|(s, p)| (s.as_str(), p.as_str()))
+        .collect();
+    assert_eq!(
+        constants, registry,
+        "ascribe_core::diagnostics::ACKNOWLEDGEABLE must list every registry entry with \
+         `next = \"review\"` and its `place`, in registry order"
+    );
+}

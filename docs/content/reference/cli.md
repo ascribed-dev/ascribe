@@ -87,6 +87,8 @@ Diagnostics go to standard output. A failure that stops the command (exit code 2
 @available: next
 Advice, a diagnostic below a warning, is listed after the errors and warnings, in every format, and the summary counts it apart when there is some: `checked 12 files: 0 errors, 2 warnings, 5 advice`. It never fails the command, even with `--deny-warnings`. A project sets how loudly a check about its content's quality speaks in [`[checks]`](content-model.md#19-checks).
 
+A problem [acknowledged as intended](directives.md#intended) isn't listed, and doesn't fail the command; the summary counts it when there is one: `checked 12 files: 0 errors, 2 warnings, 1 acknowledged`. `ascribe build` counts it the same way.
+
 ### JSON output
 
 `--format json` writes one JSON document to standard output, whatever the outcome, so a tool can always parse it. The schema is versioned: `schema_version` changes only when a field is removed or changes meaning. New fields can appear without a new version, so **ignore fields you don't know**. The [JSON report contract](../contracts/json-reports.md) has each command's schema.
@@ -104,7 +106,8 @@ Advice, a diagnostic below a warning, is listed after the errors and warnings, i
 | `shown` | number | How many diagnostics `diagnostics` lists |
 | `total` | number | How many there are |
 | `next_command` | string or null | When `truncated`, the command that lists the rest |
-| `summary` | object | `errors`, `warnings`, and `advice`: how many of each. With `--summary`, also `by_code` (`{code, slug, severity, count}`) and `by_file` (`{file, errors, warnings, advice}`), most first. |
+| `acknowledged` | array | The problems [acknowledged as intended](directives.md#intended), which `diagnostics` leaves out, in file order: `{code, slug, message, file, range, builds, reason, at}`, where `reason` is the acknowledgement's and `at` (`{file, range}`) is where it's written. With paths, those in the files named. Left out when there are none, and with `--summary`. |
+| `summary` | object | `errors`, `warnings`, and `advice`: how many of each, and `acknowledged`, how many problems are acknowledged, when there are some. With `--summary`, also `by_code` (`{code, slug, severity, count}`) and `by_file` (`{file, errors, warnings, advice}`), most first. |
 
 Each diagnostic:
 

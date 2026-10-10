@@ -14,6 +14,26 @@
 // - BuildViewResult (the language server, answering `ascribe/buildView`)
 // - AgentPromptResult (the language server, answering `ascribe/agentPrompt`)
 
+/** A problem acknowledged as intended. */
+export interface AcknowledgedEntry {
+  /** The code of the check that found it, such as `ASC036`. */
+  code: string;
+  /** The check's name. */
+  slug: string;
+  /** What the check found. */
+  message: string;
+  /** The file, as a diagnostic's `file` is. */
+  file: string;
+  /** Where in the file. */
+  range: Range;
+  /** The builds it appears in, as a diagnostic's `builds` are. */
+  builds: string[];
+  /** Why it's intended: the acknowledgement's reason. */
+  reason: string;
+  /** Where the acknowledgement is written. */
+  at: Place;
+}
+
 /**
  * The answer to `ascribe/agentPrompt`, or `null` when there's nothing to
  * prompt about: the file has no problem, the diagnostic is no longer
@@ -244,6 +264,12 @@ export interface CheckReport {
   next_command: string | null;
   /** How many errors, warnings, and advice. */
   summary: Summary;
+  /**
+   * The problems acknowledged as intended, which `diagnostics` leaves
+   * out and which don't fail the command, in file order. Left out when
+   * there are none, and with `--summary`.
+   */
+  acknowledged?: AcknowledgedEntry[];
 }
 
 /** How many diagnostics have one code. */
@@ -856,6 +882,14 @@ export type PageStatus = "added" | "removed" | "changed";
 /** What a piece of a formatted value is. */
 export type PieceKind = "text" | "code";
 
+/** A place in a file. */
+export interface Place {
+  /** The file, as a diagnostic's `file` is. */
+  file: string;
+  /** Where in the file. */
+  range: Range;
+}
+
 /** A position in a file. */
 export interface Pos {
   /** The line, from 1. */
@@ -1096,6 +1130,11 @@ export interface Summary {
   warnings: number;
   /** How many advice. */
   advice: number;
+  /**
+   * How many problems are acknowledged as intended. Left out when there
+   * are none.
+   */
+  acknowledged?: number;
   /** With `--summary`: how many diagnostics have each code, most first. */
   by_code?: CodeCount[];
   /** With `--summary`: how many diagnostics are in each file, most first. */

@@ -34,6 +34,7 @@
 mod builds;
 mod checks;
 mod diagnostic;
+pub mod intended;
 mod levels;
 pub mod page;
 mod project;
@@ -49,6 +50,7 @@ pub use builds::{
 pub use checks::check_file;
 use checks::check_sources;
 pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
+pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};
 pub use levels::apply_levels;
 pub use page::{
     PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,

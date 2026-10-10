@@ -48,6 +48,13 @@
 #                 `[checks]`; `false` when absent. A diagnostic about whether
 #                 the project is valid is never configurable, and every
 #                 "review" entry is.
+#   place         For a "review" entry, and only for one: where it reports its
+#                 problems, and so where an author acknowledges one (SPEC §4.9).
+#                 "page" for a page or fragment as a whole (its `intended`
+#                 frontmatter), "block" for one block (`@intended` above it),
+#                 or "entry" for a content model entry or an image
+#                 (`[[intended]]` in ascribe.toml). An "entry" check names its
+#                 entry in the issue argument `entry`, as `<kind> <name>`.
 #   messages     Named alternative templates, for cases of the rule that need
 #                different wording. An issue names the one it uses
 #                (`Issue::variant`); otherwise `message` is used.
@@ -1219,7 +1226,7 @@ level = "file"
 next = "choose"
 evidence = []
 spec = "7.2"
-row = "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page"
+row = "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment"
 message = "`{key}` isn't a field of the content type `{type}`"
 messages.suggestion = "`{key}` isn't a field of the content type `{type}`; did you mean `{suggestion}`?"
 messages.fragment = "`{key}` isn't a field of the fragment schema, [fragments.frontmatter]"
@@ -1680,6 +1687,7 @@ spec = "2.1"
 group = "content-types"
 message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
 messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
+messages.fragment-accepted = "`{field}` is reserved by the Ascribe spec and every fragment accepts it; remove it from `[fragments.frontmatter]`"
 messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
 messages.formatted = "`formatted` is reserved by the site output, which writes the formatted form of `inline` fields under it; remove it from `[types.{type}.frontmatter]`"
 fix = "Remove the field from the type. Every page accepts it already, with the meaning the specification gives it."
@@ -2589,6 +2597,79 @@ fix = "Remove the check from `[checks]`. Only checks about the content's quality
 
 [[diagnostic]]
 code = "ASC143"
+slug = "intended-check"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+row = "`@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else"
+message = "`{check}` isn't a check"
+messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
+messages.missing = "an acknowledgement names the check it's for: add `{example}`"
+messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
+messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}"
+fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
+
+[[diagnostic]]
+code = "ASC144"
+slug = "intended-entry"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.9"
+row = "`@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason, or an acknowledgement whose reason is still a processor's placeholder"
+message = "`intended` is a list of acknowledgements, each with a `check` and a `reason`"
+messages.reason = "acknowledging `{check}` needs a reason: say why the problem is intended"
+messages.key = "`{key}` isn't part of an acknowledgement, which has only `check` and `reason`"
+messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why `{check}`'s problem is intended"
+fix = "Write `intended` as a list, each entry with the `check` it acknowledges and a `reason` that says why the problem is intended:\n\n```yaml\nintended:\n  - check: page-orphan\n    reason: Linked from the site's sidebar.\n```\n\nThe editor's quick fix writes a placeholder reason for you to replace: until you do, the acknowledgement is reported."
+
+[[diagnostic]]
+code = "ASC145"
+slug = "intended-unused"
+severity = "advice"
+level = "page"
+next = "fix"
+evidence = []
+spec = "4.9"
+row = "`@intended` | An acknowledgement that matches no problem in any build"
+message = "nothing here needs acknowledging any more: `{check}` reports no problem here in any build"
+fix = "Remove the acknowledgement: what it excused has gone. `ascribe check` reports this only when it checks every build, since a problem may appear in one build alone."
+
+[[diagnostic]]
+code = "ASC146"
+slug = "model-intended-check"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+group = "checks"
+message = "`{check}` isn't a check"
+messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
+messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
+messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}, not in ascribe.toml"
+fix = "Name a check whose next step is review and whose problems are about a phrase, feature, glossary term, or image, by its name in the [diagnostics reference](diagnostics.md). A page's or a block's problem is acknowledged in the page itself."
+
+[[diagnostic]]
+code = "ASC147"
+slug = "model-intended-entry"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+group = "checks"
+message = "an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image`"
+messages.several = "an acknowledgement in [[intended]] is about one thing, and this one names {keys}"
+messages.unknown = "there's no {kind} `{name}` in this content model"
+messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why the problem is intended"
+fix = "Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes."
+
+[[diagnostic]]
+code = "ASC148"
 slug = "model-field-role"
 severity = "error"
 level = "file"
@@ -2603,7 +2684,7 @@ messages.duplicate = "`{other}` already has role = \"{role}\"; a content type ha
 fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, and `role = \"review-date\"` to one date field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
 
 [[diagnostic]]
-code = "ASC144"
+code = "ASC149"
 slug = "page-size"
 severity = "advice"
 level = "page"
@@ -2617,7 +2698,7 @@ messages.builds = "this page's Markdown is up to {size} characters in builds {bu
 fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`."
 
 [[diagnostic]]
-code = "ASC145"
+code = "ASC150"
 slug = "page-description-missing"
 severity = "advice"
 level = "file"
@@ -2630,7 +2711,7 @@ message = "this page has no `{field}`; write a sentence saying what the page is 
 fix = "Add the field the content type marks with `role = \"description\"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for."
 
 [[diagnostic]]
-code = "ASC146"
+code = "ASC151"
 slug = "heading-level-skipped"
 severity = "advice"
 level = "page"
@@ -2644,7 +2725,7 @@ messages.title = "this heading is level 1, which the page's title already is; ma
 fix = "Make each heading one level below the heading it belongs under. A page's title is its level-1 heading, so its own headings start at level 2. The quick fix changes the one heading; the headings under it may need to move up too."
 
 [[diagnostic]]
-code = "ASC147"
+code = "ASC152"
 slug = "code-language-missing"
 severity = "advice"
 level = "file"
@@ -2657,7 +2738,7 @@ message = "this code block has no language; write it after the opening fence, or
 fix = "Write the block's language right after the opening fence, such as `sh`, `toml`, or `json`. Use `text` for program output, logs, and anything else that isn't code. A highlighter colors the block by it, and an agent knows what the block is."
 
 [[diagnostic]]
-code = "ASC148"
+code = "ASC153"
 slug = "review-overdue"
 severity = "advice"
 level = "file"
@@ -2666,5 +2747,6 @@ evidence = []
 spec = "7.2"
 configurable = true
 area = "pages"
+place = "page"
 message = "this page was due for review on {date}; check it still holds, then move `{field}` to the next review"
 fix = "Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project."

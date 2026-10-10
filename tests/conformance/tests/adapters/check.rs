@@ -8,7 +8,7 @@
 //! A `check` case that also carries `structure` or `parser` gets its
 //! diagnostics here, from the whole check, not from the parser alone.
 
-use ascribe_check::{Project, apply_levels, check_files};
+use ascribe_check::{Acknowledgements, Project, apply_levels, check_files};
 use ascribe_conformance::{
     AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic,
 };
@@ -65,19 +65,55 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
 /// `check_files` on the case's project, in the harness's format.
 pub fn file_level_diagnostics(case: &Case) -> Result<Vec<Diagnostic>, AdapterError> {
     let project = project(case)?;
-    to_conformance(&project, check_files(&project))
+    let reported = reported(&project, check_files(&project), false);
+    to_conformance(&project, reported)
 }
 
-/// Diagnostics in the harness's format, with the content model's `[checks]`
-/// levels applied as every tool applies them: the file relative to the
-/// content root, a 1-based line, a column in Unicode scalar values, and the
-/// severity.
+/// The page-level diagnostics of `build`, in the harness's format. The
+/// file-level diagnostics are checked with them, as `ascribe check` does, so
+/// an acknowledgement of either is applied; they're left out after. With the
+/// case's only build, an acknowledgement nothing needs is reported.
+pub fn page_level_diagnostics(
+    project: &Project,
+    build: &ascribe_model::Build,
+) -> Result<Vec<Diagnostic>, AdapterError> {
+    let file_level = check_files(project);
+    let mut all = file_level.clone();
+    all.extend(ascribe_check::check_pages(project, build));
+    let only_build = project.model().builds.len() == 1;
+    let page_level = reported(project, all, only_build)
+        .into_iter()
+        .filter(|d| {
+            !file_level
+                .iter()
+                .any(|f| f.slug == d.slug && f.location == d.location)
+        })
+        .collect();
+    to_conformance(project, page_level)
+}
+
+/// What every tool reports of `diagnostics`: the content model's `[checks]`
+/// levels applied, then the acknowledgements; with `unused`, an
+/// acknowledgement that covers nothing is reported.
+fn reported(
+    project: &Project,
+    diagnostics: Vec<ascribe_check::Diagnostic>,
+    unused: bool,
+) -> Vec<ascribe_check::Diagnostic> {
+    let leveled = apply_levels(&project.model().checks, diagnostics);
+    Acknowledgements::of(project)
+        .apply(project.model(), leveled, unused)
+        .diagnostics
+}
+
+/// Diagnostics in the harness's format: the file relative to the content
+/// root, a 1-based line, a column in Unicode scalar values, and the severity.
 pub fn to_conformance(
     project: &Project,
     diagnostics: Vec<ascribe_check::Diagnostic>,
 ) -> Result<Vec<Diagnostic>, AdapterError> {
     let mut out = Vec::new();
-    for d in apply_levels(&project.model().checks, diagnostics) {
+    for d in diagnostics {
         let file = project
             .file(d.location.file)
             .ok_or_else(|| AdapterError(format!("{} has no file", d.slug)))?;

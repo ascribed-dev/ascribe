@@ -153,7 +153,7 @@ pub const HEADING_PHRASE_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("heading-ph
 pub const HEADING_DUPLICATE_WITHOUT_ID: DiagnosticSlug =
     DiagnosticSlug("heading-duplicate-without-id");
 
-/// `ASC047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page".
+/// `ASC047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment".
 pub const FRONTMATTER_UNKNOWN_KEY: DiagnosticSlug = DiagnosticSlug("frontmatter-unknown-key");
 
 /// `ASC048`, error, file level: SPEC §8.2, "Frontmatter | Required field missing".
@@ -460,22 +460,37 @@ pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-fiel
 pub const MODEL_CHECK_NOT_CONFIGURABLE: DiagnosticSlug =
     DiagnosticSlug("model-check-not-configurable");
 
-/// `ASC143`, error, file level: a rule for loading `ascribe.toml`.
+/// `ASC143`, error, file level: SPEC §8.2, "`@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else".
+pub const INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("intended-check");
+
+/// `ASC144`, error, file level: SPEC §8.2, "`@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason".
+pub const INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("intended-entry");
+
+/// `ASC145`, advice, page level: SPEC §8.2, "`@intended` | An acknowledgement that matches no problem in any build".
+pub const INTENDED_UNUSED: DiagnosticSlug = DiagnosticSlug("intended-unused");
+
+/// `ASC146`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("model-intended-check");
+
+/// `ASC147`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("model-intended-entry");
+
+/// `ASC148`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_FIELD_ROLE: DiagnosticSlug = DiagnosticSlug("model-field-role");
 
-/// `ASC144`, advice, page level: SPEC §8.2, "Pages | A page's plain Markdown, in a build, is at least the size limit (page level, per build)".
+/// `ASC149`, advice, page level: a content check (area `pages`).
 pub const PAGE_SIZE: DiagnosticSlug = DiagnosticSlug("page-size");
 
-/// `ASC145`, advice, file level: SPEC §8.2, "Pages | No description, when the page's content type marks a field as its description".
+/// `ASC150`, advice, file level: a content check (area `pages`).
 pub const PAGE_DESCRIPTION_MISSING: DiagnosticSlug = DiagnosticSlug("page-description-missing");
 
-/// `ASC146`, advice, page level: SPEC §8.2, "Headings | More than one level below the heading before it, or level 1, which the page's title is (page level)".
+/// `ASC151`, advice, page level: a content check (area `pages`).
 pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-skipped");
 
-/// `ASC147`, advice, file level: SPEC §8.2, "Code blocks | A fenced code block with no language".
+/// `ASC152`, advice, file level: a content check (area `pages`).
 pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-missing");
 
-/// `ASC148`, advice, file level: SPEC §8.2, "Pages | The date in the field the page's content type marks as its review date has passed".
+/// `ASC153`, advice, file level: a content check (area `pages`).
 pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
 
 /// Every slug, in registry order.
@@ -622,6 +637,11 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_UNUSED,
     MODEL_INLINE_FIELD,
     MODEL_CHECK_NOT_CONFIGURABLE,
+    INTENDED_CHECK,
+    INTENDED_ENTRY,
+    INTENDED_UNUSED,
+    MODEL_INTENDED_CHECK,
+    MODEL_INTENDED_ENTRY,
     MODEL_FIELD_ROLE,
     PAGE_SIZE,
     PAGE_DESCRIPTION_MISSING,
@@ -640,3 +660,9 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     CODE_LANGUAGE_MISSING,
     REVIEW_OVERDUE,
 ];
+
+/// The checks an author can acknowledge (SPEC §4.9): the registry's entries
+/// whose next step is `review`, each with the place its problems are reported
+/// at, in registry order. A test keeps it equal to the registry.
+pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] =
+    &[(REVIEW_OVERDUE, crate::Place::Page)];

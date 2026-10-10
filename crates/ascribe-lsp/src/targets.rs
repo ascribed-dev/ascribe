@@ -710,7 +710,9 @@ fn widgets(ctx: &Ctx) -> Vec<TargetWidget> {
                 primary: match schema.primary {
                     Primary::None => PrimaryKind::None,
                     Primary::Identifier { .. } => PrimaryKind::Identifier,
-                    Primary::Text { .. } => PrimaryKind::Text,
+                    // A widget can't declare a reason; only `@intended`
+                    // takes one.
+                    Primary::Text { .. } | Primary::Reason { .. } => PrimaryKind::Text,
                     Primary::Availability { .. } => PrimaryKind::Availability,
                 },
                 binding: schema.binding.map(|b| match b {

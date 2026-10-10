@@ -210,6 +210,7 @@ pub(crate) fn describe_directive(schema: &DirectiveSchema) -> String {
         Primary::Identifier { .. } => Some("an identifier (a path, id, or key)"),
         Primary::Text { .. } => Some("text"),
         Primary::Availability { .. } => Some("an availability spec or feature key"),
+        Primary::Reason { .. } => Some("the reason, as plain text"),
     };
     if let Some(primary) = primary {
         let required = if schema.primary.is_required() {

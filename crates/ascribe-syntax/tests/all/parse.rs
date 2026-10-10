@@ -498,5 +498,5 @@ fn produces_the_nodes_of_phase_06_and_07() {
 #[test]
 fn schema_type_is_reexported_in_options() {
     let schemas: Vec<DirectiveSchema> = ParseOptions::default().schemas;
-    assert_eq!(schemas.len(), 8);
+    assert_eq!(schemas.len(), 9);
 }

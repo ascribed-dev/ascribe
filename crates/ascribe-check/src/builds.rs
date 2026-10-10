@@ -7,8 +7,8 @@ use ascribe_core::RelPath;
 use ascribe_model::Build;
 
 use crate::{
-    Diagnostic, PageChecker, PageIndex, Project, apply_levels, check_all_builds, check_builds,
-    check_file, check_files,
+    Acknowledged, Acknowledgements, Diagnostic, PageChecker, PageIndex, Project, apply_levels,
+    check_all_builds, check_builds, check_file, check_files,
 };
 
 /// A build name that isn't a build of the content model.
@@ -65,6 +65,9 @@ pub fn select_builds<'p>(
 pub struct Diagnosed<'p> {
     /// The diagnostics, in the order they're reported.
     pub diagnostics: Vec<Diagnostic>,
+    /// The problems an acknowledgement covers (SPEC §4.9), which aren't in
+    /// `diagnostics`.
+    pub acknowledged: Vec<Acknowledged>,
     /// The builds checked, as [`select_builds`] chose them.
     pub builds: Vec<&'p Build>,
 }
@@ -74,6 +77,9 @@ pub struct Diagnosed<'p> {
 /// anything. With none named, that's every build and also the content no
 /// build publishes; each problem is listed once, and the builds it appears
 /// in are added to its message when they aren't all of the selected ones.
+/// A problem an acknowledgement covers is set aside in
+/// [`Diagnosed::acknowledged`]; with every build checked, an acknowledgement
+/// that covers nothing is reported.
 ///
 /// # Errors
 ///
@@ -85,7 +91,10 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
     } else {
         check_builds(project, &builds)
     };
-    let mut diagnostics = apply_levels(&project.model().checks, diagnostics);
+    let diagnostics = apply_levels(&project.model().checks, diagnostics);
+    let applied =
+        Acknowledgements::of(project).apply(project.model(), diagnostics, names.is_empty());
+    let mut diagnostics = applied.diagnostics;
     for d in &mut diagnostics {
         if let Some(note) = d.builds_note(builds.len()) {
             d.message = format!("{} ({note})", d.message);
@@ -93,6 +102,7 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
     }
     Ok(Diagnosed {
         diagnostics,
+        acknowledged: applied.acknowledged,
         builds,
     })
 }
@@ -114,7 +124,11 @@ pub fn count_errors(project: &Project, names: &[String]) -> Result<usize, Unknow
     } else {
         checker.check_builds(&builds)
     });
-    Ok(apply_levels(&project.model().checks, diagnostics)
+    let diagnostics = apply_levels(&project.model().checks, diagnostics);
+    let applied =
+        Acknowledgements::of(project).apply(project.model(), diagnostics, names.is_empty());
+    Ok(applied
+        .diagnostics
         .iter()
         .filter(|d| d.severity == crate::Severity::Error)
         .count())
@@ -165,8 +179,16 @@ pub fn diagnose_editor_build_in<'p>(
             out
         }
     };
+    // One build: whether an acknowledgement covers nothing in the others
+    // can't be told.
+    let applied = Acknowledgements::of(project).apply(
+        project.model(),
+        apply_levels(&project.model().checks, diagnostics),
+        false,
+    );
     Diagnosed {
-        diagnostics: apply_levels(&project.model().checks, diagnostics),
+        diagnostics: applied.diagnostics,
+        acknowledged: applied.acknowledged,
         builds: vec![build],
     }
 }

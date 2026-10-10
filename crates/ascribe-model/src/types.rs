@@ -264,6 +264,10 @@ impl Cx<'_> {
             format!("{path}.{key}")
         };
         let top = path.is_empty();
+        // SPEC §4.9: pages and fragments both accept `intended`.
+        if top && key == "intended" {
+            return;
+        }
         if top && matches!(key, "available" | "variant") {
             match self.schema.owner {
                 SchemaOwner::Type(_) => {}

@@ -86,6 +86,11 @@ pub struct Diagnostic {
     /// content model allows, a long page's sections, and so on.
     #[serde(skip)]
     pub evidence: Vec<Evidence>,
+    /// The content model entry or image the problem is about, for a check
+    /// that reports problems about one: its issue's `entry` argument
+    /// (`phrase old-name`), which `[[intended]]` is matched against.
+    #[serde(skip)]
+    pub subject: Option<String>,
 }
 
 /// One piece of context for an agent prompt: what Ascribe knows that an
@@ -125,6 +130,9 @@ impl Diagnostic {
             builds: Vec::new(),
             unpublished: false,
             evidence: evidence(entry, issue),
+            subject: issue
+                .arg(ascribe_core::intended::ENTRY_ARG)
+                .map(str::to_owned),
         }
     }
 

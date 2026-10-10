@@ -1,0 +1,8 @@
+description: >-
+  An `[[intended]]` table must name a review check whose problems are
+  reported at a content model entry.
+spec: ["4.9", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-intended-check, file: ascribe.toml, line: 7}
