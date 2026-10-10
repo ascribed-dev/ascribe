@@ -135,7 +135,7 @@ The page at that address reads them. With versions declared, it sends the reader
 The binary would stop building addresses and link to ids:
 
 - A diagnostic's link becomes `/go/ASC036`. The reference's headings take the codes as their ids.
-- A command's `--help` ends with `/go/cli-check`.
+- A command's `--help` ends with `/go/cli-check/`.
 
 A test checks that every id the binary can produce is in the docs' list. Then the docs can be moved under `/docs/`, as the [website proposal](website.md) needs, with no address in the binary changing.
 
@@ -151,8 +151,10 @@ A test checks that every id the binary can produce is in the docs' list. Then th
 - **Links from one project into another.** A project's links stay inside it today. A project that can read another's list could link into it by id and have the link checked. The website's pages linking into the docs are the first case.
 - **The list in a form code imports:** constants for a language, generated from the list, so a wrong id fails to compile.
 
-## Open questions
+## Decided
 
-- **Does one docs set need separate sets of names for separate products?** DITA pairs every id with an application's name, so two products can each have a `settings`. The alternative is a convention (`agent-settings`, `cli-settings`) and one flat set. A convention costs nothing; a real namespace would let `verify` check one product's ids alone.
-- **Should the same permalink on two pages mean "the same page in different versions"?** If a permalink only has to be unique within what one build publishes, a page rewritten for 3.5 and the page it replaces could carry one id, and the version switcher would follow it. That would do the job of `replaces` in the versions proposal with no new key. It would also mean a permalink is needed on every page that's ever rewritten.
-- **Who may add a permalink?** The id is a contract between the docs and the product. Declaring it in the docs' source means the product's team proposes one with a pull request against the docs. Is that the intended way, or should the product be able to reserve a name before the page exists?
+The questions this proposal left open were settled in the plan's [phase 1](permalinks/README.md#decisions):
+
+- **One flat set of names,** with a convention such as `agent-settings` and `cli-settings`, not a namespace per product. A name uses the characters `@id` allows, so it never has a `/`. A prefix can be treated as a namespace later.
+- **A permalink is unique within what one build publishes,** so two pages no build publishes together may share one. Whether versions use that in place of `replaces` is left to the [versions proposal](versions.md).
+- **A permalink is declared on the page or heading it names,** in the docs' source. A product's team proposes one with a pull request against the docs; nothing is reserved before its page exists.

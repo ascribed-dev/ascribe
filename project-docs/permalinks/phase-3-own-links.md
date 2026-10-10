@@ -52,7 +52,7 @@ The diagnostics' headings are generated, so the generator writes the `@id` line 
 ### The binary
 
 - One macro builds an address from the site, the path, and a name. `docs_page!` goes.
-- `Entry::docs` returns `…/go/ASC036`. The `docs` field in `check`'s JSON keeps its meaning (where to read about this diagnostic) and gets a shorter value.
+- `Entry::docs` returns `…/go/ASC036/` (with the slash `trailing-slash` asks for, as every address has). The `docs` field in `check`'s JSON keeps its meaning (where to read about this diagnostic) and gets a shorter value.
 - One test lists every name the binary can produce (each command's, each registry code, and the few written by hand) and checks each against the list `ascribe build` writes for `docs/`. A new command or diagnostic without a permalink in the docs fails it.
 
 ## Tasks
