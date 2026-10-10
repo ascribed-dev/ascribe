@@ -162,3 +162,12 @@ availability = "badge"
 
 [editor]
 build = "site"
+
+# Prose checks through Vale, in the editor, for whoever has Vale 3.16 or
+# later installed; `ascribe check --vale` runs them too. Vale isn't needed
+# to work on the docs, so a machine without it isn't told so.
+[checks]
+prose-not-checked = "off"
+
+[checks.vale]
+preset = "quiet"
