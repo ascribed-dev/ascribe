@@ -2,6 +2,9 @@
 
 ## Retired
 
-No longer reported. Their codes and names aren't reused.
+No longer reported. Their codes and names aren't reused, and their permalinks still lead here.
 
-- ASC039 `link-id-in-fragment`: A link can name a heading from a fragment the target page includes (SPEC §4.2), so this is no longer an error. A heading a build removes is `link-id-removed`.
+### ASC039 `link-id-in-fragment`
+@id {permalink=true}: ASC039
+
+A link can name a heading from a fragment the target page includes (SPEC §4.2), so this is no longer an error. A heading a build removes is `link-id-removed`.

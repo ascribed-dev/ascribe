@@ -203,7 +203,8 @@ impl Ctx<'_> {
     }
 
     /// The reserved keys on a page (SPEC §2.1): `available` holds an
-    /// availability spec and `variant` a mapping of dimensions to values.
+    /// availability spec, `variant` a mapping of dimensions to values, and
+    /// `permalink` a name with the characters an `@id` has.
     fn check_reserved_keys(&mut self, value: &Value, index: &YamlIndex, first_line: Span) {
         // SPEC §2.1: a value of the wrong shape is a type mismatch.
         let Value::Mapping(map) = value else { return };
@@ -227,6 +228,14 @@ impl Ctx<'_> {
         }
         if let Some(v) = map.get("variant") {
             self.check_variant_key(v, index, first_line);
+        }
+        if let Some(v) = map.get("permalink") {
+            let node = index.get("permalink");
+            let at = node.map_or(first_line, |n| n.value);
+            match v {
+                Value::String(name) => self.check_name(name, at, Some("permalink")),
+                other => self.mismatch("permalink", "a name, such as `cli-reference`", other, at),
+            }
         }
     }
 

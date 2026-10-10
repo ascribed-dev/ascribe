@@ -3,6 +3,7 @@
 ### Attributes
 
 #### ASC001 `attribute-unknown-key`
+@id {permalink=true}: ASC001
 
 Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -13,6 +14,7 @@ Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.m
 **Fix:** Fix the key's spelling, or remove it. To accept a new image attribute, declare it in `[images.attributes]`; for a project widget, in its `attributes`.
 
 #### ASC002 `attribute-type-mismatch`
+@id {permalink=true}: ASC002
 
 Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -23,6 +25,7 @@ Error · file level · next step: choose · [SPEC §3.3]({repo}/blob/main/SPEC.m
 **Fix:** Give a value of the key's declared type: one of the enumeration's values, `true` or `false` for a boolean, or a plain number such as `600` for a number.
 
 #### ASC003 `attribute-bare-key`
+@id {permalink=true}: ASC003
 
 Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -33,6 +36,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 **Fix:** Give the key a value: `key=value`. Booleans are written out too: `open=true`.
 
 #### ASC004 `attribute-unquoted-reserved`
+@id {permalink=true}: ASC004
 
 Error · file level · next step: fix · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -43,6 +47,7 @@ Error · file level · next step: fix · [SPEC §3.3]({repo}/blob/main/SPEC.md#3
 **Fix:** Quote the value: `label="Using other images"`.
 
 #### ASC055 `attribute-syntax`
+@id {permalink=true}: ASC055
 
 Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -53,6 +58,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 **Fix:** Fix the attribute block: close every quote and brace, give every `=` a value, and separate pairs with commas.
 
 #### ASC056 `attribute-duplicate-key`
+@id {permalink=true}: ASC056
 
 Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md#33-attributes)
 
@@ -65,6 +71,7 @@ Error · file level · next step: write · [SPEC §3.3]({repo}/blob/main/SPEC.md
 ### Directives
 
 #### ASC005 `directive-unknown`
+@id {permalink=true}: ASC005
 
 Warning · file level · next step: choose · [SPEC §3.2]({repo}/blob/main/SPEC.md#32-recognition)
 
@@ -75,6 +82,7 @@ Warning · file level · next step: choose · [SPEC §3.2]({repo}/blob/main/SPEC
 **Fix:** Correct the directive's name, or declare a project widget with that name in `ascribe.toml`. If the line is meant as text, write `\@` at its start.
 
 #### ASC006 `directive-primary`
+@id {permalink=true}: ASC006
 
 Error · file level · next step: write · [SPEC §3.4]({repo}/blob/main/SPEC.md#34-the-primary)
 
@@ -85,6 +93,7 @@ Error · file level · next step: write · [SPEC §3.4]({repo}/blob/main/SPEC.md
 **Fix:** Remove the text after the colon, or add the primary the directive needs, such as the path in `@include: setup.md`.
 
 #### ASC120 `directive-extra-text`
+@id {permalink=true}: ASC120
 
 Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#31-syntax)
 
@@ -97,6 +106,7 @@ Error · file level · next step: fix · [SPEC §3.1]({repo}/blob/main/SPEC.md#3
 ### Container
 
 #### ASC007 `container-unclosed`
+@id {permalink=true}: ASC007
 
 Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
@@ -107,6 +117,7 @@ Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md
 **Fix:** Add an `@end` line where the container's content ends, indented like its opener.
 
 #### ASC008 `container-colon-unexpected`
+@id {permalink=true}: ASC008
 
 Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
@@ -117,6 +128,7 @@ Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#3
 **Fix:** Remove the trailing colon. The directive applies to what its binding says, such as the block after it.
 
 #### ASC009 `container-colon-missing`
+@id {permalink=true}: ASC009
 
 Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
@@ -127,6 +139,7 @@ Error · file level · next step: fix · [SPEC §3.5]({repo}/blob/main/SPEC.md#3
 **Fix:** End the opener's line with a colon, and close the container with `@end`.
 
 #### ASC010 `container-open-at-arm`
+@id {permalink=true}: ASC010
 
 Error · file level · next step: write · [SPEC §3.6]({repo}/blob/main/SPEC.md#36-groups)
 
@@ -137,6 +150,7 @@ Error · file level · next step: write · [SPEC §3.6]({repo}/blob/main/SPEC.md
 **Fix:** Close the inner container with `@end` before the next arm's opener.
 
 #### ASC011 `end-unmatched`
+@id {permalink=true}: ASC011
 
 Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md#35-forms)
 
@@ -147,6 +161,7 @@ Error · file level · next step: write · [SPEC §3.5]({repo}/blob/main/SPEC.md
 **Fix:** Remove the `@end`, or make the directive it should close a container by ending that directive's line with a colon.
 
 #### ASC012 `end-indent-mismatch`
+@id {permalink=true}: ASC012
 
 Error · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
@@ -157,6 +172,7 @@ Error · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md
 **Fix:** Indent the `@end` exactly as its opener is indented.
 
 #### ASC013 `container-nesting-deep`
+@id {permalink=true}: ASC013
 
 Warning · file level · next step: write · [SPEC §3.10]({repo}/blob/main/SPEC.md#310-nesting)
 
@@ -169,6 +185,7 @@ Warning · file level · next step: write · [SPEC §3.10]({repo}/blob/main/SPEC
 ### Binding
 
 #### ASC014 `binding-no-block`
+@id {permalink=true}: ASC014
 
 Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
@@ -179,6 +196,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 **Fix:** Put the block the directive applies to directly below it, in the same container, or remove the directive.
 
 #### ASC015 `binding-heading`
+@id {permalink=true}: ASC015
 
 Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
@@ -189,6 +207,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 **Fix:** Move the directive below the heading, directly above the block it describes.
 
 #### ASC016 `binding-blank-line`
+@id {permalink=true}: ASC016
 
 Warning · file level · next step: fix · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
@@ -199,6 +218,7 @@ Warning · file level · next step: fix · [SPEC §3.8]({repo}/blob/main/SPEC.md
 **Fix:** Remove the blank line, so the directive touches its block. `ascribe fmt` does this.
 
 #### ASC017 `binding-not-section-top`
+@id {permalink=true}: ASC017
 
 Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md#38-binding)
 
@@ -211,6 +231,7 @@ Error · file level · next step: write · [SPEC §3.8]({repo}/blob/main/SPEC.md
 ### Title
 
 #### ASC018 `title-not-accepted`
+@id {permalink=true}: ASC018
 
 Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
@@ -221,6 +242,7 @@ Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.
 **Fix:** Remove the title line, or start it with `\.` if it's text that begins with a dot.
 
 #### ASC019 `title-dot-space`
+@id {permalink=true}: ASC019
 
 Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.md#37-titles)
 
@@ -233,6 +255,7 @@ Warning · file level · next step: write · [SPEC §3.7]({repo}/blob/main/SPEC.
 ### `@id`
 
 #### ASC020 `id-duplicate`
+@id {permalink=true}: ASC020
 
 Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
@@ -243,28 +266,31 @@ Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md
 **Fix:** Give one of the headings a different `@id`. When the second id comes from an included fragment, change it in the page or in the fragment, or include the fragment once.
 
 #### ASC058 `id-invalid`
+@id {permalink=true}: ASC058
 
 Error · file level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
-**When:** Id containing characters other than letters, digits, hyphens, underscores, and periods.
+**When:** Id, or a page's `permalink`, containing characters other than letters, digits, hyphens, underscores, and periods.
 
 **Message:** `{id}` isn't a valid id: use only letters, digits, hyphens, underscores, and periods
 
-**Fix:** Use only letters, digits, hyphens, underscores, and periods in the id.
+**Fix:** Use only letters, digits, hyphens, underscores, and periods in the id, or in the page's `permalink`.
 
 #### ASC173 `permalink-duplicate`
+@id {permalink=true}: ASC173
 
 Error · page level · next step: write · [SPEC §4.1]({repo}/blob/main/SPEC.md#41-id)
 
-**When:** Permalink published by one build on more than one page.
+**When:** Permalink published by one build in more than one place: on two pages, or as a page's own and a heading's.
 
-**Message:** the permalink `{name}` is also on `{page}`; a build can publish each permalink on one page only
+**Message:** the permalink `{name}` is also on `{page}`; a build can publish each permalink in one place only
 
-**Fix:** Give one of the headings a different `@id`, or remove `{permalink=true}` from it. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages.
+**Fix:** Give one of them a different name (a heading's `@id`, or a page's `permalink`), or stop it being a permalink: remove `{permalink=true}` from the `@id`, or `permalink` from the frontmatter. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages.
 
 ### `@include`
 
 #### ASC021 `include-target-missing`
+@id {permalink=true}: ASC021
 
 Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -275,6 +301,7 @@ Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 **Fix:** Fix the path. It's relative to the including file, or to the content root when it starts with `/`, and the file must be a Markdown source file inside the content root.
 
 #### ASC022 `include-id-missing`
+@id {permalink=true}: ASC022
 
 Error · page level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -285,6 +312,7 @@ Error · page level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 **Fix:** Fix the `#id`, or give the heading you want to include that id with `@id`.
 
 #### ASC023 `include-cycle`
+@id {permalink=true}: ASC023
 
 Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -295,6 +323,7 @@ Error · page level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md
 **Fix:** Remove one of the includes in the cycle. A section can't include itself, directly or through other files.
 
 #### ASC125 `include-heading-without-id`
+@id {permalink=true}: ASC125
 
 Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -307,6 +336,7 @@ Warning · file level · next step: write · [SPEC §4.2]({repo}/blob/main/SPEC.
 ### `@variant`
 
 #### ASC024 `variant-no-arm-survives`
+@id {permalink=true}: ASC024
 
 Warning · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
@@ -317,6 +347,7 @@ Warning · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.
 **Fix:** Add an arm for the build's selection, or check the build's `variants` in `ascribe.toml`. If the content is meant to be absent from that build, the warning can be ignored.
 
 #### ASC025 `variant-unknown`
+@id {permalink=true}: ASC025
 
 Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
@@ -327,6 +358,7 @@ Error · file level · next step: choose · [SPEC §4.3]({repo}/blob/main/SPEC.m
 **Fix:** Use a dimension and value declared in `[dimensions]`, or declare them there.
 
 #### ASC026 `variant-mixed-arms`
+@id {permalink=true}: ASC026
 
 Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
@@ -337,6 +369,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 **Fix:** Make every arm of the group dimensional (attributes, such as `{pm=npm}`) or every arm labeled (a title line).
 
 #### ASC027 `variant-arm-kind`
+@id {permalink=true}: ASC027
 
 Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
@@ -347,6 +380,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 **Fix:** Give the arm either attributes or a title line: one, not both and not neither.
 
 #### ASC028 `variant-no-shared-dimension`
+@id {permalink=true}: ASC028
 
 Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)
 
@@ -359,6 +393,7 @@ Error · file level · next step: write · [SPEC §4.3]({repo}/blob/main/SPEC.md
 ### `@available`
 
 #### ASC029 `available-unknown`
+@id {permalink=true}: ASC029
 
 Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -369,6 +404,7 @@ Error · file level · next step: choose · [SPEC §4.4]({repo}/blob/main/SPEC.m
 **Fix:** Use a declared dimension value, dimension, feature key, or lifecycle state, or declare the name in `ascribe.toml`.
 
 #### ASC030 `available-history-order`
+@id {permalink=true}: ASC030
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -379,6 +415,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 **Fix:** List the target's states oldest first: `self-managed (preview 3.3, ga 3.5)`.
 
 #### ASC031 `available-versionless`
+@id {permalink=true}: ASC031
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -389,6 +426,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 **Fix:** Remove the version. A versionless target, or a dimension name, takes a state but no version: `cloud beta`.
 
 #### ASC032 `available-exceeds-scope`
+@id {permalink=true}: ASC032
 
 Error · page level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -399,6 +437,7 @@ Error · page level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 **Fix:** Narrow this availability to what the enclosing page or section allows, or widen the enclosing one.
 
 #### ASC057 `available-syntax`
+@id {permalink=true}: ASC057
 
 Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -411,6 +450,7 @@ Error · file level · next step: write · [SPEC §4.4]({repo}/blob/main/SPEC.md
 ### `@steps`
 
 #### ASC033 `steps-not-ordered-list`
+@id {permalink=true}: ASC033
 
 Error · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
@@ -423,6 +463,7 @@ Error · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md
 ### `@details`
 
 #### ASC034 `details-title-missing`
+@id {permalink=true}: ASC034
 
 Error · file level · next step: write · [SPEC §4.7]({repo}/blob/main/SPEC.md#47-details)
 
@@ -435,6 +476,7 @@ Error · file level · next step: write · [SPEC §4.7]({repo}/blob/main/SPEC.md
 ### Project widget
 
 #### ASC035 `widget-schema`
+@id {permalink=true}: ASC035
 
 Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6-project-widgets)
 
@@ -447,6 +489,7 @@ Error · file level · next step: write · [SPEC §6]({repo}/blob/main/SPEC.md#6
 ### Links
 
 #### ASC036 `link-target-missing`
+@id {permalink=true}: ASC036
 
 Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -457,6 +500,7 @@ Error · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 **Fix:** Fix the path, or create the file. Names must match exactly, including case, and the file must be inside the project.
 
 #### ASC037 `link-id-missing`
+@id {permalink=true}: ASC037
 
 Error · page level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -467,6 +511,7 @@ Error · page level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.m
 **Fix:** Fix the `#id`, or give the heading you mean that id with `@id`.
 
 #### ASC038 `link-to-fragment`
+@id {permalink=true}: ASC038
 
 Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -477,6 +522,7 @@ Error · file level · next step: choose · [SPEC §4.2]({repo}/blob/main/SPEC.m
 **Fix:** Link to a page that includes the fragment.
 
 #### ASC040 `link-id-removed`
+@id {permalink=true}: ASC040
 
 Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md#93-build-modes)
 
@@ -487,6 +533,7 @@ Error · page level · next step: write · [SPEC §9.3]({repo}/blob/main/SPEC.md
 **Fix:** Put the link in a `@variant` arm that the same build removes, or keep the heading in that build.
 
 #### ASC041 `link-route`
+@id {permalink=true}: ASC041
 
 Warning · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -497,6 +544,7 @@ Warning · file level · next step: choose · [SPEC §5.2]({repo}/blob/main/SPEC
 **Fix:** Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change.
 
 #### ASC121 `link-page-dropped`
+@id {permalink=true}: ASC121
 
 Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -509,6 +557,7 @@ Error · page level · next step: write · [SPEC §5.2]({repo}/blob/main/SPEC.md
 ### Images
 
 #### ASC042 `image-source-missing`
+@id {permalink=true}: ASC042
 
 Error · file level · next step: choose · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -519,6 +568,7 @@ Error · file level · next step: choose · [SPEC §5.3]({repo}/blob/main/SPEC.m
 **Fix:** Fix the path, or add the image. Names must match exactly, including case, and the file must be inside the project.
 
 #### ASC043 `image-alt-missing`
+@id {permalink=true}: ASC043
 
 Warning · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -529,6 +579,7 @@ Warning · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.
 **Fix:** Describe the image between the brackets: `![The settings page](../reference/settings.png)`.
 
 #### ASC059 `image-attribute-missing`
+@id {permalink=true}: ASC059
 
 Error · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -541,6 +592,7 @@ Error · file level · next step: write · [SPEC §5.3]({repo}/blob/main/SPEC.md
 ### Phrases
 
 #### ASC044 `phrase-undeclared`
+@id {permalink=true}: ASC044
 
 Warning · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
@@ -551,6 +603,7 @@ Warning · file level · next step: choose · [SPEC §5.1]({repo}/blob/main/SPEC
 **Fix:** Declare the key in `[phrases]` if it's meant as a phrase. Otherwise write `\{` to keep the braces as text.
 
 #### ASC126 `phrase-double-braces`
+@id {permalink=true}: ASC126
 
 Warning · file level · next step: fix · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
@@ -563,6 +616,7 @@ Warning · file level · next step: fix · [SPEC §5.1]({repo}/blob/main/SPEC.md
 ### Headings
 
 #### ASC045 `heading-phrase-without-id`
+@id {permalink=true}: ASC045
 
 Warning · file level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
@@ -573,6 +627,7 @@ Warning · file level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md
 **Fix:** Give the heading a stable id: an `@id` line directly under it.
 
 #### ASC046 `heading-duplicate-without-id`
+@id {permalink=true}: ASC046
 
 Warning · page level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
@@ -583,6 +638,7 @@ Warning · page level · next step: fix · [SPEC §5.5]({repo}/blob/main/SPEC.md
 **Fix:** Give the heading a stable id: an `@id` line directly under it.
 
 #### ASC124 `heading-empty-slug`
+@id {permalink=true}: ASC124
 
 Warning · file level · next step: write · [SPEC §5.5]({repo}/blob/main/SPEC.md#55-heading-ids)
 
@@ -595,6 +651,7 @@ Warning · file level · next step: write · [SPEC §5.5]({repo}/blob/main/SPEC.
 ### Frontmatter
 
 #### ASC047 `frontmatter-unknown-key`
+@id {permalink=true}: ASC047
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -605,6 +662,7 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 **Fix:** Fix the key's spelling or remove it, or declare the field in the content type's `frontmatter` (`[fragments.frontmatter]` for a fragment).
 
 #### ASC048 `frontmatter-missing-field`
+@id {permalink=true}: ASC048
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -615,6 +673,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 **Fix:** Add the field to the page's frontmatter, or give it a default in the content type.
 
 #### ASC049 `frontmatter-type-mismatch`
+@id {permalink=true}: ASC049
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -625,16 +684,18 @@ Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.m
 **Fix:** Give a value of the field's type. Quote a string that YAML would read as something else: `version: "3.10"`.
 
 #### ASC050 `frontmatter-reserved-in-fragment`
+@id {permalink=true}: ASC050
 
 Error · file level · next step: write · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
-**When:** Reserved key (`available`, `variant`) on a fragment.
+**When:** Reserved key (`available`, `variant`, `permalink`) on a fragment.
 
 **Message:** `{key}` is reserved for pages, and fragments can't use it
 
 **Fix:** Remove the key from the fragment's frontmatter. Use `@available` or `@variant` in the fragment's content, or set the key on the pages that include it.
 
 #### ASC051 `content-type-unresolved`
+@id {permalink=true}: ASC051
 
 Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -645,6 +706,7 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 **Fix:** Make the content types' `files` patterns match each page once, or mark one type `default = true` for the pages no pattern matches.
 
 #### ASC122 `frontmatter-syntax`
+@id {permalink=true}: ASC122
 
 Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -657,6 +719,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 ### Lists
 
 #### ASC052 `list-ended-by-directive`
+@id {permalink=true}: ASC052
 
 Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
@@ -667,6 +730,7 @@ Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.
 **Fix:** Indent the directive to the list item's content, to keep it in the item. To end the list there, put a blank line before the directive.
 
 #### ASC053 `directive-indented-code`
+@id {permalink=true}: ASC053
 
 Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.md#39-directives-inside-lists-and-blockquotes)
 
@@ -677,6 +741,7 @@ Warning · file level · next step: write · [SPEC §3.9]({repo}/blob/main/SPEC.
 **Fix:** Indent the directive less, to its container's content. If it's meant as code, put it in a fenced code block.
 
 #### ASC054 `steps-numbering-continued`
+@id {permalink=true}: ASC054
 
 Warning · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.md#46-steps)
 
@@ -689,6 +754,7 @@ Warning · file level · next step: write · [SPEC §4.6]({repo}/blob/main/SPEC.
 ### Files
 
 #### ASC123 `source-unreadable`
+@id {permalink=true}: ASC123
 
 Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -701,6 +767,7 @@ Error · file level · next step: write · [SPEC §2.1]({repo}/blob/main/SPEC.md
 ### `@snippet`
 
 #### ASC127 `snippet-address`
+@id {permalink=true}: ASC127
 
 Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -711,6 +778,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 **Fix:** Write the address as `<source>:<path>`, with the path relative to the source's folder and no `..`, and add `#<region>` for a region. A file outside the project's folder can only be named through a source: declare one in `[sources.<name>]`.
 
 #### ASC128 `snippet-source-unknown`
+@id {permalink=true}: ASC128
 
 Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -721,6 +789,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 **Fix:** Fix the source's name, or declare it in ascribe.toml: `[sources.<name>]` with a `path`.
 
 #### ASC129 `snippet-file-missing`
+@id {permalink=true}: ASC129
 
 Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -731,6 +800,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 **Fix:** Fix the path, which is relative to the source's folder. For a file the source doesn't include, add a pattern that matches it to the source's `include`, or take it out of `ignore`. For a link, name the file it leads to through a source that includes it. For a source in another repository, run `ascribe sources fetch` to copy the file. When the file isn't in the repository at the pinned commit, because it was moved or deleted there, `fetch` can't copy it: name the file where it is now, or change the code and move the pin with `ascribe sources update`.
 
 #### ASC130 `snippet-file-not-text`
+@id {permalink=true}: ASC130
 
 Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -741,6 +811,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 **Fix:** Take the snippet from a text file: UTF-8, with no NUL characters.
 
 #### ASC131 `snippet-region-missing`
+@id {permalink=true}: ASC131
 
 Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -751,6 +822,7 @@ Error · file level · next step: choose · [SPEC §4.8]({repo}/blob/main/SPEC.m
 **Fix:** Fix the region's name, or mark the region in the file with `:snippet-start: <name>` and `:snippet-end:` comments. A file whose extension isn't in the comment table can only be used whole.
 
 #### ASC132 `snippet-tags`
+@id {permalink=true}: ASC132
 
 Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet)
 
@@ -763,6 +835,7 @@ Error · file level · next step: write · [SPEC §4.8]({repo}/blob/main/SPEC.md
 ### Source copies
 
 #### ASC136 `lock-invalid`
+@id {permalink=true}: ASC136
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -773,6 +846,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 **Fix:** ascribe.lock is written by `ascribe sources fetch` and `ascribe sources update`. Undo the change made to it by hand, or delete it and run `ascribe sources fetch`.
 
 #### ASC137 `lock-source-unknown`
+@id {permalink=true}: ASC137
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -783,6 +857,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 **Fix:** Run `ascribe sources fetch` to make the lock match ascribe.toml, or `ascribe sources update <name>` for a source whose `git` changed.
 
 #### ASC138 `source-copy-changed`
+@id {permalink=true}: ASC138
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -793,6 +868,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 **Fix:** A copy is the file as it is in its repository at the pinned commit. Change the code where it lives, then run `ascribe sources update <name>`; `ascribe sources fetch` puts back a copy that was changed or deleted here.
 
 #### ASC139 `source-copy-unlocked`
+@id {permalink=true}: ASC139
 
 Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -803,6 +879,7 @@ Error · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md
 **Fix:** Run `ascribe sources fetch`: it copies the files snippets use at the pinned commit and records them, and removes the rest.
 
 #### ASC140 `source-copy-unused`
+@id {permalink=true}: ASC140
 
 Warning · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.md#74-sources-in-another-repository)
 
@@ -815,6 +892,7 @@ Warning · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.
 ### `@intended`
 
 #### ASC143 `intended-check`
+@id {permalink=true}: ASC143
 
 Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
@@ -825,6 +903,7 @@ Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.m
 **Fix:** Name the check whose problem is intended, by its name in the [diagnostics reference](../reference/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable.
 
 #### ASC144 `intended-entry`
+@id {permalink=true}: ASC144
 
 Error · file level · next step: write · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 
@@ -843,6 +922,7 @@ intended:
 The editor's quick fix writes a placeholder reason for you to replace: until you do, the acknowledgement is reported.
 
 #### ASC145 `intended-unused`
+@id {permalink=true}: ASC145
 
 Advice · page level · next step: fix · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
 

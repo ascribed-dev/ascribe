@@ -1,5 +1,5 @@
 // The getting-started walkthrough in package.json names commands, views,
-// context keys, files, and pages of the docs site, none of which VS Code
+// context keys, files, and permalinks of the docs site, none of which VS Code
 // checks: a step whose button names a command that doesn't exist does
 // nothing, and one whose completion event never fires stays unchecked.
 
@@ -72,28 +72,30 @@ function contextKeys(): Set<string> {
   return keys;
 }
 
-/** A heading's id on the docs site, as github-slugger makes it. */
-function slug(heading: string): string {
-  return heading
-    .trim()
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s_-]/gu, "")
-    .replace(/\s/g, "-");
-}
+/** Where the docs site publishes its permalinks' addresses (`permalink-path` in docs/ascribe.toml). */
+const PERMALINKS = `${SITE}go/`;
 
-/** Whether a link to the docs site names a page, and a heading of it, that exist. */
-function onSite(url: string): boolean {
-  const [path = "", id] = url.slice(SITE.length).split("#");
-  const file = new URL(`../../docs/content/${path.replace(/\/$/, "") || "index"}.md`, root);
-  if (!existsSync(file)) return false;
-  if (id === undefined) return true;
-  const lines = readFileSync(file, "utf8").split("\n");
-  const headings = lines
-    .filter((line) => /^#{2,6} /.test(line))
-    .map((line) => slug(line.replace(/^#+ /, "")));
-  // A heading with an `@id` has that id instead of its slug.
-  const ids = lines.flatMap((line) => /^@id(?: *\{[^}]*\})?: *(\S+)$/.exec(line)?.[1] ?? []);
-  return headings.includes(id) || ids.includes(id);
+/**
+ * The permalinks the docs declare: each page's `permalink` and each heading's
+ * `@id {permalink=true}`. The docs' own test checks that a build publishes them.
+ */
+function docsPermalinks(): Set<string> {
+  const names = new Set<string>();
+  const walk = (dir: URL) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) walk(new URL(`${entry.name}/`, dir));
+      else if (entry.name.endsWith(".md")) {
+        const text = readFileSync(new URL(entry.name, dir), "utf8");
+        const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "";
+        for (const match of frontmatter.matchAll(/^permalink: *(\S+)$/gm))
+          names.add(match[1] ?? "");
+        for (const match of text.matchAll(/^@id *\{[^}]*\bpermalink=true\b[^}]*\}: *(\S+)$/gm))
+          names.add(match[1] ?? "");
+      }
+    }
+  };
+  walk(new URL("../../docs/content/", root));
+  return names;
 }
 
 describe("the getting-started walkthrough", () => {
@@ -168,12 +170,16 @@ describe("the getting-started walkthrough", () => {
       if (step.media.image) expect(step.media.altText, step.id).toBeTruthy();
     }
   });
+});
 
-  it("links to pages and headings of the docs site that exist", () => {
-    for (const step of steps) {
-      for (const link of links(step.description).filter((l) => l.startsWith(SITE))) {
-        expect(onSite(link), `${step.id}: ${link}`).toBe(true);
-      }
+describe("the manifest's links to the docs site", () => {
+  it("are all permalinks the docs declare, so the docs can move", () => {
+    const names = docsPermalinks();
+    const urls = read("package.json").match(/https:\/\/ascribed-dev\.com[^\s)"]*/g) ?? [];
+    expect(urls.length).toBeGreaterThanOrEqual(4);
+    for (const url of urls) {
+      expect(url.startsWith(PERMALINKS) && url.endsWith("/"), url).toBe(true);
+      expect(names, url).toContain(url.slice(PERMALINKS.length, -1));
     }
   });
 });

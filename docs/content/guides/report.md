@@ -12,7 +12,7 @@ ascribe report links                 # external links, with lychee
 ascribe report agents --site https://docs.example.com
 ```
 
-Without a section named, it runs the three that need nothing outside the project. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](../reference/cli.md#ascribe-report) lists every option, and the JSON.
+Without a section named, it runs the three that need nothing outside the project. The other two run programs you install, and reach the network; when one can't run, it says what's missing and how to get it, and the rest of the report is the same. [`ascribe report`](../reference/cli.md#cli-report) lists every option, and the JSON.
 
 ## Problems
 

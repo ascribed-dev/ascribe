@@ -47,7 +47,7 @@ Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored
 ### 1.2 The permalinks list
 @available: next
 
-The site output holds `_ascribe/permalinks.json`: every permalink the build publishes (SPEC §4.1), for the site to give each one an address that forwards to its heading. It's `generated` in the manifest, and written for every build, with an empty table when the build has none, so a consumer can tell "no permalinks" from an Ascribe that doesn't write the list.
+The site output holds `_ascribe/permalinks.json`: every permalink the build publishes (SPEC §2.1, §4.1), for the site to give each one an address that forwards to its page or heading. It's `generated` in the manifest, and written for every build, with an empty table when the build has none, so a consumer can tell "no permalinks" from an Ascribe that doesn't write the list.
 
 ```json
 {
@@ -55,7 +55,8 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
   "path": "/go/",
   "dimensions": { "pm": ["npm", "pnpm", "yarn"] },
   "permalinks": {
-    "cli-check": { "route": "/reference/cli/", "fragment": "cli-check", "source": "reference/cli.md" }
+    "cli-check": { "route": "/reference/cli/", "fragment": "cli-check", "source": "reference/cli.md" },
+    "cli-reference": { "route": "/reference/cli/", "source": "reference/cli.md" }
   }
 }
 ```
@@ -67,10 +68,10 @@ The site output holds `_ascribe/permalinks.json`: every permalink the build publ
 | `dimensions` | The content model's dimensions, keyed by name and sorted by name, each with its values in declaration order: the parameters an address takes, each setting the reader's choice for a dimension (`?pm=pnpm`). |
 | `permalinks` | One entry per permalink, keyed by its name, sorted by name. A name is unique in a build (`permalink-duplicate`). |
 | `permalinks.*.route` | The route of the page the permalink is on, as the site output's links write it. |
-| `permalinks.*.fragment` | The heading's anchor on that page, without `#`. |
+| `permalinks.*.fragment` | The heading's anchor on that page, without `#`. Absent for a page's own permalink, which leads to the top of the page. |
 | `permalinks.*.source` | The page's source path, relative to the content root. |
 
-An address forwards to `route`, then `#` and `fragment`. A later version may add keys to the file or to an entry; it doesn't change these.
+An address forwards to `route`, then `#` and `fragment` when there is one. A later version may add keys to the file or to an entry; it doesn't change these.
 
 ## 2. What Ascribe owns
 

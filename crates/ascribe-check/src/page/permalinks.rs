@@ -1,5 +1,6 @@
-//! `permalink-duplicate`: a permalink a build publishes on two pages
-//! (SPEC §4.1). Two on one page are `id-duplicate`'s.
+//! `permalink-duplicate`: a permalink a build publishes twice (SPEC §2.1,
+//! §4.1): on two pages, or as a page's own and a heading's. Two headings on
+//! one page are `id-duplicate`'s.
 
 use std::collections::HashMap;
 
@@ -8,8 +9,8 @@ use ascribe_resolve::{Permalink, Project, ResolvedPage};
 
 use super::collect::{Found, at_include_site, include_target};
 
-/// Each permalink the build publishes on a page after the first that has
-/// it, reported where it's declared on that page, naming the first.
+/// Each permalink the build publishes after the first place that has it,
+/// reported where it's declared, naming the first.
 pub(super) fn duplicates(index: &Project, pages: &[&ResolvedPage], out: &mut Vec<Found>) {
     let mut first: HashMap<String, Permalink> = HashMap::new();
     for permalink in ascribe_resolve::permalinks(pages.iter().copied()) {
@@ -17,7 +18,8 @@ pub(super) fn duplicates(index: &Project, pages: &[&ResolvedPage], out: &mut Vec
             first.insert(permalink.name.clone(), permalink);
             continue;
         };
-        if earlier.page == permalink.page {
+        let headings = earlier.anchor.is_some() && permalink.anchor.is_some();
+        if headings && earlier.page == permalink.page {
             continue;
         }
         let mut issue = Issue::new(diagnostics::PERMALINK_DUPLICATE, permalink.at)

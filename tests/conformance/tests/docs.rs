@@ -342,15 +342,15 @@ fn render(
         .collect();
     if !gone.is_empty() {
         retired.push_str(
-            "\n## Retired\n\nNo longer reported. Their codes and names aren't reused.\n\n",
+            "\n## Retired\n\nNo longer reported. Their codes and names aren't reused, and their permalinks still lead here.\n",
         );
         for entry in gone {
-            let _ = writeln!(
+            let _ = write!(
                 retired,
-                "- {} `{}`: {}",
-                entry.code,
+                "\n### {code} `{}`\n@id {{permalink=true}}: {code}\n\n{}\n",
                 entry.slug,
-                entry.retired.as_deref().unwrap_or_default()
+                entry.retired.as_deref().unwrap_or_default(),
+                code = entry.code,
             );
         }
     }
@@ -365,7 +365,7 @@ fn render(
 }
 
 /// The index: a table of the diagnostics, in code order, each linked to its
-/// entry on the reference page.
+/// entry on the reference page, whose anchor is its code.
 fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
     let mut out = format!(
         "{HEADER}\n| Code | Name | Severity | Level | Next step |\n|---|---|---|---|---|\n"
@@ -375,7 +375,7 @@ fn index<'a>(entries: impl Iterator<Item = &'a Entry>) -> String {
             out,
             "| [{code}](../reference/diagnostics.md#{anchor}) | `{slug}` | {severity} | {level} | {next} |",
             code = entry.code,
-            anchor = heading_anchor(entry),
+            anchor = entry.code,
             slug = entry.slug,
             severity = severity(entry.severity),
             level = level(entry.level),
@@ -422,9 +422,10 @@ fn write_entry(
         .unwrap_or_default();
     let _ = write!(
         out,
-        "\n#### {} `{}`\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
+        "\n#### {} `{}`\n@id {{permalink=true}}: {}\n\n{} · {} level · next step: {}{configurable}{acknowledged} · {section}\n\n",
         entry.code,
         entry.slug,
+        entry.code,
         severity(entry.severity),
         level(entry.level).to_lowercase(),
         next(entry),
@@ -549,11 +550,6 @@ fn escape_braces(text: &str) -> String {
         out.push(c);
     }
     out
-}
-
-/// The anchor of an entry's heading, as GitHub computes it.
-fn heading_anchor(entry: &Entry) -> String {
-    slug(&format!("{} {}", entry.code, entry.slug))
 }
 
 /// SPEC.md's numbered section headings, by number: `3.3` to its anchor.

@@ -29,6 +29,9 @@ const DESCRIPTION: &str = "Check Ascribe docs as an agent edits them: the langua
 /// The stop hook's command.
 const STOP_HOOK: &str = "ascribe agents hook claude-code --event stop";
 
+/// The plugin's homepage: the agents guide.
+pub(crate) const HOMEPAGE: &str = ascribe_core::docs_permalink!("agents-guide");
+
 /// The command each named prompt gets, by the prompt's name: `fix` is
 /// `/ascribe:check`.
 fn command_name(prompt: &str) -> &str {
@@ -43,7 +46,6 @@ fn files() -> Vec<(String, String)> {
     let version = env!("CARGO_PKG_VERSION");
     let author = json!({ "name": "Ascribe", "url": "https://github.com/ascribed-dev" });
     let repository = "https://github.com/ascribed-dev/ascribe";
-    let homepage = format!("{}/guides/agents/", ascribe_core::docs_site!());
     let mut files = vec![
         (
             ".claude-plugin/plugin.json".to_owned(),
@@ -53,7 +55,7 @@ fn files() -> Vec<(String, String)> {
                 "version": version,
                 "description": DESCRIPTION,
                 "author": author,
-                "homepage": homepage,
+                "homepage": HOMEPAGE,
                 "repository": repository,
                 "license": "MPL-2.0",
                 "keywords": ["ascribe", "documentation", "markdown", "docs-as-code"],
@@ -79,7 +81,7 @@ fn files() -> Vec<(String, String)> {
                 "version": version,
                 "description": DESCRIPTION,
                 "author": author,
-                "homepage": homepage,
+                "homepage": HOMEPAGE,
                 "repository": repository,
                 "license": "MPL-2.0",
                 "keywords": ["ascribe", "documentation", "markdown", "docs-as-code"],

@@ -1,6 +1,7 @@
 ---
 title: "`loom.yaml` options"
 description: Every Loom option.
+permalink: options
 ---
 
 ## Weave options

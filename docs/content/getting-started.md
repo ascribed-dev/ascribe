@@ -1,6 +1,7 @@
 ---
 title: Getting started
 description: Install Ascribe, write a first page, check it, build it, and publish it with Astro.
+permalink: getting-started
 ---
 
 Ascribe is documentation written as code: Markdown with a small set of directives for the structure documentation needs (notes, procedures, alternatives by platform or product, availability, includes), checked like code, and built into a website, plain Markdown, and JSON. This guide sets up a project, writes a first page, and publishes it with Astro.
@@ -41,6 +42,7 @@ It checks your pages as you type, completes directives, [phrases](reference/dire
 After you install it, its walkthrough, **Get Started with Ascribe**, shows the preview, the actions bar that writes directives for you, and the Ascribe sidebar. It's under **Help → Welcome** whenever you want it again.
 
 ## Create `ascribe.toml`
+@id {permalink=true}: create-ascribetoml
 
 `ascribe.toml` is the content model: the project's schema. It marks the project root, and the smallest one is a single line:
 
@@ -98,7 +100,7 @@ Each build writes three outputs to `.ascribe/build/<build>/`:
 - `plain/`: plain Markdown with everything resolved, for search indexes and LLMs;
 - `json/`: the resolved pages as JSON, for your own tools.
 
-See the [command reference](reference/cli.md#ascribe-build).
+See the [command reference](reference/cli.md#cli-build).
 
 ## Format it
 

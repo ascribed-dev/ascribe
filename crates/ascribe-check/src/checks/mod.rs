@@ -302,7 +302,7 @@ impl Ctx<'_> {
             return;
         }
         match (d.name.as_str(), &d.primary) {
-            ("id", Some(PrimaryValue::Identifier(p))) => self.check_id(&p.text, p.span),
+            ("id", Some(PrimaryValue::Identifier(p))) => self.check_name(&p.text, p.span, None),
             ("include", Some(PrimaryValue::Identifier(p))) => {
                 self.check_include(&p.text, p.span);
                 self.check_include_heading(d, &p.text);
@@ -365,16 +365,20 @@ impl Ctx<'_> {
         self.report(issue);
     }
 
-    /// `@id` values: letters, digits, hyphens, underscores, and periods
+    /// An `@id`, or with the variant `permalink` a page's `permalink`
+    /// (SPEC §2.1): letters, digits, hyphens, underscores, and periods
     /// (SPEC §4.1).
-    fn check_id(&mut self, id: &str, span: Span) {
+    fn check_name(&mut self, id: &str, span: Span, variant: Option<&'static str>) {
         let valid = !id.is_empty()
             && id
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'));
         if !valid {
-            let issue = Issue::new(diagnostics::ID_INVALID, self.location(span))
+            let mut issue = Issue::new(diagnostics::ID_INVALID, self.location(span))
                 .with_arg("id", id.to_owned());
+            if let Some(variant) = variant {
+                issue = issue.with_variant(variant);
+            }
             self.report(issue);
         }
     }

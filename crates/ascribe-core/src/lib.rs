@@ -48,13 +48,42 @@ pub mod text_edit;
 
 /// The docs site's address, with no trailing slash. It's `[consumer] site` in
 /// `docs/ascribe.toml`, and a test in `ascribe-cli` checks that they agree.
-/// The command line's help links to the site's pages from here, and so does
-/// each diagnostic, to its entry in the diagnostics reference.
+/// Every address of the docs that Ascribe builds is a permalink,
+/// [`docs_permalink!`], so nothing adds a page's path to it.
 #[macro_export]
 macro_rules! docs_site {
     () => {
         "https://ascribed-dev.com"
     };
+}
+
+/// Where the docs site publishes its permalinks' addresses: [`docs_site!`]
+/// and `[consumer] permalink-path` in `docs/ascribe.toml`, which a test in
+/// `ascribe-cli` checks.
+#[macro_export]
+macro_rules! docs_permalinks {
+    () => {
+        concat!($crate::docs_site!(), "/go/")
+    };
+}
+
+/// The address of a permalink of the docs, which forwards to wherever its
+/// page or section is: `docs_permalink!("cli-check")` is
+/// `https://ascribed-dev.com/go/cli-check/`. It ends in `/`, as the docs
+/// site's `trailing-slash` says. A test in `ascribe-cli` checks every name
+/// Ascribe links to against the permalinks the docs publish. For a name
+/// known only at run time, see [`docs_permalink`].
+#[macro_export]
+macro_rules! docs_permalink {
+    ($name:literal) => {
+        concat!($crate::docs_permalinks!(), $name, "/")
+    };
+}
+
+/// [`docs_permalink!`], for a name known only at run time, such as a
+/// diagnostic's code.
+pub fn docs_permalink(name: &str) -> String {
+    format!(concat!(docs_permalinks!(), "{}/"), name)
 }
 
 pub use attribute_block::{Attribute, AttributeBlock, AttributeValue, Token};

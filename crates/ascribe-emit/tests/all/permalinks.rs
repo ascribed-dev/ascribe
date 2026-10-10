@@ -28,7 +28,7 @@ fn list(model: &str, files: &[(&str, &str)], build: &str) -> serde_json::Value {
 }
 
 #[test]
-fn each_marked_heading_is_listed_with_its_route_and_anchor() {
+fn each_page_and_marked_heading_is_listed_with_its_route_and_anchor() {
     let files = [
         (
             "reference/cli.md",
@@ -37,7 +37,7 @@ fn each_marked_heading_is_listed_with_its_route_and_anchor() {
         ),
         (
             "guides/keys.md",
-            "---\ntitle: Keys\n---\n\n@include: _rotate.md\n",
+            "---\ntitle: Keys\npermalink: keys-guide\n---\n\n@include: _rotate.md\n",
         ),
         (
             "guides/_rotate.md",
@@ -55,6 +55,10 @@ fn each_marked_heading_is_listed_with_its_route_and_anchor() {
                     "route": "/docs/reference/cli/",
                     "fragment": "cli-check",
                     "source": "reference/cli.md",
+                },
+                "keys-guide": {
+                    "route": "/docs/guides/keys/",
+                    "source": "guides/keys.md",
                 },
                 "rotate-keys": {
                     "route": "/docs/guides/keys/",
@@ -114,5 +118,24 @@ fn the_list_names_each_dimension_with_its_values_in_declaration_order() {
             "deployment": ["cloud", "self-managed"],
             "platform": ["macos", "linux", "windows"],
         })
+    );
+}
+
+#[test]
+fn a_page_s_permalink_reaches_its_frontmatter_in_the_site_output() {
+    let project = memory_project(
+        MODEL,
+        &[(
+            "reference/cli.md",
+            "---\ntitle: CLI\npermalink: cli-reference\n---\n\nText.\n",
+        )],
+    );
+    let emitter = SiteEmitter::new(project.model());
+    let page = emit_build(Path::new("/nowhere"), &project, "site", &emitter)
+        .remove("reference/cli.md")
+        .expect("the page is in the site output");
+    assert!(
+        page.starts_with("---\ntitle: CLI\npermalink: cli-reference\n---\n"),
+        "{page}"
     );
 }

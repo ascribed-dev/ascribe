@@ -9,7 +9,7 @@ pub mod copilot;
 pub mod hook;
 pub mod markers;
 #[cfg(test)]
-mod plugin;
+pub(crate) mod plugin;
 pub mod prompts;
 pub mod settings;
 pub mod skill;

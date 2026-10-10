@@ -12,7 +12,7 @@
 use ascribe_core::Span;
 use ascribe_model::{ContentModel, Field, FieldType, TypeMatch};
 
-use super::{PhrasePlace, PhraseUse};
+use super::{FileIndex, PhrasePlace, PhraseUse};
 
 /// The declared phrase candidates in the fields of the frontmatter at
 /// `content` (a span of `source`) that take phrases.
@@ -109,6 +109,24 @@ fn scan(value: &str, offset: usize, field: &Field, model: &ContentModel, out: &m
             place: PhrasePlace::Frontmatter,
         });
     }
+}
+
+/// The line of a top-level key of the frontmatter, from the key to the end
+/// of its value on that line.
+pub(crate) fn key_line(file: &FileIndex, key: &str) -> Option<Span> {
+    let content = file.document.frontmatter.as_ref()?.content;
+    let text = file.source.get(content.range())?;
+    let mut at = content.start();
+    for line in text.split_inclusive('\n') {
+        if line
+            .strip_prefix(key)
+            .is_some_and(|rest| rest.trim_start().starts_with(':'))
+        {
+            return Some(Span::new(at, at + line.trim_end().len()));
+        }
+        at += line.len();
+    }
+    None
 }
 
 #[cfg(test)]

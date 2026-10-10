@@ -129,7 +129,7 @@ fn a_diagnostic_s_code_links_to_its_entry_in_the_reference() {
             .expect("a link to the reference")
             .href
             .as_str(),
-        "https://ascribed-dev.com/reference/diagnostics/#asc036-link-target-missing"
+        "https://ascribed-dev.com/go/ASC036/"
     );
     assert_eq!(client.shutdown(), Exit::Clean);
 }

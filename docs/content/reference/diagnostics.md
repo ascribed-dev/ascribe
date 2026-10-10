@@ -1,6 +1,7 @@
 ---
 title: Diagnostics
 description: Every problem Ascribe reports, with its code and fix.
+permalink: diagnostics
 ---
 
 Every problem Ascribe reports, with its code, its name, and how to fix it. `ascribe check`, `ascribe build`, and the editor report the same diagnostics, with the same codes.

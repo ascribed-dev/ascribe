@@ -1,6 +1,7 @@
 ---
 title: Command reference
 description: "The ascribe commands: their options, outputs, and exit codes."
+permalink: cli-reference
 ---
 
 The `ascribe` command checks, builds, and formats an Ascribe project, and runs the language server the editor uses. Its `explain`, `model`, `outline`, `link`, `refs`, and `render` commands answer questions about a project, for writers and for agents, without changing anything, and `ascribe mcp` offers them to agents as the tools of an MCP server.
@@ -132,7 +133,7 @@ Each diagnostic:
 | `builds` | array of strings | The builds a page-level diagnostic appears in, in `ascribe.toml`'s order. Empty for a file-level diagnostic, and for one in content no build publishes. With `--build`, only that build. |
 | `unpublished` | boolean | `true` for a problem in content that no build publishes |
 | `help` | string | How to fix it, in general: the advice in the [diagnostics reference](diagnostics.md) |
-| `docs` | string | The address of its entry in the diagnostics reference |
+| `docs` | string | The address of its entry in the diagnostics reference: the docs' permalink for its code, such as `https://ascribed-dev.com/go/ASC036/` |
 | `repeats` | number | For a problem in a fragment, when checking the fragment: at how many other includes it's reported too. `0` otherwise. |
 
 A position is `{line, column, offset}`: `line` and `column` start at 1, `column` counts Unicode characters (not bytes or UTF-16 units), and `offset` is the byte offset from the start of the file. A range's `end` is just past its last character; an edit that inserts text has equal positions.
@@ -140,6 +141,7 @@ A position is `{line, column, offset}`: `line` and `column` start at 1, `column`
 @snippet {phrases=true}: code:crates/ascribe-cli/tests/output/check.json
 
 ## `ascribe build`
+@id {permalink=true}: cli-build
 
 Checks the project, then writes each build's outputs. The checks run first, exactly as `ascribe check` runs them, and print what it prints. **If any check finds an error, nothing is written, for any build.**
 
@@ -174,6 +176,7 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 | `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
 
 ## `ascribe diff`
+@id {permalink=true}: cli-diff
 
 Shows what changed between a git revision and the working tree, as readers will see it: which pages of each [build](content-model.md#16-buildsname) changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, [phrase](directives.md#phrases), or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
 
@@ -277,6 +280,7 @@ A block is a heading, paragraph, code block, table, list, list item, block quote
 How blocks are matched: blocks are compared by their content without positions, so moving a block down the file or rewrapping it is no change. Blocks that didn't stay are paired, in order, with a block of the same kind whose words overlap by at least half, as **changed**; a block that matches nothing is **added** or **removed**, and a removed block identical to an added one elsewhere on the page is **moved**. A block over about 2,500 words gets no word ranges, and a list or container with over 1,000 blocks in it that changed is marked changed as a whole.
 
 ## `ascribe drift`
+@id {permalink=true}: cli-drift
 @available: ascribe 0.2.0
 
 Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. A page covers the code it shows, and nothing else: every region it takes a [snippet](directives.md#snippet) from, and every whole file it takes as one, including its fragments' snippets. It's for CI, where it says which pages a reviewer should reread; see [Drift](../guides/drift.md#when-an-example-changes).
@@ -343,6 +347,7 @@ Each example:
 | `removed` | number | Lines only in the code at the base |
 
 ## `ascribe report`
+@id {permalink=true}: cli-report
 @available: next
 
 Reports what state a project is in, section by section: what's too slow, needs the network, or is too broad for `ascribe check`. Every finding in it carries its kind of next step, as in the editor. It's for a scheduled job, or for a look at the whole project; [Reading the report](../guides/report.md) says how to act on each section.
@@ -395,6 +400,7 @@ With no section named, it runs the first three. Each section is independent: one
 A finding is a diagnostic as `ascribe check` writes it in [its JSON](#json-output), with `next`, `help`, and `docs`. Each list is an object: `items`, at most `--limit` of them, `shown`, `total`, and `truncated`. A section that runs a program has `not_run`, `null` when it ran, or its `reason` and `how` to get it to run.
 
 ## `ascribe fmt`
+@id {permalink=true}: cli-fmt
 
 Rewrites Ascribe constructs into canonical form: the spacing of directive lines and attribute blocks, attribute order, quoting, and blank lines between directives and their blocks. It changes nothing else, never how a page renders, and leaves alone a construct that has an error. See [Canonical form](directives.md#canonical-form).
 
@@ -404,7 +410,7 @@ It lists each file it changed.
 
 With `--format json`, it writes one JSON document instead: each file that changed, relative to the project's folder, with the edits that format it, each a `range` and its `new_text`, the shape of a fix's edits in [`ascribe check`'s JSON](#json-output). The ranges are in the file as it was. With `--check` too, it writes no file, and the edits are the ones it would make: what a tool that applies edits itself needs. `written` says whether the files were rewritten, and `refused` lists the files left alone, each with its `reason`. The [schema](../contracts/json-reports.md#ascribe-fmt) has every field.
 
-It formats only what `ascribe check` reads: a file in the content root that's a symbolic link, or is in a linked folder, is formatted only when the link leads to a source file of the content root. One that leads anywhere else is left alone and reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics.md#asc123-source-unreadable)), and the other files are still formatted.
+It formats only what `ascribe check` reads: a file in the content root that's a symbolic link, or is in a linked folder, is formatted only when the link leads to a source file of the content root. One that leads anywhere else is left alone and reported on standard error, as `check` reports it ([`source-unreadable`](diagnostics.md#ASC123)), and the other files are still formatted.
 
 | Code | Meaning |
 |---|---|
@@ -413,15 +419,17 @@ It formats only what `ascribe check` reads: a file in the content root that's a 
 | `2` | A problem: no `ascribe.toml`, a content model with errors, a path or file that can't be read, or a symbolic link that leads out of the content root |
 
 ## `ascribe lsp`
+@id {permalink=true}: cli-lsp
 
 Runs the language server, speaking the Language Server Protocol over standard input and output. An editor starts it; you don't run it yourself. It takes no options of its own, and refuses `--config` (exit code `2`): its project is the nearest `ascribe.toml` at or above the workspace folder the editor gives it, never one below, and `ascribe.toml`'s `[editor] build` says which build's page-level diagnostics to report. Its logs go to standard error, starting with the project it uses.
 
 The VS Code extension runs it for you, one server for each project in the workspace. See [Editing](../guides/editor.md). Any editor with an LSP client can run `ascribe lsp` too; for several projects, start one per project ([Other editors](../guides/editor.md#other-editors)).
 
 ## `ascribe mcp`
+@id {permalink=true}: cli-mcp
 @available: next
 
-Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](#ascribe-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](../guides/agents.md#the-mcp-server) to set it up.
+Runs an MCP server, speaking the [Model Context Protocol](https://modelcontextprotocol.io) over standard input and output, for an agent that has no shell, or a host that approves tools one by one. An agent's host starts it; you don't run it yourself. It offers the commands that answer questions as tools, the project's rules as resources, and the named prompts of [`ascribe agents prompt`](#cli-agents-prompt). Each tool's result is the JSON its command writes, so an agent with a shell does as well with the commands. See [The MCP server](../guides/agents.md#the-mcp-server) to set it up.
 
 | Tool | The command it runs |
 |---|---|
@@ -442,6 +450,7 @@ The resources are `ascribe://directives`, each built-in directive's syntax (`asc
 The server speaks the protocol's 2026-07-28 revision, which has no handshake, and answers `initialize` for a client on 2025-11-25 or 2025-06-18. It takes no options, and refuses `--config` (exit code `2`). Its logs go to standard error; it exits with `0` when standard input ends.
 
 ## `ascribe sources`
+@id {permalink=true}: cli-sources
 @available: ascribe 0.2.0
 
 Copies code from [sources in other repositories](content-model.md#a-source-in-another-repository) into the project, and moves their pins. `check` and `build` read only the copies, so `ascribe sources fetch` and `ascribe sources update` are the only commands that reach another repository. They run `git`, with `git`'s own credentials: whatever lets `git fetch <url>` work in your shell lets them fetch. They never prompt, so a missing credential fails at once.
@@ -451,6 +460,7 @@ Fetched repositories are kept in a cache outside the project, one per URL, so a 
 What's fetched is someone else's repository, so it's only ever read as text: `git` runs with no hooks, no submodules, and only the `https`, `http`, `ssh`, `git`, and `file` transports, and a file over 1 MB, or one that isn't text, isn't copied.
 
 ### `ascribe sources fetch`
+@id {permalink=true}: cli-sources-fetch
 
 Makes the copies match `ascribe.lock`: at each source's pin, it copies the files snippets name that have no copy or a wrong one, and removes the copies no snippet names. It's what you run after writing a new `@snippet` from a source in another repository, or after cloning if the copies were left out. It never moves a pin; a source with no pin yet is pinned to the head of its branch.
 
@@ -465,8 +475,9 @@ It lists each copy it wrote or removed. The first time a source's files are copi
 | `2` | It couldn't run: no `ascribe.toml`, a content model with errors, an `ascribe.lock` it can't read, a name that isn't a source in another repository, or `git` failing (no network, no access), with the source named and `git`'s own message |
 
 ### `ascribe sources update`
+@id {permalink=true}: cli-sources-update
 
-Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, and the pages whose examples changed, grouped as [`ascribe drift`](#ascribe-drift) groups them. With nothing to move, it changes no file and says so.
+Moves each source's pin to the head of its `branch` (or to `--to`), copies the files snippets use again at the new commit, rewrites `ascribe.lock`, and says what changed: the commits between the old pin and the new (how many, and the first lines of the newest 20, or that the pin moved back), the copies that changed, and the pages whose examples changed, grouped as [`ascribe drift`](#cli-drift) groups them. With nothing to move, it changes no file and says so.
 
 @include: ../_generated/cli-sources-update-options.md
 
@@ -482,6 +493,7 @@ The pages are found as `ascribe drift` finds them, comparing the working tree, w
 | `2` | It couldn't: no network, no access, an unknown revision, `--to` with more than one source, or the reasons `fetch` gives. The source is named, with `git`'s own message. |
 
 ### `ascribe sources status`
+@id {permalink=true}: cli-sources-status
 
 Shows each source in another repository: its repository and branch, its pin, and each copy's state (current, changed here, missing, not in the lock, unused, not copied yet, or not in the repository at the pin). It reads only the project's files: no `git`, no network. It exits with `0` whatever it finds, and `2` when the project doesn't load.
 
@@ -490,11 +502,13 @@ Shows each source in another repository: its repository and branch, its pin, and
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and `sources`, each with `name`, `git`, `branch` (or null), `commit` (the pin, or null), and `files`, each with `path` and `state`: `current`, `changed`, `missing`, `unlocked`, `unused`, `not_copied`, or `not_at_pin`.
 
 ## `ascribe vale`
+@id {permalink=true}: cli-vale
 @available: next
 
 Sets up [Vale](https://vale.sh), which checks the prose when `[checks.vale]` in `ascribe.toml` turns it on (see [Prose, through Vale](../guides/vale.md)). Vale itself is run by `ascribe check --vale` and the editor.
 
 ### `ascribe vale eject`
+@id {permalink=true}: cli-vale-eject
 
 Writes the preset `[checks.vale]` names out as the project's own Vale configuration, for a project that wants more than turning a preset's rules off: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules `off` names turned off in `.vale.ini`. Then it changes `[checks.vale]` in `ascribe.toml` to `config = ".vale.ini"`, in place of `preset` and `off`, keeping its other keys and comments. The project's vocabulary is still Ascribe's to write, under `.ascribe/vale/`.
 
@@ -506,6 +520,7 @@ It takes no options. It lists each file it wrote, `ascribe.toml` last.
 | `2` | It wrote nothing: no `ascribe.toml`, a content model with errors, a `[checks.vale]` that names no preset, or a `.vale.ini` or `.vale` that's there already. Or a file couldn't be written; the files it wrote before that stay. |
 
 ## `ascribe explain`
+@id {permalink=true}: cli-explain
 @available: next
 
 Says what a diagnostic means: its severity, its messages, how to fix it, a link to its entry in [Diagnostics](diagnostics.md), and, for the diagnostics people meet most, a short page that has the problem and the same page without it. It needs no project.
@@ -524,6 +539,7 @@ An example that needs something in `ascribe.toml` to go wrong shows that too: a 
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `code`, `slug`, `severity`, `next` (the [kind of next step](diagnostics.md#what-to-do-next), or null for a retired diagnostic), `level` (`file` or `page`), `message`, `variants` (the other messages it can give, each with `name` and `message`), `fix`, `docs` (the link), and `example`, null or with `wrong`, `right`, `model` (the model it was checked against, when it matters, or null), and `files` (other files the right page needs, each with `path` and `text`). With `--list`, it has `diagnostics`, each with `code`, `slug`, and `severity`.
 
 ## `ascribe model`
+@id {permalink=true}: cli-model
 @available: next
 
 Shows the content model as `ascribe` reads it, with the defaults filled in: page types with their files and frontmatter fields, dimensions, phrases, features, glossary terms, project widgets, and builds. It's what an agent, or a new writer, reads before writing frontmatter, a directive's attributes, or a phrase.
@@ -542,6 +558,7 @@ The text is Markdown, at most about 4,000 characters: when the model has more th
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, and a field for each section shown: `types`, `dimensions`, `phrases`, `features`, `glossary`, `widgets`, and `builds`. Without `--section`, every section is there, empty or not; with it, only that one. The [schema](../contracts/json-reports.md#ascribe-model) lists each section's fields.
 
 ## `ascribe outline`
+@id {permalink=true}: cli-outline
 @available: next
 
 Shows a page's title and type, and the headings a link to it can name, with the ids links write after `#`: the page's own headings and those that come from the fragments it includes. They're the headings the editor offers after `page.md#`.
@@ -565,6 +582,7 @@ With `--format json`, the document is:
 `page` is the path from the content root, as links write it, and `file` is from the project root, as `ascribe check` reports it. `type` is null for a fragment. `explicit_id` is true when the heading has an `@id`, which stays when its text changes; prefer those in links. `fragment` is the fragment a heading comes from, or null.
 
 ## `ascribe link`
+@id {permalink=true}: cli-link
 @available: next
 
 Says whether a link works, written on a given page: whether its target exists, the page's title or the heading's text, and the destination to write there. It resolves the link as `ascribe check` and the editor do, so the three agree.
@@ -592,6 +610,7 @@ With `--format json`, the document is:
 `kind` is `page`, `heading`, `fragment`, `file`, `external`, or `missing`. `href` is null when the target doesn't work, and `problem` says why; `closest` lists other targets, best first, each with `href`, `path`, `id`, and `title`.
 
 ## `ascribe refs`
+@id {permalink=true}: cli-refs
 @available: next
 
 Lists the places that use a page, a fragment, a heading, or an entry of the content model, each as `file:line:column`, with what kind of use it is. It's the editor's **Find All References**, on the command line: it finds a phrase only where it's a phrase, and a heading in a fragment through every page that includes it, which a text search can't.
@@ -615,6 +634,7 @@ With `--format json`, the document is:
 `total` is how many places use the target, and `shown` how many are listed. When the list was cut, `truncated` is true and `next_command` is the command that lists them all; otherwise it's null.
 
 ## `ascribe render`
+@id {permalink=true}: cli-render
 @available: next
 
 Writes a page as a reader of one build sees it: the plain Markdown the build's `plain` output writes for it, with its variants chosen, the blocks the build filters out removed, phrases and includes filled in, and links written as that output writes them. It writes nothing to disk.
@@ -634,11 +654,13 @@ Writes a page as a reader of one build sees it: the plain Markdown the build's `
 With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `page`, `build`, `not_published` (why the build doesn't publish it, or null), `route` (its route in the build's site, or null), and `text`, the page as text output writes it.
 
 ## `ascribe agents`
+@id {permalink=true}: cli-agents
 @available: next
 
 Writes the files AI coding agents read on their own: your project's rules, from `ascribe.toml`, and the Ascribe skill; and prints the named prompts. See [Agents](../guides/agents.md).
 
 ### `ascribe agents sync`
+@id {permalink=true}: cli-agents-sync
 
 Writes `AGENTS.md` beside `ascribe.toml`, a short block in the repository root's `AGENTS.md` when the project is in a subfolder, and the skill in the root's `.agents/skills/ascribe/`. It also keeps up to date each other target whose files exist already, and writes those `--target` names. It finds the repository's root as `ascribe diff` does, with `git`; outside a repository, the project's folder is the root, and it says so.
 
@@ -657,6 +679,7 @@ It writes only between its markers in a file it shares with your team, and whole
 | `2` | It couldn't run: no `ascribe.toml`, one with errors, a file whose markers are damaged, a file that would be under the content root (so one of the project's pages), `--target copilot` or `--cloud` outside a git repository, a settings file that isn't a JSON object, a setup steps workflow it can't add its steps to, or a file it can't read or write. Nothing is written. |
 
 ### `ascribe agents rules`
+@id {permalink=true}: cli-agents-rules
 
 Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside `ascribe.toml`, as it would write it now. It writes no file. The MCP server's `ascribe://instructions/<project>` resource is the same text.
 
@@ -665,12 +688,14 @@ Prints your project's rules: the block `sync` writes into the `AGENTS.md` beside
 It exits with `0`, or with `2` when there's no `ascribe.toml`, it has errors, or `git` can't say where the repository is.
 
 ### `ascribe agents skill`
+@id {permalink=true}: cli-agents-skill
 
 Prints a file of the Ascribe skill, the same for every project: its `SKILL.md`, or its directive reference, `references/directives.md`. It needs no project, and exits with `0`.
 
 @include: ../_generated/cli-agents-skill-options.md
 
 ### `ascribe agents prompt`
+@id {permalink=true}: cli-agents-prompt
 
 Prints a named prompt for an agent, in the same form as [Prompt agent](../guides/agents.md#what-a-prompt-says)'s. The MCP server offers the same prompts, which some hosts show as slash commands.
 
@@ -680,7 +705,7 @@ Prints a named prompt for an agent, in the same form as [Prompt agent](../guides
 |---|---|---|
 | `new-page` | `type`, `title`, and `path` | Write a new page of that type: where its file goes, the frontmatter to start it with, and the type's fields |
 | `fix` | `path` | Fix what `ascribe check` reports: the prompt `ascribe check --format prompt` writes when there are problems, else the loop of checking and fixing |
-| `review` | `path` and `base` | Review what the branch does to its pages, as readers see them: the prompt [`ascribe diff --format prompt`](#ascribe-diff) writes, or a line saying no page changed |
+| `review` | `path` and `base` | Review what the branch does to its pages, as readers see them: the prompt [`ascribe diff --format prompt`](#cli-diff) writes, or a line saying no page changed |
 
 `path` is a file or folder in the project, by default the current directory; `fix` reports on it. `--list` lists the prompts and their arguments.
 
@@ -691,6 +716,7 @@ ascribe agents prompt new-page --arg type=guide --arg title="Rotate your keys"
 It exits with `0`, or with `2` for a prompt or an argument it doesn't know, a required argument missing, an unknown page type, a project it can't load, or, for `review`, a comparison `ascribe diff` can't make.
 
 ### `ascribe agents hook`
+@id {permalink=true}: cli-agents-hook
 
 Checks an agent's work as its hook runs it: after the agent writes a file, or before it finishes. It reads the hook's JSON input on standard input and answers in the agent's own format. See [Hooks](../guides/agents.md#hooks) for the entries that run it.
 

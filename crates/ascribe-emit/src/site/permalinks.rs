@@ -1,6 +1,6 @@
 //! `_ascribe/permalinks.json`: the permalinks a build publishes, for a site
-//! to give each an address that forwards to its heading (output-layout
-//! contract §1.2).
+//! to give each an address that forwards to its page or heading
+//! (output-layout contract §1.2).
 
 use std::collections::BTreeMap;
 
@@ -22,7 +22,9 @@ struct List<'a> {
 #[derive(Serialize)]
 struct Entry<'a> {
     route: &'a str,
-    fragment: &'a str,
+    /// The heading's anchor; none for a page's own permalink.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    fragment: Option<&'a str>,
     source: String,
 }
 
@@ -39,7 +41,7 @@ pub(super) fn list(model: &ContentModel, build: &ResolvedBuild) -> String {
             .entry(permalink.name.as_str())
             .or_insert_with(|| Entry {
                 route: &permalink.route,
-                fragment: &permalink.anchor,
+                fragment: permalink.anchor.as_deref(),
                 source: permalink.page.to_string(),
             });
     }

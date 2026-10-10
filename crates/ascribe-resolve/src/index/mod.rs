@@ -35,6 +35,7 @@ use ascribe_syntax::{
 
 use crate::snippet::SnippetUse;
 
+pub(crate) use frontmatter::key_line as frontmatter_key;
 pub use headings::{ExplicitId, Heading, plain_text as heading_text};
 pub use refs::{Local, RefKind, Reference, Target};
 pub(crate) use refs::{substitute, target_of};

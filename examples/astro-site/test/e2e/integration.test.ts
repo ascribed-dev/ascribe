@@ -209,6 +209,23 @@ describe("the integration", () => {
     }, 90_000);
   }
 
+  it("serves a permalink added while astro dev runs, without a restart", async () => {
+    const root = await copySite("dev-permalink");
+    const server = await serveDev(root);
+    try {
+      const address = `${server.origin}${BASE}/go/streaming`;
+      expect((await fetch(address)).status).toBe(404);
+      const file = path.join(root, "content", "Guides", "My Setup.md");
+      await edit(file, (text) => text.replace("@id: streaming", "@id {permalink=true}: streaming"));
+      await untilRebuilt(file, async () => (await fetch(address)).status === 200);
+      expect(await (await fetch(address)).text()).toContain(
+        `<meta http-equiv="refresh" content="0;url=${BASE}/guides/my-setup#streaming">`,
+      );
+    } finally {
+      await server.stop();
+    }
+  }, 90_000);
+
   it("rebuilds in astro dev when a file outside the content root that a page uses changes", async () => {
     const root = await copySite("dev-outside");
     const shared = path.join(root, "shared", "notes.txt");

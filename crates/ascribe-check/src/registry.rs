@@ -123,17 +123,12 @@ pub struct Example {
     pub files: Vec<(String, String)>,
 }
 
-/// The diagnostics reference on the docs site: each code has an entry
-/// there, [`Entry::docs`].
-pub const REFERENCE: &str = concat!(ascribe_core::docs_site!(), "/reference/diagnostics/");
-
 impl Entry {
-    /// The address of the entry's section in the diagnostics reference,
-    /// such as `…/reference/diagnostics/#asc036-link-target-missing`: its
-    /// heading, `ASC036 link-target-missing`, as the site makes an anchor of
-    /// it.
+    /// The address of the entry's section in the diagnostics reference: the
+    /// docs' permalink named by its code, such as
+    /// `https://ascribed-dev.com/go/ASC036/`.
     pub fn docs(&self) -> String {
-        format!("{REFERENCE}#{}-{}", self.code.to_lowercase(), self.slug)
+        ascribe_core::docs_permalink(&self.code)
     }
 
     /// Whether the message names the build: its template, or one of its

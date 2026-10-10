@@ -209,7 +209,9 @@ pub(crate) struct Entry {
     /// How to fix it, in general: the diagnostics reference's advice for its
     /// code.
     help: String,
-    /// The address of its entry in the diagnostics reference.
+    /// The address of its entry in the diagnostics reference: the docs'
+    /// permalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,
+    /// which forwards to the entry wherever it is.
     docs: String,
     /// For a problem in included content reported because one of its related
     /// places is in a path named: at how many other includes it's reported

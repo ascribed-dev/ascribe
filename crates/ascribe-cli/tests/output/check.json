@@ -57,7 +57,7 @@
       "builds": [],
       "unpublished": false,
       "help": "Link to the page's file, not its URL: Ascribe writes each output's URLs. The editor's quick fix makes the change.",
-      "docs": "https://ascribed-dev.com/reference/diagnostics/#asc041-link-route",
+      "docs": "https://ascribed-dev.com/go/ASC041/",
       "repeats": 0
     }
   ],

@@ -13,35 +13,12 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::{commands, exit};
 
-/// A line for the end of a command's help, linking to its page on the docs
-/// site (`ascribe_core::docs_site!`): `docs_page!("reference/cli/#ascribe-check")`.
-macro_rules! docs_page {
-    ($path:literal) => {
-        concat!("Documentation: ", ascribe_core::docs_site!(), "/", $path)
-    };
-}
-
-/// Where the docs site publishes its permalinks' addresses: `[consumer]
-/// permalink-path` in `docs/ascribe.toml`.
-macro_rules! docs_permalinks {
-    () => {
-        "/go/"
-    };
-}
-
-/// A line for the end of a command's help, linking to a permalink of the
-/// docs site, which forwards to wherever its section is:
-/// `docs_permalink!("cli-check")`. The address ends in `/`, as the docs
-/// site's `trailing-slash` says.
-macro_rules! docs_permalink {
-    ($id:literal) => {
-        concat!(
-            "Documentation: ",
-            ascribe_core::docs_site!(),
-            docs_permalinks!(),
-            $id,
-            "/"
-        )
+/// A line for the end of a command's help, linking to the docs' permalink
+/// for it, which forwards to wherever its section is: `docs_link!("cli-check")`.
+/// A command's permalink is `cli-` and its name, with a `-` for each space.
+macro_rules! docs_link {
+    ($name:literal) => {
+        concat!("Documentation: ", ascribe_core::docs_permalink!($name))
     };
 }
 
@@ -49,9 +26,9 @@ macro_rules! docs_permalink {
 #[cfg(test)]
 pub(crate) const DOCS_SITE: &str = ascribe_core::docs_site!();
 
-/// `docs_permalinks!`, for the test that checks it.
+/// `ascribe_core::docs_permalinks!`, for the test that checks it.
 #[cfg(test)]
-pub(crate) const DOCS_PERMALINKS: &str = docs_permalinks!();
+pub(crate) const DOCS_PERMALINKS: &str = ascribe_core::docs_permalinks!();
 
 /// What `ascribe --help` shows before the commands and options: examples,
 /// and the commands an agent needs first, since agents read `--help` before
@@ -82,7 +59,7 @@ phrase, read `ascribe model` for what this project allows.";
     arg_required_else_help = true,
     help_template = "{about-with-newline}\n{usage-heading} {usage}\n\n{before-help}{all-args}{after-help}",
     before_help = EXAMPLES,
-    after_help = docs_page!("reference/cli/"),
+    after_help = docs_link!("cli-reference"),
 )]
 pub struct Cli {
     #[command(flatten)]
@@ -124,65 +101,65 @@ pub enum Color {
 pub enum Command {
     /// Write the files agents read on their own: the project's rules, and
     /// the Ascribe skill.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-agents"))]
+    #[command(after_help = docs_link!("cli-agents"))]
     Agents(commands::agents::Args),
     /// Build the documentation set's outputs.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-build"))]
+    #[command(after_help = docs_link!("cli-build"))]
     Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
-    #[command(after_help = docs_permalink!("cli-check"))]
+    #[command(after_help = docs_link!("cli-check"))]
     Check(commands::check::Args),
     /// Show what changed between a git revision and the working tree, page
     /// by page, as readers will see it.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-diff"))]
+    #[command(after_help = docs_link!("cli-diff"))]
     Diff(commands::diff::Args),
     /// List the pages whose code examples changed between a git revision and
     /// the working tree, and whether the words around them changed too.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-drift"))]
+    #[command(after_help = docs_link!("cli-drift"))]
     Drift(commands::drift::Args),
     /// Explain a diagnostic: what it means, how to fix it, and an example.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-explain"))]
+    #[command(after_help = docs_link!("cli-explain"))]
     Explain(commands::explain::Args),
     /// Rewrite Ascribe constructs into canonical form.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-fmt"))]
+    #[command(after_help = docs_link!("cli-fmt"))]
     Fmt(commands::fmt::Args),
     /// Say whether a link target exists as seen from a page, its title, and
     /// the link to write.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-link"))]
+    #[command(after_help = docs_link!("cli-link"))]
     Link(commands::link::Args),
     /// Run the language server, speaking LSP over standard input and output.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-lsp"))]
+    #[command(after_help = docs_link!("cli-lsp"))]
     Lsp(commands::lsp::Args),
     /// Run the MCP server, speaking the Model Context Protocol over standard
     /// input and output: the commands that answer questions, as tools.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-mcp"))]
+    #[command(after_help = docs_link!("cli-mcp"))]
     Mcp(commands::mcp::Args),
     /// Show what the content model allows: page types and their
     /// frontmatter, dimensions, phrases, features, glossary terms, widgets,
     /// and builds.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-model"))]
+    #[command(after_help = docs_link!("cli-model"))]
     Model(commands::model::Args),
     /// Show a page's title, type, and headings, with their ids and lines.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-outline"))]
+    #[command(after_help = docs_link!("cli-outline"))]
     Outline(commands::outline::Args),
     /// Show where a page, a heading, a fragment, a phrase, a feature, or
     /// another content model entry is used.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-refs"))]
+    #[command(after_help = docs_link!("cli-refs"))]
     Refs(commands::refs::Args),
     /// Show a page as a reader of one build sees it, as plain Markdown.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-render"))]
+    #[command(after_help = docs_link!("cli-render"))]
     Render(commands::render::Args),
     /// Report what state the project is in: problems, inventory, what each
     /// build leaves out, external links, and the published site's delivery
     /// to agents.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-report"))]
+    #[command(after_help = docs_link!("cli-report"))]
     Report(commands::report::Args),
     /// Copy code from sources in other repositories, and move their pins.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-sources"))]
+    #[command(after_help = docs_link!("cli-sources"))]
     Sources(commands::sources::Args),
     /// Set up Vale, which checks the prose: write a preset out as the
     /// project's own configuration.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-vale"))]
+    #[command(after_help = docs_link!("cli-vale"))]
     Vale(commands::vale::Args),
 }
 

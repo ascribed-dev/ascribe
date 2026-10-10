@@ -2,7 +2,7 @@
 //! module Astro's content collections take as their `schema`.
 //!
 //! [`generate`] writes one schema per content type, with the reserved
-//! `available` and `variant` keys added. The schemas
+//! `available`, `variant`, and `permalink` keys added. The schemas
 //! describe the frontmatter the site output writes, not the source's: in
 //! particular `available` is the list of targets the site emitter writes,
 //! not the spec string an author wrote.
@@ -158,6 +158,7 @@ fn object(fields: &[Field], reserved: bool, base: usize) -> String {
     if reserved {
         let _ = writeln!(out, "{inner}available: availableSchema.optional(),");
         let _ = writeln!(out, "{inner}variant: variantSchema.optional(),");
+        let _ = writeln!(out, "{inner}permalink: z.string().optional(),");
         let formatted: Vec<&Field> = fields.iter().filter(|f| f.inline.is_some()).collect();
         if !formatted.is_empty() {
             let _ = writeln!(

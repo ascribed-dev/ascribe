@@ -706,10 +706,7 @@ fn a_path_from_the_repository_root_reports_what_the_projects_own_path_does() {
     );
     let d = &diagnostics_of(&report)[0];
     assert!(d["help"].as_str().is_some_and(|h| !h.is_empty()), "{d:#}");
-    assert_eq!(
-        d["docs"],
-        "https://ascribed-dev.com/reference/diagnostics/#asc036-link-target-missing"
-    );
+    assert_eq!(d["docs"], "https://ascribed-dev.com/go/ASC036/");
     assert!(d["fixes"].is_array());
 }
 

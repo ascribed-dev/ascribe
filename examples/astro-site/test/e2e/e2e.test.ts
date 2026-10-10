@@ -208,6 +208,15 @@ describe("the built site", () => {
     expect(html).toContain(`<link rel="canonical" href="https://docs.example.com${to}">`);
   });
 
+  it("forwards a page's permalink to the top of the page", async () => {
+    const page = await context.newPage();
+    // `permalink: options` in the page's frontmatter.
+    await page.goto(`${origin}${BASE}/go/options`);
+    await page.waitForURL(`${origin}${BASE}/reference/options`);
+    await expect(page.locator("main > h1").textContent()).resolves.toBe("loom.yaml options");
+    await page.close();
+  });
+
   it("forwards with scripts off", async () => {
     const offline = await browser.newContext({ javaScriptEnabled: false });
     const page = await offline.newPage();

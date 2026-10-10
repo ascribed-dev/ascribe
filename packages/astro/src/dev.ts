@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { AstroIntegration } from "astro";
+import { permalinksText } from "./permalinks.js";
 import { consumerMismatches, readProject, type ProjectInfo } from "./project.js";
 
 type ServerOptions = Parameters<NonNullable<AstroIntegration["hooks"]["astro:server:setup"]>>[0];
@@ -115,6 +116,7 @@ export function watchDev(options: {
     running = true;
     const previousProject = project;
     const previousSiteRoot = previousProject.siteRoot(options.build);
+    const previousPermalinks = permalinksText(previousSiteRoot);
     while (dirty) {
       dirty = false;
       try {
@@ -145,6 +147,13 @@ export function watchDev(options: {
         server.watcher.add(project.configPath);
         watchAssets();
         await refreshContent();
+        // Astro keeps each route's `getStaticPaths` until content changes, and adding or removing a
+        // permalink may change no page: clear it, as Astro does, so the addresses follow the list.
+        if (permalinksText(previousSiteRoot) !== previousPermalinks) {
+          for (const name of ["ssr", "prerender"]) {
+            server.environments[name]?.hot.send("astro:content-changed", {});
+          }
+        }
         server.ws.send({ type: "full-reload" });
       } catch (error) {
         failed = true;
