@@ -21,21 +21,22 @@ const HEADER: &str = "<!-- Generated from the help text in crates/ascribe-cli/sr
      crates/ascribe-cli/src/docs.rs. Edit the help text, then run \
      `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`. -->\n";
 
-/// Options that no release has yet, as `(command, option)`: the reference
-/// marks them `@available: next`. Remove an entry when the option's command
-/// section is itself marked, or when `next` stops meaning "unreleased" and
-/// the release that shipped the option is named instead.
-const UNRELEASED: &[(&str, &str)] = &[
-    ("build", "anchors"),
-    ("check", "paths"),
-    ("check", "stdin"),
-    ("check", "path"),
-    ("check", "editor_build"),
-    ("check", "summary"),
-    ("check", "vale"),
-    ("diff", "page"),
-    ("diff", "pages_only"),
-    ("fmt", "format"),
+/// Options newer than their command, as `(command, option, availability)`:
+/// the reference marks each with `@available: <availability>`. An option no
+/// release has yet is `next`; when a release ships it, name the release, as
+/// `ascribe 0.2.0`. Remove an entry when the option's command section says
+/// the same.
+const AVAILABLE: &[(&str, &str, &str)] = &[
+    ("build", "anchors", "ascribe 0.2.0"),
+    ("check", "paths", "next"),
+    ("check", "stdin", "next"),
+    ("check", "path", "next"),
+    ("check", "editor_build", "next"),
+    ("check", "summary", "next"),
+    ("check", "vale", "next"),
+    ("diff", "page", "next"),
+    ("diff", "pages_only", "next"),
+    ("fmt", "format", "next"),
 ];
 
 fn repo() -> PathBuf {
@@ -296,8 +297,10 @@ fn options(command: &str, args: &[&Arg]) -> String {
     for arg in args {
         out.push_str("- ");
         let id = arg.get_id().as_str();
-        if UNRELEASED.contains(&(command, id)) {
-            out.push_str("@available: next\n  ");
+        if let Some((_, _, available)) =
+            AVAILABLE.iter().find(|(c, o, _)| (*c, *o) == (command, id))
+        {
+            out.push_str(&format!("@available: {available}\n  "));
         }
         let written = match arg.get_long() {
             // A value that may be left out is given with `=`.

@@ -239,7 +239,7 @@ Includes another file, or one heading's section of it, in place.
 
 Links target pages, not fragments: link to the page that includes a fragment.
 
-@available: next
+@available: ascribe 0.2.0
 A link can name a heading the fragment brings in, as `setup.md#prerequisites`, just as it names one of the page's own.
 
 ### `@variant`
@@ -339,7 +339,7 @@ A spec is a comma-separated list of **targets**, each with an optional lifecycle
 Each build decides what happens to availability: `badge` keeps everything and marks it, and a filter such as `{ filter = "self-managed 3.3" }` removes what isn't available there.
 
 #### Table rows
-@available: next
+@available: ascribe 0.2.0
 
 A table row takes a spec from an attribute block at the end of its first cell, with the key `available`. Quote a spec that has spaces or commas:
 
@@ -413,7 +413,7 @@ Content readers can expand or collapse. The title is required: it's what readers
 Without a colon, `@details` applies to the next block; with one, it's a container.
 
 ### `@snippet`
-@available: next
+@available: ascribe 0.2.0
 
 ([SPEC §4.8]({repo}/blob/main/SPEC.md#48-snippet))
 

@@ -1,7 +1,7 @@
 ---
 title: Drift
 description: Keeping pages from falling behind the code they describe, with code examples taken from tested files and a report of the pages whose examples changed.
-available: next
+available: ascribe 0.2.0
 ---
 
 Docs drift when the code changes and the page that describes it doesn't. Ascribe catches what it can when you check, build, or diff, so a reader never sees the old version and a reviewer sees which pages a change reaches. In CI, `ascribe drift` says which pages' examples changed while their words didn't.
