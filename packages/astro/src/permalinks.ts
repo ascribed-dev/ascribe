@@ -58,7 +58,7 @@ export function permalinkPattern(listPath: string, base: string): string {
 }
 
 /** Where a permalink leads: its page's route, and the heading's anchor. */
-export function destination(entry: { route: string; fragment?: string }): string {
+function destination(entry: { route: string; fragment?: string }): string {
   return entry.fragment === undefined ? entry.route : `${entry.route}#${entry.fragment}`;
 }
 
