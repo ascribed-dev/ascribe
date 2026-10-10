@@ -41,6 +41,20 @@ function valuesOf(tab: Element): string[] {
   return (tab.getAttribute("value") ?? "").split(/\s+/).filter(Boolean);
 }
 
+/** Select `value` in every group on the page that switches on `dimension`, but `except`. */
+let followChoice: (dimension: string, value: string, except?: AscribeTabs) => void;
+
+/**
+ * Choose `value` for `dimension`, as a reader selecting a tab with that value
+ * does: remember it across pages, and select it in every group on this page
+ * that switches on the dimension. A group with no tab for it keeps its
+ * selection. The value isn't checked.
+ */
+export function choose(dimension: string, value: string): void {
+  writeChoice(dimension, value);
+  followChoice(dimension, value);
+}
+
 /** A tab panel: one arm of a `@variant` group. Styled by CSS; no behavior. */
 export class AscribeTab extends HTMLElement {}
 
@@ -50,6 +64,14 @@ export class AscribeTabs extends HTMLElement {
   #buttons: HTMLButtonElement[] = [];
   #selected = 0;
   #ready = false;
+
+  static {
+    followChoice = (dimension, value, except) => {
+      for (const group of syncedGroups) {
+        if (group !== except && group.getAttribute("sync") === dimension) group.#follow(value);
+      }
+    };
+  }
 
   connectedCallback(): void {
     // A parser-created element is connected before its children are parsed.
@@ -143,9 +165,7 @@ export class AscribeTabs extends HTMLElement {
     const choice = tab ? valuesOf(tab)[0] : undefined;
     if (sync === null || choice === undefined) return;
     writeChoice(sync, choice);
-    for (const group of syncedGroups) {
-      if (group !== this && group.getAttribute("sync") === sync) group.#follow(choice);
-    }
+    followChoice(sync, choice, this);
   }
 
   /** Another group with the same `sync` made a choice; keep our selection if we have no match. */

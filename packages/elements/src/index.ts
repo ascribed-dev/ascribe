@@ -3,10 +3,10 @@
 // (`@ascribed/elements/style.css`), which works without this script.
 
 import { AscribeGroup } from "./group.js";
-import { AscribeTab, AscribeTabs } from "./tabs.js";
+import { AscribeTab, AscribeTabs, choose } from "./tabs.js";
 import { ELEMENT_GROUP, ELEMENT_TAB, ELEMENT_TABS } from "./names.js";
 
-export { AscribeGroup, AscribeTab, AscribeTabs };
+export { AscribeGroup, AscribeTab, AscribeTabs, choose };
 
 const registry: [string, CustomElementConstructor][] = [
   [ELEMENT_TABS, AscribeTabs],

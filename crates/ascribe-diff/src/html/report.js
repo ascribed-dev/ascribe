@@ -35,6 +35,7 @@
   function valuesOf(tab) {
     return (tab.getAttribute("value") ?? "").split(/\s+/).filter(Boolean);
   }
+  var followChoice;
   var AscribeTab = class extends HTMLElement {
   };
   var AscribeTabs = class extends HTMLElement {
@@ -43,6 +44,13 @@
     #buttons = [];
     #selected = 0;
     #ready = false;
+    static {
+      followChoice = (dimension, value, except) => {
+        for (const group of syncedGroups) {
+          if (group !== except && group.getAttribute("sync") === dimension) group.#follow(value);
+        }
+      };
+    }
     connectedCallback() {
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => this.#setup(), { once: true });
@@ -125,9 +133,7 @@
       const choice = tab ? valuesOf(tab)[0] : void 0;
       if (sync === null || choice === void 0) return;
       writeChoice(sync, choice);
-      for (const group of syncedGroups) {
-        if (group !== this && group.getAttribute("sync") === sync) group.#follow(choice);
-      }
+      followChoice(sync, choice, this);
     }
     /** Another group with the same `sync` made a choice; keep our selection if we have no match. */
     #follow(value) {
