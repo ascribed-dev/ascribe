@@ -255,3 +255,63 @@ fn an_orphan_and_an_unused_phrase_can_be_marked_as_intended() {
     // `title-duplicate` needs writing, not acknowledging.
     assert!(!action_titles(&mut client, &f.path("docs/a.md"), "title-duplicate").contains(&mark));
 }
+
+#[test]
+fn a_list_of_permalinks_thats_behind_is_brought_up_to_date_by_a_quick_fix() {
+    let page = "---\ntitle: Keys\n---\n\n## Rotate keys\n@id {permalink=true}: rotate-keys\n";
+    let header = "# Written by Ascribe. Don't edit it: run `ascribe permalinks sync`.\n";
+    let f = Fixture::new(
+        crate::support::MODEL,
+        &[
+            ("docs/keys.md", page),
+            (
+                "ascribe.permalinks",
+                &format!("{header}version = 1\n\n[permalinks]\n"),
+            ),
+        ],
+    );
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let keys = f.path("docs/keys.md");
+    let diagnostic = client
+        .diagnostics(&keys)
+        .into_iter()
+        .find(|d| slug(d) == "permalinks-list-behind")
+        .expect("permalinks-list-behind");
+    let actions = client
+        .request(
+            "textDocument/codeAction",
+            json!({
+                "textDocument": { "uri": uri(&keys).as_str() },
+                "range": diagnostic.range,
+                "context": { "diagnostics": [diagnostic] }
+            }),
+        )
+        .response_result
+        .expect("actions");
+    let sync = actions
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|a| a["title"] == "Bring ascribe.permalinks up to date")
+        .expect("the quick fix");
+    assert_eq!(sync["isPreferred"], true);
+    let list = uri(&f.path("ascribe.permalinks"));
+    let edits = &sync["edit"]["changes"][list.as_str()];
+    assert_eq!(
+        edits[0]["newText"],
+        format!("{header}version = 1\n\n[permalinks]\nrotate-keys = \"keys.md#rotate-keys\"\n")
+    );
+
+    // Once the list has it, the warning goes when the editor hears of it.
+    f.write(
+        "ascribe.permalinks",
+        edits[0]["newText"].as_str().expect("text"),
+    );
+    client.watched(&[(
+        &f.path("ascribe.permalinks"),
+        lsp_types::FileChangeType::CHANGED,
+    )]);
+    client.settle();
+    assert!(client.codes(&keys).is_empty(), "{:?}", client.codes(&keys));
+}
