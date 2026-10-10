@@ -116,6 +116,19 @@ fn loader_rules_are_file_level_and_grouped() {
     }
 }
 
+/// The reference says when a content check is reported; only a content
+/// check has `when`.
+#[test]
+fn only_content_checks_say_when() {
+    for e in &registry().entries {
+        assert!(
+            e.when.is_none() || e.area.is_some(),
+            "{}: only a content check has `when`",
+            e.slug
+        );
+    }
+}
+
 #[test]
 fn codes_are_sequential_and_slugs_unique() {
     let reg = registry();

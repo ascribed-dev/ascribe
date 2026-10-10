@@ -254,7 +254,7 @@ impl Client {
     pub fn save(&mut self, path: &Path) {
         self.notify(
             "textDocument/didSave",
-            json!({ "textDocument": { "uri": uri(path).as_str() } }),
+            serde_json::json!({ "textDocument": { "uri": uri(path).as_str() } }),
         );
     }
 
@@ -349,7 +349,9 @@ pub struct Fixture {
     pub dir: tempfile::TempDir,
 }
 
-pub const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n";
+/// A content model with the content checks across the project off: most
+/// tests are about other things, and `tests/all/across.rs` covers them.
+pub const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[checks]\npage-orphan = \"off\"\nfragment-unused = \"off\"\nphrase-unused = \"off\"\nfeature-unused = \"off\"\nglossary-term-unused = \"off\"\ntitle-duplicate = \"off\"\n";
 
 impl Fixture {
     pub fn new(model: &str, files: &[(&str, &str)]) -> Fixture {

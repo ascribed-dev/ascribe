@@ -3,7 +3,8 @@
 //! It handles the `check` tag. Its diagnostics are `ascribe_check::check_files`
 //! on a project built from the case: the case's content model, and every
 //! `.md` file under its content root. That's the same entry point
-//! `ascribe check`, the build, and the language server call.
+//! `ascribe check`, the build, and the language server call, without what an
+//! acknowledgement covers.
 //!
 //! A `check` case that also carries `structure` or `parser` gets its
 //! diagnostics here, from the whole check, not from the parser alone.
@@ -62,7 +63,8 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
     Ok(Project::from_parts(case.dir.clone(), content_root, model, text, sources).with_today(today))
 }
 
-/// `check_files` on the case's project, in the harness's format.
+/// `check_files` on the case's project, without what an acknowledgement
+/// covers, in the harness's format.
 pub fn file_level_diagnostics(case: &Case) -> Result<Vec<Diagnostic>, AdapterError> {
     let project = project(case)?;
     let reported = reported(&project, check_files(&project), false);

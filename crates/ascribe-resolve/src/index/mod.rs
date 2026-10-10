@@ -19,6 +19,7 @@
 
 mod frontmatter;
 mod headings;
+mod mentions;
 mod refs;
 pub(crate) mod walk;
 

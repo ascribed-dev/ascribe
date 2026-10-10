@@ -8,7 +8,9 @@ use std::process::{Command, Output};
 
 use tempfile::TempDir;
 
-const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[phrases]\nproduct = \"Quill\"\n";
+/// The content checks across the project are off: these tests are about
+/// other things, and the conformance cases cover them.
+const MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[phrases]\nproduct = \"Quill\"\n\n[checks]\npage-orphan = \"off\"\nfragment-unused = \"off\"\nphrase-unused = \"off\"\nfeature-unused = \"off\"\nglossary-term-unused = \"off\"\nimage-unused = \"off\"\nimage-large = \"off\"\ntitle-duplicate = \"off\"\n";
 
 /// A project in a temporary directory: the model, and these `(path, text)`
 /// files under `docs/`.
@@ -340,7 +342,7 @@ fn the_monorepo_examples_projects_have_no_problems_and_are_canonical() {
 // ---------------------------------------------------------------------------
 // Page-level checks and builds
 
-const BUILDS_MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\nversionless = [\"cloud\", \"self-managed\"]\n\n[builds.site]\nvariants = \"switch\"\navailability = \"badge\"\n\n[builds.cloud]\nvariants = { deployment = \"cloud\" }\navailability = \"badge\"\n";
+const BUILDS_MODEL: &str = "spec = \"0.1\"\n\n[project]\ncontent-root = \"docs\"\n\n[types.page]\ndefault = true\n\n[types.page.frontmatter]\ntitle = \"string\"\n\n[dimensions.deployment]\nvalues = [\"cloud\", \"self-managed\"]\nversionless = [\"cloud\", \"self-managed\"]\n\n[builds.site]\nvariants = \"switch\"\navailability = \"badge\"\n\n[builds.cloud]\nvariants = { deployment = \"cloud\" }\navailability = \"badge\"\n\n[checks]\npage-orphan = \"off\"\nfragment-unused = \"off\"\nphrase-unused = \"off\"\nfeature-unused = \"off\"\nglossary-term-unused = \"off\"\nimage-unused = \"off\"\nimage-large = \"off\"\ntitle-duplicate = \"off\"\n";
 
 fn builds_project(files: &[(&str, &str)]) -> TempDir {
     let dir = project(files);

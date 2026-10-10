@@ -58,7 +58,7 @@ With `--vale`, or with `in-check = true` in [`[checks.vale]`](content-model.md#c
 ### A quick check after each edit
 
 @available: next
-`--editor-build` runs what the editor runs as you type: the file-level checks and the page-level checks of the editor's build only (`[editor] build`, or the first build), without the pass over content no build publishes. With paths that name files, only those files and the pages that include them are checked, which is quick enough to run after every edit; the timings are in [`tests/corpora/RESULTS.md`]({repo}/blob/main/tests/corpora/RESULTS.md#one-file). It can't be combined with `--build`. The summary line, and `builds_checked` in the JSON, name the build, so a clean result says what it covers. A full `ascribe check` before you finish still covers every build.
+`--editor-build` runs what the editor runs: the file-level checks and the page-level checks of the editor's build only (`[editor] build`, or the first build), without the pass over content no build publishes, and without the image checks (`image-unused` and `image-large`), which the editor doesn't report. With paths that name files, only those files and the pages that include them are checked, and none of the [content checks](diagnostics.md#content-checks) across the project, which need every page; that's quick enough to run after every edit; the timings are in [`tests/corpora/RESULTS.md`]({repo}/blob/main/tests/corpora/RESULTS.md#one-file). It can't be combined with `--build`. The summary line, and `builds_checked` in the JSON, name the build, so a clean result says what it covers. A full `ascribe check` before you finish still covers every build.
 
 ### Output for agents
 

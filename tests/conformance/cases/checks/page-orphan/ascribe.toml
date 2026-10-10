@@ -1,0 +1,22 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+
+[dimensions.deployment]
+values = ["cloud", "self-managed"]
+versionless = ["cloud", "self-managed"]
+
+[builds.site]
+variants = "switch"
+availability = "badge"
+
+[builds.cloud]
+variants = { deployment = "cloud" }
+availability = { filter = "cloud" }

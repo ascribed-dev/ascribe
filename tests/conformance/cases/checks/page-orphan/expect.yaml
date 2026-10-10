@@ -1,0 +1,16 @@
+description: >-
+  A page no other page of the build links to or includes is an orphan, at
+  its title, in each build where it is one. A link only from content a
+  build leaves out doesn't count in that build; an include does count, and
+  an index page is never an orphan.
+spec: ["5.2", "4.2", "9.3"]
+tags: [page-check, resolve]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: page-orphan, file: lonely.md, line: 2}
+  cloud:
+    diagnostics:
+      - {slug: page-orphan, file: lonely.md, line: 2}
+      - {slug: page-orphan, file: upgrade.md, line: 2}

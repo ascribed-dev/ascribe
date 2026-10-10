@@ -192,10 +192,33 @@ impl Fingerprints {
                 (&t.name, &t.files, t.default, fields)
             })
             .collect();
+        // Where a phrase, a feature, or a glossary term is declared is read
+        // only by the diagnostics of `ascribe.toml`.
+        let phrase_values: Vec<_> = phrases.iter().map(|p| (&p.key, &p.value)).collect();
+        let feature_specs: Vec<_> = features
+            .iter()
+            .map(|f| (&f.key, &f.name, &f.available_text, &f.available))
+            .collect();
+        let terms: Vec<_> = glossary
+            .terms
+            .iter()
+            .map(|t| {
+                (
+                    (&t.id, &t.term, &t.aliases, &t.definition),
+                    (&t.link, t.case_sensitive, t.match_mode),
+                )
+            })
+            .collect();
+        let declared: Vec<_> = phrases
+            .iter()
+            .map(|p| p.span)
+            .chain(features.iter().map(|f| f.span))
+            .chain(glossary.terms.iter().map(|t| t.span))
+            .collect();
         let index = hash_of(&format!(
             "{parse}{:?}",
             (
-                phrases,
+                phrase_values.clone(),
                 &fragments.patterns,
                 &consumer.slugger,
                 &read_through,
@@ -206,9 +229,15 @@ impl Fingerprints {
             "{:?}",
             (
                 (spec, project, types, fragments, dimensions),
-                (version_scheme, lifecycle, features, notes, phrases),
                 (
-                    glossary,
+                    version_scheme,
+                    lifecycle,
+                    feature_specs,
+                    notes,
+                    phrase_values
+                ),
+                (
+                    (glossary.match_mode, glossary.case_sensitive, terms),
                     image_attributes,
                     widgets,
                     consumer,
@@ -220,7 +249,7 @@ impl Fingerprints {
                 ),
             )
         ));
-        let with_warnings = hash_of(&format!("{whole}{warnings:?}"));
+        let with_warnings = hash_of(&format!("{whole}{warnings:?}{declared:?}"));
         Fingerprints {
             parse,
             index,

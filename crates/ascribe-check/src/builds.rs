@@ -8,7 +8,7 @@ use ascribe_model::Build;
 
 use crate::{
     Acknowledged, Acknowledgements, Diagnostic, PageChecker, PageIndex, Project, apply_levels,
-    check_all_builds, check_builds, check_file, check_files,
+    check_all_builds, check_builds, check_file, check_files_with,
 };
 
 /// A build name that isn't a build of the content model.
@@ -118,7 +118,7 @@ pub fn diagnose<'p>(project: &'p Project, names: &[String]) -> Result<Diagnosed<
 pub fn count_errors(project: &Project, names: &[String]) -> Result<usize, UnknownBuild> {
     let builds = select_builds(project, names)?;
     let checker = PageChecker::new(project).errors_only();
-    let mut diagnostics = check_files(project);
+    let mut diagnostics = check_files_with(project, Some(&checker));
     diagnostics.extend(if names.is_empty() {
         checker.check_all()
     } else {
@@ -134,11 +134,11 @@ pub fn count_errors(project: &Project, names: &[String]) -> Result<usize, Unknow
         .count())
 }
 
-/// What the language server reports as you type, for `ascribe check
-/// --editor-build`: the file-level diagnostics, and the page-level ones of
-/// the editor's build alone (`[editor] build`;
-/// `ContentModel::editor_default_build`), without the pass over content no
-/// build publishes.
+/// What the language server reports, for `ascribe check --editor-build`:
+/// the file-level diagnostics, and the page-level ones of the editor's build
+/// alone (`[editor] build`; `ContentModel::editor_default_build`), without
+/// the pass over content no build publishes, and without the image checks
+/// ([`NOT_IN_EDITOR`](crate::NOT_IN_EDITOR)).
 ///
 /// With `files` (content paths of source files), only what can count for
 /// them is checked, for speed: the file-level checks of those files, and the
@@ -146,7 +146,9 @@ pub fn count_errors(project: &Project, names: &[String]) -> Result<usize, Unknow
 /// diagnostic located in them or with a related place in them, apart from a
 /// file-level one of another file whose related place is in them, which no
 /// file-level check makes. The content model's warnings and the checks of
-/// `ascribe.lock` aren't run then, since they're located in neither.
+/// `ascribe.lock` aren't run then, since they're located in neither, and
+/// neither are the content checks across the project, which need every page
+/// (the server runs them on save).
 pub fn diagnose_editor_build<'p>(project: &'p Project, files: Option<&[RelPath]>) -> Diagnosed<'p> {
     diagnose_editor_build_in(project, None, files)
 }
@@ -165,8 +167,11 @@ pub fn diagnose_editor_build_in<'p>(
     };
     let diagnostics = match files {
         None => {
-            let mut out = check_files(project);
-            out.extend(checker().check(build));
+            let checker = checker();
+            let mut out = check_files_with(project, Some(&checker));
+            out.extend(checker.check(build));
+            // What the editor doesn't report.
+            out.retain(|d| !crate::NOT_IN_EDITOR.contains(&d.slug));
             out
         }
         Some(files) => {

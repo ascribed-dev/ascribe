@@ -694,12 +694,13 @@ Only a check the diagnostics registry marks configurable can be named; the [diag
 | Check | Setting | Type | Default | Description |
 |---|---|---|---|---|
 | `page-size` | `limit` | integer | `50000` | The size, in characters of a page's plain Markdown in a build, at which the page is reported. It MUST be above 0. |
+| `image-large` | `limit` | integer or string | `"500 KB"` | The size over which an image file is reported: a whole number of bytes, or a number followed by `B`, `KB`, or `MB` (a kilobyte is 1,000 bytes, a megabyte 1,000,000), with or without a space. |
 
 The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name. `vale` is §20.2; `links` has no keys yet.
 
 A level changes how a diagnostic is reported everywhere: by `ascribe check` and `ascribe build`, and in the editor. Advice is shown, and never fails `ascribe check`, even with `--deny-warnings`; a check set to `off` isn't reported at all.
 
-**Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); a value is a string or a table, and `limit` a whole number above 0 (`model-wrong-type`).
+**Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); a value is a string or a table, `page-size`'s `limit` a whole number above 0, and `image-large`'s a size (`model-wrong-type`).
 
 ### 20.1 `[[intended]]`
 @available: next
@@ -751,7 +752,7 @@ max-level = "error"
 
 What Ascribe writes for Vale is under `.ascribe/vale/` in the project root: a preset's configuration and styles, and the vocabulary `Ascribe` of the project's own words (phrase values, glossary terms and aliases, dimension, value, and feature labels), one escaped regular expression to a line. Nothing outside it is written, except by `ascribe vale eject`.
 
-Each alert is a `prose` diagnostic (`ASC154`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC155`) at `[checks.vale]`, never a failed check. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
+Each alert is a `prose` diagnostic (`ASC162`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC163`) at `[checks.vale]`, never a failed check. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
 
 **Rules** (§22.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
 

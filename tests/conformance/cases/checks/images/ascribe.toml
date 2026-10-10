@@ -1,0 +1,13 @@
+spec = "0.1"
+
+[project]
+content-root = "files"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+
+[checks.image-large]
+limit = "100 B"

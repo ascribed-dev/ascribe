@@ -52,6 +52,7 @@ The cases were written from SPEC.md, not from any implementation. They're groupe
 | `phrases/`, `links/`, `images/`, `headings/`, `glossary/` | Inline constructs, source ids and page ids (§5) |
 | `frontmatter/`, `model/` | Frontmatter, content types, fragments, name roles (§2, §7.2) |
 | `sources/` | Sources in another repository: their copies and `ascribe.lock` (§7.4) |
+| `checks/` | The content checks across a project: orphans, unused fragments, model entries, and images, large images, and duplicate titles. They aren't SPEC rules, so the shared model turns them off and these cases have models of their own |
 | `format/` | Canonical form (§8.3): each rule, what the formatter leaves alone, and constructs with errors |
 | `builds/selection/`, `builds/filter/`, `builds/assets/`, `builds/pages/` | Resolution and build modes, availability filtering, assets, which files are pages (§9.2–§9.4) |
 | `content/` | The checks about a page's content rather than its validity, which `[checks]` can set the level of: page size, descriptions, heading levels, code block languages, and review dates (§7.2, §8.2) |

@@ -52,6 +52,10 @@ fn model(build: &str, widget: bool) -> String {
         );
     }
     text.push_str(&format!("\n[editor]\nbuild = \"{build}\"\n"));
+    // The content checks across the project run on save, which the steps
+    // don't do, and the editor doesn't report the image checks; `across.rs`
+    // covers them.
+    text.push_str("\n[checks]\npage-orphan = \"off\"\nfragment-unused = \"off\"\ntitle-duplicate = \"off\"\nimage-unused = \"off\"\nimage-large = \"off\"\n");
     text
 }
 

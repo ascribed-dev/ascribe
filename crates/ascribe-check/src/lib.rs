@@ -31,9 +31,11 @@
 //! each distinct problem once, naming the builds it appears in
 //! ([`Diagnostic::builds`]).
 
+mod across;
 mod builds;
 mod checks;
 mod diagnostic;
+mod evidence;
 pub mod intended;
 mod levels;
 pub mod page;
@@ -44,6 +46,8 @@ pub mod registry;
 mod scope;
 mod yaml;
 
+pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, size_text};
+use ascribe_core::FileId;
 pub use builds::{
     Diagnosed, UnknownBuild, count_errors, diagnose, diagnose_editor_build,
     diagnose_editor_build_in, select_builds,
@@ -51,14 +55,15 @@ pub use builds::{
 pub use checks::check_file;
 use checks::check_sources;
 pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
+pub use evidence::GATHERED as GATHERED_EVIDENCE;
 pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};
 pub use levels::apply_levels;
 pub use page::{
     PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,
 };
 pub use project::{
-    FileEntry, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile, Project, ReadFailure,
-    SourceFile,
+    FileEntry, IMAGE_FILE_IDS, LOCK_FILE_ID, LoadError, LocateError, MODEL_FILE, ModelFile,
+    Project, ReadFailure, SourceFile,
 };
 pub use registry::{Entry, Example, Level, Next, Registry};
 pub use scope::{Reported, Scope, ScopeError, locate_for};
@@ -70,15 +75,38 @@ pub use scope::{Reported, Scope, ScopeError, locate_for};
 /// Never panics on user input. Sorting is stable, so two tools that call it
 /// on the same project get the same list.
 pub fn check_files(project: &Project) -> Vec<Diagnostic> {
+    check_files_with(project, None)
+}
+
+/// [`check_files`], with the content checks that hold for every build run
+/// over `checker`'s index when there's one, so it isn't made twice.
+pub(crate) fn check_files_with(
+    project: &Project,
+    checker: Option<&PageChecker<'_>>,
+) -> Vec<Diagnostic> {
+    // The content checks across the project need its source index; with none
+    // to share, one is made only when one of them is on.
+    let mut across = match checker {
+        Some(checker) => checker.for_every_build(true),
+        None if across::any_file_level(&project.model().checks) => {
+            PageChecker::new(project).for_every_build(true)
+        }
+        None => Default::default(),
+    };
     // The content model's warnings are part of the list.
     let mut out: Vec<Diagnostic> = project.model_warnings().to_vec();
     let model = out.len();
     for file in project.sources() {
         out.extend(check_file(project, file));
+        out.extend(across.remove(&file.id).unwrap_or_default());
     }
-    // The lock and the copies come next to the content model; whether a copy
-    // is used is known once every file's snippets have been read.
-    let sources = check_sources(project);
+    // The lock and the copies come next to the content model, then the
+    // unused entries of the content model; whether a copy is used is known
+    // once every file's snippets have been read.
+    let mut sources = check_sources(project);
+    sources.extend(across.remove(&FileId::new(0)).unwrap_or_default());
     out.splice(model..model, sources);
+    // The image files' come last, in path order.
+    out.extend(across.into_values().flatten());
     out
 }

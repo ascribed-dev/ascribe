@@ -122,7 +122,8 @@ pub fn serve(connection: Connection, options: Options) -> Result<Exit, ServeErro
                 TextDocumentSyncOptions {
                     open_close: Some(true),
                     change: Some(TextDocumentSyncKind::INCREMENTAL),
-                    // Vale checks a document's prose when it's saved.
+                    // The content checks across the project run on save, and
+                    // Vale checks a document's prose.
                     save: Some(TextDocumentSyncSaveOptions::Supported(true)),
                     ..TextDocumentSyncOptions::default()
                 },
@@ -436,13 +437,7 @@ fn handle_request(shared: &Shared, request: Request) -> Response {
                     })
                 })
             }
-            CodeActionRequest::METHOD => {
-                navigation(shared, &request, |p: lsp_types::CodeActionParams| {
-                    (p.text_document.uri.clone(), move |ctx: &Ctx| {
-                        Some(crate::code_action::actions(ctx, p))
-                    })
-                })
-            }
+            CodeActionRequest::METHOD => code_action_request(shared, &request),
             Formatting::METHOD => navigation(shared, &request, |p: DocumentFormattingParams| {
                 (p.text_document.uri.clone(), move |ctx: &Ctx| {
                     Some(crate::formatting::format(ctx, p))
@@ -588,6 +583,18 @@ where
     let target = shared.lock().project_target(&uri);
     let result = target.map(|ctx| compute(&ctx)).unwrap_or_default();
     to_json(request, result)
+}
+
+/// Code actions, as [`navigation`] answers a request, and on `ascribe.toml`
+/// too, whose problems about an entry can be marked as intended.
+fn code_action_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
+    let params: lsp_types::CodeActionParams = serde_json::from_value(request.params.clone())
+        .map_err(|e| invalid(&request.id, e.to_string()))?;
+    let target = shared.lock().code_action_target(&params.text_document.uri);
+    let Some(ctx) = target else {
+        return Ok(serde_json::Value::Null);
+    };
+    to_json(request, crate::code_action::actions(&ctx, params))
 }
 
 fn rename_request(shared: &Shared, request: &Request) -> Result<serde_json::Value, Response> {
@@ -914,7 +921,8 @@ fn worker(shared: &Shared) {
         };
         let outcome = catch_unwind(AssertUnwindSafe(|| {
             let outcome = compute(&job, &|| job.snapshot.is_current());
-            if let (Some(hook), Outcome::Done(results)) = (&shared.options.before_publish, &outcome)
+            if let (Some(hook), Outcome::Done(results, _)) =
+                (&shared.options.before_publish, &outcome)
             {
                 hook(&PublishInfo {
                     version: job.snapshot.version().get(),

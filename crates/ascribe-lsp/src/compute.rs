@@ -6,6 +6,14 @@
 //! page-level checks of the editor's build); [`Core::finish`] publishes under
 //! the lock, and only what is still current.
 //!
+//! The content checks across the project (`page-orphan`, the unused
+//! fragments and content model entries, `title-duplicate`) need every page
+//! of the build, so they don't run at every round: a round runs them when
+//! the project is loaded, when a file is saved or changes on disk, and when
+//! the content model changes ([`Job::across`]). What they found is kept
+//! ([`Across`]) and added to each file's diagnostics while the file's text
+//! is still the one it was found in; an edit hides them until the next save.
+//!
 //! It doesn't call `ascribe_check::diagnose`, the entry `ascribe check`
 //! uses: that checks every build of a whole project at once, and the server
 //! checks only the files an edit affects, in the editor's one build, over the
@@ -51,13 +59,48 @@ pub(crate) struct Job {
     /// them before using them.
     pub cache: Arc<Mutex<ResolvedCache>>,
     pub affected: Vec<Affected>,
+    /// Whether the round runs the content checks across the project.
+    pub across: bool,
+    /// What they found when they last ran.
+    pub found: Arc<Across>,
     /// The day the checks run on.
     pub today: Option<ascribe_core::Date>,
 }
 
-/// What a round produced: the diagnostics of each file it computed.
+/// What the content checks across the project found when they last ran,
+/// each with the text it's located in, levels not yet applied.
+#[derive(Default, PartialEq)]
+pub(crate) struct Across {
+    /// Each source file's, and its text.
+    pub sources: BTreeMap<RelPath, (Arc<str>, Vec<lsp_types::Diagnostic>)>,
+    /// The content model's, and its text.
+    pub model: (String, Vec<Diagnostic>),
+}
+
+impl Across {
+    /// What's kept for a source file whose text is now `text`: nothing once
+    /// it's been edited since the checks ran.
+    fn of_source(&self, path: &RelPath, text: &str) -> &[lsp_types::Diagnostic] {
+        match self.sources.get(path) {
+            Some((was, found)) if **was == *text => found,
+            _ => &[],
+        }
+    }
+
+    /// What's kept for the content model, when its text is still `text`.
+    pub(crate) fn of_model(&self, text: &str) -> &[Diagnostic] {
+        if self.model.0 == text {
+            &self.model.1
+        } else {
+            &[]
+        }
+    }
+}
+
+/// What a round produced: the diagnostics of each file it computed, and what
+/// the content checks across the project found when the round ran them.
 pub(crate) enum Outcome {
-    Done(Vec<(RelPath, Vec<lsp_types::Diagnostic>)>),
+    Done(Vec<(RelPath, Vec<lsp_types::Diagnostic>)>, Option<Across>),
     /// A newer update overtook the round before it finished; its files are
     /// queued again.
     Abandoned,
@@ -69,7 +112,7 @@ impl Core {
         let encoding = self.encoding;
         let today = self.today();
         let loaded = self.loaded.as_mut()?;
-        if loaded.dirty.is_empty() {
+        if loaded.dirty.is_empty() && !loaded.across_dirty {
             return None;
         }
         let snapshot = loaded.inc.snapshot();
@@ -97,6 +140,8 @@ impl Core {
             versions,
             cache: loaded.cache.clone(),
             affected: std::mem::take(&mut loaded.pending),
+            across: std::mem::take(&mut loaded.across_dirty),
+            found: loaded.across.clone(),
             today,
         })
     }
@@ -113,13 +158,36 @@ impl Core {
             // The project was loaded again since; every file is queued there.
             return;
         }
-        let results = match outcome {
-            Outcome::Done(results) => results,
+        let (results, across) = match outcome {
+            Outcome::Done(results, across) => (results, across),
             Outcome::Abandoned => {
                 loaded.dirty.extend(job.files.iter().cloned());
+                loaded.across_dirty |= job.across;
                 return;
             }
         };
+        // What the content checks across the project found replaces what
+        // they found before; a file whose share changed and that this round
+        // didn't compute is computed again, and `ascribe.toml` is published.
+        let mut model_changed = false;
+        if let Some(across) = across
+            && across != *loaded.across
+        {
+            let paths: BTreeSet<&RelPath> = across
+                .sources
+                .keys()
+                .chain(loaded.across.sources.keys())
+                .collect();
+            for path in paths {
+                if across.sources.get(path) != loaded.across.sources.get(path)
+                    && !job.files.contains(path)
+                {
+                    loaded.dirty.insert(path.clone());
+                }
+            }
+            model_changed = across.model != loaded.across.model;
+            loaded.across = Arc::new(across);
+        }
         let mut ready = Vec::new();
         for (path, diagnostics) in results {
             let abs = loaded.source_path(&path);
@@ -133,6 +201,9 @@ impl Core {
         }
         for (abs, diagnostics) in ready {
             self.publish(&abs, diagnostics);
+        }
+        if model_changed {
+            self.publish_model_diagnostics();
         }
     }
 }
@@ -257,11 +328,21 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
             .collect()
     };
     let refs: Vec<&ResolvedPage> = resolved.iter().map(|p| &**p).collect();
-    for d in PageChecker::with_index(&project, snapshot.project()).check_resolved(&build, &refs) {
+    let checker = PageChecker::with_index(&project, snapshot.project());
+    for d in checker.check_resolved(&build, &refs) {
         if let Some(list) = by_file.get_mut(&d.location.file) {
             list.push(d);
         }
     }
+    let across = if job.across {
+        if !still_wanted() {
+            return Outcome::Abandoned;
+        }
+        Some(run_across(job, &project, &checker, &build, &router))
+    } else {
+        None
+    };
+    let found = across.as_ref().unwrap_or(&job.found);
     // The acknowledgements that can cover them: in the content model, in
     // their files, and in the files of their related places (a block that
     // includes a fragment covers a problem in what it includes).
@@ -307,13 +388,102 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
             let range = job.encoding.range(&index, r.location.span);
             Some(Location { uri, range })
         };
+        let mut lsp: Vec<lsp_types::Diagnostic> = diagnostics
+            .iter()
+            .map(|d| to_lsp(d, &index, job.encoding, &related))
+            .collect();
+        lsp.extend_from_slice(found.of_source(path, &file.text));
+        results.push((path.clone(), lsp));
+    }
+    Outcome::Done(results, across)
+}
+
+/// Runs the content checks across the project for the editor's build, over
+/// every page it publishes, and keeps what they found with the text it's
+/// located in, levels applied for a source file.
+fn run_across(
+    job: &Job,
+    project: &Project,
+    checker: &PageChecker<'_>,
+    build: &ascribe_model::Build,
+    router: &DefaultRouter,
+) -> Across {
+    let snapshot = &job.snapshot;
+    let mut paths: Vec<&RelPath> = snapshot
+        .files()
+        .filter(|f| f.kind == FileKind::Page)
+        .map(|f| &f.path)
+        .collect();
+    paths.sort();
+    let pages: Vec<Arc<ResolvedPage>> = {
+        let mut cache = job.cache.lock().unwrap_or_else(PoisonError::into_inner);
+        paths
+            .into_iter()
+            .filter_map(|path| cache.resolve_page(snapshot.project(), path, build, router))
+            .collect()
+    };
+    let refs: Vec<&ResolvedPage> = pages.iter().map(|p| &**p).collect();
+    let mut by_file: BTreeMap<FileId, Vec<Diagnostic>> = BTreeMap::new();
+    for d in checker.check_across(build, &refs) {
+        by_file.entry(d.location.file).or_default().push(d);
+    }
+    // What an acknowledgement covers isn't reported (SPEC §4.9); whether one
+    // covers nothing takes every build, so the editor never says.
+    let acknowledgements = Acknowledgements::of(project);
+    let mut found = Across {
+        model: (
+            job.model_text.clone(),
+            acknowledgements
+                .apply(
+                    &job.model,
+                    by_file.remove(&FileId::new(0)).unwrap_or_default(),
+                    false,
+                )
+                .diagnostics,
+        ),
+        ..Across::default()
+    };
+    for (id, diagnostics) in by_file {
+        let Some(entry) = project.file(id) else {
+            continue;
+        };
+        let Some(path) = entry.content_path else {
+            continue;
+        };
+        let Some(file) = snapshot.file(path) else {
+            continue;
+        };
+        let diagnostics = acknowledgements
+            .apply(
+                &job.model,
+                apply_levels(&job.model.checks, diagnostics),
+                false,
+            )
+            .diagnostics;
+        if diagnostics.is_empty() {
+            continue;
+        }
+        let index = LineIndex::new(entry.text);
+        let related = |r: &ascribe_check::RelatedInfo| -> Option<Location> {
+            let other = project.file(r.location.file)?;
+            let abs = normalize(&job.root.join(&other.display_path));
+            let range = job
+                .encoding
+                .range(&LineIndex::new(other.text), r.location.span);
+            Some(Location {
+                uri: path_to_uri(&abs)?,
+                range,
+            })
+        };
         let lsp = diagnostics
             .iter()
             .map(|d| to_lsp(d, &index, job.encoding, &related))
             .collect();
-        results.push((path.clone(), lsp));
+        found
+            .sources
+            .insert(path.clone(), (file.source.clone(), lsp));
     }
-    Outcome::Done(results)
+    found
 }
 
 /// The checked project of a snapshot: its sources with the snapshot's ids, and
