@@ -177,7 +177,7 @@ A type with neither `files` nor `default = true` could never apply, and is an er
 
 **Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)) and `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically. `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
 
-@available: next
+@available: ascribe 0.2.0
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
 
 **Unknown frontmatter keys.** A page whose frontmatter has a key its type doesn't declare (and that isn't reserved) is an error on the page.
@@ -258,7 +258,7 @@ Nesting beyond one level of `fields` is allowed but discouraged; keep frontmatte
 
 ### 5.3 Code in a field
 
-@available: next
+@available: ascribe 0.2.0
 A `string` field is plain text: a backtick in it is a backtick. To show code in a page title, set `inline = "code"` on the field:
 
 ```toml
@@ -597,7 +597,7 @@ Settings for the authoring environment (SPEC §10).
 ---
 
 ## 18. `[sources.<name>]`
-@available: next
+@available: ascribe 0.2.0
 
 A source is a folder outside the project's content, or another repository, that its pages may take code examples from, with [`@snippet`](directives.md#snippet) ([SPEC §7.3]({repo}/blob/main/SPEC.md#73-sources)). It's the only way a page can read a file outside the project's folder.
 

@@ -1,7 +1,7 @@
 ---
 title: Review
 description: Reviewing a pull request as readers will see it, in the page preview, the site preview, or a report from CI, and commenting there.
-available: next
+available: ascribe 0.2.0
 ---
 
 Ascribe shows a pull request the way readers will see it: each page it changes, rendered, with the changed blocks marked, and the pull request's review comments beside the blocks they're about. You read the change as pages instead of as a diff of Markdown files, comment where you're reading, and your comments land in the pull request like any other review. A change to a fragment shows on every page that includes it, a change to a [phrase](../reference/directives.md#phrases) on every page that uses it, and reformatting shows on none.

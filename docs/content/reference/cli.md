@@ -144,7 +144,7 @@ Checks the project, then writes each build's outputs. The checks run first, exac
 
 @include: ../_generated/cli-build-options.md
 
-@available: next
+@available: ascribe 0.2.0
 The Astro integration turns the source anchors that `--anchors` writes into attributes on every block's element ([site-render contract](../contracts/site-render.md#7-source-anchors)).
 
 Progress (`built cloud/plain: 3 pages, 2 assets`) and warnings go to standard error.
@@ -173,7 +173,6 @@ A rebuild replaces its previous output. It removes only files its own manifest l
 | `2` | The build couldn't run: a usage error, no `ascribe.toml`, a content model with errors, another build writing to the output directory, a file in the output directory that Ascribe didn't write and would have to overwrite, or two pages of the site output with the same route |
 
 ## `ascribe diff`
-@available: next
 
 Shows what changed between a git revision and the working tree, as readers will see it: which pages of each [build](content-model.md#16-buildsname) changed, and which blocks on them were added, removed, changed, or moved. It compares **resolved pages**, not files, so a page whose own file didn't change but whose included fragment, [phrase](directives.md#phrases), or build settings did is listed, with what its change comes from. A change that doesn't reach the page (`ascribe fmt`, rewrapped lines) isn't.
 
@@ -277,7 +276,7 @@ A block is a heading, paragraph, code block, table, list, list item, block quote
 How blocks are matched: blocks are compared by their content without positions, so moving a block down the file or rewrapping it is no change. Blocks that didn't stay are paired, in order, with a block of the same kind whose words overlap by at least half, as **changed**; a block that matches nothing is **added** or **removed**, and a removed block identical to an added one elsewhere on the page is **moved**. A block over about 2,500 words gets no word ranges, and a list or container with over 1,000 blocks in it that changed is marked changed as a whole.
 
 ## `ascribe drift`
-@available: next
+@available: ascribe 0.2.0
 
 Lists the pages whose code examples changed between a git revision and the working tree, and whether the words around them changed too, and the pages whose examples no longer resolve. A page covers the code it shows, and nothing else: every region it takes a [snippet](directives.md#snippet) from, and every whole file it takes as one, including its fragments' snippets. It's for CI, where it says which pages a reviewer should reread; see [Drift](../guides/drift.md#when-an-example-changes).
 
@@ -442,7 +441,7 @@ The resources are `ascribe://directives`, each built-in directive's syntax (`asc
 The server speaks the protocol's 2026-07-28 revision, which has no handshake, and answers `initialize` for a client on 2025-11-25 or 2025-06-18. It takes no options, and refuses `--config` (exit code `2`). Its logs go to standard error; it exits with `0` when standard input ends.
 
 ## `ascribe sources`
-@available: next
+@available: ascribe 0.2.0
 
 Copies code from [sources in other repositories](content-model.md#a-source-in-another-repository) into the project, and moves their pins. `check` and `build` read only the copies, so `ascribe sources fetch` and `ascribe sources update` are the only commands that reach another repository. They run `git`, with `git`'s own credentials: whatever lets `git fetch <url>` work in your shell lets them fetch. They never prompt, so a missing credential fails at once.
 

@@ -25,9 +25,10 @@ since = "string?"
 
 # What isn't in the latest release is marked with availability. A feature in
 # `main` that no release has yet is `@available: next`. When a release ships
-# it, `next` below becomes `ascribe <version>`, and every page marked with it
-# reads "since <version>". Something that shipped in an earlier release than
-# the current one can say so directly: `@available: ascribe 0.1.1`.
+# it, each `next` mark becomes `ascribe <version>`, so the page reads "since
+# <version>"; `next` itself stays unreleased, for what `main` adds after.
+# Something that shipped in an earlier release says so directly:
+# `@available: ascribe 0.1.1`.
 [dimensions.release]
 label = "Ascribe"
 values = ["ascribe"]
@@ -50,8 +51,8 @@ available = true
 label = "in main, not yet released"
 
 [features.next]
-name = "Ascribe 0.2.0"
-available = "ascribe 0.2.0"
+name = "In main, not yet released"
+available = "ascribe unreleased"
 
 [phrases]
 # The latest release: the workspace version in Cargo.toml, and every

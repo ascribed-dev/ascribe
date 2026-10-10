@@ -622,7 +622,7 @@ Settings for the authoring environment (SPEC §10).
 ---
 
 ## 19. `[sources.<name>]`
-@available: next
+@available: ascribe 0.2.0
 
 A source is a folder outside the project's content, or another repository, that its pages may take code examples from (SPEC §4.8, §7.3, §7.4). It's the only way a page can read a file outside the project's folder.
 
@@ -928,7 +928,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-editor-build-required` | When there are several builds and none is named `site`, `editor.build` is set. | `` there are several builds and none is named site; set [editor] build to the one the editor should check `` |
 
 ### 22.8 Sources
-@available: next
+@available: ascribe 0.2.0
 
 | Slug | Rule | Message |
 |---|---|---|

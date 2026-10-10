@@ -45,7 +45,7 @@ The source pages go in `content/`. If your Ascribe project lives elsewhere, such
 
 The schema's path is `<output-dir>/<build>/site/_ascribe/schema.ts`, in the directory holding `ascribe.toml`. Importing it by path keeps its exact types, so `entry.data` is typed from your content types. If you change `[project] output-dir`, the build, or the integration's `project`, change this line too.
 
-@available: next
+@available: ascribe 0.2.0
 If the Ascribe project is outside the Astro root (`project: "../docs"`), import the copy of the schema the integration writes inside it instead, `.astro/integrations/_ascribed_astro/schema.ts`, which is `../.astro/integrations/_ascribed_astro/schema.ts` from `src/content.config.ts`. The schema imports `astro/zod`, which TypeScript can only find from inside the Astro project, so type-checking (`astro check`, `tsc`) fails on the original there; Astro's own build works with either. The integration updates the copy after each build.
 
 ### 5. Add a route
@@ -60,17 +60,17 @@ Entry ids are Astro's own: `Guides/My Setup.md` is `guides/my-setup`.
 
 A layout loads the element library and shows the page's availability:
 
-@available: next
+@available: ascribe 0.2.0
 @snippet {title=src/layouts/Docs.astro}: code:examples/astro-site/src/layouts/Docs.astro
 
 `<Elements />` loads the element library's stylesheet and the small script `<ascribe-tabs>` needs. The layout is yours: the page title, navigation, and table of contents (`headings` from `render`) come from your own components.
 
-@available: next
+@available: ascribe 0.2.0
 The example's content model sets `inline = "code"` on `title`, so a title can show code, as "`` `loom.yaml` options ``". `entry.data.title` is then plain text, for `<title>` and search, and `entry.data.formatted.title` is the title as HTML, with each code span a `<code>`, for the heading and navigation (`set:html`). Without the setting, there's no `formatted`: use `title` everywhere. See [code in a field](../reference/content-model.md#53-code-in-a-field).
 
 A page's `available` frontmatter reaches the layout as `entry.data.available`: a list of targets, each with the text to show.
 
-@available: next
+@available: ascribe 0.2.0
 `<Availability available={entry.data.available} />`, from `@ascribed/astro/Availability.astro`, renders it as a badge, as the layout above does: the same markup the site output gives a section's `@available`, which the element library styles. It renders nothing for a page with no availability.
 
 In a release without `Availability.astro`, copy [its markup]({repo}/blob/main/packages/astro/src/Availability.astro) into your layout in place of the component.
@@ -89,9 +89,9 @@ npx astro build
 | `build` | The build whose site output is the collection: a build name in `ascribe.toml`. Required. |
 | `project` | The directory holding `ascribe.toml`, relative to the Astro root. By default, the root. |
 | `binary` | The `ascribe` binary to run, relative to the Astro root. By default, the `ASCRIBE_BIN` environment variable, then the binary `@ascribed/cli` installed. |
-| `anchors` {available=next} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
-| `review` {available=next} | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. |
-| `codeTitles` {available=next} | Show a code block's title above it ([code block titles](#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
+| `anchors` {available="ascribe 0.2.0"} | Mark each block of the page with the source file and lines it came from (`data-ascribe-source`; see the [site-render contract](../contracts/site-render.md#7-source-anchors)), for review: `"dev"` in `astro dev` only, `true` in `astro build` too. Use `"dev"` unless the build is for reviewers: `true` puts source file paths, fragments' included, in the published pages. By default, `false`, though `review` turns them on in `astro dev`. |
+| `review` {available="ascribe 0.2.0"} | [Review in the site preview](#review-in-the-site-preview): the **Ascribe review** app in `astro dev`'s toolbar. `false` leaves it out. By default, `true`. `astro build` never has it. |
+| `codeTitles` {available="ascribe 0.2.0"} | Show a code block's title above it ([code block titles](#code-block-titles)). `false` leaves titles out, for a site that shows them itself. By default, `true`. |
 
 ## What the integration does
 
@@ -100,9 +100,9 @@ npx astro build
 - **Serves the files pages link to** (other than pages and images) at `<base>_ascribe/files/`, in `astro dev` and in the built site.
 - @available: next
   **Publishes the outputs for agents** with `[consumer] agents = true`: `llms.txt` and each page's Markdown, in `astro dev` and in the built site ([Publish for AI agents](#publish-for-ai-agents)).
-- @available: next
+- @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](#code-block-titles)).
-- @available: next
+- @available: ascribe 0.2.0
   **Copies the generated schema** into `.astro/integrations/_ascribed_astro/schema.ts` after each build, for a project outside the Astro root ([step 4](#4-define-the-collection)).
 
 ### In `astro dev`
@@ -111,7 +111,7 @@ npx astro build
 - After a successful rebuild, Astro reloads the collection and the page.
 - After a failed one, the diagnostics are in Astro's terminal, and pages answer with HTTP 503 until a save builds cleanly again, so you never see a stale page.
 - A change to `[project] output-dir` needs a restart of `astro dev`, and says so.
-- @available: next
+- @available: ascribe 0.2.0
   It writes where it's running (`url` and `build`) to `.ascribe/dev.json` in the project, for the editor's [Open Site Preview](editor.md#site-preview), and removes the file when it stops.
 
 ## Publish for AI agents
@@ -139,7 +139,7 @@ The files are static, so any host serves them. A few things the spec asks are th
 - **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
 
 ## Review in the site preview
-@available: next
+@available: ascribe 0.2.0
 
 In `astro dev`, Astro's dev toolbar has an **Ascribe review** app. It shows a pull request's changes and review comments on the real page, in your site's layout: the same marks and threads as the editor's [page preview](editor.md#review-in-the-preview), from the same [`@ascribed/review`]({repo}/blob/main/packages/review/README.md) overlay. Nothing runs until you open the app: opening it starts review, and after **Stop Review**, the panel offers **Start Review**. [Review](review.md) walks through reviewing a pull request with it; this section is the reference for the site's side.
 
@@ -165,7 +165,7 @@ Comparing again after a save runs `ascribe diff` once, which takes about as long
 The elements render into the page (no shadow DOM), so your site's styles apply to them, and they're themed with CSS custom properties such as `--ascribe-tip-color` and `--ascribe-tab-active-color`. The [element library's README]({repo}/blob/main/packages/elements/README.md#theming) lists them, and shows how to style your own note types and lifecycle states. Their names don't change, but their default colors are Ascribe's and may change in a release, as the changelog notes, so set the ones your site needs fixed.
 
 ### Code block titles
-@available: next
+@available: ascribe 0.2.0
 
 A code block's title, such as a [`@snippet`](../reference/directives.md#snippet)'s `title`, is in its info string (`` ```mjs title="astro.config.mjs" ``). Astro's highlighting ignores it, so the integration adds a Shiki transformer that puts a titled block in a figure with the title as its caption:
 

@@ -121,7 +121,7 @@ A file with no `ascribe.toml` above it has nothing to preview: "This file isn't 
 
 The preview shows images and files from the content root, and from directories elsewhere in the project that a page uses. For safety, it runs no inline scripts and loads nothing remote, so raw HTML that needs either looks different in the preview than on the site.
 
-@available: next
+@available: ascribe 0.2.0
 A [`@snippet`](../reference/directives.md#snippet) is read again when its page changes, not when its code file does, so the preview and the page's problems don't follow edits to the code. To see them, change the page, or run **Ascribe: Restart Language Server**.
 
 ### Site preview
@@ -179,7 +179,7 @@ The other three views show the active file's project. They follow the active edi
 Pages and Content model update when you save a file of the project, when a page is added or deleted, and when you switch to another project's file; Used by updates as you move between pages and headings, while it's open.
 
 ### The status bar
-@available: next
+@available: ascribe 0.2.0
 
 While a page or an `ascribe.toml` is the active editor, the status bar names its project and the build you're looking at, such as **docs · site**, with an icon for its language server: a book while it runs, a spinning arrow while it starts, and a warning when it failed. Its tooltip gives the project's folder, its `ascribe.toml`, the `ascribe` binary in use, and the server's state. A file that isn't in a project shows nothing.
 
@@ -195,7 +195,7 @@ Each project has one **build you're looking at**, for the rest of the session: t
 The lens has no build of its own: it dims by the [build you're looking at](#the-status-bar), so with the preview open the two always show the same build. While the lens is on, the status bar shows an eye, such as **docs · self-hosted**. It follows your edits, unsaved ones included, and changes to `ascribe.toml`. What's dimmed is what `ascribe build` leaves out, decided the same way. Content an `@include` brings in is in another file and isn't shown. Dimming changes nothing in the text, its folding, or its problems. Run the command again, or pick **Stop dimming what the build leaves out**, to turn it off; it stays on for the project until then, or until the window closes.
 
 ### Review in the preview
-@available: next
+@available: ascribe 0.2.0
 
 The preview can mark what changed against a git revision, the **base**, as [`ascribe diff`](../reference/cli.md#ascribe-diff) reports it: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](review.md) walks through reviewing a pull request, start to finish; this section and the next are the reference for the editor's part.
 
@@ -206,7 +206,7 @@ With review on, the preview's header shows the base, how many changes the page h
 **Ascribe: Changed Pages**, also the list button in the preview's title bar, lists the pages the change touches in the preview's build, by title, each with its counts and, when its own file didn't change, what it changed through. A title with [code](../reference/content-model.md#53-code-in-a-field) shows it between backticks, as in "`` `loom.yaml` options ``"; the preview's heading shows it as code. Choosing one opens it and its preview.
 
 ### Comments in the preview
-@available: next
+@available: ascribe 0.2.0
 
 When your branch has an open pull request on GitHub, review shows its review threads beside the blocks they're on, and lets you review the change there. **Start Review** looks for the pull request first, and then offers its base as the first choice. The header names the pull request ("#128 against main"); the number opens it on GitHub, and **Comments (N)** lists every comment on the pull request's pages.
 
