@@ -78,7 +78,7 @@ pub fn rules(project: &Project, dir: &RelPath, root: &RelPath) -> String {
 pub fn pointer(project: &Project, dir: &RelPath) -> String {
     let at = At::new(project, dir, dir);
     format!(
-        "## Ascribe documentation in `{}`\n\n{} Its rules are in `{}`: read them before \
+        "## Ascribe documentation in `{}`\n\n{} This project's rules are in `{}`: read them before \
          editing a page there.\n\n{}\n",
         at.folder(&RelPath::root()),
         at.about(),
@@ -117,17 +117,27 @@ struct At {
     content: RelPath,
     /// The project's folder from the repository's root, where commands run.
     root: RelPath,
+    /// The folders of other projects nested in the content root, as the
+    /// reader writes them.
+    nested: Vec<RelPath>,
 }
 
 impl At {
     fn new(project: &Project, dir: &RelPath, root: &RelPath) -> At {
         let layout: &Layout = project.layout();
+        let content = dir
+            .join(layout.content_root.as_str())
+            .unwrap_or_else(|_| dir.clone());
+        let nested = project
+            .nested_projects()
+            .iter()
+            .map(|n| content.join(n.as_str()).unwrap_or_else(|_| n.clone()))
+            .collect();
         At {
             dir: dir.clone(),
-            content: dir
-                .join(layout.content_root.as_str())
-                .unwrap_or_else(|_| dir.clone()),
+            content,
             root: root.clone(),
+            nested,
         }
     }
 
@@ -163,19 +173,37 @@ impl At {
         }
     }
 
-    /// The first paragraph: what the pages are and where.
+    /// The first paragraph: what the pages are and where, and the folders in
+    /// it that are other projects', whose rules these aren't.
     fn about(&self) -> String {
         let content = if self.content.is_root() {
             "./".to_owned()
         } else {
             format!("{}/", self.content.as_str())
         };
-        format!(
+        let mut out = format!(
             "The Markdown pages under `{content}` are Ascribe documentation: pages with YAML \
              frontmatter, `@` directives, and `{{key}}` phrases, checked against the content \
              model in `{}`.",
             self.path("ascribe.toml")
-        )
+        );
+        let folders: Vec<String> = self
+            .nested
+            .iter()
+            .map(|n| format!("`{}/`", n.as_str()))
+            .collect();
+        if let Some((last, rest)) = folders.split_last() {
+            let (list, which) = if rest.is_empty() {
+                (last.clone(), "that folder is")
+            } else {
+                (format!("{} and {last}", rest.join(", ")), "each folder is")
+            };
+            out.push_str(&format!(
+                " The pages under {list} aren't: {which} another project's, with its own \
+                 `ascribe.toml` and rules."
+            ));
+        }
+        out
     }
 
     /// The loop, as a check to run.

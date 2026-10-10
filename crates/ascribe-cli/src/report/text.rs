@@ -63,9 +63,19 @@ pub fn write_reported(
     writeln!(out, "{summary}")
 }
 
-/// Writes the counts by code and by file, most first, for `--summary`; the
-/// summary line follows.
-pub fn write_tally(out: &mut dyn Write, codes: &[ByCode], by_file: &[ByFile]) -> io::Result<()> {
+/// The most files `--summary` lists. The rest are counted, with the command
+/// that lists them all.
+pub const TALLY_FILES: usize = 20;
+
+/// Writes the counts by code and by file, most first, for `--summary`: at
+/// most [`TALLY_FILES`] files, then `and N more files: <more>`. The summary
+/// line follows.
+pub fn write_tally(
+    out: &mut dyn Write,
+    codes: &[ByCode],
+    by_file: &[ByFile],
+    more: &str,
+) -> io::Result<()> {
     if codes.is_empty() {
         return Ok(());
     }
@@ -89,13 +99,20 @@ pub fn write_tally(out: &mut dyn Write, codes: &[ByCode], by_file: &[ByFile]) ->
         )?;
     }
     writeln!(out, "By file:")?;
-    for f in by_file {
+    for f in by_file.iter().take(TALLY_FILES) {
         writeln!(
             out,
             "  {:>width$}  {} ({})",
             f.counts.total(),
             f.file,
             counted(f.counts)
+        )?;
+    }
+    if by_file.len() > TALLY_FILES {
+        writeln!(
+            out,
+            "  and {} more files: {more}",
+            by_file.len() - TALLY_FILES
         )?;
     }
     Ok(())

@@ -298,7 +298,8 @@ pub fn write(
         (Format::Prompt, _) => write_prompt(out, project, args, scope.as_ref(), reported),
         (Format::Text | Format::Concise, true) => {
             let (codes, by_file) = tally(files, reported);
-            text::write_tally(out, &codes, &by_file).and_then(|()| writeln!(out, "{summary}"))
+            text::write_tally(out, &codes, &by_file, &command.tally())
+                .and_then(|()| writeln!(out, "{summary}"))
         }
         (Format::Text, false) => text::write_reported(out, files, reported, &summary, color),
         (Format::Concise, false) => {
@@ -448,6 +449,17 @@ impl<'a> Command<'a> {
     /// This command without `--summary`, writing JSON: what lists every
     /// diagnostic a summary counts.
     fn listing(&self) -> String {
+        self.with_format(false)
+    }
+
+    /// This command with `--summary`, writing JSON: what lists every file a
+    /// summary counts.
+    fn tally(&self) -> String {
+        self.with_format(true)
+    }
+
+    /// This command writing JSON, with `--summary` or without.
+    fn with_format(&self, summary: bool) -> String {
         let mut words = vec!["ascribe".to_owned(), "check".to_owned()];
         match &self.args.path {
             Some(path) if self.args.stdin => {
@@ -458,6 +470,9 @@ impl<'a> Command<'a> {
             _ => words.extend(self.args.paths.iter().map(|p| quote(&p.to_string_lossy()))),
         }
         words.extend(self.options());
+        if summary {
+            words.push("--summary".to_owned());
+        }
         words.extend(["--format".to_owned(), "json".to_owned()]);
         words.join(" ")
     }

@@ -40,6 +40,8 @@ npx ascribe check
 
 Read [Getting started](https://ascribed-dev.com/getting-started/), then the rest of the [documentation](https://ascribed-dev.com/).
 
+To write docs with an AI coding agent, such as Claude Code, GitHub Copilot, Cursor, or Codex, read [Agents](https://ascribed-dev.com/guides/agents/): `npx ascribe agents sync` gives your agent the project's rules and a skill that teaches it to check its own work.
+
 | Package | What it is |
 |---|---|
 | [`@ascribed/cli`](packages/cli) | The `ascribe` command: `check`, `build`, `fmt`, and the language server |

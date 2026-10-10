@@ -19,6 +19,8 @@ Ascribe pages are Markdown with YAML frontmatter, `@` directives, and `{phrase}`
 
 `ascribe check` exits with 0 when there are no errors, 1 when there are, and 2 when it couldn't check at all (no `ascribe.toml` at or above the file, a content model with errors, a path outside the project). Exit code 2 isn't a problem in a page: read its message.
 
+When `ascribe` isn't on the path, the project may pin it in a `package.json`: run it as `npx ascribe`, or `pnpm exec ascribe` with pnpm.
+
 `--editor-build` checks only the editor's build, which is quicker on a large project: use it after each edit, and the full check before you finish.
 
 **Stop after three rounds.** If the same errors remain after three rounds of checking and fixing, stop and ask the user. More rounds rarely help.

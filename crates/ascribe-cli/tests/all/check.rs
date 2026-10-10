@@ -1030,6 +1030,37 @@ fn summary_counts_by_code_and_by_file_instead_of_listing() {
 }
 
 #[test]
+fn summary_lists_at_most_twenty_files() {
+    let page = "---\ntitle: A\n---\n\nUse {nope}.\n";
+    let names: Vec<String> = (0..25).map(|i| format!("p{i:02}.md")).collect();
+    let pages: Vec<(&str, &str)> = names.iter().map(|n| (n.as_str(), page)).collect();
+    let dir = project(&pages);
+    let text = stdout(&ascribe(dir.path(), &["check", "docs", "--summary"]));
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(
+        lines[3], "   1  docs/p00.md (0 errors, 1 warning)",
+        "{text}"
+    );
+    assert_eq!(
+        lines[22], "   1  docs/p19.md (0 errors, 1 warning)",
+        "{text}"
+    );
+    assert_eq!(
+        lines[23],
+        "  and 5 more files: ascribe check docs --summary --format json"
+    );
+    // The JSON lists them all.
+    let report = json_of(&ascribe(
+        dir.path(),
+        &["check", "docs", "--summary", "--format", "json"],
+    ));
+    assert_eq!(
+        report["summary"]["by_file"].as_array().map(Vec::len),
+        Some(25)
+    );
+}
+
+#[test]
 fn every_fix_says_whether_it_is_safe() {
     let dir = project(&[
         (
