@@ -23,15 +23,24 @@ export interface Forwarding {
   to: string;
 }
 
-/** The list in a build's site output, or `undefined` when there isn't one. */
-export function readPermalinks(siteRoot: string): PermalinkList | undefined {
-  const file = path.join(siteRoot, "_ascribe", "permalinks.json");
-  let text: string;
+/** The list's text in a build's site output, or `undefined` when there isn't one. */
+export function permalinksText(siteRoot: string): string | undefined {
   try {
-    text = readFileSync(file, "utf8");
+    return readFileSync(listFile(siteRoot), "utf8");
   } catch {
     return undefined;
   }
+}
+
+function listFile(siteRoot: string): string {
+  return path.join(siteRoot, "_ascribe", "permalinks.json");
+}
+
+/** The list in a build's site output, or `undefined` when there isn't one. */
+export function readPermalinks(siteRoot: string): PermalinkList | undefined {
+  const file = listFile(siteRoot);
+  const text = permalinksText(siteRoot);
+  if (text === undefined) return undefined;
   const list = JSON.parse(text) as PermalinkList;
   if (list.version !== VERSION) {
     throw new Error(
