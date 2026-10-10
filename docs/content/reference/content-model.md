@@ -252,6 +252,7 @@ Grammar (ABNF, with the rules of SPEC Appendix A):
 | `phrases` | boolean | `false` | Whether phrases ([SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §11. |
 | `inline` | string | none | `"code"` reads the value's code spans. Allowed only on a content type's top-level `string` fields (and `string?`). See §5.3. |
 | `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
+| `role` | string | none | What the field is for, which a check reads: `"description"` or `"review-date"`. Allowed only on a content type's top-level fields. See §5.4. |
 
 Nesting beyond one level of `fields` is allowed but discouraged; keep frontmatter flat.
 
@@ -281,6 +282,27 @@ Each output has the title both ways: as plain text, `ascribe.toml reference`, an
 - **Review** shows the formatted title where a page's title is a heading or a list entry: the heading of VS Code's page preview, the HTML report's list of pages and its page headings, and the list of comments in the editor and the site preview. **Ascribe: Changed Pages**, which can show only text, writes the code spans between backticks. Tooltips, buttons, and search keep the plain text.
 
 Only a content type's own `string` fields can set it, not fields in objects or the fragment schema, and `"code"` is its only value (`model-inline-field`).
+
+### 5.4 Field roles
+
+@available: next
+A field's name is yours to choose, so a check that needs a page's description or the date it's due for review reads the field the content type marks with a `role`:
+
+```toml
+[types.guide.frontmatter]
+title = "string"
+summary = { type = "string?", role = "description" }
+review-by = { type = "date?", role = "review-date" }
+```
+
+| Role | The field's type | What reads it |
+|---|---|---|
+| `description` | `string`, optional or not | [`page-description-missing`](diagnostics.md#asc145-page-description-missing) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report. |
+| `review-date` | `date`, optional or not | [`review-overdue`](diagnostics.md#asc148-review-overdue) reports a page whose date has passed. |
+
+Without a role, those checks don't look at the type's pages. A role changes nothing in the outputs.
+
+**Rules.** A role is one of the two (`model-field-role`), on a field of its type, in a content type's own fields: not a field in an object, nor in the fragment schema. Two fields of one type can't have the same role.
 
 ---
 
@@ -609,21 +631,22 @@ How loudly each check about your content's quality speaks: whether it's reported
 
 ```toml
 [checks]
-some-check = "warning"
+code-language-missing = "warning"
 
-[checks.another-check]
-level = "off"
+[checks.page-size]
+level = "warning"
+limit = 40_000
 ```
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's name, as the [diagnostics reference](diagnostics.md) lists it. The value is its level: `"off"`, `"advice"`, `"warning"`, or `"error"`. Or it's a table with `level` and the check's own settings, which its entry in the reference lists; without `level`, the check keeps its own. |
 
-Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named, and none is yet, so `[checks]` can't have a key yet. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
+Only a check the [diagnostics reference](diagnostics.md#setting-a-checks-level) marks configurable can be named; that section lists them, with their settings. `page-size` has one: `limit`, a whole number of characters above 0, `50_000` unless set. `[checks.vale]` and `[checks.links]` are reserved for the settings of tools Ascribe runs.
 
 Advice is shown in the editor and by `ascribe check`, and never fails the check, even with `--deny-warnings`. A check set to `off` isn't reported at all.
 
-**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`). A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`).
+**Rules.** A key that isn't a check is an unknown key, with the closest check suggested (`model-unknown-key`), and so is a setting the check doesn't have. A check that isn't configurable can't be named (`model-check-not-configurable`). A level is one of the four (`model-invalid-value`), and `limit` is a whole number above 0 (`model-wrong-type`).
 
 ---
 

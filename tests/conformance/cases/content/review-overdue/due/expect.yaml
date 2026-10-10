@@ -1,0 +1,7 @@
+description: >-
+  A review date of the day it's checked on, or later, isn't overdue.
+spec: ["7.2", "8.2"]
+tags: [check]
+today: "2026-10-10"
+
+diagnostics: []

@@ -114,6 +114,7 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Spec version (§11) | `spec` | [§3](#3-top-level-spec) |
 | Content root (§2.2); output directory (§9.4) | `[project]` | [§4](#4-project) |
 | Content types: page schemas and the fragment schema (§2.1, §2.2) | `[types.<name>]`, `[fragments.frontmatter]` | [§5](#5-typesname-and-fragments) |
+| Field roles (§7.2) | The `role` field option | [§6.4](#64-field-roles) |
 | Fragment patterns (§2.2) | `[fragments] patterns` | [§5.3](#53-fragments) |
 | Field types (§7.2) | Field type syntax | [§6](#6-field-and-attribute-types) |
 | Directive schemas for project widgets (§3, §6) | `[widgets.<name>]` | [§15](#15-widgetsname) |
@@ -279,6 +280,7 @@ Grammar (ABNF, with the rules of SPEC Appendix A):
 | `phrases` | boolean | `false` | Whether phrases (SPEC §5.1) are substituted in this field's value. Field types only; allowed only on `string` and `list(string)` fields (and their optional forms), including fields nested in objects. See §12. |
 | `inline` | string | none | The inline markup the value is read with. The one value is `"code"`: code spans. Allowed only on a content type's top-level `string` fields (and `string?`), not in objects or the fragment schema. See §6.3. |
 | `description` | string | none | Help text shown by the editor (hover and completion) and emitted into generated schemas as documentation. |
+| `role` | string | none | What the field is for, for the checks that read it (SPEC §7.2): `"description"` or `"review-date"`. Allowed only on a content type's top-level fields, not in objects or the fragment schema. See §6.4. |
 
 Nesting beyond one level of `fields` is allowed but discouraged; keep frontmatter flat.
 
@@ -311,6 +313,22 @@ Each output carries two forms of the value. The **plain text** is the value with
 | Generated Zod schema | The field, as `z.string()` | `formatted`, with a `z.string()` for each field |
 
 A field the page leaves out gets its default's formatted form, so `formatted.<field>` is there whenever the field has a value. The setting is per field, not on for every `string`, so a backtick in an existing field keeps its meaning.
+
+---
+
+### 6.4 Field roles
+@available: next
+
+A page type's top-level field MAY have a `role`, which says what the field is for, so a check reads it whatever the field's name (SPEC §7.2):
+
+| Role | The field's type | Read by |
+|---|---|---|
+| `description` | `string` or `string?` | `page-description-missing`, which reports a page of the type whose field is absent, null, or blank. A field that's required or has a default is never absent, so the check skips it. |
+| `review-date` | `date` or `date?` | `review-overdue`, which reports a page whose date is before the day the check runs. |
+
+A type without a field with the role has none of that check's diagnostics. A role changes no output: not the generated schemas, the JSON, or the pages.
+
+**Rules** (§22.3): the role is one of the two, on a field of its type, in a content type's own fields, and at most one field of a type has each role (`model-field-role`). A second field with a role keeps its type, and loses the role.
 
 ---
 
@@ -655,25 +673,32 @@ missing = ["examples/quickstart.ts"]
 ## 20. `[checks]`
 @available: next
 
-How loudly each check about the content's quality speaks. A diagnostic about whether the project is valid can't be named here: its severity is the registry's. No check is configurable yet, so the table can't have a key yet; the two forms a key's value takes are:
+How loudly each check about the content's quality speaks. A diagnostic about whether the project is valid can't be named here: its severity is the registry's. The two forms a key's value takes are:
 
 ```toml
 [checks]
-some-check = "warning"                # a level
+code-language-missing = "warning"     # a level
 
-[checks.another-check]                # or a table: the level, and the check's own settings
+[checks.page-size]                    # or a table: the level, and the check's own settings
 level = "off"
+limit = 40_000
 ```
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's slug, as the [diagnostics reference](../reference/diagnostics.md) lists it. The value is a level: `"off"` (not reported), `"advice"`, `"warning"`, or `"error"`. Or it's a table with an optional `level` and the check's own settings, which the reference lists with the check; a table without `level` keeps the check's own level. |
 
-Only a check the diagnostics registry marks configurable can be named. The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name.
+Only a check the diagnostics registry marks configurable can be named; the [diagnostics reference](../reference/diagnostics.md#content-checks) lists them. The settings a check's table takes:
+
+| Check | Setting | Type | Default | Description |
+|---|---|---|---|---|
+| `page-size` | `limit` | integer | `50000` | The size, in characters of a page's plain Markdown in a build, at which the page is reported. It MUST be above 0. |
+
+The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name.
 
 A level changes how a diagnostic is reported everywhere: by `ascribe check` and `ascribe build`, and in the editor. Advice is shown, and never fails `ascribe check`, even with `--deny-warnings`; a check set to `off` isn't reported at all.
 
-**Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); and a value is a string or a table (`model-wrong-type`).
+**Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); a value is a string or a table, and `limit` a whole number above 0 (`model-wrong-type`).
 
 ---
 
@@ -749,6 +774,7 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | `model-phrases-field-type` | `phrases = true` is set only on `string` and `list(string)` fields. | `` phrases = true only works on string and list(string) fields, and `{field}` is "{type}" `` |
 | `model-inline-field` | `inline` is `"code"`, and is set only on a content type's top-level `string` fields (§6.3). | `` inline = "code" only works on string fields, and `{field}` is "{type}" ``<br>`` inline must be "code", not "{value}" ``<br>`` inline = "code" only works on a content type's top-level fields, and `{field}` is in {place} `` |
 | `model-pattern-syntax` | Every pattern parses under §1.3, doesn't start with `/`, and has no `..` segment. | `` "{pattern}" isn't a valid pattern: {detail} ``<br>`` pattern "{pattern}" is already relative to the content root; remove the leading / ``<br>`` pattern "{pattern}" can't contain .. `` |
+| `model-field-role` | `role` is `"description"`, on a `string` field, or `"review-date"`, on a `date` field; only on a content type's top-level fields; and a type has at most one field with each role (§6.4). | `` role = "{role}" only works on a {expected} field, and `{field}` is "{type}" ``<br>`` role must be "description" or "review-date", not "{value}" ``<br>`` role only works on a content type's top-level fields, and `{field}` is in {place} ``<br>`` `{other}` already has role = "{role}"; a content type has one field with each role `` |
 | `model-attribute-reserved` | No image or widget attribute key is one HTML already gives a meaning on that element (SPEC §7.2): `src`, `alt`, or `title` on images; `heading` or `primary` on widgets; and on both, HTML's global attributes (such as `id`, `class`, `style`, and `title`), any key starting with `aria-`, and HTML's event-handler attributes (such as `onclick`, `onload`, and `onerror`). The lists are explicit, in `ascribe_core::reserved`, so keys that merely begin with `on`, such as `online` or `only-if`, are allowed. | `` `{key}` can't be an image attribute: HTML already uses it on the <img> element ``<br>`` `{key}` can't be an attribute of widget `{name}`: the site output already uses it on the widget's element `` |
 
 ### 22.4 Dimensions, names, lifecycle, notes, and features
@@ -856,3 +882,4 @@ Each item settles a gap in SPEC.md. All 21 were decided on 2026-09-28 as recomme
 20. **Phrases in frontmatter (SPEC §5.1).** *Decision:* opt in per field with `phrases = true`, on `string` and `list(string)` fields only; off by default.
 21. **Spec version matching (SPEC §11).** *Decision:* `spec` is a quoted string that must exactly equal a version the processor implements; `"0.1"` for now. Revisit compatibility ranges when 0.2 exists.
 22. **Code in a page title (SPEC §7.2).** *Decision:* opt in per field with `inline = "code"`, on a content type's top-level `string` fields, and code spans only (§6.3). Every output carries the plain text and the formatted form. *Considered:* reading code spans in every title, which would change the meaning of every existing title with a backtick and make `title` the one string field that isn't plain text; and links or emphasis in titles, which go wrong where a title becomes the text of another link.
+23. **Fields the checks read (SPEC §7.2).** A check of a page's description or its review date needs to know which field holds it, and a project names its fields. *Decision:* a `role` on the field (§6.4), so the type that has the field says what it is, and a type without one opts out of the check. *Considered:* a `field` setting in each check's `[checks]` table, which names one field for every type, so two types with different names for their description can't both be checked, and a type without the field is reported as missing it; and fixed names, such as `description`, which take a name from every project.

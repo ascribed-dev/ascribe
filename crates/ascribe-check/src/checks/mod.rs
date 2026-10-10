@@ -10,11 +10,13 @@
 //! | `attrs` | Attribute keys and types, `@variant` dimensions, required attributes |
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
+//! | `content` | A page's description and review date, code blocks' languages |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
 
 mod attrs;
 mod avail;
+mod content;
 mod frontmatter;
 mod refs;
 mod sources;
@@ -42,6 +44,9 @@ struct Ctx<'a> {
     /// The file's link reference definitions, whose destinations hold the
     /// phrases of the reference forms that use them.
     definitions: Vec<ascribe_syntax::LinkDefinition>,
+    /// The text of the file's first paragraph, for a prompt about its
+    /// description.
+    first_paragraph: Option<String>,
     issues: Vec<Issue>,
 }
 
@@ -89,6 +94,7 @@ pub fn check_file(project: &Project, file: &SourceFile) -> Vec<Diagnostic> {
         id: file.id,
         schemas: model.directive_schemas(),
         definitions: doc.definitions.clone(),
+        first_paragraph: content::first_paragraph(&file.text, &doc.blocks),
         issues: doc.issues.clone(),
     };
     cx.check_frontmatter(doc.frontmatter.as_ref());
@@ -183,8 +189,8 @@ impl Ctx<'_> {
                         self.blocks(&arm.children);
                     }
                 }
-                BlockKind::CodeBlock(_)
-                | BlockKind::HtmlBlock(_)
+                BlockKind::CodeBlock(code) => self.check_code_language(block, code),
+                BlockKind::HtmlBlock(_)
                 | BlockKind::ThematicBreak
                 | BlockKind::End(_)
                 | BlockKind::Title(_) => {}

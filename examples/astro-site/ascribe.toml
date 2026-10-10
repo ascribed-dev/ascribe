@@ -21,7 +21,7 @@ default = true
 # `inline = "code"`: a title can show code, as "`loom.yaml` options".
 [types.page.frontmatter]
 title = { type = "string", inline = "code" }
-description = "string?"
+description = { type = "string?", role = "description" }
 
 # `@variant {pm=npm}:` and friends: a group the site keeps as tabs.
 [dimensions.pm]

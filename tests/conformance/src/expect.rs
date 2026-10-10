@@ -39,6 +39,11 @@ pub struct Expect {
     /// Per-build expectations, keyed by build name from the content model.
     #[serde(default)]
     pub builds: BTreeMap<String, BuildExpect>,
+    /// The day the checks run on, `YYYY-MM-DD`, for a case whose
+    /// diagnostics depend on it (a review date). Without it, the checks have
+    /// no day, and no review is overdue.
+    #[serde(default)]
+    pub today: Option<String>,
 }
 
 /// An expected diagnostic.
@@ -56,6 +61,10 @@ pub struct ExpectedDiagnostic {
     /// The 1-based column, counted in Unicode scalar values. Compared only when given.
     #[serde(default)]
     pub column: Option<u32>,
+    /// `error`, `warning`, or `advice`, after the content model's `[checks]`
+    /// levels. Compared only when given.
+    #[serde(default)]
+    pub severity: Option<String>,
 }
 
 impl fmt::Display for ExpectedDiagnostic {
@@ -69,6 +78,9 @@ impl fmt::Display for ExpectedDiagnostic {
         )?;
         if let Some(col) = self.column {
             write!(f, ":{col}")?;
+        }
+        if let Some(severity) = &self.severity {
+            write!(f, " ({severity})")?;
         }
         Ok(())
     }

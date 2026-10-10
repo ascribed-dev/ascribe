@@ -1,0 +1,12 @@
+description: >-
+  A role belongs on a page type's top-level field of its type: a string for
+  `description`, a date for `review-date`. A type has one field with each
+  role, a role is one of those two, and a fragment's fields have none.
+spec: ["7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-field-role, file: ascribe.toml, line: 8}
+  - {slug: model-field-role, file: ascribe.toml, line: 9}
+  - {slug: model-field-role, file: ascribe.toml, line: 11}
+  - {slug: model-field-role, file: ascribe.toml, line: 15}

@@ -224,6 +224,14 @@ Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md
 
 **Fix:** Remove `inline`, or set it to "code" on a string field of a content type's `frontmatter`.
 
+#### ASC143 `model-field-role`
+
+Error · file level · next step: write · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
+
+**Message:** role = "\{role}" only works on a \{expected} field, and `{field}` is "\{type}"
+
+**Fix:** Give `role = "description"` to one string field of a content type's `frontmatter`, and `role = "review-date"` to one date field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles.
+
 ### Dimensions, names, lifecycle states, notes, and features
 
 #### ASC082 `model-name-multiple-roles`

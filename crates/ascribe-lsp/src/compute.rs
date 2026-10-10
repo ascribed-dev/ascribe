@@ -51,6 +51,8 @@ pub(crate) struct Job {
     /// them before using them.
     pub cache: Arc<Mutex<ResolvedCache>>,
     pub affected: Vec<Affected>,
+    /// The day the checks run on.
+    pub today: Option<ascribe_core::Date>,
 }
 
 /// What a round produced: the diagnostics of each file it computed.
@@ -65,6 +67,7 @@ impl Core {
     /// Takes the work to do, if there is any.
     pub(crate) fn plan(&mut self) -> Option<Job> {
         let encoding = self.encoding;
+        let today = self.today();
         let loaded = self.loaded.as_mut()?;
         if loaded.dirty.is_empty() {
             return None;
@@ -94,6 +97,7 @@ impl Core {
             versions,
             cache: loaded.cache.clone(),
             affected: std::mem::take(&mut loaded.pending),
+            today,
         })
     }
 
@@ -303,6 +307,7 @@ fn check_project_of(job: &Job) -> Project {
         &job.fs,
         &[],
     )
+    .with_today(job.today)
 }
 
 /// The checked project of `snapshot`, with each of `replaced`'s files holding

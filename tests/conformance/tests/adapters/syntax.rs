@@ -69,6 +69,7 @@ impl ConformanceAdapter for SyntaxAdapter {
                     file: file.clone(),
                     line: pos.line + 1,
                     column: pos.col + 1,
+                    severity: None,
                 });
             }
         }

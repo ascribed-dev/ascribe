@@ -32,6 +32,7 @@ export type Variant = z.infer<typeof variantSchema>;
 export const guideSchema = z.strictObject({
   title: z.string().describe("The page title, shown in navigation and the browser tab."),
   description: z.string().optional(),
+  "review-by": z.coerce.date().optional(),
   order: z.number().optional(),
   featured: z.boolean().optional(),
   updated: z.coerce.date().optional(),

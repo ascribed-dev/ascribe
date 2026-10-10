@@ -14,7 +14,10 @@ default = true
 # Short forms, then table forms.
 [types.guide.frontmatter]
 title = { type = "string", phrases = true, description = "The page title, shown in navigation and the browser tab." }
-description = "string?"
+# A role says what a field is to the page: the checks and the outputs read
+# the description and the review date from the fields that have them.
+description = { type = "string?", role = "description" }
+review-by = { type = "date?", role = "review-date" }
 order = "number?"
 featured = "boolean?"
 updated = "date?"
@@ -212,8 +215,11 @@ availability = { filter = "self-managed 3.5" }
 build = "site"
 # :snippet-end:
 
-# How loudly each check about the content's quality speaks. No check is
-# configurable yet, so the table is empty; a key is a check's name, and its
-# value a level ("off", "advice", "warning", or "error") or a table with
-# `level` and the check's settings.
+# How loudly each check about the content's quality speaks. A key is a
+# check's name, and its value a level ("off", "advice", "warning", or
+# "error") or a table with `level` and the check's settings.
 [checks]
+code-language-missing = "warning"
+
+[checks.page-size]
+limit = 40_000

@@ -1,0 +1,7 @@
+description: >-
+  A page with a description isn't reported, and neither is a fragment, which
+  has no content type.
+spec: ["7.2", "8.2"]
+tags: [check]
+
+diagnostics: []

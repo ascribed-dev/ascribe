@@ -48,7 +48,7 @@ pub use builds::{
 };
 pub use checks::check_file;
 use checks::check_sources;
-pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
+pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
 pub use levels::apply_levels;
 pub use page::{
     PageChecker, PageIndex, check_all_builds, check_builds, check_pages, check_project,

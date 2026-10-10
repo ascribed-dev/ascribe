@@ -50,7 +50,9 @@ pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_has
 pub use model::*;
 pub use names::{KEY_RULE, NAME_WORD_RULE, edit_distance, is_key, is_name_word, suggest};
 pub use pattern::{Pattern, PatternError};
-pub use types::{Field, FieldType, FrontmatterSchema, SchemaOwner, validate_frontmatter};
+pub use types::{
+    Field, FieldRole, FieldType, FrontmatterSchema, SchemaOwner, validate_frontmatter,
+};
 
 use ascribe_core::FileId;
 

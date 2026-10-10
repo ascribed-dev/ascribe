@@ -133,8 +133,13 @@ fn codes_are_sequential_and_slugs_unique() {
         });
         assert!(kebab, "{} isn't kebab-case", e.slug);
         assert!(
-            e.row.is_some() || e.group.is_some() || e.retired.is_some(),
-            "{}: every entry comes from a §8.2 row or a loader rule, or is retired",
+            e.row.is_some() || e.group.is_some() || e.area.is_some() || e.retired.is_some(),
+            "{}: every entry comes from a §8.2 row, a loader rule, or a content check's area, or is retired",
+            e.slug
+        );
+        assert!(
+            e.area.is_none() || (e.configurable && e.row.is_none() && e.group.is_none()),
+            "{}: `area` is for content checks, which are configurable and have no §8.2 row or group",
             e.slug
         );
     }

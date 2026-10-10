@@ -1,0 +1,7 @@
+description: >-
+  A blank description is no description: it's reported at its key.
+spec: ["7.2", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: page-description-missing, line: 3, column: 1}

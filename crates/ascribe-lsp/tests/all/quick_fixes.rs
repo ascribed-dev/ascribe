@@ -1076,6 +1076,7 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         ),
         ("directive-extra-text", "\n@steps foo\n1. One.\n", ""),
         ("phrase-double-braces", "\nInstall {{product}}.\n", ""),
+        ("heading-level-skipped", "\n#### Too deep\n\nText.\n", ""),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()

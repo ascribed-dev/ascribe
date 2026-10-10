@@ -460,6 +460,24 @@ pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-fiel
 pub const MODEL_CHECK_NOT_CONFIGURABLE: DiagnosticSlug =
     DiagnosticSlug("model-check-not-configurable");
 
+/// `ASC143`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_FIELD_ROLE: DiagnosticSlug = DiagnosticSlug("model-field-role");
+
+/// `ASC144`, advice, page level: SPEC §8.2, "Pages | A page's plain Markdown, in a build, is at least the size limit (page level, per build)".
+pub const PAGE_SIZE: DiagnosticSlug = DiagnosticSlug("page-size");
+
+/// `ASC145`, advice, file level: SPEC §8.2, "Pages | No description, when the page's content type marks a field as its description".
+pub const PAGE_DESCRIPTION_MISSING: DiagnosticSlug = DiagnosticSlug("page-description-missing");
+
+/// `ASC146`, advice, page level: SPEC §8.2, "Headings | More than one level below the heading before it, or level 1, which the page's title is (page level)".
+pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-skipped");
+
+/// `ASC147`, advice, file level: SPEC §8.2, "Code blocks | A fenced code block with no language".
+pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-missing");
+
+/// `ASC148`, advice, file level: SPEC §8.2, "Pages | The date in the field the page's content type marks as its review date has passed".
+pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -604,9 +622,21 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_UNUSED,
     MODEL_INLINE_FIELD,
     MODEL_CHECK_NOT_CONFIGURABLE,
+    MODEL_FIELD_ROLE,
+    PAGE_SIZE,
+    PAGE_DESCRIPTION_MISSING,
+    HEADING_LEVEL_SKIPPED,
+    CODE_LANGUAGE_MISSING,
+    REVIEW_OVERDUE,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
 /// registry's entries with `configurable = true`, in registry order. A test
 /// keeps it equal to the registry.
-pub const CONFIGURABLE: &[DiagnosticSlug] = &[];
+pub const CONFIGURABLE: &[DiagnosticSlug] = &[
+    PAGE_SIZE,
+    PAGE_DESCRIPTION_MISSING,
+    HEADING_LEVEL_SKIPPED,
+    CODE_LANGUAGE_MISSING,
+    REVIEW_OVERDUE,
+];

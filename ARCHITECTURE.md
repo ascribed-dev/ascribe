@@ -66,9 +66,9 @@ ascribe-syntax     core, comrak-ascribe
 ascribe-model      core
 ascribe-fmt        core, syntax, model
 ascribe-resolve    core, syntax, model
-ascribe-check      core, syntax, model, resolve
-ascribe-sources    core, model, resolve
 ascribe-emit       core, syntax, model, resolve, comrak-ascribe
+ascribe-check      core, syntax, model, resolve, emit
+ascribe-sources    core, model, resolve
 ascribe-diff       core, syntax, model, resolve, check, emit
 ascribe-query      core, model, resolve, check, emit
 ascribe-lsp        core, syntax, model, resolve, check, emit, diff, fmt

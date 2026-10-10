@@ -279,6 +279,26 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nmeta = { type = \"object\", fields = { label = { type = \"string\", inline = \"code\" } } } #!\n",
         ),
         case(
+            "model-field-role",
+            None,
+            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"date\", role = \"description\" } #!\n",
+        ),
+        case(
+            "model-field-role",
+            Some("value"),
+            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"string\", role = \"summary\" } #!\n",
+        ),
+        case(
+            "model-field-role",
+            Some("nested"),
+            "spec = \"0.1\"\n[fragments.frontmatter]\nsummary = { type = \"string\", role = \"description\" } #!\n",
+        ),
+        case(
+            "model-field-role",
+            Some("duplicate"),
+            "spec = \"0.1\"\n[types.a]\ndefault = true\n[types.a.frontmatter]\ntitle = \"string\"\nsummary = { type = \"string?\", role = \"description\" }\nabout = { type = \"string?\", role = \"description\" } #!\n",
+        ),
+        case(
             "model-pattern-syntax",
             None,
             "spec = \"0.1\"\n[fragments]\npatterns = [\"a/**b\"] #!\n",
@@ -557,6 +577,11 @@ fn cases() -> Vec<Case> {
             "model-check-not-configurable",
             None,
             "spec = \"0.1\"\n[checks]\nlink-target-missing = \"warning\" #!\n",
+        ),
+        case(
+            "model-wrong-type",
+            None,
+            "spec = \"0.1\"\n[checks.page-size]\nlimit = -1 #!\n",
         ),
     ]
 }

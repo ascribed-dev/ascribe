@@ -143,3 +143,9 @@
 | [ASC140](../reference/diagnostics.md#asc140-source-copy-unused) | `source-copy-unused` | Warning | File | write |
 | [ASC141](../reference/diagnostics.md#asc141-model-inline-field) | `model-inline-field` | Error | File | write |
 | [ASC142](../reference/diagnostics.md#asc142-model-check-not-configurable) | `model-check-not-configurable` | Error | File | write |
+| [ASC143](../reference/diagnostics.md#asc143-model-field-role) | `model-field-role` | Error | File | write |
+| [ASC144](../reference/diagnostics.md#asc144-page-size) | `page-size` | Advice | Page | write |
+| [ASC145](../reference/diagnostics.md#asc145-page-description-missing) | `page-description-missing` | Advice | File | write |
+| [ASC146](../reference/diagnostics.md#asc146-heading-level-skipped) | `heading-level-skipped` | Advice | Page | fix |
+| [ASC147](../reference/diagnostics.md#asc147-code-language-missing) | `code-language-missing` | Advice | File | choose |
+| [ASC148](../reference/diagnostics.md#asc148-review-overdue) | `review-overdue` | Advice | File | review |

@@ -8,7 +8,7 @@
 //! A `check` case that also carries `structure` or `parser` gets its
 //! diagnostics here, from the whole check, not from the parser alone.
 
-use ascribe_check::{Project, check_files};
+use ascribe_check::{Project, apply_levels, check_files};
 use ascribe_conformance::{
     AdapterError, AdapterResult, Case, CaseKind, ConformanceAdapter, Diagnostic,
 };
@@ -31,9 +31,10 @@ impl ConformanceAdapter for CheckAdapter {
     }
 }
 
-/// The project a case describes: its model, its sources, and its roots. A
-/// single-file case's content root is the case directory; a project case's
-/// is `files/`. Either way the case directory is the project root.
+/// The project a case describes: its model, its sources, its roots, and the
+/// day it's checked on. A single-file case's content root is the case
+/// directory; a project case's is `files/`. Either way the case directory is
+/// the project root.
 pub fn project(case: &Case) -> Result<Project, AdapterError> {
     let text = std::fs::read_to_string(&case.model)
         .map_err(|e| AdapterError(format!("couldn't read {}: {e}", case.model.display())))?;
@@ -51,13 +52,14 @@ pub fn project(case: &Case) -> Result<Project, AdapterError> {
     };
     let sources =
         Project::read_sources(&case.dir, &content_root).map_err(|e| AdapterError(e.to_string()))?;
-    Ok(Project::from_parts(
-        case.dir.clone(),
-        content_root,
-        model,
-        text,
-        sources,
-    ))
+    let today = match &case.expect.today {
+        Some(day) => Some(
+            ascribe_core::Date::parse(day)
+                .ok_or_else(|| AdapterError(format!("`today` isn't a date: {day}")))?,
+        ),
+        None => None,
+    };
+    Ok(Project::from_parts(case.dir.clone(), content_root, model, text, sources).with_today(today))
 }
 
 /// `check_files` on the case's project, in the harness's format.
@@ -66,14 +68,16 @@ pub fn file_level_diagnostics(case: &Case) -> Result<Vec<Diagnostic>, AdapterErr
     to_conformance(&project, check_files(&project))
 }
 
-/// Diagnostics in the harness's format: the file relative to the content root,
-/// a 1-based line, and a column in Unicode scalar values.
+/// Diagnostics in the harness's format, with the content model's `[checks]`
+/// levels applied as every tool applies them: the file relative to the
+/// content root, a 1-based line, a column in Unicode scalar values, and the
+/// severity.
 pub fn to_conformance(
     project: &Project,
     diagnostics: Vec<ascribe_check::Diagnostic>,
 ) -> Result<Vec<Diagnostic>, AdapterError> {
     let mut out = Vec::new();
-    for d in diagnostics {
+    for d in apply_levels(&project.model().checks, diagnostics) {
         let file = project
             .file(d.location.file)
             .ok_or_else(|| AdapterError(format!("{} has no file", d.slug)))?;
@@ -89,6 +93,7 @@ pub fn to_conformance(
             file: path,
             line: pos.line + 1,
             column: pos.col + 1,
+            severity: Some(d.severity.as_str().to_owned()),
         });
     }
     Ok(out)

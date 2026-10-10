@@ -11,6 +11,8 @@
 //! | `include-id-missing`, `include-cycle` | include expansion |
 //! | `variant-no-arm-survives`, `available-exceeds-scope` | build modes and the availability scope check |
 //! | `link-id-removed`, `link-page-dropped` | link resolution, per build |
+//! | `heading-level-skipped` | the page's resolved headings |
+//! | `page-size` | the page's plain Markdown, per build |
 //!
 //! The entry points are [`check_project`], for one build, and
 //! [`check_all_builds`], for every build of the project. `ascribe check`,
@@ -44,12 +46,13 @@
 
 mod bridge;
 mod collect;
+mod size;
 
 use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
-use ascribe_core::{FileId, RelPath, Span};
+use ascribe_core::{FileId, RelPath, Span, diagnostics};
 use ascribe_model::{AvailabilityMode, Build, VariantMode};
 use ascribe_resolve::{DefaultRouter, IncludeSite, ResolvedPage};
 
@@ -165,7 +168,7 @@ impl<'p> PageChecker<'p> {
     pub fn check_resolved(&self, build: &Build, pages: &[&ResolvedPage]) -> Vec<Diagnostic> {
         let found = pages
             .iter()
-            .flat_map(|page| check_page(&self.indexed.index, page, &self.links))
+            .flat_map(|page| self.page(build, page))
             .collect();
         self.finish(vec![(Some(build.name.as_str()), found)])
     }
@@ -179,7 +182,7 @@ impl<'p> PageChecker<'p> {
         let found = pages
             .iter()
             .filter_map(|path| self.indexed.index.resolve_page(path, build, &router))
-            .flat_map(|page| check_page(&self.indexed.index, &page, &self.links))
+            .flat_map(|page| self.page(build, &page))
             .collect();
         self.finish(vec![(Some(build.name.as_str()), found)])
     }
@@ -245,7 +248,20 @@ impl<'p> PageChecker<'p> {
         let mut found = Vec::new();
         for page in &resolved.pages {
             on_page(page);
-            found.extend(check_page(&self.indexed.index, page, &self.links));
+            found.extend(self.page(build, page));
+        }
+        found
+    }
+
+    /// The page-level problems of one page a build publishes: those of its
+    /// resolved form, and its size.
+    fn page(&self, build: &Build, page: &ResolvedPage) -> Vec<Found> {
+        let index = &self.indexed.index;
+        let mut found = check_page(index, page, &self.links);
+        if let Some(limit) = size::limit(index)
+            && let Some(f) = size::page_size(index, self.project.root(), build, page, limit)
+        {
+            found.push(f);
         }
         found
     }
@@ -283,6 +299,7 @@ impl<'p> PageChecker<'p> {
             builds: Vec<String>,
             unpublished: bool,
         }
+        let per_build = largest_page_sizes(per_build);
         let mut merged: Vec<(Identity, Merged)> = Vec::new();
         for (build, list) in per_build {
             for found in list {
@@ -350,6 +367,47 @@ impl<'p> PageChecker<'p> {
             renumber(&mut fix.file);
         }
     }
+}
+
+/// The builds' `page-size` problems, each page's as it is in the build where
+/// the page is largest, so a page over the limit in several builds is one
+/// problem that names them.
+fn largest_page_sizes(
+    mut per_build: Vec<(Option<&str>, Vec<Found>)>,
+) -> Vec<(Option<&str>, Vec<Found>)> {
+    let mut largest: HashMap<FileId, ascribe_core::Issue> = HashMap::new();
+    for (_, list) in &per_build {
+        for f in list
+            .iter()
+            .filter(|f| f.issue.slug == diagnostics::PAGE_SIZE)
+        {
+            let file = f.issue.location.file;
+            let bigger = largest
+                .get(&file)
+                .is_none_or(|l| size::size_of(&f.issue) > size::size_of(l));
+            if bigger {
+                largest.insert(file, f.issue.clone());
+            }
+        }
+    }
+    for (_, list) in &mut per_build {
+        for f in list
+            .iter_mut()
+            .filter(|f| f.issue.slug == diagnostics::PAGE_SIZE)
+        {
+            if let Some(l) = largest.get(&f.issue.location.file) {
+                // Every argument but the build, which says where it's found.
+                let build = f.issue.arg("build").unwrap_or_default().to_owned();
+                f.issue.args = l.args.clone();
+                for arg in &mut f.issue.args {
+                    if arg.name == "build" {
+                        arg.value.clone_from(&build);
+                    }
+                }
+            }
+        }
+    }
+    per_build
 }
 
 /// A block of a page as one build publishes it: the page, the file and span

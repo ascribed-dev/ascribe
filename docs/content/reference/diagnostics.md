@@ -26,7 +26,7 @@ Each diagnostic says what kind of next step it has. `ascribe check --format json
 
 ## Setting a check's level
 
-A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](content-model.md#19-checks) in `ascribe.toml`. Its entry below says it's configurable. No diagnostic is configurable yet: every one listed here is about whether the project is valid, which a project can't lower or turn off.
+A check about the content's quality, rather than whether the project is valid, can be set to another level, or turned off, in [`[checks]`](content-model.md#19-checks) in `ascribe.toml`. Those checks are listed under [Content checks](#content-checks), and their entries say they're configurable. Every other diagnostic is about whether the project is valid, which a project can't lower or turn off.
 
 ## Index
 
@@ -39,5 +39,24 @@ A check about the content's quality, rather than whether the project is valid, c
 ## The content model
 
 @include: ../_generated/diagnostics-content-model.md
+
+## Content checks
+
+@available: next
+Checks of the content's quality: advice unless a project sets another level in [`[checks]`](content-model.md#19-checks). A check with settings takes a table, and its entry names them.
+
+```toml
+[checks]
+code-language-missing = "warning"     # so --deny-warnings fails on it
+heading-level-skipped = "off"
+
+[checks.page-size]
+level = "warning"
+limit = 40_000
+```
+
+`review-overdue` depends on the day, so `ascribe check` can report it on one day and not the day before. Set `ASCRIBE_TODAY=YYYY-MM-DD` to check as of another day; Ascribe otherwise uses today's date in UTC.
+
+@include: ../_generated/diagnostics-content-checks.md
 
 @include: ../_generated/diagnostics-retired.md

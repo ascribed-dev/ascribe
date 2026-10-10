@@ -13,14 +13,14 @@ default = true
 # the formatted title for the heading and the sidebar.
 [types.guide.frontmatter]
 title = { type = "string", inline = "code" }
-description = "string"
+description = { type = "string", role = "description" }
 
 [types.reference]
 files = ["reference/**", "contracts/**"]
 
 [types.reference.frontmatter]
 title = { type = "string", inline = "code" }
-description = "string"
+description = { type = "string", role = "description" }
 since = "string?"
 
 # What isn't in the latest release is marked with availability. A feature in

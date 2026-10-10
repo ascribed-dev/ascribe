@@ -23,8 +23,13 @@ fn repo() -> PathBuf {
 const BLESS: &str = "ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs";
 
 /// The evidence an agent prompt can carry: what an entry's `evidence` may
-/// name.
-const EVIDENCE: &[&str] = &["allowed-values"];
+/// name, from the checks' own list.
+fn evidence_names() -> Vec<&'static str> {
+    ascribe_check::EVIDENCE
+        .iter()
+        .map(|(name, _, _)| *name)
+        .collect()
+}
 
 /// The tables of `[checks]` that aren't a check's: the tools' settings. No
 /// diagnostic can have their names.
@@ -77,7 +82,7 @@ fn every_diagnostic_has_its_next_step() {
             None => wrong.push(format!("{}: no `evidence` (it may be empty)", e.code)),
             Some(list) => {
                 for name in list {
-                    if !EVIDENCE.contains(&name.as_str()) {
+                    if !evidence_names().contains(&name.as_str()) {
                         wrong.push(format!("{}: unknown evidence `{name}`", e.code));
                     }
                 }
@@ -236,14 +241,18 @@ const RULE_GROUPS: &[(&str, &str)] = &[
     ("checks", "`[checks]`"),
 ];
 
+/// The areas content checks are listed in, as they're titled in the
+/// diagnostics reference.
+const AREAS: &[(&str, &str)] = &[("pages", "Pages")];
+
 /// What each fragment starts with: what generates it, and how.
 const HEADER: &str = "<!-- Generated from tests/conformance/diagnostics.toml by \
      tests/conformance/tests/docs.rs. Edit the registry, then run \
      `ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`. -->\n";
 
 /// The fragments, by file name: an index of every diagnostic, the
-/// source-file diagnostics, the content model's, and the retired ones (empty
-/// when there are none). The index links to entries in the other fragments
+/// source-file diagnostics, the content model's, the content checks, and the
+/// retired ones (empty when there are none). The index links to entries in the other fragments
 /// through the page that includes them all (SPEC §4.2).
 fn render(
     registry: &DiagnosticsRegistry,
@@ -258,7 +267,7 @@ fn render(
     // Source-file diagnostics, grouped by the construct their SPEC row names,
     // in the order each construct first appears.
     let mut constructs: Vec<(&str, Vec<(&Entry, &str)>)> = Vec::new();
-    for entry in active.iter().filter(|e| !is_model(e)) {
+    for entry in active.iter().filter(|e| !is_model(e) && e.area.is_none()) {
         let row = entry.row.as_deref().unwrap_or_default();
         let (construct, condition) = row.split_once(" | ").unwrap_or((row, ""));
         match constructs.iter_mut().find(|(c, _)| *c == construct) {
@@ -286,6 +295,20 @@ fn render(
         }
     }
 
+    let mut content_checks = HEADER.to_owned();
+    for (area, title) in AREAS {
+        let _ = write!(content_checks, "\n### {title}\n");
+        for entry in active.iter().filter(|e| e.area.as_deref() == Some(*area)) {
+            write_entry(&mut content_checks, entry, None, anchors);
+        }
+    }
+    let unlisted: Vec<&str> = active
+        .iter()
+        .filter_map(|e| e.area.as_deref())
+        .filter(|a| !AREAS.iter().any(|(area, _)| area == a))
+        .collect();
+    assert!(unlisted.is_empty(), "areas not in AREAS: {unlisted:?}");
+
     let mut retired = HEADER.to_owned();
     let gone: Vec<&Entry> = registry
         .entries
@@ -311,6 +334,7 @@ fn render(
         ("diagnostics-index.md".to_owned(), all),
         ("diagnostics-source-files.md".to_owned(), source_files),
         ("diagnostics-content-model.md".to_owned(), content_model),
+        ("diagnostics-content-checks.md".to_owned(), content_checks),
         ("diagnostics-retired.md".to_owned(), retired),
     ]
 }

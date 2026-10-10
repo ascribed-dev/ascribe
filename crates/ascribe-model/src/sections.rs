@@ -186,6 +186,7 @@ impl Loader<'_> {
                         default: None,
                         phrases: false,
                         inline: None,
+                        role: None,
                         description: None,
                     }],
                 },

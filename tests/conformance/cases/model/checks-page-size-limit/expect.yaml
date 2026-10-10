@@ -1,0 +1,9 @@
+description: >-
+  `[checks.page-size] limit` is a whole number above 0, and a check that has
+  no limit doesn't take one.
+spec: ["8.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-wrong-type, file: ascribe.toml, line: 5}
+  - {slug: model-unknown-key, file: ascribe.toml, line: 8}
