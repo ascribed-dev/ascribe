@@ -251,6 +251,13 @@ impl Client {
         );
     }
 
+    pub fn save(&mut self, path: &Path) {
+        self.notify(
+            "textDocument/didSave",
+            json!({ "textDocument": { "uri": uri(path).as_str() } }),
+        );
+    }
+
     pub fn close(&mut self, path: &Path) {
         self.notify(
             "textDocument/didClose",

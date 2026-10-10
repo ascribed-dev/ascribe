@@ -27,6 +27,7 @@ mod model_file;
 mod nav;
 mod position;
 mod preview;
+mod prose;
 mod refactor;
 mod references;
 mod review;
@@ -105,6 +106,9 @@ pub struct Options {
     /// and to `false` as soon as a handler queues work: a test's way to wait
     /// until every result of the messages it sent has been published.
     pub idle: Option<Arc<AtomicBool>>,
+    /// What checks the prose on open and on save, for a project with
+    /// `[checks.vale]`: Vale itself when `None`, or a test's stand-in.
+    pub linter: Option<Arc<dyn ascribe_check::prose::Linter>>,
 }
 
 /// Runs the server over standard input and output until the client ends the
