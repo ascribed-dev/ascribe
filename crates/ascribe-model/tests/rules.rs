@@ -640,6 +640,21 @@ fn cases() -> Vec<Case> {
             "spec = \"0.1\"\n[[intended]]\ncheck = \"link-target-missing\"\nphrase = \"nope\" #!\nreason = \"r\"\n",
         ),
         case(
+            "model-permalinks",
+            None,
+            "spec = \"0.1\"\n[permalinks.retired]\na = { reason = \"r\" }\n[permalinks.aliases]\na = \"b\" #!\n",
+        ),
+        case(
+            "model-permalinks",
+            Some("loop"),
+            "spec = \"0.1\"\n[permalinks.aliases]\na = \"a\" #!\n",
+        ),
+        case(
+            "model-permalinks",
+            Some("placeholder"),
+            "spec = \"0.1\"\n[permalinks.retired]\na = { reason = \"why this permalink was retired\" } #!\n",
+        ),
+        case(
             "model-checks-vale",
             None,
             "spec = \"0.1\"\n[checks.vale]\npreset = \"quiet\"\nconfig = \".vale.ini\" #!\n",

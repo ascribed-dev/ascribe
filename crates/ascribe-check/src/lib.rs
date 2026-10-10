@@ -95,7 +95,8 @@ pub(crate) fn check_files_with(
     let mut across = match checker {
         Some(checker) => checker.for_every_build(true),
         None if across::any_file_level(&project.model().checks)
-            || project.permalinks().is_some() =>
+            || project.permalinks().is_some()
+            || !project.model().permalinks.is_empty() =>
         {
             PageChecker::new(project).for_every_build(true)
         }

@@ -56,6 +56,14 @@ pub enum QueryError {
         /// Its first problem.
         detail: String,
     },
+    /// A name can't be retired.
+    #[error("can't retire `{name}`: {why}")]
+    NotRetirable {
+        /// The name, or the page or folder, as given.
+        name: String,
+        /// Why not.
+        why: String,
+    },
 }
 
 fn closest_text(closest: &[String]) -> String {
@@ -77,6 +85,7 @@ impl Coded for QueryError {
             QueryError::BadTarget { .. } => "bad_target",
             QueryError::Render(e) => e.code(),
             QueryError::PermalinksListInvalid { .. } => "permalinks_list_invalid",
+            QueryError::NotRetirable { .. } => "permalink_not_retirable",
         }
     }
 }

@@ -25,8 +25,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::{
-    Acknowledgements, Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity,
-    SourceFile, apply_levels, check_file,
+    Acknowledgements, Diagnostic, PERMALINKS_FILE_ID, PageChecker, Project, ReadFailure, Registry,
+    Severity, SourceFile, apply_levels, check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
@@ -75,6 +75,8 @@ pub(crate) struct Across {
     pub sources: BTreeMap<RelPath, (Arc<str>, Vec<lsp_types::Diagnostic>)>,
     /// The content model's, and its text.
     pub model: (String, Vec<Diagnostic>),
+    /// The permalinks list's, `ascribe.permalinks`, which isn't a source.
+    pub list: Vec<lsp_types::Diagnostic>,
 }
 
 impl Across {
@@ -170,6 +172,7 @@ impl Core {
         // they found before; a file whose share changed and that this round
         // didn't compute is computed again, and `ascribe.toml` is published.
         let mut model_changed = false;
+        let mut list_changed = false;
         if let Some(across) = across
             && across != *loaded.across
         {
@@ -186,6 +189,7 @@ impl Core {
                 }
             }
             model_changed = across.model != loaded.across.model;
+            list_changed = across.list != loaded.across.list;
             loaded.across = Arc::new(across);
         }
         let mut ready = Vec::new();
@@ -204,6 +208,11 @@ impl Core {
         }
         if model_changed {
             self.publish_model_diagnostics();
+        }
+        if list_changed && let Some(loaded) = self.loaded.as_ref() {
+            let path = loaded.root.join(ascribe_model::PERMALINKS_FILE);
+            let found = loaded.across.list.clone();
+            self.publish(&path, found);
         }
     }
 }
@@ -443,6 +452,16 @@ fn run_across(
         ),
         ..Across::default()
     };
+    // The permalinks list's own, at the levels `[checks]` sets (none of them
+    // is configurable, so as they are).
+    let list = by_file.remove(&PERMALINKS_FILE_ID).unwrap_or_default();
+    if let Some(entry) = project.file(PERMALINKS_FILE_ID) {
+        let index = LineIndex::new(entry.text);
+        found.list = list
+            .iter()
+            .map(|d| to_lsp(d, &index, job.encoding, &|_| None))
+            .collect();
+    }
     for (id, diagnostics) in by_file {
         let Some(entry) = project.file(id) else {
             continue;

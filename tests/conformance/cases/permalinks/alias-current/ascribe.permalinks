@@ -1,0 +1,8 @@
+version = 1
+
+[permalinks]
+settings = "settings.md"
+
+[aliases]
+agent-settings = "settings"
+cli-settings = "agent-settings"

@@ -38,6 +38,13 @@
       },
       "type": "array"
     },
+    "aliased": {
+      "description": "The aliases recorded, new or leading somewhere new, by name.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
       "type": "string"
@@ -58,7 +65,14 @@
       "type": "array"
     },
     "removed": {
-      "description": "The names the list keeps that the content no longer declares, by\nname. `ascribe check` warns about each.",
+      "description": "The names the list keeps that the project no longer has, by name.\n`ascribe check` warns about each.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "retired": {
+      "description": "The retired permalinks recorded, new or with a new reason, by name.",
       "items": {
         "type": "string"
       },
@@ -78,6 +92,8 @@
     "created",
     "added",
     "moved",
+    "aliased",
+    "retired",
     "removed"
   ],
   "title": "PermalinksSyncReport",

@@ -1,0 +1,8 @@
+description: >-
+  A retired permalink whose reason is still the editor's placeholder has no
+  reason: the quick fix alone quiets nothing.
+spec: ["7.6"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-permalinks, file: ascribe.toml, line: 4}

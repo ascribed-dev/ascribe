@@ -619,6 +619,17 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Start `permalink-path` with `/`: `"/go/"`. It's a path from the site's root, not from `base-path`.
 
+### `[permalinks]`
+
+#### ASC178 `model-permalinks`
+@id {permalink=true}: ASC178
+
+Error · file level · next step: write · [SPEC §7.6]({repo}/blob/main/SPEC.md#76-retired-permalinks-and-aliases)
+
+**Message:** `{name}` is both retired and an alias; a name is one thing
+
+**Fix:** Give each name in `[permalinks]` one meaning: retired, in `[permalinks.retired]`, or an alias, in `[permalinks.aliases]`. A retired permalink can still lead somewhere: give it `to`. Make each alias lead, perhaps through other aliases, to a permalink a heading or page declares. Write the reason a permalink was retired in place of the placeholder the editor's quick fix writes: a reader whose link led there sees it.
+
 ### `[checks]`
 
 #### ASC142 `model-check-not-configurable`

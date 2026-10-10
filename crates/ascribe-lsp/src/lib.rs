@@ -31,6 +31,7 @@ mod preview;
 mod prose;
 mod refactor;
 mod references;
+mod retire;
 mod review;
 #[cfg(feature = "json-schema")]
 mod schema;
@@ -65,6 +66,7 @@ pub use preview::{
     AssetKind, METHOD as PREVIEW_METHOD, PreviewAsset, PreviewBuild, PreviewLink, PreviewPage,
     PreviewParams, PreviewProblem, PreviewResult, PreviewReview, PreviewSection, ProblemSeverity,
 };
+pub use retire::{Retired, Retirement, retire};
 pub use review::{
     CHANGES_METHOD as REVIEW_CHANGES_METHOD, ChangesParams, ChangesResult,
     SET_BASE_METHOD as REVIEW_SET_BASE_METHOD, SetBaseParams, SetBaseResult,

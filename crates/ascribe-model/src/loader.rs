@@ -311,6 +311,7 @@ impl<'s> Loader<'s> {
                 "sources",
                 "checks",
                 "intended",
+                "permalinks",
             ],
         );
 
@@ -343,6 +344,7 @@ impl<'s> Loader<'s> {
         let sources = self.sources(root.get("sources"), &project.value.content_root);
         let checks = self.checks(root.get("checks"));
         let intended = self.intended(root.get("intended"), &phrases, &features, &glossary);
+        let permalinks = self.permalinks(root.get("permalinks"));
 
         Some(ContentModel {
             spec: spec?,
@@ -365,6 +367,7 @@ impl<'s> Loader<'s> {
             editor_build,
             checks,
             intended,
+            permalinks,
             warnings: Vec::new(),
         })
     }

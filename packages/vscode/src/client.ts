@@ -409,6 +409,8 @@ function clientOptions(
     documentSelector: [
       { scheme: "file", language: "markdown", pattern: `${folder}/**` },
       { scheme: "file", pattern: `${folder}/ascribe.toml` },
+      // For the quick fix on a removed permalink, which edits ascribe.toml.
+      { scheme: "file", pattern: `${folder}/ascribe.permalinks` },
     ],
     outputChannel,
     middleware: {

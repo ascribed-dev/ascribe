@@ -195,6 +195,16 @@ mod tests {
             "permalinks_list_unwritable",
             "ascribe.permalinks can't be written",
         ),
+        (
+            "permalink_not_retirable",
+            "retire can't retire a name, page, or folder",
+        ),
+        ("retire_reason_missing", "retire's --reason is empty"),
+        (
+            "model_edit_refused",
+            "ascribe.toml can't be changed in place",
+        ),
+        ("model_unwritable", "ascribe.toml can't be written"),
     ];
 
     fn path() -> PathBuf {
@@ -323,7 +333,8 @@ mod tests {
                 | QueryError::UnknownBuild(_)
                 | QueryError::BadTarget { .. }
                 | QueryError::Render(_)
-                | QueryError::PermalinksListInvalid { .. } => {}
+                | QueryError::PermalinksListInvalid { .. }
+                | QueryError::NotRetirable { .. } => {}
             }
         }
         fn agents(e: &SyncError) {
@@ -341,7 +352,10 @@ mod tests {
             match e {
                 PermalinksError::ListNotFound(_)
                 | PermalinksError::Unreadable { .. }
-                | PermalinksError::Unwritable { .. } => {}
+                | PermalinksError::Unwritable { .. }
+                | PermalinksError::NoReason
+                | PermalinksError::ModelUnchanged(_)
+                | PermalinksError::ModelUnwritable { .. } => {}
             }
         }
         let _ = (
@@ -507,12 +521,22 @@ mod tests {
                 file: text(),
                 detail: text(),
             }),
+            Box::new(QueryError::NotRetirable {
+                name: text(),
+                why: text(),
+            }),
             Box::new(PermalinksError::ListNotFound(path())),
             Box::new(PermalinksError::Unreadable {
                 path: path(),
                 message: text(),
             }),
             Box::new(PermalinksError::Unwritable {
+                path: path(),
+                message: text(),
+            }),
+            Box::new(PermalinksError::NoReason),
+            Box::new(PermalinksError::ModelUnchanged(text())),
+            Box::new(PermalinksError::ModelUnwritable {
                 path: path(),
                 message: text(),
             }),

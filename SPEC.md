@@ -880,9 +880,31 @@ cli-reference = "reference/cli.md"
 ```
 
 - `version` is `1`. `[permalinks]` has one entry for each name, keyed by the name, whose value is where the name is **declared**: the content path of the file it's written in, and, for a heading, `#` and its id. A heading in a fragment is declared in the fragment. A place is where the name is written in the source, not a published address, which differs by build.
+- `[aliases]` has one entry for each alias of `ascribe.toml` (§7.6), whose value is the name it leads to, and `[retired]` one for each retired permalink, whose value is its reason. Each table is written only when it has an entry, and a name is in one table. A name is a permalink of the documentation when `[permalinks]` or `[aliases]` has it; one in `[retired]` was, and has been retired on purpose.
 - The list is the project's, not one build's: a permalink is declared by a page's `permalink` frontmatter, or by an `@id {permalink=true}`, in any source file, whether or not a build publishes it. A name declared in several places (on pages no build publishes together) has one entry, at any of them.
-- Processors check the list whenever they check the project, from the files alone: each declared name has an entry, at one of the places it's declared, and each entry is still declared. A name with no entry, or with an entry at a place that no longer declares it, means the list is **behind**; moving a permalink to another page or heading makes the list behind, and doesn't remove it. An entry that no declaration has any more is a **removed** permalink: something outside the documentation may still link to it, which no check can see.
-- A processor writes the list on request, adding each declared name and moving each entry to where its name is declared now. It MUST NOT drop an entry whose name is no longer declared, so writing the list never hides a removal.
+- Processors check the list whenever they check the project, from the files alone: each declared name has an entry, at one of the places it's declared, each alias and retired permalink an entry as `ascribe.toml` has it, and each entry is still one of the three. A name without its entry, or with an entry at a place that no longer declares it, means the list is **behind**; moving a permalink to another page or heading makes the list behind, and doesn't remove it. An entry the project has no name for any more is a **removed** permalink: something outside the documentation may still link to it, which no check can see. Retiring it (§7.6) is how its removal is recorded.
+- A processor writes the list on request, adding each declared name, moving each entry to where its name is declared now, and recording each alias and retired permalink. It MUST NOT drop an entry the project no longer has, so writing the list never hides a removal.
+
+### 7.6 Retired permalinks and aliases
+
+`ascribe.toml` MAY give names to lead somewhere that no heading or page declares, in `[permalinks]`:
+
+```toml
+[permalinks.retired]
+rotate-keys = { to = "guides/security.md", reason = "Merged into the security guide" }
+legacy-sync = { reason = "The sync agent was removed in 4.0" }
+
+[permalinks.aliases]
+agent-settings = "settings"
+cli-settings = "settings"
+```
+
+- A **retired** permalink is one ended on purpose. Its `reason` is required, and is the author's text, shown to a reader whose link leads there. Its `to`, when given, is where its address leads now: a page, and `#` and a heading's id, written as a link from the content root is; it MUST lead to a page, and to a heading on it.
+- An **alias** is a second name for a permalink. Its value is the name it leads to: a permalink a heading or page declares, or another alias that leads to one. It MUST NOT lead to a retired permalink, or back to itself.
+- A name is one thing: declared by the content, an alias, or retired. A name in two of them is an error.
+- Each build's list of permalinks (§9.5) has an alias where it has the permalink the alias leads to, and a retired permalink with a `to` where it has that page. A consumer publishes an alias's address, and a retired permalink's with a `to`, as it does a permalink's. A retired permalink with no `to`, or whose `to` the build doesn't publish, has an address that says what was there was removed, and why.
+
+Bringing a retired permalink back is deleting its entry and declaring the name again.
 
 ---
 
@@ -958,8 +980,11 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Source copies | A file in a source's copies folder that `ascribe.lock` doesn't list | Error |
 | Source copies | A copy that no snippet uses | Warning |
 | Permalinks list | `ascribe.permalinks` isn't valid TOML, or doesn't have the shape §7.5 gives it | Error |
-| Permalinks list | A permalink the content declares that `ascribe.permalinks` doesn't list, or lists in another place | Warning |
-| Permalinks list | A permalink `ascribe.permalinks` lists that the content no longer declares | Warning |
+| Permalinks list | A permalink the content declares, an alias, or a retired permalink that `ascribe.permalinks` doesn't list as it is | Warning |
+| Permalinks list | A name `ascribe.permalinks` lists that the project no longer has: not declared, an alias, or retired | Warning |
+| Retired permalinks and aliases | An alias that doesn't lead to a permalink the content declares | Error |
+| Retired permalinks and aliases | A name `ascribe.toml` retires or aliases that the content declares too | Error |
+| Retired permalinks and aliases | A retired permalink's `to` that doesn't lead to a page, or to a heading on it | Error |
 | Project widget | Violates its declared schema | Error |
 | Links | Target file doesn't exist | Error |
 | Links | Target id doesn't exist in the target file (page level) | Error |

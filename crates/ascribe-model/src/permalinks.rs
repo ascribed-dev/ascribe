@@ -10,8 +10,10 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use ascribe_core::{FileId, Issue, Location, Span, diagnostics};
+
 use toml::de::{DeTable, DeValue};
 
+use crate::model::ModelPermalinks;
 use crate::toml_util::{describe, entries, sp};
 
 /// The list's file name, beside `ascribe.toml`.
@@ -20,11 +22,28 @@ pub const PERMALINKS_FILE: &str = "ascribe.permalinks";
 /// The list's format, its `version`.
 pub const PERMALINKS_VERSION: i64 = 1;
 
-/// What the list records.
+/// What a permalink's name may hold, for messages.
+pub const NAME_RULE: &str = "letters, digits, hyphens, underscores, and periods";
+
+/// The reason the editor's "Retire this permalink" writes for the author to
+/// replace. It isn't a reason: a retired permalink that still has it is
+/// reported (`model-permalinks`), so the fix alone quiets nothing.
+pub const RETIRED_PLACEHOLDER: &str = "why this permalink was retired";
+
+/// Whether `reason` is still [`RETIRED_PLACEHOLDER`].
+pub fn is_retired_placeholder(reason: &str) -> bool {
+    reason.trim() == RETIRED_PLACEHOLDER
+}
+
+/// What the list records: each name once, in one of its three tables.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PermalinkList {
-    /// Each permalink, by name.
+    /// `[permalinks]`: each permalink the content declares, by name.
     pub permalinks: BTreeMap<String, ListedPermalink>,
+    /// `[aliases]`: each alias `ascribe.toml` declares, by name.
+    pub aliases: BTreeMap<String, ListedAlias>,
+    /// `[retired]`: each permalink `ascribe.toml` retires, by name.
+    pub retired: BTreeMap<String, ListedRetired>,
 }
 
 /// A permalink's entry.
@@ -37,16 +56,86 @@ pub struct ListedPermalink {
     pub span: Span,
 }
 
+/// An alias's entry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ListedAlias {
+    /// The name it leads to.
+    pub target: String,
+    /// The entry's key, for reporting.
+    pub span: Span,
+}
+
+/// A retired permalink's entry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ListedRetired {
+    /// Why it was retired.
+    pub reason: String,
+    /// The entry's key, for reporting.
+    pub span: Span,
+}
+
+/// What the project has now, which the list should record: each name the
+/// content declares, with the places it's declared, the first being where a
+/// new or moved entry points; and the aliases and retired permalinks of
+/// `ascribe.toml` that the content doesn't declare too.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Current {
+    /// Each declared name, with its places.
+    pub declared: BTreeMap<String, Vec<String>>,
+    /// Each alias, with the name it leads to.
+    pub aliases: BTreeMap<String, String>,
+    /// Each retired permalink, with its reason.
+    pub retired: BTreeMap<String, String>,
+}
+
+impl Current {
+    /// What the project has: `declared`, and `model`'s aliases and retired
+    /// permalinks. A name the content declares is a permalink, whatever
+    /// `ascribe.toml` says of it (`permalink-name-conflict` reports that),
+    /// and a name both retired and an alias is retired.
+    pub fn new(declared: BTreeMap<String, Vec<String>>, model: &ModelPermalinks) -> Current {
+        let retired: BTreeMap<String, String> = model
+            .retired
+            .iter()
+            .filter(|r| !declared.contains_key(&r.name))
+            .map(|r| (r.name.clone(), r.reason.clone()))
+            .collect();
+        let aliases = model
+            .aliases
+            .iter()
+            .filter(|a| !declared.contains_key(&a.name) && !retired.contains_key(&a.name))
+            .map(|a| (a.name.clone(), a.target.clone()))
+            .collect();
+        Current {
+            declared,
+            aliases,
+            retired,
+        }
+    }
+
+    /// Whether the project has `name`, in any of the three ways.
+    pub fn has(&self, name: &str) -> bool {
+        self.declared.contains_key(name)
+            || self.aliases.contains_key(name)
+            || self.retired.contains_key(name)
+    }
+}
+
 /// What [`PermalinkList::synced`] changed.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Synced {
     /// The list as it is now.
     pub list: PermalinkList,
-    /// The names it gained, in order.
+    /// The permalinks it gained, in order.
     pub added: Vec<String>,
     /// The names whose place changed, each with the place it had, in order.
     pub moved: Vec<(String, String)>,
-    /// The names it keeps that nothing declares any more, in order.
+    /// The aliases it gained, or whose target changed, in order.
+    pub aliased: Vec<String>,
+    /// The retired permalinks it gained, or whose reason changed, in order.
+    pub retired: Vec<String>,
+    /// The names it keeps that the project doesn't have any more, in
+    /// order.
     pub removed: Vec<String>,
 }
 
@@ -61,6 +150,7 @@ impl PermalinkList {
         let mut reader = Reader {
             file,
             issues: Vec::new(),
+            seen: Vec::new(),
         };
         let list = reader.list(text);
         if reader.issues.is_empty() {
@@ -70,26 +160,64 @@ impl PermalinkList {
         }
     }
 
-    /// The list brought up to date with what the content declares: each
-    /// name with the places it's declared, the first being where a new or
-    /// moved entry points. A name not in the list is added; an entry whose
-    /// place isn't one of its name's moves to the first; a name nothing
-    /// declares stays, since removing a permalink is never done for you.
-    pub fn synced(&self, declared: &BTreeMap<String, Vec<String>>) -> Synced {
+    /// Whether the list has `name`, in any of its tables.
+    pub fn has(&self, name: &str) -> bool {
+        self.permalinks.contains_key(name)
+            || self.aliases.contains_key(name)
+            || self.retired.contains_key(name)
+    }
+
+    /// Where the list has `name`, for messages: its place, the name an
+    /// alias leads to, or that it's retired.
+    pub fn span_of(&self, name: &str) -> Option<Span> {
+        self.permalinks
+            .get(name)
+            .map(|e| e.span)
+            .or_else(|| self.aliases.get(name).map(|e| e.span))
+            .or_else(|| self.retired.get(name).map(|e| e.span))
+    }
+
+    /// The list brought up to date with what the project has. A declared
+    /// name not in `[permalinks]` is added; an entry whose place isn't one
+    /// of its name's moves to the first; an alias or a retired permalink is
+    /// recorded as `ascribe.toml` has it; and a name the project doesn't
+    /// have stays where it is, since removing a permalink is never done for
+    /// you.
+    pub fn synced(&self, current: &Current) -> Synced {
         let mut out = Synced::default();
-        for (name, entry) in &self.permalinks {
-            if !declared.contains_key(name) {
-                out.removed.push(name.clone());
-                out.list.permalinks.insert(
-                    name.clone(),
-                    ListedPermalink {
-                        place: entry.place.clone(),
-                        span: Span::empty(0),
-                    },
-                );
-            }
+        let kept = |name: &String| !current.has(name);
+        for (name, entry) in self.permalinks.iter().filter(|(n, _)| kept(n)) {
+            out.removed.push(name.clone());
+            out.list.permalinks.insert(
+                name.clone(),
+                ListedPermalink {
+                    place: entry.place.clone(),
+                    span: Span::empty(0),
+                },
+            );
         }
-        for (name, places) in declared {
+        for (name, entry) in self.aliases.iter().filter(|(n, _)| kept(n)) {
+            out.removed.push(name.clone());
+            out.list.aliases.insert(
+                name.clone(),
+                ListedAlias {
+                    target: entry.target.clone(),
+                    span: Span::empty(0),
+                },
+            );
+        }
+        for (name, entry) in self.retired.iter().filter(|(n, _)| kept(n)) {
+            out.removed.push(name.clone());
+            out.list.retired.insert(
+                name.clone(),
+                ListedRetired {
+                    reason: entry.reason.clone(),
+                    span: Span::empty(0),
+                },
+            );
+        }
+        out.removed.sort();
+        for (name, places) in &current.declared {
             let Some(first) = places.first() else {
                 continue;
             };
@@ -112,11 +240,36 @@ impl PermalinkList {
                 },
             );
         }
+        for (name, target) in &current.aliases {
+            if self.aliases.get(name).is_none_or(|e| e.target != *target) {
+                out.aliased.push(name.clone());
+            }
+            out.list.aliases.insert(
+                name.clone(),
+                ListedAlias {
+                    target: target.clone(),
+                    span: Span::empty(0),
+                },
+            );
+        }
+        for (name, reason) in &current.retired {
+            if self.retired.get(name).is_none_or(|e| e.reason != *reason) {
+                out.retired.push(name.clone());
+            }
+            out.list.retired.insert(
+                name.clone(),
+                ListedRetired {
+                    reason: reason.clone(),
+                    span: Span::empty(0),
+                },
+            );
+        }
         out
     }
 
     /// The list as Ascribe writes it: one line for each name, in order, and
-    /// the same text for the same list on every platform.
+    /// the same text for the same list on every platform. `[aliases]` and
+    /// `[retired]` are written only when they have an entry.
     pub fn to_toml(&self) -> String {
         let mut out =
             String::from("# Written by Ascribe. Don't edit it: run `ascribe permalinks sync`.\n");
@@ -124,6 +277,18 @@ impl PermalinkList {
         out.push_str("\n[permalinks]\n");
         for (name, entry) in &self.permalinks {
             let _ = writeln!(out, "{} = {}", key(name), quoted(&entry.place));
+        }
+        if !self.aliases.is_empty() {
+            out.push_str("\n[aliases]\n");
+            for (name, entry) in &self.aliases {
+                let _ = writeln!(out, "{} = {}", key(name), quoted(&entry.target));
+            }
+        }
+        if !self.retired.is_empty() {
+            out.push_str("\n[retired]\n");
+            for (name, entry) in &self.retired {
+                let _ = writeln!(out, "{} = {}", key(name), quoted(&entry.reason));
+            }
         }
         out
     }
@@ -159,6 +324,8 @@ fn quoted(text: &str) -> String {
 struct Reader {
     file: FileId,
     issues: Vec<Issue>,
+    /// Each name read, with its first key's span.
+    seen: Vec<(String, Span)>,
 }
 
 impl Reader {
@@ -186,7 +353,7 @@ impl Reader {
         };
         let root = parsed.get_ref();
         for (key, span, _) in entries(root) {
-            if !matches!(key, "version" | "permalinks") {
+            if !matches!(key, "version" | "permalinks" | "aliases" | "retired") {
                 self.problem(span, format!("it has no key `{key}`"));
             }
         }
@@ -207,55 +374,102 @@ impl Reader {
                 ),
             },
         }
-        let Some(permalinks) = root.get("permalinks") else {
-            return list;
+        for (name, span, place) in self.table(root, "permalinks") {
+            if is_place(&place) {
+                list.permalinks
+                    .insert(name, ListedPermalink { place, span });
+            } else {
+                self.problem(
+                    span,
+                    format!(
+                        "the place of `{name}`, `{place}`, isn't a file's path ending in `.md`, with `#` and an id for a heading"
+                    ),
+                );
+            }
+        }
+        for (name, span, target) in self.table(root, "aliases") {
+            if ascribe_core::is_id(&target) {
+                list.aliases.insert(name, ListedAlias { target, span });
+            } else {
+                self.problem(
+                    span,
+                    format!(
+                        "the alias `{name}` leads to `{target}`, which isn't a permalink's name"
+                    ),
+                );
+            }
+        }
+        for (name, span, reason) in self.table(root, "retired") {
+            if reason.trim().is_empty() {
+                self.problem(
+                    span,
+                    format!("the retired permalink `{name}` has no reason"),
+                );
+            } else {
+                list.retired.insert(name, ListedRetired { reason, span });
+            }
+        }
+        for (name, span) in self.seen.clone() {
+            let tables: Vec<&str> = [
+                ("permalinks", list.permalinks.contains_key(&name)),
+                ("aliases", list.aliases.contains_key(&name)),
+                ("retired", list.retired.contains_key(&name)),
+            ]
+            .into_iter()
+            .filter_map(|(table, has)| has.then_some(table))
+            .collect();
+            if let [first, second, ..] = tables.as_slice() {
+                self.problem(
+                    span,
+                    format!(
+                        "`{name}` is in both `[{first}]` and `[{second}]`; a name is one thing"
+                    ),
+                );
+            }
+        }
+        list
+    }
+
+    /// The entries of the table `key`, each a valid name with a string
+    /// value; every other entry is a problem. Each name is noted once, for
+    /// a name in two tables.
+    fn table(&mut self, root: &DeTable<'_>, key: &str) -> Vec<(String, Span, String)> {
+        let mut out = Vec::new();
+        let Some(value) = root.get(key) else {
+            return out;
         };
-        let DeValue::Table(table) = permalinks.get_ref() else {
+        let DeValue::Table(table) = value.get_ref() else {
             self.problem(
-                sp(permalinks),
-                format!(
-                    "`permalinks` is {}, not a table",
-                    describe(permalinks.get_ref())
-                ),
+                sp(value),
+                format!("`{key}` is {}, not a table", describe(value.get_ref())),
             );
-            return list;
+            return out;
         };
         for (name, span, value) in entries(table) {
             if !ascribe_core::is_id(name) {
                 self.problem(
                     span,
-                    format!(
-                        "`{name}` isn't a permalink's name: letters, digits, hyphens, underscores, and periods"
-                    ),
+                    format!("`{name}` isn't a permalink's name: {NAME_RULE}"),
                 );
                 continue;
             }
             match value.get_ref() {
-                DeValue::String(place) if is_place(place) => {
-                    list.permalinks.insert(
-                        name.to_owned(),
-                        ListedPermalink {
-                            place: place.to_string(),
-                            span,
-                        },
-                    );
+                DeValue::String(text) => {
+                    if !self.seen.iter().any(|(n, _)| n == name) {
+                        self.seen.push((name.to_owned(), span));
+                    }
+                    out.push((name.to_owned(), span, text.to_string()));
                 }
-                DeValue::String(place) => self.problem(
-                    sp(value),
-                    format!(
-                        "the place of `{name}`, `{place}`, isn't a file's path ending in `.md`, with `#` and an id for a heading"
-                    ),
-                ),
                 other => self.problem(
                     sp(value),
                     format!(
-                        "the place of `{name}` is {}, not a string",
+                        "the value of `{name}` in `[{key}]` is {}, not a string",
                         describe(other)
                     ),
                 ),
             }
         }
-        list
+        out
     }
 }
 
@@ -277,16 +491,19 @@ fn is_place(text: &str) -> bool {
 mod tests {
     use super::*;
 
-    fn declared(pairs: &[(&str, &[&str])]) -> BTreeMap<String, Vec<String>> {
-        pairs
-            .iter()
-            .map(|(name, places)| {
-                (
-                    (*name).to_owned(),
-                    places.iter().map(|p| (*p).to_owned()).collect(),
-                )
-            })
-            .collect()
+    fn declared(pairs: &[(&str, &[&str])]) -> Current {
+        Current {
+            declared: pairs
+                .iter()
+                .map(|(name, places)| {
+                    (
+                        (*name).to_owned(),
+                        places.iter().map(|p| (*p).to_owned()).collect(),
+                    )
+                })
+                .collect(),
+            ..Current::default()
+        }
     }
 
     fn list(text: &str) -> PermalinkList {
@@ -321,13 +538,82 @@ mod tests {
     }
 
     #[test]
+    fn aliases_and_retired_names_are_written_after() {
+        let mut current = declared(&[("settings", &["settings.md"])]);
+        current
+            .aliases
+            .insert("agent-settings".to_owned(), "settings".to_owned());
+        current.retired.insert(
+            "rotate-keys".to_owned(),
+            "Merged into \"Security\"".to_owned(),
+        );
+        let synced = PermalinkList::default().synced(&current);
+        let text = synced.list.to_toml();
+        assert_eq!(
+            text,
+            "# Written by Ascribe. Don't edit it: run `ascribe permalinks sync`.\n\
+             version = 1\n\
+             \n\
+             [permalinks]\n\
+             settings = \"settings.md\"\n\
+             \n\
+             [aliases]\n\
+             agent-settings = \"settings\"\n\
+             \n\
+             [retired]\n\
+             rotate-keys = \"Merged into \\\"Security\\\"\"\n"
+        );
+        assert_eq!(list(&text).to_toml(), text);
+        assert_eq!(synced.aliased, ["agent-settings"]);
+        assert_eq!(synced.retired, ["rotate-keys"]);
+        // Up to date, it changes nothing.
+        let again = list(&text).synced(&current);
+        assert!(again.aliased.is_empty() && again.retired.is_empty());
+        assert_eq!(again.list.to_toml(), text);
+    }
+
+    #[test]
+    fn retiring_moves_a_name_and_bringing_it_back_moves_it_again() {
+        let before = list("version = 1\n[permalinks]\nold = \"a.md#old\"\n");
+        let mut current = Current::default();
+        current.retired.insert("old".to_owned(), "Gone".to_owned());
+        let synced = before.synced(&current);
+        assert!(synced.removed.is_empty());
+        assert_eq!(synced.retired, ["old"]);
+        assert!(synced.list.permalinks.is_empty());
+        let back = synced.list.synced(&declared(&[("old", &["b.md#old"])]));
+        assert_eq!(back.added, ["old"]);
+        assert!(back.list.retired.is_empty());
+    }
+
+    #[test]
+    fn current_leaves_out_what_the_content_declares() {
+        let model = crate::load_str(
+            "spec = \"0.1\"\n[permalinks.retired]\nboth = { reason = \"r\" }\ngone = { reason = \"r\" }\n\
+             [permalinks.aliases]\nalias = \"both\"\nalso = \"both\"\n",
+            FileId::new(0),
+        )
+        .expect("loads")
+        .permalinks;
+        let mut places = BTreeMap::new();
+        places.insert("both".to_owned(), vec!["a.md".to_owned()]);
+        places.insert("also".to_owned(), vec!["b.md".to_owned()]);
+        let current = Current::new(places, &model);
+        assert_eq!(current.retired.keys().collect::<Vec<_>>(), ["gone"]);
+        assert_eq!(current.aliases.keys().collect::<Vec<_>>(), ["alias"]);
+        assert!(current.has("also") && current.has("gone") && !current.has("other"));
+    }
+
+    #[test]
     fn syncing_adds_and_moves_and_never_drops() {
         let before = list(
             "version = 1\n[permalinks]\n\
              gone = \"a.md#gone\"\n\
              kept = \"b.md#kept\"\n\
              moved = \"a.md#moved\"\n\
-             shared = \"c.md#shared\"\n",
+             shared = \"c.md#shared\"\n\
+             [aliases]\nold-alias = \"kept\"\n\
+             [retired]\nold-retired = \"Why\"\n",
         );
         let synced = before.synced(&declared(&[
             ("kept", &["b.md#kept"]),
@@ -340,7 +626,7 @@ mod tests {
             synced.moved,
             [("moved".to_owned(), "a.md#moved".to_owned())]
         );
-        assert_eq!(synced.removed, ["gone"]);
+        assert_eq!(synced.removed, ["gone", "old-alias", "old-retired"]);
         let places: Vec<(&str, &str)> = synced
             .list
             .permalinks
@@ -358,6 +644,8 @@ mod tests {
                 ("shared", "c.md#shared"),
             ]
         );
+        assert_eq!(synced.list.aliases["old-alias"].target, "kept");
+        assert_eq!(synced.list.retired["old-retired"].reason, "Why");
     }
 
     #[test]
@@ -399,7 +687,19 @@ mod tests {
         );
         assert_eq!(
             bad("version = 1\n[permalinks]\na = true\n"),
-            ["the place of `a` is a boolean, not a string"]
+            ["the value of `a` in `[permalinks]` is a boolean, not a string"]
+        );
+        assert_eq!(
+            bad("version = 1\n[aliases]\na = \"b/c\"\n"),
+            ["the alias `a` leads to `b/c`, which isn't a permalink's name"]
+        );
+        assert_eq!(
+            bad("version = 1\n[retired]\na = \"\"\n"),
+            ["the retired permalink `a` has no reason"]
+        );
+        assert_eq!(
+            bad("version = 1\n[permalinks]\na = \"a.md\"\n[retired]\na = \"Why\"\n"),
+            ["`a` is in both `[permalinks]` and `[retired]`; a name is one thing"]
         );
     }
 }

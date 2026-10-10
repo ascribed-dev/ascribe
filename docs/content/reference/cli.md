@@ -505,30 +505,30 @@ With `--format json`, the document has `schema_version` (`1`), `ascribe_version`
 @id {permalink=true}: cli-permalinks
 @available: next
 
-Keeps the project's list of [permalinks](directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, and checks names against it. The list names each permalink the content declares and where, and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-removed`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md).
+Keeps the project's list of [permalinks](directives.md#permalinks), `ascribe.permalinks` beside `ascribe.toml`, checks names against it, and retires permalinks. The list names each permalink the content declares and where, and each alias and retired permalink in `ascribe.toml`'s [`[permalinks]`](content-model.md#20-permalinks), and is committed with the docs: with it, `ascribe check` reports a permalink that goes away (`permalink-removed`) and one the list doesn't have yet (`permalinks-list-behind`), and a product's CI can check the names it links to with `verify`. A project without the list isn't told about either. Its format is in the [permalinks list contract](../contracts/permalinks-list.md).
 
 ### `ascribe permalinks sync`
 @id {permalink=true}: cli-permalinks-sync
 
-Brings `ascribe.permalinks` up to date with the content, and makes it when there's none: it adds each permalink the list doesn't have, and records where each is declared now, so moving a heading to another page and running `sync` changes one line. It never drops a name the content no longer declares: that stays in the list, and `ascribe check` reports it until it's back, so running `sync` can't hide a removal. It lists what it added and moved, and warns about each name it kept.
+Brings `ascribe.permalinks` up to date with the project, and makes it when there's none: it adds each permalink the list doesn't have, records where each is declared now, so moving a heading to another page and running `sync` changes one line, and records each alias and retired permalink as `ascribe.toml` has it. It never drops a name the project no longer has: that stays in the list, and `ascribe check` reports it until it's back or retired, so running `sync` can't hide a removal. It lists what it added, moved, and recorded, and warns about each name it kept.
 
 @include: ../_generated/cli-permalinks-sync-options.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `changed` (whether the file was written), `created`, `added` (names), `moved` (each with `name`, `from`, and `to`), and `removed` (the names kept that nothing declares). It exits with `0` when the list is up to date, whether or not it changed, and `2` when the project doesn't load or the list can't be read or written.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `changed` (whether the file was written), `created`, `added` (names), `moved` (each with `name`, `from`, and `to`), `aliased` and `retired` (the aliases and retired permalinks recorded, new or changed), and `removed` (the names kept that the project no longer has). It exits with `0` when the list is up to date, whether or not it changed, and `2` when the project doesn't load or the list can't be read or written.
 
 ### `ascribe permalinks list`
 @id {permalink=true}: cli-permalinks-list
 
-Shows every permalink the content declares, with the file and line it's declared on, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that nothing declares any more. It changes nothing. It exits with `0` whatever it finds, and `2` when the project doesn't load or the list can't be read.
+Shows every permalink the content declares, with the file and line it's declared on, and each alias and retired permalink in `ascribe.toml`, and says which ones `ascribe.permalinks` doesn't have yet, has somewhere else, or has that the project no longer has. It changes nothing. It exits with `0` whatever it finds, and `2` when the project doesn't load or the list can't be read.
 
 @include: ../_generated/cli-permalinks-list-options.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `has_list`, `permalinks`, each with `name`, `place` (as the list writes it), `file`, `line`, `state` (`listed`, `moved`, or `not_listed`), and `listed_at` (the list's place for a moved one, or null), and `removed`, each with `name` and `place`.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `has_list`, `permalinks`, each with `name`, `place` (as the list writes it), `file`, `line`, `state` (`listed`, `moved`, or `not_listed`), and `listed_at` (the list's place for a moved one, or null); `aliases`, each with `name`, `target`, and `state` (`listed` or `not_listed`); `retired`, each with `name`, `reason`, `to` (or null), and `state`; and `removed`, each with `name`, `was` (`permalink`, `alias`, or `retired`: the list's table), and `place` (the list's place for a permalink, the name an alias led to, or a retired permalink's reason).
 
 ### `ascribe permalinks verify`
 @id {permalink=true}: cli-permalinks-verify
 
-Checks that each name is a permalink in a list, and names each one that isn't. It reads only the list, not the docs, so a product's repository can run it against a copy of the docs' list: [Checking a product's links](../guides/astro.md#checking-a-products-links) shows the step for CI.
+Checks that each name is a permalink or an alias in a list, and names each one that isn't, and each one that was retired, with the reason the docs give. It reads only the list, not the docs, so a product's repository can run it against a copy of the docs' list: [Checking a product's links](../guides/astro.md#checking-a-products-links) shows the step for CI.
 
 ```sh
 ascribe permalinks verify cli-check ASC036
@@ -537,13 +537,30 @@ ascribe permalinks verify --list docs/ascribe.permalinks --from permalinks.txt
 
 @include: ../_generated/cli-permalinks-verify-options.md
 
-With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `list` (the list's path, as given), `found`, and `missing`, each a list of names in the order given.
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `list` (the list's path, as given), `found` and `missing`, each a list of names in the order given, and `retired`, each with `name` and `reason`.
 
 | Code | Meaning |
 |---|---|
 | `0` | The list has every name |
-| `1` | It doesn't have one; each is named on standard error |
+| `1` | It doesn't have one, or has it as retired; each is named on standard error, a retired one with its reason |
 | `2` | It couldn't check: no list where it looked, or a list or a `--from` file it can't read |
+
+### `ascribe permalinks retire`
+@id {permalink=true}: cli-permalinks-retire
+
+Retires permalinks on purpose, with a reason: it writes an entry for each in `ascribe.toml`'s [`[permalinks.retired]`](content-model.md#20-permalinks), in place, keeping the file's comments and order, and, when the project has `ascribe.permalinks`, records there each one the content no longer declares. A retired permalink's address shows the reason, or leads to `--to`; `ascribe check` no longer reports it as removed; and `verify` tells a product it was retired, with the reason.
+
+```sh
+ascribe permalinks retire rotate-keys --reason "Merged into the security guide" --to guides/security.md
+ascribe permalinks retire --page guides/legacy.md --reason "The sync agent was removed in 4.0"
+ascribe permalinks retire --under guides/legacy/ --reason "The sync agent was removed in 4.0"
+```
+
+It retires a name given only when the content no longer declares it and `ascribe.permalinks` has it, and with `--page` or `--under`, each permalink declared in that page or in a file under that folder, or that the list has there. It refuses a name still declared anywhere else, an alias, or one already retired, and changes nothing then. Retiring what a page holds before the page is deleted leaves each name both declared and retired (`permalink-name-conflict`) until it is. It lists each name it retired.
+
+@include: ../_generated/cli-permalinks-retire-options.md
+
+With `--format json`, the document has `schema_version` (`1`), `ascribe_version`, `retired` (the names, in order), `reason`, `to` (or null), and `list_changed` (whether `ascribe.permalinks` was written). It exits with `0` when the names are retired, and `2` when the project doesn't load, the reason is empty, a name can't be retired, or a file can't be written.
 
 ## `ascribe vale`
 @id {permalink=true}: cli-vale

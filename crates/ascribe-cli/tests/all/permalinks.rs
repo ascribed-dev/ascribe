@@ -160,7 +160,7 @@ fn sync_keeps_a_removed_name_and_says_so() {
     assert_eq!(code_of(&sync), 0);
     assert_eq!(list_text(dir.path()), before, "sync dropped a name");
     assert!(
-        stderr(&sync).contains("kept rotate-keys, which the content no longer declares"),
+        stderr(&sync).contains("kept rotate-keys, which the project no longer has"),
         "{}",
         stderr(&sync)
     );
@@ -331,4 +331,103 @@ fn verify_cant_run_without_a_list_or_with_one_it_cant_read() {
     let sync = ascribe(dir.path(), &["permalinks", "sync"]);
     assert_eq!(code_of(&sync), 2);
     assert_eq!(list_text(dir.path()), "version = 9\n");
+}
+
+#[test]
+fn retiring_a_removed_permalink_keeps_the_model_s_comments_and_quiets_check() {
+    let dir = project();
+    write(
+        dir.path(),
+        "ascribe.toml",
+        "# The docs' model.\nspec = \"0.1\"\n\n[project]\ncontent-root = \"docs\" # beside it\n",
+    );
+    ascribe(dir.path(), &["permalinks", "sync"]);
+    fs::remove_file(dir.path().join("docs/keys.md")).unwrap();
+
+    let declared = ascribe(
+        dir.path(),
+        &["permalinks", "retire", "install", "--reason", "Gone"],
+    );
+    assert_eq!(code_of(&declared), 2);
+    assert!(
+        stderr(&declared).contains("can't retire `install`: `install.md` still declares it"),
+        "{}",
+        stderr(&declared)
+    );
+    let placeholder = ascribe(
+        dir.path(),
+        &[
+            "permalinks",
+            "retire",
+            "rotate-keys",
+            "--reason",
+            "why this permalink was retired",
+        ],
+    );
+    assert_eq!(code_of(&placeholder), 2);
+
+    let retire = ascribe(
+        dir.path(),
+        &[
+            "permalinks",
+            "retire",
+            "rotate-keys",
+            "--reason",
+            "Merged into the install page",
+            "--to",
+            "install.md",
+        ],
+    );
+    assert_eq!(code_of(&retire), 0, "{}", stderr(&retire));
+    assert_eq!(
+        stdout(&retire),
+        "retired rotate-keys, leading to install.md\nwrote ascribe.toml\nwrote ascribe.permalinks\n"
+    );
+    let model = fs::read_to_string(dir.path().join("ascribe.toml")).unwrap();
+    assert!(
+        model.starts_with(
+            "# The docs' model.\nspec = \"0.1\"\n\n[project]\ncontent-root = \"docs\" # beside it\n"
+        ),
+        "{model}"
+    );
+    assert!(
+        model.contains(
+            "[permalinks.retired]\nrotate-keys = { to = \"install.md\", reason = \"Merged into the install page\" }\n"
+        ),
+        "{model}"
+    );
+    assert!(
+        list_text(dir.path())
+            .ends_with("[retired]\nrotate-keys = \"Merged into the install page\"\n"),
+        "{}",
+        list_text(dir.path())
+    );
+    assert_eq!(reported(dir.path()), []);
+    let again = ascribe(dir.path(), &["permalinks", "sync"]);
+    assert_eq!(stdout(&again), "ascribe.permalinks is up to date.\n");
+
+    let verify = ascribe(dir.path(), &["permalinks", "verify", "rotate-keys"]);
+    assert_eq!(code_of(&verify), 1);
+    assert_eq!(
+        stderr(&verify),
+        "error: rotate-keys was retired from the docs: Merged into the install page\n"
+    );
+}
+
+#[test]
+fn an_alias_is_listed_and_verified_as_found() {
+    let dir = project();
+    let mut model = MODEL.to_owned();
+    model.push_str("\n[permalinks.aliases]\nkey-rotation = \"rotate-keys\"\n");
+    write(dir.path(), "ascribe.toml", &model);
+    let sync = ascribe(dir.path(), &["permalinks", "sync"]);
+    assert_eq!(code_of(&sync), 0, "{}", stderr(&sync));
+    assert!(
+        list_text(dir.path()).ends_with("[aliases]\nkey-rotation = \"rotate-keys\"\n"),
+        "{}",
+        list_text(dir.path())
+    );
+    assert_eq!(reported(dir.path()), []);
+    let verify = ascribe(dir.path(), &["permalinks", "verify", "key-rotation"]);
+    assert_eq!(code_of(&verify), 0, "{}", stderr(&verify));
 }

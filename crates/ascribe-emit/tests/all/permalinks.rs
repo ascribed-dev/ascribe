@@ -139,3 +139,67 @@ fn a_page_s_permalink_reaches_its_frontmatter_in_the_site_output() {
         "{page}"
     );
 }
+
+#[test]
+fn aliases_lead_where_their_permalink_does_and_retired_names_where_to_says() {
+    let model = format!(
+        "{MODEL}[permalinks.aliases]\ncheck = \"cli-check\"\nc = \"check\"\nserver = \"install-server\"\n\
+         [permalinks.retired]\n\
+         old-check = {{ to = \"reference/cli.md#cli-check\", reason = \"Merged into the CLI reference\" }}\n\
+         old-server = {{ to = \"self-managed.md\", reason = \"Moved\" }}\n\
+         legacy-sync = {{ reason = \"Removed in 4.0\" }}\n"
+    );
+    let files = [
+        (
+            "reference/cli.md",
+            "---\ntitle: CLI\n---\n\n## `ascribe check`\n@id {permalink=true}: cli-check\n",
+        ),
+        (
+            "self-managed.md",
+            "---\ntitle: Server\nvariant:\n  deployment: self-managed\n---\n\n\
+             ## Install\n@id {permalink=true}: install-server\n",
+        ),
+    ];
+    let cli_check = |extra: (&str, &str)| {
+        let mut entry = serde_json::json!({
+            "route": "/docs/reference/cli/",
+            "fragment": "cli-check",
+            "source": "reference/cli.md",
+        });
+        entry[extra.0] = extra.1.into();
+        entry
+    };
+    let cloud = list(&model, &files, "cloud");
+    assert_eq!(
+        cloud["permalinks"],
+        serde_json::json!({
+            "c": cli_check(("alias", "check")),
+            "check": cli_check(("alias", "cli-check")),
+            "cli-check": {
+                "route": "/docs/reference/cli/",
+                "fragment": "cli-check",
+                "source": "reference/cli.md",
+            },
+            "old-check": cli_check(("retired", "Merged into the CLI reference")),
+        })
+    );
+    // The cloud build doesn't publish the server's page: its alias isn't
+    // listed, and the retired name that led there has nowhere to lead.
+    assert_eq!(
+        cloud["removed"],
+        serde_json::json!({
+            "legacy-sync": { "reason": "Removed in 4.0" },
+            "old-server": { "reason": "Moved" },
+        })
+    );
+    let site = list(&model, &files, "site");
+    assert_eq!(site["permalinks"]["server"]["alias"], "install-server");
+    assert_eq!(
+        site["permalinks"]["old-server"]["route"],
+        "/docs/self-managed/"
+    );
+    assert_eq!(
+        site["removed"],
+        serde_json::json!({ "legacy-sync": { "reason": "Removed in 4.0" } })
+    );
+}

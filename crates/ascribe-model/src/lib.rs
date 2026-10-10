@@ -41,6 +41,7 @@ pub mod lock;
 pub mod model;
 mod names;
 pub mod pattern;
+mod permalink_names;
 pub mod permalinks;
 mod sections;
 mod toml_util;
@@ -55,7 +56,10 @@ pub use lock::{LOCK_FILE, LOCK_VERSION, Lock, LockedFile, LockedSource, file_has
 pub use model::*;
 pub use names::{KEY_RULE, NAME_WORD_RULE, edit_distance, is_key, is_name_word, suggest};
 pub use pattern::{Pattern, PatternError};
-pub use permalinks::{ListedPermalink, PERMALINKS_FILE, PERMALINKS_VERSION, PermalinkList, Synced};
+pub use permalinks::{
+    Current, ListedAlias, ListedPermalink, ListedRetired, PERMALINKS_FILE, PERMALINKS_VERSION,
+    PermalinkList, RETIRED_PLACEHOLDER, Synced, is_retired_placeholder,
+};
 pub use types::{
     Field, FieldRole, FieldType, FrontmatterSchema, SchemaOwner, validate_frontmatter,
 };

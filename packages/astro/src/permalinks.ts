@@ -1,5 +1,6 @@
 // Permalinks' addresses: a page at `<path><id>` for each permalink the build
-// publishes, which sends the reader on to its heading. Ascribe writes the list,
+// publishes, which sends the reader on to its heading, and for each retired
+// one with nowhere to lead, which says why it was removed. Ascribe writes the list,
 // `_ascribe/permalinks.json` in the site output (output-layout contract §1.2);
 // the integration adds the route (`Permalink.astro`) and builds its pages
 // from it, in `astro build` and `astro dev`.
@@ -17,14 +18,24 @@ export interface PermalinkList {
   path: string;
   /** The content model's dimensions, each with its values: the parameters an address takes. */
   dimensions?: Record<string, string[]>;
-  permalinks: Record<string, { route: string; fragment?: string; source: string }>;
+  /**
+   * Each permalink's destination. An alias names the permalink it leads to,
+   * and a retired permalink that leads somewhere its reason.
+   */
+  permalinks: Record<
+    string,
+    { route: string; fragment?: string; source: string; alias?: string; retired?: string }
+  >;
+  /** The retired permalinks with nowhere to lead in this build, each with why. */
+  removed?: Record<string, { reason: string }>;
 }
 
-/** What a forwarding page needs: where it sends the reader, and the parameters it takes. */
-export interface Forwarding {
-  to: string;
-  dimensions: Record<string, string[]>;
-}
+/**
+ * What an address's page needs: where it sends the reader, and the
+ * parameters it takes; or, for a retired permalink with nowhere to lead,
+ * why it was removed.
+ */
+export type Forwarding = { to: string; dimensions: Record<string, string[]> } | { reason: string };
 
 /** The list's text in a build's site output, or `undefined` when there isn't one. */
 export function permalinksText(siteRoot: string): string | undefined {
@@ -74,13 +85,21 @@ function destination(entry: { route: string; fragment?: string }): string {
   return entry.fragment === undefined ? entry.route : `${entry.route}#${entry.fragment}`;
 }
 
-/** `getStaticPaths` for the route: one page for each permalink in the site output's list. */
+/**
+ * `getStaticPaths` for the route: one page for each permalink in the site
+ * output's list, and one for each retired permalink it lists as removed.
+ */
 export function forwardingPaths(siteRoot: string): { params: { id: string }; props: Forwarding }[] {
   const list = readPermalinks(siteRoot);
   if (list === undefined) return [];
   const dimensions = list.dimensions ?? {};
-  return Object.entries(list.permalinks).map(([id, entry]) => ({
+  const forwarding = Object.entries(list.permalinks).map(([id, entry]) => ({
     params: { id },
-    props: { to: destination(entry), dimensions },
+    props: { to: destination(entry), dimensions } as Forwarding,
   }));
+  const removed = Object.entries(list.removed ?? {}).map(([id, entry]) => ({
+    params: { id },
+    props: { reason: entry.reason } as Forwarding,
+  }));
+  return [...forwarding, ...removed];
 }
