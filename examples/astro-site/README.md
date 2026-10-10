@@ -12,6 +12,7 @@ content/
   downloads/loom.yaml             linked to, so published under _ascribe/files/
 src/content.config.ts             the collection
 src/pages/[...slug].astro         the route: base + entry id, and `index` at the base
+src/pages/404.astro               the not-found page, which explains a permalink that isn't here
 src/layouts/Docs.astro            the page, its availability badge, and a table of contents
 test/e2e/                         the end-to-end tests
 ```
@@ -22,6 +23,7 @@ test/e2e/                         the end-to-end tests
 | A heading with an explicit `@id`, and a link to it from another page | `## Weave configuration` (`@id: weave-config`), linked from `Options.md` |
 | A partial variant selection: one group reduced to one arm, another left as tabs | build `site` selects `deployment = cloud`; the `pm` group stays tabs |
 | An availability annotation | page-level `available` in the frontmatter, and `@available` on `## Streaming` |
+| A permalink | `@id {permalink=true}: weave-config`, at `/docs/go/weave-config`, which with `?pm=pnpm` opens the `pnpm` tab; a name that isn't there gets the 404 page's explanation |
 | Routes | links to `guides/my-setup` and to the root page, which only work if Ascribe's router and Astro's agree |
 
 ## Running it

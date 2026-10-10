@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { consumerMismatches, normalizeBase, readProject } from "../src/project.js";
+import { consumerMismatches, homeRoute, normalizeBase, readProject } from "../src/project.js";
 
 function project(toml: string): string {
   const dir = mkdtempSync(path.join(tmpdir(), "ascribe-astro-"));
@@ -94,5 +94,15 @@ describe("normalizeBase", () => {
   it("adds the missing slashes", () => {
     expect(normalizeBase("docs")).toBe("/docs/");
     expect(normalizeBase("/")).toBe("/");
+  });
+});
+
+describe("homeRoute", () => {
+  it("is the base, ending as the site's routes do", () => {
+    expect(homeRoute("/docs", "never")).toBe("/docs");
+    expect(homeRoute("/docs/", "never")).toBe("/docs");
+    expect(homeRoute("/docs", "always")).toBe("/docs/");
+    expect(homeRoute("/docs", "ignore")).toBe("/docs/");
+    expect(homeRoute("/", "never")).toBe("/");
   });
 });

@@ -71,6 +71,7 @@ The [Astro guide](https://ascribed-dev.com/guides/astro/) walks through a site: 
 | `src/Availability.astro` | A page's availability as the element library's badge |
 | `src/code-titles.ts` | The Shiki transformer that shows code block titles |
 | `src/Permalink.astro`, `src/permalinks.ts` | The route at each permalink's address, and its pages, from the site output's `_ascribe/permalinks.json` |
+| `src/MissingPermalink.astro` | The explanation on a site's 404 page for an address under the permalinks' path that matches nothing |
 | `src/schema.ts` | Copies the generated schema inside the Astro root |
 | `src/attributes.ts` | The attribute-marker and source-anchor rules, on a hast tree |
 | `src/rehype.ts`, `src/satteri.ts` | The rules applied in each of Astro's Markdown processors |

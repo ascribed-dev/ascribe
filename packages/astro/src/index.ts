@@ -19,6 +19,9 @@
 //   // a layout
 //   import Elements from "@ascribed/astro/Elements.astro";           // <Elements /> in <head>
 //   import Availability from "@ascribed/astro/Availability.astro";   // the page's availability
+//
+//   // src/pages/404.astro
+//   import MissingPermalink from "@ascribed/astro/MissingPermalink.astro"; // a permalink that isn't here
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
@@ -27,7 +30,7 @@ import { codeTitles } from "./code-titles.js";
 import { SeenFiles, watchDev } from "./dev.js";
 import { agentsMiddleware, copyAgentFiles, copyPublishedFiles, filesMiddleware } from "./files.js";
 import { permalinkPattern, readPermalinks } from "./permalinks.js";
-import { consumerMismatches, readProject } from "./project.js";
+import { consumerMismatches, homeRoute, readProject } from "./project.js";
 import rehypeAscribeAttributes from "./rehype.js";
 import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
 import { runDiff, runPrompt } from "./review/diff.js";
@@ -223,7 +226,8 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
                 resolveId: (id) => (id === SITE_MODULE ? `\0${SITE_MODULE}` : undefined),
                 load: (id) =>
                   id === `\0${SITE_MODULE}`
-                    ? `export const siteRoot = ${JSON.stringify(siteRoot)};`
+                    ? `export const siteRoot = ${JSON.stringify(siteRoot)};\n` +
+                      `export const home = ${JSON.stringify(homeRoute(config.base, config.trailingSlash))};`
                     : undefined,
               },
               {

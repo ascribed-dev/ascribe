@@ -197,16 +197,72 @@ describe("the built site", () => {
     await expect(heading.evaluate((element) => element.matches(":target"))).resolves.toBe(true);
     await page.close();
 
-    // Without a script, a link to the same place, and no indexing.
+    // A refresh that needs no script, a link to the same place, and no indexing.
     const response = await fetch(`${origin}${BASE}/go/weave-config`);
     expect(response.status).toBe(200);
     const html = await response.text();
     const to = `${BASE}/guides/my-setup#weave-config`;
-    expect(html).not.toContain("<script");
     expect(html).toContain(`<meta http-equiv="refresh" content="0;url=${to}">`);
-    expect(html).toContain(`<a href="${to}">`);
+    expect(html).toContain(`<a href="${to}"`);
     expect(html).toContain('<meta name="robots" content="noindex">');
     expect(html).toContain(`<link rel="canonical" href="https://docs.example.com${to}">`);
+  });
+
+  it("forwards with scripts off", async () => {
+    const offline = await browser.newContext({ javaScriptEnabled: false });
+    const page = await offline.newPage();
+    await page.goto(`${origin}${BASE}/go/weave-config?pm=pnpm`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    await offline.close();
+  });
+
+  it("opens the tab a permalink's parameter names, and remembers it as a click does", async () => {
+    const reader = await browser.newContext();
+    const page = await reader.newPage();
+    // `pm` is a dimension of the content model, and `pnpm` one of its values.
+    await page.goto(`${origin}${BASE}/go/weave-config?pm=pnpm`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    const group = page.locator('ascribe-tabs[sync="pm"]');
+    await expect(group.getByRole("tab", { selected: true }).textContent()).resolves.toBe("pnpm");
+    await expect(group.getByText("pnpm add -g @loom/cli").isVisible()).resolves.toBe(true);
+    // The choice holds on the next page that has the group, with no parameter.
+    await page.goto(`${origin}${BASE}/reference/options`);
+    await page.goto(`${origin}${BASE}/guides/my-setup`);
+    await expect(group.getByRole("tab", { selected: true }).textContent()).resolves.toBe("pnpm");
+    await reader.close();
+  });
+
+  it("ignores parameters the docs don't know, as if the link had none", async () => {
+    const reader = await browser.newContext();
+    const page = await reader.newPage();
+    // A value `pm` doesn't have, a dimension the model doesn't have, and a version.
+    await page.goto(`${origin}${BASE}/go/weave-config?pm=bun&platform=macos&self-managed=3.4`);
+    await page.waitForURL(`${origin}${BASE}/guides/my-setup#weave-config`);
+    const group = page.locator('ascribe-tabs[sync="pm"]');
+    await expect(group.getByRole("tab", { selected: true }).textContent()).resolves.toBe("npm");
+    await expect(page.evaluate(() => localStorage.length)).resolves.toBe(0);
+    await reader.close();
+  });
+
+  it("explains, on the not-found page, a permalink the docs don't have", async () => {
+    const page = await context.newPage();
+    const response = await page.goto(`${origin}${BASE}/go/rotate-keys`);
+    expect(response?.status()).toBe(404);
+    await expect(page.locator("main > h1").textContent()).resolves.toBe("Page not found");
+    const note = page.locator("main section");
+    await expect(note.isVisible()).resolves.toBe(true);
+    await expect(note.locator("code").textContent()).resolves.toBe("rotate-keys");
+    await expect(note.getByRole("link", { name: "home page" }).getAttribute("href")).resolves.toBe(
+      BASE,
+    );
+
+    // Anywhere else, the not-found page says nothing about permalinks.
+    for (const address of [`${BASE}/no/such/page`, `${BASE}/go/rotate-keys/more`]) {
+      const other = await page.goto(`${origin}${address}`);
+      expect(other?.status(), address).toBe(404);
+      await expect(note.isVisible(), address).resolves.toBe(false);
+    }
+    await page.close();
   });
 
   it("leaves permalinks' addresses out of what agents read", async () => {
