@@ -96,6 +96,11 @@ pub struct Diagnostic {
     /// The address of the rule's own documentation, when the tool gives one.
     #[serde(skip)]
     pub rule_link: Option<String>,
+    /// The content model entry or image the problem is about, for a check
+    /// that reports problems about one: its issue's `entry` argument
+    /// (`phrase old-name`), which `[[intended]]` is matched against.
+    #[serde(skip)]
+    pub subject: Option<String>,
 }
 
 impl Diagnostic {
@@ -128,6 +133,9 @@ impl Diagnostic {
             next: None,
             rule: None,
             rule_link: None,
+            subject: issue
+                .arg(ascribe_core::intended::ENTRY_ARG)
+                .map(str::to_owned),
         }
     }
 

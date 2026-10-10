@@ -256,6 +256,12 @@ pub fn problem(
     if let Some(help) = registered.and_then(|e| e.fix.as_deref()) {
         known.push(format!("How to fix it: {help}"));
     }
+    if let Some(place) = registered.and_then(|e| e.place) {
+        known.push(format!(
+            "It may be intended. Only when the user says it is, acknowledge it {} with the reason they give, instead of fixing it.",
+            place.written()
+        ));
+    }
     for fix in &d.fixes {
         known.push(match fix.applicability {
             Applicability::Safe => format!("Ascribe has a safe automatic fix: `{}`.", fix.title),

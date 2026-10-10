@@ -1,0 +1,11 @@
+description: >-
+  A reason that's still the placeholder the editor's quick fix writes isn't a
+  reason: the acknowledgement is reported until the author writes why.
+spec: ["4.9", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: intended-check, line: 4}
+  - {slug: intended-entry, line: 5}
+  - {slug: intended-check, line: 8}
+  - {slug: intended-entry, line: 8}

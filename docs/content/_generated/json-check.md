@@ -4,6 +4,57 @@
 ```json
 {
   "$defs": {
+    "AcknowledgedEntry": {
+      "description": "A problem acknowledged as intended.",
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/Place",
+          "description": "Where the acknowledgement is written."
+        },
+        "builds": {
+          "description": "The builds it appears in, as a diagnostic's `builds` are.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "code": {
+          "description": "The code of the check that found it, such as `ASC036`.",
+          "type": "string"
+        },
+        "file": {
+          "description": "The file, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "message": {
+          "description": "What the check found.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/Range",
+          "description": "Where in the file."
+        },
+        "reason": {
+          "description": "Why it's intended: the acknowledgement's reason.",
+          "type": "string"
+        },
+        "slug": {
+          "description": "The check's name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "slug",
+        "message",
+        "file",
+        "range",
+        "builds",
+        "reason",
+        "at"
+      ],
+      "type": "object"
+    },
     "CodeCount": {
       "description": "How many diagnostics have one code.",
       "properties": {
@@ -213,6 +264,24 @@
       ],
       "type": "object"
     },
+    "Place": {
+      "description": "A place in a file.",
+      "properties": {
+        "file": {
+          "description": "The file, as a diagnostic's `file` is.",
+          "type": "string"
+        },
+        "range": {
+          "$ref": "#/$defs/Range",
+          "description": "Where in the file."
+        }
+      },
+      "required": [
+        "file",
+        "range"
+      ],
+      "type": "object"
+    },
     "Pos": {
       "description": "A position in a file.",
       "properties": {
@@ -286,6 +355,12 @@
     "Summary": {
       "description": "How many diagnostics of each severity.",
       "properties": {
+        "acknowledged": {
+          "description": "How many problems are acknowledged as intended. Left out when there\nare none.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
         "advice": {
           "description": "How many advice.",
           "format": "uint",
@@ -336,6 +411,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "What `ascribe check --format json` and `ascribe build --format json`\nwrite: one document, whatever the outcome. Fields can be added without a\nnew `schema_version`, so a reader ignores fields it doesn't know.",
   "properties": {
+    "acknowledged": {
+      "description": "The problems acknowledged as intended, which `diagnostics` leaves\nout and which don't fail the command, in file order. Left out when\nthere are none, and with `--summary`.",
+      "items": {
+        "$ref": "#/$defs/AcknowledgedEntry"
+      },
+      "type": "array"
+    },
     "ascribe_version": {
       "description": "The version of Ascribe that wrote it.",
       "type": "string"

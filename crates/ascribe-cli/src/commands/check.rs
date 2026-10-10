@@ -9,14 +9,14 @@ use std::rc::Rc;
 use ascribe_check::prompt::{self, Builds};
 use ascribe_check::prose;
 use ascribe_check::{
-    Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, Severity, diagnose,
-    diagnose_editor_build_in, locate_for,
+    Acknowledged, Diagnosed, Diagnostic, LoadError, Project, Reported, Scope, ScopeError, Severity,
+    diagnose, diagnose_editor_build_in, locate_for,
 };
 use ascribe_core::Coded;
 use ascribe_core::path::relative_path;
 use clap::{Args as ClapArgs, ValueEnum};
 
-use crate::answer::{FromDisk, Loaded, Projects};
+use crate::answer::{Found, FromDisk, Loaded, Projects};
 use crate::cli::Global;
 use crate::context::{stdout_is_terminal, use_color};
 use crate::exit;
@@ -164,6 +164,8 @@ pub struct Outcome {
     scope: Option<Scope>,
     reported: Vec<Reported>,
     builds_checked: Vec<String>,
+    /// The problems acknowledged as intended in the files reported on.
+    acknowledged: Vec<Acknowledged>,
     files: FileTable,
     /// How many errors, warnings, and advice are reported.
     pub counts: Counts,
@@ -238,11 +240,16 @@ pub fn run_check(
     let Checked { loaded, scope } =
         load(projects, global, args, stdin).map_err(Stopped::Failure)?;
     let project = &loaded.project;
-    let names = |d: Diagnosed<'_>| {
-        let builds = d.builds.iter().map(|b| b.name.clone()).collect();
-        (d.diagnostics, builds)
+    let names = |d: Diagnosed<'_>| Found {
+        builds: d.builds.iter().map(|b| b.name.clone()).collect(),
+        diagnostics: d.diagnostics,
+        acknowledged: d.acknowledged,
     };
-    let (diagnostics, builds_checked) = if args.editor_build {
+    let Found {
+        diagnostics,
+        builds: builds_checked,
+        mut acknowledged,
+    } = if args.editor_build {
         let files = scope.as_ref().and_then(|s| s.named_sources(project));
         names(diagnose_editor_build_in(
             project,
@@ -262,6 +269,9 @@ pub fn run_check(
         None => Reported::all(diagnostics),
     };
     reported.extend(Reported::all(about_vale));
+    if let Some(scope) = &scope {
+        acknowledged.retain(|a| scope.contains_file(project, a.problem.location.file));
+    }
     // Advice after errors and warnings; stable, so each keeps its order.
     reported.sort_by_key(|r| r.diagnostic.severity == Severity::Advice);
     let files = FileTable::of_project(project);
@@ -271,6 +281,7 @@ pub fn run_check(
         scope,
         reported,
         builds_checked,
+        acknowledged,
         files,
         counts,
     })
@@ -329,6 +340,7 @@ pub fn write(
         scope,
         reported,
         builds_checked,
+        acknowledged,
         files,
         counts,
     } = outcome;
@@ -342,7 +354,7 @@ pub fn write(
         args.editor_build
             .then(|| builds_checked.first().map(String::as_str))
             .flatten(),
-    );
+    ) + &text::acknowledged(acknowledged.len());
     let command = Command::new(global, args);
     match (args.format, args.summary) {
         (Format::Json, summary_only) => json::write(
@@ -354,6 +366,7 @@ pub fn write(
                 files_checked: checked,
                 files_reported: files_reported.unwrap_or(checked),
                 builds_checked: builds_checked.clone(),
+                acknowledged,
                 summary_only: summary_only.then(|| command.listing()),
             },
         ),
@@ -707,6 +720,7 @@ mod tests {
             files_checked: 1,
             files_reported: 1,
             builds_checked: Vec::new(),
+            acknowledged: &[],
             summary_only: None,
         };
         json::write(&mut out, &files, &reported, &about).unwrap();

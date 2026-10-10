@@ -49,6 +49,11 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 
 `ascribe check --format json` gives each problem's `fixes` too: edits that would fix it, each marked `safe` to apply as given, or `unsafe`, to read first.
 
+### Fix it, or say it's intended
+@available: next
+
+A problem whose next step is `review` may be fine as it is: a page nothing links to because the site's sidebar does, say. Fixing it is still the first answer, and an agent should fix it unless you tell it the problem is intended. When it is, the answer is an [acknowledgement](../reference/directives.md#intended): the check's name and your reason, written where the check reports the problem, so the next person reads why. Don't acknowledge a problem to make a check pass, and don't let an agent do it on its own: a prompt about a review check says to acknowledge it only when you've said so. The editor's **Mark as intended, and write why** writes a placeholder reason, which is reported until you replace it.
+
 ## Agent instructions
 
 `ascribe agents sync` writes your project's rules into the files agents read on their own, from `ascribe.toml`:

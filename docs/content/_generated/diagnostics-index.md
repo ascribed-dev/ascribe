@@ -143,6 +143,8 @@
 | [ASC140](../reference/diagnostics.md#asc140-source-copy-unused) | `source-copy-unused` | Warning | File | write |
 | [ASC141](../reference/diagnostics.md#asc141-model-inline-field) | `model-inline-field` | Error | File | write |
 | [ASC142](../reference/diagnostics.md#asc142-model-check-not-configurable) | `model-check-not-configurable` | Error | File | write |
-| [ASC143](../reference/diagnostics.md#asc143-prose) | `prose` | Advice | File | write |
-| [ASC144](../reference/diagnostics.md#asc144-prose-not-checked) | `prose-not-checked` | Advice | File | outside |
-| [ASC145](../reference/diagnostics.md#asc145-model-checks-vale) | `model-checks-vale` | Error | File | write |
+| [ASC143](../reference/diagnostics.md#asc143-intended-check) | `intended-check` | Error | File | choose |
+| [ASC144](../reference/diagnostics.md#asc144-intended-entry) | `intended-entry` | Error | File | write |
+| [ASC145](../reference/diagnostics.md#asc145-intended-unused) | `intended-unused` | Advice | Page | fix |
+| [ASC146](../reference/diagnostics.md#asc146-model-intended-check) | `model-intended-check` | Error | File | choose |
+| [ASC147](../reference/diagnostics.md#asc147-model-intended-entry) | `model-intended-entry` | Error | File | choose |

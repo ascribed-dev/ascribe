@@ -102,6 +102,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     let Diagnosed {
         diagnostics,
         builds,
+        acknowledged,
     } = match diagnose(&project, &args.build) {
         Ok(found) => found,
         Err(e) => return exit::fail(err, &e),
@@ -109,7 +110,14 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
     let files = FileTable::of_project(&project);
     let checked = project.sources().len();
     let written = match args.format {
-        Format::Text => text::write(out, &files, &diagnostics, checked, color),
+        Format::Text => text::write(
+            out,
+            &files,
+            &diagnostics,
+            checked,
+            acknowledged.len(),
+            color,
+        ),
         Format::Json => json::write(
             out,
             &files,
@@ -119,6 +127,7 @@ fn build(global: &Global, args: &Args, out: &mut dyn Write, err: &mut dyn Write)
                 files_checked: checked,
                 files_reported: checked,
                 builds_checked: builds.iter().map(|b| b.name.clone()).collect(),
+                acknowledged: &acknowledged,
                 summary_only: None,
             },
         ),

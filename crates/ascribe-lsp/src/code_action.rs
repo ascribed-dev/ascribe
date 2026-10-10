@@ -8,6 +8,7 @@ use lsp_types::{
     WorkspaceEdit,
 };
 
+use crate::intended;
 use crate::nav::{Ctx, directive_at};
 
 // Longer than the lint allows from before it was on. Split it only while
@@ -66,6 +67,49 @@ pub(crate) fn actions(ctx: &Ctx, params: CodeActionParams) -> Vec<CodeActionOrCo
                 .offset_lenient(&index, &file.source, diagnostic.range.end);
         if diagnostic_end < start || at > end {
             continue;
+        }
+        // A review check's problem may be fine as it is: the author says so
+        // with an acknowledgement, and writes why.
+        let place = ascribe_check::Registry::global()
+            .entries()
+            .find(|e| e.slug.as_str() == slug)
+            .and_then(|e| e.place);
+        if let Some(place) = place {
+            let subject = diagnostic
+                .data
+                .as_ref()
+                .and_then(|data| data.get("subject"))
+                .and_then(serde_json::Value::as_str);
+            match intended::mark(
+                place,
+                slug,
+                &file.source,
+                &file.document,
+                at,
+                subject,
+                &ctx.model_text,
+            ) {
+                Some(intended::Mark::Source(edit)) => actions.push(action(
+                    ctx,
+                    intended::TITLE,
+                    vec![diagnostic.clone()],
+                    vec![text_edit(ctx, &file.source, edit)],
+                )),
+                Some(intended::Mark::Model(edit)) => {
+                    let model_index = LineIndex::new(&ctx.model_text);
+                    actions.push(workspace_action(
+                        ctx,
+                        intended::TITLE,
+                        vec![diagnostic.clone()],
+                        Vec::new(),
+                        Some(TextEdit {
+                            range: ctx.encoding.range(&model_index, edit.span),
+                            new_text: edit.new_text,
+                        }),
+                    ));
+                }
+                None => {}
+            }
         }
         match slug {
             "attribute-unquoted-reserved" => {

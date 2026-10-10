@@ -130,6 +130,7 @@ Every declaration SPEC §7.2 lists, and every setting SPEC §9.3 and §9.5 need,
 | Name roles (§7.2, last paragraph) | Validation rule `model-name-multiple-roles` | [§22](#22-validation-rules) |
 | The editor's default build | `[editor]` | [§18](#18-editor) |
 | Sources: the folders outside the content a snippet may read (§4.8, §7.3) | `[sources.<name>]` | [§19](#19-sourcesname) |
+| Acknowledgements of a content model entry's or an image's problems (§4.9) | `[[intended]]` | [§20.1](#201-intended) |
 
 ---
 
@@ -205,7 +206,7 @@ A type with neither `files` nor `default = true` could never apply, and is an er
 
 **The page title.** Every page type MUST declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page (SPEC §5.2). The field MAY accept phrases (§12), and MAY set `inline = "code"` for code spans in the title (§6.3).
 
-**Reserved keys.** `available` (SPEC §4.4) and `variant` (SPEC §4.3) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type MUST NOT declare them (`model-field-reserved`). Generated consumer schemas include them automatically. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type MUST NOT declare it (`model-field-reserved`). `formatted` is reserved on page types as well: the site output writes the formatted form of `inline` fields under it (§6.3), so a type MUST NOT declare it (`model-field-reserved`). A page's own frontmatter can't use it either, since no type declares it.
+**Reserved keys.** `available` (SPEC §4.4) and `variant` (SPEC §4.3) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type MUST NOT declare them (`model-field-reserved`). Generated consumer schemas include them automatically. `intended` (SPEC §4.9) is reserved too, and every page and every fragment accepts it; no output has it, so generated consumer schemas leave it out, and a type MUST NOT declare it (`model-field-reserved`). Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type MUST NOT declare it (`model-field-reserved`). `formatted` is reserved on page types as well: the site output writes the formatted form of `inline` fields under it (§6.3), so a type MUST NOT declare it (`model-field-reserved`). A page's own frontmatter can't use it either, since no type declares it.
 
 **Unknown frontmatter keys.** A page whose frontmatter has a key its type doesn't declare (and that isn't reserved) is an error on the page.
 
@@ -224,7 +225,7 @@ Frontmatter is YAML. For type checking, processors parse it with the YAML 1.2 **
 
 Content types never apply to fragments, even when a type's `files` match a fragment's path.
 
-**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter MUST NOT use them (an error on the fragment), and `[fragments.frontmatter]` MUST NOT declare them (`model-field-reserved`). Use `@available` inside the fragment instead.
+**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter MUST NOT use them (an error on the fragment), and `[fragments.frontmatter]` MUST NOT declare them (`model-field-reserved`). Use `@available` inside the fragment instead. A fragment MAY use `intended`, and `[fragments.frontmatter]` MUST NOT declare it (`model-field-reserved`).
 
 ---
 
@@ -669,13 +670,38 @@ level = "off"
 |---|---|---|---|
 | `<check>` | string or table | the check's own level | A check's slug, as the [diagnostics reference](../reference/diagnostics.md) lists it. The value is a level: `"off"` (not reported), `"advice"`, `"warning"`, or `"error"`. Or it's a table with an optional `level` and the check's own settings, which the reference lists with the check; a table without `level` keeps the check's own level. |
 
-Only a check the diagnostics registry marks configurable can be named. The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name. `vale` is below; `links` has no keys yet.
+Only a check the diagnostics registry marks configurable can be named. The names `vale` and `links` are reserved: they're tables of settings for the tools Ascribe runs, not checks, and no check has either name. `vale` is §20.2; `links` has no keys yet.
 
 A level changes how a diagnostic is reported everywhere: by `ascribe check` and `ascribe build`, and in the editor. Advice is shown, and never fails `ascribe check`, even with `--deny-warnings`; a check set to `off` isn't reported at all.
 
 **Rules** (§22.9): every key is a check's slug, with a did-you-mean suggestion for one that isn't (`model-unknown-key`); the check is configurable (`model-check-not-configurable`); a level is one of the four (`model-invalid-value`); a table has only `level` and the check's settings (`model-unknown-key`); and a value is a string or a table (`model-wrong-type`).
 
-### `[checks.vale]`
+### 20.1 `[[intended]]`
+@available: next
+
+Acknowledges a review check's problem with a content model entry or an image as intended (SPEC §4.9): the problem isn't reported, and is counted and listed with the reason instead. Each table is one acknowledgement.
+
+```toml
+[[intended]]
+check = "phrase-unused"
+phrase = "old-product-name"
+reason = "Kept for the 2.x pages restored in the next release."
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `check` | string | required | A check's slug. The registry gives it `next = "review"` and `place = "entry"`. |
+| `reason` | string | required | Why the problem is intended. Not empty. |
+| `phrase` | string | | A phrase's key, declared in `[phrases]`. |
+| `feature` | string | | A feature's key, declared in `[features]`. |
+| `term` | string | | A glossary term's id, declared in `[glossary]`. |
+| `image` | string | | An image's path under the content root. |
+
+Exactly one of `phrase`, `feature`, `term`, and `image`. The acknowledgement covers the check's problems that name that entry, in every build. One that covers nothing when every build is checked is advice (`intended-unused`), reported at its `[[intended]]` header with a fix that removes the table.
+
+**Rules** (§22.9): the check exists, with a did-you-mean suggestion for one that doesn't, is a review check, and is reported at an entry (`model-intended-check`); the table names exactly one declared entry (`model-intended-entry`); `check` and `reason` are present (`model-missing-key`) and `reason` isn't empty (`model-empty-text`); and the table has no other key (`model-unknown-key`).
+
+### 20.2 `[checks.vale]`
 @available: next
 
 How the prose is checked with Vale, a program the project installs. Ascribe runs it; it isn't linked or downloaded.
@@ -700,7 +726,7 @@ max-level = "error"
 
 What Ascribe writes for Vale is under `.ascribe/vale/` in the project root: a preset's configuration and styles, and the vocabulary `Ascribe` of the project's own words (phrase values, glossary terms and aliases, dimension, value, and feature labels), one escaped regular expression to a line. Nothing outside it is written, except by `ascribe vale eject`.
 
-Each alert is a `prose` diagnostic (`ASC143`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC144`) at `[checks.vale]`, never a failed check. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
+Each alert is a `prose` diagnostic (`ASC148`) on the source file, with the rule as its JSON `rule`; one inside a phrase's text is at the phrase. A Vale that can't be run, fails, or runs out of time is one `prose-not-checked` advice (`ASC149`) at `[checks.vale]`, never a failed check. Both are configurable in `[checks]`, and `[checks]` sets their level after `max-level` caps Vale's.
 
 **Rules** (§22.9): exactly one of `preset` and `config` (`model-checks-vale`); `off` only with `preset`, and only naming its rules (`model-checks-vale`); `preset` and `max-level` take one of their values (`model-invalid-value`); no other key (`model-unknown-key`).
 
@@ -856,6 +882,8 @@ A loader MUST enforce every rule below when it loads `ascribe.toml`, and report 
 | Slug | Rule | Message |
 |---|---|---|
 | `model-check-not-configurable` | `[checks]` names only checks the diagnostics registry marks configurable. | `` `{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off `` |
+| `model-intended-check` | `[[intended]]` names a review check that's acknowledged at a content model entry. | `` `{check}` isn't a check `` |
+| `model-intended-entry` | `[[intended]]` names exactly one declared phrase, feature, glossary term, or image. | `` an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image` `` |
 | `model-checks-vale` | `[checks.vale]` has exactly one of `preset` and `config`, and `off` goes with `preset` and names its rules. | `` `[checks.vale]` has both `preset` and `config`; pick one: Ascribe's preset, or the project's own `.vale.ini` `` |
 
 ---
