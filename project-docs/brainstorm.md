@@ -1,14 +1,14 @@
 # Brainstorm: what Ascribe could do next
 
-Ideas for Ascribe after 0.1.1 (written 2026-10-02). This is exploration, not a plan: nothing here is decided. Each idea says what it is, how it fits Ascribe, what's hard about it, and the questions to answer before designing it. The suggested order and the open questions are at the end.
+Ideas for Ascribe after 0.1.1 (written 2026-10-02). This is exploration, not a plan: nothing here is decided. Each idea says what it is, how it fits Ascribe, what's hard about it, and the questions to answer before designing it. The suggested order and the open questions follow the ideas, and what has since been built is at the very end.
 
-Five groups:
+Four groups of ideas, then what's been built:
 
-- [Product features](#product-features): code snippets from tested code, editable previews, OpenAPI, editor UI (an actions bar, a sidebar, and more), prose linting with Vale, other CMS features, and embedded help.
-- [Agents](#agents): publishing docs that agents can read (the Web Documentation Delivery Spec), and helping agents that write docs (diagnostics, the CLI, an MCP server, GitHub Copilot, and Claude Code).
-- [Review](#review): seeing what a pull request changes as readers will see it, and commenting on it there.
+- [Product features](#product-features): code snippets from tested code, editable previews, OpenAPI, prose linting with Vale, other CMS features, and embedded help.
+- [Agents](#agents): publishing docs that agents can read (the Web Documentation Delivery Spec).
 - [Beyond the pages](#beyond-the-pages): what a project knows that isn't in its pages: a cache and a search index Ascribe can rebuild, and notes that people write.
 - [Paid features](#paid-features): what could be charged for, if Ascribe ever goes that way. A list to keep, not a plan.
+- [Built](#built): the editor UI, everything for agents that write docs, and review.
 
 Ascribe's own docs, and the drift checks built on them (generated reference, coverage, and snippets from section 1), are planned in [docs/](docs/README.md).
 
@@ -25,6 +25,8 @@ Ascribe's own docs, and the drift checks built on them (generated reference, cov
 # Product features
 
 ## 1. Code snippets from tested code (Bluehawk, built in)
+
+Partly built: `@snippet`, sources, and `ascribe drift` exist ([Drift](../docs/content/guides/drift.md)). Knowing whether the code was tested, and with what, isn't, and is what the [tested examples proposal](tested-examples.md) is for.
 
 **Built.** `@snippet` takes a code example from a tagged region or a whole file, through a source named in `ascribe.toml` (`code:examples/quill/ascribe.toml#dimensions`) rather than a relative path, and `ascribe drift` lists the pages whose examples changed; see the [drift guide](../docs/content/guides/drift.md). Bluehawk's `snippet` and `remove` tags work as they are; `replace`, `uncomment`, `state`, and `emphasize` are reserved, and the editor features below (go to definition, "Used by", a preview that follows the code) aren't built. Ascribe's own docs take their examples this way. What follows is the idea as it was written.
 
@@ -114,78 +116,6 @@ A general WYSIWYG editor that serializes back to Markdown tends to produce sourc
 - Embedded rendering needs elements in `@ascribed/elements` (operation, schema, example), and an Astro story.
 - Start with OpenAPI 3.1 only? GraphQL and AsyncAPI would follow the same design later.
 - Generated pages raise navigation and URL questions (see [navigation](#navigation-and-site-structure)).
-
-## 4. Editor UI: an actions bar, a sidebar, and more
-
-Planned in the editor UI plan, in nine phases.
-
-### An actions bar for where the cursor is
-
-One key opens a menu at the top center of the window, where the Command Palette appears, listing only the actions that apply to the cursor or selection right now. It's for writers more than power users: plain-language titles, a one-line description on each, typing to filter, and short wizards in the same box when an action needs input. It's built on VS Code's quick pick (`vscode.window.createQuickPick`), bound to a key with a `keybindings` contribution and active only in Ascribe projects.
-
-**Every action has another path.** Each action is defined once, in one registry: its title, description, the contexts it applies to, and what it does. That definition feeds:
-
-- the Command Palette (`Ascribe: Wrap in a note`), which users can also bind to keys;
-- the lightbulb (`Cmd+.`), where an action is a natural fix or refactor;
-- an **Ascribe** submenu in the editor's context menu;
-- the actions bar.
-
-The bar is a filtered view of commands that exist anyway, never the only way to reach one. A test checks that every registered action has a palette command.
-
-**Why not only the lightbulb.** `Cmd+.` is context sensitive too, but it's built for developers: it mixes every extension's fixes and refactors, its titles are terse, it has no groups or descriptions, and it can't ask follow-up questions. The bar is the writer-friendly front end to the same actions.
-
-**What it offers.** The language server works out the context from the parsed page (a custom request, like `ascribe/preview`):
-
-| Where the cursor is | Actions |
-|---|---|
-| On a problem | Its fixes, listed first |
-| Selected prose | Wrap in a note (pick its type); wrap in expandable details; make it a link (pick a page or section); make it a phrase; add it to the glossary |
-| An empty line | Insert a note, steps, tabs (pick a dimension and its values), expandable details, a fragment, an image (pick a file, then write alt text), or a project widget (its attributes as prompts) |
-| A list | Make it a procedure (`@steps`) |
-| A heading | Give it a fixed id; copy a link to this section; mark where it's available |
-| A note | Change its type; turn it into expandable details; remove the note but keep its text |
-| A tab group | Add a tab; remove this tab |
-| A link | Change where it points; use the target's title as its text |
-| An image | Set its width; edit its alt text |
-
-**For writers.**
-
-- Plain words before syntax: "Wrap in a note", with `@note` in the description.
-- The detail line previews what will be inserted.
-- Wizards ask ("Which dimension?", "Which values?") instead of expecting the syntax.
-- Every edit is in canonical form, and undoes in one step.
-
-**Out of scope for now:** anything beyond the editor, such as running checks or builds, or opening the published page; and modes for power users, such as prefixes that search pages or headings.
-
-### A sidebar
-
-An **Ascribe** view container in the activity bar, starting with tree views rather than a form editor for `ascribe.toml`:
-
-- **Projects:** each project, its server's state, its editor build; buttons to restart it or open its output. This builds directly on the multi-project work.
-- **Used by:** for the current page or fragment, what links to it and what includes it.
-- **Pages:** grouped by type, with fragments and what includes them, and orphaned pages flagged.
-- **Content model:** types, dimensions, phrases, features, glossary terms, widgets, and builds, each with a count of the pages that use it, and a jump to its declaration.
-
-Actions on the content model belong in the actions bar's registry too, so they appear in the palette and the bar:
-
-- **Make the selection a phrase**, replacing its other occurrences.
-- **Add the selection to the glossary.**
-- **Promote a feature** ("Promote audit-log to GA"), edited in `ascribe.toml`.
-- **Rename a dimension value or phrase key** across every page.
-
-Edits to `ascribe.toml` must keep its comments, so the server makes them with a round-trip TOML editor (`toml_edit`). A full form editor for `ascribe.toml` can come later, if at all: with the sidebar and actions, it matters much less.
-
-### A status bar item
-
-The active file's project and editor build ("Ascribe: docs · site"). Clicking it switches the editor's build or opens the project's output. In a multi-project workspace it answers, at a glance, which project a file belongs to.
-
-### A build lens
-
-Choose a build, and the editor dims what that build leaves out: other variant arms, and sections whose availability excludes it. "What will self-hosted readers see?" is then answered in the source, without opening the preview. It uses editor decorations and data the server already computes for builds.
-
-### A getting-started walkthrough
-
-VS Code's walkthrough contribution, shown after install: create an `ascribe.toml`, write a page, open the preview, add `ascribe check` to CI. Cheap, and it helps new teams start.
 
 ## 5. Prose linting with Vale
 
@@ -288,9 +218,9 @@ What's missing is the join: an output keyed by permalink, holding each named sec
 
 # Agents
 
-Sections 8 to 13 are planned in the agents plan, in eleven phases, checked against a [research report](reports/Agent%20first%20interfaces%20for%20docs%20tools.md), with one idea added on 2026-10-04: a **Prompt agent** action on problems, review comments, and changed pages, which builds a prompt for the user's own agent. Section 7 isn't in that plan.
-
 Agents meet documentation in two ways: they **read** published docs while they code, and they **write** docs in a repository. Ascribe can help with both, and it's unusually well placed for the first, because it already builds a resolved, plain-Markdown version of every page.
+
+The ideas for agents that write docs (sections 8 to 13) are under [Built](#built).
 
 ## 7. Docs that agents can read: the Web Documentation Delivery Spec
 
@@ -351,138 +281,6 @@ How Ascribe would use it:
 - **Content negotiation** needs the web server's help. Ascribe can emit the configuration (an Astro middleware, or headers files for common hosts), but not apply it.
 - **Variant URLs.** Per-build pages cover editions and versions. A dimension such as `platform`, which the site shows as tabs, either stays as labeled sections in one page, or gets per-value pages (`getting-started.macos.md`). `afdocs`'s `tabbed-content-serialization` check, run on both, can help decide.
 - **Follow the spec's changes.** It's a draft (0.6.0); its version should be pinned in the docs and its changelog watched.
-
-## 8. Diagnostics agents can use
-
-Planned in the agents plan and built (phases 1 and 3).
-
-The rest of this group is about agents that write documentation. The goal is one feedback loop agents can run themselves: **write, check, fix**, with Ascribe's knowledge of the content model, the ids, the phrases, and the diagnostics. Each harness gets that loop through its own channels.
-
-### What already works
-
-GitHub Copilot's agent mode and Claude Code's VS Code extension both read VS Code's diagnostics, so what the language server publishes already reaches agents. Good diagnostics are agent features.
-
-### Improvements
-
-- **Say the fix, not only the fault.** "`./missing-page.md` doesn't exist; did you mean `guides/missing-page.md`?"
-- **Link each code to its documentation** with LSP's `codeDescription` (`docs/diagnostics.md#…`).
-- **Expose fixes as code actions.** Agents apply them reliably.
-
-### A gap to close first
-
-With `ascribe.startServers: "onDemand"`, a project's server starts when someone opens one of its files. An agent that edits files on disk without opening them gets no diagnostics, and concludes the page is clean. Start a project's server when one of its files changes on disk too; the extension already watches for `ascribe.toml` changes, so this is a small addition (and related to [#56](https://github.com/ascribed-dev/ascribe/issues/56)).
-
-## 9. A CLI for agents
-
-Planned in the agents plan and built (phases 1 and 2), with `link` and `refs` added.
-
-Every harness can run shell commands, so this layer reaches all of them. `ascribe check --format json` exists; these are missing:
-
-| Command | What it gives an agent |
-|---|---|
-| `ascribe check path/to/page.md` | One file checked in its project's context, for a fast loop. |
-| `ascribe check --stdin --path guides/new.md` | Text checked as if it were that file, before it's written. |
-| `ascribe explain ASC036` | A diagnostic's meaning, an example, and the fix. |
-| `ascribe model --format json` | The resolved content model: page types and their required frontmatter, dimensions and values, phrases, features, glossary, widgets, builds. What an agent most needs to write a valid page. |
-| `ascribe outline page.md` | Headings and their ids, so `page.md#id` links are right the first time. |
-| `ascribe render page.md --build self-hosted --format text` | What a reader of that build sees: variants resolved, phrases substituted. |
-
-Each is a thin wrapper over something the server already computes. Output should be compact, since it's spent from an agent's context.
-
-## 10. An MCP server: `ascribe mcp`
-
-Planned in the agents plan and built (phase 7). `rename` was left out: tools stay read-only.
-
-The same capabilities as typed tools, which both harnesses prefer to shell commands.
-
-- **Stateless and multi-project.** Every tool takes a path and finds the nearest `ascribe.toml`, so one server handles a monorepo.
-- **Read-only by default.** Tools that would change files return edits rather than apply them; the harness's own edit tools, with their approval prompts, write.
-- **Tools:** `check` (files, or unsaved text at a path); `explain`; `model`; `outline`; `resolve_link` ("does `keys.md#rotate-keys` exist, and what's its title?"); `references` (where a page, id, phrase, fragment, or feature is used); `render`; `format`; `rename` (edits, as a dry run).
-- **Resources:** a directive cheat sheet, the content model, and spec sections, so an agent reads the rules when it needs them instead of guessing.
-- **Prompts:** "new page of type X", with the frontmatter the type requires.
-
-## 11. GitHub Copilot
-
-Planned in the agents plan and built (phases 8 and 10). Prompt files were left out: the cloud agent doesn't load them, and the MCP server's prompts do the same in VS Code.
-
-### In VS Code
-
-The extension can use three channels:
-
-1. **Register the MCP server from the extension** (`contributes.mcpServerDefinitionProviders` and `vscode.lm.registerMcpServerDefinitionProvider`). Copilot's agent mode then has `ascribe mcp` with no setup, using the binary the extension already resolves per project.
-2. **Language model tools** (`contributes.languageModelTools` and `vscode.lm.registerTool`). Unlike MCP tools, these run inside the extension, so they see unsaved buffers and the running language servers: the right home for "check what's in the editor now" and "render the preview". Writers can reference them in chat (`#ascribeCheck`).
-3. **Instruction files Copilot reads on its own:** `.github/copilot-instructions.md`; path-scoped `.github/instructions/ascribe.instructions.md` with `applyTo: "docs/**/*.md"`, so the rules load only when editing docs; and prompt files such as `.github/prompts/new-page.prompt.md`.
-
-A chat participant (`@ascribe`) is possible but works only in Copilot Chat; skip it unless there's demand.
-
-### Copilot's cloud coding agent
-
-It runs on GitHub without VS Code. The MCP server (configured in the repository's settings) and a `copilot-setup-steps.yml` that installs `@ascribed/cli` give it the same loop.
-
-## 12. Claude Code (CLI and its VS Code extension)
-
-Planned in the agents plan and built (phase 9). The hook command serves Codex and Copilot too, which share Claude Code's hook format.
-
-- **A hook for automatic feedback.** A `PostToolUse` hook on `Edit|Write` for Markdown files runs `ascribe check <file> --format json` and returns any errors to Claude, so every edit is checked without Claude remembering to. The most effective single item for Claude Code, and it needs only the per-file check in [section 9](#9-a-cli-for-agents).
-- **A plugin** bundling a skill ("Writing Ascribe documentation", loaded only when relevant), the MCP server, the hook, and commands such as `/ascribe:new-page` and `/ascribe:check`. Installed in one step from a plugin marketplace; the same plugin works in the CLI and in the VS Code extension.
-- **Project files** for teams without the plugin: `.mcp.json` at the repository root, and `CLAUDE.md`.
-
-## 13. One source for agent instructions
-
-Planned in the agents plan and built (phase 4), as `ascribe agents sync` rather than `ascribe init --agents`.
-
-`AGENTS.md`, `CLAUDE.md`, Copilot's instruction files, and a skill all want the same guidance. Generate them from one source, the project's content model plus Ascribe's directive reference:
-
-```sh
-ascribe init --agents        # writes or updates AGENTS.md, CLAUDE.md, .github/instructions/…
-```
-
-- The generated part sits between markers, so it can be regenerated without touching what the team wrote.
-- It's short: the page types and their required frontmatter, the phrases to use instead of literal names, the directives this project uses, and "run `ascribe check` before you finish".
-- It's per project: an agent in the security handbook learns about `review: quarterly|yearly`, not the docs project's `since`.
-
----
-
-# Review
-
-## 14. Rendered changes and comments
-
-Added 2026-10-03, after two research reports: [Docs as code pain points](reports/Docs%20as%20code%20pain%20points.md) and [Ascribe fit for docs pain points](reports/Ascribe%20fit%20for%20docs%20pain%20points.md). Planned in [review/](review/README.md), in eight phases.
-
-### The problem
-
-Reviewing docs in a pull request means choosing between the rendered page and the comments. GitHub's rendered view of a Markdown change takes no comments, and its source view shows lines, not what a reader sees. Preview deployments show the page but not what changed. Reviewers of AI-written changes feel this most, and nothing above addresses it.
-
-### The idea
-
-One comment overlay, with three views of the same review:
-
-- **The site preview.** The real page, in the site's own layout, from the site generator's dev server. Changed blocks are marked, and the pull request's review threads sit beside the blocks they refer to.
-- **The page preview.** The same marks and threads on Ascribe's own instant render of the page alone, in VS Code.
-- **The source files.** The threads on the lines they were made on, as today.
-
-Each view links to the other two: "open source" from a block or a thread, "open site preview" and "open page preview" from a file.
-
-### What Ascribe adds that a Markdown diff can't
-
-- **Pages, not files.** "This pull request changes 7 pages, 3 of them through a fragment." A change to a fragment, a phrase, or `ascribe.toml` changes pages whose own files didn't change, and only a tool that resolves the project can say which.
-- **Per build.** "What does this change for self-hosted readers?"
-- **The real site.** Comments in the context a reader will have, not on a bare render.
-
-### How
-
-- **Source anchors.** In a review mode, the site output marks each block with the source file and lines it came from, through includes. Whatever renders the output carries the anchors into the page. They are what the overlay attaches to, and they don't depend on the site generator.
-- **`ascribe diff`.** Resolves the project at a base revision (read through `git`) and now, compares the resolved pages per build, and reports changed pages and blocks. It needs `git` and nothing else, and it can write a static HTML report for CI.
-- **Threads from GitHub.** Review threads are read and written through the GitHub CLI (`gh`), or VS Code's GitHub sign-in in the extension. GitHub stays the only store: a comment made on a rendered block is an ordinary review comment on the file and line it came from.
-- **Hosts for the overlay.** The page preview in VS Code, and Astro's dev toolbar through `@ascribed/astro`.
-
-### Hard parts and questions
-
-- GitHub anchors a comment only to a file the pull request changed. A comment on a page that changed only through a fragment has to go on the fragment, or become a pull request comment that remembers its block.
-- A site's layout or components can drop the anchors. The overlay has to say when a thread has nowhere to attach, and list it anyway.
-- A reviewer needs a checkout and the site running. Reviewers without a GitHub account, or without a checkout, need a hosted service: deployed previews, sign-in, and stored comments. That's the one place a paid tier could fit, and the research says it's premature.
-- GitHub only, or GitLab too?
-- VS Code has an experimental rendered Markdown diff (August 2026), without comments. If it gains them, the page preview matters less; the site preview and resolved content still would.
 
 ---
 
@@ -631,32 +429,240 @@ Added 2026-10-09. A place to collect ideas, so they're on record if the question
 
 # Suggested order
 
-1. **Agent-friendly diagnostics and CLI** (sections 8 and 9): start servers on file changes, clearer messages with links, per-file and stdin checks, `explain`, `model`. Cheap, and every harness benefits.
-2. **Docs agents can read** (section 7): first a baseline `afdocs` run on `examples/astro-site`, then `llms.txt`, `.md` pages, the per-page pointer, and the page-size check, with `afdocs` in CI to hold the result. Mostly new outputs from what the builds already compute, and it serves every reader of an Ascribe site, not only its authors.
-3. **The Claude Code hook and `ascribe init --agents`** (sections 12 and 13): the tightest writing loop for the least work, built on step 1.
-4. **Review** (section 14): source anchors and `ascribe diff` first, since the static report and both overlays build on them. The research ranks review as the gap that drift and AI-written changes both drain into.
-5. **Vale** (section 5): prose linting with the rules teams already have, without directive noise.
-6. **Code snippets** (section 1): the most valuable product feature for docs-as-code teams, and better than Bluehawk because Ascribe can check it.
-7. **`ascribe mcp`** (section 10), read-only tools first.
-8. **Editor UI** (section 4): the actions bar first (writers gain the most), then the status bar item, the Projects and Used-by views, and the build lens.
-9. **VS Code integration for Copilot** (section 11): registering the MCP server, then language model tools.
-10. **Structural editing in the preview** (section 2, layers 1 and 2).
-11. **OpenAPI links and embeds** (section 3).
-12. **A Claude Code plugin and Copilot prompt files**, packaging what exists.
+1. **Docs agents can read** (section 7): first a baseline `afdocs` run on `examples/astro-site`, then `llms.txt`, `.md` pages, the per-page pointer, and the page-size check, with `afdocs` in CI to hold the result. Mostly new outputs from what the builds already compute, and it serves every reader of an Ascribe site, not only its authors.
+2. **Vale** (section 5): prose linting with the rules teams already have, without directive noise.
+3. **Code snippets** (section 1): the most valuable product feature for docs-as-code teams. What's left is in the [tested examples proposal](tested-examples.md).
+4. **Structural editing in the preview** (section 2, layers 1 and 2).
+5. **OpenAPI links and embeds** (section 3).
 
-Harness and spec details change quickly: VS Code's MCP and language model APIs, Copilot's instruction formats, Claude Code's hook and plugin formats, and the Web Documentation Delivery Spec (a draft). Check each against current documentation when designing that phase.
+The Web Documentation Delivery Spec is a draft and changes quickly. Check it against its current version when designing that work.
 
 # Open questions
 
 - **Who are the main users?** Writers on a docs team favor the preview editing, Vale, and CMS features; engineers documenting their own code favor snippets, OpenAPI, review, and agent support. The research found engineers feel drift most and do the reviewing.
-- **Bluehawk compatibility:** read existing Bluehawk-tagged code as is, or design new tags?
+- **Bluehawk compatibility:** read existing Bluehawk-tagged code as is, or design new tags? `@snippet` reads Bluehawk's `snippet` and `remove` tags today. The [tested examples proposal](tested-examples.md) is for projects starting clean, and would design the rest fresh.
 - **Vale:** bundle it, or use the project's own install?
-- **The actions bar's key:** one that's free on macOS, Windows, and Linux, and doesn't clash with VS Code's own (`Cmd+.` is the lightbulb).
 - **Navigation:** deliberately left to the site generator, or a gap? `llms.txt` sections and OpenAPI pages both want an answer.
 - **Variants for agents:** labeled sections in one Markdown page, or a page per variant value?
-- **Which agent harnesses come first:** Copilot, Claude Code, or both? *Answered: both, through what they share.* The commands, `AGENTS.md`, the skill, the hook format, and the MCP server each reach several harnesses from one file, so neither came first; a file for one harness is written only where no shared format reaches it (agents decision 9).
 - **Should Ascribe ever apply edits for an agent** (`rename` applying its changes), or always return edits for the harness to apply with its own approvals? *Not yet.* Every tool returns edits, and each fix says whether it's safe to apply (agents decision 4). The first likely exceptions are `ascribe check --fix` for safe fixes, and a `rename` that applies its changes with a dry run; the agents pass results record whether agents left edits half done.
 - **Review beyond a checkout:** is a hosted review service (guest reviewers, deployed previews) ever in scope, and would it be paid? Section 16 lists it with the other ideas.
 - **Notes:** one construct in the language for a note that's never published, or two (in the page, and a file)? And do they ever need more than git?
 - **A cache:** worth a database for search, or files only?
 - **Review hosts:** GitHub only, or GitLab too?
+
+---
+
+# Built
+
+These ideas have been built since this document was written. Each section is kept as it was, so it records what was intended, and parts of it may describe things that weren't built or were built differently. The guides say what exists:
+
+- **The editor UI** (section 4): [Editing](../docs/content/guides/editor.md).
+- **Agents that write docs** (sections 8 to 13): [Agents](../docs/content/guides/agents.md).
+- **Review** (section 14): [Review](../docs/content/guides/review.md).
+
+Two of the open questions were answered by building them:
+
+- **The actions bar's key:** one that's free on macOS, Windows, and Linux, and doesn't clash with VS Code's own (`Cmd+.` is the lightbulb). *Answered:* `Cmd+K A` on macOS and `Ctrl+K A` elsewhere.
+- **Which agent harnesses come first:** Copilot, Claude Code, or both? *Answered: both, through what they share.* The commands, `AGENTS.md`, the skill, the hook format, and the MCP server each reach several harnesses from one file, so neither came first; a file for one harness is written only where no shared format reaches it (agents decision 9).
+
+## 4. Editor UI: an actions bar, a sidebar, and more
+
+Planned in the editor UI plan, in nine phases.
+
+### An actions bar for where the cursor is
+
+One key opens a menu at the top center of the window, where the Command Palette appears, listing only the actions that apply to the cursor or selection right now. It's for writers more than power users: plain-language titles, a one-line description on each, typing to filter, and short wizards in the same box when an action needs input. It's built on VS Code's quick pick (`vscode.window.createQuickPick`), bound to a key with a `keybindings` contribution and active only in Ascribe projects.
+
+**Every action has another path.** Each action is defined once, in one registry: its title, description, the contexts it applies to, and what it does. That definition feeds:
+
+- the Command Palette (`Ascribe: Wrap in a note`), which users can also bind to keys;
+- the lightbulb (`Cmd+.`), where an action is a natural fix or refactor;
+- an **Ascribe** submenu in the editor's context menu;
+- the actions bar.
+
+The bar is a filtered view of commands that exist anyway, never the only way to reach one. A test checks that every registered action has a palette command.
+
+**Why not only the lightbulb.** `Cmd+.` is context sensitive too, but it's built for developers: it mixes every extension's fixes and refactors, its titles are terse, it has no groups or descriptions, and it can't ask follow-up questions. The bar is the writer-friendly front end to the same actions.
+
+**What it offers.** The language server works out the context from the parsed page (a custom request, like `ascribe/preview`):
+
+| Where the cursor is | Actions |
+|---|---|
+| On a problem | Its fixes, listed first |
+| Selected prose | Wrap in a note (pick its type); wrap in expandable details; make it a link (pick a page or section); make it a phrase; add it to the glossary |
+| An empty line | Insert a note, steps, tabs (pick a dimension and its values), expandable details, a fragment, an image (pick a file, then write alt text), or a project widget (its attributes as prompts) |
+| A list | Make it a procedure (`@steps`) |
+| A heading | Give it a fixed id; copy a link to this section; mark where it's available |
+| A note | Change its type; turn it into expandable details; remove the note but keep its text |
+| A tab group | Add a tab; remove this tab |
+| A link | Change where it points; use the target's title as its text |
+| An image | Set its width; edit its alt text |
+
+**For writers.**
+
+- Plain words before syntax: "Wrap in a note", with `@note` in the description.
+- The detail line previews what will be inserted.
+- Wizards ask ("Which dimension?", "Which values?") instead of expecting the syntax.
+- Every edit is in canonical form, and undoes in one step.
+
+**Out of scope for now:** anything beyond the editor, such as running checks or builds, or opening the published page; and modes for power users, such as prefixes that search pages or headings.
+
+### A sidebar
+
+An **Ascribe** view container in the activity bar, starting with tree views rather than a form editor for `ascribe.toml`:
+
+- **Projects:** each project, its server's state, its editor build; buttons to restart it or open its output. This builds directly on the multi-project work.
+- **Used by:** for the current page or fragment, what links to it and what includes it.
+- **Pages:** grouped by type, with fragments and what includes them, and orphaned pages flagged.
+- **Content model:** types, dimensions, phrases, features, glossary terms, widgets, and builds, each with a count of the pages that use it, and a jump to its declaration.
+
+Actions on the content model belong in the actions bar's registry too, so they appear in the palette and the bar:
+
+- **Make the selection a phrase**, replacing its other occurrences.
+- **Add the selection to the glossary.**
+- **Promote a feature** ("Promote audit-log to GA"), edited in `ascribe.toml`.
+- **Rename a dimension value or phrase key** across every page.
+
+Edits to `ascribe.toml` must keep its comments, so the server makes them with a round-trip TOML editor (`toml_edit`). A full form editor for `ascribe.toml` can come later, if at all: with the sidebar and actions, it matters much less.
+
+### A status bar item
+
+The active file's project and editor build ("Ascribe: docs · site"). Clicking it switches the editor's build or opens the project's output. In a multi-project workspace it answers, at a glance, which project a file belongs to.
+
+### A build lens
+
+Choose a build, and the editor dims what that build leaves out: other variant arms, and sections whose availability excludes it. "What will self-hosted readers see?" is then answered in the source, without opening the preview. It uses editor decorations and data the server already computes for builds.
+
+### A getting-started walkthrough
+
+VS Code's walkthrough contribution, shown after install: create an `ascribe.toml`, write a page, open the preview, add `ascribe check` to CI. Cheap, and it helps new teams start.
+
+Sections 8 to 13 were planned in the agents plan, in eleven phases, checked against a [research report](reports/Agent%20first%20interfaces%20for%20docs%20tools.md), with one idea added on 2026-10-04: a **Prompt agent** action on problems, review comments, and changed pages, which builds a prompt for the user's own agent. Section 7 isn't in that plan.
+
+## 8. Diagnostics agents can use
+
+Planned in the agents plan and built (phases 1 and 3).
+
+The rest of this group is about agents that write documentation. The goal is one feedback loop agents can run themselves: **write, check, fix**, with Ascribe's knowledge of the content model, the ids, the phrases, and the diagnostics. Each harness gets that loop through its own channels.
+
+### What already works
+
+GitHub Copilot's agent mode and Claude Code's VS Code extension both read VS Code's diagnostics, so what the language server publishes already reaches agents. Good diagnostics are agent features.
+
+### Improvements
+
+- **Say the fix, not only the fault.** "`./missing-page.md` doesn't exist; did you mean `guides/missing-page.md`?"
+- **Link each code to its documentation** with LSP's `codeDescription` (`docs/diagnostics.md#…`).
+- **Expose fixes as code actions.** Agents apply them reliably.
+
+### A gap to close first
+
+With `ascribe.startServers: "onDemand"`, a project's server starts when someone opens one of its files. An agent that edits files on disk without opening them gets no diagnostics, and concludes the page is clean. Start a project's server when one of its files changes on disk too; the extension already watches for `ascribe.toml` changes, so this is a small addition (and related to [#56](https://github.com/ascribed-dev/ascribe/issues/56)).
+
+## 9. A CLI for agents
+
+Planned in the agents plan and built (phases 1 and 2), with `link` and `refs` added.
+
+Every harness can run shell commands, so this layer reaches all of them. `ascribe check --format json` exists; these are missing:
+
+| Command | What it gives an agent |
+|---|---|
+| `ascribe check path/to/page.md` | One file checked in its project's context, for a fast loop. |
+| `ascribe check --stdin --path guides/new.md` | Text checked as if it were that file, before it's written. |
+| `ascribe explain ASC036` | A diagnostic's meaning, an example, and the fix. |
+| `ascribe model --format json` | The resolved content model: page types and their required frontmatter, dimensions and values, phrases, features, glossary, widgets, builds. What an agent most needs to write a valid page. |
+| `ascribe outline page.md` | Headings and their ids, so `page.md#id` links are right the first time. |
+| `ascribe render page.md --build self-hosted --format text` | What a reader of that build sees: variants resolved, phrases substituted. |
+
+Each is a thin wrapper over something the server already computes. Output should be compact, since it's spent from an agent's context.
+
+## 10. An MCP server: `ascribe mcp`
+
+Planned in the agents plan and built (phase 7). `rename` was left out: tools stay read-only.
+
+The same capabilities as typed tools, which both harnesses prefer to shell commands.
+
+- **Stateless and multi-project.** Every tool takes a path and finds the nearest `ascribe.toml`, so one server handles a monorepo.
+- **Read-only by default.** Tools that would change files return edits rather than apply them; the harness's own edit tools, with their approval prompts, write.
+- **Tools:** `check` (files, or unsaved text at a path); `explain`; `model`; `outline`; `resolve_link` ("does `keys.md#rotate-keys` exist, and what's its title?"); `references` (where a page, id, phrase, fragment, or feature is used); `render`; `format`; `rename` (edits, as a dry run).
+- **Resources:** a directive cheat sheet, the content model, and spec sections, so an agent reads the rules when it needs them instead of guessing.
+- **Prompts:** "new page of type X", with the frontmatter the type requires.
+
+## 11. GitHub Copilot
+
+Planned in the agents plan and built (phases 8 and 10). Prompt files were left out: the cloud agent doesn't load them, and the MCP server's prompts do the same in VS Code.
+
+### In VS Code
+
+The extension can use three channels:
+
+1. **Register the MCP server from the extension** (`contributes.mcpServerDefinitionProviders` and `vscode.lm.registerMcpServerDefinitionProvider`). Copilot's agent mode then has `ascribe mcp` with no setup, using the binary the extension already resolves per project.
+2. **Language model tools** (`contributes.languageModelTools` and `vscode.lm.registerTool`). Unlike MCP tools, these run inside the extension, so they see unsaved buffers and the running language servers: the right home for "check what's in the editor now" and "render the preview". Writers can reference them in chat (`#ascribeCheck`).
+3. **Instruction files Copilot reads on its own:** `.github/copilot-instructions.md`; path-scoped `.github/instructions/ascribe.instructions.md` with `applyTo: "docs/**/*.md"`, so the rules load only when editing docs; and prompt files such as `.github/prompts/new-page.prompt.md`.
+
+A chat participant (`@ascribe`) is possible but works only in Copilot Chat; skip it unless there's demand.
+
+### Copilot's cloud coding agent
+
+It runs on GitHub without VS Code. The MCP server (configured in the repository's settings) and a `copilot-setup-steps.yml` that installs `@ascribed/cli` give it the same loop.
+
+## 12. Claude Code (CLI and its VS Code extension)
+
+Planned in the agents plan and built (phase 9). The hook command serves Codex and Copilot too, which share Claude Code's hook format.
+
+- **A hook for automatic feedback.** A `PostToolUse` hook on `Edit|Write` for Markdown files runs `ascribe check <file> --format json` and returns any errors to Claude, so every edit is checked without Claude remembering to. The most effective single item for Claude Code, and it needs only the per-file check in [section 9](#9-a-cli-for-agents).
+- **A plugin** bundling a skill ("Writing Ascribe documentation", loaded only when relevant), the MCP server, the hook, and commands such as `/ascribe:new-page` and `/ascribe:check`. Installed in one step from a plugin marketplace; the same plugin works in the CLI and in the VS Code extension.
+- **Project files** for teams without the plugin: `.mcp.json` at the repository root, and `CLAUDE.md`.
+
+## 13. One source for agent instructions
+
+Planned in the agents plan and built (phase 4), as `ascribe agents sync` rather than `ascribe init --agents`.
+
+`AGENTS.md`, `CLAUDE.md`, Copilot's instruction files, and a skill all want the same guidance. Generate them from one source, the project's content model plus Ascribe's directive reference:
+
+```sh
+ascribe init --agents        # writes or updates AGENTS.md, CLAUDE.md, .github/instructions/…
+```
+
+- The generated part sits between markers, so it can be regenerated without touching what the team wrote.
+- It's short: the page types and their required frontmatter, the phrases to use instead of literal names, the directives this project uses, and "run `ascribe check` before you finish".
+- It's per project: an agent in the security handbook learns about `review: quarterly|yearly`, not the docs project's `since`.
+
+## 14. Rendered changes and comments
+
+Added 2026-10-03, after two research reports: [Docs as code pain points](reports/Docs%20as%20code%20pain%20points.md) and [Ascribe fit for docs pain points](reports/Ascribe%20fit%20for%20docs%20pain%20points.md). Planned in [review/](review/README.md), in eight phases.
+
+### The problem
+
+Reviewing docs in a pull request means choosing between the rendered page and the comments. GitHub's rendered view of a Markdown change takes no comments, and its source view shows lines, not what a reader sees. Preview deployments show the page but not what changed. Reviewers of AI-written changes feel this most, and nothing above addresses it.
+
+### The idea
+
+One comment overlay, with three views of the same review:
+
+- **The site preview.** The real page, in the site's own layout, from the site generator's dev server. Changed blocks are marked, and the pull request's review threads sit beside the blocks they refer to.
+- **The page preview.** The same marks and threads on Ascribe's own instant render of the page alone, in VS Code.
+- **The source files.** The threads on the lines they were made on, as today.
+
+Each view links to the other two: "open source" from a block or a thread, "open site preview" and "open page preview" from a file.
+
+### What Ascribe adds that a Markdown diff can't
+
+- **Pages, not files.** "This pull request changes 7 pages, 3 of them through a fragment." A change to a fragment, a phrase, or `ascribe.toml` changes pages whose own files didn't change, and only a tool that resolves the project can say which.
+- **Per build.** "What does this change for self-hosted readers?"
+- **The real site.** Comments in the context a reader will have, not on a bare render.
+
+### How
+
+- **Source anchors.** In a review mode, the site output marks each block with the source file and lines it came from, through includes. Whatever renders the output carries the anchors into the page. They are what the overlay attaches to, and they don't depend on the site generator.
+- **`ascribe diff`.** Resolves the project at a base revision (read through `git`) and now, compares the resolved pages per build, and reports changed pages and blocks. It needs `git` and nothing else, and it can write a static HTML report for CI.
+- **Threads from GitHub.** Review threads are read and written through the GitHub CLI (`gh`), or VS Code's GitHub sign-in in the extension. GitHub stays the only store: a comment made on a rendered block is an ordinary review comment on the file and line it came from.
+- **Hosts for the overlay.** The page preview in VS Code, and Astro's dev toolbar through `@ascribed/astro`.
+
+### Hard parts and questions
+
+- GitHub anchors a comment only to a file the pull request changed. A comment on a page that changed only through a fragment has to go on the fragment, or become a pull request comment that remembers its block.
+- A site's layout or components can drop the anchors. The overlay has to say when a thread has nowhere to attach, and list it anyway.
+- A reviewer needs a checkout and the site running. Reviewers without a GitHub account, or without a checkout, need a hosted service: deployed previews, sign-in, and stored comments. That's the one place a paid tier could fit, and the research says it's premature.
+- GitHub only, or GitLab too?
+- VS Code has an experimental rendered Markdown diff (August 2026), without comments. If it gains them, the page preview matters less; the site preview and resolved content still would.
