@@ -801,3 +801,41 @@ Warning · file level · next step: write · [SPEC §7.4]({repo}/blob/main/SPEC.
 **Message:** no snippet uses `{path}` any more; `ascribe sources fetch` removes it
 
 **Fix:** Run `ascribe sources fetch`, which removes the copies no snippet uses.
+
+### `@intended`
+
+#### ASC143 `intended-check`
+
+Error · file level · next step: choose · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
+
+**When:** Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else.
+
+**Message:** `{check}` isn't a check
+
+**Fix:** Name the check whose problem is intended, by its name in the [diagnostics reference](../reference/diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable.
+
+#### ASC144 `intended-entry`
+
+Error · file level · next step: write · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
+
+**When:** An `intended` frontmatter entry that isn't a mapping with a `check` and a reason.
+
+**Message:** `intended` is a list of acknowledgements, each with a `check` and a `reason`
+
+**Fix:** Write `intended` as a list, each entry with the `check` it acknowledges and a `reason` that says why the problem is intended:
+
+```yaml
+intended:
+  - check: page-orphan
+    reason: Linked from the site's sidebar.
+```
+
+#### ASC145 `intended-unused`
+
+Advice · page level · next step: fix · [SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)
+
+**When:** An acknowledgement that matches no problem in any build.
+
+**Message:** nothing here needs acknowledging any more: `{check}` reports no problem here in any build
+
+**Fix:** Remove the acknowledgement: what it excused has gone. `ascribe check` reports this only when it checks every build, since a problem may appear in one build alone.

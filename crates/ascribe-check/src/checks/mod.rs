@@ -10,9 +10,11 @@
 //! | `attrs` | Attribute keys and types, `@variant` dimensions, required attributes |
 //! | `avail` | `@available` specs, the `available` frontmatter key, and table rows' `available` |
 //! | `frontmatter` | Content type, fields, reserved keys, `variant` |
+//! | `acknowledge` | What `@intended` and `intended` frontmatter name (SPEC §4.9) |
 //! | `refs` | `@include` targets, `@snippet` addresses, link destinations, image sources and alt text |
 //! | `sources` | `ascribe.lock`, and the copies of sources in other repositories |
 
+mod acknowledge;
 mod attrs;
 mod avail;
 mod frontmatter;
@@ -303,6 +305,7 @@ impl Ctx<'_> {
                 self.check_availability_text(&p.text, p.span.start(), p.span, true);
             }
             ("snippet", Some(PrimaryValue::Identifier(_))) => self.check_snippet(d),
+            ("intended", _) => self.check_intended_directive(d),
             _ => {}
         }
     }

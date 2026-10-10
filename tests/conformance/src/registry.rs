@@ -109,6 +109,10 @@ pub struct Entry {
     /// Whether a project may set its level in `[checks]`.
     #[serde(default)]
     pub configurable: bool,
+    /// For a `review` entry, where it reports its problems and so where one
+    /// is acknowledged: `page`, `block`, or `entry`.
+    #[serde(default)]
+    pub place: Option<String>,
     /// The SPEC.md section the rule comes from.
     pub spec: String,
     /// The main message template.

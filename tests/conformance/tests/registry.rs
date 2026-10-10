@@ -55,6 +55,7 @@ fn spec_rows() -> Vec<(String, Severity)> {
             let severity = match c[2].as_str() {
                 "Error" => Severity::Error,
                 "Warning" => Severity::Warning,
+                "Advice" => Severity::Advice,
                 other => panic!("severity {other:?}"),
             };
             (format!("{} | {}", c[0], c[1]), severity)
@@ -72,7 +73,7 @@ fn templates(e: &Entry) -> Vec<&String> {
 fn every_spec_row_has_exactly_one_entry() {
     let reg = registry();
     let rows = spec_rows();
-    assert_eq!(rows.len(), 77, "SPEC §8.2 changed; update the registry");
+    assert_eq!(rows.len(), 80, "SPEC §8.2 changed; update the registry");
     let mut by_row: BTreeMap<&str, Vec<&Entry>> = BTreeMap::new();
     for e in &reg.entries {
         if let Some(row) = &e.row {

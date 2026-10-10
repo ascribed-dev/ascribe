@@ -499,6 +499,7 @@ impl<'a> Converter<'a> {
                 },
             ),
             Primary::Availability { .. } => ("an availability spec", "cloud"),
+            Primary::Reason { .. } => ("a reason", "Why the problem is intended."),
             Primary::Text { .. } | Primary::None => ("text", "Text that fits here."),
         };
         self.report(
@@ -549,10 +550,12 @@ impl<'a> Converter<'a> {
                     trailing,
                 }))
             }
-            Some(Primary::Availability { .. }) => Some(PrimaryValue::Line(LinePrimary {
-                span: Span::new(start, end),
-                text: rest.to_owned(),
-            })),
+            Some(Primary::Availability { .. } | Primary::Reason { .. }) => {
+                Some(PrimaryValue::Line(LinePrimary {
+                    span: Span::new(start, end),
+                    text: rest.to_owned(),
+                }))
+            }
             Some(Primary::Text { .. }) => {
                 // The head parser and the block parser disagree about where a
                 // text primary starts. That's a bug in one of them, which the

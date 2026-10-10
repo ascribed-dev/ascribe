@@ -15,6 +15,7 @@
 //! | [`issue`] | [`Issue`]: a problem, by registry slug, with its message arguments |
 //! | [`error`] | [`Coded`]: errors a caller can tell apart by a stable code |
 //! | [`diagnostics`] | One [`DiagnosticSlug`] constant per entry of `tests/conformance/diagnostics.toml` |
+//! | [`intended`] | [`Place`]: where a check's problem is acknowledged, and how a check names a content model entry |
 //! | [`schema`] | [`DirectiveSchema`], and the built-in schemas of SPEC §4 |
 //! | [`attributes`] | [`parse_attribute_block`]: the attribute-block parser |
 //! | [`attribute_block`] | [`AttributeBlock`]: parsed attributes, with spans (SPEC §3.3) |
@@ -34,6 +35,7 @@ pub mod boundary;
 pub mod consumer;
 pub mod diagnostics;
 pub mod error;
+pub mod intended;
 pub mod issue;
 pub mod line_index;
 pub mod names;
@@ -59,6 +61,7 @@ pub use attributes::{ParsedAttributes, parse_attribute_block};
 pub use boundary::SourceBoundary;
 pub use consumer::{AssetPlacement, AssetUse, ConsumerProfile, Router, SlugScope, Slugger};
 pub use error::Coded;
+pub use intended::{EntryKind, Place};
 pub use issue::{Applicability, Arg, DiagnosticSlug, Fix, Issue, Related};
 pub use line_index::{LineCol, LineIndex, WideEncoding, WideLineCol};
 pub use path::{

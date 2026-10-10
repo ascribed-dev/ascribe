@@ -344,6 +344,10 @@ fn builtin_line(builtin: Builtin) -> String {
         Builtin::Snippet => "`@snippet: <source>:<path>#<region>`: a code example from a file \
                              outside the pages"
             .to_owned(),
+        Builtin::Intended => "`@intended {check=<check>}: <reason>` above a block: a review \
+                               check's problem in it is intended; write one only when the \
+                               user says the problem is intended"
+            .to_owned(),
     }
 }
 
@@ -360,6 +364,7 @@ fn widget_line(schema: &DirectiveSchema) -> String {
         Primary::Identifier { .. } => ": <id>",
         Primary::Text { .. } => ": <text>",
         Primary::Availability { .. } => ": <spec>",
+        Primary::Reason { .. } => ": <reason>",
     };
     let mut line = match (schema.forms.line, schema.forms.container) {
         (_, false) => format!("`{syntax}{primary}`"),

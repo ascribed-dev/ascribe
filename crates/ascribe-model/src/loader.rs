@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use ascribe_core::availability::{AvailabilitySpec, parse_availability};
-use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Span, diagnostics};
+use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Place, Span, diagnostics};
 use toml::de::{DeTable, DeValue};
 
 use crate::model::*;
@@ -20,6 +20,9 @@ pub(crate) struct Loader<'s> {
     pub project_dir: Option<&'s Path>,
     /// The checks `[checks]` may name: the registry's configurable ones.
     pub configurable: &'s [DiagnosticSlug],
+    /// The checks `[[intended]]` may name, with where each reports its
+    /// problems: the registry's review checks.
+    pub review: &'s [(DiagnosticSlug, Place)],
     pub issues: Vec<Issue>,
     pub warnings: Vec<Issue>,
 }
@@ -32,6 +35,16 @@ pub(crate) fn load(
     load_configurable(src, file, project_dir, diagnostics::CONFIGURABLE)
 }
 
+/// [`load`], with `review` as the checks `[[intended]]` may name.
+#[cfg(test)]
+pub(crate) fn load_reviewing(
+    src: &str,
+    file: FileId,
+    review: &[(DiagnosticSlug, Place)],
+) -> Result<ContentModel, Vec<Issue>> {
+    load_with(src, file, None, diagnostics::CONFIGURABLE, review)
+}
+
 /// [`load`], with `configurable` as the checks `[checks]` may name.
 pub(crate) fn load_configurable(
     src: &str,
@@ -39,11 +52,28 @@ pub(crate) fn load_configurable(
     project_dir: Option<&Path>,
     configurable: &[DiagnosticSlug],
 ) -> Result<ContentModel, Vec<Issue>> {
+    load_with(
+        src,
+        file,
+        project_dir,
+        configurable,
+        diagnostics::ACKNOWLEDGEABLE,
+    )
+}
+
+fn load_with(
+    src: &str,
+    file: FileId,
+    project_dir: Option<&Path>,
+    configurable: &[DiagnosticSlug],
+    review: &[(DiagnosticSlug, Place)],
+) -> Result<ContentModel, Vec<Issue>> {
     let mut l = Loader {
         src,
         file,
         project_dir,
         configurable,
+        review,
         issues: Vec::new(),
         warnings: Vec::new(),
     };
@@ -280,6 +310,7 @@ impl<'s> Loader<'s> {
                 "editor",
                 "sources",
                 "checks",
+                "intended",
             ],
         );
 
@@ -311,6 +342,7 @@ impl<'s> Loader<'s> {
         self.project_paths(&project, root.get("project"));
         let sources = self.sources(root.get("sources"), &project.value.content_root);
         let checks = self.checks(root.get("checks"));
+        let intended = self.intended(root.get("intended"), &phrases, &features, &glossary);
 
         Some(ContentModel {
             spec: spec?,
@@ -331,6 +363,7 @@ impl<'s> Loader<'s> {
             sources,
             editor_build,
             checks,
+            intended,
             warnings: Vec::new(),
         })
     }

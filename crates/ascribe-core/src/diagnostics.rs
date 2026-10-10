@@ -153,7 +153,7 @@ pub const HEADING_PHRASE_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("heading-ph
 pub const HEADING_DUPLICATE_WITHOUT_ID: DiagnosticSlug =
     DiagnosticSlug("heading-duplicate-without-id");
 
-/// `ASC047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page".
+/// `ASC047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment".
 pub const FRONTMATTER_UNKNOWN_KEY: DiagnosticSlug = DiagnosticSlug("frontmatter-unknown-key");
 
 /// `ASC048`, error, file level: SPEC §8.2, "Frontmatter | Required field missing".
@@ -460,6 +460,21 @@ pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-fiel
 pub const MODEL_CHECK_NOT_CONFIGURABLE: DiagnosticSlug =
     DiagnosticSlug("model-check-not-configurable");
 
+/// `ASC143`, error, file level: SPEC §8.2, "`@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else".
+pub const INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("intended-check");
+
+/// `ASC144`, error, file level: SPEC §8.2, "`@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason".
+pub const INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("intended-entry");
+
+/// `ASC145`, advice, page level: SPEC §8.2, "`@intended` | An acknowledgement that matches no problem in any build".
+pub const INTENDED_UNUSED: DiagnosticSlug = DiagnosticSlug("intended-unused");
+
+/// `ASC146`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("model-intended-check");
+
+/// `ASC147`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("model-intended-entry");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -604,9 +619,19 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_UNUSED,
     MODEL_INLINE_FIELD,
     MODEL_CHECK_NOT_CONFIGURABLE,
+    INTENDED_CHECK,
+    INTENDED_ENTRY,
+    INTENDED_UNUSED,
+    MODEL_INTENDED_CHECK,
+    MODEL_INTENDED_ENTRY,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the
 /// registry's entries with `configurable = true`, in registry order. A test
 /// keeps it equal to the registry.
 pub const CONFIGURABLE: &[DiagnosticSlug] = &[];
+
+/// The checks an author can acknowledge (SPEC §4.9): the registry's entries
+/// whose next step is `review`, each with the place its problems are reported
+/// at, in registry order. A test keeps it equal to the registry.
+pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[];

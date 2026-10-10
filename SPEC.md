@@ -82,7 +82,7 @@ Processors MAY support common CommonMark extensions, such as GitHub Flavored Mar
 
 ### 2.1 Files
 
-An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves two keys: `available` (§4.4) and `variant` (§4.3).
+An Ascribe source file is a CommonMark file with the extension `.md`. A file MAY begin with YAML frontmatter delimited by lines containing only `---`. The content model (§7) defines which frontmatter keys each content type accepts; this specification reserves three keys: `available` (§4.4), `variant` (§4.3), and `intended` (§4.9).
 
 - Frontmatter MUST be valid YAML. A reserved key whose value isn't the shape its section defines (an availability spec, or a mapping of dimensions to values) is a frontmatter value of the wrong type (§8.2).
 - The source files are exactly the files under the content root (§2.2) whose names end in `.md`. A file or directory whose name begins with `.` is skipped, along with everything in it. So is a directory below the content root that holds a file named `ascribe.toml`, other than the project's own folder: it belongs to another project. The content root itself is never skipped. A symbolic link on the way to a source file is followed, and the file it leads to MUST be a source file itself (under the content root, named as above, and not in another project's folder), so a link can't put any other file on disk in a page; one that leads elsewhere is an error on that file, and it isn't a source another file can include. A source file MUST be valid UTF-8; one that can't be read, or isn't UTF-8, is an error on that file, and processors still check the rest.
@@ -96,7 +96,7 @@ A documentation set's source files live under a **content root**. Each file is e
 
 A file is a fragment if any segment of its path, relative to the content root, begins with `_` (for example `_warning.md` or `_snippets/prerequisites.md`), or if its path matches a fragment pattern declared in the content model (§7.2). Otherwise it's a page.
 
-Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available` and `variant`; availability inside a fragment is written with `@available`.
+Frontmatter on fragments is validated against the content model's fragment schema, not a page schema. Fragments MUST NOT use the reserved keys `available` and `variant`; availability inside a fragment is written with `@available`. A fragment MAY use `intended` (§4.9).
 
 ### 2.3 Escapes
 
@@ -199,7 +199,7 @@ Each directive's schema declares whether it takes a primary and of which kind:
 
   A text primary is always inline content, never a block. A line that would turn a paragraph into something else stays text: a setext underline `===` or a table delimiter row continues the primary, and a leading `[label]: /url` is text, not a link reference definition. A `---` line can't underline a primary, so it ends the primary and is a thematic break. Likewise, an ordered list that doesn't start at 1 can't interrupt a paragraph, so a line such as `2. Two.` continues a text primary; a blank line before it starts the list.
 
-- A **line primary** (an availability spec) is the rest of the directive line, with surrounding whitespace removed. It may contain spaces, but it isn't parsed as inline content and it never continues onto the following lines, so a paragraph directly below the directive is the block it binds. Only `@available` (§4.4) takes one.
+- A **line primary** (an availability spec, or a reason) is the rest of the directive line, with surrounding whitespace removed. It may contain spaces, but it isn't parsed as inline content and it never continues onto the following lines, so a paragraph directly below the directive is the block it binds. Only `@available` (§4.4) and `@intended` (§4.9) take one.
 
 ### 3.5 Forms
 
@@ -333,6 +333,7 @@ Containers MAY nest, and `@end` always closes the innermost one. Processors SHOU
 | `@steps` | line | none | following block | Mark an ordered list as a procedure |
 | `@details` | line, container | none | following block; container with a trailing `:` | Collapsible content |
 | `@snippet` | line | identifier (address) | self | Take a code example from a file |
+| `@intended` | line | line (reason) | following block | Acknowledge a check's problem as intended |
 
 ### 4.1 `@id`
 
@@ -614,6 +615,46 @@ Extensions are compared without regard to case. A file whose extension isn't in 
 
 **No history, no network.** A snippet reads the file as it is in the working tree, through its source, so checking and building need neither version-control history nor a network. A source in another repository is read through the copies in the project (§7.4).
 
+### 4.9 `@intended`
+
+Says that a problem a processor reports is intended: the author has looked at it and keeps it. An acknowledgement names one check and gives a reason, and it applies to one page, one block, or one content model entry.
+
+```
+@intended {check=link-dead}: help.example.com refuses link checkers; checked by hand.
+Read the [vendor's deployment notes](https://help.example.com/deploy) first.
+```
+
+- **Form:** line. **Binding:** following block. **Primary:** REQUIRED reason (a line primary, §3.4): plain text, the rest of the line.
+- **Attributes:**
+
+  | Key | Type | Default | Meaning |
+  |---|---|---|---|
+  | `check` | string | none, REQUIRED | The check whose problem is intended, by its name |
+
+- **What can be acknowledged.** A processor's checks are its own, beyond the diagnostics of §8.2. A check that reports something that may be fine as it is (a page nothing links to, a page longer than an agent reads) is a **review check**, and only a review check can be acknowledged; a problem that makes a document non-conforming never can. Each review check reports its problems at one kind of place: a page or fragment as a whole, one block, or one entry of the content model or one image, which have no page. Its problems are acknowledged at that place, and nowhere else:
+  - **A block:** `@intended` directly above it. The acknowledgement covers that check's problems located anywhere in the block, including in a container's content. In a fragment, it covers the block in every page that includes it.
+  - **A page or a fragment:** the reserved frontmatter key `intended`, a list of mappings with a `check` and a `reason`:
+
+    ```yaml
+    intended:
+      - check: page-orphan
+        reason: Linked from the site's sidebar, which the content model can't see.
+    ```
+
+  - **A content model entry or an image:** `[[intended]]` in the content model (§7.2), with a `check`, a `reason`, and exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root):
+
+    ```toml
+    [[intended]]
+    check = "phrase-unused"
+    phrase = "old-product-name"
+    reason = "Kept for the 2.x pages restored in the next release."
+    ```
+
+- **The reason** is REQUIRED and not empty.
+- **What it does.** A problem an acknowledgement covers isn't reported. Processors SHOULD count acknowledged problems, and list them with their reasons where they list problems.
+- **When nothing needs it.** An acknowledgement that covers no problem in any build is itself reported as advice (§8.2), so acknowledgements don't outlive what they excused. Processors report it only when they've checked every build.
+- **Never in an output.** An acknowledgement changes no output: the site, plain, and JSON outputs (§9.4) are what they'd be without it. `@intended` renders nothing, and the `intended` key isn't in a page's frontmatter in any output.
+
 ---
 
 ## 5. Inline constructs
@@ -748,6 +789,7 @@ A content model declares the following.
 | Consumer profile | Routing, slugging, heading ids, HTML passthrough, images | §9.5 |
 | Builds | Named builds and their modes | §9.3 |
 | Sources | Named sets of files outside the content that pages may take code from: each one's folder or repository, and which of its files are readable | §4.8, §7.3, §7.4 |
+| Acknowledgements | Problems of review checks about a phrase, feature, glossary term, or image that are intended, each with a reason | §4.9 |
 
 Built-in directive schemas are defined by this specification, not by the content model. A content model MAY extend the enumerations they use (note types, lifecycle states).
 
@@ -823,7 +865,7 @@ When several places together cause a diagnostic, it's reported once, at the late
 
 ### 8.2 Diagnostics
 
-Conforming processors MUST report every error below, and SHOULD report the warnings. An error means the document isn't conforming; a build MUST fail on errors.
+Conforming processors MUST report every error below, and SHOULD report the warnings. An error means the document isn't conforming; a build MUST fail on errors. Processors MAY report the advice, which never fails a build.
 
 | Construct | Condition | Severity |
 |---|---|---|
@@ -893,7 +935,7 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Headings | No `@id`, and the heading contains a phrase | Warning |
 | Headings | No `@id`, and the heading's slug is empty (its text is only punctuation or emoji) | Warning |
 | Headings | No `@id`, and the heading's slug is the same as another heading's on the page, so its id is numbered (page level) | Warning |
-| Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page | Error |
+| Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment | Error |
 | Frontmatter | Required field missing | Error |
 | Frontmatter | Value doesn't match the field's declared type | Error |
 | Frontmatter | Reserved key (`available`, `variant`) on a fragment | Error |
@@ -903,6 +945,9 @@ Conforming processors MUST report every error below, and SHOULD report the warni
 | Lists | Unindented directive line ends a list | Warning |
 | Lists | Directive line over-indented into an indented code block | Warning |
 | Lists | An ordered list continues the numbering of a list bound by `@steps` right after it ends (usually an unindented directive split the list) | Warning |
+| `@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else | Error |
+| `@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason | Error |
+| `@intended` | An acknowledgement that matches no problem in any build | Advice |
 | Content model | A name used in more than one role (dimension name, dimension value, lifecycle state, or feature key), or a dimension value in more than one dimension | Error |
 
 ### 8.3 Canonical form
