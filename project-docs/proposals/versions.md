@@ -1,6 +1,6 @@
 # Proposal: documentation versions
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Documentation versioning approaches](reports/Documentation%20versioning%20approaches.md).
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Documentation versioning approaches](../reports/Documentation%20versioning%20approaches.md).
 
 ## The goal
 
@@ -132,7 +132,7 @@ By default an older live line can still be indexed, with its canonical links poi
 
 `@ascribed/astro` would supply the switcher, banner, and links. A site using another generator gets the file.
 
-**For agents,** the claim is narrower than it sounds. Ascribe has no `llms.txt` yet; the [content checks plan](content-checks/phase-6-agent-output.md) adds it. And the plain output names a version only on a page that has an availability line. Each line's Markdown pages saying which version they're for is new output, to be added with this.
+**For agents,** the claim is narrower than it sounds. Ascribe has no `llms.txt` yet; the [content checks plan](../content-checks/phase-6-agent-output.md) adds it. And the plain output names a version only on a page that has an availability line. Each line's Markdown pages saying which version they're for is new output, to be added with this.
 
 ### Links to a page that isn't in a line
 
@@ -239,5 +239,5 @@ Two more wait on other work:
 ## Still open
 
 - **Should a release be a command?** Moving a line from `planned` to `live` is one edit. Pointing `next` at the following line, and rewriting the marks that meant this one, is a second, and it's the one that was done by hand after 0.2.0. `ascribe versions release` could do both.
-- **Do redirects wait for the redirects feature?** Retiring lists the old addresses and where each should go. Whether Ascribe then writes them for the host, or only reports them, depends on the redirects idea in the [brainstorm](brainstorm.md).
+- **Do redirects wait for the redirects feature?** Retiring lists the old addresses and where each should go. Whether Ascribe then writes them for the host, or only reports them, depends on the redirects idea in the [brainstorm](../brainstorm.md).
 - **What does a version between two declared lines mean?** With 3.2 and 3.4 declared, content naming 3.3 isn't newer than every line, so it isn't the typo case. It could be an error, or advice that the line isn't declared.

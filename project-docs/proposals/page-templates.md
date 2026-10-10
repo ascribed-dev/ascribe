@@ -49,8 +49,8 @@ So the templates stay recognizably theirs, and following a new release is a vers
 A script takes a pinned release of their repository and writes Ascribe's copies. What it does is mechanical, and listed, so the result can be predicted from the source:
 
 - **Frontmatter,** for the page type the template is for.
-- **Placeholders** become whatever Ascribe's form for "fill this in" turns out to be (see the open questions). Either way, no placeholder is read as a phrase.
-- **The template's own instructions,** which sit in the body as quoted paragraphs, become text that's never published.
+- **Placeholders keep their curly brackets, escaped.** Ascribe already reads `\{` as a literal brace, so `\{insert a brief description of the task}` is ordinary text: it passes `ascribe check`, `ascribe fmt` leaves it alone, and it shows as `{insert a brief description of the task}`. Their wording isn't touched.
+- **The template's own instructions,** which sit in the body as quoted paragraphs, become text that's never published (below).
 - **The link to the guide and the footer** go. Ascribe knows where the guide is.
 - **Ascribe's canonical form,** by running the result through `ascribe fmt`.
 - **The structural rules:** a numbered list of steps gains `@steps`; a callout becomes a `@note`. Each rule names the template and the place, and the script stops if the place isn't there any more.
@@ -78,7 +78,7 @@ A type with neither key works as it does today.
 
 ### The starter set gets in by being copied
 
-One command writes the starter set into a project: the templates, the guides, Ascribe's notes, and the types in `ascribe.toml` that name them. It's a copy, made once, like ejecting the Vale preset: from then on the files are the project's.
+The starter set is inside the binary: it's a few hundred kilobytes of text, and it changes rarely. One command writes it into a project: the templates, the guides, Ascribe's notes, and the types in `ascribe.toml` that name them. It's a copy, made once, like ejecting the Vale preset: from then on the files are the project's.
 
 That's a deliberate choice against "always use the newest from Ascribe". A team's templates are its own house style, and they shouldn't change under it on an upgrade. A later run of the command can say what's changed upstream since the copy, for a team that wants to look.
 
@@ -90,7 +90,17 @@ That's a deliberate choice against "always use the newest from Ascribe". A team'
 
 ### Knowing a page isn't finished
 
-A page made from a template starts full of things to replace. If Ascribe can recognize one, it can report a page that still has them, as advice under the [content checks](content-checks/README.md) contract. That turns "I forgot to fill in the prerequisites" from something a reader finds into something `ascribe check` does.
+A page made from a template starts full of things to replace, and an escaped placeholder is only text. Left in, it would be published.
+
+Ascribe can still find one, without a new construct, because it knows which template a page's type names. A piece of text in a page that's also a placeholder in its type's template was never filled in. That's an exact comparison, and it's reported as advice under the [content checks](../content-checks/README.md) contract: "this page still has its template's `{Task name}`". It turns "I forgot to fill in the prerequisites" from something a reader finds into something `ascribe check` does.
+
+It only knows the placeholders of the template as it is now. A project that rewrites its template after pages were made from it loses the check for the old wording, which is a fair trade for adding nothing to the language.
+
+### Text that's never published
+
+A template's instructions to its author ("this section is optional; delete it if…") shouldn't be escaped text: they're paragraphs, and they shouldn't reach a reader even when forgotten.
+
+That's the need the [brainstorm](../brainstorm.md)'s notes found: text in a page that no output carries. It's one construct, and a template's instructions are its first use. This proposal depends on it and doesn't design it. A leftover instruction is reported the same way as a leftover placeholder.
 
 ## What ships
 
@@ -113,9 +123,19 @@ The rest of their templates fall into three groups:
 - **A template language.** A template is a page with things to fill in. It has no conditions, loops, or variables beyond the title.
 - **Converting a project's existing pages** to a type.
 
-## Open questions
+## Ascribe's own docs
 
-- **How is "fill this in" written?** Their curly brackets are Ascribe's phrases. The form has to be something Ascribe recognizes, so a leftover can be reported, and something that can't be published by accident. It's close to the need the brainstorm's notes found: text in a page that never reaches an output. One construct could serve both. Is that the same construct, or does a placeholder need its own?
-- **Does the starter set ship inside the binary?** It's small, a few hundred kilobytes of text against a binary of several megabytes, and it would make the command work offline with no second download. The alternative is a package of its own, which keeps the binary free of content and lets the set have its own release. Which matters more?
-- **Should Ascribe's own docs use these types?** The docs have two page types today, `guide` and `reference`. Adopting concept, how-to, and the rest would test the templates on real pages and sort out where the docs' guides end and their references begin, which the [surface audit](surface-audit/README.md) is going to ask anyway. It would also mean restructuring the docs.
-- **What is the command called?** The audit is settling how command groups are named. This one waits for that.
+The docs adopt the types. They have two today, `guide` and `reference`. Taking on concept, how-to, tutorial, troubleshooting, and the rest is the first real test of the templates, on pages that already exist, and it settles where the docs' guides end and their references begin.
+
+It's a restructuring of the docs, so it's its own step, after the feature works. The [surface audit](../surface-audit/README.md) looks at the docs' structure too, and what it finds should shape how the pages are sorted.
+
+## Settled
+
+- **One construct for text that's never published,** shared with notes. Templates don't get their own.
+- **Placeholders are their curly brackets, escaped.** A leftover is found by comparing a page with its type's template.
+- **The starter set ships inside the binary.**
+- **Ascribe's docs use the types.**
+
+## Waiting on the audit
+
+**What the command is called.** The [surface audit](../surface-audit/README.md)'s first phase writes the conventions for naming a command and a group of subcommands, and its last phase checks this proposal's names against them. Until then the command has no name here.

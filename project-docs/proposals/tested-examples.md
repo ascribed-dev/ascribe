@@ -1,6 +1,6 @@
 # Proposal: tested examples
 
-A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Code examples tied to tested code](reports/Code%20examples%20tied%20to%20tested%20code.md).
+A proposal, not a plan. It says what the feature is and what it would look like, so the idea can be judged before anything is designed in detail. It follows the research in [Code examples tied to tested code](../reports/Code%20examples%20tied%20to%20tested%20code.md).
 
 ## The goal
 
@@ -111,7 +111,7 @@ Where it shows up:
 - **Carried the way a title is.** A `@snippet` becomes a fenced code block, and a title reaches both renderers and the plain output through the block's info string. The tested line travels the same way, as one more attribute there. A block with a tested line and no title still gets a caption. This is a change to the site-render and elements contracts.
 - **In the JSON output,** beside the snippet's address, path, and lines, which it already carries: the status, and each current observation's environment. An agent reading the Markdown version gets the caption's line. The research found that matching versions is where agents go wrong with examples.
 - **In the editor.** The language server has nothing for a `@snippet` line today. A hover there would show the file, the status, and the environment, and the stale and unobserved diagnostics appear on that line.
-- **As diagnostics,** under the [content checks](content-checks/README.md) contract: stale, unobserved, and an observation of a missing file. All advisory, all able to be raised or turned off. Their next step depends on where the code is. For a source in the same repository, it's a command the author runs: `ascribe observe`. For a source in another repository, it's `outside`: the fix is made there, and arrives with the next `ascribe sources update`.
+- **As diagnostics,** under the [content checks](../content-checks/README.md) contract: stale, unobserved, and an observation of a missing file. All advisory, all able to be raised or turned off. Their next step depends on where the code is. For a source in the same repository, it's a command the author runs: `ascribe observe`. For a source in another repository, it's `outside`: the fix is made there, and arrives with the next `ascribe sources update`.
 - **In `ascribe report`:** how many of a project's examples have a current observation.
 
 One check nothing else could make: a page says a feature is available from version 3.4, and its example was tested on 3.2. Availability is already in the content model; a project would map an environment label to a dimension to turn this on.
@@ -140,7 +140,7 @@ Being opinionated about testing without building a test product means showing th
 
 They hold no custom code, since the CLI writes the observations. Start with two, Node with TypeScript and Python.
 
-Each is a repository of its own under the organization, as the code behind `examples/docs-repository` already is, so a team can copy one whole. Each repository's own tests run in CI on a schedule, so the pattern it shows keeps working: the research's clearest warning was about sample infrastructure left to rot. That's CI running the tests, not writing observations. Each repository and its scheduled job is one more thing outside this repository to look after, recorded in [outside.md](outside.md).
+Each is a repository of its own under the organization, as the code behind `examples/docs-repository` already is, so a team can copy one whole. Each repository's own tests run in CI on a schedule, so the pattern it shows keeps working: the research's clearest warning was about sample infrastructure left to rot. That's CI running the tests, not writing observations. Each repository and its scheduled job is one more thing outside this repository to look after, recorded in [outside.md](../outside.md).
 
 ## Getting `ascribe` where the examples are
 
@@ -152,7 +152,7 @@ Each release already publishes a binary archive per platform on GitHub, with `SH
 - An install script for Linux and macOS that downloads the archive for the platform, checks it against `SHA256SUMS`, and puts the binary in a folder on the path. It takes a version, and installs the latest release without one.
 - Windows gets the archive and instructions at first. A package for a Windows installer waits for someone to need it.
 
-These install exactly what a release published, so they add no build. They do add things outside the repository to look after (a tap, and a script at an address people will pipe into a shell), which go in [outside.md](outside.md).
+These install exactly what a release published, so they add no build. They do add things outside the repository to look after (a tap, and a script at an address people will pipe into a shell), which go in [outside.md](../outside.md).
 
 One caution carries over from the editor: a project can already have two versions of `ascribe`, the extension's and the one npm pins. A third on the path can disagree with both. That's why an observation names the version that wrote it.
 

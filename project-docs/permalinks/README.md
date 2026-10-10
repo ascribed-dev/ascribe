@@ -1,6 +1,6 @@
 # Permalinks
 
-Something outside the docs links to a page or a section by a name that never changes, and Ascribe keeps that link working while the docs are renamed, moved, and rewritten. The idea, and the research behind it, are in the [proposal](../permalinks.md). This is the plan for building it.
+Something outside the docs links to a page or a section by a name that never changes, and Ascribe keeps that link working while the docs are renamed, moved, and rewritten. The idea, and the research behind it, are in the [proposal](../proposals/permalinks.md). This is the plan for building it.
 
 ## Who it's for
 
@@ -39,7 +39,7 @@ These are settled. Don't reopen them in a phase; if one can't be met, stop and r
 The rest were made in [phase 1](phase-1-decisions.md), because each fixes a shape that ships in phase 2 and can't change afterwards.
 
 10. **One flat set of names.** A docs set that covers several products uses a convention (`agent-settings`, `cli-settings`), not a namespace in the language or the model. A name uses the characters `@id` allows today (letters, digits, `-`, `_`, `.`), with nothing added, so a `/` never appears in one and an address has one segment after the path. A flat set can grow a namespace later, by treating a prefix as one; a namespace can't be taken back.
-11. **A name is unique within what one build publishes.** Two pages may carry one permalink if no build publishes both. The looser rule can be tightened later by a check; the stricter one couldn't be loosened without breaking projects. It leaves open whether the [versions proposal](../versions.md) uses one permalink on two pages in place of `replaces`.
+11. **A name is unique within what one build publishes.** Two pages may carry one permalink if no build publishes both. The looser rule can be tightened later by a check; the stricter one couldn't be loosened without breaking projects. It leaves open whether the [versions proposal](../proposals/versions.md) uses one permalink on two pages in place of `replaces`.
 12. **A name is declared only on a page or a heading that exists.** Nothing is reserved in `ascribe.toml`, so every permalink leads somewhere real, and a product's team proposes a name by a pull request against the docs. If reserving is ever wanted, it's an alias (phase 5) with no target yet.
 13. **The names that ship.** The attribute on `@id` and the frontmatter key are both `permalink`. The addresses' path is `[consumer] permalink-path`, a path from the site's root, which is `go/` under the base path when unset. The build's list is `_ascribe/permalinks.json` in the site output.
 14. **An address ends the way the site's routes do,** by `[consumer] trailing-slash`. Ascribe's docs set it to `"always"`, so the help link is `https://ascribed-dev.com/go/cli-check/`. `astro dev` answers 404 for an address without the slash when Astro's `trailingSlash` is `"always"`, and a static host may redirect it, so the binary writes the form the site serves.
@@ -84,14 +84,14 @@ Until phase 4, nothing notices a permalink being removed. The directive referenc
 | [5: Retiring and aliases](phase-5-retire.md) | A permalink can be retired with a reason, alone or many at once, and one place can have several names. |
 | [6: What a link carries](phase-6-context.md) | A link can say which variant its reader wants, and a name nobody declared gets a helpful page. |
 
-Phase 1 comes first because phase 2 ships contracts. After phase 2 the order is by risk, then by what each unblocks: phase 3 is what the [website](../website.md) waits for, and phase 4 is the last new mechanism.
+Phase 1 comes first because phase 2 ships contracts. After phase 2 the order is by risk, then by what each unblocks: phase 3 is what the [website](../proposals/website.md) waits for, and phase 4 is the last new mechanism.
 
 Each phase's result is something a person can run or open. None builds a layer for a later phase to use.
 
 ## The other plans
 
 - **The website** needs phase 3, and nothing after it. Once the binary links by id, the docs can move to `/docs/`.
-- **Versions.** Phase 1's second decision says whether one permalink may be on two pages that no build publishes together, which the [versions proposal](../versions.md) would use in place of `replaces`. Phase 6 leaves versions out of what a link carries until that work exists.
+- **Versions.** Phase 1's second decision says whether one permalink may be on two pages that no build publishes together, which the [versions proposal](../proposals/versions.md) would use in place of `replaces`. Phase 6 leaves versions out of what a link carries until that work exists.
 - **Content checks.** This plan's warnings are ordinary warnings. When the [content checks plan](../content-checks/README.md)'s contract lands, they take a kind of next step like every other diagnostic. Retiring's required reason is the same rule as that plan's acknowledgements, and should read the same.
 
 ## Rules for every phase
@@ -122,4 +122,4 @@ Each phase's result is something a person can run or open. None builds a layer f
 - The list as constants a language imports.
 - Finding permalinks nothing uses.
 - Serving a section's text to a product: "Embedded help" in the [brainstorm](../brainstorm.md).
-- A version on a link, which waits for [versions](../versions.md).
+- A version on a link, which waits for [versions](../proposals/versions.md).

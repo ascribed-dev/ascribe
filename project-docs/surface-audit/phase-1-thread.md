@@ -10,7 +10,7 @@ Part of [The surface audit](README.md). Needs nothing. This is the plan's thread
 
 ## Context
 
-- The [proposal](../surface-audit.md): the seven questions and the five kinds of finding.
+- The [proposal](../proposals/surface-audit.md): the seven questions and the five kinds of finding.
 - What fixing a broken link touches. Read each as a user would meet it, not in the code:
   - the editor: the Problems panel, the quick fix, the actions bar, **Prompt agent**;
   - the command line: `ascribe check` and its formats, `ascribe explain`, `ascribe link`;
@@ -65,7 +65,7 @@ Findings go in `findings.md`, in the form phase 5 will use: a number, the kind, 
 
 From the command-line findings, a first set of conventions, written into `project-docs/checklists.md` under the list for a change to a command:
 
-- how a command and a group of subcommands are named;
+- how a command and a group of subcommands are named. Five are proposed and unbuilt (`ascribe permalinks`, `ascribe observe`, `ascribe versions`, `ascribe archive`, and a command that writes [page templates](../proposals/page-templates.md) into a project, which has no name yet), so the convention is tried against each;
 - which words `--format` takes and what each means;
 - how a page, a build, and a project are named in arguments;
 - what each exit code means.
