@@ -588,7 +588,7 @@ Warning · file level · next step: write · [SPEC §5.5]({repo}/blob/main/SPEC.
 
 Error · file level · next step: choose · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
-**When:** Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page.
+**When:** Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment.
 
 **Message:** `{key}` isn't a field of the content type `{type}`
 

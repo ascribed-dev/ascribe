@@ -1,0 +1,8 @@
+description: >-
+  `intended` is reserved frontmatter (SPEC §2.1): a content type can't
+  declare it.
+spec: ["2.1", "7.2"]
+tags: [model]
+
+diagnostics:
+  - {slug: model-field-reserved, file: ascribe.toml, line: 8}

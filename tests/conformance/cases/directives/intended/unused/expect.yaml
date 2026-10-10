@@ -1,0 +1,10 @@
+description: >-
+  An acknowledgement that matches no problem in any build is reported as
+  advice, with a fix that removes it.
+spec: ["4.9", "8.2"]
+tags: [check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: intended-unused, line: 5}

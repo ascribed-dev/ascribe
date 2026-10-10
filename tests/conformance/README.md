@@ -47,7 +47,7 @@ The cases were written from SPEC.md, not from any implementation. They're groupe
 |---|---|
 | `recognition/`, `attributes/`, `primary/` | Which lines are directives, attribute blocks and their diagnostics, identifier and text primaries (SPEC §3.1–§3.4) |
 | `forms/`, `groups/`, `titles/`, `binding/`, `lists/`, `nesting/` | Container and line forms, groups and the arm rule, title lines, binding, lists and blockquotes, nesting (§3.5–§3.10) |
-| `directives/<name>/` | Each built-in directive: `id`, `include`, `variant`, `available`, `note`, `steps`, `details`, `snippet` (§4) |
+| `directives/<name>/` | Each built-in directive: `id`, `include`, `variant`, `available`, `note`, `steps`, `details`, `snippet`, `intended` (§4) |
 | `widgets/` | Project widgets (§6) |
 | `phrases/`, `links/`, `images/`, `headings/`, `glossary/` | Inline constructs, source ids and page ids (§5) |
 | `frontmatter/`, `model/` | Frontmatter, content types, fragments, name roles (§2, §7.2) |

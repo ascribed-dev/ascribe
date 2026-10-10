@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[types.guide]
+default = true
+
+[types.guide.frontmatter]
+title = "string"
+intended = "string"
