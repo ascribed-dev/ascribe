@@ -147,6 +147,10 @@ pub enum Command {
     /// Copy code from sources in other repositories, and move their pins.
     #[command(after_help = docs_page!("reference/cli/#ascribe-sources"))]
     Sources(commands::sources::Args),
+    /// Set up Vale, which checks the prose: write a preset out as the
+    /// project's own configuration.
+    #[command(after_help = docs_page!("reference/cli/#ascribe-vale"))]
+    Vale(commands::vale::Args),
 }
 
 impl Command {
@@ -167,6 +171,7 @@ impl Command {
             Command::Refs(args) => commands::refs::run(global, args),
             Command::Render(args) => commands::render::run(global, args),
             Command::Sources(args) => commands::sources::run(global, args),
+            Command::Vale(args) => commands::vale::run(global, args),
         }
     }
 }
