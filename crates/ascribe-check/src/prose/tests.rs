@@ -57,6 +57,7 @@ fn matches(text: &str, word: &str, with: &str) -> Vec<Alert> {
                 link: "https://example.com/words".to_owned(),
                 action: Action {
                     name: "replace".to_owned(),
+                    ..Action::default()
                 },
                 suggestions: vec![with.to_owned()],
             });
@@ -196,4 +197,34 @@ fn the_range_of_an_alert_counts_characters() {
     assert_eq!(&text[7..10], "teh");
     assert_eq!(range_of(text, 1, (1, 2)), Some((0, 2)));
     assert_eq!(range_of(text, 9, (1, 2)), None);
+}
+
+#[test]
+fn an_older_vale_s_action_gives_the_replacement() {
+    // Vale before 3.21 writes no `Suggestions`; its action says what to do.
+    let alert = |name: &str, params: &[&str]| Alert {
+        action: Action {
+            name: name.to_owned(),
+            params: params.iter().map(|p| (*p).to_owned()).collect(),
+        },
+        ..Alert::default()
+    };
+    assert_eq!(
+        replacements(&alert("edit", &["truncate", " "]), "the the"),
+        ["the"]
+    );
+    assert_eq!(
+        replacements(&alert("replace", &["receive"]), "recieve"),
+        ["receive"]
+    );
+    assert_eq!(
+        replacements(&alert("edit", &["trim_right", "!"]), "go!!"),
+        ["go"]
+    );
+    assert_eq!(replacements(&alert("remove", &[]), "very"), [""]);
+    assert!(replacements(&alert("edit", &["regex", "a", "b"]), "a").is_empty());
+    // A newer Vale's own suggestions win.
+    let mut newer = alert("edit", &["truncate", " "]);
+    newer.suggestions = vec!["The".to_owned()];
+    assert_eq!(replacements(&newer, "the the"), ["The"]);
 }

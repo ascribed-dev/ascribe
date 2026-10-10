@@ -158,7 +158,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 
 **Message:** the prose wasn't checked: `{command}` couldn't be run (\{reason}). Install Vale, or set `[checks.vale] command` to where it is
 
-**Fix:** Install [Vale](https://vale.sh) 3 or later so that the command `[checks.vale] command` names (`vale` by default) runs, or fix what Vale's own message says about its configuration. Nothing else is checked differently while it can't run. A project that checks prose only in CI can turn this off on other machines with `prose-not-checked = "off"` in `[checks]`.
+**Fix:** Install [Vale](https://vale.sh) 3.16 or later so that the command `[checks.vale] command` names (`vale` by default) runs, or fix what Vale's own message says about its configuration. Nothing else is checked differently while it can't run. A project that checks prose only in CI can turn this off on other machines with `prose-not-checked = "off"` in `[checks]`.
 
 ### External links
 

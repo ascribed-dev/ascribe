@@ -27,7 +27,7 @@ use crate::{Diagnostic, Next, Project, Severity, apply_levels};
 pub use eject::{EJECTED_CONFIG, EJECTED_STYLES, EjectError, Ejected, eject, ejected_files};
 pub use extract::{Located, Prose};
 pub use setup::{FOLDER, VOCABULARY, preset_files, vocabulary, with_settings};
-pub use vale::{Action, Alert, Linter, Program, Request, ValeError};
+pub use vale::{Action, Alert, Linter, MIN_VERSION, Program, Request, ValeError};
 
 /// How long one run of Vale on a whole project may take.
 pub const PROJECT_TIMEOUT: Duration = Duration::from_secs(600);
@@ -194,14 +194,10 @@ fn diagnostic(
 /// The replacements an alert offers, as fixes to review: each changes what
 /// the page says.
 fn fixes(file: FileId, located: &Located, alert: &Alert, source: &str) -> Vec<Fix> {
-    let replacements: Vec<String> = match alert.action.name.as_str() {
-        "replace" | "edit" => alert.suggestions.iter().take(3).cloned().collect(),
-        "remove" => vec![String::new()],
-        _ => Vec::new(),
-    };
     let current = source.get(located.span.range()).unwrap_or_default();
-    replacements
+    replacements(alert, current)
         .into_iter()
+        .take(3)
         .filter(|r| r != current)
         .map(|r| Fix {
             title: if r.is_empty() {
@@ -214,6 +210,32 @@ fn fixes(file: FileId, located: &Located, alert: &Alert, source: &str) -> Vec<Fi
             applicability: Applicability::Unsafe,
         })
         .collect()
+}
+
+/// What an alert would replace `current`, its match, with: Vale's own
+/// `Suggestions`, or, from a Vale that doesn't give them (before 3.21), what
+/// its action says, worked out as Vale does.
+fn replacements(alert: &Alert, current: &str) -> Vec<String> {
+    let action = &alert.action;
+    match action.name.as_str() {
+        "replace" | "edit" if !alert.suggestions.is_empty() => alert.suggestions.clone(),
+        "replace" => action.params.clone(),
+        "remove" => vec![String::new()],
+        "edit" => {
+            let param = |i: usize| action.params.get(i).map_or("", String::as_str);
+            let cutset = |c: char| param(1).contains(c);
+            let edited = match param(0) {
+                "truncate" if !param(1).is_empty() => current.split(param(1)).next(),
+                "trim_right" => Some(current.trim_end_matches(cutset)),
+                "trim_left" => Some(current.trim_start_matches(cutset)),
+                "trim" => Some(current.trim_matches(cutset)),
+                "remove" => Some(""),
+                _ => None,
+            };
+            edited.map(str::to_owned).into_iter().collect()
+        }
+        _ => Vec::new(),
+    }
 }
 
 /// The byte range of the prose that an alert's line and characters (from 1,

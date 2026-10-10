@@ -120,6 +120,7 @@ fn repeated(text: &str) -> Vec<Alert> {
                     span: (from, to),
                     action: Action {
                         name: "remove".to_owned(),
+                        ..Action::default()
                     },
                     ..Alert::default()
                 });
