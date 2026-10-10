@@ -252,7 +252,7 @@ The Ascribe plugin, in `plugins/ascribe/` in Ascribe's repository, gives Claude 
 - **The skill.**
 - **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](../reference/cli.md#ascribe-agents-prompt).
 
-Add it from a copy of the repository:
+Add it from a copy of the repository, in Claude Code in a terminal (its VS Code extension doesn't offer `/plugin`):
 
 ```shell
 /plugin marketplace add ./plugins/ascribe
