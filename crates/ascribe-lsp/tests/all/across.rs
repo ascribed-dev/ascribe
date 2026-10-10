@@ -217,3 +217,41 @@ fn a_problem_prompt_about_an_orphan_has_its_evidence() {
     assert!(prompt.contains("page-orphan"), "{prompt}");
     assert!(prompt.contains("Files in the same folder"), "{prompt}");
 }
+
+/// The titles of the code actions on a published diagnostic.
+fn action_titles(client: &mut Client, path: &std::path::Path, slug_of: &str) -> Vec<String> {
+    let diagnostic = client
+        .diagnostics(path)
+        .into_iter()
+        .find(|d| slug(d) == slug_of)
+        .unwrap_or_else(|| panic!("no {slug_of}"));
+    client
+        .request(
+            "textDocument/codeAction",
+            json!({
+                "textDocument": { "uri": uri(path).as_str() },
+                "range": diagnostic.range,
+                "context": { "diagnostics": [diagnostic] }
+            }),
+        )
+        .response_result
+        .expect("actions")
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|a| a["title"].as_str().map(str::to_owned))
+        .collect()
+}
+
+#[test]
+fn an_orphan_and_an_unused_phrase_can_be_marked_as_intended() {
+    let f = project();
+    let mut client = Client::start(&f.root());
+    client.settle();
+    let mark = "Mark as intended, and write why".to_owned();
+    assert!(action_titles(&mut client, &f.path("docs/b.md"), "page-orphan").contains(&mark));
+    assert!(action_titles(&mut client, &f.path("ascribe.toml"), "phrase-unused").contains(&mark));
+    // `title-duplicate` needs writing, not acknowledging.
+    assert!(!action_titles(&mut client, &f.path("docs/a.md"), "title-duplicate").contains(&mark));
+}

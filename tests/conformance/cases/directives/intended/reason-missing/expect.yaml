@@ -1,0 +1,8 @@
+description: >-
+  An `@intended` must give a reason as its primary.
+spec: ["3.4", "4.9", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: directive-primary, line: 5}
+  - {slug: intended-check, line: 5}

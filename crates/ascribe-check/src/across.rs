@@ -22,6 +22,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
+use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
 use ascribe_model::{Checks, GlossaryMatch};
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
@@ -101,7 +102,8 @@ pub(crate) fn for_every_build(
                 if unused(Usable::Phrase(p.key.clone())) {
                     issues.push(
                         Issue::new(diagnostics::PHRASE_UNUSED, at(p.span))
-                            .with_arg("key", p.key.clone()),
+                            .with_arg("key", p.key.clone())
+                            .with_arg(ENTRY_ARG, entry_arg(EntryKind::Phrase, &p.key)),
                     );
                 }
             }
@@ -111,7 +113,8 @@ pub(crate) fn for_every_build(
                 if unused(Usable::Feature(f.key.clone())) {
                     issues.push(
                         Issue::new(diagnostics::FEATURE_UNUSED, at(f.span))
-                            .with_arg("key", f.key.clone()),
+                            .with_arg("key", f.key.clone())
+                            .with_arg(ENTRY_ARG, entry_arg(EntryKind::Feature, &f.key)),
                     );
                 }
             }
@@ -123,7 +126,8 @@ pub(crate) fn for_every_build(
                 if t.match_mode != GlossaryMatch::Marked && unused(Usable::Term(t.id.clone())) {
                     issues.push(
                         Issue::new(diagnostics::GLOSSARY_TERM_UNUSED, at(t.span))
-                            .with_arg("term", t.term.clone()),
+                            .with_arg("term", t.term.clone())
+                            .with_arg(ENTRY_ARG, entry_arg(EntryKind::Term, &t.id)),
                     );
                 }
             }
@@ -178,8 +182,13 @@ fn images(project: &Project, index: &ascribe_resolve::Project, issues: &mut Vec<
     for (i, (path, content)) in listed.iter().enumerate() {
         let at = Location::new(image_id(i), Span::new(0, 0));
         let shown = path.to_string();
+        let entry = entry_arg(EntryKind::Image, content.as_str());
         if !checks.is_off(diagnostics::IMAGE_UNUSED) && index.asset_users(content).is_empty() {
-            issues.push(Issue::new(diagnostics::IMAGE_UNUSED, at).with_arg("path", shown.clone()));
+            issues.push(
+                Issue::new(diagnostics::IMAGE_UNUSED, at)
+                    .with_arg("path", shown.clone())
+                    .with_arg(ENTRY_ARG, entry.clone()),
+            );
         }
         if !checks.is_off(diagnostics::IMAGE_LARGE)
             && let Some(size) = project.file_system().size(path)
@@ -189,7 +198,8 @@ fn images(project: &Project, index: &ascribe_resolve::Project, issues: &mut Vec<
                 Issue::new(diagnostics::IMAGE_LARGE, at)
                     .with_arg("path", shown)
                     .with_arg("size", size_text(size))
-                    .with_arg("limit", size_text(limit)),
+                    .with_arg("limit", size_text(limit))
+                    .with_arg(ENTRY_ARG, entry),
             );
         }
     }

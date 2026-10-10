@@ -153,7 +153,7 @@ pub const HEADING_PHRASE_WITHOUT_ID: DiagnosticSlug = DiagnosticSlug("heading-ph
 pub const HEADING_DUPLICATE_WITHOUT_ID: DiagnosticSlug =
     DiagnosticSlug("heading-duplicate-without-id");
 
-/// `ASC047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page".
+/// `ASC047`, error, file level: SPEC §8.2, "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment".
 pub const FRONTMATTER_UNKNOWN_KEY: DiagnosticSlug = DiagnosticSlug("frontmatter-unknown-key");
 
 /// `ASC048`, error, file level: SPEC §8.2, "Frontmatter | Required field missing".
@@ -460,28 +460,43 @@ pub const MODEL_INLINE_FIELD: DiagnosticSlug = DiagnosticSlug("model-inline-fiel
 pub const MODEL_CHECK_NOT_CONFIGURABLE: DiagnosticSlug =
     DiagnosticSlug("model-check-not-configurable");
 
-/// `ASC143`, advice, page level: a content check.
+/// `ASC143`, error, file level: SPEC §8.2, "`@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else".
+pub const INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("intended-check");
+
+/// `ASC144`, error, file level: SPEC §8.2, "`@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason".
+pub const INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("intended-entry");
+
+/// `ASC145`, advice, page level: SPEC §8.2, "`@intended` | An acknowledgement that matches no problem in any build".
+pub const INTENDED_UNUSED: DiagnosticSlug = DiagnosticSlug("intended-unused");
+
+/// `ASC146`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("model-intended-check");
+
+/// `ASC147`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("model-intended-entry");
+
+/// `ASC148`, advice, page level: a content check.
 pub const PAGE_ORPHAN: DiagnosticSlug = DiagnosticSlug("page-orphan");
 
-/// `ASC144`, advice, file level: a content check.
+/// `ASC149`, advice, file level: a content check.
 pub const FRAGMENT_UNUSED: DiagnosticSlug = DiagnosticSlug("fragment-unused");
 
-/// `ASC145`, advice, file level: a content check.
+/// `ASC150`, advice, file level: a content check.
 pub const PHRASE_UNUSED: DiagnosticSlug = DiagnosticSlug("phrase-unused");
 
-/// `ASC146`, advice, file level: a content check.
+/// `ASC151`, advice, file level: a content check.
 pub const FEATURE_UNUSED: DiagnosticSlug = DiagnosticSlug("feature-unused");
 
-/// `ASC147`, advice, file level: a content check.
+/// `ASC152`, advice, file level: a content check.
 pub const GLOSSARY_TERM_UNUSED: DiagnosticSlug = DiagnosticSlug("glossary-term-unused");
 
-/// `ASC148`, advice, file level: a content check.
+/// `ASC153`, advice, file level: a content check.
 pub const IMAGE_UNUSED: DiagnosticSlug = DiagnosticSlug("image-unused");
 
-/// `ASC149`, advice, file level: a content check.
+/// `ASC154`, advice, file level: a content check.
 pub const IMAGE_LARGE: DiagnosticSlug = DiagnosticSlug("image-large");
 
-/// `ASC150`, advice, page level: a content check.
+/// `ASC155`, advice, page level: a content check.
 pub const TITLE_DUPLICATE: DiagnosticSlug = DiagnosticSlug("title-duplicate");
 
 /// Every slug, in registry order.
@@ -628,6 +643,11 @@ pub const ALL: &[DiagnosticSlug] = &[
     SOURCE_COPY_UNUSED,
     MODEL_INLINE_FIELD,
     MODEL_CHECK_NOT_CONFIGURABLE,
+    INTENDED_CHECK,
+    INTENDED_ENTRY,
+    INTENDED_UNUSED,
+    MODEL_INTENDED_CHECK,
+    MODEL_INTENDED_ENTRY,
     PAGE_ORPHAN,
     FRAGMENT_UNUSED,
     PHRASE_UNUSED,
@@ -650,4 +670,17 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
     IMAGE_UNUSED,
     IMAGE_LARGE,
     TITLE_DUPLICATE,
+];
+
+/// The checks an author can acknowledge (SPEC §4.9): the registry's entries
+/// whose next step is `review`, each with the place its problems are reported
+/// at, in registry order. A test keeps it equal to the registry.
+pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
+    (PAGE_ORPHAN, crate::Place::Page),
+    (FRAGMENT_UNUSED, crate::Place::Page),
+    (PHRASE_UNUSED, crate::Place::Entry),
+    (FEATURE_UNUSED, crate::Place::Entry),
+    (GLOSSARY_TERM_UNUSED, crate::Place::Entry),
+    (IMAGE_UNUSED, crate::Place::Entry),
+    (IMAGE_LARGE, crate::Place::Entry),
 ];

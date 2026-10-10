@@ -1,0 +1,8 @@
+description: >-
+  An `@intended` that names a check that doesn't exist is an error, and the
+  message suggests the nearest name.
+spec: ["4.9", "8.2"]
+tags: [check]
+
+diagnostics:
+  - {slug: intended-check, line: 5}

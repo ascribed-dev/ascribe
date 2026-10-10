@@ -9,7 +9,7 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use ascribe_check::{Diagnostic, LoadError, LocateError, MODEL_FILE, Project};
+use ascribe_check::{Acknowledged, Diagnostic, LoadError, LocateError, MODEL_FILE, Project};
 use ascribe_core::path::{normalize, relative_path};
 use ascribe_core::{Coded, RelPath};
 use ascribe_query::QueryError;
@@ -61,8 +61,18 @@ pub struct Loaded {
 /// A check of the whole project, kept.
 struct Checked {
     asked: Vec<String>,
-    diagnostics: Vec<Diagnostic>,
-    builds: Vec<String>,
+    found: Found,
+}
+
+/// What a check of a project found.
+#[derive(Clone, Debug, Default)]
+pub struct Found {
+    /// The diagnostics to report.
+    pub diagnostics: Vec<Diagnostic>,
+    /// The builds whose page-level checks ran, by name.
+    pub builds: Vec<String>,
+    /// The problems acknowledged as intended, which aren't reported.
+    pub acknowledged: Vec<Acknowledged>,
 }
 
 impl Loaded {
@@ -85,18 +95,17 @@ impl Loaded {
     pub fn diagnosed<E>(
         &self,
         asked: &[String],
-        check: impl FnOnce(&Project) -> Result<(Vec<Diagnostic>, Vec<String>), E>,
-    ) -> Result<(Vec<Diagnostic>, Vec<String>), E> {
+        check: impl FnOnce(&Project) -> Result<Found, E>,
+    ) -> Result<Found, E> {
         if let Some(kept) = self.checks.borrow().iter().find(|c| c.asked == asked) {
-            return Ok((kept.diagnostics.clone(), kept.builds.clone()));
+            return Ok(kept.found.clone());
         }
-        let (diagnostics, builds) = check(&self.project)?;
+        let found = check(&self.project)?;
         self.checks.borrow_mut().push(Checked {
             asked: asked.to_vec(),
-            diagnostics: diagnostics.clone(),
-            builds: builds.clone(),
+            found: found.clone(),
         });
-        Ok((diagnostics, builds))
+        Ok(found)
     }
 
     /// The index the page-level checks read ([`ascribe_check::PageIndex`]),

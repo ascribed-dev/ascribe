@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use ascribe_core::{DiagnosticSlug, Issue};
+use ascribe_core::{DiagnosticSlug, Issue, Place};
 
 use crate::Severity;
 
@@ -96,6 +96,9 @@ pub struct Entry {
     pub evidence: Vec<String>,
     /// Whether a project may set its level in `[checks]`.
     pub configurable: bool,
+    /// For a check whose next step is review: where it reports its problems,
+    /// and so where one is acknowledged (SPEC §4.9).
+    pub place: Option<Place>,
     /// Whether it's retired: no longer reported.
     pub retired: bool,
 }
@@ -234,6 +237,7 @@ impl Registry {
                 .get("configurable")
                 .and_then(toml::Value::as_bool)
                 .unwrap_or(false),
+            place: text("place").and_then(|p| Place::from_name(&p)),
             retired: t.contains_key("retired"),
         })
     }

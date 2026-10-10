@@ -52,6 +52,13 @@
 #                 `[checks]`; `false` when absent. A diagnostic about whether
 #                 the project is valid is never configurable, and every
 #                 "review" entry is.
+#   place         For a "review" entry, and only for one: where it reports its
+#                 problems, and so where an author acknowledges one (SPEC §4.9).
+#                 "page" for a page or fragment as a whole (its `intended`
+#                 frontmatter), "block" for one block (`@intended` above it),
+#                 or "entry" for a content model entry or an image
+#                 (`[[intended]]` in ascribe.toml). An "entry" check names its
+#                 entry in the issue argument `entry`, as `<kind> <name>`.
 #   messages     Named alternative templates, for cases of the rule that need
 #                different wording. An issue names the one it uses
 #                (`Issue::variant`); otherwise `message` is used.
@@ -1232,7 +1239,7 @@ level = "file"
 next = "choose"
 evidence = []
 spec = "7.2"
-row = "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page"
+row = "Frontmatter | Key the file's content type or the fragment schema doesn't declare, other than a reserved key on a page or `intended` on a fragment"
 message = "`{key}` isn't a field of the content type `{type}`"
 messages.suggestion = "`{key}` isn't a field of the content type `{type}`; did you mean `{suggestion}`?"
 messages.fragment = "`{key}` isn't a field of the fragment schema, [fragments.frontmatter]"
@@ -1693,6 +1700,7 @@ spec = "2.1"
 group = "content-types"
 message = "`{field}` is reserved by the Ascribe spec and every page accepts it; remove it from `[types.{type}.frontmatter]`"
 messages.fragment = "`{field}` is reserved by the Ascribe spec, and fragments can't use it"
+messages.fragment-accepted = "`{field}` is reserved by the Ascribe spec and every fragment accepts it; remove it from `[fragments.frontmatter]`"
 messages.slug = "`slug` is reserved by the astro profile, which uses it as a page's URL id; remove it from `[types.{type}.frontmatter]`"
 messages.formatted = "`formatted` is reserved by the site output, which writes the formatted form of `inline` fields under it; remove it from `[types.{type}.frontmatter]`"
 fix = "Remove the field from the type. Every page accepts it already, with the meaning the specification gives it."
@@ -2600,33 +2608,108 @@ group = "checks"
 message = "`{check}` can't be set in [checks]: it reports whether the project is valid, which a project can't lower or turn off"
 fix = "Remove the check from `[checks]`. Only checks about the content's quality, which the [diagnostics reference](diagnostics.md) marks as configurable, can be set there; a diagnostic about whether the project is valid is always reported at its own severity."
 
+[[diagnostic]]
+code = "ASC143"
+slug = "intended-check"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+row = "`@intended` | Names no check, a check that doesn't exist, a check that isn't a review check, or a check reported somewhere else"
+message = "`{check}` isn't a check"
+messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
+messages.missing = "an acknowledgement names the check it's for: add `{example}`"
+messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
+messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}"
+fix = "Name the check whose problem is intended, by its name in the [diagnostics reference](diagnostics.md): a check whose next step is review, acknowledged where it reports its problems. A page's problem goes in the page's `intended` frontmatter, a block's with `@intended` above the block, and a content model entry's in `[[intended]]` in `ascribe.toml`. Any other problem isn't acknowledged; fix it, or set its level in `[checks]` if it's configurable."
+
+[[diagnostic]]
+code = "ASC144"
+slug = "intended-entry"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "4.9"
+row = "`@intended` | An `intended` frontmatter entry that isn't a mapping with a `check` and a reason, or an acknowledgement whose reason is still a processor's placeholder"
+message = "`intended` is a list of acknowledgements, each with a `check` and a `reason`"
+messages.reason = "acknowledging `{check}` needs a reason: say why the problem is intended"
+messages.key = "`{key}` isn't part of an acknowledgement, which has only `check` and `reason`"
+messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why `{check}`'s problem is intended"
+fix = "Write `intended` as a list, each entry with the `check` it acknowledges and a `reason` that says why the problem is intended:\n\n```yaml\nintended:\n  - check: page-orphan\n    reason: Linked from the site's sidebar.\n```\n\nThe editor's quick fix writes a placeholder reason for you to replace: until you do, the acknowledgement is reported."
+
+[[diagnostic]]
+code = "ASC145"
+slug = "intended-unused"
+severity = "advice"
+level = "page"
+next = "fix"
+evidence = []
+spec = "4.9"
+row = "`@intended` | An acknowledgement that matches no problem in any build"
+message = "nothing here needs acknowledging any more: `{check}` reports no problem here in any build"
+fix = "Remove the acknowledgement: what it excused has gone. `ascribe check` reports this only when it checks every build, since a problem may appear in one build alone."
+
+[[diagnostic]]
+code = "ASC146"
+slug = "model-intended-check"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+group = "checks"
+message = "`{check}` isn't a check"
+messages.suggestion = "`{check}` isn't a check; did you mean `{suggestion}`?"
+messages.not-review = "`{check}` can't be acknowledged: only a check whose next step is review reports something that may be intended, so fix the problem instead"
+messages.place = "`{check}` is reported at {place}, so it's acknowledged {written}, not in ascribe.toml"
+fix = "Name a check whose next step is review and whose problems are about a phrase, feature, glossary term, or image, by its name in the [diagnostics reference](diagnostics.md). A page's or a block's problem is acknowledged in the page itself."
+
+[[diagnostic]]
+code = "ASC147"
+slug = "model-intended-entry"
+severity = "error"
+level = "file"
+next = "choose"
+evidence = []
+spec = "4.9"
+group = "checks"
+message = "an acknowledgement in [[intended]] names what it's about with one of `phrase`, `feature`, `term`, or `image`"
+messages.several = "an acknowledgement in [[intended]] is about one thing, and this one names {keys}"
+messages.unknown = "there's no {kind} `{name}` in this content model"
+messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why the problem is intended"
+fix = "Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes."
+
 ###############################################################################
 # Content checks across the project (area "project"): about the content's
 # quality, not whether it's valid. Each says when it's reported in `when`.
 ###############################################################################
 
 [[diagnostic]]
-code = "ASC143"
+code = "ASC148"
 slug = "page-orphan"
 severity = "advice"
 level = "page"
 next = "review"
 evidence = ["mentions"]
 configurable = true
+place = "page"
 area = "project"
 spec = "5.2"
 when = "No other page the build publishes links to the page or includes it. Index pages (`index.md`), and a build's only page, aren't reported"
 message = "no other page links to this page or includes it, so readers reach it only through the site's own navigation or search, if those list it"
-fix = "Link to the page from a page about its topic, or include it in one. A site whose own navigation, such as a sidebar, lists the page still reaches it, so this is a hint: turn the check off in [`[checks]`](content-model.md#19-checks) (`page-orphan = \"off\"`) when your navigation lists every page."
+fix = "Link to the page from a page about its topic, or include it in one. A site whose own navigation, such as a sidebar, lists the page still reaches it, so this is a hint: acknowledge one such page in its `intended` frontmatter, or turn the check off in [`[checks]`](content-model.md#19-checks) (`page-orphan = \"off\"`) when your navigation lists every page."
 
 [[diagnostic]]
-code = "ASC144"
+code = "ASC149"
 slug = "fragment-unused"
 severity = "advice"
 level = "file"
 next = "review"
 evidence = []
 configurable = true
+place = "page"
 area = "project"
 spec = "4.2"
 when = "No file includes the fragment"
@@ -2634,13 +2717,14 @@ message = "no file includes this fragment, so nothing publishes it"
 fix = "Include the fragment where it belongs with `@include`, or delete it when nothing needs it any more."
 
 [[diagnostic]]
-code = "ASC145"
+code = "ASC150"
 slug = "phrase-unused"
 severity = "advice"
 level = "file"
 next = "review"
 evidence = []
 configurable = true
+place = "entry"
 area = "project"
 spec = "5.1"
 when = "No file writes the phrase, in its text or in a frontmatter field that takes phrases"
@@ -2648,13 +2732,14 @@ message = "no file uses the phrase `{key}`"
 fix = "Write the phrase where its value belongs, or remove it from `[phrases]`. A phrase is used wherever a page or a fragment writes its key in braces, in the text or in a frontmatter field that takes phrases."
 
 [[diagnostic]]
-code = "ASC146"
+code = "ASC151"
 slug = "feature-unused"
 severity = "advice"
 level = "file"
 next = "review"
 evidence = []
 configurable = true
+place = "entry"
 area = "project"
 spec = "4.4"
 when = "No availability spec names the feature: no `@available`, table row's `available`, or page's `available`"
@@ -2662,13 +2747,14 @@ message = "no file uses the feature `{key}`"
 fix = "Mark the content the feature covers with its key (`@available: <key>`, or `available: <key>` in a page's frontmatter), or remove the feature from `[features]` once nothing needs it."
 
 [[diagnostic]]
-code = "ASC147"
+code = "ASC152"
 slug = "glossary-term-unused"
 severity = "advice"
 level = "file"
 next = "review"
 evidence = []
 configurable = true
+place = "entry"
 area = "project"
 spec = "5.4"
 when = "The term, and each of its aliases, appears in no file's prose. A term with `match = \"marked\"` isn't reported"
@@ -2676,13 +2762,14 @@ message = "the glossary term `{term}` appears in no file's prose, so it's never 
 fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` isn't reported, since its uses are links to its page."
 
 [[diagnostic]]
-code = "ASC148"
+code = "ASC153"
 slug = "image-unused"
 severity = "advice"
 level = "file"
 next = "review"
 evidence = []
 configurable = true
+place = "entry"
 area = "project"
 spec = "5.3"
 when = "An image file under the content root that no file shows or links to"
@@ -2690,13 +2777,14 @@ message = "no file shows or links to `{path}`"
 fix = "Delete the image when nothing needs it. An image used only from raw HTML, or by the site's own code, is reported too, since Ascribe doesn't read either: turn the check off in [`[checks]`](content-model.md#19-checks) when your site uses images that way."
 
 [[diagnostic]]
-code = "ASC149"
+code = "ASC154"
 slug = "image-large"
 severity = "advice"
 level = "file"
 next = "review"
 evidence = ["image-size"]
 configurable = true
+place = "entry"
 area = "project"
 spec = "5.3"
 when = "An image file under the content root is larger than the limit: 500 KB, or `[checks.image-large] limit`"
@@ -2704,7 +2792,7 @@ message = "`{path}` is {size}, over the {limit} limit for an image"
 fix = "Make the image smaller: save it at the size it's shown, or compress it (a screenshot as an optimized PNG, a photo as JPEG or WebP). The limit is 500 KB; set another in `ascribe.toml`, such as `[checks.image-large] limit = \"1 MB\"`."
 
 [[diagnostic]]
-code = "ASC150"
+code = "ASC155"
 slug = "title-duplicate"
 severity = "advice"
 level = "page"

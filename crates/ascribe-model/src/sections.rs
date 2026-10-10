@@ -79,12 +79,19 @@ impl Loader<'_> {
         if let Some(f) = t.get("frontmatter")
             && let Some(ft) = self.as_table("fragments.frontmatter", f)
         {
-            let reserved: &dyn Fn(&str) -> bool = &|n| matches!(n, "available" | "variant");
+            let reserved: &dyn Fn(&str) -> bool =
+                &|n| matches!(n, "available" | "variant" | "intended");
             for (name, span, _) in entries(ft) {
                 if reserved(name) {
+                    // Fragments accept `intended`, and can't use the others.
+                    let variant = if name == "intended" {
+                        "fragment-accepted"
+                    } else {
+                        "fragment"
+                    };
                     self.push(
                         self.issue(diagnostics::MODEL_FIELD_RESERVED, span)
-                            .with_variant("fragment")
+                            .with_variant(variant)
                             .with_arg("field", name),
                     );
                 }
@@ -143,8 +150,12 @@ impl Loader<'_> {
                     // the entry id Astro's loader uses instead of the path.
                     // The site output writes `inline` fields' formatted form
                     // under `formatted`.
-                    let reserved: &dyn Fn(&str) -> bool =
-                        &|n| matches!(n, "available" | "variant" | "slug" | "formatted");
+                    let reserved: &dyn Fn(&str) -> bool = &|n| {
+                        matches!(
+                            n,
+                            "available" | "variant" | "intended" | "slug" | "formatted"
+                        )
+                    };
                     for (fname, span, _) in entries(ft) {
                         if reserved(fname) {
                             let issue = self

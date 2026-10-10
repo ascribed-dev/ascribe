@@ -25,8 +25,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ascribe_check::{
-    Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity, SourceFile, apply_levels,
-    check_file,
+    Acknowledgements, Diagnostic, PageChecker, Project, ReadFailure, Registry, Severity,
+    SourceFile, apply_levels, check_file,
 };
 use ascribe_core::path::normalize;
 use ascribe_core::{FileId, LineIndex, RelPath};
@@ -339,15 +339,35 @@ pub(crate) fn compute(job: &Job, still_wanted: &dyn Fn() -> bool) -> Outcome {
         None
     };
     let found = across.as_ref().unwrap_or(&job.found);
+    // The acknowledgements that can cover them: in the content model, in
+    // their files, and in the files of their related places (a block that
+    // includes a fragment covers a problem in what it includes).
+    let mut written: BTreeSet<FileId> = by_file.keys().copied().collect();
+    written.extend(
+        by_file
+            .values()
+            .flatten()
+            .flat_map(|d| d.related.iter().map(|r| r.location.file)),
+    );
+    let written: Vec<FileId> = written.into_iter().collect();
+    let acknowledgements = Acknowledgements::in_files(&project, &written);
     let mut results = Vec::new();
     for path in &job.files {
         let Some(file) = project.source_at(path) else {
             continue;
         };
-        let diagnostics = apply_levels(
-            &job.model.checks,
-            by_file.remove(&file.id).unwrap_or_default(),
-        );
+        // Whether an acknowledgement covers nothing takes every build, so
+        // the editor never says.
+        let diagnostics = acknowledgements
+            .apply(
+                &job.model,
+                apply_levels(
+                    &job.model.checks,
+                    by_file.remove(&file.id).unwrap_or_default(),
+                ),
+                false,
+            )
+            .diagnostics;
         let index = LineIndex::new(&file.text);
         let related = |r: &ascribe_check::RelatedInfo| -> Option<Location> {
             // A related location is in a source, the content model, or a code
@@ -403,10 +423,19 @@ fn run_across(
     for d in checker.check_across(build, &refs) {
         by_file.entry(d.location.file).or_default().push(d);
     }
+    // What an acknowledgement covers isn't reported (SPEC §4.9); whether one
+    // covers nothing takes every build, so the editor never says.
+    let acknowledgements = Acknowledgements::of(project);
     let mut found = Across {
         model: (
             job.model_text.clone(),
-            by_file.remove(&FileId::new(0)).unwrap_or_default(),
+            acknowledgements
+                .apply(
+                    &job.model,
+                    by_file.remove(&FileId::new(0)).unwrap_or_default(),
+                    false,
+                )
+                .diagnostics,
         ),
         ..Across::default()
     };
@@ -420,7 +449,13 @@ fn run_across(
         let Some(file) = snapshot.file(path) else {
             continue;
         };
-        let diagnostics = apply_levels(&job.model.checks, diagnostics);
+        let diagnostics = acknowledgements
+            .apply(
+                &job.model,
+                apply_levels(&job.model.checks, diagnostics),
+                false,
+            )
+            .diagnostics;
         if diagnostics.is_empty() {
             continue;
         }
@@ -566,6 +601,14 @@ pub(crate) fn to_lsp(
                     })).collect::<Vec<_>>(),
                 })
             }).collect::<Vec<_>>(),
-        })),
+        }))
+        .map(|mut data| {
+            // The entry the problem names, for the quick fix that
+            // acknowledges it in the content model.
+            if let (Some(subject), Some(map)) = (&d.subject, data.as_object_mut()) {
+                map.insert("subject".to_owned(), subject.clone().into());
+            }
+            data
+        }),
     }
 }

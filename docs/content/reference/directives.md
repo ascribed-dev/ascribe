@@ -17,7 +17,7 @@ This page describes the language as you write it. The [Ascribe specification]({r
 - [Titles](#titles)
 - [Binding: what a directive applies to](#binding-what-a-directive-applies-to)
 - [Lists and block quotes](#lists-and-block-quotes)
-- [Built-in directives](#built-in-directives): [`@id`](#id), [`@include`](#include), [`@variant`](#variant), [`@available`](#available), [`@note`](#note), [`@steps`](#steps), [`@details`](#details), [`@snippet`](#snippet)
+- [Built-in directives](#built-in-directives): [`@id`](#id), [`@include`](#include), [`@variant`](#variant), [`@available`](#available), [`@note`](#note), [`@steps`](#steps), [`@details`](#details), [`@snippet`](#snippet), [`@intended`](#intended)
 - [Project widgets](#project-widgets)
 - [Phrases](#phrases)
 - [Links](#links)
@@ -200,6 +200,7 @@ Directives follow CommonMark's container rules, like headings and code fences:
 | [`@steps`](#steps) | line | none | Mark an ordered list as a procedure |
 | [`@details`](#details) | line, container | none | Collapsible content |
 | [`@snippet`](#snippet) | line | an address | A code example from a file |
+| [`@intended`](#intended) | line | a reason | Say a check's problem is intended |
 
 ### `@id`
 
@@ -446,6 +447,37 @@ labels = { macos = "macOS" }  # :remove:
 - Bluehawk's other tags (`state`, `replace`, `uncomment`, and `emphasize`) are reserved. A file that uses one can't be used by a snippet yet, so its code is never shown with a tag left in.
 
 Every problem is reported at the `@snippet` line: an address without a source, a source or file that doesn't exist, a region that doesn't exist (with the names the file has), and tags that don't balance, with the tag's line in the code file as related information. See [Source files](diagnostics.md#source-files) in the diagnostics reference.
+
+### `@intended`
+@available: next
+
+([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended))
+
+Says that a problem a check reports is intended: you've looked at it and are keeping it. Write the check's name and why.
+
+```markdown
+@intended {check=link-dead}: help.example.com refuses link checkers; checked by hand.
+Read the [vendor's deployment notes](https://help.example.com/deploy) first.
+```
+
+- **Only review checks.** A check whose next step is *review* reports something that may be fine as it is, such as a page nothing links to. Only those can be acknowledged; a problem that's always wrong, such as a link to a page that doesn't exist, is fixed instead. The [diagnostics reference](diagnostics.md) says where each review check is acknowledged.
+- **Where it's written** depends on the check, which reports its problems at one kind of place:
+  - **A block:** `@intended` directly above it, as above. It covers the check's problems anywhere in the block, including inside a container. Above a block of a fragment, it covers that block in every page that includes it.
+  - **A page or a fragment:** the `intended` frontmatter key, a list of entries with a `check` and a `reason`:
+
+    ```yaml
+    intended:
+      - check: page-orphan
+        reason: Linked from the site's sidebar, which Ascribe can't see.
+    ```
+
+  - **A content model entry or an image:** an [`[[intended]]` table](content-model.md#intended-acknowledgements) in `ascribe.toml`.
+- **The reason is required,** and is the rest of the line. It's for the next person who reads the page, and `ascribe check` lists it with the problem it covers.
+- **It changes no output.** Nothing renders for `@intended`, and the `intended` key isn't in any output's frontmatter.
+
+An acknowledged problem isn't reported, but `ascribe check` and `ascribe build` count it in their summary (`1 acknowledged`), and list it, with its reason, in their [JSON report](cli.md). When an acknowledgement covers nothing in any build, because the problem was fixed or the check changed, `ascribe check` reports it as advice, `intended-unused`, with a fix that removes it. That's reported only when every build is checked: not with `--build` or `--editor-build`, and not in the editor.
+
+In the editor, a review check's problem has a quick fix, **Mark as intended, and write why**, that writes the acknowledgement in the right place for you to fill in the reason. Its placeholder reason is reported as an error until you replace it, so the fix alone silences nothing.
 
 ## Project widgets
 

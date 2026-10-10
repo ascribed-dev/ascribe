@@ -85,6 +85,7 @@ impl Ctx<'_> {
         if !fragment {
             self.check_reserved_keys(&value, &index, first_line);
         }
+        self.check_intended_key(&value, &index, first_line);
     }
 
     /// The first line of the file, without its line ending. Never empty
@@ -244,7 +245,7 @@ impl Ctx<'_> {
         }
     }
 
-    fn mismatch(&mut self, field: &str, expected: &str, found: &Value, at: Span) {
+    pub(super) fn mismatch(&mut self, field: &str, expected: &str, found: &Value, at: Span) {
         let issue = Issue::new(
             diagnostics::FRONTMATTER_TYPE_MISMATCH,
             Location::new(self.id, at),

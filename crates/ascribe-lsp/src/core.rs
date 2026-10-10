@@ -908,6 +908,19 @@ impl Core {
         self.ctx(loaded, snapshot, content, &path)
     }
 
+    /// What a code action request works from: a source file's context, as
+    /// [`Core::nav_target`] gives it, or the project's for `ascribe.toml`.
+    pub(crate) fn code_action_target(&self, uri: &Uri) -> Option<Ctx> {
+        self.nav_target(uri).or_else(|| {
+            let is_model = Core::doc_path(uri).is_some_and(|p| self.config.as_ref() == Some(&p));
+            if is_model {
+                self.project_target(uri)
+            } else {
+                None
+            }
+        })
+    }
+
     /// What a request about the whole project works from, asked through any
     /// of the project's files: a source file, `ascribe.toml`, or any other
     /// file in its folder. For a file that isn't a source, the context's path

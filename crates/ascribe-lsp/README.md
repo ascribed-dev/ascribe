@@ -576,7 +576,11 @@ Diagnostics are pushed (`textDocument/publishDiagnostics`); the server doesn't
 advertise pull diagnostics.
 
 Code actions carry the checker's existing diagnostic fixes (including the
-router's reverse route suggestion) and the Ascribe-specific repairs. Rename and
+router's reverse route suggestion) and the Ascribe-specific repairs. A review
+check's problem offers **Mark as intended, and write why**, which writes an
+acknowledgement where the check's `place` says; on `ascribe.toml`, the only
+actions are those for a problem about a content model entry or an image,
+written in `[[intended]]`. Rename and
 file-move edits use the current project snapshot, including open buffers, its
 source index, and reverse references. A rename starts on a heading or an `@id`,
 a phrase (a `{key}` use or its key in `ascribe.toml`), or a dimension value (in

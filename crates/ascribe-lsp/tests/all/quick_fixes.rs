@@ -1080,6 +1080,10 @@ fn every_fix_diagnostic_has_a_quick_fix() {
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()
         .filter(|e| e.next == Some(ascribe_check::Next::Fix))
+        // Whether an acknowledgement covers nothing takes every build, so
+        // the editor never reports `intended-unused`; `ascribe check` does,
+        // with its fix.
+        .filter(|e| e.slug.as_str() != "intended-unused")
         .map(|e| e.slug.as_str())
         .collect();
     let sampled: Vec<&str> = samples.iter().map(|(slug, _, _)| *slug).collect();

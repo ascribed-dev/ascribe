@@ -1,0 +1,15 @@
+description: >-
+  A content check's problem can be acknowledged where it's reported: an
+  orphan page in its `intended` frontmatter, and an unused phrase in
+  `[[intended]]` in `ascribe.toml`. What's acknowledged isn't reported;
+  the rest is.
+spec: ["4.9", "5.1", "5.2"]
+tags: [check, page-check]
+
+diagnostics:
+  - {slug: phrase-unused, file: ascribe.toml, line: 15}
+
+builds:
+  site:
+    diagnostics:
+      - {slug: page-orphan, file: stray.md, line: 2}
