@@ -60,6 +60,7 @@ mod ids;
 mod inlines;
 mod links;
 mod modes;
+mod permalinks;
 mod phrases;
 mod router;
 mod tree;
@@ -76,6 +77,7 @@ use ascribe_syntax::{Block, BlockKind};
 pub(crate) use glossary::Terms;
 pub use glossary::glossary_targets;
 pub(crate) use inlines::prose_lists;
+pub use permalinks::{Permalink, permalinks};
 pub use router::DefaultRouter;
 pub use tree::{
     Annotation, Availability, DropReason, DroppedPage, FormattedField, GlossaryUse, HeadingIds,

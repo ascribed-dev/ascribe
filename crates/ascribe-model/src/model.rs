@@ -499,6 +499,26 @@ pub struct Consumer {
     /// index on each page. Only with a `site`, since every link they hold is
     /// absolute.
     pub agents: bool,
+    /// Where permalinks' addresses are published, as written in
+    /// `permalink-path`: a path from the site's root, starting with `/`.
+    /// [`Consumer::permalink_path`] gives the path with its default.
+    pub permalink_path: Option<String>,
+}
+
+impl Consumer {
+    /// The path each permalink's address is published under, from the
+    /// site's root and ending in `/`: `permalink-path`, or `go/` under the
+    /// base path when it isn't set.
+    pub fn permalink_path(&self) -> String {
+        let mut path = match &self.permalink_path {
+            Some(path) => path.clone(),
+            None => format!("{}/go/", self.base_path.trim_end_matches('/')),
+        };
+        if !path.ends_with('/') {
+            path.push('/');
+        }
+        path
+    }
 }
 
 /// A build's variant mode.

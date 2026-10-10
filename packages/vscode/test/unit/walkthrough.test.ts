@@ -87,11 +87,13 @@ function onSite(url: string): boolean {
   const file = new URL(`../../docs/content/${path.replace(/\/$/, "") || "index"}.md`, root);
   if (!existsSync(file)) return false;
   if (id === undefined) return true;
-  const headings = readFileSync(file, "utf8")
-    .split("\n")
+  const lines = readFileSync(file, "utf8").split("\n");
+  const headings = lines
     .filter((line) => /^#{2,6} /.test(line))
     .map((line) => slug(line.replace(/^#+ /, "")));
-  return headings.includes(id);
+  // A heading with an `@id` has that id instead of its slug.
+  const ids = lines.flatMap((line) => /^@id(?: *\{[^}]*\})?: *(\S+)$/.exec(line)?.[1] ?? []);
+  return headings.includes(id) || ids.includes(id);
 }
 
 describe("the getting-started walkthrough", () => {

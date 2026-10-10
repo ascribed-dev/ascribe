@@ -551,6 +551,13 @@ pub const DELIVERY_OUTPUT: DiagnosticSlug = DiagnosticSlug("delivery-output");
 /// `ASC172`, advice, file level: a content check (area `project`).
 pub const AVAILABILITY_LEFT_BEHIND: DiagnosticSlug = DiagnosticSlug("availability-left-behind");
 
+/// `ASC173`, error, page level: SPEC §8.2, "`@id` | Permalink published by one build on more than one page (page level)".
+pub const PERMALINK_DUPLICATE: DiagnosticSlug = DiagnosticSlug("permalink-duplicate");
+
+/// `ASC174`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_CONSUMER_PERMALINK_PATH: DiagnosticSlug =
+    DiagnosticSlug("model-consumer-permalink-path");
+
 /// Every slug, in registry order.
 pub const ALL: &[DiagnosticSlug] = &[
     ATTRIBUTE_UNKNOWN_KEY,
@@ -725,6 +732,8 @@ pub const ALL: &[DiagnosticSlug] = &[
     DELIVERY_HOSTING,
     DELIVERY_OUTPUT,
     AVAILABILITY_LEFT_BEHIND,
+    PERMALINK_DUPLICATE,
+    MODEL_CONSUMER_PERMALINK_PATH,
 ];
 
 /// The diagnostics a project may set the level of in `[checks]`: the

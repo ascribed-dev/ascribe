@@ -100,6 +100,8 @@ npx astro build
 - **Serves the files pages link to** (other than pages and images) at `<base>_ascribe/files/`, in `astro dev` and in the built site.
 - @available: next
   **Publishes the outputs for agents** with `[consumer] agents = true`: `llms.txt` and each page's Markdown, in `astro dev` and in the built site ([Publish for AI agents](#publish-for-ai-agents)).
+- @available: next
+  **Gives each permalink an address** that forwards to its heading, in `astro dev` and in the built site ([Permalinks](#permalinks)).
 - @available: ascribe 0.2.0
   **Shows code block titles**, with a Shiki transformer it adds to Astro's code highlighting ([code block titles](#code-block-titles)).
 - @available: ascribe 0.2.0
@@ -137,6 +139,23 @@ The files are static, so any host serves them. A few things the spec asks are th
 - **Content negotiation.** An agent may ask for a page with `Accept: text/markdown`; answering it with the page's `.md` needs a rule on the server, such as an edge function or middleware that rewrites to `<path>.md` when that header asks for Markdown. Without it, agents still find the `.md` URLs through `llms.txt` and the pointer. On Netlify, an edge function does it: this site's is [`markdown.ts`]({repo}/blob/main/site/netlify/edge-functions/markdown.ts).
 - **Status codes and caching.** A missing page should answer 404, not 200 with a page saying so, and the `.md` files and `llms.txt` should be cached no longer than the pages.
 - **Bot protection.** A rule that challenges unfamiliar clients blocks agents too; let them read `llms.txt` and the `.md` files.
+
+## Permalinks
+@available: next
+
+A heading marked as a [permalink](../reference/directives.md#permalinks), `@id {permalink=true}: weave-config`, gets an address of its own, `go/weave-config` under the base path, which sends the reader to the heading wherever it is now. Link to that address from outside the docs, such as from your product's interface or its error messages, and the link keeps working when the page moves.
+
+The integration adds the route itself, from the list each build writes (`_ascribe/permalinks.json` in the site output, [output-layout contract §1.2](../contracts/output-layout.md#12-the-permalinks-list)). Each address is a small page that:
+
+- forwards at once with a `<meta http-equiv="refresh">`, without a script, keeping the heading's anchor;
+- links to the same place, for a browser that doesn't follow;
+- is marked `noindex`, with a canonical link to where it leads, so search engines list the page and not the address.
+
+So it works on any static host, in `astro build` and in `astro dev`. The addresses end the way the site's routes do (`trailing-slash`), and aren't pages of the collection, `llms.txt`, or the Markdown for agents.
+
+[`permalink-path`](../reference/content-model.md#15-consumer) moves them, as a path from the site's root, such as `"/go/"` when the docs move under `/docs/` but the addresses your product prints shouldn't. It must be under Astro's `base`, since that's all an Astro site serves; the integration fails the build when it isn't.
+
+**With another generator,** read `_ascribe/permalinks.json` from the build's site output and publish a page like these at `path` and each name, forwarding to `route` and `#` and `fragment`. A host's redirect rules can do the same, but a redirect drops nothing only if the host keeps the anchor.
 
 ## Review in the site preview
 @available: ascribe 0.2.0

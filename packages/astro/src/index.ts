@@ -26,6 +26,7 @@ import { findBinary } from "./binary.js";
 import { codeTitles } from "./code-titles.js";
 import { SeenFiles, watchDev } from "./dev.js";
 import { agentsMiddleware, copyAgentFiles, copyPublishedFiles, filesMiddleware } from "./files.js";
+import { permalinkPattern, readPermalinks } from "./permalinks.js";
 import { consumerMismatches, readProject } from "./project.js";
 import rehypeAscribeAttributes from "./rehype.js";
 import { removeDevFile, siteUrl, writeDevFile } from "./review/devfile.js";
@@ -80,8 +81,9 @@ const ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v6"/><path d="M14 3v4h4"/><path d="M6 3v15"/><path d="M11 14h10v6h-6l-3 2v-2h-1z"/></svg>';
 
 /**
- * Runs `ascribe build`, checks the site's routing, adds the markdown plugin, and serves published
- * files, and, with `[consumer] agents = true`, `llms.txt` and each page's Markdown.
+ * Runs `ascribe build`, checks the site's routing, adds the markdown plugin, adds a page for each
+ * permalink's address, and serves published files, and, with `[consumer] agents = true`, `llms.txt`
+ * and each page's Markdown.
  */
 export default function ascribe(options: AscribeOptions): AstroIntegration {
   let siteRoot = "";
@@ -112,6 +114,7 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
         updateConfig,
         addDevToolbarApp,
         createCodegenDir,
+        injectRoute,
       }) => {
         const root = fileURLToPath(config.root);
         const project = readProject(path.resolve(root, options.project ?? "."));
@@ -194,6 +197,16 @@ export default function ascribe(options: AscribeOptions): AstroIntegration {
           if (command === "dev") seen.prime([project.contentRoot, project.configPath]);
           await rebuild();
           if (command === "dev") devProject = project;
+
+          // Each permalink's address, a page that forwards to its heading.
+          const permalinks = readPermalinks(siteRoot);
+          if (permalinks !== undefined) {
+            injectRoute({
+              pattern: permalinkPattern(permalinks.path, config.base),
+              entrypoint: new URL("../src/Permalink.astro", import.meta.url),
+              prerender: true,
+            });
+          }
         }
 
         // Dev serving of `_ascribe/files/`, and of the plain output for agents; the build copies them in `astro:build:done`.

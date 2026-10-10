@@ -219,6 +219,21 @@ Gives a heading an explicit, stable id, used for its anchor and by links and inc
 
 Without `@id`, a heading's id is its slug, computed from its text. Add `@id` to a heading whose text contains a phrase or duplicates another heading's: Ascribe warns about both, because their ids can change without the heading being edited.
 
+#### Permalinks
+@available: next
+
+`{permalink=true}` makes the id a **permalink** as well: a name for the section that something outside the docs can link to, which keeps working when the page is renamed, moved, or rewritten.
+
+```markdown
+## `ascribe check`
+@id {permalink=true}: cli-check
+```
+
+- **Each permalink has an address of its own,** `go/<id>` under the site's base path, or under [`permalink-path`](content-model.md#15-consumer), which forwards to the section wherever it is. With [`@ascribed/astro`](../guides/astro.md#permalinks), `/go/cli-check/` sends the reader to `/reference/cli/#cli-check`. A product links to the address, not to the page: `ascribe check --help` ends with `https://ascribed-dev.com/go/cli-check/`.
+- **The id is still the heading's anchor,** and links inside the docs name it as they name any id: `cli.md#cli-check`. A permalink is for links from outside the docs; inside, link to the file.
+- **A build can publish a permalink on one page only,** and `ascribe check` reports one it publishes twice (`permalink-duplicate`). A heading in a fragment is published on every page that includes it, so a marked heading belongs in a fragment only one page of each build includes. Two pages that no build publishes together may share a permalink.
+- **Only a heading can have a permalink for now,** not a whole page, and nothing reports a permalink that's removed: delete the id or the attribute, and the address stops working without a word. Keep a permalink's id as it is for as long as anything links to it.
+
 ### `@include`
 
 ([SPEC §4.2]({repo}/blob/main/SPEC.md#42-include))

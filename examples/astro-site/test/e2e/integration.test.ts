@@ -88,6 +88,18 @@ describe("the integration", () => {
     expect(String(failure)).toContain("nope");
   });
 
+  it("fails the Astro build when permalinks are published outside Astro's base", async () => {
+    const root = await copySite("permalinks-outside-base");
+    await edit(path.join(root, "ascribe.toml"), (text) =>
+      text.replace('trailing-slash = "never"', 'trailing-slash = "never"\npermalink-path = "/go/"'),
+    );
+    const failure = await buildSite(root).then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(String(failure)).toContain("isn't under Astro's `base`");
+  });
+
   it("routes agree under a root base path with trailing slashes", async () => {
     const root = await copySite("always");
     await edit(path.join(root, "ascribe.toml"), (text) =>
@@ -113,6 +125,9 @@ describe("the integration", () => {
       expect(await page.locator("main > h1").textContent()).toBe("Loom documentation");
       const file = await page.request.get(`${server.origin}/_ascribe/files/downloads/loom.yaml`);
       expect(file.status()).toBe(200);
+      // A permalink's address ends in `/`, as the site's routes do.
+      await page.goto(`${server.origin}/go/weave-config/`);
+      await page.waitForURL(`${server.origin}/guides/my-setup/#weave-config`);
     } finally {
       await browser.close();
       await server.stop();
@@ -132,6 +147,12 @@ describe("the integration", () => {
       expect(unprefixed.status).toBe(404);
       const html = await (await fetch(`${server.origin}${BASE}/guides/my-setup`)).text();
       expect(html).toContain('id="weave-config"');
+      // A permalink's address, as in the build.
+      const forwarding = await fetch(`${server.origin}${BASE}/go/weave-config`);
+      expect(forwarding.status).toBe(200);
+      expect(await forwarding.text()).toContain(
+        `<meta http-equiv="refresh" content="0;url=${BASE}/guides/my-setup#weave-config">`,
+      );
     } finally {
       await server.stop();
     }

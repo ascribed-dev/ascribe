@@ -555,6 +555,7 @@ slugger = "github"
 | `slugger` | string | `"github"` | **Slugging.** The algorithm for heading ids (SPEC §5.5), which must be the one the consumer uses. Supported: `"github"`, a port of `github-slugger`, which Astro uses. |
 | `html` | boolean | `true` | **HTML passthrough.** Whether the consumer renders raw HTML in markdown. The site output's custom elements need it, so the `astro` profile supports only `true`. |
 | `agents` {available=next} | boolean | `false` | **Outputs for agents.** Whether each build also publishes what AI agents read, following the Web Documentation Delivery Spec 0.6.0: `llms.txt` and each page's Markdown version, in the plain-markdown output laid out by URL, and a pointer to them on each page of the site output. It requires `site`. See below. |
+| `permalink-path` {available=next} | string | `go/` under `base-path` | **Permalinks.** The path each permalink's address is published under (SPEC §4.1), from the site's root: an address is the path, the permalink's id, and a final `/` when `trailing-slash` is `"always"`. It MUST start with `/` (`model-consumer-permalink-path`); a missing final `/` is added. The site output's `_ascribe/permalinks.json` gives it as `path` (contracts/output-layout.md §1.2). |
 
 **Heading ids, image attributes, and assets** (SPEC §9.5) are part of the profile, not keys. The `astro` profile has exactly one way to do each, defined by the contracts:
 

@@ -123,6 +123,17 @@ impl Builtin {
             Builtin::Id => DirectiveSchema {
                 primary: Primary::Identifier { required: true },
                 binding: Some(Binding::Heading),
+                attributes: Attributes::Declared(vec![AttributeSchema {
+                    key: "permalink".into(),
+                    ty: AttributeType::Boolean,
+                    required: false,
+                    default: Some(DefaultValue::Boolean(false)),
+                    description: Some(
+                        "When true, the id is also a permalink: a name for the section that \
+                         stays the same when the docs move, published at an address of its own."
+                            .into(),
+                    ),
+                }]),
                 description: Some("Give a heading a stable id.".into()),
                 ..base
             },

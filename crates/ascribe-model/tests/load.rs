@@ -47,6 +47,7 @@ fn minimal_gets_every_default() {
     assert_eq!(m.consumer.profile, "astro");
     assert_eq!(m.consumer.base_path, "/");
     assert_eq!(m.consumer.trailing_slash, TrailingSlash::Always);
+    assert_eq!(m.consumer.permalink_path(), "/go/");
     assert!(m.consumer.html);
     assert!(m.current_version.is_none());
     // Only the built-in directives.
@@ -64,6 +65,26 @@ fn minimal_gets_every_default() {
             "intended"
         ]
     );
+}
+
+#[test]
+fn permalinks_are_under_the_base_path_unless_a_path_is_set() {
+    let path = |consumer: &str| {
+        load_str(
+            &format!("spec = \"0.1\"\n[consumer]\n{consumer}"),
+            FileId::new(0),
+        )
+        .unwrap()
+        .consumer
+        .permalink_path()
+    };
+    assert_eq!(path("base-path = \"/docs/\"\n"), "/docs/go/");
+    assert_eq!(path("base-path = \"/docs\"\n"), "/docs/go/");
+    assert_eq!(
+        path("base-path = \"/docs/\"\npermalink-path = \"/go/\"\n"),
+        "/go/"
+    );
+    assert_eq!(path("permalink-path = \"/links\"\n"), "/links/");
 }
 
 #[test]

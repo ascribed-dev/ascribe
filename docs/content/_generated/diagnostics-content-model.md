@@ -544,6 +544,14 @@ Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md
 
 **Fix:** Set `site` in `[consumer]` to the published site's origin, such as `"https://docs.example.com"`, or remove `agents`.
 
+#### ASC174 `model-consumer-permalink-path`
+
+Error · file level · next step: write · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
+
+**Message:** permalink-path must start with "/", such as "/go/"
+
+**Fix:** Start `permalink-path` with `/`: `"/go/"`. It's a path from the site's root, not from `base-path`.
+
 ### `[checks]`
 
 #### ASC142 `model-check-not-configurable`

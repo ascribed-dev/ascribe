@@ -1,0 +1,10 @@
+description: >-
+  A build can publish a permalink on one page only. The second page's `@id`
+  is reported, naming the first.
+spec: ["4.1", "8.2"]
+tags: [page-check]
+
+builds:
+  site:
+    diagnostics:
+      - {slug: permalink-duplicate, file: b.md, line: 6}

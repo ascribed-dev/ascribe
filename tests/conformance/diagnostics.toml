@@ -3072,3 +3072,28 @@ spec = "4.4"
 when = "`[versions] current` is set, and a feature's availability names a version for every target, none of them later than the current release"
 message = "feature `{key}` names releases up to {version}, and the current release is {current}, so what it marks has shipped"
 fix = "When the feature stands for what the next release adds, as one named `next` does, write the shipped release's spec at the content that shipped in it (`@available: ascribe 0.2.0`), and point the feature at the release after it, or at a state such as `unreleased`. When it's a history worth keeping by name, acknowledge it in [`[[intended]]`](content-model.md#intended-acknowledgements). After each release, move [`[versions] current`](content-model.md#7-versions) to it."
+
+[[diagnostic]]
+code = "ASC173"
+slug = "permalink-duplicate"
+severity = "error"
+level = "page"
+next = "write"
+evidence = []
+spec = "4.1"
+row = "`@id` | Permalink published by one build on more than one page (page level)"
+message = "the permalink `{name}` is also on `{page}`; a build can publish each permalink on one page only"
+messages.include = "including `{path}` here puts the permalink `{name}` on this page, and it's also on `{page}`; a build can publish each permalink on one page only"
+fix = "Give one of the headings a different `@id`, or remove `{permalink=true}` from it. When the permalink is in a fragment that several pages include, mark the heading in one page instead, or make sure no build publishes two of those pages."
+
+[[diagnostic]]
+code = "ASC174"
+slug = "model-consumer-permalink-path"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "9.5"
+group = "consumer"
+message = "permalink-path must start with \"/\", such as \"/go/\""
+fix = "Start `permalink-path` with `/`: `\"/go/\"`. It's a path from the site's root, not from `base-path`."

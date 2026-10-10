@@ -173,3 +173,5 @@
 | [ASC170](../reference/diagnostics.md#asc170-delivery-hosting) | `delivery-hosting` | Advice | File | outside |
 | [ASC171](../reference/diagnostics.md#asc171-delivery-output) | `delivery-output` | Advice | File | outside |
 | [ASC172](../reference/diagnostics.md#asc172-availability-left-behind) | `availability-left-behind` | Advice | File | review |
+| [ASC173](../reference/diagnostics.md#asc173-permalink-duplicate) | `permalink-duplicate` | Error | Page | write |
+| [ASC174](../reference/diagnostics.md#asc174-model-consumer-permalink-path) | `model-consumer-permalink-path` | Error | File | write |

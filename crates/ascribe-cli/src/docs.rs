@@ -72,12 +72,23 @@ fn help_links_to_the_docs_site() {
             helps.push(sub.render_long_help().to_string());
         }
     }
+    let permalinks = docs_permalinks();
     for help in helps {
         let link = help
             .lines()
             .find_map(|line| line.strip_prefix("Documentation: "))
             .expect("each command's help ends with a link to its documentation");
         let path = link.strip_prefix(crate::cli::DOCS_SITE).unwrap();
+        if let Some(id) = path.strip_prefix(crate::cli::DOCS_PERMALINKS) {
+            let id = id.strip_suffix('/').unwrap_or_else(|| {
+                panic!("{link}: the docs site's addresses end in `/` (trailing-slash = \"always\")")
+            });
+            assert!(
+                permalinks.iter().any(|p| p.name == id),
+                "{link}: the docs publish no permalink `{id}`"
+            );
+            continue;
+        }
         let (route, anchor) = path.split_once('#').unwrap_or((path, ""));
         assert_eq!(route, "/reference/cli/", "{link}");
         if !anchor.is_empty() {
@@ -91,6 +102,55 @@ fn help_links_to_the_docs_site() {
             );
         }
     }
+}
+
+/// The permalinks the docs' `site` build publishes.
+fn docs_permalinks() -> Vec<ascribe_resolve::Permalink> {
+    let root = repo().join("docs");
+    let model = ascribe_model::load(root.join("ascribe.toml")).unwrap();
+    let layout = ascribe_resolve::Layout::from_model(&model);
+    let fs = ascribe_resolve::DiskFs::new(&root, &layout);
+    let project = ascribe_resolve::Project::load(std::sync::Arc::new(model), layout, &fs);
+    let build = project.model().build("site").unwrap();
+    let router = ascribe_resolve::AstroRouter::from_consumer(&project.model().consumer);
+    project.resolve_build(build, &router).permalinks()
+}
+
+/// Help links to the docs' permalinks at the address the docs site
+/// publishes them at, and `ascribe check`'s leads to its section.
+#[test]
+fn help_links_to_permalinks_where_the_docs_publish_them() {
+    let model = ascribe_model::load(repo().join("docs/ascribe.toml")).unwrap();
+    assert_eq!(
+        model.consumer.permalink_path(),
+        crate::cli::DOCS_PERMALINKS,
+        "docs_permalinks! in crates/ascribe-cli/src/cli.rs isn't [consumer] permalink-path in docs/ascribe.toml"
+    );
+    assert_eq!(
+        model.consumer.trailing_slash,
+        ascribe_model::TrailingSlash::Always,
+        "docs_permalink! in crates/ascribe-cli/src/cli.rs ends each address in `/`, as trailing-slash = \"always\" does"
+    );
+    let check = docs_permalinks()
+        .into_iter()
+        .find(|p| p.name == "cli-check")
+        .expect("the docs publish the permalink `cli-check`");
+    assert_eq!(
+        (check.route.as_str(), check.anchor.as_str()),
+        ("/reference/cli/", "cli-check")
+    );
+    let help = Cli::command()
+        .find_subcommand_mut("check")
+        .unwrap()
+        .render_long_help()
+        .to_string();
+    assert!(
+        help.trim_end().ends_with(&format!(
+            "Documentation: {}/go/cli-check/",
+            crate::cli::DOCS_SITE
+        )),
+        "{help}"
+    );
 }
 
 /// Each diagnostic's link, in `check`'s JSON and the language server's

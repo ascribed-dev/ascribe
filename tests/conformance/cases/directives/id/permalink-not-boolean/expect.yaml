@@ -1,0 +1,7 @@
+description: >-
+  `permalink` is a boolean, so any other value is a type mismatch.
+spec: ["3.3", "4.1"]
+tags: [check]
+
+diagnostics:
+  - {slug: attribute-type-mismatch, line: 6}

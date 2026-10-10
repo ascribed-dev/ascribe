@@ -42,7 +42,33 @@ Beside the pages it holds `llms.txt`, and one `<folder>/llms.txt` per section wh
 
 Assets go where the [asset contract](assets.md) §3 puts them: at their mirrored path, or, for links in the site output, under `_ascribe/files/`.
 
-**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`).
+**`_ascribe/` is reserved** in every emitter root for files Ascribe places other than pages and assets inside the content root: assets from outside the content root (`_ascribe/up/`), the site output's published files (`_ascribe/files/`), and generated files an emitter adds, such as the site emitter's Zod schema (`_ascribe/schema.ts`) and its list of permalinks (`_ascribe/permalinks.json`, §1.2).
+
+### 1.2 The permalinks list
+@available: next
+
+The site output holds `_ascribe/permalinks.json`: every permalink the build publishes (SPEC §4.1), for the site to give each one an address that forwards to its heading. It's `generated` in the manifest, and written for every build, with an empty table when the build has none, so a consumer can tell "no permalinks" from an Ascribe that doesn't write the list.
+
+```json
+{
+  "version": 1,
+  "path": "/go/",
+  "permalinks": {
+    "cli-check": { "route": "/reference/cli/", "fragment": "cli-check", "source": "reference/cli.md" }
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `version` | The list's format version: `1`. A reader rejects versions it doesn't know. |
+| `path` | Where the addresses are published: `[consumer] permalink-path`, or `go/` under `base-path`, as a path from the site's root ending in `/` (content-model contract §16). A permalink's address is `path`, its name, and a final `/` when `trailing-slash` is `"always"`. |
+| `permalinks` | One entry per permalink, keyed by its name, sorted by name. A name is unique in a build (`permalink-duplicate`). |
+| `permalinks.*.route` | The route of the page the permalink is on, as the site output's links write it. |
+| `permalinks.*.fragment` | The heading's anchor on that page, without `#`. |
+| `permalinks.*.source` | The page's source path, relative to the content root. |
+
+An address forwards to `route`, then `#` and `fragment`. A later version may add keys to the file or to an entry; it doesn't change these.
 
 ## 2. What Ascribe owns
 

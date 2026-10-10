@@ -1,0 +1,30 @@
+---
+// A permalink's address: a page that sends the reader on to the heading it
+// names, wherever that is now. The integration adds it as a route at
+// `<path>[id]`, one page for each entry of the site output's
+// `_ascribe/permalinks.json`. It forwards without a script, links to the same
+// place for a browser that doesn't follow, and isn't indexed.
+import { siteRoot } from "virtual:ascribe/site";
+import { forwardingPaths, type Forwarding } from "@ascribed/astro/permalinks";
+
+export function getStaticPaths() {
+  return forwardingPaths(siteRoot);
+}
+
+const { to } = Astro.props as Forwarding;
+const canonical = Astro.site === undefined ? to : new URL(to, Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting to {to}</title>
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content={`0;url=${to}`} />
+    <link rel="canonical" href={canonical} />
+  </head>
+  <body>
+    <p>This link leads to <a href={to}>{to}</a>.</p>
+  </body>
+</html>

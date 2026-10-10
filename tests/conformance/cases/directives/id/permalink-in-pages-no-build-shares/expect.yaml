@@ -1,0 +1,11 @@
+description: >-
+  A permalink must be unique within what one build publishes, so two pages
+  that no build publishes together may share one.
+spec: ["4.1", "9.3"]
+tags: [page-check]
+
+builds:
+  cloud:
+    diagnostics: []
+  self-managed:
+    diagnostics: []

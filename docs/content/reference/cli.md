@@ -14,6 +14,7 @@ Install it in a project with `npm install --save-dev @ascribed/cli` (see [Gettin
 @include: ../_generated/cli-global-options.md
 
 ## `ascribe check`
+@id {permalink=true}: cli-check
 
 Checks every source file for problems, without building anything: every file-level diagnostic, then the page-level ones for **every build** in `ascribe.toml`. The editor and `ascribe build` run the same checks, so they report the same diagnostics.
 

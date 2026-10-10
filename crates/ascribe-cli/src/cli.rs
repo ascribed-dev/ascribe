@@ -21,9 +21,37 @@ macro_rules! docs_page {
     };
 }
 
+/// Where the docs site publishes its permalinks' addresses: `[consumer]
+/// permalink-path` in `docs/ascribe.toml`.
+macro_rules! docs_permalinks {
+    () => {
+        "/go/"
+    };
+}
+
+/// A line for the end of a command's help, linking to a permalink of the
+/// docs site, which forwards to wherever its section is:
+/// `docs_permalink!("cli-check")`. The address ends in `/`, as the docs
+/// site's `trailing-slash` says.
+macro_rules! docs_permalink {
+    ($id:literal) => {
+        concat!(
+            "Documentation: ",
+            ascribe_core::docs_site!(),
+            docs_permalinks!(),
+            $id,
+            "/"
+        )
+    };
+}
+
 /// `ascribe_core::docs_site!`, for the test that checks it.
 #[cfg(test)]
 pub(crate) const DOCS_SITE: &str = ascribe_core::docs_site!();
+
+/// `docs_permalinks!`, for the test that checks it.
+#[cfg(test)]
+pub(crate) const DOCS_PERMALINKS: &str = docs_permalinks!();
 
 /// What `ascribe --help` shows before the commands and options: examples,
 /// and the commands an agent needs first, since agents read `--help` before
@@ -102,7 +130,7 @@ pub enum Command {
     #[command(after_help = docs_page!("reference/cli/#ascribe-build"))]
     Build(commands::build::Args),
     /// Check every source file for problems, without building anything.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-check"))]
+    #[command(after_help = docs_permalink!("cli-check"))]
     Check(commands::check::Args),
     /// Show what changed between a git revision and the working tree, page
     /// by page, as readers will see it.

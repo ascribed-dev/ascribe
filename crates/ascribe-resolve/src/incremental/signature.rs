@@ -41,7 +41,11 @@ pub(crate) fn structure_signature(index: &FileIndex) -> u64 {
         heading.level.hash(&mut h);
         heading.text.hash(&mut h);
         heading.source_id.hash(&mut h);
-        heading.explicit_id.as_ref().map(|e| &e.id).hash(&mut h);
+        heading
+            .explicit_id
+            .as_ref()
+            .map(|e| (&e.id, e.permalink))
+            .hash(&mut h);
         heading.has_phrase.hash(&mut h);
     }
     blocks(&index.document.blocks, &index.source, &mut h);

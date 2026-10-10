@@ -81,6 +81,7 @@ mod tests {
             slugger: "github".to_owned(),
             html: true,
             agents: false,
+            permalink_path: None,
         });
         assert_eq!(profile.name(), "astro");
         assert!(profile.html_passthrough());

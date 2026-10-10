@@ -4,7 +4,7 @@
 import { readFile } from "node:fs/promises";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import markdown, { markdownPath, prefersMarkdown } from "../netlify/edge-functions/markdown.ts";
-import { distDir, fileFor, filesUnder, requireBuild, serve } from "./built.ts";
+import { distDir, fileFor, filesUnder, forwardingPages, requireBuild, serve } from "./built.ts";
 
 describe("which requests ask for Markdown", () => {
   test.each([
@@ -52,9 +52,12 @@ describe("the built site", () => {
   }
 
   test("every page has the Markdown the function answers with", async () => {
+    // A permalink's page only forwards, and gets no Markdown.
+    const forwarding = await forwardingPages();
     const pages = (await filesUnder(distDir))
       .filter((file) => file.endsWith("index.html"))
-      .map((file) => `/${file.slice(0, -"index.html".length)}`);
+      .map((file) => `/${file.slice(0, -"index.html".length)}`)
+      .filter((page) => !forwarding.includes(page));
     expect(pages).toContain("/");
     const missing: string[] = [];
     for (const page of pages) {
@@ -77,6 +80,14 @@ describe("the built site", () => {
     expect(response.headers.get("content-type")).toMatch(/^text\/html/);
     expect(response.headers.get("vary")).toBe("Accept");
     expect(await response.text()).toMatch(/^<!DOCTYPE html>/i);
+  });
+
+  test("a permalink asked for as Markdown is its forwarding page", async () => {
+    const [page] = await forwardingPages();
+    expect(page).toBeDefined();
+    const response = await answer(page ?? "", "text/markdown");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toMatch(/^text\/html/);
   });
 
   test("a missing page asked for as Markdown is still the 404 page", async () => {

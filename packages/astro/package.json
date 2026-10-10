@@ -15,7 +15,8 @@
   "files": [
     "dist",
     "src/Elements.astro",
-    "src/Availability.astro"
+    "src/Availability.astro",
+    "src/Permalink.astro"
   ],
   "exports": {
     ".": {
@@ -35,6 +36,10 @@
     "./content": {
       "types": "./dist/content.d.ts",
       "default": "./dist/content.js"
+    },
+    "./permalinks": {
+      "types": "./dist/permalinks.d.ts",
+      "default": "./dist/permalinks.js"
     }
   },
   "engines": {
