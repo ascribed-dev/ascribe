@@ -2,6 +2,7 @@
 title: Agents
 description: Working on an Ascribe project with an AI coding agent, such as Claude Code, GitHub Copilot, or Cursor, and handing it the problems Ascribe finds.
 available: next
+permalink: agents-guide
 ---
 
 An agent is the AI coding tool you work with: Claude Code, GitHub Copilot, Cursor, Codex, and others. Ascribe gives your agent what it knows about a project, in a form an agent reads well, and checks what the agent writes:
@@ -40,12 +41,12 @@ Other commands answer what an agent would otherwise guess at. Each changes nothi
 
 | Command | What it answers |
 |---|---|
-| [`ascribe explain <code>`](../reference/cli.md#ascribe-explain) | What a diagnostic means, how to fix it, and a page with the problem and without it |
-| [`ascribe model`](../reference/cli.md#ascribe-model) | What the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, and builds |
-| [`ascribe outline <page>`](../reference/cli.md#ascribe-outline) | A page's title and type, and the headings a link can name, with their ids |
-| [`ascribe link <target> --from <page>`](../reference/cli.md#ascribe-link) | Whether a link works from a page, and what to write when it doesn't |
-| [`ascribe render <page> --build <name>`](../reference/cli.md#ascribe-render) | The page as one build's readers see it, as plain Markdown |
-| [`ascribe refs <target>`](../reference/cli.md#ascribe-refs) | Every place that uses a page, a heading, a phrase, or another entry of the content model, such as the links to fix after renaming a heading |
+| [`ascribe explain <code>`](../reference/cli.md#cli-explain) | What a diagnostic means, how to fix it, and a page with the problem and without it |
+| [`ascribe model`](../reference/cli.md#cli-model) | What the content model allows: page types and their frontmatter, dimensions, phrases, features, glossary terms, widgets, and builds |
+| [`ascribe outline <page>`](../reference/cli.md#cli-outline) | A page's title and type, and the headings a link can name, with their ids |
+| [`ascribe link <target> --from <page>`](../reference/cli.md#cli-link) | Whether a link works from a page, and what to write when it doesn't |
+| [`ascribe render <page> --build <name>`](../reference/cli.md#cli-render) | The page as one build's readers see it, as plain Markdown |
+| [`ascribe refs <target>`](../reference/cli.md#cli-refs) | Every place that uses a page, a heading, a phrase, or another entry of the content model, such as the links to fix after renaming a heading |
 
 `ascribe check --format json` gives each problem's `fixes` too: edits that would fix it, each marked `safe` to apply as given, or `unsafe`, to read first.
 
@@ -117,7 +118,7 @@ The skill is one folder, `ascribe`, in the [Agent Skills](https://agentskills.io
 
 `sync` writes it to `.agents/skills/ascribe/` at the repository's root, where Codex, Cursor, Gemini CLI, and Copilot find it, and with the `claude` target to `.claude/skills/ascribe/`, where Claude Code does. `ascribe agents skill` prints its `SKILL.md`. The `@ascribed/cli` package ships it too, as `skills/ascribe/`, for tools that install skills from packages.
 
-See [`ascribe agents`](../reference/cli.md#ascribe-agents) for every option.
+See [`ascribe agents`](../reference/cli.md#cli-agents) for every option.
 
 ## Prompt your agent
 
@@ -205,7 +206,7 @@ It offers:
 - **Resources:** each directive's syntax, and for each project, what its content model allows and its rules, the text `ascribe agents sync` writes into `AGENTS.md`.
 - **Prompts:** `new-page`, `fix`, and `review`, as `ascribe agents prompt` prints them. Many hosts show them as slash commands.
 
-See [`ascribe mcp`](../reference/cli.md#ascribe-mcp) for each tool and the command it runs.
+See [`ascribe mcp`](../reference/cli.md#cli-mcp) for each tool and the command it runs.
 
 In VS Code, the extension offers the server itself: see [VS Code](#vs-code).
 
@@ -230,7 +231,7 @@ A hook is a command your agent runs at a point in its work. Ascribe's checks an 
 @available: next
 A project that checks its prose with [Vale](vale.md) has the hooks run it only with `in-check = true` in `[checks.vale]`, as `ascribe check` does: after an edit on the files the agent wrote, and before it finishes on the whole project. Vale gets half of what the hook waits; when it takes longer, its alerts are left out, and the rest of the check reaches the agent as usual. Only Vale's error-level alerts reach the agent, as with every other check; with `max-level = "advice"` or `"warning"`, none do.
 
-Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. The first hook in a project starts a check server in the background, which keeps the project loaded, so a check after an edit takes milliseconds on a project of thousands of pages, and stops itself after 10 idle minutes. See [`ascribe agents hook`](../reference/cli.md#ascribe-agents-hook).
+Neither stops an edit, writes a file, or holds the agent up: a check that takes too long is given up. The first hook in a project starts a check server in the background, which keeps the project loaded, so a check after an edit takes milliseconds on a project of thousands of pages, and stops itself after 10 idle minutes. See [`ascribe agents hook`](../reference/cli.md#cli-agents-hook).
 
 `ascribe agents sync --with-hook` writes the entries that run them, with the targets you name or already have:
 
@@ -258,7 +259,7 @@ The Ascribe plugin, in `plugins/ascribe/` in Ascribe's repository, gives Claude 
 - **The stop hook.**
 - **The MCP server.**
 - **The skill.**
-- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](../reference/cli.md#ascribe-agents-prompt).
+- **Commands:** `/ascribe:check`, `/ascribe:new-page`, and `/ascribe:review`, which run the [named prompts](../reference/cli.md#cli-agents-prompt).
 
 Add it from a copy of the repository, in Claude Code in a terminal (its VS Code extension doesn't offer `/plugin`):
 
@@ -318,4 +319,4 @@ Nothing about your agent's work leaves your machine through Ascribe: it sends no
 - **No model, no service.** Ascribe makes no request to an AI service, holds no key for one, and collects no telemetry. The commands, the MCP server, and the hooks read your project's files and answer on standard output.
 - **Prompts go where you put them.** **Prompt agent** copies a prompt, or fills it in where your agent takes input, on your machine, and leaves it there for you to send. It never travels through a website. Once you send it, it goes wherever your agent sends what you type, under that agent's terms.
 - **Your agent sends what it reads.** What a command or tool tells your agent, such as a page's text from `ascribe render`, becomes part of what your agent sends to its model, as any file it reads does.
-- **Review reads GitHub, as you.** In review, the extension and the site preview fetch the pull request's threads from GitHub with your sign-in, and post the comments you write, as [Review](review.md) says. The prompts built from them stay on your machine. Apart from review, the only commands that reach the network are [`ascribe sources`](../reference/cli.md#ascribe-sources) `fetch` and `update`, which fetch the repositories your content model names, with `git`.
+- **Review reads GitHub, as you.** In review, the extension and the site preview fetch the pull request's threads from GitHub with your sign-in, and post the comments you write, as [Review](review.md) says. The prompts built from them stay on your machine. Apart from review, the only commands that reach the network are [`ascribe sources`](../reference/cli.md#cli-sources) `fetch` and `update`, which fetch the repositories your content model names, with `git`.

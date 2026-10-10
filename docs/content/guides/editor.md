@@ -1,6 +1,7 @@
 ---
 title: Editing
 description: The VS Code extension, workspaces with several projects, and other editors.
+permalink: editor-guide
 ---
 
 The Ascribe extension for VS Code turns the editor into an Ascribe authoring environment. Its features come from the language server, `ascribe lsp`, which runs the same checks as `ascribe check`: what the editor reports is what CI reports.
@@ -197,7 +198,7 @@ The lens has no build of its own: it dims by the [build you're looking at](#the-
 ### Review in the preview
 @available: ascribe 0.2.0
 
-The preview can mark what changed against a git revision, the **base**, as [`ascribe diff`](../reference/cli.md#ascribe-diff) reports it: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](review.md) walks through reviewing a pull request, start to finish; this section and the next are the reference for the editor's part.
+The preview can mark what changed against a git revision, the **base**, as [`ascribe diff`](../reference/cli.md#cli-diff) reports it: added and changed blocks with a bar and a label, the changed words highlighted, removed blocks where they were, and moved blocks linked to where they came from. A tab's label and a `details`' summary say what changed in what they can hide: "new" for an added tab, else how many changes. It's for reading a change as a page, your own before you push it or someone else's on a checkout of their branch. [Review](review.md) walks through reviewing a pull request, start to finish; this section and the next are the reference for the editor's part.
 
 **Ascribe: Start Review** turns it on for the active page's project. It asks for the base: the base of your branch's pull request, when it has one, the default branch (the first of `origin/HEAD`, `origin/main`, `origin/master`, `main`, and `master` that exists), or a branch, tag, or commit you type. Either way it compares with the point where your branch left it, as a pull request does. The status bar shows **Review: off**, or the base, while an Ascribe page or the preview is active; click it to start review, or to list the changed pages once it's on. While review is off, the preview has no review header and looks as it always does; its title bar has a **Start Review** button, which becomes **Changed Pages** once review is on. Review stays on for the project until **Ascribe: Stop Review**, or until the window closes. The tooltips on the base, in the header and the status bar, give the commit compared with. When that point moves (you pull, rebase, or fetch a newer base branch), review follows it the next time the preview regains focus, and says so.
 

@@ -87,6 +87,6 @@ command = "tools/vale"
 
 ## From the preset to a configuration of your own
 
-When turning rules off isn't enough, say to add a style package, `ascribe vale eject` writes the preset out as your own configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules in `off` turned off. Then it changes `[checks.vale]` to `config = ".vale.ini"`. From then on, the files are yours to change, and Ascribe never writes them again. It writes nothing when `.vale.ini` or `.vale` is there already. See [`ascribe vale eject`](../reference/cli.md#ascribe-vale-eject).
+When turning rules off isn't enough, say to add a style package, `ascribe vale eject` writes the preset out as your own configuration: `.vale.ini` and a `.vale/` styles folder at the project root, with the rules in `off` turned off. Then it changes `[checks.vale]` to `config = ".vale.ini"`. From then on, the files are yours to change, and Ascribe never writes them again. It writes nothing when `.vale.ini` or `.vale` is there already. See [`ascribe vale eject`](../reference/cli.md#cli-vale-eject).
 
 Every key of `[checks.vale]` is in the [content model reference](../reference/content-model.md#checksvale), and the two diagnostics are in the [diagnostics reference](../reference/diagnostics.md#prose-through-vale).

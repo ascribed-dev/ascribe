@@ -175,7 +175,7 @@ A type with neither `files` nor `default = true` could never apply, and is an er
 
 **The page title.** Every page type must declare `title` as a required `string` field (`model-type-title`). The frontmatter `title` is the page's title wherever the spec needs one, such as the replacement text of an empty link to a page ([SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)). The field may accept phrases (§11), and code spans (§5.3).
 
-**Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)) and `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically. `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
+**Reserved keys.** `available` ([SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)), `variant` ([SPEC §4.3]({repo}/blob/main/SPEC.md#43-variant)), and `permalink` ([SPEC §2.1]({repo}/blob/main/SPEC.md#21-files), a page's [permalink](directives.md#permalinks)) are reserved frontmatter keys. Every page accepts them, with the meaning the spec gives, whether or not its type mentions them, and a type must not declare them (`model-field-reserved`). Generated consumer schemas include them automatically. `intended` ([SPEC §4.9]({repo}/blob/main/SPEC.md#49-intended)) is reserved too, and accepted by every page and every fragment: it [acknowledges a check's problem](directives.md#intended), and since no output has it, generated consumer schemas leave it out. Under the `astro` profile, `slug` is reserved too: Astro's content loader uses a page's frontmatter `slug` as its entry id in place of its path, which would publish the page at a URL Ascribe never computed, so a type must not declare it (`model-field-reserved`).
 
 @available: ascribe 0.2.0
 `formatted` is reserved on page types too: the site output writes the formatted form of fields that set `inline` under it (§5.3), so a type must not declare it (`model-field-reserved`).
@@ -197,7 +197,7 @@ Frontmatter is YAML. For type checking, processors parse it with the YAML 1.2 **
 
 Content types never apply to fragments, even when a type's `files` match a fragment's path.
 
-**Reserved keys on fragments.** The spec defines `available` and `variant` for pages only. A fragment's frontmatter must not use them (an error on the fragment), and `[fragments.frontmatter]` must not declare them (`model-field-reserved`). Use `@available` inside the fragment instead. `intended` is for fragments too, and `[fragments.frontmatter]` must not declare it either.
+**Reserved keys on fragments.** The spec defines `available`, `variant`, and `permalink` for pages only. A fragment's frontmatter must not use them (an error on the fragment), and `[fragments.frontmatter]` must not declare them (`model-field-reserved`). Use `@available` inside the fragment instead. `intended` is for fragments too, and `[fragments.frontmatter]` must not declare it either.
 
 ---
 
@@ -298,9 +298,9 @@ team = { type = "enum(docs, platform)", role = "owner" }
 
 | Role | The field's type | What reads it |
 |---|---|---|
-| `description` | `string`, optional or not | [`page-description-missing`](diagnostics.md#asc150-page-description-missing) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report. |
-| `review-date` | `date`, optional or not | [`review-overdue`](diagnostics.md#asc153-review-overdue) reports a page whose date has passed. |
-| `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](cli.md#ascribe-report) counts pages by owner. |
+| `description` | `string`, optional or not | [`page-description-missing`](diagnostics.md#ASC150) reports a page of the type without one. A required field, or one with a default, always has one, so the check has nothing to report. |
+| `review-date` | `date`, optional or not | [`review-overdue`](diagnostics.md#ASC153) reports a page whose date has passed. |
+| `owner` | `string` or `enum`, optional or not | [`ascribe report inventory`](cli.md#cli-report) counts pages by owner. |
 
 Without a role, those checks don't look at the type's pages, and the report counts its pages as having no owner. A role changes nothing in the outputs.
 
@@ -635,7 +635,7 @@ A page names a file through its source as `<source>:<path>`, with the path relat
 - `ascribe.lock`, beside `ascribe.toml`, pins each such source to a commit, and records the hash of each file copied from it, and which files snippets name that aren't in the repository at that commit.
 - The files the project's snippets use are copied, whole, into `sources/<name>/` beside `ascribe.toml`, at the paths they have in their repository. Only those files are copied, not the repository, and not everything `include` matches. `sources/` can't be inside the content root.
 
-Both are written by [`ascribe sources fetch` and `ascribe sources update`](cli.md#ascribe-sources), and committed with the rest of the docs. `check` reports a copy that was changed by hand, a copy the lock doesn't list, a copy no snippet uses any more, and a snippet whose file hasn't been copied yet, or isn't in the repository at the pinned commit because it was moved or deleted there. The copies are published to everyone who can read the docs repository: for a private code repository and public docs, that's a decision to make knowingly.
+Both are written by [`ascribe sources fetch` and `ascribe sources update`](cli.md#cli-sources), and committed with the rest of the docs. `check` reports a copy that was changed by hand, a copy the lock doesn't list, a copy no snippet uses any more, and a snippet whose file hasn't been copied yet, or isn't in the repository at the pinned commit because it was moved or deleted there. The copies are published to everyone who can read the docs repository: for a private code repository and public docs, that's a decision to make knowingly.
 
 ---
 

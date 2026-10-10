@@ -3,6 +3,7 @@
 ### Pages
 
 #### ASC149 `page-size`
+@id {permalink=true}: ASC149
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -11,6 +12,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`.
 
 #### ASC150 `page-description-missing`
+@id {permalink=true}: ASC150
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -19,6 +21,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** Add the field the content type marks with `role = "description"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for.
 
 #### ASC151 `heading-level-skipped`
+@id {permalink=true}: ASC151
 
 Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -27,6 +30,7 @@ Advice · page level · next step: fix · configurable in `[checks]` · [SPEC §
 **Fix:** Make each heading one level below the heading it belongs under. A page's title is its level-1 heading, so its own headings start at level 2. The quick fix changes the one heading; the headings under it may need to move up too.
 
 #### ASC152 `code-language-missing`
+@id {permalink=true}: ASC152
 
 Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §1.4]({repo}/blob/main/SPEC.md#14-relationship-to-commonmark)
 
@@ -35,6 +39,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 **Fix:** Write the block's language right after the opening fence, such as `sh`, `toml`, or `json`. Use `text` for program output, logs, and anything else that isn't code. A highlighter colors the block by it, and an agent knows what the block is.
 
 #### ASC153 `review-overdue`
+@id {permalink=true}: ASC153
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §7.2]({repo}/blob/main/SPEC.md#72-declarations)
 
@@ -45,6 +50,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 ### Across the project
 
 #### ASC154 `page-orphan`
+@id {permalink=true}: ASC154
 
 Advice · page level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -55,6 +61,7 @@ Advice · page level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Link to the page from a page about its topic, or include it in one. A site whose own navigation, such as a sidebar, lists the page still reaches it, so this is a hint: acknowledge one such page in its `intended` frontmatter, or turn the check off in [`[checks]`](../reference/content-model.md#19-checks) (`page-orphan = "off"`) when your navigation lists every page.
 
 #### ASC155 `fragment-unused`
+@id {permalink=true}: ASC155
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in the page's `intended` frontmatter · [SPEC §4.2]({repo}/blob/main/SPEC.md#42-include)
 
@@ -65,6 +72,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Include the fragment where it belongs with `@include`, or delete it when nothing needs it any more.
 
 #### ASC156 `phrase-unused`
+@id {permalink=true}: ASC156
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.1]({repo}/blob/main/SPEC.md#51-phrases)
 
@@ -75,6 +83,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Write the phrase where its value belongs, or remove it from `[phrases]`. A phrase is used wherever a page or a fragment writes its key in braces, in the text or in a frontmatter field that takes phrases.
 
 #### ASC157 `feature-unused`
+@id {permalink=true}: ASC157
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -85,6 +94,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Mark the content the feature covers with its key (`@available: <key>`, or `available: <key>` in a page's frontmatter), or remove the feature from `[features]` once nothing needs it.
 
 #### ASC158 `glossary-term-unused`
+@id {permalink=true}: ASC158
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.4]({repo}/blob/main/SPEC.md#54-glossary-terms)
 
@@ -95,6 +105,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = "marked"` isn't reported, since its uses are links to its page. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](../reference/content-model.md#intended-acknowledgements).
 
 #### ASC159 `image-unused`
+@id {permalink=true}: ASC159
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -105,6 +116,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](../reference/content-model.md#19-checks) when your site uses images that way.
 
 #### ASC160 `image-large`
+@id {permalink=true}: ASC160
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §5.3]({repo}/blob/main/SPEC.md#53-images)
 
@@ -115,6 +127,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Make the image smaller: save it at the size it's shown, or compress it (a screenshot as an optimized PNG, a photo as JPEG or WebP). The limit is 500 KB; set another in `ascribe.toml`, such as `[checks.image-large] limit = "1 MB"`.
 
 #### ASC161 `title-duplicate`
+@id {permalink=true}: ASC161
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §2.2]({repo}/blob/main/SPEC.md#22-pages-and-fragments)
 
@@ -125,6 +138,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** Give each page a title that says what sets it apart. When one page replaces the other, remove the old one, or publish only one of them in each build with `available`.
 
 #### ASC172 `availability-left-behind`
+@id {permalink=true}: ASC172
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged in `[[intended]]` · [SPEC §4.4]({repo}/blob/main/SPEC.md#44-available)
 
@@ -137,6 +151,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 ### Outputs
 
 #### ASC163 `description-too-long`
+@id {permalink=true}: ASC163
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -145,6 +160,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** Shorten the description to one sentence that says what the page is for. It's the page's line in `llms.txt`, which an agent reads to choose a page, so the whole index should stay short.
 
 #### ASC164 `llms-section-large`
+@id {permalink=true}: ASC164
 
 Advice · page level · next step: write · configurable in `[checks]` · [SPEC §9.4]({repo}/blob/main/SPEC.md#94-outputs)
 
@@ -155,6 +171,7 @@ Advice · page level · next step: write · configurable in `[checks]` · [SPEC 
 ### Prose, through Vale
 
 #### ASC165 `prose`
+@id {permalink=true}: ASC165
 
 Advice · file level · next step: write · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -163,6 +180,7 @@ Advice · file level · next step: write · configurable in `[checks]` · [SPEC 
 **Fix:** Vale reported this about the prose, under the rule the message starts with. Change the text, or take the replacement the editor offers when the rule gives one; for text from a phrase, change the phrase's value in `ascribe.toml`. A rule that's wrong for the project is turned off in Vale's configuration, or, for the `quiet` preset, in `[checks.vale] off`; one place is quieted with Vale's own comments (`<!-- vale Rule = NO -->`). See [Prose, through Vale](../reference/../guides/vale.md).
 
 #### ASC166 `prose-not-checked`
+@id {permalink=true}: ASC166
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §2.1]({repo}/blob/main/SPEC.md#21-files)
 
@@ -173,6 +191,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 ### External links
 
 #### ASC168 `link-external-broken`
+@id {permalink=true}: ASC168
 
 Advice · file level · next step: review · configurable in `[checks]` · acknowledged with `@intended` above the block · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -183,6 +202,7 @@ Advice · file level · next step: review · configurable in `[checks]` · ackno
 **Fix:** Open the address. When the page is gone, link to where its content went, or remove the link. A site that turns link checkers away, or one that's down for a while, may be fine as it is: acknowledge the link with `@intended {check=link-external-broken}: <why>` directly above its block, or leave the whole host out with `[checks.links] ignore`. Only `ascribe report links` checks external links; `ascribe check` never reaches the network.
 
 #### ASC169 `link-external-moved`
+@id {permalink=true}: ASC169
 
 Advice · file level · next step: choose · configurable in `[checks]` · [SPEC §5.2]({repo}/blob/main/SPEC.md#52-links)
 
@@ -195,6 +215,7 @@ Advice · file level · next step: choose · configurable in `[checks]` · [SPEC
 ### The published site
 
 #### ASC170 `delivery-hosting`
+@id {permalink=true}: ASC170
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
@@ -205,6 +226,7 @@ Advice · file level · next step: outside · configurable in `[checks]` · [SPE
 **Fix:** Change the setting the message names where the site is hosted; no page needs editing. The [Astro guide](../reference/../guides/astro.md#what-your-host-does) says what to set on the hosts it names. Only `ascribe report agents` checks a published site.
 
 #### ASC171 `delivery-output`
+@id {permalink=true}: ASC171
 
 Advice · file level · next step: outside · configurable in `[checks]` · [SPEC §9.5]({repo}/blob/main/SPEC.md#95-consumer-profile)
 
