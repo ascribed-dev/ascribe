@@ -1076,13 +1076,13 @@ fn every_fix_diagnostic_has_a_quick_fix() {
         ),
         ("directive-extra-text", "\n@steps foo\n1. One.\n", ""),
         ("phrase-double-braces", "\nInstall {{product}}.\n", ""),
+        ("heading-level-skipped", "\n#### Too deep\n\nText.\n", ""),
     ];
     let fixable: Vec<&str> = ascribe_check::Registry::global()
         .entries()
         .filter(|e| e.next == Some(ascribe_check::Next::Fix))
         // Whether an acknowledgement covers nothing takes every build, so
-        // the editor never reports `intended-unused`; `ascribe check` does,
-        // with its fix.
+        // the editor never reports one; `ascribe check` carries its fix.
         .filter(|e| e.slug.as_str() != "intended-unused")
         .map(|e| e.slug.as_str())
         .collect();

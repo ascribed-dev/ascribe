@@ -103,7 +103,7 @@ The preview serves the content root and, for an asset elsewhere in the project, 
 
 ## Example
 
-```
+```text
 docs/                          content root
   guides/install.md            a page: ![Settings](img/settings.png)
   guides/img/settings.png

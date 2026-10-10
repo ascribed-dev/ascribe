@@ -622,7 +622,13 @@ from `ascribe-fmt`; the VS Code client applies those edits on save when
   address as `docs` in `ascribe check`'s JSON), so the code is a link in the
   Problems panel. An error is published as `Error`, a warning as `Warning`,
   and advice as `Information`, after the levels `[checks]` sets
-  (`ascribe_check::apply_levels`). Each one's `data` has its `slug`, its kind
+  (`ascribe_check::apply_levels`). The content checks run with the rest; the
+  day `review-overdue` compares with is asked of `Options::today` each round,
+  and a server without a clock doesn't report it. `page-size` renders each
+  checked page's plain Markdown in the page-level round, on every change: at
+  3,000 pages it added 0.36 ms to a page keystroke's median, against the
+  release before it on one machine.
+  Each one's `data` has its `slug`, its kind
   of next step (`next`), its `builds`, `unpublished`, its fix advice (`help`),
   and its `fixes`, as `ascribe check`'s JSON has them. A deleted file's
   diagnostics are cleared. The file-level checks probe the disk with the files

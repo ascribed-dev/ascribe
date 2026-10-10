@@ -80,8 +80,7 @@ fn page_diagnostics(case: &Case, name: &str) -> Result<Vec<Diagnostic>, AdapterE
         .model()
         .build(name)
         .ok_or_else(|| err(format!("the case's model has no build `{name}`")))?;
-    let found = ascribe_check::check_pages(&project, build);
-    super::check::to_conformance(&project, super::check::unacknowledged(&project, found))
+    super::check::page_level_diagnostics(&project, build)
 }
 
 fn result(project: &Project, resolved: &ResolvedBuild) -> Result<BuildResult, AdapterError> {

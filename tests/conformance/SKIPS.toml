@@ -10,7 +10,3 @@
 #   reason = "<why>"                      required
 #   checks = ["outline" | "diagnostics" | "builds", ...]
 #                                         optional; skips only these checks
-
-[[skip]]
-case = "directives/intended/unused"
-reason = "No review check reports its problems at a block yet (the first ones, `page-orphan` and the unused checks, report at a page or an entry), so no `@intended` is valid and none can go unused. The first review check reported at a block runs this case: name it in the input and remove this entry."

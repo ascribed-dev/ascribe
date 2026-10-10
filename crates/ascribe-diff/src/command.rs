@@ -2,7 +2,7 @@
 //! working tree against a base revision, from choosing the builds to the
 //! finished report.
 
-use ascribe_check::{diagnose, select_builds};
+use ascribe_check::{count_errors, select_builds};
 use ascribe_core::RelPath;
 use ascribe_resolve::Project;
 
@@ -150,15 +150,7 @@ pub fn diff_project(
     // part: it runs beside everything else, as reading and indexing the base
     // does beside indexing the working tree.
     let (before, now, diffs, errors) = std::thread::scope(|scope| {
-        let errors = scope.spawn(|| {
-            diagnose(project, options.builds).map_or(0, |found| {
-                found
-                    .diagnostics
-                    .iter()
-                    .filter(|d| d.severity == ascribe_check::Severity::Error)
-                    .count()
-            })
-        });
+        let errors = scope.spawn(|| count_errors(project, options.builds).unwrap_or(0));
         let before = scope.spawn(|| read_base(&repo, base.compared()));
         let now = project.index();
         let before = joined(before)?;

@@ -1,0 +1,15 @@
+spec = "0.1"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+updated = { type = "string?", role = "review-date" }
+summary = { type = "string?", role = "summary" }
+description = { type = "string?", role = "description" }
+abstract = { type = "string?", role = "description" }
+
+[fragments.frontmatter]
+owner = "string?"
+about = { type = "string?", role = "description" }

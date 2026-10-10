@@ -17,6 +17,10 @@ pub const IMAGE_SIZE: &str = "image-size";
 /// The descriptions of the pages a diagnostic names, for `title-duplicate`.
 pub const DESCRIPTIONS: &str = "descriptions";
 
+/// The evidence gathered when a prompt is made, by name, besides what an
+/// issue carries in its arguments ([`EVIDENCE`](crate::EVIDENCE)).
+pub const GATHERED: &[&str] = &[MENTIONS, IMAGE_SIZE, DESCRIPTIONS];
+
 /// The most pages a line of evidence lists.
 const MAX_PAGES: usize = 10;
 

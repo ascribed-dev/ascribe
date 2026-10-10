@@ -88,7 +88,8 @@ impl Checks {
         self.level(slug) == Some(CheckLevel::Off)
     }
 
-    /// The `limit` the project sets for a check, in bytes, if it sets one.
+    /// The `limit` the project sets for a check, if it sets one: a number
+    /// of characters for `page-size`, of bytes for `image-large`.
     pub fn limit(&self, slug: DiagnosticSlug) -> Option<u64> {
         self.settings
             .iter()
@@ -124,7 +125,8 @@ pub struct CheckSetting {
     /// The level it's set to; `None` for a table without `level`, which
     /// keeps the check's own.
     pub level: Option<CheckLevel>,
-    /// Its `limit`, a size in bytes, for a check that takes one.
+    /// `limit`, for a check that takes one: characters for `page-size`,
+    /// bytes for `image-large`.
     pub limit: Option<u64>,
 }
 

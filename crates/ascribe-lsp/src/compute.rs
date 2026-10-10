@@ -63,6 +63,8 @@ pub(crate) struct Job {
     pub across: bool,
     /// What they found when they last ran.
     pub found: Arc<Across>,
+    /// The day the checks run on.
+    pub today: Option<ascribe_core::Date>,
 }
 
 /// What the content checks across the project found when they last ran,
@@ -108,6 +110,7 @@ impl Core {
     /// Takes the work to do, if there is any.
     pub(crate) fn plan(&mut self) -> Option<Job> {
         let encoding = self.encoding;
+        let today = self.today();
         let loaded = self.loaded.as_mut()?;
         if loaded.dirty.is_empty() && !loaded.across_dirty {
             return None;
@@ -139,6 +142,7 @@ impl Core {
             affected: std::mem::take(&mut loaded.pending),
             across: std::mem::take(&mut loaded.across_dirty),
             found: loaded.across.clone(),
+            today,
         })
     }
 
@@ -493,6 +497,7 @@ fn check_project_of(job: &Job) -> Project {
         &job.fs,
         &[],
     )
+    .with_today(job.today)
 }
 
 /// The checked project of `snapshot`, with each of `replaced`'s files holding

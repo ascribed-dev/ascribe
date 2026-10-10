@@ -48,12 +48,13 @@ mod yaml;
 pub use across::{IMAGE_EXTENSIONS, IMAGE_LIMIT, NOT_IN_EDITOR, size_text};
 use ascribe_core::FileId;
 pub use builds::{
-    Diagnosed, UnknownBuild, diagnose, diagnose_editor_build, diagnose_editor_build_in,
-    select_builds,
+    Diagnosed, UnknownBuild, count_errors, diagnose, diagnose_editor_build,
+    diagnose_editor_build_in, select_builds,
 };
 pub use checks::check_file;
 use checks::check_sources;
-pub use diagnostic::{Diagnostic, RelatedInfo, Severity};
+pub use diagnostic::{Diagnostic, EVIDENCE, Evidence, RelatedInfo, Severity};
+pub use evidence::GATHERED as GATHERED_EVIDENCE;
 pub use intended::{Acknowledged, Acknowledgement, Acknowledgements, Applied};
 pub use levels::apply_levels;
 pub use page::{

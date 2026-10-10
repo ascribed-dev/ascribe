@@ -475,28 +475,46 @@ pub const MODEL_INTENDED_CHECK: DiagnosticSlug = DiagnosticSlug("model-intended-
 /// `ASC147`, error, file level: a rule for loading `ascribe.toml`.
 pub const MODEL_INTENDED_ENTRY: DiagnosticSlug = DiagnosticSlug("model-intended-entry");
 
-/// `ASC148`, advice, page level: a content check.
+/// `ASC148`, error, file level: a rule for loading `ascribe.toml`.
+pub const MODEL_FIELD_ROLE: DiagnosticSlug = DiagnosticSlug("model-field-role");
+
+/// `ASC149`, advice, page level: a content check (area `pages`).
+pub const PAGE_SIZE: DiagnosticSlug = DiagnosticSlug("page-size");
+
+/// `ASC150`, advice, file level: a content check (area `pages`).
+pub const PAGE_DESCRIPTION_MISSING: DiagnosticSlug = DiagnosticSlug("page-description-missing");
+
+/// `ASC151`, advice, page level: a content check (area `pages`).
+pub const HEADING_LEVEL_SKIPPED: DiagnosticSlug = DiagnosticSlug("heading-level-skipped");
+
+/// `ASC152`, advice, file level: a content check (area `pages`).
+pub const CODE_LANGUAGE_MISSING: DiagnosticSlug = DiagnosticSlug("code-language-missing");
+
+/// `ASC153`, advice, file level: a content check (area `pages`).
+pub const REVIEW_OVERDUE: DiagnosticSlug = DiagnosticSlug("review-overdue");
+
+/// `ASC154`, advice, page level: a content check (area `project`).
 pub const PAGE_ORPHAN: DiagnosticSlug = DiagnosticSlug("page-orphan");
 
-/// `ASC149`, advice, file level: a content check.
+/// `ASC155`, advice, file level: a content check (area `project`).
 pub const FRAGMENT_UNUSED: DiagnosticSlug = DiagnosticSlug("fragment-unused");
 
-/// `ASC150`, advice, file level: a content check.
+/// `ASC156`, advice, file level: a content check (area `project`).
 pub const PHRASE_UNUSED: DiagnosticSlug = DiagnosticSlug("phrase-unused");
 
-/// `ASC151`, advice, file level: a content check.
+/// `ASC157`, advice, file level: a content check (area `project`).
 pub const FEATURE_UNUSED: DiagnosticSlug = DiagnosticSlug("feature-unused");
 
-/// `ASC152`, advice, file level: a content check.
+/// `ASC158`, advice, file level: a content check (area `project`).
 pub const GLOSSARY_TERM_UNUSED: DiagnosticSlug = DiagnosticSlug("glossary-term-unused");
 
-/// `ASC153`, advice, file level: a content check.
+/// `ASC159`, advice, file level: a content check (area `project`).
 pub const IMAGE_UNUSED: DiagnosticSlug = DiagnosticSlug("image-unused");
 
-/// `ASC154`, advice, file level: a content check.
+/// `ASC160`, advice, file level: a content check (area `project`).
 pub const IMAGE_LARGE: DiagnosticSlug = DiagnosticSlug("image-large");
 
-/// `ASC155`, advice, page level: a content check.
+/// `ASC161`, advice, page level: a content check (area `project`).
 pub const TITLE_DUPLICATE: DiagnosticSlug = DiagnosticSlug("title-duplicate");
 
 /// Every slug, in registry order.
@@ -648,6 +666,12 @@ pub const ALL: &[DiagnosticSlug] = &[
     INTENDED_UNUSED,
     MODEL_INTENDED_CHECK,
     MODEL_INTENDED_ENTRY,
+    MODEL_FIELD_ROLE,
+    PAGE_SIZE,
+    PAGE_DESCRIPTION_MISSING,
+    HEADING_LEVEL_SKIPPED,
+    CODE_LANGUAGE_MISSING,
+    REVIEW_OVERDUE,
     PAGE_ORPHAN,
     FRAGMENT_UNUSED,
     PHRASE_UNUSED,
@@ -662,6 +686,11 @@ pub const ALL: &[DiagnosticSlug] = &[
 /// registry's entries with `configurable = true`, in registry order. A test
 /// keeps it equal to the registry.
 pub const CONFIGURABLE: &[DiagnosticSlug] = &[
+    PAGE_SIZE,
+    PAGE_DESCRIPTION_MISSING,
+    HEADING_LEVEL_SKIPPED,
+    CODE_LANGUAGE_MISSING,
+    REVIEW_OVERDUE,
     PAGE_ORPHAN,
     FRAGMENT_UNUSED,
     PHRASE_UNUSED,
@@ -676,6 +705,7 @@ pub const CONFIGURABLE: &[DiagnosticSlug] = &[
 /// whose next step is `review`, each with the place its problems are reported
 /// at, in registry order. A test keeps it equal to the registry.
 pub const ACKNOWLEDGEABLE: &[(DiagnosticSlug, crate::Place)] = &[
+    (REVIEW_OVERDUE, crate::Place::Page),
     (PAGE_ORPHAN, crate::Place::Page),
     (FRAGMENT_UNUSED, crate::Place::Page),
     (PHRASE_UNUSED, crate::Place::Entry),

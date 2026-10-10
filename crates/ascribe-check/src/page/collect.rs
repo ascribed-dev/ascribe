@@ -13,8 +13,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, Related, Span, diagnostics};
-use ascribe_resolve::{IncludeSite, Project, ResolvedBlock, ResolvedPage};
+use ascribe_core::{
+    Applicability, DiagnosticSlug, FileId, Fix, Issue, Location, Related, Span, TextEdit,
+    diagnostics,
+};
+use ascribe_resolve::{IncludeSite, Project, ResolvedBlock, ResolvedKind, ResolvedPage};
+use ascribe_syntax::BlockKind;
 
 /// A page-level issue and where its cause is, for deciding whether any build
 /// publishes that content.
@@ -35,6 +39,7 @@ pub(super) fn check_page(index: &Project, page: &ResolvedPage, links: &LinkProbl
     let mut found = Vec::new();
     recorded(index, page, &mut found);
     headings(index, page, &mut found);
+    heading_levels(index, page, &mut found);
     link_ids(index, page, links, &mut found);
     let mut seen = Vec::new();
     found.retain(|f| {
@@ -185,6 +190,89 @@ fn headings(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
             }
         }
     }
+}
+
+/// `heading-level-skipped`: a heading more than one level below the one
+/// before it, or at level 1, which the page's title is (the outputs make the
+/// title the page's level-1 heading). Headings from includes count at the
+/// levels they're written with (SPEC §4.2). After a skip, the next heading is
+/// compared with the one that skipped, so a skipped section is reported once.
+fn heading_levels(index: &Project, page: &ResolvedPage, out: &mut Vec<Found>) {
+    if index
+        .model()
+        .checks
+        .is_off(diagnostics::HEADING_LEVEL_SKIPPED)
+    {
+        return;
+    }
+    let mut previous = 1;
+    for (block, _) in page.headings() {
+        let ResolvedKind::Leaf(leaf) = &block.kind else {
+            continue;
+        };
+        let BlockKind::Heading(heading) = &leaf.kind else {
+            continue;
+        };
+        let level = heading.level;
+        let issue = if level == 1 {
+            Issue::new(
+                diagnostics::HEADING_LEVEL_SKIPPED,
+                Location::new(block.file, block.span),
+            )
+            .with_variant("title")
+        } else if level > previous + 1 {
+            Issue::new(
+                diagnostics::HEADING_LEVEL_SKIPPED,
+                Location::new(block.file, block.span),
+            )
+            .with_arg("level", level.to_string())
+            .with_arg("previous", previous.to_string())
+            .with_arg("expected", (previous + 1).to_string())
+        } else {
+            previous = level;
+            continue;
+        };
+        let expected = if level == 1 { 2 } else { previous + 1 };
+        previous = level;
+        let issue = match level_fix(index, block, heading.setext, expected) {
+            Some(fix) => issue.with_fix(fix),
+            None => issue,
+        };
+        out.push(Found {
+            issue: at_include_site(index, issue, &block.via),
+            cause: (block.file, block.span, block.via.clone()),
+        });
+    }
+}
+
+/// The fix that makes a heading level `expected`, in the file it's written
+/// in: another run of `#`, or, for a level-1 underlined heading, a `-`
+/// underline.
+fn level_fix(index: &Project, block: &ResolvedBlock, setext: bool, expected: u8) -> Option<Fix> {
+    let source = &index.file_by_id(block.file)?.source;
+    let text = source.get(block.span.range())?;
+    let (marker, replacement) = if setext {
+        let underline = text.trim_end().rfind('\n')? + 1;
+        let start = underline + text[underline..].find('=')?;
+        let end = start + text[start..].bytes().take_while(|b| *b == b'=').count();
+        (Span::new(start, end), "-".repeat(end - start))
+    } else {
+        let start = text.find('#')?;
+        let end = start + text[start..].bytes().take_while(|b| *b == b'#').count();
+        (Span::new(start, end), "#".repeat(usize::from(expected)))
+    };
+    let base = block.span.start();
+    Some(Fix {
+        title: format!("Make it a level-{expected} heading"),
+        file: block.file,
+        edits: vec![TextEdit::replace(
+            Span::new(base + marker.start(), base + marker.end()),
+            replacement,
+        )],
+        // The page's outline changes, and the headings under it may need to
+        // move too.
+        applicability: Applicability::Unsafe,
+    })
 }
 
 /// `link-id-missing`, which the source index finds

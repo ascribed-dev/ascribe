@@ -24,7 +24,7 @@ use std::sync::Arc;
 
 use ascribe_core::intended::{ENTRY_ARG, EntryKind, entry_arg};
 use ascribe_core::{DiagnosticSlug, FileId, Issue, Location, RelPath, Span, diagnostics};
-use ascribe_model::{Checks, GlossaryMatch};
+use ascribe_model::{CheckLevel, Checks, GlossaryMatch};
 use ascribe_resolve::{FileIndex, LinkTarget, ResolvedPage, Usable};
 
 use crate::page::Found;
@@ -62,20 +62,29 @@ pub(crate) fn any_file_level(checks: &Checks) -> bool {
     FILE_LEVEL.iter().any(|slug| !checks.is_off(*slug))
 }
 
+/// Whether a check runs: it's on and, when only errors count, `[checks]`
+/// raises it to an error, since it's advice otherwise.
+fn runs(checks: &Checks, slug: DiagnosticSlug, errors_only: bool) -> bool {
+    !checks.is_off(slug) && (!errors_only || checks.level(slug) == Some(CheckLevel::Error))
+}
+
 /// What the checks that run for every build found, by file: the content
 /// model's entries under its id, each unused fragment under its own, and the
 /// image files' under theirs, each list in source order. `index` is the
 /// project's source index; `file` gives the project's id of one of its files.
-/// The image checks run only when `images` is set.
+/// The image checks run only when `images` is set, and with `errors_only`
+/// only the checks `[checks]` raises to an error run.
 pub(crate) fn for_every_build(
     project: &Project,
     index: &ascribe_resolve::Project,
     file: &dyn Fn(FileId) -> FileId,
     images: bool,
+    errors_only: bool,
 ) -> BTreeMap<FileId, Vec<Diagnostic>> {
     let checks = &project.model().checks;
-    let on =
-        |slug: DiagnosticSlug| !checks.is_off(slug) && (images || !NOT_IN_EDITOR.contains(&slug));
+    let on = |slug: DiagnosticSlug| {
+        runs(checks, slug, errors_only) && (images || !NOT_IN_EDITOR.contains(&slug))
+    };
     let mut issues: Vec<Issue> = Vec::new();
 
     if on(diagnostics::FRAGMENT_UNUSED) {
@@ -135,7 +144,7 @@ pub(crate) fn for_every_build(
     }
 
     if on(diagnostics::IMAGE_UNUSED) || on(diagnostics::IMAGE_LARGE) {
-        self::images(project, index, &mut issues);
+        self::images(project, index, &on, &mut issues);
     }
 
     let mut out: BTreeMap<FileId, Vec<Diagnostic>> = BTreeMap::new();
@@ -154,7 +163,12 @@ pub(crate) fn for_every_build(
 /// root: files whose extension is an image's, outside folders whose names
 /// start with `.`, nested projects' folders, and the output directory, as
 /// the sources are found.
-fn images(project: &Project, index: &ascribe_resolve::Project, issues: &mut Vec<Issue>) {
+fn images(
+    project: &Project,
+    index: &ascribe_resolve::Project,
+    on: &dyn Fn(DiagnosticSlug) -> bool,
+    issues: &mut Vec<Issue>,
+) {
     let checks = &project.model().checks;
     let layout = project.layout();
     let listed = project.images_or(|| {
@@ -180,17 +194,16 @@ fn images(project: &Project, index: &ascribe_resolve::Project, issues: &mut Vec<
         .limit(diagnostics::IMAGE_LARGE)
         .unwrap_or(IMAGE_LIMIT);
     // An image raw HTML shows or a frontmatter field names is used too.
-    let mentioned: HashSet<RelPath> =
-        if listed.is_empty() || checks.is_off(diagnostics::IMAGE_UNUSED) {
-            HashSet::new()
-        } else {
-            index.files().flat_map(|f| f.mentioned_paths()).collect()
-        };
+    let mentioned: HashSet<RelPath> = if listed.is_empty() || !on(diagnostics::IMAGE_UNUSED) {
+        HashSet::new()
+    } else {
+        index.files().flat_map(|f| f.mentioned_paths()).collect()
+    };
     for (i, (path, content)) in listed.iter().enumerate() {
         let at = Location::new(image_id(i), Span::new(0, 0));
         let shown = path.to_string();
         let entry = entry_arg(EntryKind::Image, content.as_str());
-        if !checks.is_off(diagnostics::IMAGE_UNUSED)
+        if on(diagnostics::IMAGE_UNUSED)
             && index.asset_users(content).is_empty()
             && !mentioned.contains(content)
         {
@@ -200,7 +213,7 @@ fn images(project: &Project, index: &ascribe_resolve::Project, issues: &mut Vec<
                     .with_arg(ENTRY_ARG, entry.clone()),
             );
         }
-        if !checks.is_off(diagnostics::IMAGE_LARGE)
+        if on(diagnostics::IMAGE_LARGE)
             && let Some(size) = project.file_system().size(path)
             && size > limit
         {
@@ -244,17 +257,19 @@ fn trimmed(value: f64) -> String {
 }
 
 /// `page-orphan` and `title-duplicate` for one build, from every page it
-/// publishes, in path order. Issues are located with the index's file ids.
+/// publishes, in path order, and with `errors_only` only those `[checks]`
+/// raises to an error. Issues are located with the index's file ids.
 pub(crate) fn for_build(
     index: &ascribe_resolve::Project,
     checks: &Checks,
     resolved: &[&ResolvedPage],
+    errors_only: bool,
 ) -> Vec<Found> {
     let mut found = Vec::new();
-    if !checks.is_off(diagnostics::PAGE_ORPHAN) {
+    if runs(checks, diagnostics::PAGE_ORPHAN, errors_only) {
         orphans(index, resolved, &mut found);
     }
-    if !checks.is_off(diagnostics::TITLE_DUPLICATE) {
+    if runs(checks, diagnostics::TITLE_DUPLICATE, errors_only) {
         duplicate_titles(index, resolved, &mut found);
     }
     found

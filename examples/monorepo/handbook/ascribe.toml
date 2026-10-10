@@ -14,7 +14,7 @@ default = true
 
 [types.page.frontmatter]
 title = "string"
-description = "string?"
+description = { type = "string?", role = "description" }
 owner = "string"
 
 [notes.policy]

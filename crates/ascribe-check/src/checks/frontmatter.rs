@@ -84,6 +84,7 @@ impl Ctx<'_> {
         }
         if !fragment {
             self.check_reserved_keys(&value, &index, first_line);
+            self.check_roles(schema, &value, &index, first_line);
         }
         self.check_intended_key(&value, &index, first_line);
     }

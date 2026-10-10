@@ -1,0 +1,8 @@
+spec = "0.1"
+
+[types.page]
+default = true
+
+[types.page.frontmatter]
+title = "string"
+summary = { type = "string?", role = "description" }

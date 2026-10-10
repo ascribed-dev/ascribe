@@ -7,7 +7,7 @@ This contract says where `ascribe build` writes each build's output, how it reco
 
 ## 1. Directory layout
 
-```
+```text
 <output-dir>/                   [project] output-dir, default .ascribe/build
   .lock                         held while a build writes (§4)
   .staging/                     work in progress (§4)

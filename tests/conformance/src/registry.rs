@@ -86,15 +86,6 @@ impl fmt::Display for Level {
     }
 }
 
-/// The areas a quality check can be in, by name, with the title of their
-/// section in the diagnostics reference, in its order.
-pub const AREAS: &[(&str, &str)] = &[
-    ("pages", "Pages"),
-    ("project", "Across the project"),
-    ("prose", "Prose"),
-    ("outputs", "Outputs"),
-];
-
 /// One registry entry.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -132,16 +123,18 @@ pub struct Entry {
     /// The SPEC §8.2 row, as `<construct> | <condition>`.
     #[serde(default)]
     pub row: Option<String>,
-    /// What a quality check checks, one of [`AREAS`]: for an entry that is
-    /// neither a §8.2 row nor a loader rule.
-    #[serde(default)]
-    pub area: Option<String>,
-    /// When a quality check is reported, as a sentence without its full stop.
+    /// When a content check is reported, as a sentence without its full stop.
     #[serde(default)]
     pub when: Option<String>,
     /// The group of the diagnostics reference a loader rule is listed in.
     #[serde(default)]
     pub group: Option<String>,
+    /// The area of the diagnostics reference a content check is listed in.
+    /// Content checks are about the content's quality, not whether it
+    /// conforms, so they have no SPEC §8.2 row; only a configurable entry
+    /// has an area.
+    #[serde(default)]
+    pub area: Option<String>,
     /// Why the diagnostic was retired, if it was.
     #[serde(default)]
     pub retired: Option<String>,

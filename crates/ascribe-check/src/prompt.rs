@@ -21,20 +21,8 @@ use std::path::{Path, PathBuf};
 use ascribe_core::path::relative_path;
 use ascribe_core::{Applicability, FileId, LineIndex, Location, RelPath};
 
-use crate::diagnostic::ALLOWED_VALUES;
 use crate::evidence;
 use crate::{Diagnostic, MODEL_FILE, Project, Registry, Reported, Severity};
-
-/// The evidence a prompt can carry, as registry entries name it in
-/// `evidence`: the values the content model allows, the pages that mention
-/// an orphan's title or share its folder, an image's size, and the
-/// descriptions of pages with one title.
-pub const EVIDENCE: &[&str] = &[
-    ALLOWED_VALUES,
-    evidence::MENTIONS,
-    evidence::IMAGE_SIZE,
-    evidence::DESCRIPTIONS,
-];
 
 /// The most characters a prompt has: what the agents' own links take.
 pub const LIMIT: usize = 5_000;
@@ -257,18 +245,20 @@ pub fn problem(
             }
         ));
     }
+    for evidence in &d.evidence {
+        if evidence.text.contains('\n') {
+            known.push(format!("{}:\n{}", evidence.label, evidence.text));
+        } else {
+            known.push(format!("{}: {}", evidence.label, evidence.text));
+        }
+    }
     let registered = Registry::global().get(d.slug);
+    // What only a prompt needs is gathered now, not when the check ran.
     for name in registered
         .map(|e| e.evidence.as_slice())
         .unwrap_or_default()
     {
-        if name == ALLOWED_VALUES {
-            if let Some(allowed) = &d.allowed {
-                known.push(format!("Allowed values: {allowed}"));
-            }
-        } else {
-            known.extend(evidence::lines(project, d, name));
-        }
+        known.extend(evidence::lines(project, d, name));
     }
     if let Some(help) = registered.and_then(|e| e.fix.as_deref()) {
         known.push(format!("How to fix it: {help}"));

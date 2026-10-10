@@ -1,0 +1,9 @@
+description: >-
+  A page whose review date, in the field its content type marks as the review
+  date, is before the day it's checked on is reported at the date.
+spec: ["7.2", "8.2"]
+tags: [check]
+today: "2026-10-10"
+
+diagnostics:
+  - {slug: review-overdue, line: 3, column: 14, severity: advice}

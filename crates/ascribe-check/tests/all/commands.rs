@@ -8,7 +8,8 @@ use std::fs;
 use std::path::Path;
 
 use ascribe_check::{
-    LoadError, LocateError, MODEL_FILE, Project, Severity, UnknownBuild, diagnose, select_builds,
+    LoadError, LocateError, MODEL_FILE, Project, Severity, UnknownBuild, count_errors, diagnose,
+    select_builds,
 };
 
 const MODEL: &str =
@@ -110,4 +111,38 @@ fn diagnose_returns_what_check_reports_and_the_builds() {
         found.diagnostics
     );
     assert!(diagnose(&project, &["web".to_owned()]).is_err());
+}
+
+#[test]
+fn count_errors_counts_what_diagnose_reports_as_errors() {
+    // A broken link is an error; both pages are over a small size limit, and the
+    // two pages nothing links to and the fragment nothing includes are
+    // reported by the checks across the project, all advice unless
+    // `[checks]` raises them.
+    let page = "---\ntitle: Big\n---\n\nSee [nothing](missing.md). Some words to pass the limit.\n";
+    let pages = [
+        ("big.md", page),
+        ("lonely.md", "---\ntitle: Lonely\n---\n\nHi.\n"),
+        ("_part.md", "A part.\n"),
+    ];
+    let errors = |size: &str, across: &str| {
+        let model = format!(
+            "{MODEL}[checks]\npage-orphan = \"{across}\"\nfragment-unused = \"{across}\"\n\
+             [checks.page-size]\nlevel = \"{size}\"\nlimit = 10\n"
+        );
+        let dir = project(&model, &pages);
+        let project = load(dir.path());
+        let reported = diagnose(&project, &[])
+            .expect("every build")
+            .diagnostics
+            .iter()
+            .filter(|d| d.severity == Severity::Error)
+            .count();
+        let counted = count_errors(&project, &[]).expect("every build");
+        assert_eq!(counted, reported, "page-size {size}, across {across}");
+        counted
+    };
+    assert_eq!(errors("advice", "advice"), 1);
+    assert_eq!(errors("error", "advice"), 3);
+    assert_eq!(errors("advice", "error"), 4);
 }

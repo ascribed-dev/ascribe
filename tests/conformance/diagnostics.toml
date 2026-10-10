@@ -66,8 +66,7 @@
 #                exactly. Every row has exactly one entry.
 #   area         For a quality check, which is neither a SPEC §8.2 row nor a
 #                loader rule: what it checks, one of `AREAS` in
-#                tests/conformance/src/registry.rs (pages, project, prose,
-#                outputs). Only a configurable entry has one; its `severity`
+#                tests/conformance/tests/docs.rs. Only a configurable entry has one; its `severity`
 #                is its default level, and its `spec` is the SPEC section of
 #                the construct it checks. The diagnostics reference lists it
 #                under "Content checks", in its area's section.
@@ -2681,13 +2680,96 @@ messages.unknown = "there's no {kind} `{name}` in this content model"
 messages.placeholder = "\"{reason}\" is a placeholder, not a reason: write why the problem is intended"
 fix = "Give the acknowledgement exactly one of `phrase`, `feature`, `term` (a glossary term's id), or `image` (a path under the content root), naming something the content model declares, and a reason of your own in place of the placeholder the editor's quick fix writes."
 
+[[diagnostic]]
+code = "ASC148"
+slug = "model-field-role"
+severity = "error"
+level = "file"
+next = "write"
+evidence = []
+spec = "7.2"
+group = "content-types"
+message = "role = \"{role}\" only works on a {expected} field, and `{field}` is \"{type}\""
+messages.value = "role must be \"description\" or \"review-date\", not \"{value}\""
+messages.nested = "role only works on a content type's top-level fields, and `{field}` is in {place}"
+messages.duplicate = "`{other}` already has role = \"{role}\"; a content type has one field with each role"
+fix = "Give `role = \"description\"` to one string field of a content type's `frontmatter`, and `role = \"review-date\"` to one date field, or remove `role`. A type has at most one field with each role, and only a page type's top-level fields have roles."
+
+[[diagnostic]]
+code = "ASC149"
+slug = "page-size"
+severity = "advice"
+level = "page"
+next = "write"
+evidence = ["page-sections"]
+spec = "9.4"
+configurable = true
+area = "pages"
+message = "this page's Markdown is {size} characters in build `{build}`, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
+messages.builds = "this page's Markdown is up to {size} characters in builds {builds}, and an agent reads under {limit} in one piece; split the page, or move long tables and code below the prose"
+fix = "Split the page into pages that each answer one question, or move long tables, reference lists, and code below the prose, where an agent that stops reading early loses the least. The limit is the Web Documentation Delivery Spec's: a page passes under 50,000 characters of Markdown. Set another with `[checks.page-size] limit`."
+
+[[diagnostic]]
+code = "ASC150"
+slug = "page-description-missing"
+severity = "advice"
+level = "file"
+next = "write"
+evidence = ["page-opening"]
+spec = "7.2"
+configurable = true
+area = "pages"
+message = "this page has no `{field}`; write a sentence saying what the page is for, which search results and agents show with its title"
+fix = "Add the field the content type marks with `role = \"description\"` to the page's frontmatter: a sentence or two saying what the page covers and who it's for."
+
+[[diagnostic]]
+code = "ASC151"
+slug = "heading-level-skipped"
+severity = "advice"
+level = "page"
+next = "fix"
+evidence = []
+spec = "9.4"
+configurable = true
+area = "pages"
+message = "this heading is level {level}, after a level-{previous} heading; make it level {expected}, so the outline has no gap"
+messages.title = "this heading is level 1, which the page's title already is; make it level 2"
+fix = "Make each heading one level below the heading it belongs under. A page's title is its level-1 heading, so its own headings start at level 2. The quick fix changes the one heading; the headings under it may need to move up too."
+
+[[diagnostic]]
+code = "ASC152"
+slug = "code-language-missing"
+severity = "advice"
+level = "file"
+next = "choose"
+evidence = ["code-lines"]
+spec = "1.4"
+configurable = true
+area = "pages"
+message = "this code block has no language; write it after the opening fence, or `text` for output"
+fix = "Write the block's language right after the opening fence, such as `sh`, `toml`, or `json`. Use `text` for program output, logs, and anything else that isn't code. A highlighter colors the block by it, and an agent knows what the block is."
+
+[[diagnostic]]
+code = "ASC153"
+slug = "review-overdue"
+severity = "advice"
+level = "file"
+next = "review"
+evidence = []
+spec = "7.2"
+configurable = true
+area = "pages"
+place = "page"
+message = "this page was due for review on {date}; check it still holds, then move `{field}` to the next review"
+fix = "Read the page against what it describes and correct what has changed, then set its review date to when it's next due. If the page is right as it is, moving the date is the whole fix. The check compares with today's date in UTC (or `ASCRIBE_TODAY`), so it can start reporting without a change to the project."
+
 ###############################################################################
 # Content checks across the project (area "project"): about the content's
 # quality, not whether it's valid. Each says when it's reported in `when`.
 ###############################################################################
 
 [[diagnostic]]
-code = "ASC148"
+code = "ASC154"
 slug = "page-orphan"
 severity = "advice"
 level = "page"
@@ -2702,7 +2784,7 @@ message = "no other page links to this page or includes it, so readers reach it 
 fix = "Link to the page from a page about its topic, or include it in one. A site whose own navigation, such as a sidebar, lists the page still reaches it, so this is a hint: acknowledge one such page in its `intended` frontmatter, or turn the check off in [`[checks]`](content-model.md#19-checks) (`page-orphan = \"off\"`) when your navigation lists every page."
 
 [[diagnostic]]
-code = "ASC149"
+code = "ASC155"
 slug = "fragment-unused"
 severity = "advice"
 level = "file"
@@ -2717,7 +2799,7 @@ message = "no file includes this fragment, so nothing publishes it"
 fix = "Include the fragment where it belongs with `@include`, or delete it when nothing needs it any more."
 
 [[diagnostic]]
-code = "ASC150"
+code = "ASC156"
 slug = "phrase-unused"
 severity = "advice"
 level = "file"
@@ -2732,7 +2814,7 @@ message = "no file uses the phrase `{key}`"
 fix = "Write the phrase where its value belongs, or remove it from `[phrases]`. A phrase is used wherever a page or a fragment writes its key in braces, in the text or in a frontmatter field that takes phrases."
 
 [[diagnostic]]
-code = "ASC151"
+code = "ASC157"
 slug = "feature-unused"
 severity = "advice"
 level = "file"
@@ -2747,7 +2829,7 @@ message = "no file uses the feature `{key}`"
 fix = "Mark the content the feature covers with its key (`@available: <key>`, or `available: <key>` in a page's frontmatter), or remove the feature from `[features]` once nothing needs it."
 
 [[diagnostic]]
-code = "ASC152"
+code = "ASC158"
 slug = "glossary-term-unused"
 severity = "advice"
 level = "file"
@@ -2762,7 +2844,7 @@ message = "the glossary term `{term}` appears in no file's prose, so it's never 
 fix = "Check the term and its `aliases` against how the pages write it: occurrences match whole words, in prose only, and ignore case unless the term is case-sensitive. Remove the term when the pages don't need it. A term with `match = \"marked\"` isn't reported, since its uses are links to its page. A term used only inside a phrase's value is reported too, since phrase values aren't searched: acknowledge it in [`[[intended]]`](content-model.md#intended-acknowledgements)."
 
 [[diagnostic]]
-code = "ASC153"
+code = "ASC159"
 slug = "image-unused"
 severity = "advice"
 level = "file"
@@ -2777,7 +2859,7 @@ message = "no file shows or links to `{path}`"
 fix = "Delete the image when nothing needs it. A frontmatter string counts when it names the image from the file or from the content root, as `cover: img/card.png` does. An image used only by the site's own code is reported too, since Ascribe doesn't read it: turn the check off in [`[checks]`](content-model.md#19-checks) when your site uses images that way."
 
 [[diagnostic]]
-code = "ASC154"
+code = "ASC160"
 slug = "image-large"
 severity = "advice"
 level = "file"
@@ -2792,7 +2874,7 @@ message = "`{path}` is {size}, over the {limit} limit for an image"
 fix = "Make the image smaller: save it at the size it's shown, or compress it (a screenshot as an optimized PNG, a photo as JPEG or WebP). The limit is 500 KB; set another in `ascribe.toml`, such as `[checks.image-large] limit = \"1 MB\"`."
 
 [[diagnostic]]
-code = "ASC155"
+code = "ASC161"
 slug = "title-duplicate"
 severity = "advice"
 level = "page"

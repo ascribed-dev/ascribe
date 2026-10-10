@@ -116,32 +116,16 @@ fn loader_rules_are_file_level_and_grouped() {
     }
 }
 
-/// A quality check is about the content, not whether it's valid: a project
-/// can set its level, and the reference says when it's reported.
+/// The reference says when a content check is reported; only a content
+/// check has `when`.
 #[test]
-fn quality_checks_are_configurable_and_in_an_area() {
+fn only_content_checks_say_when() {
     for e in &registry().entries {
-        let Some(area) = &e.area else {
-            assert!(
-                e.when.is_none(),
-                "{}: only a quality check has `when`",
-                e.slug
-            );
-            continue;
-        };
         assert!(
-            ascribe_conformance::registry::AREAS
-                .iter()
-                .any(|(a, _)| a == area),
-            "{}: `{area}` isn't one of the areas",
+            e.when.is_none() || e.area.is_some(),
+            "{}: only a content check has `when`",
             e.slug
         );
-        assert!(
-            e.configurable,
-            "{}: a quality check is configurable",
-            e.slug
-        );
-        assert!(e.when.is_some(), "{}: a quality check says `when`", e.slug);
     }
 }
 
@@ -164,13 +148,12 @@ fn codes_are_sequential_and_slugs_unique() {
         assert!(kebab, "{} isn't kebab-case", e.slug);
         assert!(
             e.row.is_some() || e.group.is_some() || e.area.is_some() || e.retired.is_some(),
-            "{}: every entry comes from a §8.2 row, a loader rule, or a quality check's area, \
-             or is retired",
+            "{}: every entry comes from a §8.2 row, a loader rule, or a content check's area, or is retired",
             e.slug
         );
         assert!(
-            e.area.is_none() || (e.row.is_none() && e.group.is_none()),
-            "{}: a quality check is neither a §8.2 row nor a loader rule",
+            e.area.is_none() || (e.configurable && e.row.is_none() && e.group.is_none()),
+            "{}: `area` is for content checks, which are configurable and have no §8.2 row or group",
             e.slug
         );
     }

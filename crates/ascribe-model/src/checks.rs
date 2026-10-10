@@ -1,9 +1,10 @@
 //! `[checks]`: the level a project sets for each configurable check.
 //!
 //! A key is a check's slug. Its value is a level (`page-size = "warning"`), or
-//! a table with `level` and that check's own settings. Only the checks the
-//! diagnostics registry marks configurable can be named: a diagnostic about
-//! whether the project is valid can't be lowered or turned off.
+//! a table with `level` and that check's own settings ([`SETTINGS`]). Only
+//! the checks the diagnostics registry marks configurable can be named: a
+//! diagnostic about whether the project is valid can't be lowered or turned
+//! off.
 
 use ascribe_core::{DiagnosticSlug, diagnostics};
 use toml::de::DeValue;
@@ -11,7 +12,14 @@ use toml::de::DeValue;
 use crate::loader::Loader;
 use crate::model::{CheckLevel, CheckSetting, Checks};
 use crate::names::suggest;
-use crate::toml_util::{V, entries, join, sp};
+use crate::toml_util::{V, entries, join, sp, to_yaml};
+
+/// The settings each check takes besides `level`, by slug. `limit` is a whole
+/// number above 0, or for `image-large` a size ([`parse_size`]).
+pub const SETTINGS: &[(DiagnosticSlug, &[&str])] = &[
+    (diagnostics::PAGE_SIZE, &["limit"]),
+    (diagnostics::IMAGE_LARGE, &["limit"]),
+];
 
 impl Loader<'_> {
     /// `[checks]`.
@@ -41,26 +49,39 @@ impl Loader<'_> {
                 continue;
             }
             let path = join("checks", key);
-            let mut limit = None;
-            let level = match value.get_ref() {
-                DeValue::String(_) => self.level(&path, value),
-                DeValue::Table(table) => {
-                    let mut keys = vec!["level"];
-                    keys.extend(settings_of(slug));
-                    self.check_keys(&path, table, &keys);
-                    if let Some(v) = table.get("limit").filter(|_| keys.contains(&"limit")) {
-                        limit = self.size(&join(&path, "limit"), v);
-                    }
-                    table
-                        .get("level")
-                        .and_then(|l| self.level(&join(&path, "level"), l))
-                }
-                _ => {
-                    self.wrong_type(&path, value, "a level or a table");
-                    None
-                }
+            let mut setting = CheckSetting {
+                slug,
+                level: None,
+                limit: None,
             };
-            settings.push(CheckSetting { slug, level, limit });
+            match value.get_ref() {
+                DeValue::String(_) => setting.level = self.level(&path, value),
+                DeValue::Table(table) => {
+                    let own = SETTINGS
+                        .iter()
+                        .find(|(s, _)| *s == slug)
+                        .map_or(&[][..], |(_, keys)| *keys);
+                    let allowed: Vec<&str> = std::iter::once("level")
+                        .chain(own.iter().copied())
+                        .collect();
+                    self.check_keys(&path, table, &allowed);
+                    setting.level = table
+                        .get("level")
+                        .and_then(|l| self.level(&join(&path, "level"), l));
+                    if own.contains(&"limit") {
+                        let at = join(&path, "limit");
+                        setting.limit = table.get("limit").and_then(|l| {
+                            if slug == diagnostics::IMAGE_LARGE {
+                                self.size(&at, l)
+                            } else {
+                                self.limit(&at, l)
+                            }
+                        });
+                    }
+                }
+                _ => self.wrong_type(&path, value, "a level or a table"),
+            }
+            settings.push(setting);
         }
         Checks { settings }
     }
@@ -88,6 +109,18 @@ impl Loader<'_> {
         parsed
     }
 
+    /// A limit: a whole number above 0.
+    fn limit(&mut self, path: &str, v: &V<'_>) -> Option<u64> {
+        let n = match v.get_ref() {
+            DeValue::Integer(_) => to_yaml(v.get_ref()).as_u64().filter(|n| *n > 0),
+            _ => None,
+        };
+        if n.is_none() {
+            self.wrong_type(path, v, "a whole number above 0");
+        }
+        n
+    }
+
     /// A level: `off`, `advice`, `warning`, or `error`.
     fn level(&mut self, path: &str, v: &V<'_>) -> Option<CheckLevel> {
         let name = self.choice(path, v, &CheckLevel::NAMES)?;
@@ -97,15 +130,6 @@ impl Loader<'_> {
 
 /// What a size is, in a message.
 const SIZE: &str = "a size, such as \"500 KB\"";
-
-/// The settings a check takes in its table, besides `level`.
-fn settings_of(slug: DiagnosticSlug) -> &'static [&'static str] {
-    if slug == diagnostics::IMAGE_LARGE {
-        &["limit"]
-    } else {
-        &[]
-    }
-}
 
 /// A size in bytes, from a number and a unit: `B`, `KB` (1,000 bytes), or
 /// `MB` (1,000,000), in either case, with or without a space.
@@ -137,11 +161,12 @@ mod tests {
 
     use crate::loader::load_configurable;
 
-    // Two checks that aren't configurable are made configurable here, and
-    // one that is, with a setting of its own.
+    // Two checks that aren't configurable, made so, and two that are, each
+    // with a setting of its own.
     const CONFIGURABLE: &[DiagnosticSlug] = &[
         diagnostics::BINDING_BLANK_LINE,
         diagnostics::CONTAINER_NESTING_DEEP,
+        diagnostics::PAGE_SIZE,
         diagnostics::IMAGE_LARGE,
     ];
 
@@ -201,6 +226,29 @@ mod tests {
         );
         let found = load("[checks]\nbinding-blank-line = 2\n").unwrap_err();
         assert_eq!(found, [(diagnostics::MODEL_WRONG_TYPE, "2".to_owned())]);
+    }
+
+    #[test]
+    fn a_check_s_own_settings() {
+        let checks = load("[checks.page-size]\nlevel = \"warning\"\nlimit = 20_000\n").unwrap();
+        assert_eq!(checks.limit(diagnostics::PAGE_SIZE), Some(20_000));
+        assert_eq!(
+            checks.level(diagnostics::PAGE_SIZE),
+            Some(CheckLevel::Warning)
+        );
+        let found = load("[checks.page-size]\nlimit = 0\n").unwrap_err();
+        assert_eq!(found, [(diagnostics::MODEL_WRONG_TYPE, "0".to_owned())]);
+        let found = load("[checks.page-size]\nlimit = \"big\"\n").unwrap_err();
+        assert_eq!(
+            found,
+            [(diagnostics::MODEL_WRONG_TYPE, "\"big\"".to_owned())]
+        );
+        // `limit` is page-size's own.
+        let found = load("[checks.binding-blank-line]\nlimit = 3\n").unwrap_err();
+        assert_eq!(
+            found,
+            [(diagnostics::MODEL_UNKNOWN_KEY, "limit".to_owned())]
+        );
     }
 
     #[test]

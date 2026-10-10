@@ -1,0 +1,8 @@
+description: >-
+  An overdue review that the page acknowledges in its `intended` frontmatter,
+  with a reason, isn't reported.
+spec: ["4.9", "7.2"]
+tags: [check]
+today: "2026-10-10"
+
+diagnostics: []

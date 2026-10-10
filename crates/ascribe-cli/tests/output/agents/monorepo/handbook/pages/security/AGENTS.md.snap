@@ -10,7 +10,7 @@ Programmatic check: after editing a page, run `ascribe check <file> --format con
 A page's frontmatter is its type's. A file or folder whose name starts with `_` is a fragment, which pages `@include`, not a page.
 
 - `page` (the default): frontmatter `title` (string, required), `description` (string)
-- `policy` (files `policies/**`): frontmatter `title` (string, required), `owner` (string, required), `review` (enum(quarterly, yearly), required), `effective` (date, required)
+- `policy` (files `policies/**`): frontmatter `title` (string, required), `owner` (string, required), `review` (enum(quarterly, yearly), required), `effective` (date, required), `review-by` (date)
 
 ### Phrases
 

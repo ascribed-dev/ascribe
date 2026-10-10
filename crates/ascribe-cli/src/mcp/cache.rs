@@ -55,7 +55,7 @@ impl Projects for Cache {
             }
         }
         entries.remove(&key);
-        let project = Project::load(config)?;
+        let project = Project::load(config)?.with_today(crate::clock::today());
         let listing = list(&root, &project);
         let loaded = Rc::new(Loaded::new(project));
         entries.insert(
