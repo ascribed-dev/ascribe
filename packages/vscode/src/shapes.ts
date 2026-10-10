@@ -648,7 +648,11 @@ export interface Entry {
    * code.
    */
   help: string;
-  /** The address of its entry in the diagnostics reference. */
+  /**
+   * The address of its entry in the diagnostics reference: the docs'
+   * permalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,
+   * which forwards to the entry wherever it is.
+   */
   docs: string;
   /**
    * For a problem in included content reported because one of its related

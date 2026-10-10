@@ -33,4 +33,4 @@ title: API keys
 Create a key in **Settings**.
 ```
 
-Docs: https://ascribed-dev.com/reference/diagnostics/#asc036-link-target-missing
+Docs: https://ascribed-dev.com/go/ASC036/

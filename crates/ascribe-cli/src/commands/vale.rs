@@ -27,7 +27,7 @@ pub enum Command {
     /// turned off, and switch `[checks.vale]` to `config = ".vale.ini"`.
     ///
     /// Writes nothing when `.vale.ini` or `.vale` is there already.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-vale-eject"))]
+    #[command(after_help = docs_link!("cli-vale-eject"))]
     Eject(EjectArgs),
 }
 

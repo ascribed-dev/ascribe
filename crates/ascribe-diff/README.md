@@ -1,6 +1,6 @@
 # ascribe-diff
 
-What changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved; and which pages' examples changed while their words didn't. `ascribe diff` and `ascribe drift` are its command line; how to use them, and the JSON they write, are in the [command reference](https://ascribed-dev.com/reference/cli/#ascribe-diff). This README is about the code.
+What changed between a git revision and the working tree, as readers will see it: which pages of each build changed, and which blocks on them were added, removed, changed, or moved; and which pages' examples changed while their words didn't. `ascribe diff` and `ascribe drift` are its command line; how to use them, and the JSON they write, are in the [command reference](https://ascribed-dev.com/reference/cli/#cli-diff). This README is about the code.
 
 | Module | Role |
 |---|---|

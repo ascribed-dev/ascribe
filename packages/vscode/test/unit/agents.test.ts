@@ -140,7 +140,7 @@ function diagnostic(over: Partial<ProtocolDiagnostic> = {}): ProtocolDiagnostic 
     range: { start: { line: 2, character: 5 }, end: { line: 2, character: 9 } },
     severity: 1,
     code: "ASC036",
-    codeDescription: { href: "https://ascribed-dev.com/reference/diagnostics/#asc036" },
+    codeDescription: { href: "https://ascribed-dev.com/go/ASC036/" },
     message: "no page at `nowhere.md`",
     data: {
       slug: "link-target-missing",
@@ -264,7 +264,7 @@ describe("the problems report", () => {
           builds: ["site"],
           unpublished: false,
           help: "Fix the link.",
-          docs: "https://ascribed-dev.com/reference/diagnostics/#asc036",
+          docs: "https://ascribed-dev.com/go/ASC036/",
           repeats: 0,
         },
       ],

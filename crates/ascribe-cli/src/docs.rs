@@ -43,71 +43,14 @@ fn repo() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-/// The address help links to is the docs site's, `[consumer] site` in
-/// `docs/ascribe.toml`, and each page it links to is a page of the docs.
-#[test]
-fn help_links_to_the_docs_site() {
-    let model = ascribe_model::load(repo().join("docs/ascribe.toml")).unwrap();
-    assert_eq!(
-        model
-            .consumer
-            .site
-            .as_deref()
-            .map(|s| s.trim_end_matches('/')),
-        Some(crate::cli::DOCS_SITE),
-        "the docs site's address in crates/ascribe-cli/src/cli.rs isn't [consumer] site in docs/ascribe.toml"
-    );
-
-    let page = std::fs::read_to_string(repo().join("docs/content/reference/cli.md")).unwrap();
-    let mut cli = Cli::command();
-    let mut helps = vec![cli.render_long_help().to_string()];
-    // Rendering builds the command, which adds clap's own `help` subcommand.
-    for command in cli.get_subcommands_mut().filter(|c| c.get_name() != "help") {
-        helps.push(command.render_long_help().to_string());
-        // A hidden command, run only by Ascribe itself, isn't documented.
-        for sub in command
-            .get_subcommands_mut()
-            .filter(|c| c.get_name() != "help" && !c.is_hide_set())
-        {
-            helps.push(sub.render_long_help().to_string());
-        }
-    }
-    let permalinks = docs_permalinks();
-    for help in helps {
-        let link = help
-            .lines()
-            .find_map(|line| line.strip_prefix("Documentation: "))
-            .expect("each command's help ends with a link to its documentation");
-        let path = link.strip_prefix(crate::cli::DOCS_SITE).unwrap();
-        if let Some(id) = path.strip_prefix(crate::cli::DOCS_PERMALINKS) {
-            let id = id.strip_suffix('/').unwrap_or_else(|| {
-                panic!("{link}: the docs site's addresses end in `/` (trailing-slash = \"always\")")
-            });
-            assert!(
-                permalinks.iter().any(|p| p.name == id),
-                "{link}: the docs publish no permalink `{id}`"
-            );
-            continue;
-        }
-        let (route, anchor) = path.split_once('#').unwrap_or((path, ""));
-        assert_eq!(route, "/reference/cli/", "{link}");
-        if !anchor.is_empty() {
-            // `ascribe-sources-fetch` is the heading `ascribe sources fetch`,
-            // a level below `ascribe sources`.
-            let command = anchor.strip_prefix("ascribe-").unwrap().replace('-', " ");
-            assert!(
-                page.contains(&format!("\n## `ascribe {command}`\n"))
-                    || page.contains(&format!("\n### `ascribe {command}`\n")),
-                "{link}: reference/cli.md has no `ascribe {command}` heading"
-            );
-        }
-    }
-}
-
-/// The permalinks the docs' `site` build publishes.
-fn docs_permalinks() -> Vec<ascribe_resolve::Permalink> {
+/// The permalinks the docs' `site` build publishes, with `base-path` set to
+/// `base` when it's given.
+fn docs_permalinks(base: Option<&str>) -> Vec<ascribe_resolve::Permalink> {
     let root = repo().join("docs");
-    let model = ascribe_model::load(root.join("ascribe.toml")).unwrap();
+    let mut model = ascribe_model::load(root.join("ascribe.toml")).unwrap();
+    if let Some(base) = base {
+        base.clone_into(&mut model.consumer.base_path);
+    }
     let layout = ascribe_resolve::Layout::from_model(&model);
     let fs = ascribe_resolve::DiskFs::new(&root, &layout);
     let project = ascribe_resolve::Project::load(std::sync::Arc::new(model), layout, &fs);
@@ -116,82 +59,188 @@ fn docs_permalinks() -> Vec<ascribe_resolve::Permalink> {
     project.resolve_build(build, &router).permalinks()
 }
 
-/// Help links to the docs' permalinks at the address the docs site
-/// publishes them at, and `ascribe check`'s leads to its section.
+/// Every address of the docs the binary builds, each with the page and the
+/// heading, as written, it must lead to: each command's help, each
+/// diagnostic's entry (in `check`'s JSON, `explain`, and the editor), the
+/// agents' rules, and the plugin's homepage.
+fn addresses() -> Vec<(String, &'static str, Option<String>)> {
+    let mut helps = Vec::new();
+    let mut cli = Cli::command();
+    helps.push((cli.render_long_help().to_string(), None));
+    // Rendering builds the command, which adds clap's own `help` subcommand.
+    for command in cli.get_subcommands_mut().filter(|c| c.get_name() != "help") {
+        let name = command.get_name().to_owned();
+        helps.push((
+            command.render_long_help().to_string(),
+            Some(format!("`ascribe {name}`")),
+        ));
+        // A hidden command, run only by Ascribe itself, isn't documented.
+        for sub in command
+            .get_subcommands_mut()
+            .filter(|c| c.get_name() != "help" && !c.is_hide_set())
+        {
+            helps.push((
+                sub.render_long_help().to_string(),
+                Some(format!("`ascribe {name} {}`", sub.get_name())),
+            ));
+        }
+    }
+    let mut out: Vec<_> = helps
+        .into_iter()
+        .map(|(help, heading)| {
+            let link = help
+                .lines()
+                .find_map(|line| line.strip_prefix("Documentation: "))
+                .expect("each command's help ends with a link to its documentation");
+            (link.to_owned(), "reference/cli.md", heading)
+        })
+        .collect();
+    // Retired codes keep their entries, and their permalinks.
+    for entry in ascribe_check::Registry::global().entries() {
+        out.push((
+            entry.docs(),
+            "reference/diagnostics.md",
+            Some(format!("{} `{}`", entry.code, entry.slug)),
+        ));
+    }
+    out.push((
+        ascribe_query::rules::directive_reference_url(),
+        "reference/directives.md",
+        None,
+    ));
+    out.push((
+        crate::agents::plugin::HOMEPAGE.to_owned(),
+        "guides/agents.md",
+        None,
+    ));
+    out
+}
+
+/// The docs' address and permalink path in the binary are `docs/ascribe.toml`'s.
 #[test]
-fn help_links_to_permalinks_where_the_docs_publish_them() {
+fn the_docs_site_is_where_the_binary_links() {
     let model = ascribe_model::load(repo().join("docs/ascribe.toml")).unwrap();
     assert_eq!(
-        model.consumer.permalink_path(),
+        model
+            .consumer
+            .site
+            .as_deref()
+            .map(|s| s.trim_end_matches('/')),
+        Some(crate::cli::DOCS_SITE),
+        "docs_site! in crates/ascribe-core/src/lib.rs isn't [consumer] site in docs/ascribe.toml"
+    );
+    assert_eq!(
+        format!(
+            "{}{}",
+            crate::cli::DOCS_SITE,
+            model.consumer.permalink_path()
+        ),
         crate::cli::DOCS_PERMALINKS,
-        "docs_permalinks! in crates/ascribe-cli/src/cli.rs isn't [consumer] permalink-path in docs/ascribe.toml"
+        "docs_permalinks! in crates/ascribe-core/src/lib.rs isn't [consumer] permalink-path in docs/ascribe.toml"
     );
     assert_eq!(
         model.consumer.trailing_slash,
         ascribe_model::TrailingSlash::Always,
-        "docs_permalink! in crates/ascribe-cli/src/cli.rs ends each address in `/`, as trailing-slash = \"always\" does"
-    );
-    let check = docs_permalinks()
-        .into_iter()
-        .find(|p| p.name == "cli-check")
-        .expect("the docs publish the permalink `cli-check`");
-    assert_eq!(
-        (check.route.as_str(), check.anchor.as_str()),
-        ("/reference/cli/", "cli-check")
-    );
-    let help = Cli::command()
-        .find_subcommand_mut("check")
-        .unwrap()
-        .render_long_help()
-        .to_string();
-    assert!(
-        help.trim_end().ends_with(&format!(
-            "Documentation: {}/go/cli-check/",
-            crate::cli::DOCS_SITE
-        )),
-        "{help}"
+        "docs_permalink! in crates/ascribe-core/src/lib.rs ends each address in `/`, as trailing-slash = \"always\" does"
     );
 }
 
-/// Each diagnostic's link, in `check`'s JSON and the language server's
-/// `codeDescription`, is to its own heading in the diagnostics reference, as
-/// the site's slugger makes an anchor of it.
+/// Every address the binary builds is a permalink the docs publish, and it
+/// leads to the right page and heading: a new command or diagnostic needs
+/// one in the docs. A command's is `cli-` and its name, with a `-` for each
+/// space; a diagnostic's is its code.
 #[test]
-fn diagnostics_link_to_their_entries_in_the_reference() {
-    use ascribe_core::Slugger;
-
-    assert_eq!(
-        ascribe_check::registry::REFERENCE,
-        format!("{}/reference/diagnostics/", crate::cli::DOCS_SITE)
-    );
-    let page =
-        std::fs::read_to_string(repo().join("docs/content/reference/diagnostics.md")).unwrap();
-    let mut entries = String::new();
-    for part in ["source-files", "content-model", "content-checks"] {
-        assert!(page.contains(&format!("@include: ../_generated/diagnostics-{part}.md\n")));
-        let path = repo().join(format!("docs/content/_generated/diagnostics-{part}.md"));
-        entries.push_str(&std::fs::read_to_string(path).unwrap());
-    }
-    let mut linked = 0;
-    for entry in ascribe_check::Registry::global().entries() {
-        // A retired diagnostic isn't reported, so it's never linked to.
-        if entry.fix.is_none() {
+fn every_address_the_binary_builds_is_a_permalink_of_the_docs() {
+    let permalinks = docs_permalinks(None);
+    let mut checked = 0;
+    for (address, page, heading) in addresses() {
+        let name = address
+            .strip_prefix(crate::cli::DOCS_PERMALINKS)
+            .and_then(|rest| rest.strip_suffix('/'))
+            .unwrap_or_else(|| {
+                panic!(
+                    "{address}: not a permalink of the docs, ending in `/` (trailing-slash = \"always\")"
+                )
+            });
+        let found = permalinks
+            .iter()
+            .find(|p| p.name == name)
+            .unwrap_or_else(|| panic!("{address}: the docs publish no permalink `{name}`"));
+        assert_eq!(found.page.as_str(), page, "{address}");
+        let Some(heading) = heading else {
+            assert_eq!(
+                found.anchor, None,
+                "{address}: leads to a heading, not the page"
+            );
+            checked += 1;
             continue;
-        }
-        let heading = format!("\n#### {} `{}`\n", entry.code, entry.slug);
+        };
+        assert_eq!(found.anchor.as_deref(), Some(name), "{address}");
+        let expected = match heading.strip_prefix("`ascribe ") {
+            Some(command) => format!("cli-{}", command.trim_end_matches('`').replace(' ', "-")),
+            None => heading.split(' ').next().unwrap_or_default().to_owned(),
+        };
+        assert_eq!(name, expected, "{address}: the permalink for {heading}");
+        // The heading the `@id` is under, in the file it's written in.
+        let file = written_in(found);
+        let marked = format!(" {heading}\n@id {{permalink=true}}: {name}\n");
         assert!(
-            entries.contains(&heading),
-            "no heading{heading}in the reference"
+            file.contains(&marked),
+            "{address}: no heading {heading} marked `{name}` in the docs"
         );
-        let text = format!("{} {}", entry.code, entry.slug);
-        let anchor = ascribe_resolve::slug::GithubSlugger.new_scope().slug(&text);
-        assert_eq!(
-            entry.docs(),
-            format!("{}#{anchor}", ascribe_check::registry::REFERENCE)
-        );
-        linked += 1;
+        checked += 1;
     }
-    assert!(linked > 100, "only {linked} entries");
+    assert!(checked > 150, "only {checked} addresses");
+}
+
+/// Building the docs under another base path, as when they move to
+/// `/docs/`, changes no address the binary builds: each permalink is still
+/// published, at the same path.
+#[test]
+fn the_binary_s_addresses_dont_move_with_the_docs() {
+    let moved = docs_permalinks(Some("/docs/"));
+    for (address, page, _) in addresses() {
+        let name = address
+            .strip_prefix(crate::cli::DOCS_PERMALINKS)
+            .and_then(|rest| rest.strip_suffix('/'))
+            .unwrap();
+        let found = moved
+            .iter()
+            .find(|p| p.name == name)
+            .unwrap_or_else(|| panic!("{address}: not published under /docs/"));
+        assert_eq!(
+            found.route,
+            format!("/docs/{}/", page.trim_end_matches(".md"))
+        );
+    }
+    let mut model = ascribe_model::load(repo().join("docs/ascribe.toml")).unwrap();
+    "/docs/".clone_into(&mut model.consumer.base_path);
+    assert_eq!(
+        format!(
+            "{}{}",
+            crate::cli::DOCS_SITE,
+            model.consumer.permalink_path()
+        ),
+        crate::cli::DOCS_PERMALINKS
+    );
+}
+
+/// The text of the file a permalink is declared in: the page, or a fragment
+/// it includes.
+fn written_in(permalink: &ascribe_resolve::Permalink) -> String {
+    let content = repo().join("docs/content");
+    let page = content.join(permalink.page.as_str());
+    let text = std::fs::read_to_string(&page).unwrap();
+    if permalink.via.is_empty() {
+        return text;
+    }
+    // A heading from an include: the diagnostics reference's are in its
+    // generated fragments.
+    let mut all = text;
+    for entry in std::fs::read_dir(content.join("_generated")).unwrap() {
+        all.push_str(&std::fs::read_to_string(entry.unwrap().path()).unwrap());
+    }
+    all
 }
 
 #[test]

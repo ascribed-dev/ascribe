@@ -157,10 +157,7 @@ fn explain_answers_by_code_or_name() {
     assert_eq!(by_code["severity"], "error");
     assert!(by_code["example"]["wrong"].is_string());
     assert!(
-        by_code["docs"]
-            .as_str()
-            .unwrap()
-            .ends_with("/reference/diagnostics/#asc036-link-target-missing"),
+        by_code["docs"].as_str().unwrap().ends_with("/go/ASC036/"),
         "{by_code}"
     );
 }

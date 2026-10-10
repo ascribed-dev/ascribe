@@ -11,7 +11,7 @@
     "url": "git+https://github.com/ascribed-dev/ascribe.git",
     "directory": "packages/vscode"
   },
-  "homepage": "https://ascribed-dev.com/guides/editor/",
+  "homepage": "https://ascribed-dev.com/go/editor-guide/",
   "bugs": "https://github.com/ascribed-dev/ascribe/issues",
   "publisher": "Ascribe",
   "icon": "media/icon.png",
@@ -409,7 +409,7 @@
     "viewsWelcome": [
       {
         "view": "ascribe.projects",
-        "contents": "This workspace has no Ascribe project yet. A project is a folder with an ascribe.toml, which describes its pages and builds.\n[Get started with Ascribe](https://ascribed-dev.com/getting-started/)"
+        "contents": "This workspace has no Ascribe project yet. A project is a folder with an ascribe.toml, which describes its pages and builds.\n[Get started with Ascribe](https://ascribed-dev.com/go/getting-started/)"
       }
     ],
     "walkthroughs": [
@@ -421,7 +421,7 @@
           {
             "id": "project",
             "title": "Open a project",
-            "description": "An Ascribe project is a folder with an `ascribe.toml`, the content model that says where its pages are and what they can use. Open the folder that holds yours, or create one with [Getting started](https://ascribed-dev.com/getting-started/#create-ascribetoml).\n[Open Folder](command:workbench.action.files.openFolder)",
+            "description": "An Ascribe project is a folder with an `ascribe.toml`, the content model that says where its pages are and what they can use. Open the folder that holds yours, or create one with [Getting started](https://ascribed-dev.com/go/create-ascribetoml/).\n[Open Folder](command:workbench.action.files.openFolder)",
             "media": {
               "markdown": "media/walkthrough/project.md"
             },
@@ -479,12 +479,12 @@
           {
             "id": "check",
             "title": "Check in CI",
-            "description": "Run `npx ascribe check` in CI, and a pull request fails on the same problems the editor shows you.\n[Read About ascribe check](https://ascribed-dev.com/reference/cli/#cli-check)",
+            "description": "Run `npx ascribe check` in CI, and a pull request fails on the same problems the editor shows you.\n[Read About ascribe check](https://ascribed-dev.com/go/cli-check/)",
             "media": {
               "markdown": "media/walkthrough/check.md"
             },
             "completionEvents": [
-              "onLink:https://ascribed-dev.com/reference/cli/#cli-check"
+              "onLink:https://ascribed-dev.com/go/cli-check/"
             ]
           }
         ]

@@ -100,7 +100,7 @@ pub fn content_glob(project: &Project, dir: &RelPath) -> String {
 
 /// The address of the directive reference on the docs site.
 pub fn directive_reference_url() -> String {
-    concat!(ascribe_core::docs_site!(), "/reference/directives/").to_owned()
+    ascribe_core::docs_permalink!("directives").to_owned()
 }
 
 /// A line of Markdown for each built-in directive, in SPEC §4 order: its

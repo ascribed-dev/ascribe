@@ -134,7 +134,7 @@ The page at that address reads them. With versions declared, it sends the reader
 
 The binary would stop building addresses and link to ids:
 
-- A diagnostic's link becomes `/go/ASC036`. The reference's headings take the codes as their ids.
+- A diagnostic's link becomes `/go/ASC036/`. The reference's headings take the codes as their ids.
 - A command's `--help` ends with `/go/cli-check/`.
 
 A test checks that every id the binary can produce is in the docs' list. Then the docs can be moved under `/docs/`, as the [website proposal](website.md) needs, with no address in the binary changing.

@@ -66,7 +66,7 @@ npm test              # after a build
 
 ## Addresses
 
-A page's address is its file's path under `docs/content/`, so moving a page moves its address. Don't move a published page without a reason; when one moves, add a line to `public/_redirects`. Each diagnostic's address, `/reference/diagnostics/#asc036-link-target-missing`, stays the same, so tools can link to a diagnostic.
+A page's address is its file's path under `docs/content/`, so moving a page moves its address. Don't move a published page without a reason; when one moves, add a line to `public/_redirects`. What links in from outside the docs, the binary's help and diagnostics and the editor's links, uses a [permalink](https://ascribed-dev.com/reference/directives/#permalinks) instead, such as `/go/ASC036/`, which forwards to wherever its page or heading is, so moving a page that has one breaks none of them.
 
 ## Navigation
 

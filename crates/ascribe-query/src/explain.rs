@@ -55,7 +55,9 @@ pub struct Explanation {
     /// How to fix it, in general. `null` for a diagnostic that's no longer
     /// reported.
     pub fix: Option<String>,
-    /// The address of its entry in the diagnostics reference.
+    /// The address of its entry in the diagnostics reference: the docs'
+    /// permalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,
+    /// which forwards to the entry wherever it is.
     pub docs: String,
     /// A page that has the problem and the same page fixed; `null` when the
     /// diagnostic has no example.

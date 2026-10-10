@@ -39,4 +39,4 @@ Link to the source file, with a relative path such as `../guides/install.md#conf
 
 ### More
 
-`ascribe model handbook/pages/security` shows everything the content model allows. Every directive: https://ascribed-dev.com/reference/directives/
+`ascribe model handbook/pages/security` shows everything the content model allows. Every directive: https://ascribed-dev.com/go/directives/

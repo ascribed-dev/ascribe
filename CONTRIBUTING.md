@@ -104,6 +104,20 @@ The site is published at <https://ascribed-dev.com>. A pull request that changes
 
 Three checks run Ascribe from npm, the nightly canary `next`, not from the checkout: **Site from npm** on each push to `main`, and the **Drift** and **Review** reports on pull requests. A page documenting what you just changed can't pass them until a canary has the change. When one of them fails and the canary doesn't have what the commit ships yet, it doesn't fail: it passes with a warning, "Waiting for a canary that includes …", and its summary links to the **Canary** workflow, which a maintainer can start by hand rather than wait a night. On `main`, the run after the canary is the real check, and starts on its own; on a pull request, re-run the job once a canary has what it needs. A failure when the canary already has the commit stays red. `scripts/release/canary.ts` makes that call, and `node scripts/release/canary.ts paths` lists what counts as shipping.
 
+## Linking to the docs from code
+
+Nothing outside the docs links to a page's path. The binary, the extension, and the agents' rules link to a [permalink](docs/content/reference/directives.md#permalinks) instead, which forwards to wherever its page or section is, so the docs can move without breaking them. Ascribe's names follow one convention:
+
+| For | Name | Declared on |
+|---|---|---|
+| A command | `cli-` and its name, with `-` for a space: `cli-check`, `cli-sources-update` | Its heading in `docs/content/reference/cli.md`, `@id {permalink=true}: cli-check` |
+| The command reference | `cli-reference` | The page's frontmatter |
+| A diagnostic | Its code, `ASC036`, retired ones too | Its heading in the diagnostics reference, which the generator writes |
+| Another page | Its subject, with `-guide` for a guide: `diagnostics`, `directives`, `getting-started`, `agents-guide`, `editor-guide` | The page's frontmatter, `permalink: agents-guide` |
+| Another section | Its heading's id: `create-ascribetoml` | Its heading |
+
+In Rust, build an address with `ascribe_core::docs_permalink!("cli-check")`, never by adding a path to `docs_site!`. `every_address_the_binary_builds_is_a_permalink_of_the_docs` in `crates/ascribe-cli/src/docs.rs` checks each name the binary links to against what the docs publish, and `packages/vscode/test/unit/walkthrough.test.ts` checks the extension's manifest. A new command fails the first until its heading is marked. Don't rename or remove a permalink: something outside the docs links to it.
+
 ## Generated docs
 
 Parts of the user docs repeat what the code already says, so they're generated from it, as fragments in `docs/content/_generated/` that pages include: the diagnostics, from `tests/conformance/diagnostics.toml`; each command's options, from the `clap` help text in `crates/ascribe-cli/src/`; and the extension's settings and commands, from `packages/vscode/package.json`. Each fragment says at its top what generates it. A test beside each source fails when its fragments are stale; change the source, not the fragment, then run the test with `ASCRIBE_BLESS=1` to rewrite them (`ASCRIBE_BLESS=1 cargo test -p ascribe-conformance --test docs`, `ASCRIBE_BLESS=1 cargo test -p ascribe-cli docs`, or `ASCRIBE_BLESS=1 pnpm --filter ascribe-vscode exec vitest run test/unit/docs.test.ts`). The phrases in `docs/ascribe.toml` whose values are in another file, such as `version`, are checked against it too.

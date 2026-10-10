@@ -40,15 +40,15 @@ pub struct Args {
 pub enum Command {
     /// Copy the files snippets use from each source in another repository, at
     /// its pin in ascribe.lock.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-sources-fetch"))]
+    #[command(after_help = docs_link!("cli-sources-fetch"))]
     Fetch(FetchArgs),
     /// Move each source's pin to the head of its branch, copy its files again
     /// there, and say which pages' examples changed.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-sources-update"))]
+    #[command(after_help = docs_link!("cli-sources-update"))]
     Update(UpdateArgs),
     /// Show each source in another repository: its pin, and the state of its
     /// copies. Reads only the project's files.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-sources-status"))]
+    #[command(after_help = docs_link!("cli-sources-status"))]
     Status(StatusArgs),
 }
 

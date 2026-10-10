@@ -427,7 +427,7 @@
           "type": "string"
         },
         "docs": {
-          "description": "The address of its entry in the diagnostics reference.",
+          "description": "The address of its entry in the diagnostics reference: the docs'\npermalink for its code, such as `https://ascribed-dev.com/go/ASC036/`,\nwhich forwards to the entry wherever it is.",
           "type": "string"
         },
         "file": {

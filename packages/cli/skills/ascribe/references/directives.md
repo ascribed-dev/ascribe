@@ -16,4 +16,4 @@ A title line, `.<Title>`, goes on the line above a directive that takes one. A d
 
 A project can declare its own directives, widgets, whose names have a hyphen: `ascribe model --section widgets` lists them, with their attributes. Which note types, dimensions, and sources a project has: `ascribe model`.
 
-The full reference, with examples: https://ascribed-dev.com/reference/directives/
+The full reference, with examples: https://ascribed-dev.com/go/directives/

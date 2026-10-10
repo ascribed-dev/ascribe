@@ -1,5 +1,5 @@
 // Readers are sent to the docs site, not to the docs' source files: the
-// READMEs and the extension's manifest link to the site's pages, at the
+// READMEs link to the site's pages, and the extension's manifest to its permalinks, at the
 // address in docs/ascribe.toml's `[consumer] site`, and each link lands on a
 // page and a heading the docs have. (The binary's help is checked by
 // crates/ascribe-cli/src/docs.rs, and the site's own links by site/test/.)
@@ -43,17 +43,20 @@ function pageFor(route: string): string | undefined {
   return candidates.map((file) => path.join(content, file)).find((file) => existsSync(file));
 }
 
-/** The anchors of a page's headings, as the site's slugger writes them. */
+/** The anchors of a page's headings: as the site's slugger writes them, or a heading's `@id`. */
 function anchors(file: string): Set<string> {
-  const headings = readFileSync(file, "utf8").matchAll(/^#{1,6}\s+(.+?)\s*$/gm);
-  return new Set(
-    Array.from(headings, ([, heading = ""]) =>
+  const text = readFileSync(file, "utf8");
+  const headings = text.matchAll(/^#{1,6}\s+(.+?)\s*$/gm);
+  const ids = text.matchAll(/^@id(?: *\{[^}]*\})?: *(\S+)$/gm);
+  return new Set([
+    ...Array.from(headings, ([, heading = ""]) =>
       heading
         .toLowerCase()
         .replace(/[^\p{L}\p{N}\s_-]/gu, "")
         .replace(/ /g, "-"),
     ),
-  );
+    ...Array.from(ids, ([, id = ""]) => id),
+  ]);
 }
 
 test("READMEs link to the docs site, not to the docs' source files", () => {
@@ -86,10 +89,11 @@ test("each link to the docs site lands on a page and a heading", () => {
   expect(checked).toBeGreaterThan(10);
 });
 
-test("the extension's homepage is a page of the docs site", () => {
+// The extension's manifest links to the docs' permalinks, which
+// packages/vscode/test/unit/walkthrough.test.ts checks against the docs.
+test("the extension's homepage is on the docs site", () => {
   const manifest = JSON.parse(
     readFileSync(path.join(root, "packages", "vscode", "package.json"), "utf8"),
   ) as { homepage: string };
-  expect(manifest.homepage.startsWith(`${siteAddress()}/`)).toBe(true);
-  expect(pageFor(new URL(manifest.homepage).pathname)).toBeDefined();
+  expect(manifest.homepage.startsWith(`${siteAddress()}/go/`)).toBe(true);
 });

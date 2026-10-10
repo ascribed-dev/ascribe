@@ -28,22 +28,22 @@ pub struct Args {
 pub enum Command {
     /// Write the project's rules into the files agents read on their own,
     /// and the Ascribe skill, from the content model.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-agents-sync"))]
+    #[command(after_help = docs_link!("cli-agents-sync"))]
     Sync(SyncArgs),
     /// Print the project's rules: the block `sync` writes into the
     /// AGENTS.md beside ascribe.toml.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-agents-rules"))]
+    #[command(after_help = docs_link!("cli-agents-rules"))]
     Rules(RulesArgs),
     /// Print a file of the Ascribe skill: its SKILL.md, or its directive
     /// reference.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-agents-skill"))]
+    #[command(after_help = docs_link!("cli-agents-skill"))]
     Skill(SkillArgs),
     /// Print a named prompt for an agent: `new-page`, `fix`, or `review`.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-agents-prompt"))]
+    #[command(after_help = docs_link!("cli-agents-prompt"))]
     Prompt(PromptArgs),
     /// Check an agent's edits, as its hook: after it writes a file, or
     /// before it finishes. Reads the hook's input on standard input.
-    #[command(after_help = docs_page!("reference/cli/#ascribe-agents-hook"))]
+    #[command(after_help = docs_link!("cli-agents-hook"))]
     Hook(HookArgs),
     /// Keep a project loaded for its hooks: run by the first hook in a
     /// project, in the background.
