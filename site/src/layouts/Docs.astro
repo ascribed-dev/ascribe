@@ -18,6 +18,8 @@ const { entry, headings } = Astro.props;
 const { title, formatted, description, available } = entry.data;
 if (!entry.filePath) throw new Error(`${entry.id} has no source file`);
 const edit = `${repo}/edit/main/${contentDir}/${sourceFile(entry.filePath)}`;
+// The description is in llms.txt and not in the page's Markdown, so it's
+// marked for the delivery spec's parity check (`data-markdown-ignore`).
 ---
 
 <Base title={title} description={description} current={entry.id}>
@@ -25,7 +27,7 @@ const edit = `${repo}/edit/main/${contentDir}/${sourceFile(entry.filePath)}`;
     <article data-pagefind-body>
       <h1 set:html={formatted.title} />
       <Availability available={available} />
-      {description && <p class="description">{description}</p>}
+      {description && <p class="description" data-markdown-ignore>{description}</p>}
       <slot />
     </article>
     <footer class="page-footer">
